@@ -39,7 +39,6 @@ private:
 
 public:
 
-//LCOV_EXCL_START : dpm - Used only by Dp2 Tracing when cqd EID_TRACE_STATES > 0
   // A timer needs to be explicitly started using 'start' or 'restart'
   Timer()
     : running_(false),
@@ -113,7 +112,6 @@ public:
       return ( accumTime_ );
     }
   }
-//LCOV_EXCL_STOP : dpm - Used only by Dp2 Tracing when cqd EID_TRACE_STATES > 0
 
 };
 

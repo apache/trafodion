@@ -8355,7 +8355,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
       CMPASSERT(coll1==coll2);
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  if (CollationInfo::isSystemCollation(coll1))
 	  {
 	    setCollationEncodeComp(TRUE);
@@ -8460,7 +8459,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 	    }
 
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	     // update both operands if case insensitive comparions
@@ -9446,14 +9444,12 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9480,7 +9476,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9488,7 +9483,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9515,7 +9509,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9523,7 +9516,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9578,14 +9570,12 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9612,7 +9602,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9620,7 +9609,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9647,7 +9635,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9655,7 +9642,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9717,7 +9703,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 	
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    if (child(0)->getOperatorType() == ITM_NARROW)
@@ -9738,7 +9723,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    child(0) = child(0)->bindNode(generator->getBindWA());
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9764,7 +9748,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	    {
 	      //Solution 10-081216-8006
@@ -9786,7 +9769,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	    else
 	    {
   		if ((chType.isCaseinsensitive()) &&
@@ -9813,7 +9795,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	{
 	  //Solution 10-081216-8006
@@ -9835,7 +9816,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	  child(0) = child(0)->bindNode(generator->getBindWA());
 	}
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	else
 	{
 	    if ((chType.isCaseinsensitive()) &&

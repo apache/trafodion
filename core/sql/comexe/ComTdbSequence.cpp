@@ -110,9 +110,7 @@ ComTdbSequence::ComTdbSequence
 {
   if ( noOverflow )            
   {
-// LCOV_EXCL_START
     OLAPFlags_ |= NO_OVERFLOW ;
-// LCOV_EXCL_STOP
 
   }
   if ( unboundedFollowing )   
@@ -121,9 +119,7 @@ ComTdbSequence::ComTdbSequence
   }
   if ( logDiagnostics )       
   {
-// LCOV_EXCL_START
     OLAPFlags_ |= LOG_DIAGNOSTICS ;
-// LCOV_EXCL_STOP
   }
   if ( possibleMultipleCalls ) 
   {

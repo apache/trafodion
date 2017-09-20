@@ -115,7 +115,6 @@ public:
   inline NABoolean getAutomaticRangeLoggingRequired() const
   { return (IsBitSet(LOGGING_REQUIRED | AUTO_RANGELOG) ); }
 
-  // LCOV_EXCL_START
   // exclude from coverage since this method is used for similarity
   // check and now we use AQR instead
   inline NABoolean getInitOnStmtMvOnMe() const
@@ -127,7 +126,6 @@ public:
     return (IsBitSet(MVS_ON_ME | MANUAL_RANGELOG) || 
 	    IsBitSet(MVS_ON_ME | MIXED_RANGELOG) );
   }
-  // LCOV_EXCL_STOP
 
 private:
 

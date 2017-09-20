@@ -269,7 +269,6 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
                             const char *txt,
                             RelExpr *queryExpr )
   {
-    // LCOV_EXCL_START
     // for NSK only
     if (( CmpCommon::getDefault(NSK_DBG) == DF_ON ) &&
         ( CmpCommon::getDefault(nadef) == DF_ON ))
@@ -278,7 +277,6 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
       CURRCONTEXT_OPTDEBUG->showTree( queryExpr, NULL, "  " );
       CURRCONTEXT_OPTDEBUG->stream() << endl;
     }
-    // LCOV_EXCL_STOP
   }
 
 #ifdef NA_DEBUG_GUI
@@ -1813,7 +1811,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
 
   if (useQueryCache != NOCACHE && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
-    useQueryCache = NOCACHE; // LCOV_EXCL_LINE   
+    useQueryCache = NOCACHE;
   }
 
   // Every compile goes through here so we are guranteed that the
@@ -1958,7 +1956,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   }
 #endif
 
-  // LCOV_EXCL_START
   // for NSK only
   if ( CmpCommon::getDefault(NSK_DBG) == DF_ON )
   {
@@ -1993,7 +1990,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
       CURRCONTEXT_OPTDEBUG->stream() << endl << endl;
     }
   }
-  // LCOV_EXCL_STOP
 
 #ifdef NA_DEBUG
 #ifdef NA_DEBUG_GUI

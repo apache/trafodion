@@ -367,7 +367,7 @@ void GroupAttributes::addConstraint(ItemExpr *c)
       break;
 
     case ITM_UNIQUE_CONSTRAINT:
-      DCMPASSERT("Wrong constraint type used in GA" == 0); // LCOV_EXCL_LINE
+      DCMPASSERT("Wrong constraint type used in GA" == 0);
       break;
 
     default:
@@ -502,7 +502,6 @@ NABoolean GroupAttributes::hasCardConstraint(Cardinality &minNumOfRows,
   return found;
 }
 
-// LCOV_EXCL_START
 NABoolean GroupAttributes::hasConstraintOfType(OperatorTypeEnum constraintType) const
 {
   for (ValueId x= constraints_.init();
@@ -527,7 +526,6 @@ void GroupAttributes::getConstraintsOfType(OperatorTypeEnum constraintType,
 	  vidSet.insert(x);
     }
 }
-// LCOV_EXCL_STOP
 
 // This method is used flow RefOpt constraints (optimizer version of foreign key
 // side of a RI constraint) up the query tree. The input argument is typically
@@ -782,7 +780,7 @@ void GroupAttributes::lomerge (GroupAttributes &other, NABoolean mergeCIO)
     {
       if (NOT (requiredInputs_ == other.requiredInputs_) OR
                NOT (requiredOutputs_ == other.requiredOutputs_))
-        ABORT("Internal error, merging incompatible group attributes"); // LCOV_EXCL_LINE
+        ABORT("Internal error, merging incompatible group attributes");
     }
 
   // To add the constraints from the other group to this one, we
@@ -2496,7 +2494,6 @@ NABoolean GroupAttributes::addInputOutputLogProp (const EstLogPropSharedPtr& inp
 } //GroupAttributes::addInputOutputLogProp
 
 
-// LCOV_EXCL_START
 // this method is used by the GUI debugger for displaying the
 // estimated logical properties which are cached by the ASM
 
@@ -2561,7 +2558,6 @@ SHPTR_LIST(EstLogPropSharedPtr) * GroupAttributes::getCachedStatsList()
   }
   return statsList;
 }
-// LCOV_EXCL_STOP
 
 ColStatsSharedPtr GroupAttributes::getColStatsForSkewDetection(
                                               const ValueId vId,
@@ -2623,7 +2619,6 @@ CostScalar GroupAttributes::getSkewnessFactor(const ValueId vId,
 } // GroupAttributes::getSkewnessFactor
 
 
-// LCOV_EXCL_START
 
 SkewedValueList* GroupAttributes::getSkewedValues(const ValueId& vId,
                                               double threshold,
@@ -2884,7 +2879,6 @@ GroupAttributes::setEssentialCharacteristicOutputs(const ValueIdSet & vset)
   CMPASSERT(NOT misMatchFound);
   requiredEssentialOutputs_ = vset;
 }
-// LCOV_EXCL_STOP
 
 void 
 GroupAttributes::addEssentialCharacteristicOutputs(const ValueIdSet & vset)

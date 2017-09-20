@@ -83,7 +83,6 @@ NABoolean XAWAITIOX_MINUS_ONE = TRUE;
 // Methods for class IpcNodeName
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 IpcNodeName::IpcNodeName(IpcNetworkDomain dom,
 			 const char *name)
 {
@@ -125,7 +124,6 @@ IpcNodeName & IpcNodeName::operator = (const IpcNodeName &other)
 
   return *this;
 }
-// LCOV_EXCL_STOP
 
 NABoolean IpcNodeName::operator == (const IpcNodeName &other)
 {
@@ -198,7 +196,6 @@ IpcProcessId::IpcProcessId(
   phandle_ = phandle;
 }
 
-// LCOV_EXCL_START
 IpcProcessId::IpcProcessId(
      const SockIPAddress &ipAddr,
      SockPortNumber port) : IpcMessageObj(IPC_PROCESS_ID,
@@ -209,7 +206,6 @@ IpcProcessId::IpcProcessId(
   pid_.ipAddress_ = ipAddr.getRawAddress();
   pid_.listnerPort_ = port;
 }
-// LCOV_EXCL_STOP
 
 IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
      IpcMessageObj(IPC_PROCESS_ID,
@@ -232,7 +228,6 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 	colonPos++;
 
       if (asciiRepresentation[colonPos] == ':')
-// LCOV_EXCL_START
 	{
 	  char asciiIpAddr[300];
 	  SockIPAddress ipAddr;
@@ -257,7 +252,6 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 	      domain_ = IPC_DOM_INTERNET;
 	    }
 	}
-// LCOV_EXCL_STOP
     }
 }
 
@@ -270,7 +264,7 @@ IpcProcessId::IpcProcessId(
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     phandle_ = other.phandle_;
   else if (domain_ == IPC_DOM_INTERNET)
-    pid_ = other.pid_; // LCOV_EXCL_LINE
+    pid_ = other.pid_;
 }
 
 IpcProcessId & IpcProcessId::operator = (const IpcProcessId &other)
@@ -280,7 +274,7 @@ IpcProcessId & IpcProcessId::operator = (const IpcProcessId &other)
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     phandle_ = other.phandle_;
   else if (domain_ == IPC_DOM_INTERNET)
-    pid_ = other.pid_; // LCOV_EXCL_LINE
+    pid_ = other.pid_;
 
   return *this;
 }
@@ -307,7 +301,7 @@ NABoolean IpcProcessId::match(const IpcNodeName &name,
     {
       // IP addresses don't tell the CPU, just compare a normalized
       // form of the IP addresses
-      return (getNodeName() == name); // LCOV_EXCL_LINE
+      return (getNodeName() == name);
     }
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
@@ -323,7 +317,6 @@ NABoolean IpcProcessId::match(const IpcNodeName &name,
     return FALSE;
 }
 
-// LCOV_EXCL_START
 SockIPAddress IpcProcessId::getIPAddress() const
 {
   assert(domain_ == IPC_DOM_INTERNET);
@@ -337,7 +330,6 @@ SockPortNumber IpcProcessId::getPortNumber() const
 
   return pid_.listnerPort_;
 }
-// LCOV_EXCL_STOP
 
 const GuaProcessHandle & IpcProcessId::getPhandle() const
 {
@@ -351,7 +343,7 @@ IpcNodeName IpcProcessId::getNodeName() const
   // getting to the node name is somewhat convoluted, sorry about that
   if (domain_ == IPC_DOM_INTERNET)
     {
-      return IpcNodeName(SockIPAddress(pid_.ipAddress_)); // LCOV_EXCL_LINE
+      return IpcNodeName(SockIPAddress(pid_.ipAddress_));
     }
 #if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
@@ -404,7 +396,6 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
 
   if (domain_ == IPC_DOM_INTERNET)
     {
-// LCOV_EXCL_START
       sprintf(outb,"%d.%d.%d.%d:%d",
 	      pid_.ipAddress_.ipAddress_[0],
 	      pid_.ipAddress_.ipAddress_[1],
@@ -413,7 +404,6 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
 	      pid_.listnerPort_);
       outLen = str_len(outb);
     }
-// LCOV_EXCL_STOP
 
   // copy the result and terminate it with a NUL character
   str_cpy_all(outBuf,outb,MINOF(outLen,outBufLen-1));
@@ -465,10 +455,8 @@ IpcConnection * IpcProcessId::createConnectionToServer(
 
   if (domain_ == IPC_DOM_INTERNET)
     {
-// LCOV_EXCL_START
       usesTransactions = usesTransactions; // make compiler happy
       return new(env->getHeap()) SockConnection(env,*this,FALSE);
-// LCOV_EXCL_STOP
     }
 #if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
@@ -501,12 +489,10 @@ IpcMessageObjSize IpcProcessId::packedLength()
     {
       result += sizeof(phandle_);
     }
-// LCOV_EXCL_START
   else if (domain_ == IPC_DOM_INTERNET)
     {
       result += sizeof(pid_);
     }
-// LCOV_EXCL_STOP
 
   return result;
 }
@@ -527,7 +513,6 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
   // ---------------------------------------------------------------------
 
   // pack the object of the right domain
-// LCOV_EXCL_START
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       str_cpy_all(buffer,(const char *) &phandle_,sizeof(phandle_));
@@ -538,7 +523,6 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
       str_cpy_all(buffer,(const char *) &pid_,sizeof(pid_));
       result += sizeof(pid_);
     }
-// LCOV_EXCL_STOP
   
   return result;
 }
@@ -567,11 +551,9 @@ void IpcProcessId::unpackObj(IpcMessageObjType objType,
       str_cpy_all((char *) &phandle_, buffer, sizeof(phandle_));
     }
   else if (domain_ == IPC_DOM_INTERNET)
-// LCOV_EXCL_START
     {
       str_cpy_all((char *) &pid_, buffer, sizeof(pid_));
     }
-// LCOV_EXCL_STOP
 }
 
 // -----------------------------------------------------------------------
@@ -631,7 +613,6 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
       cc->getEnvironment() &&
       cc->getEnvironment()->getLogReleaseEsp())
   {
-    // LCOV_EXCL_START
     /*
     Coverage notes: to test this code in a dev regression requires
     changing $TRAF_HOME/etc/ms.env.  However, it was tested in
@@ -704,7 +685,6 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
       state);
     
     SQLMXLoggingArea::logExecRtInfo(filename, lineNum, logMsg, 0);
-    // LCOV_EXCL_STOP
   }
 }
 
@@ -857,12 +837,10 @@ NABoolean IpcConnection::moreWaitsAllowed()
   return TRUE;
 }
 
-// LCOV_EXCL_START
 SockConnection *IpcConnection::castToSockConnection()
 {
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 GuaConnectionToServer *IpcConnection::castToGuaConnectionToServer()
 {
@@ -1652,7 +1630,6 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                         {
                           if (env->getLogEspIdleTimeout())
                           {
-                            // LCOV_EXCL_START
                             /*
                             Coverage notes: to test this code in a dev 
                             regression requires changing 
@@ -1670,7 +1647,6 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                               myName);
                             SQLMXLoggingArea::logExecRtInfo(__FILE__, 
                                                   __LINE__, buf, 0);
-                            // LCOV_EXCL_STOP
                           }
 			  // stop esp if it has become idle and timed out
 			  NAExit(0);
@@ -2065,12 +2041,10 @@ void IpcSetOfConnections::checkLocalIntegrity(void)
 
 IpcControlConnection::~IpcControlConnection() {}
 
-// LCOV_EXCL_START
 SockControlConnection * IpcControlConnection::castToSockControlConnection()
 {
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 GuaReceiveControlConnection *
 IpcControlConnection::castToGuaReceiveControlConnection()
@@ -5131,19 +5105,19 @@ short getDefineShort( char * defineName )
 
   const char *lre = getenv("LOG_ESP_RELEASE");
   if (lre && *lre == '1')
-    logReleaseEsp_ = true;        // LCOV_EXCL_LINE
+    logReleaseEsp_ = true;
 
   const char *liet = getenv("LOG_IDLE_ESP_TIMEOUT");
   if (liet && *liet == '1')
-    logEspIdleTimeout_ = true;    // LCOV_EXCL_LINE
+    logEspIdleTimeout_ = true;
 
   const char *legcm = getenv("LOG_ESP_GOT_CLOSE_MSG");
   if (legcm && *legcm == '1')
-    logEspGotCloseMsg_ = true;    // LCOV_EXCL_LINE
+    logEspGotCloseMsg_ = true;
 
   const char *etis = getenv("ESP_TIME_IPCCONNECTION_STATES");
   if (etis && *etis == '1')
-    logTimeIpcConnectionState_ = true;    // LCOV_EXCL_LINE
+    logTimeIpcConnectionState_ = true;
   
   const char *smEnv = getenv("SQ_SEAMONSTER");
   if (smEnv && *smEnv == '1')

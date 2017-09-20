@@ -983,7 +983,6 @@ void ComTdbExeUtilGetErrorInfo::displayContents(Space * space,ULng32 flag)
     }
 }
 
-//LCOV_EXCL_STOP
 ///////////////////////////////////////////////////////////////////////////
 //
 // Methods for class ComTdbExeUtilCreateTableAs
@@ -1573,7 +1572,6 @@ void ComTdbExeUtilGetProcessStatistics::displayContents(Space * space,ULng32 fla
     }
 }
 
-//LCOV_EXCL_START
 ///////////////////////////////////////////////////////////////////////////
 //
 // Methods for class ComTdbExeUtilGetUID

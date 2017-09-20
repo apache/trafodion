@@ -944,7 +944,6 @@ next_clause:
   
   desc->setBulkMoveSetup(TRUE);
 
-  //LCOV_EXCL_START
   if (getenv("BULKMOVE") && getenv("BULKMOVEINFO") &&
       desc->bulkMoveInfo())
     {
@@ -971,7 +970,6 @@ next_clause:
 	  cout << endl;
 	}
     }
-  //LCOV_EXCL_STOP
 }
 #pragma warning (default : 4273)   //warning elimination
 
@@ -2518,7 +2516,6 @@ then place the following four lines of code after the call to setRowNumberInCli.
       return ex_expr::EXPR_ERROR;
 */
 // error path not taken . This is only if something bad happens in NVT
-//LCOV_EXCL_START
 #pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type
 InputOutputExpr::inputSingleRowValue(atp_struct *atp,
@@ -3091,7 +3088,6 @@ error_return:
   
   return ex_expr::EXPR_ERROR;
 }
-//LCOV_EXCL_STOP
 ex_expr::exp_return_type
 InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
 					  void * inputDesc_,
@@ -3340,7 +3336,6 @@ InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
   else
     {
       // error path not taken . This is only if something bad happens in NVT
-      //LCOV_EXCL_START
       if (isDbtr)
 	{
 	  // rowwise rowsets from dbtr *must* use the optimized input
@@ -3402,7 +3397,6 @@ error_return:
 		    (intParam3 != 0 ? &intParam3 : NULL));
   if (diagsArea != atp->getDiagsArea())
     atp->setDiagsArea(diagsArea);	
-  //LCOV_EXCL_STOP
   return ex_expr::EXPR_ERROR;
 }
 
@@ -3482,12 +3476,10 @@ InputOutputExpr::inputValues(atp_struct *atp,
   
   if (inputDesc && inputDesc->rowwiseRowset())
     {
-      //LCOV_EXCL_START
       ExRaiseSqlError(heap, &diagsArea, CLI_ROWWISE_ROWSETS_NOT_SUPPORTED);
       if (diagsArea != atp->getDiagsArea())
 	atp->setDiagsArea(diagsArea);
       return ex_expr::EXPR_ERROR;
-      //LCOV_EXCL_STOP
     }
 
   // If bulk move has not been disabled before, then check to see if bulk
@@ -3970,7 +3962,6 @@ InputOutputExpr::inputValues(atp_struct *atp,
                if ( CharInfo::checkCodePoint((NAWchar*)source, realSourceLen,
                                           CharInfo::UNICODE ) == FALSE )
                {
-		 //LCOV_EXCL_START
                  // Error code 3400 falls in CLI error code area, but it is
                  // a perfect fit to use here (as an exeutor error).
                  ExRaiseSqlError(heap, &diagsArea, (ExeErrorCode)3400);
@@ -3985,7 +3976,6 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		  continue;
 		 else
 		  return ex_expr::EXPR_ERROR;
-		 //LCOV_EXCL_STOP
                }
             }
 	    

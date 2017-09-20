@@ -59,12 +59,10 @@ PublishTarget publishTarget = PUBLISH_TO_QMM;
 const char* targetFilename = NULL;
 
 // This is needed to avoid a link error.
-// LCOV_EXCL_START :ale
 NABoolean NAType::isComparable(const NAType &other,
 			       ItemExpr *parentOp,
 			       Int32 emitErr) const
 { return FALSE; }
-// LCOV_EXCL_STOP
 
 void usage(char *progName)
 {
@@ -130,13 +128,11 @@ Int32 main(Int32 argc, char *argv[])
     file_mon_process_startup(true);
     atexit(my_mpi_fclose);
   }
-  // LCOV_EXCL_START :rfi
   catch (...)
   {
     cerr << "Error while initializing messaging system. Exiting..." << endl;
     exit(1);
   }
-  // LCOV_EXCL_STOP
 
   NAHeap qmpHeap("QMP Heap", NAMemory::DERIVED_FROM_SYS_HEAP, (Lng32)131072);
 
@@ -172,20 +168,16 @@ Int32 main(Int32 argc, char *argv[])
   // Process any command-line arguments.
   if (processCommandLine(argc, argv) == FALSE)
   {
-    // LCOV_EXCL_START :rfi
     QRLogger::log(CAT_QMP, LL_ERROR,
       "QMP processing of command-line arguments failed.");
     return -1;
-    // LCOV_EXCL_STOP
   }
 
   if (qmpPublisher.setTarget(publishTarget, targetFilename) == FALSE)
   {
-    // LCOV_EXCL_START :rfi
     QRLogger::log(CAT_QMP, LL_ERROR,
       "QMP opening publish target failed.");
     return -1;
-    // LCOV_EXCL_STOP
   }
 
   // Process the REWRITE_PUBLISH table reading from the stream
@@ -198,14 +190,12 @@ Int32 main(Int32 argc, char *argv[])
       QRLogger::log(CAT_QMP, LL_DEBUG,
         "QMP REWRITE_TABLE reading completed with result code - %d", result);
     }
-    // LCOV_EXCL_START :rfi
     catch(...)
     {
       // Handle database errors here.
       QRLogger::log(CAT_QMP, LL_ERROR, "Unknown exception - exiting.");
       exit(0);
     }
-    // LCOV_EXCL_STOP
 
     // Delay waiting to try again for a successful SQL table read
     // Wait 3 minutes

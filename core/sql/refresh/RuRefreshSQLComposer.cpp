@@ -66,9 +66,7 @@ void CRURefreshSQLComposer::StartInternalRefresh()
 	}
 	else
 	{
-		// LCOV_EXCL_START :dpm
 		sql_ = "DISPLAY INTERNAL REFRESH ";
-		// LCOV_EXCL_STOP
 	}
 	
 	sql_  += GetRootMV().GetFullName();
@@ -293,7 +291,6 @@ void CRURefreshSQLComposer::AddPipeLineClause()
 //	
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeCntrlTableMDAMText(
 								CRUForceOptions::MdamOptions mdamOption,
 								const CDSString* pName)
@@ -326,7 +323,6 @@ void CRURefreshSQLComposer::ComposeCntrlTableMDAMText(
 			ASSERT(FALSE);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshSQLComposer::ComposeResetCntrlTableText()
@@ -337,7 +333,6 @@ void CRURefreshSQLComposer::ComposeCntrlTableMDAMText(
 //	
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeResetCntrlTableMDAMText(const CDSString* pName)
 {
 	sql_ = "CONTROL TABLE ";
@@ -353,7 +348,6 @@ void CRURefreshSQLComposer::ComposeResetCntrlTableMDAMText(const CDSString* pNam
 
 	sql_ += " RESET; ";
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshSQLComposer::GetContextLogName() 
@@ -378,7 +372,6 @@ void CRURefreshSQLComposer::ComposeDeleteContextLogTable()
 //
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeControlQueryShape()
 {
 	RUASSERT(NULL != GetRootMV().GetMVForceOption());
@@ -389,7 +382,6 @@ void CRURefreshSQLComposer::ComposeControlQueryShape()
 
 	sql_ += ";";
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshSQLComposer::ComposeQueryShape() 
@@ -408,7 +400,6 @@ void CRURefreshSQLComposer::ComposeControlQueryShape()
 // We allow the user to force the join between the MV and the GROUP BY
 // block and the GROUP BY node above the DELTA CALCULATION sub-tree 
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeQueryShape()
 {
 	CDSString grbyStr,joinStr;
@@ -451,23 +442,19 @@ void CRURefreshSQLComposer::ComposeQueryShape()
 
 	sql_ += " JOIN( " + joinStr + grbyStr + ",CUT),CUT)";
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshSQLComposer::ComposeControlQueryShapeCut() 
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeControlQueryShapeCut()
 {
 	sql_ = "CONTROL QUERY SHAPE CUT;";
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshSQLComposer::ComposeControlQueryShapeCut() 
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshSQLComposer::ComposeShowExplain()
 {
 	sql_ = "INSERT INTO ";
@@ -487,7 +474,6 @@ void CRURefreshSQLComposer::ComposeShowExplain()
 	sql_ += "SUBSTRING(DESCRIPTION,1,2024)";
 	sql_ += " FROM TABLE(EXPLAIN(NULL,'DESCRIPTOR_FOR_SQLSTMT'));";
 }
-// LCOV_EXCL_STOP
 
 /*
 // This is the definition of the table in which the explain data is inserted

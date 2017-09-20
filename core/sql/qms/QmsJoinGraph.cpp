@@ -96,7 +96,6 @@ JoinGraphEqualitySetPtr JoinGraphTable::getEqSetUsing(JoinGraphHalfPredicatePtr 
 }
 
 
-// LCOV_EXCL_START :dpm
 /**
  * Prepare the input text for the Dotty graphical graph viewer, for this table.
  * @param[out] to Output string.
@@ -115,7 +114,6 @@ void JoinGraphTable::dumpGraph(NAString& to)
           id.data(), id.data(), getName().data(), color);
   to += text;
 }
-// LCOV_EXCL_STOP
 
 //*****************************************************************************
 //*****************************************************************************
@@ -390,7 +388,6 @@ void JoinGraphEqualitySet::setOnKeyTo(const JoinGraphTablePtr targetTable)
 
 //*****************************************************************************
 //*****************************************************************************
-// LCOV_EXCL_START :cnu Not called from anywhere.
 NABoolean JoinGraphEqualitySet::isOnKeyTo(const JoinGraphTablePtr targetTable)
 {
   if (isOnKey_ == FALSE)
@@ -408,7 +405,6 @@ NABoolean JoinGraphEqualitySet::isOnKeyTo(const JoinGraphTablePtr targetTable)
 
   return FALSE; // Should not get here!
 }
-// LCOV_EXCL_STOP
 
 //*****************************************************************************
 //*****************************************************************************
@@ -422,12 +418,10 @@ JoinGraphTablePtr JoinGraphEqualitySet::getOtherTable(JoinGraphHalfPredicatePtr 
       return halfPred->getTable();
   }
 
-  // LCOV_EXCL_START :rfi
   assertLogAndThrow(CAT_MVMEMO_JOINGRAPH, LL_MVQR_FAIL,
                     FALSE, QRLogicException,
                     "getOtherTable() called with a bad half pred pointer.");
   return NULL;
-  // LCOV_EXCL_STOP
 }
 
 //*****************************************************************************
@@ -467,7 +461,6 @@ JoinGraphHalfPredicatePtr JoinGraphEqualitySet::getForeignKeySide()
 //    to += text;
 //  }
 //}  // JoinGraphEqualitySet::dumpGraph()
-// LCOV_EXCL_START :dpm
 void JoinGraphEqualitySet::dumpGraph(NAString& to)
 {
   char text[256];
@@ -517,7 +510,6 @@ void JoinGraphEqualitySet::dumpGraph(NAString& to)
     }
   }
 }  // JoinGraphEqualitySet::dumpGraph()
-// LCOV_EXCL_STOP
 
 
 //========================================================================
@@ -584,7 +576,6 @@ void QRJoinGraph::addTable(const QRTablePtr	      tableElement,
     Int32 compareResult = thisName.compareTo(lastName);
     if (compareResult < 0)
     {
-      // LCOV_EXCL_START :cnu  Table names should always be sorted.
       // If not - it means the table names are not sorted.
       // Looks like we will have to sort them here...
       QRLogger::log(CAT_MVMEMO_JOINGRAPH, LL_INFO,
@@ -595,7 +586,6 @@ void QRJoinGraph::addTable(const QRTablePtr	      tableElement,
 
       // Correct the ordinal number of the new entry.
       newTablePtr->setOrdinalNumber(insertPos);
-      // LCOV_EXCL_STOP
     }
     else if (compareResult == 0)
     {
@@ -618,7 +608,6 @@ void QRJoinGraph::addTable(const QRTablePtr	      tableElement,
   tableHashByID_.insert(&id, newTablePtr);
 }  // QRJoinGraph::addTable()
 
-// LCOV_EXCL_START :cnu  Table names should always be sorted, which avoids call of this fn.
 /**
  * Find the spot in the table array where to insert the new table, and shift
  * the tables in the array beyond it to create an open entry for it.
@@ -662,9 +651,7 @@ CollIndex QRJoinGraph::shiftArray(const NAString thisName)
 
   return insertPos;
 }  // QRJoinGraph::shiftArray()
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :cnu  Table names should always be sorted, which avoids call of this fn.
 /**
  * Shift the table in position insertPos-1 to position insertPos, and 
  * fix its ordinal number.
@@ -677,7 +664,6 @@ void QRJoinGraph::shiftTable(CollIndex insertPos)
   shiftedTable->setOrdinalNumber(insertPos);
   tableArray_.insertAt(insertPos, shiftedTable);
 }
-// LCOV_EXCL_STOP
 
 /**
  * Create a new JoinGraphHalfPredicate object, and add it to the equality 
@@ -771,14 +757,12 @@ void QRJoinGraph::addEqualitySet(const QRJoinPredPtr predElement)
 	break;
       }
 
-      // LCOV_EXCL_START :rfi
       default:
       {
         assertLogAndThrow1(CAT_MVMEMO_JOINGRAPH, LL_MVQR_FAIL,
                            FALSE, QRLogicException,
 			   "Not expecting Equi-join predicate of type: %s", equalityElement->getElementName());
       }
-      // LCOV_EXCL_STOP
     } // case on element type
   }
 
@@ -907,7 +891,7 @@ void QRJoinGraph::initFromJBB(const QRJBBPtr jbb, MVDetailsPtr mv)
 
   // Now dump the graph if priority of MvMemo category is set DEBUG.
   if (QRLogger::isCategoryInDebug(CAT_MVMEMO_JOINGRAPH))
-    dumpGraph(mv);  // LCOV_EXCL_LINE :dpm
+    dumpGraph(mv);
 
 }  //  QRJoinGraph::initFromJBB()
 
@@ -1031,7 +1015,6 @@ JoinGraphTablePtr QRJoinGraph::getNextTable(QRJoinSubGraphPtr subGraph)
   return table;
 }
 
-// LCOV_EXCL_START :dpm
 /**
  * Prepare the input text for the Dotty graphical graph viewer.
  * @param[out] to Output string.
@@ -1068,7 +1051,6 @@ void QRJoinGraph::dumpGraph(MVDetailsPtr mv)
 
   QRLogger::log(CAT_MVMEMO_JOINGRAPH, LL_DEBUG, dotGraph);
 }  // QRJoinGraph::dumpGraph()
-// LCOV_EXCL_STOP
 
 
 //========================================================================
@@ -1443,7 +1425,6 @@ QRJoinSubGraphMapPtr QRJoinSubGraphMap::nextEquivalentMap() const
   Int32* shiftRow = new(heap) Int32[numberOfTables];
   selfJoinHandler->getNextShiftVector(shiftRow);
 
-  // LCOV_EXCL_START :dpm
   if (QRLogger::isCategoryInDebug(CAT_MVMEMO_JOINGRAPH))
   {
     NAString text("shiftRow is: ");
@@ -1457,7 +1438,6 @@ QRJoinSubGraphMapPtr QRJoinSubGraphMap::nextEquivalentMap() const
     
     newMap->shiftVector_ = text;  // For debugging.
   }
-  // LCOV_EXCL_STOP
 
   for (CollIndex table=0; table<numberOfTables; table++)
   {

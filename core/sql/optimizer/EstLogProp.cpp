@@ -129,7 +129,6 @@ EstLogProp::~EstLogProp()
   (*counter_).decrementCounter();
 }
 
-// LCOV_EXCL_START :cnu
 NABoolean EstLogProp::reconcile(const EstLogProp &other)
 {
   // simple logic for now: merge unresolved preds lists,
@@ -142,7 +141,6 @@ NABoolean EstLogProp::reconcile(const EstLogProp &other)
   resultCardinality_ = (resultCardinality_ + other.resultCardinality_) / 2;
 
 } // EstLogProp::reconcile
-// LCOV_EXCL_STOP
 
 COMPARE_RESULT EstLogProp::compareEstLogProp (const EstLogPropSharedPtr &other) const
 {
@@ -437,11 +435,9 @@ EstLogProp::getCardOfBusiestStream(const PartitioningFunction* partFunc,
 
 } // EstLogProp::getCardOfBusiestStream
 
-// LCOV_EXCL_START :dpm
 void EstLogProp::print(FILE* ofd, const char* prefix, const char *suffix) const
 {
 } // EstLogProp::print()
-// LCOV_EXCL_STOP
 
 NABoolean EstLogProp::operator == (const EstLogProp & other) const
 {

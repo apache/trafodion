@@ -205,7 +205,7 @@ public:
   const NAString &getConstraintText() const { return constraintText_; }
 
   NABoolean isViewWithCheckOption() const   { return isViewWithCheckOption_; }
-  void setViewWithCheckOption(NABoolean t)  { isViewWithCheckOption_ = t; } // LCOV_EXCL_LINE
+  void setViewWithCheckOption(NABoolean t)  { isViewWithCheckOption_ = t; }
   const QualifiedName &getCascadingViewName() const { return cascadingView_; }
   NABoolean isTheCascadingView() const 	    { return isViewWithCheckOption_ &&
   						getConstraintName() ==

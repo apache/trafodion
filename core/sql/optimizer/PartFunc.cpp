@@ -67,7 +67,6 @@
 // an undefined symbol.
 // ***********************************************************************
 
-// LCOV_EXCL_START
 void displayPartitioningFunction(const PartitioningFunction& pf)
 {
   pf.display();
@@ -89,7 +88,6 @@ void displayPartitionBoundaries(const RangePartitionBoundaries* pb)
   if (pb)
     pb->display();
 }
-// LCOV_EXCL_STOP
 
 
 // ***********************************************************************
@@ -276,14 +274,12 @@ PartitioningFunction::replaceNodeMap(NodeMap* nodeMap)
 // PartitioningFunction::copy()
 // Virtual copy constructor returns a copy of myself.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 PartitioningFunction* PartitioningFunction::copy() const
 {
   // illegal to call copy() of the base class
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::normalizePartitioningKeys()
@@ -384,14 +380,12 @@ NABoolean PartitioningFunction::isAGroupingOf(
   return (comparePartFuncToFunc(other) == SAME);
 }
 
-// LCOV_EXCL_START
 PartitioningRequirement* PartitioningFunction::makePartitioningRequirement()
 {
   // Redefine PartitioningFunction::makePartitioningRequirement()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::scaleNumberOfPartitions
@@ -538,14 +532,12 @@ NABoolean PartitioningFunction::shouldUseSynchronousAccess(
 // -----------------------------------------------------------------------
 // Virtual functions that must be redefined for derived classes.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 Lng32 PartitioningFunction::getCountOfPartitions() const
 {
   // Redefine PartitioningFunction::getCountOfPartitions()
   CMPABORT;
   return 1;
 }
-// LCOV_EXCL_STOP
 
 NABoolean PartitioningFunction::canProducePartitioningKeyPredicates() const
 {
@@ -570,7 +562,6 @@ const ValueIdList& PartitioningFunction::getPartitionInputValuesLayout() const
   return partitionInputValuesLayout_;
 }
 
-// LCOV_EXCL_START
 void PartitioningFunction::createPartitioningKeyPredicates()
 {
   // Redefine PartitioningFunction::createPartitioningKeyPredicates()
@@ -600,7 +591,6 @@ ItemExpr* PartitioningFunction::createPartitioningExpression()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::createPartSelectionExprFromSearchKey(
       const ValueId beginPartSelId,
@@ -636,14 +626,12 @@ void PartitioningFunction::preCodeGen(const ValueIdSet& availableValues)
 
 } // PartitioningFunction::preCodeGen()
 
-// LCOV_EXCL_START
 const NAString PartitioningFunction::getText() const
 {
   CMPABORT;
   return NAString("some type of partitioning function",
                    CmpCommon::statementHeap());
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::setupForStatement()
 {
@@ -675,7 +663,6 @@ void PartitioningFunction::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void PartitioningFunction::print(FILE* ofd, const char* indent,
 				 const char* title) const
 {
@@ -725,7 +712,6 @@ void PartitioningFunction::print(FILE* ofd, const char* indent,
 } // PartitioningFunction::print()
 
 void PartitioningFunction::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // SinglePartitionPartitioningFunction
@@ -766,7 +752,6 @@ void SinglePartitionPartitioningFunction::createPartitioningKeyPredicates()
   storePartitioningKeyPredicates(ValueIdSet());
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::replacePivs(
        const ValueIdList& newPivs,
        const ValueIdSet& newPartKeyPreds)
@@ -774,7 +759,6 @@ void SinglePartitionPartitioningFunction::replacePivs(
   // do nothing, there aren't any pivs for a single
   // partition
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SinglePartitionPartitioningFunction::createPartitioningExpression()
@@ -849,14 +833,12 @@ const NAString SinglePartitionPartitioningFunction::getText() const
   return "exactly 1 partition";
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::print(FILE* ofd, const char* indent,
 						const char* title) const
 {
   PartitioningFunction::print(ofd, indent,
 			      "SinglePartitionPartitioningFunction");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // ReplicateViaBroadcastPartitioningFunction
@@ -1440,13 +1422,11 @@ const NAString HashPartitioningFunction::getText() const
    return getTextImp("hash"); 
 }
 
-// LCOV_EXCL_START
 void HashPartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashPartitioningFunction");
 } // HashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // Return an expression casting an encoded skew value to oType.
 static 
@@ -2056,13 +2036,11 @@ const NAString HashDistPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void HashDistPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashDistPartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // HashDistPartitioningFunction::createPartitioningFunctionForIndexDesc()
@@ -2464,13 +2442,11 @@ const NAString Hash2PartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void Hash2PartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "Hash2PartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -2933,13 +2909,11 @@ const NAString SkewedDataPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void SkewedDataPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "SkewedDataPartitioningFunction");
 }  
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::comparePartFuncToFunc(): Compare this
@@ -2977,7 +2951,6 @@ comparePartFuncToFunc(const PartitioningFunction &other) const
 // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 
 //::scaleNUmberOfPartitions() are called in following locations
 //
@@ -3006,7 +2979,6 @@ scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
     return this;
 
 } // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::isAGroupingOf()
@@ -3973,7 +3945,6 @@ void RangePartitionBoundaries::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
 				     const char* title) const
 {
@@ -4006,7 +3977,6 @@ void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
     }
 
 } // RangePartitionBoundaries::print()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RangePartitioningFunction
@@ -4995,7 +4965,6 @@ const NAString RangePartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void RangePartitioningFunction::print(FILE* ofd, const char* indent,
 					const char* title) const
 {
@@ -5135,7 +5104,6 @@ RangePartitioningFunction::computeNumOfActivePartitions(SearchKey* skey, const T
 }
 
 
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // LogPhysPartitioningFunction
@@ -5664,7 +5632,6 @@ const NAString LogPhysPartitioningFunction::getPhysForSplitTop() const
   return physPartFunc_->getText();
 }
 
-// LCOV_EXCL_START
 void LogPhysPartitioningFunction::print(
      FILE* ofd,
      const char* indent,
@@ -5674,13 +5641,11 @@ void LogPhysPartitioningFunction::print(
   logPartFunc_->print(ofd,"logical:  ");
   physPartFunc_->print(ofd,"physical: ");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RoundRobinPartitioningFunction
 // ***********************************************************************
 
-// LCOV_EXCL_START
 PartitioningRequirement*
 RoundRobinPartitioningFunction::makePartitioningRequirement()
 {
@@ -6323,7 +6288,6 @@ void RoundRobinPartitioningFunction::print(
   PartitioningFunction::print(ofd,indent,"RoundRobinPartitioningFunction");
 }
 
-// LCOV_EXCL_STOP
 
 const skewProperty ANY_SKEW_PROPERTY(skewProperty::ANY, NULL);
   
@@ -6546,13 +6510,11 @@ const NAString HivePartitioningFunction::getText() const
    return getTextImp("hive"); 
 }
 
-// LCOV_EXCL_START
 void HivePartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HivePartitioningFunction");
 } // HivePartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 PartitioningFunction*
 HivePartitioningFunction::

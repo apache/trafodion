@@ -511,7 +511,6 @@ class QRElement : public XMLElement
       return this == &other;
     }
 
-    // LCOV_EXCL_START :rfi -- assertion failure if FALSE returned
     /**
      * Indicates whether this class can be a member of a JBBCList.
      *
@@ -522,9 +521,7 @@ class QRElement : public XMLElement
       {
         return FALSE;  // overridden to be TRUE for Table, JBB, Operator
       }
-    // LCOV_EXCL_STOP
 
-    // LCOV_EXCL_START :rfi -- assertion failure if FALSE returned
     /**
      * Indicates whether this class can be contained in a <JoinPred> element.
      *
@@ -535,9 +532,7 @@ class QRElement : public XMLElement
       {
         return FALSE;  // overridden to be TRUE for Column, MVColumn, Expr, JoinPred
       }
-    // LCOV_EXCL_STOP
 
-    // LCOV_EXCL_START :rfi -- assertion failure if FALSE returned
     /**
      * Indicates whether this class represents one of the elements that can be
      * the root element of a \c QRExpr.
@@ -550,9 +545,7 @@ class QRElement : public XMLElement
         return FALSE;  // overridden to be TRUE for Function, BinaryOper,
                        //    and UnaryOper
       }
-    // LCOV_EXCL_STOP
 
-    // LCOV_EXCL_START :rfi -- assertion failure if FALSE returned
     /**
      * Indicates whether this class represents one of the elements that can be
      * an output item.
@@ -564,9 +557,7 @@ class QRElement : public XMLElement
       {
         return FALSE;  // overridden to be TRUE for Column, Expr, MVColumn
       }
-    // LCOV_EXCL_STOP
 
-    // LCOV_EXCL_START :rfi -- assertion failure if FALSE returned
     /**
      * Indicates whether this class represents one of the elements that can be
      * a <code>Group By</code> item.
@@ -578,7 +569,6 @@ class QRElement : public XMLElement
       {
         return FALSE;  // overridden to be TRUE for Column, Expr, MVColumn
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Indicates whether an element belongs to the extra-hub as opposed to the
@@ -594,7 +584,6 @@ class QRElement : public XMLElement
       return FALSE;
     }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Returns the string value used as the basis for comparing this element
      * with other elements when creating a sorted list; for example, when
@@ -608,7 +597,6 @@ class QRElement : public XMLElement
         throw QRDescriptorException("getSortName() is not defined for Element %s",
                                     getElementName());
       }
-    // LCOV_EXCL_STOP
 
     void serializeBoolAttr(const char* attrName,
                            NABoolean attrVal,
@@ -639,7 +627,6 @@ class QRElement : public XMLElement
         return (id_.length() < 2 ? 0 : atoi(id_.data()+1));
       }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Return the first character of ID strings used by an element.
      * @return the first char of the ID for subclass elements.
@@ -652,7 +639,6 @@ class QRElement : public XMLElement
                           "to use the id attribute.");
         return ' ';
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Returns the id of the element referenced by this element.
@@ -777,7 +763,6 @@ class QRElement : public XMLElement
 
     #define THROW_DOWNCAST_EXCEPTION assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL, FALSE, QRLogicException, "Down cast to wrong element type.");
 
-    // LCOV_EXCL_START :rfi
     // Methods for easy downcasting to specific classes.
     // Each method is overridden by its specific class, to return 'this'.
     virtual QRColumnPtr     downCastToQRColumn()     { THROW_DOWNCAST_EXCEPTION }
@@ -790,7 +775,6 @@ class QRElement : public XMLElement
     virtual QRFunctionPtr   downCastToQRFunction()   { THROW_DOWNCAST_EXCEPTION }
 
     virtual QRColumnPtr     getFirstColumn() { return NULL; }
-    // LCOV_EXCL_STOP
 
     const QRElementPtr getParentElement() const
     {
@@ -822,7 +806,6 @@ class QRElement : public XMLElement
         referencedElement_ = this;
       }
 
-    // LCOV_EXCL_START :rfi
     // This method must be redefined for element types that have element content.
     virtual void startElement(void *parser,
                               const char *elementName,
@@ -831,7 +814,6 @@ class QRElement : public XMLElement
         throw QRDescriptorException("Element %s cannot contain element content",
                                     getElementName());
       }
-    // LCOV_EXCL_STOP
 
     virtual void serializeAttrs(XMLString& xml);
 
@@ -1025,7 +1007,7 @@ public:
     void addElement(QRElementPtr elem)
     {
       if (!isAllowed(elem))
-        throw QRDescriptorException("<%s> is not allowed in <%s>",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("<%s> is not allowed in <%s>",
                                     elem->getElementName(), getElementName());
       list_.insert(elem);
     }
@@ -1914,7 +1896,6 @@ class QRTable : public QRElement
         return 'T';
       }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setAndRegisterID() is not bypassed as the way to set
@@ -1930,7 +1911,6 @@ class QRTable : public QRElement
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRTable");
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Sets the id for this table element, and creates an entry in the hash
@@ -2264,7 +2244,6 @@ class QRKey : public QRElementList
 
 }; // QRKey
 
-// LCOV_EXCL_START :cnu Entire QRForcedMVs currently not used.
 /**
  * Class representing a list of forced MVs, defined in an XML document by the
  * <ForcedMVs> element. Forced MVs are those that QMS is instructed not to
@@ -2334,7 +2313,6 @@ class QRForcedMVs : public QRElement
 
     // Attributes and contained elements.
 }; // QRForcedMVs
-// LCOV_EXCL_STOP
 
 /**
  * Abstract class that is parent of any element that can be part of an explicit
@@ -2549,7 +2527,6 @@ class QRColumn : public QRExplicitExpr
       return 'C';
     }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setAndRegisterID() is not bypassed as the way to set
@@ -2565,7 +2542,6 @@ class QRColumn : public QRExplicitExpr
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRColumn");
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Sets the id for this column element, and creates an entry in the hash
@@ -3088,7 +3064,6 @@ class QRJoinPred : public QRElementList
       return 'J';
     }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setAndRegisterID() is not bypassed as the way to set
@@ -3104,7 +3079,6 @@ class QRJoinPred : public QRElementList
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRJoinPred");
       }
-    // LCOV_EXCL_STOP
 
     /**
      * We get here only when, in a multi-JBB query, one join pred includes 
@@ -3475,7 +3449,7 @@ class QROpEQ : public QRRangeOperator
         nullVal_(NULL)
       {
         if (*atts)
-          throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                       elemName, *atts);
       }
 	
@@ -4008,7 +3982,7 @@ class QROpBT : public QRRangeOperator
     virtual void endElement(void *parser, const char *elementName)
       {
         if (valueCount_ != 2)
-          throw QRDescriptorException("Two values must be contained in %s",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("Two values must be contained in %s",
                                       elementName);
         QRRangeOperator::endElement(parser, elementName);
       }
@@ -4422,7 +4396,6 @@ class QRWStringVal : public QRScalarValue
         return elemName;
       }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setWideValue() is called instead.
@@ -4437,7 +4410,6 @@ class QRWStringVal : public QRScalarValue
                           "setWideValue() must be used instead of setValue() "
                           "for element QRWStringVal");
       }
-    // LCOV_EXCL_STOP
 
     void setWideValue(const NAWString& value)
       {
@@ -4479,7 +4451,6 @@ class QRWStringVal : public QRScalarValue
      */
     virtual void serializeBody(XMLString& xml);
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #getWideValue() is called instead.
@@ -4494,14 +4465,12 @@ class QRWStringVal : public QRScalarValue
                           "getWideValue() must be used instead of getValue() "
                           "for element QRWStringVal");
       }
-    // LCOV_EXCL_STOP
 
     const NAWString& getWideValue() const
       {
         return wideStringRep_;
       }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setWStringRep() is called instead.
@@ -4516,7 +4485,6 @@ class QRWStringVal : public QRScalarValue
                           "setWStringRep() must be used instead of setStringRep() "
                           "for element QRWStringVal");
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Sets the string representation of the value represented by this object.
@@ -4667,7 +4635,7 @@ class QRNullVal : public QRExplicitExpr
       : QRExplicitExpr(ET_NullVal, parent, ADD_MEMCHECK_ARGS_PASS(heap))
       {
         if (*atts)
-          throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                       elemName, *atts);
       }
 
@@ -5251,7 +5219,7 @@ class QRExtraHub : public QRElement
         joinPredList_(NULL)
       {
         if (*atts)
-          throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("Invalid attribute specified for element %s: %s", 
                                       elemName, *atts);
       }
 
@@ -6055,7 +6023,6 @@ class QRExpr : public QRElement
         return (isResidual_ ? 'D' : 'X');
       }
 
-    // LCOV_EXCL_START :rfi
     /**
      * Overrides the standard definition of this function to throw an exception.
      * This ensures that #setAndRegisterID() is not bypassed as the way to set
@@ -6071,7 +6038,6 @@ class QRExpr : public QRElement
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRExpr");
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Sets the id for this expression element, and creates an entry in the hash
@@ -6409,7 +6375,7 @@ class QRVersion : public QRElement
         versionString_(charData_)
       {
         if (*atts)
-          throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                       elemName, *atts);
       }
 	
@@ -6485,7 +6451,7 @@ class QRMVDescriptor : public QRDescriptor
         misc_(NULL)
       {
         if (*atts)
-          throw QRDescriptorException("<%s> should have no attributes; attribute %s specified",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("<%s> should have no attributes; attribute %s specified", 
                                       getElementName(), *atts);
       }
 
@@ -7138,7 +7104,7 @@ class QRResultDescriptor : public QRElement
         // Set parent here so we don't have to use 'this' in initializer
         setParent(this);
         if (*atts)
-          throw QRDescriptorException("<%s> should have no attributes; attribute %s specified",  // LCOV_EXCL_LINE :rfi
+          throw QRDescriptorException("<%s> should have no attributes; attribute %s specified", 
                                       getElementName(), *atts);
       }
 
@@ -7521,7 +7487,6 @@ class QRUpdate : public QRElement
       newName_ = name;
     }
 
-    // LCOV_EXCL_START :cnu
     const NABoolean getIgnoreChanges()
     {
       assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -7529,7 +7494,6 @@ class QRUpdate : public QRElement
 			"Ignore changes flag can only be used in Alter Update elements.");
       return hasIgnoreChanges_;
     }
-    // LCOV_EXCL_STOP
 
     void setIgnoreChanges(NABoolean ic)
     {

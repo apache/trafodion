@@ -50,7 +50,6 @@
 
 ex_tcb_private_state::ex_tcb_private_state():errorCode_(0){}
 
-// LCOV_EXCL_START
 ex_tcb_private_state::~ex_tcb_private_state(){}
 
 ex_tcb_private_state * ex_tcb_private_state::allocate_new(const ex_tcb * /*tcb*/)
@@ -58,4 +57,3 @@ ex_tcb_private_state * ex_tcb_private_state::allocate_new(const ex_tcb * /*tcb*/
   ex_assert(0, "Can't have private state for base tcb");
   return (ex_tcb_private_state *) 0;
 }
-// LCOV_EXCL_STOP

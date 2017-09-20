@@ -69,12 +69,10 @@ public:
   // const functions:
   NABoolean isEmpty() const {return disjunct_.isEmpty(); }
 
-  // LCOV_EXCL_START :dpm
   virtual void print( FILE* ofd = stdout,
 		    const char* indent = DEFAULT_INDENT,
 		    const char* title = "disjunct") const
   { disjunct_.print(ofd,indent,title); }
-  // LCOV_EXCL_STOP
 
   const ValueIdSet& getAsValueIdSet() const
   { return disjunct_; }

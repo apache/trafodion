@@ -94,18 +94,14 @@ ComTdbSplitBottom::ComTdbSplitBottom(
   //  setPlanVersion(ComVersion_GetCurrentPlanVersion());
 }
 					 
-// LCOV_EXCL_START
 Int32 ComTdbSplitBottom::orderedQueueProtocol() const
 {
   return -1;
 } // these lines won't be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void ComTdbSplitBottom::display() const
 {
 } // these lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
 const ComTdb * ComTdbSplitBottom::getChild(Int32 pos) const
 {

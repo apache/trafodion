@@ -103,11 +103,9 @@ void EqualitySet::determineType()
   if (isEmpty())
     {
       // I don't think this should happen.
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
         "determineType() called for empty EqualitySet.");
       return;
-      // LCOV_EXCL_STOP
     }
 
   NABoolean isExact = FALSE, wasExact, isSigned = FALSE, isNullable = FALSE;
@@ -781,7 +779,6 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
         }
         break;
 
-      // LCOV_EXCL_START :rfi
       case QR::QRNoElem:
       default:
         assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -789,7 +786,6 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
 			   "Unhandled ExprElement enum value: %d",
 			   itemExpr->getQRExprElem());
         return NULL;
-      // LCOV_EXCL_STOP
     }
   // make the compiler happy
   return NULL;
@@ -895,7 +891,6 @@ QRDescGenerator::genQRExpr(ItemExpr* pExpr,
 }  // genQRExpr()
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 NABoolean
 QRDescGenerator::normalizeColumnInExpression(NAString& pExprText,
 					     ValueId   colvid,
@@ -936,7 +931,6 @@ QRDescGenerator::normalizeColumnInExpression(NAString& pExprText,
   return bColFound;
 
 }  // normalizeColumnInExpression()
-// LCOV_EXCL_STOP
 
 void QRDescGenerator::markColumnsAsResidual(ValueIdSet& vegrefsInExpr)
 {
@@ -1328,14 +1322,12 @@ void QRDescGenerator::processJBBCList(CANodeIdSet* jbbcNodeIds,
           }
         else
           {
-            // LCOV_EXCL_START :rfi
             deletePtr(groupJbb);
             Int32 nodeIdVal = nodeId;
             assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                FALSE, QRDescriptorException,
                                "Unsupported operator: %s",
                                nodeAnalysis->getOriginalExpr()->getText().data());
-            // LCOV_EXCL_STOP
           }
       }
   }
@@ -1818,7 +1810,6 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
   return jbbElemsWereCreated;
 }
 
-// LCOV_EXCL_START :cnu
 void QRDescGenerator::logColumnBitmap(QRTablePtr table,
                                       const XMLBitmap& bitmap,
                                       ElementType predType)
@@ -1876,7 +1867,6 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
       
     }
 }  // logColumnBitmap()
-// LCOV_EXCL_STOP
 
 QRQueryDescriptorPtr QRDescGenerator::createQueryDescriptor(QueryAnalysis* qa,
                                                             RelExpr* expr)
@@ -1924,10 +1914,8 @@ QRMVDescriptorPtr QRDescGenerator::createMvDescriptor(QueryAnalysis* qa,
     }
   else
     {
-      // LCOV_EXCL_START :rfi  processJBBs should not return false for mv
       deletePtr(mvDesc);
       return NULL;
-      // LCOV_EXCL_STOP
     }
 }  // createMvDescriptor() 
 
@@ -3033,13 +3021,11 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
         }
       else
         {
-          // LCOV_EXCL_START :rfi
           Int32 vidInt = vid;
           assertLogAndThrow2(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             FALSE, QRDescriptorException,
                             "ValueId %d is not a base col or veg ref -- op type = %d",
                             vidInt, opType);
-          // LCOV_EXCL_STOP
         }
     }
   assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -3063,7 +3049,7 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
   else if (elemType == ET_ResidualPred)
     elem->downCastToQRTable()->setResidualBit(col->getColIndex());
   else
-    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                        FALSE, QRDescriptorException,
                        "Wrong element type sent to setPredBitmap() -- %d",
                        elemType);

@@ -804,7 +804,6 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
             // should be logged.  On other platforms we skip the 
             // the core-file and Seapilot event.  The Seaquest
             // logic is encapsulated in ComDiags.cpp and ComRtUtils.cpp.
-            // LCOV_EXCL_START
             // I tested this code with regress/executor/TEST082.
             // However, that test is disabled.
             for (CollIndex i = 0; i < sendNodes_.entries(); i++)
@@ -835,7 +834,6 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
               }
             }
             break;
-            // LCOV_EXCL_STOP
           }
         case ComTdbSplitBottom::TEST_LOG4CXX:
           {

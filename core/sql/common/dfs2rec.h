@@ -458,7 +458,6 @@ private:
   }
   
 public:
-//LCOV_EXCL_START : Reported by Code Coverage tool as unused, but actually not executable on SQ
   Lng32 getLength()
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -472,7 +471,6 @@ public:
     else
       return len_etc.datetime_.len;
   };
-//LCOV_EXCL_STOP
 
   Lng32 getPrecision()
   {

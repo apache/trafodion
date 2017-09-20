@@ -69,7 +69,6 @@ public:
 
   ~ComTdbTuple();
 
-// LCOV_EXCL_START
 // only derived class is used, see GenRelMisc.cpp
   Int32 orderedQueueProtocol() const
   {
@@ -111,7 +110,6 @@ public:
   virtual ex_expr* getExpressionNode(Int32 pos);
   virtual const char * getExpressionName(Int32 pos) const;
 
-// LCOV_EXCL_STOP
 // end of excluding the base tuple operator class from coverage checking
 protected:
 
@@ -177,7 +175,6 @@ protected:
 
 };
 
-// LCOV_EXCL_START
 // This non-leaf tuple operator was not used so far on SQ, see GenRelMisc.cpp
 ////////////////////////////////////////////////
 // class ComTdbTupleNonLeaf
@@ -240,7 +237,6 @@ protected:
   char fillersComTdbNonLeaf_[40];  // 08-47  unused
 };
 
-// LCOV_EXCL_STOP
 // end of excluding non-leaf operator from coverage checking
 
 #endif

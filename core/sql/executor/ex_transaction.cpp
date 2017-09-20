@@ -172,7 +172,6 @@ short ExTransaction::getCurrentXnId(Int64 * tcbref, Int64 *transId,
   return retcode;
 }
 
-// LCOV_EXCL_START : code not used
 #pragma nowarn(262)   // warning elimination
 short ExTransaction::getCurrentTxHandle(short * txHandle)
 { 
@@ -185,7 +184,6 @@ short ExTransaction::getCurrentTxHandle(short * txHandle)
   return retcode;
 }
 #pragma warn(262)  // warning elimination 
-// LCOV_EXCL_STOP 
 
 #pragma nowarn(262)   // warning elimination 
 
@@ -202,7 +200,7 @@ short ExTransaction::waitForRollbackCompletion(Int64 transid)
   if (transid)
     rc = STATUSTRANSACTION(&status, transid); // using param transid
   else
-    rc = STATUSTRANSACTION(&status);  // LCOV_EXCL_LINE using current transid
+    rc = STATUSTRANSACTION(&status);
 
   if ((rc == 0) && (status != 5))
     {
@@ -219,7 +217,7 @@ short ExTransaction::waitForRollbackCompletion(Int64 transid)
 	  if (transid)
 	    rc = STATUSTRANSACTION(&status, transid); // using param transid.
 	  else
-    rc = STATUSTRANSACTION(&status);  // LCOV_EXCL_LINE using current transid
+    rc = STATUSTRANSACTION(&status);
 
 	  if (! ((rc == 0) && (status != 5)))
 	    done = TRUE;
@@ -243,7 +241,7 @@ short ExTransaction::waitForCommitCompletion(Int64 transid)
   if (transid)
     rc = STATUSTRANSACTION(&status, transid); // using param transid
   else
-    rc = STATUSTRANSACTION(&status);  // LCOV_EXCL_LINE using current transid
+    rc = STATUSTRANSACTION(&status);  // using current transid
   if ((rc == 0) && (status != 3))
     {
       // check for return status in a loop until the transaction
@@ -257,7 +255,7 @@ short ExTransaction::waitForCommitCompletion(Int64 transid)
 	  if (transid)
 	    rc = STATUSTRANSACTION(&status, transid); // using param transid.
 	  else
-	    rc = STATUSTRANSACTION(&status); // LCOV_EXCL_LINE using current transid
+	    rc = STATUSTRANSACTION(&status); // using current transid
 	  if (! ((rc == 0) && (status != 3)))
 	    done = TRUE;
 	}
@@ -971,7 +969,6 @@ short ExTransaction::setProcessTransToContextTrans
 // data integrity problems would be a likely result of any
 // failure.
 ////////////////////////////////////////////////////////////
-// LCOV_EXCL_START : code not used
 short ExTransaction::resetProcessTrans
   (TmfPhandle_Struct * oldProcessTxHandle)
 {
@@ -979,7 +976,6 @@ short ExTransaction::resetProcessTrans
 
   return retcode;
 }
-// LCOV_EXCL_STOP
 
 void   ExTransaction::setTransId(Int64 transid)
 {
@@ -1147,7 +1143,6 @@ short ExTransTcb::work()
     CliGlobals *cliGlobals =
       stmtGlob->castToExMasterStmtGlobals()->getCliGlobals();
 
-    // LCOV_EXCL_START code used only in Nonstop
     // if inside of a UDR, let a SET XN stmt get through if it
     // was compiled with setAllowedInXn option. This is allowed
     // for jdbc/odbc/sqlj sql statements.
@@ -1175,7 +1170,6 @@ short ExTransTcb::work()
       qparent_.up->insert();
       
     }	
-    // LCOV_EXCL_STOP
     else{
 
     short rc;
@@ -1293,7 +1287,6 @@ short ExTransTcb::work()
       }
       break;
 
-      // LCOV_EXCL_START : code not used
       case ROLLBACK_:  {
         if (ta->userEndedExeXn()) {
           ta->cleanupTransaction();

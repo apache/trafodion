@@ -4513,7 +4513,6 @@ short ExExeUtilShowSetTcb::work()
   return 0;
 }
 
-//LCOV_EXCL_START
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilGetUIDTdb::build(ex_globals * glob)
@@ -7506,7 +7505,6 @@ short ExExeUtilLobInfoTcb::work()
 
   return WORK_OK;
 }
-//LCOV_EXCL_STOP
 
 
 
@@ -7803,4 +7801,3 @@ short ExExeUtilLobInfoTableTcb::work()
 
   return WORK_OK;
 }
-//LCOV_EXCL_STOP

@@ -92,7 +92,6 @@ public:
 
 	// These functions serialize/de-serialize the executor's context 
 	// for the message communication with the remote server process
-	// LCOV_EXCL_START :cnu
 
 	// Used in the main process side
 	virtual void StoreRequest(CUOFsIpcMessageTranslator &translator);
@@ -107,18 +106,15 @@ public:
 	{
 		inherited::StoreReply(translator);
 	}
-	// LCOV_EXCL_STOP
 
 protected:
 	enum { SIZE_OF_PACK_BUFFER = 2000 };
 
 	//-- Implementation of pure virtual 
-	// LCOV_EXCL_START :cnu
 	virtual Lng32 GetIpcBufferSize() const
 	{
 		return SIZE_OF_PACK_BUFFER; // Initial size 
 	}
-	// LCOV_EXCL_STOP
 
 private:
 	//-- Prevent copying

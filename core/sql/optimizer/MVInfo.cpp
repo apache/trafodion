@@ -346,7 +346,6 @@ NABoolean ViewColumnConnection::operator==(const ViewColumnConnection &other) co
 //============================================================================
 // ViewColumnConnection and ViewTableConnection classes ignored from coverage
 // testing until MV on view is supported.
-// LCOV_EXCL_START
 
 //----------------------------------------------------------------------------
 ViewTableConnection::~ViewTableConnection()
@@ -637,7 +636,6 @@ void ViewColumnGraph::display() const
 
 #endif
 
-// LCOV_EXCL_STOP
 
 //============================================================================
 //=======================  class MVVegPredicateColumn ========================
@@ -673,7 +671,6 @@ MVVegPredicateColumn::MVVegPredicateColumn(const BaseColumn  *baseCol,
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVVegPredicateColumn::print(FILE* ofd, const char* indent, const char* title) const
 {
   NAString tableText =  getTableName().getQualifiedNameAsString();
@@ -700,7 +697,6 @@ void MVVegPredicateColumn::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -1000,7 +996,6 @@ void MVVegPredicate::insert(const MVVegPredicateColumn *newCol)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVVegPredicate::print(FILE* ofd, const char* indent, const char* title) const
 {
   fprintf(ofd, "\tVegPredicate:");
@@ -1017,7 +1012,6 @@ void MVVegPredicate::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -1217,7 +1211,6 @@ NABoolean MVUsedObjectInfo::processSelectionPredicates(ValueIdSet&  expr,
 // ---------------------------------------------------------------------
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVUsedObjectInfo::print( FILE* ofd,	  // = stdout,
 			      const char* indent, // = DEFAULT_INDENT,
 			      const char* title   // = "MVInfo"
@@ -1266,7 +1259,6 @@ void MVUsedObjectInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2220,7 +2212,6 @@ NABoolean MVColumnInfo::isNonRepeatableExpressionUsed(BindWA *bindWA)
 // ---------------------------------------------------------------------
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVColumnInfo::print( FILE* ofd,          //  = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title
@@ -2280,7 +2271,6 @@ void MVColumnInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2524,7 +2514,6 @@ void MVColumns::setNewColumnName(MVColumnInfo *colInfo, const NAString& newName)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVColumns::print( FILE* ofd,          //  = stdout,
 		       const char* indent, // = DEFAULT_INDENT,
 		       const char* title
@@ -2547,7 +2536,6 @@ void MVColumns::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2960,7 +2948,6 @@ NABoolean MVInfo::addTableNamesToList(BindWA        *bindWA,
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfo::print( FILE* ofd,		// = stdout,
 		    const char* indent, // = DEFAULT_INDENT,
 		    const char* title   // = "MVInfo"
@@ -3020,7 +3007,6 @@ void MVInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 // - functions used in showddl
@@ -4750,7 +4736,6 @@ void MVInfoForDDL::setColAsIndirectUpdate(MVColumnInfo *colInfo)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfoForDDL::print( FILE* ofd,	      // = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title   // = "MVInfo"
@@ -4773,7 +4758,6 @@ void MVInfoForDDL::print( FILE* ofd,	      // = stdout,
   }
   fprintf(ofd,"\n");
 } // MVInfoForDDL::print()
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -4981,7 +4965,6 @@ const MVUsedObjectInfo *MVInfoForDML::findUsedInfoForTable(const QualifiedName& 
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfoForDML::print( FILE* ofd,	      // = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title   // = "MVInfo"
@@ -4992,7 +4975,6 @@ void MVInfoForDML::print( FILE* ofd,	      // = stdout,
 
   if (strcmp(title, "")) fprintf(ofd,"\n");
 } // MVInfoForDDL::print()
-// LCOV_EXCL_STOP
 #endif
 
 //----------------------------------------------------------------------------

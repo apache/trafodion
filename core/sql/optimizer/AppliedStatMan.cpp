@@ -199,7 +199,6 @@ RelExpr * AppliedStatMan::getExprForCANodeId(
   return jbbcExpr;
 } // getExprForCANodeId
 
-// LCOV_EXCL_START :cnu
 // AppliedStatMan::formJoinExprWithCANodeSet fakes a join expression,
 // between the left and the right child. This method takes the left
 // childId and the right childId, and forms a join expression.
@@ -487,7 +486,6 @@ Join * AppliedStatMan::formJoinExprWithEstLogProps(
   return joinExpr;
 
 } // AppliedStatMan::formJoinExprWithEstLogProps
-// LCOV_EXCL_STOP
 
 // This method forms the join expression for join on JBBC specified by jbbcId
 // inputEstLogProp should not be cacheable
@@ -667,7 +665,6 @@ EstLogPropSharedPtr AppliedStatMan::synthesizeLogProp(
 	return outputEstLogProp;
 } // AppliedStatMan::synthesizeLogProp
 
-// LCOV_EXCL_START :cnu
 EstLogPropSharedPtr AppliedStatMan::joinEstLogProps (
               const EstLogPropSharedPtr& leftEstLogProp,
               const EstLogPropSharedPtr& rightEstLogProp,
@@ -755,7 +752,6 @@ EstLogPropSharedPtr AppliedStatMan::joinEstLogProps (
   outputEstLogProp = joinExpr->getGroupAttr()->outputLogProp(inLP);
   return outputEstLogProp;
 }
-// LCOV_EXCL_STOP
 
 // AppliedStatMan::getPotentialOutputs. This method is called from
 // formJoinExpr methods. It sets the characteristics output of the
@@ -1235,7 +1231,6 @@ EstLogPropSharedPtr AppliedStatMan::getStatsForLocalPredsOnPrefixOfColList(
 
 } // AppliedStatMan::getStatsForLocalPredsOnPrefixOfColList
 
-// LCOV_EXCL_START :cnu
 // get Stats after applying local predicates on the given columns of JBBC
 EstLogPropSharedPtr AppliedStatMan::getStatsForLocalPredsOnGivenCols(
 		      CANodeId jbbc,
@@ -1264,7 +1259,6 @@ EstLogPropSharedPtr AppliedStatMan::getStatsForLocalPredsOnGivenCols(
 
   return getStatsForCANodeId(jbbc, inputLP, &localPredsOnCols);
 } // AppliedStatMan::getStatsForLocalPredsOnGivenCols
-// LCOV_EXCL_STOP
 
 // get Stats after doing a join on the Clustering key columns of JBBC
 EstLogPropSharedPtr AppliedStatMan::getStatsForJoinPredsOnCKOfJBBC(

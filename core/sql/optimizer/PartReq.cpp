@@ -209,7 +209,6 @@ PartitioningRequirement::copy() const
   return NULL;
 }
 
-// LCOV_EXCL_START
 void PartitioningRequirement::print(FILE* ofd, const char* indent, 
 				    const char* title) const
 {
@@ -245,7 +244,6 @@ COMPARE_RESULT PartitioningRequirement::comparePartReqToReq
   ABORT("Redefine PartitioningRequirement::comparePartReqToReq()");
   return INCOMPATIBLE;
 }
-// LCOV_EXCL_STOP
                                          
 // ***********************************************************************
 // FuzzyPartitioningRequirement
@@ -302,7 +300,6 @@ FuzzyPartitioningRequirement::copy() const
   return NULL;
 }
 
-// LCOV_EXCL_START
 void FuzzyPartitioningRequirement::print(FILE* ofd, const char* indent, 
                                          const char* title) const
 {
@@ -310,7 +307,6 @@ void FuzzyPartitioningRequirement::print(FILE* ofd, const char* indent,
 } 
 
 void FuzzyPartitioningRequirement::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // FullySpecifiedPartitioningRequirement
@@ -486,7 +482,6 @@ FullySpecifiedPartitioningRequirement::copy() const
   return NULL;
 }
 
-// LCOV_EXCL_START
 void FullySpecifiedPartitioningRequirement::print
        (FILE* ofd, const char* indent, const char* title) const
 {
@@ -494,7 +489,6 @@ void FullySpecifiedPartitioningRequirement::print
 } 
 
 void FullySpecifiedPartitioningRequirement::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireApproximatelyNPartitions
@@ -1260,7 +1254,6 @@ RequireApproximatelyNPartitions::copy() const
     new (CmpCommon::statementHeap()) RequireApproximatelyNPartitions(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireApproximatelyNPartitions::print(FILE* ofd, const char* indent, 
 				       const char* title) const
 {
@@ -1268,7 +1261,6 @@ void RequireApproximatelyNPartitions::print(FILE* ofd, const char* indent,
 } 
 
 void RequireApproximatelyNPartitions::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -1299,7 +1291,6 @@ RequireExactlyOnePartition::copy() const
     new (CmpCommon::statementHeap()) RequireExactlyOnePartition(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireExactlyOnePartition::print(FILE* ofd, const char* indent, 
                                        const char* title) const
 {
@@ -1307,7 +1298,6 @@ void RequireExactlyOnePartition::print(FILE* ofd, const char* indent,
 } 
 
 void RequireExactlyOnePartition::display() const  { print(); }
-// LCOV_EXCL_STOP
 // -----------------------------------------------------------------------
 // RequireReplicateViaBroadcast
 // -----------------------------------------------------------------------
@@ -1370,7 +1360,6 @@ RequireReplicateViaBroadcast::copy() const
     new (CmpCommon::statementHeap()) RequireReplicateViaBroadcast(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireReplicateViaBroadcast::print(FILE* ofd, const char* indent, 
                                          const char* title) const
 {
@@ -1378,7 +1367,6 @@ void RequireReplicateViaBroadcast::print(FILE* ofd, const char* indent,
 } 
 
 void RequireReplicateViaBroadcast::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireReplicateNoBroadcast
@@ -1438,7 +1426,6 @@ RequireReplicateNoBroadcast::copy() const
     new (CmpCommon::statementHeap()) RequireReplicateNoBroadcast(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireReplicateNoBroadcast::print(FILE* ofd, const char* indent, 
                                          const char* title) const
 {
@@ -1446,7 +1433,6 @@ void RequireReplicateNoBroadcast::print(FILE* ofd, const char* indent,
 } 
 
 void RequireReplicateNoBroadcast::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireHash
@@ -1455,7 +1441,6 @@ void RequireReplicateNoBroadcast::display() const  { print(); }
 // -----------------------------------------------------------------------
 // Method for performing a pointer type cast
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 const RequireHash*
 RequireHash::castToRequireHash() const
   { return this; }
@@ -1474,7 +1459,6 @@ void RequireHash::print(FILE* ofd, const char* indent,
 } 
 
 void RequireHash::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireHashDist
@@ -1510,7 +1494,6 @@ RequireHashDist::copy() const
     new (CmpCommon::statementHeap()) RequireHashDist(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireHashDist::print(FILE* ofd, const char* indent, 
                         const char* title) const
 {
@@ -1518,7 +1501,6 @@ void RequireHashDist::print(FILE* ofd, const char* indent,
 } 
 
 void RequireHashDist::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireHash2
@@ -1563,7 +1545,6 @@ RequireHash2::copy() const
     new (CmpCommon::statementHeap()) RequireHash2(*this);
 }
 
-// LCOV_EXCL_START
 void RequireHash2::print(FILE* ofd, const char* indent,
                         const char* title) const
 {
@@ -1571,7 +1552,6 @@ void RequireHash2::print(FILE* ofd, const char* indent,
 }
 
 void RequireHash2::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 //===========
 // -----------------------------------------------------------------------
@@ -1633,7 +1613,6 @@ RequireSkewed::copy() const
   return new (CmpCommon::statementHeap()) RequireSkewed(*this);
 }
 
-// LCOV_EXCL_START
 void RequireSkewed::print(FILE* ofd, const char* indent,
                         const char* title) const
 {
@@ -1641,7 +1620,6 @@ void RequireSkewed::print(FILE* ofd, const char* indent,
 }
 
 void RequireSkewed::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -1662,7 +1640,6 @@ RequireRange::copy() const
     new (CmpCommon::statementHeap()) RequireRange(*this); 
 }
 
-// LCOV_EXCL_START
 void RequireRange::print(FILE* ofd, const char* indent, 
                          const char* title) const
 {
@@ -1670,13 +1647,11 @@ void RequireRange::print(FILE* ofd, const char* indent,
 } 
 
 void RequireRange::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // RequireRoundRobin
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 NABoolean
 RequireRoundRobin::
 partReqAndFuncCompatible(const PartitioningFunction* other) const
@@ -1715,7 +1690,6 @@ void RequireRoundRobin::print(FILE* ofd, const char* indent,
 
 void RequireRoundRobin::display() const  { print(); }
 
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class LogicalPartitioningRequirement

@@ -335,7 +335,6 @@ NABoolean NAType::isNumeric() const
 // Methods that return the binary form of the minimum and the maximum
 // representable values.
 // ---------------------------------------------------------------------
-//LCOV_EXCL_START : - Derived types MUST define the real routines
 void NAType::minRepresentableValue(void*, Lng32*, NAString**,
 				   NAMemory * h) const {}
 
@@ -395,9 +394,7 @@ NABoolean NAType::computeNextKeyValue(NAString &keyValue) const
   ComASSERT(keyValue == temp);
   return FALSE;
 }
-//LCOV_EXCL_STOP : - Derived types MUST define the real routines
 
-//LCOV_EXCL_START :
 void NAType::print(FILE* ofd, const char* indent)
 {
 #ifdef TRACING_ENABLED 
@@ -405,7 +402,6 @@ void NAType::print(FILE* ofd, const char* indent)
           indent,getNominalSize(),getTotalSize());
 #endif
 }
-//LCOV_EXCL_STOP :
 
 // -- The external name for the type (text representation)
 
@@ -443,12 +439,10 @@ Lng32 NAType::getPrecision() const
   return -1;
 }
 
-//LCOV_EXCL_START : Routine must be defined, but used only by numeric types.
 Lng32 NAType::getMagnitude() const
 {
   return -1;
 }
-//LCOV_EXCL_STOP :
 
 Lng32 NAType::getScale() const
 {

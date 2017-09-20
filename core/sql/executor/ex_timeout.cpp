@@ -181,7 +181,6 @@ short ExTimeoutTcb::work()
 
 #if _DEBUG    // For debugging only !!!!!
     if ( getenv("DEBUG_TIMEOUT") ) {
-      // LCOV_EXCL_START
       ComDiagsArea* diagsArea = 
 	ComDiagsArea::allocate (getGlobals()->getDefaultHeap());
       char errmsg[120];
@@ -214,7 +213,6 @@ short ExTimeoutTcb::work()
 			   diagsArea, (ExeErrorCode) -3066 );
     }  // end of debugging section  
     else   
-      // LCOV_EXCL_STOP
 #endif    
 
     if ( goodTimeoutValue ) {

@@ -267,7 +267,6 @@ static void propagateCoAndCoToChildren(ItemExpr *parentOp,
   }
 }
 
-// LCOV_EXCL_START - cnu
 static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
 {
   Int32 n = 0;
@@ -279,7 +278,6 @@ static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
   }
   return n;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // The virtual NAType::isComparable() methods -- implemented here rather than
@@ -399,7 +397,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
   #ifndef NDEBUG
     if (NCHAR_DEBUG < 0) NCHAR_DEBUG = getenv("NCHAR_DEBUG") ? +1 : 0;
     if (NCHAR_DEBUG > 0) {
-// LCOV_EXCL_START - dpm
       NAString p(CmpCommon::statementHeap());
       parentOp->unparse(p);
       NAString s(getTypeSQLname(TRUE /*terse*/));
@@ -420,7 +417,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
 	   << endl;
       if (!cmpOK)
         cerr << endl;
-// LCOV_EXCL_STOP
     }
   #endif
 
@@ -549,7 +545,7 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 
       if ( DoCompatibilityTest && NOT operand1->isCompatible(*operand2) ) {
          // 4041 comparison between these two types is not allowed
-         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2); // LCOV_EXCL_LINE - cnu
+         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2);
          return FALSE;
       }
     }
@@ -962,7 +958,6 @@ Cast::pushDownType(NAType& desiredType,
    return (NAType *)synthesizeType();
 }
 
-// LCOV_EXCL_START - cnu
 void ItemExpr::coerceChildType(NAType& desiredType,
                    enum NABuiltInTypeEnum defaultQualifier)
 {
@@ -970,7 +965,6 @@ void ItemExpr::coerceChildType(NAType& desiredType,
      child(i) -> getValueId().coerceType(desiredType, defaultQualifier);
    }
 }
-// LCOV_EXCL_STOP
 #pragma warning (default : 4018)   //warning elimination
 #pragma warn(1506)  // warning elimination
 
@@ -1280,21 +1274,17 @@ const NAType *BuiltinFunction::synthesizeType()
 	const CharType &typ1 = (CharType&)child(0)->getValueId().getType();
 	if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	const CharType &typ2 = (CharType&)child(1)->getValueId().getType();
 	if (typ2.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	retType = new HEAP
@@ -1555,7 +1545,6 @@ const NAType *CodeVal::synthesizeType()
 
   switch (getOperatorType())
   {
-// LCOV_EXCL_START - rfi
     case ITM_NCHAR_MP_CODE_VALUE:
        if ( CharInfo::is_NCHAR_MP(typ1.getCharSet()) != TRUE )
        {
@@ -1578,7 +1567,6 @@ const NAType *CodeVal::synthesizeType()
          return NULL;
        }
        break;
-// LCOV_EXCL_STOP
 
     case ITM_ASCII:
        {
@@ -1609,12 +1597,10 @@ const NAType *CodeVal::synthesizeType()
      {
        switch ( typ1.getCharSet() )
        {
-// LCOV_EXCL_START - mp
           case CharInfo::KANJI_MP:
           case CharInfo::KSC5601_MP:
             setOperatorType(ITM_NCHAR_MP_CODE_VALUE);
             break;
-// LCOV_EXCL_STOP
 
           case CharInfo::UNICODE:
             setOperatorType(ITM_UNICODE_CODE_VALUE);
@@ -1704,10 +1690,8 @@ const NAType *Aggregate::synthesizeType()
 
     if (!operand.isSupportedType())
     {
-// LCOV_EXCL_START - mp
       emitDyadicTypeSQLnameMsg(-4041, operand, operand);
       return NULL;
-// LCOV_EXCL_STOP
     }
 
     if (inScalarGroupBy())
@@ -3228,12 +3212,10 @@ const NAType *DynamicParam::synthesizeType()
 }
 
 
-// LCOV_EXCL_START - cnu
 const NAType *ExplodeVarchar::synthesizeType()
 {
   return getType();
 }
-// LCOV_EXCL_STOP
 
 const NAType *Format::synthesizeType()
 {
@@ -3651,11 +3633,9 @@ const NAType *BitOperFunc::synthesizeType()
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -3801,11 +3781,9 @@ const NAType *MathFunc::synthesizeType()
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -4702,12 +4680,10 @@ const NAType *Lower::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     // 3217: Character set KANJI/KSC5601 is not allowed in the LOWER function.
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("LOWER");
-// LCOV_EXCL_STOP
   }
 
   if ((ct->isUpshifted()) ||
@@ -4759,11 +4735,9 @@ const NAType *Upper::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("UPPER");
-// LCOV_EXCL_STOP
   }
 
   if (NOT ct->isUpshifted()) {

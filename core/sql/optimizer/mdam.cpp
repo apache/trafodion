@@ -334,14 +334,11 @@ void DisjunctArray::orDisjunctArray
 
 
 
-// LCOV_EXCL_START :dpm
 void DisjunctArray::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :dpm
 void DisjunctArray::print( FILE* ofd,
 			   const char* indent,
 			   const char* title) const
@@ -364,7 +361,6 @@ void DisjunctArray::print( FILE* ofd,
   } // for every disjunct
 
 } // display()
-// LCOV_EXCL_STOP
 
 
 //---------------------------------------------------------
@@ -950,10 +946,8 @@ ScanKey::isAKeyPredicateForColumn(
 	}
       else
         {
-        // LCOV_EXCL_START :rfi
         DCMPASSERT(FALSE);
         return FALSE; // internal error case
-        // LCOV_EXCL_STOP
         }
     }
 
@@ -1893,7 +1887,6 @@ MdamKey::isAPartKeyPredicateForMdam(const ValueId& predId, const ValueIdSet& inp
 
 
 
-// LCOV_EXCL_START :dpm
 void MdamKey::print( FILE* ofd,
 		    const char* indent,
 		    const char* title) const
@@ -1956,7 +1949,6 @@ void MdamKey::print( FILE* ofd,
     }   // is printing enabled?
 
 } // MdamKey::print()
-// LCOV_EXCL_STOP
 
 
 
@@ -2052,7 +2044,6 @@ void Disjuncts::computeCommonPredicates()
   }
 } // Disjuncts::computeCommonPredicates(..)
 
-// LCOV_EXCL_START :dpm
 void Disjuncts::print( FILE* ofd,
 			       const char* indent,
 			       const char* title) const
@@ -2085,7 +2076,6 @@ void Disjuncts::print() const
 {
   print(stdout);
 }
-// LCOV_EXCL_STOP
 
 NABoolean Disjuncts::
 get(Disjunct& disjunct, CollIndex i) const
@@ -2438,7 +2428,7 @@ void KeyColumns::KeyColumn::insert(const ValueId &predicate)
       break;
     default:
       // The column MUST be EMPTY, EQUAL, INLIST, IS_NULL, RANGE, etc
-      DCMPASSERT(FALSE);  // LCOV_EXCL_LINE :rfi
+      DCMPASSERT(FALSE);
     } // switch getType(predicate)
 
   // Now insert the new predicate:
@@ -2469,13 +2459,12 @@ KeyColumns::KeyColumn::getType(const ValueId& predId) const
     case ITM_ASSIGN:
       return ASSIGN;
     default:
-      CMPABORT; // LCOV_EXCL_LINE :rfi  // unsupported predicate!
+      CMPABORT; // unsupported predicate
       break;
     }
   return INLIST; // to keep the compiler happy, fix this!
 } // getType(predId)
 
-// LCOV_EXCL_START :dpm
 void KeyColumns::KeyColumn::print( FILE* ofd,
 				   const char* indent,
 				   const char* /*title*/ ) const
@@ -2517,7 +2506,6 @@ void KeyColumns::KeyColumn::print( FILE* ofd,
   getPredicates().print(ofd,indent,"");
   fprintf(ofd,"\n");
 }
-// LCOV_EXCL_STOP
 
 
 void KeyColumns::KeyColumn::clearPredicates()
@@ -2704,7 +2692,7 @@ KeyColumns::getKeyColumn(const ValueId& column) const
 	}
     }
   if (result == NULL)
-    DCMPASSERT(FALSE);  // LCOV_EXCL_LINE :rfi
+    DCMPASSERT(FALSE);
   return *result;
 }
 
@@ -2813,7 +2801,7 @@ void KeyColumns::insertPredicate(const ValueId& predicate,
       // continue processing
       break;
     default:
-      DCMPASSERT(FALSE);  // LCOV_EXCL_LINE :rfi  // invalid predicate
+      DCMPASSERT(FALSE);  // invalid predicate
     }
 
   // Some veggies can be rewritted to preds like 2 = 7
@@ -2828,7 +2816,7 @@ void KeyColumns::insertPredicate(const ValueId& predicate,
 	 AND
 	 (predicate.getItemExpr()->getConstChild(1)->
 	  castToItemExpr()->getOperatorType() == ITM_CONSTANT) )
-      DCMPASSERT(FALSE); // LCOV_EXCL_LINE :rfi // $$$ How do we handle CONST OPERATOR CONST???
+      DCMPASSERT(FALSE); // $$$ How do we handle CONST OPERATOR CONST???
 
   // Because of VEG rewriting, the predicate may look like:
   // A=2 AND B=2, parse it if so:
@@ -2921,7 +2909,6 @@ void KeyColumns::clearPredicates()
     }
 }
 
-// LCOV_EXCL_START :dpm
 void KeyColumns::print( FILE* ofd,
 			const char* indent,
 			const char* title) const
@@ -2953,7 +2940,6 @@ void KeyColumns::print( FILE* ofd,
     } // for every column
 
 } // KeyColumns::print
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -2990,7 +2976,6 @@ NABoolean ColumnOrderList::containsPredicates() const
   return containsPreds;
 } // containsPredicates()
 
-// LCOV_EXCL_START :dpm
 void ColumnOrderList::print( FILE* ofd,
 			     const char* indent,
 			     const char* /*title*/) const
@@ -3021,7 +3006,6 @@ void ColumnOrderList::print( FILE* ofd,
       }
   }
 } //  ColumnOrderList::print(...)
-// LCOV_EXCL_STOP
 
 
 
@@ -3325,7 +3309,6 @@ computeCommonKeyPredicates(ValueIdSet& commonKeyPredicates) const
 
 
 
-// LCOV_EXCL_START :dpm
 void ColumnOrderListPtrArray::print( FILE* ofd,
 				     const char* indent,
 				     const char* /*title*/) const
@@ -3339,7 +3322,6 @@ void ColumnOrderListPtrArray::print( FILE* ofd,
     }
 
 }
-// LCOV_EXCL_STOP
 
 const ValueIdSet ScanKey::getAllColumnsReferenced() const
 {

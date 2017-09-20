@@ -395,11 +395,9 @@ enum DatetimeType::Subtype DatetimeType::validate(rec_datetime_field startField,
          case REC_DATE_DAY:
            return SUBTYPE_ILLEGAL;
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
          case REC_DATE_HOUR:
          case REC_DATE_MINUTE:
            return SUBTYPE_SQLMPDatetime;
-//LCOV_EXCL_STOP : cnu
 
          default:
            assert (FALSE);
@@ -709,7 +707,6 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
   endOff--;	// was at offset of next field, now at offset of the delimiter
   i = endOff - startOff;		// length (endOff is one past last char)
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
   if (getSubtype() == SUBTYPE_SQLMPDatetime)
   {
    fracPrec = getFractionPrecision();
@@ -722,7 +719,6 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
      i -= adjust;
    }
   }
-//LCOV_EXCL_STOP : cnu
 
   char valueString[valueStringLen];
   str_cpy_all(valueString, &inValueString[startOff], i /*length*/);
@@ -740,12 +736,10 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
       **stringLiteral += "\'";
       **stringLiteral += valueString;
       **stringLiteral += "\'";
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
       if (getSubtype() == SUBTYPE_SQLMPDatetime)
        {
         **stringLiteral += getDatetimeQualifierAsString(FALSE);
        }
-//LCOV_EXCL_STOP : cnu
     }
 } // DatetimeType::getRepresentableValue
 
@@ -1299,7 +1293,6 @@ double SQLTimestamp::getMaxValue()  const
 }
 
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 double SQLMPDatetime::encode(void *bufPtr) const
 {
   char * valPtr = (char *)bufPtr;
@@ -1320,7 +1313,6 @@ double SQLMPDatetime::encode(void *bufPtr) const
   val += (double)w[6] / pow(10, getFractionPrecision());
   return val;
 }
-//LCOV_EXCL_STOP : cnu
 
 
 // ***********************************************************************
@@ -1344,7 +1336,6 @@ NABoolean SQLMPDatetime::isSupportedType(void) const
 //
 // ***********************************************************************
 
-//LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 const NAType*SQLMPDatetime::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                           const NAType& operand1,
                                           const NAType& operand2,
@@ -1360,7 +1351,6 @@ const NAType*SQLMPDatetime::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                        h,
                                        flags);
 }
-//LCOV_EXCL_STOP : cnu
 
 
 // ***********************************************************************

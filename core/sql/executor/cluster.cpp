@@ -211,7 +211,7 @@ void HashBuffer::init(Cluster * cluster) {
 HashBuffer::~HashBuffer() {
   if (data_) {
     if ( ! cluster_ ) {
-      heap_->deallocateMemory(data_);  // LCOV_EXCL_LINE
+      heap_->deallocateMemory(data_);
       return;
     }
     // NOTE: we do NOT ajust the memory usage statistics for the cluster,
@@ -258,13 +258,11 @@ HashBuffer::~HashBuffer() {
 
 /////////////////////////////////////////////////////////////////////////////
 
-// LCOV_EXCL_START  
 
 Bucket::Bucket() {
   init();
 };
 
-// LCOV_EXCL_STOP
 
 void Bucket::init() {
   innerCluster_ = NULL;

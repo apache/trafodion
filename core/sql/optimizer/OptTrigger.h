@@ -74,7 +74,7 @@ public:
 	     RelExpr *parentSubTree);
 
   // Dummy copy constructor - method body does not exist
-  OptTrigger(const OptTrigger &orig, NAMemory *h=0); // LCOV_EXCL_LINE
+  OptTrigger(const OptTrigger &orig, NAMemory *h=0); 
   // ---------------------------------------------------------------------
   // Accessor functions
   // ---------------------------------------------------------------------
@@ -103,7 +103,7 @@ public:
   OptTriggerList(): LIST(OptTriggerPtr)(CmpCommon::statementHeap()) { }
 
   // Dummy copy constructor - method body does not exist
-  OptTriggerList(const OptTriggerList &orig, NAMemory *h=0); // LCOV_EXCL_LINE
+  OptTriggerList(const OptTriggerList &orig, NAMemory *h=0);
 
   RelExpr *createUnionSubTree() const;
 };
@@ -138,7 +138,7 @@ public:
   // Dummy copy constructor - method body does not exist
   OptTriggerGroup(const OptTriggerGroup &orig);
 
-  virtual ~OptTriggerGroup() {} // LCOV_EXCL_LINE
+  virtual ~OptTriggerGroup() {}
 
   inline CollIndex entries() const 
     { return (rowTriggerGroup_.entries()+statmentTriggerGroup_.entries());}
@@ -199,7 +199,7 @@ public:
   OptTriggerGroupList(): LIST(OptTriggerGroup *)(CmpCommon::statementHeap()) { }
 
   // Dummy copy constructor - method body does not exist
-  OptTriggerGroupList(const OptTriggerGroupList &orig, NAMemory *h=0); // LCOV_EXCL_LINE
+  OptTriggerGroupList(const OptTriggerGroupList &orig, NAMemory *h=0);
 };
 
 

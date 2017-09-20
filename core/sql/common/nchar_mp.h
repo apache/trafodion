@@ -53,7 +53,6 @@
 // A simple class devoting to the concept of MP KANJI charset 
 ////////////////////////////////////////////////////////////////////
 
-//LCOV_EXCL_START : cnu  -- As of 8/30/2011, not used in SQ SQL.
 
 class kanji_char_set 
 {
@@ -96,14 +95,12 @@ static short bytesPerChar() { return 2; };
 private:
 
 };
-//LCOV_EXCL_STOP : cnu
 
 
 ////////////////////////////////////////////////////////////////////
 // A simple class devoting to the concept of MP KSC5601 charset 
 ////////////////////////////////////////////////////////////////////
 
-//LCOV_EXCL_START : cnu  -- As of 8/30/2011, not used in SQ SQL.
 
 class ksc5601_char_set 
 {
@@ -146,7 +143,6 @@ static short bytesPerChar() { return 2; };
 private:
 
 };
-//LCOV_EXCL_STOP : cnu
 
 
 #endif

@@ -176,7 +176,6 @@ CreateInstance(CUOFsIpcMessageTranslator &translator)
 //
 //	Serialize the context
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUUpdateBitmap::StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	RUASSERT(size_ > 0);
@@ -186,7 +185,6 @@ void CRUUpdateBitmap::StoreData(CUOFsIpcMessageTranslator &translator)
 	translator.WriteBlock(buffer_, size_);
 #pragma warn(1506)  // warning elimination 
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDeltaDef
@@ -362,7 +360,6 @@ TInt32 CRUDeltaStatistics::GetDeltaSize()
 //
 //	De-serialize the context
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDeltaStatistics::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.ReadBlock(&nRanges_, sizeof(TInt32));
@@ -387,14 +384,12 @@ void CRUDeltaStatistics::LoadData(CUOFsIpcMessageTranslator &translator)
 		pUpdateBitmap_ = CRUUpdateBitmap::CreateInstance(translator);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDeltaStatistics::StoreData()
 //
 //	Serialize the context
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 
 void CRUDeltaStatistics::StoreData(CUOFsIpcMessageTranslator &translator)
 {
@@ -418,7 +413,6 @@ void CRUDeltaStatistics::StoreData(CUOFsIpcMessageTranslator &translator)
 		pUpdateBitmap_->StoreData(translator);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDeltaStatistics::GetPackedBufferSize()
@@ -471,7 +465,6 @@ CRUDeltaStatisticsMap::operator = (const CRUDeltaStatisticsMap& other)
 //
 //	De-serialize the context
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDeltaStatisticsMap::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	CRUDeltaStatistics deStat;
@@ -487,14 +480,12 @@ void CRUDeltaStatisticsMap::LoadData(CUOFsIpcMessageTranslator &translator)
 		(*this)[epoch] = deStat;
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDeltaStatisticsMap::StoreData()
 //
 //	Serialize the context
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDeltaStatisticsMap::StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	CRUDeltaStatistics deStat;
@@ -516,4 +507,3 @@ void CRUDeltaStatisticsMap::StoreData(CUOFsIpcMessageTranslator &translator)
 		deStat.StoreData(translator);
 	}
 }
-// LCOV_EXCL_STOP

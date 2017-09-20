@@ -33,7 +33,6 @@
 ******************************************************************************
 */
 
-// LCOV_EXCL_START
 // exclude this whole file from coverage since this code is related to vertical
 // partitioning and that feature is not active anymore
 
@@ -585,4 +584,3 @@ PackedTableDesc::getPackingInfoForColumn(Lng32 position)
   return (PackedColDesc *)packingInfo;
 }
 
-// LCOV_EXCL_STOP

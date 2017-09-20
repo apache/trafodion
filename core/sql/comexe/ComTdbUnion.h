@@ -107,10 +107,8 @@ public:
   inline void setLeftTdb(ComTdb *left)                { tdbLeft_ = left; }
   inline void setRightTdb(ComTdb *right)            { tdbRight_ = right; }
 
-// LCOV_EXCL_START
 // exclude from code coverage since this code is obsolete
   Int32 orderedQueueProtocol() const  { return -1; }
-// LCOV_EXCL_STOP
 
   virtual const ComTdb* getChild(Int32 pos) const;
   virtual Int32 numChildren() const;
@@ -192,7 +190,6 @@ protected:
 
 };
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since this is used only by GUI
 inline const ComTdb* ComTdbUnion::getChild(Int32 pos) const
 {
@@ -203,7 +200,6 @@ inline const ComTdb* ComTdbUnion::getChild(Int32 pos) const
    else
       return NULL;
 }
-// LCOV_EXCL_STOP
 
 
 #endif

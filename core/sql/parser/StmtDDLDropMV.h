@@ -146,7 +146,6 @@ StmtDDLDropMV::isValidateSpecified()const
   return isValidateSpec_;
 }
 
-// LCOV_EXCL_START :dpm
 inline const NABoolean
 StmtDDLDropMV::isLogFileSpecified() const
 {
@@ -161,6 +160,5 @@ StmtDDLDropMV::getLogFile() const
   ComASSERT(pLogFile_ NEQ NULL);
   return *pLogFile_;
 }
-// LCOV_EXCL_STOP
 
 #endif // STMTDDLDROPMV_H

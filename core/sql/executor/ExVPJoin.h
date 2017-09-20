@@ -64,7 +64,6 @@ class ExVPJoinTcbPrivateState;
 
 // Exclude this code from coverage analysis since this feature is
 // obsolete and not used.
-// LCOV_EXCL_START
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -232,7 +231,6 @@ inline ex_expr * ExVPJoinTcb::filterPred()
   return vpJoinTdb().filterExpr_; 
 }
  
-// LCOV_EXCL_STOP
 
 #endif
 

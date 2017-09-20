@@ -1878,7 +1878,6 @@ ItemExpr *ItemExpr::bindNodeRoot(BindWA *bindWA)
 
 } // ItemExpr::bindNodeRoot()
 
-// LCOV_EXCL_START :rfi
 ItemExpr* ItemExpr::_bindNodeRoot(BindWA *bindWA)
 {
   return 0;
@@ -1892,7 +1891,6 @@ ItemExpr * ItemExpr::foldConstants(BindWA *bindWA)
     bindWA->setErrStatus();
   return result;
 }
-// LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::bindUDFsOrSubqueries(BindWA *bindWA)
 {
@@ -3544,7 +3542,7 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
 
     case CharInfo::KANJI_MP:
     case CharInfo::KSC5601_MP:
-      setOperatorType(ITM_NCHAR_MP_CHAR); //LCOV_EXCL_LINE - mp
+      setOperatorType(ITM_NCHAR_MP_CHAR);
       break;
 
     default:
@@ -3552,7 +3550,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
   }
 
   if (!CharInfo::isCharSetSupported(charSet_)) {
-// LCOV_EXCL_START - rfi
     // 3010 Character set $0~string0 is not yet supported.
     // 4062 The preceding error actually occurred in function $0~String0.
     *CmpCommon::diags() << DgSqlCode(-3010)
@@ -3562,7 +3559,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
     *CmpCommon::diags() << DgSqlCode(-4062) << DgString0(unparsed);
     bindWA->setErrStatus();
     return NULL;
-// LCOV_EXCL_STOP
   }
 
   // CharFunc inherits from BuiltinFunction .. Function .. ItemExpr.
@@ -12358,11 +12354,9 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
          olap->isFrameEndUnboundedFollowing()) || //olap->getframeEnd() ==  INT_MAX) || 
         (olap->getframeStart() > olap->getframeEnd()))
     {
-// LCOV_EXCL_START - rfi
       //The specified window frame clause is not valid.
       *CmpCommon::diags() << DgSqlCode(-4342);
       bindWA->setErrStatus();
-// LCOV_EXCL_STOP
     } 
 
     if (!olap->isFrameStartUnboundedPreceding() && //olap->getframeStart() != -INT_MAX &&

@@ -3942,7 +3942,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
           return;
          }
 
-      // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
        if (nadval) {	// additional sanity checking we want to do occasionally
@@ -4008,7 +4007,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	    }
 	}	// if env-var
       #endif	// NDEBUG
-      // LCOV_EXCL_STOP
 
     } // for i
 
@@ -5048,7 +5046,6 @@ NABoolean NADefaults::domainMatch(Int32 attrEnum,
   // and calling getAsULong, instead of using 'long' fields to retrieve
   // unsigned(DDui*) attr values via getAsLong ...
   //
-  // LCOV_EXCL_START
   // if we get here the compiler will crash
   if (flt) {
     DefaultValidator *validator = NULL;
@@ -5077,7 +5074,6 @@ NABoolean NADefaults::domainMatch(Int32 attrEnum,
       		DefaultValidatorType(expectedType))
       << " " << (flt ? *flt : 123.45) << endl;
   #endif
-  // LCOV_EXCL_STOP
 
   return FALSE;
 }

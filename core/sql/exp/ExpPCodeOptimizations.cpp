@@ -9734,7 +9734,6 @@ OptPCodeCache::logPCCEvent( Int32           eventType
 }
 #endif // OPT_PCC_DEBUG==1
 
-// LCOV_EXCL_START
 //
 // printPCodeExprCacheStats() -- intended to be called by gdb to give the
 // developer a formatted view of the cache's statistics.
@@ -9748,4 +9747,3 @@ OptPCodeCache::printPCodeExprCacheStats()
    printf("MaxOptPCodeSize = %d, MaxHitsForAnyOneEntry = %ld, MaxHitsForAnyDeletedEntry = %ld\n",
            maxOptPCodeSize_ ,    maxHits_ ,                   maxHitsDel_ );
 }
-// LCOV_EXCL_STOP

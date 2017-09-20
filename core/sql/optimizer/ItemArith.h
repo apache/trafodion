@@ -82,7 +82,7 @@ public:
   void setStandardNormalization()	                { normalizeFlags_ = LAST_DAY_ON_ERR; }
 
   NABoolean isKeepLastDay() const 		{ return normalizeFlags_ == LAST_DAY_OF_MONTH_FLAG; }
-  void setKeepLastDay()	                { normalizeFlags_ = LAST_DAY_OF_MONTH_FLAG; } // LCOV_EXCL_LINE
+  void setKeepLastDay()	                { normalizeFlags_ = LAST_DAY_OF_MONTH_FLAG; }
   NABoolean isDateMathFunction() const  { return (isStandardNormalization() || isKeepLastDay()); }
 
   const NAType* getIntervalQualifier() const 	{ return intervalQualifier_; }

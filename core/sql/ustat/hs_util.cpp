@@ -503,7 +503,6 @@ Lng32 FormatRow(const HSColumnStruct *srcDesc,
                       }
 
 // Here begin a number of cases that are only possible with MP datetime types.
-// LCOV_EXCL_START :mp
                     case REC_DTCODE_YEAR:
                       {
                         wStr = WIDE_("DATETIME '");
@@ -671,15 +670,12 @@ Lng32 FormatRow(const HSColumnStruct *srcDesc,
                           }
                         break;
                       }
-// LCOV_EXCL_STOP
 
-                    // LCOV_EXCL_START :rfi
                     default:
                       {
                         HS_ASSERT(FALSE);
                         break;
                       }
-                    // LCOV_EXCL_STOP
                   }
 
                 target = wStr.data();
@@ -774,13 +770,11 @@ Lng32 FormatRow(const HSColumnStruct *srcDesc,
                         na_wsprintf(workBuf, WIDE_("%s SECOND(%d, %d)"), wStr.data(), srcDesc->precision, srcDesc->scale);
                         break;
                       }
-                    // LCOV_EXCL_START :rfi
                     default:
                       {
                         HS_ASSERT(FALSE);
                         break;
                       }
-                    // LCOV_EXCL_STOP
                   }
 
                 target = workBuf;
@@ -865,7 +859,6 @@ NAString getTableName(const NAString name, const ComAnsiNameSpace nameSpace)
   }
 
 
-// LCOV_EXCL_START :mp  Called only for MP datetime types.
 static NAWString appendFraction (Lng32 scale)
   {
     NAWString wStr;
@@ -886,7 +879,6 @@ static NAWString appendFraction (Lng32 scale)
 
     return wStr;
   }
-// LCOV_EXCL_STOP
 
 // Calculate default sample size for table.
 Int64 getDefaultSampleSize(Int64 tblRowCount)
@@ -960,7 +952,6 @@ Int64 hs_getBaseTime()
         short baseTsStr[] = {1970, 1, 1, 0, 0, 0, 0, 0};
         short error;
         baseTs = COMPUTETIMESTAMP(baseTsStr, &error);
-        // LCOV_EXCL_START :rfi
         if (error)
           {
             sprintf(LM->msg,
@@ -983,7 +974,6 @@ Int64 hs_getBaseTime()
             throw CmpInternalException("failure in getEpochTime()",
                                        __FILE__, __LINE__);
         }
-        // LCOV_EXCL_STOP
         // baseTs == HS_EPOCH_TIMESTAMP;
 
     return baseTs / 1000000;
@@ -1016,7 +1006,6 @@ Int64 hs_getEpochTime()
         short baseTsStr[] = {1970, 1, 1, 0, 0, 0, 0, 0};
         short error;
         baseTs = COMPUTETIMESTAMP(baseTsStr, &error);
-        // LCOV_EXCL_START :rfi
         if (error)
           {
             sprintf(LM->msg,
@@ -1039,7 +1028,6 @@ Int64 hs_getEpochTime()
             throw CmpInternalException("failure in getEpochTime()",
                                        __FILE__, __LINE__);
         }
-        // LCOV_EXCL_STOP
         // baseTs == HS_EPOCH_TIMESTAMP;
       }
 

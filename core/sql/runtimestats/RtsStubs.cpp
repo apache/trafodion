@@ -36,7 +36,6 @@
 #include "ex_ex.h"
 
 // Turn off code coverage collection for these stubs.
-// LCOV_EXCL_START
 extern "C" {
  void unpackObj__13UdrMessageObjFlT1iUlPCc() {
     ex_assert(0, "Entering stub unpackObj__13UdrMessageObjFlT1iUlPCc");
@@ -686,7 +685,6 @@ void CmpAssertInternal(const char*, const char*, Int32) {
    ex_assert(0, "Entering stub CmpAssertInternal(const char*, const char*, int)");
   }
 
-// LCOV_EXCL_STOP
 
 void NA_MM_FreeMemory_(char *startAddr, Int32 byteCount) {
   // do nothing and do not assert here.  

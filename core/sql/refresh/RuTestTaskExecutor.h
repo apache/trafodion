@@ -42,7 +42,6 @@
 #include "RuTaskExecutor.h"
 #include "RuSQLDynamicStatementContainer.h"
 
-// LCOV_EXCL_START :rfi
 
 class REFRESH_LIB_CLASS CRUTestTaskExecutor : public CRUTaskExecutor
 {
@@ -171,6 +170,5 @@ private:
 	CRUSQLDynamicStatementContainer errorDynamicSQLContainer_;
 };
 
-// LCOV_EXCL_STOP
 
 #endif

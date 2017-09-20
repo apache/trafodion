@@ -222,7 +222,6 @@ static short convFloat64ToAscii(char *target,
      //        : new (STMTHEAP, FALSE) elemType[elemCount])
 #endif
 
-// LCOV_EXCL_START :rfi
 void ISFixedChar::fail(const char* opName, Lng32 line)
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -236,7 +235,6 @@ void ISFixedChar::fail(const char* opName, Lng32 line)
   throw CmpInternalException("failure in ISFixedChar",
                              __FILE__, line);
 }
-// LCOV_EXCL_STOP
 
 // Compare this object to rhs, returning negative value if less, 0 if equal,
 // and positive value if greater.
@@ -1326,7 +1324,6 @@ void MCWrapper::fail(const char* opName, Lng32 line)
 }
 
 
-// LCOV_EXCL_START :rfi
 void ISVarChar::fail(const char* opName, Lng32 line)
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -1340,7 +1337,6 @@ void ISVarChar::fail(const char* opName, Lng32 line)
   throw CmpInternalException("failure in ISVarChar",
                              __FILE__, line);
 }
-// LCOV_EXCL_STOP
 
 // Compare this object to rhs, returning negative value if less, 0 if equal,
 // and positive value if greater.
@@ -2513,7 +2509,6 @@ Int64 HSHistogram::getTotalUec()
   }
 
 
-// LCOV_EXCL_START :cnu
 /***********************************************/
 /* METHOD:  getTotalRowCount()                 */
 /* PURPOSE: Determine the SUM(rowcount)        */
@@ -2534,7 +2529,6 @@ Int64 HSHistogram::getTotalRowCount()
       }
     return rowCount;
   }
-// LCOV_EXCL_STOP
 
 Lng32 HSHistogram::getParenthesizedIntBoundary(Lng32 intNum, HSDataBuffer &intBoundary)
   {
@@ -2699,7 +2693,6 @@ static void sumFrequencies(FrequencyCounts& fc, Int32 maxInterval, FrequencyCoun
       }
 }
 
-// LCOV_EXCL_START :cnu
 /**************************************************************************/
 /* METHOD:  compareFC()                                                   */
 /* PURPOSE: Compare the two frequency counts to determine if for each     */
@@ -2744,7 +2737,6 @@ NABoolean compareFC(FrequencyCounts& fc1, FrequencyCounts& fc2)
 
   return differenceFound;
 }
-// LCOV_EXCL_STOP
 
 /**************************************************************************/
 /* METHOD:  removeLesserGapIntervals()                                    */
@@ -3441,7 +3433,6 @@ Lng32 HSGlobalsClass::Initialize()
         for (retry = 0; retry <= retryLimit && groupStateOK; retry++)
           {
             retcode = AddNecessaryColumns();
-            // LCOV_EXCL_START :rfi
             if (retcode < 0)
               {
                 // An error occurred.
@@ -3456,7 +3447,6 @@ Lng32 HSGlobalsClass::Initialize()
               }
             else
               break;  // successful execution, exit retry loop
-            // LCOV_EXCL_STOP
           }
 
         // If we found errors, but retried successfully, rewind past the errors
@@ -4997,7 +4987,6 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
               break;
 
             default:
-              // LCOV_EXCL_START :rfi
               LM->Log("INTERNAL ERROR (mapInternalSortTypes):");
               sprintf(LM->msg, "Undefined datetime type %d", col.precision);
               LM->Log(LM->msg);
@@ -5007,7 +4996,6 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
                                   << DgString2(LM->msg);
               throw CmpInternalException("failure in mapInternalSortTypes()",
                                          __FILE__, __LINE__);
-              // LCOV_EXCL_STOP
           }
         break;
 
@@ -5312,7 +5300,6 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
           default:
             // Check to see if the column's type is supposed to be handled
             // by internal sort.  If so, this is a problem.
-            // LCOV_EXCL_START :rfi
             if (isInternalSortType(group->colSet[0]))
               {
                 LM->Log("INTERNAL ERROR (getInternalSortMemoryRequirements):");
@@ -5327,7 +5314,6 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
               }
             elementSize = 0;
             break;
-            // LCOV_EXCL_STOP
         }
 
       Int64 i64MemNeeded = rows * elementSize;
@@ -8183,10 +8169,8 @@ Lng32 HSGlobalsClass::WriteStatistics()
       }
     else
       {
-        // LCOV_EXCL_START :nsk
         histRS.reset(new HSinsertHist("INSERT101_MP", hstogram_table->data()));
         histintRS.reset(new HSinsertHistint("INSERT201_MP", hsintval_table->data()));
-        // LCOV_EXCL_STOP
       }
     LM->StartTimer("initialize rowset for Histograms");
     retcode = histRS->initialize();       //initialize ROWSET for HISTOGRAMS
@@ -8503,7 +8487,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
       else
         stmt = HSCliStatement::CURSOR103_MX;
     else
-      stmt = HSCliStatement::CURSOR103_MP;  // LCOV_EXCL_LINE :nsk
+      stmt = HSCliStatement::CURSOR103_MP;
 
     HSCliStatement cursor103( stmt,
                            (char *)hstogram_table->data(),
@@ -10009,8 +9993,8 @@ Lng32 HSGlobalsClass::ClearAllHistograms()
         LM->Log(LM->msg);
       }
 
-    if (tableFormat == SQLMP)               // LCOV_EXCL_LINE :nsk
-      stmt = HSCliStatement::DELETE101_MP;  // LCOV_EXCL_LINE :nsk
+    if (tableFormat == SQLMP)       
+      stmt = HSCliStatement::DELETE101_MP;
     else
       if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
         stmt = HSCliStatement::DELETE101_MX_2300;
@@ -10029,8 +10013,8 @@ Lng32 HSGlobalsClass::ClearAllHistograms()
         LM->Log(LM->msg);
       }
 
-    if (tableFormat == SQLMP)               // LCOV_EXCL_LINE :nsk
-      stmt = HSCliStatement::DELETE201_MP;  // LCOV_EXCL_LINE :nsk
+    if (tableFormat == SQLMP)               
+      stmt = HSCliStatement::DELETE201_MP; 
     else
       if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
         stmt = HSCliStatement::DELETE201_MX_2300;
@@ -10151,7 +10135,6 @@ Lng32 HSGlobalsClass::ClearSelectHistograms()
     return retcode;
   }
 
-// LCOV_EXCL_START :nsk
 /***********************************************/
 /* METHOD:  DeleteOrphanHistograms()           */
 /* PURPOSE: Deletes obsolete histograms that   */
@@ -10208,7 +10191,6 @@ Lng32 HSGlobalsClass::DeleteOrphanHistograms()
       }
     return 0;
   }
-// LCOV_EXCL_STOP
 
 /***********************************************/
 /* METHOD:  GetStatistics()                    */
@@ -10484,8 +10466,8 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
         stmt = HSCliStatement::SHOWINT_MX_2300;
       else
         stmt = HSCliStatement::SHOWINT_MX;
-    else                                    // LCOV_EXCL_LINE :nsk
-        stmt = HSCliStatement::SHOWINT_MP;  // LCOV_EXCL_LINE :nsk
+    else                                    
+        stmt = HSCliStatement::SHOWINT_MP;
 
     HSCliStatement intData( stmt,
         (char *)hsintval_table->data(),
@@ -10909,7 +10891,6 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             }
             break;
 
-          // LCOV_EXCL_START :rfi
           default:
             sprintf(errtxt, "processInternalSortNulls(): unknown type %d", 
                             group->ISdatatype);
@@ -10918,7 +10899,6 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
             retcode=-1;
             HSHandleError(retcode);
             break;
-          // LCOV_EXCL_STOP
         }
 
       group = group->next;
@@ -11019,7 +10999,6 @@ bool isInternalSortType(HSColumnStruct &col)
             case REC_DTCODE_TIME:
             case REC_DTCODE_TIMESTAMP:
               return true;
-            // LCOV_EXCL_START :rfi
             default:
               LM->Log("INTERNAL ERROR (isInternalSortType):");
               sprintf(LM->msg, "Undefined datetime precision type %d", col.precision);
@@ -11030,7 +11009,6 @@ bool isInternalSortType(HSColumnStruct &col)
                                   << DgString2(LM->msg);
               throw CmpInternalException("failure in isInternalSortType()",
                                          __FILE__, __LINE__);
-            // LCOV_EXCL_STOP
           }
 
       case REC_INT_YEAR:
@@ -11969,7 +11947,6 @@ Lng32 doSort(HSColGroupStruct *group)
                        (ISVarChar*)group->nextData - (ISVarChar*)group->data - 1);
         break;
       }
-      // LCOV_EXCL_START :rfi
       default:
         sprintf(errtxt, "doSort(): unknown type %d", group->ISdatatype);
         sprintf(LM->msg, "INTERNAL ERROR: %s", errtxt);
@@ -11977,7 +11954,6 @@ Lng32 doSort(HSColGroupStruct *group)
         retcode = -1;
         HSHandleError(retcode);
         break;
-      // LCOV_EXCL_STOP
     }
 
   if (LM->LogNeeded())
@@ -11987,7 +11963,6 @@ Lng32 doSort(HSColGroupStruct *group)
               group->colSet[0].colname->data(), maxRecDepth);
       LM->Log(LM->msg);
     }
-  // LCOV_EXCL_START :rfi
   if (recDepth != 0) 
     {
       sprintf(errtxt, "doSort(): Recursion depth should be 0.");
@@ -11996,7 +11971,6 @@ Lng32 doSort(HSColGroupStruct *group)
       retcode = -1;
       HSHandleError(retcode);
     }
-  // LCOV_EXCL_STOP
   return retcode;
 }
 
@@ -12448,7 +12422,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         createHistogram(group, intCount, sampleRowCount, samplingUsed, (double*)NULL);
         break;
 
-      // LCOV_EXCL_START :rfi
       default:
         sprintf(errtxt, "createStats(): unknown type %d", group->ISdatatype);
         sprintf(LM->msg, "INTERNAL ERROR: %s", errtxt);
@@ -12456,7 +12429,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
         retcode=-1;
         HSHandleError(retcode);
         break;
-      // LCOV_EXCL_STOP
     }
 
     if (LM->LogNeeded())
@@ -12505,7 +12477,6 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
   return retcode;
 }
 
-// LCOV_EXCL_START :rfi
 /************************************************/
 /* METHOD:  log()                               */
 /* PURPOSE: Write selected information to the   */
@@ -12562,7 +12533,6 @@ void HSGlobalsClass::log(HSLogMan* LM)
       group = group->next;
     }
 }
-// LCOV_EXCL_STOP
 
 NABoolean HSGlobalsClass::wherePredicateSpecifiedForIUS()
 {
@@ -14347,11 +14317,9 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
                 }
                 break;
 
-              // LCOV_EXCL_START :rfi
               default:
                 retcode = -1;
                 break;
-              // LCOV_EXCL_STOP
             }
           break;
 
@@ -14486,11 +14454,9 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
 
 #pragma warning(default:4146)
 
-        // LCOV_EXCL_START :rfi
         default:
           retcode = -1;
           break;
-        // LCOV_EXCL_STOP
        } // switch
       }  // else
 
@@ -14527,7 +14493,6 @@ Lng32 setBufferValue(T& value,
 
     // Copy the value, with any required formatting, into the buffer.
     Int32 rc=0;
-    // LCOV_EXCL_START :rfi
     if ((rc = copyValue(value, valueBuff, colDesc, len)) < 0)
       {
         LM->Log("INTERNAL ERROR (copyValue):");
@@ -14542,7 +14507,6 @@ Lng32 setBufferValue(T& value,
         throw CmpInternalException("failure in copyValue()",
                                    __FILE__, __LINE__);
       }
-    // LCOV_EXCL_STOP
 
     // *len has already been set for char types due to possibility of embedded
     // nulls, but will have to be adjusted here to len in bytes instead of chars.

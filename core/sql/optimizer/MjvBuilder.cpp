@@ -1223,7 +1223,6 @@ ItemExpr *MjvOnRequestBuilder::buildSelectionListForScanOnIudLog() const
 // by the INDIRECT predicate.
 //----------------------------------------------------------------------------
 // Exclude from coverge testing - used only for range logging
-// LCOV_EXCL_START
 RelRoot *MjvOnRequestBuilder::buildRootOverIUDLog(RelExpr *topNode) const
 {
   ItemExpr *OperationTypeCol = new(heap_) 
@@ -1239,7 +1238,6 @@ RelRoot *MjvOnRequestBuilder::buildRootOverIUDLog(RelExpr *topNode) const
   result->addCompExprTree(IndirectCol);
   return result;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // We get here when we need to read from the Range log.
@@ -1248,7 +1246,6 @@ RelRoot *MjvOnRequestBuilder::buildRootOverIUDLog(RelExpr *topNode) const
 // by the INDIRECT predicate.
 //----------------------------------------------------------------------------
 // Exclude from coverge testing - used only for range logging
-// LCOV_EXCL_START
 RelRoot *MjvOnRequestBuilder::buildRootOverRangeBlock(RelExpr *topNode) const
 {
   ItemExpr *OperationTypeCol = new(heap_) 
@@ -1264,7 +1261,6 @@ RelRoot *MjvOnRequestBuilder::buildRootOverRangeBlock(RelExpr *topNode) const
   result->addCompExprTree(IndirectCol);
   return result;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Have a uniform select list over the logs
@@ -1274,7 +1270,6 @@ RelRoot *MjvOnRequestBuilder::buildRootOverRangeBlock(RelExpr *topNode) const
 // We do get here for the insertion part, where we must not have @OP.
 //----------------------------------------------------------------------------
 // Exclude from coverge testing - used only for range logging
-// LCOV_EXCL_START
 RelRoot *MjvOnRequestBuilder::buildRootWithUniformSelectList(RelExpr *topNode,
 							  ItemExpr *opExpr,
 							  const CorrName *nameOverride) const
@@ -1288,7 +1283,6 @@ RelRoot *MjvOnRequestBuilder::buildRootWithUniformSelectList(RelExpr *topNode,
 
   return new(heap_) RelRoot(topNode, REL_ROOT, rootSelectList);
 }
-// LCOV_EXCL_STOP
 
 
 // ===========================================================================

@@ -182,7 +182,6 @@ void runServer(Int32 argc, char **argv)
   // while holding the stats semaphore.  This code has been covered in
   // a manual unit test, but it is not possible to cover this easily in
   // an automated test.
-  // LCOV_EXCL_START
   if (statsGlobals->getSemPid() != -1)
   {
     NAProcessHandle prevSsmpPhandle((SB_Phandle_Type *)
@@ -206,7 +205,6 @@ void runServer(Int32 argc, char **argv)
                      (pid_t) myPhandle.getPin());
     }
   }
-  // LCOV_EXCL_STOP
 
   XPROCESSHANDLE_GETMINE_(statsGlobals->getSsmpProcHandle());
 

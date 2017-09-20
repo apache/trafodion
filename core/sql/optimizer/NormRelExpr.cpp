@@ -9692,7 +9692,6 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
   // ------------------------------
 
   // we create a name of this form:
-  // CSE_TEMP_ppppp_MXIDiiiii_Ssss_ccc
   // where
   //   ppp... is a prefix of the CTE name or an internal name
   //          (just to make it easier to identify, not really needed,

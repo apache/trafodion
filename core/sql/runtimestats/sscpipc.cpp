@@ -107,12 +107,10 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
     doLogCancelKillServers_ = true;
 }
 
-// LCOV_EXCL_START
 SscpGlobals::~SscpGlobals()
 {
   sem_close((sem_t *)semId_);
 }
-// LCOV_EXCL_STOP
 
 void SscpGuaReceiveControlConnection::actOnSystemMessage(
        short                  messageNum,

@@ -168,7 +168,6 @@ ComTdbTupleLeaf::ComTdbTupleLeaf(Queue * tupleExprList,
 }
 
 
-// LCOV_EXCL_START
 // This non-leaf tuple operator was not used so far on SQ, see GenRelMisc.cpp
 
 ///////////////////////////////////////
@@ -212,6 +211,5 @@ Lng32 ComTdbTupleNonLeaf::unpack(void * base, void * reallocator)
   return ComTdbTuple::unpack(base, reallocator);
 }
 
-// LCOV_EXCL_STOP
 // end of excluding non-leaf operator from coverage checking
 

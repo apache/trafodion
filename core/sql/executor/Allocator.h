@@ -130,7 +130,6 @@ namespace ExOverflow
   {
     return heap_;
   }
-//LCOV_EXCL_START
   inline
   ByteCount64
   Allocator::getMaxAllocation(void) const
@@ -149,7 +148,6 @@ namespace ExOverflow
     return (UInt32) (quota_ / ONE_MEGABYTE);
 #endif
   }
-//LCOV_EXCL_STOP
   inline
   void
   Allocator::reuse(char* buffer)
@@ -159,14 +157,12 @@ namespace ExOverflow
       reuseList_.push_back(buffer);
     }
   }
-//LCOV_EXCL_START
   inline
   ByteCount64
   Allocator::size(void) const
   {
     return memAllocated_;
   }
-//LCOV_EXCL_STOP
 
 }
 

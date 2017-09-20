@@ -88,9 +88,7 @@ public:
   MultiColumnUecList (const StatsList   & initStats,
                       const ValueIdList & tableColumns ) ;
 
-// LCOV_EXCL_START :dd
   virtual ~MultiColumnUecList() {} ;
-// LCOV_EXCL_STOP
 
   // given a ValueIdSet of table columns, returns the stored groupUec (if
   // it exists), else returns csMinusOne

@@ -527,9 +527,9 @@ OptTriggersBackbone::~OptTriggersBackbone()
     {
       OptTriggerPtr optTrigger = (*triggerList_)[i];
       // exclude coverage - we don't seem to handle macro expansion very well
-      NADELETEBASIC(optTrigger, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+      NADELETEBASIC(optTrigger, CmpCommon::statementHeap());
     }
-    NADELETEBASIC(triggerList_, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+    NADELETEBASIC(triggerList_, CmpCommon::statementHeap());
   }
 
   if (triggerGroups_)
@@ -537,9 +537,9 @@ OptTriggersBackbone::~OptTriggersBackbone()
     for (CollIndex i = 1; i < triggerGroups_->entries(); i++)
     {
       OptTriggerGroup *optGroup = (*triggerGroups_)[i];
-      NADELETE(optGroup, OptTriggerGroup, (CmpCommon::statementHeap())); // LCOV_EXCL_LINE
+      NADELETE(optGroup, OptTriggerGroup, (CmpCommon::statementHeap()));
     }
-    NADELETEBASIC(triggerGroups_, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+    NADELETEBASIC(triggerGroups_, CmpCommon::statementHeap());
   }
 
 }
@@ -921,7 +921,7 @@ OptTriggersBackbone::reorder()
 
   // free the temporary array
   // exclude coverage - we don't seem to handle macro expansion very well
-  NADELETEBASIC(optTriggerPtrArray, (CmpCommon::statementHeap())); // LCOV_EXCL_LINE
+  NADELETEBASIC(optTriggerPtrArray, (CmpCommon::statementHeap()));
 }
 
 //-----------------------------------------------------------------------------------

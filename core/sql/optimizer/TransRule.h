@@ -130,7 +130,7 @@ public:
   // copy ctor
   MJExpandRule (const MJExpandRule &) ; // not written
 
-  virtual ~MJExpandRule() {} // LCOV_EXCL_LINE
+  virtual ~MJExpandRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -161,7 +161,7 @@ public:
   // copy ctor
   MVQRRule (const MVQRRule &) ; 
 
-  virtual ~MVQRRule() {} // LCOV_EXCL_LINE
+  virtual ~MVQRRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
                               Context * context);
@@ -184,7 +184,7 @@ public:
   // copy ctor
   MVQRScanRule (const MVQRScanRule &) ;
 
-  virtual ~MVQRScanRule() {} // LCOV_EXCL_LINE
+  virtual ~MVQRScanRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
                               Context * context);
@@ -207,7 +207,7 @@ public:
   // copy ctor
   GroupByMVQRRule (const GroupByMVQRRule &) ;
 
-  virtual ~GroupByMVQRRule() {} // LCOV_EXCL_LINE
+  virtual ~GroupByMVQRRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
                               Context * context);
@@ -230,7 +230,7 @@ public:
   // copy ctor
   MJEnumRule (const MJEnumRule &) ; // not written
 
-  virtual ~MJEnumRule() {} // LCOV_EXCL_LINE
+  virtual ~MJEnumRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -250,7 +250,6 @@ class MJStarJoinIRuleWA : public NABasicObject
   friend class MJStarJoinIRule;
 
 public:
-  // LCOV_EXCL_START
   // listOfEdges_ is allocated from the statement heap. It is safe to
   // ignore this dstr is not code coveraged.
   ~MJStarJoinIRuleWA()
@@ -258,7 +257,6 @@ public:
     if(listOfEdges_)
       delete listOfEdges_;
   }
-  // LCOV_EXCL_STOP
 
 private:
 
@@ -318,7 +316,7 @@ public:
   // copy ctor
   MJStarJoinRules (const MJExpandRule &) ; // not written
 
-  virtual ~MJStarJoinRules() {} // LCOV_EXCL_LINE
+  virtual ~MJStarJoinRules() {}
 
   /*virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -359,7 +357,7 @@ public:
   // copy ctor
   MJStarJoinIRule (const MJStarJoinIRule &) ; // not written
 
-  virtual ~MJStarJoinIRule() {} // LCOV_EXCL_LINE
+  virtual ~MJStarJoinIRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -449,7 +447,7 @@ public:
   // copy ctor
   MJStarJoinIIRule (const MJExpandRule &) ; // not written
 
-  virtual ~MJStarJoinIIRule() {} // LCOV_EXCL_LINE
+  virtual ~MJStarJoinIIRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -479,7 +477,7 @@ public:
   JoinCommutativityRule (const JoinCommutativityRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~JoinCommutativityRule() {} // LCOV_EXCL_LINE
+  virtual ~JoinCommutativityRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -502,7 +500,7 @@ public:
   JoinLeftShiftRule (const JoinLeftShiftRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~JoinLeftShiftRule() {} // LCOV_EXCL_LINE
+  virtual ~JoinLeftShiftRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -531,7 +529,7 @@ public:
   IndexJoinRule1 (const IndexJoinRule1 &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~IndexJoinRule1() {} // LCOV_EXCL_LINE
+  virtual ~IndexJoinRule1() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
   virtual RelExpr * nextSubstitute(RelExpr * before,
@@ -558,7 +556,7 @@ public:
   IndexJoinRule2 (const IndexJoinRule2 &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~IndexJoinRule2() {} // LCOV_EXCL_LINE
+  virtual ~IndexJoinRule2() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
   virtual RelExpr * nextSubstitute(RelExpr * before,
@@ -578,7 +576,7 @@ public:
   OrOptimizationRule (const OrOptimizationRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~OrOptimizationRule() {} // LCOV_EXCL_LINE
+  virtual ~OrOptimizationRule() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
 
@@ -613,7 +611,7 @@ public:
   TSJRule (const TSJRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~TSJRule() {} // LCOV_EXCL_LINE
+  virtual ~TSJRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
                               Context * context);
@@ -660,7 +658,7 @@ public:
   JoinToTSJRule (const JoinToTSJRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~JoinToTSJRule() {} // LCOV_EXCL_LINE
+  virtual ~JoinToTSJRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -686,7 +684,7 @@ public:
   TSJFlowRule (const TSJFlowRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~TSJFlowRule() {} // LCOV_EXCL_LINE
+  virtual ~TSJFlowRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -707,7 +705,7 @@ public:
        Rule(name,pattern,substitute) {}
 
 // warning elimination (removed "inline")
-  virtual ~TSJUDRRule() {} // LCOV_EXCL_LINE
+  virtual ~TSJUDRRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -739,7 +737,7 @@ public:
   FilterRule (const FilterRule &) ; // not written
 
  // warning elimination (removed "inline")
-  virtual ~FilterRule() {} // LCOV_EXCL_LINE
+  virtual ~FilterRule() {}
   virtual Guidance * guidanceForExploringChild(Guidance * guidance,
 					       Context * context,
 					       Lng32 childIndex);
@@ -976,7 +974,7 @@ public:
   SampleScanRule (const SampleScanRule &) ; // not written
 
 // warning elimination (removed "inline")
-  virtual ~SampleScanRule() {} // LCOV_EXCL_LINE
+  virtual ~SampleScanRule() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
   virtual RelExpr * nextSubstitute(RelExpr * before,
@@ -999,7 +997,7 @@ public:
 			    RelExpr * substitute) :
                                          Rule(name,pattern,substitute) {}
 // warning elimination (removed "inline")
-  virtual ~JoinToBushyTreeRule() {} // LCOV_EXCL_LINE
+  virtual ~JoinToBushyTreeRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);

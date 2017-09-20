@@ -24,7 +24,6 @@
 
 //#include "Platform.h"
 
-// LCOV_EXCL_START :ale
 extern "C"
 void CmpAssertInternal__FPcT1i(void){};
 
@@ -48,6 +47,5 @@ void  __eq__16ExtendedQualNameCFRC16ExtendedQualName(void) {};
 
 extern "C"
 void  __eq__13QualifiedNameCFRC8NAString(void) {};
-// LCOV_EXCL_STOP
 
 

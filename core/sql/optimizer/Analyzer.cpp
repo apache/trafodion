@@ -58,7 +58,6 @@
 
 void forceCQS1(RelExpr *, RelExpr *);
 
-// LCOV_EXCL_START :rfi
 // tmp methods
 void xxx()
 {
@@ -69,7 +68,6 @@ void revisitLater()
 {
   CMPASSERT(FALSE);
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class CANodeId
@@ -423,7 +421,6 @@ CANodeId CANodeIdSet::getJBBCwithMinConnectionsToThisJBBSubset() const
    } // for loop to pick the jbbc with min connections, and collect if there are
 	 // more than one with min connections.
 
-// LCOV_EXCL_START 
 // debugging code
 #ifdef _DEBUG
 if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
@@ -437,7 +434,6 @@ if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
                   <<endl;
 }
 #endif
-// LCOV_EXCL_STOP
   if (jbbcsWithMinConnections.entries() > 1)
   {
 
@@ -498,14 +494,14 @@ if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
   CURRCONTEXT_OPTDEBUG->stream() << "Connections tried "\
                   << id.getText() \
 				  << " with " << id2.getText() \
-				  << endl;   // LCOV_EXCL_LINE :dpm
+				  << endl;
   CURRCONTEXT_OPTDEBUG->stream() << "Number of columns "\
                   << istring(Lng32(idCols.entries()))\
-                  <<endl;   // LCOV_EXCL_LINE :dpm
+                  <<endl;
   CURRCONTEXT_OPTDEBUG->stream() << "Equality factor "\
                   << eqFactor.value() \
                   << endl
-				  << endl;   // LCOV_EXCL_LINE :dpm
+				  << endl;
 }
 #endif
 		   } // for loop to traverse all two way connections
@@ -519,17 +515,16 @@ if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
 {
   CURRCONTEXT_OPTDEBUG->stream() << "CANodeId picked up "\
                   << childWithMinConnections.getText() \
-				  << endl;   // LCOV_EXCL_LINE :dpm
+				  << endl;
   CURRCONTEXT_OPTDEBUG->stream() << "Max Equality factor "\
                   << maxEqFactor.value() \
                   << endl
-				  << endl;   // LCOV_EXCL_LINE :dpm
+				  << endl;
 }
 #endif
   return childWithMinConnections;
 }
 
-// LCOV_EXCL_START :cnu
 // get minimum estimated row count of the group from amongst the nodeSet
 CostScalar CANodeIdSet::getMinChildEstRowCount() const
 {
@@ -546,7 +541,6 @@ CostScalar CANodeIdSet::getMinChildEstRowCount() const
     }
     return minEstCard;
 }
-// LCOV_EXCL_STOP
 
 
 // compute the JBBSubset structure for this CANodeIdSet
@@ -598,7 +592,6 @@ JBBSubset * CANodeIdSet::jbbcsToJBBSubset() const
   return result;
 }
 
-// LCOV_EXCL_START :dpm
 const NAString CANodeIdSet::getText() const
 {
   NAString result("CANodeIdSet: {");
@@ -621,7 +614,6 @@ void CANodeIdSet::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class CANodeIdSetMap
@@ -712,7 +704,6 @@ QueryAnalysis::QueryAnalysis(CollHeap *outHeap, NABoolean analysis):
 }
 
 // destruct a QueryAnalysis
-// LCOV_EXCL_START :dd
 QueryAnalysis::~QueryAnalysis()
 {
   delete tCGraph_;
@@ -720,7 +711,6 @@ QueryAnalysis::~QueryAnalysis()
   delete mvQueryRewriteHandler_;
   // should loop over other collections and delete later
 }
-// LCOV_EXCL_STOP
 
 
 // This is a temporary placement of initialization. Later it shall be
@@ -1040,10 +1030,8 @@ JBBC * QueryAnalysis::newJBBC(Join* parent, RelExpr* expr,
       jbbcsProducingOutput = outputToJBBCsMap_[jbbcOutput];
     }
     else{
-// LCOV_EXCL_START :rfi
       jbbcsProducingOutput = new (STMTHEAP) CANodeIdSet();
       outputToJBBCsMap_.insertAt(jbbcOutput, jbbcsProducingOutput);
-// LCOV_EXCL_STOP
     }
 
     (*jbbcsProducingOutput) += nodeAnalysis->getId();
@@ -1639,10 +1627,8 @@ void QueryAnalysis::analyzeJBBCDependencies(RelExpr* expr)
 
 NABoolean QueryAnalysis::hasMandatoryXP()
 {
-// LCOV_EXCL_START :rfi
   if(hasMandatoryXPComputed_)
     return hasMandatoryXP_;
-// LCOV_EXCL_STOP
 
   hasMandatoryXP_ = FALSE;
 
@@ -1880,7 +1866,6 @@ void QueryAnalysis::graphDisplay() const
     // Display graph is OFF. bye bye
     return;
   }
-// LCOV_EXCL_START :dpm
   if(*fname && strcasecmp(fname,"ON") == 0)
   {
     // The default file name is used here
@@ -1912,11 +1897,9 @@ void QueryAnalysis::graphDisplay() const
   result += "}\n";
   fileout<<result;
 
-// LCOV_EXCL_STOP
   return;
 }
 
-// LCOV_EXCL_START :dpm
 const NAString QueryAnalysis::getText() const
 {
   NAString result(heap_);
@@ -1963,7 +1946,6 @@ void QueryAnalysis::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // pilotAnalysis() and jbbAnalysis() and other RelExpr methods
@@ -2048,7 +2030,7 @@ NABoolean Scan::pilotAnalysis(QueryAnalysis* qa)
   }
 
   if (!qa->newTableAnalysis(this))
-    return FALSE; // LCOV_EXCL_LINE :rfi
+    return FALSE;
 
   return TRUE;
 }
@@ -2518,7 +2500,6 @@ EstLogPropSharedPtr MultiJoin::setJBBInput(EstLogPropSharedPtr & inLP)
   return QueryAnalysis::ASM()->getStatsForJBBSubset(jbbSubset_);
 }
 
-// LCOV_EXCL_START :cnu
 RelExpr* RelExpr::expandMultiJoinSubtree()
 {
   // pass it to children
@@ -2532,7 +2513,6 @@ RelExpr* RelExpr::expandMultiJoinSubtree()
 
   return this;
 }
-// LCOV_EXCL_STOP
 
 // xxx move this to RelExpr.h and make inline
 GroupAnalysis * RelExpr::getGroupAnalysis()
@@ -2729,7 +2709,6 @@ void ValueIdSet::accumulateReferencingExpressions(const ValueIdSet & referencing
 // This method remove those expressions that are members of the
 // referencingSet and not referencing any value in ReferencedSet.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 void ValueIdSet::removeNonReferencingExpressions(const ValueIdSet & otherSet,
                                     NABoolean doNotDigInsideVegRefs,
                                     NABoolean doNotDigInsideInstNulls)
@@ -2755,7 +2734,6 @@ void ValueIdSet::removeNonReferencingExpressions(const ValueIdSet & otherSet,
       subtractElement(myExpr); // delete expression from set
   } // myExpr loop
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // ValueIdSet::findAllReferencedBaseCols()
@@ -2796,7 +2774,6 @@ void ValueIdSet::findAllReferencedIndexCols(ValueIdSet & result) const
 // This method finds all eqaulity columns referenced directly or indirectly
 // via this ValueIdSet.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 void ValueIdSet::findAllEqualityCols(ValueIdSet & result) const
 {
   // Iterate through all the expressions in the set
@@ -2805,7 +2782,6 @@ void ValueIdSet::findAllEqualityCols(ValueIdSet & result) const
     x.getItemExpr()->findEqualityCols(result);
   }
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Perform columnAnalysis on this set
@@ -3149,12 +3125,10 @@ GroupAnalysis::GroupAnalysis(const GroupAnalysis & other,
   }
 }
 
-// LCOV_EXCL_START :dd
 GroupAnalysis::~GroupAnalysis()
 {
   delete localJBBView_;
 }
-// LCOV_EXCL_STOP
 
 // clear analysis results in GroupAnalysis.
 // note: this should clear only analysis results and
@@ -3166,7 +3140,6 @@ void GroupAnalysis::clear()
   allSubtreeTables_.clear();
 }
 
-// LCOV_EXCL_START :dpm
 const NAString GroupAnalysis::getText() const
 {
   NAString result("GroupAnalysis:\n");
@@ -3230,7 +3203,6 @@ NABoolean GroupAnalysis::operator == (const GroupAnalysis & other)
   // the two groups are equivalent
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 // The parent JBB view of the JBBSubset. If this group is a
 // JBBC then a JBBSubset of this JBBC alone is returned. Otherwise
@@ -3366,7 +3338,6 @@ void GroupAnalysis::reconcile(GroupAnalysis * other)
 // Methods for class NodeAnalysis
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START :cnu
 EstLogPropSharedPtr NodeAnalysis::getStats()
 
 {
@@ -3378,7 +3349,6 @@ EstLogPropSharedPtr NodeAnalysis::getStats()
 
   return stats_;
 }
-// LCOV_EXCL_STOP
 
 CostScalar NodeAnalysis::getCardinality()
 {
@@ -3451,7 +3421,6 @@ void NodeAnalysis::computeStats()
   return;
 }
 
-// LCOV_EXCL_START :dpm
 const NAString NodeAnalysis::getText() const
 {
   NAString result("NodeAnalysis # ");
@@ -3481,7 +3450,6 @@ void NodeAnalysis::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 NABoolean NodeAnalysis::isExtraHub()
 {
@@ -3498,7 +3466,6 @@ NABoolean NodeAnalysis::isExtraHub()
 // Methods for class TableAnalysis
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START :cnu & dpm
 // List access paths that are promising for predicate lookup
 const LIST(AccessPathAnalysis*) &
   TableAnalysis::promisingAccessPathsForLookup()
@@ -3648,7 +3615,6 @@ void TableAnalysis::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 void TableAnalysis::initAccessPaths()
 {
@@ -3895,14 +3861,12 @@ void TableAnalysis::checkIfCompressedHistsViable()
     qa->disableCompressedHistsViable();
 }
 
-// LCOV_EXCL_START :cnu
 ValueIdSet TableAnalysis::getConnectingVegPreds(ColAnalysis & col) const
 {
   ValueIdSet result = vegPreds_;
   result.intersectSet(col.getVegPreds());
   return result;
 }
-// LCOV_EXCL_STOP
 
 ValueIdSet TableAnalysis::getConnectingVegPreds(TableAnalysis & other) const
 {
@@ -3913,7 +3877,6 @@ ValueIdSet TableAnalysis::getConnectingVegPreds(TableAnalysis & other) const
 
 ////////////////////////////////////////
 
-// LCOV_EXCL_START :cnu
 // Get all JBBCs that are connected to this set of columns and the join preds
 // This table must be JBBC
 CANodeIdSet TableAnalysis::getJBBCsConnectedToCols(const CANodeIdSet & jbbcs,
@@ -3960,7 +3923,6 @@ CANodeIdSet TableAnalysis::getJBBCsConnectedToCols(const CANodeIdSet & jbbcs,
   }
   return result;
 };
-// LCOV_EXCL_STOP
 
 // Get the JBBCs that are connected to the maximum prefix size in the given column list
 // This table must be JBBC
@@ -4150,7 +4112,6 @@ CostScalar TableAnalysis::getBaseUec(const ValueIdSet & columns)
 }
 
 
-// LCOV_EXCL_START :cnu
 
 // Compute the local predicates on this table that references any of these columns
 // of the table
@@ -4185,7 +4146,6 @@ ValueIdSet TableAnalysis::getLocalPredsOnColumns(const ValueIdSet & cols,
 
   return result;
 };
-// LCOV_EXCL_STOP
 
 // Compute the local predicates on this table that references a prefix of this
 // column list. compute also the prefix size.
@@ -4279,7 +4239,6 @@ CostScalar TableAnalysis::getCardinalityOfBaseTable()
     return getStatsOfBaseTable()->getResultCardinality();
 }
 
-// LCOV_EXCL_START :cnu
 CostScalar TableAnalysis::getMaxCardinalityOfBaseTable()
 {
     return getStatsOfBaseTable()->getMaxCardEst();
@@ -4363,7 +4322,6 @@ NABoolean TableAnalysis::predsOnUnique(ValueIdSet& vidSet,
 
   return FALSE;
 }
-// LCOV_EXCL_STOP
 
 // get a rough estimate of cost for doing a nested join
 // number of probes = dataFlowFromEdge
@@ -4464,7 +4422,6 @@ AccessPathAnalysis::AccessPathAnalysis
     }
   }
 
-// LCOV_EXCL_START :cnu
 NABoolean AccessPathAnalysis::isIndexOnly()
 {
   // xxx May be I should cache the result of this method if turn out
@@ -4569,7 +4526,6 @@ ValueIdSet JBBItem::predecessorPredsOnOther(const JBBItem & other) const
   result.intersectSet(other.getPredsWithSuccessors());
   return result;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class JBBC
@@ -4593,7 +4549,6 @@ void JBBC::setJoinPreds(const ValueIdSet & joinPreds)
   }
 }
 
-// LCOV_EXCL_START 
 // Not used - we are using the JBBSubset version of this
 ValueIdSet JBBC::joinPredsWithOther(const JBBC & other) const
 {
@@ -4616,7 +4571,6 @@ ValueIdSet JBBC::joinPredsWithOther(const JBBC & other) const
 
   return result;
 }
-// LCOV_EXCL_STOP
 
 void JBBC::setPredsWithDependencies(const ValueIdSet & predsWithDependencies,
                                     const ValueIdSet & predsWithPredecessors)
@@ -4658,7 +4612,6 @@ void JBBC::setPredsWithDependencies(const ValueIdSet & predsWithDependencies,
                                      jbbcCharOutput);
 }
 
-// LCOV_EXCL_START :cnu
 // Get all JBBCs that are have no join predicate with this JBBC.
 CANodeIdSet JBBC::getJBBCsThatXProductWithMe() const
 {
@@ -4669,7 +4622,6 @@ CANodeIdSet JBBC::getJBBCsThatXProductWithMe() const
   result.subtractSet(predecessorJBBCs_);
   return result;
 }
-// LCOV_EXCL_STOP
 
 CANodeIdSet JBBC::getJBBCsConnectedViaKeyJoins()
 {
@@ -4715,7 +4667,6 @@ CANodeIdSet JBBC::getJBBCsConnectedViaKeyJoins()
   return jbbcsJoinedViaTheirKey_;
 }
 
-// LCOV_EXCL_START :cnu
 /* Do not inspect this method */
 // Returns a subset of getJoinedJBBCs that are joined with this JBBC
 // on this particular column
@@ -4735,7 +4686,6 @@ CANodeIdSet JBBC::getJoinedJBBCsOnTheseColumns(const ValueIdSet & cols,
   xxx();
   return CANodeIdSet(heap_);
 }
-// LCOV_EXCL_STOP
 
 NABoolean JBBC::isGuaranteedEqualizer()
 {
@@ -4767,7 +4717,6 @@ NABoolean JBBC::isGuaranteedEqualizer()
   return isGuaranteedEqualizer_;
 }
 
-// LCOV_EXCL_START :cnu
 NABoolean JBBC::hasNonExpandingJoin()
 {
 
@@ -4844,7 +4793,6 @@ void JBBC::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class JBBSubset
@@ -4912,7 +4860,6 @@ CANodeIdSet JBBSubset::getJBBCsAndGB() const
 	return jbbcsAndGB;
   }
 
-// LCOV_EXCL_START :cnu
 // Get all JBBCs that are have no join predicate with this JBBSubset.
 CANodeIdSet JBBSubset::getJBBCsThatXProductWithMe() const
 {
@@ -4923,7 +4870,6 @@ CANodeIdSet JBBSubset::getJBBCsThatXProductWithMe() const
   result.subtractSet(getPredecessorJBBCs());
   return result;
 }
-// LCOV_EXCL_STOP
 
 // Copy the JBBCs and GB from other JBBSubset.
 // This method copy the JBBSubset without copying its heap_ affiliation.
@@ -4938,7 +4884,6 @@ void JBBSubset::copySubsetMembers(const JBBSubset & other)
   // Of course we should NOT copy heap_ here.
 }
 
-// LCOV_EXCL_START :cnu
 // Subtract the content (JBBCs and GB) of other JBBSubset from this
 // JBBSubset. This method side-effect this JBBSubset.
 void JBBSubset::subtractSubset(const JBBSubset & other)
@@ -4950,7 +4895,6 @@ void JBBSubset::subtractSubset(const JBBSubset & other)
   }
   clearAnalysis();
 }
-// LCOV_EXCL_STOP
 
 // add the content (JBBCs and GB) of other JBBSubset to this
 // JBBSubset. This method side-effect this JBBSubset.
@@ -5138,7 +5082,6 @@ NAList<CANodeIdSet*>* JBBSubsetAnalysis::getConnectedSubgraphs(NABoolean followS
 }
 
 
-// LCOV_EXCL_START :cnu
 CANodeIdSet JBBSubsetAnalysis::getInputSubgraph(CANodeId node, NABoolean followSuccessors) const
 {
   
@@ -5186,7 +5129,6 @@ CANodeIdSet JBBSubsetAnalysis::getInputSubgraph(CANodeId node, NABoolean followS
 
   return inputSubgraph;
 }
-// LCOV_EXCL_STOP
   
 CANodeIdSet JBBSubset::getSubtreeTables() const
 {
@@ -5337,7 +5279,6 @@ NABoolean JBBSubset::isGuaranteedNonExpandingJoin(JBBC jbbc)
   return jbbcGA->isUnique(ColVegRefSet);
 }
 
-// LCOV_EXCL_START :cnu
 // verify integrity of the JBBSubset. That is
 // jbbcs_ contains only jbbcs from same JBB
 // gb_ belongs to a group by of the same JBB
@@ -5375,7 +5316,6 @@ void JBBSubset::print (FILE *f,
 {
   fprintf (f, getText());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Methods for class JBBSubsetAnalysis
@@ -5431,7 +5371,6 @@ JBBSubsetAnalysis::JBBSubsetAnalysis(const JBBSubset & subset,
   init();
 }
 
-// LCOV_EXCL_START :cnu
 // which JBBCs can I add to this subset while reserving its self-dpendency
 CANodeIdSet JBBSubsetAnalysis::legalJBBCAdditions() const
 {
@@ -5442,7 +5381,6 @@ CANodeIdSet JBBSubsetAnalysis::legalJBBCAdditions() const
   result.subtractSet(jbbcs_);
   return result;
 }
-// LCOV_EXCL_STOP
 
 // initialize JBBSubsetAnalysis computable fields
 void JBBSubsetAnalysis::init()
@@ -5739,7 +5677,6 @@ void JBBSubsetAnalysis::setSubsetMJ(MultiJoin * subsetMJ)
     subsetMJ_ = subsetMJ;
 }
 
-// LCOV_EXCL_START
 // Used to be used by LargeScopeRules old topMatch method of MJStarJoinIRule,
 // not used anymore this code is OFF by default
 MJRulesWA * JBBSubsetAnalysis::getMJRulesWA()
@@ -6092,7 +6029,6 @@ CANodeId MJRulesWA::computeCenterTable()
 
   return centerTable_;
 }
-// LCOV_EXCL_STOP
 
 CASortedList * JBBSubsetAnalysis::getNodesSortedByLocalPredsCard()
 {
@@ -6119,7 +6055,6 @@ CASortedList * JBBSubsetAnalysis::getNodesSortedByLocalPredsCard()
   return result;
 }
 
-// LCOV_EXCL_START :cnu
 CASortedList * JBBSubsetAnalysis::getNodesSortedByLocalKeyPrefixPredsCard()
 {
   // get CANodeIdSet representing this MultiJoin
@@ -6164,7 +6099,6 @@ CANodeId JBBSubsetAnalysis::getLargestNode()
 
   return NULL_CA_ID;
 }
-// LCOV_EXCL_STOP
 
 CANodeId JBBSubsetAnalysis::getLargestIndependentNode()
 {
@@ -6308,7 +6242,6 @@ void JBBSubsetAnalysis::analyzeInitialPlan()
       (factTable != NULL_CA_ID ) &&
       isAStarPattern(factTable, factTableCKPrefixCardinality))
   {
-// LCOV_EXCL_START 
 // for debugging only
 #ifdef _DEBUG
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
@@ -6317,7 +6250,6 @@ void JBBSubsetAnalysis::analyzeInitialPlan()
       CURRCONTEXT_OPTDEBUG->stream() << "JBBSubsetAnalysis StarJoinTypeI feasible" <<endl;
     }
 #endif //_DEBUG
-// LCOV_EXCL_STOP
     factTable_ = factTable;
     setStarJoinTypeIFeasible();
     arrangeTablesAfterFactForStarJoinTypeI();
@@ -6564,13 +6496,11 @@ CANodeId JBBSubsetAnalysis::findFactTable(
         if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
              CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
         {
-// LCOV_EXCL_START :dpm
           CURRCONTEXT_OPTDEBUG->stream() << "Picked the fact Table specified by user" << endl;
           CURRCONTEXT_OPTDEBUG->stream() << "fact Table: " << factTable.getText() << endl;
           CURRCONTEXT_OPTDEBUG->stream() << "fact Table  num rows scanned: ";
           CURRCONTEXT_OPTDEBUG->stream() << istring(Lng32(factTableCKPrefixCardinality.value()))\
                           << endl;
-// LCOV_EXCL_STOP
         }
 #endif
         break;
@@ -6852,7 +6782,6 @@ CANodeId JBBSubsetAnalysis::findFactTable(
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     CURRCONTEXT_OPTDEBUG->stream() << "Largest Table: " << largestTable.getText() << endl;
     CURRCONTEXT_OPTDEBUG->stream() << "Largest Table  num rows scanned: ";
     CURRCONTEXT_OPTDEBUG->stream() << istring(Lng32(largestTableCardinality.value()))\
@@ -6883,7 +6812,6 @@ CANodeId JBBSubsetAnalysis::findFactTable(
     CURRCONTEXT_OPTDEBUG->stream() << istring(Lng32(secondLargestTableTotalDataVol.value()))\
                     << endl;
     CURRCONTEXT_OPTDEBUG->stream() << endl;
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -7066,12 +6994,10 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     CURRCONTEXT_OPTDEBUG->stream() << "Pattern match parameters are: "<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "Min center connectivity: "<<minimumCenterConnectivity<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "Max dimension connectivity: "<<maximumDimensionConnectivity<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << endl;
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -7137,11 +7063,9 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     CURRCONTEXT_OPTDEBUG->stream() << "JBBC: "<<currentTable.getText()<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "connected jbbcs: "<<connectedChildren.getText()<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << endl;
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -7210,7 +7134,6 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     if(center != NULL_CA_ID)
     {
       CURRCONTEXT_OPTDEBUG->stream() << "Center Table is: "<<center.getText()<<endl;
@@ -7221,7 +7144,6 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
     else{
       CURRCONTEXT_OPTDEBUG->stream() << "No center table found "<<center.getText()<<endl;
     }
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -7278,7 +7200,6 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     CURRCONTEXT_OPTDEBUG->stream() << "Center Table Rows Scanned: "\
                     <<centerTableRowsScanned_.getValue()<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "Center Table Record Size: "\
@@ -7289,7 +7210,6 @@ CANodeId JBBSubsetAnalysis::computeCenterTable()
                     <<centerTablePartitions_.getValue()<<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "Center Table size per partition: "\
                     <<centerTableDataPerPartition_.getValue()<<endl;
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -7403,10 +7323,8 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-// LCOV_EXCL_START :dpm
       CURRCONTEXT_OPTDEBUG->stream() << "Pattern Not Matched, there is no join predicate on prefix of clustering key" <<endl;
       CURRCONTEXT_OPTDEBUG->stream() << "MJStarJoinIRule_isAStarPattern_End" <<endl;
-// LCOV_EXCL_STOP
     }
 #endif //_DEBUG
     // return FALSE, indicating this rule is not a good match for the current
@@ -7498,14 +7416,12 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
       if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
            CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
       {
-// LCOV_EXCL_START :dpm
         CURRCONTEXT_OPTDEBUG->stream() << "Cost estimate of fact table access as outer most table: "\
                         << istring(Lng32(factTableHashJoinCost.value()))\
                         <<endl;
         CURRCONTEXT_OPTDEBUG->stream() << "Star Join will make sense if fact table nested join access is "\
                         << istring(Lng32(factTableCostFactor))\
                         << " times cheaper" << endl;
-// LCOV_EXCL_STOP
       }
 #endif //_DEBUG
 
@@ -7868,12 +7784,10 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-// LCOV_EXCL_START :dpm
       CURRCONTEXT_OPTDEBUG->stream() << "Built an edge starting from table "\
                       << tableToConsider.getText()<< endl;
       CURRCONTEXT_OPTDEBUG->stream() << "The edge is " \
                       << currentEdge.getText()<<endl;
-// LCOV_EXCL_STOP
     }
 #endif
 
@@ -7918,12 +7832,10 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
       if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
            CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
       {
-// LCOV_EXCL_START :dpm
         CURRCONTEXT_OPTDEBUG->stream() << "Built an edge starting from table "\
                         << connectedTable.getText()<< endl;
         CURRCONTEXT_OPTDEBUG->stream() << "The edge is " \
                         << currentEdge.getText()<<endl;
-// LCOV_EXCL_STOP
       }
 #endif
     }
@@ -8073,7 +7985,6 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-// LCOV_EXCL_START :dpm
       CURRCONTEXT_OPTDEBUG->stream() << "FactTable after edge " \
                       << currentEdge.getText()<<endl;
       CURRCONTEXT_OPTDEBUG->stream() << "The cummulative edge is "\
@@ -8090,7 +8001,6 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
       CURRCONTEXT_OPTDEBUG->stream() << "Our cost estimate of fact table nested join: "\
                       << istring(Lng32(factTableCost.value()))\
                       <<endl;
-// LCOV_EXCL_STOP
     }
 #endif //_DEBUG
 
@@ -8232,12 +8142,10 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
       CURRCONTEXT_OPTDEBUG->stream() << "The tables below fact table"\
                       << optimalEdgeSet.getText()<<endl;
       CURRCONTEXT_OPTDEBUG->stream() << "The tables above fact table "\
                       << availableNodes.getText()<<endl;
-// LCOV_EXCL_STOP
 
   }
 #endif //_DEBUG
@@ -8261,10 +8169,8 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
          CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-// LCOV_EXCL_START :dpm
       CURRCONTEXT_OPTDEBUG->stream() << "Pattern Not Matched, there is no significant reduction on fact table" <<endl;
       CURRCONTEXT_OPTDEBUG->stream() << "JBBSubsetAnalysis_isAStarPattern_End" <<endl;
-// LCOV_EXCL_STOP
     }
 #endif //_DEBUG
     // return FALSE, indicating this rule is not a good match for the current
@@ -8276,10 +8182,8 @@ NABoolean JBBSubsetAnalysis::isAStarPattern(CANodeId factTable,
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START :dpm
     CURRCONTEXT_OPTDEBUG->stream() << "Pattern Matched" <<endl;
     CURRCONTEXT_OPTDEBUG->stream() << "JBBSubsetAnalysis_isAStarPattern_End" <<endl;
-// LCOV_EXCL_STOP
   }
 #endif //_DEBUG
 
@@ -8550,7 +8454,6 @@ void JBBSubsetAnalysis::arrangeTablesAfterFactForStarJoinTypeI()
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-// LCOV_EXCL_START :dpm
 
       CURRCONTEXT_OPTDEBUG->stream() << "Table to be joined after fact table "\
                       << availableNodes.getText() << endl;
@@ -8558,7 +8461,6 @@ void JBBSubsetAnalysis::arrangeTablesAfterFactForStarJoinTypeI()
                       << factTable.getText() << endl;
       CURRCONTEXT_OPTDEBUG->stream() << "Table to be joined before fact table "\
                       << nodesJoinedBeforeFactTable_.getText() << endl;
-// LCOV_EXCL_STOP
     }
 #endif
 
@@ -9092,7 +8994,6 @@ const CASortedList * JBBWA::getNodesSortedByLocalKeyPrefixPredsCard()
   return byLocalKeyPrefixPredsCard_;
 }
 
-// LCOV_EXCL_START :cnu
 const CASortedList * JBBWA::getNodesSortedByCard()
 {
   if(!byNodeCard_)
@@ -9108,7 +9009,6 @@ const CASortedList * JBBWA::getNodesSortedByData()
 
   return byNodeData_;
 }
-// LCOV_EXCL_STOP
 
 const CASortedList * JBBWA::getNodesSortedByOutputData()
 {
@@ -9138,7 +9038,6 @@ JBBWA::getCardinalityAfterLocalKeyPrefixPreds(CANodeId node,
   return logProps->getResultCardinality();
 }
 
-// LCOV_EXCL_START :cnu
 // Given a node, return it's data-size (i.e. cardinality * rowsize)
 // after application of local preds on the prefix of the clustering key
 // If logProps is passed in is NULL, then ASM will be called to compute
@@ -9170,7 +9069,6 @@ JBBWA::getDataSizeAfterLocalKeyPrefixPreds(CANodeId node,
   return (logProps->getResultCardinality() * nodeRecordSize);
 
 }
-// LCOV_EXCL_STOP
 
 // Given a node, return it's cardinality after application of local preds.
 // If logProps is passed in is NULL, then ASM will be called to compute
@@ -9192,7 +9090,6 @@ JBBWA::getCardinalityAfterLocalPreds(CANodeId node,
   return logProps->getResultCardinality();
 }
 
-// LCOV_EXCL_START :cnu
 // Given a node, return it's data-size (i.e. cardinality * rowsize)
 // after application of local preds. If logProps is passed in is NULL,
 // then ASM will be called to compute the logical properties
@@ -9315,7 +9212,6 @@ CostScalar JBBWA::getNodeDataSize(CANodeId node,
   //return the datasize, datasize will be < 0 if this is not a table
   return (logProps->getResultCardinality() * nodeRecordSize);
 }
-// LCOV_EXCL_STOP
 
 // Given a node, return it's output data size (i.e. rowcount * outputrowsize)
 CostScalar JBBWA::getNodeOutputDataSize(CANodeId node,
@@ -9402,7 +9298,6 @@ void JBB::addJBBC(JBBC* jbbc)
   jbbc->setJBB(this);
 }
 
-// LCOV_EXCL_START 
 // Currently not used
 // Set the GB in the JBB.
 void JBB::setGB(CANodeId gb)
@@ -9412,7 +9307,6 @@ void JBB::setGB(CANodeId gb)
   // gb id must belong to GBAnalysis node (no need to check for null)
   gbAnalysis_->setJBB(this);
 }
-// LCOV_EXCL_STOP
 
 // Set the GB in the JBB using GBAnalysis
 void JBB::setGB(GBAnalysis* gb)
@@ -9755,7 +9649,6 @@ NABoolean JBB::hasMandatoryXP() const
     return FALSE;
 }
 
-// LCOV_EXCL_START :dpm
 const NAString JBB::graphDisplay(const QueryAnalysis* qa) const
 {
   NAString result = "";
@@ -9895,7 +9788,6 @@ const NAString ColAnalysis::getText() const
 
   return result;
 }
-// LCOV_EXCL_STOP
 
 void ColAnalysis::finishAnalysis()
 {
@@ -9924,7 +9816,6 @@ void ColAnalysis::finishAnalysis()
   return;
 }
 
-// LCOV_EXCL_START 
 // Currently not used
 ValueIdSet ColAnalysis::getConnectingVegPreds(ValueId other)
 {
@@ -9932,7 +9823,6 @@ ValueIdSet ColAnalysis::getConnectingVegPreds(ValueId other)
   result.intersectSet(other.colAnalysis()->getVegPreds());
   return result;
 }
-// LCOV_EXCL_STOP
 
 // find all local preds referencing this column
 // I am considering caching this localPred xxx
@@ -9943,7 +9833,6 @@ const ValueIdSet ColAnalysis::getLocalPreds() const
   return result;
 }
 
-// LCOV_EXCL_START 
 // This code was being called from LargeScopeRule.cpp method
 // MJStarJoinIRule::isAStarPattern but that code is no longer used
 // Get all sibling JBBCs that are joined to this table on this column
@@ -9972,7 +9861,6 @@ CANodeIdSet ColAnalysis::getConnectedJBBCs()
 
   return myJoinedJBBCs;
 }
-// LCOV_EXCL_STOP
 
 // Get all sibling JBBCs that are joined to this table on this column
 // these include JBBCs joined via non_VEG preds like t1.a = t2.b + 7
@@ -10005,7 +9893,6 @@ CANodeIdSet ColAnalysis::getAllConnectedJBBCs()
   return myJoinedJBBCs;
 }
 
-// LCOV_EXCL_START 
 // This is no longer used. Seems to have been replaced by getAllConnectingPreds
 // Get connecting Veg Preds between me and this JBBC.
 ValueIdSet ColAnalysis::getConnectingPreds(JBBC* jbbc)
@@ -10016,7 +9903,6 @@ ValueIdSet ColAnalysis::getConnectingPreds(JBBC* jbbc)
   commonPreds.intersectSet(vegPreds_);
   return commonPreds;
 }
-// LCOV_EXCL_STOP
 
 // Get connecting Veg Preds between me and this JBBC.
 ValueIdSet ColAnalysis::getAllConnectingPreds(JBBC* jbbc)
@@ -10044,7 +9930,6 @@ ValueIdSet ColAnalysis::getAllConnectingPreds(JBBC* jbbc)
 
 // ****************************************************************
 
-// LCOV_EXCL_START :dpm
 // this will be changed to a getText method for ValueIdSet
 NAString valueIdSetGetText(const ValueIdSet & set)
 {
@@ -10063,7 +9948,6 @@ NAString valueIdSetGetText(const ValueIdSet & set)
   result += "}";
   return result;
 }
-// LCOV_EXCL_STOP
 
 // FALSE does not mean column is not a constant. It means we did not verify
 // that it is a constant.

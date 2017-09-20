@@ -523,7 +523,6 @@ void RangeSpec::addSubrange(QRScalarValuePtr startVal, QRScalarValuePtr endVal,
         }
         break;
 
-      // LCOV_EXCL_START :rfi
       default:
         {
           // Need this to avoid link errors.
@@ -535,7 +534,6 @@ void RangeSpec::addSubrange(QRScalarValuePtr startVal, QRScalarValuePtr endVal,
                             valueElemType);
         }
         break;
-      // LCOV_EXCL_STOP
     }
 }  // addSubrange(QRScalarValuePtr...
 
@@ -690,13 +688,11 @@ void RangeSpec::addDenormalizedSubrange(const char* typeText,
     }
   else if (!strncmp(typeText, "INTERVAL", typeNameLen))
     intvlType = parseIntervalTypeText(typeText + typeNameLen);
-  // LCOV_EXCL_START :rfi
   else
     assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                        FALSE, QRLogicException,
                        "Invalid data type for normalized range pred item -- %s",
                        typeText);
-  // LCOV_EXCL_STOP
 
   // Fill in the missing value based on the type to turn the open interval into
   // a closed one. This restricts the range to the values allowable for the type.
@@ -1097,13 +1093,11 @@ static Int64 intervalMaxIntegerValue(const NAType& naType, logLevel level)
         maxVal += maxStartFieldUnits * 12;
         break;
 
-      // LCOV_EXCL_START :rfi
       default:
         assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                           FALSE, QRLogicException,
                           "Invalid end field for interval type -- %d",
                           type.getEndField());
-      // LCOV_EXCL_STOP
         break;
     }
 
@@ -1133,14 +1127,12 @@ void SubrangeBase::getExactNumericMinMax(const NAType& type,
                 typeMin = (numType.isSigned() ? (-typeMax - 1) : 0);
                 break;
 
-              // LCOV_EXCL_START :rfi
               default:
                 assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                   FALSE, QRLogicException,
                                   "No case in getExactNumericMinMax() for "
                                   "binary exact numeric of type %d",
                                   numType.getFSDatatype());
-              // LCOV_EXCL_STOP
                 break;
             }
         }
@@ -1186,12 +1178,10 @@ void SubrangeBase::getExactNumericMinMax(const NAType& type,
       typeMax = intervalMaxIntegerValue(type, level);
       typeMin = -typeMax; 
     }
-  // LCOV_EXCL_START :rfi
   else
     assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                        FALSE, QRLogicException,
                        "Type not handled by getExactNumericMinMax() -- %d", type.getTypeQualifier());
-  // LCOV_EXCL_STOP
 } // getExactNumericMinMax()
 
 QRScalarValuePtr SubrangeBase::createScalarValElem(CollHeap* heap,
@@ -1278,13 +1268,11 @@ Int64 SubrangeBase::getStepSize(const NAType* type, logLevel level)
             case REC_DATE_SECOND:
               stepSize = (Int64)pow(10, 6 - dtiType->getFractionPrecision());
               break;
-            // LCOV_EXCL_START :rfi
             default:
               assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                  FALSE, QRDescriptorException,
                                  "unexpected end field for datetime type -- %d",
                                  dtiType->getEndField());
-            // LCOV_EXCL_STOP
           }
         break;
 
@@ -1310,23 +1298,19 @@ Int64 SubrangeBase::getStepSize(const NAType* type, logLevel level)
             case REC_DATE_SECOND:
               stepSize = (Int64)pow(10, 6 - dtiType->getFractionPrecision());
               break;
-            // LCOV_EXCL_START :rfi
             default:
               assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                  FALSE, QRDescriptorException,
                                  "unexpected end field for datetime type -- %d",
                                  dtiType->getEndField());
-            // LCOV_EXCL_STOP
           }
         break;
 
-      // LCOV_EXCL_START :rfi
       default:
         assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "getStepSize() called for incorrect type -- %d",
                            typeQual);
-      // LCOV_EXCL_STOP
     }
 
   return stepSize;
@@ -1819,7 +1803,6 @@ void Subrange<Int64>::initSpecifiedValueCount()
     specifiedValueCount_ = 1;
 }
 
-// LCOV_EXCL_START :rfi
 // This template throws an exception if the function is called for any type other
 // than Int64. The work for Int64 is done by a specialization of the template.
 template <class T> inline
@@ -1828,7 +1811,6 @@ void Subrange<T>::makeStartInclusive(const NAType* type, NABoolean& overflowed)
   assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                     "makeStartInclusive() called for non-Int64-based type");
 }
-// LCOV_EXCL_STOP
 
 // This is the specialization of the above template that makes the start of a
 // subrange inclusive, by adjusting it up to the next allowable value (in its
@@ -1861,7 +1843,6 @@ void Subrange<Int64>::makeStartInclusive(const NAType* type,
     }
 }
 
-// LCOV_EXCL_START :rfi
 // This template throws an exception if the function is called for any type other
 // than Int64. The work for Int64 is done by a specialization of the template.
 template <class T> inline
@@ -1870,7 +1851,6 @@ void Subrange<T>::makeEndInclusive(const NAType* type, NABoolean& overflowed)
   assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                     "makeEndInclusive() called for non-Int64-based type");
 }
-// LCOV_EXCL_STOP
 
 // This is the specialization of the above template that makes the end of a
 // subrange inclusive, by adjusting it down to the previous allowable value (in
