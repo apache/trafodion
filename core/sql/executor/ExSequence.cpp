@@ -1130,7 +1130,6 @@ short ExSequenceTcb::work()
             //
             pstate->step_ = ExSeq_EMPTY;
             pstate->matchCount_ = 0;
-            workAtp_->release();
 
             // Initialize the history buffer in preparation for the
             // next request.
