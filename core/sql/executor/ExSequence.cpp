@@ -350,6 +350,8 @@ ExSequenceTcb::ExSequenceTcb (const ExSequenceTdb &  myTdb,
       ((void*)this, GetHistoryRow, GetHistoryRowOLAP);
     checkPartitionChangeExpr()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
   }
+
+  workAtp_->getTupp(myTdb.tuppIndex_) = new(space) tupp_descriptor;
 }
 
 // Destructor
@@ -404,6 +406,8 @@ void ExSequenceTcb::freeResources()
   }
   firstOLAPBuffer_ = NULL;
   lastOLAPBuffer_ = NULL;
+
+  workAtp_->getTupp(myTdb().tuppIndex_).release();
 }
 
 // work - doit...
@@ -461,6 +465,10 @@ short ExSequenceTcb::work()
   pentry_down = qparent_.down->getHeadEntry();
   pstate = (ExSequencePrivateState*) pentry_down->pstate;
   request = pentry_down->downState.request;
+  workAtp_->copyPartialAtp(pentry_down->getAtp(),0,
+			   MINOF(myTdb().tuppIndex_,
+				 pentry_down->numTuples())-1);
+  // copy temp and input tupps. Last tupp history row
 
   // Take any child replies and process them. Return the processed
   // rows as long the parent queue has room.
@@ -610,10 +618,6 @@ short ExSequenceTcb::work()
               //
             case ex_queue::Q_OK_MMORE:
               {
-                tupp_descriptor histTupp;
-                workAtp_->copyAtp(pentry_down->getAtp());
-                workAtp_->getTupp(myTdb().tuppIndex_) = &histTupp;
-
                 if ( checkPartitionChangeExpr() &&
                        currentHistRowPtr_)
                 {
@@ -1117,7 +1121,8 @@ short ExSequenceTcb::work()
               = pentry_down->downState.parentIndex;
             pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
             pentry_up->upState.setMatchNo(pstate->matchCount_);
-            
+	    workAtp_->releasePartialAtp(0,MINOF(myTdb().tuppIndex_,
+						pentry_down->numTuples())-1);
             qparent_.down->removeHead();
             qparent_.up->insert();
 
@@ -1125,7 +1130,6 @@ short ExSequenceTcb::work()
             //
             pstate->step_ = ExSeq_EMPTY;
             pstate->matchCount_ = 0;
-            workAtp_->release();
 
             // Initialize the history buffer in preparation for the
             // next request.

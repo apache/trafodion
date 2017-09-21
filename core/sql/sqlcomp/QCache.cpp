@@ -595,10 +595,13 @@ NABoolean ParameterTypeList::operator==(const ParameterTypeList& other) const
   if (nParms != other.entries()) {
     return FALSE;
   }
+  const NABoolean STRICT_CHK=FALSE;
+  NABoolean typeEqual;
   for (CollIndex i = 0; i < nParms; i++) {
-    const NABoolean STRICT_CHK=FALSE;
-    if (NOT (at(i).type_->isCompatible(*other.at(i).type_)) ||
-        other.at(i).type_->errorsCanOccur(*at(i).type_, STRICT_CHK)) {
+    typeEqual = (at(i).type_ == other.at(i).type_);
+    if (!typeEqual && // if types are equal don't check any further
+	(!(at(i).type_->isCompatible(*other.at(i).type_)) ||
+	 other.at(i).type_->errorsCanOccur(*at(i).type_, STRICT_CHK))) {
       return FALSE;
     }
     if (*at(i).posns_ != *other.at(i).posns_) 
