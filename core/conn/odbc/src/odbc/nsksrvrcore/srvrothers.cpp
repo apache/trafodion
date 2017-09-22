@@ -6412,11 +6412,8 @@ odbc_SQLSrvr_ExtractLob_sme_(
         exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
     }
-FILE * fp= NULL;
-        fp = fopen("/tmp/closeLOB", "a+");
     switch (extractLobAPI) {
     case 0:
-        fprintf(fp, "new LOB API\n");
         extractData = NULL;
         snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBLENGTH(LOB'%s') LOCATION %Ld", lobHandle, (Int64)&lobLength);
         break;
@@ -6434,8 +6431,6 @@ FILE * fp= NULL;
         extractLen = 0;
         extractData = NULL;
         snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)extractData, &extractLen);
-        fprintf(fp, "close\n");
-        fclose(fp);
         break;
     default:
         return ;
