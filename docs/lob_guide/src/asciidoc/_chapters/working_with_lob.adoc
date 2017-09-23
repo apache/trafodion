@@ -23,11 +23,11 @@
 */
 ////
 
-[#work with lob]
-= Work with LOB
+[#working with lobs]
+= Working with LOBs
 
-[#create a sql table with lob columns]
-== Create a SQL Table with LOB Columns
+[#creating a sql table with lob columns]
+== Creating a SQL Table with LOB Columns
 
 When creating a SQL table with LOB columns, following relevant tables and files are created as well:
 
@@ -39,14 +39,21 @@ When creating a SQL table with LOB columns, following relevant tables and files 
 == Syntax
 
 ```
-CREATE TABLE table-name (lob-column-spec[, lob-column-spec]…)
+CREATE TABLE table-name (column-spec[, column-spec]…)
 ```
 
 ```
+column-spec is:
+lob-column-spec     | 
+other-column-spec
+
 lob-column-spec is:
-column {lob type}
+column-name {lob-data-type}[column-constraint]
 
-lob type is:
+other-column-spec is:
+column-name {data-type}[column-constraint]
+
+lob-data-type is:
 BLOB | CLOB [({numeric literal} [unit])] [STORAGE 'storage literal']
 
 unit is:
@@ -145,8 +152,8 @@ The following is a LOB file with 2 columns you will see 2 files in HDFS:
 
 As rows are added to this table, the LOB data for each row gets appended to the corresponding column’s LOB data file. 
 
-[#insert into a sql table containing lob columns]
-== Insert into a SQL Table Containing LOB Columns
+[#inserting into a sql table containing lob columns]
+== Inserting into a SQL Table Containing LOB Columns
 
 [#syntax]
 === Syntax
@@ -160,9 +167,13 @@ target-col-list is:
 colname[, colname]... 
 
 insert-source is: 
-VALUES(lob_query-expr[, lob_query-expr])
+VALUES(column-expr[, column-expr]...)
 
-lob_query-expr is: 
+column-expr is:
+lob-query-expr           |
+other-query-expr
+
+lob-query-expr is: 
 NULL | ?                                                                     |
 EMPTY_BLOB()                                                                 |
 EMPTY_CLOB()                                                                 |                                     
@@ -181,6 +192,10 @@ hdfs:///{local hdfs file name}
 ``` 
 [#semantics]
 === Semantics
+
+* `_other-query-expr_`
++
+For the syntax and description of `_other-query-expr_`, see the `_query-expr_` in the <<select_statement,SELECT Statement>>.
 
 * `_EMPTY_BLOB(), EMPTY_CLOB()_`
 +
@@ -291,8 +306,8 @@ EXECUTE S USING 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
 INSERT INTO t130lob2 VALUES (1, empty_blob());
 ```
 
-[#insert into a sql table containing lob columns using select clause]
-== Insert into a SQL Table Containing LOB Columns Using Select Clause
+[#inserting into a sql table containing lob columns using select clause]
+== Inserting into a SQL Table Containing LOB Columns Using Select Clause
 
 [#syntax]
 === Syntax
@@ -386,27 +401,27 @@ INSERT INTO t130lob3 SELECT c1,c2,c3 FROM t130lob2;
 SELECT c1,lobtostring(c2,100),lobtostring(c3,100) FROM t130lob3;
 ```
 
-[#update a sql table containing lob columns]
-== Update a SQL Table Containing LOB Columns
+[#updating a sql table containing lob columns]
+== Updating a SQL Table Containing LOB Columns
 
 The source for updating a LOB can be divided into 2 groups:
 
 * Update using parameters/functions
 * Update using LOB handle
 
-[#update using parameters/functions]
-=== Update Using Parameters/Functions
+[#updating using parameters/functions]
+=== Updating Using Parameters/Functions
 
 The following parameters/functions can be used to update.
 
-* A parameter.
-* `EMPTY_BLOB` or `EMPTY_CLOB`.
-* An in-memory lob which is a simple string data.  
+* A parameter
+* `EMPTY_BLOB` or `EMPTY_CLOB`
+* An in-memory lob which is a simple string data 
 +
-To insert this string, a literal needs to be provided.
-* An on-platform file (linux/hdfs file) containing text or binary data.  
-* A user buffer of a specified length allocated in user space.
-* An external LOB file in HDFS.
+To insert this string, a literal needs to be provided
+* An on-platform file (linux/hdfs file) containing text or binary data 
+* A user buffer of a specified length allocated in user space
+* An external LOB file in HDFS
 
 [#syntax]
 ==== Syntax 
@@ -443,7 +458,7 @@ hdfs:///{local hdfs file name}
 [#semantics]
 ==== Semantics
 
-For more information, see Semantics in <<insert into a sql table containing lob columns,Insert into a SQL Table Containing LOB Columns>>.
+For more information, see Semantics in <<inserting into a sql table containing lob columns,Inserting into a SQL Table Containing LOB Columns>>.
 
 [#examples]
 ==== Examples
@@ -478,15 +493,15 @@ UPDATE tlob1 SET c2=buffertolob(LOCATION 12546474, SIZE 4000);
 UPDATE tlob130ext SET c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') WHERE c1=2;
 ```
 
-* In the table t130lob2 where c1 is 1, updates (overwrites) the value of the c2 to xyxyxyxyxyxyx.
+* In the table t130lob2 where c1 is 1, updates (overwrites) value of the c2 to xyxyxyxyxyxyx.
 +
 ```
 PREPARE S FROM UPDATE t130lob2 SET c2=? WHERE c1 =1;
 EXECUTE S USING 'xyxyxyxyxyxyx';
 ```
 
-[# update using lob handle]
-=== Update Using Lob Handle
+[# updating using lob handle]
+=== Updating Using Lob Handle
 
 A LOB handle is specified to the update (similar to extract). 
 
@@ -509,7 +524,7 @@ For more information about examples, see http://trafodion.incubator.apache.org/d
 [#considerations]
 === Considerations
 
-* The keyword `'APPEND'` can be used to append to lob data that may already exist in a LOB column. If it is not specified, the data is overwritten.
+* The keyword `APPEND` can be used to append to lob data that may already exist in a LOB column. If it is not specified, the data is overwritten.
 
 * When a LOB column is updated or overwritten, a new section is written into the LOB data file. The old section remains in HDFS but won’t have any pointer or reference to it.
 
@@ -518,7 +533,7 @@ For more information about examples, see http://trafodion.incubator.apache.org/d
 +
 So a LOB column that contains data that has been appended several times can contain multiple descriptor rows in the Descriptor Chunks table to describe where each chunk belonging to this LOB begins/ends.
 
-* APPEND cannot be used on function `EXTERNALTOLOB`.
+* `APPEND` cannot be used on function `EXTERNALTOLOB`.
 
 * When an external LOB is updated outside of Trafodion, an update needs to be done to update the descriptor files in Trafodion. 
 +
@@ -530,8 +545,8 @@ Similarly, if a column is declared without the `STORAGE 'External'` attribute, t
 +
 That is, once the storage for a LOB column is declared at CREATE time, the attribute is set and cannot be modified. 
 
-[#select column from a sql table containing lob columns]
-== Select Column from a SQL Table Containing LOB Columns
+[#selecting column from a sql table containing lob columns]
+== Selecting Column from a SQL Table Containing LOB Columns
 
 Selecting a row from a table will give back the lob handle for the lob column. 
 
@@ -567,8 +582,8 @@ LOBH00000200010423909193650389683319694857010382259683718212310961182290216021"T
 --- 1 row(s) selected.
 ```
 
-[#extract lob data from a sql table containing lob columns]
-== Extract LOB Data from a SQL Table Containing LOB Columns 
+[#extracting lob data from a sql table containing lob columns]
+== Extracting LOB Data from a SQL Table Containing LOB Columns 
 
 Extract lob data can be done in two ways:
 
@@ -589,8 +604,8 @@ The user/application will be responsible for redriving the extract until end of 
 +
 The extracted buffer data can then be written to files or another location as the application chooses. 
 
-[#extract lob data into a file for a given lob handle]
-=== Extract Lob Data into a File for a Given Lob Handle 
+[#extracting lob data into a file for a given lob handle]
+=== Extracting Lob Data into a File for a Given Lob Handle 
 
 [#syntax]
 ==== Syntax
@@ -659,8 +674,8 @@ EXTRACT LOBTOFILE (LOB 'LOBH0000020001052011799729258368171988412143721051681251
 Success. Targetfile:tlob130_deep.jpg  Length: 159018
 ```
 
-[#extract lob data into a user specified buffer]
-=== Extract Lob Data into a User Specified Buffer
+[#extracting lob data into a user specified buffer]
+=== Extracting Lob Data into a User Specified Buffer
 
 Extract from a LOB column into a target user buffer of a specified size. The Trafodion engine will retrieve exactly the amount of requested data. The user/application will be responsible for redriving the extract until end of data. Then the extracted buffer data can be written to files or another location as the application chooses. 
 
@@ -676,8 +691,8 @@ For the cases of SUCCESS or EOD, a length will also be returned to the user, so 
 EXTRACT LOBTOBUFFER (LOB 'lob handle as quoted string', LOCATION lob output buffer address as long, SIZE input/output address of length container as long)
 ```
 
-[#extract lob length for a given lob handle]
-=== Extract Lob Length for a Given Lob Handle
+[#extracting lob length for a given lob handle]
+=== Extracting Lob Length for a Given Lob Handle
 
 Extract from a LOB column straight into an on-platform linux or HDFS file in one shot. 
 

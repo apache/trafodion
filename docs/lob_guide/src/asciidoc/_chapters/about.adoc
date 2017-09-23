@@ -49,19 +49,19 @@ This is a new guide.
 &#8226; 1.5 <<lob restrictions,LOB Restrictions>> +
 &#8226; 1.6 <<lob related sql statements and functions,LOB Related SQL Statements and Functions>>.
 
-| <<Work with LOB,Work with LOB>>              | Explains how to use a LOB with SQL statement and covers following topics: +
-&#8226; 2.1  <<create a sql table with lob columns,Create a SQL Table with LOB Columns>> +
-&#8226; 2.2  <<insert into a sql table containing lob columns,Insert into a SQL Table Containing LOB Columns>> +
-&#8226; 2.3  <<insert into a sql table containing lob columns using select clause,Insert into a SQL Table Containing LOB Columns Using Select Clause>> +
-&#8226; 2.4  <<update a sql table containing lob columns,Update a SQL Table Containing LOB Columns>> +
-&#8226; 2.5  <<select column from a sql table containing lob columns,Select Column from a SQL Table Containing LOB Columns>> +
-&#8226; 2.6  <<extract lob data from a sql table containing lob columns,Extract LOB Data from a SQL Table Containing LOB Columns>> +
-&#8226; 2.7  <<delete column from a sql table containing lob columns,Delete Column from a SQL Table Containing LOB columns>> +
-&#8226; 2.8  <<drop a sql table containing lob columns,Drop a SQL Table Containing LOB Columns>> +
+| <<working with LOBs,Working With LOBs>>              | Explains how to use a LOB with SQL statement and covers following topics: +
+&#8226; 2.1  <<creating a sql table with lob columns,Creating a SQL Table with LOB Columns>> +
+&#8226; 2.2  <<inserting into a sql table containing lob columns,Inserting into a SQL Table Containing LOB Columns>> +
+&#8226; 2.3  <<inserting into a sql table containing lob columns using select clause,Inserting into a SQL Table Containing LOB Columns Using Select Clause>> +
+&#8226; 2.4  <<updating a sql table containing lob columns,Updating a SQL Table Containing LOB Columns>> +
+&#8226; 2.5  <<selecting column from a sql table containing lob columns,Selecting Column from a SQL Table Containing LOB Columns>> +
+&#8226; 2.6  <<extracting lob data from a sql table containing lob columns,Extracting LOB Data from a SQL Table Containing LOB Columns>> +
+&#8226; 2.7  <<deleting column from a sql table containing lob columns,Deleting Column from a SQL Table Containing LOB columns>> +
+&#8226; 2.8  <<dropping a sql table containing lob columns,Dropping a SQL Table Containing LOB Columns>> +
 &#8226; 2.9  <<garbage collection,Garbage Collection>> +
 &#8226; 2.10 <<cleanup of a sql table containing lob columns,Cleanup of a SQL Table Containing LOB Columns>> +
 &#8226; 2.11 <<showddl for lobs,SHOWDDL for LOBs>> +
-&#8226; 2.12 <<get command for lob tables,Get Command for LOB Tables>>
+&#8226; 2.12 <<getting command for lob tables,Getting Command for LOB Tables>>
 |===
 
 == Notation Conventions
