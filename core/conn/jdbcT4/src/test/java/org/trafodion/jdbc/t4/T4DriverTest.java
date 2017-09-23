@@ -23,12 +23,7 @@
 
 package org.trafodion.jdbc.t4;
 
-import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -43,29 +38,6 @@ public class T4DriverTest {
 	}
 
 
-	@Test
-	public void readLob() throws SQLException {
-		Connection conn = null;
-		try {
-			conn = DriverManager.getConnection("jdbc:t4jdbc://192.168.0.36:23400/:", "zz", "zz");
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("select c2 from tlob");
-			while (rs.next()) {
-				Blob blob = rs.getBlob(1);
-				System.out.println("LOB length " + blob.length());
-				System.out.println(new String(blob.getBytes(1, (int)blob.length())));
-			}
-			conn.close();
-			conn = null;
-		}
-		catch (SQLException se) { 
-			System.out.println(se.getMessage());
-		}
-		finally {
-			if (conn != null)
-				conn.close();
-		}
-	}
 	@Test
 	public void acceptsURL() throws SQLException {
 		String url = "jdbc:t4jdbc://localhost:23400/:";
