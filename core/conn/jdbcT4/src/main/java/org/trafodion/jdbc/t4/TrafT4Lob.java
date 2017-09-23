@@ -103,7 +103,7 @@ public abstract class TrafT4Lob {
 
 		try {
 			int pos = 0;
-			int chunkSize = 100 * 1024 * 1024;
+            int chunkSize = connection_.props_.getLobChunkSize() * 1024 * 1024;
 			while (pos < length) {
 				int remainSize = (int) (length - pos);
 				int fecthSize = remainSize < chunkSize ? remainSize : chunkSize;
@@ -153,7 +153,7 @@ public abstract class TrafT4Lob {
 		    return ;
 		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
 
-		final long chunkSize = 100 * 1024 * 1024;
+        final long chunkSize = connection_.props_.getLobChunkSize() * 1024 * 1024;
 		LogicalByteArray wbuffer = null;
 
 		byte[] valueBuffer = null;
