@@ -949,10 +949,11 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   description += cacheBuf ;
   description += " " ;
 
-  if (!(((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->cacheBlocks())) {
-    description += "cache_blocks: " ;
+  description += "cache_blocks: " ;
+  if (!(((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->cacheBlocks()))
     description += "OFF " ;
-  }
+  else
+    description += "ON " ;
 
   if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->useSmallScanner())) {
     description += "small_scanner: " ;

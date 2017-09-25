@@ -90,6 +90,8 @@ class atp_struct
 				       short last_tupp);
     inline unsigned short  numTuples() const;
     inline void         release();   // de-initialize
+    inline void releasePartialAtp(short from_first_tupp,
+				  short last_tupp) ;
 
   // 
   // Methods for manipulating diagnostics area.
@@ -305,6 +307,21 @@ inline void atp_struct::release()
     tuppArray_[i].release();
   }
 
+  // null-out diags area pointer; setDiagsArea releases existing
+  // reference to diags area if it is non-null
+  setDiagsArea(0);
+}
+
+inline void atp_struct::releasePartialAtp(short from_first_tupp,
+ 					  short last_tupp)
+{
+  // Release each tupp.
+  //
+  for(Int32 i=from_first_tupp; i<=last_tupp; i++)
+  {
+    tuppArray_[i].release();
+  }
+  
   // null-out diags area pointer; setDiagsArea releases existing
   // reference to diags area if it is non-null
   setDiagsArea(0);

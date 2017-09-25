@@ -4190,6 +4190,12 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
           generator->setProcessLOB(TRUE);
+	  
+	  // flag set for HBase scan in HbaseAccess::preCodeGen
+	  // unique scan unlikely for hive scans except 
+	  // with predicate on virtual cols.
+	  if (!(searchKey() && searchKey()->isUnique()))
+	    generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
         }
     }
 

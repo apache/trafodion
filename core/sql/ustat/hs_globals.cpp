@@ -9376,14 +9376,14 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
                mgroup->clistr->append(sampleOption->data());
 
             mgroup->clistr->append(" GROUP BY ");
-            mgroup->clistr->append(mgroup->colNames->data());
+            mgroup->clistr->append(mgroupColNames);
             mgroup->clistr->append(" FOR READ UNCOMMITTED ACCESS) T(");
-            mgroup->clistr->append(mgroup->colNames->data());
+            mgroup->clistr->append(mgroupColNames);
             mgroup->clistr->append(", FMTVAL, SUMVAL)");
             if(collectMCSkewedValues)
             {
               mgroup->clistr->append(" ORDER BY ");
-              mgroup->clistr->append(mgroup->colNames->data());
+              mgroup->clistr->append(mgroupColNames);
             }
     
             cursor = new(STMTHEAP) HSCursor;

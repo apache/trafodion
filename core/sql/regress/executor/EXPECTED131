@@ -103,6 +103,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ......... 5
+  cache_blocks ........... ON
   small_scanner .......... ON
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
@@ -146,6 +147,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 99
+  cache_blocks ........... ON
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 99)
@@ -301,6 +303,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 30
+  cache_blocks ........... ON
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 30)
@@ -344,6 +347,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 30
+  cache_blocks ........... ON
   small_scanner .......... ON
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
