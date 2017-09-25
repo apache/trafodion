@@ -418,7 +418,6 @@ Lng32 Tree::generateInterRuns()
 }
 
 //  **********************UNUSED METHODS ********************************
-// LCOV_EXCL_START
 
 Lng32 Tree::sortClientOutOfMem(void)
 {
@@ -507,7 +506,6 @@ UInt32 Tree::getOverheadPerRecord(void)
   return(2 * (sizeof(TreeNode) + sizeof(Record)));
 }
 
-// LCOV_EXCL_STOP
 
 
 

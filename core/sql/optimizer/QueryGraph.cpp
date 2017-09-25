@@ -20,7 +20,6 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-// LCOV_EXCL_START
 // code that is not compiled, but for some reason is reported
 // just excluding the entire file
 #include "AppliedStatMan.h"
@@ -725,4 +724,3 @@ const CANodeIdSet * QueryGraphConnection::getBestIncomingReductionPath()
   return bestIncomingReductionPath_;
 }
 //QueryGraphConnection::getBestIncomingReductionPath
-// LCOV_EXCL_STOP

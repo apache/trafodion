@@ -124,7 +124,6 @@ void QmpPublish::performRewritePublishReading()
     // commit the last transaction.
     sqlInterface_.commitTransaction();
   }
-  // LCOV_EXCL_START :rfi
   catch(QRDatabaseException ex)
   {
     // Handle database errors here.
@@ -133,7 +132,6 @@ void QmpPublish::performRewritePublishReading()
       "Error reading PUBLISH table from database - exiting.");
     exit(0);
   }
-  // LCOV_EXCL_STOP
 }  // End of performRewritePublishReading
 
 // *************************************************************** 
@@ -151,7 +149,7 @@ void QmpPublish::preparePublishRewritePublishRowToSend(MVQR_Publish* publishData
     sqlInterface_.getSchemaVersion(publishData->catalogUID_);
   if (version == NULL)
   {
-    QRLogger::log(CAT_QMP, LL_ERROR,  // LCOV_EXCL_LINE :rfi
+    QRLogger::log(CAT_QMP, LL_ERROR,
       "Not expecting an empty catalog.");
     return;
   }
@@ -241,7 +239,7 @@ QRPublishDescriptorPtr QmpPublish::createPublishDescriptor(MVQR_Publish* publish
 ComPublishMVOperationType QmpPublish::convertOperationType(char * operation)
 {
   if (operation == NULL)
-    return COM_PUBLISH_MV_UNKNOWN;  // LCOV_EXCL_LINE :rfi
+    return COM_PUBLISH_MV_UNKNOWN;
 
   if (strncmp(operation,COM_PUBLISH_MV_CREATE_LIT,2) == 0)
     return COM_PUBLISH_MV_CREATE;
@@ -261,12 +259,10 @@ ComPublishMVOperationType QmpPublish::convertOperationType(char * operation)
     return COM_PUBLISH_MV_TOUCH;
   else if (strncmp(operation,COM_PUBLISH_MV_REPUBLISH_LIT,2) == 0)
     return COM_PUBLISH_MV_REPUBLISH;
-  // LCOV_EXCL_START :rfi
   else if (strncmp(operation,COM_PUBLISH_MV_UNKNOWN_LIT,2) == 0)
     return COM_PUBLISH_MV_UNKNOWN;
   else
     return COM_PUBLISH_MV_UNKNOWN;
-  // LCOV_EXCL_STOP
 
 }  // End of convertOperationType
 

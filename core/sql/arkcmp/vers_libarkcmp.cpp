@@ -26,6 +26,4 @@
 #define VERS_CV_MIN 0
 #define VERS_CV_UPD 1
 
-// LCOV_EXCL_START
 VERS_LIB(libarkcmp)
-// LCOV_EXCL_STOP

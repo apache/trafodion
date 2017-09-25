@@ -508,7 +508,7 @@ inline void HashBufferSerial::setRowLength(HashRow *row, UInt32 len) {
 class Bucket {
 public:
   Bucket();
-   ~Bucket() {}; // LCOV_EXCL_LINE
+   ~Bucket() {};
   void init();
   inline ULng32 getRowCount() const;
   inline Cluster * getInnerCluster () const;

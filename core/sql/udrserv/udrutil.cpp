@@ -53,7 +53,6 @@ FILE *UdrTraceFile = stdout;
 
 #define TF_STRING(x) ( (x) ? ("TRUE") : ("FALSE") )
 
-// LCOV_EXCL_START
 void displaySqlBuffer(SqlBuffer *sbuf, Lng32 sbuflen, ostream &os)
 {
   os << "Display an SQL Buffer:" << endl;
@@ -618,7 +617,6 @@ void doMessageBox(UdrGlobals *UdrGlob, Int32 trLevel,
                UdrGlob->serverName_, MB_OK|MB_ICONINFORMATION);
   }
 }
-// LCOV_EXCL_STOP
 
 #ifdef _DEBUG
 void sleepIfPropertySet(LmLanguageManager &lm,

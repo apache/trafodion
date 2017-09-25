@@ -266,7 +266,7 @@ public:
 
   // For determining if the partitioning key is a prefix of the
   // sort key (i.e. the clustering key) 
-  NABoolean isPartKeyPrefixOfSortKey() const; // LCOV_EXCL_LINE
+  NABoolean isPartKeyPrefixOfSortKey() const;
 
   // --- For sort key
   inline NABoolean isSorted() const   { return (sortKey_.entries() > 0); }
@@ -549,7 +549,6 @@ private:
 }; // class OptimizeForNRows
 
 // -- Optimize for first row - not used in SQ
-// LCOV_EXCL_START
 class OptimizeForFirstRow : public OptimizeForNRows
 {
 public:
@@ -558,7 +557,6 @@ public:
   virtual ~OptimizeForFirstRow() {}
 
 }; // class OptimizeForFirstRow
-// LCOV_EXCL_STOP
 
 // -- Optimize for last row
 class OptimizeForLastRow : public OptimizeForNRows
@@ -574,7 +572,6 @@ public:
 }; // class OptimizeForLastRow
 
 // -- Optimize for resource consumption - not used in SQ
-// LCOV_EXCL_START
 class OptimizeForResourceConsumption : public PerformanceGoal
 {
 public:
@@ -583,7 +580,6 @@ public:
   virtual NABoolean isOptimizeForResourceConsumption() const;
 
 }; // class OptimizeForResourceConsumption
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -991,7 +987,7 @@ public:
   // ---------------------------------------------------------------------
   inline const RelExpr * getMustMatch() const       { return mustMatch_; }
 
-  RelExpr* getInputMustMatch(Lng32 childIndex) const; // LCOV_EXCL_LINE
+  RelExpr* getInputMustMatch(Lng32 childIndex) const;
 
 
   void setPushDownRequirement(const PushDownRequirement* pdp) 

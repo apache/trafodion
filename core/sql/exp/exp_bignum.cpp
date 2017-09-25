@@ -75,13 +75,11 @@ BigNum::~BigNum()
 #pragma warning (default : 4273)  //warning elimination
 
 #pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 Attributes * BigNum::newCopy()
 {
   BigNum * new_copy = new BigNum(); 
   *new_copy = *this;
   return new_copy;
-// LCOV_EXCL_STOP
 };
 #pragma warning (default : 4273)  //warning elimination
 
@@ -95,11 +93,9 @@ Attributes * BigNum::newCopy(NAMemory * heap)
 #pragma warning (default : 4273)  //warning elimination
 
 #pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 void BigNum::copyAttrs(Attributes *source) 
 {
   *this = *((BigNum *) source);
- // LCOV_EXCL_STOP
   return;
 };
 #pragma warning (default : 4273)  //warning elimination
@@ -156,7 +152,6 @@ void BigNum::fixup(Space * space,
 // Convert (i.e. copy) the Big Num from op_data[1] ("source") to op_data[0] ("this").
 
 #pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 short BigNum::conv(Attributes * source, char * op_data[])
 {
   return BigNumHelper::ConvBigNumWithSignToBigNumWithSignHelper(((BigNum *) source)->getLength(),
@@ -164,7 +159,6 @@ short BigNum::conv(Attributes * source, char * op_data[])
                                                                 op_data[1],
                                                                 op_data[0]);
 }
-// LCOV_EXCL_STOP
 #pragma warning (default : 4273)  //warning elimination
 
 
@@ -518,7 +512,6 @@ short BigNum::castFrom (Attributes * source,
   unsigned short * thisDataInShorts = (unsigned short *) op_data[0];
   
   if ((sourceType >= REC_MIN_INTERVAL) && (sourceType <= REC_MAX_INTERVAL)) {
-	  // LCOV_EXCL_START
     switch (source1->getLength()) {
     case SQL_SMALL_SIZE:
       sourceType = REC_BIN16_SIGNED;
@@ -528,7 +521,6 @@ short BigNum::castFrom (Attributes * source,
       break;
     case SQL_LARGE_SIZE:
       sourceType = REC_BIN64_SIGNED;
-      // LCOV_EXCL_STOP
       break;
     }
   }
@@ -539,7 +531,6 @@ short BigNum::castFrom (Attributes * source,
   
   switch (sourceType) {
     case REC_BIN16_SIGNED: {
-    	// LCOV_EXCL_START
       if ( *((short *) op_data[1]) < 0) {
 #pragma nowarn(1506)   // warning elimination 
         thisDataInShorts[0] = -*((short *) op_data[1]);
@@ -549,13 +540,11 @@ short BigNum::castFrom (Attributes * source,
       else {
         thisDataInShorts[0] = *((short *) op_data[1]);
         }
-      // LCOV_EXCL_STOP
       }
       break;
      
     case REC_BPINT_UNSIGNED:
     case REC_BIN16_UNSIGNED: {
-    	// LCOV_EXCL_START
       thisDataInShorts[0] = *((unsigned short *) op_data[1]);
       }
       break;
@@ -567,7 +556,6 @@ short BigNum::castFrom (Attributes * source,
         }
       else {
         *((ULng32 *) op_data[0])  = *((Lng32 *) op_data[1]);
-        // LCOV_EXCL_STOP
         }
 
 #ifdef NA_LITTLE_ENDIAN
@@ -615,7 +603,6 @@ short BigNum::castFrom (Attributes * source,
       
     case REC_DECIMAL_LSE: {
       // Remember first char of source in temp
-    	// LCOV_EXCL_START
       char temp = op_data[1][0];
 
       // Temporarily suppress sign bit in source
@@ -750,7 +737,6 @@ short BigNum::castFrom (Attributes * source,
       }
 
       break;
-      // LCOV_EXCL_STOP
     case REC_FLOAT64: {
 
       // The code below is modeled on the corresponding code in large decimals.
@@ -881,7 +867,6 @@ short BigNum::castFrom (Attributes * source,
 
 
 #pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 void BigNum::encode(const char * inBuf, char * outBuf, short desc)
 {
   char sign = BIGN_GET_SIGN(inBuf, getLength());
@@ -967,7 +952,6 @@ void BigNum::init(char * op_data, char * str)
   // Set sign bit
   if (str[0] == '-')
     BIGN_SET_SIGN(op_data, getLength());
-  // LCOV_EXCL_STOP
 }
 #pragma warning (default : 4273)  //warning elimination
 

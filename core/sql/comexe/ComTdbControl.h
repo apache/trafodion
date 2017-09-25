@@ -53,7 +53,6 @@ enum ControlQueryType
 ///////////////////////////////////////////////////////
 // class ExControlTdb
 ///////////////////////////////////////////////////////
-// LCOV_EXCL_START
 class ComTdbControl : public ComTdb
 {
 friend class ExControlTcb;
@@ -145,5 +144,4 @@ private:
   char fillersComTdbControl_[30];  // 42-71
 
 };
-// LCOV_EXCL_STOP
 #endif

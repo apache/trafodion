@@ -119,7 +119,6 @@ CliGlobals::CliGlobals(NABoolean espProcess)
   init(espProcess, NULL);
   globalsAreInitialized_ = TRUE;
 }
-//LCOV_EXCL_STOP
 
 void CliGlobals::init( NABoolean espProcess,
                        StatsGlobals *statsGlobals
@@ -215,14 +214,11 @@ void CliGlobals::init( NABoolean espProcess,
     {
       error = statsGlobals_->openStatsSemaphore(semId_);
       // Behave like as if stats is not available
-      //ss_cc_change - rare error case
-      //LCOV_EXCL_START
       if (error != 0)
       {
 	statsGlobals_ = NULL;
 	statsHeap_ = getExecutorMemory();
       }
-      //LCOV_EXCL_STOP
       else
       {
         error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
@@ -307,8 +303,6 @@ void CliGlobals::init( NABoolean espProcess,
   // could initialize the program file name here but ...
   myProgName_[0] = '\0';
 }
-//ss_cc_change
-//LCOV_EXCL_START
 CliGlobals::~CliGlobals()
 {
   arkcmpInitFailed_ = arkcmpERROR_; // (it's corrupt after deleting, anyway...)
@@ -342,7 +336,6 @@ Lng32 CliGlobals::getNextUniqueContextHandle()
     return contextHandle;
 }
 
-//LCOV_EXCL_STOP
 IpcPriority CliGlobals::myCurrentPriority()
 {
   IpcPriority myPriority;
@@ -354,7 +347,6 @@ IpcPriority CliGlobals::myCurrentPriority()
   return myPriority;
 }
 
-//LCOV_EXCL_STOP
 
 // NOTE: Unlike REFPARAM_BOUNDSCHECK, this method does not verify that
 //       the pointer "startAddress" actually points to a valid address
@@ -494,7 +486,6 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
   return result;
 }
 
-//LCOV_EXCL_START
 void * CliGlobals::getSegmentStartAddrOnNSK()
 {
 
@@ -544,8 +535,6 @@ Lng32 CliGlobals::createContext(ContextCli* &newContext)
    
   return 0;
 }
-//ss_cc_change : This was relevant only when we supported nowait CLI
-//LCOV_EXCL_START
 Lng32 CliGlobals::dropContext(ContextCli* context)
 {
   if (!context)
@@ -590,7 +579,6 @@ Lng32 CliGlobals::dropContext(ContextCli* context)
   cliSemaphore_->release();
   return 0;
 }
-//LCOV_EXCL_STOP
 
 ContextCli * CliGlobals::getContext(SQLCTX_HANDLE context_handle, 
                                     NABoolean calledFromDrop)
@@ -908,17 +896,12 @@ char * CliGlobals::getEnv(const char * name)
   return (char*)ComRtGetEnvValueFromEnvvars((const char**)envvars_, name);
 }
 //
-//ss_cc_change : unused anywhere in our code base
-//LCOV_EXCL_START
 Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
 {
     theContext->reset(contextMsg);  
     return SUCCESS;
 }
-//LCOV_EXCL_STOP
 
-//ss_cc_change POS featue no longer used
-//LCOV_EXCL_START
 void CliGlobals::clearQualifiedDiskInfo()
 {
   CollHeap *heap = defaultContext_->exCollHeap();

@@ -272,7 +272,6 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
 
   if (def->getAttrEnum() == NSK_DBG_LOG_FILE)
   {
-    // LCOV_EXCL_START
     DefaultConstants attrEnum = def->getAttrEnum();
     const char * optDbgLog =
       ActiveSchemaDB()->getDefaults().getValue(attrEnum);
@@ -293,7 +292,6 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
 
     CURRCONTEXT_OPTDEBUG->openLog(logFileName);
 
-    // LCOV_EXCL_STOP
   }
 
   if (def->getAttrEnum() == NSK_DBG_COMPILE_INSTANCE)

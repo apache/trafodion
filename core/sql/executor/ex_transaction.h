@@ -403,11 +403,11 @@ public:
   ex_queue_pair getParentQueue() const{return qparent_;}; 
   inline Int32 orderedQueueProtocol() const{return ((const ExTransTdb &)tdb).orderedQueueProtocol();}
 
-  void freeResources(){};  // LCOV_EXCL_LINE Code not used
+  void freeResources(){};
   
   Int32 numChildren() const { return 0; }   
 
-  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; }  // LCOV_EXCL_LINE Code not used
+  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; }
 
 private:
   ex_queue_pair	qparent_;

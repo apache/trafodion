@@ -79,10 +79,8 @@ void ReinitRuleSet(RuleSet* rules)
 Rule::Rule (const char * name, RelExpr * pattern, RelExpr * substitute)
 {
   if (name == NULL)
-// LCOV_EXCL_START
 // all current rules have name, which is a good practice
     name_ = "no user name";
-// LCOV_EXCL_STOP
   else
     name_ = name;
 
@@ -97,16 +95,13 @@ Rule::Rule (const char * name, RelExpr * pattern, RelExpr * substitute)
 
 } // Rule::Rule
 
-// LCOV_EXCL_START
 // Rules are created once and never deleted
 Rule::~Rule ()
 {
   delete pattern_;
   delete substitute_;
 } // Rule::~Rule
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 // print methods are for debugging
 void Rule::print (FILE * f, const char * prefix, const char * suffix)
 {
@@ -116,7 +111,6 @@ void Rule::print (FILE * f, const char * prefix, const char * suffix)
   substitute_ -> print (f, "  Substitute = ", "");
   fprintf (f, "%s\n", suffix);
 } // Rule::print
-// LCOV_EXCL_STOP
 
 NABoolean Rule::isImplementationRule() const
 {
@@ -395,14 +389,12 @@ RuleSet::RuleSet(Int32 approxNumRules, CollHeap* h) :
   initializeAllPasses();
 }
 
-// LCOV_EXCL_START
 // Rules are created once and never deleted
 RuleSet::~RuleSet()
 {
   for (Lng32 i = 0; i < (Lng32)allRules_.entries(); i++)
     delete allRules_[i];
 }
-// LCOV_EXCL_STOP
 
 void RuleSet::insert(Rule * r)
 {
@@ -513,7 +505,6 @@ void  RuleSet::initializeFirstPass()
   setTotalPasses();
 }
 
-// LCOV_EXCL_START
 // this is called by the old optimization driver i.e. RelExpr::optimize
 // the new optimization driver is method RelExpr::optimize2
 NABoolean RuleSet::nextPass()
@@ -527,7 +518,6 @@ NABoolean RuleSet::nextPass()
   else
     return FALSE;
 }
-// LCOV_EXCL_STOP
 
 void RuleSet::setCurrentPassNumber(Lng32 passNumber)
 {
@@ -594,7 +584,6 @@ NABoolean RulesPerContextList::applied (const Context * const context,
   return FALSE;
 }
 
-// LCOV_EXCL_START
 // not called anywhere in the code
 //
 // Has the provided rule been applied in any prior context which has the
@@ -613,7 +602,6 @@ NABoolean RulesPerContextList::applied (const EstLogPropSharedPtr& inputLogProp,
   }
   return FALSE;
 }
-// LCOV_EXCL_STOP
 
 void RulesPerContextList::addRule (const Context* const context,
 				   NAUnsigned ruleNumber)
@@ -641,7 +629,6 @@ void RulesPerContextList::addRule (const Context* const context,
   insertAt (0, newEntry);
 }
 
-// LCOV_EXCL_START
 // method is not called anywhere
 void RulesPerContextList::removeRule (const Context* const context,
 				   NAUnsigned ruleNumber)
@@ -659,7 +646,6 @@ void RulesPerContextList::removeRule (const Context* const context,
       i++;
   }
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for class Guidance

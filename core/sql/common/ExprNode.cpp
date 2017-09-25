@@ -806,7 +806,6 @@ ExprNode::ExprNode(const ExprNode& s)
 
 ExprNode::~ExprNode() {}
 
-// LCOV_EXCL_START
 ExprNode * ExprNode::getChild(Lng32 )
 {
   ABORT("virtual function ExprNode::getChild() must be redefined");
@@ -908,5 +907,4 @@ void ExprNode::addLocalExpr(LIST(ExprNode *) &,
 {
   // the default implementation is to do nothing
 }
-// LCOV_EXCL_STOP
 

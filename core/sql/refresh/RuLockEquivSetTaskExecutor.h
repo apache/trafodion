@@ -87,19 +87,16 @@ public:
 	//----------------------------------//
 protected:
 	//-- Implementation of pure virtual
-	// LCOV_EXCL_START :cnu
 	virtual Lng32 GetIpcBufferSize() const
 	{
 		return 0;	// The task is always performed locally
 	}
-	// LCOV_EXCL_STOP
 
 	//----------------------------------//
 	//	Private Members
 	//----------------------------------//
 private:
 	// Not implemented because this executor always runs in the main process
-	// LCOV_EXCL_START :cnu
 
 	// These functions serialize/de-serialize the executor's context 
 	// for the message communication with the remote server process
@@ -123,7 +120,6 @@ private:
 	{ 
 		RUASSERT(FALSE); 
 	}
-	// LCOV_EXCL_STOP
 
 private:
 	//-- Prevent copying

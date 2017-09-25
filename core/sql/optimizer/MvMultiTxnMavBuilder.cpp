@@ -315,7 +315,6 @@ RelExpr *MvMultiTxnMavBuilder::buildReadIudLogBlock()
 // Ofcourse that sorting the range log records is must cheaper then sorting 
 // the table records after the join.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 Union *MvMultiTxnMavBuilder::buildUnionBetweenRangeAndIudBlocks(RelExpr *scanIUDLogBlock,
 							      RelExpr *scanRangeLogBlock) const
 {
@@ -324,16 +323,13 @@ Union *MvMultiTxnMavBuilder::buildUnionBetweenRangeAndIudBlocks(RelExpr *scanIUD
 
   return unionNode;
 }  // MvMultiTxnMavBuilder::buildUnionBetweenRangeAndIudBlocks()
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 NABoolean MvMultiTxnMavBuilder::needAlternateCIorder() const
 {
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 ItemExpr *MvMultiTxnMavBuilder::buildSelectionListForScanOnIudLog() const
@@ -688,7 +684,6 @@ RelExpr *MvMultiTxnMavBuilder::buildInsertContextNode()
 // b) Catchup predicates
 // c) Phase1 predicates
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvMultiTxnMavBuilder::buildSelectionPredicateForScanOnRangeLog() const
 {
   // a)
@@ -728,7 +723,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildSelectionPredicateForScanOnRangeLog() const
  
   return result;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Add the following selection predicate to the Scan of the range log for 
@@ -737,7 +731,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildSelectionPredicateForScanOnRangeLog() const
 //
 // Predicate a) is only added for Catchup activations.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvMultiTxnMavBuilder::buildCatchupSelectionPredicateForScanOnRangeLog() const
 {
   // a)
@@ -757,7 +750,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildCatchupSelectionPredicateForScanOnRangeLog(
   return predA;
 
 } // MvMultiTxnMavBuilder::buildCatchupSelectionPredicateForScanOnRangeLog()
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Add the following selection predicate to the Scan of the range log for 
@@ -773,7 +765,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildCatchupSelectionPredicateForScanOnRangeLog(
 // range type. When the upper boundary of the range is closed, the condition
 // is >=, otherwise it is >.
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvMultiTxnMavBuilder::buildPhase1SelectionPredicateForScanOnRangeLog() const
 {
   // a)
@@ -813,7 +804,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildPhase1SelectionPredicateForScanOnRangeLog()
   return new(heap_) BiLogic(ITM_AND, predB, predC);
 
 }  // MvMultiTxnMavBuilder::buildPhase1SelectionPredicateForScanOnRangeLog()
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // For multi transactional refresh, there are two additional predicates to
@@ -824,7 +814,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildPhase1SelectionPredicateForScanOnRangeLog()
 // When Catchup
 //    EndCtx.CI   >  BASE_TABLE.CI DIRECTEDBY <direction-vector>
 // Excluded from coverage test - used only with range logging.
-// LCOV_EXCL_START
 ItemExpr *MvMultiTxnMavBuilder::buildRangeLogJoinPredicate() const
 {
   // Call the base class for the normal predicate.
@@ -880,7 +869,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildRangeLogJoinPredicate() const
 
   return predicate;
 }  // MvMultiTxnMavBuilder::buildRangeLogJoinPredicate()
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Do not use unions when their are too many epochs because it will blow the
@@ -909,7 +897,6 @@ NABoolean MvMultiTxnMavBuilder::useUnionBakeboneToMergeEpochs() const
 // ===========================================================================
 
 // Exclude from coverage testing - used only with range loggiing
-// LCOV_EXCL_START
 
 // This class performs a single rows vs. ranges duplicate elimination algorithm 
 // in the internal refresh delta computation block.
@@ -1626,4 +1613,3 @@ RelExpr *MultiTxnDEMavBuilder::buildReadRangeLogBlock() const
   return topNode;
 }  // MultiTxnDEMavBuilder::buildReadRangeLogBlock()
 
-// LCOV_EXCL_STOP

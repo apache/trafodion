@@ -39,7 +39,6 @@
 #include "ComplexObject.h"
 #include "CliMsgObj.h"
 #include "sqlcli.h"
-//LCOV_EXCL_START
 // allocate memory from the heap and duplicate the string
 static char * dupCharStar(NAMemory *heap, char *source){
   char *target = NULL;
@@ -261,4 +260,3 @@ ComplexObject * CliComplexObjectFactory::manufacture(NAMemory *heap,
     return NULL;
   }
 }   
-//LCOV_EXCL_STOP

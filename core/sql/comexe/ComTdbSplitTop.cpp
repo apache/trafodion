@@ -97,18 +97,14 @@ ComTdbSplitTop::ComTdbSplitTop(ComTdb       *child,
   streamTimeout_ = streamTimeout;
 }
   
-// LCOV_EXCL_START
 Int32 ComTdbSplitTop::orderedQueueProtocol() const
 {
   return TRUE;
 } // these 3 lines won't be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void ComTdbSplitTop::display() const
 {
 } // these 3 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
 const ComTdb* ComTdbSplitTop::getChild(Int32 pos) const
 {

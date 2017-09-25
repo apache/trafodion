@@ -1055,7 +1055,6 @@ static double getValueAsDouble(myVarChar* valPtr)
   return ucsToDouble(valPtr);
 }
 
-// LCOV_EXCL_START :ace
 // This won't be called, just needs to exist to avoid compilation error for
 // a template instantiation using ISFixedChar.
 static double getValueAsDouble(ISFixedChar* valPtr)
@@ -1079,7 +1078,6 @@ static double getValueAsDouble(MCWrapper* valPtr)
   assert(FALSE);
   return 0;
 }
-// LCOV_EXCL_STOP
 
 
 // NOTE: The following function has to be defined in the header file so the

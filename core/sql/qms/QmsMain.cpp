@@ -81,13 +81,11 @@ Int32 main(Int32 argc, char *argv[])
     file_mon_process_startup(true);
     atexit(my_mpi_fclose);
   }
-  // LCOV_EXCL_START :rfi
   catch (...)
   {
     cerr << "Error while initializing messaging system. Exiting..." << endl;
     exit(1);
   }
-  // LCOV_EXCL_STOP
 
   NABoolean performSMDInit = FALSE;
   NABoolean performXMLInit = FALSE;

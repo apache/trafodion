@@ -212,11 +212,9 @@ void ToAnsiIdentifier3(const char * inputData, size_t inputLen,
     // Verify that trailing blanks were excluded
     sptr--;
     if (isSpace8859_1((unsigned char)*sptr)) {
-//LCOV_EXCL_START :rfi
       ComASSERT(0);   // Note: no-op in Release build.
       *outputLen = 0; // sorry, this is not supposed to happen
       return;
-//LCOV_EXCL_STOP
     }
   }
   else {

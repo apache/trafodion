@@ -623,21 +623,17 @@ public:
     return isAlignedFormat;
   }
  
-// LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
-// LCOV_EXCL_STOP
 
   NABoolean isVerticalPartition() const
   {  return (flags_ & IS_VERTICAL_PARTITION) != 0; }
 
-// LCOV_EXCL_START :cnu
   void setHasVerticalPartitions( NABoolean value )
   {
     value ?
        flags_ |= HAS_VERTICAL_PARTITIONS : flags_ &= ~HAS_VERTICAL_PARTITIONS;
   }
-// LCOV_EXCL_STOP
 
   NABoolean hasVerticalPartitions() const
   {  return (flags_ & HAS_VERTICAL_PARTITIONS) != 0; }
@@ -1356,10 +1352,8 @@ public:
   void getCacheStats(NATableCacheStats & stats);
 
 
-// LCOV_EXCL_START :cnu
   inline ULng32 currentCacheSize() { return currentCacheSize_; }
   inline ULng32 intervalWaterMark() { return intervalWaterMark_; }
-// LCOV_EXCL_STOP
   inline ULng32 hits() { return totalCacheHits_; }
   inline ULng32 lookups() { return totalLookupsCount_; }
 

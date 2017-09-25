@@ -585,7 +585,6 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
   return sp;
 } // processLoadParameters
 
-// LCOV_EXCL_START
 void displayLoadParameters(UdrLoadMsg &request)
 {
   ServerDebug("");
@@ -713,7 +712,6 @@ void displayLoadParameters(UdrLoadMsg &request)
   ServerDebug("");
   
 } // displayLoadParameters
-// LCOV_EXCL_STOP
 
 void reportLoadResults(UdrGlobals *UdrGlob, SPInfo *sp, LmRoutine *lmr_)
 {

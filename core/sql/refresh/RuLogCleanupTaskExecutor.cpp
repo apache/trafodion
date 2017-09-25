@@ -78,7 +78,6 @@ void CRULogCleanupTaskExecutor::Init()
 //--------------------------------------------------------------------------//
 //	CRULogCleanupTaskExecutor::StoreRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRULogCleanupTaskExecutor::
 	StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -91,12 +90,10 @@ void CRULogCleanupTaskExecutor::
 	translator.SetMessageType(
 		CUOFsIpcMessageTranslator::RU_LOG_CLEANUP_EXECUTOR);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRULogCleanupTaskExecutor::LoadRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRULogCleanupTaskExecutor::
 	LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -106,7 +103,6 @@ void CRULogCleanupTaskExecutor::
 	translator.ReadBlock(&hasRangeLog_,sizeof(BOOL));
 	translator.ReadBlock(&noOfPartitions_,sizeof(Int32));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRULogCleanupTaskExecutor::ComposeMySql()
@@ -262,11 +258,9 @@ CRULogCleanupTaskExecutor::SQL_STATEMENT CRULogCleanupTaskExecutor::decideOnDele
     deleteMethod = CLEAN_IUD_BASIC;
 
 #ifdef _DEBUG
-	// LCOV_EXCL_START :dpb
     CDSString msg("Safety factor set to 100 or less - using simple delete.");
     CRUGlobals::GetInstance()->
 		LogDebugMessage(CRUGlobals::DUMP_COMPILED_DYNAMIC_SQL, "", msg, FALSE);
-	// LCOV_EXCL_STOP
 #endif
   }
   else

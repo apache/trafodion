@@ -3116,7 +3116,7 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
          case ITM_ASSIGN:
          default:
             // XXX Don't expect this case to ever happen
-           CMPASSERT(0); // LCOV_EXCL_LINE
+           CMPASSERT(0);
            break;
        }
    }

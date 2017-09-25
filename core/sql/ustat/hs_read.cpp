@@ -222,7 +222,7 @@ Lng32 HSStatsTimeCursor::open(NABoolean updateReadTime)
         stmt = "CURSOR102_MX_2300";
     }
   else
-        stmt = "CURSOR102_MX";  // LCOV_EXCL_LINE :cnu
+        stmt = "CURSOR102_MX"; 
 
   return OpenCursor( stmt,
                       (void *)histogramTableName_,
@@ -366,7 +366,7 @@ Lng32 HSStatsTimeCursor::get(Int64 &maxStatTime, const NAColumnArray &colArray,
                                 (void *)(&readCount),  NULL);
     else
       retcode_ = SQL_EXEC_Fetch(desc_, NULL, 2,(void *)(&statTime),   NULL, 
-                                               (void *)(&colNumber),  NULL);  // LCOV_EXCL_LINE :cnu
+                                               (void *)(&colNumber),  NULL);
     if (retcode_ == HS_EOF || retcode_ < 0) break;
 
     LM->Log("While Fetching StatsTime: Check for update of READ_TIME/READ_COUNT.");
@@ -885,7 +885,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
     }
   else
     {
-      // LCOV_EXCL_START :nsk
       ComMPLoc tempObj (actualQualifiedName.getQualifiedNameAsString().data(),
                         ComMPLoc::FILE);
       objectName = new(STMTHEAP) ComObjectName(tempObj.getSysDotVol(),
@@ -898,7 +897,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
                                   *objectName,
                                   GUARDIAN_TABLE,
                                   ExtendedQualName::convSpecialTableTypeToAnsiNameSpace(actualType));
-      // LCOV_EXCL_STOP
     }
 
   if ((actualType == ExtendedQualName::NORMAL_TABLE ||
@@ -936,10 +934,8 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
             }
           else
             {
-              // LCOV_EXCL_START :nsk
               histogramTableName = tabDef->getCatalogLoc(HSTableDef::EXTERNAL_FORMAT) + ".HISTOGRM";
               histintsTableName  = tabDef->getCatalogLoc(HSTableDef::EXTERNAL_FORMAT) + ".HISTINTS";
-              // LCOV_EXCL_STOP
             }
 
           fullQualName = tabDef->getObjectFullName();
@@ -1572,14 +1568,12 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
       // histograms.  So, this code could be removed.
       // if it is an empty histogram for automation (it has been needed before),
       // flag it, so it will not be added again
-      // LCOV_EXCL_START :cnu
       if ( reason_ == HS_REASON_EMPTY )
         {
           if (colCount_ == 1) // an empty histogram exists for this single column histogram
             emptyHistogram[tableColNum_] = TRUE;
           continue;
         }
-      // LCOV_EXCL_STOP
       // update the latest statsTime only when it is not an empty histogram
       if (statsTime < statsTime_) statsTime = statsTime_;
 
@@ -1707,7 +1701,6 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
           numHistograms++;
 
         }
-      // LCOV_EXCL_START :rfi
       catch (CmpInternalException&)
         {
           //No need to handle exception because default histograms will be
@@ -1724,7 +1717,6 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
                               << DgString2(LM->msg);
           throw;
         }
-      // LCOV_EXCL_STOP
     }
   while ((retcode_ = get()) == 0);
 
@@ -1792,7 +1784,6 @@ Lng32 HSHistogrmCursor::get()
                             //(void *)buf3_, NULL,
                             //(void *)buf4_, NULL
                             );
-  // LCOV_EXCL_START :cnu
   else
     retcode_ = SQL_EXEC_Fetch(desc_, NULL, 9,
                             (void *)&histid_, NULL,
@@ -1804,7 +1795,6 @@ Lng32 HSHistogrmCursor::get()
                             (void *)&statsTime_, NULL,
                             (void *)buf1_, NULL,
                             (void *)buf2_, NULL);
-  // LCOV_EXCL_STOP
 
   if (retcode_ < 0)
     {
@@ -1874,11 +1864,11 @@ Lng32 HSHistogrmCursor::open()
     }
   else
     {
-      if (fileType_ == SQLMP)   stmt = "CURSOR101_NOMC_MP";  // LCOV_EXCL_LINE :nsk
+      if (fileType_ == SQLMP)   stmt = "CURSOR101_NOMC_MP";
       else
         if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
               stmt = "CURSOR101_NOMC_MX_2300";
-        else stmt = "CURSOR101_NOMC_MX";  // LCOV_EXCL_LINE :cnu
+        else stmt = "CURSOR101_NOMC_MX";
     }
 
   return OpenCursor( stmt
@@ -2126,7 +2116,7 @@ Lng32 HSHistintsCursor::open()
 
   NAString stmt;
   if (fileType_ == SQLMP)
-    stmt = "CURSOR201_MP";  // LCOV_EXCL_LINE :nsk
+    stmt = "CURSOR201_MP"; 
   else
     // histogram versioning
     if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
@@ -2289,7 +2279,6 @@ Lng32 HSHistintsCursor::get( const ULng32 histid
                                  (void *)buf_mfv_, NULL
                                  //(void *)buf_v6_, NULL
                                  );
-      // LCOV_EXCL_START :cnu
       else 
         retcode_ =  SQL_EXEC_Fetch(desc_, NULL, 5,
                                  (void *)&histid_, NULL,
@@ -2297,7 +2286,6 @@ Lng32 HSHistintsCursor::get( const ULng32 histid
                                  (void *)&tempIntRowCount, NULL,
                                  (void *)&tempIntUec, NULL,
                                  (void *)buf_, NULL);
-      // LCOV_EXCL_STOP
       if (retcode_ && retcode_ != HS_EOF)
         HSLogError(retcode_);
       if (retcode_)
@@ -2399,13 +2387,11 @@ Lng32 OpenCursor( const char *descID
                                          param2Addr, NULL);
   if (retcode)
     HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "OpenCursor", NULL, TRUE);
-  // LCOV_EXCL_START :rfi
   if (retcode < 0 && LM->LogNeeded())
     {
       sprintf(LM->msg, "HSREAD: ***[FAIL=%d]Unable to load module %s", retcode, descID);
       LM->Log(LM->msg);
     }
-  // LCOV_EXCL_STOP
 
 
   return ((retcode < 0) ? -1 : retcode);

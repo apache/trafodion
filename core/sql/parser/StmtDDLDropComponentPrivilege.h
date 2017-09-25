@@ -67,11 +67,9 @@ public:
   inline const ComDropBehavior getDropBehavior()                   const { return dropBehavior_; }
 
   // for tracing
-  // LCOV_EXCL_START
   virtual const NAString displayLabel1() const;
   virtual const NAString displayLabel2() const;
   virtual const NAString getText() const;                    
-  // LCOV_EXCL_STOP
 
 private:
 

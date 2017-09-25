@@ -156,13 +156,11 @@ public:
                                 { return addedSegCount_ >= maxSecSegCount_; }
   Lng32   addSegId(short segId, void *start, size_t len);
   void   deleteSegId(short segId);
-// LCOV_EXCL_START
   SEG_ID  getFirstSegId() const			 { return firstSegId_; }
   void * getFirstSegStart() const                { return firstSegStart_; }
   off_t   getFirstSegOffset() const              { return firstSegOffset_; }
   size_t   getFirstSegLen() const                { return firstSegLen_; }
   size_t   getFirstSegMaxLen() const             { return firstSegMaxLen_; }
-// LCOV_EXCL_STOP
   void   resizeSeg(short segId, void *start, size_t newLen);
 
   // check whether a specified range of memory overlaps any of the segments
@@ -225,14 +223,12 @@ public:
   NAHeapFragment* alignAsFragment();
 
 #if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
-// LCOV_EXCL_START
 void dump(ostream* outstream,
 	  Lng32 debugLevel,
 	  MemoryStats& freeStats,
 	  MemoryStats& allocStats,
           NAHeapFragment *top,
 	  Lng32 indent);
-// LCOV_EXCL_STOP
 #endif
 
   NABlock();

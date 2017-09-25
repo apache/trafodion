@@ -393,14 +393,12 @@ short EXP_FIXED_BIGN_OV_DIV(Attributes * op1,
   if(op1->isSimpleType())
   {
     char * op1_data[2];
-    // LCOV_EXCL_START
     op1_data[0] = op1BNdata;
     op1_data[1] = op_data[1];
     rc = op1BN.castFrom(op1, op1_data, NULL, NULL);
     if(rc)
       return -1;
     div_data[1] = op1BNdata;
-    // LCOV_EXCL_STOP
   }
   else
     div_data[1] = op_data[1]; 
@@ -447,7 +445,6 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
   //convert op1 & op2 to bignum if not already bignum
   if(op1->isSimpleType())
   {
-	  // LCOV_EXCL_START
     char * op1_data[2];
     op1_data[0] = op1BNdata;
     op1_data[1] = op_data[0];
@@ -458,7 +455,6 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
       return -1;
     }
     mod_data[1] = op1BNdata;
-    // LCOV_EXCL_STOP
   }
   else
     mod_data[1] = op_data[0]; 
@@ -471,10 +467,8 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
     rc = op2BN.castFrom(op2, op2_data, NULL, NULL);
     if(rc)
     {
-    	// LCOV_EXCL_START
       *ov = 1;
       return -1;
-      // LCOV_EXCL_STOP
     }
     mod_data[2] = op2BNdata;
   }
@@ -498,10 +492,8 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
   rc = modBN.div(&op1BN, &op2BN, temp_data, NULL, NULL);
   if(rc)
   {
-	  // LCOV_EXCL_START
     *ov = 1;
     return -1;
-    // LCOV_EXCL_STOP
   }
 
   //calculate (x/y) * y
@@ -512,10 +504,8 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
   rc = modBN.mul(&op1BN, &op2BN, temp_data);
   if(rc)
   {
-	  // LCOV_EXCL_START
     *ov = 1;
     return -1;
-    // LCOV_EXCL_STOP
   }
   
   //Calculate final result z = x - xByYTimesY
@@ -631,7 +621,6 @@ ex_arith_sum_clause::processNulls(char *null_data[],
 //  N  y  set a to nonnull and zero and call eval to compute A=1+0
 //  N  N  do nothing (A=N)
 //
-// LCOV_EXCL_START
 ex_expr::exp_return_type 
 ex_arith_count_clause::processNulls(char *null_data[],
 				    CollHeap *heap,
@@ -657,7 +646,6 @@ ex_arith_count_clause::processNulls(char *null_data[],
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
                                                CollHeap *heap,
                                                ComDiagsArea** diagsArea)
@@ -671,14 +659,12 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       *(short *)op_data[0] = *(short *)op_data[1] + *(short *)op_data[2];
 #pragma warn(1506)  // warning elimination 
       break;
-      // LCOV_EXCL_START
     case ADD_BIN16S_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = *(short *)op_data[1] + *(short *)op_data[2];
       break;
     case ADD_BIN16S_BIN32S_BIN32S:
       *(Lng32 *)op_data[0] = *(short *)op_data[1] + *(Lng32 *)op_data[2];
       break;
-      // LCOV_EXCL_STOP
     case ADD_BIN32S_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = *(Lng32 *)op_data[1] + *(short *)op_data[2];
       break;
@@ -686,10 +672,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       *(Lng32 *)op_data[0] = *(Lng32 *)op_data[1] + *(Lng32 *)op_data[2];
       break;
     case ADD_BIN32S_BIN64S_BIN64S:
-    	// LCOV_EXCL_START
       *(Int64 *)op_data[0] = *(Int64 *)op_data[2] + *(Lng32 *)op_data[1];
       break;
-      // LCOV_EXCL_STOP
     case ADD_BIN64S_BIN32S_BIN64S:
       *(Int64 *)op_data[0] = *(Int64 *)op_data[1] + *(Lng32 *)op_data[2];
       break;
@@ -702,10 +686,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 					     &ov);
 	if (ov)
 	  {
-		// LCOV_EXCL_START
 	    ExRaiseSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW);
 	    return ex_expr::EXPR_ERROR;
-	    // LCOV_EXCL_STOP
 	  }
 
       }
@@ -720,10 +702,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       *(ULng32 *)op_data[0] = *(unsigned short *)op_data[1] + *(unsigned short *)op_data[2];
       break;
     case ADD_BIN16U_BIN32U_BIN32U:
-    	// LCOV_EXCL_START
       *(ULng32 *)op_data[0] = *(unsigned short *)op_data[1] + *(ULng32 *)op_data[2];
       break;
-      // LCOV_EXCL_STOP
     case ADD_BIN32U_BIN16U_BIN32U:
       *(ULng32 *)op_data[0] = *(ULng32 *)op_data[1] + *(unsigned short *)op_data[2];
       break;
@@ -734,13 +714,11 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       *(Int64 *)op_data[0] = *(Int64 *)op_data[2] + *(unsigned short *)op_data[1];
       break;
     case ADD_BIN64S_BPINTU_BIN64S:
-    	// LCOV_EXCL_START
       *(Int64 *)op_data[0] = *(Int64 *)op_data[1] + *(unsigned short *)op_data[2];
       break;
     case ADD_BIN32U_BIN64S_BIN64S:
       *(Int64 *)op_data[0] = *(Int64 *)op_data[2] + *(ULng32 *)op_data[1];
       break;
-      // LCOV_EXCL_STOP
     case ADD_BIN64S_BIN32U_BIN64S:
       *(Int64 *)op_data[0] = *(Int64 *)op_data[1] + *(ULng32 *)op_data[2];
       break;
@@ -792,7 +770,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       /* SUB operation */
     case SUB_BIN16S_BIN16S_BIN16S:
 #pragma nowarn(1506)   // warning elimination 
-    	// LCOV_EXCL_START
       *(short *)op_data[0] = *(short *)op_data[1] - *(short *)op_data[2];
 #pragma warn(1506)  // warning elimination 
       break;
@@ -808,7 +785,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
     case SUB_BIN32S_BIN32S_BIN32S:
       *(Lng32 *)op_data[0] = *(Lng32 *)op_data[1] - *(Lng32 *)op_data[2];
       break;
-      // LCOV_EXCL_STOP
     case SUB_BIN64S_BIN64S_BIN64S:
       {
 	short ov;
@@ -817,10 +793,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 					     &ov);
 	if (ov)
 	  {
-		// LCOV_EXCL_START
 	    ExRaiseSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW);
 	    return ex_expr::EXPR_ERROR;
-	    // LCOV_EXCL_STOP
 	  }
 
 	//*(Int64 *)op_data[0] = *(Int64 *)op_data[1] - *(Int64 *)op_data[2];

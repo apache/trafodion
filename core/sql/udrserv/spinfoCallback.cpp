@@ -131,10 +131,8 @@ void SpInfoGetNextRow(char            *rowData,
   SPInfo *sp = udrGlobals->getCurrSP();
   if(!sp)
   {
-// LCOV_EXCL_START
     *queue_state = SQLUDR_Q_CANCEL;
     return;
-// LCOV_EXCL_STOP
   }
 
   // Access  SQL buffer that corresponds to table index 
@@ -245,7 +243,6 @@ Int32 sendEmitWaitedReply(UdrGlobals *udrGlobals,
   const char *moduleName = "sendEmitWaitedReply";
 
   NABoolean traceInvokeDataAreas = false;
-// LCOV_EXCL_START
   if (udrGlobals->verbose_ && udrGlobals->showInvoke_ &&
       udrGlobals->traceLevel_ >= TRACE_DATA_AREAS)
     traceInvokeDataAreas = true;
@@ -257,7 +254,6 @@ Int32 sendEmitWaitedReply(UdrGlobals *udrGlobals,
 
     displaySqlBuffer(emitSqlBuffer, sp->getReplyBufferSize());
   }
-// LCOV_EXCL_STOP
 
   //get datastream
   UdrServerDataStream *dataStream = sp->getDataStream();
@@ -339,12 +335,10 @@ Int32 SpInfoEmitRow  (char            *rowData,
   // UDR is used.
   SPInfo *sp = udrGlobals->getCurrSP();
   if(!sp)
-// LCOV_EXCL_START
   {
     *queue_state = SQLUDR_Q_CANCEL;
     return SQLUDR_ERROR;
   }
-// LCOV_EXCL_STOP
 
 
   // Access emit SQL buffer that corresponds to table index 

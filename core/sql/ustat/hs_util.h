@@ -134,14 +134,12 @@ inline ULng32 roundup4(ULng32 value)
   return((value != floor) ? (floor + 4) : value);
 }
 
-// LCOV_EXCL_START :cnu
 inline ULng32 roundup8(ULng32 value)
 {
   ULng32 floor = value & 0xFFFFFFF8;
 
   return((value != floor) ? (floor + 8) : value);
 }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -150,7 +148,6 @@ inline ULng32 roundup8(ULng32 value)
 // HSPtrObj<T> *t = new HSPtrObj<T>[100];
 // delete [] t will delete each individual element which pt_ points to.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu  Used only by HSCursor::buildNAType(), which is cnu
 template <class T> class HSPtrObj {
 
 public:
@@ -170,7 +167,6 @@ public:
   // pt points to a single object.
   T *pt_;
 };
-// LCOV_EXCL_STOP
 
 template <class T> class HSPtrArray {
 

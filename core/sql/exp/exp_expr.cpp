@@ -101,7 +101,6 @@ Lng32 ex_expr::initExpr()
   return rc;
 }
 
-// LCOV_EXCL_START
 // lean expressions are not used not tested
 void ex_expr_lean::displayContents(Space * space, short mode,
 				   const char * displayStr,
@@ -163,7 +162,6 @@ void ex_expr_lean::displayContents(Space * space, short mode,
 	}
     }
 }
-// LCOV_EXCL_STOP
 // make a 'lean' copy of 'this' and point it back to itself.  Supports all
 // expressions.  Do not copy clauses_ or pCodeObject_.  Caller is responsible
 // for proper deallocation of memory.
@@ -211,7 +209,6 @@ void ex_expr::makeLeanCopyAll(Space * space)
 
 // make a 'lean' copy of 'this' to 'other'.
 // Do not copy clauses_ or pCodeObject_.
-// LCOV_EXCL_START
 void ex_expr::makeLeanCopy(ex_expr_lean * other, Space * space)
 {
   //  *((ex_expr_base*)other) = *((ex_expr_base*)this);
@@ -246,7 +243,6 @@ void ex_expr::makeLeanCopy(ex_expr_lean * other, Space * space)
       other->persistentArea_ = space->allocateAlignedSpace(persistentLength_);
     }
 }
-// LCOV_EXCL_STOP
 void ex_expr::displayContents(Space * space, short mode, const char * displayStr,ULng32 flag)
 {
   char buf[100] = {0};	// Soln 10-041117-1848
@@ -316,14 +312,12 @@ void ex_expr::displayContents(Space * space, short mode, const char * displayStr
 	  
 	  if(getPCodeObject())
 	    {
-		  // LCOV_EXCL_START
 	      str_sprintf(buf, "  PCode:\n");
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	      str_sprintf(buf, "PCode Expr Length: %d", getPCodeSize());
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	      
 	      PCode::displayContents(getPCodeObject()->getPCIList(), space);
-	      // LCOV_EXCL_STOP
 	    }
 	}
     }

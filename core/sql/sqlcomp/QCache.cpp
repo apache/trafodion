@@ -1992,7 +1992,6 @@ ULng32 QCache::getSizeOfPostParserEntry(KeyDataPair& entry)
     + sizeof(CacheEntry) + CacheHashTbl::getBucketEntrySize();
 }
 
-// LCOV_EXCL_START
 // this routine is used for debugging qcache bugs only
 void QCache::sanityCheck(Int32 mark)
 {
@@ -2003,7 +2002,6 @@ void QCache::sanityCheck(Int32 mark)
     getSizeOfPostParserEntry(entry);
   }
 }
-// LCOV_EXCL_STOP
 
 // return TRUE iff cache can accommodate a new entry of this size
 NABoolean QCache::canFit(ULng32 size)

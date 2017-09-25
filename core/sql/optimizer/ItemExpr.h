@@ -106,10 +106,8 @@ public:
 
   // compare an ExprValueId with another ExprValueId or ItemExpr * or ValueId
   NABoolean operator == (const ExprValueId &other) const;
-  // LCOV_EXCL_START
   inline NABoolean operator != (const ExprValueId &other) const
                                            { return NOT operator == (other); }
-  //LCOV_EXCL_STOP
 
   NABoolean operator == (const ItemExpr *other) const;
   inline NABoolean operator != (const ItemExpr *other) const
@@ -411,10 +409,8 @@ public:
   // sure the expression is not used elsewhere.
   void unBind() { markAsUnBound(); setValueId(NULL_VALUE_ID); }
 
- // LCOV_EXCL_START
   virtual NABoolean isTypeComplete(const NAType*) { return TRUE; };
   virtual void reportTypeIsIncomplete() {};
- // LCOV_EXCL_STOP
 
   void bindChildren(BindWA *bindWA); // a method for binding the children
   void bindSelf(BindWA *bindWA); // a method for binding the children and self
@@ -1123,12 +1119,10 @@ public:
 
   virtual ConstantParameter *castToConstantParameter() { return NULL; }
 
-  // LCOV_EXCL_START
   // perform a safe type cast to RandomNum (return NULL ptr for illegal casts)
   virtual RandomNum *castToRandomNum() { return NULL; }
 
   virtual const SelParameter *castToSelParameter() const { return NULL; }
- // LCOV_EXCL_STOP
 
   // does this entire ItemExpr qualify query to be cacheable after this phase?
   virtual NABoolean isCacheableExpr(CacheWA& cwa);
@@ -1173,7 +1167,7 @@ public:
 // warning elimination (removed "inline")
   virtual void setPMOrdPosAndIndex( ComColumnDirection paramMode,
 					   Int32 ordinalPosition,
-                                    Int32 index) { CMPASSERT (0);} // LCOV_EXCL_LINE
+                                    Int32 index) { CMPASSERT (0);}
 
   NABoolean isARangePredicate() const;
 

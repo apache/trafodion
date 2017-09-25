@@ -256,13 +256,11 @@ public:
   					 Int32 errOrWarn = -1,
   					 NABoolean overwrite = TRUE,
 					 NABoolean alreadyCanonical = FALSE);
-  // LCOV_EXCL_START
   // code not used
   NABoolean        setCatalogTrustedFast(NAString &value)
 			       { return setCatalog(value, -1, TRUE, TRUE); }
   NABoolean        setSchemaTrustedFast	(NAString &value)
 			       { return setSchema(value, -1, TRUE, TRUE); }
-  // LCOV_EXCL_STOP
   void		   getCatalogAndSchema	(NAString &cat, NAString &sch);
 
   void		   setState		(Provenance s)	{ currentState_ = s; }
@@ -290,7 +288,6 @@ public:
 						 const char* &value,
 						 NABoolean userDefaultsOnly);
 
-  // LCOV_EXCL_START
   void             readFromFlatFile	(const char *fname,
 					 Provenance overwriteIf   = SET_BY_CQD,
 					 Int32 errOrWarn = +1/*warning*/)
@@ -298,7 +295,6 @@ public:
     spName.prepend(" ");		// space signals FLAT FILE not SQL TABLE
     readFromSQLTable(spName, overwriteIf, errOrWarn);
   }
-  // LCOV_EXCL_STOP
 
   void             readFromSQLTables(Provenance overwriteIfNotYet = SET_BY_CQD,
   				     Int32 errOrWarn = +1/*warning*/);

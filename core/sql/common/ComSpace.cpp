@@ -474,7 +474,6 @@ void Space::outputBuffer(ComSpace * space, char * buf, char * newbuf)
   }
 }
 
-// LCOV_EXCL_START
 void Space::display(char *buf,
 		    size_t buflen,
 		    size_t countPrefixSize, ostream &outstream)
@@ -509,7 +508,6 @@ void Space::display(char *buf,
   outstream << flush;
   ComASSERT(buf == bend);
 }
-// LCOV_EXCL_STOP
 
 
 
@@ -565,7 +563,6 @@ void* Space::convertToPtr(Long offset) const
   return NULL;
 }
 
-// LCOV_EXCL_START
 // The method is not called elsewhere
 Lng32 Space::allocAndCopy(void * from, ULng32 size, NABoolean failureIsFatal)
 {
@@ -573,7 +570,6 @@ Lng32 Space::allocAndCopy(void * from, ULng32 size, NABoolean failureIsFatal)
   str_cpy_all(to, (char *)from, size);
   return (convertToOffset(to));
 }
-// LCOV_EXCL_STOP
 
 
 #if 0 /* NOT CURRENTLY USED and does not compile for 64 bits */

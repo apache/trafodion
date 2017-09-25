@@ -133,7 +133,6 @@ ex_expr::exp_return_type ex_aggregate_clause::init()
 {
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_aggregate_clause::eval(char * /*op_data*/[],
 						   CollHeap *heap,
 						   ComDiagsArea** diagsArea)
@@ -141,7 +140,6 @@ ex_expr::exp_return_type ex_aggregate_clause::eval(char * /*op_data*/[],
   ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
 /////////////////////////////////////////////////
 // class ex_aggr_one_row_clause
 /////////////////////////////////////////////////
@@ -199,7 +197,6 @@ ex_expr::exp_return_type ex_aggr_any_true_max_clause::eval(char *op_data[],
     case -1:  // operand is NULL
       {
 	// remember that a null was seen.
-   // LCOV_EXCL_START
 	nullSeen_ = 1;
 
 	// Genesis 10-040203-2921
@@ -225,7 +222,6 @@ ex_expr::exp_return_type ex_aggr_any_true_max_clause::eval(char *op_data[],
       {
 	ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
 	retcode = ex_expr::EXPR_ERROR;
-	// LCOV_EXCL_STOP
       }
       break;
 

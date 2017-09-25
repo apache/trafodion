@@ -172,27 +172,23 @@ ExpDatetime::ExpDatetime()
 ExpDatetime::~ExpDatetime()
 {
 }
-// LCOV_EXCL_START
 Attributes * ExpDatetime::newCopy()
 {
   ExpDatetime * new_copy = new ExpDatetime();
   *new_copy = *this;
   return new_copy;
 };
-// LCOV_EXCL_STOP
 Attributes * ExpDatetime::newCopy(CollHeap * heap)
 {
   ExpDatetime * new_copy = new(heap) ExpDatetime();
   *new_copy = *this;
   return new_copy;
 };
-// LCOV_EXCL_START
 void ExpDatetime::copyAttrs(Attributes *source_) // copy source attrs to this.
 {
   *this = *((ExpDatetime *)source_);
   return;
 };
-// LCOV_EXCL_STOP
 ExpDatetime * 
 ExpDatetime::castToExpDatetime()
 {
@@ -255,7 +251,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_YEAR_SECOND:
     startField = REC_DATE_YEAR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_MONTH:
   case REC_DTCODE_MONTH_DAY:
   case REC_DTCODE_MONTH_HOUR:
@@ -269,14 +264,12 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_DAY_SECOND:
     startField = REC_DATE_DAY;
     break;
-	// LCOV_EXCL_STOP
   case REC_DTCODE_TIME:
   case REC_DTCODE_HOUR:
   case REC_DTCODE_HOUR_MINUTE:
   case REC_DTCODE_HOUR_SECOND:
     startField = REC_DATE_HOUR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_MINUTE:
   case REC_DTCODE_MINUTE_SECOND:
     startField = REC_DATE_MINUTE;
@@ -287,17 +280,14 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   default:
     return -1;
   }
-	// LCOV_EXCL_STOP
 
   switch (datetimeCode) {
   case REC_DTCODE_YEAR:
     endField = REC_DATE_YEAR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_YEAR_MONTH:
   case REC_DTCODE_MONTH:
     endField = REC_DATE_MONTH;
-	// LCOV_EXCL_STOP
     break;
   case REC_DTCODE_DATE:
   case REC_DTCODE_YEAR_DAY:
@@ -305,7 +295,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_DAY:
     endField = REC_DATE_DAY;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_YEAR_HOUR:
   case REC_DTCODE_MONTH_HOUR:
   case REC_DTCODE_DAY_HOUR:
@@ -319,7 +308,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_MINUTE:
     endField = REC_DATE_MINUTE;
     break;
-	// LCOV_EXCL_STOP
   case REC_DTCODE_TIMESTAMP:
   case REC_DTCODE_YEAR_SECOND:
   case REC_DTCODE_MONTH_SECOND:

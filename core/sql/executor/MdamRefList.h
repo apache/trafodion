@@ -79,11 +79,9 @@ class MdamRefList
 
     // Assignment operator is not supported.
 
-// LCOV_EXCL_START
 // this operator was defined for completeness but is not currently used
     // Test for equality.
     NABoolean operator==(const MdamRefList & otherList) const;
-// LCOV_EXCL_STOP
 // end of excluding this equal operator from coverage checking
 
     // Copy the entries from one reference list to another.
@@ -150,7 +148,6 @@ inline MdamRefList::MdamRefList(const Int32 disjunctNum,
   insert(disjunctNum, mdamRefListEntryHeap);
 }
 
-// LCOV_EXCL_START
 // this method is only called in the destruct, see MdamRefList.cpp for reason
 // Determine if the list is empty.
 inline NABoolean MdamRefList::isEmpty() const
@@ -158,6 +155,5 @@ inline NABoolean MdamRefList::isEmpty() const
   return lastEntryPtr_ == 0;
 }
 
-// LCOV_EXCL_STOP
 // end of excluding isEmpty from coverage checking
 #endif /* MDAMREFLIST_H */

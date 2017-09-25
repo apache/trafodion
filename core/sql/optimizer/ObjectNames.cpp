@@ -174,7 +174,6 @@ NAString QualifiedName::getQualifiedNameAsString(NABoolean formatForDisplay,
   return result;
 }
 
-//LCOV_EXCL_START /* : cnu -- not used on Linux */
 // -----------------------------------------------------------------------
 // makeSafeFilenamePart() and
 // QualifiedName::getQualifiedNameAsAnsiNTFilenameString()
@@ -303,7 +302,6 @@ const NAString QualifiedName::getQualifiedNameAsAnsiNTFilenameString() const
 
   return result;
 }
-//LCOV_EXCL_STOP /* : cnu -- not used on Linux */
 
 const NAString QualifiedName::getQualifiedNameAsAnsiString(NABoolean formatForDisplay,
 							   NABoolean externalDisplay) const
@@ -1390,7 +1388,6 @@ const TableRefName *TableRefList::findTable(const CorrName& tableCorr) const
 // Additional non-inline functions for all ``ObjectNames'' classes
 // -----------------------------------------------------------------------
 
-//LCOV_EXCL_START : dpm
 // Display/print, for debugging.
 
 void CatalogName::display()   const { print(); }	
@@ -1476,7 +1473,6 @@ void ColRefName::print(FILE* ofd, const char* indent, const char* title,
   if (strcmp(title,"")) fprintf(ofd,"\n");
 #endif
 }
-//LCOV_EXCL_STOP : dpm
 
 // ++MV
 ComAnsiNameSpace ExtendedQualName::convSpecialTableTypeToAnsiNameSpace( const SpecialTableType type )

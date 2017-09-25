@@ -92,7 +92,6 @@ char *keyRangeGen::findVTblPtr(short classID)
   return vtblPtr;
 }
 
-// LCOV_EXCL_START
 void keyRangeGen::fixupVTblPtr()
 {
   switch (getType())
@@ -115,7 +114,6 @@ void keyRangeGen::fixupVTblPtr()
       break;
     }
 }
-// LCOV_EXCL_STOP
 
 Long keyRangeGen::pack(void * space)
 {

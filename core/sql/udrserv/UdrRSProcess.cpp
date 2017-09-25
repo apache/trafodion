@@ -50,7 +50,6 @@ void processAnRSLoadMessage(UdrGlobals *udrGlob,
 
   ComDiagsArea *diags = ComDiagsArea::allocate(udrGlob->getIpcHeap());
 
-// LCOV_EXCL_START
   doMessageBox(udrGlob, TRACE_SHOW_DIALOGS,
                udrGlob->showRSLoad_, moduleName);
 
@@ -62,7 +61,6 @@ void processAnRSLoadMessage(UdrGlobals *udrGlob,
   {
     ServerDebug("[UdrServ (%s)]  Receive RS Load Request", moduleName);
   }
-// LCOV_EXCL_STOP
 
   // process RS Load request
   SPInfo *sp = udrGlob->getSPList()->spFind(request.getHandle());
@@ -160,7 +158,6 @@ void processAnRSFetchOrContinueMessage(UdrGlobals *udrGlob,
 {
   const char* moduleName = "processAnRSFetchOrContinueMessage";
 
-// LCOV_EXCL_START
   // This method should only be called for RS invoke or RS continue
   // message types.
   NABoolean show = FALSE;
@@ -182,7 +179,6 @@ void processAnRSFetchOrContinueMessage(UdrGlobals *udrGlob,
   if (doTrace)
     ServerDebug("[UdrServ (%s)]  Receive RS Invoke or Continue Request",
                 moduleName);
-// LCOV_EXCL_STOP
 
   // Free up any receive buffers no longer in use
   msgStream.cleanupBuffers();
@@ -415,7 +411,6 @@ void processAnRSCloseMessage(UdrGlobals *udrGlob,
   ComDiagsArea *diags = ComDiagsArea::allocate(udrGlob->getIpcHeap());
   UDR_ASSERT(diags, "Unable to allocate memory for SQL diagnostics area");
 
-// LCOV_EXCL_START
   doMessageBox(udrGlob, TRACE_SHOW_DIALOGS,
                udrGlob->showRSClose_, moduleName);
 
@@ -426,7 +421,6 @@ void processAnRSCloseMessage(UdrGlobals *udrGlob,
   {
     ServerDebug("[UdrServ (%s)]  Receive RS Close Request", moduleName);
   }
-// LCOV_EXCL_STOP
 
   // Find the SPInfo instance for this request
   SPInfo *sp = udrGlob->getSPList()->spFind(request.getHandle());
@@ -516,7 +510,6 @@ void processAnRSUnloadMessage(UdrGlobals *udrGlob,
 {
   const char* moduleName = "processAnRSUnloadMessage";
 
-// LCOV_EXCL_START
   doMessageBox(udrGlob, TRACE_SHOW_DIALOGS,
                udrGlob->showRSUnload_, moduleName);
 
@@ -526,7 +519,6 @@ void processAnRSUnloadMessage(UdrGlobals *udrGlob,
   {
     ServerDebug("[UdrServ (%s)]  Receive RS Unload Request", moduleName);
   }
-// LCOV_EXCL_STOP
 
   // Find the SPInfo instance for this request
   SPInfo *sp = udrGlob->getSPList()->spFind(request.getHandle());

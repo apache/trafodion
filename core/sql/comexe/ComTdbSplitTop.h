@@ -159,22 +159,18 @@ public:
   { return (splitTopFlags_ & STATIC_PA_AFFINATY) ? TRUE : FALSE; }
   void setStaticPaAffinity() {splitTopFlags_ |= STATIC_PA_AFFINATY; }
 
-// LCOV_EXCL_START
   NABoolean getSetupSharedPool() const 
   { return (splitTopFlags_ & SETUP_SHARED_POOL) ? TRUE : FALSE; }
   void setSetupSharedPool() {splitTopFlags_ |= SETUP_SHARED_POOL; }
 // these 3 lines won't be covered, feature not yet activated.
-// LCOV_EXCL_STOP
 
   NABoolean getUseExtendedPState() const 
   { return (splitTopFlags_ & USE_EXTENDED_PSTATE) ? TRUE : FALSE; }
   void setUseExtendedPState() {splitTopFlags_ |= USE_EXTENDED_PSTATE; }
 
-// LCOV_EXCL_START
   Int32 getNumSharedBuffers() const { return numSharedBuffs_; }
   void setNumSharedBuffers(Int32 n) {numSharedBuffs_ = n; }
 // these 2 lines won't be covered, feature not yet activated.
-// LCOV_EXCL_STOP
 
   // For SeaMonster
   NABoolean getExchangeUsesSM() const

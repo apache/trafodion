@@ -79,7 +79,6 @@ void processAnUnLoadMessage(UdrGlobals *UdrGlob,
 
   if (sp == NULL)
   {
-// LCOV_EXCL_START
     //
     // No SPInfo exists for this UDR handle. Could be because the
     // handle is invalid or because this is an out-of-sequence UNLOAD
@@ -105,7 +104,6 @@ void processAnUnLoadMessage(UdrGlobals *UdrGlob,
       *diags << DgString0("Unload Message");
     }
   } // if (sp == NULL)
-// LCOV_EXCL_STOP
 
   if (sp)
   {
@@ -132,7 +130,6 @@ void processAnUnLoadMessage(UdrGlobals *UdrGlob,
     sp = NULL;
 
     if (error != 0)
-// LCOV_EXCL_START
     {
       sprintf(errorText,
               "(%.30s) UDR Unload Error: %d",
@@ -143,7 +140,6 @@ void processAnUnLoadMessage(UdrGlobals *UdrGlob,
                    UdrGlob->showLoad_,
                    errorText);
     }
-// LCOV_EXCL_STOP
   }
 
   //

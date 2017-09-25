@@ -11337,10 +11337,8 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                if ( $3/*toggled_optional_left_charlen_right*/->isCharLenUnitSpecified()  AND
                     $1/*tok_char_or_character_or_byte*/ EQU TOK_BYTE )
                {
-                 //LCOV_EXCL_START : cnu - Used only in ModeSpecial1
                  emitError3435( $1, eCharSet, parCLU ); // BYTES/CHARS not allowed with BYTE VARYING
                  YYERROR;
-                 //LCOV_EXCL_STOP : cnu - Used only in ModeSpecial1
                }
                if ( eCharSet EQU CharInfo::UCS2 AND parCLU EQU ParAuxCharLenSpec::eBYTES )
                {
@@ -26840,8 +26838,8 @@ file_attribute_uid_clause : TOK_UID NUMERIC_LITERAL_EXACT_NO_SCALE
        // This syntax to be used by Backup/Restore only.
        // If Backup/Restore is ever implemented then add a parserflag for it 
        // and report the 3001 error only if flag is not set.
-                                  *SqlParser_Diags << DgSqlCode(-3001) << DgString0("UID");  // LCOV_EXCL_LINE
-                                  YYERROR;                                                   // LCOV_EXCL_LINE
+                                  *SqlParser_Diags << DgSqlCode(-3001) << DgString0("UID");
+
        // Uncomment the next 2 lines if Backup/Restore is ever implemented.
 				  //$$ = new (PARSERHEAP()) ElemDDLFileAttrUID(atoInt64($2->data()));
 				  //delete $2;		   

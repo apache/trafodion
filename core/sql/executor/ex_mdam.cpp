@@ -213,12 +213,10 @@ void MdamColumn::setNextColumn(MdamColumn *next)
 next_ = next;
 }
 
-// LCOV_EXCL_START
 MdamIntervalList & MdamColumn::getIntervalList()
 {
 return intervals_;
 }
-// LCOV_EXCL_STOP
 
 NABoolean MdamColumn::initNextValue()
 {
@@ -734,7 +732,7 @@ while ((predIterator.positionToNextOr(&currentPred_)) &&
             }
           default:
             {
-              ex_assert(0,"Invalid predicate type"); //LCOV_EXCL_LINE
+              ex_assert(0,"Invalid predicate type");
               break;
             }
           }
@@ -1068,7 +1066,6 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
   char *ektarget = ekData_.getDataPointer();
   ULng32 keyLength = getGenInfo().getKeyLength();
 
-  // LCOV_EXCL_START
   if (getGenInfo().getKeytag() > 0)
     {
       unsigned short keytag = getGenInfo().getKeytag();
@@ -1078,7 +1075,6 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
       ektarget += sizeof(short);
       keyLength -= sizeof(short);
     }
-  // LCOV_EXCL_STOP
 
   if (complementKeysBeforeReturning_)
     {
@@ -1189,7 +1185,7 @@ keyRangeEx::getNextKeyRangeReturnType keyMdamEx::getNextKeyRange
 	  }
 	default:
 	  {
-	    ex_assert(0,"keyMdamEx::getNextKeyRange() invalid getNextValue rc"); // LCOV_EXCL_LINE
+	    ex_assert(0,"keyMdamEx::getNextKeyRange() invalid getNextValue rc");
 	    break;
 	  }
 	}

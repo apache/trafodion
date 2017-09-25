@@ -180,7 +180,6 @@ public:
   // make a node name from an Internet address or from a phandle
   IpcNodeName(const SockIPAddress &iPNode);
 #if (defined(NA_GUARDIAN_IPC))
-// LCOV_EXCL_START
   IpcNodeName(const GuaProcessHandle &phandle);
   // Return the Guardian node name as a character string, without trailing spaces.
   inline void getNodeNameAsString (char * nodeName) const
@@ -192,7 +191,6 @@ public:
       else
         nodeName[i+1] = 0;
   };
-// LCOV_EXCL_STOP
 #endif
   IpcNodeName & operator = (const IpcNodeName &other);
   NABoolean operator == (const IpcNodeName &other);

@@ -41,7 +41,6 @@
 
 // Exclude this code from coverage analysis since this feature is
 // obsolete and not used.
-// LCOV_EXCL_START
 
 ex_tcb * ExVPJoinTdb::build(ex_globals * glob)
 {
@@ -482,4 +481,3 @@ ex_tcb_private_state * ExVPJoinPrivateState::allocate_new(const ex_tcb * tcb)
 ExVPJoinPrivateState::~ExVPJoinPrivateState()
 {}
 
-// LCOV_EXCL_STOP

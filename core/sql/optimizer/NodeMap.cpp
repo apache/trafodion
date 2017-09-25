@@ -261,7 +261,6 @@ NodeMapEntry::NodeMapEntry(const NodeMapEntry& other, CollHeap* heap )
 //
 //==============================================================================
 // The function is not called anywhere
-// LCOV_EXCL_START
 void
 NodeMapEntry::setDp2Name(char* dp2Name)
 {
@@ -279,7 +278,6 @@ NodeMapEntry::setDp2Name(char* dp2Name)
   strcpy(dp2Name_,dp2Name);
 
 } //NodeMapEntry::setDp2Name()
-// LCOV_EXCL_STOP
 
 //<pb>
 //==============================================================================
@@ -446,7 +444,6 @@ NodeMapEntry::getText() const
 //  none
 //
 //==============================================================================
-// LCOV_EXCL_START
 void
 NodeMapEntry::print(FILE* ofd, const char* indent, const char* title) const
 {
@@ -463,7 +460,6 @@ NodeMapEntry::print(FILE* ofd, const char* indent, const char* title) const
                                                      "State: ",partitionState_);
 
 } // NodeMapEntry::print()
-// LCOV_EXCL_STOP
 
 //<pb>
 //============================================================================
@@ -615,7 +611,6 @@ NodeMap::NodeMap(const NodeMap& other, CollHeap* heap)
 //
 //==============================================================================
 // NodeMaps are deleted with the statement heap. 
-// LCOV_EXCL_START
 NodeMap::~NodeMap()
 {
 
@@ -645,7 +640,6 @@ NodeMap::~NodeMap()
     QueryAnalysis::Instance()->tempMonitor().exit();
 
 } // NodeMap destructor.
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Make a copy of this NodeMap object in a specified heap.
@@ -708,7 +702,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
   // number of CPUs in cluster.
   //-----------------------------------------------------------------------
 #ifdef _DEBUG
-// LCOV_EXCL_START
     if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
         (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
 	  CURRCONTEXT_OPTDEBUG->stream()
@@ -716,7 +709,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 	    << "logicalNumEntries = " << logicalNumEntries << endl
 	    << "totalESPs= " << totalESPs << endl;
     }
-// LCOV_EXCL_STOP
 #endif
 
   Lng32 requiredESPs = CURRSTMT_OPTDEFAULTS->getRequiredESPs();
@@ -877,7 +869,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 //
 //==============================================================================
 // the method is not used under SQ, except in OSM mode simulating NSK
-// LCOV_EXCL_START
 void
 NodeMap::deriveGrouping(const CollIndex         numGroups,
                               CollIndexPointer& groupStart,
@@ -1095,7 +1086,6 @@ NodeMap::deriveGrouping(const CollIndex         numGroups,
       }
     }
 } // NodeMap::deriveGrouping()
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Determine if node map has a node specification for all entries.
@@ -2386,7 +2376,6 @@ void NodeMap::balanceScanInfos(HivePartitionAndBucketKey *hiveSearchKey,
 } // NodeMap::balanceScanInfos
 
 // to be called from the debugger
-// LCOV_EXCL_START
 void 
 NodeMap::display() const
 {
@@ -2493,7 +2482,6 @@ NodeMap::print(FILE* ofd, const char* indent, const char* title) const
          );
 
 } // NodeMap::print()
-// LCOV_EXCL_STOP
 #pragma warn(1506)  // warning elimination 
 
 //=======================================================

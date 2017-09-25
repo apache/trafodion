@@ -69,7 +69,6 @@ class QRQueries;
 #define MAX_DEFAULTS_VALUE 1000
 #define MAX_DEFAULTS_UTF8_VALUE_IN_BYTES 4001
 
-// LCOV_EXCL_START :rfi
 /**
  * Exception thrown when an error in a database operation is found.
  */
@@ -96,7 +95,6 @@ class QRDatabaseException : public QRException
     {}
 
 }; // QRDatabaseException
-// LCOV_EXCL_STOP
 
 /**
  * QRMVData is the structure used to pass information between

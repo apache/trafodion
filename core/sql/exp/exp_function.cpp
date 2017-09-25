@@ -1080,7 +1080,6 @@ ex_expr::exp_return_type ExFunctionReplace::eval(char *op_data[],
 
   if (CollationInfo::isSystemCollation(getCollation()))
   {
-	// LCOV_EXCL_START
     nPasses= CollationInfo::getCollationNPasses(getCollation());
     lenSourceStr = getArgEncodedLen(0);
     lenSearchStr = getArgEncodedLen(1);
@@ -1110,7 +1109,6 @@ ex_expr::exp_return_type ExFunctionReplace::eval(char *op_data[],
 				nPasses,
 				getCollation(),
 				TRUE);
-    // LCOV_EXCL_START
 
   }
 
@@ -1404,7 +1402,6 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
   // case of collation -- 
   if (CollationInfo::isSystemCollation(getCollation()))
   {
-	  // LCOV_EXCL_START
     nPasses = CollationInfo::getCollationNPasses(getCollation());
 
     //get the length of the encoded source string
@@ -1455,7 +1452,6 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
 				getCollation(),
 				FALSE);
 
-    // LCOV_EXCL_STOP
   }
   // Find how many leading characters in operand 2 correspond to the trim
   // character.
@@ -2179,14 +2175,11 @@ Lng32 ex_function_position::findPosition
   // sourceStr.
 
   if (searchLen <= 0)
-  // LCOV_EXCL_START
     return 0;
-  // LCOV_EXCL_STOP
   Int32 position = 1;
   Int32 collPosition = 1;
   Int32 char_count = 1;
   Int32 number_bytes;
-  // LCOV_EXCL_START
   while (position + searchLen -1 <= sourceLen)
   {
     if (str_cmp(searchStr, &sourceStr[position-1], (Int32)searchLen) != 0)
@@ -2222,7 +2215,6 @@ Lng32 ex_function_position::findPosition
     }
   }
   return 0;
-  // LCOV_EXCL_STOP
 }
 
 
@@ -2345,7 +2337,6 @@ ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
   
   return ex_expr::EXPR_OK;
 };
-// LCOV_EXCL_START
 static Lng32 findTokenPosition(char * sourceStr, Lng32 sourceLen,
 			      char * searchStr, Lng32 searchLen,
 			      short bytesPerChar)
@@ -2550,7 +2541,6 @@ ex_expr::exp_return_type ExFunctionReverseStr::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 };
 
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
 						   ComDiagsArea**)
@@ -3627,7 +3617,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     break;
   }
 
-  // LCOV_EXCL_START
   case REC_BYTE_F_ASCII: {
       if (CollationInfo::isSystemCollation(collation )) 
       {
@@ -3645,7 +3634,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 			  collation,
 			  TRUE);
 	}
-	// LCOV_EXCL_STOP
 	else //search
 	{
           Int32 effEncodedKeyLength = 0;
@@ -3690,7 +3678,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
      
       if (CollationInfo::isSystemCollation(collation))
       {
-    // LCOV_EXCL_START
 	Int16 nPasses = CollationInfo::getCollationNPasses(collation);
 	NABoolean rmTspaces = getRmTSpaces(collation);
 	
@@ -3724,7 +3711,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 	}
       }
       else
-  // LCOV_EXCL_STOP
       {
 
         //
@@ -3821,7 +3807,6 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 // class ex_function_encode
 ////////////////////////////////////////////////////////////////////
 ex_function_encode::ex_function_encode(){};
-// LCOV_EXCL_START
 ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
 				       Attributes ** attr,
 				       Space * space,
@@ -3837,7 +3822,6 @@ ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
   
   setCollEncodingType(CollationInfo::Sort);
 };
-// LCOV_EXCL_STOP
 ex_function_encode::ex_function_encode(OperatorTypeEnum oper_type,
 				       Attributes ** attr,
 				       Space * space,
@@ -4040,7 +4024,6 @@ void ex_function_encode::getCollationWeight(
     }
   }
 }
-// LCOV_EXCL_START
 unsigned char ex_function_encode::getCollationWeight( 
                                                      CharInfo::Collation collation,
                                                      Int16 pass,
@@ -4284,7 +4267,6 @@ void ex_function_encode::encodeCollationSearchKey(const UInt8 * src,
   str_pad( (char *) ptr,(encodeKey - ptr) + encodedKeyLength, '\0');
 
 } // ex_function_encode::encodeCollationSearchKey
-// LCOV_EXCL_STOP
 
 ////////////////////////////////////////////////////////////////////////
 // class ex_function_explode_varchar
@@ -5054,7 +5036,6 @@ ex_expr::exp_return_type ex_function_mod::eval(char *op_data[],
 ////////////////////////////////////////////////////////////////////
 // class ex_function_mask
 ////////////////////////////////////////////////////////////////////
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_function_mask::eval(char *op_data[], 
                                                 CollHeap* heap,
                                                 ComDiagsArea** diagsArea)
@@ -5181,7 +5162,6 @@ ex_expr::exp_return_type ExFunctionShift::eval(char *op_data[],
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 static
 ex_expr::exp_return_type getDoubleValue(double *dest,
                                         char *source,
@@ -5401,7 +5381,6 @@ ex_expr::exp_return_type ExpRaiseErrorFunction::eval(char *op_data[],
 // -----------------------------------------------------------------------
 // methods for ExFunctionPack
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 // Constructor.
 ExFunctionPack::ExFunctionPack(Attributes** attr,
                                Space* space,
@@ -5865,7 +5844,6 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
                                                      CollHeap* heap,
                                                      ComDiagsArea** diagsArea)
@@ -6109,7 +6087,6 @@ ex_expr::exp_return_type ExProgDistrib::eval(char *op_data[],
   *((ULng32 *)op_data[0]) = resultValue - 1;
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ExProgDistribKey::eval(char *op_data[],
                                                 CollHeap*,
                                                 ComDiagsArea**)
@@ -6145,7 +6122,6 @@ ex_expr::exp_return_type ExProgDistribKey::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 
 }
-// LCOV_EXCL_STOP
 ex_expr::exp_return_type ExPAGroup::eval(char *op_data[],
                                          CollHeap*,
                                          ComDiagsArea**)
@@ -6469,7 +6445,6 @@ ExRowsetArrayInto::eval(char *op_data[], CollHeap *heap,
 
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_function_nullifzero::eval(char *op_data[],
 						      CollHeap *heap,
 						      ComDiagsArea** diagsArea)
@@ -6504,7 +6479,6 @@ ex_expr::exp_return_type ex_function_nullifzero::eval(char *op_data[],
   
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP
 //
 // NVL(e1, e2) returns e2 if e1 is NULL otherwise e1. NVL(e1, e2) is
 // equivalent to ANSI/ISO
@@ -8632,5 +8606,4 @@ aes_decrypt_error:
 
   return ex_expr::EXPR_ERROR;
 }
-// LCOV_EXCL_STOP
 #pragma warn(1506)  // warning elimination 

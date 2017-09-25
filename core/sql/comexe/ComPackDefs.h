@@ -180,9 +180,7 @@
 
 #include <str.h>
 
-// LCOV_EXCL_START  
 inline void COPY_KEY_VTBL_PTR(char * from, char * to)
                       { str_cpy_all (to, from, sizeof(char *)); }
-// LCOV_EXCL_STOP
 #endif // COMPACKDEFS_H
 

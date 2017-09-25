@@ -58,7 +58,6 @@ enum {disjunctNumInitialValue = -1};
 // Member functions for class MdamRefList
 // *****************************************************************************
 
-// LCOV_EXCL_START
 // this desctor is not called as the instance is part of MdamColumn class and
 // would be constructed and destructed together.
 //Destructor.
@@ -71,10 +70,8 @@ MdamRefList::~MdamRefList()
     "MdamRefList::~MdamRefList() called for a non-empty reference list.");
 }
 
-// LCOV_EXCL_STOP
 // end of excluding the destructor from coverage checking.
 
-// LCOV_EXCL_START
 // this operator was designed for completeness but is not currently used
 // Compare two reference lists.  If they are equal, return true.
 // Otherwise, return false. Comparision stops at first non-match.
@@ -108,7 +105,6 @@ NABoolean MdamRefList::operator==(const MdamRefList & otherList) const
   return TRUE;
 }
 
-// LCOV_EXCL_STOP
 // end of excluding this equal operator from coverage checking
 
 // Copy the entries from one reference list to another.

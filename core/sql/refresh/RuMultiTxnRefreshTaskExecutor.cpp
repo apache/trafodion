@@ -190,7 +190,6 @@ void CRUMultiTxnRefreshTaskExecutor::UpdateTargetEpoch(TInt32 epoch)
     // In reality, it is retryable, but we have to handle that ourselves. 
     pStat->ExecuteUpdate(TRUE);
   }
-  // LCOV_EXCL_START :rfi
   catch (CDMException &eDm)
   {
     if (eDm.GetErrorCode (0) == -VERSION_PLAN_VERSION_ERROR_NON_RETRYABLE_STATEMENT)
@@ -199,7 +198,6 @@ void CRUMultiTxnRefreshTaskExecutor::UpdateTargetEpoch(TInt32 epoch)
     else
       throw;
   }
-  // LCOV_EXCL_STOP
 
   pStat->Close();
 }
@@ -610,7 +608,6 @@ void CRUMultiTxnRefreshTaskExecutor::
 			
 			CommitTransaction();
 		}
-		// LCOV_EXCL_START :rfi
 		catch (CDSException &ex)
 		{
 			pStat->Close();
@@ -626,7 +623,6 @@ void CRUMultiTxnRefreshTaskExecutor::
 			
 			return;
 		}
-		// LCOV_EXCL_STOP
 
 #ifdef _DEBUG
 		// This section is only for the regression test
@@ -708,7 +704,6 @@ CDMPreparedStatement * CRUMultiTxnRefreshTaskExecutor::
 		// Simulate a system error at this point!
 		TESTPOINT_SEVERE2(CRUGlobals::SEVERE_PREPARE_CRASH, GetRootMVName());
 	}
-	// LCOV_EXCL_START :rfi
 	catch (CDSException &ex)
 	{
 		ex.SetError(IDS_RU_IREFRESH_FAILED);	
@@ -725,7 +720,6 @@ CDMPreparedStatement * CRUMultiTxnRefreshTaskExecutor::
 									GetLastSQL(type));
 		throw ex;	// Re-throw
 	}
-	// LCOV_EXCL_STOP
 
 	return pStat;
 }
@@ -793,7 +787,6 @@ void CRUMultiTxnRefreshTaskExecutor::LogClosureMessage()
 //--------------------------------------------------------------------------//
 //	CRUMultiTxnRefreshTaskExecutor::StoreRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUMultiTxnRefreshTaskExecutor::
 	StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -812,12 +805,10 @@ void CRUMultiTxnRefreshTaskExecutor::
 	translator.SetMessageType(CUOFsIpcMessageTranslator::
 		RU_MULTI_TXN_REFRESH_EXECUTOR);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUMultiTxnRefreshTaskExecutor::StoreReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUMultiTxnRefreshTaskExecutor::
 	StoreReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -831,12 +822,10 @@ void CRUMultiTxnRefreshTaskExecutor::
 	translator.WriteBlock(&txnCounter_, sizeof(short));
 
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUAuditRefreshTaskExecutor::LoadRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUMultiTxnRefreshTaskExecutor::
 	LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -852,12 +841,10 @@ void CRUMultiTxnRefreshTaskExecutor::
 	translator.ReadBlock(&multiTxnTargetEpoch_, sizeof(TInt32));
 	translator.ReadBlock(&txnCounter_, sizeof(short));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUAuditRefreshTaskExecutor::LoadReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUMultiTxnRefreshTaskExecutor::
 	LoadReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -870,5 +857,4 @@ void CRUMultiTxnRefreshTaskExecutor::
 	translator.ReadBlock(&multiTxnTargetEpoch_, sizeof(TInt32));
 	translator.ReadBlock(&txnCounter_, sizeof(short));
 }
-// LCOV_EXCL_STOP
 

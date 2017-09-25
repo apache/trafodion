@@ -360,13 +360,11 @@ Lng32 na_wcstol (const NAWchar * wstr)
   return (Lng32)na_wcstoll(wstr);
 }
 
-//LCOV_EXCL_START : cnu - used only by swscanf() (which is not used) and EncodedValue.cpp (in DEBUG code)
 double na_wcstod(const NAWchar *, NAWchar **)
 {
    // not implemented!
    return (double)0;
 }
-//LCOV_EXCL_STOP
 
 NAWchar *na_wmemchr(const NAWchar *ws, NAWchar wc, Int32 n) 
 {
@@ -402,7 +400,6 @@ size_t na_mbstowcs(NAWchar* wp, const char* p,  size_t mx_wp)
   return n;
 }
 
-//LCOV_EXCL_START : cnu [ used only by CIEDelimDataFileDoubleByte::PositionFile() in the IMPORT utility ]
 NAWchar* na_wcswcs(const NAWchar* wp1, const NAWchar* wp2)
 { 
    if ( wp2 == NULL || *wp2 == (NAWchar)0 ) 
@@ -419,7 +416,6 @@ NAWchar* na_wcswcs(const NAWchar* wp1, const NAWchar* wp2)
 
    return NULL;
 }
-//LCOV_EXCL_STOP
 
 #include "swscanf.cpp"
 #include "swsprintf.cpp"

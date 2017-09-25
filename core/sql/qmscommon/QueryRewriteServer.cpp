@@ -263,11 +263,9 @@ IpcServer* MvQueryRewriteServer::getQmsServer(DefaultToken publishDest,
             }
           else
             {
-              // LCOV_EXCL_START :rfi
               QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                 "Failed to allocate server process for QMS");
               QRLogger::logDiags(diagsArea, CAT_SQL_COMP_QR_IPC);
-              // LCOV_EXCL_STOP
             }
         }
       else
@@ -276,14 +274,12 @@ IpcServer* MvQueryRewriteServer::getQmsServer(DefaultToken publishDest,
             "Could not find local QMS.");
         }
     }
-    // LCOV_EXCL_START :rfi
     catch(...)
     {
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "Exception when allocating server process for QMS");
       return NULL;
     }
-    // LCOV_EXCL_STOP
     }
   return qmsServer_;
 }  // End of getQmsServer
@@ -438,30 +434,24 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
           }
           break;
 
-        // LCOV_EXCL_START :rfi
         default:
-          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);  // LCOV_EXCL_LINE :rfi
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);
           break;
-        // LCOV_EXCL_STOP
       }
 
       if (msgStream.moreObjects())
         {
-          // LCOV_EXCL_START :rfi
           QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
             "Match request received one or more extraneous response "
                      "objects, which were discarded");
           msgStream.clearAllObjects();
-          // LCOV_EXCL_STOP
         }
     }
   else
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "No response object in message stream from QMS");
       checkQmsServer();
-      // LCOV_EXCL_STOP
     }
 
   return xmlResponse;
@@ -476,7 +466,7 @@ QRRequestResult MvQueryRewriteServer::initQms(IpcServer* qmsServer,
     QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, "...Initialization succeeded");
   else
     QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "INITIALIZATION FAILED, result = %d",
-                  response); // LCOV_EXCL_LINE :rfi
+                  response);
   return response;
 }
 
@@ -521,29 +511,23 @@ QRRequestResult MvQueryRewriteServer::sendInitializeMessage(IpcServer* qms,
           statusResponse->decrRefCount();
         }
       else
-        // LCOV_EXCL_START :rfi
         QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);
-        // LCOV_EXCL_STOP
 
       if (msgStream.moreObjects())
         {
-          // LCOV_EXCL_START :rfi
           QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
             "Initialize request received one or more extraneous response "
                      "objects, which were discarded");
           msgStream.clearAllObjects();
-          // LCOV_EXCL_STOP
         }
     }
   else
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "No response object in message stream from QMS");
 
       if (qmsServer_)
          checkQmsServer();
-      // LCOV_EXCL_STOP
     }
 
   return status;
@@ -569,8 +553,8 @@ void MvQueryRewriteServer::formatTimestamp(
 {
   if (GMT_Time == 0)
   {
-    buffer[0] = '\0';  // LCOV_EXCL_LINE :rfi
-    return;            // LCOV_EXCL_LINE :rfi
+    buffer[0] = '\0';
+    return;
   }
 
   short    Date_and_Time[8];
@@ -591,8 +575,8 @@ void MvQueryRewriteServer::formatTimestamp(
    if (GMT_Time > 274958971199999999LL || // The year 4000
        GMT_Time < 146728398400000000LL)   // The year 1
    {
-      *buffer = 0;  // LCOV_EXCL_LINE :rfi
-      return;       // LCOV_EXCL_LINE :rfi
+      *buffer = 0;
+      return; 
    }
 //#endif
 
@@ -601,7 +585,7 @@ void MvQueryRewriteServer::formatTimestamp(
 
 // If we can't convert, just show GMT
    if (errorNumber)
-      isGMT = true;  // LCOV_EXCL_LINE :rfi
+      isGMT = true;
 
 // Decompose timestamp
    INTERPRETTIMESTAMP(julianTime,Date_and_Time);
@@ -627,13 +611,11 @@ void MvQueryRewriteServer::formatTimestamp(
 
    if (isGMT)
    {
-      // LCOV_EXCL_START :rfi
       buffer[27] = ' '; 
       buffer[28] = 'G';
       buffer[29] = 'M';
       buffer[30] = 'T';
       buffer[31] = 0;
-      // LCOV_EXCL_STOP
    }
    else
       buffer[27] = 0;
@@ -655,7 +637,6 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   // String constant used in logging entries.
   const static char PUBLISH[] = "PUBLISH";
  
-  // LCOV_EXCL_START :rfi
   if (!descriptorText)
     {
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
@@ -663,16 +644,13 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
                  "MvQueryRewriteServer::sendPublishMessage()");
       return InternalError;
     }
-  // LCOV_EXCL_STOP
 
-  // LCOV_EXCL_START :rfi
   if (!server)
     {
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "null server passed to MvQueryRewriteServer::sendPublishMessage()");
       return InternalError;
     }
-  // LCOV_EXCL_STOP
 
   // Only messages we deal with here are publish.
   const char* requestName = PUBLISH;
@@ -742,11 +720,9 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   }
   else if (msgStream.getNextObjType() != QR::STATUS_RESPONSE)
   {
-    // LCOV_EXCL_START :rfi
     QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
       "Wrong response object returned from %s request", requestName);
     return ProtocolError;
-    // LCOV_EXCL_STOP
   }
   else
   {
@@ -757,26 +733,20 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
         "%s request succeeded", requestName);
     else
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "%s request failed with status %d", requestName, result);
-      // LCOV_EXCL_STOP
     if (msgStream.moreObjects())
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "%s request received one or more extraneous response "
                   "objects, which were discarded", requestName);
       msgStream.clearAllObjects();
-      // LCOV_EXCL_STOP
     }
     return result;
   }
 }  // sendPublishMessage
 
-// LCOV_EXCL_START :nsk
 void extractDefineAndThenPutEnvIfFound(char *defineName)
 {
 } // static void extractDefineAndThenPutEnvIfFound()
-// LCOV_EXCL_STOP
 

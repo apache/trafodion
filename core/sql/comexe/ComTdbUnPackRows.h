@@ -235,9 +235,7 @@ public:
   //
   // Exclude this code from coverage analysis.
   // This code could be deleted since it is the same as the base implementation.
-  // LCOV_EXCL_START
   Int32 orderedQueueProtocol() const { return -1; }
-  // LCOV_EXCL_STOP
 
   // return a pointer to the specifed (by position) child TDB.
   // UnPackRows has only one child.

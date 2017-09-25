@@ -106,7 +106,7 @@ public:
 
   virtual void release(); // release
 
-  virtual void display() const {}; // LCOV_EXCL_LINE
+  virtual void display() const {};
 
   // key range iterator methods
   virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
@@ -123,12 +123,10 @@ public:
 
   // on the next method, we pass in NULL if a probe resulted in no
   // data; we pass in the encoded key value if data was obtained
-// LCOV_EXCL_START
   virtual void reportProbeResult(char *)
   { 
     ex_assert(0,"reportProbeResult() was called when it shouldn't have been");
   };
-// LCOV_EXCL_STOP
 
   // when getNextKeyRange() returns FETCH_RANGE or PROBE_RANGE, the
   // caller should call the next four methods to get its hands on the

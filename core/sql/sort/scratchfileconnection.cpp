@@ -45,7 +45,6 @@ $
 #include "ScratchFileConnection.h"
 #include "ex_ex.h"
 
-// LCOV_EXCL_START
 ScratchFileConnection::ScratchFileConnection(Int32 index, ScratchFile *sf,
                                              ExSubtask *eventHandler,
                                              IpcEnvironment *env,
@@ -151,4 +150,3 @@ void ScratchFileConnection::populateDiagsArea(ComDiagsArea *&, CollHeap *)
     ex_assert(0,"Should never call SqlTableConnection::populateDiagsArea()");
 }
 
-// LCOV_EXCL_STOP

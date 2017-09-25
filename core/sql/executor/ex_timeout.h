@@ -133,10 +133,10 @@ public:
   inline Int32 orderedQueueProtocol() 
     const{return ((const ExTimeoutTdb &)tdb).orderedQueueProtocol();}
 
-  void freeResources(){}; // LCOV_EXCL_LINE
+  void freeResources(){};
   
   Int32 numChildren() const { return 0; }   
-  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; } // LCOV_EXCL_LINE
+  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; }
 
 private:
 

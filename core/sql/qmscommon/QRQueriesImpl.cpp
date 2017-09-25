@@ -135,7 +135,6 @@ void QRQueriesImpl::commitTransaction()
   return;
 }  // End of commitTransaction
 
-// LCOV_EXCL_START :rfi
 // *************************************************************** 
 // * Rollback the transaction
 // * This routine calls a static SQL routine to execute "ROLLBACK WORK;"
@@ -149,7 +148,6 @@ void QRQueriesImpl::rollbackTransaction()
 
   return;
 }  // End of rollbackTransaction
-// LCOV_EXCL_STOP
 
 // *************************************************************** 
 // *************************************************************** 
@@ -171,13 +169,11 @@ NABoolean QRQueriesImpl::getSystemDefault(const char* attribute, char* defValue)
     // Always close to free up resources
     queries_->closeSystemDefault();
   }
-  // LCOV_EXCL_START :rfi
   catch(...)
   {
     // If we get an error here, just go with the defaults.
     return FALSE;
   }
-  // LCOV_EXCL_STOP
 
   if (sqlCode == SQL_Success)
     return TRUE;
@@ -242,19 +238,16 @@ NABoolean QRQueriesImpl::getCollectQMSStatsEnabled()
 
   if (getSystemDefault(collectQMSStatsdEnabled, defValue) == FALSE)
     return FALSE; // The default value.
-  // LCOV_EXCL_START :cnu CQD does not exist.
   else if (!strcmp(defValue, "OFF"))
     return FALSE;
   else if (!strcmp(defValue, "ON"))
     return TRUE;
-  // LCOV_EXCL_STOP
   else
-    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,  // LCOV_EXCL_LINE :rfi
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                        FALSE, QRDatabaseException,
                        "Invalid value for MVQR_COLLECT_QMS_STATS system default: %s.", defValue);
 }
 
-// LCOV_EXCL_START :cnu
 // *************************************************************** 
 // * Get the ISO_MAPPING setting from the SYSTEM DEFAULTS TABLE
 // * for National character set support.
@@ -282,9 +275,7 @@ CharInfo::CharSet QRQueriesImpl::getIsoMapping()
     return  CharInfo::getCharSetEnum((const char *)"ISO88591");
   }
 }  // End of getIsoMapping
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :cnu
 // *************************************************************** 
 // * Get the DEFAULT_CHARSET setting from the SYSTEM DEFAULTS TABLE
 // * for National character set support.
@@ -311,11 +302,9 @@ CharInfo::CharSet QRQueriesImpl::getDefaultCharset()
     return CharInfo::getCharSetEnum((const char *)"ISO88591");
   }
 }  // End of getDefaultCharset
-// LCOV_EXCL_STOP
 
 // *************************************************************** 
 // *************************************************************** 
-// LCOV_EXCL_START :cnu
 Int32 QRQueriesImpl::getMvqrCpusPerQMS()
 {
   static const char cpusPerQms[] = "MVQR_CPUS_PER_QMS";
@@ -330,11 +319,9 @@ Int32 QRQueriesImpl::getMvqrCpusPerQMS()
     return result;
   }
 }  // End of getMvqrCpusPerQMS
-// LCOV_EXCL_STOP
 
 // *************************************************************** 
 // *************************************************************** 
-// LCOV_EXCL_START :cnu
 Int32 QRQueriesImpl::getMvqrQMSCpuOffset()
 {
   static const char qmsCpusOffset[] = "MVQR_QMS_CPU_OFFSET";
@@ -349,7 +336,6 @@ Int32 QRQueriesImpl::getMvqrQMSCpuOffset()
     return result;
   }
 }  // End of getMvqrQMSCpuOffset
-// LCOV_EXCL_STOP
 
 // *************************************************************** 
 // * Obtain the CAT_UID for a specific catalog

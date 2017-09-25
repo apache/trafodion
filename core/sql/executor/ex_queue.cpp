@@ -212,7 +212,6 @@ void ex_queue::removeHead()
 } // ex_queue::removeHead()
 #endif
 	       
-// LCOV_EXCL_START
 //soln 10-040111-2308 start
 void ex_queue::deleteHeadEntry()
 {
@@ -256,7 +255,6 @@ void ex_queue::deleteHeadEntry()
 
 } // ex_queue::deleteHeadEntry()
 //soln 10-040111-2308 end
-// LCOV_EXCL_STOP
 
 void ex_queue_entry::passAtp(const ex_queue_entry *from)
 {
