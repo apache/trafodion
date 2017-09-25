@@ -1857,16 +1857,16 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			break;
         case Types.BLOB:
             data = getLocalString(columnIndex);
-            if (data != null) {
+            if ( !connection_.props_.getUseLobHandle() && data != null) {
                 Blob blob = new TrafT4Blob(connection_, data, null);
-                return new String((blob.getBytes(1, (int) blob.length())));
+                data = new String((blob.getBytes(1, (int) blob.length())));
             }
             break;
         case Types.CLOB:
             data = getLocalString(columnIndex);
-            if (data != null) {
+            if ( !connection_.props_.getUseLobHandle() && data != null) {
                 Clob clob = new TrafT4Clob(connection_, data, null);
-                return clob.getSubString(1, (int)clob.length());
+                data =  clob.getSubString(1, (int)clob.length());
             }
             break;
 		case Types.VARBINARY:

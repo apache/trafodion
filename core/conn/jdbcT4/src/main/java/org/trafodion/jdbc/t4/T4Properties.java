@@ -120,6 +120,7 @@ public class T4Properties {
 	String blobTableName_;
 
     private int lobChunkSize_ = 10; // default 10M
+    private boolean useLobHandle_ = false;
 
     // private short transportBufferSize_;
 	private boolean useArrayBinding_;
@@ -429,6 +430,7 @@ public class T4Properties {
         setTcpNoDelay(getProperty("tcpNoDelay"));
 
         setLobChunkSize(getProperty("lobChunkSize"));
+        setUseLobHandle(getProperty("useLobHandle"));
 	}
 
 	T4Properties getT4Properties() {
@@ -523,6 +525,7 @@ public class T4Properties {
         props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
         
         props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
+        props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
 
 		return props;
 	}
@@ -1907,6 +1910,23 @@ public class T4Properties {
                 sqlExceptionMessage_ = "Incorrect value for setLobChunkSize set: " + val + ex.getMessage();
                 this.lobChunkSize_ = 10;
             }
+        }
+    }
+
+    public boolean getUseLobHandle() {
+        return useLobHandle_;
+    }
+
+    public void setUseLobHandle(boolean useLobHandle) {
+        this.useLobHandle_ = useLobHandle;
+    }
+
+    public void setUseLobHandle(String val) {
+        if (val != null) {
+            setUseLobHandle(Boolean.parseBoolean(val));
+        }
+        else {
+            setUseLobHandle(false);
         }
     }
 
