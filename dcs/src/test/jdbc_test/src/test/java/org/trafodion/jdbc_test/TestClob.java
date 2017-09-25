@@ -23,6 +23,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,10 +52,17 @@ public class TestClob {
 
 	@BeforeClass
 	public static void doTestSuiteSetup() throws Exception {
-		try {
-			_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
-			Statement stmt = _conn.createStatement();
-
+	    try {
+            _conn = Utils.getUserConnection();
+	    }
+	    catch (SQLException se) {
+            se.printStackTrace();
+	        fail("failed to create connection : " + se.getMessage());
+	    }
+	    try (
+	            Statement stmt = _conn.createStatement();
+	            )
+        {
 			// use CQD to enable CLOB support
 			stmt.execute("CQD TRAF_CLOB_AS_VARCHAR 'OFF'");
 			// stmt.execute(strDropTable);
@@ -62,6 +70,7 @@ public class TestClob {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
+            fail("failed to set CQD for CLOB");
 		}
 	}
 

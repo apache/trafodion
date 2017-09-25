@@ -8534,12 +8534,13 @@ void
 odbc_SQLSrvr_ExtractLob_ame_(
     /* In   */ CEE_tag_def objtag_
   , /* In   */ const CEE_handle_def *call_id_
-  , /* In   */ IDL_long    extractLobAPI
-  , /* In   */ IDL_string  lobHandle)
+  , /* In   */ IDL_short   extractLobAPI
+  , /* In   */ IDL_string  lobHandle
+  , /* In   */ IDL_long_long    extractLen)
 {
     ERROR_DESC_LIST_def sqlWarning = {0, 0};
-    IDL_long_long lobDataLen = 0;
-    BYTE * lobDataValue = NULL;
+    IDL_long_long lobLength = 0;
+    BYTE * extractData = NULL;
 
     odbc_SQLsrvr_ExtractLob_exc_ exception_ = {0, 0};
 
@@ -8548,14 +8549,17 @@ odbc_SQLSrvr_ExtractLob_ame_(
                                  &exception_,
                                  extractLobAPI,
                                  lobHandle,
-                                 lobDataLen,
-                                 lobDataValue);
+                                 lobLength,
+                                 extractLen,
+                                 extractData);
 
     odbc_SQLSrvr_ExtractLob_ts_res_(objtag_,
                                     call_id_,
                                     &exception_,
-                                    lobDataLen,
-                                    lobDataValue);
+                                    extractLobAPI,
+                                    lobLength,
+                                    extractLen,
+                                    extractData);
 }
 
 void

@@ -1526,14 +1526,15 @@ EXTRACTLOB_IOMessage(
     IDL_char     *curptr;
     IDL_long inputPosition = 0;
 
-    IDL_long extractLobAPI = 0;
+    IDL_short extractLobAPI = 0;
+    IDL_long extractLen = 0;
     IDL_long lobHandleLen = 0;
     IDL_string lobHandle = NULL;
     IDL_long lobHandleCharset = 0;
 
     curptr = pnode->r_buffer();
 
-    extractLobAPI = *(IDL_long *)(curptr + inputPosition);
+    extractLobAPI = *(IDL_short *)(curptr + inputPosition);
     inputPosition += sizeof(extractLobAPI);
 
     lobHandleLen = *(IDL_long*)(curptr + inputPosition);
@@ -1547,11 +1548,15 @@ EXTRACTLOB_IOMessage(
         inputPosition += sizeof(lobHandleCharset);
     }
 
+    extractLen = *(IDL_long *)(curptr + inputPosition);
+    inputPosition += sizeof(extractLen);
+
     odbc_SQLSrvr_ExtractLob_ame_(
             objtag_,
             call_id_,
             extractLobAPI,
-            lobHandle
+            lobHandle,
+            extractLen
             );
 }
 

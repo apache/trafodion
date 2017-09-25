@@ -27,9 +27,9 @@ class ExtractLobMessage {
 
 	static final short LOB_EXTRACT_LEN                 = 0;
 	static final short LOB_EXTRACT_BUFFER              = LOB_EXTRACT_LEN + 1;
-	static final short LOB_EXTRACT_BOTH_LEN_AND_BUFFER = LOB_EXTRACT_BUFFER + 1;
+	static final short LOB_CLOSE_CURSOR                = LOB_EXTRACT_BUFFER + 1;
 
-	static LogicalByteArray marshal(short extractType, String lobHandle, int lobHandleCharset, long lobLength, InterfaceConnection ic) throws SQLException{
+	static LogicalByteArray marshal(short extractType, String lobHandle, int lobHandleCharset, long extractLen, InterfaceConnection ic) throws SQLException{
 		int wlength = Header.sizeOf();
 		LogicalByteArray buf;
 
@@ -37,20 +37,23 @@ class ExtractLobMessage {
 			byte[] lobHandleBytes = ic.encodeString(lobHandle, InterfaceUtilities.SQLCHARSETCODE_UTF8);
 
 			wlength += TRANSPORT.size_int;
-			// wlength += TRANSPORT.size_long; // length of lobHandle
 
 			if (lobHandle.length() > 0) {
 				wlength += TRANSPORT.size_bytesWithCharset(lobHandleBytes);
 			}
 
-			if (lobLength > 0) {
+			if (extractLen > 0) {
 				wlength += TRANSPORT.size_long;
 			}
 
 			buf = new LogicalByteArray(wlength, Header.sizeOf(), ic.getByteSwap());
 
-			buf.insertInt(extractType);
+			buf.insertShort(extractType);
 			buf.insertStringWithCharset(lobHandleBytes, lobHandleCharset);
+			
+			if (extractType == LOB_EXTRACT_BUFFER) {
+				buf.insertLong(extractLen);
+			}
 			return buf;
 		} catch (Exception e) {
 			throw TrafT4Messages.createSQLException(ic.t4props_, ic.getLocale(), "unsupported_encoding", "UTF-8");

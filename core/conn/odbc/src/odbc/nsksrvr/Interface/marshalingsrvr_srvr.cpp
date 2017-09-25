@@ -2307,8 +2307,10 @@ odbc_SQLsrvr_ExtractLob_param_res_(
       , char* &buffer
       , UInt32& message_length
       , const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
-      , IDL_long_long lobDataLen
-      , BYTE * lobDataValue
+      , IDL_short extractLobAPI
+      , IDL_long_long lobLength
+      , IDL_long_long extractLen
+      , BYTE * extractData
 )
 {
     CEE_status sts = CEE_SUCCESS;
@@ -2352,13 +2354,20 @@ odbc_SQLsrvr_ExtractLob_param_res_(
             break;
     }
 
-    // length of IDL_long  LOB len
-    wlength += sizeof(IDL_long);
-    if (lobDataValue != NULL)
-    {
-        wlength += lobDataLen;
+    wlength += sizeof(IDL_short);
+    switch (extractLobAPI) {
+    case 0:
+        wlength += sizeof(IDL_long_long);
+        break;
+    case 1:
+        wlength += sizeof(IDL_long_long);
+        wlength += extractLen;
+        break;
+    case 2:
+        break;
+    default:
+        break;
     }
-    wlength += lobDataLen;
 
     // update the length of message
     message_length = wlength;
@@ -2394,10 +2403,25 @@ odbc_SQLsrvr_ExtractLob_param_res_(
         default:
             break;
     }
-    IDL_long_copy((IDL_long *)&lobDataLen, curptr);
-    if (lobDataValue != NULL)
-    {
-        IDL_byteArray_copy(lobDataValue, lobDataLen, curptr);
+
+    //IDL_long_copy((IDL_long *)&extractLobAPI, curptr);
+    IDL_short_copy((IDL_short *)&extractLobAPI, curptr);
+
+    switch (extractLobAPI) {
+    case 0:
+        IDL_long_long_copy((IDL_long_long *)&lobLength, curptr);
+        break;
+    case 1:
+        IDL_long_long_copy((IDL_long_long *)&extractLen, curptr);
+        if (extractLen != 0)
+        {
+            IDL_byteArray_copy(extractData, extractLen, curptr);
+        }
+        break;
+    case 2:
+        break;
+    default:
+        break;
     }
 
     return sts;

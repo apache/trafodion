@@ -41,6 +41,7 @@ import java.io.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import static org.junit.Assert.fail;
 
 /*  The test case is added for bug #1452993;
  *  T2 don't read the property file from System Properties but T4 do it.
@@ -54,10 +55,14 @@ public class PropTest
     public void  testDefaultPropertiesConnection() throws SQLException {
         Connection conn = null;
         try {
+            conn = Utils.getUserConnection();
+        }
+        catch (Exception e) {
+            fail("failed to create connection" + e.getMessage());
+        }
+        try {
             // The option -Dproperties=propFile can be used to instead of System.setProperty()
             System.setProperty("properties", System.getProperty("trafjdbc.properties"));
-
-            conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
             System.out.println("Catalog : " + conn.getCatalog());
             assertEquals("Catalog should be the same as the properties file defined",Utils.catalog, conn.getCatalog());
             System.out.println("testDefaultPropertiesConnection : PASS");

@@ -119,7 +119,9 @@ public class T4Properties {
 	String clobTableName_;
 	String blobTableName_;
 
-	// private short transportBufferSize_;
+    private int lobChunkSize_ = 10; // default 10M
+
+    // private short transportBufferSize_;
 	private boolean useArrayBinding_;
 	private boolean batchRecovery_;
 	private final String propPrefix_ = "t4jdbc.";
@@ -425,6 +427,8 @@ public class T4Properties {
 		setKeepAlive(getProperty("keepAlive"));
 		setTokenAuth(getProperty("tokenAuth"));
         setTcpNoDelay(getProperty("tcpNoDelay"));
+
+        setLobChunkSize(getProperty("lobChunkSize"));
 	}
 
 	T4Properties getT4Properties() {
@@ -518,6 +522,8 @@ public class T4Properties {
 		props.setProperty("tokenAuth", String.valueOf(_tokenAuth));
         props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
         
+        props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
+
 		return props;
 	}
 
@@ -1883,6 +1889,26 @@ public class T4Properties {
 	long getReserveDataLocator() {
 		return reserveDataLocator_;
 	}
+
+    public int getLobChunkSize() {
+        return lobChunkSize_;
+    }
+
+    public void setLobChunkSize(int lobChunkSize_) {
+        this.lobChunkSize_ = lobChunkSize_;
+    }
+
+    public void setLobChunkSize(String val) {
+        this.lobChunkSize_ = 10;
+        if (val != null) {
+            try {
+                this.lobChunkSize_ = Integer.parseInt(val);
+            } catch (NumberFormatException ex) {
+                sqlExceptionMessage_ = "Incorrect value for setLobChunkSize set: " + val + ex.getMessage();
+                this.lobChunkSize_ = 10;
+            }
+        }
+    }
 
 	/**
 	 * Returns the rounding mode set for the driver as an Integer value with one
