@@ -9736,6 +9736,11 @@ static void OloadJson(int eid)
             k = 0;
         }
     }
+
+    if (pJsonReader->errorCode != JSON_ERROR_PARSE_EOF) {
+        fprintf(stderr, "odb [OloadJson(%d)] - Error parse json file encountered error:%s\n", __LINE__, jsonReaderErrorMessage(pJsonReader));
+    }
+
     jsonReaderFree(pJsonReader);
     /* load trailing rows */
     if (m) {                          /* Insert rowset */

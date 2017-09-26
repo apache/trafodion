@@ -38,13 +38,45 @@ JsonReader *jsonReaderNew(const char *path)
         return NULL;
     }
 
-    strncpy(pJsonReader->jsonFileName, path, JSON_PARSER_MAX_FILE_NAME_LEN);
+    pJsonReader->jsonFileName = (char *)malloc(strlen(path) + 1);
+    if (!pJsonReader->jsonFileName) {
+        return NULL;
+    }
+
+    strcpy(pJsonReader->jsonFileName, path);
     pJsonReader->nestDepth = 0;
     pJsonReader->state = JSON_STATE_START;
     pJsonReader->errorCode = JSON_SUCCESS;
     pJsonReader->currentCharPtr = pJsonReader->buf;
 
     return pJsonReader;
+}
+
+const char *jsonReaderErrorMessage(JsonReader *pJsonReader) {
+    switch (pJsonReader->errorCode)
+    {
+    case JSON_SUCCESS:
+        strcpy(pJsonReader->errorMessage, "success");
+        break;
+    case JSON_ERROR_DEPTH:
+        sprintf(pJsonReader->errorMessage, "nested depth exceeding limit of %d in file:%s, line:%lu, pos:%lu",
+            JSON_PARSER_MAX_NESTED_NUM, pJsonReader->jsonFileName, pJsonReader->lineNum, pJsonReader->linePos);
+        break;
+    case JSON_ERROR_PARSE_EOF:
+        strcpy(pJsonReader->errorMessage, "parse to end of file");
+        break;
+    case JSON_ERROR_STATE:
+        strcpy(pJsonReader->errorMessage, "error state");
+        break;
+    case JSON_ERROR_BAD_FORMAT:
+        sprintf(pJsonReader->errorMessage, "unexpected character in file:%s, line:%lu, pos:%lu",
+            pJsonReader->jsonFileName, pJsonReader->lineNum, pJsonReader->linePos);
+        break;
+    default:
+        strcpy(pJsonReader->errorMessage, "unexpected error code");
+        break;
+    }
+    return pJsonReader->errorMessage;
 }
 
 JsonReaderError jsonMoveCurrentCharPtr(JsonReader *pJsonReader)
@@ -59,7 +91,7 @@ JsonReaderError jsonMoveCurrentCharPtr(JsonReader *pJsonReader)
             pJsonReader->isBufReady = true;
         }
         else {
-            pJsonReader->errorCode = JSON_ERROR_PARSE_EOF;
+            return (pJsonReader->errorCode = JSON_ERROR_PARSE_EOF);
         }
     }
 
@@ -559,5 +591,8 @@ JsonReaderError jsonParse(JsonReader *pJsonReader)
 void jsonReaderFree(JsonReader *pJsonReader)
 {
     fclose(pJsonReader->jsonFile);
+    if (pJsonReader->jsonFileName) {
+        free(pJsonReader->jsonFileName);
+    }
     free(pJsonReader);
 }

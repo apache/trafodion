@@ -29,7 +29,6 @@
 
 #define JSON_PARSER_BUF_LEN 1024
 #define JSON_PARSER_ERROR_MESSAGE_LEN 512
-#define JSON_PARSER_MAX_FILE_NAME_LEN 256
 #define JSON_PARSER_MAX_NESTED_NUM 100
 
 #ifndef bool
@@ -65,20 +64,8 @@ typedef enum JsonReaderState_ JsonReaderState;
 enum JsonReaderError_
 {
     JSON_SUCCESS,
-    JSON_CONTINUE,
     JSON_ERROR_DEPTH,
     JSON_ERROR_PARSE_EOF,
-    JSON_ERROR_PARSE_UNEXPECTED,
-    JSON_ERROR_PARSE_NULL,
-    JSON_ERROR_PARSE_BOOLEAN,
-    JSON_ERROR_PARSE_NUMBER,
-    JSON_ERROR_PARSE_ARRAY,
-    JSON_ERROR_PARSE_OBJECT_KEY_NAME,
-    JSON_ERROR_PARSE_OBJECT_KEY_SEP,
-    JSON_ERROR_PARSE_OBJECT_VALUE_SEP,
-    JSON_ERROR_PARSE_STRING,
-    JSON_ERROR_PARSE_COMMENT,
-    JSON_ERROR_SIZE,
     JSON_ERROR_STATE,
     JSON_ERROR_BAD_FORMAT
 };
@@ -98,10 +85,10 @@ struct JsonReader_
     size_t nestDepth;
     JsonReaderState state;
     JsonReaderError errorCode;
-    char errorMsg[JSON_PARSER_ERROR_MESSAGE_LEN];
     char buf[JSON_PARSER_BUF_LEN];
+    char errorMessage[JSON_PARSER_ERROR_MESSAGE_LEN];
     char *currentCharPtr;
-    char jsonFileName[JSON_PARSER_MAX_FILE_NAME_LEN];
+    char *jsonFileName;
     size_t numberReadBuf;
     size_t lineNum;
     size_t linePos;
@@ -116,6 +103,12 @@ typedef struct JsonReader_ JsonReader;
  * return: pointer to json reader
  */
 JsonReader *jsonReaderNew(const char *path);
+
+/* jsonReaderErrorMessage: get json reader error message
+ * pJsonReader: pointer to json reader
+ * return: pointer to json reader
+ */
+const char *jsonReaderErrorMessage(JsonReader *pJsonReader);
 
 /* jsonMoveCurrentCharPtr: move current char pointer forward.
  *
