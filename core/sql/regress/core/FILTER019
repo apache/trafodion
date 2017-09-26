@@ -53,11 +53,11 @@ s/TotWriteIOs:[ ][0-9]*[ ]*/ There was an Overflow, /
 s/TotReadIOs:[ ][0-9]*[ ]*//
 s/MinClusterRows:[ ][0-9]*[ ]*//
 s/MaxClusterRows:[ ][0-9]*[ ]*//
-s/ClusterRowsVar:[ ][0-9]*[ ]*//
+s/ClusterRowsVar:[ ][0-9.]*[ ]*//
 s/ClusterNo:[ ][0-9]*[ ]*//g
 s/NumBuckets:[ ][0-9]*[ ]*//g
 s/ActRows:[ ][0-9]*[ ]*//g
 s/NumChains:[ ][0-9]*[ ]*//g
 s/MaxChain:[ ][0-9]*[ ]*//g
-s/VarChain:[ ][0-9]*[ ]*//g
+s/VarChain:[ ][0-9.]*[ ]*//g
 " $fil
