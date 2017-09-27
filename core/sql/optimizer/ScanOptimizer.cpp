@@ -451,6 +451,215 @@ static NABoolean checkMDAMadditionalRestriction(
   return FALSE;
 }
 
+
+// MDAM Cost Workarea
+//
+// This object is used to compute the optimal MDAM cost.
+//
+// It is allocated on the stack only.
+
+class NewMDAMCostWA
+{
+public:
+  NewMDAMCostWA(FileScanOptimizer & optimizer,
+    NABoolean mdamForced,
+    MdamKey *mdamKeyPtr,
+    const Cost *costBoundPtr,
+    const ValueIdSet & exePreds,
+    const CostScalar & singleSubsetSize);
+  void compute();
+  NABoolean isMdamWon() const;
+  NABoolean hasNoExePreds() const;
+  const CostScalar & getNumKBytes() const;
+  void computeDisjunct();
+  Cost * getScmCost();
+
+private:
+  // output
+  NABoolean mdamWon_;
+  NABoolean noExePreds_;
+  CostScalar numKBytes_;
+  Cost * scmCost_;
+
+  // input
+  const NABoolean mdamForced_;
+  MdamKey *mdamKeyPtr_;
+  const Cost *costBoundPtr_;
+  FileScanOptimizer & optimizer_;
+  const CostScalar singleSubsetSize_;
+
+  // work variables
+
+  // estimated # of rows upper bound of the scan (TODO: per scan probe?)
+  const CostScalar innerRowsUpperBound_;
+  // estimated # of blocks upper bound of the scan (TODO: per scan probe?)
+  // This is computed from innerRowsUpperBound_ and estimatedRecordsPerBlock_;
+  // the method of computation doesn't allow us to make this const (sigh)
+  CostScalar innerBlocksUpperBound_;
+  // estimated # of rows per block of the scan
+  const CostScalar estimatedRowsPerBlock_;
+
+  // The disjunct index currently being computed by compute()
+  // TODO: does this really need to be a member?
+  CollIndex disjunctIndex_;
+
+  // Some terminology:
+  //
+  // Unfortunately, the term "probe" is overloaded, referring to
+  // two very different concepts. 
+  //
+  // "Scan probe" -- This is the usual Optimizer meaning of the
+  // term "probe". It means an input row sent to a relational
+  // operator. Many Scan nodes will have just one probe per 
+  // statement execution. A Scan node for the inner table of a
+  // nested join may have any number of probes. "Scan probe" is
+  // not to be confused with "MDAM probe", which is a lower-level
+  // concept.
+  // "MDAM probe" -- This is the run-time act of materializing the
+  // next value for some key column. A subset is created with the
+  // begin key reflecting the last value materialized (or the first
+  // possible value in the interval if this is the first traversal
+  // to this interval). The end key reflects the end of the interval.
+  // The run-time fetches at most one row from this subset then
+  // closes the subset. The row fetched (if any) gives the next 
+  // value of the key column.
+  // "MDAM fetch" -- This is the run-time act of fetching rows that
+  // satisfy the MDAM key predicates. Zero or more subsets will be
+  // generated at run time based on interval boundaries and/or key
+  // column values materialized by MDAM probes.
+
+  NABoolean isMultipleScanProbes_; // if true, there may be multiple scan probes
+  CostScalar incomingScanProbes_;  // number of scan probes
+
+  // The next few variables are the values for the optimum prefix
+  // of the last disjunct costed. Note that since the run-time does
+  // MDAM probes until it fails to find another key column value,
+  // disjunctOptMDAMProbeRows_ < disjunctMDAMProbeSubsets_. The
+  // one exception to this case is when we do "dense" access; then
+  // disjunctMdamProbeSubsets_ = 0.
+
+  CostScalar disjunctOptMDAMFetchRows_;  // number of rows fetched by MDAM key predicates
+  CostScalar disjunctOptMDAMFetchSubsets_; // number of MDAM fetch subsets
+  CostScalar disjunctOptMDAMProbeRows_;  // number of MDAM probes
+  CostScalar disjunctOptMDAMProbeSubsets_; // number of MDAM probe subsets
+
+  // set to FALSE if computeDisjunct() finds a heuristic reason that
+  // we should not use MDAM
+
+  NABoolean disjunctMdamOK_;
+
+  // scratch space
+  const ValueIdSet & exePreds_;
+  const ScanForceWildCard *scanForcePtr_;
+
+  // Outer histograms is used in multiple probes, where it is joined with
+  // the disjunct histograms and also used to compute # of failed probes
+  const Histograms outerHistograms_;
+};
+
+// stack allocated only
+// work area to find out the optimal disjunct prefix
+class NewMDAMOptimalDisjunctPrefixWA{
+public:
+  NewMDAMOptimalDisjunctPrefixWA(
+    FileScanOptimizer & optimizer,
+    const ColumnOrderList & keyPredsByCol,
+    const ValueIdSet & disjunctKeyPreds,
+    const ValueIdSet & exePreds,
+    const Histograms & outerHistograms,
+    MdamKey *mdamKeyPtr,
+    const ScanForceWildCard *scanForcePtr,
+    NABoolean mdamForced,
+    NABoolean isMultipleProbes,
+    const CostScalar & incomingScanProbes,
+    const CostScalar & estimatedRecordsPerBlock,
+    const CostScalar & innerRowsUpperBound,
+    const CostScalar & innerBlocksUpperBound,
+    const CostScalar & singleSubsetSize,
+    CollIndex disjunctIndex);
+
+  ~NewMDAMOptimalDisjunctPrefixWA();
+
+  CollIndex getOptStopColumn() const;
+  const CostScalar & getOptMDAMFetchRows() const;
+  const CostScalar & getOptMDAMFetchSubsets() const;
+  const CostScalar & getOptMDAMProbeRows() const;
+  const CostScalar & getOptMDAMProbeSubsets() const;
+  const ValueIdSet & getOptKeyPreds() const;
+
+  void compute(NABoolean & noExePreds /* out */);
+
+  CollIndex getStopColumn() const;
+
+private:
+
+  void applyPredsToHistogram(const ValueIdSet * predsPtr);
+
+  NABoolean isColumnDense(CollIndex columnPosition);
+
+  void calculateMetricsFromKeyPreds(const ValueIdSet * predsPtr, const CostScalar & maxUEC,
+                                    CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/);
+  void calculateMetricsFromKeyPred(const ValueId & keyPred, const CostScalar & maxUEC, 
+    CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/,
+    int & lessCount /*in/out*/, int & greaterCount /*in/out*/);
+
+  NABoolean isMinimalCost(Cost * currentCost,
+                          CollIndex columnPosition,
+                          NABoolean & forced /* out */);
+
+  // --------------------------- output --------------------------
+
+  // metrics for optimal stop column found so far (and ultimately output)
+  CostScalar optMDAMFetchRows_;  // number of rows fetched by MDAM key predicates
+  CostScalar optMDAMFetchSubsets_; // number of MDAM fetch subsets
+  CostScalar optMDAMProbeRows_;  // number of rows returned by MDAM probe subsets
+  CostScalar optMDAMProbeSubsets_; // number of MDAM probe subsets
+
+  CollIndex optStopColumn_;
+  // ---------------------------- input -----------------------------
+  FileScanOptimizer & optimizer_;
+  // array of pointers to key predicates ordered on key columns
+  const ColumnOrderList & keyPredsByCol_;
+  // key predicates of the disjunct
+  const ValueIdSet & disjunctKeyPreds_;
+  // executor predicates of the disjunct
+  const ValueIdSet & exePreds_;
+  // Outer histograms is used in multiple probes, where it is joined with
+  // the disjunct histograms and also used to compute # of failed probes
+  const Histograms & outerHistograms_;
+  // User specified scan force pattern
+  const ScanForceWildCard * scanForcePtr_;
+  const NABoolean isMultipleProbes_;
+  const NABoolean mdamForced_;
+  // # of probes
+  CostScalar incomingScanProbes_;
+  // estimated # of records per block of the scan
+  const CostScalar estimatedRecordsPerBlock_;
+  // estimated # of rows upper bound of the scan
+  const CostScalar innerRowsUpperBound_;
+  // estimated # of blocks upper bound of the scan
+  const CostScalar innerBlocksUpperBound_;
+  // estimated # of rows in a single subset scan (before
+  // application of executor predicates)
+  const CostScalar singleSubsetSize_;
+  const CollIndex disjunctIndex_;
+  // ---------------------------- input with side effects -----------
+  MdamKey * mdamKeyPtr_;
+  // ------------------------------ scratch space ---------------------
+  IndexDescHistograms disjunctHistograms_;
+
+  // metrics for optimal stop column found so far
+  Cost * optimalCost_;
+  
+  NABoolean crossProductApplied_;
+
+  const NABoolean multiColUecInfoAvail_;
+
+  NABoolean MCUECOfPriorPrefixFound_;
+  CostScalar MCUECOfPriorPrefix_;
+};
+
+
 // stack allocated only
 // work area to find out the MDAM cost
 class MDAMCostWA
@@ -2381,6 +2590,14 @@ NABoolean IndexDescHistograms::isMultiColUecInfoAvail() const
 //
 //if the denominator is a,b,c then the numerator must be a,b,c,d
 // we must have comparable sets as numerator and denominator
+//
+//At one time this method actually computed this ratio, but in its
+//current incarnation it returns just the UEC of the one MC histogram
+//that matches the current key prefix. The caller is expected to
+//compute this ratio after two consecutive calls on consecutive 
+//columns. (This is the meaning of the strange comment below, 
+//"The following code will never be exercised and it's intentional.")
+//
 //Input: columnOrderList which has the columnIdList for the index/table
 //       indexOfcolum in the order list that we have to compute uec info for
 //Output: estimateduec for the column and true as return value
@@ -3980,7 +4197,15 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
   ValueIdSet exePred;
   NABoolean mdamIsWinner = FALSE;
 
+  // For the MDAM costing rewrite, we need the subset size as calculated
+  // by single subset scan. So we need to cost single subset scan even
+  // if MDAM is forced.
+  NABoolean singleSubsetMetricsNeeded = 
+    (CmpCommon::getDefault(MDAM_COSTING_REWRITE) == DF_ON);
+
   if (mdamForced   // Force mdam case:
+      AND
+      NOT singleSubsetMetricsNeeded
       AND
       getIndexDesc()->getNAFileSet()->isKeySequenced())
     { // Mdam is our only choice:
@@ -5638,7 +5863,16 @@ FileScanOptimizer::computeCostForMultipleSubset
 
   if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
   {
-    return scmComputeCostForMultipleSubset(mdamKeyPtr,
+    if (CmpCommon::getDefault(MDAM_COSTING_REWRITE) == DF_ON)
+      return scmRewrittenComputeCostForMultipleSubset(mdamKeyPtr,
+				           costBoundPtr,
+					   mdamForced,
+					   numKBytes,
+					   exePreds,
+					   checkExePreds,
+					   sharedMdamKeyPtr);
+    else
+      return scmComputeCostForMultipleSubset(mdamKeyPtr,
 				           costBoundPtr,
 					   mdamForced,
 					   numKBytes,
@@ -9884,6 +10118,1002 @@ const CostScalar & MDAMOptimalDisjunctPrefixWA::getOptSeqKBRead() const
 const ValueIdSet & MDAMOptimalDisjunctPrefixWA::getOptKeyPreds() const
 { return optKeyPreds_; }
 
+// ZZZZZ New MDAM costing code goes here
+
+NewMDAMCostWA::NewMDAMCostWA
+(FileScanOptimizer & optimizer,
+ NABoolean mdamForced,
+ MdamKey *mdamKeyPtr,
+ const Cost *costBoundPtr,
+ const ValueIdSet & exePreds,
+ const CostScalar & singleSubsetSize) :
+   mdamWon_(FALSE)
+  ,noExePreds_(TRUE)
+  ,numKBytes_(0)
+  ,scmCost_(NULL)
+  ,mdamForced_(mdamForced)
+  ,mdamKeyPtr_(mdamKeyPtr)
+  ,costBoundPtr_(costBoundPtr)
+  ,optimizer_(optimizer)
+  ,singleSubsetSize_(singleSubsetSize)
+  ,isMultipleScanProbes_(optimizer.isMultipleProbes())
+  ,incomingScanProbes_(optimizer.getIncomingProbes())
+  ,disjunctMdamOK_(FALSE)
+
+  ,innerRowsUpperBound_( optimizer.getRawInnerHistograms().
+			 getRowCount().getCeiling() )
+  ,innerBlocksUpperBound_(0) // initialized below
+  ,estimatedRowsPerBlock_( optimizer.getIndexDesc()->
+			      getEstimatedRecordsPerBlock() )
+  ,disjunctIndex_(0)
+
+  ,exePreds_(exePreds) //optimizer.getRelExpr().getSelectionPred())
+  ,scanForcePtr_(optimizer.findScanForceWildCard())
+  ,outerHistograms_(optimizer.getContext().getInputLogProp()->getColStats())
+{
+  // Compute inner blocks upper bound
+  computeBlocksUpperBound(innerBlocksUpperBound_ /* out*/
+    ,innerRowsUpperBound_ /* in */
+    ,estimatedRowsPerBlock_ /*in*/);
+}
+
+
+// This function computes whether MDAM wins over the cost bound
+// It sums up cost factors for all disjuncts, calculates the cost
+// and compares with the cost bound.
+void NewMDAMCostWA::compute()
+{
+  if (isMultipleScanProbes_)
+  {
+    MDAM_DEBUG0(MTL2, "Mdam scan is multiple probes");
+  }
+  else 
+  {
+    incomingScanProbes_ = 1; // TODO: why is this necessary?
+    MDAM_DEBUG0(MTL2, "Mdam scan is a single probe");
+  }
+
+  // the next few variables are sums over the set of disjuncts; all of these
+  // are actually upper bounds
+  CostScalar sumMDAMFetchRows;    // sum of rows fetched by MDAM key predicates
+  CostScalar sumMDAMProbeRows;    // sum of rows returned on MDAM probes
+  CostScalar sumMDAMFetchSubsets; // sum of MDAM fetch subsets
+  CostScalar sumMDAMProbeSubsets; // sum of MDAM probe subsets
+
+  CostScalar totalSeqKBRead;
+
+  // -----------------------------------------------------------------------
+  //  Loop through every disjunct and:
+  //   1 Find the optimal disjunct prefix for the disjunct
+  //   2 Compute the sum of the metrics of all disjuncts so far
+  // -----------------------------------------------------------------------
+  for (CollIndex disjunctIndex=0;
+       disjunctIndex < mdamKeyPtr_->getKeyDisjunctEntries();
+       disjunctIndex++)
+    {
+      // 1 find optimal prefix for disjunct
+      disjunctIndex_ = disjunctIndex;
+      computeDisjunct();
+      if(NOT disjunctMdamOK_)
+        {
+          mdamWon_ = FALSE;
+          MDAM_DEBUG0(MTL2, "Mdam scan lost because disjunctMdamOK_ is false");
+          return;
+        }
+
+      // 2 Compute the sum of the costs of the disjuncts seen so far
+
+      // Add in counts from the disjunct just processed
+      sumMDAMFetchRows += disjunctOptMDAMFetchRows_;
+      sumMDAMProbeRows += disjunctOptMDAMProbeRows_;
+      sumMDAMFetchSubsets += disjunctOptMDAMFetchSubsets_;
+      sumMDAMProbeSubsets += disjunctOptMDAMProbeSubsets_;
+    } // for every disjunct
+
+  // Now compute the cost and see if MDAM wins or loses.
+
+  // Note: The older version of this code computed this cost within
+  // the disjunct loop in hopes of taking an early out if the cost
+  // bound was exceeded. We don't do that here, because the I/O cost
+  // is not additive. Adding disjuncts can actually lower the I/O
+  // cost by increasing the amount of sequential I/O and lowering
+  // the amount of disk seeks.  
+
+  // Worst case for sequential I/O is that we read all the blocks that a single
+  // subset scan would
+  CostScalar seqBlocksReadUpperBound = 
+    (singleSubsetSize_/optimizer_.getIndexDesc()->getEstimatedRecordsPerBlock()).getCeiling(); 
+
+  if (optimizer_.getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable())
+  {
+    CostScalar totRowsProcessed = sumMDAMFetchRows + sumMDAMProbeRows;
+
+    CostScalar avgMDAMFetchSubsetSize = sumMDAMFetchRows / sumMDAMFetchSubsets;
+    CostScalar avgMDAMFetchBlocks = 
+      (avgMDAMFetchSubsetSize/optimizer_.getIndexDesc()->getEstimatedRecordsPerBlock()).getCeiling(); 
+    CostScalar seqBlocksFetchUpperBound = avgMDAMFetchBlocks * sumMDAMFetchSubsets;
+    CostScalar seqBlocksProbeUpperBound = sumMDAMProbeSubsets;
+    CostScalar refinedSeqBlocksReadUpperBound = MINOF(seqBlocksReadUpperBound,
+      seqBlocksFetchUpperBound + seqBlocksProbeUpperBound);
+
+    CostScalar seeks = csZero;
+    if (refinedSeqBlocksReadUpperBound < seqBlocksReadUpperBound)
+      {
+        // Here we know that in the worst case, we won't touch all the blocks 
+        // that a single subset scan will. Let's assume worst case placement
+        // of the blocks we do touch -- that is, spread them out as much
+        // as possible. The number of gaps is the number of seeks.
+        CostScalar maxNumberOfChunks = MINOF(refinedSeqBlocksReadUpperBound,
+          seqBlocksReadUpperBound - refinedSeqBlocksReadUpperBound);
+
+        // We don't count a seek for the first block. (Single subset scan
+        // costing doesn't count it either. So this makes it apples-to-apples.)
+        seeks = maxNumberOfChunks - csOne;
+      }
+
+    // Add into the seeks some overhead per subset. Not every subset will cause
+    // a seek, but there is some overhead per subset. (We subtract one, because
+    // simple scans don't charge for their one subset. That makes the comparison
+    // more applies-to-apples.)
+
+    CostScalar totalSubsets = sumMDAMProbeSubsets + sumMDAMFetchSubsets - csOne;
+    CostScalar MDAMSubsetAdjustmentFactor = ActiveSchemaDB()->getDefaults().getAsDouble(MDAM_SUBSET_FACTOR);
+    totalSubsets *= MDAMSubsetAdjustmentFactor;
+    seeks += totalSubsets;
+
+    CostScalar rowSize = optimizer_.getIndexDesc()->getRecordSizeInKb() * csOneKiloBytes;
+    CostScalar rowSizeFactor = optimizer_.scmRowSizeFactor(rowSize);
+    totRowsProcessed *= rowSizeFactor;
+
+    CostScalar randIORowSizeFactor = 
+      optimizer_.scmRowSizeFactor(rowSize, ScanOptimizer::RAND_IO_ROWSIZE_FACTOR);
+    seeks *= randIORowSizeFactor;
+
+    CostScalar seqIORowSizeFactor = 
+      optimizer_.scmRowSizeFactor(rowSize, ScanOptimizer::SEQ_IO_ROWSIZE_FACTOR);
+    refinedSeqBlocksReadUpperBound *= seqIORowSizeFactor;
+
+    CostScalar totalSeqKBRead = refinedSeqBlocksReadUpperBound *
+      optimizer_.getIndexDesc()->getBlockSizeInKb();
+
+    scmCost_ = optimizer_.scmComputeMDAMCostForHbase(totRowsProcessed, seeks, 
+                                                     totalSeqKBRead, incomingScanProbes_);
+  }
+  else // Not an HBase table
+  {
+    // None of the other storage engines we support currently have a direct access structure
+    // so MDAM doesn't make sense
+    disjunctMdamOK_ = FALSE;
+    mdamWon_ = FALSE;
+    MDAM_DEBUG0(MTL2, "Mdam scan lost because its not an HBase table");
+    return;
+  }
+
+  // scale up mdam cost by factor of NCM_MDAM_COST_ADJ_FACTOR --default is 1
+  CostScalar costAdj = (ActiveSchemaDB()->getDefaults()).getAsDouble(NCM_MDAM_COST_ADJ_FACTOR);
+  scmCost_->cpScmlr().scaleByValue(costAdj);
+
+  // If the cost exceeds the bound, MDAM loses
+
+  if (costBoundPtr_ != NULL &&
+      costBoundPtr_->scmCompareCosts(*scmCost_) == LESS)
+  {
+    mdamWon_ = FALSE;
+    MDAM_DEBUG0(MTL2, "Mdam scan lost due to higher cost determined by scmCompareCosts()");
+    return;
+  }
+
+  // update rows accessed
+  optimizer_.setEstRowsAccessed(sumMDAMFetchRows + sumMDAMProbeRows);
+  mdamWon_ = TRUE;
+  numKBytes_ = 0; // seqKBytesPerScan; // TODO: where does this come from?
+}
+
+// This function computes the cost factors of a MDAM disjunct
+// It computes the members below:
+//   disjunctMdamOK_
+//   disjunctOptMDAMFetchRows_
+//   disjunctOptMDAMProbeRows_
+//   disjunctOptMDAMFetchSubsets_
+//   disjunctOptMDAMProbeSubsets_
+//   noExePreds_
+// It also side effects member mdamKeyPtr_
+void NewMDAMCostWA::computeDisjunct()
+{
+  MDAM_DEBUG1(MTL2, "NewMDAMCostWA::computeDisjunct processing disjunct %d\n",disjunctIndex_);
+ 
+  // get the key preds for this disjunct:
+  NABoolean allKeyPredicates = FALSE;
+  ValueIdSet disjunctKeyPreds;
+  mdamKeyPtr_->getKeyPredicates(disjunctKeyPreds /*out*/,
+			       &allKeyPredicates /*out*/,
+			       disjunctIndex_ /*in*/);
+  if( NOT (allKeyPredicates) )
+    noExePreds_ = FALSE;
+
+
+  // return with a NULL cost if there are no key predicates
+  // "costBoundPtr_ == NULL" means "MDAM is forced"
+  if (disjunctKeyPreds.isEmpty() AND costBoundPtr_ != NULL)
+    {
+      MDAM_DEBUG0(MTL2, "NewMDAMCostWA::computeDisjunct(): disjunctKeyPreds is empty"); 
+      disjunctMdamOK_ = FALSE;
+      return; // full table scan, MDAM is worthless here
+    }
+
+  // Tabulate the key predicates using the key columns as the index
+  ColumnOrderList keyPredsByCol(optimizer_.getIndexDesc()->getIndexKey());
+  mdamKeyPtr_->getKeyPredicatesByColumn(keyPredsByCol,disjunctIndex_);
+
+  MDAM_DEBUG1(MTL2, "Disjunct: %d, keyPredsByCol:", disjunctIndex_);
+  MDAM_DEBUGX(MTL2, keyPredsByCol.print());
+  MDAM_DEBUG0(MTL2, "disjunctKeyPreds no recomputing");
+  MDAM_DEBUGX(MTL2, disjunctKeyPreds.display());
+
+  // compute the optimal prefix and the associated min cost
+  NewMDAMOptimalDisjunctPrefixWA prefixWA(optimizer_,
+				       keyPredsByCol,
+				       disjunctKeyPreds,
+				       exePreds_,
+				       outerHistograms_,
+				       mdamKeyPtr_,
+				       scanForcePtr_,
+				       mdamForced_,
+				       isMultipleScanProbes_,
+				       incomingScanProbes_,
+				       estimatedRowsPerBlock_,
+				       innerRowsUpperBound_,
+				       innerBlocksUpperBound_,
+                                       singleSubsetSize_,
+				       disjunctIndex_);
+
+  prefixWA.compute(noExePreds_ /*out */);
+  CollIndex stopColumn = prefixWA.getStopColumn();
+  disjunctOptMDAMFetchRows_ = prefixWA.getOptMDAMFetchRows();
+  disjunctOptMDAMProbeRows_ = prefixWA.getOptMDAMProbeRows();
+  disjunctOptMDAMFetchSubsets_ = prefixWA.getOptMDAMFetchSubsets();
+  disjunctOptMDAMProbeSubsets_ = prefixWA.getOptMDAMProbeSubsets();
+
+  // Set the stop column for current disjunct:
+  mdamKeyPtr_->setStopColumn(disjunctIndex_, stopColumn);
+
+  NABoolean mdamMakeSense = TRUE;
+  if (NOT mdamForced_  AND stopColumn == 0) {
+    if (keyPredsByCol.getPredicateExpressionPtr(0) == NULL )
+      mdamMakeSense = FALSE;
+    else if (mdamKeyPtr_->getKeyDisjunctEntries() == 1) 
+      {
+        // When there is a conflict in single subset, mdam should handle it
+        const ColumnOrderList::KeyColumn* currKeyColumn =
+          keyPredsByCol.getPredicateExpressionPtr(0);
+
+        NABoolean conflict =
+          (  (currKeyColumn->getType() == KeyColumns::KeyColumn:: CONFLICT)
+             OR
+             (currKeyColumn->getType() ==
+              KeyColumns::KeyColumn::CONFLICT_EQUALS)   
+             OR
+             // added for patching (since it is a single disjunct now, but not a conflict)
+             // where a =10 or a=20 or a=30
+             (currKeyColumn->getType() ==
+              KeyColumns::KeyColumn::INLIST) );
+      
+      if( NOT conflict ) 
+          { 
+            // single subset should be chosen.
+            MDAM_DEBUG0(MTL2, "NewMDAMCostWA::computeDisjunct(): conflict predicate for single subset, force MDAM off"); 
+            mdamMakeSense = FALSE;
+          }
+      }
+  }
+
+  CollIndex noOfmissingKeyColumnsTot = 0;
+  CollIndex presentKeyColumnsTot = 0;
+
+
+  const IndexDesc *idesc = optimizer_.getFileScan().getIndexDesc();
+  const ColStatDescList& csdl = idesc->getPrimaryTableDesc()->getTableColStats();
+  Histograms hist(csdl);
+	 
+  Lng32 checkOption = (ActiveSchemaDB()->getDefaults()).getAsLong(MDAM_APPLY_RESTRICTION_CHECK);
+
+  if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() != OptDefaults::MINIMUM
+     && (!mdamForced_)
+	 && (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
+	 && checkOption >= 1 
+	 && (!checkMDAMadditionalRestriction(
+                                    keyPredsByCol,
+                                    optimizer_.computeLastKeyColumnOfDisjunct(keyPredsByCol),
+                                    hist,
+                                    (restrictCheckStrategy)checkOption,
+                                    noOfmissingKeyColumnsTot,
+                                    presentKeyColumnsTot))
+   )
+  {
+        
+    MDAM_DEBUG0(MTL2, "NewMDAMCostWA::computeDisjunct(): MDAM additional restriction check failed"); 
+    mdamMakeSense = FALSE;
+  }
+  disjunctMdamOK_ = mdamMakeSense; 
+}
+
+NABoolean NewMDAMCostWA::isMdamWon() const
+{
+  return mdamWon_;
+}
+
+NABoolean NewMDAMCostWA::hasNoExePreds() const
+{
+  return noExePreds_;
+}
+
+const CostScalar & NewMDAMCostWA::getNumKBytes() const
+{
+  return numKBytes_;
+}
+
+Cost * NewMDAMCostWA::getScmCost()
+{
+  return scmCost_;
+}
+
+
+// Implementation of NewMDAMOptimalDisjunctPrefixWA methods
+
+NewMDAMOptimalDisjunctPrefixWA::NewMDAMOptimalDisjunctPrefixWA
+(FileScanOptimizer & optimizer,
+ const ColumnOrderList & keyPredsByCol,
+ const ValueIdSet & disjunctKeyPreds,
+ const ValueIdSet & exePreds,
+ const Histograms & outerHistograms,
+ MdamKey *mdamKeyPtr,
+ const ScanForceWildCard *scanForcePtr,
+ NABoolean mdamForced,
+ NABoolean isMultipleProbes,
+ const CostScalar & incomingScanProbes,
+ const CostScalar & estimatedRecordsPerBlock,
+ const CostScalar & innerRowsUpperBound,
+ const CostScalar & innerBlocksUpperBound,
+ const CostScalar & singleSubsetSize,
+ CollIndex disjunctIndex)
+
+ :
+   optMDAMFetchRows_(0)
+  ,optMDAMFetchSubsets_(0)
+  ,optMDAMProbeRows_(0)
+  ,optMDAMProbeSubsets_(0)
+  ,optStopColumn_(0)
+  ,optimizer_(optimizer)
+  ,keyPredsByCol_(keyPredsByCol)
+  ,disjunctKeyPreds_(disjunctKeyPreds)
+  ,exePreds_(exePreds)
+  ,outerHistograms_(outerHistograms)
+  ,scanForcePtr_(scanForcePtr)
+  ,isMultipleProbes_(isMultipleProbes)
+  ,mdamForced_(mdamForced)
+  ,incomingScanProbes_(incomingScanProbes)
+  ,estimatedRecordsPerBlock_(estimatedRecordsPerBlock)
+  ,innerRowsUpperBound_(innerRowsUpperBound)
+  ,innerBlocksUpperBound_(innerBlocksUpperBound)
+  ,singleSubsetSize_(singleSubsetSize)
+  ,disjunctIndex_(disjunctIndex)
+  ,mdamKeyPtr_(mdamKeyPtr)
+  ,disjunctHistograms_( *(optimizer.getIndexDesc()), 0 )
+  ,optimalCost_(NULL)
+  ,crossProductApplied_(FALSE)
+  ,multiColUecInfoAvail_(disjunctHistograms_.isMultiColUecInfoAvail())
+  ,MCUECOfPriorPrefixFound_(FALSE)
+  ,MCUECOfPriorPrefix_(csZero)
+{}
+
+
+
+NewMDAMOptimalDisjunctPrefixWA::~NewMDAMOptimalDisjunctPrefixWA()
+{
+  if(optimalCost_)
+    delete optimalCost_;
+}
+
+
+// This function computes the optimal prefix of the disjunct
+
+// If we decide that the optimal prefix does not use all of the
+// key predicates, then the output parameter noExePreds will be
+// set to FALSE. Otherwise we leave it untouched.
+
+void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/)
+{
+  // Cumulative probe counters (MDAM is a recursive algorithm; this
+  // represents the cost of recursion)
+
+  CostScalar cumulativeMDAMProbeRows;
+  CostScalar cumulativeMDAMProbeSubsets;
+
+  CostScalar previousColumnMDAMProbeRows(csOne);
+
+  const ValueIdList & keyColumns = optimizer_.getIndexDesc()->getIndexKey();
+  for (CollIndex i = 0; i < keyColumns.entries(); i++)
+  {
+    MDAM_DEBUG1(MTL2,"New Prefix compute, exploring column %d\n",i);
+
+    // Apply key predicates for that column to the histograms
+
+    // Because of a VEG predicate can contain more than one
+    // predicate encoded, add histograms incrementally so that
+    // the reduction of a VEG predicate for a later column
+    // than the current column position does not affect the
+    // distribution of the current column.
+    // Note that the append method receives a one-based column position,
+    // so add one to the prefix because the prefix is zero based.
+
+    disjunctHistograms_.appendHistogramForColumnPosition(i+1);
+    CostScalar ColumnUECBeforePreds = disjunctHistograms_.getColStatsForColumn(
+                   optimizer_.getIndexDesc()->
+                   getIndexKey()[i]).getTotalUec().getCeiling();
+    MDAM_DEBUG1(MTL2,"Column UEC from histograms before applying key predicates: %f",ColumnUECBeforePreds.value());
+
+    const ValueIdSet * predsPtr = keyPredsByCol_[i];
+    applyPredsToHistogram(predsPtr);
+    CostScalar columnUEC = disjunctHistograms_.getColStatsForColumn(
+                   optimizer_.getIndexDesc()->
+                   getIndexKey()[i]).getTotalUec().getCeiling();
+    MDAM_DEBUG1(MTL2,"Column UEC from histograms: %f",columnUEC.value());
+
+    // Determine if column is dense or sparse and set it accordingly
+
+    NABoolean isDense = isColumnDense(i);
+    if (isDense)
+      mdamKeyPtr_->setColumnToDense(i);
+    else
+      mdamKeyPtr_->setColumnToSparse(i);
+
+    // Analyze the key predicates
+    
+    // We need to estimate how many
+    // MDAM intervals will result from them (as that determines
+    // subset counts), and also we need to know the estimated 
+    // upper bound on the UEC of the key column. (Example: If we
+    // have a range predicate of the form A > ? AND A < ?, we 
+    // estimate the selectivity as the square of the default
+    // selectivity for a ">" predicate. But when this is applied
+    // to histograms, it does not affect the histogram UEC
+    // estimate, only its cardinality estimate.)
+
+    CostScalar MDAMIntervalEstimate(csOne);
+    CostScalar MDAMUECEstimate(columnUEC);
+
+    if (predsPtr AND (NOT predsPtr->isEmpty()))
+    {
+      calculateMetricsFromKeyPreds(predsPtr, ColumnUECBeforePreds,
+        MDAMUECEstimate /*out*/, MDAMIntervalEstimate /*out*/);
+    
+      MDAM_DEBUG1(MTL2,"Column UEC from predicates: %f",MDAMUECEstimate.value());
+      MDAM_DEBUG1(MTL2,"Interval estimate from predicates: %f",MDAMIntervalEstimate.value());
+    }
+
+    if (MDAMUECEstimate < columnUEC)
+      columnUEC = MDAMUECEstimate;
+
+    MDAM_DEBUG1(MTL2,"Minimal column UEC: %f",columnUEC.value());
+
+    // Calculate bound on column UEC from multicolumn histograms
+
+    // For example, it might be the case that there is a functional dependency
+    // within the set of key columns. If A, B, C, D has the same UEC as A, B, C,
+    // then we know that traversing to D results in at most one MDAM probe.
+    // So, we can use the ratio of the UEC of A, B, C, D divided by that of
+    // A, B, C as an upper bound on column UEC. Among others, this scenario
+    // happens when we have a "_SALT_" column or a "_DIVISION_n_" column.
+
+    if (multiColUecInfoAvail_)
+      {
+        // obtain the UEC of this prefix 
+        CostScalar UECFromMCHistograms = csOne;
+        NABoolean UECFromMCFound = disjunctHistograms_.
+          estimateUecUsingMultiColUec(keyPredsByCol_, /*in*/
+                                      i, /*in*/
+                                      UECFromMCHistograms /*out*/);
+        if (UECFromMCFound)
+          {
+            MDAM_DEBUG2(MTL2, "Column UEC of prefix %d from MC histograms: %f:", 
+              i, UECFromMCHistograms.value());
+
+            if (MCUECOfPriorPrefixFound_)
+              {  
+                // we have UEC of this prefix and the prior prefix, so we can
+                // compute their ratio
+                CostScalar columnUECFromMCUECRatio = UECFromMCHistograms / MCUECOfPriorPrefix_;
+
+                MDAM_DEBUG1(MTL2, "Ratio of prefix UEC to prior prefix UEC: %f:",
+                  columnUECFromMCUECRatio.value());
+
+                if (columnUECFromMCUECRatio < columnUEC)
+                  columnUEC = columnUECFromMCUECRatio;
+
+                MDAM_DEBUG1(MTL2, "Minimal column UEC: %f", columnUEC.value()); 
+              }
+
+            MCUECOfPriorPrefix_ = UECFromMCHistograms; // save for next column          
+          }        
+
+        MCUECOfPriorPrefixFound_ = UECFromMCFound;                
+      }      
+
+    // Calculate the number of probe rows and probe subsets for that column
+
+    // Each probe subset returns at most one row; there will be exactly one
+    // probe subset that returns no row for each MDAM interval. Note that
+    // for dense columns, we don't do a scan for the probe; we just increment
+    // the last value we used, so MDAMProbeSubsets is zero in that case.
+ 
+    CostScalar MDAMProbeRows = previousColumnMDAMProbeRows * columnUEC;
+    CostScalar MDAMProbeSubsets =
+      isDense ? csZero : previousColumnMDAMProbeRows * (columnUEC + MDAMIntervalEstimate);
+
+    MDAM_DEBUG1(MTL2,"MDAM Probe Rows on this column: %f",MDAMProbeRows.value());
+    MDAM_DEBUG1(MTL2,"MDAM Probe Subsets on this column: %f",MDAMProbeSubsets.value());
+    
+
+    // Calculate the number of fetch rows and fetch subsets for that column
+
+    CostScalar MDAMFetchRows = disjunctHistograms_.getColStatsForColumn(
+                   optimizer_.getIndexDesc()->
+                   getIndexKey()[i]).getRowcount().getCeiling();
+    CostScalar MDAMFetchSubsets = previousColumnMDAMProbeRows * MDAMIntervalEstimate;
+
+    MDAM_DEBUG1(MTL2,"MDAM Fetch Rows on this column: %f",MDAMFetchRows.value());
+    MDAM_DEBUG1(MTL2,"MDAM Fetch Subsets on this column: %f",MDAMFetchSubsets.value());
+
+    // Calculate cost assuming this column is the stop column
+
+    // A subset does not necessarily cause a disk seek. And disk seeks in
+    // general can't be predicted here as they are not additive (the block we
+    // need next might be the current block, or might be sequential after this
+    // one). So we don't try to estimate disk seeks here. Nor do we try to
+    // estimate sequential I/O here. 
+
+    // However a subset does cause some positioning overhead in the Region
+    // Server apart from disk activity, as it involves traversal of index
+    // blocks (perhaps in memory). So, we include some cost in the
+    // totalSeeks param here.
+
+    CostScalar totalRowsProcessed = cumulativeMDAMProbeRows + MDAMFetchRows;
+
+    CostScalar totalSeeks = cumulativeMDAMProbeSubsets + MDAMFetchSubsets;
+    CostScalar MDAMSubsetAdjustmentFactor = ActiveSchemaDB()->getDefaults().getAsDouble(MDAM_SUBSET_FACTOR);
+    totalSeeks *= MDAMSubsetAdjustmentFactor;
+
+    CostScalar totalSeqKBRead = csZero;  // not estimated here
+    Cost * currentCost = optimizer_.scmComputeMDAMCostForHbase(totalRowsProcessed, totalSeeks, 
+                                                           totalSeqKBRead, incomingScanProbes_);   
+
+    // If the cost is a new minimum (or if this is the lead column), capture it
+
+    NABoolean forced = FALSE;
+    if (isMinimalCost(currentCost,i,forced /* out */))
+    //if ((optimalCost_ == NULL) OR (currentCost->compareCosts(*optimalCost_) == LESS))
+      {
+        // Capture new minimums
+        if (optimalCost_)
+          delete optimalCost_;
+
+        optMDAMFetchRows_ = MDAMFetchRows;
+        optMDAMFetchSubsets_ = MDAMFetchSubsets;
+        optMDAMProbeRows_ = cumulativeMDAMProbeRows;
+        optMDAMProbeSubsets_ = cumulativeMDAMProbeSubsets;
+
+        optimalCost_ = currentCost;
+        optStopColumn_ = i;
+
+        MDAM_DEBUG1(MTL2,"Column %d has optimal cost so far for this disjunct:",i);
+        MDAM_DEBUG1(MTL2,"  Optimal MDAM Probe Rows: %f",optMDAMProbeRows_.value());
+        MDAM_DEBUG1(MTL2,"  Optimal MDAM Probe Subsets: %f",optMDAMProbeSubsets_.value());
+        MDAM_DEBUG1(MTL2,"  Optimal MDAM Fetch Rows: %f",optMDAMFetchRows_.value());
+        MDAM_DEBUG1(MTL2,"  Optimal MDAM Fetch Subsets: %f",optMDAMFetchSubsets_.value());
+        MDAM_DEBUGX(MTL2,MdamTrace::printCostObject(&optimizer_,optimalCost_,"Optimal cost"));
+      }
+    else
+      {
+        MDAM_DEBUGX(MTL2,MdamTrace::printCostObject(&optimizer_,currentCost,"Not optimal cost"));
+        delete currentCost;
+
+        // if this is the last column and it is not optimal, indicate that there
+        // are some key predicates that must be generated as executor predicates
+        if (i == keyColumns.entries() - 1)
+          noExePreds = FALSE;
+    }
+
+    if (forced)
+      {
+        MDAM_DEBUG0(MTL2,"  (The choice above was forced.)");
+      }
+
+    // Update cumulative counters for the next column
+
+    cumulativeMDAMProbeRows += MDAMProbeRows;
+    cumulativeMDAMProbeSubsets += MDAMProbeSubsets;
+    previousColumnMDAMProbeRows = MDAMProbeRows; 
+
+    MDAM_DEBUG1(MTL2,"Cumulative MDAM Probe Rows including this column: %f",cumulativeMDAMProbeRows.value());
+    MDAM_DEBUG1(MTL2,"Cumulative MDAM Probe Subsets including this column: %f\n",cumulativeMDAMProbeSubsets.value()); 
+  }
+}
+
+
+// This function applies predicates to the disjunctHistograms_
+// member. It has side effects on members
+// crossProductApplied_ and disjunctHistograms_
+void NewMDAMOptimalDisjunctPrefixWA::applyPredsToHistogram(const ValueIdSet * predsPtr)
+{
+  if ( predsPtr AND
+       (NOT predsPtr->isEmpty())
+       )
+    {
+      const SelectivityHint * selHint = optimizer_.getIndexDesc()->getPrimaryTableDesc()->getSelectivityHint();
+      const CardinalityHint * cardHint = optimizer_.getIndexDesc()->getPrimaryTableDesc()->getCardinalityHint();
+
+      MDAM_DEBUG0(MTL2, "Applying predicates to disjunct histograms");
+      MDAM_DEBUGX(MTL2, predsPtr->print());
+      if (NOT crossProductApplied_
+          AND
+          isMultipleProbes_)
+        {
+          MDAM_DEBUG0(MTL2, "Applying cross product");
+          // If this is multiple probes, we need to use joined histograms to
+          // estimate the cost factors (rows, uecs)
+          // Therefore, apply the cross product to the disjunctHistograms only once.
+          // Use the disjunctHistograms as normal after cross product is applied.
+          // ??? It seems that we need do the cross product even though there
+          // ??? is no pred on the current column. This is not being done?
+          crossProductApplied_ = TRUE;
+          disjunctHistograms_.
+                applyPredicatesWhenMultipleProbes(
+                  *predsPtr
+                  ,*(optimizer_.getContext().getInputLogProp())
+                  ,optimizer_.getRelExpr().getGroupAttr()->
+                  getCharacteristicInputs()
+                  ,TRUE // doing MDAM!
+                  ,selHint
+                  ,cardHint
+                  ,NULL
+                  ,REL_SCAN);
+        }
+      else
+        disjunctHistograms_.applyPredicates(*predsPtr, (Scan &)optimizer_.getRelExpr(), selHint, cardHint, REL_SCAN);
+    }
+}
+
+// This function computes whether the column being scaned is dense or
+// sparse. Returns TRUE if dense, FALSE if sparse.
+NABoolean NewMDAMOptimalDisjunctPrefixWA::isColumnDense(CollIndex columnPosition)
+{
+  NABoolean rc = FALSE;  // assume column is sparse
+  ScanForceWildCard::scanOptionEnum forceOption = ScanForceWildCard::UNDEFINED;
+
+  // Check if scan is being forced
+  // if so check if density is forced too
+  if (scanForcePtr_ && mdamForced_)
+    forceOption = scanForcePtr_->getEnumAlgorithmForColumn(columnPosition);
+
+  if (forceOption == ScanForceWildCard::COLUMN_DENSE)
+    {
+      rc = TRUE;
+      MDAM_DEBUG0(MTL2,"Column is dense (forced)");
+    }
+  else if (forceOption == ScanForceWildCard::COLUMN_SPARSE)
+    {
+      rc = FALSE;
+      MDAM_DEBUG0(MTL2,"Column is sparse (forced)");
+    }
+  else
+    {
+      // Sparse/dense was not forced, calculate it from histograms
+      // With single column histograms we can only do
+      // a good job estimating this for the first column
+      if (columnPosition == 0)
+	{
+	  // why not use firstColHistogram ?
+	  const ColStats & firstColumnColStats =
+	    disjunctHistograms_.
+	    getColStatsForColumn(optimizer_.getIndexDesc()->getIndexKey()[0]);
+	  // may want to put the threshold in the defaults table:
+	  const CostScalar DENSE_THRESHOLD = 0.90;
+	  const CostScalar density =
+	    (firstColumnColStats.getTotalUec().getCeiling()) /
+	    ( firstColumnColStats.getMaxValue().getDblValue()
+	      - firstColumnColStats.getMinValue().getDblValue()
+	      + 1.0 );
+	  if ( density > DENSE_THRESHOLD )
+            {
+              // It is dense!!!
+              rc = TRUE;
+              MDAM_DEBUG0(MTL2,"Column is dense (from histogram)");
+            }
+          else
+            {
+              // It is sparse!!!
+              rc = FALSE;
+              MDAM_DEBUG0(MTL2,"Column is sparse (from histogram)");
+            }
+        } // if columnPosition == 0
+      else
+        {
+          // columnPosition > 0, always sparse
+          rc = FALSE;
+          MDAM_DEBUG0(MTL2,"Column is sparse (non-leading column)");
+        }
+    } // dense/sparse not forced
+
+  return rc;   
+}
+
+
+void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueIdSet * predsPtr, 
+  const CostScalar & maxUEC, CostScalar & UECFromPreds, CostScalar & IntervalCountFromPreds)
+{
+  // If the key predicates for a column are all of the form
+  // column op constant (or column IS NULL), then the UEC of
+  // the result after applying key predicates can be read from
+  // the histogram. If even some of the key predicates are 
+  // of this form, the UEC of the resulting histogram will
+  // still be a reasonable bound.
+
+  // But if there are key predicates, and none has a constant,
+  // then the row count of the histogram will be reduced but
+  // not the UEC. This is a problem for MDAM costing because
+  // we depend on the (true) UEC to determine the number of
+  // MDAM probes for the column.
+
+  // An example of this situation is a predicate X = ? on a
+  // column with UEC 1 million. We know that after X = ? is
+  // applied, the true UEC will be 1. However, the histogram
+  // will show reduced row counts but a UEC of 1,000,000.
+
+  // It's quite reasonable for the histogram code to behave
+  // this way, actually. Its foremost goal is to predict
+  // cardinalities. And scaling down the row count while
+  // retaining the 1 million UEC models the column after
+  // applying X = ? as a probability distribution.
+
+  // So, this method attempts to approximate the true UEC
+  // for such predicates by looking at the predicates
+  // themselves.
+
+  // For MDAM costing, we prefer to overestimate this UEC
+  // rather than underestimate (as MDAM performance degrades
+  // poorly when we underestimate). So, for example, when
+  // estimating an OR, we don't try to account for a possible
+  // non-empty intersection of values but instead just add
+  // the UECs. That is a reasonable upper bound without it
+  // being grossly overestimated.
+
+  // A fine point concerns the handling of range predicates.
+  // The default selectivity for A > ? is 1/3 (well, it's 
+  // the value of CQD HIST_DEFAULT_SEL_FOR_PRED_RANGE).
+  // In a uniform distribution, this would translate into
+  // a UEC of 1/3 the original. For simplicity, this is the
+  // calculation we use. It's not quite right though. If we
+  // have a distribution that is skewed to the left or right
+  // (e.g. an exponential distribution), it would be more
+  // precise to find the point in the histogram where the
+  // *row count* to the right or left is 1/3 of the total,
+  // then compute the UEC of that subset of the histogram.
+  // We'll leave that complexity to a future improvement
+  // if and when it seems needed.
+
+  int lessCount = 0;
+  int greaterCount = 0;
+
+  ValueId vid = predsPtr->init();
+  predsPtr->next(vid);  // expect it to return true, as caller insured predsPtr was not empty
+  calculateMetricsFromKeyPred(vid, maxUEC,
+                              UECFromPreds /*out*/, IntervalCountFromPreds /*out*/,
+                              lessCount /*in/out*/, greaterCount /*in/out*/);
+  predsPtr->advance(vid);
+
+  while (predsPtr->next(vid))
+    {      
+      CostScalar UECFromPreds1;
+      CostScalar IntervalCountFromPreds1;
+      calculateMetricsFromKeyPred(vid, maxUEC,
+                                  UECFromPreds1 /*out*/, IntervalCountFromPreds1 /*out*/,
+                                  lessCount /*in/out*/, greaterCount /*in/out*/);
+      // this predicate is ANDed with the previous; so the
+      // UEC is at most the min of the two (but see below for
+      // special handling of the case A > ? AND A < ?)
+      UECFromPreds = MINOF(UECFromPreds,UECFromPreds1);
+      predsPtr->advance(vid);
+    }
+
+  if (UECFromPreds > maxUEC)
+    UECFromPreds = maxUEC;
+
+  // special handling if both A < ? and A > ? present
+  if ((lessCount > 0) && (greaterCount > 0)) 
+    {
+      CostScalar selectionFactor = 
+        CostPrimitives::getBasicCostFactor(HIST_DEFAULT_SEL_FOR_PRED_RANGE);
+      CostScalar andedRange = maxUEC * selectionFactor * selectionFactor;
+      if (andedRange < UECFromPreds)
+        UECFromPreds = andedRange;
+      if (UECFromPreds < csOne)
+        UECFromPreds = csOne;
+    }
+
+}
+
+void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId & keyPred, const CostScalar & maxUEC, 
+ CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/,
+ int & lessCount /*in/out*/, int & greaterCount /*in/out*/)
+{
+  // TODO: Add logic to make sure our key column is always on the left (otherwise our lessCount and greaterCount
+  // will be inaccurate)
+
+  ItemExpr * ie = keyPred.getItemExpr();
+  switch (ie->getOperatorType())
+    {
+      case ITM_LESS:
+      case ITM_LESS_EQ:
+        {
+          lessCount++;
+          UECFromPreds = maxUEC * CostPrimitives::getBasicCostFactor(HIST_DEFAULT_SEL_FOR_PRED_RANGE);
+          if (UECFromPreds < csOne)
+            UECFromPreds = csOne;
+          IntervalCountFromPreds = csOne;
+          break;
+        }
+      case ITM_GREATER:
+      case ITM_GREATER_EQ:
+        {
+          greaterCount++;
+          UECFromPreds = maxUEC * CostPrimitives::getBasicCostFactor(HIST_DEFAULT_SEL_FOR_PRED_RANGE);
+          if (UECFromPreds < csOne)
+            UECFromPreds = csOne;
+          IntervalCountFromPreds = csOne;
+          break;
+        }
+      case ITM_EQUAL:
+      case ITM_IS_NULL:
+        {
+          UECFromPreds = csOne;
+          IntervalCountFromPreds = csOne;
+          break;
+        }
+      case ITM_OR:
+        {
+          int localLessCount = 0;
+          int localGreaterCount = 0;
+          CostScalar UECFromPreds0;
+          CostScalar IntervalCountFromPreds0;
+          calculateMetricsFromKeyPred(ie->child(0),maxUEC,
+                                      UECFromPreds0,IntervalCountFromPreds0,
+                                      localLessCount,localGreaterCount);
+          CostScalar UECFromPreds1;
+          CostScalar IntervalCountFromPreds1;
+          calculateMetricsFromKeyPred(ie->child(1),maxUEC,
+                                      UECFromPreds1,IntervalCountFromPreds1,
+                                      localLessCount,localGreaterCount);
+          // we'll be pessimistic here and assume no overlap in the values satisfying each leg of the OR
+          UECFromPreds = UECFromPreds0 + UECFromPreds1;
+          IntervalCountFromPreds = IntervalCountFromPreds0 + IntervalCountFromPreds1;
+          break;
+        }
+      case ITM_AND:
+        {
+          CostScalar UECFromPreds0;
+          CostScalar IntervalCountFromPreds0;
+          calculateMetricsFromKeyPred(ie->child(0),maxUEC,
+                                      UECFromPreds0,IntervalCountFromPreds0,
+                                      lessCount,greaterCount);
+          CostScalar UECFromPreds1;
+          CostScalar IntervalCountFromPreds1;
+          calculateMetricsFromKeyPred(ie->child(1),maxUEC,
+                                      UECFromPreds1,IntervalCountFromPreds1,
+                                      lessCount,greaterCount);
+          // the most pessimistic assumption we can make is that the same set of rows that satisfies
+          // one leg of the AND is a subset of those that satisfy the other leg
+          UECFromPreds = MINOF(UECFromPreds0,UECFromPreds1);
+          IntervalCountFromPreds = MINOF(IntervalCountFromPreds0,IntervalCountFromPreds1);
+          break;
+        }
+      default:
+        {
+          UECFromPreds = csOne;  // unexpected operator
+          IntervalCountFromPreds = csOne;
+          DCMPASSERT(ie->getOperatorType() != ITM_AND);
+          break;
+        }
+    }
+}
+
+
+// This function determines if the "currentCost" is a new minimum and returns TRUE if so,
+// FALSE otherwise. If the decision was forced, the "forced" parameter will be set to TRUE,
+// FALSE otherwise.
+
+NABoolean NewMDAMOptimalDisjunctPrefixWA::isMinimalCost(Cost * currentCost,
+                                                        CollIndex columnPosition,
+                                                        NABoolean & forced /* out */)
+{
+  NABoolean newMinimumFound = FALSE;
+  forced = FALSE;  // assume not forced
+
+  if (scanForcePtr_ && mdamForced_)
+    {
+      if (columnPosition < scanForcePtr_->getNumMdamColumns())
+        {
+          // The user wants this column as part of the mdam key,
+          // so pretend that the cost is lower when the column is added
+          newMinimumFound = TRUE;
+          forced = TRUE;
+        }
+      else
+        {
+          if (scanForcePtr_->getMdamColumnsStatus()
+              == ScanForceWildCard::MDAM_COLUMNS_ALL)
+            {
+              // Unconditionally force all of the columns:
+              newMinimumFound = TRUE;
+              forced = TRUE;
+            }
+          else if (scanForcePtr_->getMdamColumnsStatus()
+                   == ScanForceWildCard::MDAM_COLUMNS_NO_MORE)
+            {
+              // Unconditionally reject this and later columns:
+              newMinimumFound = FALSE;
+              forced = TRUE;
+            }
+          else
+            {
+              DCMPASSERT(scanForcePtr_->getMdamColumnsStatus()
+                   == ScanForceWildCard::MDAM_COLUMNS_REST_BY_SYSTEM);
+              // leave forced as FALSE
+            }
+        }
+    } // if scanForcePtr_ && mdamForced_
+
+  if (NOT forced)
+    {
+      // Mdam has not been forced, or forced but with the choice
+      // of system decision for MDAM column. proceed with costing:
+      
+      DCMPASSERT(currentCost != NULL);  
+      newMinimumFound = (optimalCost_ == NULL) ? TRUE :
+        (currentCost->scmCompareCosts(*optimalCost_) == LESS);
+    }
+
+  return newMinimumFound;
+}
+
+const CostScalar & NewMDAMOptimalDisjunctPrefixWA::getOptMDAMProbeRows() const
+{
+  return optMDAMProbeRows_;
+}
+
+const CostScalar & NewMDAMOptimalDisjunctPrefixWA::getOptMDAMProbeSubsets() const
+{
+  return optMDAMProbeSubsets_;
+}
+
+const CostScalar & NewMDAMOptimalDisjunctPrefixWA::getOptMDAMFetchRows() const
+{
+  return optMDAMFetchRows_;
+}
+
+const CostScalar & NewMDAMOptimalDisjunctPrefixWA::getOptMDAMFetchSubsets() const
+{
+  return optMDAMFetchSubsets_;
+}
+
+CollIndex NewMDAMOptimalDisjunctPrefixWA::getStopColumn() const
+{
+  return optStopColumn_;
+}
+
+
+// ZZZZZ End of new MDAM costing code
+
+
 // LCOV_EXCL_START :cnu
 // return true if has resuable shared basic cost for this mdam
 NABoolean
@@ -10089,6 +11319,48 @@ FileScanOptimizer::scmComputeCostForMultipleSubset(MdamKey* mdamKeyPtr,
   return costWA.getScmCost();
 
 } // scmComputeCostForMultipleSubset(...)
+
+
+Cost* 
+FileScanOptimizer::scmRewrittenComputeCostForMultipleSubset(MdamKey* mdamKeyPtr,
+						   const Cost * costBoundPtr,
+						   NABoolean mdamForced,
+						   CostScalar & numKBytes,
+						   ValueIdSet exePreds,
+						   NABoolean checkExePreds,
+						   MdamKey *&sharedMdamKeyPtr )
+{
+  // MDAM only works for key sequenced files.
+  DCMPASSERT(getIndexDesc()->getNAFileSet()->isKeySequenced());
+  DCMPASSERT(getIndexDesc()->getIndexKey().entries() > 0);
+
+  sharedMdamKeyPtr = mdamKeyPtr;
+    
+  NewMDAMCostWA costWA(*this,
+                       mdamForced,
+                       mdamKeyPtr,
+                       costBoundPtr,
+                       exePreds,
+                       singleSubsetSize_);
+
+  costWA.compute();
+  NABoolean isMdamWon = costWA.isMdamWon();
+  if(NOT isMdamWon)
+    return NULL;  
+
+  NABoolean noExePreds = costWA.hasNoExePreds();
+  //noExePreds is true, great set the flag in MDAM
+  if(noExePreds AND checkExePreds)
+    {
+      mdamKeyPtr->setNoExePred();
+    }
+  numKBytes = costWA.getNumKBytes();
+
+  // MDAM won! return the cost vector
+  return costWA.getScmCost();
+
+} // scmRewrittenComputeCostForMultipleSubset(...)
+
 
 NABoolean FileScanOptimizer::isMultipleProbes() const
 {

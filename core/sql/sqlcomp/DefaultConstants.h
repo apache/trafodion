@@ -1655,6 +1655,10 @@ enum DefaultConstants
 
   NEW_MDAM,
 
+  MDAM_COSTING_REWRITE,
+
+  MDAM_SUBSET_FACTOR,
+
   // -------------------------------------------------------------------------
   // Makes NO ACTION referential action behave like RESTRICT.
   // -------------------------------------------------------------------------
