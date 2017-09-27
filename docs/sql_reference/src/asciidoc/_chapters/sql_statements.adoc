@@ -374,7 +374,7 @@ statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or wh
 To run this statement, AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-ALTER TABLE name alter-action
+ALTER TABLE table-name alter-action
 
 alter-action is:
      ADD [IF NOT EXISTS][COLUMN] column-definition
@@ -658,17 +658,16 @@ If the constraint refers to the other table in a query expression, you must also
 [[alter_table_examples]]
 ===  Example of ALTER TABLE
 
-* This example adds a column.
-
+* This example adds a column:
++ 
 ```
 ALTER TABLE persnl.project
    ADD COLUMN projlead
       NUMERIC (4) UNSIGNED
 ```
 
-
-* This example alters a column of an existing table – showing both positive and negative cases.
-
+* This example alters a column of an existing table – showing both positive and negative cases:
++
 ```
 >>INVOKE T;
 
@@ -706,6 +705,12 @@ ALTER TABLE persnl.project
 --- SQL operation failed with errors.
 ```
 
+* This example alters the name of the column:
++
+```
+Alter TABLE PRODUCT 
+ALTER COLUMN vend_id RENAME TO cstm_id;
+```
 
 <<<
 [[alter_user_statement]]
