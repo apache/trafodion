@@ -1397,7 +1397,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
 
           // str_printf() does not support %ld. Use %d instead.
           str_sprintf(lruQPInfo, 
-	             "Queries to be processed: \n\n%s\n\n%s\n\n\n Initial rows deleted: %d",
+	             "Queries to be processed: \n\n%s\n\n%s\n\n\n Initial rows deleted: %ld",
                       lruStmtAndPartInfo_,
                       lruStmtWithCKAndPartInfo_,
                       getRowsDeleted());
@@ -1426,7 +1426,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
       if ((rc == 100 || rc > 0) && lrTdb().longRunningQueryPlan()) {
 
         char lruQPInfo [100];
-        str_sprintf(lruQPInfo, "Total rows deleted: %d\n\n", getRowsDeleted());
+        str_sprintf(lruQPInfo, "Total rows deleted: %ld\n\n", getRowsDeleted());
 
         ComDiagsArea * diagsArea = getDiagAreaFromUpQueueTail();
         (*diagsArea) << DgSqlCode(8427) << DgString0(lruQPInfo);
@@ -1575,7 +1575,7 @@ short ExExeUtilLongRunningTcb::processContinuing(Lng32 &rc)
 
         char lruQPInfo[100];
 
-        str_sprintf(lruQPInfo, "Continuing rows deleted: %d\n\n", 
+        str_sprintf(lruQPInfo, "Continuing rows deleted: %ld\n\n", 
                                 rowsAffected);
 
         ComDiagsArea * diagsArea = getDiagAreaFromUpQueueTail();
