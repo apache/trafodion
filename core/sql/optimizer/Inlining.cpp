@@ -1563,7 +1563,6 @@ RelExpr *GenericUpdate::createTentativeSubTree(BindWA *bindWA,
 // child classes only.
 //////////////////////////////////////////////////////////////////////////////
 // we are not supposed to get here
-// LCOV_EXCL_START
 RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA, 
 					  CollHeap *heap, 
 					  TriggersTempTable& tempTableObj,
@@ -1573,7 +1572,6 @@ RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA,
   CMPASSERT(FALSE); // Not supposed to get here !!!
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Create an Insert node that inserts the NEW@ values into the subject table.
@@ -2829,7 +2827,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
   if (getOperatorType() == REL_UNARY_INSERT &&
       getTableDesc()->getNATable()->getMvAttributeBitmap().getAutomaticRangeLoggingRequired())
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     ItemExpr *rowType  = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWTYPE);
     ItemExpr *rowCount = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWCOUNT);
@@ -2837,7 +2834,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
       addVirtualColumn(bindWA, rowType, InliningInfo::getRowTypeVirtualColName(), heap);
     rowCountId = 
       addVirtualColumn(bindWA, rowCount, InliningInfo::getRowCountVirtualColName(), heap);
-    // LCOV_EXCL_STOP
   }
 
   ItemExpr *tsOutExpr = new (heap) 
@@ -2895,7 +2891,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
   RelExpr *topNode = insertNode;
   if (logTableObj.needsRangeLogging() && projectMidRangeRows)
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     RelRoot *rootNode = new (heap) RelRoot(insertNode);
     rootNode->setEmptySelectList();
@@ -2918,7 +2913,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
     ifNode->setCondUnary();
 
     topNode = ifNode;
-    // LCOV_EXCL_STOP
   }
 
   RelRoot *rootNode = new (heap) RelRoot(topNode);
@@ -3115,7 +3109,6 @@ GenericUpdate::getTriggeredMvs(BindWA                 *bindWA,
 //////////////////////////////////////////////////////////////////////////////
 
 // we are not supposed to get here
-// LCOV_EXCL_START
 void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 					  BindWA                 *bindWA,
 					  CollHeap               *heap,
@@ -3126,7 +3119,6 @@ void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 {
   CMPASSERT(false); // not implemented in GenericUpdate
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

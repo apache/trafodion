@@ -239,10 +239,8 @@ ClusteredBitmap::increaseBitmapMapSize(UInt32 numNeeded)
 
     for (UInt32 thisIdx = 0; thisIdx < numBitmaps_; thisIdx++)
     {
-      // LCOV_EXCL_START :cnu
       newMap[thisIdx].significantBits_ = bitmapMap_[thisIdx].significantBits_;
       newMap[thisIdx].bitmap_ = bitmapMap_[thisIdx].bitmap_;
-      // LCOV_EXCL_STOP
     }
 
     // Delete old array and set current bitmapMap to the new one
@@ -359,7 +357,6 @@ ClusteredBitmap::ClusteredBitmap(const ClusteredBitmap &other,
   }
 }
 
-// LCOV_EXCL_START :cnu
 // ClusteredBitmap constructor
 ClusteredBitmap::ClusteredBitmap(const ClusteredBitmap &other)
  : heap_(other.heap_),
@@ -379,7 +376,6 @@ ClusteredBitmap::ClusteredBitmap(const ClusteredBitmap &other)
     copyBits(bitmapMap_[thisIdx].bitmap_, other.bitmapMap_[thisIdx].bitmap_);
   }
 }
-// LCOV_EXCL_STOP
 
 // ClusteredBitmap destructor
 ClusteredBitmap::~ClusteredBitmap()

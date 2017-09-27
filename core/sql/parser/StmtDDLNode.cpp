@@ -660,7 +660,6 @@ StmtDDLGrantComponentPrivilege::castToStmtDDLGrantComponentPrivilege()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString StmtDDLGrantComponentPrivilege::displayLabel1() const
 {
@@ -730,7 +729,6 @@ const NAString StmtDDLGrantComponentPrivilege::getText()
   return "StmtDDLGrantComponentPrivilege";
 }
 
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for class StmtDDLRevokeComponentPrivilege
@@ -780,7 +778,6 @@ StmtDDLRevokeComponentPrivilege::castToStmtDDLRevokeComponentPrivilege()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString StmtDDLRevokeComponentPrivilege::displayLabel1() const
 {
@@ -850,7 +847,6 @@ const NAString StmtDDLRevokeComponentPrivilege::getText()
   return "StmtDDLRevokeComponentPrivilege";
 }
 
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methodsn for class StmtDDLReInitializeSQL
@@ -1418,7 +1414,6 @@ StmtDDLSchRevoke::setChild(Lng32 index, ExprNode * pChildNode)
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString
 StmtDDLSchRevoke::displayLabel1() const
@@ -1516,7 +1511,6 @@ StmtDDLSchRevoke::getText() const
   return "StmtDDLSchRevoke";
 }
 
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for class StmtDDLRegisterComponent
@@ -1570,7 +1564,6 @@ StmtDDLRegisterComponent::castToStmtDDLRegisterComponent()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString
 StmtDDLRegisterComponent::displayLabel1() const
@@ -1614,7 +1607,6 @@ StmtDDLRegisterComponent::getText() const
   return "StmtDDLRegisterComponent";
 }
 
-// LCOV_EXCL_STOP
 
 //
 // End of File

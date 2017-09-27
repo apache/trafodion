@@ -2558,7 +2558,6 @@ private:
 // partitions in a random fashion so as to balance the number of records
 // in each partition.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 class RoundRobinPartitioningFunction : public PartitioningFunction
 {
 public:
@@ -2704,7 +2703,6 @@ private:
   NABoolean resetAfterStatement_;
 
 }; // class RoundRobinPartitioningFunction
-// LCOV_EXCL_STOP
 //
 
 

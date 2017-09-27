@@ -93,12 +93,10 @@ ComTdbSendTop::ComTdbSendTop(ExFragId           childFragId,
   smTag_                  = 0;
 }
   
-// LCOV_EXCL_START
 Int32 ComTdbSendTop::orderedQueueProtocol() const
 {
   return TRUE;
 } // these lines won't be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP
 
 Lng32 ComTdbSendTop::minSendBufferSize(Lng32 downRecLen, Lng32 numRecs)
 {
@@ -124,18 +122,14 @@ Lng32 ComTdbSendTop::minReceiveBufferSize(Lng32 upRecLen, Lng32 numRecs)
   return minSendBufferSize(upRecLen,numRecs);
 }
 
-// LCOV_EXCL_START
 void ComTdbSendTop::display() const
 {
 } // these 3 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 const ComTdb* ComTdbSendTop::getChild(Int32 /*pos*/) const
 {
   return NULL;
 } // these 4 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
 const ComTdb * ComTdbSendTop::getChildForGUI(
 	Int32 /*pos*/, 

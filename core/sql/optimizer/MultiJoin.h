@@ -62,11 +62,9 @@ public:
     heap_(outHeap)
   {}
 
-// LCOV_EXCL_START :dd
   // Destructor
   ~JBBCExprGroupEntry()
   {}
-// LCOV_EXCL_STOP
 
   ExprGroupId & getExprGroupId()
   {
@@ -305,14 +303,12 @@ public:
     return jbbSubset_;
   }
 
-  // LCOV_EXCL_START 
   // code no longer used. Used to be called from LargeScopeRules.cpp method
   // MJStarJoinIRule::computeCostForFactTable but this code is no longer used
   ExprGroupId getChildFromJBBCId(CANodeId jbbc) const
   {
     return childrenMap_.getExprGroupIdOfJBBC(jbbc);
   }
-  // LCOV_EXCL_STOP
 
   Join * getPreferredJoin();
 

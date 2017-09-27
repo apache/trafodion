@@ -69,9 +69,7 @@ class AppliedStatMan : public NABasicObject
 public:
   AppliedStatMan(CollHeap *outHeap = CmpCommon::statementHeap());
 
-// LCOV_EXCL_START :dd
   ~AppliedStatMan() {};
-// LCOV_EXCL_STOP
 
   // Hash method for ASM cache
 

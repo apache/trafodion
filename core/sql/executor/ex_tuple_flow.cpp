@@ -83,7 +83,6 @@ ExTupleFlowTcb::ExTupleFlowTcb(const ExTupleFlowTdb &  tuple_flow_tdb,
 {
   CollHeap * space = glob->getSpace();
   
-  // LCOV_EXCL_START
   // Allocate the buffer pool, if tgtExpr_ is present
   if (tuple_flow_tdb.tgtExpr_)
 #pragma nowarn(1506)   // warning elimination 
@@ -91,7 +90,6 @@ ExTupleFlowTcb::ExTupleFlowTcb(const ExTupleFlowTdb &  tuple_flow_tdb,
 						  tuple_flow_tdb.bufferSize_,
 						  glob->getSpace());
 #pragma warn(1506)  // warning elimination 
-  // LCOV_EXCL_STOP
   
   tcbSrc_ = &src_tcb;
   tcbTgt_ = &tgt_tcb;
@@ -124,12 +122,10 @@ ExTupleFlowTcb::ExTupleFlowTcb(const ExTupleFlowTdb &  tuple_flow_tdb,
 				    to_parent_cri,
 				    space);
 
-  // LCOV_EXCL_START  
   // fixup expressions
   if (tflowTdb().tgtExpr_)
     (void) tflowTdb().tgtExpr_->fixup(0, getExpressionMode(), this,
   				      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
-  // LCOV_EXCL_STOP
     
 }
 
@@ -256,7 +252,6 @@ short ExTupleFlowTcb::work()
 		    {
 		      // move this source row to target.
                       
-                      // LCOV_EXCL_START
                       // BEGIN:  - Read note at beginning of work().
                       // 
                       if (tcbSrc_->getNodeType() == ComTdb::ex_PACKROWS)
@@ -270,7 +265,6 @@ short ExTupleFlowTcb::work()
                       }
                       //
                       // END:- Read note at beginning of work().
-                      // LCOV_EXCL_STOP
 
 		      pstate.srcRequestCount_++;
 		      tgt_entry->downState.request = 
@@ -313,7 +307,6 @@ short ExTupleFlowTcb::work()
                           pstate.tgtRequests_++;
 			}
 
-                      // LCOV_EXCL_START
 	              if ((pstate.tgtRowsSent_ == FALSE) &&
 			  (src_entry->getDiagsArea()))
 			{
@@ -327,16 +320,13 @@ short ExTupleFlowTcb::work()
 			    qParent_.up->getTailEntry();
 			  up_entry->setDiagsArea(src_entry->getDiagsArea());
 			}
-                      // LCOV_EXCL_STOP
 
 		      qSrc_.up->removeHead();
 		      
 		      pstate.srcEOD_ = TRUE;
                       
-                      // LCOV_EXCL_START
 		      if (tflowTdb().sendEODtoTgt())
 			pstate.step_ = MOVE_EOD_TO_TGT_;
-                      // LCOV_EXCL_STOP
 		    }
 		    break;
 		    
@@ -409,7 +399,7 @@ short ExTupleFlowTcb::work()
 
 		  default:
 		    {
-		      ex_assert(0, "ExTupleFlowTcb::work() Error returned from src"); // LCOV_EXCL_LINE
+		      ex_assert(0, "ExTupleFlowTcb::work() Error returned from src");
 		    }
 		    break;
 		  } // switch
@@ -443,10 +433,8 @@ short ExTupleFlowTcb::work()
 
 	    pstate.tgtRequests_++;
 
-            // LCOV_EXCL_START
 	    if (tflowTdb().sendEODtoTgt())
 	      pstate.srcEOD_ = TRUE;
-            // LCOV_EXCL_STOP
 	    else
 	      pstate.srcEOD_ = FALSE;
 
@@ -578,7 +566,7 @@ short ExTupleFlowTcb::work()
                              
 		  default:
 		    {
-		      ex_assert(0, "ExTupleFlowTcb::work() Error returned from tgt"); // LCOV_EXCL_LINE
+		      ex_assert(0, "ExTupleFlowTcb::work() Error returned from tgt");
 		    }
 		    break;
 		    
@@ -667,7 +655,7 @@ short ExTupleFlowTcb::work()
                         
                     default:
                       {
-		        ex_assert(0, "ExTupleFlowTcb::work() Error returned from src"); // LCOV_EXCL_LINE
+		        ex_assert(0, "ExTupleFlowTcb::work() Error returned from src");
 		      }
 		      break;
                   }
@@ -695,7 +683,7 @@ short ExTupleFlowTcb::work()
                     
                     default:
                       {
-                        ex_assert(0, "ExTupleFlowTcb::work() Error returned from tgt"); // LCOV_EXCL_LINE
+                        ex_assert(0, "ExTupleFlowTcb::work() Error returned from tgt");
                       }
 		      break;
                   }
@@ -767,7 +755,6 @@ short ExTupleFlowTcb::work()
 	    pentry->upState.parentIndex = pentry_down->downState.parentIndex;
 	    pentry->upState.setMatchNo(pstate.matchCount_);
 
-            // LCOV_EXCL_START
             // BEGIN:  Read note at beginning of work().
             //
             if(pstate.noOfUnPackedRows_ != 0)
@@ -783,7 +770,6 @@ short ExTupleFlowTcb::work()
             }
             //
             // END: - Read note at beginning of work().
-            // LCOV_EXCL_STOP
 
 	    // if stats are to be collected, collect them.
 	    if (getStatsEntry())

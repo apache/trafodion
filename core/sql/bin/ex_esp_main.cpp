@@ -563,7 +563,6 @@ void EspGuaControlConnection::actOnSystemMessage(
         // Master is gone, stop this process and let the OS cleanup.
         if (getEnv()->getLogEspGotCloseMsg())
         {
-          // LCOV_EXCL_START
           /*
           Coverage notes: to test this code in a dev regression requires
           changing $TRAF_HOME/etc/ms.env, so I made a manual test on
@@ -577,14 +576,12 @@ void EspGuaControlConnection::actOnSystemMessage(
           char *sysMsgName = NULL;
           switch (messageNum)
           {
-          // LCOV_EXCL_STOP
           case ZSYS_VAL_SMSG_CPUDOWN:
             sysMsgName = (char *) "CPUDOWN";
             break;
           case ZSYS_VAL_SMSG_REMOTECPUDOWN:
             sysMsgName = (char *) "REMOTECPUDOWN";
             break;
-          // LCOV_EXCL_START
           case ZSYS_VAL_SMSG_CLOSE:
             sysMsgName = (char *) "CLOSE";
             break;
@@ -597,7 +594,6 @@ void EspGuaControlConnection::actOnSystemMessage(
                             sysMsgName, myName);
           SQLMXLoggingArea::logExecRtInfo(__FILE__, 
                                           __LINE__, buf, 0);
-          // LCOV_EXCL_STOP
         }
         getEnv()->stopIpcEnvironment();
       }

@@ -1096,7 +1096,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
  }  // end of try block
 
- // LCOV_EXCL_START
  // exception handling
  catch(...)
  {
@@ -1111,7 +1110,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
     }
     rc = -1;
  }
- // LCOV_EXCL_STOP
 
 finally:
 

@@ -64,7 +64,6 @@ NABoolean doUdrDebug(){
   return doUdrDebugFlag;
 }
 
-// LCOV_EXCL_START
 void udrDebug(const char *formatString, ...)
 {
   if (doUdrDebug())
@@ -77,7 +76,6 @@ void udrDebug(const char *formatString, ...)
     fflush(udrDebugFile);
   }
 }
-// LCOV_EXCL_STOP
 
 
 #endif // UDR_DEBUG

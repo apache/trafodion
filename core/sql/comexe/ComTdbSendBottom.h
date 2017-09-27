@@ -113,7 +113,6 @@ virtual const char *getNodeName() const { return "EX_SEND_BOTTOM"; };
   virtual ex_expr* getExpressionNode(Int32 pos);
   virtual const char * getExpressionName(Int32 pos) const ;
 
-// LCOV_EXCL_START
   virtual ex_send_bottom_tcb * buildInstance(ExExeStmtGlobals * glob,
                                      ExEspFragInstanceDir *espInstanceDir,
                                      const ExFragKey &myKey,
@@ -122,7 +121,6 @@ virtual const char *getNodeName() const { return "EX_SEND_BOTTOM"; };
                                      Lng32 parentInstanceNum,
                                      NABoolean isLocal)       { return NULL; }
 // its executor twin is used, ignore
-// LCOV_EXCL_STOP
 
   // For SHOWPLAN
   virtual void displayContents(Space *space, ULng32 flag);

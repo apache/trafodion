@@ -250,7 +250,6 @@ NormValue::NormValue(const ConstValue * constant, NABoolean negate)
   isNullFlag_ = FALSE;
 }
 
-// LCOV_EXCL_START :dpm
 void NormValue::display (FILE *f, const char * prefix, const char * suffix,
                          CollHeap *c, char *buf) const
 {
@@ -273,7 +272,6 @@ void NormValue::display (FILE *f, const char * prefix, const char * suffix,
     PRINTIT(f, c, space, buf, mybuf);
   }
 }
-// LCOV_EXCL_STOP
 
 NormValueList::NormValueList(const NormValueList & nvl, NAMemory *h)
   :NAArray<NormValue>(h ? h : CmpCommon::statementHeap(),nvl.entries()),
@@ -1034,7 +1032,6 @@ COMPARE_RESULT EncodedValue::compare (const EncodedValue &other) const
   return result;
 }
 
-// LCOV_EXCL_START :dpm
 void EncodedValue::display (FILE *f, const char * prefix, const char * suffix,
                             CollHeap *c, char *buf) const
 {
@@ -1061,7 +1058,6 @@ void EncodedValue::display (FILE *f, const char * prefix, const char * suffix,
   snprintf(mybuf, sizeof(mybuf), " )%s", suffix);
   PRINTIT(f, c, space, buf, mybuf);
 }
-// LCOV_EXCL_STOP
 
 const NAString EncodedValue::getText(NABoolean parenthesized, NABoolean showFractionalPart) const
 {

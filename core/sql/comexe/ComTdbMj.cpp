@@ -146,7 +146,7 @@ ComTdbMj::ComTdbMj(ComTdb * left_tdb,
 
 };
 
-void ComTdbMj::display() const {}; // LCOV_EXCL_LINE - ignore the next line, only used by GUI
+void ComTdbMj::display() const {};
 
 Long ComTdbMj::pack(void * space)
 {
@@ -201,9 +201,7 @@ void ComTdbMj::displayContents(Space * space,ULng32 flag)
     }
 }
 
-// LCOV_EXCL_START
 Int32 ComTdbMj::orderedQueueProtocol() const
 {
       return -1; // TRUE
 } // there 4 lines will not be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP

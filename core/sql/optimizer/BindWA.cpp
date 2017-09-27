@@ -711,13 +711,11 @@ NABoolean BindWA::inMVDefinition() const
 // ***********************************************************************
 // Display/print, for debugging.
 // ***********************************************************************
-// LCOV_EXCL_START :dpm
 void BindWA::display() const { print(); }
 
 void BindWA::print(FILE* ofd, const char* indent, const char* title) const
 {
 } // BindWA::print()
-// LCOV_EXCL_STOP
 
 //============================================================================
 //======================  class MvBindContext  ===============================
@@ -773,7 +771,6 @@ ItemExpr *BindWA::getHVorDPFromSPDups (ItemExpr *h)
   return NULL;
 }
 
-// LCOV_EXCL_START :cnu
 NABoolean BindWA::checkHVorDPinSPDups (ItemExpr *h)
 {
   if ( NULL == getHVorDPFromSPDups (h))
@@ -781,7 +778,6 @@ NABoolean BindWA::checkHVorDPinSPDups (ItemExpr *h)
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 NABoolean BindWA::checkMultiOutSPParams (ItemExpr *h)
 {
@@ -1034,7 +1030,6 @@ void HostArraysWA::collectHostVarsInPred(ItemExpr *parent, Int32 childNumber)
 }
 // Searches in list for a host variable whose name is in *inputVar. 
 // If it finds it, replaces *inputVar with the host variable found
-// LCOV_EXCL_START :cnu
 NABoolean HostArraysWA::findHostVar(ItemExpr **inputVar, ItemExpr *list)
 {     
   ItemExpr *ptr = list;
@@ -1068,7 +1063,6 @@ NABoolean HostArraysWA::findHostVar(ItemExpr **inputVar, ItemExpr *list)
  *inputVar = NULL;
  return FALSE;
 }
-// LCOV_EXCL_STOP
 
 // We have found an array host variable in the parse tree.
 // We store it and replace it with a name that will be used in the rename node.
@@ -1179,11 +1173,9 @@ void HostArraysWA::processArrayHostVar(ItemExpr *parent, Int32 childNumber)
 }
 
 
-// LCOV_EXCL_START :cnu
 void HostArraysWA::processKeyVar(ItemExpr *parent, Int32 childNumber)
 {
 } 
-// LCOV_EXCL_STOP
 
 // Traverses listOfHostArrays_ and creates a list of mapping variable names 
 // that will be used in the Rename node. The list of names is pointed by newNames_

@@ -52,7 +52,7 @@ void ex_log_ems( const char *f, Int32 l, const char * m);
 
 void assert_botch_longjmp( const char *f, int l, const char * m);
 
-#define ex_assert(p, msg) if (!(p)) { assert_botch_abend( __FILE__ , __LINE__ , msg); }; // LCOV_EXCL_LINE
+#define ex_assert(p, msg) if (!(p)) { assert_botch_abend( __FILE__ , __LINE__ , msg); };
 
 class	ex_expr;	// to be defined
 

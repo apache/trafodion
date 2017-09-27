@@ -252,12 +252,10 @@ void SQLMXLoggingArea::resetSqlText()
     sql_error_event.set_string3(String3);
   if (String4)
     sql_error_event.set_string4(String4);
-  //LCOV_EXCL_START - unused members of diags are
   if (serverName)
     sql_error_event.set_server_name(serverName);
   if (connectionName)
     sql_error_event.set_connection_name(connectionName);
-  //LCOV_EXCL_STOP
   if (constraintCatalog)
     sql_error_event.set_constraint_catalog(constraintCatalog);
   if (constraintSchema)
@@ -930,10 +928,6 @@ void SQLMXLoggingArea::logSortDiskInfo(char *diskname, short percentfree, short 
   //** use event id SQEV_SQL_SRT_INFO **
 }
 
-//LCOV_EXCL_START
-// ss_cc_changes: these are stubs that need to be removed by components. 
-// Excluding these from code coverage
- 
 static void check_assert_bug_catcher()
 {
 
@@ -1176,4 +1170,3 @@ void SQLMXLoggingArea::logPMAudDoneEvent(ULng32 eventId,
 
 }
 #endif // #if 0
-// LCOV_EXCL_STOP

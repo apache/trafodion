@@ -63,7 +63,6 @@ CmpProcess::CmpProcess()
     processStartTime_ = CONVERTTIMESTAMP(processStartTime_,0,-1,0);
   }
 }
-// LCOV_EXCL_START :cnu
 /************************************************************************
 method CmpProcess::getProcessDuration
 
@@ -90,7 +89,6 @@ CmpProcess::getCurrentSystemHeapSize()
 
   return currentSystemHeapSize;
 }
-// LCOV_EXCL_STOP
 /************************************************************************
 method CmpProcess::getCompilerId
 

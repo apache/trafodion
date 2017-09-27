@@ -65,7 +65,6 @@ ex_tcb * ExTupleLeafTdb::build(ex_globals * glob)
   return tcb;
 }
 
-// LCOV_EXCL_START
 ///////////////////////////////////////
 // class ExTupleNonLeafTdb
 ///////////////////////////////////////
@@ -81,7 +80,6 @@ ex_tcb * ExTupleNonLeafTdb::build(ex_globals * glob)
 
   return tcb;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////
 // class ExTupleTcb
@@ -131,14 +129,12 @@ ExTupleTcb::~ExTupleTcb()
   freeResources();
 }
 
-// LCOV_EXCL_START
 short ExTupleTcb::work()
 {
   // should not reach here
   ex_assert(0, "ExTupleTcb::work() must be redefined");
   return WORK_OK;
 }
-// LCOV_EXCL_STOP
 
 void ExTupleTcb::freeResources()
 {
@@ -353,7 +349,6 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
 #pragma warn(203)  // warning elimination 
 }
 
-// LCOV_EXCL_START
 ///////////////////////////////////////////////
 // class ExTupleNonLeafTcb
 ///////////////////////////////////////////////
@@ -645,7 +640,6 @@ ExWorkProcRetcode ExTupleNonLeafTcb::work()
   return WORK_OK;
 #pragma warn(203)  // warning elimination 
 }
-// LCOV_EXCL_STOP
 
 /////////////////////////////////////////////
 // class ExTuplePrivateState

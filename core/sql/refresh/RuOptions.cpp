@@ -134,7 +134,6 @@ void CRUOptions::AddDebugOption(Int32 testpoint, const CDSString &objName)
 //--------------------------------------------------------------------------//
 //	CRUOptions::Dump()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :dpm
 void CRUOptions::Dump(CDSString &to) 
 {
 	to += "\n\t\tCOMMAND OPTIONS DUMP\n\n";
@@ -195,7 +194,6 @@ void CRUOptions::Dump(CDSString &to)
 		to += CDSString(buf);
 	}
 }
-// LCOV_EXCL_STOP
 #endif
 
 //--------------------------------------------------------------------------//
@@ -217,7 +215,6 @@ operator = (const CRUOptions::DebugOption &other)
 //	The LoadData/StoreData methods move only the output 
 //	file's name and the debug options between the processes.
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 {
  Int32 stringSize;
@@ -254,12 +251,10 @@ void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 #pragma warn(1506)  // warning elimination 
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUOptions::LoadData()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	char buf[PACK_BUFFER_SIZE];
@@ -305,4 +300,3 @@ void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 		AddDebugOption(testpoint, objName);
 	}
 }
-// LCOV_EXCL_STOP

@@ -612,7 +612,6 @@ protected:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Exclude from coverage testing - used only with range loggiing
-// LCOV_EXCL_START
 class MultiTxnDEMavBuilder : public MvMultiTxnMavBuilder
 {
 public:
@@ -693,7 +692,6 @@ private:
   static const char   lastNotNullPrefixColName_[];
 
 };  // MultiTxnDEMavBuilder
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // Builds the refresh tree of a single-delta pipelined MAV. 

@@ -70,12 +70,10 @@ public:
   inline       ElemDDLGrantee * getGrantedBy() const { return grantedBy_; }; 
 
   // for tracing
-  // LCOV_EXCL_START
   virtual const NAString displayLabel1() const;
   virtual const NAString displayLabel2() const;
   virtual NATraceList getDetailInfo() const;
   virtual const NAString getText();                    
-  // LCOV_EXCL_STOP
 
 private:
 

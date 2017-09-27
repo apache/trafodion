@@ -76,7 +76,6 @@ ElemDDLCreateMVOneAttributeTableList::getType() const
 
 
 // methods for tracing
-// LCOV_EXCL_START :dpm
 const NAString 
 ElemDDLCreateMVOneAttributeTableList::displayLabel1() const
 {
@@ -96,7 +95,6 @@ ElemDDLCreateMVOneAttributeTableList::getText() const
 {
 	return "ElemDDLCreateMVOneAttributeTableList";
 }
-// LCOV_EXCL_STOP
 
 
 

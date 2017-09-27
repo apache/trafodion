@@ -162,10 +162,8 @@ PNH CmpSetNewHandler(PNH handler)
   return old;
 }
 
-// LCOV_EXCL_START
 // Code not used
 PNH CmpGetNewHandler()
 {
   return globalCmpNewHandler;
 }
-// LCOV_EXCL_STOP

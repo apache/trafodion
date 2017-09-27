@@ -868,7 +868,6 @@ NABoolean StmtDDLCreateTrigger::isTransitionName(const NAString& tableName)
 // to the select list of the root. This will make sure the system added
 // columns are analyzed correctly.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu Expanded pass not used anymore.
 void addSystemColumnsToRootSelectList(RelRoot      *queryRoot, 
 				      MVInfoForDDL *mvInfo,
 				      BindWA       *bindWA)
@@ -894,7 +893,6 @@ void addSystemColumnsToRootSelectList(RelRoot      *queryRoot,
   // Add the system added column expressions to the root select list.
   queryRoot->addCompExprTree(systemAddedColsExpr);
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // definition of method bindNode() for class StmtDDLCreateMV
@@ -956,12 +954,10 @@ StmtDDLCreateMV::bindNode(BindWA * pBindWA )
         ((COM_RECOMPUTE != mvInfo->getRefreshType()) &&  (COM_BY_USER !=mvInfo->getRefreshType()))
       )
     {
-      // LCOV_EXCL_START :cnu (MV on View not supported)
       *CmpCommon::diags() << DgSqlCode(-4222)
                           << DgString0("Non-recompute MVs on views");
       pBindWA->setErrStatus();
       return this;
-      // LCOV_EXCL_STOP
     }
 
     // Transform the direct tree.

@@ -366,9 +366,7 @@ public:
   // ---------------------------------------------------------------------
   // Whether the TDB supports out-of-order replies to its requests.
   // ---------------------------------------------------------------------
-// LCOV_EXCL_START
   virtual Int32 orderedQueueProtocol() const { return 1; }
-// LCOV_EXCL_STOP
   
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
@@ -446,19 +444,19 @@ public:
   // ---------------------------------------------------------------------
   // numChildren() -- Returns the number of children for this TDB
   // ---------------------------------------------------------------------
-  virtual Int32 numChildren() const { return -1; } // LCOV_EXCL_LINE
+  virtual Int32 numChildren() const { return -1; }
 
   // ---------------------------------------------------------------------
   // getNodeName() -- Returns the name of this TDB.
   // ---------------------------------------------------------------------
-  virtual const char *getNodeName() const  { return "ComTDB"; } // LCOV_EXCL_LINE
+  virtual const char *getNodeName() const  { return "ComTDB"; }
 
   // ---------------------------------------------------------------------
   // getChild(int child) -- Returns a pointer to the nth child TDB of this
   // TDB. This function cannot be used to get children which reside in
   // other processes -- see getChildForGUI.
   // ---------------------------------------------------------------------
-  virtual const ComTdb *getChild(Int32) const    { return NULL; } // LCOV_EXCL_LINE
+  virtual const ComTdb *getChild(Int32) const    { return NULL; }
 
   // ---------------------------------------------------------------------
   // getChildForGUI() takes as additional arguments the fragment directory
@@ -470,14 +468,12 @@ public:
   // to be looked up. See ComTdbPartnAccess.h_tdb::getChildForGUI() for an
   // example of how this could be done.
   // ---------------------------------------------------------------------
-// LCOV_EXCL_START
   virtual const ComTdb *getChildForGUI(Int32 pos,
                                        Lng32 /*base*/, 
                                        void * /*frag_dir*/) const 
   {
     return getChild(pos);
   }
-// LCOV_EXCL_STOP
 
   // ---------------------------------------------------------------------
   // numExpressions() -- Returns the number of expression for this TDB.

@@ -607,7 +607,6 @@ void SPInfo::resetLastCallTs()
   numResultSets_ = 0;
 }
 
-// LCOV_EXCL_START
 // displaySPInfo - Used when tracing objects
 void SPInfo::displaySPInfo(Lng32 indent)
 {
@@ -763,7 +762,6 @@ void SPInfo::displaySPInfoId(Lng32 indent)
   ServerDebug("%sObject ID         : " INT64_SPEC , ind, udrHandle_ );
 
 } // SPInfo::displaySPInfoId
-// LCOV_EXCL_STOP
 
 // createUniqueIdentifier
 Int64 SPInfo::createUniqueIdentifier()

@@ -88,7 +88,7 @@ class QryStmtAttribute : public NABasicObject {
   QryStmtAttribute(const QryStmtAttribute& s) : attr(s.attr), value(s.value) {}
 
   // destructor 
-  virtual ~QryStmtAttribute() {}  // LCOV_EXCL_LINE  
+  virtual ~QryStmtAttribute() {}
 
   // equality comparison used by CompilerEnv::isEqual
   NABoolean isEqual(const QryStmtAttribute &o) const 
@@ -112,7 +112,7 @@ class QryStmtAttributeSet : public NABasicObject {
   QryStmtAttributeSet(const QryStmtAttributeSet& s);
 
   // destructor frees all query statement attribute settings
-  virtual ~QryStmtAttributeSet() {} // LCOV_EXCL_LINE  
+  virtual ~QryStmtAttributeSet() {}
 
   // add a query statement attribute to attrs
   void addStmtAttribute(SQLATTR_TYPE a, ULng32 v);
@@ -156,7 +156,7 @@ public:
   };
 
   CmpMain();
-  virtual ~CmpMain() {} // LCOV_EXCL_LINE  
+  virtual ~CmpMain() {}
 
 #ifdef NA_DEBUG_GUI
 

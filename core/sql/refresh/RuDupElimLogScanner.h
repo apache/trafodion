@@ -129,7 +129,6 @@ public:
 
 public:
 	// Pack/unpack for IPC - refinements & implementation of pure virtuals
-        // LCOV_EXCL_START :cnu
         
 	// Used in the main process side
 	virtual void StoreRequest(CUOFsIpcMessageTranslator &translator)
@@ -154,7 +153,6 @@ public:
 	{
 		statMap_.StoreData(translator);
 	}
-	// LCOV_EXCL_STOP
 
 	//-----------------------------------------//
 	//	Private area

@@ -39,11 +39,9 @@
 
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
-// LCOV_EXCL_START
 ex_expr::exp_return_type ex_noop_clause::eval(char * /*op_data*/[],
 					      CollHeap*,
 					      ComDiagsArea**)
 {
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP

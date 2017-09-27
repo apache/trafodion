@@ -1922,7 +1922,6 @@ RelExpr * OrOptimizationRule::nextSubstitute(
           // If a predicate contains 1=1, it is constant folded and removed
           // from the OR predicate.
           //
-          // LCOV_EXCL_START
       if( doesValueIdEvaluateToFalse(d) )
 	  {
 	      disjunctsEvaluatingToFalse += d;
@@ -1932,7 +1931,6 @@ RelExpr * OrOptimizationRule::nextSubstitute(
 	      return NULL;
 	  }
 	  break;
-          // LCOV_EXCL_STOP
 
 	default:
 	  // leave col set to NULL
@@ -6472,7 +6470,7 @@ NABoolean TSJUDRRule::isContextSensitive () const
 // methods for class HbaseAccessRule
 // -----------------------------------------------------------------------
 
-//HbaseScanRule::~HbaseScanRule() {} // LCOV_EXCL_LINE
+//HbaseScanRule::~HbaseScanRule() {}
 //
 //NABoolean HbaseScanRule::topMatch(RelExpr * relExpr, Context *context)
 //{

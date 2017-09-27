@@ -71,18 +71,14 @@ char *GetHistoryRowOLAP(void *data, Int32 n,
   //      in this case.
   //
   if (n < 0) {
-// LCOV_EXCL_START
 // this path in the code is a safe garde and may not be hit
 // maybe we can chage to assert or may be we can remove in the future
     retcode = -1;   // ERROR condition
     return NULL;
-// LCOV_EXCL_STOP
   } else if (n >= tcb->maxNumberHistoryRows_ && 
              tcb->numberHistoryRows_ == tcb->maxNumberHistoryRows_) {
-// LCOV_EXCL_START
     retcode = -1;   // ERROR condition
     return NULL;
-// LCOV_EXCL_STOP
   } else if (n >= tcb->numberHistoryRows_) {
     if(leading || (n - tcb->numberHistoryRows_) >= winSize)
       retcode = 0;
@@ -186,7 +182,6 @@ char *GetHistoryRow(void *data, Int32 n,
   {
     return tcb->currentHistRowPtr_ - n * tcb->recLen() ; // offset back from first
   }
-// LCOV_EXCL_START
 // this code is used for the legacy sequence functions-- Not sure whether to add a test
 // for this as the sequence functions are supposed to be replaced by OLAP functions
 // I am hiding this code from code coverage tool for now.
@@ -205,7 +200,6 @@ char *GetHistoryRow(void *data, Int32 n,
     {
       tmpBuf = tcb->lastOLAPBuffer_;
     }
-// LCOV_EXCL_STOP
   }
   return tmpBuf->getFirstRow() + ( tcb->maxRowsInOLAPBuffer_ - n ) * tcb->recLen();
 
@@ -443,9 +437,7 @@ short ExSequenceTcb::work()
       //
       if (request == ex_queue::GET_NOMORE)
         {
-          // LCOV_EXCL_START
           pstate->step_ = ExSeq_DONE;
-          // LCOV_EXCL_STOP
         }
       else
         {
@@ -550,9 +542,7 @@ short ExSequenceTcb::work()
             // try again later.
             //
             if (qparent_.up->isFull())
-              // LCOV_EXCL_START
               return WORK_OK;
-              // LCOV_EXCL_STOP
 
             ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
 
@@ -629,11 +619,9 @@ short ExSequenceTcb::work()
                   
                   if (retCode == ex_expr::EXPR_ERROR)
                   {
-                    // LCOV_EXCL_START
                     updateDiagsArea(centry);
                     pstate->step_ = ExSeq_ERROR;
                     break;
-                    // LCOV_EXCL_STOP
                   }
                   if ( retCode == ex_expr::EXPR_FALSE)
                   {
@@ -795,9 +783,7 @@ short ExSequenceTcb::work()
             //
             if (pool_->get_free_tuple(pentry_up->getTupp(myTdb().tuppIndex_),
                                       recLen()))
-              // LCOV_EXCL_START
               return WORK_POOL_BLOCKED;
-              // LCOV_EXCL_STOP 
 
             char *tuppData = pentry_up->getTupp
               (myTdb().tuppIndex_).getDataPointer();
@@ -815,10 +801,8 @@ short ExSequenceTcb::work()
               retCode = returnExpr()->eval(pentry_up->getAtp(),workAtp_);
               if (retCode == ex_expr::EXPR_ERROR)
               {
-                // LCOV_EXCL_START
                 pstate->step_ = ExSeq_ERROR;
                 break;
-                // LCOV_EXCL_STOP
               }
             }
 
@@ -829,10 +813,8 @@ short ExSequenceTcb::work()
               retCode = postPred()->eval(pentry_up->getAtp(),pentry_up->getAtp());
               if (retCode == ex_expr::EXPR_ERROR)
               {
-                // LCOV_EXCL_START
                 pstate->step_ = ExSeq_ERROR;
                 break;
-                // LCOV_EXCL_STOP
               }
             }
 
@@ -880,9 +862,7 @@ short ExSequenceTcb::work()
               // go to the error processing state.
               //
             case ex_expr::EXPR_ERROR:
-              // LCOV_EXCL_START
               pstate->step_ = ExSeq_ERROR;
-              // LCOV_EXCL_STOP
               break;
             }
 
@@ -1008,17 +988,14 @@ short ExSequenceTcb::work()
         {
           if (!overflowEnabled_)
           {
-           // LCOV_EXCL_START
            // used for debugging when CmpCommon::getDefault(EXE_BMO_DISABLE_OVERFLOW)is set to off ;
             updateDiagsArea(EXE_OLAP_OVERFLOW_NOT_SUPPORTED);
             pstate->step_ = ExSeq_ERROR;
             break;
-            // LCOV_EXCL_STOP
           }
           ex_assert(isUnboundedFollowing(),"");
  
 	  if ( ! cluster_->flush(&rc_) ) {  // flush the buffers
-            // LCOV_EXCL_START
             // if no errors this code path is not visited
 	    if ( rc_ ) 
             { // some error
@@ -1026,12 +1003,9 @@ short ExSequenceTcb::work()
               pstate->step_ = ExSeq_ERROR;
 	      break;
 	    }
-            // LCOV_EXCL_STOP
 	    // not all the buffers are completely flushed. An I/O is pending
-            // LCOV_EXCL_START
             // maybe we cane remove in the future
 	    return WORK_OK; 
-            // LCOV_EXCL_STOP
 	  }
 
 	  // At this point -- all the buffers were completely flushed
@@ -1074,17 +1048,13 @@ short ExSequenceTcb::work()
                     isUnboundedFollowing() );
 
 	    if ( ! cluster_->read(&rc_) ) {
-              // LCOV_EXCL_START
 	      if ( rc_ ) { // some error
                 updateDiagsArea( rc_);
 		pstate->step_ = ExSeq_ERROR;
 		break;
 	      }
-              // LCOV_EXCL_STOP
 	      // not all the buffers are completely read. An I/O is pending
-              // LCOV_EXCL_START
 	      return WORK_OK;
-              // LCOV_EXCL_STOP 
 	    }
 
             numberOfRowsReturnedBeforeReadOF_ = 0;
@@ -1111,9 +1081,7 @@ short ExSequenceTcb::work()
             // try again later.
             //
             if (qparent_.up->isFull())
-              // LCOV_EXCL_START
               return WORK_OK;
-              // LCOV_EXCL_STOP
             
             ex_queue_entry * pentry_up = qparent_.up->getTailEntry();
             pentry_up->upState.status = ex_queue::Q_NO_DATA;
@@ -1141,7 +1109,6 @@ short ExSequenceTcb::work()
             if (qparent_.down->isEmpty())
               return WORK_OK;
            
-            // LCOV_EXCL_START
             // If we haven't given to our child the new head
             // index return and ask to be called again.
             //
@@ -1153,7 +1120,6 @@ short ExSequenceTcb::work()
             pentry_down = qparent_.down->getHeadEntry();
             pstate = (ExSequencePrivateState*) pentry_down->pstate;
             request = pentry_down->downState.request; 
-            // LCOV_EXCL_STOP
           }
         break;
         } // switch pstate->step_
@@ -1256,14 +1222,11 @@ NABoolean  ExSequenceTcb::removeOLAPBuffer()
 
   if (lastOLAPBuffer_ == NULL || firstOLAPBuffer_ == NULL)
   {
-    // LCOV_EXCL_START
     return FALSE;
-    // LCOV_EXCL_STOP
   }
 
   if (lastOLAPBuffer_ == firstOLAPBuffer_)
   {
-   // LCOV_EXCL_START
    // since we keep a minimum number of buffers this code won't be visited
    // this code should not be removed. if we decide to not keep a min number 
    // of buffers in the list it will be used
@@ -1273,7 +1236,6 @@ NABoolean  ExSequenceTcb::removeOLAPBuffer()
     lastOLAPBuffer_ = NULL;
     firstOLAPBuffer_ = NULL;
     return TRUE;
-    // LCOV_EXCL_STOP
   }
 
   HashBuffer * tmpBuf = lastOLAPBuffer_;
@@ -1291,9 +1253,7 @@ NABoolean ExSequenceTcb::shrinkOLAPBufferList()
   {
     if (! removeOLAPBuffer())
     {
-      // LCOV_EXCL_START
       return FALSE;// error
-      // LCOV_EXCL_STOP
     }
   };
   return TRUE;
@@ -1318,9 +1278,7 @@ NABoolean  ExSequenceTcb::addNewOLAPBuffer(NABoolean checkMemoryPressure)
   if ( tmpBuf == NULL || 
        tmpBuf->getDataPointer() == NULL ) 
   {
-    // LCOV_EXCL_START
     return FALSE; // no memory
-    // LCOV_EXCL_STOP
   }
 
   if (firstOLAPBuffer_== NULL)
@@ -1364,17 +1322,13 @@ void ExSequenceTcb::initializeHistory()
     for (Int32 i = 0 ; i < minNumberOfOLAPBuffers_; i++)
     {
       if ( ! addNewOLAPBuffer( FALSE /* No Memory Pressure Check */ ) ) 
-        // LCOV_EXCL_START
         ex_assert(0, "No memory for minimal OLAP window!");
-        // LCOV_EXCL_STOP
     }
   }  
   else
   {
     if (!shrinkOLAPBufferList())
-      // LCOV_EXCL_START
       ex_assert(0,"initializeHistory-- can not shrink buffer list");
-       // LCOV_EXCL_STOP
   }
 
   // Initialize all the settings needed for unbounded following (and overflow)
@@ -1417,9 +1371,7 @@ void ExSequenceTcb::createCluster()
   // if quota, and it's less than avail memory, then use that lower figure 
   if ( myTdb().memoryQuotaMB() > 0 &&
 	 myTdb().memoryQuotaMB() * ONE_MEG < availableMemory )
-    // LCOV_EXCL_START
     availableMemory = myTdb().memoryQuotaMB() * ONE_MEG ;
-    // LCOV_EXCL_STOP
 
   ULng32 minMemQuotaMB = myTdb().isPossibleMultipleCalls() ?
     myTdb().memoryQuotaMB() : 0 ;
@@ -1481,14 +1433,12 @@ void ExSequenceTcb::createCluster()
   clusterDb_->setScratchIOVectorSize(myTdb().scratchIOVectorSize());
   switch(myTdb().getOverFlowMode())
   {
-    // LCOV_EXCL_START
     case SQLCLI_OFM_SSD_TYPE: 
       clusterDb_->setScratchOverflowMode(SCRATCH_SSD);
       break;
     case SQLCLI_OFM_MMAP_TYPE: 
       clusterDb_->setScratchOverflowMode(SCRATCH_MMAP);
       break;
-     // LCOV_EXCL_STOP
     default:
     case SQLCLI_OFM_DISK_TYPE:
       clusterDb_->setScratchOverflowMode(SCRATCH_DISK);
@@ -1518,9 +1468,7 @@ void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
     {
       if (workAtp_->getDiagsArea())
       {     
-        // LCOV_EXCL_START
         workAtp_->getDiagsArea()->mergeAfter(*centry->getDiagsArea());
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -1531,7 +1479,6 @@ void ExSequenceTcb::updateDiagsArea(ex_queue_entry * centry)
       }
     }
 }
-// LCOV_EXCL_START
 void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
 {                   
     ComDiagsArea *da = workAtp_->getDiagsArea();
@@ -1545,7 +1492,6 @@ void ExSequenceTcb::updateDiagsArea(  ExeErrorCode rc_)
       *da << DgSqlCode(-rc_);
     }
 }
-// LCOV_EXCL_STOP
 //
 // Constructor and destructor private state
 //

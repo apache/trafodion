@@ -43,7 +43,6 @@ QRGroupLattice::~QRGroupLattice()
   deletePtr(lattice_);
 }
 
-// LCOV_EXCL_START :cnu
 void QRGroupLattice::dumpLattice(const char* tag)
 {
   QRTRACER("QRGroupLattice::dumpLattice()");
@@ -54,7 +53,6 @@ void QRGroupLattice::dumpLattice(const char* tag)
     QRLogger::log(CAT_GRP_LATTCE_INDX, LL_DEBUG, graph.data());
   }
 }
-// LCOV_EXCL_STOP
 
 /**
  * This method can be used to dump detailed usage stats to the log file,
@@ -62,14 +60,12 @@ void QRGroupLattice::dumpLattice(const char* tag)
  * Currently not used.
  *****************************************************************************
  */
-// LCOV_EXCL_START :cnu
 void QRGroupLattice::reportStats(NAString& text)
 {
   QRTRACER("QRGroupLattice::reportStats()");
   text += "\nLatticeIndex Graph:\n";
   lattice_->dumpLattice(text, "stats");
 }
-// LCOV_EXCL_STOP
 
 void QRGroupLattice::collectMVGroups(WorkloadAnalysisPtr workload, Int32 minQueriesPerMV, CollHeap* heap)
 {

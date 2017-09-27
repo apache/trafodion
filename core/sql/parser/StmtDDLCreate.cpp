@@ -1027,7 +1027,6 @@ StmtDDLCreateComponentPrivilege::castToStmtDDLCreateComponentPrivilege()
 // methods for tracing
 //
 
-// LCOV_EXCL_START
 
 const NAString
 StmtDDLCreateComponentPrivilege::displayLabel1() const
@@ -1059,7 +1058,6 @@ StmtDDLCreateComponentPrivilege::getText() const
   return "StmtDDLCreateComponentPrivilege";
 }
 
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 // MV - RG (refresh groups)

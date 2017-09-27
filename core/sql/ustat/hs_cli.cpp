@@ -655,7 +655,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
                                                  FALSE,
                                                  STMTHEAP);
       }
-    // LCOV_EXCL_START :nsk
     else
       {
         ComMPLoc tempObj(tblName, ComMPLoc::FILE);
@@ -713,7 +712,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
         //entry-sequence tables, have a 2G limit
           ddl += HS_EXTENT_SIZE_MP_FMT1;
       }
-    // LCOV_EXCL_STOP
 
 
     HSSqTableDef sampleDef(*sampleName, tableType);
@@ -2784,23 +2782,19 @@ Lng32 HSCursor::prepareRowsetInternal
           }
         while (col = col->next);
       }
-    // LCOV_EXCL_START :rfi
     else
     {
       LM->Log("***[ERROR] prepareRowset: GROUP PTR IS NULL\n");
       return -1;
     }
-    // LCOV_EXCL_STOP
 
     LM->Log(cliStr);
 
       // Cannot reuse a cursor.  This causes memory leak.
     if (stmtAllocated_)
       {
-        // LCOV_EXCL_START :rfi
         LM->Log("***[ERROR] REUSING ALLOCATED CURSOR\n");
         return -1;
-        // LCOV_EXCL_STOP
       }
 
 
@@ -2908,10 +2902,8 @@ Lng32 HSCursor::prepareRowsetInternal
     LM->StopTimer();
     if (retcode_ < 0)
       {
-        // LCOV_EXCL_START :rfi
         LM->Log("***[FAILED] Unable to open rowset cursor.\n");
         HSHandleError(retcode_);
-        // LCOV_EXCL_STOP
       }
 
     closeStmtNeeded_ = TRUE;
@@ -3003,10 +2995,8 @@ Lng32 HSCursor::prepare( const char *clistr
   // Cannot reuse a cursor.  This causes memory leak.
   if (stmtAllocated_)
     {
-      // LCOV_EXCL_START :rfi
       LM->Log("***[ERROR] REUSING ALLOCATED CURSOR\n");
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   retcode_ = SQL_EXEC_ClearDiagnostics(stmt_);
@@ -3196,14 +3186,12 @@ Lng32 HSCursor::prepare( const char *clistr
   LM->StopTimer();
   if (retcode_)
     {
-      // LCOV_EXCL_START :rfi
       if (LM->LogNeeded())
         {
           snprintf(LM->msg, sizeof(LM->msg), "***[FAILED] OPEN CURSOR, retcode=%d", retcode_);
           LM->Log(LM->msg);
         }
       HSHandleError(retcode_);
-      // LCOV_EXCL_STOP
     }
 
   closeStmtNeeded_ = TRUE;
@@ -3217,7 +3205,6 @@ Lng32 HSCursor::prepare( const char *clistr
 #define ALIGN4(addr) ((addr & 0x3) == 0)
 #define ALIGN8(addr) ((addr & 0x7) == 0)
 
-// LCOV_EXCL_START :cnu
 template <class T> class HSBin : public SQLInt {
 
 public:
@@ -3233,10 +3220,8 @@ private:
 
   Lng32 id_;
 };
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 class HSLargeint : public SQLInt {
 
 public:
@@ -3252,7 +3237,6 @@ private:
 
   Lng32 id_;
 };
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 class HSDate : public SQLDate {
@@ -3270,7 +3254,6 @@ public:
 };
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 NAType* ConstructNumericType( Long addr
                                    , Lng32 id
                                    , Lng32 length
@@ -3325,13 +3308,11 @@ NAType* ConstructNumericType( Long addr
   }
   return type;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Construct a NA type from an SQL type so that NAtype.encode can be
 // called later.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 #pragma nowarn(770)   // warning elimination
 Lng32 HSCursor::buildNAType()
 {
@@ -3508,7 +3489,6 @@ Lng32 HSCursor::buildNAType()
   return 0;
 }
 #pragma warn(770)  // warning elimination
-// LCOV_EXCL_STOP
 
 /***********************************************/
 /* METHOD:  fetchRowset()                      */
@@ -3775,7 +3755,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
 // -----------------------------------------------------------------------
 // Fetch char type and largeint type columns from a table.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &value2, double &value3)
 {
   HSErrorCatcher errorCatcher(retcode_, - UERR_INTERNAL_ERROR, "fetchCharColumn", TRUE);
@@ -3821,7 +3800,6 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   return 0;
 }
 
-// LCOV_EXCL_STOP
 
 // Constructor used for static interface.
 HSinsertHist::HSinsertHist(const char *stmtID,

@@ -724,7 +724,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
     }
 
 #ifdef _DEBUG
-// LCOV_EXCL_START
 // Do not need to cover debug code since customers and QA do no receive it.
   char *testCancelFreq  = getenv("TEST_ERROR_AT_QUEUE");
   if (testCancelFreq)
@@ -741,7 +740,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
         }
       getGlobals()->setInjectErrorAtQueue(freq);
     }
-// LCOV_EXCL_STOP
   else
       getGlobals()->setInjectErrorAtQueue(0);
 #endif
@@ -913,7 +911,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
   // This code block must be placed right before insert().
   // ------------------------------------------------------------
   CancelState old = master_glob->setCancelState(CLI_CANCEL_TCB_READY);
-// LCOV_EXCL_START
   if (old == CLI_CANCEL_REQUESTED)
     {
       // Don't bother to continue if async cancel has been requested.
@@ -925,7 +922,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
       populateCancelDiags(*diagsArea);
       return -1; 
     }
-// LCOV_EXCL_STOP
 
 	// ++Trigger,
 	//
@@ -1862,7 +1858,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		}
 
               // $$$ no-wait CLI prototype VV
-// LCOV_EXCL_START 
 // Obsolete in SQ.
               if (timeLimit == 0)
                 {
@@ -1872,7 +1867,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
                 // diagnostics in this way...
                 return NOT_FINISHED;
                 }
-// LCOV_EXCL_STOP
 
               // $$$ no-wait CLI prototype ^^
 
@@ -1889,7 +1883,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
           schedRetcode = glob->getScheduler()->work(prevWaitTime);
 
 #ifdef _DEBUG
-// LCOV_EXCL_START 
 // We do not need coverage for DEBUG builds since QA or customers do no recieve.
           if (earliestTimeToCancel && getenv("TEST_CANCEL_ABORT"))
             {
@@ -1901,7 +1894,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
               return -1;
             }
 #endif
-// LCOV_EXCL_STOP
 
           if (schedRetcode == WORK_BAD_ERROR)
             {
@@ -2906,14 +2898,12 @@ void ex_root_tcb::deregisterCB()
       // See comments around allowUnitTestSuspend above.  This code has
       // been manually unit tested, and it too difficult and costly to 
       // test in an automated script.
-      // LCOV_EXCL_START
       statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
                cliGlobals->myPin());
       DELAY(300);
 
       int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
                   cliGlobals->myPin());
-      // LCOV_EXCL_STOP
     }
 
     // Now we have the semaphore, and the query is not suspended.  Quick

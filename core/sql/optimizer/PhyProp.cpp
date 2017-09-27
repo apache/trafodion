@@ -52,7 +52,6 @@
 
 PhysicalProperty::~PhysicalProperty() {}
 
-// LCOV_EXCL_START
 void PhysicalProperty::print(FILE* ofd,
 			     const char * /* prefix */,
 			     const char * /* suffix */) const
@@ -93,7 +92,6 @@ NABoolean PhysicalProperty::isPartKeyPrefixOfSortKey() const
   return TRUE;
 
 } // PhysicalProperty::isPartKeyPrefixOfSortKey()
-// LCOV_EXCL_STOP
 
 // The following method is used by the overloaded implementations of
 // '<', '>', '==' for physical properties.
@@ -306,7 +304,6 @@ ReqdPhysicalProperty::~ReqdPhysicalProperty()
 }
 
 
-// LCOV_EXCL_START
 void ReqdPhysicalProperty::print(FILE* ofd,
 				 const char * /* prefix */,
 				 const char * /* suffix */) const
@@ -315,7 +312,6 @@ void ReqdPhysicalProperty::print(FILE* ofd,
  availableCPUs_, pipelinesPerCPU_);
 }
 
-// LCOV_EXCL_STOP
 
 // --------------------------------------------------------------------
 // does a given plan satisfy the required property
@@ -885,7 +881,6 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
 } // ReqdPhysicalProperty::compareRequirements
 
 
-// LCOV_EXCL_START
 // Checked in M5. This function is never called
 RelExpr * ReqdPhysicalProperty::getInputMustMatch(Lng32 childIndex) const
 {
@@ -902,7 +897,6 @@ RelExpr * ReqdPhysicalProperty::getInputMustMatch(Lng32 childIndex) const
     else
       return NULL; // pattern has fewer children, no need for a match
 }
-// LCOV_EXCL_STOP
 
 // ||opt this method should never be called because we always
 // have a location requirement???

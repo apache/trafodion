@@ -49,7 +49,6 @@ public:
                                    unsigned short threshold
                                   ); 
 
-// LCOV_EXCL_START
 
 #ifdef FORDEBUG
   virtual NABoolean printDiskTable(){return TRUE;};
@@ -61,7 +60,6 @@ private:
   virtual NABoolean refreshDisk(DiskDetails *diskPtr){ return TRUE;};
   virtual NABoolean computeNumScratchFiles(DiskDetails *diskptr ){return TRUE;};
 
-// LCOV_EXCL_STOP
 
   short factorImportanceTotalFreeSpace_;
   short factorImportanceNumScrFiles_;  

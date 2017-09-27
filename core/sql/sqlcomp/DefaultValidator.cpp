@@ -127,7 +127,6 @@ Int32 ValidateTraceStr::validate( const char       *value,
   return TRUE;
 }
 
-// LCOV_EXCL_START :cnu
 Int32 ValidateAnsiList::validate( const char *value,  
 				const NADefaults *nad,
 			 Int32 attrEnum,
@@ -220,7 +219,6 @@ Int32 ValidateRoleNameList::validate( const char *value,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 Int32 ValidatePOSTableSizes::validate(const char *value,
                                     const NADefaults *nad,
@@ -477,7 +475,6 @@ Int32 ValidateCollationList::validate(const char *value,
     // Set collStr to be the fragment up to (excluding) the semicolon or zero;
     // set collList to be the rest of itself (after the semicolon).
     //
-// LCOV_EXCL_START :mp
     char *s = collList;
     for (NABoolean quoted = FALSE; *s; s++) {
       if (*s == '"')
@@ -546,7 +543,6 @@ Int32 ValidateCollationList::validate(const char *value,
 	    << DgString0(collStr)
 	    << DgString1(nad->lookupAttrName(attrEnum, errOrWarn));
 
-// LCOV_EXCL_STOP
     }	// !collStr.isNull()
   } // while
 

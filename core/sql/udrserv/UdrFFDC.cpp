@@ -343,7 +343,6 @@ void setUdrSignalHandlers()
   }
 }
 
-// LCOV_EXCL_START
 void printSignalHandlers()
 {
   struct sigaction oldAction;
@@ -365,7 +364,6 @@ void printSignalHandlers()
     }
   }
 }
-// LCOV_EXCL_STOP
 
 // Saves the UDR trap signal handlers 
 NABoolean saveUdrTrapSignalHandlers()

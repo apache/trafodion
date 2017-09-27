@@ -68,10 +68,8 @@ public:
                      NABoolean AfterUpdate);
 
 
-// LCOV_EXCL_START
 // exclude from code coverage analsysis since this method is not used
   Int32 orderedQueueProtocol() const { return -1; } 
-// LCOV_EXCL_STOP
 
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
@@ -85,13 +83,11 @@ public:
 
   virtual const char *getNodeName() const { return "EX_COMPOUND_STMT"; };
 
-// LCOV_EXCL_START
 // exclude from code coverage analysys since there are no expressions for
 // this operator
   virtual ex_expr* getExpressionNode(Int32 pos) { return NULL; } 
 
   virtual const char * getExpressionName(Int32 pos) const { return NULL; }   
-// LCOV_EXCL_STOP
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.

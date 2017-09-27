@@ -78,7 +78,6 @@ CRURefreshTaskExecutor::~CRURefreshTaskExecutor()
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::StoreRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRURefreshTaskExecutor::
 	StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -134,12 +133,10 @@ void CRURefreshTaskExecutor::
 	}
 
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::StoreReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRURefreshTaskExecutor::
 	StoreReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -147,12 +144,10 @@ void CRURefreshTaskExecutor::
 
 	translator.WriteBlock(&isRecompute_,sizeof(BOOL));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::LoadRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRURefreshTaskExecutor::
 	LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -212,12 +207,10 @@ void CRURefreshTaskExecutor::
 	  tableLockProtocol_->LoadData(translator);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::LoadReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRURefreshTaskExecutor::
 	LoadReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -225,7 +218,6 @@ void CRURefreshTaskExecutor::
 
 	translator.ReadBlock(&isRecompute_,sizeof(BOOL));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::Init()
@@ -291,7 +283,6 @@ void CRURefreshTaskExecutor::ComposeForceStatements()
 	CRURefreshSQLComposer myComposer(GetRefreshTask());
 
 	// Deal with explain data
-	// LCOV_EXCL_START :rfi
 	if (NULL != pForceOption &&
 		CRUForceOptions::EXPLAIN_ON == pForceOption->GetExplainOption())
 	{
@@ -299,7 +290,6 @@ void CRURefreshTaskExecutor::ComposeForceStatements()
 		myComposer.ComposeShowExplain();
 		pRefreshTEDynamicContainer_->SetStatementText(SHOW_EXPLAIN, myComposer.GetSQL());
 	}
-	// LCOV_EXCL_STOP
 
 	ComposeCQSStatements();
 	
@@ -324,7 +314,6 @@ void CRURefreshTaskExecutor::ComposeMDAMStatements()
 	ComposeControlTableStmtForUsedTables();
 
 	// MV base tables force options
-	// LCOV_EXCL_START :rfi
 	if (NULL != pForceOption &&
 		CRUForceOptions::MDAM_NO_FORCE != pForceOption->GetMDAMoption())
 	{
@@ -343,7 +332,6 @@ void CRURefreshTaskExecutor::ComposeMDAMStatements()
 		myComposer.ComposeResetCntrlTableMDAMText();
 		pRefreshTEDynamicContainer_->SetStatementText(RESET_MDAM_STAT, myComposer.GetSQL());
 	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -365,7 +353,6 @@ void CRURefreshTaskExecutor::ComposeCQSStatements()
 	}
 
 	// MV force options
-	// LCOV_EXCL_START :rfi
 	if ((CRUForceOptions::GB_NO_FORCE != pForceOption->GetGroupByoption() ||
 	    CRUForceOptions::JOIN_NO_FORCE !=   pForceOption->GetJoinoption()))
 	{
@@ -390,7 +377,6 @@ void CRURefreshTaskExecutor::ComposeCQSStatements()
 		myComposer.ComposeControlQueryShapeCut();
 		pRefreshTEDynamicContainer_->SetStatementText(CQS_CUT_STAT, myComposer.GetSQL());
 	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -398,7 +384,6 @@ void CRURefreshTaskExecutor::ComposeCQSStatements()
 //
 // Compose the Control MDAM option for all base tables for forced tables
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRURefreshTaskExecutor::ComposeControlTableStmtForUsedTables() 
 {
 	CRUMV &rootMV = GetRefreshTask()->GetRootMV();
@@ -430,7 +415,6 @@ void CRURefreshTaskExecutor::ComposeControlTableStmtForUsedTables()
 		ComposeControlTableStmtForUsedTable(*pTbl,stmtIndex,mdamOpt);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRURefreshTaskExecutor::ComposeControlTableStmtForUsedTables()
@@ -1039,7 +1023,6 @@ void CRURefreshTaskExecutor::ApplyIRCompilerDefaults()
 		return;
 	}
 	
-	// LCOV_EXCL_START :rfi
 
 	RUASSERT(NULL != pRefreshTEDynamicContainer_);
 
@@ -1091,7 +1074,6 @@ void CRURefreshTaskExecutor::ApplyIRCompilerDefaults()
 #pragma warn(1506)  // warning elimination 
 		}
  	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -1137,7 +1119,6 @@ void CRURefreshTaskExecutor::SetAllowOfflineAccess()
 
 void CRURefreshTaskExecutor::ResetIRCompilerDefaults()
 {
-	// LCOV_EXCL_START :rfi
 	if ((FORCE_CQS & forceFlags_) || (FORCE_USER_CQS & forceFlags_))
 	{
 		CDMPreparedStatement *pStat = pRefreshTEDynamicContainer_->
@@ -1154,7 +1135,6 @@ void CRURefreshTaskExecutor::ResetIRCompilerDefaults()
 
 		ExecuteStatement(*pStat,RESET_MDAM_STAT);
 	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -1314,7 +1294,6 @@ void CRUTableLockProtocol::Init(CRUTblList &tblList,
 //	CRUTableLockProtocol::StoreData()
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUTableLockProtocol::StoreData(CUOFsIpcMessageTranslator &translator)
 {
   // Store the NothingToLock_ flag
@@ -1336,13 +1315,11 @@ void CRUTableLockProtocol::StoreData(CUOFsIpcMessageTranslator &translator)
   } 
 
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTableLockProtocol::LoadData()
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUTableLockProtocol::LoadData(CUOFsIpcMessageTranslator &translator)
 {
   // Load the NothingToLock_ flag
@@ -1366,7 +1343,6 @@ void CRUTableLockProtocol::LoadData(CUOFsIpcMessageTranslator &translator)
   }
 
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUTableLockProtocol::IsEnsureUsedTableLockContinuityNeeded()

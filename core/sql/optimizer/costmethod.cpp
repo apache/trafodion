@@ -70,7 +70,6 @@ static THREAD_P FILE* pfp = NULL;
 // be called. This is a workaround for bugs/missing
 // functionality in ObjectCenter that cause display() to become
 // an undefined symbol.
-// LCOV_EXCL_START :dpm
 void displayCostMethod(const CostMethod& pf)
   {
   pf.display();
@@ -81,7 +80,6 @@ void displayCostMethod(const CostMethod* pf)
   if (pf)
     pf->display();
   }
-// LCOV_EXCL_STOP
 
 //<pb>
 //************************************************
@@ -106,7 +104,6 @@ void displayCostMethod(const CostMethod* pf)
 //  Rolled up cost.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 rollUpUnaryNonBlocking(const Cost& parentOnly,
                        const Cost& childRollUp,
@@ -311,7 +308,6 @@ CostMethod::print( FILE* ofd
 
 void
 CostMethod::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // CostMethod::cleanUpAllCostMethods() is used to reset the SharedPtrs in
@@ -322,7 +318,6 @@ CostMethod::display() const  { print(); }
 // function may also clean up other problems that may exist in the
 // CostMethod objects when a longjmp occurs.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :rfi
 void
 CostMethod::cleanUpAllCostMethods()
 {
@@ -333,13 +328,11 @@ CostMethod::cleanUpAllCostMethods()
        cm != NULL; cm = cm->nextCostMethod_)
     cm->cleanUp();
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // CostMethod::generateZeroCostObject()
 // Generate a zero cost object out of the information already cached.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost* CostMethod::generateZeroCostObject()
 {
   // A zero cost vector.
@@ -359,7 +352,6 @@ Cost* CostMethod::generateZeroCostObject()
   return new STMTHEAP Cost( &cv, &cv, NULL, cpuCount, fragmentsPerCPU );
 
 }
-// LCOV_EXCL_STOP
 
 // return true iff we are under a nested join
 NABoolean
@@ -627,15 +619,13 @@ CostMethod::computeOperatorCost(RelExpr* op,
   Cost* cost;
   try {
     cost = computeOperatorCostInternal(op, myContext, countOfStreams);
-  } catch(...) { // LCOV_EXCL_LINE :rfi
+  } catch(...) {
     // cleanUp() must be called before this function is called again
     // because wrong results may occur the next time computeOperatorCost()
     // is called and because the SharedPtr objects must be set to zero.
     // Failure to call cleanUp() will very likely cause problems.
-    // LCOV_EXCL_START :rfi
     cleanUp();
     throw;  // rethrow the exception
-    // LCOV_EXCL_STOP
   }
 
   cleanUp();
@@ -807,7 +797,7 @@ CostMethod::computePlanCost( RelExpr* op,
     //------------------------------------------------------------------
     if ( childContext == NULL )
     {
-      ABORT("CostMethod::computePlanCost(): A child has a NULL context"); // LCOV_EXCL_LINE :rfi
+      ABORT("CostMethod::computePlanCost(): A child has a NULL context");
     }
 
     // Coverity flags this dereferencing null pointer childContext.
@@ -815,7 +805,7 @@ CostMethod::computePlanCost( RelExpr* op,
     // coverity[var_deref_model]
     if ( NOT childContext->hasOptimalSolution() )
     {
-      ABORT("CostMethod::computePlanCost(): A child has no solution"); // LCOV_EXCL_LINE :rfi
+      ABORT("CostMethod::computePlanCost(): A child has no solution");
     }
 
     //---------------------------------------------
@@ -865,7 +855,6 @@ CostMethod::computePlanCost( RelExpr* op,
 //  none.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 void
 CostMethod::getChildCostsForBinaryOp( RelExpr* op
                                     , const Context* myContext
@@ -1284,7 +1273,6 @@ CostMethod::mergeBothLegsBlocking( const CostPtr leftChildCost,
 
 } // CostMethod::mergeBothLegsBlocking
 //<pb>
-// LCOV_EXCL_STOP
 
 /**********************************************************************/
 /*                                                                    */
@@ -1309,7 +1297,6 @@ CostMethod::mergeBothLegsBlocking( const CostPtr leftChildCost,
 //  Pointer to computed cost object for this exchange operator.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodExchange::computeOperatorCostInternal(RelExpr* op,
                                                 const Context* myContext,
@@ -1796,7 +1783,6 @@ CostMethodExchange::computeExchangeCostGoingDown( const ReqdPhysicalProperty* rp
 			  );
 
 } // CostMethodExchange::computeExchangeCostGoingDown
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Compute default values needed for costing a specified exchange operator.
@@ -1921,7 +1907,6 @@ CostMethodExchange::getDefaultValues(
 //  Number of messages sent down to child.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 CostScalar
 CostMethodExchange::computeDownMessages(
                                          const CostScalar& numOfProbes,
@@ -4481,7 +4466,6 @@ CostMethodExchange::computeExchangeCost( const CostVecPtr   parentFR,
   return exchangeCost;
 
 } // CostMethodExchange::computeExchangeCost()
-// LCOV_EXCL_STOP
 //<pb>
 /**********************************************************************/
 /*                                                                    */
@@ -4594,24 +4578,20 @@ CostMethodFileScan::computeOperatorCostInternal(RelExpr* op,
   NABoolean
     isNestedJoin = ( myContext->getInputLogProp()->getColStats().entries() > 0 );
 
-// LCOV_EXCL_START
 // excluded for coverage because DEBUG only code
 if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifndef NDEBUG
   if (isNestedJoin)
     (*CURRSTMT_OPTGLOBALS->nestedJoinMonitor).enter();
   (*CURRSTMT_OPTGLOBALS->fileScanMonitor).enter();
 }//#endif
-// LCOV_EXCL_STOP
   costPtr = scanOptimizer->optimize(searchKeyPtr,  /* out */
                                     mdamKeyPtr     /* out */);
 
-// LCOV_EXCL_START
 // excluded for coverage because DEBUG only code
 if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifndef NDEBUG
   (*CURRSTMT_OPTGLOBALS->fileScanMonitor).exit();
   if (isNestedJoin)
     (*CURRSTMT_OPTGLOBALS->nestedJoinMonitor).exit();
-// LCOV_EXCL_STOP
 }//#endif
 
   // Set blocks per access estimate. Use value from the defaults
@@ -4703,7 +4683,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifndef NDEBUG
   // ---------------------------------------------------------------------
   // For debugging.
   // ---------------------------------------------------------------------
-// LCOV_EXCL_START :dpm
 // excluded for coverage because DEBUG only code
 #ifndef NDEBUG
   if ( CmpCommon::getDefault( OPTIMIZER_PRINT_COST ) == DF_ON )
@@ -4719,7 +4698,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifndef NDEBUG
     fprintf(pfp,"\n");
   }
 #endif
-// LCOV_EXCL_STOP
 
   // transfer probe counters to p (the FileScan)
   p->setProbes(scanOptimizer->getProbes());
@@ -4770,7 +4748,6 @@ CostMethodDP2Scan::computeOperatorCostInternal(RelExpr* op,
 // -----------------------------------------------------------------------
 // CostMethodFixedCostPerRow::computeOperatorCostInternal().
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodFixedCostPerRow::computeOperatorCostInternal(RelExpr* op,
                                                        const Context* myContext,
@@ -4887,7 +4864,6 @@ void CostMethodFixedCostPerRow::print(FILE* ofd,
   fprintf(ofd,"\n ");
 
 } // CostMethodFixedCostPerRow::print()
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR SORT...............................................
@@ -5000,7 +4976,6 @@ void CostMethodSort::cacheParameters(RelExpr* op,
 // -----------------------------------------------------------------------
 // CostMethodSort computeOperatorCost().
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodSort::computeOperatorCostInternal(RelExpr* op,
                                             const Context* myContext,
@@ -5318,7 +5293,6 @@ CostMethodSort::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodSort::computeOperatorCostInternal()
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR GROUPBY............................................
@@ -6244,7 +6218,6 @@ void CostMethodGroupByAgg::cleanUp()
 // -----------------------------------------------------------------------
 // CostMethodSortGroupBy::computeOperatorCostInternal().
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodSortGroupBy::computeOperatorCostInternal(RelExpr* op,
                                                    const Context* myContext,
@@ -6445,7 +6418,6 @@ CostMethodSortGroupBy::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodSortGroupBy::computeOperatorCostInternal().
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR HGB................................................
@@ -6550,7 +6522,6 @@ void CostMethodHashGroupBy::cacheParameters(RelExpr* op,
 // noOfClusters_, which together forms an initial working set of
 // parameters for computePassCost().
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 void CostMethodHashGroupBy::deriveParameters()
 {
   // ---------------------------------------------------------------------
@@ -7992,7 +7963,6 @@ CostMethodShortCutGroupBy::computePlanCost( RelExpr* op,
  return planCost;
 
 } // CostMethodShortCutGroupBy::computePlanCost()
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR JOIN...............................................
@@ -8496,7 +8466,6 @@ void CostMethodJoin::estimateDegreeOfParallelism()
       // Try to use colstats to estimate row counts for a representative
       // stream. If that fails, just assume even distribution.
       // ---------------------------------------------------------------
-      // LCOV_EXCL_START :cnu
       // excluded for coverage because below code is disabled
       if(isColStatsMeaningful_)
       {
@@ -8585,7 +8554,6 @@ void CostMethodJoin::estimateDegreeOfParallelism()
           // -----------------------------------------------------------
         }
       }
-      // LCOV_EXCL_STOP
       else
       // ---------------------------------------------------------------
       // $$$ This is always the code path taken right now, since the
@@ -8685,7 +8653,6 @@ void CostMethodJoin::estimateDegreeOfParallelism()
 // actual stream cost of the operation in the cases where there maybe an
 // inherent uneven distribution of workload across different streams.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 NABoolean CostMethodJoin::computeRepresentativeStream()
 {
   // This method needs more refinement and thoughts...
@@ -9042,7 +9009,6 @@ NABoolean CostMethodJoin::mergeHistogramsOnEquiJoinPred()
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 //<pb>
 // -----------------------------------------------------------------------
 // CostMethodJoin::classifyPredicates().
@@ -9350,7 +9316,6 @@ void CostMethodHashJoin::cacheParameters(RelExpr* op,
 // stages of operation. It assumes both cacheParameters() as well as
 // estimateDegreeOfParallelism() have been called.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 void CostMethodHashJoin::deriveParameters()
 {
   // ---------------------------------------------------------------------
@@ -10600,7 +10565,6 @@ CostMethodHashJoin::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodHashJoin::computeOperatorCostInternal().
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Clean up the cost vectors at various stages.
@@ -10674,7 +10638,6 @@ void CostMethodHashJoin::cleanUp()
 //  Pointer to cumulative final cost.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodHashJoin::computePlanCost( RelExpr*             hashJoinOp,
                                      const Context*       myContext,
@@ -11109,7 +11072,6 @@ SimpleCostVector CostMethodHashJoin::computeNewBlockingCost(
   E.setNumProbes(parentNumProbes);
   return E;
 } // CostMethodHashJoin::computeNewBlockingCost()
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR MJ.................................................
@@ -11167,7 +11129,6 @@ void CostMethodMergeJoin::cacheParameters(RelExpr* op,
 // of possible uec's (which is the smaller of the left and right uec's).
 //
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 CostScalar CostMethodMergeJoin::computeIntervalMergingCost(
   CostScalar  child0RowCount,
   CostScalar  child0Uec,
@@ -12282,7 +12243,6 @@ CostMethodNestedJoin::mergeBothLegsBlocking(
   return mergedCost;
 
 } //CostMethodNestedJoin::mergeBothLegsBlocking
-// LCOV_EXCL_STOP
 //<pb>
 // -----------------------------------------------------------------------
 // CostMethodNestedJoin::cacheParameters()
@@ -12332,7 +12292,6 @@ void CostMethodNestedJoin::cacheParameters(RelExpr* op,
 // -----------------------------------------------------------------------
 // CostMethodNestedJoin::computeOperatorCostInternal()
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodNestedJoin::computeOperatorCostInternal(RelExpr* op,
                                                   const Context* myContext,
@@ -12770,7 +12729,6 @@ CostMethodNestedJoinFlow::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodNestedJoinFlow::computeOperatorCostInternal().
-// LCOV_EXCL_STOP
 //<pb>
 
 // ----QUICKSEARCH FOR MU.................................................
@@ -12802,7 +12760,6 @@ void CostMethodMergeUnion::cacheParameters(
 // -----------------------------------------------------------------------
 // CostMethodMergeUnion::computeOperatorCostInternal().
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost*
 CostMethodMergeUnion::computeOperatorCostInternal(RelExpr* op,
                                                   const Context* myContext,
@@ -13517,7 +13474,6 @@ CostMethodTuple::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodTuple::computeOperatorCostInternal().
-// LCOV_EXCL_STOP
 //<pb>
 
 /**********************************************************************/
@@ -13586,7 +13542,6 @@ CostMethodTranspose::cacheParameters(RelExpr *op,
 // long& countOfStreams
 //  OUT - Estimated degree of parallelism for returned preliminary cost.
 //
-// LCOV_EXCL_START :cnu -- OCM code
 Cost *
 CostMethodTranspose::computeOperatorCostInternal(RelExpr *op,
 					         const Context *myContext,
@@ -13645,7 +13600,6 @@ CostMethodTranspose::computeOperatorCostInternal(RelExpr *op,
 
 
 }      // CostMethodTranspose::computeOperatorCostInternal()
-// LCOV_EXCL_STOP
 
 /**********************************************************************/
 /*                                                                    */
@@ -13685,7 +13639,6 @@ CostMethodCompoundStmt::cacheParameters(RelExpr *op,
 // Context *myContext
 //  IN - The optimization context within which to cost this node.
 //-------------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 Cost *
 CostMethodCompoundStmt::computeOperatorCostInternal(RelExpr *op,
                                                     const Context *myContext,
@@ -13903,7 +13856,6 @@ CostMethodTableMappingUDF::computeOperatorCostInternal(RelExpr* op,
                             fragmentsPerCPU
                           );
 }
-// LCOV_EXCL_STOP
 
 /**********************************************************************/
 /*                                                                    */
@@ -14239,7 +14191,6 @@ CostMethodUnPackRows::cacheParameters(RelExpr *op,
 // long& countOfStreams
 //  OUT - Estimated degree of parallelism for returned preliminary cost.
 //
-// LCOV_EXCL_START :cnu -- OCM code
 Cost *
 CostMethodUnPackRows::computeOperatorCostInternal(RelExpr *op,
                                                   const Context *myContext,
@@ -14297,7 +14248,6 @@ CostMethodUnPackRows::computeOperatorCostInternal(RelExpr *op,
     Cost(&cvFirstRow, &cvLastRow, NULL, cpuCount, fragmentsPerCPU);
 
 }      // CostMethodUnPackRows::computeOperatorCostInternal()
-// LCOV_EXCL_STOP
 
 /**********************************************************************/
 /*                                                                    */
@@ -14363,7 +14313,6 @@ CostMethodRelSequence::cacheParameters(RelExpr *op,
 // long& countOfStreams
 //  OUT - Estimated degree of parallelism for returned preliminary cost.
 //
-// LCOV_EXCL_START :cnu -- OCM code
 Cost *
 CostMethodRelSequence::computeOperatorCostInternal(RelExpr *op,
                                                    const Context *myContext,
@@ -14758,7 +14707,6 @@ CostMethodIsolatedScalarUDF::computeOperatorCostInternal(RelExpr* op,
   return costPtr;
 
 }  // CostMethodIsolatedScalarUDF::computeOperatorCostInternal().
-// LCOV_EXCL_STOP
 
 //<pb>
 

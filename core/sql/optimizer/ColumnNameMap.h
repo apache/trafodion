@@ -136,7 +136,6 @@ public:
   void setQualifiedColumnAmbiguousFlag()        
   {  qualColAmbiguousFlag_ = TRUE; }
 
-  // LCOV_EXCL_START :dpm
   // ---------------------------------------------------------------------
   // Display/print, for debugging.
   // ---------------------------------------------------------------------
@@ -162,7 +161,6 @@ public:
       fprintf(ofd," (input value)");
     if (strcmp(title, "")) fprintf(ofd,"\n");
   } // print()
-  // LCOV_EXCL_STOP
 
   void display() { print(); }
 

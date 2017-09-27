@@ -41,7 +41,6 @@
 
 // Exclude this function from coverage as it is called only when there is an assertion in LM
 // which results in UDR server abend, so no coverage info can be generated.
-// LCOV_EXCL_START
 void lmAssert(const char *file, Int32 linenum, const char *msg)
 {
   if (!file)
@@ -59,7 +58,6 @@ void lmAssert(const char *file, Int32 linenum, const char *msg)
   lmMakeTFDSCall(message, file, linenum);
   // should not reach here
 }
-// LCOV_EXCL_STOP
 
 
 

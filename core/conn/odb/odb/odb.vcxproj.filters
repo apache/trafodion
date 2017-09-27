@@ -27,6 +27,9 @@
     <ClCompile Include="..\src\versodb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\JsonReader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\verslib.h">
@@ -34,6 +37,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\JsonReader.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

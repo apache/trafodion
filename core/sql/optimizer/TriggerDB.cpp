@@ -47,7 +47,6 @@
 // Debugging aid.
 //
 // For debugging only
-// LCOV_EXCL_START
 void 
 TableOp::print(ostream& os) const 
 {
@@ -64,7 +63,6 @@ TableOp::print(ostream& os) const
   os << "of Table " << subjectTable_.getQualifiedNameAsAnsiString() << " : " 
      << endl;
 }
-// LCOV_EXCL_STOP
 
 //-----------------------------------------------------------------------------
 //
@@ -88,10 +86,8 @@ TriggerDB::HashFunction(const TableOp & key)
     return hval+2;
   else 
   {
-    // LCOV_EXCL_START
     CMPASSERT(FALSE);
     return 0;
-    // LCOV_EXCL_STOP
   }
 }
 
@@ -123,7 +119,6 @@ TriggerDB::getValidEntry(const TableOp * key, BindWA * bindWA)
     // only used when triggers are allocated from the cntext heap. 
     // Currently triggers are allocated from the statement heap.
     // See method Trigger::Heap() in file Triggers.h for more details
-    // LCOV_EXCL_START
 
     // entry exist in TriggerDB and we work ACROSS statements =>
     //   validate the entry: compare the entry's subject table timestamp
@@ -151,7 +146,6 @@ TriggerDB::getValidEntry(const TableOp * key, BindWA * bindWA)
       delete result; // destroy the entry
       return NULL;
     }
-    // LCOV_EXCL_STOP
   } // end of validation
 
   // at this point, if result != NULL, then it is valid. Otherwise it is 
@@ -178,7 +172,6 @@ TriggerDB::getTriggers(QualifiedName &subjectTable,
 // only used when triggers are allocated from the cntext heap. 
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 void
 TriggerDB::clearAndDestroy()
 {
@@ -205,7 +198,6 @@ TriggerDB::clearAndDestroy()
   // now, TriggerDB should be empty
   CMPASSERT(this->entries() == 0);
 }
-// LCOV_EXCL_STOP
 
 //
 // -- ResetRecursionCounter()
@@ -217,7 +209,6 @@ TriggerDB::clearAndDestroy()
 // only used when triggers are allocated from the cntext heap. 
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 static void 
 ResetRecursionCounter(TriggerList* triggerList)
 {
@@ -230,7 +221,6 @@ ResetRecursionCounter(TriggerList* triggerList)
     trg->resetRecursionCounter();
   }
 }
-// LCOV_EXCL_STOP
 
 //
 // -- TriggerDB::cleanupPerStatement()
@@ -244,7 +234,6 @@ ResetRecursionCounter(TriggerList* triggerList)
 // only used when triggers are allocated from the cntext heap. 
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 NABoolean
 TriggerDB::cleanupPerStatement()
 {
@@ -282,7 +271,6 @@ TriggerDB::cleanupPerStatement()
     return FALSE;
   }
 }
-// LCOV_EXCL_STOP
 
 //
 // -- TriggerDB::print
@@ -290,7 +278,6 @@ TriggerDB::cleanupPerStatement()
 // Debugging aid.
 //
 // For debugging only
-// LCOV_EXCL_START
 void TriggerDB::print(ostream& os) const 
 {
   NAHashDictionaryIterator<TableOp, BeforeAndAfterTriggers> iter (*this) ; 
@@ -312,7 +299,6 @@ void TriggerDB::print(ostream& os) const
     iter.getNext(top, triggers);
   }
 }
-// LCOV_EXCL_STOP
 
 NABoolean TriggerDB::isHiveTable(QualifiedName& name)
 {
@@ -331,12 +317,10 @@ NABoolean TriggerDB::isHiveTable(QualifiedName& name)
 // TBD
 //
 // not implemented
-// LCOV_EXCL_START
 RefConstraintList * 
 SchemaDB::getRIs(QualifiedName &subjectTable, 
 		 ComOperation   operation)
 {
   return NULL;
 }
-// LCOV_EXCL_STOP
 

@@ -217,7 +217,6 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   }
   // Allocate an ExTrieTable for rows that map directly to groups using
   // bitMux fast mapping.
-  // LCOV_EXCL_START  
 
   if (bitMuxExpr_) {
     // Try to get about 1Mb of memory for the Trie table.
@@ -268,7 +267,6 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   //
   if(bitMuxExpr_ && !hbAggrExpr_ && !hashExpr_)
     bitMuxExpr_ = NULL;
-  // LCOV_EXCL_STOP
 
   // get the queue that child use to communicate with me
   childQueue_  = childTcb_->getParentQueue(); 
@@ -276,7 +274,7 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   // Allocate the queues to communicate with parent (no pstate needed)
   allocateParentQueues(parentQueue_,FALSE);
 
-  // Now, fixup the expressions     // LCOV_EXCL_START
+  // Now, fixup the expressions   
   //
   if (hashExpr_)
     (void) hashExpr_->fixup(0, getExpressionMode(), this,
@@ -318,7 +316,6 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   if (ofSearchExpr_)
     (void) ofSearchExpr_->fixup(0, getExpressionMode(), this,
 				space_, heap_, glob->computeSpace(), glob);
-  // LCOV_EXCL_STOP
   // Allocate the ATP's that are used internally in the work
   // methods.
   //
@@ -351,7 +348,6 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
 
 ///////////////////////////////////////////////////////////////////////////////
 // Destructor for hash_grby_tcb
-//  // LCOV_EXCL_START
 ex_hash_grby_tcb::~ex_hash_grby_tcb() {
 
   delete parentQueue_.up;
@@ -400,7 +396,6 @@ void ex_hash_grby_tcb::freeResources() {
   if(bitMuxBuffer_) NADELETEBASIC(bitMuxBuffer_, space_);
   bitMuxBuffer_ = NULL;
 };
-// LCOV_EXCL_STOP  
 
 void ex_hash_grby_tcb::registerSubtasks()
 {
@@ -636,7 +631,7 @@ short ex_hash_grby_tcb::work() {
         }
     } break;
 
-    case HASH_GRBY_ERROR: {   // LCOV_EXCL_START
+    case HASH_GRBY_ERROR: {
       // make sure that we have a free slot in the parent's up queue
       if (parentQueue_.up->isFull()) {
 	return WORK_OK;
@@ -674,7 +669,7 @@ short ex_hash_grby_tcb::work() {
       downParentEntry->setDiagsArea(diags);
       workHandleError(downParentEntry->getAtp());
     } break;
-    };    // LCOV_EXCL_STOP
+    };
   };
 };
 
@@ -784,11 +779,11 @@ void ex_hash_grby_tcb::workInitialize() {
     // Default to 100 MB, minimum setting 10 MB
     //
     availableMemory = hashGrbyTdb().partialGrbyMemoryMB() * ONE_MEG ; 
-    if(availableMemory == 0) {   // LCOV_EXCL_START
+    if(availableMemory == 0) {
       availableMemory = 100 * ONE_MEG; 
     } else if(availableMemory < 10 * ONE_MEG) {
       availableMemory = 10 * ONE_MEG;  
-    } // LCOV_EXCL_STOP  
+    }
     
     // reset the counter for every run.
     partialGroupbyMissCounter_ = 0;
@@ -853,12 +848,12 @@ void ex_hash_grby_tcb::workInitialize() {
 				    getStatsEntry()
                                     );
 
-  if ( !clusterDb_ || rc_ != EXE_OK ) {    // LCOV_EXCL_START
+  if ( !clusterDb_ || rc_ != EXE_OK ) {
     if ( !clusterDb_ ) rc_ = EXE_NO_MEM_TO_EXEC;  // new() couldn't allocate
     else delete clusterDb_; 
     setState(HASH_GRBY_ERROR);
     return;
-  };    // LCOV_EXCL_STOP
+  };
 
   clusterDb_->setScratchIOVectorSize(hashGrbyTdb().scratchIOVectorSize());
   switch(hashGrbyTdb().getOverFlowMode())
@@ -895,13 +890,13 @@ void ex_hash_grby_tcb::workInitialize() {
 				 cluster,
 				 &rc_);  
 
-    if ( !cluster || rc_ != EXE_OK ) {    // LCOV_EXCL_START
+    if ( !cluster || rc_ != EXE_OK ) {
       // we could not allocate the Cluster
       if ( !cluster ) rc_ = EXE_NO_MEM_TO_EXEC;
       else delete cluster;
       setState(HASH_GRBY_ERROR);
       return;
-    };     // LCOV_EXCL_STOP
+    };
 
     bucketIdx += bucketsPerCluster;
   };
@@ -1154,10 +1149,10 @@ void ex_hash_grby_tcb::workReadChild() {
       else {
 	// we couldn't insert the row. If we got an error, handle it.
 	// EXE_NO_MEM_TO_EXEC is not an error
-	if (rc_ && !(rc_ == EXE_NO_MEM_TO_EXEC)) {   // LCOV_EXCL_START
+	if (rc_ && !(rc_ == EXE_NO_MEM_TO_EXEC)) {
 	  setState(HASH_GRBY_ERROR);
 	  return;
-	};    // LCOV_EXCL_STOP
+	};
 
 	// we ran out of memory. Handle this situation. In case of a
 	// partial grouping we return the row as a new group to the parent.
@@ -1300,7 +1295,6 @@ void ex_hash_grby_tcb::workReadChild() {
 
 // workReadChildBitMux
 //
-// LCOV_EXCL_START  
 Int32 ex_hash_grby_tcb::workReadChildBitMux() {
   ex_queue_entry * childEntry;
   ex_queue_entry * upParentEntry = parentQueue_.up->getTailEntry();
@@ -1415,7 +1409,6 @@ Int32 ex_hash_grby_tcb::workReadChildBitMux() {
   //
   return 0;
 }
-// LCOV_EXCL_STOP
 
 /////////////////////////////////////////////////////////////////////////////
 // read rows from the overflow buffer and aggregate them into the

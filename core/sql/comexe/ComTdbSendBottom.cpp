@@ -83,25 +83,19 @@ ComTdbSendBottom::ComTdbSendBottom(
   smTag_                 = 0;
 }
   
-// LCOV_EXCL_START
 Int32 ComTdbSendBottom::orderedQueueProtocol() const
 {
   return TRUE;
 } // these 3 lines won't be covered, obsolete
-// LCOV_EXCL_STOP
   
-// LCOV_EXCL_START
 void ComTdbSendBottom::display() const
 {
 } // ignore these lines, used by Windows GUI only
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 const ComTdb* ComTdbSendBottom::getChild(Int32 pos) const
 {
   return NULL;
 } // these lines won't be covered, it's never called as it has no child opr
-// LCOV_EXCL_STOP
 
 Int32 ComTdbSendBottom::numChildren() const
 {

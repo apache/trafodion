@@ -37,7 +37,6 @@
 *
 ******************************************************************************
 */
-// LCOV_EXCL_START
 // exclude this whole file from coverage since this code is related to vertical
 // partitioning and that feature is not active anymore
 #include "Collections.h"
@@ -445,6 +444,5 @@ private:
   //
   NABoolean callFromCatMan_;
 };
-// LCOV_EXCL_STOP
 
 #endif

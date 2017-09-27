@@ -43,7 +43,6 @@
 #include "RuSQLComposer.h"
 #include "uofsIpcMessageTranslator.h"
 
-// LCOV_EXCL_START :rfi
 
 //--------------------------------------------------------------------------//
 //	CRUTestTaskExecutor::Work()
@@ -363,4 +362,3 @@ void CRUTestTaskExecutor::
 	translator.ReadBlock(&groupId_,sizeof(Int32));
 }
 
-// LCOV_EXCL_STOP

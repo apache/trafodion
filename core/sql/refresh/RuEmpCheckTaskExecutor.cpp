@@ -111,7 +111,6 @@ void CRUEmpCheckTaskExecutor::Init()
 //--------------------------------------------------------------------------//
 //	CRUEmpCheckTaskExecutor::LoadRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUEmpCheckTaskExecutor::
 LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -123,12 +122,10 @@ LoadRequest(CUOFsIpcMessageTranslator &translator)
 	
 	pEmpCheck_->LoadData(translator);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUEmpCheckTaskExecutor::LoadReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUEmpCheckTaskExecutor::
 LoadReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -138,12 +135,10 @@ LoadReply(CUOFsIpcMessageTranslator &translator)
 
 	pEmpCheck_->LoadData(translator);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUEmpCheckTaskExecutor::StoreRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUEmpCheckTaskExecutor::
 StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -154,12 +149,10 @@ StoreRequest(CUOFsIpcMessageTranslator &translator)
 	translator.SetMessageType(CUOFsIpcMessageTranslator::
 							  RU_EMP_CHECK_EXECUTOR);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUEmpCheckTaskExecutor::StoreReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUEmpCheckTaskExecutor::
 StoreReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -167,7 +160,6 @@ StoreReply(CUOFsIpcMessageTranslator &translator)
 
 	pEmpCheck_->StoreData(translator);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUEmpCheckTaskExecutor::Work()

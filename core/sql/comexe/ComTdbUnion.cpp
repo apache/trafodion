@@ -52,7 +52,6 @@ ComTdbUnion::ComTdbUnion() :
 }
 
 
-// LCOV_EXCL_START
 // not called, tested by removing the code and testing
 ComTdbUnion::ComTdbUnion(const ComTdbUnion *union_tdb)
   : ComTdb(ComTdb::ex_UNION,
@@ -77,7 +76,6 @@ ComTdbUnion::ComTdbUnion(const ComTdbUnion *union_tdb)
     csErrFlags_(union_tdb->csErrFlags_)
 {
 }
-// LCOV_EXCL_STOP
 
 ComTdbUnion::ComTdbUnion(ComTdb * left_tdb,
 			 ComTdb * right_tdb,
@@ -164,10 +162,8 @@ Int32 ComTdbUnion::numChildren() const
   return ( ( tdbRight_ == (ComTdbPtr) NULL ) ? 1 : 2 );
 }
 
-// LCOV_EXCL_START
 // exclude from code coverage since this is used only GUI
 void ComTdbUnion::display() const {}; 
-// LCOV_EXCL_STOP
 
 Long ComTdbUnion::pack(void * space)
 {

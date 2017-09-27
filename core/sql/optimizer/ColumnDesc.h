@@ -92,7 +92,6 @@ public:
   const char * getViewFileName() const          { return viewFileName_; }
   void setViewFileName(const char * name)       { viewFileName_ = name;  }
 
-  // LCOV_EXCL_START :dpm
   // ---------------------------------------------------------------------
   // Display/print, for debugging.
   // ---------------------------------------------------------------------
@@ -110,7 +109,6 @@ public:
       groupedFlag_? " grp " : "");
     if (strcmp(title, "")) fprintf(ofd,"\n");
   } // ColumnDesc::print()
-  //LCOV_EXCL_STOP
 
   void display() const { print(); }
 

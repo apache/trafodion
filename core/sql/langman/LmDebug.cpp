@@ -52,17 +52,15 @@ NABoolean doLmDebug()
     // Note: the "LM_DEBUG" string is split into two adjacent strings so
     // the preprocessor does not perform macro substitution on LM_DEBUG.
     if (getenv("LM_""DEBUG"))
-      doLmDebugFlag = TRUE;  // LCOV_EXCL_LINE --exclude coverage, used for debugging
+      doLmDebugFlag = TRUE;
 
     char *debug_log = getenv("LM_DEBUG_LOG");
     if (debug_log != NULL)
     {
 // Exclude coverage, used for debugging
-// LCOV_EXCL_START 
       lmDebugFile = fopen(debug_log, "a");
       if (!lmDebugFile)
        lmDebugFile = stdout;
-// LCOV_EXCL_STOP
     }
   }
 
@@ -74,14 +72,12 @@ void lmDebug(const char *formatString, ...)
   if (doLmDebug())
   {
 // Exclude coverage, used for debugging
-// LCOV_EXCL_START
     va_list args;
     va_start(args, formatString);
     fprintf(lmDebugFile, "[LM DEBUG] ");
     vfprintf(lmDebugFile, formatString, args);
     fprintf(lmDebugFile, "\n");
     fflush(lmDebugFile);
-// LCOV_EXCL_STOP
   }
 }
 
@@ -97,7 +93,7 @@ NABoolean doLmDebugSignalHandlers(){
     //
     if (getenv("LM_DEBUG_SIGNAL_HANDLERS"))
     {
-      doLmDebugSignalHandlersFlag = TRUE;  // LCOV_EXCL_LINE --exclude coverage, used for debugging
+      doLmDebugSignalHandlersFlag = TRUE;
     }
   }
   return doLmDebugSignalHandlersFlag;
@@ -106,11 +102,10 @@ NABoolean doLmDebugSignalHandlers(){
 void debugLmSignalHandlers()
 {
   if(doLmDebugSignalHandlers())
-    lmPrintSignalHandlers();  // LCOV_EXCL_LINE --exclude coverage, used for debugging
+    lmPrintSignalHandlers();
 }
 
 // Exclude the following function for coverage as this is used only for debugging signal handler
-// LCOV_EXCL_START
 NABoolean doNotRestoreSignalHandlersAfterUDF(){
   static NABoolean doNotRestoreSignalHandlersAfterUDFFlag = FALSE;
   static NABoolean firstTime = TRUE;
@@ -124,7 +119,6 @@ NABoolean doNotRestoreSignalHandlersAfterUDF(){
   }
   return doNotRestoreSignalHandlersAfterUDFFlag;
 }
-// LCOV_EXCL_STOP
 
 #endif // LM_DEBUG
 

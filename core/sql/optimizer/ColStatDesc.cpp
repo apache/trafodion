@@ -347,10 +347,8 @@ ColStatDesc::applySel( const CostScalar & selectivity )
 
   if ( baseUec.isZero() ) // avoid div-by-zero!
   {
-// LCOV_EXCL_START - rfi
     newTotalUec = csZero;
     uecSelectivity = csZero;
-// LCOV_EXCL_STOP
   }
   else if ( colStats->isUnique() )
   {
@@ -497,10 +495,8 @@ ColStatDesc::synchronizeStats( const CostScalar & baseRowcount,
 
   if ( baseUec.isZero() ) // avoid div-by-zero
   {
-// LCOV_EXCL_START - rfi
     newTotalUec = csZero;
     uecSelectivity = csZero;
-// LCOV_EXCL_STOP
   }
   else if ( specialFlag == DO_NOT_REDUCE_UEC )
   {
@@ -3145,10 +3141,8 @@ ColStatDescList::estimateCardinality (const CostScalar & initialRowCount,
   // The estimated cardinality should never go below zero
   if (newRowCount.getValue() < 0)
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT( newRowCount.isGreaterOrEqualThanZero() );
     newRowCount.minCsZero();
-// LCOV_EXCL_STOP
   }
 
   // This is the rowcount without using hints. Save it
@@ -4707,10 +4701,8 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
       // at the customer. 
       if (leftNumOuterColStats != rightNumOuterColStats )
       {
-// LCOV_EXCL_START - rfi
         CCMPASSERT( leftNumOuterColStats == rightNumOuterColStats );
         return newRowCount;
-// LCOV_EXCL_STOP
       }
 	numOuterColStats = leftNumOuterColStats;
 
@@ -4785,7 +4777,7 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
 	  // copyStatsList is a copy of THIS statsList, during
 	  // the process of applying predicates to THIS and
 	  // the copy, we should not have dropped any columns.
-	  Int32 stophere = 0; // LCOV_EXCL_LINE - rfi
+	  Int32 stophere = 0;
 	}
 #pragma warn(262)  // warning elimination
 
@@ -4817,10 +4809,8 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
         // if could not find the histogram to be merged
         // return for release mode. Side effect could be 
         // increased cardinality
-// LCOV_EXCL_START - rfi
         CCMPASSERT( found == TRUE );
         return newRowCount;
-// LCOV_EXCL_STOP
       }
 	  ColStatsSharedPtr leftColStats  =
 	    (*this)[currentL]->getColStatsToModify();
@@ -4881,11 +4871,9 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
 #pragma nowarn(262)   // warning elimination
 	if( copyStatsList.entries() != 0 )
 	{
-// LCOV_EXCL_START - rfi
       CCMPASSERT (copyStatsList.entries() == 0);
 	  // The OR merge between THIS and the copy did not go properly
 	  return newRowCount;
-// LCOV_EXCL_STOP
 	}
 #pragma warn(262)  // warning elimination
 
@@ -4981,10 +4969,8 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
     } // ITM_OR
     else  // error: It isn't ITM_AND or ITM_OR ... oops
     {
-// LCOV_EXCL_START - rfi
       CCMPASSERT("Unsupported binary logic operator" );
       return newRowCount;
-// LCOV_EXCL_STOP
     }
 
     if(exprOpCode == REL_SCAN && !maxSelectivity && (CmpCommon::getDefault(COMP_BOOL_67) == DF_ON))
@@ -5820,7 +5806,6 @@ ColStatDescList::applyDefaultPred (ItemExpr *pred,
           (*this, origPredValueId, globalPredicate);
       }
   }
-// LCOV_EXCL_START :cnu
   else
   {
   //
@@ -6565,7 +6550,6 @@ ColStatDescList::applyDefaultPred (ItemExpr *pred,
     }
   }
   }
-// LCOV_EXCL_STOP
 
   // maxSelectivity computation is done
   if (maxSelectivity) return;
@@ -6603,7 +6587,6 @@ ColStatDescList::applyDefaultPred (ItemExpr *pred,
 
 	if ( left == right )
 	{
-// LCOV_EXCL_START - cnu
 	  OperatorTypeEnum op = pred->getOperatorType();
 	  switch ( op )
 	  {
@@ -6621,7 +6604,6 @@ ColStatDescList::applyDefaultPred (ItemExpr *pred,
 	  default:
 	    break;
 	  }
-// LCOV_EXCL_STOP
 	}
       }
     } // $$$ end of stuff that should someday be removed ...
@@ -6723,7 +6705,7 @@ CostScalar ColStatDescList::getMaxOfMaxFreqOfCol(const ValueIdSet & baseColSet)
 			baseColSet.advance(col))
   {
     if (col == NULL_VALUE_ID)
-      continue; // LCOV_EXCL_LINE - rfi
+      continue;
 
 	  ColStatsSharedPtr colStat = this->getColStatsPtrForColumn (col);
 	  ColAnalysis * colAnalysis = col.colAnalysis();
@@ -6785,7 +6767,7 @@ CostScalar ColStatDescList::getMinOfMaxFreqOfCol(const ValueIdSet & baseColSet)
 			baseColSet.advance(col))
   {
     if (col == NULL_VALUE_ID)
-      continue; // LCOV_EXCL_LINE
+      continue;
 
 	  ColStatsSharedPtr colStat = this->getColStatsPtrForColumn (col);
 	  ColAnalysis * colAnalysis = col.colAnalysis();
@@ -6840,13 +6822,11 @@ ColStatDescList::getMaxFreqForCaseExpr(const ValueIdSet & leafValues)
 {
   if(leafValues.entries() == 0)
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT ( leafValues.entries() > 0 );
 
     // In absence of leaf values, it is not possible to calculate max freq.
     // Return zero to indicate uniform distribution.
     return csZero;
-// LCOV_EXCL_STOP
   }
 
   CostScalar maxFreq = csZero;
@@ -7794,12 +7774,10 @@ ColStatDescList::mergeListPairwise ()
   // sanity check
   if ((entries() % 2) != 0)
   {
-// LCOV_EXCL_START - rfi
     CCMPASSERT( entries() % 2 == 0 ); // should be an even number!
     //if not return without merging. Don't want to land up with an 
     // unreferenced object in  the collections class
     return newRowcount;
-// LCOV_EXCL_STOP
   }
 
   // NB: we avoid having the resulting rowcount blow up by making sure
@@ -8399,13 +8377,11 @@ ColStatDescList::getColStatsPtrForColumn (const ValueId& inputColumn) const
 #pragma nowarn(270)   // warning elimination
     if ((index < 0) || (index >= entries()) )
     {
-// LCOV_EXCL_START - rfi
       // if the index is out side the range of histogram list, return
       // NULL pointer indicating that the histogram is not found in the 
       // list
       CCMPASSERT( (index >= 0) AND (index < entries() ));
       return NULL;
-// LCOV_EXCL_STOP
     }
 
 #pragma warn(270)  // warning elimination
@@ -8677,7 +8653,6 @@ ColStatDescList::getUecOfJoiningCols(ValueIdSet & joinedColSet) const
 
 } // ColStatDescList::getUecOfJoiningCols
 
-// LCOV_EXCL_START - dpm
 
 void
 ColStatDescList::print (ValueIdList selectListCols,
@@ -8724,7 +8699,6 @@ ColStatDescList::print (ValueIdList selectListCols,
           "**************************************************************\n");
   PRINTIT(ofd, c, space, buf, mybuf);
 }
-// LCOV_EXCL_STOP
 
 void
 ColStatDescList::display() const
@@ -8810,10 +8784,8 @@ ColStatDescList::enforceInternalConsistency(CollIndex start,
 
     if (cs->getHistogram() == NULL)
     {
-// LCOV_EXCL_START - rfi
        CCMPASSERT("Histogram is NULL");
        cs->insertZeroInterval();
-// LCOV_EXCL_STOP
     }
 
     if ( cs->getHistogram()->entries() == 0 )
@@ -8901,10 +8873,8 @@ ColStatDescList::enforceInternalConsistency(CollIndex start,
   {
     if (firstNonFakeRowcount < 0)
     {
-// LCOV_EXCL_START - rfi
       CCMPASSERT( firstNonFakeRowcount.isGreaterOrEqualThanZero() );
       firstNonFakeRowcount = 0;
-// LCOV_EXCL_STOP
     }
 
     for ( i = start; i < end; i++ )
@@ -8933,7 +8903,6 @@ ColStatDescList::enforceInternalConsistency(CollIndex start,
   // done, finally
 }
 
-// LCOV_EXCL_START - cnu
 ValueIdSet ColStatDescList::appliedPreds () const
 {
   ValueIdSet result;
@@ -8953,7 +8922,6 @@ ValueIdSet ColStatDescList::VEGColumns () const
   }
   return result;
 }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -9309,10 +9277,8 @@ MultiColumnUecList::getListOfSubsetsContainsColumns(
 #ifndef NDEBUG
   if(getenv("MDAM_MCUEC"))
   {
-// LCOV_EXCL_START - dpm
     fprintf(stdout, " \n\n-----List to be considered----\n");
     allValueIds.print();
-// LCOV_EXCL_STOP
   }
 #endif
 
@@ -9548,10 +9514,8 @@ MultiColumnUecList::useMCUecForCorrPreds (
 
     if (iterDesc == NULL)
     {
-// LCOV_EXCL_START - rfi
       CCMPASSERT( iterDesc != NULL );
       return FALSE;
-// LCOV_EXCL_STOP
     }
 
     // do a lookup in the hash dictionary we're currently populating
@@ -10000,12 +9964,10 @@ MultiColumnUecList::findMatchingColumns (
     NABoolean inserted = FALSE ;
     if ( joinPairs[i].entries() > 2 )
     {
-// LCOV_EXCL_START - rfi
       // we cannot handle a join between many (>2) columns -- do not
       // use this join predicate
       remainingPairs.insert( joinPairs[i] );
       continue ;
-// LCOV_EXCL_STOP
     }
 
     const ValueId & firstId = joinPairs[i][0];
@@ -10204,10 +10166,8 @@ MultiColumnUecList::getUecForMCJoin (
       TableDesc  * iterDesc = iterExpr->getTableDesc();
       if (iterDesc == NULL)
       {
-// LCOV_EXCL_START - rfi
         CCMPASSERT( iterDesc != NULL );
         return FALSE;
-// LCOV_EXCL_STOP
       }
 
       // do a lookup in the hash dictionary we're currently populating
@@ -10504,10 +10464,8 @@ MultiColumnUecList::getUecForMCJoin (
       const TableDesc  * iterDesc = iterExpr->getTableDesc();
       if (iterDesc == NULL)
       {
-// LCOV_EXCL_START - rfi
         CCMPASSERT( iterDesc != NULL );
         return FALSE;
-// LCOV_EXCL_STOP
       }
 
       if ( iterDesc == tableOneDesc )
@@ -10563,10 +10521,8 @@ MultiColumnUecList::getUecForMCJoin (
     // to 2, then that means we shall not be able to use MC UEC
     if (joinList.entries() != 2 )
     {
-// LCOV_EXCL_START - rfi
       CCMPASSERT( joinList.entries() == 2 );
       return FALSE;
-// LCOV_EXCL_STOP
     }
 
     for ( j = 0; j < joinList.entries(); j++ )
@@ -10580,10 +10536,8 @@ MultiColumnUecList::getUecForMCJoin (
       const TableDesc  * iterDesc = iterExpr->getTableDesc();
       if (iterDesc == NULL)
       {
-// LCOV_EXCL_START - rfi
         CCMPASSERT( iterDesc != NULL );
         return FALSE;
-// LCOV_EXCL_STOP
       }
 
       if ( iterDesc == tableOneDesc )
@@ -10598,7 +10552,6 @@ MultiColumnUecList::getUecForMCJoin (
       }
       else
       {
-// LCOV_EXCL_START - rfi
 	      // it's a table column not associated with either of
 	      // the two tables we're joining -- however, we already
 	      // tried to remove all of these references!  abort!
@@ -10607,7 +10560,6 @@ MultiColumnUecList::getUecForMCJoin (
 	      // it should not be a work stoppage
 	      CCMPASSERT( FALSE );
 	      return FALSE ;
-// LCOV_EXCL_STOP
       }
     } // j-loop
   } // i-loop
@@ -10957,17 +10909,13 @@ MultiColumnUecList::getUecForMCJoin (
         // There is no way, the reduction should go beyond 1
         if (highestUecRedByLocalPreds1 > csOne)
         {
-// LCOV_EXCL_START - rfi
           CCMPASSERT ("Reduction from local predicates is greater than 1");
           highestUecRedByLocalPreds1 = csOne;
-// LCOV_EXCL_STOP
         }
         if (highestUecRedByLocalPreds2 > csOne)
         {
-// LCOV_EXCL_START - rfi
           CCMPASSERT ("Reduction from local predicates is greater than 1");
           highestUecRedByLocalPreds2 = csOne;
-// LCOV_EXCL_STOP
         }
         mcUEC1 = (mcUEC1 * highestUecRedByLocalPreds1).minCsOne();
         mcUEC2 = (mcUEC2 * highestUecRedByLocalPreds2).minCsOne();
@@ -11437,7 +11385,6 @@ MultiColumnUecList * MultiColumnUecList::createMCListForRemainingCols(
 // useful debugging routines
 //
 
-// LCOV_EXCL_START - dpm
 void
 MultiColumnUecList::print (FILE *ofd,
                            const char * prefix,
@@ -11470,7 +11417,6 @@ MultiColumnUecList::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 
 void
 MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,

@@ -128,7 +128,6 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
   if (!(sc_=new(h_) IpcServerClass(env_, IPC_SQLCOMP_SERVER, allocMethod_,
                                    compilerVersion_,nodeName_)))
     {
-      //ss_cc_change : Rare error condition
       //
       *diagArea_ << DgSqlCode(- CLI_OUT_OF_MEMORY)
                  << DgString0("IpcServerClass");
@@ -151,7 +150,6 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
 	  getMxcmpPriorityDelta();
       if ((priority > 200) ||
 	  (priority < 1))
-	//ss_cc_change - rare occurence
 	
 	priority = IPC_PRIORITY_DONT_CARE;
 	
@@ -171,7 +169,6 @@ ExSqlComp::ReturnStatus ExSqlComp::createServer()
       //Server process allocations may have changed the define context
       cliGlobals_->currContext()->checkAndSetCurrentDefineContext();
     }
-  //ss_cc_change : rare error condition
   //  
   if (ret == ERROR)
   {
@@ -212,7 +209,6 @@ ExSqlComp::ReturnStatus ExSqlComp::establishConnection()
     if (badConnection_)
       ret = ERROR;
   }
-    //ss_cc_change : rare error path
     //
   if (ret == ERROR)
     error(arkcmpErrorConnection);
@@ -229,12 +225,12 @@ ExSqlComp::ReturnStatus ExSqlComp::startSqlcomp(void)
 
   // all the connection and control processing are done in waited mode.
   if ( (ret=createServer()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
   if ( (ret=establishConnection()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
 
   if ( (ret=resendControls()) == ERROR )
-    return ret; //LCOV_EXCL_LINE
+    return ret;
 
   // on NT, the environment is not shipped to mxcmp when the process
   // is created as an NSK lite process.
@@ -262,7 +258,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendRequest()
   /* long sqlCode = (ta->xnInProgress() && !ta->implicitXn()) ?
      arkcmpErrorUserTxnAndArkcmpGone : 0;*/
   Lng32 sqlCode=0;
-  //ss_cc_change : debug error path
   //
   if (
 #ifdef _DEBUG
@@ -357,7 +352,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
   short indexIntoCliCompilerArray = 0;
   indexIntoCliCompilerArray = cliGlobals_->currContext()->getIndexToCompilerArray();
 
-  //ss_cc_change : rare error condition
   //
   if (badConnection_)
     {      
@@ -372,7 +366,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
       if (ret == ERROR)
          return ret;
     } 
-  //ss_cc_change : can only happen through nowait CLI
   //
 
   if(this->isShared() && (cliGlobals_->currContext() != lastContext_))
@@ -449,7 +442,6 @@ ExSqlComp::OperationStatus ExSqlComp::status(Int64 reqId)
 
 // --------------------------------------------------------------------------
 // Parse the info fetched from Describe::bindNode().  Genesis 10-981211-5986.
-//ss_cc_change : This is unused dead code 
 //
 static NABoolean pairLenTxt(Int32 &len, const char *&txt, const char *&cqd)
 {
@@ -485,7 +477,6 @@ void ExSqlComp::appendControls(ExControlArea *dest, ExControlArea *src){
                        ctl->isNonResettable());
     }
 }
-//ss_cc_change : This was used only for versioning - obsolete on SQ
 //
 static ExSqlComp::ReturnStatus saveControls(ExControlArea *ca, const char *cqd)
 {
@@ -601,7 +592,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
   ContextCli *ctxt = cliGlobals_->currContext();
   short indexIntoCliCompilerArray = ctxt->getIndexToCompilerArray();
 
-  //ss_cc_change: rare error condition
   //
   if (ctxt->arkcmpInitFailed(indexIntoCliCompilerArray))
   {
@@ -653,7 +643,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     if (q->isEmpty())
     {
       ret=resetAllDefaults(); 
-      //ss_cc_change : rare error condition
       // 
       if (ret == ERROR)
       {
@@ -797,7 +786,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
         
         if (ret != ERROR)
         {
-	  // ss_cc_change : only applicable to downrev compiler
 	  //
           if ( 
               ((*diagArea_).contains(-2050) || 
@@ -845,7 +833,6 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
       
     } // control list is NOT empty
   } // if (ret != ERROR)
-  //ss_cc_change : rare error case
   //
   if (ret != SUCCESS || diagArea_->getNumber() || loopDiags.getNumber())
   {
@@ -982,7 +969,6 @@ ExSqlComp::~ExSqlComp()
   if (diagArea_)
     diagArea_->deAllocate();
 }
-//ss_cc_change : this is applicable to nowait cli
 //
 void ExSqlComp::endConnection()
 {
@@ -1080,7 +1066,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
   // When we move to v2400 and beyond, this code need to correctly
   // figure out which charsets are not understood by the downrev
   // compiler where this msg is being sent to.
-  // ss_cc_change : down rev compiler is obsolete on SQ
   //
   if (getVersion() < COM_VERS_2300)
     {
@@ -1177,7 +1162,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
       request->setFlags(cliGlobals_->currContext()->getSqlParserFlags()); 
       
       // If we are talking to a downrev compiler take care of the following.
-      //ss_cc_change
       //
       if ( compilerVersion_ < COM_VERS_COMPILER_VERSION)
 	{
@@ -1213,7 +1197,6 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 		}
 	      else
 		{
-		  //ss_cc_change : rare error condition
 		  //
 		  // The second retry failed. Reset outstandingSendBuffers.
 		  outstandingSendBuffers_.ioStatus_ = ExSqlComp::FINISHED;
@@ -1386,7 +1369,6 @@ ComDiagsArea* ExSqlComp::getDiags(Int64 )
 {
   return diagArea_;
 }
-//ss_cc_change : dead code
 //
 ComDiagsArea* ExSqlComp::takeDiags(Int64)
 {

@@ -247,7 +247,6 @@ size_t NAWString::index(const NAWchar* pattern, size_t patLen, size_t startIndex
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
 NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 {
   size_t len = naws.length();
@@ -263,7 +262,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
   buf[len] = NAWCHR('\0');
   return buf;
 }
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // newNAWcharBufferContainingAnEmptyNAWString()
@@ -282,7 +280,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 // Use the NADELETEBASIC(returned_NAWchar_star_pointer, heap_pointer)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
 NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 {
   NAWchar* buf = NULL;
@@ -298,7 +295,6 @@ NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 
   return buf;
 }
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
@@ -317,12 +313,10 @@ void TrimNAWStringSpace(NAWString& ns, NAString::stripType eStripType) // defaul
   }
 
   if (eStripType == NAString::leading || eStripType == NAString::both) {
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers pass eStripType value other than "trailing".
     for (i=0; i<ns.length(); i++)
       if (!isSpace8859_1(ns[i]))
         break;
     if (i)
       ns.remove(0, i);
-//LCOV_EXCL_STOP
   }
 }

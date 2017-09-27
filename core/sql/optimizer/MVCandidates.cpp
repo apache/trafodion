@@ -55,7 +55,6 @@ MVCandidates::MVCandidates(RelRoot* root,
     bjScanHash_(bjScanHashFn, 17, TRUE, QueryAnalysis::Instance()->outHeap())
 {}
 
-// LCOV_EXCL_START :cnu
 Int32 MVCandidates::nodeCount(ExprNode* node)
 {
   // Recurse for each child, and add one for the current node.
@@ -67,7 +66,6 @@ Int32 MVCandidates::nodeCount(ExprNode* node)
 
   return nodes + 1;
 }
-// LCOV_EXCL_STOP
 
 // extract the list of candidate MVs from the value of the MVQR_REWRITE_CANDIDATES CQD
 void MVCandidates::buildFavoritesList (CollHeap* heap)
@@ -135,7 +133,7 @@ GroupByAgg* MVCandidates::getGroupByAggNode(RelExpr* childNode,
                                        	 candidate->getMVName()->getMVName(),
                                          heap));
       else
-        assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                            FALSE, MVCandidateException,
 			   "Unexpected element type for grouping item -- %d",
 			   elemType)
@@ -326,7 +324,7 @@ ItemExpr* MVCandidates::rewriteItemExpr(const ElementPtrList& mvColumns,
                 break;
 
               default:
-                assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                    FALSE, MVCandidateException,
                                    "rewriteItemExpr() not ready for element of type %d",
                                    mvColumns[i]->getElementType());
@@ -444,7 +442,7 @@ static OperatorTypeEnum determineAggForRollup(QRMVColumnPtr mvCol)
 	    break;
 
           default: 
-            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                               FALSE, MVCandidateException,
                                "Can't rewrite this agg func for rollup: %d",
                                itemExpr->getOperatorType());
@@ -548,7 +546,7 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
                                                heap);
               }
             else
-              assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+              assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                  FALSE, MVCandidateException,
                                  "Not ready for range item with element type %d",
                                  rangeItem->getElementType())
@@ -567,7 +565,7 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
             break;
 
           default:
-            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL, 
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                rangePred->getResult());
@@ -685,7 +683,7 @@ void MVCandidates::rewriteResidPreds(QRCandidatePtr candidate,
             break;
 
           default:
-            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL, 
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                residPred->getResult());
@@ -733,7 +731,7 @@ ColRefName* MVCandidates::getColRefName(QRCandidatePtr candidate,
     }
   else
     throw QRDescriptorException("getColRefName() cannot be called for element %s",
-                                elem->getElementName());  // LCOV_EXCL_LINE :rfi
+                                elem->getElementName());
 
   return returnVal;
 } // getColRefName()
@@ -871,7 +869,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
             break;
 
           default:
-            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                output->getResult());
@@ -947,7 +945,6 @@ void MVCandidates::analyzeCandidateMVs(QRJbbSubsetPtr qrJbbSubset)
                            rewriteSingleNode,
                            jbbNodeSet, heap);
         }
-      // LCOV_EXCL_START :rfi
       catch (MVCandidateException&)
         {
           // Throwers of this exception should use one of the macros that logs the
@@ -957,7 +954,6 @@ void MVCandidates::analyzeCandidateMVs(QRJbbSubsetPtr qrJbbSubset)
             "Skipping candidate MV %s due to exception",
                       candidate->getMVName()->getMVName().data());
         }
-      // LCOV_EXCL_STOP
     }
 
   delete actualJbbSubset;
@@ -977,7 +973,7 @@ ValueId MVCandidates::getRewriteVid(RETDesc* retDesc,
         return retDesc->getValueId(i);
     }
     
-  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                     FALSE, MVCandidateException,
                     "Column in <Output> element of result descriptor not found "
                     "in column descriptor list");
@@ -1020,7 +1016,7 @@ ValueId MVCandidates::getBaseColValueId(QRElementPtr referencingElem)
       someMemberId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN) 
     return someMemberId;
 
-  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                      FALSE, MVCandidateException,
                      "No base column found in vegref referenced by %s",
                      ref.data());
@@ -1109,7 +1105,7 @@ void MVCandidates::populateOneVidMap(RelExpr* root,
               vidMap.addMapEntry(vegrefVid, ie->getValueId());
             }
           else
-            assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                               FALSE, MVCandidateException,
                               "Unable to get vegref for map value id lower value")
           baseColVid = getBaseColValueId(elem);
@@ -1119,7 +1115,7 @@ void MVCandidates::populateOneVidMap(RelExpr* root,
   }
   else
   {
-     assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+     assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                        FALSE, MVCandidateException,
                        "Expecting a base column while constructing map value id lower value")
   }
@@ -1151,7 +1147,6 @@ void MVCandidates::populateVidMap(RelExpr* root,
       else if (elemType == ET_Expr)
         {
           expr = elem->downCastToQRExpr();
-          // LCOV_EXCL_START :rfi
           if (expr->getExprRoot()->isAnAggregate())
             {
               // These have already been taken care of and shouldn't be in the
@@ -1160,7 +1155,6 @@ void MVCandidates::populateVidMap(RelExpr* root,
                                 FALSE, MVCandidateException,
                                 "Aggregate function found in top value list");
             }
-          // LCOV_EXCL_STOP
           else
             {
               const ElementPtrList& colsUsed = expr->getInputColumns(heap, FALSE);
@@ -1172,7 +1166,7 @@ void MVCandidates::populateVidMap(RelExpr* root,
             }
         }
       else
-        assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                           FALSE, MVCandidateException,
                           "Output item is neither Column, MVColumn nor expression")
     }
@@ -1327,13 +1321,11 @@ ItemExpr* MVCandidates::getIGBJoinCondOp(QRElementPtr elem,
                                          NABoolean& fromFactTable,
                                          CollHeap* heap)
 {
-  // LCOV_EXCL_START :rfi
   if (elem->getElementType() != ET_Column)
     assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                        FALSE, MVCandidateException,
                        "Can only handle column join condition operands, not %d",
                        elem->getElementType());
-  // LCOV_EXCL_STOP
 
   QRElementPtr outputItem;
   QRColumnPtr col = elem->getReferencedElement()->downCastToQRColumn();
@@ -1358,7 +1350,7 @@ ItemExpr* MVCandidates::getIGBJoinCondOp(QRElementPtr elem,
                                                             mvCol, heap));
             }
         }
-      assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+      assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                         FALSE, MVCandidateException,
                         "Could not find join operand from fact table for "
                         "indirect Group By query");
@@ -1701,7 +1693,6 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   // Bind the replacement tree.
   marker = CmpCommon::diags()->mark();
   RelExpr* boundRoot = root->bindNode(bindWA_);
-  // LCOV_EXCL_START :rfi
   if (bindWA_->errStatus())
   {
     QRLogger::log(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
@@ -1720,7 +1711,6 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
     deletePtr(match);
     return;
   }
-  // LCOV_EXCL_STOP
 
   // queryRoot_->getStoiList().insert(scan->getOptStoi());
 

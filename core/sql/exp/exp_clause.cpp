@@ -1150,23 +1150,18 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_OR: return "ITM_OR";
 
     // unary logic operators
-    // LCOV_EXCL_START
     case ITM_NOT: return "ITM_NOT";
     case ITM_IS_TRUE: return "ITM_IS_TRUE";
     case ITM_IS_FALSE: return "ITM_IS_FALSE";
-    // LCOV_EXCL_STOP
     case ITM_IS_NULL: return "ITM_IS_NULL";
     case ITM_IS_NOT_NULL: return "ITM_IS_NOT_NULL";
-    // LCOV_EXCL_START
     case ITM_IS_UNKNOWN: return "ITM_IS_UNKNOWN";
     case ITM_IS_NOT_UNKNOWN: return "ITM_IS_NOT_UNKNOWN";
-    // LCOV_EXCL_STOP
 
     // binary comparison operators
     case ITM_EQUAL: return "ITM_EQUAL";
     case ITM_NOT_EQUAL: return "ITM_NOT_EQUAL";
     case ITM_LESS: return "ITM_LESS";
-    // LCOV_EXCL_START
     case ITM_LESS_EQ: return "ITM_LESS_EQ";
     case ITM_GREATER: return "ITM_GREATER";
     case ITM_GREATER_EQ: return "ITM_GREATER_EQ";
@@ -1174,12 +1169,10 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     // unary arithmetic operators
     case ITM_NEGATE: return "ITM_NEGATE";
     case ITM_INVERSE: return "ITM_INVERSE";
-    // LCOV_EXCL_STOP
     // binary arithmetic operators
     case ITM_PLUS: return "ITM_PLUS";
     case ITM_MINUS: return "ITM_MINUS";
     case ITM_TIMES: return "ITM_TIMES";
-    // LCOV_EXCL_START
     case ITM_DIVIDE: return "ITM_DIVIDE";
     case ITM_EXPONENT: return "ITM_EXPONENT";
 
@@ -1205,23 +1198,18 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_PIVOT_GROUP: return "ITM_PIVOT_GROUP";
 
-    // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
     case ITM_AGGR_GROUPING_FUNC: return "ITM_AGGR_GROUPING_FUNC";
 
     // custom functions
-    // LCOV_EXCL_START
     case ITM_USER_DEF_FUNCTION: return "ITM_USER_DEF_FUNCTION";
     case ITM_BETWEEN: return "ITM_BETWEEN";
-    // LCOV_EXCL_STOP
     case ITM_LIKE: return "ITM_LIKE";
     case ITM_REGEXP: return "ITM_REGEXP";
-    // LCOV_EXCL_START
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
     case ITM_SESSION_USER: return "ITM_SESSION_USER";
     case ITM_USER: return "ITM_USER";
-    // LCOV_EXCL_STOP
     case ITM_AUTHNAME: return "ITM_AUTHNAME";
     case ITM_AUTHTYPE: return "ITM_AUTHTYPE";
 
@@ -1231,14 +1219,11 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_CASE: return "ITM_CASE";
     case ITM_IF_THEN_ELSE: return "ITM_IF_THEN_ELSE";
     case ITM_RETURN_TRUE: return "ITM_RETURN_TRUE";
-    // LCOV_EXCL_START
     case ITM_RETURN_FALSE: return "ITM_RETURN_FALSE";
     case ITM_RETURN_NULL: return "ITM_RETURN_NULL";
-    // LCOV_EXCL_STOP
     case ITM_COMP_ENCODE: return "ITM_COMP_ENCODE";
     case ITM_COMP_DECODE: return "ITM_COMP_DECODE";
     case ITM_HASH: return "ITM_HASH";
-    // LCOV_EXCL_START
     case ITM_REPLACE_NULL: return "ITM_REPLACE_NULL";
     case ITM_PACK_FUNC: return "ITM_PACK_FUNC";
     case ITM_BITMUX: return "ITM_BITMUX";
@@ -1258,9 +1243,7 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_MOVING_MIN       : return "ITM_MOVING_MIN";
     case ITM_MOVING_SDEV      : return "ITM_MOVING_SDEV";
     case ITM_MOVING_VARIANCE  : return "ITM_MOVING_VARIANCE";
-    // LCOV_EXCL_STOP
     case ITM_OFFSET           : return "ITM_OFFSET";
-    // LCOV_EXCL_START
     case ITM_RUNNING_COUNT    : return "ITM_RUNNING_COUNT";
     case ITM_ROWS_SINCE       : return "ITM_ROWS_SINCE";
     case ITM_RUNNING_SUM      : return "ITM_RUNNING_SUM";
@@ -1274,9 +1257,7 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // flow control
     case ITM_DO_WHILE         : return "ITM_DO_WHILE";
-    // LCOV_EXCL_STOP
     case ITM_BLOCK            : return "ITM_BLOCK";
-    // LCOV_EXCL_START
     case ITM_WHILE            : return "ITM_WHILE";
 
     // scalar min/max
@@ -1366,7 +1347,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_REPLACE_UNICODE: return "ITM_REPLACE_UNICODE";
     case ITM_UNICODE_CODE_VALUE: return "ITM_UNICODE_CODE_VALUE";
     case ITM_NCHAR_MP_CODE_VALUE: return "ITM_NCHAR_MP_CODE_VALUE";
-    // LCOV_EXCL_STOP
     // translate function
     case ITM_TRANSLATE: return "ITM_TRANSLATE";
 
@@ -1375,7 +1355,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // RowSet expression functions
     case ITM_ROWSETARRAY_SCAN: return "ITM_ROWSETARRAY_SCAN";
-    // LCOV_EXCL_START
     case ITM_ROWSETARRAY_ROWID: return "ITM_ROWSETARRAY_ROWID";
     case ITM_ROWSETARRAY_INTO : return "ITM_ROWSETARRAY_INTO";
 
@@ -1398,10 +1377,8 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_DAYOFYEAR: return "ITM_DAYOFYEAR";
     case ITM_FIRSTDAYOFYEAR: return "ITM_FIRSTDAYOFYEAR";
     case ITM_INTERNALTIMESTAMP: return "ITM_INTERNALTIMESTAMP";
-    // LCOV_EXCL_STOP
     // misc. functions
     case ITM_NARROW: return "ITM_NARROW";
-    // LCOV_EXCL_START
     case ITM_INTERVAL: return "ITM_INTERVAL";
     case ITM_INSTANTIATE_NULL: return "ITM_INSTANTIATE_NULL";
     case ITM_INCREMENT: return "ITM_INCREMENT";
@@ -1410,23 +1387,18 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_LESS_OR_LE: return "ITM_LESS_OR_LE";
     case ITM_RANGE_LOOKUP: return "ITM_RANGE_LOOKUP";
     case ITM_DECODE: return "ITM_DECODE";
-    // LCOV_EXCL_STOP
     case ITM_HDPHASHCOMB: return "ITM_HDPHASHCOMB";
-    // LCOV_EXCL_START
     case ITM_RANDOMNUM: return "ITM_RANDOMNUM";
     case ITM_PROGDISTRIB: return "ITM_PROGDISTRIB";
-    // LCOV_EXCL_STOP
     case ITM_HASHCOMB: return "ITM_HASHCOMB";
     case ITM_HDPHASH: return "ITM_HDPHASH";
     case ITM_EXEC_COUNT: return "ITM_EXEC_COUNT";
-    // LCOV_EXCL_START
     case ITM_CURR_TRANSID: return "ITM_CURR_TRANSID";
     case ITM_NOTCOVERED: return "ITM_NOTCOVERED";
     case ITM_BALANCE: return "ITM_BALANCE";
     case ITM_RAND_SELECTION: return "ITM_RAND_SELECTION";
     case ITM_PROGDISTRIBKEY: return "ITM_PROGDISTRIBKEY";
     case ITM_PAGROUP: return "ITM_PAGROUP";
-    // LCOV_EXCL_STOP
     case ITM_HASH2_DISTRIB: return "ITM_HASH2_DISTRIB";
 
     case ITM_HEADER: return "ITM_HEADER";
@@ -1475,7 +1447,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // renaming, conversion, assignment
     case ITM_RENAME_COL: return "ITM_RENAME_COL";
-    // LCOV_EXCL_STOP
     case ITM_CONVERT: return "ITM_CONVERT";
     case ITM_CAST: return "ITM_CAST";
     case ITM_ASSIGN: return "ITM_ASSIGN";
@@ -1485,7 +1456,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // do a cast but adjust target length based
     // on operand (used by ODBC)
-    // LCOV_EXCL_START
     case ITM_CAST_CONVERT: return "ITM_CAST_CONVERT";
 
     case ITM_CAST_TYPE: return "ITM_CAST_TYPE";
@@ -1543,7 +1513,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_SEQUENCE_VALUE: return "ITM_SEQUENCE_VALUE";
 
-    // LCOV_EXCL_STOP
     // Note, this list is arranged in the same order as the types
     // appear in common/OperTypeEnum.h, please keep the same order
     // when adding new types
@@ -1878,7 +1847,6 @@ ex_like_clause_doublebyte::ex_like_clause_doublebyte(OperatorTypeEnum oper_type,
 /////////////////////////////////////////////////////////////
 // Methods to display Contents
 /////////////////////////////////////////////////////////////
-// LCOV_EXCL_START
 void ex_aggr_one_row_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_aggr_one_row_clause", clauseNum, constsArea);
@@ -1888,7 +1856,6 @@ void ex_aggr_any_true_max_clause::displayContents(Space * space, const char * /*
 {
   ex_clause::displayContents(space, "ex_aggr_any_true_max_clause", clauseNum, constsArea);
 }
-// LCOV_EXCL_STOP
 void ex_aggr_min_max_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_aggr_min_max_clause", clauseNum, constsArea);
@@ -2038,7 +2005,6 @@ void ex_function_clause::displayContents(Space * space, const char * /*displaySt
 {
   ex_clause::displayContents(space, "ex_function_clause", clauseNum, constsArea);
 }
-// LCOV_EXCL_START
 void ex_function_abs::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_function_abs", clauseNum, constsArea);
@@ -2053,7 +2019,6 @@ void ExFunctionBitOper::displayContents(Space * space, const char * /*displayStr
 {
   ex_clause::displayContents(space, "ExFunctionBitOper", clauseNum, constsArea);
 }
-// LCOV_EXCL_STOP
 void ex_inout_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_inout_clause", clauseNum, constsArea);
@@ -2080,7 +2045,6 @@ void ExRegexpClauseChar::displayContents(Space * space, const char * /*displaySt
   ex_clause::displayContents(space, "ExRegexpClauseChar", clauseNum, constsArea);
 }
 
-// LCOV_EXCL_START
 void ex_like_clause_doublebyte::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_like_clause_doublebyte", clauseNum, constsArea);
