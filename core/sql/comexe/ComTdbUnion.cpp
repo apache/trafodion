@@ -232,7 +232,7 @@ void ComTdbUnion::displayContents(Space * space,ULng32 flag)
       if(flag & 0x00000008)
         {
 		      char buf[100];
-	   		str_sprintf(buf, "\nFor ComTdbUnion :\nFlags = %b, unionReclen = %d ",
+	   		str_sprintf(buf, "\nFor ComTdbUnion :\nFlags = %x, unionReclen = %d ",
       						flags_,unionReclen_);
 		      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }

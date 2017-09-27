@@ -228,8 +228,8 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
                          recordDelimiter_ ,  columnDelimiter_ );
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "hdfsBufSize_ = %d, rangeTailIOSize_ = %d, "
-                       "hdfsSqlMaxRecLen_ = %d",
+      str_sprintf(buf, "hdfsBufSize_ = %ld, rangeTailIOSize_ = %d, "
+                       "hdfsSqlMaxRecLen_ = %ld",
                         hdfsBufSize_ ,  rangeTailIOSize_, hdfsSqlMaxRecLen_ );
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
@@ -237,11 +237,11 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
                           tuppIndex_ ,      workAtpIndex_ );
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "asciiTuppIndex_ = %d, asciiRowLen_ = %d",
+      str_sprintf(buf, "asciiTuppIndex_ = %d, asciiRowLen_ = %ld",
                           asciiTuppIndex_ ,      asciiRowLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "moveExprColsTuppIndex_ = %d, moveExprColsRowLength_ = %d",
+      str_sprintf(buf, "moveExprColsTuppIndex_ = %d, moveExprColsRowLength_ = %ld",
                           moveExprColsTuppIndex_ ,      moveExprColsRowLength_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
@@ -253,10 +253,10 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 
-      str_sprintf(buf, "outputRowLength_ = %d", outputRowLength_);
+      str_sprintf(buf, "outputRowLength_ = %ld", outputRowLength_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "Flag = %b",flags_);
+      str_sprintf(buf, "Flag = %x",flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       Queue *hdfsFileInfoList = hdfsFileInfoList_;
@@ -411,7 +411,7 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
 
               str_sprintf(
                    buf, 
-		   "%6d %6d %12Ld %12Ld  %s %s",
+		   "%6d %6d %12ld %12ld  %s %s",
                    currInstNum,
                    currEntryNum,
                    hdfo->getStartOffset(),
@@ -426,7 +426,7 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
               currEntryNum++;
             }
 
-          str_sprintf(buf, "\nSummary of bytes read per ESP (%Ld = 100 percent):\n",
+          str_sprintf(buf, "\nSummary of bytes read per ESP (%ld = 100 percent):\n",
                       totalBytes);
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                sizeof(short));
@@ -438,7 +438,7 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
 
           for (Int32 e=0; e<numESPs; e++)
             {
-              str_sprintf(buf,"ESP %4d reads %18Ld bytes (%4d percent of avg)",
+              str_sprintf(buf,"ESP %4d reads %18ld bytes (%4ld percent of avg)",
                           e,
                           bytesPerESP[e],
                           (Int32) 100 * bytesPerESP[e] * numESPs / totalBytes);
@@ -449,10 +449,10 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
 
       if (hdfsRootDir_)
         {
-          str_sprintf(buf, "hdfsRootDir: %s", hdfsRootDir_);
+          str_sprintf(buf, "hdfsRootDir: %s", hdfsRootDir());
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-          str_sprintf(buf, "modTSforDir_ = %Ld, numOfPartCols_ = %d",
+          str_sprintf(buf, "modTSforDir_ = %ld, numOfPartCols_ = %d",
                       modTSforDir_, numOfPartCols_);
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 

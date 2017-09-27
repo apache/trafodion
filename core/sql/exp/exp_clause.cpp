@@ -1590,12 +1590,12 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 	  getOperTypeEnumAsString(operType_), operType_, numOperands_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    ex_clause::flags_ = %b ",flags_ );
+  str_sprintf(buf, "    ex_clause::flags_ = %x ",flags_ );
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (displayStr)
     {
-      str_sprintf(buf, "    %s::flags_ = %b ", displayStr, clauseFlags);
+      str_sprintf(buf, "    %s::flags_ = %x ", displayStr, clauseFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
 
@@ -1966,7 +1966,7 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
                                   getNumOperands());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    flags_ = %b ", getAllFlags());
+  str_sprintf(buf, "    flags_ = %x ", getAllFlags());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (noPCodeAvailable())
@@ -2015,7 +2015,7 @@ void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/,
   str_sprintf(buf, "    ex_comp_clause::rollupColumnNum_ = %d", rollupColumnNum_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    ex_comp_clause::flags_ = %b", flags_);
+  str_sprintf(buf, "    ex_comp_clause::flags_ = %x", flags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 

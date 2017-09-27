@@ -112,7 +112,7 @@ CmpProcess::getCompilerId(char *id)
   CMPASSERT( NULL != id );
 
   str_sprintf
-    (id, "%018Ld%02d%04d%03d",
+    (id, "%018ld%02d%04d%03d",
      getProcessStartTime(),        
      getNodeNum(),                      
      getPin(),                         

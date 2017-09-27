@@ -2321,7 +2321,7 @@ short CmpDescribeHiveTable (
           NAString bufnas(buf);
           outputLongLine(space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(space, buf);
         }
 
@@ -2448,7 +2448,7 @@ short CmpDescribeHiveTable (
       NAString bufnas(buf);
       outputLongLine(space, bufnas, 0);
 
-      str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+      str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
       outputShortLine(space, buf);
     }
 
@@ -3780,7 +3780,7 @@ short CmpDescribeSeabaseTable (
           NAString bufnas(buf);
           outputLongLine(*space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(*space, buf);
         }
     }

@@ -1373,9 +1373,9 @@ void PCode::displayContents(PCIList code, Space *space) {
   PCI * pci = iter.first();
 
   while (pci != NULL) {
-
     char tbuf[256];
-    str_sprintf(buf, "    PCI(%09d)[%3d,%d] %s(", pci, pci->getCodePosition(),
+// TODO: Need to check pci casting is correct
+    str_sprintf(buf, "    PCI(%09ld)[%3d,%d] %s(", (Int64)pci, pci->getCodePosition(),
 	    pci->getGeneratedCodeSize(),
 	    PCIT::operationString(pci->getOperation()));
 
@@ -1458,9 +1458,9 @@ Int32 PCode::dumpContents(PCIList code, char * buf, Int32 bufLen) {
 
   buf[0] = 0;
   while (pci != NULL) {
-
+// TODO: Need to check pci casting is correct
     char tbuf[256];
-    str_sprintf(tbuf, "PCI(%09d)[%3d,%d] %s(", pci, pci->getCodePosition(),
+    str_sprintf(tbuf, "PCI(%09ld)[%3d,%d] %s(", (Int64)pci, pci->getCodePosition(),
 	    pci->getGeneratedCodeSize(),
 	    PCIT::operationString(pci->getOperation()));
     len += str_len(tbuf);

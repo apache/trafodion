@@ -1691,7 +1691,7 @@ public:
     return hdfsPort_;
   }
 
-  Lng32 getModTS() const
+  Int64 getModTS() const
   {
     return modTS_;
   }

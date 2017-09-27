@@ -126,7 +126,7 @@ void ComTdbSortGrby::displayContents(Space * space,ULng32 flag)
       if(flag & 0x00000008)
         {
 	  			char buf[100];
-			   str_sprintf(buf, "\nFor ComTdbSortGrby :\nFlags = %b, recLen = %d ",flags_,recLen_ );
+			   str_sprintf(buf, "\nFor ComTdbSortGrby :\nFlags = %x, recLen = %d ",flags_,recLen_ );
       		space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 

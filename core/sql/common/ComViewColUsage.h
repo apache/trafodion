@@ -91,7 +91,7 @@ public:
       // usage contains 2 int64 and 3 int32, 200 chars is big enough to hold 
       // the string representation
       char buf[200];
-      str_sprintf(buf, "viewUID: %Ld viewCol: %d refUID: %Ld refCol: %d refType: %d;",
+      str_sprintf(buf, "viewUID: %ld viewCol: %d refUID: %ld refCol: %d refType: %d;",
                   viewUID_, viewColNumber_,
                   refdUID_, refdColNumber_, refdObjectType_);
       viewColUsageStr = buf;

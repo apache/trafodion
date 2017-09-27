@@ -965,7 +965,7 @@ void GuaConnectionToServer::openRetryCleanup()
        , seqNum
        );
     str_sprintf(msgBuf,
-      "GuaConnectionToServer: BFILE_OPEN %d,%d,%Ld "
+      "GuaConnectionToServer: BFILE_OPEN %d,%d,%ld "
       "error 14 retry count = %d\n", cpu, pin, seqNum, getOpenRetries());
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msgBuf, 0);
      setOpenRetries(0);

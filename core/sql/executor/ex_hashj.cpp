@@ -2023,7 +2023,7 @@ void ex_hashj_tcb::workEndPhase1() {
       char msg[1024];
       
       str_sprintf(msg, 
-		  "HJ End Phase 1 (%d). #inner rows: %Ld, #buckets: %d, #clusters: %d, #flushed: %d, total size %d MB, cluster size max- %d MB min- %d, variable size records: %s",
+		  "HJ End Phase 1 (%d). #inner rows: %ld, #buckets: %d, #clusters: %d, #flushed: %d, total size %d MB, cluster size max- %d MB min- %d, variable size records: %s",
 		  0,
 		  totalRightRowsRead_,
 		  bucketCount_ , numClusters, numFlushed, 

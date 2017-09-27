@@ -136,7 +136,7 @@ void ComTdbSort::displayContents(Space * space,ULng32 flag)
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                     sizeof(short));
 
-            str_sprintf(buf,"Flags = %b, sortRecLen = %d, sortKeyLen = %d",
+            str_sprintf(buf,"Flags = %x, sortRecLen = %d, sortKeyLen = %d",
 		      	  flags_,sortRecLen_,sortKeyLen_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                     sizeof(short));
@@ -180,7 +180,7 @@ void SortOptions::displayContents(Space *space)
    							sortNRows_,sortType_,internalSort_);
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-   str_sprintf(buf,"Sort Option Flags = %b", flags_);
+   str_sprintf(buf,"Sort Option Flags = %x", flags_);
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf),sizeof(short));
    
    str_sprintf(buf, "sortMaxHeapSizeMB = %d, scratchFreeSpaceThreshold = %d",

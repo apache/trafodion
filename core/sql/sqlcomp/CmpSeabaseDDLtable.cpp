@@ -907,7 +907,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT,
@@ -960,7 +960,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
     }
  
   Int64 indexUID = 0;
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', '%s', '%s', '%s', '%s', '%s', %Ld, %d, %Ld, %Ld )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %ld, '%s', '%s', '%s', '%s', '%s', '%s', %ld, %d, %ld, %ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               tableUID, pkeyUID,
               COM_PRIMARY_KEY_CONSTRAINT_LIT,
@@ -989,7 +989,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
     {
       for (Lng32 i = 0; i < numKeys; i++)
         {
-          str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
+          str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, %d, %d, %d, 0)",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                       pkeyUID,
                       keyInfoArray[i].colName,
@@ -1313,7 +1313,7 @@ short CmpSeabaseDDL::updateConstraintMD(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               ((ct == COM_UNIQUE_CONSTRAINT) ? COM_UNIQUE_CONSTRAINT_OBJECT_LIT :
@@ -1334,7 +1334,7 @@ short CmpSeabaseDDL::updateConstraintMD(
     }
 
   Int64 indexUID = 0;
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', '%s', '%s', '%s', '%s', '%s', %Ld, %d, %Ld, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %ld, '%s', '%s', '%s', '%s', '%s', '%s', %ld, %d, %ld, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               tableUID, constrUID,
               ((ct == COM_UNIQUE_CONSTRAINT) ? COM_UNIQUE_CONSTRAINT_LIT :
@@ -1360,7 +1360,7 @@ short CmpSeabaseDDL::updateConstraintMD(
       NAColumn * nac = naColArray.getColumn(keyColList[i]);
       Lng32 colNumber = nac->getPosition();
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, %d, %d, %d, 0)",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   constrUID,
                   keyColList[i].data(),
@@ -1391,7 +1391,7 @@ short CmpSeabaseDDL::updateRIConstraintMD(
 
   char buf[4000];
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', '%s', '%s', 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %ld, '%s', '%s', '%s', 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
               ringConstrUID, refdConstrUID,
               COM_FULL_MATCH_OPTION_LIT,
@@ -1405,7 +1405,7 @@ short CmpSeabaseDDL::updateRIConstraintMD(
       return -1;
     }
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %Ld, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %ld, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
               refdConstrUID, ringConstrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -1509,7 +1509,7 @@ short CmpSeabaseDDL::updateIndexInfo(
         }
 
       // update indexes table and mark this index as an implicit index.
-      str_sprintf(buf, "update %s.\"%s\".%s set is_explicit = 0 where base_table_uid = %Ld and index_uid = (select object_uid from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = 'IX') ",
+      str_sprintf(buf, "update %s.\"%s\".%s set is_explicit = 0 where base_table_uid = %ld and index_uid = (select object_uid from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = 'IX') ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   tableUID,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -1545,7 +1545,7 @@ short CmpSeabaseDDL::updateIndexInfo(
       CmpCommon::diags()->clear();
     }
 
-  str_sprintf(buf, "update %s.\"%s\".%s set index_uid = %Ld where table_uid = %Ld and constraint_uid = %Ld and constraint_type = '%s'",
+  str_sprintf(buf, "update %s.\"%s\".%s set index_uid = %ld where table_uid = %ld and constraint_uid = %ld and constraint_type = '%s'",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               indexUID,
               tableUID, constrUID,
@@ -5282,7 +5282,7 @@ short CmpSeabaseDDL::cloneSeabaseTable(
       // if there are added or altered columns in the source table, then cloned
       // table metadata need to reflect that.
       // Update metadata and set the cloned column class to be the same as source.
-      str_sprintf(buf, "merge into %s.\"%s\".%s using (select column_name, column_class from %s.\"%s\".%s where object_uid = %Ld) x on (object_uid = %Ld and column_name = x.column_name) when matched then update set column_class = x.column_class;",
+      str_sprintf(buf, "merge into %s.\"%s\".%s using (select column_name, column_class from %s.\"%s\".%s where object_uid = %ld) x on (object_uid = %ld and column_name = x.column_name) when matched then update set column_class = x.column_class;",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                   srcTableUID,
@@ -5562,7 +5562,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       if ((NOT naTable->isSQLMXAlignedTable()) &&
           (nac->isComputedColumn()))
         {
-          str_sprintf(query, "update %s.\"%s\".%s set column_number = column_number + 1 where object_uid = %Ld and column_number = %d",
+          str_sprintf(query, "update %s.\"%s\".%s set column_number = column_number + 1 where object_uid = %ld and column_number = %d",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                       objUID,
                       nac->getPosition());
@@ -5575,7 +5575,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               return;
             }
 
-          str_sprintf(query, "update %s.\"%s\".%s set column_number = column_number + 1 where object_uid = %Ld and column_number = %d",
+          str_sprintf(query, "update %s.\"%s\".%s set column_number = column_number + 1 where object_uid = %ld and column_number = %d",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                       objUID,
                       nac->getPosition());
@@ -5588,7 +5588,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               return;
             }
 
-          str_sprintf(query, "update %s.\"%s\".%s set sub_id = sub_id + 1 where text_uid = %Ld and text_type = %d and sub_id = %d",
+          str_sprintf(query, "update %s.\"%s\".%s set sub_id = sub_id + 1 where text_uid = %ld and text_type = %d and sub_id = %d",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
                       objUID,
                       COM_COMPUTED_COL_TEXT,
@@ -5640,7 +5640,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
         }
     }
 
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%u', '%s', '%s', %Ld )",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%u', '%s', '%s', %ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
               col_name,
@@ -5799,7 +5799,7 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
   Int64 objUID = naTable->objectUid().castToInt64();
 
   char buf[4000];
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %ld and column_number = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
               dropColNum);
@@ -5811,7 +5811,7 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
       return -1;
     }
   
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %ld and column_number >= %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
               dropColNum);
@@ -5823,7 +5823,7 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
       return -1;
     }
   
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %ld and column_number >= %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
               objUID,
               dropColNum);
@@ -5835,7 +5835,7 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
       return -1;
     }
   
-  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %Ld and text_type = %d and sub_id > %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %ld and text_type = %d and sub_id > %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID,
               COM_COMPUTED_COL_TEXT,
@@ -5850,7 +5850,7 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
   
   // keys for pkey constraint refer to base table column number.
   // modify it so they now refer to new column numbers.
-  str_sprintf(buf, "update %s.\"%s\".%s K set column_number = column_number - 1  where K.column_number >= %d and K.object_uid = (select C.constraint_uid from %s.\"%s\".%s C where C.table_uid = %Ld and C.constraint_type = 'P')",
+  str_sprintf(buf, "update %s.\"%s\".%s K set column_number = column_number - 1  where K.column_number >= %d and K.object_uid = (select C.constraint_uid from %s.\"%s\".%s C where C.table_uid = %ld and C.constraint_type = 'P')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
               dropColNum,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
@@ -6539,31 +6539,31 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
       char tmpBuf[1000];
       if (sgo->isIncrementSpecified())
         {
-          str_sprintf(tmpBuf, " increment by %Ld", sgo->getIncrement());
+          str_sprintf(tmpBuf, " increment by %ld", sgo->getIncrement());
           options += tmpBuf;
         }
       
       if (sgo->isMaxValueSpecified())
         {
           if (sgo->isNoMaxValue())
-            str_sprintf(tmpBuf, " no maxvalue ", sgo->getMaxValue());
+            strcpy(tmpBuf, " no maxvalue ");
           else
-            str_sprintf(tmpBuf, " maxvalue %Ld", sgo->getMaxValue());
+            str_sprintf(tmpBuf, " maxvalue %ld", sgo->getMaxValue());
           options += tmpBuf;
         }
       
       if (sgo->isMinValueSpecified())
         {
           if (sgo->isNoMinValue())
-            str_sprintf(tmpBuf, " no maxvalue ", sgo->getMinValue());
+            strcpy(tmpBuf, " no maxvalue ");
           else
-            str_sprintf(tmpBuf, " minvalue %Ld", sgo->getMinValue());
+            str_sprintf(tmpBuf, " minvalue %ld", sgo->getMinValue());
           options += tmpBuf;
         }
       
       if (sgo->isStartValueSpecified())
         {
-          str_sprintf(tmpBuf, " start with %Ld", sgo->getStartValue());
+          str_sprintf(tmpBuf, " start with %ld", sgo->getStartValue());
           options += tmpBuf;
         }
       
@@ -6572,7 +6572,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
           if (sgo->isNoCache())
             str_sprintf(tmpBuf, " no cache ");
           else
-            str_sprintf(tmpBuf, " cache %Ld ", sgo->getCache());
+            str_sprintf(tmpBuf, " cache %ld ", sgo->getCache());
           options += tmpBuf;
         }
       
@@ -6894,7 +6894,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
       ToQuotedString(quotedDefVal, defVal, FALSE);
     }
   
-  str_sprintf(buf, "update %s.\"%s\".%s set (column_class, fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, nullable, character_set, default_class, default_value) = ('%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, '%s', %d, '%s') where object_uid = %Ld and column_number = %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set (column_class, fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, nullable, character_set, default_class, default_value) = ('%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, '%s', %d, '%s') where object_uid = %ld and column_number = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               COM_ALTERED_USER_COLUMN_LIT,
               datatype,
@@ -7022,7 +7022,7 @@ short CmpSeabaseDDL::mdOnlyAlterColumnAttr(
     return -1;
 
   char buf[4000];
-  str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d, column_class = '%s' where object_uid = %Ld and column_number = %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d, column_class = '%s' where object_uid = %ld and column_number = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               newType->getNominalSize(),
               COM_ALTERED_USER_COLUMN_LIT,
@@ -7154,7 +7154,7 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
       goto label_error1;
     }
    
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %ld and column_number = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               tableUID,
               altColNum);
@@ -7166,7 +7166,7 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
       goto label_error1;
     }
   
-  str_sprintf(buf, "insert into %s.\"%s\".%s select object_uid, '%s', %d, '%s', fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, '%s', '%s', direction, is_optional, flags from %s.\"%s\".%s where object_uid = %Ld and column_number = (select column_number from %s.\"%s\".%s where object_uid = %Ld and column_name = '%s')",
+  str_sprintf(buf, "insert into %s.\"%s\".%s select object_uid, '%s', %d, '%s', fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, '%s', '%s', direction, is_optional, flags from %s.\"%s\".%s where object_uid = %ld and column_number = (select column_number from %s.\"%s\".%s where object_uid = %ld and column_name = '%s')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naCol->getColName().data(),              
               altColNum,
@@ -7705,7 +7705,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
   Lng32 colNumber = nacol->getPosition();
   
   char buf[4000];
-  str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s', column_class = '%s' where object_uid = %Ld and column_number = %d",
+  str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s', column_class = '%s' where object_uid = %ld and column_number = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               renamedColName.data(),
               COM_ALTERED_USER_COLUMN_LIT,
@@ -7774,7 +7774,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
           if (naFS->getKeytag() == 0)
             continue;
 
-          str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' || '@' where object_uid = %Ld and column_name = '%s' || '@'",
+          str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' || '@' where object_uid = %ld and column_name = '%s' || '@'",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                       renamedColName.data(),
                       naFS->getIndexUID(),
@@ -7789,7 +7789,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
               return;
             }
 
-         str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' where object_uid = %Ld and column_name = '%s'",
+         str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' where object_uid = %ld and column_name = '%s'",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                       renamedColName.data(),
                       naFS->getIndexUID(),
@@ -8023,7 +8023,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     }
 
   char cqdbuf[200];
-  str_sprintf(cqdbuf, "cqd traf_create_table_with_uid '%Ld';",
+  str_sprintf(cqdbuf, "cqd traf_create_table_with_uid '%ld';",
               tableUID);
   cliRC = cliInterface.executeImmediate(cqdbuf);
   if (cliRC < 0)
@@ -9031,7 +9031,7 @@ short CmpSeabaseDDL::getTextFromMD(const char * catalogName,
 
   char query[1000];
 
-  str_sprintf(query, "select octet_length(text), text from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d for read committed access order by seq_num",
+  str_sprintf(query, "select octet_length(text), text from %s.\"%s\".%s where text_uid = %ld and text_type = %d and sub_id = %d for read committed access order by seq_num",
               catalogName, SEABASE_MD_SCHEMA, SEABASE_TEXT,
               textUID, static_cast<int>(textType), textSubID);
   
@@ -9431,7 +9431,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       
       // the cardinality hint should force a nested join with
       // TABLE_CONSTRAINTS as the outer and INDEXES as the inner
-      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I /*+ cardinality 1e9 */ where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
+      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I /*+ cardinality 1e9 */ where T.table_uid = %ld and T.constraint_uid = %ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   naTable->objectUid().castToInt64(),
@@ -10642,7 +10642,7 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
       SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
       
       usedObjUID = naTable->objectUid().get_value();
-      str_sprintf(query, "delete from %s.\"%s\".%s where using_view_uid = %Ld and used_object_uid = %Ld",
+      str_sprintf(query, "delete from %s.\"%s\".%s where using_view_uid = %ld and used_object_uid = %ld",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID);
@@ -11222,7 +11222,7 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
     "nullable, trim(character_set), default_class, default_value, "
     "trim(column_heading), hbase_col_family, hbase_col_qualifier, direction, "
     "is_optional, flags  from %s.\"%s\".%s "
-    "where object_uid = %Ld and direction in (%s)"
+    "where object_uid = %ld and direction in (%s)"
     "order by 2 for read committed access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
@@ -11448,7 +11448,7 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo(
 
  char buf[4000];
 
- str_sprintf(buf, "select fs_data_type, start_value, increment, max_value, min_value, cycle_option, cache_size, next_value, seq_type, redef_ts from %s.\"%s\".%s  where seq_uid = %Ld",
+ str_sprintf(buf, "select fs_data_type, start_value, increment, max_value, min_value, cycle_option, cache_size, next_value, seq_type, redef_ts from %s.\"%s\".%s  where seq_uid = %ld",
              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
              seqUID);
 
@@ -11569,7 +11569,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseLibraryDesc(
      
   str_sprintf(buf, "SELECT library_filename, version "
                    "FROM %s.\"%s\".%s "
-                   "WHERE library_uid = %Ld "
+                   "WHERE library_uid = %ld "
                    "FOR READ COMMITTED ACCESS",
              getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_LIBRARIES,libUID);
 
@@ -11836,7 +11836,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       CmpCommon::diags()->clear();
     }
 
-  str_sprintf(query, "select is_audited, num_salt_partns, row_format, flags from %s.\"%s\".%s where table_uid = %Ld for read committed access",
+  str_sprintf(query, "select is_audited, num_salt_partns, row_format, flags from %s.\"%s\".%s where table_uid = %ld for read committed access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               objUID);
   
@@ -11918,14 +11918,14 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
   if (objType == COM_INDEX_OBJECT)
     {
-      str_sprintf(query, "select k.column_name, c.column_number, k.keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s k, %s.\"%s\".%s c where k.column_name = c.column_name and k.object_uid = c.object_uid and k.object_uid = %Ld and k.nonkeycol = 0 for read committed access order by keyseq_number",
+      str_sprintf(query, "select k.column_name, c.column_number, k.keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s k, %s.\"%s\".%s c where k.column_name = c.column_name and k.object_uid = c.object_uid and k.object_uid = %ld and k.nonkeycol = 0 for read committed access order by keyseq_number",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                   objUID);
     }
   else
     {
-      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s where object_uid = %Ld and nonkeycol = 0 for read committed access order by keyseq_number",
+      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s where object_uid = %ld and nonkeycol = 0 for read committed access order by keyseq_number",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   objUID);
     }
@@ -11957,7 +11957,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       populateKeyInfo(keyInfoArray[idx], vi);
     }
 
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access order by 1,2,3",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access order by 1,2,3",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
@@ -12086,7 +12086,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       indexInfoArray[idx].numSaltPartns = idxNumSaltPartns;
       indexInfoArray[idx].rowFormat = idxRowFormat;
       Queue * keyInfoQueue = NULL;
-      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, nonkeycol  from %s.\"%s\".%s where object_uid = %Ld for read committed access order by keyseq_number",
+      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, nonkeycol  from %s.\"%s\".%s where object_uid = %ld for read committed access order by keyseq_number",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   idxUID);
       cliRC = cliInterface.initializeInfoList(keyInfoQueue, TRUE);
@@ -12157,7 +12157,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     } // for
 
   // get constraint info
-  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced, C.flags from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %Ld and O.object_uid = C.constraint_uid order by 1",
+  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced, C.flags from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %ld and O.object_uid = C.constraint_uid order by 1",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               catName.data(), schName.data(), 
@@ -12240,7 +12240,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         constrInfoArray[idx].isEnforced = 0;
 
       Queue * keyInfoQueue = NULL;
-      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from %s.\"%s\".%s where object_uid = %Ld for read committed access order by keyseq_number",
+      str_sprintf(query, "select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from %s.\"%s\".%s where object_uid = %ld for read committed access order by keyseq_number",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   constrUID);
       cliRC = cliInterface.initializeInfoList(keyInfoQueue, TRUE);
@@ -12304,7 +12304,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
               return NULL;
             }
 
-          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s U, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = U.foreign_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = U.foreign_constraint_uid and U.unique_constraint_uid = %Ld order by 2, 1",
+          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s U, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = U.foreign_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = U.foreign_constraint_uid and U.unique_constraint_uid = %ld order by 2, 1",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -12350,7 +12350,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       // attach all the referencing constraints
       if (strcmp(constrType, COM_FOREIGN_KEY_CONSTRAINT_LIT) == 0)
         {
-          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s R, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = R.unique_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = R.unique_constraint_uid and R.ref_constraint_uid = %Ld order by 2,1",
+          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s R, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = R.unique_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = R.unique_constraint_uid and R.ref_constraint_uid = %ld order by 2,1",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -12410,7 +12410,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
        }
     } // for
 
-  str_sprintf(query, "select check_option, is_updatable, is_insertable from %s.\"%s\".%s where view_uid = %Ld for read committed access ",
+  str_sprintf(query, "select check_option, is_updatable, is_insertable from %s.\"%s\".%s where view_uid = %ld for read committed access ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
               objUID);
   
@@ -12781,7 +12781,7 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
   " library_filename, version, signature,  catalog_name, schema_name,"
   " object_name"
   " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
-  " where r.udr_uid = %Ld and r.library_uid = l.library_uid "
+  " where r.udr_uid = %ld and r.library_uid = l.library_uid "
   " and l.library_uid = o.object_uid for read committed access",
        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,

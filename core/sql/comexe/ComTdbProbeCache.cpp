@@ -118,7 +118,7 @@ void ComTdbProbeCache::displayContents(Space * space,ULng32 flag)
         probeLen_,      cacheSize_,      recLen_,      tuppIndex_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       str_sprintf(buf, 
-       "probeCacheFlags_ = %b, numInnerTuples_ =%d", 
+       "probeCacheFlags_ = %x, numInnerTuples_ =%d", 
         probeCacheFlags_,      numInnerTuples_ );
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }

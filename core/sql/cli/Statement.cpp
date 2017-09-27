@@ -2068,7 +2068,7 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
   if (retcode == 1) // check failed
     {
       char errStr[2000];
-      str_sprintf(errStr, "compiledModTS = %Ld, failedModTS = %Ld, failedLoc = %s", 
+      str_sprintf(errStr, "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
                   si->modTS(), failedModTS, 
                   (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
       

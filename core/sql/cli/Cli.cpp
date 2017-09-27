@@ -2550,7 +2550,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
 			    stringParam1 = (char*)errCond->getOptionalString(0);
 			  intParam1 = errCond->getOptionalInteger(0);
 			  
-			  str_sprintf(emsText, "AutoQueryRetry will be attempted for Sqlcode=%d, Nskcode=%d, StringParam=%s, IntParam=%s",
+			  str_sprintf(emsText, "AutoQueryRetry will be attempted for Sqlcode=%d, Nskcode=%d, StringParam=%s, IntParam=%d",
 				      sqlcode, nskcode, 
 				      (stringParam1 ? stringParam1 : "NULL"),
 				      (intParam1 != ComDiags_UnInitialized_Int
@@ -8501,7 +8501,7 @@ Lng32 SQLCLI_LOBcliInterface
 				       &inDescSyskey, &descPartnKey,
 				       &schNameLen, schName,
 				       inLobHandle);
-      str_sprintf(logBuf,"Handle contents : flags %d, lobType %d, lobNum :%d, uid : %Ld, descSyskey: %Ld, descPartnKey : %Ld, schNameLen:%d, schName %s", flags,lobType,lobNum,uid,inDescSyskey,descPartnKey,schNameLen,schName);
+      str_sprintf(logBuf,"Handle contents : flags %d, lobType %d, lobNum :%d, uid : %ld, descSyskey: %ld, descPartnKey : %ld, schNameLen:%d, schName %s", flags,lobType,lobNum,uid,inDescSyskey,descPartnKey,schNameLen,schName);
        lobDebugInfo(logBuf,0,__LINE__,lobTrace);
     }
 
@@ -8709,7 +8709,7 @@ Lng32 SQLCLI_LOBcliInterface
     case LOB_CLI_INSERT:
       {
 	// insert into lob descriptor handle table
-	str_sprintf(query, "select syskey from (insert into table(ghost table %s) values (%Ld, 1, %Ld)) x",
+	str_sprintf(query, "select syskey from (insert into table(ghost table %s) values (%ld, 1, %ld)) x",
 		    lobDescHandleName, descPartnKey, (dataLen ? *dataLen : 0));
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -8733,7 +8733,7 @@ Lng32 SQLCLI_LOBcliInterface
         if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
           {
             //blackBox points to external file name
-            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
+            str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, 1, %ld, %ld, '%s')",
                         lobDescChunksName, descPartnKey, descSyskey,
                         (dataLen ? *dataLen : 0),
                         (dataOffset ? *dataOffset : 0),
@@ -8742,7 +8742,7 @@ Lng32 SQLCLI_LOBcliInterface
           }
         else
           {
-            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
+            str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, 1, %ld, %ld, NULL)",
                         lobDescChunksName, descPartnKey, descSyskey,
                         (dataLen ? *dataLen : 0),
                         (dataOffset ? *dataOffset : 0));
@@ -8794,7 +8794,7 @@ Lng32 SQLCLI_LOBcliInterface
             cliRC = -LOB_DESC_APPEND_ERROR;       
             goto error_return;
           } 
-	str_sprintf(query, "update table(ghost table %s) set numChunks = numChunks + 1, lobLen = lobLen + %Ld where descPartnKey = %Ld and syskey = %Ld",
+	str_sprintf(query, "update table(ghost table %s) set numChunks = numChunks + 1, lobLen = lobLen + %ld where descPartnKey = %ld and syskey = %ld",
 		    lobDescHandleName, 
 		    (dataLen ? *dataLen : 0),
 		    descPartnKey, inDescSyskey);
@@ -8812,7 +8812,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-	str_sprintf(query, "select numChunks from table(ghost table %s) h where h.descPartnKey = %Ld and h.syskey = %Ld for read committed access",
+	str_sprintf(query, "select numChunks from table(ghost table %s) h where h.descPartnKey = %ld and h.syskey = %ld for read committed access",
 		    lobDescHandleName,  
 		    descPartnKey, inDescSyskey);
 
@@ -8835,7 +8835,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// insert into lob descriptor chunks table
 	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
 	  {
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, %d, %Ld, %Ld, '%s')",
+	    str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, %d, %ld, %ld, '%s')",
 			lobDescChunksName, descPartnKey, inDescSyskey, 
 			numChunks, (dataLen ? *dataLen : 0),
 			(dataOffset ? *dataOffset : 0),
@@ -8844,7 +8844,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 	else
 	  {
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, %d, %Ld, %Ld, NULL)",
+	    str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, %d, %ld, %ld, NULL)",
 			lobDescChunksName, descPartnKey, inDescSyskey, 
 			numChunks, (dataLen ? *dataLen : 0),
 			(dataOffset ? *dataOffset : 0)
@@ -8884,7 +8884,7 @@ Lng32 SQLCLI_LOBcliInterface
   case LOB_CLI_UPDATE_UNIQUE:
       {
 	// update desc handle table
-	str_sprintf(query, "update table(ghost table %s) set numChunks = 1, lobLen = %Ld where descPartnKey = %Ld and syskey = %Ld",
+	str_sprintf(query, "update table(ghost table %s) set numChunks = 1, lobLen = %ld where descPartnKey = %ld and syskey = %ld",
 		    lobDescHandleName, 
 		    (dataLen ? *dataLen : 0),
 		    descPartnKey, inDescSyskey);
@@ -8906,7 +8906,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 
 	// delete all chunks from lob descriptor chunks table
-	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and descSysKey = %Ld",
+	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %ld and descSysKey = %ld",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
 
 	// set parserflags to allow ghost table
@@ -8933,7 +8933,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// insert the new chunk into lob descriptor chunks table
 	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
 	  {
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
+	    str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, 1, %ld, %ld, '%s')",
 			lobDescChunksName, descPartnKey, inDescSyskey,
 			(dataLen ? *dataLen : 0),
 			(dataOffset ? *dataOffset : 0),
@@ -8942,7 +8942,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 	else
 	  {
-	   str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
+	   str_sprintf(query, "insert into table(ghost table %s) values (%ld, %ld, 1, %ld, %ld, NULL)",
 			lobDescChunksName, descPartnKey, inDescSyskey,
 			(dataLen ? *dataLen : 0),
 			(dataOffset ? *dataOffset : 0));
@@ -8984,7 +8984,7 @@ Lng32 SQLCLI_LOBcliInterface
     case LOB_CLI_DELETE:
       {
 	// delete from lob descriptor handle table
-	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and syskey = %Ld",
+	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %ld and syskey = %ld",
 		    lobDescHandleName, descPartnKey, inDescSyskey);
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -9002,7 +9002,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 
 	// delete from lob descriptor chunks table
-	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and descSysKey = %Ld",
+	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %ld and descSysKey = %ld",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -9026,7 +9026,7 @@ Lng32 SQLCLI_LOBcliInterface
       {
 	// check if there are multiple chunks.
 	Int32 numChunks = 0;
-	str_sprintf(query, "select numChunks from table(ghost table %s) where descPartnKey = %Ld for read committed access",
+	str_sprintf(query, "select numChunks from table(ghost table %s) where descPartnKey = %ld for read committed access",
 		    lobDescHandleName,
 		    descPartnKey);
         lobDebugInfo(query,0,__LINE__,lobTrace);
@@ -9086,7 +9086,7 @@ Lng32 SQLCLI_LOBcliInterface
 	
 	// This lob has only one chunk. Read and return the single descriptor.
       
-	str_sprintf(query, "select c.chunkLen, c.dataOffset ,c.stringParam from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %Ld and h.syskey = %Ld and c.chunkNum = h.numChunks for read committed access",
+	str_sprintf(query, "select c.chunkLen, c.dataOffset ,c.stringParam from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %ld and h.syskey = %ld and c.chunkNum = h.numChunks for read committed access",
 		    lobDescHandleName, lobDescChunksName, 
 		    descPartnKey, inDescSyskey);
          
@@ -9175,7 +9175,7 @@ Lng32 SQLCLI_LOBcliInterface
 
    case LOB_CLI_SELECT_CURSOR:
       {
-	str_sprintf(query, "select dataOffset, chunkLen, stringParam from table(ghost table %s) where descPartnKey = %Ld and descSyskey = %Ld order by chunkNum for read committed access",
+	str_sprintf(query, "select dataOffset, chunkLen, stringParam from table(ghost table %s) where descPartnKey = %ld and descSyskey = %ld order by chunkNum for read committed access",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -9308,7 +9308,7 @@ Lng32 SQLCLI_LOBcliInterface
 	
 	//aggregate on chunklen for this lob.
 
-	str_sprintf (query,  "select sum(chunklen) from  %s   where descpartnkey = %Ld and descsyskey = %Ld ", lobDescChunksName, descPartnKey, inDescSyskey );
+	str_sprintf (query,  "select sum(chunklen) from  %s   where descpartnkey = %ld and descsyskey = %ld ", lobDescChunksName, descPartnKey, inDescSyskey );
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
@@ -9439,7 +9439,7 @@ Lng32 SQLCLI_LOB_GC_Interface
 				       &schNameLen, schName,
 				       handle);
     }
-  str_sprintf(logBuf,"flags %d, lobType %d, lobNum :%d, uid : %Ld, descSyskey: %Ld, descPartnKey : %Ld, schNameLen:%d, schName %s", flags,lobType,lobNum,uid,inDescSyskey,inDescPartnKey,schNameLen,schName);
+  str_sprintf(logBuf,"flags %d, lobType %d, lobNum :%d, uid : %ld, descSyskey: %ld, descPartnKey : %ld, schNameLen:%d, schName %s", flags,lobType,lobNum,uid,inDescSyskey,inDescPartnKey,schNameLen,schName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   char tgtLobNameBuf[100];
   char * tgtLobName = 
@@ -9474,7 +9474,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   Int64 numEntries = 0;
   Lng32 len;
   cliRC = cliInterface->executeImmediate(query, (char*)&numEntries, &len, FALSE);
-  str_sprintf(logBuf,"Number of entries in descchunktable %s is %d",lobDescChunksName, numEntries);
+  str_sprintf(logBuf,"Number of entries in descchunktable %s is %ld",lobDescChunksName, numEntries);
    lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   currContext.resetSqlParserFlags(0x1);
 
@@ -9548,7 +9548,7 @@ Lng32 SQLCLI_LOB_GC_Interface
       dcInMemoryArray[i].setChunkLen(chunkLen);
       dcInMemoryArray[i].setChunkNum(chunkNum);
 
-      str_sprintf(logBuf,"Fetched for entry i=%d; currentOffset:%Ld, descPartnKey:%Ld, sysKey:%Ld, chunkLen:%Ld,chunkNum %d", i,currentOffset,descPartnKey,descSyskey,chunkLen,chunkNum);
+      str_sprintf(logBuf,"Fetched for entry i=%d; currentOffset:%ld, descPartnKey:%ld, sysKey:%ld, chunkLen:%ld,chunkNum %ld", i,currentOffset,descPartnKey,descSyskey,chunkLen,chunkNum);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace);
 
       cliRC = cliInterface->fetch();
@@ -9589,7 +9589,7 @@ Lng32 SQLCLI_LOB_GC_Interface
       else
         {
          
-          str_sprintf(query, "update table(ghost table %s) set dataOffset=%Ld, chunkLen = %Ld where descPartnKey = %Ld and descSysKey = %Ld",
+          str_sprintf(query, "update table(ghost table %s) set dataOffset=%ld, chunkLen = %ld where descPartnKey = %ld and descSysKey = %ld",
                       lobDescChunksName, 
                       dcInMemoryArray[i].getNewOffset(),
                       dcInMemoryArray[i].getChunkLen(),
@@ -10462,7 +10462,7 @@ static Lng32 SeqGenCliInterfacePrepQry(
 			  &currContext,
 			  NULL);
       
-      str_sprintf(stmtName, "%s_%Ld", qryName, sga->getSGObjectUID().get_value());
+      str_sprintf(stmtName, "%s_%ld", qryName, sga->getSGObjectUID().get_value());
       
       doPrep = TRUE;
     }
@@ -10535,7 +10535,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
       if (! cliInterfaceArr[SEQ_UPD_TS_QRY_IDX])
         {
           cliRC = SeqGenCliInterfacePrepQry(
-                                            "update %s.\"%s\".%s set upd_ts = cast(? as largeint not null) where seq_uid = %Ld",
+                                            "update %s.\"%s\".%s set upd_ts = cast(? as largeint not null) where seq_uid = %ld",
                                             SEQ_UPD_TS_QRY_IDX,
                                             "SEQ_UPD_TS_QRY_IDX",
                                             cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
@@ -10576,7 +10576,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
   if (! cliInterfaceArr[SEQ_PROCESS_QRY_IDX])
     {
       cliRC = SeqGenCliInterfacePrepQry(
-                                        "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextValue end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %Ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextValue, redefTS);",
+                                        "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextValue end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextValue, redefTS);",
                                         SEQ_PROCESS_QRY_IDX,
                                         "SEQ_PROCESS_QRY_IDX",
                                         cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
@@ -10641,7 +10641,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
       if (! cliInterfaceArr[SEQ_SEL_TS_QRY_IDX])
         {
           cliRC = SeqGenCliInterfacePrepQry(
-                                            "select upd_ts from %s.\"%s\".%s where seq_uid = %Ld",
+                                            "select upd_ts from %s.\"%s\".%s where seq_uid = %ld",
                                             SEQ_SEL_TS_QRY_IDX,
                                             "SEQ_SEL_TS_QRY_IDX",
                                             cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);

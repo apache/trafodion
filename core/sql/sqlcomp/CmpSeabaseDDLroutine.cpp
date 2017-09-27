@@ -229,7 +229,7 @@ short CmpSeabaseDDL::getUsingRoutines(ExeCliInterface *cliInterface,
   char buf[4000];
   str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), "
                    "object_type, object_uid from %s.\"%s\".%s T, %s.\"%s\".%s LU "
-                   "where LU.using_library_uid = %Ld and "
+                   "where LU.using_library_uid = %ld and "
                    "T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
@@ -389,7 +389,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
  
   char * query = new(STMTHEAP) char[1000];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, 0)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
 	      objUID,
               libFileName.data(),
@@ -643,7 +643,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
   
   char buf[2048]; // filename max length is 512. Additional bytes for long
   // library names.
-  str_sprintf(buf, "update %s.\"%s\".%s set library_filename = '%s' where library_uid = %Ld",
+  str_sprintf(buf, "update %s.\"%s\".%s set library_filename = '%s' where library_uid = %ld",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
 	      libFileName.data(),
 	      libUID);
@@ -808,7 +808,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
 
   char * buf = new(STMTHEAP) char[200];
   str_sprintf(buf, "select library_filename from %s.\"%s\".%s"
-              " where library_uid = %Ld for read uncommitted access",
+              " where library_uid = %ld for read uncommitted access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, libUID);
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
@@ -1236,7 +1236,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   
 
   char * query = new(STMTHEAP) char[2000+MAX_SIGNATURE_LENGTH];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %Ld, '%s', 0)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %ld, '%s', 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
 	      objUID,
               udrType.data(),
@@ -1267,7 +1267,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
     }
 
   char * query1 = new(STMTHEAP) char[1000];
-  str_sprintf(query1, "insert into %s.\"%s\".%s values (%Ld, %Ld, 0)",
+  str_sprintf(query1, "insert into %s.\"%s\".%s values (%ld, %ld, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
 	      libUID, objUID);
   
@@ -1760,7 +1760,7 @@ short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
   str_sprintf(queryBuf, "drop schema if exists %s.\"%s\" cascade ",
-              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA);
 
   // Drop the SEABASE_LIBMGR_SCHEMA schema
   cliRC = cliInterface->executeImmediate(queryBuf);

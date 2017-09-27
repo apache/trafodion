@@ -298,7 +298,7 @@ void ComTdbUnPackRows::displayContents(Space * space,ULng32 flag)
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 
-      str_sprintf(buf,"flags_ = %b", flags_);
+      str_sprintf(buf,"flags_ = %x", flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   

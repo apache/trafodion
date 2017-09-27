@@ -310,6 +310,7 @@ void str_complement(const ULng32 length, char * s);
 // of sprintf as we cannot call C runtime from the SQL executor.
 //------------------------------------------------------------------------
 
+#define str_sprintf sprintf
 Int32 str_sprintf(char *, const char *, ...);
 
 // -----------------------------------------------------------------------

@@ -349,6 +349,8 @@ public:
   }
 
   Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
+ 
+  char *hdfsRootDir() { return hdfsRootDir_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()

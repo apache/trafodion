@@ -503,7 +503,7 @@ void CmpSeabaseDDLauth::insertRow()
   NAString authValid = isAuthValid() ? "Y" : "N";
 
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, '%s', '%s', '%s', %d, '%s', %Ld, %Ld, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, '%s', '%s', '%s', %d, '%s', %ld, %ld, 0)",
               sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
               getAuthID(),
               getAuthDbName().data(),

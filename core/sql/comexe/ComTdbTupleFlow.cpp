@@ -141,7 +141,7 @@ void ComTdbTupleFlow::displayContents(Space * space,ULng32 flag)
 #pragma nowarn(1506)   // warning elimination 
 		      Lng32 hFlags = (flags_- lFlags)/65536;
 #pragma warn(1506)  // warning elimination 
- 	   		str_sprintf(buf, "\nFor ComTdbTupleFlow :\nFlags = %b%b ",hFlags,lFlags );
+ 	   		str_sprintf(buf, "\nFor ComTdbTupleFlow :\nFlags = %x%x ",hFlags,lFlags );
 		      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 

@@ -329,7 +329,7 @@ void ComTdbHashj::displayContents(Space * space,ULng32 flag)
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       str_sprintf(buf,
-		  "hjFlags = %b, isSemiJoin = %d, isLeftJoin = %d, isRightJoin = %d",
+		  "hjFlags = %x, isSemiJoin = %d, isLeftJoin = %d, isRightJoin = %d",
 		  hjFlags_,isSemiJoin(),isLeftJoin(),isRightJoin());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 

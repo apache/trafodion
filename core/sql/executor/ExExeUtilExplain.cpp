@@ -1882,7 +1882,7 @@ void ExExeUtilDisplayExplainTcb::DoHeader()
   FormatLongLine("STATEMENT_NAME", statementName_, 14, valSize);
   
   //convert the Int64 to string
-  str_sprintf(outStr, "%Ld", planId_);
+  str_sprintf(outStr, "%ld", planId_);
   FormatLine("PLAN_ID", outStr, 7, (Lng32)str_len(outStr));
   
   // rework cardinality as rows out.  Assume probe count is always 1

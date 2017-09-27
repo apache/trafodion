@@ -1818,14 +1818,14 @@ ExExeUtilPopulateInMemStatsTcb::~ExExeUtilPopulateInMemStatsTcb()
 static const QueryString deleteStatsQuery[] =
 {
   {" delete from %s "},
-  {"  where table_uid = %Ld"}
+  {"  where table_uid = %ld"}
 };
 
 static const QueryString populateHistogramsStatsQuery[] =
 {
   {" insert into %s "},
   {" select  "},
-  {"   %Ld, "},
+  {"   %ld, "},
   {"   histogram_id, "},
   {"   col_position, column_number, colcount, interval_count, rowcount, "},
   {"   total_uec, stats_time, low_value, high_value, read_time, read_count, "},
@@ -1852,7 +1852,7 @@ static const QueryString populateHistintsStatsQuery[] =
 {
   {" insert into %s "},
   {" select  "},
-  {"   %Ld, "},
+  {"   %ld, "},
   {"   histogram_id, "},
   {"   interval_number, interval_rowcount, interval_uec, interval_boundary, "},
   {"   std_dev_of_freq, "},
@@ -2360,7 +2360,7 @@ short ExExeUtilHiveTruncateTcb::work()
         if (cliRC == 1) // data mod check failed
         {
           char errStr[200];
-          str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+          str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                       htTdb().getModTS(), failedModTS);
           
           ComDiagsArea * diagsArea = NULL;

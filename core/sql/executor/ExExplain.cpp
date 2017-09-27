@@ -1810,7 +1810,7 @@ short ExExplainTcb::storeExplainInRepos(
     }
 
   queryBuf = new(heap) char[4000];
-  str_sprintf(queryBuf, "update %s.\"%s\".%s set explain_plan = cast(? as varchar(%d) not null) where exec_start_utc_ts = CONVERTTIMESTAMP(%Ld)  and query_id = '%s' ",
+  str_sprintf(queryBuf, "update %s.\"%s\".%s set explain_plan = cast(? as varchar(%d) not null) where exec_start_utc_ts = CONVERTTIMESTAMP(%ld)  and query_id = '%s' ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE, 
               REPOS_MAX_EXPLAIN_PLAN_LEN,
               *execStartUtcTs, qid);
