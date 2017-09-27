@@ -43,13 +43,11 @@
  * MATCH request.
  */
 
-// LCOV_EXCL_START :ale
 // This is needed to avoid a link error.
 NABoolean NAType::isComparable(const NAType &other,
 			       ItemExpr *parentOp,
 			       Int32 emitErr) const
 { return FALSE; }
-// LCOV_EXCL_STOP
 
 Qms* Qms::instance_ = NULL;
 
@@ -111,7 +109,6 @@ QRResultDescriptorPtr Qms::match(QRQueryDescriptorPtr qryDescPtr, NAMemory* requ
         {
           mvMemo_.search(jbb, jbbCandidates, requestHeap);
         }
-      // LCOV_EXCL_START :rfi
       catch (...)
         {
           // Exception occurred, skip this JBB and keep going.
@@ -120,7 +117,6 @@ QRResultDescriptorPtr Qms::match(QRQueryDescriptorPtr qryDescPtr, NAMemory* requ
           deletePtr(jbbCandidates);
           continue;
         }
-      // LCOV_EXCL_STOP
 
       mvCandidates->insert(jbbCandidates);
     }
@@ -135,7 +131,6 @@ QRResultDescriptorPtr Qms::match(QRQueryDescriptorPtr qryDescPtr, NAMemory* requ
     //dumpInventoryHash();
     return resultDesc;
   }
-  // LCOV_EXCL_START :rfi
   catch (QRException e)
   {
     QRLogger::instance().log(CAT_QMS_MAIN, LL_MVQR_FAIL, "MATCH operation aborted.");
@@ -151,7 +146,6 @@ QRResultDescriptorPtr Qms::match(QRQueryDescriptorPtr qryDescPtr, NAMemory* requ
     QRResultDescriptorPtr resultDesc = MVCandidateCollection::generateEmptyResultDescriptor(requestHeap);
     return resultDesc;
   }
-  // LCOV_EXCL_STOP
 }
 
 /**
@@ -198,7 +192,6 @@ void Qms::insert(QRMVDescriptorPtr mvDescPtr, const QRMVDefinition* mvDefPtr)
     MVInventoryHash_.insert(&mvDetails->getMVName(), mvDetails);
     //dumpInventoryHash();
   }
-  // LCOV_EXCL_START :rfi
   catch (QRException e)
   {
     // Ignore exceptions for now.
@@ -211,7 +204,6 @@ void Qms::insert(QRMVDescriptorPtr mvDescPtr, const QRMVDefinition* mvDefPtr)
     QRLogger::instance().log(CAT_QMS_MAIN, LL_MVQR_FAIL,
       "PUBLISH operation aborted, An unknown exception occurred.");
   }
-  // LCOV_EXCL_STOP
 }
 
 /**
@@ -237,7 +229,6 @@ void Qms::drop(const NAString& mvName)
     }
     //dumpInventoryHash();
   }
-  // LCOV_EXCL_START :rfi
   catch (QRException e)
   {
     // Ignore exceptions for now.
@@ -250,7 +241,6 @@ void Qms::drop(const NAString& mvName)
     QRLogger::instance().log(CAT_QMS_MAIN, LL_MVQR_FAIL,
       "DROP operation aborted because of unknown exception.");
   }
-  // LCOV_EXCL_STOP
 }
 
 /**
@@ -335,7 +325,6 @@ void Qms::rename(const NAString& oldName, const NAString& newName)
       QRLogger::instance().log(CAT_QMS_MAIN, LL_INFO,
         "Unable to rename MV %s - not found in QMS.", oldName.data());
   }
-  // LCOV_EXCL_START :rfi
   catch (QRException e)
   {
     // Ignore exceptions for now.
@@ -347,7 +336,6 @@ void Qms::rename(const NAString& oldName, const NAString& newName)
     QRLogger::instance().log(CAT_QMS_MAIN, LL_MVQR_FAIL,
       "Rename operation aborted because of unknown exception.");
   }
-  // LCOV_EXCL_STOP
 }
 
 /**
@@ -374,7 +362,6 @@ const Int64 *Qms::getMVTimestamp(const NAString& mvName)
     return &mvDetails->getRedefTimestamp();
 }
 
-// LCOV_EXCL_START :cnu
 void Qms::dumpInventoryHash()
 {
   QRLogger::instance().log(CAT_QMS_MAIN, LL_DEBUG, "Dumping MV Inventory:");
@@ -387,7 +374,6 @@ void Qms::dumpInventoryHash()
     QRLogger::instance().log(CAT_QMS_MAIN, LL_DEBUG, key->data());
   }
 }
-// LCOV_EXCL_STOP
 
 /**
  * Perform workload analysis.

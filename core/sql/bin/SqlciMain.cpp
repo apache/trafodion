@@ -87,7 +87,6 @@ DEFINE_DOVERS(sqlci)
 #endif
 
 #include "EHException.h"
-#include "MxciEHCallBack.h"
 
 #ifdef _DEBUG_RTS
 #include "ComQueue.h"
@@ -209,15 +208,14 @@ _callable void removeProcess()
 {
   CliGlobals *cliGlobals = GetCliGlobals();
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
-  short savedPriority, savedStopMode;
   if (statsGlobals != NULL)
   {
-    short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                cliGlobals->myPin(),savedPriority, savedStopMode, TRUE /*shouldTimeout*/);
+    int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                cliGlobals->myPin());
     if (error == 0)
     {
       statsGlobals->removeProcess(cliGlobals->myPin());
-      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin(), savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
     }
     else if (error == 4011)
     {

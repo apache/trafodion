@@ -124,7 +124,6 @@ NAColumn *NAColumn::deepCopy(const NAColumn & nac, NAMemory * heap)
   return column;
 }
 
-// LCOV_EXCL_START :cnu
 // -----------------------------------------------------------------------
 // See NAColumn.h and BindRelExpr.C (bindCheckConstraint function)
 // for the reason for these two methods.
@@ -151,7 +150,6 @@ const QualifiedName& NAColumn::getNotNullConstraintName() const
   CMPASSERT(isNotNullNondroppable_);
   return isNotNullNondroppable_->getConstraintName();
 }
-// LCOV_EXCL_STOP
 
 // warning elimination (removed "inline")
 static NAString makeTableName(const NATable *table,
@@ -621,7 +619,6 @@ NABoolean NAColumn::createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
 } // createNAType()
 
-// LCOV_EXCL_START :dpm
 // -----------------------------------------------------------------------
 // Print function for debugging
 // -----------------------------------------------------------------------
@@ -689,7 +686,6 @@ void NAColumnArray::trace(FILE* ofd) const
     }
   }
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // functions for NAColumnArray
@@ -753,7 +749,6 @@ NAColumn * NAColumnArray::getColumnByPos(Lng32 position) const
   return NULL;
 }
 
-// LCOV_EXCL_START :cnu
 // removes the column that has the same position
 void NAColumnArray::removeByPosition(Lng32 position)
 {
@@ -802,7 +797,6 @@ ULng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
   return maxVal;
 }
 
-// LCOV_EXCL_STOP
 
 //method to reset an NAColumn object after a statement
 //In the ideal world NAColumn objects should not be having any state
@@ -832,7 +826,6 @@ void NAColumn::resetAfterStatement()
   return;
 }
 
-// LCOV_EXCL_START :dd
 NABoolean NAColumnArray::operator==(const NAColumnArray &other) const
 {
   if (entries() != other.entries())
@@ -847,7 +840,6 @@ NABoolean NAColumnArray::operator==(const NAColumnArray &other) const
     }
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 Int32 NAColumnArray::getTotalStorageSize() const
 {

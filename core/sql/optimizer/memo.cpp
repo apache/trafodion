@@ -116,12 +116,10 @@ CascadesGroup::~CascadesGroup()
 //<pb>
 
 
-// LCOV_EXCL_START
 void CascadesGroup::print(FILE * f, const char * prefix, const char *) const
 {
 } // CascadesGroup::print
 
-// LCOV_EXCL_STOP
 //<pb>
 void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
 {
@@ -158,7 +156,7 @@ void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
       // improve log prop's/group attributes; recost all plans if required
       if (expr->reconcileGroupAttr(getGroupAttr()))
 	// XXX recost all plans in this group
-	ABORT("reoptimizing after improveLogProp() not implemented"); // LCOV_EXCL_LINE
+	ABORT("reoptimizing after improveLogProp() not implemented");
     }
 
   // remember that expr came from src
@@ -290,7 +288,6 @@ RelExpr * CascadesGroup::unlinkLogExpr(RelExpr *expr)
 }
 //<pb>
 // A dangling method
-// LCOV_EXCL_START
 RelExpr * CascadesGroup::unlinkPhysExpr(RelExpr *expr)
 {
   // -------------------------------------------------------------
@@ -326,7 +323,6 @@ RelExpr * CascadesGroup::unlinkPhysExpr(RelExpr *expr)
   // to remind the calling procedure that it owns that expression now)
   return expr;
 }
-// LCOV_EXCL_STOP
 
 //<pb>
 CascadesPlan * CascadesGroup::getFirstPlan() const
@@ -351,7 +347,6 @@ RelExpr * CascadesGroup::getLastLogExpr() const
 }
 
 // use by OptDebug::showMemoStats(). Mask it out from code coverage
-// // LCOV_EXCL_START
 Lng32 CascadesGroup::getCountOfLogicalExpr() const
 {
   RelExpr * expr = logExprs_;
@@ -392,7 +387,6 @@ double CascadesGroup::calculateNoOfLogPlans() const
   result = result + (result*numOfMergedExprs);
   return result;
 }
-// LCOV_EXCL_STOP
 
 HashValue CascadesGroup::hash()
 {
@@ -767,7 +761,6 @@ CascadesMemo::CascadesMemo(CascadesGroupId groups, Lng32 buckets)
 // RelExpr::optimizeNode() by setting memo = NULL. This is a speeding
 // deletion.
 
-// LCOV_EXCL_START
 CascadesMemo::~CascadesMemo()
 {
   if (NOT (CURRSTMT_OPTGLOBALS->BeSilent))
@@ -820,10 +813,8 @@ CascadesMemo::~CascadesMemo()
     delete group_[groupId];
 
 } // CascadesMemo::~CascadesMemo
-// LCOV_EXCL_STOP
 
 //<pb>
-// LCOV_EXCL_START
 void CascadesMemo::print(FILE * f, const char *, const char *) const
 {
 } // CascadesMemo::print
@@ -841,7 +832,6 @@ void CascadesMemo::print_all_trees(CascadesGroupId root,
   // entire body of this method is essentially dead code until someone
   // resurrects the MOTIF/X11 based mxcmp "display" GUI too.
 } // CascadesMemo::print_all_trees
-// LCOV_EXCL_STOP
 
 //<pb>
 RelExpr * CascadesMemo::include(RelExpr * expr,

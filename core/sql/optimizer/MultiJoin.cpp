@@ -73,7 +73,6 @@ MultiJoin::MultiJoin(const JBBSubset & jbbSubset,
 #pragma warning (default : 4018)  //warning elimination
 }
 
-// LCOV_EXCL_START  - cnu
 NABoolean MultiJoin::isSymmetricMultiJoin() const
 {
   // now all are inners non semi
@@ -89,7 +88,6 @@ void MultiJoin::pushdownCoveredExpr(const ValueIdSet & outputExpr,
 {
   CMPASSERT(0);
 } // MultiJoin::pushdownCoveredExpr
-// LCOV_EXCL_STOP
 
 void MultiJoin::getPotentialOutputValues(ValueIdSet & outputValues) const
 {
@@ -112,12 +110,10 @@ void MultiJoin::getPotentialOutputValues(ValueIdSet & outputValues) const
   }
 } // MultiJoin::getPotentialOutputValues()
 
-// LCOV_EXCL_START  - dpm
 const NAString MultiJoin::getText() const
 {
   return NAString("multi_join");
 } // MultiJoin::getText()
-// LCOV_EXCL_STOP
 
 HashValue MultiJoin::topHash()
 {
@@ -638,10 +634,8 @@ Join* MultiJoin::createLeftLinearJoinTree
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START - dpm
     CURRCONTEXT_OPTDEBUG->stream() << "Following is left deep join sequence: " << endl;
     CURRCONTEXT_OPTDEBUG->stream() << endl;
-// LCOV_EXCL_STOP
   }
 #endif
 
@@ -665,7 +659,7 @@ Join* MultiJoin::createLeftLinearJoinTree
     if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
     {
-      CURRCONTEXT_OPTDEBUG->stream() << ((*leftDeepJoinSequence)[i]).getText() << endl; // LCOV_EXCL_LINE - dpm
+      CURRCONTEXT_OPTDEBUG->stream() << ((*leftDeepJoinSequence)[i]).getText() << endl;
     }
 #endif
     //Get JBBSubset for left side of join
@@ -704,10 +698,8 @@ Join* MultiJoin::createLeftLinearJoinTree
   if ( CmpCommon::getDefault( NSK_DBG ) == DF_ON  &&
        CmpCommon::getDefault( NSK_DBG_MJRULES_TRACKING ) == DF_ON )
   {
-// LCOV_EXCL_START  - dpm
     CURRCONTEXT_OPTDEBUG->stream() << ((*leftDeepJoinSequence)[(numJoinChildren-1)]).getText() << endl;
     CURRCONTEXT_OPTDEBUG->stream() << endl;
-// LCOV_EXCL_STOP
   }
 #endif
 
@@ -734,7 +726,6 @@ Join* MultiJoin::createLeftLinearJoinTree
 // method for testing purpose right now.
 // Uses left linearize for expanding
 // ----------------------------------------------------------------
-// LCOV_EXCL_START - cnu
 RelExpr* MultiJoin::expandMultiJoinSubtree()
 {
   // Use default implementation to invoke call on children
@@ -744,7 +735,6 @@ RelExpr* MultiJoin::expandMultiJoinSubtree()
   Join* result = leftLinearize();
   return result;
 }
-// LCOV_EXCL_STOP
 
 // Methods for class MJJoinDirective
 MJJoinDirective::MJJoinDirective(CollHeap *outHeap):
@@ -807,12 +797,10 @@ const ExprGroupId &
       return array_[i]->getExprGroupId();
     }
   }
-  // LCOV_EXCL_START 
   // Assert on invalid request
   CMPASSERT(FALSE);
   ExprGroupId* dummyResult = new(CmpCommon::statementHeap()) ExprGroupId;
   return *dummyResult;
-  // LCOV_EXCL_STOP
 }
 
 // ---------------------------------------------------------------
@@ -1015,7 +1003,6 @@ void MultiJoin::synthLogPropWithMJReuse(NormWA * normWAPtr)
 // synthEstLogProp
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START 
 // Used for other RelExpr but not MultiJoin
 void MultiJoin::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
@@ -1030,7 +1017,6 @@ void MultiJoin::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
   
   getGroupAttr()->addInputOutputLogProp (inputEstLogProp, myEstLogProp, NULL);
 } // MultiJoin::synthEstLogProp
-// LCOV_EXCL_STOP
 
 
 void MultiJoin::addLocalExpr(LIST(ExprNode *) &xlist,
@@ -1124,7 +1110,6 @@ void MultiJoin::analyzeInitialPlan()
 // ---------------------------------------------------------------------
 // MultiJoinTester methods
 // ---------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
 NABoolean MultiJoinTester::Test1(RelExpr* originalNonMultiJoinTree, RelExpr* treeConvertedToMultiJoin)
 {
   RelExpr* treeCopy = treeConvertedToMultiJoin->copyRelExprTree(CmpCommon::statementHeap());
@@ -1135,4 +1120,3 @@ NABoolean MultiJoinTester::Test1(RelExpr* originalNonMultiJoinTree, RelExpr* tre
   CMPASSERT(originalNonMultiJoinTree->duplicateMatch(*treeCopy));
   return TRUE;
 }
-// LCOV_EXCL_STOP

@@ -458,7 +458,6 @@ private:
   }
   
 public:
-//LCOV_EXCL_START : Reported by Code Coverage tool as unused, but actually not executable on SQ
   Lng32 getLength()
   {
     if ((type >= REC_MIN_NUMERIC) && (type <= REC_MAX_NUMERIC))
@@ -472,7 +471,6 @@ public:
     else
       return len_etc.datetime_.len;
   };
-//LCOV_EXCL_STOP
 
   Lng32 getPrecision()
   {
@@ -528,7 +526,6 @@ public:
       len_etc.datetime_.len = (unsigned short) len;
   };
 
-#ifdef NA_CATMAN_SIM
   Lng32 getBeginType()
   {
     if (type == REC_DATETIME)
@@ -556,7 +553,6 @@ public:
     if (type == REC_DATETIME)
       len_etc.datetime_.end_type = (unsigned short) etype;
   };
-#endif  // NA_CATMAN_SIM
 
   unsigned char flags;
   unsigned char type;

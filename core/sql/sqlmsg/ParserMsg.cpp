@@ -293,8 +293,6 @@ void StoreSyntaxError(const NAWchar *input_str, Int32 input_pos,
     }
   }
   
-  //delete entireBuf;  		NT_PORT ( bd 1/24/97 )
-
 } // StoreSyntaxError, Unicode version 
 #pragma warn(1506)  // warning elimination
 

@@ -1140,15 +1140,12 @@ void ExEspStmtGlobals::deleteMe(NABoolean fatalError)
   statsGlobals = espFragInstanceDir_->getStatsGlobals();
   if (statsGlobals != NULL)
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(espFragInstanceDir_->getSemId(),
-                      espFragInstanceDir_->getPid(),savedPriority, savedStopMode,
-                      FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(espFragInstanceDir_->getSemId(),
+                      espFragInstanceDir_->getPid());
     if (stmtStats_ != NULL)
       statsGlobals->removeQuery(espFragInstanceDir_->getPid(), stmtStats_);
     statsGlobals->releaseStatsSemaphore(espFragInstanceDir_->getSemId(),
-            espFragInstanceDir_->getPid(), savedPriority, savedStopMode);
+            espFragInstanceDir_->getPid());
     stmtStats_ = NULL;
 
   }

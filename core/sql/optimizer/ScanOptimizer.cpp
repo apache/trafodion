@@ -75,7 +75,6 @@
 #define FSOWARNING(x)
 #endif
 
-// LCOV_EXCL_START :dpm 
 #ifdef MDAM_TRACE
 
 THREAD_P FILE *MdamTrace::outputFile_ = NULL;
@@ -315,7 +314,6 @@ void MdamTrace::setLevel(enum MdamTraceLevel l)
 }
 
 #endif // if MDAM_TRACE
-// LCOV_EXCL_STOP
 
 enum restrictCheckStrategy { MAJORITY_WITH_PREDICATES=1, TOTAL_UECS=2, BOTH=3 };
 
@@ -897,7 +895,6 @@ private:
   CostScalar rcAfterApplyFirstKeyPreds_;
 };
 
-// LCOV_EXCL_START :dpm 
 #ifndef NDEBUG
 
 static Int32
@@ -1420,7 +1417,6 @@ ScanOptimizerAllTests(const FileScan& associatedFileScan
 }
 #endif
 
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // getDp2CacheSizeInBlocks
@@ -1438,7 +1434,6 @@ getDP2CacheSizeInBlocks(const CostScalar& blockSizeInKb)
     else if (blockSizeInKb == 32.)
       cacheSizeInBlocks =
         CostPrimitives::getBasicCostFactor(DP2_CACHE_32K_BLOCKS);
-// LCOV_EXCL_START :cnu
     else if (blockSizeInKb == 16.)
       cacheSizeInBlocks =
         CostPrimitives::getBasicCostFactor(DP2_CACHE_16K_BLOCKS);
@@ -1460,7 +1455,6 @@ getDP2CacheSizeInBlocks(const CostScalar& blockSizeInKb)
     else
       cacheSizeInBlocks =
         CostPrimitives::getBasicCostFactor(NCM_CACHE_SIZE_IN_BLOCKS);
-// LCOV_EXCL_STOP
 
   return cacheSizeInBlocks;
 
@@ -1637,7 +1631,6 @@ ordersMatch(const InputPhysicalProperty* ipp,
   if ((ipp != NULL) AND (!(ipp->getAssumeSortedForCosting())) AND
      (!(ipp->getExplodedOcbJoinForCosting())))
   {
-    // LCOV_EXCL_START :rfi
     // Shouldn't have an ipp if there are no outer order columns!
     if ((ipp->getNjOuterOrder() == NULL) OR
          ipp->getNjOuterOrder()->isEmpty())
@@ -1661,7 +1654,6 @@ ordersMatch(const InputPhysicalProperty* ipp,
 	CCMPASSERT(FALSE);
       return FALSE;
     }
-    // LCOV_EXCL_STOP
 
     // Get the physical partitioning function for the access path
     const PartitioningFunction* physicalPartFunc =
@@ -1722,14 +1714,12 @@ ordersMatch(const InputPhysicalProperty* ipp,
 
     // There MUST be some probe columns, otherwise there should not
     // have been an ipp!
-    // LCOV_EXCL_START :rfi
     if (innerOrderProbeCols.isEmpty())
     {
       if (NOT noCmpAssert)
 	CCMPASSERT(FALSE);
       return FALSE;
     }
-    // LCOV_EXCL_STOP
 
     ValueIdList njOuterOrder = *(ipp->getNjOuterOrder());
     // Sol 10-040303-3781. The number of entries of innerOrderProbCols(5)
@@ -1802,7 +1792,7 @@ ordersMatch(const InputPhysicalProperty* ipp,
     if (NOT partiallyInOrder)
     {
       if (NOT noCmpAssert)
-	CCMPASSERT(FALSE); // LCOV_EXCL_LINE :rfi
+	CCMPASSERT(FALSE);
       return FALSE;
     }
   } // end if ipp exists
@@ -1855,11 +1845,9 @@ ordersMatch(const InputPhysicalProperty* ipp,
             baseTableColIndex, innerOrderProbeColsNoInv[keyColIndex])
          )
       {
-        // LCOV_EXCL_START :rfi
 	if (NOT noCmpAssert)
 	  CCMPASSERT(FALSE);
         return FALSE;
-        // LCOV_EXCL_STOP
       }
       currentColUec = csdl[baseTableColIndex]->getColStats()->getTotalUec();
       totalInOrderColsUec = totalInOrderColsUec * currentColUec;
@@ -1908,7 +1896,6 @@ ordersMatch(const InputPhysicalProperty* ipp,
 //      columnId in any of its operands.
 //
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 static NABoolean
 predReferencesColumn(const ItemExpr *predIEPtr
                      ,const ValueId& columnId)
@@ -1958,7 +1945,6 @@ predReferencesColumn(const ItemExpr *predIEPtr
 
   return itDoes;
 }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -2025,7 +2011,6 @@ computeTotalBlocksLowerBound(
            innerBlocksUpperBound );
 }
 
-// LCOV_EXCL_START :dpm 
 
 #ifndef NDEBUG
 
@@ -2057,7 +2042,6 @@ ScanOptimizer::printCostObject(const Cost * costPtr) const
   }
   printf("\n");
 }
-// LCOV_EXCL_STOP
 
 #endif
 
@@ -2125,14 +2109,12 @@ Histograms::containsAtLeastOneFake() const
 } // containsAtLeastOneFake()
 
 
-// LCOV_EXCL_START :cnu
 NABoolean
 Histograms::getColStatDescForColumn(CollIndex index,
 				    const ValueId& column) const
 {
   return getColStatDescList().getColStatDescIndexForColumn(index,column);
 }
-// LCOV_EXCL_STOP
 
 
 const ColStats&
@@ -2177,14 +2159,12 @@ Histograms::getColStatsPtrForColumn(const ValueId& column) const
 
 }// getColStatsForColumn(...)
 
-// LCOV_EXCL_START :cnu
 void
 Histograms::displayHistogramForColumn(const ValueId& column) const
 {
   getColStatsForColumn(column).display();
 
 }// getColStatsForColumn(...)
-// LCOV_EXCL_STOP
 
 void
 Histograms::applyPredicates(const ValueIdSet& predicates, 
@@ -2369,7 +2349,6 @@ Histograms::applyPredicatesWhenMultipleProbes(
 
 } // Histograms::applyPredicatesWhenMultipleProbes(...)
 
-// LCOV_EXCL_START :cnu
 void
 Histograms::applyPredicate(const ValueId& predicate, 
                            const RelExpr & scan,
@@ -2382,7 +2361,6 @@ Histograms::applyPredicate(const ValueId& predicate,
   vis.insert(predicate);
   applyPredicates(vis, scan, selHint, cardHint, opType);
 } // applyPredicate(...)
-// LCOV_EXCL_STOP
 
 NABoolean
 Histograms::isAnIndexJoin(const EstLogProp& inputEstLogProp
@@ -2450,7 +2428,6 @@ Histograms::isAnIndexJoin(const EstLogProp& inputEstLogProp
 } // Histograms::isAnIndexJoin() const
 
 
-// LCOV_EXCL_START :dpm 
 void
 Histograms::display() const
 {
@@ -2467,7 +2444,6 @@ Histograms::print (FILE *ofd,
      getColStatDescList().print(emptySelectList) ;
 #endif
 }// print()
-// LCOV_EXCL_STOP
 
 //-------------------------------------------------------
 // Methods for IndexDescHistograms
@@ -2556,7 +2532,7 @@ IndexDescHistograms::appendHistogramForColumnPosition(
       else
         {
           // There must be a ColStatDesc for every key column!
-          CMPABORT; // LCOV_EXCL_LINE :rfi
+          CMPABORT;
         }
 
       // propagate all base-table multi-col uec info : easiest way
@@ -2610,7 +2586,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
            CostScalar& estimatedUec/*out*/)
 {
    ValueIdList columnList= keyPredsByCol.getColumnList();
-// LCOV_EXCL_START :dpm 
 #ifndef NDEBUG
         if(getenv("MDAM_MCUEC")){
           fprintf(stdout,"\n\n---columnList before reduction \n\n----");
@@ -2618,7 +2593,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
         }
 
 #endif
-// LCOV_EXCL_STOP
 //remove everything beyond the column under consideration
    for ( CollIndex i = keyPredsByCol.entries()-1; i>indexOfColumn; i--){
         columnList.removeAt(i);
@@ -2629,7 +2603,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
 
    const MultiColumnUecList * MCUL =
         getIndexDesc().getPrimaryTableDesc()->getTableColStats().getUecList();
-// LCOV_EXCL_START :dpm 
 #ifndef NDEBUG
         if(getenv("MDAM_MCUEC")){
           fprintf(stdout,"\n\n---columnList for Index[%d]:  \n", indexOfColumn);
@@ -2638,14 +2611,12 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
           MCUL->print();
         }
 #endif
-// LCOV_EXCL_STOP
 //get all the valueIdSets that contains the column and columns from the
 //columnList only
    LIST(ValueIdSet) * listOfSubsets=
      MCUL->getListOfSubsetsContainsColumns(columnList,uecCount);
 
    if(listOfSubsets->entries()==0) return FALSE;
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
         if(getenv("MDAM_MCUEC")){
           fprintf(stdout,"\n\n---Got my value ID list-----\n\n");
@@ -2655,7 +2626,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
           }
         }
 #endif
-// LCOV_EXCL_STOP
 //Trying to find the matching denominator for the numerator
    CostScalar uecWithoutColumn=0;
    CollIndex entriesInSubset=0;
@@ -2714,7 +2684,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
         vidSet.remove(idInBaseCol);
      //Do we have a matching denominator
         perfectDenom = MCUL->findDenom(vidSet);
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
   if(getenv("MDAM_MCUEC"))
   {
@@ -2722,7 +2691,6 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
     vidSet.print();
   }
 #endif
-// LCOV_EXCL_STOP
   //choose the MC uecs with the most entries so for col d , best would
   // be abcd/abc even if you have abd/ab. But if there are two of same
   // entries select the one with higher uec count for the denominator.
@@ -3702,7 +3670,6 @@ ScanOptimizer::isMdamEnabled() const
   return mdamIsEnabled;
 } //  isMdamEnabled()
 
-// LCOV_EXCL_START :cnu
 const CostScalar
 ScanOptimizer::getIndexLevelsSeeks() const
 {
@@ -3716,7 +3683,6 @@ ScanOptimizer::getIndexLevelsSeeks() const
     else
       return csZero;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // INPUT:
@@ -3915,14 +3881,12 @@ ScanOptimizer::computeCostObject(
 
   CostScalar frIOTime = tempFirst.getIOTime();
 
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
   Lng32 planFragmentsPerCPU = (Lng32)partitionsPerCPU.getValue();
 
   if ( planFragmentsPerCPU > 1 AND CURRSTMT_OPTGLOBALS->synCheckFlag )
     (*CURRSTMT_OPTGLOBALS->asynchrMonitor).enter();
 #endif  //NDEBUG
-// LCOV_EXCL_STOP
 
   tempLast.setIdleTime(0.);
   tempFirst.setIdleTime(0.);
@@ -3940,12 +3904,10 @@ ScanOptimizer::computeCostObject(
   costPtr->cplr().setIOTime(lrIOTime);
   costPtr->totalCost().setIOTime(lrIOTime);
 
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
   if ( planFragmentsPerCPU > 1 AND CURRSTMT_OPTGLOBALS->synCheckFlag)
     (*CURRSTMT_OPTGLOBALS->asynchrMonitor).exit();
 #endif  //NDEBUG
-// LCOV_EXCL_STOP
 
   DCMPASSERT(costPtr != NULL);
 
@@ -4641,14 +4603,12 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
   // compute blocks read per access
   computeNumberOfBlocksToReadPerAccess(*winnerCostPtr
                                        ,mdamIsWinner, winnerCostPtrNumKBytes);
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
 if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {
   if ( isIndexJoin )
     (*CURRSTMT_OPTGLOBALS->indexJoinMonitor).exit();
 }
 #endif  //NDEBUG
-// LCOV_EXCL_STOP
 
   MDAM_DEBUG0(MTL2, "END   Scan Costing ********************************\n\n");
   return winnerCostPtr;
@@ -4824,7 +4784,6 @@ FileScanOptimizer::computeCostForSingleSubset(
     return  scmComputeCostForSingleSubset();
   }
 
-  // LCOV_EXCL_START :cnu -- OCM code
   MDAM_DEBUG0(MTL2, "BEGIN Single Subset Costing --------");
 
   // This was added as part of the project
@@ -5600,11 +5559,9 @@ FileScanOptimizer::computeCostForSingleSubset(
 
    MDAM_DEBUG0(MTL2, "END   Single Subset Costing --------\n");
    return costPtr;
-   // LCOV_EXCL_STOP
 
 }// computeCostForSingleSubset(...)
 
-// LCOV_EXCL_START :dpm
 #ifndef NDEBUG
 void
 FileScanOptimizer::runMdamTests
@@ -5704,7 +5661,6 @@ FileScanOptimizer::runMdamTests
   MdamTrace::setLevel(origLevel);
 }
 #endif
-// LCOV_EXCL_STOP
 
 NABoolean FileScanOptimizer::isMDAMFeasibleForHBase(const IndexDesc* idesc, ValueIdSet& preds)
 {
@@ -5882,7 +5838,6 @@ FileScanOptimizer::computeCostForMultipleSubset
 					   sharedMdamKeyPtr);
   }
 
-// LCOV_EXCL_START :cnu OCM code
 #ifndef NDEBUG
   if(getenv("MDAM_TEST"))
   {
@@ -5916,11 +5871,9 @@ FileScanOptimizer::computeCostForMultipleSubset
 					   mdamTypeIsCommon,
 					   sharedMdamKeyPtr);
   }
-// LCOV_EXCL_STOP
 
 }
 
-// LCOV_EXCL_START :cnu OCM code
 // -----------------------------------------------------------------------
 // Use this routine to compute the cost of a given MdamKey
 // INPUT:
@@ -7475,7 +7428,6 @@ FileScanOptimizer::oldComputeCostForMultipleSubset
 
 } // oldComputeCostForMultipleSubset(...)
 #pragma warn(262)  // warning elimination
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // This function will check if current context has the same basic physical
@@ -7554,7 +7506,6 @@ FileScanBasicCost::hasSameBasicProperties(const Context & currentContext) const
      *(currentIPP->getNjOuterOrder()) == *(existingIPP->getNjOuterOrder()) );
 }
 
-// LCOV_EXCL_START :cnu
 // -----------------------------------------------------------------------
 // Use this routine to compare the current cost with a given bound.
 // INPUT:
@@ -7606,9 +7557,7 @@ FileScanOptimizer::exceedsBound(const Cost *costBoundPtr,
   return FALSE;
 
 } // FileScanOptimizer::exceedsBound(...)
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START : OCM code
 /////////////////////////////////////////////////////////////////////
 // fix the estimation
 // for seeks beginBlocksLowerBound = no. of unique entries WHICH ARE
@@ -7695,7 +7644,6 @@ FileScanOptimizer::computeSeekForDp2ReadAheadAndProbeOrder(
     }
   }
 }
-// LCOV_EXCL_STOP
 
 void
 FileScanOptimizer::computeIOForFullCacheBenefit(
@@ -7798,7 +7746,6 @@ FileScanOptimizer::computeIOForRandomCase(
 }
 
 
-// LCOV_EXCL_START :cnu
 void
 FileScanOptimizer::computeIOForFullTableScan(
      CostScalar& dataRows /* out */
@@ -7827,7 +7774,6 @@ FileScanOptimizer::computeIOForFullTableScan(
     indexBlocksLowerBound; // index seeks
 
 } // FileScanOptimizer::computeIOForFullTableScan(...)
-// LCOV_EXCL_STOP
 
 void
 FileScanOptimizer::computeCostVectorsForMultipleSubset(
@@ -8887,7 +8833,6 @@ void MDAMCostWA::compute()
           return;
 	}
       }
-      // LCOV_EXCL_START :cnu -- OCM code
       else
       {
 	disjunctsFR_.reset();
@@ -8926,7 +8871,6 @@ void MDAMCostWA::compute()
           return;
 	}
       }
-      // LCOV_EXCL_STOP
     } // for every disjunct
 
   // update rows accessed
@@ -9174,7 +9118,6 @@ MDAMOptimalDisjunctPrefixWA::~MDAMOptimalDisjunctPrefixWA()
     delete pMinCost_;
 }
 
-// LCOV_EXCL_START :cnu
 // This method find if there are any intervenning missing key column present 
 NABoolean MDAMOptimalDisjunctPrefixWA::missingKeyColumnExists() const
 {
@@ -9195,7 +9138,6 @@ NABoolean MDAMOptimalDisjunctPrefixWA::missingKeyColumnExists() const
    }
    return FALSE;
 }
-// LCOV_EXCL_STOP
 
 // This function computes the optimal prefix of the disjunct
 void MDAMOptimalDisjunctPrefixWA::compute()
@@ -10117,6 +10059,7 @@ const CostScalar & MDAMOptimalDisjunctPrefixWA::getOptSeqKBRead() const
 
 const ValueIdSet & MDAMOptimalDisjunctPrefixWA::getOptKeyPreds() const
 { return optKeyPreds_; }
+
 
 // ZZZZZ New MDAM costing code goes here
 
@@ -11114,7 +11057,6 @@ CollIndex NewMDAMOptimalDisjunctPrefixWA::getStopColumn() const
 // ZZZZZ End of new MDAM costing code
 
 
-// LCOV_EXCL_START :cnu
 // return true if has resuable shared basic cost for this mdam
 NABoolean
 FileScanOptimizer::getSharedCost(FileScanBasicCost * &fileScanBasicCostPtr /*out, never NULL*/
@@ -11151,10 +11093,7 @@ FileScanOptimizer::getSharedCost(FileScanBasicCost * &fileScanBasicCostPtr /*out
 	   //       disjunctsLRPtr->getCPUTime() > csZero AND
        CURRSTMT_OPTDEFAULTS->reuseBasicCost() );
 }
-// LCOV_EXCL_STOP
 
-
-// LCOV_EXCL_START :cnu
 
 Cost* FileScanOptimizer::newComputeCostForMultipleSubset
 ( MdamKey* mdamKeyPtr,
@@ -11273,7 +11212,6 @@ Cost* FileScanOptimizer::newComputeCostForMultipleSubset
   MDAM_DEBUG0(MTL2, "END   MDAM Costing --------\n");
   return costPtr;
 } // newComputeCostForMultipleSubset(...)
-// LCOV_EXCL_STOP
 
 Cost* 
 FileScanOptimizer::scmComputeCostForMultipleSubset(MdamKey* mdamKeyPtr,

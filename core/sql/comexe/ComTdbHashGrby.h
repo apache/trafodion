@@ -88,11 +88,13 @@ protected:
   UInt32         numInBatch_;                    // 176-179
   UInt16         forceOverflowEvery_;            // 180-181
   UInt16         hgbGrowthPercent_;              // 182-183
-  Float32        hgbMemEstInMbPerCpu_;           // 184-187
+  Float32        hgbMemEstInKBPerNode_;           // 184-187
   Int16          scratchIOVectorSize_;           // 188-189
   UInt16         bmoMinMemBeforePressureCheck_;  // 190-191
   UInt16         bmoMaxMemThresholdMB_;          // 192-193
-  char           fillersComTdbHashGrby_[6];      // 194-199
+  char           fillersComTdbHashGrby_[2];      // 194-195
+  Float32        estMemoryUsage_;                // 196-199
+  Float32        bmoQuotaRatio_;
  
 public:
 
@@ -311,9 +313,9 @@ public:
 
   void setPartialGrbyMemoryMB(UInt16 v) { partialGrbyMemoryMB_ = v; }
 
-  void setHgbMemEstInMbPerCpu(Float32 s) {hgbMemEstInMbPerCpu_=s;}
+  void setHgbMemEstInKBPerNode(Float32 s) {hgbMemEstInKBPerNode_=s;}
 
-  Float32 getHgbMemEstInMbPerCpu() {return hgbMemEstInMbPerCpu_;}
+  Float32 getHgbMemEstInKBPerNode() {return hgbMemEstInKBPerNode_;}
 
   Float32 hgbGrowthPercent() {return Float32(hgbGrowthPercent_/100.0);}
 
@@ -332,6 +334,16 @@ public:
 
   UInt16  getBMOMaxMemThresholdMB()
   { return bmoMaxMemThresholdMB_; }
+
+  void setEstimatedMemoryUsage(Float32 estMemory)
+    { estMemoryUsage_ = estMemory; }
+  virtual Float32 getEstimatedMemoryUsage(void)
+    { return estMemoryUsage_;}
+
+  void setBmoQuotaRatio(Float32 bmoQuotaRatio)
+    { bmoQuotaRatio_ = bmoQuotaRatio; }
+  virtual Float32 getBmoQuotaRatio(void)
+    { return bmoQuotaRatio_;}
 
   NABoolean isNonBMOPartialGroupBy() { return (isPartialGroup_ == TRUE); }
 

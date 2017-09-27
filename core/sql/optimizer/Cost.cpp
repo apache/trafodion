@@ -60,13 +60,11 @@ extern Cost* rollUpUnaryNonBlocking(const Cost& ,
 // -----------------------------------------------------------------------
 // global display methods (to be invoked from Objectcenter)
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 // excluded for coverage because it's a debug code
 void displayCost (const Cost & cost)
 {
   cost.print();
 }
-// LCOV_EXCL_STOP
 
 //<pb>
 
@@ -300,7 +298,6 @@ operator/(const SimpleCostVector &vector, const CostScalar &scalar)
 //  Sum of v1 and v2 using blocking vector addition.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 SimpleCostVector
 blockingAdd(const SimpleCostVector &v1,
             const SimpleCostVector &v2,
@@ -753,7 +750,6 @@ isLowerBound(const SimpleCostVector &v1, const SimpleCostVector &v2)
 
 } // isLowerBound()
 //<pb>
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // methods for class SimpleCostVector used in SCM.
@@ -893,7 +889,6 @@ void SimpleCostVector::print(FILE* ofd) const
 }
 */
 
-// LCOV_EXCL_START
 // excluded for coverage because it's a debug code
 void SimpleCostVector::print(FILE* pfp) const
 {
@@ -914,7 +909,6 @@ void SimpleCostVector::print(FILE* pfp) const
   fprintf(pfp,"\n");
 }
 
-// LCOV_EXCL_STOP
 //<pb>
 
 //<pb>
@@ -923,7 +917,6 @@ void SimpleCostVector::print(FILE* pfp) const
 // The argument ownline indicates if the cost components need to be in their
 // own lines.
 // The argument prefix optionally gives a prefix string to be printed
-// LCOV_EXCL_START
 // This gets called only when internal CQD EXPLAIN_DETAIL_COST_FOR_CALIBRATION
 // is ON for debugging purpose. So, exclude for coverage
 const NAString SimpleCostVector::getDetailDesc(const DefaultToken ownline,
@@ -971,7 +964,6 @@ const NAString SimpleCostVector::getDetailDesc(const DefaultToken ownline,
   dtlDesc = detail;
   return dtlDesc;
 } // SimpleCostVector::getDetailDesc()
-// LCOV_EXCL_STOP
 
 //<pb>
 // NCM specific method.
@@ -1157,7 +1149,6 @@ SimpleCostVector::getNormalizedVersion(const CostScalar & factor) const
 //  Accumulated vector using overlapped addition.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 const SimpleCostVector&
 SimpleCostVector::overlappedAdd(const SimpleCostVector& other)
 {
@@ -1255,7 +1246,6 @@ SimpleCostVector::repeatedOverlappedAdd(const Lng32 times)
   return *this;
 
 } //SimpleCostVector::repeatedOverlappedAdd()
-// LCOV_EXCL_STOP
 //<pb>
 // -----------------------------------------------------------------------
 // scaleUpByNumProbes() scales up a simple cost vector by its number of
@@ -1417,7 +1407,6 @@ const SimpleCostVector& SimpleCostVector::reset()
 //  TRUE if this is a zero vector; FALSE otherwise.
 //
 //==============================================================================
-// LCOV_EXCL_START
 // This method is no longer used, isZeroVectorWithProbes is used instead.
 // So hide it from coverage
 NABoolean
@@ -1442,7 +1431,6 @@ SimpleCostVector::isZeroVector() const
   return TRUE;
 
 } // SimpleCostVector::isZero
-// LCOV_EXCL_STOP
 
 // This method needs to be used instead of isZeroVector for checking
 // blocking components of Cost Object: cpbcTotal and cpbc1.
@@ -1954,7 +1942,6 @@ ElapsedTime Cost::convertToElapsedTime(
   ElapsedTime et ( csZero );
   CostScalar etBlock = cpbcTotal_.getElapsedTime(*pfg);
 
-  // LCOV_EXCL_START
   // FirstRow optimization is a disabled feature, hide from coverage
   if(pfg->isOptimizeForFirstRow())
   {
@@ -1962,7 +1949,6 @@ ElapsedTime Cost::convertToElapsedTime(
     const CostScalar etFR = cpfr_.getElapsedTime(*pfg) + etBlock;
     et = ElapsedTime( etFR );
   }
-  // LCOV_EXCL_STOP
   else if(pfg->isOptimizeForLastRow())
   {
     // cpbcTotal_ is a per-probe average cost.
@@ -1973,7 +1959,6 @@ ElapsedTime Cost::convertToElapsedTime(
     etLRPlusBlk = etLR + etBlock * cpbcTotal_.getNumProbes();
     et = ElapsedTime( etLRPlusBlk );
   }
-  // LCOV_EXCL_START
   // total resource consumption is a disabled feature, hide from coverage
   else if (pfg->isOptimizeForResourceConsumption())
   {
@@ -1988,7 +1973,6 @@ ElapsedTime Cost::convertToElapsedTime(
     etLRPlusBlk = etLR + etBlock * cpbcTotal_.getNumProbes();
     et = ElapsedTime( etLRPlusBlk );
   }
-  // LCOV_EXCL_STOP
   return et;
 
 } // Cost::convertToElapsedTime()
@@ -2055,7 +2039,6 @@ const NAString Cost::getDetailDesc() const
               "TC_PROC: %g TC_PROD: %g TC_SENT: %g IO_SEQ: %g IO_RAND: %g ",
               tcProc, tcProd, tcSent, ioSeq, ioRand);
 
-      // LCOV_EXCL_START :dpm
       NABoolean scmDebugOn = (CmpCommon::getDefault(NCM_PRINT_ROWSIZE) == DF_ON);
       if (scmDebugOn == TRUE)
       {
@@ -2069,7 +2052,6 @@ const NAString Cost::getDetailDesc() const
         // Does strcat truncate??
         strcat(line, rowsizeInfo);
       }
-      // LCOV_EXCL_STOP
     }
   }
   dtlDesc = line;
@@ -2148,7 +2130,6 @@ void Cost::getExternalCostAttr(double &cpuTime, double &ioTime,
 // simple cost vector depending on the cost model in effect. This is expected
 // to be used by callers like Explain etc. to display the cost details.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 void Cost::getOcmCostAttr(double &cpu, double &io,
                           double &msg, double &idleTime,
                           Lng32 &probes) const
@@ -2168,14 +2149,12 @@ void Cost::getOcmCostAttr(double &cpu, double &io,
   CostScalar tmpProbe = cplr_.getNumProbes();
   probes =  Lng32(tmpProbe.getValue());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // The cost detail description consists of the individual components of the
 // simple cost vector depending on the cost model in effect. This is expected
 // to be used by callers like Explain etc. to display the cost details.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 // called only when internal debugging CQD NCM_PRINT_ROWSIZE is ON.
 // So hide from coverage
 void Cost::getScmCostAttr(double &tcProc, double &tcProd,
@@ -2195,7 +2174,6 @@ void Cost::getScmCostAttr(double &tcProc, double &tcProd,
   CostScalar tmpProbe = cpScmlr_.getNumProbes();
   probes = Lng32(tmpProbe.getValue());
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // The cost detail description consists of the individual components of the
@@ -2441,7 +2419,6 @@ Cost::computePlanPriority( RelExpr* op,
 }
 
 
-// LCOV_EXCL_START
 // excluded for coverage because it's a debug code
 void Cost::print(FILE * pfp, const char * , const char *) const
 {
@@ -2468,7 +2445,6 @@ void Cost::display() const
   print(); 
 }
 
-// LCOV_EXCL_STOP
 
 //<pb>
 //==============================================================================
@@ -2505,7 +2481,6 @@ void Cost::display() const
 //  none.
 //
 //==============================================================================
-// LCOV_EXCL_START :cnu -- OCM code
 HashJoinCost::HashJoinCost(const SimpleCostVector* currentProcessFirstRowCost,
                            const SimpleCostVector* currentProcessLastRowCost,
                            const SimpleCostVector* currentProcessBlockingCost,
@@ -2574,7 +2549,6 @@ HashJoinCost::HashJoinCost(const SimpleCostVector* currentProcessFirstRowCost,
     }
 
 } // HashJoinCost constructor.
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Effectively a virtual constructor for a hash join cost object.
@@ -2899,7 +2873,6 @@ CostScalar ResourceConsumptionWeight::operator[] (Lng32 ix) const
 // -----------------------------------------------------------------------
 // methods for class CostLimit
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 ElapsedTimeCostLimit* CostLimit::castToElapsedTimeCostLimit() const
 {
   return NULL; // sorry, wrong number
@@ -3523,7 +3496,6 @@ ElapsedTimeCostLimit::unilaterallyReduce(const ElapsedTime & timeReduction)
   cachedValue_ = 0.0;
 
 } //ElapsedTimeCostLimit::unilaterallyReduce()
-// LCOV_EXCL_STOP
 //<pb>
 
 // ***********************************************************************
@@ -3884,7 +3856,6 @@ ScmElapsedTimeCostLimit::unilaterallyReduce(const ElapsedTime & timeReduction)
 // ---------------------------------------------------------------------------
 // methods for class CostPrimitives
 // ---------------------------------------------------------------------------
-// LCOV_EXCL_START :cnu -- OCM code
 
 double CostPrimitives::cpuCostForCopySet(const ValueIdSet & vidset)
 {
@@ -3981,5 +3952,4 @@ double CostPrimitives::getBasicCostFactor(Lng32 id)
     return 1.0;
   return CmpCommon::getDefaultNumeric((DefaultConstants)id);
 }
-// LCOV_EXCL_STOP
 // eof

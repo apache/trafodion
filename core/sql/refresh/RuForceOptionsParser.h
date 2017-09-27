@@ -94,7 +94,6 @@ class CRUMVForceOptionsList;
 // line --> FORCE_CQS = sql_stmt
 //		sql_stmt --> (one line statement that ends with ;)
 
-// LCOV_EXCL_START :cnu
 
 class REFRESH_LIB_CLASS CRUForceOptionsParser 
 {
@@ -205,6 +204,5 @@ private:
 	Int32 lineNumber_;
 };
 
-// LCOV_EXCL_STOP
 
 #endif

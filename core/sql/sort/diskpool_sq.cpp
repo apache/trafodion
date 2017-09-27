@@ -29,7 +29,7 @@
 //    The constructor of NT version of DiskPool.
 //--------------------------------------------------------------------------
 SQDisk::SQDisk(SortError* sorterror, CollHeap *heap) :DiskPool(heap),
-sortError_(sorterror) {  // NT_PORT ( ls 2/7/97 )
+sortError_(sorterror) {
   
   factorImportanceTotalFreeSpace_ = 30;
   factorImportanceNumScrFiles_ = 70;   

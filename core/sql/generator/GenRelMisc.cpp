@@ -1908,15 +1908,13 @@ short RelRoot::codeGen(Generator * generator)
   // fragments of the plan that are executed locally or are downloaded
   // to DP2 or to ESPs) from the generator's copy <compFragDir> and attach
   // it to the root_tdb
-  NABoolean fragmentQuotas = CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) == DF_ON;
+  NABoolean fragmentQuotas = CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON;
   ExFragDir *exFragDir =
 #pragma nowarn(1506)   // warning elimination
     new(space) ExFragDir(compFragDir->entries(),space,
                          CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON, 
                          fragmentQuotas, 
                          (UInt16)CmpCommon::getDefaultLong(ESP_MULTI_FRAGMENT_QUOTA_VM),
-                         fragmentQuotas ?
-                           (UInt8)CmpCommon::getDefaultLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS) :
                            (UInt8)CmpCommon::getDefaultLong(ESP_NUM_FRAGMENTS));
 #pragma warn(1506)  // warning elimination
 
@@ -2793,6 +2791,9 @@ short RelRoot::codeGen(Generator * generator)
   if(generator->hiveAccess())
     root_tdb->setHiveAccess(TRUE);
 
+  root_tdb->setBmoMemoryLimitPerNode(ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB));
+  root_tdb->setEstBmoMemoryPerNode(generator->getTotalBMOsMemoryPerNode().value());
+
   Int32 numSikEntries = securityKeySet_.entries();
   if (numSikEntries > 0)
   {
@@ -2910,9 +2911,9 @@ short RelRoot::codeGen(Generator * generator)
 
       // now set the values of the previously allocated directory entry
 
-      NABoolean mlimitPerCPU = CmpCommon::getDefaultLong(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerNode = CmpCommon::getDefaultLong(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
       UInt16 BMOsMemoryUsage = 0;
-      if (mlimitPerCPU == TRUE)
+      if (mlimitPerNode == TRUE)
         BMOsMemoryUsage = (UInt16)compFragDir->getBMOsMemoryUsage(i);
       else if (compFragDir->getNumBMOs(i) > 1 ||
                (compFragDir->getNumBMOs(i) == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON))
@@ -2953,6 +2954,8 @@ short RelRoot::codeGen(Generator * generator)
   compilerStatsInfo->bmo() = generator->getTotalNumBMOs();
   compilerStatsInfo->queryType() = (Int16)root_tdb->getQueryType();
   compilerStatsInfo->subqueryType() = (Int16)root_tdb->getSubqueryType();
+  compilerStatsInfo->bmoMemLimitPerNode() = root_tdb->getBmoMemoryLimitPerNode();
+  compilerStatsInfo->estBmoMemPerNode() = root_tdb->getEstBmoMemoryPerNode();
 
   NADELETEBASIC(partInputDataDescs, generator->wHeap());
   NADELETEBASIC(nodeMap, generator->wHeap());
@@ -3099,10 +3102,12 @@ short Sort::generateTdb(Generator * generator,
   sort_options->setConsiderBufferDefrag(considerBufferDefrag);
 
   short memoryQuotaMB = 0;
+  double memoryQuotaRatio;
+  Lng32 numStreams;
+  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
 
-  if(CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF)
+  if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF)
   {
-
     // The CQD EXE_MEM_LIMIT_PER_BMO_IN_MB has precedence over the mem quota sys
     memoryQuotaMB = (UInt16)defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB);
 
@@ -3116,28 +3121,35 @@ short Sort::generateTdb(Generator * generator,
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
       
-      NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
   
-      if ( mlimitPerCPU || numBMOsInFrag > 1 ) {
+      if ( mlimitPerNode || numBMOsInFrag > 1 ||
+         (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
   
           memoryQuotaMB = (short)
              computeMemoryQuota(generator->getEspLevel() == 0,
-                                mlimitPerCPU,
-                                generator->getBMOsMemoryLimitPerCPU().value(),
-                                generator->getTotalNumBMOsPerCPU(),
-                                generator->getTotalBMOsMemoryPerCPU().value(),
+                                mlimitPerNode,
+                                generator->getBMOsMemoryLimitPerNode().value(),
+                                generator->getTotalNumBMOs(),
+                                generator->getTotalBMOsMemoryPerNode().value(),
                                 numBMOsInFrag, 
-                                generator->getFragmentDir()->getBMOsMemoryUsage()
+                                bmoMemoryUsagePerNode,
+                                numStreams,
+                                memoryQuotaRatio
                                );
   
-                  
-          Lng32 sortMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_SORT);
+      }            
+      Lng32 sortMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_SORT);
+      Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
   
-          if ( memoryQuotaMB < sortMemoryLowbound )
-             memoryQuotaMB = (short)sortMemoryLowbound;
+      if ( memoryQuotaMB < sortMemoryLowbound ) {
+         memoryQuotaMB = (short)sortMemoryLowbound;
+         memoryQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
       }
+      else if (memoryQuotaMB >  memoryUpperbound)
+         memoryQuotaMB = memoryUpperbound;
     }
-   }
+  }
 
    //BMO settings. By Default set this value to max available 
    //irrespective of quota is enabled or disabled. Sort at run time
@@ -3193,6 +3205,7 @@ short Sort::generateTdb(Generator * generator,
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
   sort_tdb->setTopNSortEnabled(CmpCommon::getDefault(GEN_SORT_TOPN) == DF_ON);
+  sort_tdb->setBmoQuotaRatio(memoryQuotaRatio);
   
   if (generator->getUserSidetreeInsert())
     sort_tdb->setUserSidetreeInsert(TRUE);
@@ -3205,6 +3218,7 @@ short Sort::generateTdb(Generator * generator,
   generator->initTdbFields(sort_tdb);
 
   double sortMemEst = getEstimatedRunTimeMemoryUsage(sort_tdb);
+  sort_tdb->setEstimatedMemoryUsage(sortMemEst / 1024);
   generator->addToTotalEstimatedMemory(sortMemEst);
 
   generator->addToTotalOverflowMemory(
@@ -3220,21 +3234,12 @@ short Sort::generateTdb(Generator * generator,
   float bmoCtzFactor;
   defs.getFloat(BMO_CITIZENSHIP_FACTOR, bmoCtzFactor);
   sort_tdb->setBmoCitizenshipFactor((Float32)bmoCtzFactor);
-
- //if(!generator->explainDisabled()) {
-  Lng32 sortMemEstInKBPerCPU = (Lng32)(sortMemEst / 1024) ;
-  sortMemEstInKBPerCPU = sortMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  sort_tdb->setSortMemEstInMbPerCpu
-    ( Float32(MAXOF(sortMemEstInKBPerCPU/1024,1)) );
-
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(sortMemEstInKBPerCPU );
-
+  sort_tdb->setSortMemEstInKBPerNode(bmoMemoryUsagePerNode /1024);
+  if (sortNRows())
+     sort_tdb->setTopNThreshold(defs.getAsLong(GEN_SORT_TOPN_THRESHOLD));
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(sort_tdb, childExplainTuple, 0, generator));
-
-    generator->setOperEstimatedMemory(0);
   }
 
   // set the new up cri desc.
@@ -3921,52 +3926,42 @@ double Sort::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
   return 0;
 }
 
-CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   Lng32 childRecordSize = 
       childGroupAttr->getCharacteristicOutputs().getRowLength();
-  CostScalar totalMemory = getEstRowsUsed() * childRecordSize;
+  CostScalar rowsUsed;
+  if (sortNRows() && (topNRows_ > 0)
+            && (topNRows_ <= getDefault(GEN_SORT_TOPN_THRESHOLD)))
+     rowsUsed = topNRows_; 
+  else
+     rowsUsed = getEstRowsUsed();
+  CostScalar totalMemory = rowsUsed * childRecordSize;
 
-  if ( perCPU == TRUE ) {
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL)
-    {
-      PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-      totalMemory /= partFunc->getCountOfPartitions();
-    }
+  Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  if (phyProp != NULL)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
   }
-
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if (perNode) 
+      totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
+      totalMemory /= numOfStreams;
   return totalMemory;
 }
 
 double Sort::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  const Int32 numBuffs = ActiveSchemaDB()->getDefaults().getAsLong(GEN_SORT_MAX_NUM_BUFFERS);
-  const Int32 bufSize = ActiveSchemaDB()->getDefaults().getAsLong(GEN_SORT_MAX_BUFFER_SIZE);
-  double memoryLimitPerCpu;
-  short memoryQuotaInMB = ((ComTdbSort *)tdb)->getSortOptions()->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
-  else
-    memoryLimitPerCpu = numBuffs * bufSize ;
-
-  const PhysicalProperty* const phyProp = getPhysicalProperty();
   Lng32 numOfStreams = 1;
-  if (phyProp != NULL)
-  {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
-  }
-
-  CostScalar memoryPerCpu = totalMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
-  {
-      memoryPerCpu = memoryLimitPerCpu;
-  }
-  totalMemory = memoryPerCpu * numOfStreams ;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
   return totalMemory.value();
 }
 

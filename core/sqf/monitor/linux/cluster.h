@@ -57,6 +57,19 @@ enum MonXChngTags
     MON_XCHNG_DATA
 };
 
+typedef struct
+{
+    int p_sent;
+    int p_received;
+    int p_n2recv;
+    bool p_sending;
+    bool p_receiving;
+    int p_timeout_count;
+    bool p_initial_check;
+    char *p_buff;
+    struct timespec znodeFailedTime;
+} peer_t;
+
 class CNode;
 class CLNode;
 
@@ -100,7 +113,7 @@ public:
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
-    void AssignTmLeader( int pnid );
+    void AssignTmLeader( int pnid, bool checkProcess );
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -118,7 +131,7 @@ public:
     void addNewSock(int nid, int otherRank, int sockFd );
 
     bool exchangeNodeData ( );
-    void exchangeTmSyncData ( struct sync_def *sync );
+    void exchangeTmSyncData ( struct sync_def *sync, bool bumpSync );
     int GetConfigPNodesCount() { return configPNodesCount_; }
     int GetConfigPNodesMax() { return configPNodesMax_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
@@ -191,12 +204,12 @@ protected:
 
     CNode  **Node;           // array of nodes
     CLNode **LNode;          // array of logical nodes
-
     int      TmSyncPNid;     // Physical Node ID of current TmSync operations master
 
 
-    void AddTmsyncMsg (struct sync_def *sync,
-                                 struct internal_msg_def *msg);
+    void AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
+                     , struct sync_def *sync
+                     , struct internal_msg_def *msg);
     void AddReplData (struct internal_msg_def *msg);
     void AddMyNodeState ();
     void TraceTMSyncState(struct sync_buffer_def *recv_buffer,
@@ -252,6 +265,10 @@ private:
     int integratingPNid_;       // pnid of node when re-integration in progress
     MPI_Comm  joinComm_;        // new to creator communicator (1-to-1)
     int joinSock_;              // new to creator socket used at join phase
+    unsigned long long lastSeqNum_;
+    unsigned long long lowSeqNum_;
+    unsigned long long highSeqNum_;
+    unsigned long long reconnectSeqNum_;
     unsigned long long seqNum_;
     int cumulativeDelaySec_;
 
@@ -281,10 +298,6 @@ private:
 
     bool agTimeStats(struct timespec & ts_begin,
                      struct timespec & ts_end);
-    
-
-
-    struct sync_buffer_def *tmSyncBuffer_;
 
     // Size of send and receive buffers used for communication between monitors
     enum { CommBufSize = MAX_SYNC_SIZE };
@@ -323,6 +336,9 @@ private:
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherSock(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
+    int AllgatherSockReconnect( MPI_Status *stats );
+    int AcceptSockPeer( CNode *node, int peer );
+    int ConnectSockPeer( CNode *node, int peer );
 
     void ValidateClusterState( cluster_state_def_t nodestate[],
                                bool haveDivergence );
@@ -331,6 +347,7 @@ private:
     void HandleReintegrateError( int rc, int err,
                                  int nid, nodeId_t *nodeInfo,
                                  bool abort );
+    bool PingSockPeer(CNode *node);
     void ReIntegrateMPI( int initProblem );
     void ReIntegrateSock( int initProblem );
     void SendReIntegrateStatus( STATE nodeState, int status );
@@ -357,8 +374,9 @@ private:
 
     void InitClusterSocks( int worldSize, int myRank, char *nodeNames,int *rankToPnid );
     void InitServerSock( void );
-    int AcceptSock( int sock );
+    int  AcceptSock( int sock );
     void EpollCtl( int efd, int op, int fd, struct epoll_event *event );
+    void EpollCtlDelete( int efd, int fd, struct epoll_event *event );
     int  MkSrvSock( int *pport );
     int  MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port );
 

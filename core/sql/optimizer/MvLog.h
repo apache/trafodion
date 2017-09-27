@@ -39,7 +39,6 @@
 #include "RelMisc.h"
 
 // MVLOG command is not supported
-// LCOV_EXCL_START
 
 class MvLogInternalNames;
 
@@ -248,6 +247,5 @@ private:
   static const char simpleRangeTuple_[];
 };  // class MvLogInternalNames
 
-// LCOV_EXCL_STOP
 
 #endif // MVLOG_H

@@ -189,7 +189,6 @@ UdrGlobals::UdrGlobals(NAHeap *udrheap, NAHeap *ipcheap)
   UDR_DEBUG1("Session User : %s", sessionUserName_); 
 }
 
-// LCOV_EXCL_START
 // we don't have any way of invoking these at this point.
 // we should provide a way for procedure bodies to set a java property
 // that the language manager can use to check to determine if it should
@@ -261,7 +260,6 @@ void UdrGlobals::displayStats(ostream& out, Lng32 indent)
   ServerDebug("%sNum Total RSets    : " INT64_SPEC , ind, numTotalRSets_ );
   ServerDebug("%sNum Curr RSets     : " INT64_SPEC , ind, numCurrRSets_ );
 }
-// LCOV_EXCL_STOP
 
 
 LmLanguageManager *UdrGlobals::getLM(ComRoutineLanguage language) const

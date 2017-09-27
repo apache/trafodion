@@ -43,9 +43,6 @@
 // -----------------------------------------------------------------------
 class ExHbaseAccessTdb;
 class ExHbaseAccessTcb;
-#ifdef NEED_PSTATE
-class ExBlockingHbaseAccessPrivateState;
-#endif
 
 // -----------------------------------------------------------------------
 // Classes referenced in this file
@@ -109,9 +106,6 @@ private:
 
 class ExHbaseAccessTcb  : public ex_tcb
 {
-#ifdef NEED_PSTATE
-  friend class ExHbaseAccessPrivateState;
-#endif
   friend class ExHbaseTaskTcb;
   friend class ExHbaseScanTaskTcb;
   friend class ExHbaseScanRowwiseTaskTcb;
@@ -154,13 +148,6 @@ public:
     else
       return NULL;
   }
-
-#ifdef NEED_PSTATE
-  // For dynamic queue resizing.
-  virtual ex_tcb_private_state * allocatePstates(
-       Lng32 &numElems,      // inout, desired/actual elements
-       Lng32 &pstateLength); // out, length of one element
-#endif
 
   // Overridden by ExHbaseAccessSelectTcb, for which sampling may be used.
   virtual Float32 getSamplePercentage() const

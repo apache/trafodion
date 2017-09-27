@@ -182,7 +182,6 @@ void runServer(Int32 argc, char **argv)
   // while holding the stats semaphore.  This code has been covered in
   // a manual unit test, but it is not possible to cover this easily in
   // an automated test.
-  // LCOV_EXCL_START
   if (statsGlobals->getSemPid() != -1)
   {
     NAProcessHandle prevSsmpPhandle((SB_Phandle_Type *)
@@ -193,24 +192,19 @@ void runServer(Int32 argc, char **argv)
       NAProcessHandle myPhandle;
       myPhandle.getmine();
       myPhandle.decompose();
-      short savedPriority, savedStopMode;
-      short error =
+      int error =
            statsGlobals->releaseAndGetStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
-                     (pid_t) prevSsmpPhandle.getPin(),
-                     savedPriority, savedStopMode,
-                     FALSE /*shouldTimeout*/);
+                     (pid_t) prevSsmpPhandle.getPin());
       ex_assert(error == 0,
                "releaseAndGetStatsSemaphore() returned error");
 
       statsGlobals->releaseStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
-                     (pid_t) myPhandle.getPin(),
-                     savedPriority, savedStopMode);
+                     (pid_t) myPhandle.getPin());
     }
   }
-  // LCOV_EXCL_STOP
 
   XPROCESSHANDLE_GETMINE_(statsGlobals->getSsmpProcHandle());
 

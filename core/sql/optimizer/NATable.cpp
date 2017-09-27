@@ -2023,7 +2023,6 @@ static PartitioningFunction * createRangePartitioningFunction
 // createRoundRobinPartitioningFunction()
 // This method is used for creating a RoundRobinPartitioningFunction.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 static PartitioningFunction * createRoundRobinPartitioningFunction
                                 (TrafDesc * part_desc_list,
                                  NodeMap* nodeMap,
@@ -2055,7 +2054,6 @@ static PartitioningFunction * createRoundRobinPartitioningFunction
   return new (heap) RoundRobinPartitioningFunction(numberOfPartitions, nodeMap, heap);
 
 } // static createRoundRobinPartitioningFunction()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // createHashDistPartitioningFunction()
@@ -3610,7 +3608,6 @@ ULng32 naStringHashFunc(const NAString& indexName)
 // The method processDuplicateNames() is called by createNAFileSet() for
 // tables having duplicate remote indexes.
 //*************************************************************************
-// LCOV_EXCL_START :nsk
 void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
                            NAFileSetList & indexes,
                            char *localNodeName)
@@ -3618,7 +3615,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 {
     return;
 } // processDuplicateNames()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Method for:
@@ -5642,7 +5638,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          } // if
      } // if
 
-   // LCOV_EXCL_STOP
    initialSize_ = heap_->getAllocSize();
    MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
  } // NATable()
@@ -5936,7 +5931,6 @@ NATable::NATable(BindWA *bindWA,
 
   hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
 
-  // LCOV_EXCL_STOP
   initialSize_ = heap_->getAllocSize();
   MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
 } // NATable()
@@ -8763,7 +8757,6 @@ void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
           //remove from list of cached NATables
           if (cachedTableList_.remove(cachedNATable) > 0)
             {
-              // LCOV_EXCL_START - caching is off by default for now
               //if metadata caching is ON, then adjust cache size
               //since we are deleting a caching entry
               if(cacheMetaData_)
@@ -8771,7 +8764,6 @@ void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
               if (cachedNATable->heap_ &&
                   cachedNATable->heap_ != CmpCommon::statementHeap())
                 tablesToDeleteAfterStatement_.insert(cachedNATable);
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -9123,7 +9115,6 @@ NABoolean NATableDB::enforceMemorySpaceConstraints()
 //the current statement.
 //This is used when a binder error occurs. In rare cases the binder
 //error might be due to a stale metadata cache entry.
-// LCOV_EXCL_START :cnu
 void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
 
   //do this only if metadata caching is 'ON'
@@ -9147,7 +9138,6 @@ void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
     statementCachedTableList_.clear();
   }
 }
-// LCOV_EXCL_STOP
 
 //Turn metadata caching ON
 void NATableDB::setCachingON()

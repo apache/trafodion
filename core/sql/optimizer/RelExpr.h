@@ -293,22 +293,20 @@ public:
   // change literals in cacheable query's kids into ConstantParameters
   void normalizeKidsForCache(CacheWA& cachewa, BindWA& bindWA);
 
-  // How much memory do we expect this operator's executor to be able to use? 
-  // The method takes into consideration the memory needed by ODBC.
-  Lng32 getExeMemoryAvailable(NABoolean inMaster, Lng32 BMOsMemoryLimit) const;
-
   // How much memory do we expect this operator's executor to be able to use 
   // per ESP/master fragment ?
   Lng32 getExeMemoryAvailable(NABoolean inMaster) const;
 
   // compute the memory quota 
   double computeMemoryQuota(NABoolean inMaster,
-                            NABoolean perCPU,
+                            NABoolean perNode,
                             double BMOsMemoryLimit,
                             UInt16 totalNumBMOs,
                             double totalBMOsMemoryUsage,
                             UInt16 numBMOsPerFragment,
-                            double BMOsMemoryUsagePerFragment
+                            double BMOMemoryUsage,
+                            Lng32  numStreams,
+                            double &memQuotaRatio
                            );
 
  
@@ -1296,11 +1294,12 @@ public:
   // ---------------------------------------------------------------------
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
+/*
+  virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perNode) 
+      { return getEstimatedRunTimeMemoryUsage(perNode) / (1024*1024); }
+*/
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perCPU) 
-      { return getEstimatedRunTimeMemoryUsage(perCPU) / (1024*1024); }
-
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU) {return 0;}
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL) {return 0;}
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
 
   inline NABoolean isinBlockStmt() const

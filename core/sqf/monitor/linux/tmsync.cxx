@@ -236,7 +236,7 @@ void CTmSync_Container::CommitTmDataBlock( int return_code )
         if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d" " - Getting all nodes TmSyncState\n", method_name, __LINE__);
 
-        ExchangeTmSyncState();
+        ExchangeTmSyncState( false );
         state = Nodes->GetTmState( SyncState_Commit );
         if (( state == SyncState_Abort ) ||
             ( state == SyncState_Null  )   )
@@ -267,7 +267,7 @@ void CTmSync_Container::CommitTmDataBlock( int return_code )
     // End the TM sync processing cycle for my node.
     MyNode->SetTmSyncState( SyncState_Null );
     MyNode->SetTmSyncNid( -1 );
-    ExchangeTmSyncState();
+    ExchangeTmSyncState( false );
     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
        trace_printf("%s@%d" " - Physical Node " "%d"  " TmSyncState updated (" "%d" ")" "\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncState());
     
@@ -318,9 +318,9 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                    trace_printf("%s@%d" " - Physical Node %d TmSyncState updated (nid=%d, state=%d)\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncNid(), MyNode->GetTmSyncState());
                 }
                 syncCycle_.lock();
-                exchangeTmSyncData( sync );
+                exchangeTmSyncData( sync, false );
                 syncCycle_.unlock();
-                ExchangeTmSyncState();
+                ExchangeTmSyncState( false );
                 if (( Monitor->TmSyncPNid == MyPNID                           ) &&
                     ( Nodes->GetTmState( SyncState_Start ) == SyncState_Start )   )
                 {
@@ -391,7 +391,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                trace_printf("%s@%d" " - Physical Node " "%d"  " TmSyncState updated (" "%d" ")" "\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncState());
             }
             UnPackSyncData(sync);
-            ExchangeTmSyncState();
+            ExchangeTmSyncState( true );
         }
         else
         {
@@ -700,7 +700,7 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
     TRACE_EXIT;
 }
 
-void CTmSync_Container::ExchangeTmSyncState( void )
+void CTmSync_Container::ExchangeTmSyncState( bool bumpSync )
 {
     struct sync_def sync;
 
@@ -714,7 +714,7 @@ void CTmSync_Container::ExchangeTmSyncState( void )
     sync.count = 0;
     sync.length = 0;
     syncCycle_.lock();
-    exchangeTmSyncData( &sync );
+    exchangeTmSyncData( &sync, bumpSync );
     syncCycle_.unlock();
 
     TRACE_EXIT;

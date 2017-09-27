@@ -66,17 +66,7 @@ ex_queue::ex_queue(const queue_type    type,
   
   // make size a power of 2 and greater than 1.
   //
-  ULng32 count = 1;     
-  queue_index s = size_ - 1;
-  while (s > 1) {
-    count++;
-    s = s >> 1;
-  };
-
-  if (count > (sizeof(queue_index) * 8))
-    size_ = maxQueueSize;
-  else
-    size_ = (1 << count);
+  size_ = roundUp2Power(size_);
 
   ex_assert(size_ > 1, "invalid queue size");
 
@@ -222,7 +212,6 @@ void ex_queue::removeHead()
 } // ex_queue::removeHead()
 #endif
 	       
-// LCOV_EXCL_START
 //soln 10-040111-2308 start
 void ex_queue::deleteHeadEntry()
 {
@@ -266,7 +255,6 @@ void ex_queue::deleteHeadEntry()
 
 } // ex_queue::deleteHeadEntry()
 //soln 10-040111-2308 end
-// LCOV_EXCL_STOP
 
 void ex_queue_entry::passAtp(const ex_queue_entry *from)
 {
@@ -950,7 +938,21 @@ void ex_queue::logRemoveHead()
 #endif
 }
 
+queue_index ex_queue::roundUp2Power(queue_index i)
+{
+  ULng32 count = 1;     
+  queue_index s = i - 1;
+  while (s > 1) {
+    count++;
+    s = s >> 1;
+  };
 
+  if (count > (sizeof(queue_index) * 8))
+    s  = maxQueueSize;
+  else
+    s = (1 << count);
+  return s;
+}
 
 
 

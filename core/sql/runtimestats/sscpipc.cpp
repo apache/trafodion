@@ -50,9 +50,8 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
     statsGlobals_(statsGlobals)
   , doLogCancelKillServers_(false)
 {
-  short error;
+  int error;
   Int32 myCpu;
-  short savedPriority, savedStopMode;
   char programDir[100];
   short processType;
   char myNodeName[MAX_SEGMENT_NAME_LEN+1];
@@ -66,15 +65,13 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
   ex_assert(error == 0, "BINSEM_OPEN returned an error");
 
 
-  error = (short) ComRtGetProgramInfo(programDir, 100, processType,
+  error = ComRtGetProgramInfo(programDir, 100, processType,
     myCpu, myPin_,
     myNodeNumber, myNodeName, myNodeNameLen, myStartTime, myProcessNameString);
   ex_assert(error == 0,"Error in ComRtGetProgramInfo");
 
   pri = 0;
-  error = statsGlobals_->getStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode,
-                                          FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
   // ProcessHandle wrapper in porting layer library
   NAProcessHandle sscpPhandle;
   error = sscpPhandle.getmine(statsGlobals->getSscpProcHandle());
@@ -98,7 +95,7 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
                0);
   statsGlobals_->addProcess(myPin_, statsHeap);
 
-  statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+  statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
   CliGlobals *cliGlobals = GetCliGlobals();
   cliGlobals->setSemId(semId_);
   cliGlobals->setStatsHeap(statsHeap);
@@ -110,12 +107,10 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
     doLogCancelKillServers_ = true;
 }
 
-// LCOV_EXCL_START
 SscpGlobals::~SscpGlobals()
 {
   sem_close((sem_t *)semId_);
 }
-// LCOV_EXCL_STOP
 
 void SscpGuaReceiveControlConnection::actOnSystemMessage(
        short                  messageNum,
@@ -268,10 +263,8 @@ void SscpNewIncomingConnectionStream::processStatsReq(IpcConnection *connection)
         clearAllObjects();
         setType(IPC_MSG_SSCP_REPLY);
         setVersion(CurrSscpReplyMessageVersion);
-        short savedPriority, savedStopMode;
-        short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-                sscpGlobals->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+                sscpGlobals->myPin());
         SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
         StmtStats *stmtStats = statsGlobals->getStmtStats(qid, str_len(qid));
         ExStatisticsArea *stats;
@@ -345,7 +338,7 @@ void SscpNewIncomingConnectionStream::processStatsReq(IpcConnection *connection)
           } while (stmtStats != NULL && str_cmp(qid, stmtStats->getQueryId(), stmtStats->getQueryIdLen()) != 0);
         }
 
-        statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(), sscpGlobals->myPin(), savedPriority, savedStopMode);
+        statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(), sscpGlobals->myPin());
 #ifdef _DEBUG_RTS
         cerr << "Merged Stats " << mergedStats << " \n";
 #endif
@@ -436,10 +429,8 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
   if (reqType != SQLCLI_STATS_REQ_RMS_INFO &&
           reqType != SQLCLI_STATS_REQ_MEM_OFFENDER)
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-            sscpGlobals->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+            sscpGlobals->myPin());
     SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
     stmtStatsList->position();
     if (reqType == SQLCLI_STATS_REQ_ET_OFFENDER)
@@ -474,7 +465,7 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
              mergedStats->appendCpuStats(stats, FALSE);
        }
     }
-    statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(), sscpGlobals->myPin(), savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(), sscpGlobals->myPin());
   }
   if (reqType == SQLCLI_STATS_REQ_RMS_INFO)
   {
@@ -510,8 +501,6 @@ int reportStops(int alreadyStoppedCnt, int stoppedCnt)
 
 void SscpNewIncomingConnectionStream::processKillServersReq()
 {
-
-  short savedPriority, savedStopMode;
   int alreadyStoppedCnt = 0;
   int stoppedCnt = 0;
 
@@ -554,10 +543,8 @@ void SscpNewIncomingConnectionStream::processKillServersReq()
   setType(IPC_MSG_SSCP_REPLY);
   setVersion(CurrSscpReplyMessageVersion);
 
-  short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-                  sscpGlobals->myPin(),
-                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+                  sscpGlobals->myPin());
 
   SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
@@ -648,8 +635,7 @@ void SscpNewIncomingConnectionStream::processKillServersReq()
     // Okay, here goes...
     stoppedCnt++;
     statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(),
-                                      sscpGlobals->myPin(), savedPriority,
-                                      savedStopMode);
+                                      sscpGlobals->myPin());
     gph.dumpAndStop(request->getMakeSaveabend(),
                     true);                    // doStop
 
@@ -660,16 +646,13 @@ void SscpNewIncomingConnectionStream::processKillServersReq()
 
     // Reacquire the sema4.  And reposition into the HashQueue.
     error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-                    sscpGlobals->myPin(),
-                    savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                    sscpGlobals->myPin());
 
     stmtStatsList->position(qid, qidLen);
   }
 
   statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(),
-                                    sscpGlobals->myPin(), savedPriority,
-                                    savedStopMode);
+                                    sscpGlobals->myPin());
 
   if (sscpGlobals->shouldLogCancelKillServers() ||
       request->getCancelLogging())
@@ -703,7 +686,6 @@ void SscpNewIncomingConnectionStream::processKillServersReq()
 void SscpNewIncomingConnectionStream::suspendActivateSchedulers()
 {
   int espFragCnt = 0;
-  short savedPriority, savedStopMode;
   IpcMessageObjVersion msgVer = getNextObjVersion();
 
   ex_assert(msgVer <= currRtsStatsReqVersionNumber, "Up-rev message received.");
@@ -732,10 +714,8 @@ void SscpNewIncomingConnectionStream::suspendActivateSchedulers()
   setType(IPC_MSG_SSCP_REPLY);
   setVersion(CurrSscpReplyMessageVersion);
 
-  short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-                  sscpGlobals->myPin(),
-                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+                  sscpGlobals->myPin());
 
   SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
@@ -778,8 +758,7 @@ void SscpNewIncomingConnectionStream::suspendActivateSchedulers()
   }
 
   statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(),
-                                    sscpGlobals->myPin(), savedPriority,
-                                    savedStopMode);
+                                    sscpGlobals->myPin());
 
   if (request->getSuspendLogging())
   {
@@ -833,11 +812,8 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
     }
     SscpGlobals *sscpGlobals = getSscpGlobals();
     StatsGlobals *statsGlobals = sscpGlobals->getStatsGlobals();
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
-                  sscpGlobals->myPin(),
-                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+                  sscpGlobals->myPin());
     ExTimeStats timer;
     if (revokeTimer)
       timer.start();
@@ -893,8 +869,7 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
     statsGlobals->mergeNewSikeys(numSiks, request->getSik());
 
     statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(),
-                                    sscpGlobals->myPin(), savedPriority,
-                                    savedStopMode);
+                                    sscpGlobals->myPin());
     if (revokeTimer)
     {
       timer.stop();

@@ -134,7 +134,6 @@ ComTdb::ComTdb(
   // ---------------------------------------------------------------------
   str_cpy_all((char *) &eyeCatcher_, eye, 4);
 
-// LCOV_EXCL_START
 // This constructor is never called with params parameter
   if (params)
     {
@@ -143,7 +142,6 @@ ComTdb::ComTdb(
 			numBuffers_, bufferSize_,
 			firstNRows_);
     }
-// LCOV_EXCL_STOP
 
   collectStatsType_ = NO_STATS;
 
@@ -302,11 +300,9 @@ void ComTdb::displayChildren(Space *space,ULng32 flag)
 // implemented in the executor project which fixes up a TDB object to the
 // Executor version of the TDB.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void ComTdb::fixupVTblPtrCom()
 {
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // This method returns the virtual function table pointer for an object
@@ -838,7 +834,6 @@ char *ComTdb::findVTblPtrCom(short classID)
 
     default:
       break;
-// LCOV_EXCL_STOP
   }
   return vtblptr;
 }

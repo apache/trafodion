@@ -759,10 +759,8 @@ public:
       // log the message to the event log
       // SQLMXLoggingArea::logSQLMXAssertionFailureEvent(__FILE__, __LINE__, "Histogram has just one HistInt");
 
-// LCOV_EXCL_START :rfi
       Histogram* tempHist = (Histogram *)this;
       tempHist->clear();
-// LCOV_EXCL_STOP
     }
 
     if ( entries() == 0 )
@@ -2353,9 +2351,7 @@ public:
     LIST(EncodedValue)(h,initLen),
     finalHashComputed_(TRUE) {};
 
-// LCOV_EXCL_START :dd
    ~SkewedValueList() {};
-// LCOV_EXCL_STOP
 
    // insert a skewed value in decending order.
    void insertInOrder(const EncodedValue&);

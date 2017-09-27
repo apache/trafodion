@@ -279,21 +279,17 @@ void QmsMessageStream::actOnReceive(IpcConnection* connection)
     respond(responseObj);
 }
 
-// LCOV_EXCL_START :rfi
 static void error(const char* text)
 {
   cerr << text << endl;
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :rfi
 static void usage(char *progName)
 {
   cerr << "Usage: " << progName << " infile outfile" << endl;
   QRLogger::log(CAT_QR_IPC, LL_ERROR,
     "Usage: %s infile outfile", progName);
 }
-// LCOV_EXCL_STOP
 
 // These static member functions are called from QmsMain.cpp.
 
@@ -325,11 +321,9 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
 
     if (!descriptor)
       {
-        // LCOV_EXCL_START :rfi
         QRLogger::log(CAT_QMS_MAIN, LL_WARN,
           "XMLDocument.parse() returned NULL.");
         return XMLParseError;
-        // LCOV_EXCL_STOP
       }
     else
       {
@@ -337,7 +331,6 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
           "Parsed XML document successfully.");
       }
    }
-  // LCOV_EXCL_START :rfi
   catch (XMLException& ex)
     {
       QRLogger::log(CAT_QMS_MAIN, LL_MVQR_FAIL,
@@ -356,7 +349,6 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
         "An Unknown exception occurred");
       return InternalError;
     }
-  // LCOV_EXCL_STOP
 
   return Success;
 }  // End of parseXmlDoc
@@ -478,12 +470,10 @@ QRRequestResult QRRequest::handleMatchRequest(QRRequest& request,
     // something else.
     if (descriptor->getElementType() != ET_QueryDescriptor)
     {
-      // LCOV_EXCL_START :rfi
       result = WrongDescriptor;
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR,
         "XML document parsed ok, but had wrong document element -- %s",
                   descriptor->getElementName());
-      // LCOV_EXCL_STOP
     }
 
     // If it is Success, perform "match" and add the resulting Result
@@ -570,7 +560,7 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             // collect and log qms stats
             if (qmsInitializer.doCollectQMSStats())
             {
-              qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu cqd that drives this does not exist
+              qmsInitializer.logQMSStats();
             }
 
             if (result == QR::Success)
@@ -596,7 +586,7 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             // collect and log qms stats
             if (qmsInitializer.doCollectQMSStats())
             {
-              qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu CQD that controls this is not defined.
+              qmsInitializer.logQMSStats();
             }
 
             if (result == QR::Success)
@@ -641,14 +631,12 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             responseMsgPtr = new QRStatusMessageObj(QR::InvalidRequest);
             break;
 
-          // LCOV_EXCL_START :rfi
           default:
             QRLogger::log(CAT_QMS_MAIN, LL_ERROR,
               "Unhandled message: %d", msgStream->getNextObjType());
             noBadRequest = FALSE;
             responseMsgPtr = new QRStatusMessageObj(QR::InvalidRequest);
             break;
-          // LCOV_EXCL_STOP
         } // switch
     } // while
 
@@ -695,22 +683,18 @@ Int32 QRCommandLineRequest::processCommandLine(Int32 argc, char *argv[])
 
   if (!inFile.rdbuf()->is_open())
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR, "Can't open input file. %s", argv[1]);
       error("Can't open input file.");
       usage(argv[0]);
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   if (!outFile.rdbuf()->is_open())
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR, "Can't open output file. %s", argv[2]);
       error("Can't open output file.");
       usage(argv[0]);
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   QRCommandLineRequest request(inFile);
@@ -795,7 +779,7 @@ Int32 QRCommandLineRequest::processCommandLine(Int32 argc, char *argv[])
       // collect and log qms stats
       if (qmsInitializer.doCollectQMSStats())
       {
-        qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu CQD that controls this is not defined.
+        qmsInitializer.logQMSStats();
       }
 
       moreInput = request.readRequestType(requestType);

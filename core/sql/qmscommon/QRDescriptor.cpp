@@ -136,7 +136,7 @@ QRElement::ExprResult QRElement::encodeResult(const char* resultString)
       if (!strcmp(resultString, ExprResultNames[i]))
         return (ExprResult)i;
     }
-  throw QRDescriptorException("Invalid value for 'result' attribute -- %s",  // LCOV_EXCL_LINE :rfi
+  throw QRDescriptorException("Invalid value for 'result' attribute -- %s",
                               resultString);
 }
 
@@ -217,7 +217,7 @@ void QRElement::deserializeBoolAttr(const char* attrName,
   else if (!strcmp(attrVal, "1"))
     attr = TRUE;
   else
-    throw QRDescriptorException("Value of %s attribute must be either 0 or 1",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Value of %s attribute must be either 0 or 1",
                                 attrName);
 }
 
@@ -289,7 +289,7 @@ void QRElementList::startItemExprElement(void *parser, const char *elementName, 
   else if (!strcmp(elementName, QRExpr::elemName))
     elem = new (XMLPARSEHEAP) QRExpr(this, atts, FALSE, ADD_MEMCHECK_ARGS(XMLPARSEHEAP));
   else
-    throw QRDescriptorException("<%s> cannot contain <%s>",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("<%s> cannot contain <%s>",
                                 getElementName(), elementName);
 
   addElement(elem);
@@ -374,16 +374,14 @@ NABoolean QRQueryMisc::treeWalk(VisitorPtr visitor)
 
 void QRQueryMisc::startElement(void *parser, const char *elementName, const char **atts)
 {
-  // LCOV_EXCL_START :cnu
   if (!strcmp(elementName, QRForcedMVs::elemName))
     {
       forcedMVs_ = new (XMLPARSEHEAP) QRForcedMVs(CHILD_ELEM_ARGS(XMLPARSEHEAP));
       XMLDocument::setCurrentElement(parser, forcedMVs_);
     }
-  // LCOV_EXCL_STOP
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -484,7 +482,7 @@ void QRQueryDescriptor::startElement(void *parser, const char *elementName, cons
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -571,7 +569,7 @@ QRJBB::QRJBB(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "ref"))
         ref_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -640,12 +638,11 @@ void QRJBB::startElement(void *parser, const char *elementName, const char **att
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
 
-// LCOV_EXCL_START :cnu
 void QRJBB::createTableArray(CollIndex maxEntries)
 {
   assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
@@ -654,7 +651,6 @@ void QRJBB::createTableArray(CollIndex maxEntries)
   maxTableEntries_ = maxEntries;
   tableArray_ = new QRTablePtr[maxEntries];
 }
-// LCOV_EXCL_STOP
 
 void QRJBB::addTable(QRTablePtr table)
 {
@@ -699,7 +695,7 @@ void QRList<T>::startElement(void *parser, const char *elementName, const char *
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -719,7 +715,7 @@ template<> void QRList<QRExpr>::startElement(void *parser, const char *elementNa
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -766,7 +762,7 @@ QRHub::QRHub(XMLElementPtr parent, AttributeList atts,
     residualPredList_(NULL)
 {
   if (*atts)
-    throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                 elemName, *atts);
 }
 
@@ -830,7 +826,7 @@ void QRHub::startElement(void *parser, const char *elementName, const char **att
     }
   else
     {
-      throw QRDescriptorException("<%s> cannot contain <%s>",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("<%s> cannot contain <%s>",
                                   elemName, elementName);
     }
 }
@@ -843,7 +839,7 @@ QRJBBCList::QRJBBCList(XMLElementPtr parent, AttributeList atts,
   : QRElementList(ET_JBBCList, parent, NULL, ADD_MEMCHECK_ARGS_PASS(heap))
 {
   if (*atts)
-    throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                 elemName, *atts);
 }
 
@@ -858,7 +854,7 @@ void QRJBBCList::startElement(void *parser, const char *elementName, const char 
   else if (!strcmp(elementName, QROperator::elemName))
     elem = new (XMLPARSEHEAP) QROperator(CHILD_ELEM_ARGS(XMLPARSEHEAP));
   else
-    throw QRDescriptorException("<%s> cannot contain <%s>",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("<%s> cannot contain <%s>",
                                 elemName, elementName);
 
   addElement(elem);
@@ -1012,7 +1008,7 @@ void QRTable::startElement(void *parser, const char *elementName, const char **a
     elem = key;
   }
   else
-    throw QRDescriptorException("<%s> cannot contain <%s>",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("<%s> cannot contain <%s>",
                                 elemName, elementName);
 
   XMLDocument::setCurrentElement(parser, elem);
@@ -1036,7 +1032,7 @@ QRKey::QRKey(XMLElementPtr parent, AttributeList atts,
   : QRElementList(ET_Key, parent, NULL, ADD_MEMCHECK_ARGS_PASS(heap))
 {
   if (*atts)
-    throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                 elemName, *atts);
 }
 
@@ -1047,7 +1043,7 @@ void QRKey::startElement(void *parser, const char *elementName, const char **att
   if (!strcmp(elementName, QRColumn::elemName))
     elem = new (XMLPARSEHEAP) QRColumn(CHILD_ELEM_ARGS(XMLPARSEHEAP));
   else
-    throw QRDescriptorException("<%s> cannot contain <%s>",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("<%s> cannot contain <%s>",
                                 elemName, elementName);
 
   addElement(elem);
@@ -1058,7 +1054,6 @@ void QRKey::startElement(void *parser, const char *elementName, const char **att
 // QRForcedMVs
 //
 
-// LCOV_EXCL_START :cnu Entire QRForcedMVs is currently not used.
 QRForcedMVs::~QRForcedMVs()
 {
   CollIndex i;
@@ -1099,7 +1094,6 @@ void QRForcedMVs::serializeBody(XMLString& xml)
   for (i = 0; i < tableList_.entries(); i++) 
     tableList_[i]->toXML(xml);
 }
-// LCOV_EXCL_STOP
 
 
 //
@@ -1145,7 +1139,7 @@ QRJoinPred::QRJoinPred(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "result"))
         result_ = encodeResult(iter.getValue());
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -1236,7 +1230,7 @@ QRRangePred::QRRangePred(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "mustMatch"))
         deserializeBoolAttr(attrName, iter.getValue(), mustMatch_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -1356,7 +1350,7 @@ void QRRangePred::startElement(void *parser, const char *elementName, const char
       XMLDocument::setCurrentElement(parser, op);
     }
   else
-    throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Element %s cannot contain element %s",
                                 elemName, elementName);
 } // QRRangePred::startElement
 
@@ -1446,7 +1440,7 @@ void QROpEQ::startElement(void *parser, const char *elementName, const char **at
       return;
     }
   else
-    throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Element %s cannot contain element %s",
                                 elemName, elementName);
   if (valElem)
     {
@@ -1512,7 +1506,7 @@ QROpInequality::QROpInequality(ElementType eType, QRElement *parent,
       if (!strcmp(attrName, "isNormalized"))
         deserializeBoolAttr(attrName, attrVal, isNormalized_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -1556,7 +1550,7 @@ void QROpInequality::startElement(void *parser, const char *elementName, const c
   else if (!strcmp(elementName, QRFloatVal::elemName))
     value_ = new (XMLPARSEHEAP) QRFloatVal(CHILD_ELEM_ARGS(XMLPARSEHEAP));
   else
-    throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Element %s cannot contain element %s",
                                 getElementName(), elementName);
   XMLDocument::setCurrentElement(parser, value_);
 }
@@ -1592,7 +1586,7 @@ QROpBT::QROpBT(QRElement *parent, AttributeList atts,
       else if (!strcmp(attrName, "endIsIncluded"))
         deserializeBoolAttr(attrName, attrVal, endIsIncluded_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -1635,7 +1629,7 @@ void QROpBT::startElement(void *parser, const char *elementName, const char **at
 {
   valueCount_++;
   if (valueCount_ > 2)
-    throw QRDescriptorException("Only 2 values can be contained in %s", elemName);  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Only 2 values can be contained in %s", elemName);
 
   //QRElementPtr& val = (valueCount_ == 1 ? startValue_ : endValue_);
   QRScalarValuePtr& val = (valueCount_ == 1 ? startValue_ : endValue_);
@@ -1931,7 +1925,7 @@ QRGroupBy::QRGroupBy(XMLElementPtr parent, AttributeList atts,
     else if (!strcmp(attrName, "result"))
       result_ = encodeResult(iter.getValue());
     else
-      throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                   elemName, attrName);
   }
 }
@@ -1994,7 +1988,6 @@ void QRGroupBy::startElement(void *parser, const char *elementName, const char *
     primary_ = new (XMLPARSEHEAP) QRPrimaryGroupBy(CHILD_ELEM_ARGS(XMLPARSEHEAP));
     elem = primary_;
   }
-  // LCOV_EXCL_START :cnu Dependent/Minimal GB not implemented yet.
   else if (!strcmp(elementName, QRDependentGroupBy::elemName))
   {
     dependent_ = new (XMLPARSEHEAP) QRDependentGroupBy(CHILD_ELEM_ARGS(XMLPARSEHEAP));
@@ -2005,7 +1998,6 @@ void QRGroupBy::startElement(void *parser, const char *elementName, const char *
     minimal_ = new (XMLPARSEHEAP) QRMinimalGroupBy(CHILD_ELEM_ARGS(XMLPARSEHEAP));
     elem = minimal_;
   }
-  // LCOV_EXCL_STOP
   else if (!strcmp(elementName, QRList<QRTable>::elemName))
   {
     tableList_ = new (XMLPARSEHEAP) QRList<QRTable>(CHILD_ELEM_ARGS(XMLPARSEHEAP));
@@ -2013,7 +2005,7 @@ void QRGroupBy::startElement(void *parser, const char *elementName, const char *
   }
   else
   {
-    throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Element %s cannot contain element %s",
                                 elemName, elementName);
   }
 
@@ -2029,7 +2021,7 @@ QRPrimaryGroupBy::QRPrimaryGroupBy(XMLElementPtr parent, AttributeList atts,
   : QRElementList(ET_PrimaryGroupBy, parent, NULL, ADD_MEMCHECK_ARGS_PASS(heap))
 {
   if (*atts)
-    throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                 elemName, *atts);
 }
 
@@ -2038,7 +2030,6 @@ void QRPrimaryGroupBy::startElement(void *parser, const char *elementName, const
   QRElementList::startItemExprElement(parser, elementName, atts);
 }
 
-// LCOV_EXCL_START :cnu Dependent GB not implemented yet.
 //
 // QRDependentGroupBy
 //
@@ -2055,9 +2046,7 @@ void QRDependentGroupBy::startElement(void *parser, const char *elementName, con
 {
   QRElementList::startItemExprElement(parser, elementName, atts);
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :cnu Minimal GB not implemented yet.
 //
 // QRMinimalGroupBy
 //
@@ -2074,7 +2063,6 @@ void QRMinimalGroupBy::startElement(void *parser, const char *elementName, const
 {
   QRElementList::startItemExprElement(parser, elementName, atts);
 }
-// LCOV_EXCL_STOP
 
 
 
@@ -2112,7 +2100,7 @@ QRColumn::QRColumn(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "isNullable"))
         deserializeBoolAttr(attrName, attrValue, isNullable_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -2208,7 +2196,7 @@ QRExpr::QRExpr(XMLElementPtr parent, AttributeList atts, NABoolean isResidual,
           result_ = encodeResult(iter.getValue());
         }
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     getElementName(), //@ZXresid -- virtual fn in ctor
                                     attrName);
     }
@@ -2276,7 +2264,7 @@ void QRExpr::startElement(void *parser, const char *elementName, const char **at
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   getElementName(), elementName);
     }
 }
@@ -2386,7 +2374,7 @@ QRExplicitExprPtr QRExplicitExpr::constructSubElement(void *parser,
     elem = new (XMLPARSEHEAP) QRNullVal(CHILD_ELEM_ARGS(XMLPARSEHEAP));
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   getElementName(), elementName);
     }
 
@@ -2431,7 +2419,7 @@ QRBinaryOper::QRBinaryOper(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "op"))
         operator_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -2482,7 +2470,7 @@ void QRBinaryOper::startElement(void* parser, const char* elementName, const cha
   else if (!secondOperand_)
     secondOperand_ = elem;
   else
-    throw QRDescriptorException("More than two operands given for binary operator "   // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("More than two operands given for binary operator "
                                 "with id=%s", id_.data());
                                 
   XMLDocument::setCurrentElement(parser, elem);
@@ -2512,7 +2500,7 @@ QRUnaryOper::QRUnaryOper(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "op"))
         operator_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -2547,7 +2535,7 @@ void QRUnaryOper::startElement(void *parser, const char *elementName, const char
   if (!operand_)
     operand_ = elem;
   else
-    throw QRDescriptorException("More than one operand given for unary operator "   // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("More than one operand given for unary operator " 
                                 "with id=%s", id_.data());
                                 
   XMLDocument::setCurrentElement(parser, elem);
@@ -2573,7 +2561,7 @@ QRParameter::QRParameter(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "value"))
         paramValue_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -2619,7 +2607,7 @@ QRFunction::QRFunction(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "aggregateFunc"))
         aggregateFunc_ = (AggregateFunctionType)atoi(iter.getValue());
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     getElementName(), attrName);
     }
 }
@@ -2929,7 +2917,7 @@ QROutput::QROutput(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "result"))
         result_ = encodeResult(iter.getValue());
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -2988,7 +2976,7 @@ void QRExtraHub::startElement(void *parser, const char *elementName, const char 
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -3024,7 +3012,7 @@ QRMVMisc::QRMVMisc(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "isUMV"))
         deserializeBoolAttr(attrName, iter.getValue(), isUMV_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -3062,7 +3050,7 @@ QRMVDescriptor::QRMVDescriptor(AttributeList atts,
   // Set parent here so we don't have to use 'this' in initializer
   setParent(this);
   if (*atts)
-    throw QRDescriptorException("<%s> should have no attributes; attribute %s specified",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("<%s> should have no attributes; attribute %s specified",
                                 getElementName(), *atts);
 }
 
@@ -3136,7 +3124,7 @@ void QRMVDescriptor::startElement(void *parser, const char *elementName, const c
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -3163,7 +3151,7 @@ QRMVName::QRMVName(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "TS"))
         timestamp_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -3210,7 +3198,7 @@ QRCandidate::QRCandidate(XMLElementPtr parent, AttributeList atts,
       else if (!strcmp(attrName, "isIndirectGroupBy"))
         deserializeBoolAttr(attrName, attrVal, isIndirectGroupBy_);
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -3315,7 +3303,7 @@ void QRCandidate::startElement(void *parser, const char *elementName, const char
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 } // QRCandidate::startElement
@@ -3345,7 +3333,7 @@ QRJbbSubset::QRJbbSubset(XMLElementPtr parent, AttributeList atts,
     else if (!strcmp(attrName, "ref"))
       ref_ = iter.getValue();
     else
-      throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                   elemName, attrName);
   }
 }
@@ -3391,7 +3379,7 @@ void QRJbbSubset::startElement(void *parser, const char *elementName, const char
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -3416,7 +3404,7 @@ QRJbbResult::QRJbbResult(XMLElementPtr parent, AttributeList atts,
       if (!strcmp(attrName, "ref"))
         ref_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -3469,7 +3457,7 @@ void QRJbbResult::startElement(void *parser, const char *elementName, const char
       XMLDocument::setCurrentElement(parser, info);
     }
   else
-    throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+    throw QRDescriptorException("Element %s cannot contain element %s",
                                 elemName, elementName);
 }
 
@@ -3521,7 +3509,7 @@ void QRResultDescriptor::startElement(void *parser, const char *elementName, con
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -3553,7 +3541,7 @@ QRPublishDescriptor::QRPublishDescriptor(AttributeList atts,
       if (!strcmp(attrName, "TS"))
         redefTimestamp_ = iter.getValue();
       else
-        throw QRDescriptorException("Invalid attribute specified for element %s: %s",  // LCOV_EXCL_LINE :rfi
+        throw QRDescriptorException("Invalid attribute specified for element %s: %s",
                                     elemName, attrName);
     }
 }
@@ -3618,7 +3606,7 @@ void QRPublishDescriptor::startElement(void *parser,
     }
   else
     {
-      throw QRDescriptorException("Element %s cannot contain element %s",  // LCOV_EXCL_LINE :rfi
+      throw QRDescriptorException("Element %s cannot contain element %s",
                                   elemName, elementName);
     }
 }
@@ -3713,7 +3701,7 @@ void QRPublishDescriptor::initialize(ComPublishMVOperationType opType,
 
     case COM_PUBLISH_MV_UNKNOWN:
     default:
-      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         FALSE, QRDescriptorException,
 			"Unhandled MV operation type");
       break;

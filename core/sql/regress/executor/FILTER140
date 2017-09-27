@@ -39,4 +39,6 @@ s/.*PREPARATION.*/removed/
 s/.*COMPLETION.*/removed/
 s/Time:.*/Time:@time@/
 s/VOLATILE_SCHEMA_MXID[0-9]*/VOLATILE_SCHEMA_00/
+s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
+s/^\([ ]*est_memory_per_node[ ]*[\.]*\) .*/\1 removed/g
 " $fil

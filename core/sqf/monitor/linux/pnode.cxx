@@ -418,7 +418,14 @@ int CNode::AssignNid(void)
     CLNode *lnode = AssignLNode();
     
     TRACE_EXIT;
-    return( lnode->Nid );
+    if (lnode)
+    {
+        return( lnode->Nid );
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 CLNode *CNode::AssignLNode (void)
@@ -1416,6 +1423,7 @@ CNodeContainer::CNodeContainer( void )
                ,head_(NULL)
                ,tail_(NULL)
                ,syncBufferFreeSpace_(MAX_SYNC_SIZE)
+               ,lastSyncBuffer_(NULL)
                ,SyncBuffer(NULL)
 {
     const char method_name[] = "CNodeContainer::CNodeContainer";
@@ -1424,6 +1432,7 @@ CNodeContainer::CNodeContainer( void )
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "NCTR", 4);
 
+    lastSyncBuffer_ = new struct sync_buffer_def;
     SyncBuffer = new struct sync_buffer_def;
 
     // Load cluster configuration
@@ -1454,6 +1463,10 @@ CNodeContainer::~CNodeContainer( void )
 
     const char method_name[] = "CNodeContainer::~CNodeContainer";
     TRACE_ENTRY;
+    if (lastSyncBuffer_)
+    {
+        delete lastSyncBuffer_;
+    }
     if (SyncBuffer)
     {
         delete SyncBuffer;
@@ -2955,7 +2968,10 @@ struct internal_msg_def *CNodeContainer::PopMsg( struct sync_buffer_def *recvBuf
     return msg;
 }
 
-
+void CNodeContainer::SaveMyLastSyncBuffer( void )
+{
+    memcpy( (void*)lastSyncBuffer_, (void*)SyncBuffer, sizeof(sync_buffer_def) );
+}
 
 bool CNodeContainer::SpaceAvail ( int msgSize )
 {

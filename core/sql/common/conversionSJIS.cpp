@@ -44,7 +44,6 @@
 #include "NLSConversion.h"
 #include "nawstring.h"
 
-//LCOV_EXCL_START :cnu -- SJIS not supported yet
 
 #ifdef MODULE_DEBUG
 #include "stringBuf.cpp"
@@ -638,4 +637,3 @@ Int32 main(Int32 argc, char** argv)
 }
 
 #endif
-//LCOV_EXCL_STOP :cnu -- SJIS not supported yet

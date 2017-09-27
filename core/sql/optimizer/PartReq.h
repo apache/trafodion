@@ -199,10 +199,8 @@ public:
   virtual NABoolean isRequirementRange() const
     { return FALSE; }
 
-  // LCOV_EXCL_START
   virtual NABoolean isRequirementRoundRobin() const
     { return FALSE; }
-  // LCOV_EXCL_STOP
 
   virtual NABoolean isRequirementSkewBusterBroadcast() const
     { return FALSE; };
@@ -458,12 +456,10 @@ public:
        getPartitioningFunction()->isARangePartitioningFunction();
     }
 
-  // LCOV_EXCL_START
   virtual NABoolean isRequirementRoundRobin() const
     { return
        getPartitioningFunction()->isARoundRobinPartitioningFunction();
     }
-  // LCOV_EXCL_STOP
 
   virtual NABoolean isRequirementSkewBusterBroadcast() const;
 
@@ -996,7 +992,6 @@ public:
 }; // class RequireRange
 
 
-// LCOV_EXCL_START
 class RequireRoundRobin : public FullySpecifiedPartitioningRequirement
 {
 public:
@@ -1037,7 +1032,6 @@ public:
   virtual void display() const;
 
 }; // class RequireRoundRobin
-// LCOV_EXCL_STOP
 
 class RequireHive : public FullySpecifiedPartitioningRequirement
 {

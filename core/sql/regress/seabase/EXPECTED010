@@ -58,7 +58,7 @@
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:14:29 2017
+-- Definition current  Mon Sep 18 16:05:40 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -71,7 +71,7 @@
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:14:30 2017
+-- Definition current  Mon Sep 18 16:05:40 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -90,7 +90,7 @@
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:14:31 2017
+-- Definition current  Mon Sep 18 16:05:41 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -221,7 +221,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182873097135
+PLAN_ID .................. 212372510743136532
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -234,6 +234,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -262,7 +263,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208413466
+  ObjectUIDs ............. 5892537540705208217
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -283,6 +284,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -302,7 +304,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182873185952
+PLAN_ID .................. 212372510743216468
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -316,6 +318,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -344,7 +347,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208413466
+  ObjectUIDs ............. 5892537540705208217
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -363,6 +366,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -383,7 +387,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182873280690
+PLAN_ID .................. 212372510743326023
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -396,6 +400,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -424,7 +429,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208413466
+  ObjectUIDs ............. 5892537540705208217
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -446,6 +451,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -464,7 +470,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182872306074
+PLAN_ID .................. 212372510742386836
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -478,6 +484,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -506,7 +513,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208413466
+  ObjectUIDs ............. 5892537540705208217
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -525,6 +532,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -769,7 +777,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371182874064550
+PLAN_ID .................. 212372510744251128
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -784,6 +792,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -812,7 +821,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -833,6 +842,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -846,7 +856,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371182874153559
+PLAN_ID .................. 212372510744321090
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -862,6 +872,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -890,7 +901,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -911,6 +922,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -925,7 +937,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371182874257819
+PLAN_ID .................. 212372510744403400
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -940,6 +952,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -968,7 +981,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -989,6 +1002,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1003,7 +1017,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371182874350776
+PLAN_ID .................. 212372510744506903
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1017,6 +1031,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1046,7 +1061,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   input_variables ........ %('a')
 
 
@@ -1095,6 +1110,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1110,7 +1126,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371182874559871
+PLAN_ID .................. 212372510744679860
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1126,6 +1142,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1155,7 +1172,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   input_variables ........ %('upd'), %(4)
 
 
@@ -1182,7 +1199,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371182874642434
+PLAN_ID .................. 212372510744762969
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1197,6 +1214,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1226,7 +1244,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -1247,6 +1265,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1260,7 +1279,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371182874716809
+PLAN_ID .................. 212372510744826272
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1276,6 +1295,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1305,7 +1325,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1326,6 +1346,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1340,7 +1361,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371182874808020
+PLAN_ID .................. 212372510744914026
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1355,6 +1376,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1384,7 +1406,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1405,6 +1427,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1419,7 +1442,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371182874909059
+PLAN_ID .................. 212372510744992870
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1433,6 +1456,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1463,7 +1487,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   input_variables ........ %('a')
 
 
@@ -1512,6 +1536,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1527,7 +1552,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371182875095004
+PLAN_ID .................. 212372510745170839
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1543,6 +1568,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1573,7 +1599,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208414002
+  ObjectUIDs ............. 5892537540705208633
   input_variables ........ %('uuu'), %(4)
 
 
@@ -1750,7 +1776,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:15:05 2017
+-- Definition current  Mon Sep 18 16:06:13 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1763,7 +1789,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:15:06 2017
+-- Definition current  Mon Sep 18 16:06:13 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1782,7 +1808,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:15:06 2017
+-- Definition current  Mon Sep 18 16:06:13 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1913,7 +1939,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182907907658
+PLAN_ID .................. 212372510775355462
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -1926,6 +1952,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1954,7 +1981,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417374
+  ObjectUIDs ............. 5892537540705211716
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -1975,6 +2002,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -1994,7 +2022,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182907988752
+PLAN_ID .................. 212372510775435387
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -2008,6 +2036,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2036,7 +2065,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417374
+  ObjectUIDs ............. 5892537540705211716
   select_list ............ 1, '1'
 
 
@@ -2056,6 +2085,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -2074,7 +2104,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182908067727
+PLAN_ID .................. 212372510775513753
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -2087,6 +2117,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2115,7 +2146,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417374
+  ObjectUIDs ............. 5892537540705211716
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -2136,6 +2167,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2154,7 +2186,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182908151747
+PLAN_ID .................. 212372510775595020
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -2168,6 +2200,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2196,7 +2229,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417374
+  ObjectUIDs ............. 5892537540705211716
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -2216,6 +2249,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -2458,7 +2492,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371182910444555
+PLAN_ID .................. 212372510777807806
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2473,6 +2507,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2501,7 +2536,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2523,6 +2558,7 @@ DESCRIPTION
   unique_rows ............ 1,a,1
   unique_rows ............ 4,a,1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2535,7 +2571,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371182910487314
+PLAN_ID .................. 212372510777847080
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2551,6 +2587,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2579,7 +2616,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2614,6 +2651,7 @@ DESCRIPTION
   begin_keys(incl) ....... 4,a,5
   end_keys(incl) ......... 4,a,2147483647
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2626,7 +2664,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371182910529822
+PLAN_ID .................. 212372510777884929
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2641,6 +2679,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2669,7 +2708,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2695,6 +2734,7 @@ DESCRIPTION
   unique_rows ............ 4,a,1
   unique_rows ............ 4,a,3
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2707,7 +2747,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371182910574355
+PLAN_ID .................. 212372510777938513
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -2721,6 +2761,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2750,7 +2791,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -2804,6 +2845,7 @@ DESCRIPTION
   unique_rows ............ 6,a,1
   unique_rows ............ 6,a,3
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2817,7 +2859,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371182910674353
+PLAN_ID .................. 212372510778036529
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -2833,6 +2875,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2862,7 +2905,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -2892,7 +2935,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371182910760217
+PLAN_ID .................. 212372510778110007
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2907,6 +2950,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -2936,7 +2980,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2958,6 +3002,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -2971,7 +3016,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371182910801321
+PLAN_ID .................. 212372510778154911
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2987,6 +3032,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3016,7 +3062,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3038,6 +3084,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -3052,7 +3099,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371182910844058
+PLAN_ID .................. 212372510778204183
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3067,6 +3114,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3096,7 +3144,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3118,6 +3166,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -3132,7 +3181,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371182910894572
+PLAN_ID .................. 212372510778249743
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -3146,6 +3195,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3176,7 +3226,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -3226,6 +3276,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -3240,7 +3291,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371182910991800
+PLAN_ID .................. 212372510778336974
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -3256,6 +3307,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3286,7 +3338,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208417710
+  ObjectUIDs ............. 5892537540705212102
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -3463,7 +3515,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:15:35 2017
+-- Definition current  Mon Sep 18 16:06:48 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3476,7 +3528,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:15:35 2017
+-- Definition current  Mon Sep 18 16:06:48 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3495,7 +3547,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:15:36 2017
+-- Definition current  Mon Sep 18 16:06:49 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3626,7 +3678,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182937604679
+PLAN_ID .................. 212372510810689778
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -3639,6 +3691,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3667,7 +3720,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420341
+  ObjectUIDs ............. 5892537540705215251
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -3688,6 +3741,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -3707,7 +3761,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182937724275
+PLAN_ID .................. 212372510810785182
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -3721,6 +3775,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3749,7 +3804,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420341
+  ObjectUIDs ............. 5892537540705215251
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -3768,6 +3823,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -3788,7 +3844,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182937835572
+PLAN_ID .................. 212372510810887577
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -3801,6 +3857,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3829,7 +3886,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420341
+  ObjectUIDs ............. 5892537540705215251
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -3851,6 +3908,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -3869,7 +3927,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182936838415
+PLAN_ID .................. 212372510809929666
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -3883,6 +3941,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -3911,7 +3970,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420341
+  ObjectUIDs ............. 5892537540705215251
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -3930,6 +3989,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -4174,7 +4234,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371182940175352
+PLAN_ID .................. 212372510813424935
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4189,6 +4249,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4217,7 +4278,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4237,6 +4298,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4252,7 +4314,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371182940212922
+PLAN_ID .................. 212372510813467701
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4268,6 +4330,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4296,7 +4359,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4316,6 +4379,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4332,7 +4396,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371182940255134
+PLAN_ID .................. 212372510813513582
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4347,6 +4411,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4375,7 +4440,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4395,6 +4460,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4411,7 +4477,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371182940306145
+PLAN_ID .................. 212372510813555013
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4425,6 +4491,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4454,7 +4521,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   input_variables ........ %('a')
 
 
@@ -4502,6 +4569,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4518,7 +4586,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371182940487507
+PLAN_ID .................. 212372510813664352
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4534,6 +4602,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4563,7 +4632,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   input_variables ........ %('upd'), %(4)
 
 
@@ -4590,7 +4659,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371182940578372
+PLAN_ID .................. 212372510813764883
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4605,6 +4674,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4634,7 +4704,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4654,6 +4724,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4669,7 +4740,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371182940619202
+PLAN_ID .................. 212372510813822752
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4685,6 +4756,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4714,7 +4786,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4734,6 +4806,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4750,7 +4823,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371182940658230
+PLAN_ID .................. 212372510813873480
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4765,6 +4838,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4794,7 +4868,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4814,6 +4888,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4830,7 +4905,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371182940708419
+PLAN_ID .................. 212372510813926991
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4844,6 +4919,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4874,7 +4950,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   input_variables ........ %('a')
 
 
@@ -4922,6 +4998,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -4938,7 +5015,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371182940807391
+PLAN_ID .................. 212372510814057803
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4954,6 +5031,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -4984,7 +5062,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208420692
+  ObjectUIDs ............. 5892537540705215610
   input_variables ........ %('uuu'), %(4)
 
 
@@ -5161,7 +5239,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:16:06 2017
+-- Definition current  Mon Sep 18 16:07:19 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -5174,7 +5252,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:16:06 2017
+-- Definition current  Mon Sep 18 16:07:19 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5193,7 +5271,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:16:07 2017
+-- Definition current  Mon Sep 18 16:07:20 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5324,7 +5402,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182968766991
+PLAN_ID .................. 212372510841638220
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -5337,6 +5415,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5365,7 +5444,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423369
+  ObjectUIDs ............. 5892537540705218307
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -5386,6 +5465,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -5405,7 +5485,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182968849794
+PLAN_ID .................. 212372510841720052
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -5419,6 +5499,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5447,7 +5528,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423369
+  ObjectUIDs ............. 5892537540705218307
   select_list ............ 1, '1'
 
 
@@ -5467,6 +5548,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -5485,7 +5567,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182968944690
+PLAN_ID .................. 212372510841806680
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -5498,6 +5580,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5526,7 +5609,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423369
+  ObjectUIDs ............. 5892537540705218307
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -5547,6 +5630,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -5565,7 +5649,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182969035632
+PLAN_ID .................. 212372510841894956
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -5579,6 +5663,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5607,7 +5692,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423369
+  ObjectUIDs ............. 5892537540705218307
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -5627,6 +5712,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -5869,7 +5955,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371182971295321
+PLAN_ID .................. 212372510844145441
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5884,6 +5970,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5912,7 +5999,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -5932,6 +6019,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -5945,7 +6033,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371182971376208
+PLAN_ID .................. 212372510844225191
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5961,6 +6049,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -5989,7 +6078,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6009,6 +6098,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6023,7 +6113,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371182971470942
+PLAN_ID .................. 212372510844303373
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6038,6 +6128,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6066,7 +6157,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6086,6 +6177,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6100,7 +6192,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371182971557639
+PLAN_ID .................. 212372510844389798
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6114,6 +6206,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6143,7 +6236,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6191,6 +6284,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6206,7 +6300,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371182971723888
+PLAN_ID .................. 212372510844550022
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6222,6 +6316,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6251,7 +6346,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6281,7 +6376,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371182971801817
+PLAN_ID .................. 212372510844652886
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6296,6 +6391,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6325,7 +6421,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -6345,6 +6441,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6358,7 +6455,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371182971866281
+PLAN_ID .................. 212372510844727465
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6374,6 +6471,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6403,7 +6501,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6423,6 +6521,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6437,7 +6536,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371182971954454
+PLAN_ID .................. 212372510844821878
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6452,6 +6551,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6481,7 +6581,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6501,6 +6601,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6515,7 +6616,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371182972078318
+PLAN_ID .................. 212372510844904137
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6529,6 +6630,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6559,7 +6661,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6607,6 +6709,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -6622,7 +6725,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371182972263598
+PLAN_ID .................. 212372510845062874
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6638,6 +6741,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -6668,7 +6772,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208423734
+  ObjectUIDs ............. 5892537540705218678
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6868,7 +6972,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:16:38 2017
+-- Definition current  Mon Sep 18 16:07:54 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -6881,7 +6985,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:16:38 2017
+-- Definition current  Mon Sep 18 16:07:54 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6900,7 +7004,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:16:39 2017
+-- Definition current  Mon Sep 18 16:07:54 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -7031,7 +7135,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183000667659
+PLAN_ID .................. 212372510876531459
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -7044,6 +7148,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7072,7 +7177,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208426637
+  ObjectUIDs ............. 5892537540705221801
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -7093,6 +7198,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7112,7 +7218,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183000746918
+PLAN_ID .................. 212372510876627518
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -7126,6 +7232,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7154,7 +7261,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208426637
+  ObjectUIDs ............. 5892537540705221801
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -7173,6 +7280,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -7193,7 +7301,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183000843568
+PLAN_ID .................. 212372510876720520
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -7206,6 +7314,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7234,7 +7343,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208426637
+  ObjectUIDs ............. 5892537540705221801
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -7256,6 +7365,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7274,7 +7384,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371182999882511
+PLAN_ID .................. 212372510875730083
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -7288,6 +7398,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7316,7 +7427,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208426637
+  ObjectUIDs ............. 5892537540705221801
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -7335,6 +7446,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -7579,7 +7691,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371183003187666
+PLAN_ID .................. 212372510879119333
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7594,6 +7706,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7622,7 +7735,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -7643,6 +7756,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7656,7 +7770,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371183003254442
+PLAN_ID .................. 212372510879194787
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7672,6 +7786,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7700,7 +7815,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7721,6 +7836,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7735,7 +7851,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371183003341083
+PLAN_ID .................. 212372510879281025
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7750,6 +7866,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7778,7 +7895,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7799,6 +7916,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7813,7 +7931,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371183003439919
+PLAN_ID .................. 212372510879367346
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -7827,6 +7945,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7856,7 +7975,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   input_variables ........ %('a')
 
 
@@ -7905,6 +8024,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -7920,7 +8040,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371183003603752
+PLAN_ID .................. 212372510879523505
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -7936,6 +8056,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -7965,7 +8086,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   input_variables ........ %('upd'), %(4)
 
 
@@ -7992,7 +8113,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371183003680166
+PLAN_ID .................. 212372510879601502
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8007,6 +8128,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8036,7 +8158,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -8057,6 +8179,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8070,7 +8193,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371183003746360
+PLAN_ID .................. 212372510879671371
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8086,6 +8209,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8115,7 +8239,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8136,6 +8260,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8150,7 +8275,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371183003819034
+PLAN_ID .................. 212372510879752056
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8165,6 +8290,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8194,7 +8320,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8215,6 +8341,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8229,7 +8356,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371183003896976
+PLAN_ID .................. 212372510879838549
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -8243,6 +8370,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8273,7 +8401,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   input_variables ........ %('a')
 
 
@@ -8322,6 +8450,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8337,7 +8466,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371183004084054
+PLAN_ID .................. 212372510880023918
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -8353,6 +8482,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8383,7 +8513,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208427012
+  ObjectUIDs ............. 5892537540705222172
   input_variables ........ %('uuu'), %(4)
 
 
@@ -8560,7 +8690,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sun Sep  3 07:17:14 2017
+-- Definition current  Mon Sep 18 16:08:26 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -8573,7 +8703,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:17:14 2017
+-- Definition current  Mon Sep 18 16:08:26 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8592,7 +8722,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sun Sep  3 07:17:15 2017
+-- Definition current  Mon Sep 18 16:08:26 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8723,7 +8853,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183036758320
+PLAN_ID .................. 212372510908567185
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -8736,6 +8866,7 @@ ROWS_OUT ................ 11
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 51
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8764,7 +8895,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430253
+  ObjectUIDs ............. 5892537540705224879
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -8785,6 +8916,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8804,7 +8936,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183036836349
+PLAN_ID .................. 212372510908658564
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -8818,6 +8950,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8846,7 +8979,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430253
+  ObjectUIDs ............. 5892537540705224879
   select_list ............ 1, '1'
 
 
@@ -8866,6 +8999,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -8884,7 +9018,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183036917671
+PLAN_ID .................. 212372510908738883
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -8897,6 +9031,7 @@ ROWS_OUT ................ 10
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -8925,7 +9060,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430253
+  ObjectUIDs ............. 5892537540705224879
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -8946,6 +9081,7 @@ DESCRIPTION
   begin_keys(incl)
   end_keys(incl)
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -8964,7 +9100,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212371183036997130
+PLAN_ID .................. 212372510908850085
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -8978,6 +9114,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9006,7 +9143,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430253
+  ObjectUIDs ............. 5892537540705224879
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -9026,6 +9163,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed .......... 1
@@ -9268,7 +9406,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212371183039142934
+PLAN_ID .................. 212372510911141353
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9283,6 +9421,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9311,7 +9450,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9331,6 +9470,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9344,7 +9484,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212371183039200317
+PLAN_ID .................. 212372510911228720
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9360,6 +9500,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9388,7 +9529,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9408,6 +9549,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9422,7 +9564,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212371183039291236
+PLAN_ID .................. 212372510911309816
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9437,6 +9579,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9465,7 +9608,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9485,6 +9628,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9499,7 +9643,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212371183039376851
+PLAN_ID .................. 212372510911393357
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9513,6 +9657,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9542,7 +9687,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -9590,6 +9735,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9605,7 +9751,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212371183039557017
+PLAN_ID .................. 212372510911545518
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -9621,6 +9767,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9650,7 +9797,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -9680,7 +9827,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212371183039638279
+PLAN_ID .................. 212372510911622711
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9695,6 +9842,7 @@ ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9724,7 +9872,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9744,6 +9892,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9757,7 +9906,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212371183039722473
+PLAN_ID .................. 212372510911684578
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9773,6 +9922,7 @@ ROWS_OUT ................. 5
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9802,7 +9952,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9822,6 +9972,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9836,7 +9987,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212371183039825762
+PLAN_ID .................. 212372510911760214
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9851,6 +10002,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 99
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9880,7 +10032,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9900,6 +10052,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -9914,7 +10067,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212371183039915766
+PLAN_ID .................. 212372510911831778
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9928,6 +10081,7 @@ ROWS_OUT ................. 4
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 4
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -9958,7 +10112,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -10006,6 +10160,7 @@ DESCRIPTION
                              TRAFODION.SCH.T010T2
   object_type ............ Trafodion
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ........ 100
@@ -10021,7 +10176,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212371183040097697
+PLAN_ID .................. 212372510912002680
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -10037,6 +10192,7 @@ EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0
 DESCRIPTION
   olt_optimization ....... used
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -10067,7 +10223,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 8861534267208430622
+  ObjectUIDs ............. 5892537540705225268
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -10578,12 +10734,12 @@ CREATE TABLE TRAFODION.SCH."delim_tab"
 --- SQL operation complete.
 >>get all volatile schemas;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000157412123711828437731090000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000268512123725106838989550000000002
 
 --- SQL operation complete.
 >>get all volatile tables;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000157412123711828437731090000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000268512123725106838989550000000002
   Table: VTAB1
   Table: VTAB2
 

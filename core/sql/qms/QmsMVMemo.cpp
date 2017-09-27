@@ -133,14 +133,12 @@ NABoolean MVMemoGroup::addPhysicalExpression(const QRJoinSubGraphMapPtr   map,
     map->setMVDetails(mv);
     groupLattice_->insert(map, jbb);    
    }
-   // LCOV_EXCL_START :rfi
    catch (...)
    {
      QRLogger::log(CAT_GRP_LATTCE_INDX, LL_MVQR_FAIL,
        "Caught exception creating group lattice or inserting mv");
      throw;
    }
-   // LCOV_EXCL_STOP
   }
 
   return TRUE;
@@ -187,14 +185,12 @@ void MVMemoGroup::getPhysicalExpressions(MVCandidatesForJBBPtr  mvCandidates,
       mvCandidates->insert(jbbSubset);
     }
    }
-   // LCOV_EXCL_START :rfi
    catch (...)
    {
      QRLogger::log(CAT_GRP_LATTCE_INDX, LL_MVQR_FAIL,
        "Caught exception searching group lattice or setting subgraph maps");
      throw;
    }
-   // LCOV_EXCL_STOP
   }
   else
   {
@@ -226,7 +222,6 @@ void MVMemoGroup::getPhysicalExpressions(MVCandidatesForJBBPtr  mvCandidates,
   }
 }  // MVMemoGroup::getPhysicalExpressions()
 
-// LCOV_EXCL_START :cnu
 /**
  * Remove a physical expression for an MV that has been dropped.
  * @param key The hash key for the MV to remove.
@@ -251,7 +246,6 @@ void MVMemoGroup::removePhysicalExpression(MVMemoPhysicalExpressionPtr expr)
    }
   }
 }
-// LCOV_EXCL_STOP
 
 /**
  * 
@@ -324,7 +318,6 @@ Int32 MVMemoGroup::getNumOfMVs()
  * Currently not used.
  *****************************************************************************
  */
-// LCOV_EXCL_START :cnu
 void MVMemoGroup::reportStats(NAString& text)
 {
   text += "\n== These MVs:";
@@ -349,7 +342,6 @@ void MVMemoGroup::reportStats(NAString& text)
     groupLattice_->reportStats(text);
   }
 }
-// LCOV_EXCL_STOP
 
 /**
  * Create a ProposedMV object and add to it all the MVs that are in physical
@@ -740,7 +732,6 @@ MVMemoGroupPtr MVMemo::probeForSubGraph(HubIteratorPtr hubIterator, const QRJoin
  * Currently not used.
  *****************************************************************************
  */
-// LCOV_EXCL_START :cnu
 void MVMemo::reportStats(Int32 numOfMVs)
 {
   typedef NAPtrList<MVMemoGroupPtr> GroupList;
@@ -805,7 +796,6 @@ void MVMemo::reportStats(Int32 numOfMVs)
     groupsProcessed++;
   }
 }
-// LCOV_EXCL_STOP
 
 /**
  * Iterate over all the MVMemo groups to collect proposed MVs.

@@ -577,6 +577,8 @@ protected:
 
   NABasicPtr snapshotscanTempLocation_;                             // 360-367
   QueuePtr listOfSnapshotScanTables_;                               // 368-375
+  Float64 bmoMemLimitPerNode_;
+  Float64 estBmoMemPerNode_; 
 
 public:
   
@@ -1311,6 +1313,12 @@ public:
   void setCpuLimit(Int64 cpuLimit) { cpuLimit_ = cpuLimit; }
 
   Int64 getCpuLimit() { return cpuLimit_; }
+
+  void setBmoMemoryLimitPerNode(double limit) { bmoMemLimitPerNode_ = limit; }
+  double getBmoMemoryLimitPerNode() { return bmoMemLimitPerNode_; }
+
+  void setEstBmoMemoryPerNode(double estMem) { estBmoMemPerNode_ = estMem; }
+  double getEstBmoMemoryPerNode() { return estBmoMemPerNode_; }
 
   NABoolean getQueryLimitDebug() const
     {return ((rtFlags4_ & QUERY_LIMIT_DEBUG) != 0);};

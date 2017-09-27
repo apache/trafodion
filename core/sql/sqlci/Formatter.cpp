@@ -396,7 +396,6 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
     convFlags |= CONV_LEFT_PAD;
     short retcode = convDoItMxcs(data,
 				 length,
-#pragma nowarn(1506)   // warning elimination 
 				 datatype,
 				 precision,
 				 scale,
@@ -406,7 +405,6 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
 				 0,  // targetPrecision
 				 tcs,
 				 convFlags);
-#pragma warn(1506)  // warning elimination 
   }
   break;
 
@@ -463,7 +461,6 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
     else
 	  retcode = convDoIt(data,
                              length,
-#pragma nowarn(1506)   // warning elimination 
                              datatype,
                              precision,
                              scale,
@@ -479,7 +476,6 @@ Int32 Formatter::buffer_it(SqlciEnv * sqlci_env, char *data,
                              CONV_UNKNOWN,
                              NULL, // conversion error flag
                              CONV_ALLOW_INVALID_CODE_VALUE);   
-#pragma warn(1506)  // warning elimination 
   }
   break;
 

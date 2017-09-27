@@ -147,7 +147,7 @@ class MemoryMonitor;
 class ExMsgResourceInfo;
 class ExScratchFileOptions;
 class ComTdbRoot;
-class CliStatement;
+class Statement;
 class ExUdrServer;
 class ExRsInfo;
 class ex_send_top_tcb;
@@ -307,18 +307,38 @@ public:
 
   inline NABoolean grabMemoryQuotaIfAvailable(ULng32 size)
   { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->grabMemoryQuotaIfAvailable(size);
     if ( unusedBMOsMemoryQuota_ < size ) return FALSE;
     unusedBMOsMemoryQuota_ -= size ;
     return TRUE;
   }
 
-  inline void resetMemoryQuota() { unusedBMOsMemoryQuota_ = 0 ; }
+  inline void resetMemoryQuota() 
+  {
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->resetMemoryQuota();
+    unusedBMOsMemoryQuota_ = 0 ; 
+  }
 
-  inline ULng32 unusedMemoryQuota() { return unusedBMOsMemoryQuota_; }
+  inline ULng32 unusedMemoryQuota() 
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->unusedMemoryQuota();
+    return unusedBMOsMemoryQuota_;
+  }
 
   inline void yieldMemoryQuota(ULng32 size) 
-  { unusedBMOsMemoryQuota_ += size; }
-
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->yieldMemoryQuota(size);
+    unusedBMOsMemoryQuota_ += size; 
+  }
+  
   // getStreamTimeout: return TRUE (FALSE) if the stream-timeout was set (was
   // not set). If set, the timeoutValue parameter would return that value
   virtual NABoolean getStreamTimeout( Lng32 & timeoutValue );
@@ -448,7 +468,7 @@ public:
 
   ExMasterStmtGlobals(short num_temps,
 		      CliGlobals *cliGlobals,
-                      CliStatement *statement,
+                      Statement *statement,
 		      short create_gui_sched = 0,
 		      Space * space = NULL,
 		      CollHeap * heap = NULL);
@@ -508,7 +528,7 @@ public:
   Int64 getRowsAffected() const           {return rowsAffected_;}
   void setRowsAffected(Int64 newRows)             {rowsAffected_ = newRows;}
 
-  inline CliStatement *getStatement()                 { return statement_; }
+  inline Statement *getStatement()                 { return statement_; }
 
   // For asynchronous CLI cancel.
   inline CancelState getCancelState() const           {return cancelState_;}
@@ -581,7 +601,7 @@ private:
   ExRtFragTable *fragTable_;
 
   // Current statement
-  CliStatement *statement_;
+  Statement *statement_;
 
   // rows affected during the execution of this statement.
   // Applies to rows updated/deleted/inserted ONLY.

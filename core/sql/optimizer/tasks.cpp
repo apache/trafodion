@@ -79,7 +79,6 @@ CascadesTask::~CascadesTask()
   
 } // CascadesTask::~CascadesTask
 
-// LCOV_EXCL_START
 void CascadesTask::print(FILE *, const char *, const char *) const
 {
   ABORT("CascadesTask::print() needs to be redefined");
@@ -89,7 +88,6 @@ NAString CascadesTask::taskText() const
 {
   return "Shouldn't ever see a generic task";
 }
-// LCOV_EXCL_STOP
 
 CascadesGroupId CascadesTask::getGroupId() const
 {
@@ -173,7 +171,6 @@ OptimizeGroupTask::OptimizeGroupTask(Context * context,
 {
 } // OptimizeGroupTask::OptimizeGroupTask
 
-// LCOV_EXCL_START
 void OptimizeGroupTask::print(FILE * f, const char * prefix, 
 			      const char * suffix) const
 {
@@ -192,7 +189,6 @@ NAString OptimizeGroupTask::taskText() const
           getParentTaskId(), getSubTaskId(), groupId_);
   return NAString(returnText) + context_->getRequirementsString();
 }
-// LCOV_EXCL_STOP
 
 CascadesGroupId OptimizeGroupTask::getGroupId() const
 {
@@ -475,7 +471,6 @@ OptimizeExprTask::OptimizeExprTask(RelExpr * expr,
   context_->incrOutstanding();
 } // OptimizeExprTask::OptimizeExprTask
 
-// LCOV_EXCL_START
 void OptimizeExprTask::print(FILE * f, const char *, const char * suffix) const
 {
 #ifndef NDEBUG
@@ -511,7 +506,6 @@ NAString OptimizeExprTask::taskText() const
 #endif
          returnText + context_->getRequirementsString();
 }
-// LCOV_EXCL_STOP
 
 CascadesGroupId OptimizeExprTask::getGroupId() const
 {
@@ -776,7 +770,6 @@ ExploreGroupTask::ExploreGroupTask(CascadesGroupId group_no,
 {
 } // ExploreGroupTask::ExploreGroupTask
 
-// LCOV_EXCL_START
 void ExploreGroupTask::print(FILE * f, const char * prefix, const char * suffix) const
 {
 #ifndef NDEBUG
@@ -794,7 +787,6 @@ NAString ExploreGroupTask::taskText() const
           getParentTaskId(), getSubTaskId(), groupId_);
   return returnText;
 }
-// LCOV_EXCL_STOP
 
 CascadesGroupId ExploreGroupTask::getGroupId() const
 {
@@ -860,7 +852,6 @@ ExploreExprTask::ExploreExprTask(RelExpr * expr,
 {
 } // ExploreExprTask::ExploreExprTask
 
-// LCOV_EXCL_START
 void ExploreExprTask::print(FILE * f, const char *, const char * suffix) const
 {
 #ifndef NDEBUG
@@ -885,7 +876,6 @@ NAString ExploreExprTask::taskText() const
   else
     return NAString(prefix) + expr_->getText() + returnText;
 }
-// LCOV_EXCL_STOP
 
 //<pb>
 CascadesGroupId ExploreExprTask::getGroupId() const
@@ -1055,7 +1045,6 @@ ApplyRuleTask::ApplyRuleTask(Rule * rule,
     context_->incrOutstanding();
 } // ApplyRuleTask::ApplyRuleTask
 
-// LCOV_EXCL_START
 void ApplyRuleTask::print(FILE * f, const char * prefix, const char *) const
 {
 #ifndef NDEBUG
@@ -1083,7 +1072,6 @@ NAString ApplyRuleTask::taskText() const
     return NAString(prefix) + "Enforcer Rule \"" + 
       rule_->getName() + returnText;
 }
-// LCOV_EXCL_STOP
 
 CascadesGroupId ApplyRuleTask::getGroupId() const
 {
@@ -1519,14 +1507,12 @@ void CreatePlanTask::perform(Lng32 taskId)
 					FALSE,
 					taskId, ++stride));
 
-// LCOV_EXCL_START
       if ( showThisPlan )
       {
         out << endl << prefix << "*** Incomplete plan ***" << endl;
         CURRCONTEXT_OPTDEBUG->showTree( getExpr(), getPlan(), prefix, showPlanCost );
         out << endl;
       }
-// LCOV_EXCL_STOP
     }
   else
     {
@@ -1564,13 +1550,11 @@ void CreatePlanTask::perform(Lng32 taskId)
           // that is never re-optimized in this pass:
           plan_->setSuccessInCurrentPass();
           
-// LCOV_EXCL_START
           if ( showThisPlan )
           {
             out << endl << prefix << "*** Qualified plan ***" << endl;
             CURRCONTEXT_OPTDEBUG->showTree( getExpr(), getPlan(), prefix, showPlanCost );
           }
-// LCOV_EXCL_STOP
 
 	  // This is a solution for the optimization goal represented
 	  // by the context; now check whether it's the optimal one so far
@@ -1641,11 +1625,9 @@ void CreatePlanTask::perform(Lng32 taskId)
 	      // This is the first solution for this pass and therefore 
               // it is the optimal one so far.
 	      context_->setSolution(plan_);
-// LCOV_EXCL_START
               if ( showThisPlan )
                 out << prefix << "*** Chosen plan ***" << endl << endl;
 
-// LCOV_EXCL_STOP
 // if because of nice context we have an enforcer above
               // partial plan that already satisfies requirement -
               // replace solution with that partial plan because
@@ -1758,7 +1740,6 @@ void CreatePlanTask::garbageCollection(RelExpr * /* oldx */,
 } // CreatePlanTask::garbageCollection
 
 
-// LCOV_EXCL_START
 void CreatePlanTask::print(FILE * f, const char * prefix, const char * suffix) const
 {
   fprintf(f, "%screate plan -- incarnation %d (%d) of %d\n",
@@ -1796,7 +1777,6 @@ NAString CreatePlanTask::taskText() const
 
   return returnString + context_->getRequirementsString();
 }
-// LCOV_EXCL_STOP
 
 
 //<pb>
@@ -1810,7 +1790,6 @@ GarbageCollectionTask::~GarbageCollectionTask ()
 {}
 
 
-// LCOV_EXCL_START
 void GarbageCollectionTask::print (FILE * f,
 				   const char * prefix,
 				   const char * /*suffix*/) const
@@ -1823,7 +1802,6 @@ NAString GarbageCollectionTask::taskText() const
   return "Garbage Collection";
 }
 
-// LCOV_EXCL_STOP
 
 void GarbageCollectionTask::perform (Lng32 /*taskId*/)
 {

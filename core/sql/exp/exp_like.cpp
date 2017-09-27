@@ -129,7 +129,7 @@ LikePattern::LikePattern
         patternBuf += lastHeader->getLength();
 
         if(systemCollationFlag)
-        {// LCOV_EXCL_START
+        {
           headerLength = lastHeader->getLength();
           if(headerLength >0)
           {
@@ -152,7 +152,6 @@ LikePattern::LikePattern
             lastHeader->setEncodedHeader(headerPattern);
           }
           lastHeader->setCollation(co);
-          // LCOV_EXCL_STOP
         }
         lastHeader->append(new(exHeap)LikePatternHeader(i, patternBuf, exHeap));
         prevHeader = lastHeader;
@@ -172,7 +171,7 @@ LikePattern::LikePattern
 
   lastHeader->endClauses();
   if(systemCollationFlag)
-  {// LCOV_EXCL_START
+  {
     headerLength = lastHeader->getLength();
     if(headerLength > 0)
     {
@@ -194,7 +193,6 @@ LikePattern::LikePattern
       lastHeader->setEncodedHeader(headerPattern);
     }
     lastHeader->setCollation(co);
-    // LCOV_EXCL_STOP
   }
   //
   // If there are more than two headers in the chain, move the last header to
@@ -263,9 +261,7 @@ NABoolean LikePattern::matches
   UInt16         nPasses;
   
   if (systemCollationFlag)
-	// LCOV_EXCL_START
     nPasses =  CollationInfo::getCollationNPasses(co);
-  // LCOV_EXCL_STOP
   else
     nPasses = 1;
 
@@ -277,11 +273,9 @@ NABoolean LikePattern::matches
   {
     if (systemCollationFlag)
     {
-    	// LCOV_EXCL_START
       headerPattern = header->getEncodedPattern();
       if ((header->getLength()*nPasses) > (endOfText - text))
         return FALSE;
-      // LCOV_EXCL_STOP
     }
     else
     {
@@ -341,11 +335,10 @@ NABoolean LikePattern::matches
   {
     headerLength = header->getLength();
     if (systemCollationFlag)
-    {// LCOV_EXCL_START
+    {
       headerPattern = header->getEncodedPattern();
       if (header->getLength() > (endOfText - text))
         return FALSE;
-      // LCOV_EXCL_STOP
     }
     else
     {
@@ -378,9 +371,7 @@ NABoolean LikePattern::matches
 
       if(systemCollationFlag)
       {
-    	  // LCOV_EXCL_START
         text += nPasses;
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -402,7 +393,6 @@ NABoolean LikePattern::matches
         {
           if(systemCollationFlag)
           {
-        	  // LCOV_EXCL_START
             equalFlag = TRUE;
 
             for(short i = 0; i < nPasses; i++)
@@ -416,7 +406,6 @@ NABoolean LikePattern::matches
             if(equalFlag) break;
             else
               text += nPasses;
-            // LCOV_EXCL_STOP
           }
           else
           {
@@ -628,7 +617,6 @@ ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
 
   if (systemCollationFlag)
   {
-	// LCOV_EXCL_START
     pattern.setCollation (co);
     short nPasses =  CollationInfo::getCollationNPasses(co);
     Int32 effEncodedKeyLength;
@@ -658,7 +646,6 @@ ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
     textStr = encodedText;
 //    len1 = effEncodedKeyLength;  the length without trading space.
     len1 *= nPasses;
-    // LCOV_EXCL_STOP
   }
 
   if (cs == CharInfo::UTF8)
@@ -787,19 +774,15 @@ NABoolean LikePatternHeader::matches(const char* text,
   
   if (systemCollationFlag)
   {
-	  // LCOV_EXCL_START
     nPasses =  CollationInfo::getCollationNPasses(co);
     encodedPattern = getEncodedPattern();
-    // LCOV_EXCL_STOP
   }
 
   do {
     if (systemCollationFlag)
     {
-    	// LCOV_EXCL_START
       clause->setEncodedPattern(encodedPattern);
       clause->setCollation(this->getCollation());
-      // LCOV_EXCL_STOP
     }
     if (NOT clause->matches(text))
       return FALSE;
@@ -810,12 +793,10 @@ NABoolean LikePatternHeader::matches(const char* text,
 
       if (systemCollationFlag)
       {
-    	  // LCOV_EXCL_START
         Int32 len = clause->getLength()*nPasses;
         text += len;
         encodedPattern += len;
         headerMatchLen += len;
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -838,12 +819,10 @@ NABoolean LikePatternHeader::matches(const char* text,
     {
       if (systemCollationFlag)
       {
-    	  // LCOV_EXCL_START
         Int32 len = clauseLen*nPasses;
         text += len;
         encodedPattern += len;
         headerMatchLen += len; 
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -885,11 +864,9 @@ NABoolean LikePatternHeader::matchesR(const char        * text,
   
   if (systemCollationFlag)
   {
-	  // LCOV_EXCL_START
     headerPattern = getEncodedPattern();
     nPasses =  CollationInfo::getCollationNPasses(co);
     headerLength *= nPasses;
-    // LCOV_EXCL_STOP
   }
   else
   {
@@ -919,7 +896,6 @@ NABoolean LikePatternHeader::matchesR(const char        * text,
       Int32 numOfUnderscore = clauseR->getLength();
       if(systemCollationFlag)
       {
-    	  // LCOV_EXCL_START
         endText -= (numOfUnderscore * nPasses);
         headerLength -= (clauseR->getLength() * nPasses);
         if(endText < text) // String left is shorter than the pattern
@@ -928,7 +904,6 @@ NABoolean LikePatternHeader::matchesR(const char        * text,
             NADELETEBASIC(charLengthInBuf, heap);
           return FALSE;
         }
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -955,7 +930,6 @@ NABoolean LikePatternHeader::matchesR(const char        * text,
       // p1 point to the beginning of each character
       if(systemCollationFlag)
       {
-    	  // LCOV_EXCL_START
         if(p < p1) // String left is shorter than the pattern
         {
           if(deallocateNeeded)
@@ -968,7 +942,6 @@ NABoolean LikePatternHeader::matchesR(const char        * text,
           clauseR->setEncodedPattern
             (getEncodedPattern()+(headerLength - (clauseR->getLength()*nPasses)));
         }
-        // LCOV_EXCL_STOP
       }
       else
       {
@@ -1015,11 +988,9 @@ NABoolean LikePatternClause::matches(const char* text)
 
     if (CollationInfo::isSystemCollation(co))
     {
-    	// LCOV_EXCL_START
       pattern = encodedPattern_;
       nPasses =  CollationInfo::getCollationNPasses(co);
       clauseLength *= nPasses;
-      // LCOV_EXCL_STOP
     }
     else
       pattern = (unsigned char *)pattern_;

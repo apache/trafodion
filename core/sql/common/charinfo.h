@@ -360,12 +360,10 @@ public:
     return collationNPasses[getCollationParamsIndex( collation) ];
   }
 
-//LCOV_EXCL_START :cnu -- SQ does not support any collations yet.
   inline static unsigned char  getCollationMaxChar(const CharInfo::Collation collation) 
   {
     return collationMaxChar[getCollationParamsIndex( collation) ];
   }
-//LCOV_EXCL_STOP
 
 
  

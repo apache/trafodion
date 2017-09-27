@@ -53,7 +53,7 @@
 #include <errno.h>
 #pragma nowarn(1506)  //warning elimination
 
-extern "C" int isatty(int); // NT_PORT ( bd 12/17/96 )
+extern "C" int isatty(int);
 
 int yyback(int *p, int m);
 int yylook(void);
@@ -88,7 +88,7 @@ void HsUnput(char c)
 // LCOV_EXCL_START :cnu
 // handle EOF in the input stream and let lex continue
 // with the next input file
-extern "C" // NT_PORT ( bd 10/8/96 ) C Linkage
+extern "C"
 {
 int yywrap(void*)
 {

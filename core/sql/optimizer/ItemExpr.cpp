@@ -165,12 +165,10 @@ NABoolean ExprValueId::operator== (const ItemExpr *other) const
 {
   return getPtr() == other;
 }
- // LCOV_EXCL_START
 NABoolean ExprValueId::operator== (const ValueId &other) const
 {
   return (getValueId() == other);
 }
- // LCOV_EXCL_STOP
 
 ValueId ExprValueId::getValueId() const
 {
@@ -182,7 +180,6 @@ ValueId ExprValueId::getValueId() const
   else
     return exprId_;
 }
- // LCOV_EXCL_START
 void ExprValueId::convertToMemoized()
 {
   // set this mode to prevent updates to it: a MEMOIZED object cannot
@@ -194,7 +191,6 @@ void ExprValueId::convertToStandalone()
 {
   exprMode_ = STANDALONE;
 }
- // LCOV_EXCL_STOP
 
 ItemExpr * ExprValueId::getPtr() const
 {
@@ -274,7 +270,6 @@ ItemExpr::~ItemExpr()
   (*counter_).decrementCounter();
 }
 
- // LCOV_EXCL_START
 void ItemExpr::transformToRelExpr(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -284,7 +279,6 @@ void ItemExpr::transformToRelExpr(NormWA & normWARef,
    locationOfPointerToMe = this;
 
 }
- // LCOV_EXCL_STOP
 
 // operator[] is used to access the children of a tree
 ExprValueId & ItemExpr::operator[] (Lng32 index)
@@ -303,7 +297,6 @@ NABoolean ItemExpr::operator== (const ItemExpr& other) const	// virtual meth
 {
   return (getValueId() == other.getValueId());
 }
- // LCOV_EXCL_START
 void ItemExpr::deleteInstance()
 {
   Int32 nc = getArity();
@@ -311,7 +304,6 @@ void ItemExpr::deleteInstance()
     inputs_[i] = NULL;
   delete this;
 } // ItemExpr::deleteInstance()
- // LCOV_EXCL_STOP
 
 
 void ItemExpr::setChild(Lng32 index, ExprNode * newChild)
@@ -425,7 +417,7 @@ NABoolean ItemExpr::referencesTheGivenValue(const ValueId & vid,
       InstantiateNull *inst = (InstantiateNull *)nie->castToItemExpr();
 
       if (doNotDigInsideInstNulls)
-        return FALSE; // LCOV_EXCL_LINE
+        return FALSE;
       else
       {
         // Need to dig underneath the instantiate null to check if
@@ -808,12 +800,10 @@ ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr,
             }
           else
             { // XXX print warning for now.
-              // LCOV_EXCL_START
 #ifdef DEBUG
               fprintf(stderr, "ItemExpr::createMirrorPred(): Didn't find any references to valueId: %d\n", tempV);
 #endif
               return NULL; 
-              // LCOV_EXCL_STOP
             }
           // now we want to replace the reference to the key column in the compExpr with the keyColExpr
 
@@ -1269,7 +1259,7 @@ ItemExpr * ItemExpr::copyTopNode(ItemExpr *derivedNode,
 
   if (derivedNode == NULL)
     {
-      ABORT("encountered an instantiation of an ItemExpr object"); // LCOV_EXCL_LINE
+      ABORT("encountered an instantiation of an ItemExpr object");
     }
   else
     result = derivedNode;
@@ -1557,7 +1547,6 @@ Lng32 ItemExpr::getTreeSize(Lng32& maxDepth, NABoolean giveUpThreshold)
   return currentSize;
 }
 
-// LCOV_EXCL_START : cnu
 // Find all eqaulity columns in an item expression tree.
 void ItemExpr::findEqualityCols(ValueIdSet& result)
 {
@@ -1594,7 +1583,6 @@ void ItemExpr::findEqualityCols(ValueIdSet& result)
     child(1)->findEqualityCols(result);
   }
 }
-// LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::treeWalk(ItemTreeWalkFunc f,
                               CollHeap *outHeap,
@@ -1742,7 +1730,6 @@ ValueId ItemExpr::mapAndRewriteCommon(ValueIdMap &map, NABoolean mapDownwards)
   return result;
 } // ItemExpr::mapAndRewriteCommon
 
-// LCOV_EXCL_START : cnu
 ItemExpr * ItemExpr::foldConstants(ComDiagsArea *diagsArea,
 				   NABoolean newTypeSynthesis)
 {
@@ -1779,7 +1766,6 @@ ItemExpr * ItemExpr::foldConstants(ComDiagsArea *diagsArea,
 
   return result;
 }
- // LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::applyInverseDistributivityLaw(
      OperatorTypeEnum backboneType,
@@ -1915,11 +1901,9 @@ ItemExpr * ItemExpr::connect2(OperatorTypeEnum op,
     case ITM_AND:
     case ITM_OR:
       return new(CmpCommon::statementHeap()) BiLogic(op, op1, op2);
-// LCOV_EXCL_START : cnu
     default:
       CMPASSERT("Operator type not supported by connect2" == 0);
       return NULL;
-// LCOV_EXCL_STOP
     }
 }
 
@@ -2248,7 +2232,6 @@ NABoolean ItemExpr::maxSelectivitySameAsSelectivity() const
     }
   return FALSE; 
 }
-// LCOV_EXCL_START
 void ItemExpr::print(FILE * f,
 		     const char * prefix,
 		     const char * suffix) const
@@ -2286,7 +2269,6 @@ void ItemExpr::display()
   unparse(result, PARSER_PHASE, USER_FORMAT_DELUXE);
   fprintf(stdout, "%s\n", result.data());
 }
-// LCOV_EXCL_STOP
 
 
 //
@@ -2661,7 +2643,7 @@ void ItemExpr::unparse(NAString &result,
           if (child(0))
             child(0)->unparse(result, phase,form, tabId);
           else
-            result += "NULL"; // LCOV_EXCL_LINE
+            result += "NULL";
 
           if (operatorType == ITM_POSITION)
             result += " IN ";
@@ -2671,7 +2653,7 @@ void ItemExpr::unparse(NAString &result,
           if (child(1))
             child(1)->unparse(result, phase, form, tabId);
           else
-            result += "NULL"; // LCOV_EXCL_LINE
+            result += "NULL";
           result += ")";
           break;
         } // STDDEV, MOD, VARIANCE

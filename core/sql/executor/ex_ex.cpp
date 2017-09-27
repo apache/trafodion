@@ -488,13 +488,9 @@ void ex_tcb::mergeStats(ExStatisticsArea *otherStats)
   if (statsGlobals != NULL)
   {
     semId = glob->getSemId();
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(semId, glob->getPid(), 
-      savedPriority, savedStopMode,
-      FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(semId, glob->getPid());
     glob->getStatsArea()->merge(otherStats);
-    statsGlobals->releaseStatsSemaphore(semId, glob->getPid(), savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(semId, glob->getPid());
   }
   else
     glob->getStatsArea()->merge(otherStats);

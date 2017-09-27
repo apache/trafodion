@@ -122,11 +122,9 @@ public:
   // three methods to enter, leave and test the test mode. The test 
   // mode is for testing POS.
 
-// LCOV_EXCL_START
   NABoolean inTestMode() const { return inTestMode_; };
   void setTestMode() { inTestMode_ = TRUE; };
   void resetTestMode() { inTestMode_ = FALSE; };
-// LCOV_EXCL_STOP
 
 protected :
 

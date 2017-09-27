@@ -2489,6 +2489,17 @@ NABoolean NAMemory::getUsage(size_t * lastBlockSize, size_t * freeSize, size_t *
   return crowded;
 }
 
+NABoolean NAMemory::checkSize(size_t size, NABoolean failureIsFatal)
+{
+  if (size > MAX_MEMORY_SIZE_IN_AN_ALLOC) {
+     if (failureIsFatal) 
+        abort();
+     else
+        return FALSE;  
+  }
+  return TRUE;
+}
+
 // ---------------------------------------------------------------------------
 // NASegGlobals methods
 // ---------------------------------------------------------------------------
@@ -2930,7 +2941,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   // allocate 0 bytes. But this would waste memory to maintain a
   // heap fragment of size 0.
   if (userSize == 0)
-    return NULL;
+     return NULL;
+
+  if (! checkSize(userSize, failureIsFatal))
+     return NULL;
 
   // getSharedMemory() check alone is enough since it will return for both
   // global and process stats heap. Leaving the rest of the condition here
@@ -3162,7 +3176,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
         // If we return from this call it means that the caller wanted
         // a memory allocation failure to be fatal yet did not set the
         // the jump buffer.  This is not good.
-        assert(0);
+        abort();
       }
 
       // Caller will handle the error so just return null.
@@ -4089,6 +4103,9 @@ void DefaultIpcHeap::destroy()
 
 void * DefaultIpcHeap::allocateIpcHeapMemory(size_t size, NABoolean failureIsFatal)
 {
+  if (! checkSize(size, failureIsFatal))
+     return NULL;
+
   void * rc = ::operator new(size);
 #pragma nowarn(1506)   // warning elimination 
   HEAPLOG_ADD_ENTRY(rc, size, heapID_.heapNum, getName())
@@ -4098,7 +4115,7 @@ void * DefaultIpcHeap::allocateIpcHeapMemory(size_t size, NABoolean failureIsFat
     {
       // Might never return...
       handleExhaustedMemory();
-      assert(0);
+      abort();
     }
   return rc; 
 }
@@ -4141,3 +4158,4 @@ SEG_ID getStatsSegmentId()
   }
   return gStatsSegmentId_; 
 }
+

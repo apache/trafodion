@@ -54,7 +54,7 @@
 
 class ContextCli;
 class Attributes;
-class CliStatement;
+class Statement;
 
 // -----------------------------------------------------------------------
 // BulkMoveInfo
@@ -387,7 +387,7 @@ class Descriptor : public ExGod {
   BulkMoveInfo *bmInfo_;
 
   // the statement for which bulk move was done from/to this descriptor.
-  CliStatement * bulkMoveStmt_;
+  Statement * bulkMoveStmt_;
 
   ContextCli *context_;        // the context that contains this descriptor
 
@@ -729,7 +729,7 @@ public:
     return ((rowwiseRowsetV2()) && (NOT rowwiseRowsetDisabled()));
   }
 
-  CliStatement* &bulkMoveStmt() { return bulkMoveStmt_; }
+  Statement* &bulkMoveStmt() { return bulkMoveStmt_; }
 
   NABoolean isDescTypeWide();
   void setDescTypeWide(NABoolean v)

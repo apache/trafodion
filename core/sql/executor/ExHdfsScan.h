@@ -46,9 +46,6 @@
 // -----------------------------------------------------------------------
 class ExHdfsScanTdb;
 class ExHdfsScanTcb;
-#ifdef NEED_PSTATE
-class ExBlockingHdfsScanPrivateState;
-#endif
 
 // -----------------------------------------------------------------------
 // Classes referenced in this file
@@ -113,10 +110,6 @@ private:
 
 class ExHdfsScanTcb  : public ex_tcb
 {
-#ifdef NEED_PSTATE
-  friend class ExHdfsScanPrivateState;
-#endif
-
 public:
   ExHdfsScanTcb( const ComTdbHdfsScan &tdb,
                          ex_globals *glob );
@@ -150,12 +143,6 @@ public:
     else
       return NULL;
   }
-#ifdef NEED_PSTATE
-  // For dynamic queue resizing.
-  virtual ex_tcb_private_state * allocatePstates(
-       Lng32 &numElems,      // inout, desired/actual elements
-       Lng32 &pstateLength); // out, length of one element
-#endif
 
 protected:
   enum {

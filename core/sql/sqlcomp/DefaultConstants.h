@@ -2688,9 +2688,6 @@ enum DefaultConstants
   // perform substring transformation (ICBC PoC)
   SUBSTRING_TRANSFORMATION,
 
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,
 
   // by default, a primary key or unique constraint must be non-nullable.
   // This default, if set, allows them to be nullable.
@@ -2840,8 +2837,6 @@ enum DefaultConstants
   // These CQDs are for Multi-Fragment ESPs
   ESP_MULTI_FRAGMENTS,
   ESP_NUM_FRAGMENTS,
-  ESP_NUM_FRAGMENTS_WITH_QUOTAS,
-  ESP_MULTI_FRAGMENT_QUOTAS,
   ESP_MULTI_FRAGMENT_QUOTA_VM,
   EXE_SINGLE_BMO_QUOTA, // Quota system applys to fragments with single BMO
 
@@ -2898,20 +2893,15 @@ enum DefaultConstants
 
 
   // Total mem size (MB) for a query
-  EXE_MEMORY_LIMIT_PER_CPU, 
-
-  // The percent of total nBMO memory in EXE_MEMORY_LIMIT_PER_CPU 
-  EXE_MEMORY_LIMIT_NONBMOS_PERCENT, 
+  BMO_MEMORY_LIMIT_PER_NODE_IN_MB, 
 
   // lower-bound memory limit for BMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
   EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_SORT ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,
 
   // lower-bound memory limit for nBMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PA ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE ,
 
@@ -3884,12 +3874,24 @@ enum DefaultConstants
   // on hive could be created without registering them.
   // This default is for internal testing usage only and not externalized.
   HIVE_NO_REGISTER_OBJECTS,
+ 
+  BMO_MEMORY_LIMIT_UPPER_BOUND,
+  BMO_MEMORY_ESTIMATE_RATIO_CAP,
 
   // if set, cleanse output of explain text by filtering values that
   // may not be deterministic on different systems.
   // Same as explain format: options 'c'
   // Used during dev regressions to cleanse explain output.
   EXPLAIN_OPTION_C,
+
+  // Threshold when TOPN sort becomes a regular sort
+  GEN_SORT_TOPN_THRESHOLD,
+
+  // Ratio of BMO_MEMORY_LIMIT_PER_NODE_IN_MB that will be divided
+  // equally across all BMO operators 
+  BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,
+
+  EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

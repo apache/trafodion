@@ -54,7 +54,7 @@ public:
     LOG_TYPE,
     OBEY_TYPE,
     REPEAT_TYPE,
-    SETDEFINE_TYPE, SETENVVAR_TYPE, SETPARAM_TYPE, SETPATTERN_TYPE,
+    SETENVVAR_TYPE, SETPARAM_TYPE, SETPATTERN_TYPE,
     SET_TERMINAL_CHARSET_TYPE,
     SHOW_TYPE, STATISTICS_TYPE,
     SHAPE_TYPE, WAIT_TYPE,
@@ -78,10 +78,6 @@ public:
   ~SqlciCmd();
   inline char * get_argument(char * dummy_arg = 0){return argument;};
   inline Lng32   get_arglen(){return arglen;};
-  NABoolean isAllowedInSIP() { return FALSE; }
-  NABoolean isAllowedInRWMode() { return TRUE; }
-  NABoolean isAllowedInCSMode() { return FALSE; }
-
 };
 
 class Shape : public SqlciCmd {
@@ -131,8 +127,6 @@ public:
   FixCommand(Int32, short);
   ~FixCommand(){};
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class FCRepeat : public SqlciCmd {
@@ -144,9 +138,6 @@ public:
   FCRepeat(Int32, short);
   ~FCRepeat(){};
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
-
 };
 
 class Obey : public SqlciCmd {
@@ -155,8 +146,6 @@ public:
   Obey(char *, Lng32 arglen_, char * section_name_);
   ~Obey(){};
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Log : public SqlciCmd {
@@ -169,28 +158,23 @@ public:
   Log(char *, Lng32 arglen_, log_type type_, Int32 commands_only);
   ~Log(){};
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class History : public SqlciCmd {
 public:
   History(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class ListCount : public SqlciCmd {
 public:
     ListCount(char *, Lng32);
     short process(SqlciEnv * sqlci_env);
-    NABoolean isAllowedInSIP() {return TRUE;};
 };
 
 class Mode :  public SqlciCmd {
 public:
-    enum ModeType { SQL_, REPORT_, DISPLAY_, MXCS_};
+    enum ModeType { SQL_};
     Mode(ModeType type, NABoolean value);
     ~Mode(){};
     short process(SqlciEnv * sqlci_env);
@@ -198,10 +182,7 @@ private:
     ModeType type;
     NABoolean value;
     short process_sql(SqlciEnv * sqlci_env);
-    short process_report(SqlciEnv * sqlci_env);
-    short process_mxcs(SqlciEnv * sqlci_env);
     short process_display(SqlciEnv * sqlci_env);
-    NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Verbose : public SqlciCmd {
@@ -232,7 +213,6 @@ public:
   short process(SqlciEnv * sqlci_env);
 };
 
-#pragma nowarn(1506)   // warning elimination
 class SetTerminalCharset : public SqlciCmd {
 
 private:
@@ -276,7 +256,6 @@ public:
   ~SetInferCharset(){};
   short process(SqlciEnv * sqlci_env);
 };
-#pragma warn(1506)  // warning elimination
 
 class Error : public SqlciCmd {
 public:
@@ -304,25 +283,20 @@ class Env : public SqlciCmd {
 public:
   Env(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Exit : public SqlciCmd {
 public:
   Exit(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
-  NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Reset : public SqlciCmd {
 public:
-  enum reset_type {PARAM_, PATTERN_, PREPARED_, CONTROL_, DEFINE_};
+  enum reset_type {PARAM_, PATTERN_, PREPARED_, CONTROL_};
 private:
   reset_type type;
   short reset_control(SqlciEnv * sqlci_env);
-  short reset_define(SqlciEnv * sqlci_env);
   short reset_param(SqlciEnv * sqlci_env);
   short reset_pattern(SqlciEnv * sqlci_env);
   short reset_prepared(SqlciEnv * sqlci_env);
@@ -330,16 +304,6 @@ public:
   Reset(reset_type type, char * argument_, Lng32 arglen_);
   Reset(reset_type type);
   ~Reset();
-  short process(SqlciEnv * sqlci_env);
-};
-
-class SetDefine : public SqlciCmd {
-  char * define_name;
-  Lng32 namelen;
-  NABoolean alter_; // if TRUE, then alter existing define
-public:
-  SetDefine(char *, Lng32, char *, Lng32, NABoolean);
-  ~SetDefine();
   short process(SqlciEnv * sqlci_env);
 };
 
@@ -399,7 +363,7 @@ public:
 class Show : public SqlciCmd {
 public:
   enum show_type {CURSOR_, PARAM_, PATTERN_,
-		  PREPARED_, CONTROL_, DEFINE_,
+		  PREPARED_, CONTROL_,
 		  SESSION_, VERSION_};
 private:
   show_type type;
@@ -410,7 +374,6 @@ private:
 
   short show_control(SqlciEnv * sqlci_env);
   short show_cursor(SqlciEnv * sqlci_env);
-  short show_define(SqlciEnv * sqlci_env);
   short show_param(SqlciEnv * sqlci_env);
   short show_pattern(SqlciEnv * sqlci_env);
   short show_prepared(SqlciEnv * sqlci_env);

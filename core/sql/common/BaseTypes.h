@@ -38,16 +38,11 @@
 #include "Platform.h"
 
 
-  #include <stdio.h>
-  #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifdef NA_STD_NAMESPACE
 #include <iostream>
 using namespace std;
-#else
-  #include <iostream>
-#endif
-
 
 #include "NAAssert.h"
 #include "NAHeap.h"

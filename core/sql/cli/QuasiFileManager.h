@@ -39,7 +39,7 @@
 */
 #include "NoWaitOp.h"
 
-class CliStatement;
+class Statement;
 class IpcEnvironment;
 class ComDiagsArea;
 class HashQueue;

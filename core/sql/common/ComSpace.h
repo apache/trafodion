@@ -43,14 +43,9 @@
 #include <stddef.h>
 #include "CollHeap.h"
 
-
 class Block;
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 
 /////////////////////////////////////////////////////
 //
@@ -129,7 +124,7 @@ public:
 
   void setParent(CollHeap * parent);
 
-  char * allocateAlignedSpace(ULng32 size, NABoolean failureIsFatal = TRUE);
+  char * allocateAlignedSpace(size_t size, NABoolean failureIsFatal = TRUE);
 
   char * allocateAndCopyToAlignedSpace(const char* dp,
 				       size_t dlen,

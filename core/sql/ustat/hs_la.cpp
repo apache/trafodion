@@ -519,7 +519,6 @@ Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
     return 1000000;
   }
 
-// LCOV_EXCL_START :nt
 /***************************************************************************/
 /* METHOD:  getRowCountUsingSelect()                                       */
 /* PURPOSE: Get row count of a table using 'select count(*)'.              */ 
@@ -545,7 +544,6 @@ Int64 HSTableDef::getRowCountUsingSelect()
 
   return rows; 
 }
-// LCOV_EXCL_STOP
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // 10-060424-6040
@@ -560,7 +558,6 @@ NABoolean HSSqTableDef::publicSchemaExists()
   {
     return FALSE;
   }
-// LCOV_EXCL_STOP
 
 // Check to see if a system defined SYSKEY exists and set hasSyskey_ flag.
 Lng32 HSSqTableDef::setHasSyskeyFlag()
@@ -591,7 +588,7 @@ Lng32 HSSqTableDef::setHasSyskeyFlag()
 
     query  = "SELECT SYSKEY, * FROM ";
     if(objActualFormat_ == SQLMP)
-      query += getTableName(tableName_->data(), nameSpace_);  // LCOV_EXCL_LINE :nsk
+      query += getTableName(tableName_->data(), nameSpace_);
     else
       query += getTableName(ansiName_->data(), nameSpace_);
 
@@ -742,22 +739,18 @@ NAString HSSqTableDef::getNodeName() const
 
 NAString HSTableDef::getObjectFullName() const
   {
-    // LCOV_EXCL_START :nsk
     if(objActualFormat_ == SQLMP)
       return tableName_->data();
     else
-    // LCOV_EXCL_STOP
       return ansiName_->data();
   }
 
 
-// LCOV_EXCL_START :nsk
 NAString HSSqTableDef::getCatalogLoc(formatType format) const
   {
     NAString catalogName;
     return catalogName;
   }
-// LCOV_EXCL_STOP
 
 
 NAString HSTableDef::getPrimaryLoc(formatType format) const
@@ -772,7 +765,6 @@ NAString HSTableDef::getPrimaryLoc(formatType format) const
       }
     else
       {
-        // LCOV_EXCL_START :nsk
         if (objActualFormat_ == SQLMP)
           {
             loc.append(catalog_->data());
@@ -780,7 +772,6 @@ NAString HSTableDef::getPrimaryLoc(formatType format) const
             loc.append(ToAnsiIdentifier(schema_->data()));
           }
         else
-        // LCOV_EXCL_STOP
           {
             loc.append(ToAnsiIdentifier(catalog_->data()));
             loc.append(".");

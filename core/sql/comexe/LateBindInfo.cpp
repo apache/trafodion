@@ -83,7 +83,6 @@ void UninitializedMvName::setAnsiName( const char *ansiName )
 }
 
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since it is not called from anywhere
 NABoolean LateNameInfo::makeSQLIdentifier(char * invalue, 
 					  char * outvalue)
@@ -114,7 +113,6 @@ NABoolean LateNameInfo::makeSQLIdentifier(char * invalue,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 // return code: TRUE, if error. FALSE, if all is ok.
 // This method assumes that the parts array passed in has 
@@ -160,7 +158,6 @@ NABoolean LateNameInfo::extractParts
   return FALSE;
 }
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since it is not called from anywhere
 static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 {

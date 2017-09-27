@@ -38,7 +38,6 @@
  *****************************************************************************
  */
 
-#include "SqlExpDllDefines.h"
 #include "ExpAlignedFormat.h"
 
 // Forward external references

@@ -159,7 +159,6 @@ inline static void openTraceFile()
 #define ESP_TRACE2(s1,s2) if (sv_trace) { trace_printf(s1,s2);}
 
 
-// LCOV_EXCL_START
 IpcStartupMsg::IpcStartupMsg()
 {
   // set the correct message code and blank out all other fields

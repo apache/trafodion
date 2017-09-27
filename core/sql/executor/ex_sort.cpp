@@ -178,7 +178,8 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
   //sortPool_.
   if((pentry_down->downState.request == ex_queue::GET_N) &&
      (pentry_down->downState.requestValue > 0) &&
-     (sortTdb().topNSortEnabled()))
+     (sortTdb().topNSortEnabled()) &&
+     (pentry_down->downState.requestValue <= sortTdb().getTopNThreshold()))
   {
     topNSortPool_ = new(sortSpace_)
                     ExSimpleSQLBuffer(pentry_down->downState.requestValue + 1,
@@ -364,11 +365,12 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
         sortType_.useIterQSForRunGeneration_ = 1;
         break;
   }   
-  
+
   sortUtil_ = new(sortHeap_) SortUtil(sort_tdb.getExplainNodeId());
 
   sortDiag_ = NULL;
 
+  sortCfg_ = new(sortHeap_) SortUtilConfig(sortHeap_);
   sortCfg_ = new(sortHeap_) SortUtilConfig(sortHeap_);
 
   sortCfg_->setSortType(sortType_);
@@ -389,7 +391,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setScratchIOVectorSize(st->sortOptions_->scratchIOVectorSize());
   sortCfg_->setBmoCitizenshipFactor(st->getBmoCitizenshipFactor());
   sortCfg_->setMemoryContingencyMB(st->getMemoryContingencyMB());
-  sortCfg_->setSortMemEstInMbPerCpu(st->getSortMemEstInMbPerCpu());
+  sortCfg_->setSortMemEstInKBPerNode(st->getSortMemEstInKBPerNode());
   sortCfg_->setEstimateErrorPenalty(st->sortGrowthPercent());
   sortCfg_->setBmoMaxMemThresholdMB(st->sortOptions_->bmoMaxMemThresholdMB());
   sortCfg_->setIntermediateScratchCleanup(st->sortOptions_->intermediateScratchCleanup());
@@ -583,7 +585,6 @@ ex_tcb_private_state * ExSortTcb::allocatePstates(
 // the sort subsystem.
 ////////////////////////////////////////////////////////////////////////
 
-// LCOV_EXCL_START
 void ExSortTcb::createSortDiags()
 {
   ExExeStmtGlobals* exe_glob = getGlobals()->castToExExeStmtGlobals();
@@ -621,12 +622,10 @@ void ExSortTcb::createSortDiags()
   sortDiag_->incrRefCount();
 
 }
-// LCOV_EXCL_STOP
 ////////////////////////////////////////////////////////////////////////
 // processSortError()
 // 
 #pragma nowarn(262)   // warning elimination 
-// LCOV_EXCL_START
 NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
 				      queue_index parentIndex,
 				      queue_index downIndex)
@@ -654,7 +653,6 @@ NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 #pragma warn(262)  // warning elimination 
 
 short ExSortTcb::workStatus(short workRC)
@@ -671,20 +669,16 @@ short ExSortTcb::workStatus(short workRC)
 // -----------------------------------------------------------------------
 // Generic work procedure should never be called
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 short  ExSortTcb::work()
 {
   ex_assert(0,"Should never reach ExSortTcb::work()");
   return WORK_BAD_ERROR;
 }
-// LCOV_EXCL_STOP
 short ExSortTcb::workDown()
 {
   // if no parent request, return
   if (qparent_.down->isEmpty())
-// LCOV_EXCL_START
     return WORK_OK;
-// LCOV_EXCL_STOP
   
   queue_index    tail = qparent_.down->getTailIndex();
 
@@ -776,18 +770,14 @@ short ExSortTcb::workUp()
       switch (pstate.step_)
 	{
         case ExSortTcb::SORT_EMPTY:
-          // LCOV_EXCL_START
 	  ex_assert(0,"Should never reach workUp with this state");
 	  return WORK_OK;
-          // LCOV_EXCL_STOP
 	case ExSortTcb::SORT_PREP:
 	  {
 	    if ( sortDiag_ != NULL )
 	      {
-                // LCOV_EXCL_START
 		sortDiag_->decrRefCount();
 		sortDiag_ = NULL;              // reset
-                // LCOV_EXCL_STOP
 	      }
 	    if (bmoStats_)
                bmoStats_->setBmoPhase(SORT_PHASE_END-SORT_PREP_PHASE);
@@ -799,11 +789,9 @@ short ExSortTcb::workUp()
        
       if (sortUtil_->sortInitialize(*sortCfg_, topNCount) != SORT_SUCCESS)
       {
-                // LCOV_EXCL_START
 		createSortDiags();
 		pstate.step_ = ExSortTcb::SORT_ERROR;
 		break;
-                // LCOV_EXCL_STOP	      
 	      }
 	    
 	    pstate.step_ = ExSortTcb::SORT_SEND;
@@ -812,12 +800,10 @@ short ExSortTcb::workUp()
 
         case ExSortTcb::RESTART_PARTIAL_SORT:
           {
-            // LCOV_EXCL_START
             pstate.noOverflow_ = TRUE;
             sortPartiallyComplete_ = FALSE;
             sortUtil_->sortEnd();
             pstate.step_ = ExSortTcb::SORT_PREP;
-            // LCOV_EXCL_STOP
           }
           break;
 
@@ -825,13 +811,11 @@ short ExSortTcb::workUp()
 	  {
             if (request == ex_queue::GET_NOMORE)
               {
-                // LCOV_EXCL_START
                 // Parent canceled, inform child and consume input rows
                 qchild_.down->cancelRequestWithParentIndex(
 							   qparent_.down->getHeadIndex());
                 pstate.step_ = ExSortTcb::SORT_CANCELED;
                 break;
-                // LCOV_EXCL_STOP
               }
 
 	    // if nothing returned from child. Get outta here.
@@ -851,9 +835,7 @@ short ExSortTcb::workUp()
 			  pstate.allocatedTuppDesc_, pstate.noOverflow_,
 			  workRC);
 	    if (rc == 1)
-              // LCOV_EXCL_START
 	      return workRC;
-              // LCOV_EXCL_STOP
 
 	    // consume the child row in all cases except when
 	    // sort is partially complete. sortPartiallyComplete is TRUE
@@ -879,12 +861,10 @@ short ExSortTcb::workUp()
 		      {
 		      case ex_queue::Q_OK_MMORE:
 		      case ex_queue::Q_SQLERROR:
-                        // LCOV_EXCL_START
 			{
 			  qchild_.up->removeHead();
 			}
 			break;
-                        // LCOV_EXCL_STOP
 		      case ex_queue::Q_NO_DATA:
 			{
 			  qchild_.up->removeHead();
@@ -895,9 +875,7 @@ short ExSortTcb::workUp()
 
 		      case ex_queue::Q_INVALID: 
 			{
-                          // LCOV_EXCL_START
 			  ex_assert(0, "ExSortTcb::work() invalid state returned by child");
-                          // LCOV_EXCL_STOP
 			}; break;
 		      }
 		  }
@@ -910,15 +888,12 @@ short ExSortTcb::workUp()
             // Inform child to cancel immediately. This may be called
             // several times if the parent up queue remains full,
             // but it has no unwanted side effect.
-           // LCOV_EXCL_START
             qchild_.down->cancelRequestWithParentIndex(
 						       qparent_.down->getHeadIndex());
-             // LCOV_EXCL_STOP
             // continue
           }
         case ExSortTcb::SORT_ERROR_ON_RECEIVE:
 	  {
-            // LCOV_EXCL_START
 	    if (qparent_.up->isFull()){
 	      return workStatus(WORK_OK); // parent queue is full. Just return
 	    }
@@ -946,7 +921,6 @@ short ExSortTcb::workUp()
               pstate.step_ = ExSortTcb::SORT_DONE;
 	  }
 	  break;
-          // LCOV_EXCL_STOP
 	case ExSortTcb::SORT_RECEIVE:
 	  {
 	    // check if we've got room in the up queue
@@ -978,9 +952,7 @@ short ExSortTcb::workUp()
 			     pstate.allocatedTuppDesc_, pstate.noOverflow_,
 			     workRC);
 	    if (rc == 1)
-              // LCOV_EXCL_START
 	      return workRC;
-              // LCOV_EXCL_STOP
 
 	  }
 	  break;
@@ -989,9 +961,7 @@ short ExSortTcb::workUp()
 	  {
 	    // check if we've got room in the parent up queue
 	    if (qparent_.up->isFull()){
-              // LCOV_EXCL_START
 	      return workStatus(WORK_OK); // parent queue is full. Just return
-              // LCOV_EXCL_STOP
 	    }
 
 	    rc = done(TRUE, // send Q_NO_DATA
@@ -1119,9 +1089,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	    {
 		if (sortTdb().sortOptions_->dontOverflow())
 		  {
-                    // LCOV_EXCL_START
 		  sortSendPool_->addBuffer(sortTdb().bufferSize_);
-                    // LCOV_EXCL_STOP
 		  }
 		// add more buffers if there is more space 
 		//available in the pool.
@@ -1141,7 +1109,6 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		      }
 		    else 
 		      {
-                       // LCOV_EXCL_START
 			// Ask sort to overflow. 
 			rc = sortUtil_->sortClientOutOfMem() ;
 			if (rc == SORT_IO_IN_PROGRESS)
@@ -1156,7 +1123,6 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 			  {
 			    createSortDiags();
 			    step = ExSortTcb::SORT_ERROR;
-                            // LCOV_EXCL_STOP
 			    break;
 			  }
 		      }
@@ -1193,7 +1159,6 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 			ex_assert(0,"Must get a tuple from pool as they must be available");	  
 			step = ExSortTcb::SORT_ERROR;
 			break;
-      // LCOV_EXCL_STOP
 		} 
 		  
 	  }
@@ -1201,11 +1166,9 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	  }
 	else
 	  {
-	    // LCOV_EXCL_START
             // If the tuple was already allocated
 	    td = allocatedTuppDesc;
 	    allocatedTuppDesc = NULL;
-            // LCOV_EXCL_STOP
 	  }
 	  //reaching here td is not NULL.
         ex_expr::exp_return_type retCode = ex_expr::EXPR_OK;
@@ -1294,7 +1257,6 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 
             if (qparent_.up->isFull()){
               return WORK_OK;
-                  // LCOV_EXCL_STOP
             }
 
             ex_queue_entry *upEntry = qparent_.up->getTailEntry();
@@ -1302,9 +1264,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
             upEntry->copyAtp(srcEntry);
 
             if (sortFromTop && (sortTdb().isNonFatalErrorTolerated()))
-                  // LCOV_EXCL_START
               upEntry->upState.status  = ex_queue::Q_OK_MMORE;  // denotes nonfatal error
-                  // LCOV_EXCL_STOP
             else
               upEntry->upState.status = ex_queue::Q_SQLERROR;
 
@@ -1332,7 +1292,6 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	// this rec for partialKey comparison.
         
 	if(sortTdb().partialSort())
-          // LCOV_EXCL_START
           // Partial sort is disabled and not active because it has issues 
 	  {
 	    if(!setCompareTd_)
@@ -1383,14 +1342,12 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	  }
         if (bmoStats_)
            bmoStats_->incInterimRowCount();
-	// LCOV_EXCL_STOP
 	rc = sortUtil_->sortSend(dataPointer,
 				 newRecLen,
 				 td) ;
 	
 	if (rc == SORT_IO_IN_PROGRESS)
 	  {
-            // LCOV_EXCL_START
 	    // Don't consume the child row - just return
 	    // save the tuple descriptor that we used
 	    allocatedTuppDesc = td;
@@ -1399,19 +1356,16 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	    // IPC and will schedule this operator again for next round
 	    workRC = WORK_CALL_AGAIN;
 	    return workStatus(1);
-            // LCOV_EXCL_STOP
 	  }
 	if (rc != SORT_SUCCESS)
 	  {
 	    // The tupp_descriptors already sent to sortUtil_
 	    // will be cleaned up via sortUtil_->sortEnd(), but 
 	    // this one must be freed now.
-            // LCOV_EXCL_START
 	    td->setReferenceCount(0);
 	    createSortDiags();
 	    step = ExSortTcb::SORT_ERROR;
 	    break;
-            // LCOV_EXCL_STOP
 	  }
       }
     break;
@@ -1421,20 +1375,16 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	if(setCompareTd_)
 	  {
 	    // dereference setCompareTd_
-            // LCOV_EXCL_START
 	    ReleaseTupp(setCompareTd_);
 	    setCompareTd_ = NULL;
-            // LCOV_EXCL_STOP
 	  }
 	sortPartiallyComplete_ = FALSE;
 	
 	if (sortUtil_->sortSendEnd(noOverflow) != SORT_SUCCESS)
 	  {
-            // LCOV_EXCL_START
 	    createSortDiags();
 	    step = ExSortTcb::SORT_ERROR_ON_RECEIVE;
 	    break;
-            // LCOV_EXCL_STOP
 	  }
 	
 	// ensure that the rows affected are returned
@@ -1443,9 +1393,7 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 	  {
 	    if (sortDiag_)
 	      {
-                // LCOV_EXCL_START
 		sortDiag_->mergeAfter(*da);
-                // LCOV_EXCL_STOP
 	      }
 	    else
 	      {
@@ -1462,10 +1410,8 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
     case ex_queue::Q_SQLERROR:
       {
 	if (qparent_.up->isFull()){
-          // LCOV_EXCL_START
 	  workRC = WORK_OK;
 	  return workStatus(1);
-          // LCOV_EXCL_STOP
 	}
 	
 	ex_queue_entry *upEntry = qparent_.up->getTailEntry();
@@ -1489,10 +1435,8 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
     break;
     
     case ex_queue::Q_INVALID:
-      // LCOV_EXCL_START
       ex_assert(0,"ExSortTcb::work() Invalid state returned by child");
       break;
-     // LCOV_EXCL_STOP
       
     } // switch srcStatus
   
@@ -1553,11 +1497,9 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
         {
           // no more space in the pool to allocate sorted rows from.
           //Return and come back later when some space gets freed up.
-          // LCOV_EXCL_START
           workRC = WORK_POOL_BLOCKED;
           return workStatus(1);
         }
-              // LCOV_EXCL_STOP
 	    }
           tgtEntry->getAtp()->getTupp(sortTdb().tuppIndex_) = td;  
           ReleaseTupp(td);
@@ -1566,10 +1508,8 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	}
       else
 	{
-          // LCOV_EXCL_START
 	  td = allocatedTuppDesc;
 	  allocatedTuppDesc = NULL;
-          // LCOV_EXCL_STOP
 	  
 	}
       char *dataPointer = td->getTupleAddress();
@@ -1584,7 +1524,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
       // partialSortPool_.
       if(sortTdb().partialSort())
 	{
-          // LCOV_EXCL_START
 	  if (!allocatedTuppDesc)
 	    {
 	      if (pentry_down)
@@ -1607,7 +1546,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	      receiveTd = allocatedTuppDesc;
 	      allocatedTuppDesc = NULL;
 	    }
-          // LCOV_EXCL_STOP
 	}
       else if (pentry_down)
 	tgtEntry->copyAtp(pentry_down);
@@ -1622,11 +1560,9 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	  td->setReferenceCount(0);
 	  if(sortTdb().partialSort())
 	    {
-              // LCOV_EXCL_START
 	      // In the case of partial sort, we need to copy
 	      // the record into sortPool directly.
 	      memcpy(receiveTd->getTupleAddress(), td->getTupleAddress(), reclen);
-              // LCOV_EXCL_STOP
 	    }
 	  else
 	    tgtEntry->getAtp()->getTupp(sortTdb().tuppIndex_) = td;
@@ -1635,7 +1571,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
   
   if (rc == SORT_IO_IN_PROGRESS)
     {
-      // LCOV_EXCL_START
       if (noOverflow == FALSE)
 	// Tupp descriptor allocated, remember it
 	allocatedTuppDesc = td;
@@ -1645,7 +1580,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	    allocatedTuppDesc = receiveTd;
 	  receiveTd = NULL;
 	}
-      // LCOV_EXCL_STOP
       // Don't consume the child row - just return
       // By returing work_call_again, scheduler will not give control back to 
       // IPC and will schedule this operator again for next round
@@ -1655,7 +1589,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
     }
   if (rc != SORT_SUCCESS)
     {
-      // LCOV_EXCL_START
       // error returned
       createSortDiags();
       if(sortPartiallyComplete_)
@@ -1668,7 +1601,6 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	  receiveTd = NULL;
 	}
       return 0;
-     // LCOV_EXCL_STOP
     }
   else
     {
@@ -1747,11 +1679,9 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 		  // of the child row reads.
 		  if(sortPartiallyComplete_)
 		    {
-                     // LCOV_EXCL_START
 		      qchild_.down->cancelRequestWithParentIndex(
 			   qparent_.down->getHeadIndex());
 		      step = ExSortTcb::SORT_CANCELED;
-                      // LCOV_EXCL_STOP
 		    }
 		  else
 		    step = ExSortTcb::SORT_DONE;
@@ -1774,17 +1704,13 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 	  // EOF
 	  if(receiveTd)
 	    {
-              // LCOV_EXCL_START
 	      tgtEntry->getAtp()->getTupp(sortTdb().tuppIndex_).release();
 	      receiveTd = NULL;
-              // LCOV_EXCL_STOP
 	    }
 
 	  if(sortPartiallyComplete_)
 	    {
-              // LCOV_EXCL_START
 	      step = ExSortTcb::RESTART_PARTIAL_SORT;
-              // LCOV_EXCL_STOP
 	    }
 	  else
 	    {
@@ -1813,13 +1739,11 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 
 		  if (bmoStats_ == NULL && getStatsEntry()->castToExMeasStats())
 		    {
-                     // LCOV_EXCL_START
 		      getStatsEntry()->castToExMeasStats()->incNumSorts(1);
 		      Int64 elapsedTime;
 		      elapsedTime = s.getStatElapsedTime();
 		      
 		      getStatsEntry()->castToExMeasStats()->incSortElapsedTime(elapsedTime);
-                      // LCOV_EXCL_STOP
 		      
 		    }
 		}
@@ -1853,9 +1777,7 @@ short ExSortTcb::done(
 	  if (pUPda == NULL)
 	    pUPda = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
 	  else
-            // LCOV_EXCL_START
 	    pUPda->incrRefCount();
-            // LCOV_EXCL_STOP
 	  
 	  pUPda->mergeAfter(*sortDiag_);
 	  pentry->setDiagsArea (pUPda);
@@ -1871,11 +1793,9 @@ short ExSortTcb::done(
   sortUtil_->sortEnd();
   if(setCompareTd_)
     {
-      // LCOV_EXCL_START
       // dereference setCompareTd_
       ReleaseTupp(setCompareTd_);
       setCompareTd_ = NULL;
-      // LCOV_EXCL_STOP
     }
   sortPartiallyComplete_ = FALSE;
   
@@ -1898,10 +1818,8 @@ short ExSortTcb::cancel()
 	    = *((ExSortPrivateState *) pentry->pstate);
           if (pstate.allocatedTuppDesc_)
             {
-              // LCOV_EXCL_START
 	      ReleaseTupp(pstate.allocatedTuppDesc_);
 	      pstate.allocatedTuppDesc_ = NULL;
-              // LCOV_EXCL_STOP
             }
 
           switch (pstate.step_)
@@ -1910,11 +1828,9 @@ short ExSortTcb::cancel()
               // Nothing is in the down queue yet for this request, but parent 
               // does expect a Q_NO_DATA so just change pstate.step_ to 
               // SORT_DONE;
-              // LCOV_EXCL_START
               pstate.step_ = SORT_DONE;
               ioEventHandler_->schedule(); //schedule workUp to reply
               break;
-              // LCOV_EXCL_STOP
             case SORT_PREP:
             case SORT_SEND:
               // Request has been sent to child, so cancel and discard child 
@@ -1925,26 +1841,20 @@ short ExSortTcb::cancel()
             case SORT_ERROR:
               // Request-to-child still pending, so cancel and discard child 
               // responses.
-              // LCOV_EXCL_START
               qchild_.down->cancelRequestWithParentIndex(pindex);
               // The parent is not interested to process error, go to cancel.
               pstate.step_ = ExSortTcb::SORT_CANCELED;
               break;
-              // LCOV_EXCL_STOP
             case SORT_RECEIVE:
               if(sortPartiallyComplete_)
               {
-                // LCOV_EXCL_START
                 qchild_.down->cancelRequestWithParentIndex(pindex);
                 pstate.step_ = ExSortTcb::SORT_CANCELED;
-                // LCOV_EXCL_STOP
               }
               else
                // Child has returned Q_NO_DATA and entry pop'd from child up queue.
-               // LCOV_EXCL_START
                pstate.step_ = SORT_DONE;
               break;
-              // LCOV_EXCL_STOP
             case SORT_ERROR_ON_RECEIVE:
               // Child has returned Q_NO_DATA and entry pop'd from child up queue.
               // The parent is not interested to process error, go to done.
@@ -1974,27 +1884,23 @@ ExSortPrivateState::ExSortPrivateState()
   step_ = ExSortTcb::SORT_EMPTY;
   noOverflow_ = TRUE;
 }
-// LCOV_EXCL_START
 ExSortPrivateState::~ExSortPrivateState()
 {
   if (allocatedTuppDesc_)
     ReleaseTupp(allocatedTuppDesc_);
 };
-// LCOV_EXCL_STOP
 void ReleaseTupp(void * td)
 {
 #pragma nowarn(1506)   // warning elimination 
   ((tupp_descriptor *)td)->setReferenceCount(((tupp_descriptor *)td)->getReferenceCount() - 1);
 #pragma warn(1506)  // warning elimination 
 }
-// LCOV_EXCL_START
 void CaptureTupp(void * td)
 {
 #pragma nowarn(1506)   // warning elimination 
   ((tupp_descriptor *)td)->setReferenceCount(((tupp_descriptor *)td)->getReferenceCount() + 1);
 #pragma warn(1506)  // warning elimination 
 }
-// LCOV_EXCL_STOP
 ////////////////////////////////////////////////////////////////////////////
 // ExSortFromTopTcb: input is from parent, output is to child
 ////////////////////////////////////////////////////////////////////////////
@@ -2069,9 +1975,7 @@ short ExSortFromTopTcb::work()
 	  {
 	    if (qparent_.down->isEmpty())
 	      {
-                // LCOV_EXCL_START
 		return workStatus(WORK_OK);
-                // LCOV_EXCL_STOP
 	      }
 
 	    pentry_down = qparent_.down->getHeadEntry();
@@ -2086,9 +1990,7 @@ short ExSortFromTopTcb::work()
 	    eodToChild_          = FALSE;
 
 	    if (pentry_down->downState.request == ex_queue::GET_EOD)
-              // LCOV_EXCL_START
 	      step_ = ExSortTcb::SORT_DONE_WITH_QND;
-              // LCOV_EXCL_STOP
 	    else
 	      step_ = ExSortTcb::SORT_PREP;
 	  }
@@ -2098,19 +2000,15 @@ short ExSortFromTopTcb::work()
 	  {
 	    if ( sortDiag_ != NULL )
 	      {
-                // LCOV_EXCL_START
 		sortDiag_->decrRefCount();
 		sortDiag_ = NULL;              // reset
-                // LCOV_EXCL_STOP
 	      }
 
 	    if (sortUtil_->sortInitialize(*sortCfg_, 0) != SORT_SUCCESS)
 	      {
-                // LCOV_EXCL_START
 		createSortDiags();
 		step_ = ExSortTcb::SORT_ERROR;
 		break;
-                // LCOV_EXCL_STOP	      
 	      }
 	    
 	    step_ = ExSortTcb::SORT_SEND;
@@ -2210,9 +2108,7 @@ short ExSortFromTopTcb::work()
 			     allocatedTuppDesc_, noOverflow_,
 			     workRC);
 	    if (rc == 1)
-              // LCOV_EXCL_START
 	      return workStatus(workRC);
-              // LCOV_EXCL_STOP
 	    if (step_ == ExSortTcb::SORT_DONE)
 	      {
 		// All sorted rows have been sent to the child.
@@ -2296,7 +2192,6 @@ short ExSortFromTopTcb::work()
 	      
 	      case ex_queue::Q_SQLERROR:
 		{
-                 // LCOV_EXCL_START
 		  ex_queue_entry *pentry = qparent_.up->getTailEntry();
 		  
 		  pentry->copyAtp(centry);
@@ -2311,7 +2206,6 @@ short ExSortFromTopTcb::work()
 		  step_ = ExSortTcb::SORT_CANCEL_CHILD;
 		}
 	      break;
-              // LCOV_EXCL_STOP
 	      
 	      case ex_queue::Q_OK_MMORE:
 		{
@@ -2330,9 +2224,7 @@ short ExSortFromTopTcb::work()
 
 	      default:
 		{
-                  // LCOV_EXCL_START
 		  ex_assert(0, "ExSortFromTopTcb::work() Error state Q_OK_MMORE from child");
-                  // LCOV_EXCL_STOP
 		}
 	      break;
 		    
@@ -2345,7 +2237,6 @@ short ExSortFromTopTcb::work()
             //SORT_ERROR can occur when processing rows before sending 
             //any row to child. In other words,pentry_down->downState.request
             //is not received ex_queue::GET_EOD yet.
-            // LCOV_EXCL_START
             ex_assert(numSortedRows_ == 0, "ExSortFromTopTcb::work() Sort Error when row to child");
 
 	    if (qparent_.up->isFull())
@@ -2364,14 +2255,12 @@ short ExSortFromTopTcb::work()
 
 	  }
 	break;
-          // LCOV_EXCL_STOP
 
 	case ExSortTcb::SORT_ERROR_ON_RECEIVE:
 	  {
 	    // this error is returned during sortReceive phase
 	    // or at the end of sortSend when all rows have been sent
 	    // to child.
-	    // LCOV_EXCL_START
 	    if (qparent_.up->isFull())
 	      {
 		return workStatus(WORK_OK); // parent queue is full. 
@@ -2385,7 +2274,6 @@ short ExSortFromTopTcb::work()
 	    step_ = ExSortTcb::SORT_CANCEL_CHILD;
 	  }
 	break;
-        // LCOV_EXCL_STOP
 	case ExSortTcb::SORT_CANCEL_CHILD:
 	  {
 	    // this state is reached when child returns an error
@@ -2402,7 +2290,6 @@ short ExSortFromTopTcb::work()
             //In this case, just send a QND. This is achived by stepping
             //to ExSortTcb::SORT_DONE_WITH_QND state. Cleanup is done in
             //ExSortTcb::SORT_DONE_WITH_QND state.
-            // LCOV_EXCL_START
             if(numSortedRows_ == 0)
             {
               step_ = ExSortTcb::SORT_DONE_WITH_QND;
@@ -2451,7 +2338,6 @@ short ExSortFromTopTcb::work()
 	      }
 	  }
 	break;
-        // LCOV_EXCL_STOP
 
 	case ExSortTcb::SORT_DONE_WITH_QND:
 	  {

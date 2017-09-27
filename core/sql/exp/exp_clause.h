@@ -43,7 +43,7 @@
 #include "exp_attrs.h"
 
 #include "Collections.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "Int64.h"
 #include "OperTypeEnum.h"
 #include "ExpAtp.h"

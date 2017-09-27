@@ -21,14 +21,11 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := CharSetConstants.cpp \
-	Define.cpp \
+CPPSRC := Define.cpp \
 	ExpConvMxcs.cpp \
 	Formatter.cpp \
-	immudefs.cpp \
 	InputStmt.cpp \
 	Log.cpp \
-	MsgCat.cpp \
 	Obey.cpp \
 	Param.cpp \
 	Prepare.cpp \
@@ -36,27 +33,17 @@ CPPSRC := CharSetConstants.cpp \
 	SqlciCmd.cpp \
 	SqlciEnv.cpp \
 	SqlciError.cpp \
-	SqlciHelp.cpp \
 	SqlciNode.cpp \
 	SqlciParser.cpp \
 	SqlciReset.cpp \
-	SqlciRWCmd.cpp \
-	SqlciCSCmd.cpp \
 	SqlciShow.cpp \
 	SqlciStats.cpp \
 	SqlciStmts.cpp \
-	SqlciUsage.cpp \
-	SqlciUtil.cpp \
 	SqlCmd.cpp \
-	UtilInt.cpp \
-	UtilMsg.cpp \
 	sqlclicmd.cpp
 
 
 YINC := tdm_sqlmxmsg_intl
-
-CPPSRC += SqlciRWSimulator.cpp \
-	SqlciCSSimulator.cpp
 
 DEFS += -DSQLCLI_LIB -DCLI_DLL -D_UNICODE -DCOPYRIGHT_VERSION_H=\"$(TRAFODION_VER)\" -DCOPYRIGHT_HEADER_H='"$(PRODUCT_COPYRIGHT_HEADER)"' -DPRODVER='"$(TRAFODION_VER_PROD)"'
 

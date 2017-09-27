@@ -529,7 +529,7 @@ ElemDDLPartitionSystem::bindNode(BindWA * /*pBindWA*/)
         // if the specified OSS environment variable has the
         // dollar sign prefix, removes it.
         //
-	    if (envVarName[(size_t) 0] EQU '$')            // NT_PORT FIX SK 07/15/96
+        if (envVarName[(size_t) 0] EQU '$')
         {
           envVarName = envVarName(1/*startpos*/, envVarName.length() - 1);
         }

@@ -209,12 +209,10 @@ ExLobGlobals *lobGlobals = NULL;
 
 //*****************************************************************************
 //*****************************************************************************
-// LCOV_EXCL_START
 static void sigterm_handler(Lng32 signo)
 {
     printf("sigterm received\n");
 }
-// LCOV_EXCL_STOP
 
 void LOB_process_stop(short flag)
 {
@@ -553,10 +551,8 @@ Lng32 main(Lng32 argc, char *argv[])
     // Register sigterm_handler as our signal handler for SIGTERM.
     if (signal(SIGTERM, sigterm_handler) == SIG_ERR)
     {
-      // LCOV_EXCL_START
       cout << "*** Cannot handle SIGTERM ***" << endl;
       exit(1);
-      // LCOV_EXCL_STOP
     }
 
     retval = pthread_mutex_init(&cnfg_mutex, NULL);
@@ -565,7 +561,7 @@ Lng32 main(Lng32 argc, char *argv[])
     // seaquest related stuff
     retval = msg_init_attach(&argc, &argv, true, (char *)"");
     if (retval)
-      printf("msg_init_attach returned: %d\n", retval);  // LCOV_EXCL_LINE
+      printf("msg_init_attach returned: %d\n", retval);
     // sq_fs_dllmain();
     msg_mon_process_startup(true);
     msg_mon_enable_mon_messages(1);
@@ -573,10 +569,8 @@ Lng32 main(Lng32 argc, char *argv[])
     retval = atexit((void(*)(void))msg_mon_process_shutdown);
     if (retval != 0)
     {
-      // LCOV_EXCL_START
       cout << "*** atexit failed with error " << retval << " ***" << endl;
       exit(1);
-      // LCOV_EXCL_STOP
     }
     // setup log4cxx
     QRLogger::initLog4cxx(QRLogger::QRL_LOB);

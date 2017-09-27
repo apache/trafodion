@@ -56,7 +56,6 @@ public:
 
 
 	// virtual destructor
-        // LCOV_EXCL_LINE  
 	virtual ~ElemDDLTableFeature(){}
 
 	// cast

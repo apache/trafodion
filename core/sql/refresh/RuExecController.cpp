@@ -108,7 +108,6 @@ void CRUExecController::HandleRequest(CRURuntimeControllerRqst *pRqst)
 		HandleRequestFailure(pRqst, ex);
 		return;
 	}
-	// LCOV_EXCL_START :rfi
 	catch (...) 
 	{
 		// Unknown error happened
@@ -116,7 +115,6 @@ void CRUExecController::HandleRequest(CRURuntimeControllerRqst *pRqst)
 		HandleRequestFailure(pRqst, ex);
 		return;
 	}
-	// LCOV_EXCL_STOP
 }
 
 //--------------------------------------------------------------------------//
@@ -228,7 +226,6 @@ void CRUExecController::HandleAwaitEventRqst()
 
 			return;
 		}
-		// LCOV_EXCL_START :rfi
 		catch (CUOFsTaskProcessPool::CUOFsUnknownProcessException &e)
 		{
 			// If it's the TMF completion message, then try to listen again
@@ -240,7 +237,6 @@ void CRUExecController::HandleAwaitEventRqst()
 				throw e;	
 			}
 		}
-		// LCOV_EXCL_STOP
 	}
 }
 
@@ -442,7 +438,6 @@ void CRUExecController::SerializeTaskExecutor(CRUTaskExecutor &executor)
 
 			break;
 		}
-		// LCOV_EXCL_START :rfi
 		catch (CUOFsBufferOverFlowException &ex)
 		{
 			if (pTranslator->GetBufferSize() 
@@ -458,7 +453,6 @@ void CRUExecController::SerializeTaskExecutor(CRUTaskExecutor &executor)
 			// The buffer can be resized up to the maximum 
 			executor.ReAllocateBuffer(2 /*factor*/);
 		}
-		// LCOV_EXCL_STOP
 	}
 }
 
@@ -524,7 +518,6 @@ HandleRemoteExecutorSuccess(CRUTask *pTask,
 //--------------------------------------------------------------------------//
 //	CRUExecController::HandleRemoteExecutorFailure()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRUExecController::
 HandleRemoteExecutorFailure(CRUTask *pTask,
 							Lng32 pid,
@@ -549,7 +542,6 @@ HandleRemoteExecutorFailure(CRUTask *pTask,
 	ex.SetError(IDS_RU_REMOTE_EXECUTION_FAILURE);
 	HandleTaskFailure(*pTask, ex);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	GENERAL-PURPOSE METHODS

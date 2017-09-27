@@ -201,11 +201,15 @@ protected:
   Int32 sortPartialKeyLen_;                             // 56-59
 
   UInt32 minimalSortRecs_;                              // 60-63
-  Float32 sortMemEstInMbPerCpu_;                        // 64-67
+  Float32 sortMemEstInKBPerNode_;                        // 64-67
   Float32 bmoCitizenshipFactor_;                        // 68-71
   Int32  pMemoryContingencyMB_;                        // 72-75
   UInt16 sortGrowthPercent_;                            // 76-77
-  char fillersComTdbSort_[18];                          // 78-95
+  char filler_1[2];                                     // 78-79
+  Int32 topNThreshold_;                                 // 80-83
+  Float32 estMemoryUsage_;                             // 84-87
+  Float32 bmoQuotaRatio_;                              // 88-91
+  char fillersComTdbSort_[4];                          // 92-95
 
 public:
 
@@ -331,9 +335,24 @@ public:
   Int32 getMemoryContingencyMB(void)
     { return pMemoryContingencyMB_; }
   
-  void setSortMemEstInMbPerCpu(Float32 s) {sortMemEstInMbPerCpu_=s;}
-  Float32 getSortMemEstInMbPerCpu() {return sortMemEstInMbPerCpu_;}
+  void setSortMemEstInKBPerNode(Float32 s) {sortMemEstInKBPerNode_=s;}
+  Float32 getSortMemEstInKBPerNode() {return sortMemEstInKBPerNode_;}
   Float32 sortGrowthPercent() {return Float32(sortGrowthPercent_/100.0);}
+
+  void setTopNThreshold(Int32 limit)
+    {  topNThreshold_ = limit;} 
+  Int32 getTopNThreshold(void)
+    { return topNThreshold_; }
+
+  void setEstimatedMemoryUsage(Float32 estMemory)
+    { estMemoryUsage_ = estMemory; }
+  virtual Float32 getEstimatedMemoryUsage(void)
+    { return estMemoryUsage_;}
+
+  void setBmoQuotaRatio(Float32 bmoQuotaRatio)
+    { bmoQuotaRatio_ = bmoQuotaRatio; }
+  virtual Float32 getBmoQuotaRatio(void)
+    { return bmoQuotaRatio_;}
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.

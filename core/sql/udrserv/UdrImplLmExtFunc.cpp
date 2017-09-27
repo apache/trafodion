@@ -45,12 +45,10 @@ void lmMakeTFDSCall(const char *msg, const char *file, UInt32 line)
 }
 
 
-// LCOV_EXCL_START
 void lmPrintSignalHandlers()
 {
   printSignalHandlers();
 }
-// LCOV_EXCL_STOP
 
 NABoolean lmSetSignalHandlersToDefault()
 {

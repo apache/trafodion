@@ -50,7 +50,6 @@
 // LM service: convertIn. 
 //////////////////////////////////////////////////////////////////////
 // Exclude the following methods for coverage as they are not used in LM.
-// LCOV_EXCL_START
 LmResult LmLanguageManager::convertIn(
   NAType   *src,
   NAType   **dst,
@@ -112,7 +111,6 @@ LmResult LmLanguageManager::convertOut(
 
   return convertIn(src, dst, mem);
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////
 // skipURLProtocol.

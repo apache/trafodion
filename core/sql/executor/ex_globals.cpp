@@ -41,7 +41,6 @@
 #include "ComTdb.h"
 #include "ex_tcb.h"
 #include "ExStats.h"
-#include "ExMeas.h"
 #include "ex_globals.h"
 #include "Globals.h"
 #include "SqlStats.h"
@@ -127,12 +126,9 @@ void ex_globals::deleteMe(NABoolean fatalError)
     else
     {
       Long semId = getSemId();
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(semId, getPid(), savedPriority, savedStopMode,
-                        FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(semId, getPid());
       NADELETE(statsArea_, ExStatisticsArea, statsArea_->getHeap());
-      statsGlobals->releaseStatsSemaphore(semId, getPid(), savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(semId, getPid());
     }
   }
   statsArea_ = NULL;

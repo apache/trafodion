@@ -687,7 +687,6 @@ const NAString Refresh::getText() const
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 // Exclude from coverage testing - Must be implemented as a RelExpr subclass, but not used.
-// LCOV_EXCL_START
 RelExpr *Refresh::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   Refresh *result = NULL;
@@ -726,7 +725,6 @@ RelExpr *Refresh::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   return BinderOnlyNode::copyTopNode(result, outHeap);
 }  // Refresh::copyTopNode()
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Return the DeltaDefinition for the table named 'name'.

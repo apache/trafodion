@@ -43,7 +43,6 @@
 #include "RuGlobals.h"
 #include "RuOptions.h"
 
-// LCOV_EXCL_START :cnu
 
 //----------------------------------------------------------------------------
 //Destructor
@@ -739,4 +738,3 @@ CDSString CRUForceOptionsParser::GetQualifiedName() const
 		   ansiName.GetObjectName();
 }
 
-// LCOV_EXCL_STOP

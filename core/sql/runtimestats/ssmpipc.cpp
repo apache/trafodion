@@ -194,7 +194,8 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
 #endif
 
   char defineName[24+1];
-  short error, mergeInterval, statsTimeout, sqlSrcLen;
+  int error;
+  short mergeInterval, statsTimeout, sqlSrcLen;
 
   //Check to see if the user wants to use a different merge interval (default is 30 seocnds).
   //Set this define as follows: ADD DEFINE =_MX_RTS_MERGE_INTERVAL, CLASS DEFAULTS, VOLUME $A.Bnnnnn
@@ -233,7 +234,6 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
   }
 
   CliGlobals *cliGlobals = GetCliGlobals();
-  short savedPriority, savedStopMode;
   char programDir[100];
   short processType;
   char myNodeName[MAX_SEGMENT_NAME_LEN+1];
@@ -253,9 +253,7 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
     ex_assert(0,"Error in ComRtGetProgramInfo");
   }
   pri = 0;
-  error = statsGlobals_->getStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode,
-                                          FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
   NAProcessHandle phandle;
 
   (void)phandle.getmine(statsGlobals->getSsmpProcHandle());
@@ -272,7 +270,7 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
           0);
   statsGlobals_->setSscpOpens(0);
   statsGlobals_->setSscpDeletedOpens(0);
-  statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+  statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
   deallocatedSscps_ = new (heap_) Queue(heap_);
   doingGC_ = FALSE;
   // Debug code to force merge if the =_MX_SSMP_FORCE_MERGE define
@@ -598,14 +596,12 @@ void SsmpGlobals::work()
     // and update the time of last GC.
     statsGlobals->checkForDeadProcesses(myPin_);
     setDoingGC(TRUE);
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode,FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(semId_, myPin_);
     statsGlobals->doFullGC();
     statsGlobals->setLastGCTime(NA_JulianTimestamp());
     statsGlobals->cleanupOldSikeys(SikGcInterval);
     setDoingGC(FALSE);
-    statsGlobals->releaseStatsSemaphore(semId_, myPin_,savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(semId_, myPin_);
   }
 }
 
@@ -660,12 +656,9 @@ bool SsmpGlobals::getQidFromPid( Int32 pid,         // IN
                                )
 {
   bool foundQid = false;
-  short savedPriority, savedStopMode;
   StatsGlobals *statsGlobals = getStatsGlobals();
   short error =
-    statsGlobals->getStatsSemaphore(getSemId(), myPin(),
-         savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    statsGlobals->getStatsSemaphore(getSemId(), myPin());
 
   SyncHashQueue *ssList = statsGlobals->getStmtStatsList();
   ssList->position();
@@ -709,8 +702,7 @@ bool SsmpGlobals::getQidFromPid( Int32 pid,         // IN
     }
     ss = (StmtStats *)ssList->getNext();
   }
-  statsGlobals->releaseStatsSemaphore(getSemId(), myPin(),
-                                  savedPriority, savedStopMode);
+  statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
   return foundQid;
 }
 
@@ -722,12 +714,9 @@ bool SsmpGlobals::cancelQueryTree(char *queryId, Lng32 queryIdLen,
   bool hasChildQid = false;
   char childQid[ComSqlId::MAX_QUERY_ID_LEN + 1];
   Lng32 childQidLen = 0;
-  short savedPriority, savedStopMode;
   StatsGlobals *statsGlobals = getStatsGlobals();
-  short error =
-    statsGlobals->getStatsSemaphore(getSemId(), myPin(),
-         savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error =
+    statsGlobals->getStatsSemaphore(getSemId(), myPin());
 
   StmtStats *cqStmtStats = statsGlobals->getMasterStmtStats(
     queryId, queryIdLen,
@@ -742,8 +731,7 @@ bool SsmpGlobals::cancelQueryTree(char *queryId, Lng32 queryIdLen,
     childQidLen = m->getChildQidLen();
   }
 
-  statsGlobals->releaseStatsSemaphore(getSemId(), myPin(),
-                                      savedPriority, savedStopMode);
+  statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
 
   if (cqStmtStats == NULL)
   {
@@ -790,11 +778,10 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
   NABoolean ceSaveabend = request->getCancelEscalationSaveabend();
   bool cancelLogging = request->getCancelLogging();
 
-  short savedPriority, savedStopMode;
   short sqlErrorCode = 0;
   const char *sqlErrorDesc = NULL;
   StatsGlobals *statsGlobals = getStatsGlobals();
-  short error;
+  int error;
   char tempQid[ComSqlId::MAX_QUERY_ID_LEN+1];
 
 
@@ -803,10 +790,7 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
 
   if (aq == NULL)
   {
-     error = statsGlobals->getStatsSemaphore(getSemId(),
-              myPin(),
-              savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-     ex_assert(error == 0, "getStatsSemaphore() returned an error");
+     error = statsGlobals->getStatsSemaphore(getSemId(), myPin());
      StmtStats *cqStmtStats = statsGlobals->getMasterStmtStats(
                 queryId, queryIdLen,
                 RtsQueryId::ANY_QUERY_);
@@ -837,8 +821,7 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
            sqlErrorDesc = "The query state is not known";
         }
      }
-     statsGlobals->releaseStatsSemaphore(getSemId(),
-          myPin(), savedPriority, savedStopMode);
+     statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
   }
   else
   if (aq && (aq->getQueryStartTime() <= cancelStartTime))
@@ -854,12 +837,8 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
     if (unimportantDiags)
       unimportantDiags->decrRefCount();
 
-    short savedPriority, savedStopMode;
     StatsGlobals *statsGlobals = getStatsGlobals();
-    short error =
-      statsGlobals->getStatsSemaphore(getSemId(), myPin(),
-           savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(getSemId(), myPin());
 
     StmtStats *cqStmtStats = statsGlobals->getMasterStmtStats(
       queryId, queryIdLen,
@@ -879,8 +858,7 @@ bool SsmpGlobals::cancelQuery(char *queryId, Lng32 queryIdLen,
         cMasterStats->setCancelComment(request->getComment());
         }
     }
-    statsGlobals->releaseStatsSemaphore(getSemId(), myPin(),
-                                        savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
 
     // Set up for escalation later.
     if ((ceFirstInterval != 0) || (ceSecondInterval != 0))
@@ -966,13 +944,9 @@ bool SsmpGlobals::activateFromQid(
 {
   bool doAttemptActivate = true;
   // Find the query.
-  short savedPriority, savedStopMode;
   StatsGlobals *statsGlobals = getStatsGlobals();
 
-  short error = statsGlobals->getStatsSemaphore(
-              getSemId(), myPin(),
-              savedPriority, savedStopMode, FALSE);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = statsGlobals->getStatsSemaphore(getSemId(), myPin());
 
   SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
@@ -1020,8 +994,7 @@ bool SsmpGlobals::activateFromQid(
     masterStats->setQuerySuspended(false);
   }
 
-  statsGlobals->releaseStatsSemaphore(getSemId(), myPin(),
-                                      savedPriority, savedStopMode);
+  statsGlobals->releaseStatsSemaphore(getSemId(), myPin());
 
   if (doAttemptActivate && suspendLogging)
   {
@@ -1443,13 +1416,10 @@ void SsmpNewIncomingConnectionStream::actOnSuspendQueryReq(
         Lng32 qidLen = queryId->getQueryIdLen();
 
         // Find the query.
-        short savedPriority, savedStopMode;
         StatsGlobals *statsGlobals = ssmpGlobals_->getStatsGlobals();
 
-        short error = statsGlobals->getStatsSemaphore(
-                    ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                    savedPriority, savedStopMode, FALSE);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        int error = statsGlobals->getStatsSemaphore(
+                    ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
 
         SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
         stmtStatsList->position(qid, qidLen);
@@ -1531,8 +1501,7 @@ void SsmpNewIncomingConnectionStream::actOnSuspendQueryReq(
         }
 
         statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-                                            ssmpGlobals_->myPin(),
-                                            savedPriority, savedStopMode);
+                                            ssmpGlobals_->myPin());
 
         if (doAttemptSuspend && request->getSuspendLogging())
         {
@@ -1682,14 +1651,13 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
 {
   IpcMessageObjVersion msgVer;
   StatsGlobals *statsGlobals;
-  short error;
+  int error;
   char *qid;
   pid_t pid = 0;
   short cpu;
   Int64 timeStamp;
   Lng32 queryNumber;
   RtsQueryId *rtsQueryId = NULL;
-  short savedPriority, savedStopMode;
   StmtStats *stmtStats = NULL;
 
   msgVer = getNextObjVersion();
@@ -1724,14 +1692,12 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
           case SQLCLI_STATS_REQ_QID:
             qid = queryId->getQid();
             error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                    ssmpGlobals_->myPin());
             stmtStats =
               statsGlobals->getMasterStmtStats(qid, str_len(qid), queryId->getActiveQueryNum());
             if (stmtStats != NULL)
               stmtStats->setStmtStatsUsed(TRUE);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                    savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             if (stmtStats != NULL)
             {
               getMergedStats(request, queryId, stmtStats,
@@ -1741,14 +1707,12 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
           case SQLCLI_STATS_REQ_QID_DETAIL:
             qid = queryId->getQid();
             error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(), 
-                        ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);  
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                        ssmpGlobals_->myPin());
             stmtStats = 
               statsGlobals->getMasterStmtStats(qid, str_len(qid), 1);
             if (stmtStats != NULL)
               stmtStats->setStmtStatsUsed(TRUE);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                    savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             if (stmtStats != NULL)
             {
               getMergedStats(request, queryId, stmtStats,
@@ -1761,13 +1725,11 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
             break;
           case SQLCLI_STATS_REQ_PID:
             error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(),savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                    ssmpGlobals_->myPin());
             stmtStats = statsGlobals->getStmtStats(pid, queryId->getActiveQueryNum());
             if (stmtStats != NULL)
               stmtStats->setStmtStatsUsed(TRUE);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                        savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             if (stmtStats != NULL)
             {
               if (stmtStats->isMaster())
@@ -1803,13 +1765,11 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
             timeStamp = queryId->getTimeStamp();
             queryNumber = queryId->getQueryNumber();
             error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(),savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                    ssmpGlobals_->myPin());
             stmtStats = statsGlobals->getStmtStats(cpu, pid, timeStamp, queryNumber);
             if (stmtStats != NULL)
               stmtStats->setStmtStatsUsed(TRUE);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                        savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             if (stmtStats != NULL)
             {
                 ex_assert(stmtStats->isMaster() == TRUE, "Should be Master here");
@@ -1818,14 +1778,11 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
             }
             break;
           case SQLCLI_STATS_REQ_CPU:
-            error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                  ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+            error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             stmtStats = statsGlobals->getStmtStats(queryId->getActiveQueryNum());
             if (stmtStats != NULL)
               stmtStats->setStmtStatsUsed(TRUE);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                      savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             if (stmtStats != NULL)
             {
               ex_assert(stmtStats->isMaster() == TRUE, "Should be Master here");
@@ -1917,13 +1874,11 @@ void SsmpNewIncomingConnectionStream::getMergedStats(RtsStatsReq *request,
                                           srcMergedStats->getOrigCollectStatsType());
         mergedStats->setStatsEnabled(TRUE);
         StatsGlobals *statsGlobals = ssmpGlobals_->getStatsGlobals();
-        short savedPriority, savedStopMode;
-        short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        int error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                    ssmpGlobals_->myPin());
         mergedStats->merge(srcMergedStats, statsMergeType);
         statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+                    ssmpGlobals_->myPin());
         sendMergedStats(mergedStats, 0, reqType, stmtStats, FALSE);
         return;
       }
@@ -1969,7 +1924,6 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
   StatsGlobals *statsGlobals;
   ExStatisticsArea *stats;
   ExStatisticsArea *cpuStats = NULL;
-  short savedPriority, savedStopMode;
   ExMasterStats *masterStats;
 
   short currQueryNum = 0;
@@ -2027,9 +1981,8 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
            ExStatisticsArea(getHeap(), 0, ComTdb::ET_OFFENDER_STATS,
                      ComTdb::ET_OFFENDER_STATS);
        cpuStats->setStatsEnabled(TRUE);
-       short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-            ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
-       ex_assert(error == 0, "getStatsSemaphore() returned an error");
+       int error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+            ssmpGlobals_->myPin());
        SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
        stmtStatsList->position();
        Int64 currTimestamp = NA_JulianTimestamp();
@@ -2041,7 +1994,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
                   subReqType, filter, currTimestamp);
        }
        statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-          ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+          ssmpGlobals_->myPin());
        break;
 
      }
@@ -2058,9 +2011,8 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
     case SQLCLI_STATS_REQ_CPU_OFFENDER:
      {
       short noOfQueries = request->getNoOfQueries();
-      short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                        ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                        ssmpGlobals_->myPin());
       SyncHashQueue * stmtStatsList = statsGlobals->getStmtStatsList();
       stmtStatsList->position();
      switch (noOfQueries)
@@ -2093,7 +2045,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
         break;
       }
       statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-          ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+          ssmpGlobals_->myPin());
       break;
      }
     default:
@@ -2128,7 +2080,6 @@ void SsmpNewIncomingConnectionStream::actOnExplainReq(IpcConnection *connection)
   IpcMessageObjVersion msgVer;
   StmtStats *stmtStats;
   StatsGlobals *statsGlobals;
-  short savedPriority, savedStopMode;
   RtsExplainFrag *explainFrag = NULL;
   RtsExplainFrag *srcExplainFrag;
 
@@ -2151,9 +2102,8 @@ void SsmpNewIncomingConnectionStream::actOnExplainReq(IpcConnection *connection)
                 RtsExplainReply(request->getHandle(), getHeap());
   *this << *reply;
   statsGlobals = ssmpGlobals_->getStatsGlobals();
-  short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                    ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                    ssmpGlobals_->myPin());
   stmtStats = statsGlobals->getMasterStmtStats(request->getQid(), request->getQidLen(),
               RtsQueryId::ANY_QUERY_);
   if (stmtStats != NULL)
@@ -2162,8 +2112,7 @@ void SsmpNewIncomingConnectionStream::actOnExplainReq(IpcConnection *connection)
     if (srcExplainFrag != NULL)
       explainFrag = new (getHeap()) RtsExplainFrag(getHeap(), srcExplainFrag);
   }
-  statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                        savedPriority, savedStopMode);
+  statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
   if (explainFrag)
     *this << *(explainFrag);
   send(FALSE);
@@ -2187,8 +2136,7 @@ void SscpClientMsgStream::actOnStatsReply(IpcConnection *connection)
 
   IpcMessageObjVersion msgVer;
   msgVer = getNextObjVersion();
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
 
   if (msgVer > currRtsStatsReplyVersionNumber)
     // Send Error
@@ -2220,8 +2168,7 @@ void SscpClientMsgStream::actOnStatsReply(IpcConnection *connection)
           {
             StatsGlobals *statsGlobals = ssmpGlobals_->getStatsGlobals();
             error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                ssmpGlobals_->myPin());
             if (mergedStats_ == NULL)
             {
               if (isReplySent())
@@ -2238,8 +2185,7 @@ void SscpClientMsgStream::actOnStatsReply(IpcConnection *connection)
               mergedStats_->setStatsEnabled(TRUE);
             }
             mergedStats_->merge(stats);
-            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                      savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
             break;
           }
           case SQLCLI_STATS_REQ_QID_DETAIL:
@@ -2409,8 +2355,7 @@ void SscpClientMsgStream::sendMergedStats()
 {
   StmtStats *stmtStats;
   ExStatisticsArea *mergedStats;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
 
   stmtStats = getStmtStats();
   short reqType = getReqType();
@@ -2419,8 +2364,7 @@ void SscpClientMsgStream::sendMergedStats()
   {
     StatsGlobals *statsGlobals = ssmpGlobals_->getStatsGlobals();
     error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-      ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      ssmpGlobals_->myPin());
     mergedStats_ = new (ssmpGlobals_->getStatsHeap())
           ExStatisticsArea(ssmpGlobals_->getStatsHeap(), 0,
                 stmtStats->getMasterStats()->getCollectStatsType());
@@ -2432,8 +2376,7 @@ void SscpClientMsgStream::sendMergedStats()
             ExMasterStats(ssmpGlobals_->getStatsHeap());
     masterStats->copyContents(stmtStats->getMasterStats());
     mergedStats_->setMasterStats(masterStats);
-    statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-          savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
   }
   ExMasterStats *masterStats;
   if (mergedStats_ != NULL)
@@ -2471,8 +2414,7 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
                                              short reqType, StmtStats *stmtStats, NABoolean updateMergeStats)
 {
   StatsGlobals *statsGlobals;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
 
   RtsStatsReply *reply = new (getHeap())
       RtsStatsReply(getHandle(), getHeap());
@@ -2488,8 +2430,7 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
       send (FALSE);
       statsGlobals = ssmpGlobals_->getStatsGlobals();
       error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-            ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+            ssmpGlobals_->myPin());
       if (stmtStats != NULL)
       {
         if (updateMergeStats)
@@ -2498,8 +2439,7 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
         if (isWmsProcess() && stmtStats->canbeGCed())
           statsGlobals->removeQuery(stmtStats->getPid(), stmtStats, TRUE);
       }
-      statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
-                  savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin());
       break;
     case SQLCLI_STATS_REQ_QID_DETAIL:
       if (mergedStats != NULL)

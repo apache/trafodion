@@ -45,7 +45,7 @@
 #include "SQLCLIdev.h"
 #include "ExpLOBexternal.h"
 #include "ComDiags.h"
-class CliStatement;
+class Statement;
 class CliGlobals;
 class ContextCli;
 class Descriptor;
@@ -115,13 +115,11 @@ extern "C"
                               /*IN*/ SQLSTMT_ID *callStmtId,
                               /*IN*/ Lng32 resultSetIndex,
                               /*INOUT*/ SQLSTMT_ID *resultSetStmtId);
-//LCOV_EXCL_START
 
    Lng32 SQLCLI_AssocFileNumber(/*IN*/    CliGlobals   * cliGlobals,
                                /*IN*/    SQLSTMT_ID * statement_id,
 		               /*IN*/    short         file_number);
 
-//LCOV_EXCL_STOP
 Int32  SQLCLI_GetDiskMaxSize (
 			      /*IN*/ CliGlobals *cliGlobals,
 			      /*IN*/ char *volname,

@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Sun Sep  3 07:21:45 2017
+-- Definition current  Mon Sep 18 16:13:32 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -143,7 +143,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212371183306853153
+PLAN_ID .................. 212372511214096121
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -156,6 +156,7 @@ ROWS_OUT ................. 7
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 11
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -181,7 +182,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 931258273795435832
+  ObjectUIDs ............. 2068981457564705177
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -202,6 +203,7 @@ DESCRIPTION
   begin_keys(incl) ....... 3
   end_keys(excl) ......... 5
   cache_size ........... 100
+  cache_blocks ........... ON
   small_scanner .......... ON
   probes ................. 1
   rows_accessed ......... 11
@@ -1274,7 +1276,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Sun Sep  3 07:23:51 2017
+-- Definition current  Mon Sep 18 16:15:51 2017
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1462,7 +1464,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000001654212371183276408861000000000206U3333300_2289_EXPLSTMT
+MXID11000003675212372511181547316000000000206U3333300_2377_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1514,7 +1516,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000001654212371183276408861000000000206U3333300_2300_EXPLSTMT2
+MXID11000003675212372511181547316000000000206U3333300_2388_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;

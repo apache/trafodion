@@ -70,7 +70,9 @@ ComTdbRoot::ComTdbRoot()
        rtFlags5_(0),
        compilationStatsData_(NULL),
        objectUidList_(NULL),
-       cursorType_(SQL_READONLY_CURSOR)	   
+       cursorType_(SQL_READONLY_CURSOR),	
+       bmoMemLimitPerNode_(0),
+       estBmoMemPerNode_(0)
 {
   //setPlanVersion(ComVersion_GetCurrentPlanVersion());
       

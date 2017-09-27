@@ -346,28 +346,27 @@ void CCluster::NodeReady( CNode *spareNode )
         lnode->Up();
     }
 
-    ResetIntegratingPNid();
     spareNode->SetActivatingSpare( false );
-
     if ( MyNode->IsCreator() )
     {
         MyNode->SetCreator( false, -1, -1 );
     }
+    ResetIntegratingPNid();
 
     TRACE_EXIT;
 }
 
-
 // Assigns a new TMLeader if given pnid is same as TmLeaderNid 
 // TmLeader is a logical node num. 
 // pnid has gone down, so if that node was previously the TM leader, a new one needs to be chosen.
-void CCluster::AssignTmLeader(int pnid)
+void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 {
     const char method_name[] = "CCluster::AssignTmLeader";
     TRACE_ENTRY;
 
     int i = 0;
     CNode *node = NULL;
+    CProcess *process = NULL;
 
     int TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
 
@@ -375,24 +374,50 @@ void CCluster::AssignTmLeader(int pnid)
     {
         node = LNode[TmLeaderNid]->GetNode();
 
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+        if (checkProcess)
         {
-            trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
-                        , method_name, __LINE__
-                        , node->GetPNid()
-                        , node->GetName()
-                        , NodePhaseString(node->GetPhase())
-                        , node->IsSoftNodeDown());
+            process = LNode[TmLeaderNid]->GetProcessLByType( ProcessType_DTM );
+            if (process)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    if (node)
+                        trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, "
+                                      "isSoftNodeDown=%d, checkProcess=%d\n"
+                                    , method_name, __LINE__
+                                    , node->GetPNid()
+                                    , node->GetName()
+                                    , NodePhaseString(node->GetPhase())
+                                    , node->IsSoftNodeDown()
+                                    , checkProcess );
+                }
+                return;
+            }
         }
-    
-        return;
+        else
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+            {
+                if (node)
+                    trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, "
+                                  "isSoftNodeDown=%d, checkProcess=%d\n"
+                                , method_name, __LINE__
+                                , node->GetPNid()
+                                , node->GetName()
+                                , NodePhaseString(node->GetPhase())
+                                , node->IsSoftNodeDown()
+                                , checkProcess );
+            }
+            return;
+        }
     }
 
     node = Node[TmLeaderPNid];
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
     {
-        trace_printf("%s@%d" " - Node "  "%d" " TmLeader failed." "\n", method_name, __LINE__, TmLeaderNid);
+        trace_printf( "%s@%d" " - Node "  "%d" " TmLeader failed! (checkProcess=%d)\n"
+                    , method_name, __LINE__, TmLeaderNid, checkProcess );
     }
 
     for (i=0; i<GetConfigPNodesMax(); i++)
@@ -435,6 +460,15 @@ void CCluster::AssignTmLeader(int pnid)
         }  
 
         TmLeaderNid = node->GetFirstLNode()->GetNid();
+
+        if (checkProcess)
+        {
+            process = LNode[TmLeaderNid]->GetProcessLByType( ProcessType_DTM );
+            if (!process)
+            {
+                continue; // skip this node no DTM process exists
+            }
+        }
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
@@ -483,7 +517,11 @@ CCluster::CCluster (void)
       integratingPNid_(-1),
       joinComm_(MPI_COMM_NULL),
       joinSock_(-1),
-      seqNum_(0),
+      lastSeqNum_(0),
+      lowSeqNum_(0),
+      highSeqNum_(0),
+      reconnectSeqNum_(0),
+      seqNum_(1),
       waitForWatchdogExit_(false)
       ,checkSeqNum_(false)
       ,validateNodeDown_(false)
@@ -511,6 +549,9 @@ CCluster::CCluster (void)
                     method_name, __LINE__,
                     (checkSeqNum_ ? "enabled" : "disabled"));
     
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    configPNodesMax_ = clusterConfig->GetPNodesConfigMax();
+
     // Compute minimum "sync cycles" per second.   The minimum is 1/10
     // the expected number, assuming "next_test_delay" cycles per second (where
     // next_test_delay is in microseconds).
@@ -520,8 +561,6 @@ CCluster::CCluster (void)
     agMaxElapsed_.tv_nsec = 0;
     agMinElapsed_.tv_sec = 10000;
     agMinElapsed_.tv_nsec = 0;
-
-    tmSyncBuffer_ = Nodes->GetSyncBuffer();
 
     // Allocate structures for monitor point-to-point communications
     //
@@ -547,6 +586,7 @@ CCluster::CCluster (void)
     {
         comms_[i] = MPI_COMM_NULL;
         socks_[i] = -1;
+        sockPorts_[i] = -1;
     }
 
     env = getenv("SQ_MON_NODE_DOWN_VALIDATION");
@@ -647,7 +687,7 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
         {
             trace_printf("%s@%d nodestate[%d].seq_num=%lld, seqNum=%lld\n", method_name, __LINE__, i, nodestate[i].seq_num, seqNum );
         }
-        if (nodestate[i].seq_num > 0)
+        if (nodestate[i].seq_num > 1)
         {
             if (seqNum == 0) 
             {
@@ -657,6 +697,10 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
             {
                 assert(nodestate[i].seq_num == seqNum);
             }
+        }
+        if (trace_settings & TRACE_RECOVERY)
+        {
+            trace_printf("%s@%d nodestate[%d].seq_num=%lld, seqNum=%lld\n", method_name, __LINE__, i, nodestate[i].seq_num, seqNum );
         }
     }
 
@@ -804,11 +848,11 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         {
             if ( node->GetPNid() == integratingPNid_ )
             {
-                ResetIntegratingPNid();
                 if ( MyNode->IsCreator() )
                 {
                     MyNode->SetCreator( false, -1, -1 );
                 }
+                ResetIntegratingPNid();
             }
             node->KillAllDown();
             node->SetState( State_Down ); 
@@ -839,7 +883,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
     if ( Emulate_Down )
     {
         IAmIntegrated = false;
-        AssignTmLeader(pnid);
+        AssignTmLeader(pnid, false);
     }
 
     TRACE_EXIT;
@@ -940,7 +984,7 @@ void CCluster::SoftNodeDown( int pnid )
     }
 
     IAmIntegrated = false;
-    AssignTmLeader(pnid);
+    AssignTmLeader(pnid, false);
 
     TRACE_EXIT;
 }
@@ -1303,9 +1347,10 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                             , method_name, __LINE__, node->GetName(), node->GetPNid(), StateString( node->GetState() ) );
                 for ( int i =0; i < Nodes->GetPNodesCount(); i++ )
                 {
-                    trace_printf( "%s@%d socks_[indexToPnid_[%d]=%d]=%d\n"
+                    trace_printf( "%s@%d socks_[indexToPnid_[%d]=%d]=%d, sockPorts_[indexToPnid_[%d]=%d]=%d\n"
                                 , method_name, __LINE__
-                                , i, indexToPnid_[i], socks_[indexToPnid_[i]] );
+                                , i, indexToPnid_[i], socks_[indexToPnid_[i]]
+                                , i, indexToPnid_[i], sockPorts_[indexToPnid_[i]] );
                 }
             }
             if ( MyNode->IsCreator() )
@@ -1425,11 +1470,11 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 }
             }
 
-            ResetIntegratingPNid();
             if ( MyNode->IsCreator() )
             {
                 MyNode->SetCreator( false, -1, -1 );
             }
+            ResetIntegratingPNid();
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                trace_printf( "%s@%d" " - New monitor %s, pnid=%d, state=%s, spare=%d\n"
@@ -1616,8 +1661,9 @@ const char *SyncStateString( SyncState state)
 }
 
 
-void CCluster::AddTmsyncMsg (struct sync_def *sync,
-                             struct internal_msg_def *msg)
+void CCluster::AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
+                           , struct sync_def *sync
+                           , struct internal_msg_def *msg)
 {
     const char method_name[] = "CCluster::AddTmsyncMsg";
     TRACE_ENTRY;
@@ -1647,12 +1693,12 @@ void CCluster::AddTmsyncMsg (struct sync_def *sync,
 
     // Insert the message size into the message header
     msg->replSize = msgSize;
-    tmSyncBuffer_->msgInfo.msg_count = 1;
-    tmSyncBuffer_->msgInfo.msg_offset += msgSize;
+    tmSyncBuffer->msgInfo.msg_count = 1;
+    tmSyncBuffer->msgInfo.msg_offset += msgSize;
 
     // Set end-of-buffer marker
     msg = (struct internal_msg_def *)
-        &tmSyncBuffer_->msg[tmSyncBuffer_->msgInfo.msg_offset];
+        &tmSyncBuffer->msg[tmSyncBuffer->msgInfo.msg_offset];
     msg->type = InternalType_Null;
 
     TRACE_EXIT;
@@ -2787,7 +2833,6 @@ void CCluster::InitializeConfigCluster( void )
     MPI_Comm_size (MPI_COMM_WORLD, &worldSize);    
     int rankToPnid[worldSize];
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
-    configPNodesMax_ = clusterConfig->GetPNodesConfigMax();
     
     CurNodes = worldSize;
 
@@ -2931,7 +2976,7 @@ void CCluster::InitializeConfigCluster( void )
                     node->SetCommPort( &commPortNums[ i * MPI_MAX_PORT_NAME] );
                     node->SetSyncPort( &syncPortNums[ i * MPI_MAX_PORT_NAME] );
                     rankToPnid[i] = node->GetPNid();
-                    nodeStatus[i] = true;
+                    nodeStatus[rankToPnid[i]] = true;
 
                     if (trace_settings & TRACE_INIT)
                     {
@@ -2967,7 +3012,7 @@ void CCluster::InitializeConfigCluster( void )
             // Any nodes not in the initial MPI_COMM_WORLD are down.
             for (int i=0; i<GetConfigPNodesCount(); ++i)
             {
-                if ( nodeStatus[i] == false )
+                if ( nodeStatus[indexToPnid_[i]] == false )
                 {
                     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
                         trace_printf( "%s@%d - nodeStatus[%d]=%d"
@@ -2982,7 +3027,7 @@ void CCluster::InitializeConfigCluster( void )
                     // assign new TmLeader if TMLeader node is dead.
                     if (TmLeaderPNid == indexToPnid_[i]) 
                     {
-                        AssignTmLeader(indexToPnid_[i]);
+                        AssignTmLeader(indexToPnid_[i], false);
                     }
                 }
                 else
@@ -3327,6 +3372,132 @@ void CCluster::SendReIntegrateStatus( STATE nodeState, int initErr )
     }
 }
 
+bool CCluster::PingSockPeer(CNode *node)
+{
+    const char method_name[] = "CCluster::PingSockPeer";
+    TRACE_ENTRY;
+
+    bool rs = true;
+    int  rc;
+    int  pingSock = -1;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Pinging remote monitor %s, pnid=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName(), node->GetPNid() );
+    }
+
+    // Attempt to connect with remote monitor
+    for (int i = 0; i < MAX_RECONN_PING_RETRY_COUNT; i++ )
+    {
+        pingSock = Monitor->Connect( node->GetCommPort() );
+        if ( pingSock < 0 )
+        {
+            sleep( MAX_RECONN_PING_WAIT_TIMEOUT );
+        }
+        else
+        {
+            break;
+        }
+    }
+    if ( pingSock < 0 )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Can't connect to remote monitor %s, pnid=%d\n"
+                        , method_name, __LINE__
+                        , node->GetName(), node->GetPNid() );
+        }
+        return(false);
+    }
+
+    nodeId_t nodeInfo;
+
+    nodeInfo.pnid = MyPNID;
+    strcpy(nodeInfo.nodeName, MyNode->GetName());
+    strcpy(nodeInfo.commPort, MyNode->GetCommPort());
+    strcpy(nodeInfo.syncPort, MyNode->GetSyncPort());
+    nodeInfo.ping = true;
+    nodeInfo.creatorPNid = -1;
+    nodeInfo.creator = false;
+    nodeInfo.creatorShellPid = -1;
+    nodeInfo.creatorShellVerifier = -1;
+    
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "Sending my nodeInfo.pnid=%d\n"
+                      "        nodeInfo.nodeName=%s\n"
+                      "        nodeInfo.commPort=%s\n"
+                      "        nodeInfo.syncPort=%s\n"
+                      "        nodeInfo.creatorPNid=%d\n"
+                      "        nodeInfo.creator=%d\n"
+                      "        nodeInfo.creatorShellPid=%d\n"
+                      "        nodeInfo.creatorShellVerifier=%d\n"
+                      "        nodeInfo.ping=%d\n"
+                    , nodeInfo.pnid
+                    , nodeInfo.nodeName
+                    , nodeInfo.commPort
+                    , nodeInfo.syncPort
+                    , nodeInfo.creatorPNid
+                    , nodeInfo.creator
+                    , nodeInfo.creatorShellPid
+                    , nodeInfo.creatorShellVerifier
+                    , nodeInfo.ping );
+    }
+
+    rc = Monitor->SendSock( (char *) &nodeInfo
+                          , sizeof(nodeId_t)
+                          , pingSock );
+
+    if ( rc )
+    {
+        rs = false;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Cannot send ping node info to node %s: (%s)\n"
+                , method_name, node->GetName(), ErrorMsg(rc));
+        mon_log_write(MON_PINGSOCKPEER_1, SQ_LOG_ERR, buf);    
+    }
+    else
+    {
+        // Get info about connecting monitor
+        rc = Monitor->ReceiveSock( (char *) &nodeInfo
+                                 , sizeof(nodeId_t)
+                                 , pingSock );
+        if ( rc )
+        {   // Handle error
+            rs = false;
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], Cannot receive ping node info from node %s: (%s)\n"
+                    , method_name, node->GetName(), ErrorMsg(rc));
+            mon_log_write(MON_PINGSOCKPEER_2, SQ_LOG_ERR, buf);    
+        }
+        else
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "Received from nodeInfo.pnid=%d\n"
+                              "        nodeInfo.nodeName=%s\n"
+                              "        nodeInfo.commPort=%s\n"
+                              "        nodeInfo.syncPort=%s\n"
+                              "        nodeInfo.ping=%d\n"
+                            , nodeInfo.pnid
+                            , nodeInfo.nodeName
+                            , nodeInfo.commPort
+                            , nodeInfo.syncPort
+                            , nodeInfo.ping );
+            }
+        }
+    }
+
+    close( pingSock );
+
+    TRACE_EXIT;
+    return( rs );
+}
+
 void CCluster::ReIntegrate( int initProblem )
 {
     const char method_name[] = "CCluster::ReIntegrate";
@@ -3607,6 +3778,10 @@ void CCluster::ReIntegrateSock( int initProblem )
     int rc;
     int existingCommFd;
     int existingSyncFd;
+    char commPort[MPI_MAX_PORT_NAME];
+    char syncPort[MPI_MAX_PORT_NAME];
+    char *pch1;
+    char *pch2;
 
     // Set bit indicating my node is up
     upNodes_.upNodes[MyPNID/MAX_NODE_BITMASK] |= (1ull << (MyPNID%MAX_NODE_BITMASK));
@@ -3642,12 +3817,6 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     TEST_POINT( TP011_NODE_UP );
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf("%s@%d Connected to creator monitor, sending my node info\n",
-                     method_name, __LINE__); 
-    }
-
     // Send this node's name and port number so creator monitor 
     // knows who we are, and set flag to let creator monitor it is the CREATOR.
     nodeId_t myNodeInfo;
@@ -3662,21 +3831,14 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d - Sending my node info to creator monitor\n"
-                    , method_name, __LINE__);
-        trace_printf( "Node info for pnid=%d\n"
-                      "        myNodeInfo.nodeName=%s\n"
-                      "        myNodeInfo.commPort=%s\n"
-                      "        myNodeInfo.syncPort=%s\n"
-                      "        myNodeInfo.creatorPNid=%d\n"
-                      "        myNodeInfo.creator=%d\n"
-                      "        myNodeInfo.creatorShellPid=%d\n"
-                      "        myNodeInfo.creatorShellVerifier=%d\n"
+        trace_printf( "%s@%d - Connected to creator monitor, sending my info, "
+                      "node %d (%s), commPort=%s, syncPort=%s, creator=%d, "
+                      "creatorShellPid=%d:%d\n"
+                    , method_name, __LINE__
                     , myNodeInfo.pnid
                     , myNodeInfo.nodeName
                     , myNodeInfo.commPort
                     , myNodeInfo.syncPort
-                    , myNodeInfo.creatorPNid
                     , myNodeInfo.creator
                     , myNodeInfo.creatorShellPid
                     , myNodeInfo.creatorShellVerifier );
@@ -3774,9 +3936,32 @@ void CCluster::ReIntegrateSock( int initProblem )
             otherMonRank_[nodeInfo[i].pnid] = 0;
             ++CurNodes;
 
-            Node[nodeInfo[i].pnid]->SetCommPort( nodeInfo[i].commPort );
-            Node[nodeInfo[i].pnid]->SetSyncPort( nodeInfo[i].syncPort );
+            // Store port numbers for the node
+            strncpy(commPort, nodeInfo[i].commPort, MPI_MAX_PORT_NAME);
+            strncpy(syncPort, nodeInfo[i].syncPort, MPI_MAX_PORT_NAME);
+
+            Node[nodeInfo[i].pnid]->SetCommPort( commPort );
+            pch1 = strtok (commPort,":");
+            pch1 = strtok (NULL,":");
+            Node[nodeInfo[i].pnid]->SetCommSocketPort( atoi(pch1) );
+
+            Node[nodeInfo[i].pnid]->SetSyncPort( syncPort );
+            pch2 = strtok (syncPort,":");
+            pch2 = strtok (NULL,":");
+            Node[nodeInfo[i].pnid]->SetSyncSocketPort( atoi(pch2) );
+            sockPorts_[nodeInfo[i].pnid] = Node[nodeInfo[i].pnid]->GetSyncSocketPort();
+
             Node[nodeInfo[i].pnid]->SetState( State_Up );
+
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
+                            , method_name, __LINE__
+                            , Node[nodeInfo[i].pnid]->GetPNid()
+                            , Node[nodeInfo[i].pnid]->GetName()
+                            , pch1, atoi(pch1)
+                            , pch2, atoi(pch2) );
+            }
 
             // Tell creator we are ready to accept its connection
             int mypnid = MyPNID;
@@ -3897,9 +4082,33 @@ void CCluster::ReIntegrateSock( int initProblem )
 
             otherMonRank_[nodeInfo[i].pnid] = 0;
             ++CurNodes;
-            Node[nodeInfo[i].pnid]->SetCommPort( nodeInfo[i].commPort );
-            Node[nodeInfo[i].pnid]->SetSyncPort( nodeInfo[i].syncPort );
+
+            // Store port numbers for the node
+            strncpy(commPort, nodeInfo[i].commPort, MPI_MAX_PORT_NAME);
+            strncpy(syncPort, nodeInfo[i].syncPort, MPI_MAX_PORT_NAME);
+        
+            Node[nodeInfo[i].pnid]->SetCommPort( commPort );
+            pch1 = strtok (commPort,":");
+            pch1 = strtok (NULL,":");
+            Node[nodeInfo[i].pnid]->SetCommSocketPort( atoi(pch1) );
+        
+            Node[nodeInfo[i].pnid]->SetSyncPort( syncPort );
+            pch2 = strtok (syncPort,":");
+            pch2 = strtok (NULL,":");
+            Node[nodeInfo[i].pnid]->SetSyncSocketPort( atoi(pch2) );
+            sockPorts_[nodeInfo[i].pnid] = Node[nodeInfo[i].pnid]->GetSyncSocketPort();
+
             Node[nodeInfo[i].pnid]->SetState( State_Up );
+
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
+                            , method_name, __LINE__
+                            , Node[nodeInfo[i].pnid]->GetPNid()
+                            , Node[nodeInfo[i].pnid]->GetName()
+                            , pch1, atoi(pch1)
+                            , pch2, atoi(pch2) );
+            }
 
             // Connect to existing monitor
             existingSyncFd = AcceptSyncSock();
@@ -3969,9 +4178,10 @@ void CCluster::ReIntegrateSock( int initProblem )
         }
         for ( int i =0; i < pnodeCount; i++ )
         {
-            trace_printf( "%s@%d socks_[%d]=%d\n"
+            trace_printf( "%s@%d socks_[%d]=%d, sockPorts_[%d]=%d\n"
                         , method_name, __LINE__
-                        , nodeInfo[i].pnid, socks_[nodeInfo[i].pnid]);
+                        , nodeInfo[i].pnid, socks_[nodeInfo[i].pnid]
+                        , nodeInfo[i].pnid, sockPorts_[nodeInfo[i].pnid]);
         }
         for ( int i =0; i < MAX_NODE_MASKS ; i++ )
         {
@@ -4224,16 +4434,24 @@ void CCluster::setNewSock( int pnid )
                 --CurNodes;
             }
 
-            if (trace_settings & TRACE_RECOVERY)
-            {
-                trace_printf("%s@%d - setting new communicator for pnid %d, "
-                             "otherRank=%d\n",
-                             method_name, __LINE__, it->pnid, it->otherRank);
-            }
-
+            CNode *node= Nodes->GetNode( it->pnid );
             socks_[it->pnid] = it->socket;
+            sockPorts_[it->pnid] = node->GetSyncSocketPort();
             otherMonRank_[it->pnid] = it->otherRank;
             ++CurNodes;
+
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Setting new communicator for %d (%s), "
+                              "socks_[%d]=%d, sockPorts_[%d]=%d, otherMonRank_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , node->GetPNid()
+                            , node->GetName()
+                            , it->pnid, socks_[it->pnid]
+                            , it->pnid, sockPorts_[it->pnid]
+                            , it->pnid, otherMonRank_[it->pnid] );
+            }
+
             // Set bit indicating node is up
             upNodes_.upNodes[it->pnid/MAX_NODE_BITMASK] |= (1ull << (it->pnid%MAX_NODE_BITMASK));
 
@@ -4419,20 +4637,9 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
     const char method_name[] = "CCluster::AllgatherSock";
     TRACE_ENTRY;
 
+    bool reconnecting = false;
     static int hdrSize = Nodes->GetSyncHdrSize( );
     int err = MPI_SUCCESS;
-    typedef struct
-    {
-        int p_sent;
-        int p_received;
-        int p_n2recv;
-        bool p_sending;
-        bool p_receiving;
-        int p_timeout_count;
-        bool p_initial_check;
-        char *p_buff;
-        struct timespec znodeFailedTime;
-    } peer_t;
     peer_t p[GetConfigPNodesMax()];
     memset( p, 0, sizeof(p) );
     tag = 0; // make compiler happy
@@ -4442,12 +4649,12 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                                 ? (ZClient->GetSessionTimeout() * 2) : 120;
 
     int nsent = 0, nrecv = 0;
-    for ( int iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
+    for ( int iPeer = 0; iPeer < GetConfigPNodesCount(); iPeer++ )
     {
-        peer_t *peer = &p[iPeer];
-        stats[iPeer].MPI_ERROR = MPI_SUCCESS;
-        stats[iPeer].count = 0;
-        if ( iPeer == MyPNID || socks_[iPeer] == -1 )
+        peer_t *peer = &p[indexToPnid_[iPeer]];
+        stats[indexToPnid_[iPeer]].MPI_ERROR = MPI_SUCCESS;
+        stats[indexToPnid_[iPeer]].count = 0;
+        if ( indexToPnid_[iPeer] == MyPNID || socks_[indexToPnid_[iPeer]] == -1 )
         {
             peer->p_sending = peer->p_receiving = false;
             nsent++;
@@ -4460,11 +4667,31 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
             peer->p_timeout_count = 0;
             peer->p_initial_check = true;
             peer->p_n2recv = -1;
-            peer->p_buff = ((char *) rbuf) + (iPeer * CommBufSize);
+            peer->p_buff = ((char *) rbuf) + (indexToPnid_[iPeer] * CommBufSize);
+
             struct epoll_event event;
-            event.data.fd = socks_[iPeer];
+            event.data.fd = socks_[indexToPnid_[iPeer]];
             event.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
-            EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[iPeer], &event );
+            EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[indexToPnid_[iPeer]], &event );
+        }
+    }
+
+    if (trace_settings & (TRACE_SYNC | TRACE_SYNC_DETAIL))
+    {
+        for ( int i = 0; i < GetConfigPNodesCount(); i++ )
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                peer_t *peer = &p[indexToPnid_[i]];
+                trace_printf( "%s@%d" " - socks_[%d]=%d, "
+                              "peer->p_sending=%d, "
+                              "peer->p_receiving=%d\n"
+                            , method_name, __LINE__
+                            , indexToPnid_[i]
+                            , socks_[indexToPnid_[i]]
+                            , peer->p_sending
+                            , peer->p_receiving );
+            }
         }
     }
 
@@ -4493,8 +4720,8 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         else
         {
             // default to 64 seconds
-            sv_epoll_wait_timeout = 4000;
-            sv_epoll_retry_count = 16;
+            sv_epoll_wait_timeout = 16000;
+            sv_epoll_retry_count = 4;
         }
 
         char buf[MON_STRING_BUF_SIZE];
@@ -4512,38 +4739,128 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
     struct epoll_event events[2*GetConfigPNodesMax() + 1];
     while ( 1 )
     {
-        int maxEvents = 2*GetConfigPNodesMax() - nsent - nrecv;
+reconnected:
+        int maxEvents = 2*GetConfigPNodesCount() - nsent - nrecv;
         if ( maxEvents == 0 ) break;
         int nw;
         int zerr = ZOK;
+
         while ( 1 )
         {
             nw = epoll_wait( epollFD_, events, maxEvents, sv_epoll_wait_timeout );
             if ( nw >= 0 || errno != EINTR ) break;
         }
+
         if ( nw == 0 )
-        {
-            for ( int iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
+        { // Timeout, no fd's ready
+            for ( int iPeer = 0; iPeer < GetConfigPNodesCount(); iPeer++ )
             {
-                peer_t *peer = &p[iPeer];
-                if ( (iPeer != MyPNID) &&
-                    (socks_[iPeer] != -1) )
+                peer_t *peer = &p[indexToPnid_[iPeer]];
+                if ( (indexToPnid_[iPeer] != MyPNID) && (socks_[indexToPnid_[iPeer]] != -1) )
                 {
-                    if ( (peer->p_receiving) ||
-                        (peer->p_sending) )
+                    if ( (peer->p_receiving) || (peer->p_sending) )
                     {
                         if ( ! ZClientEnabled )
                         {
-                            peer->p_timeout_count++;
+                            if (peer->p_initial_check && !reconnecting)
+                            {
+                                peer->p_initial_check = false;
+                                clock_gettime(CLOCK_REALTIME, &peer->znodeFailedTime);
+                                peer->znodeFailedTime.tv_sec += sessionTimeout;
+                                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                {
+                                    trace_printf( "%s@%d" " - Znode Fail Time %ld(secs)\n"
+                                                , method_name, __LINE__
+                                                , peer->znodeFailedTime.tv_sec);
+                                }
+                            }
     
                             if ( peer->p_timeout_count < sv_epoll_retry_count )
                             {
+                                peer->p_timeout_count++;
+
+                                if (IsRealCluster)
+                                {
+                                    if (trace_settings & TRACE_RECOVERY)
+                                    {
+                                        trace_printf( "%s@%d - Initianing AllgatherSockReconnect(), trigger: %s(%d),"
+                                                      " timeout count=%d,"
+                                                      " sending=%d,"
+                                                      " receiving=%d\n"
+                                                    , method_name, __LINE__
+                                                    , Node[indexToPnid_[iPeer]]->GetName(), iPeer
+                                                    , peer->p_timeout_count
+                                                    , peer->p_sending
+                                                    , peer->p_receiving);
+                                    }
+                                    // Attempt reconnect to all peers
+                                    err = AllgatherSockReconnect( stats );
+                                    // Redrive IOs on live peer connections
+                                    nsent = 0; nrecv = 0;
+                                    for ( int i = 0; i < GetConfigPNodesCount(); i++ )
+                                    {
+                                        peer_t *peer = &p[indexToPnid_[i]];
+                                        if ( indexToPnid_[i] == MyPNID || socks_[indexToPnid_[i]] == -1 )
+                                        {
+                                            peer->p_sending = peer->p_receiving = false;
+                                            nsent++;
+                                            nrecv++;
+                                        }
+                                        else
+                                        {
+                                            peer->p_sending = peer->p_receiving = true;
+                                            peer->p_sent = peer->p_received = 0;
+                                            peer->p_timeout_count = 0;
+                                            peer->p_n2recv = -1;
+                                            peer->p_buff = ((char *) rbuf) + (indexToPnid_[i] * CommBufSize);
+                                
+                                            struct epoll_event event;
+                                            event.data.fd = socks_[indexToPnid_[i]];
+                                            event.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+                                            EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[indexToPnid_[i]], &event );
+                                        }
+                                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                        {
+                                            trace_printf( "%s@%d" " - socks_[%d]=%d, "
+                                                          "peer->p_sending=%d, "
+                                                          "peer->p_receiving=%d\n"
+                                                        , method_name, __LINE__
+                                                        , indexToPnid_[i]
+                                                        , socks_[indexToPnid_[i]]
+                                                        , peer->p_sending
+                                                        , peer->p_receiving );
+                                        }
+                                    }
+                                    reconnectSeqNum_ = seqNum_;
+                                    reconnecting = true;
+                                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                    {
+                                        trace_printf( "%s@%d" " - Reconnecting!\n"
+                                                    , method_name, __LINE__ );
+                                    }
+                                    goto reconnected;
+                                }
                                 continue;
+                            }
+                            if (trace_settings & TRACE_RECOVERY)
+                            {
+                                trace_printf( "%s@%d - Peer timeout triggered: "
+                                              "peer->p_timeout_count %d, "
+                                              "sv_epoll_retry_count %d\n"
+                                              "        socks_[%d]=%d\n"
+                                              "        stats[%d].MPI_ERROR=%s\n"
+                                            , method_name, __LINE__
+                                            , peer->p_timeout_count
+                                            , sv_epoll_retry_count
+                                            , indexToPnid_[iPeer]
+                                            , socks_[indexToPnid_[iPeer]]
+                                            , iPeer
+                                            , ErrorMsg(stats[indexToPnid_[iPeer]].MPI_ERROR) );
                             }
                         }
                         else
                         {
-                            if (peer->p_initial_check)
+                            if (peer->p_initial_check && !reconnecting)
                             {
                                 peer->p_initial_check = false;
                                 clock_gettime(CLOCK_REALTIME, &peer->znodeFailedTime);
@@ -4557,7 +4874,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                                 
                             }
                             // If not expired, stay in the loop
-                            if ( ! ZClient->IsZNodeExpired( Node[iPeer]->GetName(), zerr ))
+                            if ( ! ZClient->IsZNodeExpired( Node[indexToPnid_[iPeer]]->GetName(), zerr ))
                             {
                                 if ( zerr == ZCONNECTIONLOSS || zerr == ZOPERATIONTIMEOUT )
                                 {
@@ -4572,10 +4889,71 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
    
                                         if ( peer->p_timeout_count < sv_epoll_retry_count )
                                         {
+                                            if (IsRealCluster)
+                                            {
+                                                if (trace_settings & TRACE_RECOVERY)
+                                                {
+                                                    trace_printf( "%s@%d - Initianing AllgatherSockReconnect(), trigger: %s(%d),"
+                                                                  " timeout count=%d,"
+                                                                  " sending=%d,"
+                                                                  " receiving=%d\n"
+                                                                , method_name, __LINE__
+                                                                , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                                                , peer->p_timeout_count
+                                                                , peer->p_sending
+                                                                , peer->p_receiving);
+                                                }
+                                                // Attempt reconnect to all peers
+                                                err = AllgatherSockReconnect( stats );
+                                                // Redrive IOs on live peer connections
+                                                nsent = 0; nrecv = 0;
+                                                for ( int i = 0; i < GetConfigPNodesCount(); i++ )
+                                                {
+                                                    peer_t *peer = &p[indexToPnid_[i]];
+                                                    if ( indexToPnid_[i] == MyPNID || socks_[indexToPnid_[i]] == -1 )
+                                                    {
+                                                        peer->p_sending = peer->p_receiving = false;
+                                                        nsent++;
+                                                        nrecv++;
+                                                    }
+                                                    else
+                                                    {
+                                                        peer->p_sending = peer->p_receiving = true;
+                                                        peer->p_sent = peer->p_received = 0;
+                                                        peer->p_timeout_count = 0;
+                                                        peer->p_n2recv = -1;
+                                                        peer->p_buff = ((char *) rbuf) + (indexToPnid_[i] * CommBufSize);
+                                            
+                                                        struct epoll_event event;
+                                                        event.data.fd = socks_[indexToPnid_[i]];
+                                                        event.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+                                                        EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[i], &event );
+                                                    }
+                                                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                                    {
+                                                        trace_printf( "%s@%d" " - socks_[%d]=%d, "
+                                                                      "peer->p_sending=%d, "
+                                                                      "peer->p_receiving=%d\n"
+                                                                    , method_name, __LINE__
+                                                                    , indexToPnid_[i]
+                                                                    , socks_[indexToPnid_[i]]
+                                                                    , peer->p_sending
+                                                                    , peer->p_receiving );
+                                                    }
+                                                }
+                                                reconnectSeqNum_ = seqNum_;
+                                                reconnecting = true;
+                                                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                                {
+                                                    trace_printf( "%s@%d" " - Reconnecting!\n"
+                                                                , method_name, __LINE__ );
+                                                }
+                                                goto reconnected;
+                                            }
                                             continue;
                                         }
                                     }
-                                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                    if (trace_settings & TRACE_RECOVERY)
                                     {
                                         trace_printf( "%s@%d - Znode Failed triggered\n"
                                                       "        Current Time    %ld(secs)\n"
@@ -4592,58 +4970,99 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
 
                                     if ( peer->p_timeout_count < sv_epoll_retry_count )
                                     {
+                                        if (IsRealCluster)
+                                        {
+                                            if (trace_settings & TRACE_RECOVERY)
+                                            {
+                                                trace_printf( "%s@%d - Initianing AllgatherSockReconnect(), trigger: %s(%d),"
+                                                              " timeout count=%d,"
+                                                              " sending=%d,"
+                                                              " receiving=%d\n"
+                                                            , method_name, __LINE__
+                                                            , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                                            , peer->p_timeout_count
+                                                            , peer->p_sending
+                                                            , peer->p_receiving);
+                                            }
+                                            // Attempt reconnect to all peers
+                                            err = AllgatherSockReconnect( stats );
+                                            // Redrive IOs on live peer connections
+                                            nsent = 0; nrecv = 0;
+                                            for ( int i = 0; i < GetConfigPNodesCount(); i++ )
+                                            {
+                                                peer_t *peer = &p[indexToPnid_[i]];
+                                                if ( indexToPnid_[i] == MyPNID || socks_[indexToPnid_[i]] == -1 )
+                                                {
+                                                    peer->p_sending = peer->p_receiving = false;
+                                                    nsent++;
+                                                    nrecv++;
+                                                }
+                                                else
+                                                {
+                                                    peer->p_sending = peer->p_receiving = true;
+                                                    peer->p_sent = peer->p_received = 0;
+                                                    peer->p_timeout_count = 0;
+                                                    peer->p_n2recv = -1;
+                                                    peer->p_buff = ((char *) rbuf) + (indexToPnid_[i] * CommBufSize);
+                                        
+                                                    struct epoll_event event;
+                                                    event.data.fd = socks_[indexToPnid_[i]];
+                                                    event.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+                                                    EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[i], &event );
+                                                }
+                                                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                                {
+                                                    trace_printf( "%s@%d" " - socks_[%d]=%d, "
+                                                                  "peer->p_sending=%d, "
+                                                                  "peer->p_receiving=%d\n"
+                                                                , method_name, __LINE__
+                                                                , indexToPnid_[i]
+                                                                , socks_[indexToPnid_[i]]
+                                                                , peer->p_sending
+                                                                , peer->p_receiving );
+                                                }
+                                            }
+                                            reconnectSeqNum_ = seqNum_;
+                                            reconnecting = true;
+                                            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                            {
+                                                trace_printf( "%s@%d" " - Reconnecting!\n"
+                                                            , method_name, __LINE__ );
+                                            }
+                                            goto reconnected;
+                                        }
                                         continue;
                                     }
                                 }
                             }
                         }
 
-                        char buf[MON_STRING_BUF_SIZE];
-                        snprintf( buf, sizeof(buf)
-                                , "[%s@%d] Not heard from peer=%d (node=%s) "
-                                  "(current seq # is %lld)\n"
-                                , method_name
-                                ,  __LINE__
-                                , iPeer
-                                , Node[iPeer]->GetName()
-                                , seqNum_ );
-                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_CRIT, buf );
-
-                        stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
-                        err = MPI_ERR_IN_STATUS;
-                        if ( peer->p_sending )
+                        if (trace_settings & TRACE_RECOVERY)
                         {
-                            peer->p_sending = false;
-                            nsent++;
-                        }
-                        if ( peer->p_receiving )
-                        {
-                            peer->p_receiving = false;
-                            nrecv++;
+                            trace_printf( "%s@%d - err=%d, socks_[%d]=%d, stats[%d].MPI_ERROR=%s\n"
+                                        , method_name, __LINE__
+                                        , err
+                                        , indexToPnid_[iPeer]
+                                        , socks_[indexToPnid_[iPeer]]
+                                        , indexToPnid_[iPeer]
+                                        , ErrorMsg(stats[indexToPnid_[iPeer]].MPI_ERROR) );
                         }
 
-                        // setup the epoll structures 
-                        struct epoll_event event;
-                        event.data.fd = socks_[iPeer];
-                        int op = 0;
-                        if ( !peer->p_sending && !peer->p_receiving )
+                        if ( err == MPI_ERR_IN_STATUS
+                          && stats[indexToPnid_[iPeer]].MPI_ERROR == MPI_ERR_EXITED)
                         {
-                            op = EPOLL_CTL_DEL;
-                            event.events = 0;
-                        }
-                        else if ( peer->p_sending )
-                        {
-                            op = EPOLL_CTL_MOD;
-                            event.events = EPOLLOUT | EPOLLET | EPOLLRDHUP;
-                        }
-                        else if ( peer->p_receiving )
-                        {
-                            op = EPOLL_CTL_MOD;
-                            event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
-                        }
-                        if ( op == EPOLL_CTL_DEL || op == EPOLL_CTL_MOD )
-                        {
-                            EpollCtl( epollFD_, op, socks_[iPeer], &event );
+                            // At this point, this peer is not responding and
+                            // reconnects failed or its znode expired
+                            char buf[MON_STRING_BUF_SIZE];
+                            snprintf( buf, sizeof(buf)
+                                    , "[%s@%d] Not heard from peer=%d (node=%s) "
+                                      "(current seq # is %lld)\n"
+                                    , method_name
+                                    ,  __LINE__
+                                    , indexToPnid_[iPeer]
+                                    , Node[indexToPnid_[iPeer]]->GetName()
+                                    , seqNum_ );
+                            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_2, SQ_LOG_CRIT, buf );
                         }
                     }
                 }
@@ -4651,35 +5070,43 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         }
  
         if ( nw < 0 )
-        {
+        { // Got an error
             char ebuff[256];
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf), "[%s@%d] epoll_wait(%d, %d) error: %s\n",
                 method_name, __LINE__, epollFD_, maxEvents,
                 strerror_r( errno, ebuff, 256 ) );
-            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_2, SQ_LOG_CRIT, buf );
+            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
             MPI_Abort( MPI_COMM_SELF,99 );
         }
+
+        // Process fd's which are ready to initiate an IO or completed IO
         for ( int iEvent = 0; iEvent < nw; iEvent++ )
         {
             bool stateChange = false;
             int fd = events[iEvent].data.fd;
             int iPeer;
-            for ( iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
-            {
-                if ( events[iEvent].data.fd == socks_[iPeer] ) break;
+            for ( iPeer = 0; iPeer < GetConfigPNodesCount(); iPeer++ )
+            { // Find corresponding peer by matching socket fd
+                if ( events[iEvent].data.fd == socks_[indexToPnid_[iPeer]] ) break;
             }
-            if ( iPeer < 0 || iPeer >= GetConfigPNodesMax() || iPeer == MyPNID
-                || socks_[iPeer] == -1
-                || (!p[iPeer].p_sending && !p[iPeer].p_receiving) )
+            if ( indexToPnid_[iPeer] < 0 || indexToPnid_[iPeer] >= GetConfigPNodesMax() || indexToPnid_[iPeer] == MyPNID
+                || socks_[indexToPnid_[iPeer]] == -1
+                || (!p[indexToPnid_[iPeer]].p_sending && !p[indexToPnid_[iPeer]].p_receiving) )
             {
                 char buf[MON_STRING_BUF_SIZE];
-                snprintf( buf, sizeof(buf), "[%s@%d] invalid peer %d\n",
-                    method_name, __LINE__, iPeer );
-                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
+                snprintf( buf, sizeof(buf)
+                        , "[%s@%d] Invalid peer %d, "
+                          "peer.p_sending=%d, "
+                          "peer.p_receiving=%d\n"
+                        , method_name, __LINE__
+                        , indexToPnid_[iPeer]
+                        , indexToPnid_[iPeer] >= GetConfigPNodesMax()?-1:p[indexToPnid_[iPeer]].p_sending
+                        , indexToPnid_[iPeer] >= GetConfigPNodesMax()?-1:p[indexToPnid_[iPeer]].p_receiving );
+                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_4, SQ_LOG_CRIT, buf );
                 MPI_Abort( MPI_COMM_SELF,99 );
             }
-            peer_t *peer = &p[iPeer];
+            peer_t *peer = &p[indexToPnid_[iPeer]];
             if ( (events[iEvent].events & EPOLLERR) ||
                  (events[iEvent].events & EPOLLHUP) ||
                  ( !(events[iEvent].events & (EPOLLIN|EPOLLOUT))) )
@@ -4690,13 +5117,13 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                 snprintf( buf, sizeof(buf)
                         , "[%s@%d] Error: peer=%d, events[%d].data.fd=%d, event[%d]=%s\n"
                         , method_name, __LINE__
-                        , iPeer
+                        , indexToPnid_[iPeer]
                         , iEvent
                         , events[iEvent].data.fd
                         , iEvent
                         , EpollEventString(events[iEvent].events) );
-                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_4, SQ_LOG_CRIT, buf );
-                stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
+                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_5, SQ_LOG_CRIT, buf );
+                stats[indexToPnid_[iPeer]].MPI_ERROR = MPI_ERR_EXITED;
                 err = MPI_ERR_IN_STATUS;
                 if ( peer->p_sending )
                 {
@@ -4708,12 +5135,11 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                     peer->p_receiving = false;
                     nrecv++;
                 }
-                stateChange = 1;
+                stateChange = true;
                 goto early_exit;
             }
-            if ( peer->p_receiving
-                && events[iEvent].events & EPOLLIN )
-            {
+            if ( peer->p_receiving && events[iEvent].events & EPOLLIN )
+            { // Got receive (read) completion
                 int eagain_ok = 0;
 read_again:
                 char *r = &peer->p_buff[peer->p_received];
@@ -4729,6 +5155,26 @@ read_again:
                 int nr;
                 while ( 1 )
                 {
+                    if (trace_settings & TRACE_SYNC_DETAIL)
+                    {
+                        trace_printf( "%s@%d - EPOLLIN from %s(%d),"
+                                      " sending=%d,"
+                                      " receiving=%d (%d)"
+                                      " sent=%d,"
+                                      " received=%d"
+                                      " timeout_count=%d,"
+                                      " initial_check=%d,"
+                                      " n2recv=%d\n"
+                                    , method_name, __LINE__
+                                    , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                    , peer->p_sending
+                                    , peer->p_receiving, n2get
+                                    , peer->p_sent
+                                    , peer->p_received
+                                    , peer->p_timeout_count
+                                    , peer->p_initial_check
+                                    , peer->p_n2recv );
+                    }
                     nr = recv( fd, r, n2get, 0 );
                     if ( nr >= 0 || errno == EINTR ) break;
                 }
@@ -4746,8 +5192,8 @@ read_again:
                         snprintf( buf, sizeof(buf)
                                 , "[%s@%d] recv[%d](%d) error %d (%s)\n"
                                 , method_name, __LINE__
-                                , iPeer, nr , err, strerror(err) );
-                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_5, SQ_LOG_CRIT, buf );
+                                , indexToPnid_[iPeer], nr , err, strerror(err) );
+                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_6, SQ_LOG_CRIT, buf );
                         peer->p_receiving = false;
                         nrecv++;
                         if ( peer->p_sending )
@@ -4755,7 +5201,7 @@ read_again:
                             peer->p_sending = false;
                             nsent++;
                         }
-                        stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
+                        stats[indexToPnid_[iPeer]].MPI_ERROR = MPI_ERR_EXITED;
                         err = MPI_ERR_IN_STATUS;
                         stateChange = true;
                     }
@@ -4792,7 +5238,7 @@ read_again:
                             snprintf( buf, sizeof(buf),
                                 "[%s@%d] error n2recv %d\n",
                                 method_name, __LINE__, peer->p_n2recv );
-                            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_6, SQ_LOG_CRIT, buf );
+                            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_7, SQ_LOG_CRIT, buf );
                             MPI_Abort( MPI_COMM_SELF,99 );
                         }
                         if ( peer->p_n2recv == 0 )
@@ -4800,20 +5246,59 @@ read_again:
                             // this buffer is done
                             peer->p_receiving = false;
                             nrecv++;
-                            stats[iPeer].count = peer->p_received;
+                            stats[indexToPnid_[iPeer]].count = peer->p_received;
+                            if (trace_settings & TRACE_SYNC_DETAIL)
+                            {
+                                trace_printf( "%s@%d - EPOLLOUT to %s(%d),"
+                                              " sending=%d,"
+                                              " receiving=%d (%d)"
+                                              " sent=%d,"
+                                              " received=%d"
+                                              " timeout_count=%d,"
+                                              " initial_check=%d,"
+                                              " n2recv=%d\n"
+                                            , method_name, __LINE__
+                                            , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                            , peer->p_sending
+                                            , peer->p_receiving, n2get
+                                            , peer->p_sent
+                                            , peer->p_received
+                                            , peer->p_timeout_count
+                                            , peer->p_initial_check
+                                            , peer->p_n2recv );
+                            }
                             stateChange = true;
                         }
                     }
                 }
             }
-            if ( peer->p_sending
-                && events[iEvent].events & EPOLLOUT )
-            {
+            if ( peer->p_sending  && events[iEvent].events & EPOLLOUT )
+            { // Got send (write) completion
                 char *s = &((char *)sbuf)[peer->p_sent];
                 int n2send = nbytes - peer->p_sent;
                 int ns;
                 while ( 1 )
                 {
+                    if (trace_settings & TRACE_SYNC_DETAIL)
+                    {
+                        trace_printf( "%s@%d - EPOLLOUT to %s(%d),"
+                                      " sending=%d (%d),"
+                                      " receiving=%d"
+                                      " sent=%d,"
+                                      " received=%d"
+                                      " timeout_count=%d,"
+                                      " initial_check=%d,"
+                                      " n2recv=%d\n"
+                                    , method_name, __LINE__
+                                    , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                    , peer->p_sending, n2send
+                                    , peer->p_receiving
+                                    , peer->p_sent
+                                    , peer->p_received
+                                    , peer->p_timeout_count
+                                    , peer->p_initial_check
+                                    , peer->p_n2recv );
+                    }
                     ns = send( fd, s, n2send, 0 );
                     if ( ns >= 0 || errno != EINTR ) break;
                 }
@@ -4825,8 +5310,8 @@ read_again:
                     snprintf( buf, sizeof(buf)
                             , "[%s@%d] send[%d](%d) error=%d (%s)\n"
                             , method_name, __LINE__
-                            , iPeer, ns, err, strerror(err) );
-                    mon_log_write( MON_CLUSTER_ALLGATHERSOCK_7, SQ_LOG_CRIT, buf );
+                            , indexToPnid_[iPeer], ns, err, strerror(err) );
+                    mon_log_write( MON_CLUSTER_ALLGATHERSOCK_8, SQ_LOG_CRIT, buf );
                     peer->p_sending = false;
                     nsent++;
                     if ( peer->p_receiving )
@@ -4834,7 +5319,7 @@ read_again:
                         peer->p_receiving = false;
                         nrecv++;
                     }
-                    stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
+                    stats[indexToPnid_[iPeer]].MPI_ERROR = MPI_ERR_EXITED;
                     err = MPI_ERR_IN_STATUS;
                     stateChange = true;
                 }
@@ -4846,6 +5331,26 @@ read_again:
                         // finished sending to this destination
                         peer->p_sending = false;
                         nsent++;
+                        if (trace_settings & TRACE_SYNC_DETAIL)
+                        {
+                            trace_printf( "%s@%d - EPOLLOUT to %s(%d),"
+                                          " sending=%d (%d),"
+                                          " receiving=%d"
+                                          " sent=%d,"
+                                          " received=%d"
+                                          " timeout_count=%d,"
+                                          " initial_check=%d,"
+                                          " n2recv=%d\n"
+                                        , method_name, __LINE__
+                                        , Node[indexToPnid_[iPeer]]->GetName(), indexToPnid_[iPeer]
+                                        , peer->p_sending, n2send
+                                        , peer->p_receiving
+                                        , peer->p_sent
+                                        , peer->p_received
+                                        , peer->p_timeout_count
+                                        , peer->p_initial_check
+                                        , peer->p_n2recv );
+                        }
                         stateChange = true;
                     }
                 }
@@ -4854,7 +5359,7 @@ early_exit:
             if ( stateChange )
             {
                 struct epoll_event event;
-                event.data.fd = socks_[iPeer];
+                event.data.fd = socks_[indexToPnid_[iPeer]];
                 int op = 0;
                 if ( !peer->p_sending && !peer->p_receiving )
                 {
@@ -4886,6 +5391,422 @@ early_exit:
 
     TRACE_EXIT;
     return err;
+}
+
+int CCluster::AllgatherSockReconnect( MPI_Status *stats )
+{
+    const char method_name[] = "CCluster::AllgatherSockReconnect";
+    TRACE_ENTRY;
+
+    int err = MPI_SUCCESS;
+    int idst;
+    int reconnectSock = -1;
+    CNode *node;
+
+    // Loop on each node in the cluster
+    for ( int i = 0; i < GetConfigPNodesMax(); i++ )
+    {
+        // Loop on each adjacent node in the cluster
+        for ( int j = i+1; j < GetConfigPNodesMax(); j++ )
+        {
+            if ( i == MyPNID )
+            { // Current [i] node is my node, so connect to [j] node
+
+                idst = j;
+                node = Nodes->GetNode( idst );
+                if (!node) continue;
+                if (node->GetState() != State_Up)
+                {
+                    if (socks_[idst] != -1)
+                    { // Peer socket is still active
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                        {
+                            trace_printf( "%s@%d - Node %s (%d) is not up, "
+                                          "removing old socket from epoll set, "
+                                          "socks_[%d]=%d\n"
+                                        , method_name, __LINE__
+                                        , node->GetName(), node->GetPNid()
+                                        , idst, socks_[idst] );
+                        }
+                        // Remove old socket from epoll set, it may not be there
+                        struct epoll_event event;
+                        event.data.fd = socks_[idst];
+                        event.events = 0;
+                        EpollCtlDelete( epollFD_, socks_[idst], &event );
+                        socks_[idst] = -1;
+                    }
+                    continue;
+                }
+                reconnectSock = ConnectSockPeer( node, idst );
+                if (reconnectSock == -1)
+                {
+                    stats[idst].MPI_ERROR = MPI_ERR_EXITED;
+                    stats[idst].count = 0;
+                    err = MPI_ERR_IN_STATUS;
+                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                    {
+                        trace_printf( "%s@%d - Setting Node %s (%d) status to "
+                                      "stats[%d].MPI_ERROR=%s\n"
+                                    , method_name, __LINE__
+                                    , node->GetName(), node->GetPNid()
+                                    , idst
+                                    , ErrorMsg(stats[idst].MPI_ERROR) );
+                    }
+                    if (node->GetState() != State_Up)
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                        {
+                            trace_printf( "%s@%d - Node %s (%d) is not up, "
+                                          "removing old socket from epoll set, "
+                                          "socks_[%d]=%d\n"
+                                        , method_name, __LINE__
+                                        , node->GetName(), node->GetPNid()
+                                        , idst, socks_[idst] );
+                        }
+                        // Remove old socket from epoll set, it may not be there
+                        struct epoll_event event;
+                        event.data.fd = socks_[idst];
+                        event.events = 0;
+                        EpollCtlDelete( epollFD_, socks_[idst], &event );
+                        socks_[idst] = -1;
+                    }
+                }
+            }
+            else if ( j == MyPNID )
+            { // Current [j] is my node, accept connection from peer [i] node
+
+                idst = i;
+                node = Nodes->GetNode( idst );
+                if (!node) continue;
+                if (node->GetState() != State_Up)
+                {
+                    if (socks_[idst] != -1)
+                    { // Peer socket is still active
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                        {
+                            trace_printf( "%s@%d - Node %s (%d) is not up, "
+                                          "removing old socket from epoll set, "
+                                          "socks_[%d]=%d\n"
+                                        , method_name, __LINE__
+                                        , node->GetName(), node->GetPNid()
+                                        , idst, socks_[idst] );
+                        }
+                        // Remove old socket from epoll set, it may not be there
+                        struct epoll_event event;
+                        event.data.fd = socks_[idst];
+                        event.events = 0;
+                        EpollCtlDelete( epollFD_, socks_[idst], &event );
+                        socks_[idst] = -1;
+                    }
+                    continue;
+                }
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                {
+                    trace_printf( "%s@%d - Pinging Node %s (%d) to see if it's up\n"
+                                , method_name, __LINE__
+                                , node->GetName(), node->GetPNid() );
+                }
+                if (PingSockPeer(node))
+                {
+                    reconnectSock = AcceptSockPeer( node, idst );
+                    if (reconnectSock == -1)
+                    {
+                        stats[idst].MPI_ERROR = MPI_ERR_EXITED;
+                        stats[idst].count = 0;
+                        err = MPI_ERR_IN_STATUS;
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                        {
+                            trace_printf( "%s@%d - Setting Node %s (%d) status to "
+                                          "stats[%d].MPI_ERROR=%s\n"
+                                        , method_name, __LINE__
+                                        , node->GetName(), node->GetPNid()
+                                        , idst
+                                        , ErrorMsg(stats[idst].MPI_ERROR) );
+                        }
+                        if (node->GetState() != State_Up)
+                        {
+                            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                            {
+                                trace_printf( "%s@%d - Node %s (%d) is not up, "
+                                              "removing old socket from epoll set, "
+                                              "socks_[%d]=%d\n"
+                                            , method_name, __LINE__
+                                            , node->GetName(), node->GetPNid()
+                                            , idst, socks_[idst] );
+                            }
+                            // Remove old socket from epoll set, it may not be there
+                            struct epoll_event event;
+                            event.data.fd = socks_[idst];
+                            event.events = 0;
+                            EpollCtlDelete( epollFD_, socks_[idst], &event );
+                            socks_[idst] = -1;
+                        }
+                    }
+                }
+                else
+                {
+                    if (socks_[idst] != -1)
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                        {
+                            trace_printf( "%s@%d - Node %s (%d) is not up, "
+                                          "removing old socket from epoll set, "
+                                          "socks_[%d]=%d\n"
+                                        , method_name, __LINE__
+                                        , node->GetName(), node->GetPNid()
+                                        , idst, socks_[idst] );
+                        }
+                        // Remove old socket from epoll set, it may not be there
+                        struct epoll_event event;
+                        event.data.fd = socks_[idst];
+                        event.events = 0;
+                        EpollCtlDelete( epollFD_, socks_[idst], &event );
+                    }
+                    reconnectSock = -1;
+                    stats[idst].MPI_ERROR = MPI_ERR_EXITED;
+                    stats[idst].count = 0;
+                    err = MPI_ERR_IN_STATUS;
+                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                    {
+                        trace_printf( "%s@%d - Setting Node %s (%d) status to "
+                                      "stats[%d].MPI_ERROR=%s\n"
+                                    , method_name, __LINE__
+                                    , node->GetName(), node->GetPNid()
+                                    , idst
+                                    , ErrorMsg(stats[idst].MPI_ERROR) );
+                    }
+                }
+            }
+            else
+            {
+                idst = -1;
+            }
+            if ( idst >= 0 
+              && reconnectSock != -1
+              && fcntl( socks_[idst], F_SETFL, O_NONBLOCK ) )
+            {
+                err = MPI_ERR_AMODE;
+                char ebuff[256];
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf), "[%s@%d] fcntl(NONBLOCK) error: %s\n",
+                    method_name, __LINE__, strerror_r( errno, ebuff, 256 ) );
+                mon_log_write( MON_CLUSTER_ALLGATHERSOCKRECONN_1, SQ_LOG_CRIT, buf );
+            }
+        }
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        for ( int i = 0; i < GetConfigPNodesCount(); i++ )
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d" " - socks_[%d]=%d, "
+                              "stats[%d].MPI_ERROR=%s\n"
+                            , method_name, __LINE__
+                            , indexToPnid_[i]
+                            , socks_[indexToPnid_[i]]
+                            , indexToPnid_[i]
+                            , ErrorMsg(stats[indexToPnid_[i]].MPI_ERROR) );
+            }
+        }
+        trace_printf( "%s@%d - Returning err=%d\n"
+                    , method_name, __LINE__, err );
+    }
+
+    TRACE_EXIT;
+    return( err );
+}
+
+int CCluster::AcceptSockPeer( CNode *node, int peer )
+{
+    const char method_name[] = "CCluster::AcceptSockPeer";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+    int reconnectSock = -1;
+    unsigned char srcaddr[4];
+    struct hostent *he;
+
+    // Get my host structure via my node name
+    he = gethostbyname( MyNode->GetName() );
+    if ( !he )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] gethostbyname(%s) error: %s\n"
+                , method_name, __LINE__
+                , MyNode->GetName()
+                , strerror_r( errno, ebuff, 256 ) );
+        mon_log_write( MON_CLUSTER_ACCEPTSOCKPEER_1, SQ_LOG_CRIT, buf );
+        abort();
+    }
+    else
+    {
+        if (trace_settings & TRACE_RECOVERY)
+        {
+            trace_printf( "%s@%d Accepting server socket: from %s(%d), src=%d.%d.%d.%d, port=%d\n"
+                        , method_name, __LINE__
+                        , node->GetName(), node->GetPNid()
+                        , (int)((unsigned char *)srcaddr)[0]
+                        , (int)((unsigned char *)srcaddr)[1]
+                        , (int)((unsigned char *)srcaddr)[2]
+                        , (int)((unsigned char *)srcaddr)[3]
+                        , MyNode->GetSyncSocketPort() );
+        }
+
+        // Accept connection from peer
+        reconnectSock = AcceptSock( syncSock_ );
+        if (reconnectSock != -1)
+        {
+            if (trace_settings & TRACE_RECOVERY)
+            {
+                trace_printf( "%s@%d Server %s(%d) accepted from client %s(%d), old socks_[%d]=%d, new socks_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , MyNode->GetName(), MyPNID
+                            , node->GetName(), node->GetPNid()
+                            , peer, socks_[peer]
+                            , peer, reconnectSock);
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s@%d] AcceptSock(%d) failed!\n",
+                method_name, __LINE__, syncSock_ );
+            mon_log_write( MON_CLUSTER_ACCEPTSOCKPEER_2, SQ_LOG_ERR, buf );
+            rc = -1;
+        }
+
+        if (socks_[peer] != -1)
+        {
+            // Remove old socket from epoll set, it may not be there
+            struct epoll_event event;
+            event.data.fd = socks_[peer];
+            event.events = 0;
+            EpollCtlDelete( epollFD_, socks_[peer], &event );
+        }
+        if (reconnectSock != -1)
+        {
+            socks_[peer] = reconnectSock;
+        }
+    }
+
+    TRACE_EXIT;
+    return rc;
+}
+
+int CCluster::ConnectSockPeer( CNode *node, int peer )
+{
+    const char method_name[] = "CCluster::ConnectSockPeer";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+    int reconnectSock = -1;
+    unsigned char srcaddr[4], dstaddr[4];
+    struct hostent *he;
+
+    // Get my host structure via my node name
+    he = gethostbyname( MyNode->GetName() );
+    if ( !he )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] gethostbyname(%s) error: %s\n"
+                , method_name, __LINE__
+                , MyNode->GetName()
+                , strerror_r( errno, ebuff, 256 ) );
+        mon_log_write( MON_CLUSTER_CONNECTSOCKPEER_1, SQ_LOG_CRIT, buf );
+        abort();
+    }
+    else
+    {
+        // Initialize my source address structure
+        memcpy( srcaddr, he->h_addr, 4 );
+        // Get peer's host structure via its node name 
+        he = gethostbyname( node->GetName() );
+        if ( !he )
+        {
+            char ebuff[256];
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                "[%s@%d] gethostbyname(%s) error: %s\n",
+                method_name, __LINE__, node->GetName(),
+                strerror_r( errno, ebuff, 256 ) );
+            mon_log_write( MON_CLUSTER_CONNECTSOCKPEER_2, SQ_LOG_CRIT, buf );
+            abort();
+        }
+        // Initialize peer's destination address structure
+        memcpy( dstaddr, he->h_addr, 4 );
+
+        if (trace_settings & TRACE_RECOVERY)
+        {
+            trace_printf( "%s@%d Creating client socket: src=%d.%d.%d.%d, "
+                          "dst(%s)=%d.%d.%d.%d, dst port=%d\n"
+                        , method_name, __LINE__
+                        , (int)((unsigned char *)srcaddr)[0]
+                        , (int)((unsigned char *)srcaddr)[1]
+                        , (int)((unsigned char *)srcaddr)[2]
+                        , (int)((unsigned char *)srcaddr)[3]
+                        ,  node->GetName()
+                        , (int)((unsigned char *)dstaddr)[0]
+                        , (int)((unsigned char *)dstaddr)[1]
+                        , (int)((unsigned char *)dstaddr)[2]
+                        , (int)((unsigned char *)dstaddr)[3]
+                        , sockPorts_[peer] );
+        }
+        // Connect to peer
+        reconnectSock = MkCltSock( srcaddr, dstaddr, sockPorts_[peer] );
+        if (reconnectSock != -1)
+        {
+            if (trace_settings & TRACE_RECOVERY)
+            {
+                trace_printf( "%s@%d Client %s(%d) connected to server %s(%d), old socks_[%d]=%d, new socks_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , MyNode->GetName(), MyPNID
+                            , node->GetName(), node->GetPNid()
+                            , peer, socks_[peer]
+                            , peer, reconnectSock);
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s@%d] MkCltSock() src=%d.%d.%d.%d, "
+                      "dst(%s)=%d.%d.%d.%d failed!\n"
+                    , method_name, __LINE__
+                    , (int)((unsigned char *)srcaddr)[0]
+                    , (int)((unsigned char *)srcaddr)[1]
+                    , (int)((unsigned char *)srcaddr)[2]
+                    , (int)((unsigned char *)srcaddr)[3]
+                    ,  node->GetName()
+                    , (int)((unsigned char *)dstaddr)[0]
+                    , (int)((unsigned char *)dstaddr)[1]
+                    , (int)((unsigned char *)dstaddr)[2]
+                    , (int)((unsigned char *)dstaddr)[3] );
+            mon_log_write( MON_CLUSTER_CONNECTSOCKPEER_3, SQ_LOG_ERR, buf );
+            rc = -1;
+        }
+
+        if (socks_[peer] != -1)
+        {
+            // Remove old socket from epoll set, it may not be there
+            struct epoll_event event;
+            event.data.fd = socks_[peer];
+            event.events = 0;
+            EpollCtlDelete( epollFD_, socks_[peer], &event );
+        }
+        if (reconnectSock != -1)
+        {
+            socks_[peer] = reconnectSock;
+        }
+    }
+
+    TRACE_EXIT;
+    return( rc );
 }
 
 // When we get a communication error for a point-to-point monitor communicator
@@ -5187,8 +6108,10 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
     const char method_name[] = "CCluster::ValidateSeqNum";
 
     unsigned long long seqNum;
-    unsigned long long seqNumBucket[256];
-    int seqNumCount[256];
+    unsigned long long loSeqNum = seqNum_;
+    unsigned long long hiSeqNum = seqNum_;
+    unsigned long long seqNumBucket[MAX_NODES];
+    int seqNumCount[MAX_NODES];
     int maxBucket = 0;
     bool found;
     int mostCountsIndex;
@@ -5198,10 +6121,26 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
     // Count occurrences of sequence numbers from other nodes
     for (int pnid = 0; pnid < GetConfigPNodesMax(); pnid++)
     {
+        CNode *node= Nodes->GetNode( pnid );
+        if (!node) continue;
+        if (node->GetState() != State_Up) continue;
+        
         seqNum = nodestate[pnid].seq_num;
+
+        if (trace_settings & TRACE_SYNC)
+        {
+            trace_printf( "%s@%d seqNum_=%lld, nodestate[%d].seq_num=%lld\n"
+                        , method_name, __LINE__
+                        , seqNum_
+                        , pnid
+                        , nodestate[pnid].seq_num );
+        }
 
         if (seqNum != 0)
         {
+            loSeqNum = (seqNum < loSeqNum) ? seqNum : loSeqNum;
+            hiSeqNum = (seqNum > hiSeqNum) ? seqNum : hiSeqNum;
+    
             found = false;
             for (int i=0; i<maxBucket; ++i)
             {
@@ -5239,14 +6178,22 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
         }
     }
 
+    lowSeqNum_  = loSeqNum;
+    highSeqNum_ = hiSeqNum;
+    
     if (trace_settings & TRACE_SYNC)
     {
         if ( seqNum_ != seqNumBucket[mostCountsIndex] )
         {
-            trace_printf("%s@%d Most common seq num=%lld (%d nodes), %d buckets"
-                         ", local seq num (%lld) did not match.\n",
-                         method_name, __LINE__, seqNumBucket[mostCountsIndex],
-                         seqNumCount[mostCountsIndex], maxBucket, seqNum_);
+            trace_printf( "%s@%d Most common seq num=%lld (%d nodes), "
+                          "%d buckets, low=%lld, high=%lld, local seq num (%lld) did not match.\n"
+                         , method_name, __LINE__
+                         , seqNumBucket[mostCountsIndex]
+                         , seqNumCount[mostCountsIndex]
+                         , maxBucket
+                         , lowSeqNum_
+                         , highSeqNum_
+                         , seqNum_ );
         }
     }
 
@@ -5268,7 +6215,7 @@ void CCluster::HandleDownNode( int pnid )
         trace_printf("%s@%d - Added down node to list, pnid=%d, name=(%s)\n", method_name, __LINE__, downNode->GetPNid(), downNode->GetName());
 
     // assign new TmLeader if TMLeader node is dead.
-    AssignTmLeader(pnid);
+    AssignTmLeader(pnid, false);
 
     // Build available list of spare nodes
     CNode *spareNode;
@@ -5373,6 +6320,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     TRACE_ENTRY;
 
     struct sync_buffer_def *recvBuf;
+    struct sync_buffer_def *sendBuf = Nodes->GetSyncBuffer();
     STATE node_state;
     int change_nid;
     cluster_state_def_t nodestate[GetConfigPNodesMax()];
@@ -5430,13 +6378,14 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         recvBuf = (struct sync_buffer_def *)
             (((char *) syncBuf) + index * CommBufSize);
 
-        if (trace_settings & TRACE_SYNC_DETAIL)
+        if (trace_settings & TRACE_SYNC)
         {
             int nr;
             MPI_Get_count(&status[index], MPI_CHAR, &nr);
             trace_printf("%s@%d - Received %d bytes from node %d, "
-                         "message count=%d\n",
+                         ", seq_num=%lld, message count=%d\n",
                          method_name, __LINE__, nr, index,
+                         recvBuf->nodeInfo.seq_num,
                          recvBuf->msgInfo.msg_count);
         }
 
@@ -5532,23 +6481,23 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             Node[index]->SetState( State_Down );
             --CurNodes;
             // Clear bit in set of "up nodes"
-            upNodes_.upNodes[index/MAX_NODE_BITMASK] &= 
-                ~(1ull << (index%MAX_NODE_BITMASK));
+            upNodes_.upNodes[index/MAX_NODE_BITMASK] &= ~(1ull << (index%MAX_NODE_BITMASK));
         }
     }
 
-    if ( checkSeqNum_ && !ValidateSeqNum( nodestate ) && !enqueuedDown_ )
+    if ( (checkSeqNum_ || reconnectSeqNum_ != 0)
+      && !ValidateSeqNum( nodestate ) 
+      && !enqueuedDown_ )
     {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s] Sync cycle sequence number (%lld) "
-                 "incorrect.  Scheduling node down.\n", method_name, seqNum_);
-        mon_log_write(MON_CLUSTER_UPDTCLUSTERSTATE_1, SQ_LOG_ERR, buf);
-
-        mem_log_write(CMonLog::MON_UPDATE_CLUSTER_2, MyPNID);
-
-        enqueuedDown_ = true;
-
-        ReqQueue.enqueueDownReq(MyPNID);
+        if ( reconnectSeqNum_ == 0 && MyNode->GetState() == State_Up )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s] Sync cycle sequence number (%lld) "
+                     "incorrect.  Aborting!\n", method_name, seqNum_);
+            mon_log_write(MON_CLUSTER_UPDTCLUSTERSTATE_1, SQ_LOG_CRIT, buf);
+            mem_log_write(CMonLog::MON_UPDATE_CLUSTER_2, MyPNID);
+            abort();
+        }
     }
 
     nodestate[MyPNID].node_state = Node[MyPNID]->GetState();
@@ -5605,8 +6554,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 --CurNodes;
 
                 // Clear bit in set of "up nodes"
-                upNodes_.upNodes[index/MAX_NODE_BITMASK] &= 
-                    ~(1ull << (index%MAX_NODE_BITMASK));
+                upNodes_.upNodes[index/MAX_NODE_BITMASK] &= ~(1ull << (index%MAX_NODE_BITMASK));
 
                 // Pretend node is still up until down node processing
                 // completes.
@@ -5625,8 +6573,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                         trace_printf( "%s@%d Divergence, queueing "
                                       "monExited{%d, %d, %lld}\n"
                                     , method_name, __LINE__
-                                    , index
-                                    , MyPNID, seqNum_);
+                                    , index, MyPNID, seqNum_ );
                     }
                     // Save info for the exited monitor so can confirm
                     // that all monitors have the same view.
@@ -5650,8 +6597,8 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                    , method_name, __LINE__
                    , MyNode->GetName()
                    , MyPNID
-                   , tmSyncBuffer_->nodeInfo.tmSyncState
-                   , SyncStateString( tmSyncBuffer_->nodeInfo.tmSyncState ));
+                   , sendBuf->nodeInfo.tmSyncState
+                   , SyncStateString( sendBuf->nodeInfo.tmSyncState ));
     }
 
     // Update our node states
@@ -5661,12 +6608,12 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         change_nid = nodestate[index].change_nid;
 
         if ( index == MyPNID && 
-             MyNode->GetState() == State_Merged && seqNum_ == 0)
+             MyNode->GetState() == State_Merged && seqNum_ == 1)
         {   // Initial "allgather" for this re-integrated monitor.
 
             seqNum_ = EnsureAndGetSeqNum(nodestate);
 
-            if (trace_settings & TRACE_SYNC_DETAIL)
+            if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
             {
                 trace_printf("%s@%d Completed initial allgather for pnid=%d, "
                              "state=%d(%s), seqNum_=%lld\n", method_name, __LINE__,
@@ -5844,6 +6791,20 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
                 (((char *) syncBuf) + i * CommBufSize);
         }
 
+        if (trace_settings & TRACE_SYNC)
+        {
+            trace_printf("%s@%d - Buffer for node %d, swpRecCount_=%d, seq_num=%lld, "
+                         "lastSeqNum_=%lld, msg_count=%d, msg_offset=%d\n",
+                         method_name, __LINE__, i, swpRecCount_,
+                         msgBuf->nodeInfo.seq_num,
+                         lastSeqNum_,
+                         msgBuf->msgInfo.msg_count,
+                         msgBuf->msgInfo.msg_offset);
+        }
+
+        // if we have already processed buffer, skip it
+        if (lastSeqNum_ == msgBuf->nodeInfo.seq_num) continue;
+
         // reset msg length to zero to initialize for PopMsg()
         msgBuf->msgInfo.msg_offset = 0;
 
@@ -5880,10 +6841,12 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
         else if ( !deferredTmSync )
         {
             // temp trace
-            if (trace_settings & TRACE_SYNC_DETAIL)
+            if (trace_settings & TRACE_SYNC)
             {
-                trace_printf("%s@%d - For node %d, msg_count=%d, msg_offset"
-                             "=%d\n", method_name, __LINE__, i,
+                trace_printf("%s@%d - For node %d, swpRecCount_=%d, "
+                             "seq_num=%lld,msg_count=%d, msg_offset=%d\n",
+                             method_name, __LINE__, i, swpRecCount_,
+                             msgBuf->nodeInfo.seq_num,
                              msgBuf->msgInfo.msg_count,
                              msgBuf->msgInfo.msg_offset);
             }
@@ -6099,6 +7062,8 @@ bool CCluster::exchangeNodeData ( )
     const char method_name[] = "CCluster::exchangeNodeData";
     TRACE_ENTRY;
 
+    bool result = false;
+
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_sync_Incr();
@@ -6106,11 +7071,14 @@ bool CCluster::exchangeNodeData ( )
     ++swpRecCount_; // recursive count for this function
 
     bool doShutdown = false;
+    bool lastAllgatherWithLastSyncBuffer = false;
 
     struct internal_msg_def *msg;
     MPI_Status status[GetConfigPNodesMax()];
     int err;
     struct sync_buffer_def *recv_buffer;
+    struct sync_buffer_def *send_buffer = Nodes->GetSyncBuffer();
+    unsigned long long savedSeqNum = 0;
 
     // if we are here in a second recursive call that occurred while
     // processing TMSync data, use the second receive buffer
@@ -6127,22 +7095,30 @@ bool CCluster::exchangeNodeData ( )
     }
 
     // Initialize sync buffer header including node state
-    msg = Nodes->InitSyncBuffer( Nodes->GetSyncBuffer(), seqNum_, upNodes_ );
+    msg = Nodes->InitSyncBuffer( send_buffer, seqNum_, upNodes_ );
 
     // Fill sync buffer based on queue of replication requests
     Replicator.FillSyncBuffer ( msg );
 
-    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
-        trace_printf("%s@%d - doing Allgather size=%d, message count=%d, seqNum_=%lld\n",
-                     method_name, __LINE__, Nodes->GetSyncSize(),
-                     (Nodes->GetSyncBuffer())->msgInfo.msg_count, seqNum_);
+reconnected:
+
+    if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
+        trace_printf( "%s@%d - doing Allgather size=%d, swpRecCount_=%d, message count=%d "
+                      "message seq_num=%lld, seqNum_=%lld, lastSeqNum_=%lld\n"
+                    , method_name, __LINE__
+                    , Nodes->GetSyncSize()
+                    , swpRecCount_
+                    , send_buffer->msgInfo.msg_count
+                    , send_buffer->nodeInfo.seq_num
+                    , seqNum_
+                    , lastSeqNum_);
 
     struct timespec ts_ag_begin;
     clock_gettime(CLOCK_REALTIME, &ts_ag_begin);
 
 
     // Exchange info with other nodes
-    err = Allgather(Nodes->GetSyncSize(), Nodes->GetSyncBuffer(), (char *)recv_buffer,
+    err = Allgather(Nodes->GetSyncSize(), send_buffer, (char *)recv_buffer,
              0 /*seqNum_*/, status );
 
     struct timespec ts_ag_end;
@@ -6176,7 +7152,7 @@ bool CCluster::exchangeNodeData ( )
             {
                 trace_printf("%s@%d - slow Allgather info: sync size=%d, message count=%d, MyPNID=%d\n",
                              method_name, __LINE__,  Nodes->GetSyncSize(), 
-                             (Nodes->GetSyncBuffer())->msgInfo.msg_count, MyPNID);
+                             send_buffer->msgInfo.msg_count, MyPNID);
                 struct sync_buffer_def *msgBuf;
                 int nr;
 
@@ -6211,16 +7187,63 @@ bool CCluster::exchangeNodeData ( )
             }
         }
 
-        UpdateClusterState( doShutdown, recv_buffer, status,
-                            Nodes->GetSyncBuffer()->nodeInfo.change_nid);
+        UpdateClusterState( doShutdown
+                          , recv_buffer
+                          , status
+                          , send_buffer->nodeInfo.change_nid);
     }
 
-    // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
-    if ( ++seqNum_ == 0) seqNum_ = 1;
-
-    if ( ProcessClusterData( recv_buffer, Nodes->GetSyncBuffer(), false ) )
+    if ( ProcessClusterData( recv_buffer, send_buffer, false ) )
     {   // There is a TmSync message remaining to be handled
-        ProcessClusterData( recv_buffer, Nodes->GetSyncBuffer(), true );
+        ProcessClusterData( recv_buffer, send_buffer, true );
+    }
+    else
+    {
+        if ( lastAllgatherWithLastSyncBuffer )
+        {
+            seqNum_ = savedSeqNum;
+            lastAllgatherWithLastSyncBuffer = false;
+            send_buffer = Nodes->GetSyncBuffer();
+            goto reconnected;
+        }
+    
+        if ( reconnectSeqNum_ != 0 )
+        {
+            // The Allgather() has executed a reconnect at reconnectSeqNum_.
+            // The UpdateClusterState has set the lowSeqNum_and highSeqNum_
+            // in the current IO exchange which will indicate whether there is
+            // a mismatch in IOs between monitor processes. If there is a mismatch,
+            // the lowSeqNum_and highSeqNum_ relative to our current seqNum_
+            // will determine how to redrive the exchange of node data.
+            if (seqNum_ > lowSeqNum_)
+            { // A remote monitor did not receive our last SyncBuffer
+                // Redo exchange with the previous SyncBuffer
+                send_buffer = Nodes->GetLastSyncBuffer();
+                savedSeqNum = seqNum_;
+                seqNum_ = lastSeqNum_;
+                // Indicate to follow up the next exchange with current SyncBuffer
+                lastAllgatherWithLastSyncBuffer = true;
+                lowSeqNum_ = highSeqNum_ = reconnectSeqNum_ = 0;
+                goto reconnected;
+            }
+            else if (seqNum_ < highSeqNum_)
+            { // The local monitor did not receive the last remote SyncBuffer
+                // Redo exchange with the current SyncBuffer
+                send_buffer = Nodes->GetSyncBuffer();
+                lowSeqNum_ = highSeqNum_ = reconnectSeqNum_ = 0;
+                goto reconnected;
+            }
+        }
+    
+        // Save the sync buffer and corresponding sequence number we just processed
+        // On reconnect we must resend the last buffer and the current buffer
+        // to ensure dropped buffers are processed by all monitor processe in the
+        // correct order
+        Nodes->SaveMyLastSyncBuffer();
+        lastSeqNum_ = seqNum_;
+    
+        // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
+        if ( ++seqNum_ == 0) seqNum_ = 1;
     }
 
     // ?? Need the following?  Possibly not since maybe all sync cycle
@@ -6228,17 +7251,24 @@ bool CCluster::exchangeNodeData ( )
     // Wake up any threads waiting on the completion of a sync cycle
     syncCycle_.wakeAll();
 
-    bool result = false;
     if (doShutdown) result = checkIfDone( );
 
     --swpRecCount_;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
+        trace_printf( "%s@%d - node data exchange completed, swpRecCount_=%d, "
+                      "seqNum_=%lld, lastSeqNum_=%lld\n"
+                    , method_name, __LINE__
+                    , swpRecCount_
+                    , seqNum_
+                    , lastSeqNum_);
 
     TRACE_EXIT;
 
     return result;
 }
 
-void CCluster::exchangeTmSyncData ( struct sync_def *sync )
+void CCluster::exchangeTmSyncData ( struct sync_def *sync, bool bumpSync )
 {
     const char method_name[] = "CCluster::exchangeTmSyncData";
     TRACE_ENTRY;
@@ -6246,11 +7276,14 @@ void CCluster::exchangeTmSyncData ( struct sync_def *sync )
     ++swpRecCount_; // recursive count for this function
 
     bool doShutdown = false;
+    bool lastAllgatherWithLastSyncBuffer = false;
 
     struct internal_msg_def *msg;
     MPI_Status status[GetConfigPNodesMax()];
     int err;
     struct sync_buffer_def *recv_buffer;
+    struct sync_buffer_def *send_buffer = Nodes->GetSyncBuffer();
+    unsigned long long savedSeqNum = 0;
 
     // if we are here in a second recursive call that occurred while
     // processing TMSync data, use the second receive buffer
@@ -6266,27 +7299,58 @@ void CCluster::exchangeTmSyncData ( struct sync_def *sync )
       recv_buffer = recvBuffer2_;
     }
 
+    if (bumpSync)
+    {
+        // Save the sync buffer and corresponding sequence number we just processed
+        // On reconnect we must resend the last buffer and the current buffer
+        // to ensure dropped buffers are processed by all monitor processe in the
+        // correct order
+        Nodes->SaveMyLastSyncBuffer();
+        lastSeqNum_ = seqNum_;
+
+        // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
+        if ( ++seqNum_ == 0) seqNum_ = 1;
+
+        if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
+            trace_printf( "%s@%d - Bumping sequence number, "
+                          "swpRecCount_=%d, seqNum_=%lld, lastSeqNum_=%lld\n"
+                        , method_name, __LINE__
+                        , swpRecCount_
+                        , seqNum_
+                        , lastSeqNum_);
+        
+    }
+
     // Initialize sync buffer header including node state
-    msg = Nodes->InitSyncBuffer( tmSyncBuffer_, seqNum_, upNodes_ );
+    msg = Nodes->InitSyncBuffer( send_buffer, seqNum_, upNodes_ );
 
     // Add tmsync data
-    AddTmsyncMsg( sync, msg );
+    AddTmsyncMsg( send_buffer, sync, msg );
+
+reconnected:
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
-        trace_printf("%s@%d - tmSyncBuffer_=%p, msg=%p\n",
-                     method_name, __LINE__, tmSyncBuffer_, msg);
+        trace_printf( "%s@%d - doing Allgather size=%d, swpRecCount_=%d, message count=%d "
+                      "message seq_num=%lld, seqNum_=%lld, lastSeqNum_=%lld\n"
+                    , method_name, __LINE__
+                    , Nodes->GetSyncSize()
+                    , swpRecCount_
+                    , send_buffer->msgInfo.msg_count
+                    , send_buffer->nodeInfo.seq_num
+                    , seqNum_
+                    , lastSeqNum_);
 
-    int syncSize = sizeof(cluster_state_def_t)
-                 + sizeof(msgInfo_t)
-                 + tmSyncBuffer_->msgInfo.msg_offset;
+    struct timespec ts_ag_begin;
+    clock_gettime(CLOCK_REALTIME, &ts_ag_begin);
 
-    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
-        trace_printf("%s@%d - doing Allgather size=%d, message count=%d, seqNum_=%lld\n",
-                     method_name, __LINE__, syncSize,
-                     tmSyncBuffer_->msgInfo.msg_count, seqNum_);
 
     // Exchange info with other nodes
-    err = Allgather(syncSize, tmSyncBuffer_, (char *)recv_buffer, 0 /*seqNum_*/, status );
+    err = Allgather(Nodes->GetSyncSize(), send_buffer, (char *)recv_buffer, 
+             0 /*seqNum_*/, status );
+
+    struct timespec ts_ag_end;
+    clock_gettime(CLOCK_REALTIME, &ts_ag_end);
+
     if (err != MPI_SUCCESS && err != MPI_ERR_IN_STATUS)
     {
         if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
@@ -6309,20 +7373,114 @@ void CCluster::exchangeTmSyncData ( struct sync_def *sync )
     }
     else
     {
-        UpdateClusterState( doShutdown, recv_buffer, status,
-                            tmSyncBuffer_->nodeInfo.change_nid);
+        if (agTimeStats( ts_ag_begin, ts_ag_end))
+        {  // Slow cycle, print info
+            if ( trace_settings & TRACE_SYNC )
+            {
+                trace_printf("%s@%d - slow Allgather info: sync size=%d, message count=%d, MyPNID=%d\n",
+                             method_name, __LINE__,  Nodes->GetSyncSize(), 
+                             send_buffer->msgInfo.msg_count, MyPNID);
+                struct sync_buffer_def *msgBuf;
+                int nr;
+
+                for (int i = 0; i < GetConfigPNodesMax(); i++)
+                {
+                    bool noComm;
+                    switch( CommType )
+                    {
+                        case CommType_InfiniBand:
+                            noComm = (comms_[i] == MPI_COMM_NULL) ? true : false;
+                            break;
+                        case CommType_Sockets:
+                            noComm = (socks_[i] == -1) ? true : false;
+                            break;
+                        default:
+                            // Programmer bonehead!
+                            abort();
+                    }
+                    // Only process active nodes
+                    if (noComm) continue;
+
+                    msgBuf = (struct sync_buffer_def *)
+                        (((char *) recv_buffer) + i * CommBufSize);
+
+                    MPI_Get_count(&status[i], MPI_CHAR, &nr);
+
+                    trace_printf("%s@%d - slow Allgather info, pnid=%d: received bytes=%d, message count=%d, msg_offset=%d\n",
+                                 method_name, __LINE__, i, nr,
+                                 msgBuf->msgInfo.msg_count,
+                                 msgBuf->msgInfo.msg_offset);
+                }
+            }
+        }
+
+        UpdateClusterState( doShutdown
+                          , recv_buffer
+                          , status
+                          , send_buffer->nodeInfo.change_nid);
     }
+
+    if ( ProcessClusterData( recv_buffer, send_buffer, false ) )
+    {   // There is a TmSync message remaining to be handled
+        ProcessClusterData( recv_buffer, send_buffer, true );
+    }
+
+    if ( lastAllgatherWithLastSyncBuffer )
+    {
+        seqNum_ = savedSeqNum;
+        lastAllgatherWithLastSyncBuffer = false;
+        send_buffer = Nodes->GetSyncBuffer();
+        goto reconnected;
+    }
+
+    if ( reconnectSeqNum_ != 0 )
+    {
+        // The Allgather() has executed a reconnect at reconnectSeqNum_.
+        // The UpdateClusterState has set the lowSeqNum_and highSeqNum_
+        // in the current IO exchange which will indicate whether there is
+        // a mismatch in IOs between monitor processes. If there is a mismatch,
+        // the lowSeqNum_and highSeqNum_ relative to our current seqNum_
+        // will determine how to redrive the exchange of node data.
+        if (seqNum_ > lowSeqNum_)
+        { // A remote monitor did not receive our last SyncBuffer
+            // Redo exchange with the previous SyncBuffer
+            send_buffer = Nodes->GetLastSyncBuffer();
+            savedSeqNum = seqNum_;
+            seqNum_ = lastSeqNum_;
+            // Indicate to follow up the next exchange with current SyncBuffer
+            lastAllgatherWithLastSyncBuffer = true;
+            lowSeqNum_ = highSeqNum_ = reconnectSeqNum_ = 0;
+            goto reconnected;
+        }
+        else if (seqNum_ < highSeqNum_)
+        { // The local monitor did not receive the last remote SyncBuffer
+            // Redo exchange with the current SyncBuffer
+            send_buffer = Nodes->GetSyncBuffer();
+            lowSeqNum_ = highSeqNum_ = reconnectSeqNum_ = 0;
+            goto reconnected;
+        }
+    }
+
+    // Save the sync buffer and corresponding sequence number we just processed
+    // On reconnect we must resend the last buffer and the current buffer
+    // to ensure dropped buffers are processed by all monitor processe in the
+    // correct order
+    Nodes->SaveMyLastSyncBuffer();
+    lastSeqNum_ = seqNum_;
 
     // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
     if ( ++seqNum_ == 0) seqNum_ = 1;
 
-    if ( ProcessClusterData( recv_buffer, tmSyncBuffer_, false ) )
-    {   // There is a TmSync message remaining to be handled
-        ProcessClusterData( recv_buffer, tmSyncBuffer_, true );
-    }
-
     --swpRecCount_;
-    
+
+    if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
+        trace_printf( "%s@%d - node data exchange completed, swpRecCount_=%d, "
+                      "seqNum_=%lld, lastSeqNum_=%lld\n"
+                    , method_name, __LINE__
+                    , swpRecCount_
+                    , seqNum_
+                    , lastSeqNum_);
+
     TRACE_EXIT;
 }
 
@@ -6330,16 +7488,86 @@ void CCluster::EpollCtl( int efd, int op, int fd, struct epoll_event *event )
 {
     const char method_name[] = "CCluster::EpollCtl";
     TRACE_ENTRY;
-
+#if 0
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        int iPeer;
+        for ( iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
+        { // Find corresponding peer by matching socket fd
+            if ( fd == socks_[iPeer] ) break;
+        }
+        trace_printf( "%s@%d epoll_ctl( efd=%d,%s, fd=%d(%s), %s )\n"
+                    , method_name, __LINE__
+                    , efd
+                    , EpollOpString(op)
+                    , fd, Node[iPeer]->GetName()
+                    , EpollEventString(event->events) );
+    }
+#endif
     int rc = epoll_ctl( efd, op, fd, event );
     if ( rc == -1 )
     {
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s@%d] epoll_ctl() error: %s\n",
-            method_name, __LINE__, strerror_r( errno, ebuff, 256 ) );
+        int iPeer;
+        for ( iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
+        { // Find corresponding peer by matching socket fd
+            if ( fd == socks_[iPeer] ) break;
+        }
+        snprintf( buf, sizeof(buf), "[%s@%d] epoll_ctl(efd=%d,%s, fd=%d(%s), %s) error: %s\n"
+                , method_name, __LINE__
+                , efd
+                , EpollOpString(op)
+                , fd, Node[iPeer]->GetName()
+                , EpollEventString(event->events)
+                , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_EPOLLCTL_1, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
+    }
+
+    TRACE_EXIT;
+    return;
+}
+
+void CCluster::EpollCtlDelete( int efd, int fd, struct epoll_event *event )
+{
+    const char method_name[] = "CCluster::EpollCtlDelete";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        int iPeer;
+        for ( iPeer = 0; iPeer < GetConfigPNodesMax(); iPeer++ )
+        { // Find corresponding peer by matching socket fd
+            if ( fd == socks_[iPeer] ) break;
+        }
+        trace_printf( "%s@%d epoll_ctl( efd=%d,%s, fd=%d(%s), %s )\n"
+                    , method_name, __LINE__
+                    , efd
+                    , EpollOpString(EPOLL_CTL_DEL)
+                    , fd, Node[iPeer]->GetName()
+                    , EpollEventString(event->events) );
+    }
+
+    // Remove old socket from epoll set, it may not be there
+    int rc = epoll_ctl( efd, EPOLL_CTL_DEL, fd, event  );
+    if ( rc == -1 )
+    {
+        int err = errno;
+        if (err != ENOENT)
+        {
+            char ebuff[256];
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s@%d] epoll_ctl(efd=%d, %s, fd=%d, %s) error: %s\n"
+                    , method_name, __LINE__
+                    , efd
+                    , EpollOpString(EPOLL_CTL_DEL)
+                    , fd
+                    , EpollEventString(event->events)
+                    , strerror_r( err, ebuff, 256 ) );
+            mon_log_write( MON_CLUSTER_EPOLLCTLDELETE_1, SQ_LOG_CRIT, buf );
+            MPI_Abort( MPI_COMM_SELF,99 );
+        }
     }
 
     TRACE_EXIT;
@@ -6386,6 +7614,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
         strcpy( nodeName, "localhost" );
         n = nodeName;
     }
+    // Get my host structure via my node name or localhost
     he = gethostbyname( n );
     if ( !he )
     {
@@ -6396,18 +7625,22 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
         mon_log_write( MON_CLUSTER_INITCLUSTERSOCKS_4, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
     }
+    // Initialize my source address structure
     memcpy( srcaddr, he->h_addr, 4 );
     int idst;
+    // Loop on each node in the cluster
     for ( int i = 0; i < worldSize; i++ )
     {
+        // Loop on each adjacent node in the cluster
         for ( int j = i+1; j < worldSize; j++ )
         {
             if ( i == myRank )
-            {
+            { // Current [i] node is my node, so connect to [j] node
                 idst = j;
                 if ( nodeNames )
-                {
+                { // Real cluster
                     n = &nodeNames[j*MPI_MAX_PROCESSOR_NAME];
+                    // Get peer's host structure via its node name 
                     he = gethostbyname( n );
                     if ( !he )
                     {
@@ -6420,15 +7653,16 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                         mon_log_write( MON_CLUSTER_INITCLUSTERSOCKS_5, SQ_LOG_CRIT, buf );
                         MPI_Abort( MPI_COMM_SELF,99 );
                     }
+                    // Initialize peer's destination address structure
                     memcpy( dstaddr, he->h_addr, 4 );
                     node = Nodes->GetNode( n );
                     if ( node )
-                    {
+                    { // Save peer's port in its node object
                         node->SetSyncSocketPort(sockPorts_[j]);
                     }
                 }
                 else
-                {
+                { // Virtual cluster. Same source and destination addresses
                     node = NULL;
                     memcpy( dstaddr, srcaddr, 4 );
                 }
@@ -6448,11 +7682,11 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                                 , (int)((unsigned char *)dstaddr)[3]
                                 , sockPorts_[j] );
                 }
-
+                // Connect to peer
                 socks_[rankToPnid[j]] = MkCltSock( srcaddr, dstaddr, sockPorts_[j] );
             }
             else if ( j == myRank )
-            {
+            { // Current [j] peer my node, accept connection from peer [i] node
                 if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                 {
                     trace_printf( "%s@%d Accepting server socket: src=%d.%d.%d.%d, port=%d\n"
@@ -6465,6 +7699,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                 }
 
                 idst = i;
+                // Accept connection from peer [i]
                 socks_[rankToPnid[i]] = AcceptSock( syncSock_ );
             }
             else
@@ -6514,8 +7749,8 @@ void CCluster::InitServerSock( void )
 {
     const char method_name[] = "CCluster::InitServerSock";
     TRACE_ENTRY;
-    int serverCommPort;
-    int serverSyncPort;
+    int serverCommPort = 0;
+    int serverSyncPort = 0;
 
     unsigned char addr[4];
     struct hostent *he;
@@ -6534,14 +7769,24 @@ void CCluster::InitServerSock( void )
     }
     memcpy( addr, he->h_addr, 4 );
 
+    char *env = getenv("MONITOR_COMM_PORT");
+    if ( env )
+    {
+        int val;
+        errno = 0;
+        val = strtol(env, NULL, 10);
+        if ( errno == 0) serverCommPort = val;
+    }
+
     commSock_ = MkSrvSock( &serverCommPort );
     if ( commSock_ < 0 )
     {
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s@%d] MkSrvSock(comm) error: %s\n"
-                , method_name, __LINE__, strerror_r( errno, ebuff, 256 ) );
+                , "[%s@%d] MkSrvSock(MONITOR_COMM_PORT=%d) error: %s\n"
+                , method_name, __LINE__, serverCommPort
+                , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_2, SQ_LOG_CRIT, buf );
         abort();
     }
@@ -6566,14 +7811,23 @@ void CCluster::InitServerSock( void )
 
     }
 
+    env = getenv("MONITOR_SYNC_PORT");
+    if ( env )
+    {
+        int val;
+        errno = 0;
+        val = strtol(env, NULL, 10);
+        if ( errno == 0) serverSyncPort = val;
+    }
     syncSock_ = MkSrvSock( &serverSyncPort );
     if ( syncSock_ < 0 )
     {
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s@%d] MkSrvSock(sync) error: %s\n"
-                , method_name, __LINE__, strerror_r( errno, ebuff, 256 ) );
+                , "[%s@%d] MkSrvSock(MONITOR_SYNC_PORT=%d) error: %s\n"
+                , method_name, __LINE__, serverSyncPort
+                , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_3, SQ_LOG_CRIT, buf );
         abort();
     }
@@ -6983,12 +8237,19 @@ int CCluster::MkSrvSock( int *pport )
     memset( (char *) &sockinfo, 0, size );
     sockinfo.sin_family = AF_INET;
     sockinfo.sin_addr.s_addr = htonl( INADDR_ANY );
-    sockinfo.sin_port = htons( 0 );
+    sockinfo.sin_port = htons( *pport );
+    int lv_bind_tries = 0;
     do
     {
+        if (lv_bind_tries > 0) 
+        {
+            sleep(5);
+        }
         err = bind( sock, (struct sockaddr *) &sockinfo, size );
         sched_yield( );
-    } while ( err && errno == EADDRINUSE );
+    } while ( err && 
+             (errno == EADDRINUSE) &&
+             (++lv_bind_tries < 4) );
 
     if ( err )
     {
@@ -7042,7 +8303,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], listen() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_4, SQ_LOG_CRIT, la_buf); 
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_8, SQ_LOG_CRIT, la_buf); 
         close( (int)sock );
         return ( -1 );
     }
@@ -7379,8 +8640,14 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 int err = errno;
-                sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
-                       , method_name, err, strerror( err ));
+                sprintf( la_buf, "[%s], connect(%d.%d.%d.%d:%d) failed! errno=%d (%s)\n"
+                       , method_name
+                       , (int)((unsigned char *)dstip)[0]
+                       , (int)((unsigned char *)dstip)[1]
+                       , (int)((unsigned char *)dstip)[2]
+                       , (int)((unsigned char *)dstip)[3]
+                       , port
+                       , err, strerror( err ));
                 mon_log_write(MON_CLUSTER_MKCLTSOCK_7, SQ_LOG_ERR, la_buf); 
                 close(sock);
                 return ( -1 );
@@ -7541,7 +8808,7 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
             }
             else
             {
-                sizeCount -= received;
+                sizeCount -= readCount;
                 readAgain = true;
             }
         }

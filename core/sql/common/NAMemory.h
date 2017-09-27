@@ -64,12 +64,8 @@ template <class T> class NAList;
 #endif // _DEBUG
 
 #if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 #endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
 #include <unistd.h>
@@ -85,6 +81,8 @@ class NAHeapFragment;
 class NATreeFragment;
 class MemBinsem;
 class SegmentStatus;
+
+#define MAX_MEMORY_SIZE_IN_AN_ALLOC  INT_MAX
 
 
 // MemoryStats is used for dynamically allocated statistics (when MEMDEBUG=1 or higher)
@@ -158,13 +156,11 @@ public:
                                 { return addedSegCount_ >= maxSecSegCount_; }
   Lng32   addSegId(short segId, void *start, size_t len);
   void   deleteSegId(short segId);
-// LCOV_EXCL_START
   SEG_ID  getFirstSegId() const			 { return firstSegId_; }
   void * getFirstSegStart() const                { return firstSegStart_; }
   off_t   getFirstSegOffset() const              { return firstSegOffset_; }
   size_t   getFirstSegLen() const                { return firstSegLen_; }
   size_t   getFirstSegMaxLen() const             { return firstSegMaxLen_; }
-// LCOV_EXCL_STOP
   void   resizeSeg(short segId, void *start, size_t newLen);
 
   // check whether a specified range of memory overlaps any of the segments
@@ -227,14 +223,12 @@ public:
   NAHeapFragment* alignAsFragment();
 
 #if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
-// LCOV_EXCL_START
 void dump(ostream* outstream,
 	  Lng32 debugLevel,
 	  MemoryStats& freeStats,
 	  MemoryStats& allocStats,
           NAHeapFragment *top,
 	  Lng32 indent);
-// LCOV_EXCL_STOP
 #endif
 
   NABlock();
@@ -393,8 +387,9 @@ public:
   inline NASegGlobals * getSegGlobals() { return segGlobals_; }
   char *getName() {  return name_; }
   NAMemoryType getType() {  return type_; }
+
   NABoolean getUsage(size_t* lastSegSize, size_t* freeSize, size_t* totalSize);
-  // for debugging
+
   NABoolean containsAddress(void *addr)
         { return NABlock::blockHolding(firstBlk_, addr) != NULL; }
 
@@ -402,6 +397,8 @@ public:
   void setSharedMemory() { sharedMemory_ = TRUE; }
 
   NABoolean isComSpace(void) { return derivedClass_ == COMSPACE_CLASS; } ;
+ 
+  NABoolean checkSize(size_t size, NABoolean failureIsFatal);
 
 protected:
 

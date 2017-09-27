@@ -475,14 +475,12 @@ StmtDDLCreateTrigger::isOwnerSpecified() const
   return pOwner_ ? TRUE : FALSE;
 }
 
-// LCOV_EXCL_START
 // Not used by Triggers
 inline const ElemDDLGrantee *
 StmtDDLCreateTrigger::getOwner() const
 {
   return pOwner_;
 }
-// LCOV_EXCL_STOP
 
 #endif // STMTDDLCREATETRIGGER_H
 

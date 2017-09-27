@@ -211,7 +211,7 @@ void HashBuffer::init(Cluster * cluster) {
 HashBuffer::~HashBuffer() {
   if (data_) {
     if ( ! cluster_ ) {
-      heap_->deallocateMemory(data_);  // LCOV_EXCL_LINE
+      heap_->deallocateMemory(data_);
       return;
     }
     // NOTE: we do NOT ajust the memory usage statistics for the cluster,
@@ -258,13 +258,11 @@ HashBuffer::~HashBuffer() {
 
 /////////////////////////////////////////////////////////////////////////////
 
-// LCOV_EXCL_START  
 
 Bucket::Bucket() {
   init();
 };
 
-// LCOV_EXCL_STOP
 
 void Bucket::init() {
   innerCluster_ = NULL;
@@ -308,7 +306,7 @@ ClusterDB::ClusterDB(HashOperator hashOperator,
 		     Float32 bmoCitizenshipFactor,
 		     Int32  pMemoryContingencyMB, 
 		     Float32 estimateErrorPenalty,
-		     Float32 hashMemEstInMbPerCpu,
+		     Float32 hashMemEstInKBPerNode,
 		     ULng32 initialHashTableSize,
 		     ExOperStats * hashOperStats
 		     )
@@ -364,7 +362,7 @@ ClusterDB::ClusterDB(HashOperator hashOperator,
     bmoCitizenshipFactor_(bmoCitizenshipFactor),
     pMemoryContingencyMB_(pMemoryContingencyMB), 
     estimateErrorPenalty_(estimateErrorPenalty),
-    hashMemEstInMbPerCpu_(hashMemEstInMbPerCpu),
+    hashMemEstInKBPerNode_(hashMemEstInKBPerNode),
 
     totalPhase3TimeNoHL_(0),
     maxPhase3Time_(0),
@@ -714,6 +712,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
     }
   }
 
+/*
   // Check if we are running out of address space or swap space.
   // getUsage() would return TRUE if and only if memory gets crowded (i.e. we 
   // failed at least once to allocate a desired flat segment size, and the 
@@ -736,7 +735,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
       return FALSE;
     }
   }
-
+*/
 
   if (memMonitor_ && memoryUsed_ >= minMemBeforePressureCheck_ ) {
 
@@ -863,7 +862,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
       // do the following check if HJ still in phase 1.
       if ( checkCompilerHints )
 	{
-	  Float32 E = hashMemEstInMbPerCpu_ ; //expected memory consumption
+	  Float32 E = hashMemEstInKBPerNode_ / 1024 ; //expected memory consumption
 	  
 #ifdef FUTURE_WORK
 	  //check extreme case first. Expected cannot be more than
@@ -898,7 +897,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
 	  if ( C > E ) // consumed memory exceeded the expected -- adjust E
 	    {
 	      E = C * ( 1 + estimateErrorPenalty ) ;
-	      hashMemEstInMbPerCpu_ = E ;
+	      hashMemEstInKBPerNode_ = E * 1024;
 	    }
 	  
 	  Float32 m = E - C;  //delta memory required to avoid overflow.

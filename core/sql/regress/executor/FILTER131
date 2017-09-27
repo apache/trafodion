@@ -25,5 +25,7 @@
 
 fil=$1
 sed "
+s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
+s/^\([ ]*est_memory_per_node[ ]*[\.]*\) .*/\1 removed/g
 " $fil
 

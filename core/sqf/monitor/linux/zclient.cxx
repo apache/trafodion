@@ -708,8 +708,16 @@ int CZClient::InitializeZClient( void )
     TRACE_ENTRY;
 
     int rc;
+    int retries = 0;
 
     rc = MakeClusterZNodes();
+
+    while ( rc != ZOK && retries < ZOOKEEPER_RETRY_COUNT)
+    {
+        sleep(ZOOKEEPER_RETRY_WAIT);
+        retries++;
+        rc = MakeClusterZNodes();
+    }
 
     if ( rc == ZOK )
     {

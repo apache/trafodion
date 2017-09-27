@@ -88,26 +88,22 @@ extern const WordAsBits SingleBitArray[];
 // global display methods for purposes of debugging
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 void displayContext (const Context & context)
 {
   context.print();
 }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
 // local helper functions
 // -----------------------------------------------------------------------
 #ifdef _DEBUG
-// LCOV_EXCL_START
 static const char *getCOMPILE_TIME_MONITOR_OUTPUT_FILEname()
 {
   const char * fname = ActiveSchemaDB()->getDefaults().
 			 getValue(COMPILE_TIME_MONITOR_OUTPUT_FILE);
   return (*fname && stricmp(fname,"NONE") != 0) ? fname : NULL;
 }
-// LCOV_EXCL_STOP
 #endif //_DEBUG
 
 
@@ -221,7 +217,6 @@ void clearFailedPlanWarningsForStream()
 
 // This method is for the old driver and not used unless CQD NEW_OPT_DRIVER 
 // is OFF. We use the new driver by default.
-// LCOV_EXCL_START
 RelExpr * RelExpr::optimize(NABoolean exceptionMode,
                 Guidance * guidance,
 			    ReqdPhysicalProperty * rpp,
@@ -931,7 +926,6 @@ if (plan && context->getGroupAttr()->isStream())
 
   return ( plan );
 } // optimize
-// LCOV_EXCL_STOP
 
 #pragma warn(262)  // warning elimination
 #pragma warning (default : 4101)  //warning elimination
@@ -976,7 +970,6 @@ Context::~Context()
 } // Context::~Context
 //<pb>
 
-// LCOV_EXCL_START
 void Context::print(FILE * f, const char * prefix, const char * suffix) const
 {
 #ifdef _DEBUG
@@ -1342,7 +1335,6 @@ NAString Context::getStatusString() const
 
   return result;
 }
-// LCOV_EXCL_STOP
 
 //<pb>
 // ----------------------------------------------------------------------
@@ -4233,7 +4225,6 @@ void OptDefaults::initializeCostInfo()
   // Ideally this values shl'd be placed in nadefaults.cpp once regressions are resolved.
 
   // on SQ, CB_155 is off and we mask the following code from code coverage.
-  // LCOV_EXCL_START
   if(CmpCommon::getDefault(COMP_BOOL_155) == DF_ON )
   {
     NAString v="1600.0";
@@ -4328,7 +4319,6 @@ void OptDefaults::initializeCostInfo()
 	defs_->validateAndInsert("CPUCOST_SCAN_OVH_PER_KB", v, FALSE);
 	defs_->validateAndInsert("CPUCOST_SCAN_OVH_PER_ROW", v, FALSE);
   }
-  // LCOV_EXCL_STOP
   // -----------------------------------------------------------------------
   // All resource-to-time multipliers need to be re-calibrated in
   // a per statement basis since they may have been changed by the
@@ -5098,7 +5088,6 @@ NABoolean OptDefaults::InitCostVariables()
     {
       defaultPerformanceGoal_ = new (heap_) OptimizeForLastRow();
     }
-// LCOV_EXCL_START
   else if (goalTok == DF_FIRSTROW)
     {
       defaultPerformanceGoal_ = new (heap_) OptimizeForFirstRow();
@@ -5117,7 +5106,6 @@ NABoolean OptDefaults::InitCostVariables()
         << DgString0(goalText)
         << DgString1("OPTIMIZATION_GOAL");
     }
-// LCOV_EXCL_STOP
 
   if (resourcePerformanceGoal_ == NULL)
     {
@@ -5453,7 +5441,6 @@ OptDebug::~OptDebug()
 
 // OptDebug::openLog() is called only when CQD NSK_DBG_LOG_FILE is ON 
 // in ControlDB.cpp.
-// LCOV_EXCL_START
 NABoolean OptDebug::openLog( const char* filename )
 {
   if (fileIsGood_)
@@ -5498,7 +5485,6 @@ void OptDebug::closeLog()
   logFileName_[0] = '\0';
   fileIsGood_ = FALSE;
 }
-// LCOV_EXCL_STOP
 
 // ---------------------------------------------------------------------
 // Accessor functions
@@ -5554,7 +5540,6 @@ void OptDebug::setCompileInstanceClass(const char* str)
 // For a SQL query, either show the query tree or query execution plan tree.
 // Equivalent to the main window in GUI display.
 // ---------------------------------------------------------------------
-// LCOV_EXCL_START
 void OptDebug::showTree( const ExprNode *tree,
                          const CascadesPlan *plan,
                          const char *prefix,
@@ -6610,7 +6595,6 @@ void OptDebug::showMemoStats(CascadesMemo *memo,
 	out << "\n\tMemo Contexts: \t" << contextCnt << endl;
 
 }
-// LCOV_EXCL_STOP
 
 // New optimization driver
 RelExpr *RelExpr::optimize2()

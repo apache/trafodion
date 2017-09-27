@@ -73,7 +73,7 @@ SortTopN::SortTopN(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
   
   isHeapified_ = FALSE;
   
-  topNKeys_  = (RecKeyBuffer *)heap_->allocateMemory(sizeof(RecKeyBuffer) * allocRunSize_);  
+  topNKeys_  =  (RecKeyBuffer *) new (heap_) BYTE[sizeof(RecKeyBuffer) * allocRunSize_];  
   
   // Below asserts useful in debug mode. 
   ex_assert(topNKeys_  != NULL, "Sort: Initial topNKeys_ allocation failed");  
@@ -125,6 +125,8 @@ Lng32 SortTopN::sortSend(void *rec, ULng32 len, void* tupp)
        //Note lookIndex_ contains the current number of filled elements.
         buildHeap();
     }
+    if (bmoStats_)
+       bmoStats_->updateBMOHeapUsage((NAHeap *)heap_);
     return SORT_SUCCESS;
   }
   
@@ -133,7 +135,7 @@ Lng32 SortTopN::sortSend(void *rec, ULng32 len, void* tupp)
   //new rec key with the root node of the heap ( root node is always the greatest).
   insertRec(rec, len, tupp);
   return SORT_SUCCESS;
- }
+}
 
 
 void SortTopN::buildHeap() 

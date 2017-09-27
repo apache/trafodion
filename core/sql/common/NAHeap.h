@@ -38,12 +38,8 @@
 
 #include "ComSpace.h"
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 
 // -----------------------------------------------------------------------
 // This file contains the memory management classes :
@@ -52,7 +48,7 @@ class ostream;
 //    allocateMemory, deallocateMemory methods defined.
 //
 // -class NASpace: public CollHeap
-//    NASpace acts as a Space in exp_space.h
+//    NASpace acts as a Space in ComSpace.h
 //
 // -class NAMFHeap: public CollHeap
 //    NAMFHeap use malloc/free.

@@ -1974,7 +1974,6 @@ extern SQLMODULE_ID __SQL_mod_199222286715188012;
 #include "NAWinNT.h"
 #include "wstr.h"
 #include "csconvert.h"
-#include "catapirequest.h"
 
 // Disable warning 4390 
 #pragma warning ( disable : 4390 )
@@ -3265,6 +3264,7 @@ SQL_EXEC_ExecFetch(&__SQL_id0,(long)0,0)) != 0);}
 *********************************************************/
 Lng32 QRQueries::reDescribeMV(const NAString& mvName, NABoolean rePublish)
 {
+#ifdef __ignore
   /* EXEC SQL BEGIN DECLARE SECTION; */
     /* char  */ char catRequestText[MAX_UTF8_CMD_LEN_IN_BYTES_PLUS_1];
   /* EXEC SQL END DECLARE SECTION; */  
@@ -3300,6 +3300,8 @@ if ((SQLCODE = SQL_EXEC_ClearDiagnostics(&__SQL_id0))  != 0 ||(SQLCODE =
 SQL_EXEC_ExecFetch(&__SQL_id0,(long)0,0)) != 0);}
 
   return SQLCODE;
+#endif
+return 0;
 }
 
 #pragma warning ( default : 4390 )

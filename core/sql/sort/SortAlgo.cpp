@@ -118,7 +118,7 @@ short SortAlgo :: compare(char* key1, char* key2)
     /*if (key2 == NULL)*/ return KEY1_IS_GREATER;
   };
 #pragma nowarn(203)   // warning elimination 
-  return 0; // NT_PORT ( ls 2/7/97 )
+  return 0;
 #pragma warn(203)  // warning elimination 
 }
 

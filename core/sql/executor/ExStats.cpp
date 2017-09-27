@@ -7550,14 +7550,10 @@ short ExStatsTcb::work()
                           if (statsGlobals != NULL)
                           {
                             semId = getGlobals()->getSemId();
-                            short savedPriority, savedStopMode;
-                            short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                            int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                             stats_->merge(stats, statsMergeType_);
                             setDeleteStats(TRUE);
-                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                      savedPriority, savedStopMode);
+                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                           }
                           else
                           {
@@ -7623,14 +7619,10 @@ short ExStatsTcb::work()
                             if (statsGlobals != NULL)
                             {
                               semId = getGlobals()->getSemId();
-                              short savedPriority, savedStopMode;
-                              short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                    savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                              ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                              int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                               stats_->merge(stats, statsMergeType_);
                               setDeleteStats(TRUE);
-                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                        savedPriority, savedStopMode);
+                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                             }
                             else
                             {
@@ -9493,16 +9485,12 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
   if ((numSIKeys > PreAllocatedSikKeys) || 
       (numObjUIDs > PreAllocatedObjUIDs))
   {
-    short savedPriority, savedStopMode;
     Long semId = cliGlobals->getSemId();
     StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
     if (statsGlobals)
     {
-      short error = statsGlobals->getStatsSemaphore(
-                    semId, cliGlobals->myPin(), 
-                    savedPriority, savedStopMode,
-                    FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(
+                    semId, cliGlobals->myPin());
     }
 
     if (numSIKeys > PreAllocatedSikKeys)
@@ -9520,8 +9508,7 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
 
     if (statsGlobals)
       statsGlobals->releaseStatsSemaphore(
-                      semId, cliGlobals->myPin(), 
-                      savedPriority, savedStopMode);
+                      semId, cliGlobals->myPin());
   }
 
   numSIKeys_ = numSIKeys;
@@ -10420,6 +10407,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType)
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
+  estMemoryUsage_ = 0; 
 }
 
 ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
@@ -10430,10 +10418,14 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
   init(FALSE);
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
-  if (tdb != NULL)
+  if (tdb != NULL) {
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
-  else
+    estMemoryUsage_ = ((ComTdb *)tdb)->getEstimatedMemoryUsage();
+  }
+  else {
     scratchOverflowMode_ = -1;
+    estMemoryUsage_ = 0;
+  }
 }
 
 ExBMOStats::ExBMOStats(NAMemory *heap, 
@@ -10445,10 +10437,14 @@ ExBMOStats::ExBMOStats(NAMemory *heap,
   init(FALSE);
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
-  if (tdb != NULL)
+  if (tdb != NULL) {
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
-  else
+    estMemoryUsage_ = ((ComTdb *)tdb)->getEstimatedMemoryUsage();
+  }
+  else {
     scratchOverflowMode_ = -1;
+    estMemoryUsage_ = 0;
+  }
 }
 
 void ExBMOStats::init(NABoolean resetDop)
@@ -10692,6 +10688,9 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_SCRATCH_IO_MAX_TIME:
     sqlStats_item->int64_value = scratchIOMaxTime_;
+    break;
+  case SQLSTATS_BMO_EST_MEMORY:
+    sqlStats_item->double_value = estMemoryUsage_;
     break;
   case SQLSTATS_INTERIM_ROW_COUNT:
     sqlStats_item->int64_value = interimRowCount_;

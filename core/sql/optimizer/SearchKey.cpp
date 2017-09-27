@@ -673,7 +673,6 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
   }
 } // SearchKey::SearchKey()
 
-// LCOV_EXCL_START :cnu RR part func table not supported
 // -----------------------------------------------------------------------
 // Constructor to set up partition search keys for a RR partitioned table
 // -----------------------------------------------------------------------
@@ -764,7 +763,6 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
          setOfPredicates);
   }
 } // SearchKey::SearchKey()
-// LCOV_EXCL_STOP
 
 ItemExpr *SearchKey::getBeginKeyExclusionExpr() const
 {
@@ -801,7 +799,6 @@ ValueId SearchKey::computeMissingKeyValue(ValueId keyColumn,
   return minMaxConstant->getValueId();
 } // SearchKey::computeMissingKeyValue()
 
-// LCOV_EXCL_START :dpm
 // -----------------------------------------------------------------------
 // Methods for debugging
 // -----------------------------------------------------------------------
@@ -822,7 +819,6 @@ void SearchKey::display() const
 {
  SearchKey::print();
 } // SearchKey::display()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // $$$ SearchKeyBounds
@@ -897,7 +893,7 @@ void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates
       // All value id's in SearchKeyBounds *must* be either
       // an index column or a base table column,
       // if we reach here it is an internal error:
-      CMPASSERT(FALSE); // LCOV_EXCL_LINE :rfi
+      CMPASSERT(FALSE);
     } // switch on type of input column
 
 
@@ -1402,7 +1398,6 @@ ValueId SearchKeyBounds::computeMissingKeyValue(NABoolean wantMinValue)
 } // SearchKeyBounds::computeMissingKeyValue()
 
 
-// LCOV_EXCL_START :dpm
 // -----------------------------------------------------------------------
 // Method for allocating the work space.
 // -----------------------------------------------------------------------
@@ -1461,7 +1456,6 @@ void SearchKeyBounds::display() const
 {
  SearchKeyBounds::print();
 } // SearchKeyBounds::display()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // $$$ SearchKeyWorkSpace
@@ -1532,7 +1526,7 @@ void SearchKeyWorkSpace::analyzeSearchPredicates
 			     const ValueIdSet & externalInputs
 			     )
 {
-  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
+  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)
     {
       // Set the value contained in the key predicate (if any)
       // for this key column (i.e. bound):
@@ -1931,7 +1925,6 @@ void SearchKey::getKeyPredicates(ValueIdSet &keyPredicates, /* out */
 } // getKeyPredicates(...)
 
 
-// LCOV_EXCL_START :cnu
 // Generate the data structures needed by the generator and
 // rewrite VEG preds and predicates:
 void SearchKey::preCodeGen(ValueIdSet& executorPredicates,
@@ -1994,7 +1987,6 @@ void SearchKey::replaceBegEndPivs(ValueIdSet & oldPivs,
         }
     }
 }
-// LCOV_EXCL_STOP
 
 
 

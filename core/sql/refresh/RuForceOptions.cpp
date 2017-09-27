@@ -38,7 +38,6 @@
 #include "dsstring.h"
 #include"RuForceOptions.h"
 
-// LCOV_EXCL_START :cnu
 
 CRUForceOptions::~CRUForceOptions()
 {
@@ -165,6 +164,5 @@ CRUForceOptions::MdamOptions CRUMVForceOptions::GetForceMdamOptionForTable(const
 	return CRUForceOptions::MDAM_NO_FORCE;
 }
 
-// LCOV_EXCL_STOP
 
 

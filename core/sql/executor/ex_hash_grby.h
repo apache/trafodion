@@ -82,7 +82,7 @@ public:
   {}
 
   virtual ~ex_hash_grby_tdb()
-  {}    // LCOV_EXCL_LINE
+  {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
@@ -330,12 +330,12 @@ public:
                  Initial Revision.
 *****************************************************************************/
 inline const ex_tcb* ex_hash_grby_tcb::getChild(Int32 pos) const {
-  ex_assert((pos >= 0), ""); // LCOV_EXCL_START
+  ex_assert((pos >= 0), "");
   if (pos == 0)
     return childTcb_;
   else
     return NULL; 
-}  // LCOV_EXCL_STOP
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //

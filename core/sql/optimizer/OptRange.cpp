@@ -691,7 +691,7 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                            FALSE, QRDescriptorException, 
                            "Unhandled data type: %d", typeQual);
         break;
@@ -701,7 +701,6 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
 
 ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
 {
-  // LCOV_EXCL_START :rfi
   if (checkConstraint->getOperatorType() != ITM_CASE)
     {
       QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
@@ -709,9 +708,7 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
         checkConstraint->getOperatorType());
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
-  // LCOV_EXCL_START :rfi
   ItemExpr* itemExpr = checkConstraint->child(0);
   if (itemExpr->getOperatorType() != ITM_IF_THEN_ELSE)
     {
@@ -720,7 +717,6 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
         itemExpr->getOperatorType());
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
   // Child of the if-then-else is either is_false, which is the parent of the
   // predicate (for most check constraints), or the predicate itself (for
@@ -752,7 +748,6 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
         }
       return;
     }
-  // LCOV_EXCL_START :rfi
   else if (itemExpr->getOperatorType() != ITM_BASECOLUMN)
     {
       QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
@@ -760,7 +755,6 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
         "%d instead of ITM_BASECOLUMN.", itemExpr->getOperatorType());
       return;
     }
-  // LCOV_EXCL_STOP
 
 #ifdef _DEBUG
     const NATable* tbl = colValId.getNAColumn()->getNATable();
@@ -872,7 +866,7 @@ void OptRangeSpec::intersectTypeConstraint(QRDescGenerator* descGen,
             break;
 
           default:
-            QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+            QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
               "No case in intersectTypeConstraint() for "
                         "approximate numeric of type %d",
                         colType.getFSDatatype());
@@ -1123,7 +1117,6 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
           isRange = FALSE;
         break;
 
-      // LCOV_EXCL_START :cnu -- Transformation phase rewrites between op
       case ITM_BETWEEN:
         startValue = getConstOperand(predExpr);
         if (startValue)
@@ -1140,7 +1133,6 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
         else
           isRange = FALSE;
         break;
-      // LCOV_EXCL_STOP
 
       case ITM_IS_NULL:
       case ITM_IS_NOT_NULL:
@@ -1394,7 +1386,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 break;
 
               default:
-                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                    FALSE, QRLogicException,
                                    "Unknown datetime subtype -- %d",
                                    dtType->getSubtype());
@@ -1448,7 +1440,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 break;
 
               default:
-                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                   FALSE, QRLogicException,
                                   "Invalid end field for interval type -- %d",
                                   intvlType->getEndField());
@@ -1519,7 +1511,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                            "Type not handled by reconstituteInt64Value() -- %d",
                            typeQual);
         return NULL;
@@ -1533,7 +1525,6 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
 ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) const
 {
   NABuiltInTypeEnum typeQual = type->getTypeQualifier();
-  // LCOV_EXCL_START :rfi
   if (typeQual != NA_NUMERIC_TYPE)
     {
       assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
@@ -1541,7 +1532,6 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
                          typeQual);
       return NULL;
     }
-  // LCOV_EXCL_STOP
 
   // Use these for the textual representation of a constant value, which is
   // passed to the ConstValue ctor.
@@ -1743,7 +1733,7 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, 
                            FALSE, QRDescriptorException, 
                            "Unhandled data type in "
                            "OptRangeSpec::makeSubrangeItemExpr: %d",
@@ -2045,7 +2035,7 @@ static Int64 getInt64ValueFromDateTime(ConstValue* val,
         break;
 
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid datetime subtype -- %d", constType->getSubtype());
     }
@@ -2118,7 +2108,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         valWasNegative = (i64val < 0);
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid interval storage length -- %d",
                            storageSize);
@@ -2157,7 +2147,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val *= (Int64)pow(10, 6 - constIntvlType->getFractionPrecision());
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Invalid end field for interval -- %d",
                            constIntvlType->getEndField());
@@ -2201,7 +2191,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val = i64val / scaleFactor * scaleFactor;
         break;
       default:
-        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                           FALSE, QRDescriptorException,
                           "Invalid end field for interval -- %d",
                           colIntvlType->getEndField());

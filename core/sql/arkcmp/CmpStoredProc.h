@@ -46,7 +46,6 @@
 #include "CmpISPStd.h"
 
 // for the table descriptions
-#include "enum.h"
 #include "CmpCommon.h"
 #include "Collections.h"  // for NAList
 #include "Int64.h"

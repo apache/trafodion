@@ -1408,7 +1408,6 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
       }
   }
 
-// LCOV_EXCL_START
 // This code has been unit tested and most is also tested by
 // executor/TEST082
   if ((theError == CLI_TCB_EXECUTE_ERROR) ||  // 8816
@@ -3381,11 +3380,7 @@ void ComDiagsArea::destroyMe()
 
 void ComDiagsArea::DiagsCondition::destroyMe()
 {
-#ifdef NA_MSVC                              // NT_PORT (bsv 11/7/96)
   this -> DiagsCondition::~DiagsCondition();
-#else
-  this -> ComDiagsArea::DiagsCondition::~DiagsCondition();
-#endif
 }
 
 ComDiagsArea::DiagsCondition &

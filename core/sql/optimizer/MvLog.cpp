@@ -48,7 +48,6 @@
 #include "ComMvAttributeBitmap.h"
 
 // MVLOG command is not supported
-// LCOV_EXCL_START
 
 #pragma nowarn(1000)   // warning elimination 
 const MvLogInternalNames MvLog::internalNames_;
@@ -1409,4 +1408,3 @@ void MvLog::appendToExprList(ItemExprList&            toAddto,
 				emptyCorrName_);
 }
 
-// LCOV_EXCL_STOP

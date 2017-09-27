@@ -215,7 +215,21 @@ public:
   ExSqlComp::ReturnStatus sendXnMsgToArkcmp
   (char * data, Lng32 dataSize, 
    Lng32 xnMsgType, ComDiagsArea* &diagsArea);
-    
+
+  inline NABoolean grabMemoryQuotaIfAvailable(ULng32 size)
+  {
+    if ( unusedBMOsMemoryQuota_ < size ) return FALSE;
+    unusedBMOsMemoryQuota_ -= size ;
+    return TRUE;
+  }
+
+  inline void resetMemoryQuota() { unusedBMOsMemoryQuota_ = 0 ; }
+
+  inline ULng32 unusedMemoryQuota() { return unusedBMOsMemoryQuota_; }
+
+  inline void yieldMemoryQuota(ULng32 size)
+  { unusedBMOsMemoryQuota_ += size; }
+
 private:
 
   // The heap where executor 'stuff' will be allocated from.
@@ -505,6 +519,8 @@ private:
   // It points to a list of 'black box' of data allocated by user and is returned
   // back whenever this context is in use.
   HashQueue * trafSElist_;
+  // memory quota allocation given back by BMOs to be used by other BMOs
+  ULng32 unusedBMOsMemoryQuota_;
 
   NABoolean deleteStats()
   {

@@ -434,6 +434,8 @@ s/^\([ ]*HBASE_FILTER_PREDS[ ]*\) .*/\1 removed/g
 
 # For ObjectUIDs , which are now included in EXPLAIN.
 s/^ ObjectUIDs \.\.\.\.\.\.\.\.\.\.\.\.\. [0-9,]*$/  ObjectUIDs filtered/g
+s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
+s/^\([ ]*est_memory_per_node[ ]*[\.]*\) .*/\1 removed/g
 
 # Query IDs
 s/qid MXID11.*$/qid filtered/g

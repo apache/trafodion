@@ -134,7 +134,6 @@ static void GU_DEBUG_Display(BindWA *bindWA, GenericUpdate *gu,
   if (!GU_DEBUG)
     return;
 
-// LCOV_EXCL_START - dpm
   if (preEndl) cerr << endl;
   cerr << "---" << endl;
 
@@ -159,7 +158,6 @@ static void GU_DEBUG_Display(BindWA *bindWA, GenericUpdate *gu,
     cerr << gu->getUpdTableNameText() << " bwa>cs>grd(" << text << ") " <<flush;
     bindWA->getCurrentScope()->getRETDesc()->display();
   }
-// LCOV_EXCL_STOP
 
   if (postEndl) cerr << endl;
 #endif
@@ -707,7 +705,6 @@ static ItemExpr* bindCheckConstraint(
   return constraintPred;
 } // bindCheckConstraint()
 
-// LCOV_EXCL_START - cnu
 static ItemExpr *intersectColumns(const RETDesc &leftTable,
                                   const RETDesc &rightTable,
                                   BindWA* bindWA)
@@ -726,7 +723,6 @@ static ItemExpr *intersectColumns(const RETDesc &leftTable,
   // Binding this predicate must be done in caller's context/scope, not here...
   return predicate;
 } // intersectColumns()
-// LCOV_EXCL_STOP
 
 static ItemExpr *joinCommonColumns(const RelExpr *const leftRelExpr,
                                    const RelExpr *const rightRelExpr,
@@ -3134,7 +3130,6 @@ void Join::BuildLeftChildMapForRightJoin()
 // member functions for class Intersect
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START - cnu
 RelExpr *Intersect::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -3220,13 +3215,11 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 
   return join;
 } // Intersect::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // member functions for class Except 
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START - cnu
 RelExpr *Except::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -3312,7 +3305,6 @@ RelExpr *Except::bindNode(BindWA *bindWA)
 
   return join;
 } // Excpet::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // member functions for class Union
@@ -6735,14 +6727,12 @@ ItemExpr *RelRoot::selectList()
 
 // Returns current place that assignmentStTree_ points to and
 // sets that pointer to NULL
-// LCOV_EXCL_START - cnu
 ItemExpr * RelRoot::removeAssignmentStTree()
 {
   ItemExpr* tempTree = assignmentStTree_;
   assignmentStTree_ = NULL;
   return tempTree;
 }
-// LCOV_EXCL_STOP
 
 bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType,
                                        const PrivMgrUserPrivs *pPrivInfo)
@@ -9577,7 +9567,6 @@ RelExpr *BeforeTrigger::bindNode(BindWA *bindWA)
 // -----------------------------------------------------------------------
 // member functions for class Insert
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
 static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
                             ValueIdList &sysColList, CollIndex i)
 {
@@ -9636,7 +9625,6 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
   assign->bindNode(bindWA);
   insert->rrKeyExpr() = assign->getValueId();
 } // bindInsertRRKey
-// LCOV_EXCL_STOP
 
 RelExpr *Insert::bindNode(BindWA *bindWA)
 {
@@ -9908,10 +9896,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     }
 
     if (GU_DEBUG) {
-// LCOV_EXCL_START - dpm
       cerr << "columnLkp " << flush;
       columnLkp->display();
-// LCOV_EXCL_STOP
     }
 
     for (i = 0; i < columnLkp->getDegree(); i++) {
@@ -10568,12 +10554,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
 
   if (isRRTable) {
-// LCOV_EXCL_START -
     const LIST(IndexDesc *) indexes = getTableDesc()->getIndexes();
     for(i = 0; i < indexes.entries(); i++) {
       indexes[i]->getPartitioningFunction()->setAssignPartition(TRUE);
     }
-// LCOV_EXCL_STOP
   }
 
   // It is a system generated identity value if
@@ -12833,13 +12817,11 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
   }
 
   if (naTable->isVerticalPartition()) {
-// LCOV_EXCL_START - cnu
     // On attempt to update an individual VP, say: 4082 table not accessible
     *CmpCommon::diags() << DgSqlCode(-4082) <<
        DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
     bindWA->setErrStatus();
     return this;
-// LCOV_EXCL_STOP
   }
 
 
@@ -14074,7 +14056,6 @@ ItemExpr *execPred  = NULL;
 // -----------------------------------------------------------------------
 // RelRoutine
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - rfi
 RelExpr *RelRoutine::bindNode(BindWA *bindWA)
 {
   CMPASSERT(0); // For the time being, all classes above implement their own.
@@ -14098,7 +14079,6 @@ RelExpr *RelRoutine::bindNode(BindWA *bindWA)
   //  getGroupAttr()->addCharacteristicOutputs(getTableDesc()->getColumnList());
   return boundExpr;
 } // RelRoutine::bindNode()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // BuiltinTableValuedFunction
@@ -15965,7 +15945,6 @@ RelExpr * RowsetRowwise::bindNode(BindWA* bindWA)
   return newSubTree->bindNode(bindWA);
 } // RowsetRowwise::bindNode()
 
-// LCOV_EXCL_START - rfi
 RelExpr * RowsetFor::bindNode(BindWA* bindWA)
 {
   // Binding of this node should not happen. It should have been eliminated
@@ -15975,7 +15954,6 @@ RelExpr * RowsetFor::bindNode(BindWA* bindWA)
   CMPASSERT(0);
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 RelExpr * RowsetInto::bindNode(BindWA* bindWA)
 {
@@ -16804,7 +16782,6 @@ void IsolatedNonTableUDR::populateAndBindItemExpr ( ItemExpr *param,
 
 
 
-// LCOV_EXCL_START - rfi
 void
 IsolatedNonTableUDR::setInOrOutParam (ItemExpr *expr,
                               ComColumnDirection paramMode,
@@ -16813,7 +16790,6 @@ IsolatedNonTableUDR::setInOrOutParam (ItemExpr *expr,
     // Should not get here..
    CMPASSERT(FALSE);
 }
-// LCOV_EXCL_STOP
 
 
 // This method separates the IN and OUT parameters Each IN/INOUT param

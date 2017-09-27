@@ -65,7 +65,6 @@ extern NABoolean allocateEODRow(UdrGlobals *UdrGlob,
                                 SqlBuffer &replyBuffer,
                                 queue_index parentIndex);
 
-// LCOV_EXCL_START
 // Utility method to deallocate descriptor items created in
 // UdrResultSet::generateProxySyntax()
 static void
@@ -89,7 +88,6 @@ deleteDescItems(ComUInt32 numCols, SQLDESC_ITEM *desc_items, NAMemory *heapPtr)
 
   return;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -159,7 +157,6 @@ char *TmpBuffer::getNextRow(ComDiagsArea* &rowDiags,
 // If errors occur, parameter 'd' will be populated with errors. Callers
 // need to check for diagnostics
 // This constructor is used on Windows Platform
-// LCOV_EXCL_START
 UdrResultSet::UdrResultSet(SPInfo *spInfo, SQLSTMT_ID *stmt, ComDiagsArea &d)
   : spInfo_(spInfo),
     state_(RS_INITIATED),
@@ -192,7 +189,6 @@ UdrResultSet::UdrResultSet(SPInfo *spInfo, SQLSTMT_ID *stmt, ComDiagsArea &d)
   UDR_DEBUG1("  Proxy syntax \"%s\"",
              (proxySyntax_ ? proxySyntax_->data() : ""));
 }
-// LCOV_EXCL_STOP
 
 // If errors occur, parameter 'd' will be populated with errors. Callers
 // need to check for diagnostics
@@ -323,7 +319,6 @@ UdrResultSet::deallocateExeGeneratedFields()
 
 } // UdrResultSet::deallocateExeGeneratedFields
 
-// LCOV_EXCL_START
 const char *
 UdrResultSet::stateString()
 {
@@ -340,7 +335,6 @@ UdrResultSet::stateString()
     default: return ComRtGetUnknownString((Int32) state_);
   }
 }
-// LCOV_EXCL_STOP
 
 // Reinitiliazes the UdrResultSet object with the new LmResultSet object.
 // If lmRS param is NULL, the stmt_id param is used for initialization.

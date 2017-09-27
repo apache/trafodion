@@ -2154,34 +2154,10 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       // Compute the total available memory quota for BMOs
       NADefaults &defs               = ActiveSchemaDB()->getDefaults();
 
-      // total per CPU
-      double m = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) * (1024*1024);
+      // total per node
+      double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) * (1024*1024);
 
-      // total memory usage for all nBMOs 
-      double m1 = (generator->getTotalNBMOsMemoryPerCPU()).value();
-
-      // total memory limit for all BMOs
-      double m2 = m-m1;
-
-      double ratio = 
-          defs.getAsDouble(EXE_MEMORY_LIMIT_NONBMOS_PERCENT) / 100;
-
-      if ( m2 < 0 ) {
-         // EXE_MEMORY_LIMIT_PER_CPU is set too small, set the total 
-         // memory limit for BMOs to zero. When the memory quota for
-         // each BMO is computed (via method RelExpr::computeMemoryQuota()),
-         // the lower-bound for each BMO will kick in and each will receive
-         // a quota equal to the lower-bound value.
-         m2 = 0;
-      } else { 
-
-         // nBMOs use more memory than the portion, adjust m2 to 
-         // that of (1-ratio)*m
-         if (m1 > m*ratio )
-           m2 = m*(1-ratio);
-      }
-
-      generator->setBMOsMemoryLimitPerCPU(m2);
+      generator->setBMOsMemoryLimitPerNode(m);
 
     }
 
@@ -2336,7 +2312,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
 
       ValueIdSet discardSet;
       CollIndex ne = nullInstantiatedOutput().entries();
-      for (CollIndex j = 0; j < ne; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < ne; j++) 
 	{
 	  instNullId = nullInstantiatedOutput_[j];
 	  GenAssert(instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");
@@ -2380,7 +2356,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
       availableValues += child(1)->getGroupAttr()->getCharacteristicOutputs();
 
       CollIndex neR = nullInstantiatedForRightJoinOutput().entries();
-      for (CollIndex j = 0; j < neR; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < neR; j++) 
 	{
 	  instNullIdForRightJoin = nullInstantiatedForRightJoinOutput_[j];
 	  GenAssert(instNullIdForRightJoin.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");
@@ -3757,7 +3733,7 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
   // Count this BMO and add its needed memory to the total needed
   generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
     generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
 
@@ -4214,6 +4190,12 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
           generator->setProcessLOB(TRUE);
+	  
+	  // flag set for HBase scan in HbaseAccess::preCodeGen
+	  // unique scan unlikely for hive scans except 
+	  // with predicate on virtual cols.
+	  if (!(searchKey() && searchKey()->isUnique()))
+	    generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
         }
     }
 
@@ -6007,7 +5989,7 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
     // Count this BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
   }
@@ -6650,7 +6632,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
       if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF) {
         generator->incrNumBMOs();
 
-        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
           generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
       }
     }
@@ -6684,6 +6666,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
 				       numUnblockedHalloweenScansBefore);
 	}
     }
+  topNRows_ = generator->getTopNRows();
   return this;
 
 } // Sort::preCodeGen()
@@ -6752,8 +6735,8 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
     generator->incrNumBMOs();
   */
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
 
   markAsPreCodeGenned();
   return this;
@@ -7257,8 +7240,8 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
       
     } // isEspExchange() && !eliminateThisExchange
   
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
   
   return result;
   
@@ -8378,7 +8361,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
       CMPASSERT(coll1==coll2);
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  if (CollationInfo::isSystemCollation(coll1))
 	  {
 	    setCollationEncodeComp(TRUE);
@@ -8483,7 +8465,6 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 	    }
 
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	     // update both operands if case insensitive comparions
@@ -9469,14 +9450,12 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9503,7 +9482,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9511,7 +9489,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9538,7 +9515,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9546,7 +9522,6 @@ ItemExpr * Hash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9601,14 +9576,12 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	if (CollationInfo::isSystemCollation(coll))
 	    {
 	      child(0) = new(generator->wHeap()) 
 		CompEncode(child(0),FALSE, -1, CollationInfo::Compare);
 	      child(0) = child(0)->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	    {
 	      //--------------------------
@@ -9635,7 +9608,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    const CharType &chType = (CharType&)childType;
 	    CharInfo::Collation coll = chType.getCollation();
 	    
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	      {
 		hi = new(generator->wHeap()) 
@@ -9643,7 +9615,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	      }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	      else
 	      {
 		//-----------------------------
@@ -9670,7 +9641,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	const CharType &chType = (CharType&)childType;
 	CharInfo::Collation coll = chType.getCollation();
 	
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    child(0) = new (generator->wHeap()) 
@@ -9678,7 +9648,6 @@ ItemExpr * HiveHash::preCodeGen(Generator * generator)
 	    
 	    child(0) = child(0)->bindNode(generator->getBindWA());
           }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9740,7 +9709,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 	
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	  {
 	    if (child(0)->getOperatorType() == ITM_NARROW)
@@ -9761,7 +9729,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    child(0) = child(0)->bindNode(generator->getBindWA());
 	  }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	  else
 	  {
 	    if ((chType.isCaseinsensitive()) &&
@@ -9787,7 +9754,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	    CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
             if (CollationInfo::isSystemCollation(coll))
 	    {
 	      //Solution 10-081216-8006
@@ -9809,7 +9775,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 		hi = hi->bindNode(generator->getBindWA());
 	    }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	    else
 	    {
   		if ((chType.isCaseinsensitive()) &&
@@ -9836,7 +9801,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	CharInfo::Collation coll = chType.getCollation();
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
         if (CollationInfo::isSystemCollation(coll))
 	{
 	  //Solution 10-081216-8006
@@ -9858,7 +9822,6 @@ ItemExpr * HashDistPartHash::preCodeGen(Generator * generator)
 
 	  child(0) = child(0)->bindNode(generator->getBindWA());
 	}
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
 	else
 	{
 	    if ((chType.isCaseinsensitive()) &&
@@ -10841,6 +10804,12 @@ RelExpr * FirstN::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+
+  if (getFirstNRows() > 0)
+     generator->setTopNRows(getFirstNRows());
+  else
+     generator->setTopNRows(ActiveSchemaDB()->getDefaults().getAsULong(GEN_SORT_TOPN_THRESHOLD));
 
   if (! RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

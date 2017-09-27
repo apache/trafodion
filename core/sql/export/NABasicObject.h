@@ -43,14 +43,6 @@
 #include "NAStdlib.h"
 #include "NABoolean.h"
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-
-
-
-
 #define NOT_CHECK_NAHEAP(h) (h)
 
 class NAMemory ;
@@ -148,7 +140,6 @@ typedef NAMemory CollHeap ;
 class NABasicObject
 {
 
-// NT_PORT ( bd 12/10/96 )
 protected:
  virtual ~NABasicObject() {};
 
@@ -220,7 +211,6 @@ public:
   Int32 maybeInvalidObject()	       { return h_ == invalidHeapPtr();}
 
   // For smart-pointer callers, some defensive programming for Debug build.
-  // For some reason, this method won't link into the NSK mxcmp static object.
 #if !defined(NDEBUG)
     Int32 checkInvalidObject(const void* const referencingObject=NULL);
 #else
@@ -295,24 +285,12 @@ void * operator new[](size_t size, CollHeap* h, NABoolean failureIsFatal);
 // char* p = new (CmpCommon::contextHeap()) char[10];
 // NADELETEBASIC(p,CmpCommon::contextHeap());
 
-#ifdef USE_RUNTIME_BUT_NOT_FOR_UNIX
-#define NADELETEBASIC(p,h) \
-  (void) (!(p) || \
-  	 (((h) ? (h)->deallocateMemory((void*)p) : (delete (void*)p)), 0) )
-#define NADELETEBASICARRAY(p,h) \
-  (void) (!(p) || \
-        (((h) ? (h)->deallocateMemory((void*)p) : delete [] p), 0))
-#else
 #define NADELETEBASIC(p,h) \
   (void) (!(p) || \
   	 ((NOT_CHECK_NAHEAP(h) ? (h)->deallocateMemory((void*)p) : delete p), 0) )
 #define NADELETEBASICARRAY(p,h) \
   (void) (!(p) || \
         ((NOT_CHECK_NAHEAP(h) ? (h)->deallocateMemory((void*)p) : delete [] p), 0))
-#endif
-
-
-
 
 // NADELETE(p,C,h) deletes p from CollHeap h, and calls p's destructor ~C.
 // so the destructor of class C will be called.
@@ -320,17 +298,10 @@ void * operator new[](size_t size, CollHeap* h, NABoolean failureIsFatal);
 // ClassA* a = new(CmpCommon::contextHeap()) ClassA;
 // NADELETE(a,ClassA,CmpCommon::contextHeap());
 
-#ifdef USE_RUNTIME_BUT_NOT_FOR_UNIX
-#define NADELETE(p,C,h)  \
-  (void) (!(p) || \
-  	 (((h) ? ((p)->~C(), (h)->deallocateMemory((void*)p)) : \
-	 	 (delete (void*)p)), 0))
-#else
 #define NADELETE(p,C,h)  \
   (void) (!(p) || \
   	 ((NOT_CHECK_NAHEAP(h) ? ((p)->~C(), (h)->deallocateMemory((void*)p)) : \
 	 	 delete p), 0))
-#endif
 
 // NADELETEARRAY(p,n,C,h) deletes p from CollHeap h, p is an array of class C
 // so the destructor of C will be called for each element of p (if not NULL).

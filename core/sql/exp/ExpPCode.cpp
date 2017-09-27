@@ -1293,7 +1293,6 @@ Int32 PCode::isInstructionRangeType( PCIT::Instruction instruction)
   };
 }
 
-// LCOV_EXCL_START
 Int32 PCode::profileInit() {
   if(profileCounts_) delete [] profileCounts_;
   if(profileTimes_) delete [] profileTimes_;
@@ -1307,12 +1306,10 @@ Int32 PCode::profileInit() {
 
   return 0;
 }
-// LCOV_EXCL_STOP
 Int32 PCode::profilePrint() {
   PCIListIter iter(pciList_);
 
   if(!profileCounts_) return 0;
-  // LCOV_EXCL_START
   Int32 pciNum = 0;
   for(PCI *pci = iter.first(); pci; pci = iter.next()) {
     if(pci->getOperation() == PCIT::Op_PROFILE) {
@@ -1321,10 +1318,8 @@ Int32 PCode::profilePrint() {
     }
     pciNum++;
   }
-  // LCOV_EXCL_STOP
   return 0;
 }
-// LCOV_EXCL_START
 //buffer should be 32 bytes
 void PCIT::operandString(Int32 operand, char* buffer) {
   // str_sprintf(buffer, "%8.8X", operand);
@@ -1557,7 +1552,6 @@ void PCode::dumpContents(PCodeBinary* pCode, char* buf, Int32 bufLen) {
   buf[len+1] = 0;
 }
 
-// LCOV_EXCL_STOP
 PCodeBinary * PCode::generateCodeSegment(Int32 length,
 				  Int32 *atpCode,
 				  Int32 *atpIndexCode,
@@ -1788,7 +1782,6 @@ const char *PCIT::operationString(PCIT::Operation op) {
   case PCIT::Op_LD_ATP: return("LD_ATP");
   case PCIT::Op_LD_UNALIGNED_ATP: return("LD_UNALIGNED_ATP");
   case PCIT::Op_MV_ATP_N: return("MV_N");*/
-  // LCOV_EXCL_START
   case PCIT::Op_OPDATA: return("OPDATA");
 
   case PCIT::Op_MOVE: return("MOVE");
@@ -1816,7 +1809,6 @@ const char *PCIT::operationString(PCIT::Operation op) {
 
   case PCIT::Op_AND: return("AND");
   case PCIT::Op_OR: return("OR");
-  // LCOV_EXCL_STOP
   case PCIT::Op_SUM: return("SUM");
   case PCIT::Op_MINMAX: return("MINMAX");
   case PCIT::Op_ADD: return("ADD");
@@ -1834,7 +1826,6 @@ const char *PCIT::operationString(PCIT::Operation op) {
   case PCIT::Op_DECODE: return("DECODE");
 
   case PCIT::Op_GENFUNC: return("GENFUNC");
-  // LCOV_EXCL_START
   case PCIT::Op_HASH: return("HASH");
   case PCIT::Op_FILL_MEM_BYTES: return("FILL_MEM_BYTES");
   case PCIT::Op_RETURN: return("RETURN");
@@ -1843,10 +1834,8 @@ const char *PCIT::operationString(PCIT::Operation op) {
   case PCIT::Op_BRANCH_AND: return("BRANCH_AND");
   case PCIT::Op_BRANCH_OR: return("BRANCH_OR");
   case PCIT::Op_TARGET: return("TARGET");
-  // LCOV_EXCL_STOP
   case PCIT::Op_RANGE_LOW: return("RANGE_LOW");
   case PCIT::Op_RANGE_HIGH: return("RANGE_HIGH");
-  // LCOV_EXCL_START
   case PCIT::Op_REPLACE_NULL: return("REPLACE_NULL");
 
   case PCIT::Op_CLAUSE: return("CLAUSE");
@@ -1868,7 +1857,6 @@ const char *PCIT::operationString(PCIT::Operation op) {
   case PCIT::Op_CONV_VC_PTR: return("CONV_VC_PTR");
 
   case PCIT::Op_END: return("END");
-  // LCOV_EXCL_STOP
   default: return("UNKNOWN OPERATION");
   }
 }
@@ -1896,7 +1884,6 @@ const char *PCIT::addressingModeString(PCIT::AddressingMode am) {
   case PCIT::IBIN8U: return("IBIN8U");
   case PCIT::IBIN16U: return("IBIN16U");
   case PCIT::IBIN64S: return("IBIN64S");
-  // LCOV_EXCL_START
   case PCIT::IBIN32S: return("IBIN32S");
   case PCIT::IATTR4: return("IATTR4");
   case PCIT::IATTR3: return("IATTR3");
@@ -1904,14 +1891,11 @@ const char *PCIT::addressingModeString(PCIT::AddressingMode am) {
 
   case PCIT::MATTR3: return("MATTR3");
   case PCIT::MATTR4: return("MATTR4");
-  // LCOV_EXCL_STOP
   case PCIT::MATTR5: return("MATTR5");
-  // LCOV_EXCL_START
   case PCIT::MATTR6: return("MATTR6");
 
   case PCIT::MUNI: return("MUNI");
   case PCIT::MUNIV: return("MUNIV");
-  // LCOV_EXCL_STOP
 
   case PCIT::IPTR: return("IPTR");
 
@@ -2651,7 +2635,6 @@ PCIID PCode::nullBranchHelper(AttributesPtr *attrs,
       //
       else 
 	{
-    	  // LCOV_EXCL_START
         if( attrA->isSQLMXAlignedFormat() || attrB->isSQLMXAlignedFormat() )
         {
           AML aml(PCIT::MPTR32,PCIT::MPTR32,PCIT::IPTR,PCIT::IPTR);
@@ -2672,7 +2655,6 @@ PCIID PCode::nullBranchHelper(AttributesPtr *attrs,
 		attrB->getAtp(), attrB->getAtpIndex(),
 		attrB->getNullIndOffset());
 	  PCI pci(PCIT::Op_NULL_VIOLATION, aml, ol);
-	  // LCOV_EXCL_STOP
 	  code.append(pci);
 	}
     }

@@ -78,7 +78,6 @@ public:
 public:
 	// These functions serialize/de-serialize the executor's context 
 	// for the message communication with the remote server process
-	// LCOV_EXCL_START :cnu
 
 	// Used in the main process side
 	virtual void StoreRequest(CUOFsIpcMessageTranslator &translator);
@@ -93,7 +92,6 @@ public:
 	{
 		inherited::StoreReply(translator);
 	}
-	// LCOV_EXCL_STOP
 
 public:
 	//-- Implementation of pure virtual functions

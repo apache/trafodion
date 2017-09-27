@@ -564,7 +564,6 @@ TableDesc::setBaseSelectivityHintForScan(SelectivityHint *selHint,
 // -----------------------------------------------------------------------
 #pragma nowarn(1506)   // warning elimination
 #pragma nowarn(770)   // warning elimination
-// LCOV_EXCL_START - dpm
 void TableDesc::print(FILE* ofd, const char* indent, const char* title)
 {
 #ifndef NDEBUG
@@ -602,7 +601,6 @@ void TableDescList::print(FILE* ofd, const char* indent, const char* title)
     }
 #endif
 } // TableDescList::print()
-// LCOV_EXCL_STOP
 CardinalityHint::CardinalityHint(CostScalar scanCardinality)
 {
   scanCardinality_ = scanCardinality;
@@ -611,7 +609,6 @@ CardinalityHint::CardinalityHint(CostScalar scanCardinality)
   baseSelectivity_ = -1.0;
 }
 
-// LCOV_EXCL_START - cnu
 // constructor defined with local predicates
 CardinalityHint::CardinalityHint(CostScalar scanCardinality,
 				 const ValueIdSet & localPreds)
@@ -621,7 +618,6 @@ CardinalityHint::CardinalityHint(CostScalar scanCardinality,
   localPreds_ = localPreds;
   baseSelectivity_ = -1.0;
 }
-// LCOV_EXCL_STOP
 SelectivityHint::SelectivityHint(double selectivityFactor)
 {
   selectivityFactor_ = selectivityFactor;
@@ -634,12 +630,11 @@ void SelectivityHint::setScanSelectivityFactor (double selectivityFactor)
   // This method is called only for selectivityFactor >= 0.0
 
   if (selectivityFactor > 1.0)
-    selectivityFactor_ = 1.0; // LCOV_EXCL_LINE - rfi
+    selectivityFactor_ = 1.0;
   else
     selectivityFactor_ = selectivityFactor ;
 }
 
-// LCOV_EXCL_START - cnu
 CostScalar
 TableDesc::getBaseRowCntIfUniqueJoinCol(const ValueIdSet &joinedCols)
 
@@ -666,7 +661,6 @@ TableDesc::getBaseRowCntIfUniqueJoinCol(const ValueIdSet &joinedCols)
   return baseRowCount;
 
 } // TableDesc::getBaseRowCntIfUniqueJoinCol
-// LCOV_EXCL_STOP
 
 
 ValueIdSet TableDesc::getComputedColumns(NAColumnBooleanFuncPtrT fptr)

@@ -84,12 +84,10 @@
 // defined in Generator.cpp. That code, however, fixes up the TDB's to
 // the Compiler version.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void ComTdb::fixupVTblPtr()
 {
   fixupVTblPtrExe();
 }
-// LCOV_EXCL_STOP
 
 char *ComTdb::findVTblPtr(short classID)
 {
@@ -103,12 +101,10 @@ char *ComTdb::findVTblPtr(short classID)
 // implemented in the comexe project which fixes up a TDB object to the
 // Compiler version of the TDB.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void ComTdb::fixupVTblPtrExe()
 {
 	ex_assert(0,"fixupVTblPtrExe() shouldn't be called"); // method retired
 }
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -718,7 +714,7 @@ case ex_LOB_INFO:
     }
 
     default:
-      ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId"); // LCOV_EXCL_LINE
+      ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId");
       break;
   }
   return vtblptr;
@@ -801,7 +797,6 @@ Lng32 getTotalTcbSpace(char*inTdb, char * otherInfo, char * parentMemory)
 
   switch (tdb->getNodeType())
     {
-// LCOV_EXCL_START
 // This method is called from an internal CLI call and the only palce
 // where this internal CLI call is make is from generator for Generator.cpp
 // for EID Root tdb and so this code is not called for other tdb's
@@ -813,7 +808,6 @@ Lng32 getTotalTcbSpace(char*inTdb, char * otherInfo, char * parentMemory)
       g = new(&heap) ExEspStmtGlobals(10, NULL, 0, &space, &heap, NULL,
                                       NullFragInstanceHandle, 0);
       break;
-// LCOV_EXCL_STOP
     case ComTdb::ex_EXPLAIN:
       break;
 

@@ -104,7 +104,6 @@ private:
   // ---------------------------------------------------------------------
 };
 
-// LCOV_EXCL_START
 // -----------------------------------------------------------------------
 // ExTupleNonLeafTdb
 // -----------------------------------------------------------------------
@@ -155,10 +154,6 @@ private:
   //    the classes to the comexe project.
   // ---------------------------------------------------------------------
 };
- // LCOV_EXCL_STOP
-
-
-
 
 ////////////////////////////////////////
 // class ExTupleTcb
@@ -203,7 +198,7 @@ public:
   };
   
   virtual Int32 numChildren() const { return 0;};
-  virtual const ex_tcb* getChild(Int32 pos) const { return NULL;}; //LCOV_EXCL_LINE
+  virtual const ex_tcb* getChild(Int32 pos) const { return NULL;};
 
 protected:
   ex_queue_pair qparent;
@@ -235,7 +230,6 @@ public:
 
 
 
-// LCOV_EXCL_START
 ////////////////////////////////////////////////
 // class ExTupleNonLeafTcb
 ////////////////////////////////////////////////
@@ -264,8 +258,6 @@ private:
   queue_index nextToSendDown_; // next down queue index to send to server
 
 };
-// LCOV_EXCL_STOP
-
 
 class ExTuplePrivateState : public ex_tcb_private_state
 {

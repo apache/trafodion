@@ -59,7 +59,6 @@ NAString ColumnDescList::getColumnDescListAsString() const
   return list;
 }
 
-// LCOV_EXCL_START :cnu
 ColumnDesc *ColumnDescList::findColumn(const NAString& colName) const
 {
   for (CollIndex i=0; i<entries(); i++)
@@ -70,4 +69,3 @@ ColumnDesc *ColumnDescList::findColumn(const NAString& colName) const
   }
   return NULL;
 }
-// LCOV_EXCL_STOP

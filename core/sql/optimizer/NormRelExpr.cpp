@@ -5865,7 +5865,6 @@ void Scan::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (i = 0;
        i < (Int32)getTableDesc()->getIndexes().entries();
        i++)
@@ -6626,7 +6625,6 @@ void GenericUpdate::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (j = 0;
        j < (Int32)getTableDesc()->getIndexes().entries();
        j++)
@@ -9694,7 +9692,6 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
   // ------------------------------
 
   // we create a name of this form:
-  // CSE_TEMP_ppppp_MXIDiiiii_Ssss_ccc
   // where
   //   ppp... is a prefix of the CTE name or an internal name
   //          (just to make it easier to identify, not really needed,

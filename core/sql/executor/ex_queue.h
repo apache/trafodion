@@ -324,6 +324,7 @@ inline
   { ExQueueAssert(upDown_ == DOWN_QUEUE,""); nextSubtask_ = nextSubtask; }
 //?johannes??
 
+  static queue_index roundUp2Power(queue_index i);
 
 private:
 
@@ -444,7 +445,7 @@ private:
     }
 
     void logRemoveHead();  
-
+  
 };  // ex_queue
 
 

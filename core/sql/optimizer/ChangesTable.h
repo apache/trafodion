@@ -82,7 +82,7 @@ public:
   // when computing the @TS column
   enum RowTsCounter { ROW_TS_INCR = 3 };
 
-  virtual ~ChangesTable() {} // LCOV_EXCL_LINE
+  virtual ~ChangesTable() {}
 
 
   // Accessors
@@ -192,7 +192,7 @@ public:
 		    RowsType        scanType, 
 		    BindWA         *bindWA);
 
-  virtual ~TriggersTempTable() {} // LCOV_EXCL_LINE
+  virtual ~TriggersTempTable() {}
 
   inline void setBeforeTriggersExist() { beforeTriggersExist_ = TRUE; }
   inline NABoolean getBeforeTriggersExist() const { return beforeTriggersExist_; }
@@ -238,16 +238,14 @@ public:
   MvIudLog(const GenericUpdate *baseNode, 
 	   BindWA              *bindWA);
 
-  virtual ~MvIudLog() {} // LCOV_EXCL_LINE
+  virtual ~MvIudLog() {}
 
   MVInfoForDML	  *getMvInfo()		 const { return mvInfo_; } 
 
   // not used for this templog type
-  // LCOV_EXCL_START
   virtual NABoolean isEmptyDefaultTransitionName() const { return TRUE; }
 
   virtual NABoolean supportsLateBinding() const { return TRUE; }
-  // LCOV_EXCL_STOP
 
   virtual ItemExpr *createAtColExpr(const NAColumn *naColumn, 
 				    NABoolean       isInsert,
@@ -328,7 +326,7 @@ public:
   MvIudLogForMvLog(CorrName&  tableName, 
 	           BindWA    *bindWA);
 
-  virtual ~MvIudLogForMvLog() {} // LCOV_EXCL_LINE
+  virtual ~MvIudLogForMvLog() {}
 
   virtual ItemExpr *createColExprForEpoch() const;
   virtual ItemExpr *createColExprForOpType(NABoolean isInsert,
@@ -363,14 +361,12 @@ public:
 		      ItemExpr		   *catchupNo,
 		      BindWA               *bindWA);
 
-  virtual ~MvLogForContextRows() {} // LCOV_EXCL_LINE
+  virtual ~MvLogForContextRows() {}
 
   // not used for this templog type
-  // LCOV_EXCL_START
   virtual NABoolean isEmptyDefaultTransitionName() const { return TRUE; }
 
   virtual NABoolean supportsLateBinding() const { return FALSE; }
-  // LCOV_EXCL_STOP
 
   virtual ItemExpr *createAtColExpr(const NAColumn *naColumn, 
 				    NABoolean       isInsert,

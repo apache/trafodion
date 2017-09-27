@@ -39,7 +39,6 @@
 // -----------------------------------------------------------------------
 
 #include "cli_stdh.h"
-#include "ExMeas.h"
 
 Module::Module(const char * module_name, Lng32 len, char * pathName, 
                Lng32 pathNameLen, NAHeap *heap)

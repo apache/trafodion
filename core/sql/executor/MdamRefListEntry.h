@@ -55,7 +55,7 @@ class MdamRefListEntry
     // nextEntryPtr_ is set to point to the newly-created node to begin a
     // circularly-linked list.
     MdamRefListEntry(const Int32 disjunctNum)
-       :  disjunctNum_(disjunctNum)  /* NT_PORT , nextEntryPtr_(this) */
+       :  disjunctNum_(disjunctNum) 
     {
 	    nextEntryPtr_ = this;
     }

@@ -336,6 +336,14 @@ public:
 
 };
 
+class ValidateUIntFrom1To8 : public ValidateNumericRange
+{
+public:
+  ValidateUIntFrom1To8() 
+    : ValidateNumericRange(VALID_UINT, (float)1, (float)8) {}
+
+};
+
 class ValidateUIntFrom1To10 : public ValidateNumericRange
 {
 public:
