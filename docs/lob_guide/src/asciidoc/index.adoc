@@ -1,0 +1,53 @@
+////
+* @@@ START COPYRIGHT @@@                                                         
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@ 
+////
+
+= LOB Guide
+:doctype: book
+:numbered:
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:icons: font
+:iconsdir: icons
+:experimental:
+:source-language: text
+:revnumber: {project-version}
+:title-logo-image: {project-logo}
+:project-name: {project-name}
+
+:images: ../images
+:leveloffset: 1
+
+// The directory is called _chapters because asciidoctor skips direct
+// processing of files found in directories starting with an _. This
+// prevents each chapter being built as its own book.
+
+include::../../shared/license.txt[]
+<<<
+include::../../shared/acknowledgements.txt[]
+<<<
+include::../../shared/revisions.txt[]
+
+include::asciidoc/_chapters/about.adoc[]
+include::asciidoc/_chapters/introduction.adoc[]
+include::asciidoc/_chapters/work_with_lob.adoc[]
