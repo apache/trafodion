@@ -498,7 +498,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 if (retcode == 1) // check failed
                   {
                     char errStr[200];
-                    str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                    str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                                 modTS, failedModTS);
 
                     ComDiagsArea * diagsArea = NULL;

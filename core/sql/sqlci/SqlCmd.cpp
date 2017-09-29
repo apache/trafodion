@@ -741,7 +741,7 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   char * queryBuf = new char[4000];
 
   Int64 ts = NA_JulianTimestamp();
-  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, CONVERTTIMESTAMP(%Ld), '%s', '' ) ",
+  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, CONVERTTIMESTAMP(%ld), '%s', '' ) ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE,
               ts, queryId);
 

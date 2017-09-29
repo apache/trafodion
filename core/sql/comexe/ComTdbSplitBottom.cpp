@@ -172,7 +172,7 @@ void ComTdbSplitBottom::displayContents(Space * space,ULng32 flag)
     str_sprintf(buf, "\nFor ComTdbSplitBottom :");
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "splitBottomFlags_ = %b", (Lng32) splitBottomFlags_);
+    str_sprintf(buf, "splitBottomFlags_ = %x", (Lng32) splitBottomFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
     str_sprintf(buf, "topNumESPs = %d, bottomNumESPs = %d", 
@@ -218,7 +218,7 @@ void ComTdbSplitBottom::displayContents(Space * space,ULng32 flag)
       
       while (numTriads > 0)
       {
-        str_sprintf(buf, "%23Ld %23Ld %23Ld", 
+        str_sprintf(buf, "%23ld %23ld %23ld", 
                     skewInfo_->getSkewHashValues()[i],
                     skewInfo_->getSkewHashValues()[i+1],
                     skewInfo_->getSkewHashValues()[i+2]);
@@ -231,7 +231,7 @@ void ComTdbSplitBottom::displayContents(Space * space,ULng32 flag)
       // Now do the final line: 1 or 2 values.
       if (numLeftovers == 2)
       {
-        str_sprintf(buf, "%23Ld %23Ld", 
+        str_sprintf(buf, "%23ld %23ld", 
                     skewInfo_->getSkewHashValues()[i],
                     skewInfo_->getSkewHashValues()[i+1]);
         space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
@@ -239,7 +239,7 @@ void ComTdbSplitBottom::displayContents(Space * space,ULng32 flag)
       }
       else if (numLeftovers == 1)
       {
-        str_sprintf(buf, "%23Ld", 
+        str_sprintf(buf, "%23ld", 
                     skewInfo_->getSkewHashValues()[i]);
         space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
                                              sizeof(short));

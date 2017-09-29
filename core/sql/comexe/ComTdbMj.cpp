@@ -189,7 +189,7 @@ void ComTdbMj::displayContents(Space * space,ULng32 flag)
   if (flag & 0x00000008)
     {
       char buf[100];
-      str_sprintf(buf, "\nFor ComTdbMj :\nFlags = %b, ljRecLen = %d, rightDupRecLen = %d ",
+      str_sprintf(buf, "\nFor ComTdbMj :\nFlags = %x, ljRecLen = %d, rightDupRecLen = %d ",
 		  flags_, ljRecLen_, rightDupRecLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }

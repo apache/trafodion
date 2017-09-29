@@ -242,7 +242,7 @@ void CmpSqlSession::setSessionId(NAString &sessionID)
 	 sessionUniqNum,
 	 userNameLen, NULL,
 	 userSessionNameLen, NULL);
-      str_sprintf(sName, "%02d%03Ld%06Ld%018Ld%010Ld",
+      str_sprintf(sName, "%02d%03ld%06ld%018ld%010ld",
 		  ComSqlId::SQ_SQL_ID_VERSION,
 		  segmentNum_, pin_l, schemaNameCreateTime,
 		  sessionUniqNum);

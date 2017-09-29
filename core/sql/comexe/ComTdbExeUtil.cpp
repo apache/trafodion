@@ -786,7 +786,7 @@ void ComTdbExeUtilLoadVolatileTable::displayContents(Space * space,ULng32 flag)
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 
-      str_sprintf(buf,"Threshold = %Ld ", threshold_);
+      str_sprintf(buf,"Threshold = %ld ", threshold_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
     }
@@ -1624,7 +1624,7 @@ void ComTdbExeUtilGetUID::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbExeUtilGetUID :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
-      str_sprintf(buf,"UID = %LD", uid_);
+      str_sprintf(buf,"UID = %ld", uid_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   
@@ -1800,7 +1800,7 @@ void ComTdbExeUtilPopulateInMemStats::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbExeUtilPopulateInMemStats :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
-      str_sprintf(buf,"UID = %LD", uid_);
+      str_sprintf(buf,"UID = %ld", uid_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       if ((char *)inMemHistogramsTableName_ != (char *)NULL)
@@ -2144,7 +2144,7 @@ void ComTdbExeUtilGetMetadataInfo::displayContents(Space * space,ULng32 flag)
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
 
-      str_sprintf(buf, "Flags = %b",flags_);
+      str_sprintf(buf, "Flags = %x",flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
     }

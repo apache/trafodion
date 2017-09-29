@@ -441,7 +441,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 	  return -1;
 	}
       
-      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, %ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID,
@@ -463,7 +463,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
     {
 
       char query[1000];
-      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, %ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  uul[u]->getUDFUID(),
@@ -650,7 +650,7 @@ short CmpSeabaseDDL::getListOfDirectlyReferencedObjects (
   char buf[4000];
   str_sprintf(buf, "select object_type, object_uid, catalog_name," 
                    "schema_name, object_name from %s.\"%s\".%s T, %s.\"%s\".%s VU " 
-                   "where VU.using_view_uid = %Ld "
+                   "where VU.using_view_uid = %ld "
                    "and T.object_uid = VU.used_object_uid",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
@@ -1048,7 +1048,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
 
   query = new(STMTHEAP) char[1000];
-  str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
+  str_sprintf(query, "upsert into %s.\"%s\".%s values (%ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
 	      computeCheckOption(createViewNode),

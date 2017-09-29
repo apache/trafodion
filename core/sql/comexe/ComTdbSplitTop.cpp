@@ -173,10 +173,10 @@ void ComTdbSplitTop::displayContents(Space *space, ULng32 flag)
   {
     char buf[256];
     
-    str_sprintf(buf, "\nFor ComTdbSplitTop :\nFlags = %b ",flags_);
+    str_sprintf(buf, "\nFor ComTdbSplitTop :\nFlags = %x ",flags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "splitTopFlags_ = %b", (Lng32) splitTopFlags_);
+    str_sprintf(buf, "splitTopFlags_ = %x", (Lng32) splitTopFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
     str_sprintf(buf, "bottomNumParts_ = %d", (Int32) bottomNumParts_);

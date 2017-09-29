@@ -69,7 +69,7 @@ char * ExpLOBoper::ExpGetLOBname(Int64 uid, Lng32 num, char * outBuf, Lng32 outB
   if (outBufLen < 31)
     return NULL;
 
-  str_sprintf(outBuf, "LOBP_%020Ld_%04d",
+  str_sprintf(outBuf, "LOBP_%020ld_%04d",
 	      uid, num);
 
   return outBuf;
@@ -82,7 +82,7 @@ char * ExpLOBoper::ExpGetLOBDescName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBDsc_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"LOBDsc_%020ld_%04d\"",
 	      schName, uid, num);
 
   return outBuf;
@@ -94,7 +94,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleObjNamePrefix(Int64 uid,
   if (outBufLen < 512)
     return NULL;
   
-  str_sprintf(outBuf, "%s_%020Ld", LOB_DESC_HANDLE_PREFIX,uid);
+  str_sprintf(outBuf, "%s_%020ld", LOB_DESC_HANDLE_PREFIX,uid);
   
   return outBuf;
 }
@@ -107,7 +107,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld_%04d\"",
 	      schName, LOB_DESC_HANDLE_PREFIX,uid, num);
   
   return outBuf;
@@ -115,7 +115,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 
 Lng32 ExpLOBoper::ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen)
 {
-  // Desc Name Format: LOBDescHandle_%020Ld_%04d
+  // Desc Name Format: LOBDescHandle_%020ld_%04d
   char * lobNumPtr = &descName[sizeof(LOB_DESC_HANDLE_PREFIX) + 20 + 1];
   Lng32 lobNum = str_atoi(lobNumPtr, 4);
   
@@ -131,7 +131,7 @@ char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld_%04d\"",
 	      schName, LOB_DESC_CHUNK_PREFIX,uid, num);
 
   return outBuf;
@@ -146,7 +146,7 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"%s_%020Ld\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld\"",
 	      schName, LOB_MD_PREFIX,uid);
 
   return outBuf;
@@ -471,7 +471,7 @@ void ExpLOBoper::createLOBhandleString(Int16 flags,
 				       char * schName,
 				       char * lobHandleBuf)
 {
-  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020ld%02d%ld%02d%ld%03d%s",
 	      flags, lobType, lobNum, uid,
 	      findNumDigits(descKey), descKey, 
 	      findNumDigits(descTS), descTS,
@@ -493,7 +493,7 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
 				       Lng32 handleLen)
 {
   // opp of:
-  //  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  //  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020ld%02d%ld%02d%ld%03d%s",
   //	      flags, lobType, lobNum, uid,
   //	      findNumDigits(descKey), descKey, 
   //	      findNumDigits(descTS), descTS,

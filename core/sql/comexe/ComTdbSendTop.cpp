@@ -200,7 +200,7 @@ void ComTdbSendTop::displayContents(Space *space, ULng32 flag)
     str_sprintf(buf, "\nFor ComTdbSendTop :");
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "childFragId_ = %d, sendTopFlags_ = %b",
+    str_sprintf(buf, "childFragId_ = %d, sendTopFlags_ = %x",
                 (Lng32) childFragId_, (Lng32) sendTopFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 

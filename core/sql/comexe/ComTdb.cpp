@@ -226,7 +226,7 @@ void ComTdb::displayContents(Space * space,ULng32 flag)
                   estRowsUsed_, estRowsAccessed_, expressionMode_);
   		space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  		str_sprintf(buf, "Flag = %b",flags_);
+  		str_sprintf(buf, "Flag = %x",flags_);
   		space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   		if (firstNRows() >= 0)

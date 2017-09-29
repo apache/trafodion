@@ -343,7 +343,7 @@ short Exchange::codeGenForESP(Generator * generator)
     ComUID uid;
     uid.make_UID();
     Int64 i64 = uid.get_value();
-    str_sprintf(extractSecurityKey, "%Ld", i64);
+    str_sprintf(extractSecurityKey, "%ld", i64);
   }
   else
   {

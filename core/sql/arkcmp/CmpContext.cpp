@@ -242,7 +242,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   gmtDiff_ = timezone / 60;
 
   CmpProcess p;
-  p.getCompilerId(compilerId_);
+  p.getCompilerId(compilerId_, COMPILER_ID_LEN);
 
 
   //  CmpSeabaseDDL cmpSBD;

@@ -113,7 +113,7 @@ void ComTdbFirstN::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbFirstN :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
-      str_sprintf(buf,"firstNRows = %d", firstNRows_);
+      str_sprintf(buf,"firstNRows = %ld", firstNRows_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   

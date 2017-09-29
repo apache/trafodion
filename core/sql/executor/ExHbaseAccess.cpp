@@ -1346,7 +1346,7 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
                       else if (colName.length() == sizeof(ULng32))
                         v = *(ULng32*)colName.data();
                       
-                      str_sprintf(buf, "%Ld", v);
+                      str_sprintf(buf, "%ld", v);
                     }
                   
                   ComDiagsArea * diagsArea = NULL;

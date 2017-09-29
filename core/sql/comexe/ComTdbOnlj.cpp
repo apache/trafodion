@@ -220,7 +220,7 @@ void ComTdbOnlj::displayContents(Space * space,ULng32 flag)
       if(flag & 0x00000008)
         {
 		      char buf[100];
-	   		str_sprintf(buf, "\nFor ComTdbOnlj :\nFlags = %b, ljRecLen = %d, instantiatedRowAtpIndex = %d ",
+	   		str_sprintf(buf, "\nFor ComTdbOnlj :\nFlags = %x, ljRecLen = %d, instantiatedRowAtpIndex = %d ",
       						flags_, ljRecLen_, instantiatedRowAtpIndex_);
 		      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }

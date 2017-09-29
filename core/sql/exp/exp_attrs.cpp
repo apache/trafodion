@@ -340,11 +340,11 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
       
       Int64 ll = (Int64)lobLen;
       //      Int64 ll = (Int64)getPrecision() * 1000 + (Int64)getScale();
-      str_sprintf(buf, "      LobLength = %Ld Mb", ll);
+      str_sprintf(buf, "      LobLength = %ld Mb", ll);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
 
-  str_sprintf(buf, "      Precision = %d, Scale = %d, Collation = %d, flags_ = %b",
+  str_sprintf(buf, "      Precision = %d, Scale = %d, Collation = %d, flags_ = %x",
               getPrecision(), getScale(), getCollation(), flags_);
 
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -437,7 +437,7 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
   if ((getRowsetSize() > 0) ||
       (getRowsetInfo()))
     {
-      str_sprintf(buf, "      rowsetSize_ = %d, rowsetInfo_ = %b",
+      str_sprintf(buf, "      rowsetSize_ = %d, rowsetInfo_ = %x",
 		  getRowsetSize(), getRowsetInfo());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }

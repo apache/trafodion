@@ -188,7 +188,7 @@ char schemaObjectLit[3] = {0};
       } 
    }
    
-   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0)",
+   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                catalogName.data(), quotedSchName.data(), quotedObjName.data(),
                schemaObjectLit,
@@ -1379,7 +1379,7 @@ char buf[4000];
    {
       str_sprintf(buf,"UPDATE %s.\"%s\".%s "
                       "SET object_owner = %d "
-                      "WHERE object_UID = %Ld",
+                      "WHERE object_UID = %ld",
                   getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                   newOwnerID,schemaUID);
       cliRC = cliInterface.executeImmediate(buf);

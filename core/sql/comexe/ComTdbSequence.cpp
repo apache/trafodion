@@ -142,7 +142,7 @@ void ComTdbSequence::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbSequence :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
-      str_sprintf(buf,"recLen_ = %d, maxHistoryRows_ = %d, OLAPFlags_ = %b %s",
+      str_sprintf(buf,"recLen_ = %d, maxHistoryRows_ = %d, OLAPFlags_ = %x %s",
 		  recLen_, maxHistoryRows_, OLAPFlags_,
 		  isUnboundedFollowing() ? ", UNBOUNDED_FOLLOWING" : "");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));

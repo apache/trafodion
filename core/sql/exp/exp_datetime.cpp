@@ -113,7 +113,7 @@ raiseDateConvErrorWithSrcDataNumeric(ComDiagsArea** diagsArea, long srcData, Col
 {
    char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
    str_pad(errstr, sizeof(errstr), 0 );
-   str_sprintf(errstr,"%Ld",srcData);
+   str_sprintf(errstr,"%ld",srcData);
    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
 }
 //////////////////////////////////////////////

@@ -11793,7 +11793,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		    i--;
 		  }
 		
-		str_sprintf(buf, "@A1 / %Ld", denom);
+		str_sprintf(buf, "@A1 / %ld", denom);
 	      }
 	    
 	    if (strlen(buf) > 0)
@@ -11814,7 +11814,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		
 		// multiply by 10 ** (number of digits rounded off) to
 		// get back to the original scale.
-		str_sprintf(buf, "cast(@A1 * %Ld as numeric(%d,%d))", 
+		str_sprintf(buf, "cast(@A1 * %ld as numeric(%d,%d))", 
                   denom, MAX_NUMERIC_PRECISION, MAXOF(type_op1.getScale(), roundTo));
 		parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 2, divExpr, child(1));
 		if (! parseTree)

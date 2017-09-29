@@ -708,12 +708,12 @@ static void appendListOfColumns(Queue* listOfColNames,ComTdb *tdb, NAString& out
           else
         v = 0;
           if (j==0)
-              str_sprintf(buf, "%s%s%Ld",
+              str_sprintf(buf, "%s%s%ld",
                   colFam,
                   (withAt ? "@" : ""),
                   v);
           else
-              str_sprintf(buf, ",%s%s%Ld",
+              str_sprintf(buf, ",%s%s%ld",
                   colFam,
                   (withAt ? "@" : ""),
                   v);
@@ -804,7 +804,7 @@ static void appendPushedDownExpression(ComTdb *tdb, NAString& outNAString){
                 v = *(ULng32*)colName;
                   else
                 v = 0;
-                  str_sprintf(buf2, "%s%s%Ld",
+                  str_sprintf(buf2, "%s%s%ld",
                       colFam,
                       (withAt ? "@" : ""),
                       v);
@@ -1724,7 +1724,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
        ComQIActionTypeEnumToLiteral(sikValue[i].getSecurityKeyType(),
                                     sikOperationLit);
        sikOperationLit[2] = '\0';
-       str_sprintf(buf, "{%Ld,%Ld,%s}",
+       str_sprintf(buf, "{%ld,%ld,%s}",
                   (Int64)sikValue[i].getSubjectHashValue(),
                   (Int64)sikValue[i].getObjectHashValue(),
                   sikOperationLit);
@@ -1737,12 +1737,12 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   if (objectUIDs)
   {
     char buf[64];
-    str_sprintf(buf, "ObjectUIDs: %Ld", objectUIDs[0]);
+    str_sprintf(buf, "ObjectUIDs: %ld", objectUIDs[0]);
     statement += buf; 
     Int32 numO = rootTdb->getNumObjectUIDs();
     for (Int32 i = 1; i < numO; i++)
     {
-      str_sprintf(buf, ", %Ld", objectUIDs[i]);
+      str_sprintf(buf, ", %ld", objectUIDs[i]);
       statement += buf;
     }
     statement += " ";

@@ -146,7 +146,7 @@ void ComTdbSendBottom::displayContents(Space *space, ULng32 flag)
     str_sprintf(buf, "\nFor ComTdbSendBottom :");
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "sendBottomFlags_ = %b", (Lng32) sendBottomFlags_);
+    str_sprintf(buf, "sendBottomFlags_ = %x", (Lng32) sendBottomFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
     str_sprintf(buf, "downRecordLength_ = %d, upRecordLength_ = %d",

@@ -337,7 +337,7 @@ Lng32 SortUtil::sortSendEnd(NABoolean& internalSort)
   {
     char msg[500];
     str_sprintf(msg,
-    "Sort is performing %s sort: NumRecs:%d",
+    "Sort is performing %s sort: NumRecs:%ld",
         internalSort? "internal":"external", stats_.numRecs_);
     SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
   }
@@ -428,7 +428,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
       {
         char msg[500];
         str_sprintf(msg,
-        "Sort Merge Phase encountered memory pressure: NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+        "Sort Merge Phase encountered memory pressure: NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
         stats_.numRuns_, config_->mergeOrder_, stats_.numRecs_,stats_.scrNumBlocks_);
         
         SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -522,7 +522,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
     {
       char msg[500];
       str_sprintf(msg,
-      "Sort is performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+      "Sort is performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
       stats_.numRuns_,config_->mergeOrder_,stats_.numRecs_,stats_.scrNumBlocks_); 
     
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -678,7 +678,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
     {
       char msg[500];
       str_sprintf(msg,
-      "Sort is not performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%d, ScratchBlocks:%d",
+      "Sort is not performing intermediate merges, NumRuns:%d, MergeOrder:%d, NumRecs:%ld, ScratchBlocks:%d",
       stats_.numRuns_,config_->mergeOrder_,stats_.numRecs_,stats_.scrNumBlocks_); 
       
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
@@ -767,7 +767,7 @@ Lng32 SortUtil::sortReceive(void* record, ULng32& len)
     stats_.elapsedTime_ = currentTimeJ - stats_.beginSortTime_;
     if (config_->logInfoEvent()) {
       char msg[500];
-      str_sprintf(msg, "Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
+      str_sprintf(msg, "Sort elapsed time : %ld; Num runs : %d; runsize :%d",
 		stats_.elapsedTime_,stats_.numInitRuns_,sortAlgo_->getRunSize());
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }
@@ -801,7 +801,7 @@ Lng32 SortUtil::sortReceive(void*& record,ULng32& len,void*& tupp)
     stats_.elapsedTime_ = currentTimeJ - stats_.beginSortTime_; 
     if (config_->logInfoEvent()) {
       char msg[500];
-      str_sprintf(msg, "Internal sort performed. Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
+      str_sprintf(msg, "Internal sort performed. Sort elapsed time : %ld; Num runs : %d; runsize :%d",
 		stats_.elapsedTime_,stats_.numInitRuns_,sortAlgo_->getRunSize());
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }

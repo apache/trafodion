@@ -253,7 +253,7 @@ void ex_expr::displayContents(Space * space, short mode, const char * displayStr
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
   str_sprintf(buf, "Expr Len: %d, Consts Len: %d", exprLen, getConstsLength());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-  str_sprintf(buf, "flags_ = %b ",flags_ );
+  str_sprintf(buf, "flags_ = %x ",flags_ );
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (flag & 0x00000004)
