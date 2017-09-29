@@ -48,7 +48,7 @@ public:
   Lng32 getCurrentSystemHeapSize(); 
 
   // generate the compiler id out of cpu#, pin, node#, and process start timestamp 
-  void getCompilerId( char *id );
+  void getCompilerId( char *id, int len);
 
 private:  
   short       nodeNum_;  // cpu num

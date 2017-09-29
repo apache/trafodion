@@ -70,10 +70,10 @@ method CompilationStats::getCompilerId
 
 ************************************************************************/
 void
-CompilationStats::getCompilerId(char *cmpId)
+CompilationStats::getCompilerId(char *cmpId, int len)
 {
   CmpProcess p;
-  p.getCompilerId(cmpId);
+  p.getCompilerId(cmpId, len);
 }
 /************************************************************************
 method CompilationStats::enterCmpPhase
@@ -303,7 +303,7 @@ void CompilationStats::dumpToFile()
   fprintf(myf, "  Compilation End Time: %s\n", endTime); 
 
   char cmpId[COMPILER_ID_LEN];
-  getCompilerId(cmpId);
+  getCompilerId(cmpId, COMPILER_ID_LEN);
   fprintf(myf, "  Compiler Id: %s\n", cmpId);
   fprintf(myf, "  All Cmp Phases Execution length: \n");
   fprintf(myf, "    Binder: %d\n", cmpPhaseLength(CompilationStats::CMP_PHASE_BINDER));
