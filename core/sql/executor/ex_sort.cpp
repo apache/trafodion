@@ -695,8 +695,7 @@ short ExSortTcb::workDown()
 		"Invalid initial state in ex_sort_tcb::workDown()");
 
       if ((request == ex_queue::GET_NOMORE) ||
-	  ((sortTdb().sortOptions_->sortNRows() == TRUE) &&
-	   (request == ex_queue::GET_N) &&
+	  ((request == ex_queue::GET_N) &&
 	   (pentry_down->downState.requestValue == 0)))
 	{
 	  // Parent canceled before start, or request 0 row,
@@ -709,8 +708,7 @@ short ExSortTcb::workDown()
 	{
 	  ex_queue_entry *centry = qchild_.down->getTailEntry();
 	    
-	  if ((sortTdb().sortOptions_->sortNRows() == TRUE) &&
-	      (request == ex_queue::GET_N))
+	  if (request == ex_queue::GET_N)
 	    {
 	      centry->downState.request = ex_queue::GET_ALL;
 	    }
@@ -1670,10 +1668,9 @@ short ExSortTcb::sortReceive(ex_queue_entry * pentry_down,
 
 	      // stop if first N sorted rows have been returned.
 	      if ((request == ex_queue::GET_NOMORE) ||
-		  (sortTdb().sortOptions_->sortNRows() == TRUE) &&
-		  (request == ex_queue::GET_N)  &&
+		  ((request == ex_queue::GET_N)  &&
 		  ((Lng32)matchCount >= 
-		   pentry_down->downState.requestValue))
+		   pentry_down->downState.requestValue)))
 		{
 		  // If sort partially complete, lets cancel rest of 
 		  // of the child row reads.

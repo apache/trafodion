@@ -2234,6 +2234,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDui___(MEMORY_LIMIT_HISTCACHE_UPPER_KB,     "0"),
   DDui___(MEMORY_LIMIT_NATABLECACHE_UPPER_KB,  "0"),
   DDui___(MEMORY_LIMIT_QCACHE_UPPER_KB,        "0"),
+  // Checked at compile time. Set to -1 to disable check.
+  // Value should be >= EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB
+  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "500"),
 
   // SQL/MX Compiler/Optimzer Memory Monitor.
   DDkwd__(MEMORY_MONITOR,			"OFF"),

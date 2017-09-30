@@ -135,6 +135,22 @@ RelExpr * PhysUnPackRows::preCodeGen(Generator * generator,
     (availableValues,
      getGroupAttr()->getCharacteristicInputs());
 
+  Lng32 memLimit = (Lng32)CmpCommon::getDefaultNumeric(MEMORY_LIMIT_ROWSET_IN_MB);
+  if (memLimit > 0)
+  {
+    Lng32 rowLength = getGroupAttr()->getCharacteristicOutputs().getRowLength();
+    Lng32 rowsetSize = getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value() ;
+    Lng32 memNeededMB = (rowLength * rowsetSize)/(1024 * 1024);
+    if (memLimit < memNeededMB)
+    {
+      *CmpCommon::diags() << DgSqlCode(-30050) << DgInt0(memNeededMB) 
+                          << DgInt1(memLimit) << DgInt2(rowLength) 
+                          << DgInt3(rowsetSize);
+      GenExit();
+      return NULL;
+    }
+  }
+
   generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
 
   markAsPreCodeGenned();

@@ -1948,6 +1948,9 @@ Sort::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
       description += "CIF: OFF ";
     }
   }
+  if (sortTdb->topNSortEnabled() && sortNRows())
+    description += "topn_enabled: yes ";
+
   explainTuple->setDescription(description);  // save what we have built
 
   return(explainTuple);

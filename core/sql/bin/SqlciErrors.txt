@@ -3951,3 +3951,4 @@ $3~String1.
 30047 ZZZZZ 99999 BEGINNER MAJOR DBADMIN NAR details. HexdRow: $0~String0 ErrNum: $1~Int1 ObjectName: $2~TableName PartitionName: $3~String3 FileNum: $4~Int4 RecNum: $5~Int5
 30048 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load failed. Number of error rows($0~Int0) inserted into the exception table exceeded the max allowed($1~Int1).
 30049 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load succeeded. Number of error rows inserted into the exception table is $0~Int0
+30050 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Memory required by input rowset buffer is $0~Int0 MB, exceeding specified limit of $1~Int1. Row length is $2~Int2 bytes and rowset has a maximum of $3~Int3 elements. 
