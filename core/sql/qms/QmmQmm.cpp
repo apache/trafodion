@@ -476,7 +476,6 @@ void QmpStub::allocateProcess(IpcEnvironment& ipcEnv, short cpu)
     }
 }
 
-//#pragma nowarn(770)   // warning elimination 
 void QmpStub::spawnProcess(IpcEnvironment& ipcEnv, short cpu) //, ComDiagsArea **diags, CollHeap *diagsHeap)
 {
    SB_Phandle_Type p_handle;

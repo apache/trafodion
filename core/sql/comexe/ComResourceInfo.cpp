@@ -152,7 +152,6 @@ Lng32 ExScratchFileOptions::ipcPackObjIntoMessage(char *buffer) const
   return (currPtr - buffer);
 }
 
-#pragma nowarn(770)   // warning elimination
 void ExScratchFileOptions::ipcUnpackObj(Lng32 objSize,
 					const char *buffer,
 					CollHeap *heap,
@@ -175,10 +174,8 @@ void ExScratchFileOptions::ipcUnpackObj(Lng32 objSize,
   // allocate one common buffer for the arrays of ExScratchDiskDrive
   // structs and for all the names
   Lng32 bufferLen =
-#pragma nowarn(1506)   // warning elimination 
     (numSpecifiedDirs_) *
     sizeof(ExScratchDiskDrive) + totalNameLength;
-#pragma warn(1506)  // warning elimination 
 
   if (bufferLen == 0)
     {
@@ -233,4 +230,3 @@ void ExScratchFileOptions::ipcUnpackObj(Lng32 objSize,
 
   assert(currPtr-buffer == objSize);
 }
-#pragma warn(770)  // warning elimination 

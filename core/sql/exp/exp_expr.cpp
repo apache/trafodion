@@ -60,24 +60,16 @@ char *ex_expr::findVTblPtr(short classID)
   switch (classID)
   {
     case exp_INPUT_OUTPUT:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, InputOutputExpr);
-#pragma warn(1506)  // warning elimination 
       break;
     case exp_AGGR:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, AggrExpr);
-#pragma warn(1506)  // warning elimination 
       break;
     case exp_LEAN_EXPR:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ex_expr_lean);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ex_expr);
-#pragma warn(1506)  // warning elimination 
       break;
   }
   return vtblPtr;

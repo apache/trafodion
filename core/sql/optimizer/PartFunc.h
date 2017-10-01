@@ -785,7 +785,6 @@ protected:
   inline void storePartitioningKeyPredicates(const ValueIdSet& partKeyPreds)
                            { partitioningKeyPredicates_ = partKeyPreds;
 			     partKeyPredsCreated_ = TRUE; }
-// warning elimination (removed "inline")
   void storePartitionInputValues(const ValueIdList& partInputValues)
                        { partitionInputValues_ = partInputValues;
                          partitionInputValuesLayout_ = partInputValues; }
@@ -2615,13 +2614,11 @@ public:
   // --------------------------------------------------------------------
   // Destructor functions
   // --------------------------------------------------------------------
-// warning elimination (removed "inline")
   virtual ~RoundRobinPartitioningFunction() {}
 
   // ---------------------------------------------------------------------
   // see base class for explanations of the virtual methods
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   virtual const RoundRobinPartitioningFunction *
   castToRoundRobinPartitioningFunction() const { return this; }
 

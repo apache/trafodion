@@ -369,9 +369,7 @@ void ex_split_top_tcb::registerSubtasks()
   // No tasks get registered here if the child TCBs aren't allocated yet
   for (CollIndex i = 0; i < childTcbs_.entries(); i++)
     {
-#pragma nowarn(1506)   // warning elimination 
       registerChildQueueSubtask(i);
-#pragma warn(1506)  // warning elimination 
     }
 }
 
@@ -747,9 +745,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                     // associated with that partition number, or for a
                     // child that can be associated with the partition
                     // number
-#pragma nowarn(1506)   // warning elimination 
                     childIndex = getAssociatedChildIndex(dp2PartNum);
-#pragma warn(1506)  // warning elimination 
 
                     // if no child that is already associated is found then
                     // wait for a child to free up, don't do anything now
@@ -846,9 +842,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                         else
                           centry->getTupp(
                                splitTopTdb().partInputDataAtpIndex_) =
-#pragma nowarn(1506)   // warning elimination 
                           inputDataTupps_->getTuppDescriptor(childIndex+1);
-#pragma warn(1506)  // warning elimination 
                       }
                         
                     // add a tupp with the partition number for a PA node
@@ -857,9 +851,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                       {
                         centry->getTupp(
                              splitTopTdb().paPartNoAtpIndex_) =
-#pragma nowarn(1506)   // warning elimination 
                           paPartNumTupps_->getTuppDescriptor(dp2PartNum+1);
-#pragma warn(1506)  // warning elimination 
 	
 			 if(splitTopTdb().isSystemIdentity()){
 			   // Copy the sidTuple in tempChildAtp_  to 
@@ -934,9 +926,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
               {
                 // Which TCB child does this request go to?
                 CollIndex childIndex;
-#pragma nowarn(1506)   // warning elimination 
                 childIndex = getAssociatedChildIndex(dp2PartNum);
-#pragma warn(1506)  // warning elimination 
 
                 // If no child that is already associated is found then
                 // wait for a child to free up, don't do anything now
@@ -986,9 +976,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                               
                           // add a tupp with the partition number for a PA node
                           centry->getTupp(splitTopTdb().paPartNoAtpIndex_) =
-#pragma nowarn(1506)   // warning elimination 
                                 paPartNumTupps_->getTuppDescriptor(dp2PartNum+1);
-#pragma warn(1506)  // warning elimination 
                               
                           // massage child queue entry
                           centry->downState = pentry->downState;
@@ -1079,9 +1067,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
               }
 
             // which TCB child does this request go to?
-#pragma nowarn(1506)   // warning elimination 
             CollIndex childIndex = getAssociatedChildIndex(dp2PartNum);
-#pragma warn(1506)  // warning elimination 
 
             if (childIndex == NULL_COLL_INDEX)
               {
@@ -1135,9 +1121,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                         
                     // add a tupp with the partition number for a PA node
                     centry->getTupp(splitTopTdb().paPartNoAtpIndex_) =
-#pragma nowarn(1506)   // warning elimination 
                           paPartNumTupps_->getTuppDescriptor(dp2PartNum+1);
-#pragma warn(1506)  // warning elimination 
                         
                     // massage child queue entry
                     centry->downState = pentry->downState;
@@ -1175,9 +1159,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
               }
 
             // which TCB child does this request go to?
-#pragma nowarn(1506)   // warning elimination 
             CollIndex childIndex = getAssociatedChildIndex(dp2PartNum);
-#pragma warn(1506)  // warning elimination 
 
             if (childIndex == NULL_COLL_INDEX)
               {
@@ -1230,9 +1212,7 @@ ExWorkProcRetcode ex_split_top_tcb::workDown()
                         
                     // add a tupp with the partition number for a PA node
                     centry->getTupp(splitTopTdb().paPartNoAtpIndex_) =
-#pragma nowarn(1506)   // warning elimination 
                           paPartNumTupps_->getTuppDescriptor(dp2PartNum+1);
-#pragma warn(1506)  // warning elimination 
                         
                     // massage child queue entry
                     centry->downState = pentry->downState;
@@ -1977,7 +1957,6 @@ void ex_split_top_tcb::resetAssociatedChildIndex(Lng32 partNo)
     }
 }
 
-#pragma nowarn(262)   // warning elimination 
 CollIndex ex_split_top_tcb::getAssociatedChildIndex(Lng32 partNo)
 {
   // ---------------------------------------------------------------------
@@ -2089,7 +2068,6 @@ CollIndex ex_split_top_tcb::getAssociatedChildIndex(Lng32 partNo)
   // balancing.
   return NULL_COLL_INDEX;
 }
-#pragma warn(262)  // warning elimination 
 
 
 
@@ -2221,9 +2199,7 @@ CollIndex ex_split_top_tcb::findNextReadyChild(
                     // encode the merge key into the tupp reserved
                     // for this purpose
                     workAtp_->getTupp(mergeKeyAtpIndex()) = 
-#pragma nowarn(1506)   // warning elimination 
                       mergeKeyTupps_->getTuppDescriptor(ch+1);
-#pragma warn(1506)  // warning elimination 
 
                     if (mergeKeyExpr()->eval(centry->getAtp(),workAtp_) ==
                         ex_expr::EXPR_ERROR)
@@ -2236,9 +2212,7 @@ CollIndex ex_split_top_tcb::findNextReadyChild(
                       }
 
                     char * newKey = mergeKeyTupps_->
-#pragma nowarn(1506)   // warning elimination 
                       getTuppDescriptor(ch+1)->getTupleAddress();
-#pragma warn(1506)  // warning elimination 
 
                     // do until we found the exact position
                     while (highIndex > lowIndex)
@@ -2251,9 +2225,7 @@ CollIndex ex_split_top_tcb::findNextReadyChild(
                         // must already have been encoded if it is
                         // a member of the merge sequence)
                         char *testKey = mergeKeyTupps_->
-#pragma nowarn(1506)   // warning elimination 
                           getTuppDescriptor(mergeSequence_[testIndex]+1)->
-#pragma warn(1506)  // warning elimination 
                           getTupleAddress();
 
                         // evaluate whether the new key to insert is less
@@ -2317,9 +2289,7 @@ CollIndex ex_split_top_tcb::findNextReadyChild(
         }
     } // we're merging
 
-#pragma nowarn(203)   // warning elimination 
   ex_assert(0,"Should never reach here");
-#pragma warn(203)  // warning elimination 
   return NULL_COLL_INDEX;
 }
 
@@ -2364,9 +2334,7 @@ ex_tcb_private_state * ex_split_top_tcb::allocatePstates(
 
 Int32 ex_split_top_tcb::numChildren() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return childTcbs_.entries();
-#pragma warn(1506)  // warning elimination 
 }   
 
 const ex_tcb* ex_split_top_tcb::getChild(Int32 pos) const

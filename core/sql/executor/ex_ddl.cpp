@@ -93,11 +93,9 @@ ExDDLTcb::ExDDLTcb(const ComTdbDDL & ddl_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(ddl_tdb.numBuffers_,
 				     ddl_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // Allocate the queue to communicate with parent
   qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -1268,12 +1266,8 @@ Lng32 ExDescribeTcb::returnLeaks(short &error)
   ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 	    
   // allocate space 
-#pragma nowarn(1506)   // warning elimination 
   if (pool_->get_free_tuple(up_entry->getTupp(describeTdb().tuppIndex_),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 			    describeTdb().outputRowlen_))
-#pragma warn(1506)  // warning elimination 
 	      
     {
       // no more space in the pool.
@@ -1283,17 +1277,13 @@ Lng32 ExDescribeTcb::returnLeaks(short &error)
     }
 	
   char *entry = up_entry->
-#pragma nowarn(1506)   // warning elimination 
 		getTupp(describeTdb().tuppIndex_).getDataPointer();
-#pragma warn(1506)  // warning elimination 
 
   // For ARKCMP and/or SQLCI
   if (HeapLogRoot::fetchLine(entry,
 			     describeTdb().flags_, 
 			     pstate.dataPtr_,
-#pragma nowarn(1506)   // warning elimination 
 			     pstate.dataLen_) == 1)
-#pragma warn(1506)  // warning elimination 
     { // eof
       pstate.currLen_ = pstate.dataLen_;
       pstate.step_ = DONE_;

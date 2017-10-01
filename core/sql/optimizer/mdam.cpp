@@ -1455,39 +1455,29 @@ void MdamKey::setAllColumnsToSparse()
 void MdamKey::setStopColumn(CollIndex disjunctNumber,
 		   CollIndex columnOrder)
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(disjunctNumber >= 0 AND disjunctNumber < getDisjuncts().entries());
-#pragma warn(270)  // warning elimination
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(columnOrder >= 0 AND columnOrder < getKeyColumns().entries());
-#pragma warn(270)  // warning elimination
   DCMPASSERT(stopColumnArray_ != NULL);
   stopColumnArray_[disjunctNumber] = columnOrder;
 }
 
 CollIndex MdamKey::getStopColumn(CollIndex disjunctNumber) const
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(disjunctNumber >= 0 AND disjunctNumber < getDisjuncts().entries());
-#pragma warn(270)  // warning elimination
   DCMPASSERT(stopColumnArray_ != NULL);
   return stopColumnArray_[disjunctNumber];
 }
 
 NABoolean MdamKey::getSparseFlag(CollIndex columnOrder) const
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(columnOrder >= 0 AND columnOrder < getKeyColumns().entries());
-#pragma warn(270)  // warning elimination
   DCMPASSERT(sparseFlagArray_ != NULL);
   return sparseFlagArray_[columnOrder];
 }
 
 void MdamKey::setSparseFlag(CollIndex columnOrder, NABoolean isSparse)
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(columnOrder >= 0 AND columnOrder < getKeyColumns().entries());
-#pragma warn(270)  // warning elimination
   DCMPASSERT(sparseFlagArray_ != NULL);
   sparseFlagArray_[columnOrder] = isSparse;
 }
@@ -2527,7 +2517,6 @@ void KeyColumns::KeyColumn::clearPredicates()
 // are conflicting predicates. Resolve conflict will pick any
 // one of them (in this case we may like to get A < 2, but
 // this is difficult to do in the optimizer)
-#pragma nowarn(262)   // warning elimination
 void KeyColumns::KeyColumn::resolveConflict()
 {
 
@@ -2603,7 +2592,6 @@ void KeyColumns::KeyColumn::resolveConflict()
 
     }
 } // resolveConflict(...)
-#pragma warn(262)  // warning elimination
 
 
 //---------------------------------------------------------
@@ -2648,7 +2636,6 @@ void KeyColumns::insertColumn(const ValueId& column)
 } // KeyColumns::insertColumn(..)
 
 
-#pragma nowarn(262)   // warning elimination
 void KeyColumns::append(const ValueIdSet& andPredicateExpression)
 
 {
@@ -2667,7 +2654,6 @@ void KeyColumns::append(const ValueIdSet& andPredicateExpression)
     } // for every predicate
 
 } // KeyColumns::fill(..)
-#pragma warn(262)  // warning elimination
 
 
 KeyColumns::~KeyColumns()
@@ -2749,7 +2735,6 @@ void KeyColumns::insertPredicate(const ValueId& predicate)
   insertPredicate(predicate,NULL);
 }
 
-#pragma nowarn(262)   // warning elimination
 void KeyColumns::insertPredicate(const ValueId& predicate,
                                  const ValueId* columnPtr)
 {
@@ -2881,7 +2866,6 @@ void KeyColumns::insertPredicate(const ValueId& predicate,
   // and T1.A is a key col. but T1.D is not a key col.
 
 } // KeyColumns::insertPredicate(..)
-#pragma warn(262)  // warning elimination
 
 
 void KeyColumns::clear()
@@ -3024,17 +3008,13 @@ ColumnOrderList::ColumnOrderList(const ValueIdList& listOfColumns):
 
 void ColumnOrderList::validateOrder(CollIndex order)
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(order >= 0 && order < columnList_.entries());
-#pragma warn(270)  // warning elimination
   orderKeyColumnPtrList_[order] = getKeyColumnPtr(columnList_[order]);
 }
 
 void ColumnOrderList::invalidateOrder(CollIndex order)
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(order >= 0 && order < columnList_.entries());
-#pragma warn(270)  // warning elimination
   orderKeyColumnPtrList_[order] = NULL;
 }
 
@@ -3051,9 +3031,7 @@ void ColumnOrderList::invalidateAllColumns()
 const ColumnOrderList::KeyColumn* ColumnOrderList::
 getPredicateExpressionPtr(CollIndex order) const
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(order >= 0 && order < orderKeyColumnPtrList_.entries());
-#pragma warn(270)  // warning elimination
   if (orderKeyColumnPtrList_[order] == NULL)
     return NULL;
   else
@@ -3082,9 +3060,7 @@ void ColumnOrderList::setStopColumn(CollIndex stopColumn)
 
 void ColumnOrderList::resolveConflict(CollIndex order)
 {
-#pragma nowarn(270)   // warning elimination
   DCMPASSERT(order >= 0 && order < orderKeyColumnPtrList_.entries());
-#pragma warn(270)  // warning elimination
   if (orderKeyColumnPtrList_[order] != NULL)
     {
       orderKeyColumnPtrList_[order]->resolveConflict();

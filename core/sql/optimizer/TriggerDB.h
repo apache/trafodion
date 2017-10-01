@@ -60,7 +60,6 @@ class TableOp : public NABasicObject
 public:
 
   // explicit ctor
-// warning elimination (removed "inline")
   TableOp(QualifiedName &subjectTable, ComOperation operation)
     : subjectTable_(subjectTable),
       operation_(operation)

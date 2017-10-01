@@ -134,24 +134,18 @@ Int32 na_wcsnncmp (const NAWchar *wstr1, UInt32 len1,
         return 0;
     }
   else
-#pragma nowarn(1506)   // warning elimination
     return *--wstr1 - *--wstr2;
 //    return (*(const UInt16*)--wstr1 - *(const UInt16*)--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 na_wcsncmp (const NAWchar * wstr1, const NAWchar * wstr2, UInt32 len)
 {
    if ( len == 0 ) return 0;
 
-#pragma warning (disable : 4018)   //warning elimination
    for (Int32 i=0; i<len; i++ )
-#pragma warning (default : 4018)   //warning elimination
    {
      if ( *wstr1 != *wstr2 )
-#pragma nowarn(1506)   // warning elimination 
         return ( *wstr1 - *wstr2 );
-#pragma warn(1506)  // warning elimination 
 
      if ( *wstr1 == 0 ) break;
 
@@ -166,9 +160,7 @@ Int32 na_wcscmp (const NAWchar * wstr1, const NAWchar * wstr2)
    while (*wstr1 == *wstr2++)
 		if (*wstr1++ == 0)
 			return (0);
-#pragma nowarn(1506)   // warning elimination 
 	return (*wstr1 - *--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 
 #if 0 /* As of 8/30/2011, there are no callers in SQ SQL. */
@@ -177,9 +169,7 @@ Int32 na_wcsicmp (const NAWchar * wstr1, const NAWchar * wstr2)
    while (na_towlower(*wstr1) == na_towlower(*wstr2++))
 		if (*wstr1++ == 0)
 			return (0);
-#pragma nowarn(1506)   // warning elimination 
 	return (*wstr1 - *--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 #endif /* As of 8/30/2011, there are no callers in SQ SQL. */
 

@@ -719,9 +719,7 @@ Lng32 CliGlobals::setEnvVars(char ** envvars)
   for (nEnvs=0; envvars[nEnvs]; nEnvs++);
 
   // one extra to null terminate envvar list
-#pragma nowarn(1506)   // warning elimination 
   Lng32 envvarsLen = (nEnvs + 1) * sizeof(char*);
-#pragma warn(1506)  // warning elimination 
 
   Int32 count;
   for (count=0; count < nEnvs; count++) 

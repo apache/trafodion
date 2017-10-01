@@ -40,9 +40,7 @@
 #include "NAAssert.h"
 #include "SQLCLIdev.h"
 
-  #pragma nowarn (1506) // warning elimination
   #include <iostream>
-  #pragma warn (1506) // warning elimination
 
 
 // To debug an inline function:

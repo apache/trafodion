@@ -151,7 +151,6 @@ const QualifiedName& NAColumn::getNotNullConstraintName() const
   return isNotNullNondroppable_->getConstraintName();
 }
 
-// warning elimination (removed "inline")
 static NAString makeTableName(const NATable *table,
 			      const TrafColumnsDesc *column_desc)
 {
@@ -160,7 +159,6 @@ static NAString makeTableName(const NATable *table,
        table->getTableName().getQualifiedNameAsAnsiString().data() : "");
 }
 
-// warning elimination (removed "inline")
 static NAString makeColumnName(const NATable *table,
 			       const TrafColumnsDesc *column_desc)
 {
@@ -652,9 +650,7 @@ void NAColumnArray::print(FILE* ofd, const char* indent, const char* title,
 {
   Space * space = (Space *)c;
   char mybuf[1000];
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   for (CollIndex i = 0; i < entries(); i++)
   {
     snprintf(mybuf, sizeof(mybuf), "%s%s[%2d] =", NEW_INDENT, title, i);
@@ -696,19 +692,15 @@ NAColumnArray::~NAColumnArray()
 
 }
 
-#pragma nowarn(1506)   // warning elimination
 void NAColumnArray::deepDelete()
 {
-#pragma warning (disable : 4244)   //warning elimination
   unsigned short members = this->entries();
-#pragma warning (default : 4244)   //warning elimination
   for( unsigned short i=0;i<members;i++)
   {
     (*this)[i]->deepDelete();
     delete (*this)[i];
   }
 }
-#pragma warn(1506)  // warning elimination
 void NAColumnArray::insertAt(CollIndex index, NAColumn * newColumn)
 {
   LIST(NAColumn *)::insertAt(index,newColumn);

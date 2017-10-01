@@ -808,9 +808,7 @@ ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 buffLen = getOperand(1)->getLength(op_data[1]);
-#pragma warn(1506)   // warning elimination 
   
   // Get the position from operand 2.
   Lng32 pos = *(Lng32 *)op_data[2];
@@ -829,9 +827,7 @@ ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
 
   unsigned char onechar = *(unsigned char *)(op_data[1] + charnum);
   unsigned char mask = 1;
-#pragma nowarn(1506)   // warning elimination 
   mask = mask<<bitnum;
-#pragma warn(1506)   // warning elimination 
 
   *((ULng32*)op_data[0]) = (ULng32) (mask & onechar ? 1 : 0);
 
@@ -845,10 +841,8 @@ ex_expr::exp_return_type ex_function_is_bitwise_and_true::eval(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 leftSize = getOperand(1)->getLength(op_data[1]);
   Lng32 rightSize = getOperand(2)->getLength(op_data[2]);
-#pragma warn(1506)   // warning elimination 
   
   if (leftSize != rightSize)
   {
@@ -933,10 +927,8 @@ ex_expr::exp_return_type ex_function_concat::eval(char *op_data[],
 						  CollHeap *heap,
 						  ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)   // warning elimination 
 
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
@@ -1346,9 +1338,7 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
   char trimCharSmallBuf[lenTrimCharSmallBuf];
 
   // find out the length of trim character.
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)   // warning elimination 
 
   CharInfo::CharSet cs = ((SimpleType *)getOperand(0))->getCharSet();
 
@@ -1381,9 +1371,7 @@ ex_expr::exp_return_type ex_function_trim_char::eval(char *op_data[],
       return ex_expr::EXPR_ERROR;
     }   
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)   // warning elimination 
 
   if (cs == CharInfo::UTF8) // If so, must ignore any filler spaces at end of string
   {
@@ -1782,9 +1770,7 @@ ex_expr::exp_return_type ex_function_oct_length::eval(char *op_data[],
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
      len1 = Attributes::trimFillerSpaces( op_data[1], prec1, len1, cs );
   }
-#pragma nowarn(1506)   // warning elimination 
   *(Lng32 *)op_data[0] = len1;
-#pragma warn(1506)   // warning elimination 
   
   return ex_expr::EXPR_OK;
 };
@@ -2017,9 +2003,7 @@ ex_expr::exp_return_type ExFunctionConvertHex::eval(char *op_data[],
 {
   static const char HexArray[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if (getOperType() == ITM_CONVERTTOHEX)
     {
       Int32 i;
@@ -2079,27 +2063,17 @@ ex_expr::exp_return_type ExFunctionConvertHex::eval(char *op_data[],
 	      unsigned char upper4Bits;
 	      unsigned char lower4Bits;
 	      if ((op_data[1][i] >= '0') && (op_data[1][i] <= '9'))
-#pragma nowarn(1506)   // warning elimination 
 		upper4Bits = (unsigned char)(op_data[1][i]) - '0';
-#pragma warn(1506)  // warning elimination 
 	      else
-#pragma nowarn(1506)   // warning elimination 
 		upper4Bits = (unsigned char)(op_data[1][i]) - 'A' + 10;
-#pragma warn(1506)  // warning elimination 
 
 	      if ((op_data[1][i+1] >= '0') && (op_data[1][i+1] <= '9'))
-#pragma nowarn(1506)   // warning elimination 
 		lower4Bits = (unsigned char)(op_data[1][i+1]) - '0';
-#pragma warn(1506)  // warning elimination 
 	      else
-#pragma nowarn(1506)   // warning elimination 
 		lower4Bits = (unsigned char)(op_data[1][i+1]) - 'A' + 10;
-#pragma warn(1506)  // warning elimination 
 
 	      
-#pragma nowarn(1506)   // warning elimination 
 	      op_data[0][j] = (upper4Bits << 4) | lower4Bits;
-#pragma warn(1506)  // warning elimination 
 
 	      i += 2;
 	      j++;
@@ -2227,9 +2201,7 @@ ex_function_char_length_doublebyte::eval(char *op_data[],
   // The data type of result is long.
 
   *(Lng32 *)op_data[0] = 
-#pragma nowarn(1506)   // warning elimination 
 	(getOperand(1)->getLength(op_data[-MAX_OPERANDS+1])) >> 1;
-#pragma warn(1506)  // warning elimination 
 
 
   return ex_expr::EXPR_OK;
@@ -2243,9 +2215,7 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 
 
   // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -2253,9 +2223,7 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
   }
   
   // in operand 2
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
@@ -2303,17 +2271,13 @@ ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
 						    CollHeap*,
 						    ComDiagsArea**)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
   
   // If len1 is 0, return a position of 1.
   Lng32 position = 1;
   if (len1 > 0)
     {
-#pragma nowarn(1506)   // warning elimination 
       Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
 
       NAWchar* pat = (NAWchar*)op_data[1];
       NAWchar* source = (NAWchar*)op_data[2];
@@ -2372,9 +2336,7 @@ ex_expr::exp_return_type ExFunctionTokenStr::eval(char *op_data[],
 {
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
   // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -2382,9 +2344,7 @@ ex_expr::exp_return_type ExFunctionTokenStr::eval(char *op_data[],
   }
   
   // in operand 2
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
@@ -2792,9 +2752,7 @@ ex_expr::exp_return_type ex_function_dayofweek::eval(char *op_data[],
   month = *datetimeOpData++;
   day = *datetimeOpData;
   interval = datetimeOpType->getTotalDays(year, month, day);
-#pragma nowarn(1506)   // warning elimination 
   unsigned short result = (unsigned short)((interval + 1) % 7) + 1;
-#pragma warn(1506)  // warning elimination 
   str_cpy_all(op_data[0], (char *) &result, sizeof(result));
   return ex_expr::EXPR_OK;
 }
@@ -3504,9 +3462,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
     //
     if (source[0] & 0200) {
       for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
         target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
     } else {
       if (target != source)
         str_cpy_all(target, source, length);
@@ -4328,7 +4284,6 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
   if (forInsert_)
     {
       // move source to target. No blankpadding.
-#pragma nowarn(1506)   // warning elimination 
       return convDoIt(op_data[1],
 		      getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]),
 		      getOperand(1)->getDatatype(),
@@ -4343,12 +4298,10 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
 		      getOperand(0)->getVCIndicatorLength(),
 		      heap,
 		      diagsArea);
-#pragma warn(1506)  // warning elimination 
     }
   else
     {
       // move source to target. Blankpad target to maxLength.
-#pragma nowarn(1506)   // warning elimination 
       if (convDoIt(op_data[1],
 		   getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]),
 		   getOperand(0)->getDatatype(),
@@ -4364,7 +4317,6 @@ ex_expr::exp_return_type ex_function_explode_varchar::eval(char *op_data[],
 		   heap,
 		   diagsArea))
 	return ex_expr::EXPR_ERROR;
-#pragma warn(1506)  // warning elimination 
       
       // Move max length to length bytes of target.
       getOperand(0)->setVarLength(getOperand(0)->getLength(),
@@ -5339,9 +5291,7 @@ ex_expr::exp_return_type ExpRaiseErrorFunction::eval(char *op_data[],
   
 	if (getNumOperands()==2) 
         {
-#pragma nowarn(1506)   // warning elimination 
            Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
            op_data[1][len1] = '\0';
            *(*diagsArea) << DgString1(op_data[1]);  // The string expression
 	} 
@@ -5431,9 +5381,7 @@ ex_expr::exp_return_type ExFunctionPack::eval(char* op_data[],
     char* nullByte = op_data[0] + nullBitOffsetInBytes + sizeof(Int32);
 
     // Used to set/unset the null bit.
-#pragma nowarn(1506)   // warning elimination 
     unsigned char nullByteMask = (1 << nullBitOffsetInBits);
-#pragma warn(1506)  // warning elimination 
 
     // Turn bit off/on depending on whether operand is null.
     if(nullFlag == 0)
@@ -5492,20 +5440,16 @@ ex_expr::exp_return_type ExFunctionPack::eval(char* op_data[],
         if(bitsToCopyThisRound > bitsToCopy) bitsToCopyThisRound = bitsToCopy;
 
         // Mask has ones in the those positions where bits will be copied to.
-#pragma nowarn(1506)   // warning elimination 
         unsigned char mask = ((0xFF >> tgtBitOffset) <<
                               (8 - bitsToCopyThisRound)) >>
                               (8 - tgtBitOffset - bitsToCopyThisRound);
-#pragma warn(1506)  // warning elimination 
 
         // Clear target bits. Keep other bits unchanged in the target byte.
         (*tgtBytePtr) &= (~mask);
 
         // Align source bits with its the destination. Mask off other bits.
         unsigned char srcByte = *(op_data[1] + srcByteOffset);
-#pragma nowarn(1506)   // warning elimination 
         srcByte = ((srcByte >> srcBitOffset) << tgtBitOffset) & mask;
-#pragma warn(1506)  // warning elimination 
 
         // Make the copy.
         (*tgtBytePtr) |= srcByte;
@@ -5598,9 +5542,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
     // The byte of the CHAR field containing the bit.
     //
-#pragma nowarn(1506)   // warning elimination 
     Lng32 byteOffset = sizeof(Int32) + (bitOffset >> 3);
-#pragma warn(1506)  // warning elimination 
 
     // The bit of the byte at byteOffset to be extracted.
     //
@@ -5685,9 +5627,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
 
       // The index into the byte of the value.
       //
-#pragma nowarn(1506)   // warning elimination 
       Lng32 itemIndex = index & ( itemsPerByte - 1);
-#pragma warn(1506)  // warning elimination 
 
       // A mask to extract an item of size width.
       //
@@ -5712,14 +5652,10 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
     //
     switch(getOperand(0)->getLength()) {
     case 1:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned char *)op_data[0] = value;
-#pragma warn(1506)  // warning elimination 
       return ex_expr::EXPR_OK;
     case 2:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = value;
-#pragma warn(1506)  // warning elimination 
       return ex_expr::EXPR_OK;
     case 4:
       *(ULng32 *)op_data[0] = value;
@@ -5731,9 +5667,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
       return ex_expr::EXPR_ERROR;
     }
 
-#pragma nowarn(203)   // warning elimination 
     return ex_expr::EXPR_OK;
-#pragma warn(203)  // warning elimination 
   }
 
 
@@ -5813,9 +5747,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
       // to the destination.  This is the first time this
       // byte is written to.
       //
-#pragma nowarn(1506)   // warning elimination 
       op_data[0][dindex] = byte >> rshift;
-#pragma warn(1506)  // warning elimination 
     }
 
     dindex++;
@@ -5827,9 +5759,7 @@ ExUnPackCol::eval(char *op_data[], CollHeap *heap, ComDiagsArea **diagsArea)
   //
   for(i = 0; i < (Lng32) getOperand(0)->getLength(); i++) {
 
-#pragma nowarn(1506)   // warning elimination 
     unsigned char mask = (width > 7) ? 0xFF : masks[width];
-#pragma warn(1506)  // warning elimination 
     
     op_data[0][i] &= mask;
     width -= 8;
@@ -5857,7 +5787,6 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
   ULng32 convFlags = (flags_ & TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT ?
                       CONV_ALLOW_INVALID_CODE_VALUE : 0);
 
-#pragma nowarn(1506)   // warning elimination 
       return convDoIt(op_data[1],
         op1->getLength(op_data[-MAX_OPERANDS + 1]),
         op1->getDatatype(),
@@ -5875,7 +5804,6 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
         (ConvInstruction)convType,
         NULL,
         convFlags);
-#pragma warn(1506)  // warning elimination 
 }
   
 void ExFunctionRandomNum::initSeed(char *op_data[])
@@ -5892,9 +5820,7 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
       if (getNumOperands() == 2)
 	{
 	  // seed is specified as an argument. Use it.
-#pragma nowarn(1506)   // warning elimination 
 	  seed_ = *(ULng32 *)op_data[1];
-#pragma warn(1506)  // warning elimination 
 	  return;
 	}
 
@@ -6012,9 +5938,7 @@ void ExFunctionRandomSelection::initDiff()
     // reset the selProbability_ to original value in case this function
     // gets called again
     
-#pragma nowarn(1506)   // warning elimination 
     selProbability_ += difference_;
-#pragma warn(1506)  // warning elimination 
   }
 }
 
@@ -6060,12 +5984,8 @@ ex_expr::exp_return_type ExProgDistrib::eval(char *op_data[],
   ULng32 i = 2;
 
   while(offset >= i && i <= totNumValues) {
-#pragma nowarn(1506)   // warning elimination 
     Lng32 n1 = offset % i;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     Lng32 n2 = offset / i;
-#pragma warn(1506)  // warning elimination 
     if (n1 == 0) {
       offset = (i-1) * (n2 - 1) + resultValue;
       resultValue = i;
@@ -6569,9 +6489,7 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
 {
     CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
     // search for operand 1
-#pragma nowarn(1506)   // warning elimination 
     Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
     if ( cs == CharInfo::UTF8 )
     {
         Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -6579,9 +6497,7 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
     }
 
     // in operand 2
-#pragma nowarn(1506)   // warning elimination 
     Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
     if ( cs == CharInfo::UTF8 )
     {
         Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
@@ -7254,9 +7170,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     {
       // compliment all bytes
       for (Lng32 k = 0; k < encodedKeyLen; k++)
-#pragma nowarn(1506)   // warning elimination 
 	target[k] = ~(source[k]);
-#pragma warn(1506)  // warning elimination 
       
       source = target;
     }
@@ -7442,9 +7356,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     //
     if (NOT(source[0] & 0200)) {
       for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
         target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
     } else {
       if (target != source)
         str_cpy_all(target, source, length);
@@ -7496,9 +7408,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 	// this was a negative number.
 	// flip all bits.
 	for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
 	  target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
       }
 
     // here comes the dependent part
@@ -7546,9 +7456,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 	// this was a negative number.
 	// flip all bits.
 	for (Lng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination 
 	  target[i] = ~source[i];
-#pragma warn(1506)  // warning elimination 
       }
 
     // here comes the dependent part
@@ -8606,4 +8514,3 @@ aes_decrypt_error:
 
   return ex_expr::EXPR_ERROR;
 }
-#pragma warn(1506)  // warning elimination 

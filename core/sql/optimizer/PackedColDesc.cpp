@@ -115,9 +115,7 @@
 Lng32
 PackedColDesc::determinePackedColSize(Lng32 packingFactor) const
 {
-#pragma nowarn(1026)   // warning elimination 
   const Int32 BitsPerByte = 8;
-#pragma warn(1026)  // warning elimination 
 
   const NAType *colType = getType();
 
@@ -185,9 +183,7 @@ PackedColDesc::generatePackingInfo(Lng32 packingFactor)
 
   CMPASSERT(packingFactor > 1);
 
-#pragma nowarn(1026)   // warning elimination 
   const Int32 BitsPerByte = 8;
-#pragma warn(1026)  // warning elimination 
 
   const NAType *colType = getType();
       
@@ -232,9 +228,7 @@ Lng32
 PackedAPDesc::determinePackingFactor(Lng32 maxPackedRecLen) const
 {
 
-#pragma nowarn(1026)   // warning elimination 
   const Int32 BitsPerByte = 8;
-#pragma warn(1026)  // warning elimination 
 
   PackedColDescList apCols = getAPColumns();
 
@@ -300,12 +294,10 @@ PackedAPDesc::determinePackingFactor(Lng32 maxPackedRecLen) const
   // The keySizeinBytes is for the SYSKEY (one per AP).
   // The (SQL_INT_SIZE * numUserColumns) is for the NUM_ROWS fields.
   //
-#pragma nowarn(1506)   // warning elimination 
   Lng32 packingFactor =
     ((maxPackedRecLen - keySizeInBytes - (SQL_INT_SIZE * numUserColumns))
      * BitsPerByte) /
     (numNullFlags + dataSizeInBits);
-#pragma warn(1506)  // warning elimination 
 
   return packingFactor;
 }
@@ -489,15 +481,11 @@ PackedTableDesc::generatePackingInfo()
   // The maximum size of any packed AP (which could have more than
   // one column.
   //
-#pragma nowarn(1026)   // warning elimination 
   const Int32 MaxPackedAPSize = 4000;
-#pragma warn(1026)  // warning elimination 
 
   // The maximum size of all the packed AP's of this table.
   //
-#pragma nowarn(1026)   // warning elimination 
   const Int32 MaxPackedTableSize = 24000;
-#pragma warn(1026)  // warning elimination 
 
   // The current minimum packing factor.  This will be the packing
   // factor limited by MaxPackedAPSize for the worst case AP.
@@ -550,9 +538,7 @@ PackedTableDesc::generatePackingInfo()
       if(packedTableSize > MaxPackedTableSize) {
 
         float packingFactorAdj = MaxPackedTableSize/(float)packedTableSize;
-#pragma nowarn(1506)   // warning elimination 
         minPackingFactor = (Int32)(minPackingFactor * packingFactorAdj) - 1;
-#pragma warn(1506)  // warning elimination 
       }
     }
   }

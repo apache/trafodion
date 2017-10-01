@@ -366,7 +366,6 @@ NAClusterInfo::numOfSMPs()
   return result; 
 
 } // NAClusterInfo::numOfSMPs()  
-#pragma warn(1506)  // warning elimination 
 
 // Returns total number of CPUs (including down CPUs)
 Lng32 NAClusterInfo::getTotalNumberOfCPUs()

@@ -410,9 +410,7 @@ Lng32 ComRtGetMPSysCatName(
       {
 	if (sysName[i] == ' ') break;
       }
-#pragma nowarn(1506)   // warning elimination
     str_cpy_all(sysCatLoc, sysName, i);
-#pragma warn(1506)  // warning elimination
     if (i)
       sysCatLoc[i++] = '.';
     z = i;
@@ -424,26 +422,16 @@ Lng32 ComRtGetMPSysCatName(
       }
     //ComDEBUG(i > 2);
     sysCatLoc[z++] = '$';
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(252)   // warning elimination
     str_cpy_all(sysCatLoc + z, tab->cat_volname + 2, i - 2);
-#pragma warn(252)  // warning elimination
-#pragma warn(1506)  // warning elimination
     z += i - 2;
     sysCatLoc[z++] = '.';
     for (i = 0; i < 8; i++)  //padded with blanks
       {
 	if (tab->cat_subvolname[i] == ' ') break;
       }
-#pragma nowarn(252)   // warning elimination
-#pragma nowarn(1506)   // warning elimination
     str_cpy_all(sysCatLoc + z, tab->cat_subvolname, i);
-#pragma warn(252)  // warning elimination
-#pragma warn(1506)  // warning elimination
     sysCatLoc[z+i] = '\0';
-#pragma nowarn(1506)   // warning elimination
     *sysCatLength = (Lng32)z+i;
-#pragma warn(1506)  // warning elimination
 
   }
 
@@ -475,9 +463,7 @@ void ComRt_Upshift (char * buf)
 
         while (*pBuf)
         {
-#pragma nowarn(1506)   // warning elimination
 	    *pBuf = TOUPPER(*pBuf);
-#pragma warn(1506)  // warning elimination
             ++pBuf;
         }
     }
@@ -543,9 +529,7 @@ NABoolean ComRtGetEnvValue(const char * envvar, Lng32 * envvarValue)
     // envvar not there or no value
     return FALSE;
 
-#pragma nowarn(1506)   // warning elimination
   Int32 max = strlen(ptr);
-#pragma warn(1506)  // warning elimination
   Lng32 tempValue = 0;
   for (Int32 i = 0;i < max;i++)
   {

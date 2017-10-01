@@ -172,9 +172,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
 
   // initialize CmpStatement related members.
   statements_.insert(0);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(0);
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
 
   diags_ = ComDiagsArea::allocate(heap_);
@@ -595,9 +593,7 @@ void CmpContext::setStatement(CmpStatement* s)
   init();
   statements_.insert(s);
   s->setPrvCmpStatement(statements_[currentStatement_]);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(s);
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
 
   // Commented this out, as init() is now a no-op:
@@ -608,9 +604,7 @@ void CmpContext::unsetStatement(CmpStatement* s, NABoolean exceptionRaised)
 {
   CollIndex i = statements_.index(s);
   statements_.removeAt(i);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(s->prvCmpStatement());
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
   for ( i = 0; i < statements_.entries(); i++ )
     if (statements_[i] && statements_[i]->prvCmpStatement() == s)
@@ -624,9 +618,7 @@ void CmpContext::unsetStatement(CmpStatement* s, NABoolean exceptionRaised)
 void CmpContext::setCurrentStatement(CmpStatement* s)
 {
   CollIndex i = statements_.index(s);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = ( i == NULL_COLL_INDEX ) ? 0 : i;
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
   CMPASSERT(s->diags()->getNumber() == 0);
   // diags()->clear();

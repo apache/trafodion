@@ -38,7 +38,6 @@ const NAType *ItmDoWhileFunction::synthesizeType() {
 
 // copyTopNode
 //
-#pragma nowarn(770)   // warning elimination 
 ItemExpr *ItmDoWhileFunction::copyTopNode(ItemExpr *derivedNode, 
 					 CollHeap *outHeap) {
   ItemExpr *result;
@@ -51,7 +50,6 @@ ItemExpr *ItmDoWhileFunction::copyTopNode(ItemExpr *derivedNode,
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 };
-#pragma warn(770)  // warning elimination 
 
 
 //
@@ -68,7 +66,6 @@ const NAType *ItmBlockFunction::synthesizeType() {
 
 // copyTopNode
 //
-#pragma nowarn(770)   // warning elimination 
 ItemExpr *ItmBlockFunction::copyTopNode(ItemExpr *derivedNode, 
 					 CollHeap *outHeap) {
   ItemExpr *result;
@@ -81,7 +78,6 @@ ItemExpr *ItmBlockFunction::copyTopNode(ItemExpr *derivedNode,
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 };
-#pragma warn(770)  // warning elimination 
 
 //
 // ItmWhile
@@ -95,7 +91,6 @@ const NAType *ItmWhileFunction::synthesizeType() {
 
 // copyTopNode
 //
-#pragma nowarn(770)   // warning elimination 
 ItemExpr *ItmWhileFunction::copyTopNode(ItemExpr *derivedNode, 
 					 CollHeap *outHeap) {
   ItemExpr *result;
@@ -108,7 +103,6 @@ ItemExpr *ItmWhileFunction::copyTopNode(ItemExpr *derivedNode,
 
   return BuiltinFunction::copyTopNode(derivedNode, outHeap);
 };
-#pragma warn(770)  // warning elimination 
 
 
 

@@ -67,8 +67,6 @@ short getIntervalFields(Lng32 fsDatatype,
 //  IntervalType : The interval data type
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(1319)  // warning elimination
 class IntervalType : public DatetimeIntervalCommonType
 {
 public:
@@ -314,8 +312,6 @@ private:
   unsigned short leadingPrecision_;
 
 }; // class IntervalType
-#pragma warn(1506)  // warning elimination
-#pragma warn(1319)  // warning elimination
 
 // ***********************************************************************
 //

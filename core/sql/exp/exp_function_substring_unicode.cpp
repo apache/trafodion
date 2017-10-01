@@ -61,9 +61,7 @@ ex_expr::exp_return_type ex_function_substring_doublebyte::eval(char *op_data[],
 						 CollHeap* heap,
 						 ComDiagsArea** diagsArea)
 {
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
 
   len1 /= sizeof(NAWchar); // len1 now counts in terms of number of NCHARs.
   

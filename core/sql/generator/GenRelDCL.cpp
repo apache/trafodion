@@ -231,10 +231,8 @@ short RelTransaction::codeGen(Generator * generator)
 	       (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 	       (queue_index)getDefault(GEN_TRAN_SIZE_DOWN),
 	       (queue_index)getDefault(GEN_TRAN_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	       getDefault(GEN_TRAN_NUM_BUFFERS), 
 	       getDefault(GEN_TRAN_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(trans_tdb);
 
   // SET TRANSACTION is allowed within a transaction, if this query
@@ -358,10 +356,8 @@ short RelSetTimeout::codeGen(Generator * generator)
 		   (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 		   (queue_index)getDefault(GEN_TIMEOUT_SIZE_DOWN),
 		   (queue_index)getDefault(GEN_TIMEOUT_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 		   getDefault(GEN_TIMEOUT_NUM_BUFFERS),
 		   getDefault(GEN_TIMEOUT_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   timeout_tdb->setStream( isStream_ );  // set the flags in the TCB
   timeout_tdb->setReset( isReset_ );

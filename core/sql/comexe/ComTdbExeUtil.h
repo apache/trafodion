@@ -217,7 +217,6 @@ protected:
   char fillersComTdbExeUtil_[104];          // 40-135
 
 };
-#pragma warn(1506)  // warning elimination
 
 
 static const ComTdbVirtTableColumnInfo exeUtilDisplayExplainVirtTableColumnInfo[] =

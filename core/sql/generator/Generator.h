@@ -89,7 +89,6 @@ struct CifAvgVarCharSizeCache
 //////////////////////////////////////////////////////////////////////////
 // class Generator
 //////////////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination
 class Generator : public NABasicObject
 {
   enum {TRANSACTION_FLAG   = 0x0001,   // transaction is needed somewhere
@@ -1695,7 +1694,6 @@ public:
   inline ULng32 getTopNRows() { return topNRows_; }
         
 }; // class Generator
-#pragma warn(1506)   // warning elimination
 
 class GenOperSimilarityInfo : public NABasicObject
 {

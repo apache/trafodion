@@ -350,14 +350,10 @@ ExWorkProcRetcode ExVPJoinTcb::workUp()
 
 		      // Append this child's output to result ATP.
 		      //
-#pragma nowarn(1506)   // warning elimination 
 		      short numResTups = reply->numTuples()-vpJoinTdb().firstReplyAtpIx_;
-#pragma warn(1506)  // warning elimination 
 		      short dest_start_tupp = outIx;
 		      short src_start_tupp = vpJoinTdb().firstReplyAtpIx_;
-#pragma nowarn(1506)   // warning elimination 
 		      short src_end_tupp =  numResTups + vpJoinTdb().firstReplyAtpIx_ - 1;
-#pragma warn(1506)  // warning elimination 
 		      
 
 		      resAtp->copyPartialAtp(reply->getAtp(), // source atp

@@ -104,7 +104,6 @@ enum {
 //  ParKeyWord : A description of a key word.
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
 class ParKeyWord : public NABasicObject
 {
 public:
@@ -187,7 +186,6 @@ private:
   //
   UInt32 flags_;
 };
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 //

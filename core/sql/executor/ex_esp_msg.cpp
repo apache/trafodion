@@ -616,9 +616,7 @@ IpcMessageObjSize TupMsgBuffer::packObjIntoMessage(IpcMessageBufferPtr buffer)
   theBuffer_->drivePack();
 
   // now move the SqlBuffer
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(buffer,(char *) theBuffer_, theBuffer_->get_buffer_size());
-#pragma warn(1506)  // warning elimination 
 
   result += theBuffer_->get_buffer_size();
 
@@ -645,9 +643,7 @@ void TupMsgBuffer::unpackObj(IpcMessageObjType objType,
   ex_assert(allocSize_ >= (Lng32) sqlBufferSize,
 	    "TupMsgBuffer too small for unpack");
 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all((char *) theBuffer_, buffer, sqlBufferSize);
-#pragma warn(1506)  // warning elimination 
 
   // convert offsets in buffer to pointers
   theBuffer_->driveUnpack();
@@ -689,9 +685,7 @@ IpcMessageObjSize ExProcessIdsOfFrag::packObjIntoMessage(
      IpcMessageBufferPtr buffer)
 {
   IpcMessageObjSize result = packBaseClassIntoMessage(buffer);
-#pragma nowarn(1506)   // warning elimination 
   Int32 np = processIds_.entries();
-#pragma warn(1506)  // warning elimination 
 
   // pack fragment id and number of entries
   str_cpy_all(buffer, (const char *) &spare_, sizeof(spare_));
@@ -953,9 +947,7 @@ IpcMessageObjSize ExMsgFragment::packObjIntoMessage(IpcMessageBufferPtr buffer)
   }
   else
   {
-#pragma nowarn(1506)   // warning elimination 
     str_cpy_all(buffer,fragment_,f_.fragmentLength_);
-#pragma warn(1506)  // warning elimination 
     buffer += f_.fragmentLength_;
   }
 
@@ -1035,9 +1027,7 @@ void ExMsgFragment::unpackObj(IpcMessageObjType objType,
   }
   else
   {
-#pragma nowarn(1506)   // warning elimination 
     str_cpy_all(fragment_, buffer,f_.fragmentLength_);
-#pragma warn(1506)  // warning elimination 
     buffer += f_.fragmentLength_;
   }
 
@@ -1106,7 +1096,6 @@ ExMsgTimeoutData::packObjIntoMessage(IpcMessageBufferPtr buffer)
   return (IpcMessageObjSize) (buffer - start);
 }
 
-#pragma nowarn(262)   // warning elimination 
 void ExMsgTimeoutData::unpackObj(IpcMessageObjType objType,
 				 IpcMessageObjVersion objVersion,
 				 NABoolean sameEndianness,
@@ -1129,7 +1118,6 @@ void ExMsgTimeoutData::unpackObj(IpcMessageObjType objType,
 
   iOwnTD_ = TRUE;  // on the ESP side; I own the newly allocated timeoutData_
 }
-#pragma warn(262)  // warning elimination 
 
 
 
@@ -1289,9 +1277,7 @@ void ExMsgResourceInfo::unpackObj(IpcMessageObjType objType,
   // sfo_ is const
   sfo_ = sfo;
 
-#pragma nowarn(1506)   // warning elimination 
   sfo->ipcUnpackObj(objSize - (buffer-start),
-#pragma warn(1506)  // warning elimination 
 		    buffer,
 		    getHeap(),
 		    totalNameLength_,

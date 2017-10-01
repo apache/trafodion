@@ -186,9 +186,7 @@ short RelInternalSP::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returned_desc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
  
   // cri descriptor for work atp has 3 entries:
   // -- the first two entries for consts and temps.

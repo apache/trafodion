@@ -70,7 +70,6 @@ public:
 
   // The constructor
   //
-// warning elimination  (removed "inline")
   RelSequence(RelExpr *child = NULL,
               ItemExpr *requiredOrder = NULL,
               CollHeap *oHeap = CmpCommon::statementHeap());
@@ -380,16 +379,13 @@ private:
 // that is both a logical and physical node. The PhysSequence node
 // does not add any data members. It adds a few virtual methods.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 class PhysSequence : public RelSequence
 {
 public:
 
   // The constructor
   //
-#pragma nowarn(734)   // warning elimination
   PhysSequence(RelExpr *child = NULL,
-#pragma warn(734)   // warning elimination
                       CollHeap *oHeap = CmpCommon::statementHeap())
     : RelSequence(child, NULL, oHeap)
   {
@@ -572,6 +568,5 @@ private:
   Lng32 estHistoryRowLength_;
 
 }; // class PhysSequence
-#pragma warn(1506)  // warning elimination
 
 #endif

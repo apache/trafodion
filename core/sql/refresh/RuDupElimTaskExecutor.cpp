@@ -461,17 +461,13 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 	for (i=0; i<CRUDupElimConst::NUM_CONTROL_STMTS; i++)
 	{
 		comp.ComposeControlText(i);
-#pragma nowarn(1506)   // warning elimination 
 		ctrlStmtContainer_.SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 	}
 
 	for (i=0; i<CRUDupElimConst::NUM_QUERY_STMTS; i++)
 	{
 		comp.ComposeQueryText(i);
-#pragma nowarn(1506)   // warning elimination 
 		pLogScanner_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 	}
 
 	if (NULL != pSingleRowResolver_)
@@ -479,9 +475,7 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 		for (i=0; i<CRUDupElimConst::NUM_SINGLE_RESOLV_STMTS; i++)
 		{
 			comp.ComposeSingleRowResolvText(i);
-#pragma nowarn(1506)   // warning elimination 
 			pSingleRowResolver_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 		}
 	}
 
@@ -490,9 +484,7 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 		for (i=0; i<CRUDupElimConst::NUM_RNG_RESOLV_STMTS; i++)
 		{
 			comp.ComposeRangeResolvText(i);
-#pragma nowarn(1506)   // warning elimination 
 			pRangeResolver_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 		}
 	}
 }

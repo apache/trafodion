@@ -107,7 +107,6 @@ class Trigger : public NABasicObject
 public:	
 
   // Explicit ctor
-// warning elimination (removed "inline") 
   Trigger(const QualifiedName    &name,
 		 const QualifiedName	&subjectTable,
 		 ComOperation		operation,
@@ -178,7 +177,6 @@ public:
     { return (granularity_== COM_ROW); }
 
   // MV
-// warning elimination (removed "inline")
   virtual NABoolean isMVImmediate() const
     { return false; } // this is a regular trigger
 
@@ -311,7 +309,6 @@ public:
   {};
 
   virtual RelExpr *getParsedTrigger(BindWA *bindWA);
-// warning elimination (removed "inline")
   virtual NABoolean isMVImmediate() const 
     { return true; } // this is a special trigger (ON STATEMENT MV)
 
@@ -339,7 +336,6 @@ class UpdateColumns : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline")
   UpdateColumns(NABoolean allColumns)
     :  allColumns_(allColumns)
   {
@@ -450,7 +446,6 @@ public:
   // Should never be called. Needed for compilation. We rely on 
   // NAHashBucket::contains() being called with a default NULL argument for
   // Values in the triggerDB hash where BeforeAndAfterTriggers are Values.
-  // warning elimination (removed "inline")
   NABoolean operator == (const BeforeAndAfterTriggers &other) const 
     { CMPASSERT(FALSE); return FALSE; }
 

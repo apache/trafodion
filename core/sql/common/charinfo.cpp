@@ -345,9 +345,7 @@ CollationInfo::CollationInfo(CollHeap *h,
   namelen_ = strlen(name);	// allowed to be 0 if siz[] not passed in
   if (siz) {
     size_t cnt = siz[0];
-#pragma nowarn(270)   // warning elimination 
     ComASSERT(cnt >= 0 && cnt < MAX_NAME_PARTS);
-#pragma warn(270)  // warning elimination 
     ComASSERT(namelen_ > 0 && namelen_ == siz[1]);
     for (size_t off = 0; off < OFFSETARRAY_SIZE; off++) {
       synonymOffset_[off] = (off < cnt) ? siz[off+2] : 0;
@@ -649,9 +647,7 @@ const char* CharInfo::getLocaleCharSetAsString()
    } else
      return localeCharSet_;
 
-#pragma nowarn(203)   // warning elimination 
    return SQLCHARSETSTRING_UNKNOWN;
-#pragma warn(203)  // warning elimination 
 }
 
 Int32 CharInfo::getTargetCharTypeFromLocale()

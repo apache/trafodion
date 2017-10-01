@@ -293,12 +293,10 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::pCodeGenerate(Space *space, UIn
   // Fourth operand is the length of first operand. Data for this length
   // will be moved to result as the nee min/max value.
   AML aml(PCIT::MBIN8,PCIT::MBIN8,PCIT::MBIN32S,PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
         attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
         attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
         attrs[1]->getLength());
-#pragma warn(1506)   // warning elimination 
 
   PCI pci(PCIT::Op_MINMAX, aml, ol);
   code.append(pci);
@@ -497,12 +495,10 @@ ex_expr::exp_return_type ex_function_encode::pCodeGenerate(Space *space, UInt32 
 	      PCIT::getMemoryAddressingMode(attrs1Datatype),
 	      PCIT::IBIN32S,
 	      PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
       OL ol(tgt->getAtp(), tgt->getAtpIndex(),tgt->getOffset(),
 	    src->getAtp(), src->getAtpIndex(),src->getOffset(),
 	    tgt->getLength(),
 	    (isDesc()));
-#pragma warn(1506)   // warning elimination 
 
       // Add the encode instruction.
       //
@@ -527,11 +523,9 @@ ex_expr::exp_return_type ex_function_encode::pCodeGenerate(Space *space, UInt32 
       AML aml(PCIT::getMemoryAddressingMode(tgt->getDatatype()),
 	      PCIT::getMemoryAddressingMode(src->getDatatype()),
 	      PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
       OL ol(tgt->getAtp(), tgt->getAtpIndex(),tgt->getOffset(),
 	    src->getAtp(), src->getAtpIndex(),src->getOffset(),
 	    (isDesc()));
-#pragma warn(1506)   // warning elimination 
 
       // Add the encode instruction.
       //
@@ -634,11 +628,9 @@ ex_expr::exp_return_type ex_bool_clause::pCodeGenerate(Space *space, UInt32 f) {
   // The third operand is the memory location of the 2nd argument.
   //
   AML aml(PCIT::MBIN32S, PCIT::MBIN32S, PCIT::MBIN32S);
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
 	attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
 	attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset());
-#pragma warn(1506)   // warning elimination 
 
   // Generate the instruction
   //
@@ -688,9 +680,7 @@ ex_expr::exp_return_type bool_result_clause::pCodeGenerate(Space *space, UInt32 
   // The first operand is the memory location of the boolean return value.
   //
   AML aml(PCIT::MBIN32S);
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset());
-#pragma warn(1506)   // warning elimination 
 
   // Add the return instruction.
   //
@@ -1174,12 +1164,10 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
 	    PCIT::IBIN32S,
             PCIT::IBIN32S);
 
-#pragma nowarn(1506)   // warning elimination 
     OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
 	  attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
 	  attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
 	  attrs[2]->getLength(), (Int32)getOperType());
-#pragma nowarn(1506)   // warning elimination 
 
     // Add the comparison instruction.
     //
@@ -1494,10 +1482,8 @@ ex_expr::exp_return_type ex_function_bool::pCodeGenerate(Space *space, UInt32 f)
   // Second operand is the immediate value to store in the result
   //
   AML aml(PCIT::MBIN32S, PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
 	returnValue);
-#pragma warn(1506)  // warning elimination 
 
   // Add the move instruction.
   //
@@ -1743,11 +1729,9 @@ ex_expr::exp_return_type ex_function_hash::pCodeGenerate(Space *space, UInt32 f)
       UInt32 flags = ExHDPHash::NO_FLAGS;
 
       AML aml(PCIT::MBIN32U, oper, PCIT::IBIN32S, PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination
       OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
             attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
             flags, attrs[1]->getLength());
-#pragma warn(1506)  // warning elimination
       PCI pci(PCIT::Op_HASH, aml, ol);
       code.append( pci);
     }
@@ -1811,11 +1795,9 @@ ex_expr::exp_return_type ExHDPHashComb::pCodeGenerate(Space *space, UInt32 f) {
   AML aml(PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
           PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()),
           PCIT::getMemoryAddressingMode(attrs[2]->getDatatype()));
-#pragma nowarn(1506)   // warning elimination
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
         attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
         attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset());
-#pragma warn(1506)   // warning elimination
 
   // Generate the operator
   //
@@ -1875,11 +1857,9 @@ ex_expr::exp_return_type ExHashComb::pCodeGenerate(Space *space, UInt32 f) {
   AML aml(PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
 	  PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()),
 	  PCIT::getMemoryAddressingMode(attrs[2]->getDatatype()));
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
 	attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(),
 	attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset());
-#pragma warn(1506)   // warning elimination 
 
   // Generate the operator
   //
@@ -3134,11 +3114,9 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
     case CONV_BOOL_BOOL:
       {
 	AML aml(PCIT::MBIN8, PCIT::MBIN8, PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
 	OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
 	      src->getAtp(), src->getAtpIndex(), src->getOffset(),
 	      dst->getLength());
-#pragma warn(1506)  // warning elimination 
 	PCI pci(PCIT::Op_MOVE, aml, ol);
 	code.append(pci);
       }
@@ -3158,15 +3136,11 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 #ifdef NA_LITTLE_ENDIAN
 	Int32 srcOffset = src->getOffset();
 #else
-#pragma nowarn(1506)   // warning elimination 
 	Int32 srcOffset = src->getOffset() + src->getLength() - dst->getLength();
-#pragma warn(1506)  // warning elimination 
 #endif
-#pragma nowarn(1506)   // warning elimination 
 	OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
 	      src->getAtp(), src->getAtpIndex(), srcOffset,
 	      dst->getLength());
-#pragma warn(1506)  // warning elimination 
 	PCI pci(PCIT::Op_MOVE, aml, ol);
 	code.append(pci);
       }
@@ -3180,11 +3154,9 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 	AML aml(PCIT::getMemoryAddressingMode(dst->getDatatype()),
 		PCIT::getMemoryAddressingMode(src->getDatatype()),
 		PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
 	OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
 	      src->getAtp(), src->getAtpIndex(), src->getOffset(),
 	      dst->getPrecision());
-#pragma warn(1506)  // warning elimination 
 	PCI pci(PCIT::Op_MOVE, aml, ol);
 	code.append(pci);
       }
@@ -3199,11 +3171,9 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 	    AML aml(PCIT::getMemoryAddressingMode(dst->getDatatype()),
 		    PCIT::getMemoryAddressingMode(src->getDatatype()),
 		    PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
 	    OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
 		  src->getAtp(), src->getAtpIndex(), src->getOffset(),
 		  dst->getPrecision());
-#pragma warn(1506)  // warning elimination 
 	    PCI pci(PCIT::Op_MOVE, aml, ol);
 	    code.append(pci);
 	  }
@@ -3213,12 +3183,10 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 		    PCIT::IBIN32S,
 		    PCIT::getMemoryAddressingMode(src->getDatatype()),
 		    PCIT::IBIN32S, PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
 	    OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
 		  dst->getPrecision(),
 		  src->getAtp(), src->getAtpIndex(), src->getOffset(),
 		  src->getPrecision(), dst->getScale() - src->getScale());
-#pragma warn(1506)  // warning elimination 
 	    PCI pci(PCIT::Op_MOVE, aml, ol);
 	    code.append(pci);
 	  }
@@ -3230,13 +3198,9 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
 	AML aml(PCIT::getMemoryAddressingMode(dst->getDatatype()),
 		PCIT::getMemoryAddressingMode(src->getDatatype()),
 		PCIT::IBIN32S);
-#pragma nowarn(1506)   // warning elimination 
 	OL ol(dst->getAtp(), dst->getAtpIndex(), dst->getOffset(),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 	      src->getAtp(), src->getAtpIndex(), src->getOffset(),
 	      src->getLength());
-#pragma warn(1506)  // warning elimination 
 	PCI pci(PCIT::Op_MOVE, aml, ol);
 	code.append(pci);
       }
@@ -3574,7 +3538,6 @@ ex_expr::exp_return_type ex_function_mod::pCodeGenerate(Space *space, UInt32 f)
   AML aml(PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
 	  PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()),
 	  PCIT::getMemoryAddressingMode(attrs[2]->getDatatype()));
-#pragma nowarn(1506)   // warning elimination 
   OL ol(attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(), 
 	attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset(), 
 	attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset());
@@ -3597,7 +3560,6 @@ ex_expr::exp_return_type ex_function_mod::pCodeGenerate(Space *space, UInt32 f)
 
   return ex_expr::EXPR_OK;
 }
-#pragma warn(1506)  // warning elimination 
 
 
 

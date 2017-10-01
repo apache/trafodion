@@ -290,9 +290,7 @@ NABoolean ex_queue::allocateAtps(CollHeap * space,
       // at a time We are sent back the size of the atp struct since
       // it also allocates space for number of tuples per criDesc.
       numNewAtps = size_;
-#pragma nowarn(1506)   // warning elimination 
       atps = allocateAtpArray( criDesc_, numNewAtps, &atpSize, space, failureIsFatal);
-#pragma warn(1506)  // warning elimination 
     }
 
   // check whether the caller provided the ATPs or whether we were
@@ -354,16 +352,12 @@ NABoolean ex_queue::allocatePstate(ex_tcb * tcb,
 {
   queue_index i;
   ex_tcb_private_state *actualPstates = pstates;
-#pragma nowarn(1506)   // warning elimination 
   Lng32 actualNumPstates = numNewPstates;
-#pragma warn(1506)  // warning elimination 
   Lng32 actualPstateLength = pstateLength;
 
   if (actualPstates == NULL)
     {
-#pragma nowarn(1506)   // warning elimination 
       actualNumPstates = size_;
-#pragma warn(1506)  // warning elimination 
       // NOTE: actualNumPstates may be changed (reduced) by this call
       actualPstates = tcb->allocatePstates(actualNumPstates,
 					   actualPstateLength);
@@ -485,9 +479,7 @@ queue_index ex_queue::resize(ex_tcb *    tcb,
   // allocate array of ATPs if needed
   if (needAtps)
     {
-#pragma nowarn(1506)   // warning elimination 
       atps = allocateAtpArray(criDesc_, sizeDelta, &atpSize, space, FALSE);
-#pragma warn(1506)  // warning elimination 
 
       // for now, give up if it wasn't possible to allocate the ATPs in
       // one piece (one could try to allocate them one by one)
@@ -500,9 +492,7 @@ queue_index ex_queue::resize(ex_tcb *    tcb,
   // allocate an array of pstate objects if needed
   if (needsPstates_)
     {
-#pragma nowarn(1506)   // warning elimination 
       numAllocatedPstates = sizeDelta;
-#pragma warn(1506)  // warning elimination 
       pstates = tcb->allocatePstates(numAllocatedPstates,pstateLength);
       if (pstates == NULL)
 	{
@@ -801,9 +791,7 @@ void ex_queue::injectErrorOrCancel()
     {
        if ((rand() & (freq-1)) != 0)
          return;
-#pragma nowarn(269)   // warning elimination 
         NABoolean needsError = FALSE;
-#pragma warn(269)  // warning elimination 
         switch (qe->upState.status)
         {
         case Q_OK_MMORE:

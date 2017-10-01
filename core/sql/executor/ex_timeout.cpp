@@ -79,11 +79,9 @@ ExTimeoutTcb::ExTimeoutTcb(const ExTimeoutTdb & timeout_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(timeout_tdb.numBuffers_,
 				     timeout_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // Allocate the queue to communicate with parent
   qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -136,7 +134,6 @@ ExTimeoutTcb::~ExTimeoutTcb()
 //////////////////////////////////////////////////////
 // work() for ExTimeoutTcb
 //////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination
 short ExTimeoutTcb::work()
 {
   while (1) {
@@ -264,11 +261,8 @@ short ExTimeoutTcb::work()
     
     qparent_.down->removeHead();
   }  
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
-#pragma warn(262)  // warning elimination 
 
 // if diagsArea is not NULL, then its error code is used.
 // Otherwise, err is used to handle error.

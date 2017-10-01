@@ -143,10 +143,8 @@ const NAString PartitioningRequirement::getText() const
 	    {
 	      Lng32 lo, hi;
 	      hi = getCountOfPartitions();
-#pragma nowarn(1506)   // warning elimination 
 	      lo = hi - (Lng32) (hi * castToRequireApproximatelyNPartitions()-> 
 		getAllowedDeviation());
-#pragma warn(1506)  // warning elimination
 	      // if rounded down we may have to add one
 	      if (NOT castToRequireApproximatelyNPartitions()->
 		  isPartitionCountWithinRange(lo) OR
@@ -371,12 +369,8 @@ FullySpecifiedPartitioningRequirement::comparePartReqToReq
 
     ValueIdSet myPartKey = getPartitioningKey();
     ValueIdSet otherPartKey = other->getPartitioningKey();
-#pragma nowarn(1506)   // warning elimination 
     Lng32 myKeyCount = myPartKey.entries();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     Lng32 otherKeyCount = otherPartKey.entries();
-#pragma warn(1506)  // warning elimination 
     Lng32 myPartCount = getCountOfPartitions();
     Lng32 otherPartCount = other->getCountOfPartitions();
     float otherAllowedDeviation = 
@@ -391,12 +385,8 @@ FullySpecifiedPartitioningRequirement::comparePartReqToReq
 
     // Compare the required number of partitions.
     if ( (otherPartCount == ANY_NUMBER_OF_PARTITIONS) OR
-#pragma nowarn(1506)   // warning elimination 
          ((myPartCount >= (otherPartCount - 
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
                            (otherPartCount * otherAllowedDeviation))) AND
-#pragma warn(1506)  // warning elimination 
           (myPartCount <= otherPartCount)) )
       result = combine_compare_results(result,MORE);
     else
@@ -559,9 +549,7 @@ RequireApproximatelyNPartitions::partReqAndFuncCompatible
 {
   CMPASSERT(other != NULL);
   
-#pragma nowarn(1506)   // warning elimination 
   Lng32 reqKeyCount = getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination 
   Lng32 reqPartCount = getCountOfPartitions();
   Lng32 actualPartCount = other->getCountOfPartitions();
   float reqAllowedDeviation = getAllowedDeviation();
@@ -617,18 +605,12 @@ RequireApproximatelyNPartitions::comparePartReqToReq
   
   ValueIdSet myPartKey = getPartitioningKey();
   ValueIdSet otherPartKey = other->getPartitioningKey();
-#pragma nowarn(1506)   // warning elimination 
   Lng32 myKeyCount = myPartKey.entries();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 otherKeyCount = otherPartKey.entries();
-#pragma warn(1506)  // warning elimination 
   Lng32 myPartCount = getCountOfPartitions();
   Lng32 otherPartCount = other->getCountOfPartitions();
   float myAllowedDeviation = getAllowedDeviation();
-#pragma nowarn(1506)   // warning elimination 
   float myLowerBound = myPartCount - (myPartCount * myAllowedDeviation);
-#pragma warn(1506)  // warning elimination 
 
   COMPARE_RESULT result;
   
@@ -647,9 +629,7 @@ RequireApproximatelyNPartitions::comparePartReqToReq
 
     // Compare the required number of partitions.
     if ( (myPartCount == ANY_NUMBER_OF_PARTITIONS) OR
-#pragma nowarn(1506)   // warning elimination 
          ((otherPartCount >= myLowerBound) AND
-#pragma warn(1506)  // warning elimination 
           (otherPartCount <= myPartCount)) )
       result = combine_compare_results(result,LESS);
     else
@@ -711,9 +691,7 @@ RequireApproximatelyNPartitions::comparePartReqToReq
             other->castToRequireApproximatelyNPartitions()->
                    getAllowedDeviation();
     float otherLowerBound =
-#pragma nowarn(1506)   // warning elimination 
             otherPartCount - (otherPartCount * otherAllowedDeviation);
-#pragma warn(1506)  // warning elimination 
 
     if (myPartCount == otherPartCount)
     {
@@ -733,9 +711,7 @@ RequireApproximatelyNPartitions::comparePartReqToReq
     {
       if (myPartCount > otherPartCount) // my # of parts is largest
       {
-#pragma nowarn(1506)   // warning elimination 
         if (otherPartCount >= myLowerBound) //overlap
-#pragma warn(1506)  // warning elimination 
         {
           // Only if other's lower bound is greater than my lower bound
           // can we definitely say LESS.
@@ -755,9 +731,7 @@ RequireApproximatelyNPartitions::comparePartReqToReq
       }
       else // other's # of parts is larger
       {
-#pragma nowarn(1506)   // warning elimination 
         if (myPartCount >= otherLowerBound) //overlap
-#pragma warn(1506)  // warning elimination 
         {
           // Only if my lower bound is greater than other's lower bound
           // can we definitely say MORE.
@@ -895,13 +869,9 @@ RequireApproximatelyNPartitions::isPartitionCountWithinRange(Lng32 numOfParts)
    // less a given percentage deviation of that upper bound.  The specified
   // partition must fall between the lower and upper bound (inclusive).
   //---------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
   float lowerBound = reqPartCount - (reqPartCount * getAllowedDeviation());
-#pragma warn(1506)  // warning elimination 
   if (   numOfParts > reqPartCount
-#pragma nowarn(1506)   // warning elimination 
       OR numOfParts < lowerBound   )
-#pragma warn(1506)  // warning elimination 
   {
     return FALSE; 
   }

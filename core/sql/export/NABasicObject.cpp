@@ -91,9 +91,7 @@ void* NABasicObject::operator new(size_t t, CollHeap* h, NABoolean failureIsFata
 
 
       p = ::operator new(t);
-#pragma nowarn(1506)   // warning elimination 
       //      HEAPLOG_ADD_ENTRY(p, t, NA_HEAP_BASIC, "NABasic Heap")
-#pragma warn(1506)  // warning elimination 
     }
 
   if (p)
@@ -189,9 +187,7 @@ void* NABasicObject::operator new[](size_t t, CollHeap* h, NABoolean failureIsFa
 
 
       p = ::operator new(t);
-#pragma nowarn(1506)   // warning elimination 
       //      HEAPLOG_ADD_ENTRY(p, t, NA_HEAP_BASIC, "NABasic Heap")
-#pragma warn(1506)  // warning elimination 
     }
 
   if (p)

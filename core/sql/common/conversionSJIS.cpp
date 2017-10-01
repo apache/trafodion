@@ -181,9 +181,7 @@ sjisToUnicode(const charBuf& sjisString, CollHeap *heap,
 	u = (NAWchar)c;                 // found in the first single-byte block
       else 
       if ( isSingleByteSJIS2ndBlock(c) )
-#pragma nowarn(1506)   // warning elimination 
 	u = (NAWchar)c - 0xA1 + 0xFF61; // found in the 2nd single-byte block
-#pragma warn(1506)  // warning elimination 
       else {
 
         // the second byte does not exist!

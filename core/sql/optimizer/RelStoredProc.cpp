@@ -221,9 +221,7 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 	convertToValueIdList(getProcAllParamsVids(),bindWA,ITM_ITEM_LIST);
       if (bindWA->errStatus()) return NULL;
 	  
-#pragma nowarn(1506)   // warning elimination 
       Lng32 nParams = getProcAllParamsVids().entries();
-#pragma warn(1506)  // warning elimination 
       CmpSPInputFormat inputFormat(bindWA->currentCmpContext());
       if ( !cmpInternalSP->InputFormat(nParams, inputFormat) )
 	// error, the info should be put into currentCmpContext()->diags()
@@ -331,12 +329,8 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 	c = getProcAllParamsVids()[0].getItemExpr()->castToConstValue(b);
 	if (c)
 	  {
-#pragma nowarn(1506)   // warning elimination 
 	    inputSize    = c->getRawText()->length();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 	    newInputSize = inputSize + defaultSchema.length() + 2;
-#pragma warn(1506)  // warning elimination 
 	  };
 	if (newInputSize)
 	  {
@@ -346,9 +340,7 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 	    str_cpy (newInput, c->getRawText()->data(), inputSize);
 	    newInput[inputSize] = '$';
 
-#pragma nowarn(1506)   // warning elimination 
 	    str_cpy (&newInput[inputSize+1], defaultSchema.data(), defaultSchema.length());
-#pragma warn(1506)  // warning elimination 
 
 	    NAType *newType   = new (bindWA->wHeap()) SQLChar (bindWA->wHeap(), newInputSize, FALSE);
 	    ItemExpr *newItem = new (bindWA->wHeap()) ConstValue(newType, newInput, newInputSize );

@@ -115,12 +115,8 @@ static char *cvt __P((double, Int32, Int32, char *, Int32 *, Int32, Int32 *));
 static Int32 exponent __P((char *, Int32, Int32));
 
 #else /* no FLOATING_POINT */
-#pragma warning (disable : 4005)   //warning elimination
-#pragma nowarn(140)   // warning elimination 
 #undef  BUF
 #define	BUF		40
-#pragma warn(140)  // warning elimination 
-#pragma warning (default : 4005)   //warning elimination
 
 #endif /* FLOATING_POINT */
 
@@ -140,12 +136,8 @@ static Int32 exponent __P((char *, Int32, Int32));
 #define	ALT		0x001		/* alternate form */
 #define	HEXPREFIX	0x002		/* add 0x or 0X prefix */
 #define	LADJUST		0x004		/* left adjustment */
-#pragma warning (disable : 4005)   //warning elimination
-#pragma nowarn(140)   // warning elimination 
 #undef  LONGDBL
 #define	LONGDBL		0x008		/* long double; unimplemented */
-#pragma warn(140)  // warning elimination 
-#pragma warning (default : 4005)   //warning elimination
 #define	LONGINT		0x010		/* long integer */
 #define	QUADINT		0x020		/* quad integer */
 #define	SHORTINT	0x040		/* short integer */
@@ -368,9 +360,7 @@ reswitch:	switch (ch) {
 			flags |= QUADINT;
 			goto rflag;
 		case L'c':
-#pragma nowarn(1506)   // warning elimination 
 			*(cp = buf) = va_arg(ap, Int32);
-#pragma warn(1506)  // warning elimination 
 			size = 1;
 			sign = L'\0';
 			break;
@@ -381,9 +371,7 @@ reswitch:	switch (ch) {
 		case L'i':
 			_uquad = SARG();
 			if ((quad_t)_uquad < 0) {
-#pragma warning (disable : 4146)   //warning elimination
 				_uquad = -_uquad;
-#pragma warning (default : 4146)   //warning elimination
 				sign = L'-';
 			}
 			base = DEC;
@@ -460,9 +448,7 @@ reswitch:	switch (ch) {
 			else if (flags & LONGINT)
 				*va_arg(ap, Lng32 *) = ret;
 			else if (flags & SHORTINT)
-#pragma nowarn(1506)   // warning elimination 
 				*va_arg(ap, short *) = ret;
-#pragma warn(1506)  // warning elimination 
 			else
 				*va_arg(ap, Int32 *) = ret;
 			continue;	/* no output */
@@ -506,9 +492,7 @@ reswitch:	switch (ch) {
 				} else
 					size = prec;
 			} else
-#pragma nowarn(1506)   // warning elimination 
 				size = na_wcslen(cp);
-#pragma warn(1506)  // warning elimination 
 			sign = L'\0';
 			break;
 		case L'U':
@@ -554,11 +538,7 @@ number:			if ((dprec = prec) >= 0)
 				switch (base) {
 				case OCT:
 					do {
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
 						*--cp = to_char(_uquad & 7);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 						_uquad >>= 3;
 					} while (_uquad);
 					/* handle octal leading 0 */
@@ -569,16 +549,10 @@ number:			if ((dprec = prec) >= 0)
 				case DEC:
 					/* many numbers are 1 digit */
 					while (_uquad >= 10) {
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
 						*--cp = to_char(_uquad % 10);
-#pragma warn(1506)  // warning elimination 
 						_uquad /= 10;
 					}
-#pragma nowarn(1506)   // warning elimination 
 					*--cp = to_char(_uquad);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 					break;
 
 				case HEX:
@@ -590,9 +564,7 @@ number:			if ((dprec = prec) >= 0)
 
 				default:
 					cp = (NAWchar *) WIDE_("bug in vfprintf: bad base");
-#pragma nowarn(1506)   // warning elimination 
 					size = na_wcslen(cp);
-#pragma warn(1506)  // warning elimination 
 					goto skipsize;
 				}
 			}
@@ -604,9 +576,7 @@ number:			if ((dprec = prec) >= 0)
 				goto done;
 			/* pretend it was %c with argument ch */
 			cp = buf;
-#pragma nowarn(1506)   // warning elimination 
 			*cp = ch;
-#pragma warn(1506)  // warning elimination 
 			size = 1;
 			sign = L'\0';
 			break;
@@ -641,9 +611,7 @@ number:			if ((dprec = prec) >= 0)
 			PRINT(&sign, 1);
 		} else if (flags & HEXPREFIX) {
 			ox[0] = L'0';
-#pragma nowarn(1506)   // warning elimination 
 			ox[1] = ch;
-#pragma warn(1506)  // warning elimination 
 			PRINT(ox, 2);
 		}
 

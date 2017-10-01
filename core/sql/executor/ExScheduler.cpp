@@ -328,7 +328,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
               ex_queue_pair pq = subtask->tcb_->getParentQueue();
               if (pq.down != NULL)
               {
-#pragma warning (disable : 4244)   //warning elimination
                 stats->getDownQueueStats().addEntry(
                                            (double)pq.down->getLength());
                 stats->setDownQueueSize(pq.down->getSize());
@@ -337,7 +336,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
               {
                 stats->getUpQueueStats().addEntry(
                                          (double)pq.up->getLength());
-#pragma warning (default : 4244)   //warning elimination
                  stats->setUpQueueSize(pq.up->getSize());
               }
             }

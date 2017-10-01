@@ -412,9 +412,7 @@ RelExpr * MJEnumRule::nextSubstitute(RelExpr * before,
 
     // Data flow optimization
     CostScalar childrenFlow = mjoin->getChildrenDataFlow();
-#pragma nowarn(1506)   // warning elimination
     const Lng32 numChildren = jbbcs.entries();
-#pragma warn(1506)  // warning elimination
     Lng32 childIter = -1; // temp iterator. *NOT* the same as child index
     RelExpr** potentialSubstitutes = new (CmpCommon::statementHeap()) RelExpr*[numChildren];
     CostScalar* substituteMetric = new (CmpCommon::statementHeap()) CostScalar[numChildren];

@@ -2367,9 +2367,7 @@ RelExpr * WildCardOp::copyTopNode(RelExpr * derivedNode,
 	}
     }
 
-#pragma nowarn(203)   // warning elimination
   return NULL; // shouldn't really reach here
-#pragma warn(203)  // warning elimination
 }
 
 // -----------------------------------------------------------------------
@@ -6831,9 +6829,7 @@ void Union::getPotentialOutputValues(ValueIdSet & outputValues) const
   // The output of the union is defined by the ValueIdUnion
   // expressions that are maintained in the colMapTable_.
   //
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = unionMap_->colMapTable_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 index = 0; index < ne; index++)
     {
       // Accumulate the ValueIds of the result of the union
@@ -7286,7 +7282,6 @@ HashValue MergeUnion::topHash()
   return result;
 }
 
-#pragma nowarn(262)   // warning elimination
 NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
 {
   if (!RelExpr::duplicateMatch(other))
@@ -7300,7 +7295,6 @@ NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
   return FALSE;
 
 }
-#pragma warn(262)  // warning elimination
 
 RelExpr * MergeUnion::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
@@ -9930,7 +9924,6 @@ const NAString FileScan::getTypeText() const
   return descr;
 }
 
-#pragma nowarn(262)   // warning elimination
 void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 			    LIST(NAString) &llist) const
 {
@@ -10072,7 +10065,6 @@ void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 
   RelExpr::addLocalExpr(xlist,llist);
 }
-#pragma warn(262)  // warning elimination
 
 const Disjuncts& FileScan::getDisjuncts() const
 {
@@ -11487,9 +11479,7 @@ Tuple::Tuple(const Tuple & other) : RelExpr(other.getOperatorType())
 
 Tuple::~Tuple() {}
 
-#pragma nowarn(1026)   // warning elimination
 Int32 Tuple::getArity() const { return 0; }
-#pragma warn(1026)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A virtual method for computing output values that an operator can
@@ -11895,9 +11885,7 @@ RelExpr * BeforeTrigger::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 	  else
 	  {
 		CMPASSERT(setList_ != NULL);  // Must have either SET or SIGNAL clause.
-#pragma nowarn(1506)   // warning elimination
 		ItemExprList *setList = new(outHeap) ItemExprList(setList_->entries(), outHeap);
-#pragma warn(1506)  // warning elimination
 		for (CollIndex i=0; i<setList_->entries(); i++)
 		  setList->insert(setList_->at(i)->copyTree(outHeap));
 

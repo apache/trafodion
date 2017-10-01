@@ -560,9 +560,7 @@ short HashJoin::codeGen(Generator * generator) {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-#pragma nowarn(1506)   // warning elimination
     returnedTuples = givenDesc->noTuples();
-#pragma warn(1506)  // warning elimination
 
     if (leftOutputValIds.entries())
       returnedLeftRowAtpIndex = returnedTuples++;
@@ -3116,7 +3114,6 @@ short MergeJoin::codeGen(Generator * generator)
   bool yieldQuota = !(generator->getRightSideOfFlow());
   UInt16 quotaPct = (UInt16) getDefault(MJ_BMO_QUOTA_PERCENT);
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbMj * mj_tdb =
     new(space) ComTdbMj(child_tdb1,
 			child_tdb2,
@@ -3155,7 +3152,6 @@ short MergeJoin::codeGen(Generator * generator)
 			quotaMB,
 			quotaPct,
 			yieldQuota);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(mj_tdb);
 
   if (CmpCommon::getDefault(EXE_DIAGNOSTIC_EVENTS) == DF_ON)
@@ -3486,7 +3482,6 @@ short NestedJoin::codeGen(Generator * generator)
   OperatorTypeEnum rightChildOp = rightChildExpr->getOperatorType();
   NABoolean usedForMvLogging = FALSE;
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbOnlj * nlj_tdb =
     new(space) ComTdbOnlj(tdb1,
 			  tdb2,
@@ -3517,7 +3512,6 @@ short NestedJoin::codeGen(Generator * generator)
 			  tolerateNonFatalError,
 			  usedForMvLogging 
 			  );
-#pragma warn(1506)  // warning elimination
 // getRowsetRowCountArraySize() should return positive values
 // only if isRowsetIterator() returns TRUE.
   GenAssert((((getRowsetRowCountArraySize() > 0) && isRowsetIterator()) ||
@@ -3695,13 +3689,11 @@ short NestedJoinFlow::codeGen(Generator * generator)
 			       (Cardinality) getGroupAttr()->
 			       getOutputLogPropList()[0]->
 			       getResultCardinality().value(),
-#pragma nowarn(1506)   // warning elimination
 			       getDefault(GEN_TFLO_NUM_BUFFERS),
 			       getDefault(GEN_TFLO_BUFFER_SIZE),
 			       generator->getVSBBInsert(),
 			       isRowsetIterator(),
 			       tolerateNonFatalError);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tflow_tdb);
 
   // turn off the VSBB insert flag in the generator, it has been

@@ -188,9 +188,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                 {
                   NABoolean x = bkey_excluded;
                   bkey_excluded = ekey_excluded;
-#pragma nowarn(1506)   // warning elimination 
                   ekey_excluded = x;
-#pragma warn(1506)  // warning elimination 
 
                   ex_expr* temp = bk_excluded_expr;
                   bk_excluded_expr = ek_excluded_expr;
@@ -292,9 +290,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
           else
             desc_flag = !reverseScan;
 
-#pragma nowarn(1506)   // warning elimination 
           enode = new(generator->wHeap()) CompEncode(enode,desc_flag); 
-#pragma warn(1506)  // warning elimination 
           enode->bindNode(generator->getBindWA());
 
           attrs[i] = 
@@ -377,9 +373,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
           ItemExpr * lo = new(generator->wHeap()) ConstValue(targetType, 
                                 !desc_flag, 
                                 TRUE /* allow NULL */);
-#pragma nowarn(1506)   // warning elimination 
           lo = new(generator->wHeap()) CompEncode(lo,desc_flag); 
-#pragma warn(1506)  // warning elimination 
           lo->bindNode(generator->getBindWA());
 
           ValueIdList loList;
@@ -399,9 +393,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
           ItemExpr * hi = new(generator->wHeap()) ConstValue(targetType->newCopy(generator->wHeap()),
                                 desc_flag,
                                 TRUE /* allow NULL */);
-#pragma nowarn(1506)   // warning elimination 
           hi = new(generator->wHeap()) CompEncode(hi,desc_flag);
-#pragma warn(1506)  // warning elimination 
           hi->bindNode(generator->getBindWA());
 
           ValueIdList hiList;
@@ -428,9 +420,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                     ConstValue(targetType->newCopy(generator->wHeap()),
                                !desc_flag, 
                                FALSE /* don't allow NULL */);
-      #pragma nowarn(1506)   // warning elimination 
                   nonNullLo = new(generator->wHeap()) CompEncode(nonNullLo,desc_flag); 
-      #pragma warn(1506)  // warning elimination 
                   nonNullLo->bindNode(generator->getBindWA());
 
                   ValueIdList nonNullLoList;
@@ -451,9 +441,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                     ConstValue(targetType->newCopy(generator->wHeap()),
                          desc_flag, 
                          FALSE /* don't allow NULL */);
-#pragma nowarn(1506)   // warning elimination 
                   nonNullHi = new(generator->wHeap()) CompEncode(nonNullHi,desc_flag); 
-#pragma warn(1506)  // warning elimination 
                   nonNullHi->bindNode(generator->getBindWA());
                   
                   ValueIdList nonNullHiList;

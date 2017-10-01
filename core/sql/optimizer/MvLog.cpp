@@ -49,9 +49,7 @@
 
 // MVLOG command is not supported
 
-#pragma nowarn(1000)   // warning elimination 
 const MvLogInternalNames MvLog::internalNames_;
-#pragma warn(1000)  // warning elimination 
 
 const char MvLogInternalNames::beginRangeSuffix_[] = "_BEGIN";
 const char MvLogInternalNames::endRangeSuffix_[]   = "_FIRST";
@@ -304,7 +302,6 @@ NABoolean MvLog::isTableRangePartitioned() const
 // 1. The columns from the MVLOG command line.
 // 2. The base table clustering index columns.
 // 3. The base table columns that are not in the clustering index.
-#pragma nowarn(262)   // warning elimination 
 void MvLog::buildBaseTableColumnNamesLists()
 {
   CMPASSERT(NULL != pNaTable_);
@@ -364,7 +361,6 @@ void MvLog::buildBaseTableColumnNamesLists()
     }
   }
 } // MvLog::buildBaseTableColumnNamesLists
-#pragma warn(262)  // warning elimination 
 
 //----------------------------------------------------------------------------
 // Verify that the list of columns from the MVLOG command line are a prefix
@@ -516,9 +512,7 @@ void MvLog::getColumnsPositionsInCI(const NAFileSet * pCiFileSet)
 
     if(ciColName == colRefName)
     {
-#pragma nowarn(1506)   // warning elimination 
       pRelevantCiPositionsList_.insert(inputColIndex);
-#pragma warn(1506)  // warning elimination 
     }
     else // not a CI prefix
     {
@@ -566,9 +560,7 @@ void MvLog::addRangePartitionBoundries(
        boundryIndex++)
   {
     const ItemExprList* pBoundry = 
-#pragma nowarn(1506)   // warning elimination 
       pBoundries->getBoundaryValues(boundryIndex);
-#pragma warn(1506)  // warning elimination 
     CMPASSERT(NULL != pBoundry);
 
     ItemExprList *pBoundryCopy = new(heap_)ItemExprList(heap_);

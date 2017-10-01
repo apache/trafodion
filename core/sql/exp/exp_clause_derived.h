@@ -45,7 +45,6 @@
 #include "exp_like.h"
 #include <byteswap.h>
 
-#pragma warning ( disable : 4251 )
 
 #define instrAndText(a) a, #a
 
@@ -2811,7 +2810,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif
 

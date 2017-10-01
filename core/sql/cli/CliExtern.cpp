@@ -3519,7 +3519,6 @@ Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO(
 
 };
 
-#pragma nowarn(770)   // warning elimination 
 Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
      /*IN* (SQLDIAG_COND_INFO_ITEM_ID) */ Lng32 what_to_get,
      /*IN*/ Lng32 conditionNum,
@@ -3633,7 +3632,6 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
   return retcode;
 }
 
-#pragma warn(770)  // warning elimination 
 
 Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO2(
      /*IN* (SQLDIAG_COND_INFO_ITEM_ID) */ Lng32 what_to_get,

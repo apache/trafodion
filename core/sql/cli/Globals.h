@@ -106,7 +106,6 @@ enum ArkcmpFailMode { arkcmpIS_OK_ = FALSE/*no failure*/,
 arkcmpWARN_,
 arkcmpERROR_ };
 
-#pragma nowarn(1506)   // warning elimination
 class CliGlobals : public NAAssertGlobals
 {
 public:
@@ -587,7 +586,6 @@ private:
   LmLanguageManagerJava *langManJava_;
   NABoolean espProcess_;
 };
-#pragma warn(1506)   // warning elimination
 
 // -----------------------------------------------------------------------
 // A global method to get a pointer to the CLI globals. The method

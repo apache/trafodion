@@ -73,8 +73,6 @@ class ExUdrServer;
 class UdrContextMsg;
 class SequenceValueGenerator;
 class LmRoutine;
-#pragma warning( disable : 4244 )  // warning elimination
-#pragma nowarn(1506)   // warning elimination 
 class ContextCli : public ExGod {
   
 public:
@@ -1054,8 +1052,6 @@ public:
    ContextCli *context_;
 };
 
-#pragma warn(1506)   // warning elimination 
-#pragma warning( default : 4244 )  // warning elimination
 
 
 inline HashQueue *

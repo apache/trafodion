@@ -457,9 +457,7 @@ Lng32 HeapLogRoot::fetchLine( char *buf
     }
 
   Lng32 error = log->fetchLine(&buf[2], 1 /*sqlci*/);
-#pragma nowarn(1506)   // warning elimination 
   *((short*)buf) = strlen(&buf[2]);
-#pragma warn(1506)  // warning elimination 
   if (error == FETCH_EOF)
     control2(flags, LeakDescribe::FLAG_SQLCI);
   return error;
@@ -708,9 +706,7 @@ Lng32 HeapLog::fetchLine( char *buf
 
   if (datalen_ > 0)
     { // Fetch log data from ARKCMP.
-#pragma nowarn(1506)   // warning elimination 
       Lng32 s = strlen(packdata_) + 1;
-#pragma warn(1506)  // warning elimination 
       if (currlen_ >= datalen_ ||
 	  s == 1)
 	{ // eof
@@ -878,8 +874,6 @@ Lng32 HeapLog::fetchLine( char *buf
       close();
       return FETCH_EOF; 
     }
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }  
 

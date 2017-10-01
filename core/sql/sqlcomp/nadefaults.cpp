@@ -3691,9 +3691,7 @@ inline static UInt32 getFlags(Int32 attrEnum)
 
 inline static NABoolean isFlagOn(Int32 attrEnum, NADefaultFlags flagbit)
 {
-#pragma nowarn(1506)   // warning elimination
   return defaultDefaults[defDefIx_[attrEnum]].flags & (UInt32)flagbit;
-#pragma warn(1506)  // warning elimination
 }
 
 inline static void setFlagOn(Int32 attrEnum, NADefaultFlags flagbit)
@@ -4071,15 +4069,11 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   for ( i = 0; i < numAttrs; i++ )
   {
 #ifndef NDEBUG
-#pragma nowarn(1506)   // warning elimination
     const DefaultValidatorType validatorType = validator(i)->getType();
-#pragma warn(1506)  // warning elimination
 #endif
 
-#pragma nowarn(1506)   // warning elimination
     if ( validator(i)->getType() == VALID_KWD && (i != NATIONAL_CHARSET) &&
          (i != INPUT_CHARSET) && (i != ISO_MAPPING) )
-#pragma warn(1506)  // warning elimination
     {
       currentTokens_[i] = new NADHEAP DefaultToken;
 
@@ -4088,9 +4082,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
       if (isNonResetableAttribute(defaultDefaults[defDefIx_[i]].attrName))
 	*currentTokens_[i] = DF_OFF;
       else
-#pragma nowarn(1506)   // warning elimination
 	*currentTokens_[i] = token( i, tmp );
-#pragma warn(1506)  // warning elimination
     }
   }
 
@@ -4273,9 +4265,7 @@ enum DefaultConstants NADefaults::lookupAttrName(const char *name,
   while (cresult != 0 && lo < hi);
 
   if (position != 0)
-#pragma nowarn(1506)   // warning elimination
     *position = split;
-#pragma warn(1506)  // warning elimination
 
   // if the last comparison result was equal, return value at "split"
   if (cresult == 0)
@@ -6144,21 +6134,17 @@ static void setCatSchErr(NAString &value,
     stmt += value;
     stmt += "\"";
     stmt += ";";
-#pragma nowarn(1506)   // warning elimination
     parser.parseDML(stmt, stmt.length(),
                     OBJECTNAMECHARSET
                     );
-#pragma warn(1506)  // warning elimination
   }
   if (errs == CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) {
     stmt = pfx;
     stmt += value;
     stmt += ";";
-#pragma nowarn(1506)   // warning elimination
     parser.parseDML(stmt, stmt.length(),
                     OBJECTNAMECHARSET
                     );
-#pragma warn(1506)  // warning elimination
   }
 
   // Change errors to warnings if errOrWarn is +1 (i.e. warning).

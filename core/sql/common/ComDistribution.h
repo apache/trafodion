@@ -145,13 +145,11 @@ ComBuildANSIName ( const char * catalogName,   // in, catalog name (internal for
 //  Convert between various enums and literals. Output literal must 
 //  be at least 3 characters.
 //
-#pragma nowarn(449)   // Disregard warning 449: No constructor to 
 typedef struct        // initialize const members
 {
   Int32                      enum_;
   const char *               literal_;
 } literalAndEnumStruct;
-#pragma warn(449)
 
 // General enum to literal translation
 void enumToLiteral ( const literalAndEnumStruct * conversionTable,

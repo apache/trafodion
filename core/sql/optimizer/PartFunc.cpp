@@ -666,9 +666,7 @@ void PartitioningFunction::resetAfterStatement()
 void PartitioningFunction::print(FILE* ofd, const char* indent,
 				 const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
 
   fprintf(ofd,"%s--Partitioning-Function----------------\n",NEW_INDENT);
   fprintf(ofd,"%s%s (%d)\n",
@@ -3327,9 +3325,7 @@ NABoolean RangePartitionBoundaries::compareRangePartitionBoundaries(
   // Since we didn't look at the last group, we need to compute the
   // number of partitions in it and see if it is the group with
   // the largest number of partitions.
-#pragma nowarn(1506)   // warning elimination
   numOfPartsInLastGroup = (other.partitionCount_ - otherix) + 1;
-#pragma warn(1506)  // warning elimination
   if ((maxPartsPerGroup != NULL) AND
       (numOfPartsInLastGroup > *maxPartsPerGroup))
   {
@@ -3477,9 +3473,7 @@ RangePartitionBoundaries::merge(const RangePartitionBoundaries& other,
     }
 
   result->encodedBoundaryKeyLength_ = encodedBoundaryKeyLength_;
-#pragma nowarn(1506)   // warning elimination
   result->partitionCount_ = resultix - 1;
-#pragma warn(1506)  // warning elimination
 
   return result;
 } // RangePartitionBoundaries::merge
@@ -3516,9 +3510,7 @@ Lng32 RangePartitionBoundaries::getOptimizedNumberOfPartKeys()
       }
     }
 
-#pragma nowarn(1506)   // warning elimination
   return numPartKeyCols;
-#pragma warn(1506)  // warning elimination
 }
 
 Lng32 RangePartitionBoundaries::scaleNumberOfPartitions(
@@ -3785,9 +3777,7 @@ void RangePartitionBoundaries::completePartitionBoundaries(
     ItemExprList(CmpCommon::statementHeap());
 
   // set some data members that could not be set before
-#pragma nowarn(1506)   // warning elimination
   partKeyColumnCount_ = partitioningKeyOrder.entries();
-#pragma warn(1506)  // warning elimination
   encodedBoundaryKeyLength_ = encodedBoundaryKeyLength;
 
   Lng32 i;
@@ -3920,9 +3910,7 @@ void RangePartitionBoundaries::setupForStatement(NABoolean useStringVersion)
 
   for(UInt32 i=0; i < boundaryValuesList_.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     bindAddBoundaryValue(i);
-#pragma warn(1506)  // warning elimination
   }
 
   setupForStatement_ = TRUE;
@@ -3948,9 +3936,7 @@ void RangePartitionBoundaries::resetAfterStatement()
 void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
 				     const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   char  btitle[50];
   char* S = btitle;
   Lng32 index;
@@ -4108,9 +4094,7 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
 
       CollIndex nCols = keyColumnList_.entries();
       ValueIdSet setOfKeyPredicates;
-#pragma nowarn(1506)   // warning elimination
       ValueIdList partInputValues(2*nCols+1);
-#pragma warn(1506)  // warning elimination
       ValueIdList loValues;
       ValueIdList hiValues;
 
@@ -4449,9 +4433,7 @@ RangePartitioningFunction::createPartitioningFunctionForIndexDesc
   for (i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id list
@@ -4576,9 +4558,7 @@ ItemExpr* RangePartitioningFunction::createPartitioningExpression()
 	   dataConversionErrorFlag,
 	   &oType);
       // form the key encoding of the key column (a character string)
-#pragma nowarn(1506)   // warning elimination
       ItemExpr *e = new (CmpCommon::statementHeap()) CompEncode (c,descOrder);
-#pragma warn(1506)  // warning elimination
 
       // concatenate the individual key encodings of the key columns
       if (encKey == NULL)
@@ -4833,12 +4813,8 @@ RangePartitioningFunction::partFuncAndFuncPushDownCompatible(
 
    if ( other == NULL ) return FALSE;
 
-#pragma nowarn(1506)   // warning elimination
    Lng32 thisKeyCount = getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
    Lng32 otherKeyCount = other->getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
 
    // same key count
    if (thisKeyCount != otherKeyCount)
@@ -5767,9 +5743,7 @@ createPartitioningFunctionForIndexDesc(IndexDesc *idesc) const
   for (CollIndex i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id set

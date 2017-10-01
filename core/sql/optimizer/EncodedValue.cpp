@@ -645,7 +645,6 @@ EncodedValue::EncodedValue (ItemExpr *expr,
   addANormValue(this,expr,negate);
 }
 
-#pragma nowarn(262)   // warning elimination 
 void
 EncodedValue::constructorFunction (const NAWchar * theValue,
                                    const NAColumnArray &columns, 
@@ -803,7 +802,6 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
 	// invoke parser to parse the char string and generate a ConstValue
         Parser parser(CmpCommon::context());
 
-#pragma nowarn(1506)   // warning elimination 
                          // Leave space for both semi-colon and null
                          // next points to the next char after the value
         Int32 numChars = MINOF(BOUNDARY_LEN-2,na_wcslen(item)-na_wcslen(next));
@@ -846,9 +844,7 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
         buf[numChars+prefixLen] = L';';
         buf[numChars+prefixLen+1] = L'\0';
        
-#pragma warn(1506)  // warning elimination 
 
-#pragma warn(1506)  // warning elimination 
 
 	NABoolean negate = FALSE;
 
@@ -933,7 +929,6 @@ EncodedValue::constructorFunction (const NAWchar * theValue,
 
   return;
 }
-#pragma warn(262)  // warning elimination 
 
 // -----------------------------------------------------------------------
 //  Given an upper and lower bound, represented in multi-attribute

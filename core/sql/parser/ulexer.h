@@ -90,7 +90,6 @@ typedef Int32 yy_state_type;
 
 union YYSTYPE;
 
-#pragma nowarn(1506)   // warning elimination 
 class ULexer {
 public:
 	virtual ~ULexer()	{ }
@@ -131,7 +130,6 @@ protected:
 	  void yyToNarrow() {}
 	#endif
 };
-#pragma warn(1506)  // warning elimination 
 
 }
 #endif	// __U_LEXER_H

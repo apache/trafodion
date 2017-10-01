@@ -47,7 +47,6 @@ const NAType *ItmBitMuxFunction::synthesizeType() {
 
 // copyTopNode
 //
-#pragma nowarn(770)   // warning elimination 
 ItemExpr *ItmBitMuxFunction::copyTopNode(ItemExpr *derivedNode, 
 					 CollHeap *outHeap) {
   ItemExpr *result;
@@ -61,4 +60,3 @@ ItemExpr *ItmBitMuxFunction::copyTopNode(ItemExpr *derivedNode,
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 };
-#pragma warn(770)  // warning elimination 

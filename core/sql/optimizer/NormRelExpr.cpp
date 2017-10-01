@@ -8671,7 +8671,6 @@ void TupleList::rewriteNode(NormWA & normWARef)
 // but here we need to tranform each member of each ValueIdUnion of
 // transUnionVals().
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::transformNode(NormWA &normWARef,
                               ExprGroupId &locationOfPointerToMe)
 {
@@ -8769,7 +8768,6 @@ void Transpose::transformNode(NormWA &normWARef,
   transformSelectPred(normWARef, locationOfPointerToMe);
 
 } // Transpose::transformNode()
-#pragma warn(1506)  // warning elimination 
 
 // Transpose::rewriteNode() ---------------------------------------------
 // rewriteNode() is the virtual function that computes
@@ -8785,7 +8783,6 @@ void Transpose::transformNode(NormWA &normWARef,
 // but here we need to normalize each member of each ValueIdUnion of
 // transUnionVals().
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::rewriteNode(NormWA & normWARef)
 {
   // Rewrite the expressions of the child node.
@@ -8830,7 +8827,6 @@ void Transpose::rewriteNode(NormWA & normWARef)
   //
   getGroupAttr()->normalizeInputsAndOutputs(normWARef);
 } // Transpose::rewriteNode()
-#pragma warn(1506)  // warning elimination 
 
 // Transpose::recomputeOuterReferences() --------------------------------
 // This method is used by the normalizer for recomputing the
@@ -8840,7 +8836,6 @@ void Transpose::rewriteNode(NormWA & normWARef)
 //
 // Side Effects: sets the characteristicInputs of the groupAttr.
 //
-#pragma nowarn(1506)   // warning elimination 
 void Transpose::recomputeOuterReferences()
 {
   // This is virtual method on RelExpr.
@@ -8897,7 +8892,6 @@ void Transpose::recomputeOuterReferences()
   //
   getGroupAttr()->setCharacteristicInputs(outerRefs);
 } // Transpose::recomputeOuterReferences()  
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // Member functions for class Pack
@@ -10303,9 +10297,7 @@ CANodeId  CqsWA::findCANodeId(const NAString &tableName)
 
   //if you are here, invoke error handling
   AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
   return CANodeId();  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 
 } // CqsWA::findCANodeId()
 
@@ -10597,9 +10589,7 @@ RelExpr * CqsWA::checkAndProcessGroupByJBBC( RelExpr *relExpr,
   }
 
   // error
-#pragma nowarn(203)   // warning elimination
    return NULL; // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 
 }// CqsWA::checkAndProcessGroupByJBBC()
 
@@ -10656,9 +10646,7 @@ RelExpr *ScanForceWildCard::generateMatchingExpr(CANodeIdSet &lChildSet,
   else
   {
     AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
   }
 } // ScanForceWildCard::generateMatchingExpr()
 
@@ -10666,9 +10654,7 @@ RelExpr * RelExpr::generateLogicalExpr(CANodeIdSet &lChildSet,
                                        CANodeIdSet &rChildSet)
 {
   AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination 
 }
 
 //**************************************************************
@@ -10697,9 +10683,7 @@ RelExpr * GroupByAgg::generateLogicalExpr(CANodeIdSet &lChildSet,
 {
 
   AssertException("", __FILE__, __LINE__).throwException(); 
-#pragma nowarn(203)   // warning elimination
     return NULL;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
 }
 
 NABoolean RelRoot::forceCQS(RelExpr *cqsExpr)
@@ -10921,9 +10905,7 @@ NABoolean CqsWA::isMPTable(const NAString &tableName)
     else
     {
       AssertException("", __FILE__, __LINE__).throwException();
-#pragma nowarn(203)   // warning elimination
     return FALSE;  // keep VisualC++ happy
-#pragma warn(203)   // warning elimination
     }
   }
   else

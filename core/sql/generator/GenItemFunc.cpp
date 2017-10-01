@@ -110,7 +110,6 @@ short BuiltinFunction::codeGen(Generator * generator)
           case CharInfo::ISO88591:
           case CharInfo::UTF8:
           // case CharInfo::SJIS:  // Uncomment this if we ever support SJIS
-#pragma nowarn(1506)   // warning elimination 
            function_clause =
                new(generator->getSpace()) ex_like_clause_char(getOperatorType()
                                                    ,1+getArity()
@@ -138,9 +137,7 @@ short BuiltinFunction::codeGen(Generator * generator)
              function_clause->setNoPCodeAvailable(TRUE);
 
            break;
-#pragma warn(1506)   // warning elimination 
           case CharInfo::UCS2:
-#pragma nowarn(1506)   // warning elimination 
            function_clause = new(generator->getSpace()) 
                                    ex_like_clause_doublebyte(ITM_LIKE_DOUBLEBYTE
                                                    ,1+getArity()
@@ -148,7 +145,6 @@ short BuiltinFunction::codeGen(Generator * generator)
                                                    ,space
                                                    );
            break;
-#pragma warn(1506)   // warning elimination 
           default:
 	    GenAssert(0, "unknown value for bytes-per-char.");
         }
@@ -330,7 +326,6 @@ short BuiltinFunction::codeGen(Generator * generator)
 	  }
 	
 
-#pragma nowarn(1506)   // warning elimination 
         const CharType& substringOperandType = 
            (CharType&)((child(0)->getValueId()).getType());
 
@@ -355,7 +350,6 @@ short BuiltinFunction::codeGen(Generator * generator)
 	    GenAssert(0, "unknown value for bytes-per-char.");
         }
       }
-#pragma warn(1506)   // warning elimination 
       
       break;
       
@@ -885,13 +879,11 @@ short BitOperFunc::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
-#pragma nowarn(1506)   // warning elimination 
   ex_clause * function_clause = NULL;
   function_clause =
     new(generator->getSpace()) ExFunctionBitOper(getOperatorType(), 
 						 (1+getArity()),
 						 attr, generator->getSpace());
-#pragma warn(1506)  // warning elimination 
   
   generator->getExpGenerator()->linkClause(this, function_clause);
 
@@ -1417,12 +1409,9 @@ short Cast::codeGen(Generator * generator)
   // if temp space is needed for this operation, set it.
   if (attr[0]->isComplexType())
     {
-#pragma nowarn(1506)   // warning elimination 
       eg->addTempsLength(((ComplexType *)attr[0])->setTempSpaceInfo(getOperatorType(),
 								    eg->getTempsLength()));
-#pragma warn(1506)  // warning elimination 
     }
-#pragma nowarn(1506)   // warning elimination 		      
   ex_conv_clause * conv_clause;
   if(attr[0]->getNullFlag())  //if target is nullable
     conv_clause = new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
@@ -1440,7 +1429,6 @@ short Cast::codeGen(Generator * generator)
                                                     reverseDataErrorConversionFlag_,
                                                     noStringTruncationWarnings(),
                                                     FALSE);
-#pragma warn(1506)  // warning elimination 
 
   conv_clause->setTreatAllSpacesAsZero(treatAllSpacesAsZero());
 
@@ -1791,7 +1779,6 @@ short MathFunc::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
-#pragma nowarn(1506)   // warning elimination 
 
   ex_clause * function_clause = NULL;
   function_clause =
@@ -1799,7 +1786,6 @@ short MathFunc::codeGen(Generator * generator)
 					      (1+getArity()),
 					      attr, generator->getSpace());
   
-#pragma warn(1506)  // warning elimination 
   
   generator->getExpGenerator()->linkClause(this, function_clause);
 
@@ -2091,16 +2077,12 @@ short RangeLookup::codeGen(Generator * generator)
   // copy 2 Attribute pointers and 2 showplan attribute pointers to array with 3 pointers
   str_cpy_all((char *) attr3,
 	      (const char *) attr2,
-#pragma nowarn(1506)   // warning elimination 
 	      sizeof(Attributes *) * (numAttrs-1));
-#pragma warn(1506)  // warning elimination 
   if (numAttrsShowPlan)
     {
       str_cpy_all((char *) &attr3[numAttrs],
 		  (const char *) &attr2[numAttrs-1],
-#pragma nowarn(1506)   // warning elimination 
 		  sizeof(Attributes *) * (numAttrs-1));
-#pragma warn(1506)  // warning elimination 
     }
 
   // make a ConstValue that is a huge character column with all the
@@ -2131,13 +2113,11 @@ short RangeLookup::codeGen(Generator * generator)
   // ...and showplan equivalent, if needed
   if (numAttrsShowPlan)
     {
-#pragma nowarn(1506)   // warning elimination 
       attr3[numAttrs + numAttrsShowPlan - 1] = new (generator->wHeap())
 	ShowplanAttributes(
 	     constValSplitKeys->getValueId(),
 	     convertNAString("SplitKeysForRangeRepartitioning",
 			     generator->wHeap()));
-#pragma warn(1506)  // warning elimination 
     }
 
   // now that we prepared all the inputs, add the clause itself
@@ -2316,13 +2296,11 @@ short RandomNum::codeGen(Generator *generator)
 
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
-#pragma nowarn(1506)   // warning elimination 
   ex_clause *function_clause = new (space) ExFunctionRandomNum(ITM_RANDOMNUM,
 							       (1+getArity()),
 							       simpleRandom_,
                                                                attr, 
                                                                space);
-#pragma warn(1506)  // warning elimination 
   
   if (function_clause)
     generator->getExpGenerator()->linkClause(this, function_clause);

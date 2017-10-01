@@ -96,7 +96,6 @@ ExOnljTcb::ExOnljTcb(const ExOnljTdb &  nljTdb,  //
 
   // Allocate the buffer pool, if 'special' left join
   if ((isLeftJoin()) && (nljTdb.ljExpr_)) {
-#pragma nowarn(1506)   // warning elimination 
     pool_ = new(glob->getSpace()) sql_buffer_pool(nljTdb.numBuffers_,
                                                   nljTdb.bufferSize_,
                                                   glob->getSpace());
@@ -115,7 +114,6 @@ ExOnljTcb::ExOnljTcb(const ExOnljTdb &  nljTdb,  //
     }
 
   }
-#pragma warn(1506)  // warning elimination 
   
   // Copy predicate pointers
   beforePred_ = nljTdb.preJoinPred_;

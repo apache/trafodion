@@ -94,9 +94,7 @@ Tree::Tree(ULng32 numruns, ULng32 runsize, ULng32 recsize,
    ex_assert(rootNode_ != NULL, "Tree::Tree, root_Node_ is NULL");
    ex_assert(rootRecord_ != NULL, "Tree::Tree, rootRecord_ is NULL");
    
-#pragma nowarn(1506)   // warning elimination 
    str_pad(keyOfLastWinner_, keysize, '\377');
-#pragma warn(1506)  // warning elimination 
    baseRun_    = runnum;
    winner_     = rootNode_;
 

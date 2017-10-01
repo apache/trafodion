@@ -235,7 +235,6 @@ private:
   };
 };
 
-#pragma nowarn(1506)   // warning elimination
 class SqlBufferBase : public SqlBufferHeader
 {
 public:
@@ -463,7 +462,6 @@ protected:
   Lng32		 sizeInBytes_;        // total size of the buffer
 
 };
-#pragma warn(1506)  // warning elimination 
 
 /*
 unsigned long SqlBufferNeededSize(long numTuples = 0, 
@@ -475,7 +473,6 @@ unsigned long SqlBufferNeededSize(long numTuples = 0,
 ////////////////////////////////////////////////////////////////
 // class SqlBuffer
 ////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 class SqlBuffer : public SqlBufferBase
 {
 public:
@@ -790,7 +787,6 @@ private:
 Int32 setupSrControlInfo( NABoolean isSend, tupp_descriptor *tuppDesc );
 
 };
-#pragma warn(1506)  // warning elimination 
 
 /////////////////////////////////////////////////////////////////////
 // class SqlBufferNormal
@@ -1120,10 +1116,8 @@ private:
 
   virtual tupp_descriptor * tupleDesc(Int32 i)
     {
-#pragma warning(disable : 4018)   //warning elimination
       if (i >= maxTuppDesc_)
 	return NULL;
-#pragma warning(default : 4018)   //warning elimination
 
       TupleDescInfo * tdi = firstTupleDesc();
       for (Int32 j = 0; j < i; j++)

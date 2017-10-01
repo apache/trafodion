@@ -171,8 +171,6 @@ RoutineDesc::RoutineDesc(const RoutineDesc &rdesc, CollHeap *h)
 // -----------------------------------------------------------------------
 // ! Print function for RoutineDesc
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(770)   // warning elimination
 void RoutineDesc::print(FILE* ofd, const char* indent, const char* title)
 {
 #ifndef NDEBUG
@@ -273,11 +271,9 @@ NABoolean RoutineDesc::createRoutineParam(BindWA *bindWA, CollIndex i,
     const NAColumnArray & params = routine->getParams();
     ColStatDescList &colStsDescList = getEffOutParamColStatDescList();
 
-#pragma nowarn(1506)   // warning elimination
     RoutineParam *routineParam = new (bindWA->wHeap()) RoutineParam(params[i],
                                                                     i, 
                                                                     this);
-#pragma warn(1506)  // warning elimination
 
     if ( routineParam == NULL ) return FALSE;
 

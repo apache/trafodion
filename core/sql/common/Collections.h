@@ -56,7 +56,6 @@
 // File contents
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 
 template <class T> class NACollection;
 template <class T> class NASubCollection;
@@ -310,11 +309,7 @@ const NAUnsigned MAX_COLL_INDEX        = MINOF(100000000,LONG_MAX);
 // syntax in other modules)
 // -----------------------------------------------------------------------
 #define SET(Type)      NASet<Type>
-#pragma warning (disable : 4005)  //warning elimination
-#pragma nowarn(140)   // warning elimination
 #define LIST(Type)     NAList<Type>
-#pragma warn(140)  // warning elimination
-#pragma warning (default : 4005)  //warning elimination
 #define ARRAY(Type)    NAArray<Type>
 #define SUBARRAY(Type) NASubArray<Type>
 #define HASHDICTIONARY(Key,Value) NAHashDictionary<Key,Value>
@@ -1208,7 +1203,6 @@ public:
    else
       {
       // NOTE: for performance reasons we return arbitrary numbers for TRUE
-      // cast to NABoolean added for warning elimination
       return( (NABoolean) (pBits_[ wn ] LAND SingleBitArray[ bitNo( b ) ]) );  
       }
    }
@@ -3015,7 +3009,6 @@ private:
 }; // NAKeyLookup
 
 
-#pragma warn(1506)   // warning elimination
 
 
 // -----------------------------------------------------------------------

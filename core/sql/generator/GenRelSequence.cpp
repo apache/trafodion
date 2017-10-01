@@ -834,9 +834,7 @@ PhysSequence::codeGen(Generator *generator)
   //
   Int32 numberTuples = givenCriDesc->noTuples() + 1;
   ex_cri_desc * returnCriDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new (space) ex_cri_desc(numberTuples, space);
-#pragma warn(1506)  // warning elimination 
 
   // For now, the history buffer row looks just the return row. Later,
   // it may be useful to add an additional tupp for sequence function
@@ -845,9 +843,7 @@ PhysSequence::codeGen(Generator *generator)
   //
   const Int32 historyAtp = 0;
   const Int32 historyAtpIndex = numberTuples-1;
-#pragma nowarn(1506)   // warning elimination 
   ex_cri_desc *historyCriDesc = new (space) ex_cri_desc(numberTuples, space);
-#pragma warn(1506)  // warning elimination 
   ExpTupleDesc *historyDesc = 0;
 
   //seperate the read and retur expressions
@@ -947,12 +943,8 @@ PhysSequence::codeGen(Generator *generator)
                             &historyDesc,
                             ExpTupleDesc::SHORT_FORMAT);
   NADELETEBASIC(attrs, wHeap);
-#pragma nowarn(1506)   // warning elimination 
   returnCriDesc->setTupleDescriptor(historyAtpIndex, historyDesc);
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   historyCriDesc->setTupleDescriptor(historyAtpIndex, historyDesc);
-#pragma warn(1506)  // warning elimination 
 
   // If there are any sequence function items, generate the sequence 
   // function expressions.
@@ -1054,7 +1046,6 @@ PhysSequence::codeGen(Generator *generator)
                                 postPred,
                                 cancelExpression,
                                 getMinFollowingRows(),
-#pragma nowarn(1506)   // warning elimination 
                                 historyRecLen,
                                 historyAtpIndex,
                                 childTdb,
@@ -1078,7 +1069,6 @@ PhysSequence::codeGen(Generator *generator)
                                 numberOfWinOLAPBuffers,
                                 noOverflow,
                                 checkPartChangeExpr);
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sequenceTdb);
 
   // update the estimated value of HistoryRowLength with actual value

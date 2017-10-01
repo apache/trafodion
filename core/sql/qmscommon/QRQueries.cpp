@@ -1975,8 +1975,6 @@ extern SQLMODULE_ID __SQL_mod_199222286715188012;
 #include "wstr.h"
 #include "csconvert.h"
 
-// Disable warning 4390 
-#pragma warning ( disable : 4390 )
 
 /* EXEC SQL
  MODULE HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.MVQR_N29_000 NAMES ARE ISO88591;
@@ -3303,9 +3301,6 @@ SQL_EXEC_ExecFetch(&__SQL_id0,(long)0,0)) != 0);}
 #endif
 return 0;
 }
-
-#pragma warning ( default : 4390 )
-
 
 #ifdef __linux__
 SQLMODULE_ID __SQL_mod_199222286715188012 = {

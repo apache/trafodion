@@ -113,9 +113,7 @@ char * ToAnsiIdentifier2(const char * nsData, size_t nsLen,
     return NULL;
 
   char * retBuf = new(heap) char[len + 1];
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(retBuf, buf, len);
-#pragma warn(1506)  // warning elimination 
   retBuf[len] = 0;
 
   return retBuf;
@@ -242,9 +240,7 @@ void ToAnsiIdentifier3(const char * inputData, size_t inputLen,
   }
 
   // copy the converted identifier to the output
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(outputData, bptr, len);
-#pragma warn(1506)  // warning elimination 
   outputData[len] = 0;
   *outputLen = len;
 

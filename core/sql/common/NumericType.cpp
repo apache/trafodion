@@ -77,9 +77,7 @@ static void unsignedLongToAscii(ULng32 number, char * asciiString,
   char temp;
   Int32 i,j;
 
-#pragma nowarn(1506)   // warning elimination
   for (i = 0, j = strlen(asciiString)-1; i < j; i++, j--)
-#pragma warn(1506)  // warning elimination
     {
       temp = asciiString[i];
       asciiString[i] = asciiString[j];
@@ -1078,7 +1076,6 @@ NAString* SQLSmall::convertToString(double v, CollHeap* h) const
 //  Methods for SQLBPInt
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 SQLBPInt::SQLBPInt(NAMemory *heap, UInt32 declared,
 		   NABoolean allowSQLnull,
 		   NABoolean allowNegValues)
@@ -1096,7 +1093,6 @@ SQLBPInt::SQLBPInt(NAMemory *heap, UInt32 declared,
   assert (allowNegValues == FALSE);
   declaredSize_ = declared;
 } // SQLBPInt()
-#pragma warn(1506)  // warning elimination
 
 // Are two BPInt types equal if they have different storage sizes??
 NABoolean SQLBPInt::operator==(const NAType& other) const
@@ -1718,9 +1714,7 @@ void SQLNumeric::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
         Lng32 i=0;
         for (; i<getPrecision(); i++)
           {
-#pragma nowarn(1506)   // warning elimination
             temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
           }
         
         for (i = 0; i < getNominalSize(); i++)
@@ -1885,13 +1879,9 @@ double SQLNumeric::getMinValue() const
 	       Lng32 i=0;
 	       for (; i<getPrecision(); i++)
 	       {
-#pragma nowarn(1506)   // warning elimination
 		  temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
 	       }
-#pragma nowarn(1506)   // warning elimination
 	       temp = -temp;
-#pragma warn(1506)  // warning elimination
 
                temp *= pow(10.0, -1 * getScale());
                return double(temp);
@@ -1945,9 +1935,7 @@ double SQLNumeric::getMaxValue() const
 	   Lng32 i=0;
 	   for (; i<getPrecision(); i++)
 	   {
-#pragma nowarn(1506)   // warning elimination
 	      temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
 	   }
 
            temp *= pow(10.0, -1 * getScale());
@@ -1999,9 +1987,7 @@ double SQLDecimal::encode(void * input) const
   // Reset the bit before converting to double.
   if (temp_dec[0] & 0200)
     {
-#pragma nowarn(1506)   // warning elimination
       temp_dec[0] = temp_dec[0] & 0177;
-#pragma warn(1506)  // warning elimination
       temp = - atof(temp_dec);
     }
   else

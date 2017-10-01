@@ -1277,20 +1277,16 @@ NABoolean Statement::isExeDebug(char *src, Lng32 charset)
 
 Int32 Statement::octetLen(char *s, Lng32 charset)
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset==SQLCHARSETCODE_UCS2 ?  
     na_wcslen((const NAWchar*)s) * 
     CharInfo::maxBytesPerChar((CharInfo::CharSet)charset) : str_len(s);
-#pragma warn(1506)  // warning elimination
 }
 
 Int32 Statement::octetLenplus1(char *s, Lng32 charset)
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset==SQLCHARSETCODE_UCS2 ? 
     (na_wcslen((const NAWchar*)s)+1)*
     CharInfo::maxBytesPerChar((CharInfo::CharSet)charset) : str_len(s)+1;
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 Statement::sourceLenplus1()
@@ -3001,7 +2997,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		// make sure that the table name in the update/del stmt is the
 		// same as the tablename specified in the cursor.
 		ex_root_tdb *cursorTdb = currentOfCursorStatement_->getRootTdb();
-#pragma nowarn(1506)   // warning elimination 
 		Int16 cursorTableNameLen = 
 		  str_len( cursorTdb->getLateNameInfoList()->
 						    getLateNameInfo(cursorTdb->baseTablenamePosition()).
@@ -4602,9 +4597,7 @@ void Statement::copyGenCode(char * gen_code, ULng32 gen_code_len,
   }
 
   if ((stmt_type == STATIC_STMT) && (root_tdb))
-#pragma nowarn(1506)   // warning elimination 
     setRecompWarn(root_tdb->recompWarn());
-#pragma warn(1506)  // warning elimination 
     
   } // if (unpackTDBs)
   
@@ -4956,9 +4949,7 @@ short Statement::rollbackSavepoint(ComDiagsArea & diagsArea,
 
   if (rollbackSP)
     {
-#pragma nowarn(1506)   // warning elimination 
       short retcode = root_tcb->rollbackSavepoint();
-#pragma warn(1506)  // warning elimination 
       if (retcode)
 	{
 	  diagsArea.mergeAfter(*statementGlobals_->getDiagsArea());

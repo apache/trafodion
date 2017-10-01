@@ -893,9 +893,7 @@ static ItemExpr *addCheckForTriggerEnabled(BindWA    *bindWA,
 
   ItemExpr *enableCheck = new(heap) 
     GetBitValueAt(new(heap) GetTriggersStatus(), 
-#pragma nowarn(1506)   // warning elimination 
 		  new(heap) ConstValue(triggerIndex) );
-#pragma warn(1506)  // warning elimination 
 
   // Check if whenClause is empty or TRUE
   if (whenClause == NULL || whenClause->getOperatorType() == ITM_RETURN_TRUE)
@@ -1632,14 +1630,10 @@ RelExpr *Update::createEffectiveGU(BindWA   *bindWA,
   for (CollIndex i=0; i<subjectColumns.entries(); i++)
   {
     // If this column was not SET into, no need to change it.
-#pragma nowarn(1506)   // warning elimination 
     if (!colsToSet->contains(i))
-#pragma warn(1506)  // warning elimination 
       continue;
 
-#pragma nowarn(1506)   // warning elimination 
     NAColumn *currentColumn = subjectColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     const NAString &colName = currentColumn->getColName();
 
     // Cannot update a clustering/primary key column!
@@ -2281,9 +2275,7 @@ RelExpr * GenericUpdate::createUndoTempTable(TriggersTempTable *tempTableObj,Bin
   tempCorrName.setCorrName( NEWCorr);
   for (CollIndex i=0; i<tempColumns.entries(); i++) 
     {
-#pragma nowarn(1506)   // warning elimination 
       NAString tempColName(tempColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
    
 
       ColReference *tempColRef = new(bindWA->wHeap()) 
@@ -2700,9 +2692,7 @@ RelExpr* GenericUpdate::inlineRI (BindWA *bindWA,
 
   CMPASSERT (!refConstraints->isEmpty())
   
-#pragma nowarn(1506)   // warning elimination 
   if ((entries = refConstraints->entries())) 
-#pragma warn(1506)  // warning elimination 
   {
     riSubtree = createRISubtree(bindWA, naTable, *(refConstraints->at(0)), heap);
     for (Int32 i=1; i < entries; i++) 

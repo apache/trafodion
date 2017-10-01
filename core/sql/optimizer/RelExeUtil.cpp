@@ -4749,7 +4749,6 @@ RelExpr * ExeUtilLoadVolatileTable::bindNode(BindWA *bindWA)
   NAWchar *inputStr = SQLTEXTW();
   Int32 start_pos = 0;
 
-#pragma nowarn(1506)   // warning elimination 
   CharInfo::CharSet targetCharSet = SqlParser_CurrentParser->charset_;
   if ( targetCharSet == CharInfo::UCS2 )
   {
@@ -4761,7 +4760,6 @@ RelExpr * ExeUtilLoadVolatileTable::bindNode(BindWA *bindWA)
        NAWstrlen(&inputStr[start_pos]),
        targetCharSet,
        bindWA->wHeap());
-#pragma warn(1506)  // warning elimination
   
   // get the upd stats query
   updStatsQuery_ = 

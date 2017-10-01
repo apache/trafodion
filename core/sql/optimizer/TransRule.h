@@ -476,7 +476,6 @@ public:
   // copy ctor
   JoinCommutativityRule (const JoinCommutativityRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~JoinCommutativityRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -499,7 +498,6 @@ public:
   // copy ctor
   JoinLeftShiftRule (const JoinLeftShiftRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~JoinLeftShiftRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -528,7 +526,6 @@ public:
   // copy ctor
   IndexJoinRule1 (const IndexJoinRule1 &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~IndexJoinRule1() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -555,7 +552,6 @@ public:
   // copy ctor
   IndexJoinRule2 (const IndexJoinRule2 &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~IndexJoinRule2() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -575,7 +571,6 @@ public:
   // copy ctor
   OrOptimizationRule (const OrOptimizationRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~OrOptimizationRule() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -610,7 +605,6 @@ public:
   // copy ctor
   TSJRule (const TSJRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~TSJRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -657,7 +651,6 @@ public:
   // copy ctor
   JoinToTSJRule (const JoinToTSJRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~JoinToTSJRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -683,7 +676,6 @@ public:
   // copy ctor
   TSJFlowRule (const TSJFlowRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~TSJFlowRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -704,7 +696,6 @@ public:
                RelExpr * substitute) :
        Rule(name,pattern,substitute) {}
 
-// warning elimination (removed "inline")
   virtual ~TSJUDRRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,
@@ -736,7 +727,6 @@ public:
   // copy ctor
   FilterRule (const FilterRule &) ; // not written
 
- // warning elimination (removed "inline")
   virtual ~FilterRule() {}
   virtual Guidance * guidanceForExploringChild(Guidance * guidance,
 					       Context * context,
@@ -973,7 +963,6 @@ public:
   // copy ctor
   SampleScanRule (const SampleScanRule &) ; // not written
 
-// warning elimination (removed "inline")
   virtual ~SampleScanRule() {}
   virtual NABoolean topMatch (RelExpr * expr,
 			      Context * context);
@@ -991,12 +980,10 @@ public:
 class JoinToBushyTreeRule : public Rule
 {
 public:
-// warning elimination (removed "inline")
   JoinToBushyTreeRule(const char * name,
 			    RelExpr * pattern,
 			    RelExpr * substitute) :
                                          Rule(name,pattern,substitute) {}
-// warning elimination (removed "inline")
   virtual ~JoinToBushyTreeRule() {}
 
   virtual NABoolean topMatch (RelExpr * expr,

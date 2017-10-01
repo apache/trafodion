@@ -85,11 +85,9 @@ ExTupleFlowTcb::ExTupleFlowTcb(const ExTupleFlowTdb &  tuple_flow_tdb,
   
   // Allocate the buffer pool, if tgtExpr_ is present
   if (tuple_flow_tdb.tgtExpr_)
-#pragma nowarn(1506)   // warning elimination 
     pool_ = new(glob->getSpace()) sql_buffer_pool(tuple_flow_tdb.numBuffers_,
 						  tuple_flow_tdb.bufferSize_,
 						  glob->getSpace());
-#pragma warn(1506)  // warning elimination 
   
   tcbSrc_ = &src_tcb;
   tcbTgt_ = &tgt_tcb;
@@ -793,9 +791,7 @@ short ExTupleFlowTcb::work()
 	} // switch pstate.step_
     } // while
   
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }
 
 

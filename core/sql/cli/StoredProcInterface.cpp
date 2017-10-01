@@ -229,9 +229,7 @@ short ExSPPutReplyRow(void * replyBuffer,     // IN: the reply buffer
 				    0,
 				    0) == SqlBuffer::MOVE_SUCCESS)
 	{
-#pragma nowarn(1506)   // warning elimination 
 	  str_cpy_all(tdesc->getTupleAddress(), replyRow, rowLen);
-#pragma warn(1506)  // warning elimination 
 	}
       else
 	{

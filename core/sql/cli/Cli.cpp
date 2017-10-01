@@ -1156,9 +1156,7 @@ Lng32 SQLCLI_BreakEnabled(/*IN*/ CliGlobals * cliGlobals,
     }
 
 
-#pragma nowarn(1506)   // warning elimination 
   cliGlobals->setBreakEnabled (enabled);
-#pragma warn(1506)  // warning elimination 
   return 0;
 }
 Lng32 SQLCLI_SPBreakRecvd(/*IN*/ CliGlobals * cliGlobals,
@@ -1170,14 +1168,11 @@ Lng32 SQLCLI_SPBreakRecvd(/*IN*/ CliGlobals * cliGlobals,
     }
 
 
-#pragma nowarn(1506)   // warning elimination 
   *breakRecvd = cliGlobals->SPBreakReceived();
   cliGlobals->setSPBreakReceived(FALSE);
-#pragma warn(1506)  // warning elimination 
   return 0;
 }
 
-#pragma nowarn(770)   // warning elimination
 Lng32 SQLCLI_CreateContext(/*IN*/ CliGlobals * cliGlobals,
 			  /*OUT*/ SQLCTX_HANDLE *contextHandle,
 			  /*IN*/ char * sqlAuthId,
@@ -1215,7 +1210,6 @@ Lng32 SQLCLI_CreateContext(/*IN*/ CliGlobals * cliGlobals,
 
   return SUCCESS;
 }
-#pragma warn(770)  // warning elimination 
 
 Lng32 SQLCLI_CurrentContext(/*IN*/ CliGlobals * cliGlobals,
 			   /*OUT*/ SQLCTX_HANDLE *contextHandle)
@@ -4290,7 +4284,6 @@ static Lng32 getStmtInfo(
       *(Int32 *)numeric_value = diags.getFunction();  // returns FunctionEnum type
       break;
 
-#pragma warning (disable : 4244)   //warning elimination
     case SQLDIAG_ROW_COUNT:
       {
       Int64 rowCount;
@@ -4304,7 +4297,6 @@ static Lng32 getStmtInfo(
       break;
       }
      
-#pragma warning (default : 4244)   //warning elimination
       case SQLDIAG_ROWSET_ROW_COUNT:
       {
 	
@@ -7721,9 +7713,7 @@ Lng32 SQLCLI_GetCollectStatsType_Internal(/*IN*/ CliGlobals * cliGlobals,
       *collectStatsType = (ULng32)ComTdb::NO_STATS;
   }
 
-#pragma nowarn(769)   // warning elimination 
   return retcode;
-#pragma warn(769)  // warning elimination 
 }
 
 // For internal use only -- do not document!

@@ -164,9 +164,7 @@ inline
 NAWchar na_towupper (NAWchar wc)
 {
    if ( NAWCHR('a') <= wc && wc <= NAWCHR('z') )
-#pragma nowarn(1506)   // warning elimination
       return wc - NAWCHR('a') + NAWCHR('A');
-#pragma warn(1506)  // warning elimination
    else
       return wc;
 }
@@ -175,9 +173,7 @@ inline
 NAWchar na_towlower (NAWchar wc)
 {
    if ( NAWCHR('A') <= wc && wc <= NAWCHR('Z') )
-#pragma nowarn(1506)   // warning elimination
       return wc - NAWCHR('A') + NAWCHR('a');
-#pragma warn(1506)  // warning elimination
    else
       return wc;
 }

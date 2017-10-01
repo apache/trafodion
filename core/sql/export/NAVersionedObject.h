@@ -1438,7 +1438,6 @@ protected:
 // ---------------------------------------------------------------------
 typedef NAVersionedObjectPtrTempl<NAVersionedObject> NAVersionedObjectPtr;
 
-#pragma warning ( disable : 4251 )
 
 // ---------------------------------------------------------------------
 // Class NAVersionedObject
@@ -1836,7 +1835,6 @@ private:
 };  // END of class declaration for NAVersionedObject ------------------
 
 
-#pragma warning ( default : 4251 )
 
 #endif  // ---------------------------------------------------- EOF ----
 

@@ -1221,7 +1221,6 @@ public:
   // ---------------------------------------------------------------------
   // Constructor and Destructor.
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   CascadesPlan(RelExpr * physExpr, Context * context = NULL);
 
   virtual ~CascadesPlan();
@@ -1418,7 +1417,6 @@ public:
 //   applying transformation rules
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 class Context : public NABasicObject
 {
 
@@ -1749,7 +1747,6 @@ private:
   PlanWorkSpace*       myPws_;    // my PlanWorkSpace
 
 }; // Context
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A list and an array of context pointers
@@ -2159,7 +2156,6 @@ private:
 // (d) a list of pattern for which this group has been expanded
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 class CascadesGroup : public NABasicObject
 {
 
@@ -2246,7 +2242,6 @@ private:
   // top parallelism heristic and nice contrext for top groupBy
   NABoolean  isBelowRoot_;
 }; // CascadesGroup
-#pragma warn(1506)  // warning elimination
 //<pb>
 // -----------------------------------------------------------------------
 // Search space memory
@@ -2257,7 +2252,6 @@ private:
 // duplicate expressions.
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 class CascadesMemo : public NABasicObject
 {
 
@@ -2310,7 +2304,6 @@ private:
   Lng32                   hashSize_;   // size of hash table
 
 }; // CascadesMemo
-#pragma warn(1506)  // warning elimination
 //<pb>
 // -----------------------------------------------------------------------
 // Tasks
@@ -2738,7 +2731,6 @@ public:
       EXPR_FINISHED	// current expr is finished; in advance() only
     };
 
-// warning elimination (removed "inline")
   static const char * binding_state_name (CascadesBindingStateEnum state)
     {
       return  state == START_GROUP ? "start a group" :

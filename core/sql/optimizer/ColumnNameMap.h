@@ -67,7 +67,6 @@ class XCNM;
 // whose name is exposed in a given scope.
 // 
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class ColumnNameMap : public NABasicObject
 {
 public:
@@ -198,7 +197,6 @@ private:
   NABoolean qualColAmbiguousFlag_;
 
 }; // class ColumnNameMap
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // Implementation for inline functions

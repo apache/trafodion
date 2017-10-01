@@ -38,9 +38,7 @@
 #include "Generator.h"
 #include "GenExpGenerator.h"
 #include "sql_buffer.h"
-#pragma warning ( disable : 4244 )
 #include "ExplainTuple.h"
-#pragma warning ( default : 4244 )
 #include "ExplainTupleMaster.h"
 #include "ComQueue.h"
 //#include "UdfDllInteraction.h"

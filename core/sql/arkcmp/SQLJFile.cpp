@@ -61,12 +61,10 @@ bool SQLJFile::openFile(Cmdline_Args &args)
 
   // invoke MDFWriter to extract modules
   const char mdfWriter[]= "java sqlj.runtime.profile.util.MDFWriter";
-#pragma nowarn(1506)   // warning elimination 
   cmdLen = strlen(mdfWriter) + strlen(moduleNamesOption) + 2 +
     strlen("-CerrorFileName=") + strlen(errFileName) + 2 +
     strlen("-CMDFList=") + strlen(outputFileName) + 1 +
     args.application().length();
-#pragma warn(1506)  // warning elimination 
   // for efficiency we try to use the stack-allocated cmd variable.
   // but, no matter how big we declare it, eg: char cmd[12345],
   // it is always possible for someone like QA try something like

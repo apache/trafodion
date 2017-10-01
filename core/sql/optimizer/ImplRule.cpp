@@ -1621,7 +1621,6 @@ RelExpr * FileScanRule::nextSubstitute(RelExpr * before,
    return generateScanSubstitutes(before, context, memory, FALSE);
 }
 
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // methods for class HbaseScanRule
@@ -4084,7 +4083,6 @@ PhysicalPackRule::~PhysicalPackRule()
 }
 
 // PhysicalPackRule::topMatch()
-#pragma nowarn(262)   // warning elimination
 NABoolean PhysicalPackRule::topMatch(RelExpr* relExpr, Context* context)
 {
   // Match the node type first.
@@ -4205,7 +4203,6 @@ NABoolean PhysicalPackRule::topMatch(RelExpr* relExpr, Context* context)
 
   return TRUE;
 }
-#pragma warn(262)  // warning elimination
 
 RelExpr* PhysicalPackRule::nextSubstitute(RelExpr* before,
                                           Context* /*context*/,

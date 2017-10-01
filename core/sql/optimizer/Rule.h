@@ -294,7 +294,6 @@ public:
   // copy ctor
   RuleSubset (const RuleSubset & orig, CollHeap * h=0) ; // not written
 
-  // warning elimination (removed "inline")
   virtual ~RuleSubset() {}
 
   inline RuleSubset & operator = (const RuleSubset &other)
@@ -304,7 +303,6 @@ public:
 // -----------------------------------------------------------------------
 // The set of rules used in Cascades
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 class RuleSet : public NABasicObject
 {
 friend class RuleSubset;
@@ -366,7 +364,6 @@ public:
 
   // return a (sub) set of currently applicable rules
   // (see also Guidance::applicableRules())
-// warning elimination (remove "inline")
   const RuleSubset * applicableRules()
    {
      CMPASSERT( (currentPass_ >= getFirstPassNumber()) AND
@@ -376,7 +373,6 @@ public:
 
   // used to recognize first pass rules for the use
   // in optimization Level 1
-// warning elimination (removed "inline")
   const RuleSubset * getPassNRules(Lng32 passNum)
    {
      CMPASSERT( (passNum >= getFirstPassNumber()) AND
@@ -450,7 +446,6 @@ private:
   RuleSubset          passSensitiveRules_; // all rules that look at the pass #
   RuleSubset          patternSensitiveRules_; // rules using the expl. pattern
 };
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // Rule substitute memory

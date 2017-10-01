@@ -246,9 +246,7 @@ char *str_itoa(ULng32 i, char *outstr)
       temp = i;
       while (temp > 0)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  outstr[j--] = '0' + (char) (temp%10);
-#pragma warn(1506)  // warning elimination
 	  temp = temp / 10;
 	}
     }
@@ -295,9 +293,7 @@ char *str_ltoa(Int64 i, char *outstr)
       temp = ii;
       while (temp > 0)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  outstr[j--] = '0' + (char) (temp%10);
-#pragma warn(1506)  // warning elimination
 	  temp = temp / 10;
 	}
       if (neg)
@@ -459,14 +455,10 @@ Int32 str_cpy_convert(char * tgt, char * src,
    for (Lng32 i = 0; i < length; i++)
     {
       if (upshift)
-#pragma nowarn(1506)   // warning elimination
 	tgt[i] = TOUPPER(src[i]);
-#pragma warn(1506)  // warning elimination
 
       if (!upshift)
-#pragma nowarn(1506)   // warning elimination
 	tgt[i] = TOLOWER(src[i]);
-#pragma warn(1506)  // warning elimination
     }
 
    return 0;
@@ -510,9 +502,7 @@ Int32 str_inc(const ULng32 length, char * s)
 void str_complement(const ULng32 length, char * s)
 {
   for (ULng32 i = 0; i < length; i++)
-#pragma nowarn(1506)   // warning elimination
     s[i] = ~(s[i]);
-#pragma warn(1506)  // warning elimination
 }
 
 // ----------------------------------------------------------------------
@@ -570,22 +560,16 @@ Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen)
   while (srcix < srcLen)
     {
       // high-order 6 bits of input byte 0 go into output char 0
-#pragma nowarn(1506)   // warning elimination
       key_out[tgtix]   = (key_in[srcix] >> 2) + minChar;
-#pragma warn(1506)  // warning elimination
       // low-order 2 bits of input byte 0 go into output char 1
-#pragma nowarn(1506)   // warning elimination
       key_out[tgtix+1] = ((key_in[srcix] & 0x3) << 4) + minChar;
-#pragma warn(1506)  // warning elimination
 
       if (srcix+1 < srcLen)
 	{
 	  // add high-order 4 bits of input byte 1 to output char 1
 	  key_out[tgtix+1] += key_in[srcix+1] >> 4;
 	  // low-order 4 bits of input byte 1 go to output char 2
-#pragma nowarn(1506)   // warning elimination
 	  key_out[tgtix+2]  = ((key_in[srcix+1] & 0xf) << 2) + minChar;
-#pragma warn(1506)  // warning elimination
 	}
 
       if (srcix+2 < srcLen)
@@ -593,9 +577,7 @@ Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen)
 	  // add high-order 2 bits of input byte 2 to output char 2
 	  key_out[tgtix+2] += key_in[srcix+2] >> 6;
 	  // low-order 6 bits of input byte 2 go to output char 3
-#pragma nowarn(1506)   // warning elimination
 	  key_out[tgtix+3]  = (key_in[srcix+2] & 0x3f) + minChar;
-#pragma warn(1506)  // warning elimination
 	}
 
       srcix += 3;
@@ -764,9 +746,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   NABoolean empty = TRUE;
   if (dQuoteSeen)
     {
-#pragma warning (disable : 4018)   //warning elimination
       for (i = 0; i < tgtLen;i++)
-#pragma warning (default : 4018)   //warning elimination
 	{
 	  if (isSpace8859_1(tgt[i])) // Convert all tabs to spaces
 	    tgt[i] = ' ';
@@ -786,9 +766,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   UInt32 j = 0;
 
   i = 0;
-#pragma warning (disable : 4018)   //warning elimination
   for (i = 0; i < tgtLen; i++)
-#pragma warning (default : 4018)   //warning elimination
     {
       if (dQuoteSeen)
 	{
@@ -802,10 +780,8 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      // a double quote has been seen inside the string
 	      // remove the second double quote by shifting all
 	      // the chars to the right of it by
-#pragma warning (disable : 4018)   //warning elimination
 	      for (j = i; j < tgtLen; j++)
 		tgt[j] = tgt[j+1];
-#pragma warning (default : 4018)   //warning elimination
 	      tgtLen--;
 
 	    }
@@ -820,9 +796,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      if (allowedChars)
 		{
 		  short found = 0;
-#pragma warning (disable : 4018)   //warning elimination
 		  for (UInt32 j = 0; j <str_len(allowedChars); j++)
-#pragma warning (default : 4018)   //warning elimination
 		    {
 		      if (tgt[i] == allowedChars[j])
 			found = 1;
@@ -834,9 +808,7 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
 	      else
 		return -1;
 	    }
-#pragma nowarn(1506)   // warning elimination
 	  tgt[i] = TOUPPER(tgt[i]);
-#pragma warn(1506)  // warning elimination
 	}
     } // end for
 

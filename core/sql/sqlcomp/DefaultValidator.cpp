@@ -68,9 +68,7 @@ void DefaultValidator::applyUpper(NAString &value) const
 				    if (*s == '"')
 				      quoted = !quoted;
 				    else if (!quoted)
-#pragma nowarn(1506)   // warning elimination 
 				      *s = toupper(*s);
-#pragma warn(1506)  // warning elimination 
 				  }
 				  value = tmp;
 				  return;
@@ -378,9 +376,7 @@ Int32 ValidateNumericRange::validate( const char *value,
     }
 
     if (multiple_ && !multipleOK)
-#pragma nowarn(1506)   // warning elimination 
       *CmpCommon::diags() << DgSqlCode(ERRWARN(2057)) << DgInt0(multiple_);
-#pragma warn(1506)  // warning elimination 
 
   }
 

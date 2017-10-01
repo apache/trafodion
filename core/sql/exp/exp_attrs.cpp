@@ -82,14 +82,12 @@ Attributes::Attributes(short complex_type) :
   
   vcIndicatorLength_ = 2; // for now
  
-#pragma nowarn(161)   // warning elimination 
   offset_   = ExpOffsetMax;
   atpindex_ = 0;
   atp_      = 0;
   
   nullIndOffset_  = ExpOffsetMax;
   vcLenIndOffset_ = ExpOffsetMax;
-#pragma warn(161)   // warning elimination 
   voaOffset_      = ExpOffsetMax;
   relOffset_      = 0;
   nextAttrIdx_    = ExpOffsetMax;
@@ -129,25 +127,17 @@ char *Attributes::findVTblPtr(short classID)
   switch (classID)
     {
     case ShowplanID:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ShowplanAttributes);
-#pragma warn(1506)  // warning elimination 
       break;
     case SimpleTypeID:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, SimpleType);
-#pragma warn(1506)  // warning elimination 
       break;
     case BigNumID:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, BigNum);
-#pragma warn(1506)  // warning elimination 
       break;
     case ComplexTypeID:
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ComplexType);
-#pragma warn(1506)  // warning elimination 
       break;
     }
   return vtblPtr;
@@ -191,17 +181,11 @@ void Attributes::fixup(Space * /*space*/,
   assert( area == (char *)0 );
     
 #else /* FOLLOWING CODE SHOULD NOT BE NEEDED */
-#pragma nowarn(1506)   // warning elimination 
   offset_ = (uLong)(area + offset_);
-#pragma warn(1506)  // warning elimination 
   if (getNullFlag())   // nullable 
-#pragma nowarn(1506)   // warning elimination 
      nullIndOffset_ = (ULng32)(area + nullIndOffset_);
-#pragma warn(1506)  // warning elimination 
   if (getVCIndicatorLength() > 0)
-#pragma nowarn(1506)   // warning elimination 
     vcLenIndOffset_ = (ULng32)(area + vcLenIndOffset_);
-#pragma warn(1506)  // warning elimination 
 #endif
 
 }

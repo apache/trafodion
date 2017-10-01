@@ -180,9 +180,7 @@ TriggerDB::clearAndDestroy()
   TableOp * key = NULL;
   BeforeAndAfterTriggers* value = NULL;
   // iterate over all entries and destroy them
-#pragma warning (disable : 4018)   //warning elimination
   for (Int32 i=0; i < iter.entries(); i++) 
-#pragma warning (default : 4018)   //warning elimination
   {
     iter.getNext(key, value);
     CMPASSERT(key != NULL);
@@ -253,9 +251,7 @@ TriggerDB::cleanupPerStatement()
     BeforeAndAfterTriggers* curr = NULL;
 
     // iterate over all entries 
-#pragma warning (disable : 4018)   //warning elimination
     for (Int32 i=0; i < iter.entries(); i++) 
-#pragma warning (default : 4018)   //warning elimination
     {
       iter.getNext(key, curr);
       CMPASSERT(curr != NULL);

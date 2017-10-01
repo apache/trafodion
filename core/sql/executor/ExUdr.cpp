@@ -47,7 +47,6 @@
 //   method would decide to initiate the restart.
 //
 
-#pragma nowarn(262)   // warning elimination 
 #include "ex_stdh.h"
 #include "ExUdr.h"
 #include "ExUdrServer.h"
@@ -4771,5 +4770,4 @@ ExUdrPrivateState::~ExUdrPrivateState()
 {
 }
 
-#pragma warn(262)  // warning elimination 
 

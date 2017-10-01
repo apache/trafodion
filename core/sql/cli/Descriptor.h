@@ -129,9 +129,7 @@ private:
 // -----------------------------------------------------------------------
 // Descriptor
 // -----------------------------------------------------------------------
-#pragma warning (disable : 4275)   //warning elimination
 class Descriptor : public ExGod {
-#pragma warning (default : 4275)   //warning elimination
   enum Flags
   {
   /*************************************************************

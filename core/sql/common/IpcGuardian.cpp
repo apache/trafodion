@@ -346,9 +346,7 @@ GuaConnectionToServer::GuaConnectionToServer(
       activeIOs_[i].ioTag_ = -1;
     }
 
-#pragma nowarn(1506)   // warning elimination 
   lastAllocatedEntry_       = nowaitDepth_-1;
-#pragma warn(1506)  // warning elimination 
 
   numOutstandingIOs_        = 0;
   partiallySentBuffer_      = NULL;
@@ -540,9 +538,7 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
             Int32 retcode = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
             if (retcode != 0)
-#pragma nowarn(1506)   // warning elimination 
               guaErrorInfo_ = retcode; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
             
             // timeout does not set the connection into an error state
             // but it causes a return
@@ -902,9 +898,7 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
         Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
         if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
           guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
         setErrorInfo(-1);
         setState(ERROR_STATE);
         return WAIT_OK;
@@ -918,9 +912,7 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
         Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
         if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
           guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
         setErrorInfo(-1);
         setState(ERROR_STATE);
         return WAIT_OK;
@@ -936,9 +928,7 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
             Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
             if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
               guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
             setErrorInfo(-1);
             setState(ERROR_STATE);
             return WAIT_OK;;
@@ -978,16 +968,12 @@ GuaConnectionToServer * GuaConnectionToServer::castToGuaConnectionToServer()
 
 Int32 GuaConnectionToServer::numQueuedSendMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return sendQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 GuaConnectionToServer::numQueuedReceiveMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return receiveQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 void GuaConnectionToServer::populateDiagsArea(ComDiagsArea *&diags,
@@ -1463,7 +1449,6 @@ void GuaConnectionToServer::openPhandle(char * processName, NABoolean parallelOp
       procFileNameLen = phandle.getPhandleStringLen();
       strncpy(procFileName, phandle.getPhandleString(), procFileNameLen);
     MXTRC_1("GCTS::openPhandle procFileName=%s\n", procFileName);
-#pragma nowarn(1506)   // warning elimination 
    NABoolean isEsp = getEnvironment()->getAllConnections()->getPendingIOs().isEsp();
    getEnvironment()->setLdoneConsumed(TRUE);
     // multi fragment esp 
@@ -1500,7 +1485,6 @@ void GuaConnectionToServer::openPhandle(char * processName, NABoolean parallelOp
   //  retcode = gettimeofday(&tv2, 0);
   //  elapsedTime = (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec;
     }
-#pragma warn(1506)  // warning elimination 
     if (guaErrorInfo_ != GuaOK)
       {
         setErrorInfo(-1);
@@ -1598,9 +1582,7 @@ MXTRC_2("connection=%x, filenum=%d\n", this, openFile_);
       Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
       if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
       setErrorInfo(-1);
       setState(ERROR_STATE);
       return;
@@ -1614,9 +1596,7 @@ MXTRC_2("connection=%x, filenum=%d\n", this, openFile_);
       Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
       if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
       setErrorInfo(-1);
       setState(ERROR_STATE);
       return;
@@ -1632,9 +1612,7 @@ MXTRC_2("connection=%x, filenum=%d\n", this, openFile_);
 	  Int32 errcode2 = BFILE_GETINFO_(openFile_,&guaErrorInfo_);
 
 	  if (errcode2 != 0)
-#pragma nowarn(1506)   // warning elimination 
 	    guaErrorInfo_ = errcode2; // not even FILE_GETINFO_ worked
-#pragma warn(1506)  // warning elimination 
 	  setErrorInfo(-1);
 	  setState(ERROR_STATE);
 	  return;
@@ -2042,16 +2020,12 @@ GuaConnectionToClient * GuaConnectionToClient::castToGuaConnectionToClient()
 
 Int32 GuaConnectionToClient::numQueuedSendMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return sendQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 GuaConnectionToClient::numQueuedReceiveMessages()
 {
-#pragma nowarn(1506)   // warning elimination 
   return receiveQueueEntries();
-#pragma warn(1506)  // warning elimination 
 }
 
 void GuaConnectionToClient::populateDiagsArea(ComDiagsArea *&diags,
@@ -2322,9 +2296,7 @@ void GuaConnectionToClient::acceptBuffer(IpcMessageBuffer  *buffer,
       assert(chunkBytesReceived_ + receivedDataLength <= totalMessageLength);
       str_cpy_all(partiallyReceivedBuffer_->data(chunkBytesReceived_),
 		  buffer->data(0),
-#pragma nowarn(1506)   // warning elimination 
 		  receivedDataLength);
-#pragma warn(1506)  // warning elimination 
       chunkBytesReceived_ += receivedDataLength;
 
       // must reply with an empty message to secondary request chunks
@@ -2491,9 +2463,7 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
   while (retry)
     {
       if(initialized_ || timeout != IpcInfiniteTimeout){
-#pragma nowarn(252)   // warning elimination 
 	_cc_status stat;
-#pragma nowarn(252)   // warning elimination 
 	if (ipcAwaitiox == NULL || !ipcAwaitiox->getCompleted())
 	{
 	  stat = BAWAITIOX(&receiveFile_,
@@ -2509,9 +2479,7 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
 				 &countTransferred,
 				 &ioTag);
 	}
-  #pragma warn(252)   // warning elimination 
 	if (_status_ne(stat)) 
-#pragma warn(252)   // warning elimination 
 	  retcode = BFILE_GETINFO_(receiveFile_,&guaErrorInfo_);
 	else
 	  retcode = guaErrorInfo_ = GuaOK;
@@ -2520,9 +2488,7 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
 	// Set the timeout to 1 min
 	Lng32 newTimeOut= 100*60*1;
 	NABoolean done = FALSE; 
-#pragma nowarn(252)   // warning elimination 
 	while(!done){
-#pragma nowarn(252)   // warning elimination 
           _cc_status stat;
 	  if (guaReceiveFastStart_ != NULL && guaReceiveFastStart_->awaitiox_)
 	  {
@@ -2550,7 +2516,6 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
 	  }
 	  else
 	  {
-#pragma warn(252)   // warning elimination 
 	    if (_status_ne(stat)) 
 	      retcode = BFILE_GETINFO_(receiveFile_,&guaErrorInfo_);
 	    else
@@ -4137,7 +4102,6 @@ void IpcGuardianServer::launchProcess(ComDiagsArea **diags,
   return;
 }
 
-#pragma nowarn(770)   // warning elimination 
 void IpcGuardianServer::spawnProcess(ComDiagsArea **diags,
 				     CollHeap *diagsHeap)
 {
@@ -4254,7 +4218,6 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
   }
 }
 
-#pragma warn(770)   // warning elimination 
 
 short IpcGuardianServer::changePriority(IpcPriority priority, NABoolean isDelta)
 {

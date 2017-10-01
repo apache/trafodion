@@ -2325,7 +2325,6 @@ private:
 // -----------------------------------------------------------------------
 // IpcBufferedMsgStream
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)  // warning elimination 
 class IpcBufferedMsgStream : public IpcMessageStreamBase
 {
 friend class IpcClientMsgStream;
@@ -2517,7 +2516,6 @@ private:
 
   NABoolean smContinueProtocol_;
 }; 
-#pragma warn(1506)  // warning elimination  
 
 // ----------------------------------------------------------------------------
 // IpcClientMsgStream

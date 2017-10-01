@@ -3780,7 +3780,6 @@ ColStatDescList::identifyMergeCandidates (ItemExpr * operand,
 // This is the new version of this function which facilitates applying all
 // predicates at once.
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 NABoolean
 ColStatDescList::applyVEGPred (ItemExpr *VEGpred,
                                CostScalar & rowcount,
@@ -4119,9 +4118,7 @@ ColStatDescList::applyVEGPred (ItemExpr *VEGpred,
     // statsToMerge
 
     //NB: i is unsigned, so this loop as-is should never terminate
-#pragma nowarn(270)   // warning elimination
     for ( i = statsToMerge.entries() - 1; i >= 0; i-- )
-#pragma warn(270)  // warning elimination
     {
       if (statsToMerge[i] != rootStatIndex)
       {
@@ -4243,7 +4240,6 @@ ColStatDescList::applyVEGPred (ItemExpr *VEGpred,
   return appliedPredicateFlag;
 
 } // applyVEGPred
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 //  ColStatDescList::applyBiLogicPred
@@ -4771,7 +4767,6 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
 	ValueIdSet matchedRight;
 	CollIndex currentL, currentR;
 
-#pragma nowarn(262)   // warning elimination
 	if( this->entries() != copyStatsList.entries() )
 	{
 	  // copyStatsList is a copy of THIS statsList, during
@@ -4779,7 +4774,6 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
 	  // the copy, we should not have dropped any columns.
 	  Int32 stophere = 0;
 	}
-#pragma warn(262)  // warning elimination
 
 	for( currentL = 0; currentL < entries(); currentL++ )
 	{
@@ -4868,14 +4862,12 @@ ColStatDescList::applyBiLogicPred(CostScalar & tempRowcount,
 	  }
 	}  // for     (currentL)
 
-#pragma nowarn(262)   // warning elimination
 	if( copyStatsList.entries() != 0 )
 	{
       CCMPASSERT (copyStatsList.entries() == 0);
 	  // The OR merge between THIS and the copy did not go properly
 	  return newRowCount;
 	}
-#pragma warn(262)  // warning elimination
 
 	// Determine the resultant rowcount.  If not all columns overlapped,
 	// use previously determined rowcount
@@ -8360,7 +8352,6 @@ ColStatDescList::getColStatDescIndex (CollIndex& index,           /* out */
 //  ColStatDescList
 // -----------------------------------------------------------------------
 
-#pragma nowarn(262)   // warning elimination
 ColStatsSharedPtr
 ColStatDescList::getColStatsPtrForColumn (const ValueId& inputColumn) const
 {
@@ -8374,7 +8365,6 @@ ColStatDescList::getColStatsPtrForColumn (const ValueId& inputColumn) const
   }
   else
   {
-#pragma nowarn(270)   // warning elimination
     if ((index < 0) || (index >= entries()) )
     {
       // if the index is out side the range of histogram list, return
@@ -8384,11 +8374,9 @@ ColStatDescList::getColStatsPtrForColumn (const ValueId& inputColumn) const
       return NULL;
     }
 
-#pragma warn(270)  // warning elimination
     return (*this)[index]->getColStats();
   }
 }
-#pragma warn(262)  // warning elimination
 
 // -----------------------------------------------------------------------
 // This method returns the ColStatsSharedPtr for the ColStats that references
@@ -9468,7 +9456,6 @@ MultiColumnUecList::findDenom (const ValueIdSet & columns) const
 ULng32 TableDescHashFn (const TableDesc & tablePtr)
 { return (ULng32)((Long)&tablePtr/8) ; }
 
-#pragma nowarn(262)   // warning elimination
 NABoolean
 MultiColumnUecList::useMCUecForCorrPreds (
      NAHashDictionary<ValueId, CostScalar> & predReductions, /* in/mod */
@@ -9784,7 +9771,6 @@ MultiColumnUecList::useMCUecForCorrPreds (
 			     numPredicates );
     return TRUE;
 }
-#pragma warn(262)  // warning elimination
 
 NABoolean 
 MultiColumnUecList::createMCStatsForColumnSet(ValueIdSet colsWithReductions, 

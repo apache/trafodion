@@ -295,9 +295,7 @@ CostMethod::print( FILE* ofd
                  , const char* title
                  ) const
   {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s ",NEW_INDENT);
   if (title)
     fprintf(ofd,"%s ",title);
@@ -1415,9 +1413,7 @@ CostMethodExchange::computeOperatorCostInternal(RelExpr* op,
                                     getNumActivePartitions();
   const CostScalar& numOfPartitions = ((NodeMap *)(childPartFunc->getNodeMap()))->
                                                 getEstNumActivePartitionsAtRuntime();
-#pragma warning (disable : 4018)   //warning elimination
   const CostScalar& numOfProducers  = MINOF( numOfPartitions ,sppForChild->getCurrentCountOfCPUs()  );
-#pragma warning (default : 4018)   //warning elimination
 
   //---------------------------------------------------------------
   //  Exchange operator's number of streams is parent's degree of
@@ -4850,9 +4846,7 @@ void CostMethodFixedCostPerRow::print(FILE* ofd,
                                       const char* indent,
                                       const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   CostMethod::print(ofd,indent,title);
   fprintf(ofd,"%s ",NEW_INDENT);
   fprintf(ofd,
@@ -8663,9 +8657,7 @@ NABoolean CostMethodJoin::computeRepresentativeStream()
   GroupAttributes * child1GA = jn_->child(1).getGroupAttr();
 
   // This is essentially an implementation shared by MJ and HJ but not NJ.
-#pragma nowarn(203)   // warning elimination
   if(jn_->isTSJ()) return FALSE;
-#pragma warn(203)  // warning elimination
 
   // Cannot do better if no colstats are available for analysis.
   if(NOT isColStatsMeaningful_) return FALSE;
@@ -9277,16 +9269,12 @@ void CostMethodHashJoin::cacheParameters(RelExpr* op,
 
   // Length of a row from the left table.
   GroupAttributes* child0GA = hj_->child(0).getGroupAttr();
-#pragma nowarn(1506)   // warning elimination
   child0RowLength_ = child0GA->getRecordLength();
-#pragma warn(1506)  // warning elimination
   extChild0RowLength_ = child0RowLength_ + hashedRowOverhead_;
 
   // Length of a row from the right table.
   GroupAttributes* child1GA = hj_->child(1).getGroupAttr();
-#pragma nowarn(1506)   // warning elimination
   child1RowLength_ = child1GA->getRecordLength();
-#pragma warn(1506)  // warning elimination
   extChild1RowLength_ = child1RowLength_ + hashedRowOverhead_;
 
   // Cost for making a copy of those rows to the local buffer.

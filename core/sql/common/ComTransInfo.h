@@ -304,7 +304,6 @@ private:
   NABoolean  scanLockForIM_;
 };
 
-#pragma nowarn(1506)   // warning elimination 
 class TransMode : public NAVersionedObject
 {
 public:
@@ -551,7 +550,6 @@ private:
 
   UInt32 multiCommitSize_;                                           // 20-23
 };
-#pragma warn(1506)  // warning elimination 
 
 // verify that statement-level access and session-level setting are OK.
 // set errCodeA/errCodeB to 0/0 if all OK, else to -3140/-3141.

@@ -1409,9 +1409,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                            &stmt_id);
 
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   rootTdbBuf = new (heap) char[rootTdbSize];
   srcStrBuf  = new (heap) char[srcStrSize+1];
@@ -1427,9 +1425,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                        srcStrSize,
                                        &stmt_id);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   if (srcStrSize > 0)
     srcStrBuf[srcStrSize] = 0;
@@ -1667,9 +1663,7 @@ static short CmpDescribePlan(
 
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   //Allocate a SQL statement
   stmt_id.name_mode = stmt_handle;
@@ -1776,9 +1770,7 @@ static short CmpDescribePlan(
    // free up resources
   retcode = SQL_EXEC_DeallocDesc(&sql_src);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   retcode = SQL_EXEC_DeallocStmt(&stmt_id);
   if (retcode)

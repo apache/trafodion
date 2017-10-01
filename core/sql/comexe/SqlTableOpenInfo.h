@@ -48,7 +48,6 @@
 // --------------------------------------------------------------------------
 // Class SqlTableOpenInfo
 // --------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class SqlTableOpenInfo : public NAVersionedObject
 {
 public:
@@ -508,7 +507,6 @@ private:
   char fillersSqlTableOpenInfo_[16];                               // 96-111
 
 };
-#pragma warn(1506)   // warning elimination 
 
 // --------------------------------------------------------------------------
 // Template instantiation to produce a 64-bit pointer emulator class

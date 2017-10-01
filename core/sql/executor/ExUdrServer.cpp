@@ -64,7 +64,6 @@ static const char *GetStatusString(ExUdrServer::ExUdrServerStatus s)
   return "***UNKNOWN***";
 } */
 
-#pragma nowarn(140)   // warning elimination 
 #define UdrDebug0(s) \
   ( UdrPrintf(traceFile_,(s)) )
 #define UdrDebug1(s,a1) \
@@ -77,7 +76,6 @@ static const char *GetStatusString(ExUdrServer::ExUdrServerStatus s)
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4)) )
 #define UdrDebug5(s,a1,a2,a3,a4,a5) \
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4),(a5)) )
-#pragma warn(140)  // warning elimination
 
 #else
 //

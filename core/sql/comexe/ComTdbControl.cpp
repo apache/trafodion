@@ -66,9 +66,7 @@ ComTdbControl::ComTdbControl(ControlQueryType cqt,
 	   num_buffers,
 	   buffer_size),
     cqt_(cqt),
-#pragma nowarn(1506)   // warning elimination 
     reset_(reset),
-#pragma warn(1506)  // warning elimination 
     sqlText_(sqlText),
     sqlTextCharSet_(sqlTextCharSet),
     value1_(value1),

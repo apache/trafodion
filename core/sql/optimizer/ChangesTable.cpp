@@ -249,9 +249,7 @@ RelExpr *ChangesTable::buildInsert(NABoolean useLeafInsert,
   ItemExpr *delColExpr, *insColExpr;
   for (CollIndex i=0; i < tempColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAColumn *currentTempCol = tempColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     const NAString& colName = currentTempCol->getColName();
 
     delColExpr = insColExpr = NULL;
@@ -465,9 +463,7 @@ ItemExpr *ChangesTable::buildBaseColsSelectList(const CorrName& tableName) const
 
   for (CollIndex i=0; i<subjectColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAString colName(subjectColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     if (!colName.compareTo("SYSKEY"))
       continue;  // Skip SYSKEY.
 
@@ -498,9 +494,7 @@ ChangesTable::buildColsCorrespondingToBaseSelectList() const
 
   for (CollIndex i=0; i<columns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     NAString colName(columns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     if (colName.data()[0] == '@' && colName.compareTo("@SYSKEY"))
       continue;  // Skip any special column that is not @SYSKEY.
 
@@ -581,9 +575,7 @@ ItemExpr *ChangesTable::buildRenameColsList() const
 
   for (CollIndex i=0; i<subjectColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     const NAString subjectCol(subjectColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
     const NAString *colName = &subjectCol;
     if (!subjectCol.compareTo("SYSKEY"))
     {
@@ -1247,7 +1239,6 @@ ItemExpr *MvIudLog::buildLogEpochPredicate(const DeltaDefinition *deltaDef,
 //		       We use here a special builtin function that evalutes
 //		       this expression
 //////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 ItemExpr *MvIudLog::createSpecificWhereExpr(RowsType type) const
 {
   CMPASSERT(deltaDef_ != NULL);
@@ -1333,7 +1324,6 @@ ItemExpr *MvIudLog::createSpecificWhereExpr(RowsType type) const
 
   return result;
 }
-#pragma warn(262)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 // The orig selection predicate is on the base table columns. This recursive 
@@ -1387,9 +1377,7 @@ ItemExpr *MvIudLog::buildOrigScanPredicate() const
     parser.getItemExprTree((char *)textPredicate.data());
 
   ItemExprList predicateList(origScanPredicate, bindWA_->wHeap(), ITM_AND);
-#pragma nowarn(1506)   // warning elimination 
   for (Int32 i=predicateList.entries()-1; i>=0; i--)
-#pragma warn(1506)  // warning elimination 
   {
     if (fixReferencesFromBaseTableToLog(predicateList[i]) == FALSE)
       predicateList.removeAt(i);
@@ -1453,9 +1441,7 @@ ItemExpr *MvIudLog::constructUpdateBitmapFromList(const LIST(Lng32) &columnList)
   
   for (CollIndex i=0; i < logColumns.entries(); i++) 
   {
-#pragma nowarn(1506)   // warning elimination 
     currentTempCol = logColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     if (!currentTempCol->getColName().compareTo(COMMV_BITMAP_COL))
       break;
   }

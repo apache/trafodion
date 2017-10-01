@@ -781,7 +781,6 @@ private:
 THREAD_P Lng32 HSHistogrmCursor::fetchCount_ = 0;
 THREAD_P Lng32 HSHistintsCursor::fetchCount_ = 0;
 
-#pragma nowarn(770)   // warning elimination
 Lng32 FetchHistograms( const QualifiedName & qualifiedName
                     , const ExtendedQualName::SpecialTableType type
                     , const NAColumnArray & colArray
@@ -970,12 +969,10 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
   NABoolean *emptyHistogram; 
   NABoolean *smallSampleHistogram; 
   double    *smallSampleSize; 
-#pragma nowarn(1506)   // warning elimination 
   NANewArray<NABoolean> tmpfh(fakeHistogram, numCols);
   NANewArray<NABoolean> tmpeh(emptyHistogram, numCols);
   NANewArray<NABoolean> tmpsh(smallSampleHistogram, numCols);
   NANewArray<double>    tmpzh(smallSampleSize, numCols);
-#pragma warn(1506)  // warning elimination
   CollIndex k = 0;
   for (k = 0; k < numCols; k++) 
   {
@@ -990,9 +987,7 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
   // -----------------------------------------------------------------------
   HSColStats cs(colArray, colStatsList, heap);
   Lng32 *colmap;                                 // Lng32 = column position in tbl
-#pragma nowarn(1506)   // warning elimination
   NANewArray< Lng32 > tmpcm(colmap, numCols);      // no need to initialize
-#pragma warn(1506)  // warning elimination
 
   // -----------------------------------------------------------------------
   // For packed tables (which must be a VP table as well), code is already
@@ -1250,7 +1245,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
 
   return 0;
 }
-#pragma warn(770)  // warning elimination
 // *****************************************************************************
 // FUNCTION   readHistograms()
 // PURPOSE    Bundles the read of histograms from UMD tables and assignment of
@@ -2351,9 +2345,7 @@ Lng32 OpenCursor( const char *descID
 
   strncpy(moduleName, HS_MODULE, HS_MODULE_LENGTH);
   module.module_name = (char*)moduleName;
-#pragma nowarn(1506)   // warning elimination
   module.module_name_len = strlen((char*)moduleName);
-#pragma warn(1506)  // warning elimination
   module.creation_timestamp = 1234567890;
 
   if (desc)
@@ -2378,9 +2370,7 @@ Lng32 OpenCursor( const char *descID
   desc->handle     = 0;
 
   sprintf((char*)desc->identifier, descID);
-#pragma nowarn(1506)   // warning elimination
   desc->identifier_len = strlen(descID);
-#pragma warn(1506)  // warning elimination
 
   SQL_EXEC_ClearDiagnostics(desc);
   retcode = SQL_EXEC_Exec(desc, NULL, 2, param1Addr, NULL,
@@ -2491,12 +2481,8 @@ void HSColStats::addHistogram
 
   if (LM->LogNeeded())
     {
-#pragma nowarn(1506)   // warning elimination
       NAWcharBuf wLowBuf((wchar_t *)lowval,na_wcslen(lowval));
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       NAWcharBuf wHiBuf((wchar_t *)highval,na_wcslen(highval));
-#pragma warn(1506)  // warning elimination
       charBuf* isoLowVal = NULL;
       charBuf* isoHiVal = NULL;
       isoLowVal = unicodeToISO88591(wLowBuf, heap_, isoLowVal);
@@ -2605,10 +2591,8 @@ void HSColStats::addHistint( NABoolean needHistints
 
       if (LM->LogNeeded())
         {
-#pragma nowarn(1506)   // warning elimination
           NAWcharBuf wBoundBuf((wchar_t *)boundary,na_wcslen(boundary));
           NAWcharBuf wMfvBuf((wchar_t *)mfv, na_wcslen(mfv));
-#pragma warn(1506)  // warning elimination
           charBuf* isoBoundVal = NULL;
           charBuf* isoMfvVal = NULL;
           isoBoundVal = unicodeToISO88591(wBoundBuf, heap_, isoBoundVal);

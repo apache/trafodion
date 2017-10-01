@@ -360,9 +360,7 @@ IpcNodeName IpcProcessId::getNodeName() const
 //    Perhaps we should set pid_.ipAddress_ =  some meaningless ip address?;
 	  
       return IpcNodeName(SockIPAddress(pid_.ipAddress_));
-#pragma nowarn(1252)   // warning elimination 
 }
-#pragma warn(1252)  // warning elimination 
 
 IpcCpuNum IpcProcessId::getCpuNum() const
 {
@@ -4048,9 +4046,7 @@ void IpcBufferedMsgStream::cleanupBuffers()
   }
   if (inUseBufList_.entries() < (CollIndex) inUseBufferLimit_)
   { // optimize garbage collection limit until inuse limit reached
-#pragma nowarn(1506)   // warning elimination 
     garbageCollectLimit_ = inUseBufList_.entries(); 
-#pragma warn(1506)  // warning elimination 
   }
   
 }

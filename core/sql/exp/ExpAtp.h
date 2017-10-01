@@ -67,7 +67,6 @@ class ExStatisticsArea;
 // The first member of the array is actually a pointer to the composite row
 // descriptor.
 
-#pragma warning ( disable : 4251 )
 
 class atp_struct
 {
@@ -133,7 +132,6 @@ class atp_struct
 			      // are allocated, then the length is 3
 };                  
 
-#pragma warning ( default : 4251 )
 
 // Constructor of an Atp given a cri descriptor.  Can't make it a simple 
 // constructor since we need to allocate a variable length array.  In
@@ -289,9 +287,7 @@ inline void atp_struct::copyPartialAtp(atp_struct * from,
 
 inline void atp_struct::copyPartialAtp(atp_struct * from)
 {
-#pragma nowarn(1506)   // warning elimination 
   copyPartialAtp(from, 0, from->numTuples()-1);
-#pragma warn(1506)  // warning elimination 
 }
 
 // De-initialize atp. deallocation is done elsewhere

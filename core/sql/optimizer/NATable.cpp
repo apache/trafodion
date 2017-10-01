@@ -239,7 +239,6 @@ void HistogramCache::invalidateCache()
 // context heap to store it in the hash table.
 //--------------------------------------------------------------------------
 
-#pragma nowarn(770)   // warning elimination
 void HistogramCache::getHistograms(NATable& table)
 {
   const QualifiedName& qualifiedName = table.getFullyQualifiedGuardianName();
@@ -333,7 +332,6 @@ void HistogramCache::getHistograms(NATable& table)
   lastTouchTime_ = getCurrentTime();
 
 } //1//
-#pragma warn(770)  // warning elimination
   
 //----------------------------------------------------------------------------
 // HistogramCache::createColStatsList()
@@ -575,7 +573,6 @@ void HistogramCache::createColStatsList
 //found in the cache. The columns whose statistics are required
 //are passed in through colArray. 
 //------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 Int32 HistogramCache::getStatsListFromCache
 ( StatsList&            list, //In \ Out
   NAColumnArray&        colArray, //In
@@ -673,7 +670,6 @@ Int32 HistogramCache::getStatsListFromCache
 
   return columnsCovered;
 }
-#pragma warn(1506)  // warning elimination
 
 //this method is used to put into the cache stats lists, that
 //needed to be re-read or were not there in the cache
@@ -1816,7 +1812,6 @@ NABoolean checkColumnTypeForSupportability(const NAColumnArray & partColArray, c
 // permissible values that the partitioning key columns can contain
 // within a certain partition, for range-partitioned data.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static RangePartitionBoundaries * createRangePartitionBoundaries
                                      (TrafDesc * part_desc_list,
 				      Lng32 numberOfPartitions,
@@ -1956,7 +1951,6 @@ static RangePartitionBoundaries * createRangePartitionBoundaries
   return partBounds;
 
 } // static createRangePartitionBoundaries()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // createRangePartitioningFunction()
@@ -2216,7 +2210,6 @@ createHash2PartitioningFunctionForHBase(TrafDesc* desc,
 // a histogram's boundary values.
 //
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                       (const IndexDesc* idesc, 
                                        HistogramSharedPtr& hist,
@@ -2377,7 +2370,6 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
   return partBounds;
 
 } // createRangePartitionBoundariesFromStats()
-#pragma warn(1506)  // warning elimination
 
 static 
 PartitioningFunction*
@@ -2665,7 +2657,6 @@ static PartitioningFunction * createHivePartitioningFunction
 // This method is used for creating a node map for all DP2 partitions of
 // associated with this table or index.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static void createNodeMap (TrafDesc* part_desc_list,
 		           NodeMap*     nodeMap,
                            NAMemory*    heap,
@@ -2771,9 +2762,7 @@ static void createNodeMap (TrafDesc* part_desc_list,
     }
 
 } // static createNodeMap()
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 static void createNodeMap (hive_tbl_desc* hvt_desc,
 		           NodeMap*     nodeMap,
                            NAMemory*    heap,
@@ -2820,7 +2809,6 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
   // No fake volumn assignment because Hive' partitions are not hash
   // based, there is no balance of data among all partitions.
 } // static createNodeMap()
-#pragma warn(1506)  // warning elimination
 
 //-------------------------------------------------------------------------
 // This function checks if a table/index or any of its partitions are
@@ -2829,13 +2817,11 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
 // - approx 31000 for messages to remote nodes, and 56000 for messages
 // on the local node.
 //-------------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 static NABoolean checkRemote(TrafDesc* part_desc_list,
                              char * tableName)
 {
     return TRUE;
 }
-#pragma warn(262)  // warning elimination
 
 
 static NAString makeTableName(const NATable *table,
@@ -2846,7 +2832,6 @@ static NAString makeTableName(const NATable *table,
        table->getTableName().getQualifiedNameAsAnsiString().data() : "");
 }
 
-// warning elimination (removed "inline")
 static NAString makeColumnName(const NATable *table,
 			       const TrafColumnsDesc *column_desc)
 {
@@ -3311,7 +3296,6 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 // Method for inserting new NAColumn entries in NATable::colArray_,
 // one for each column_desc in the list supplied as input.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
 			  NATable *table		/*IN*/,
 			  NAColumnArray &colArray	/*OUT*/,
@@ -3485,7 +3469,6 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
   return FALSE;							// no error
 
 } // createNAColumns()
-#pragma warn(1506)  // warning elimination
       
 NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 {
@@ -3553,7 +3536,6 @@ NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
   return FALSE;							// no error
 
 } // createNAColumns()
-#pragma warn(1506)  // warning elimination
 
 
 
@@ -3625,7 +3607,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 // -  inserting new NAFileSet entries in NATable::vertParts_
 //    one for each vertical partition in the list supplied as input.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 static
 NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
                            const NATable * table          /*IN*/,
@@ -4290,7 +4271,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      // logic related to indexes hiding
    return FALSE;
  } // static createNAFileSets()
- #pragma warn(1506)  // warning elimination
 
 
  // for Hive tables
@@ -4589,7 +4569,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
    return FALSE;
  } // static createNAFileSets()
 
- #pragma warn(1506)  // warning elimination
 
  // -----------------------------------------------------------------------
  // Mark columns named in PRIMARY KEY constraint (these will be different
@@ -4901,7 +4880,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
  const Lng32 initHeapSize = 32 * 1024;		// ## 32K: tune this someday!
 
- #pragma nowarn(770)  // warning elimination
  NATable::NATable(BindWA *bindWA,
                   const CorrName& corrName,
                   NAMemory *heap,
@@ -5546,21 +5524,15 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          //get volume/catalog name
          //skip ".$"
          catStr=&nodeName[nodeNameLen+2];
-#pragma nowarn(1506)   // warning elimination
          catStrLen = catalogName.length() - (nodeNameLen+2);
-#pragma warn(1506)  // warning elimination
 
          //get subvolume/schema name
          schemaStr = (char *) schemaName.data();
-#pragma nowarn(1506)   // warning elimination
          schemaStrLen = schemaName.length();
-#pragma warn(1506)  // warning elimination
 
          //get file name
          fileStr = (char *) fileName.data();
-#pragma nowarn(1506)   // warning elimination
          fileStrLen = fileName.length();
-#pragma warn(1506)  // warning elimination
 
          //figure out the node number for the node
          //which has the primary partition.
@@ -5641,7 +5613,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    initialSize_ = heap_->getAllocSize();
    MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
  } // NATable()
-#pragma warn(770)  // warning elimination
 
 
 // Constructor for a Hive table
@@ -5934,7 +5905,6 @@ NATable::NATable(BindWA *bindWA,
   initialSize_ = heap_->getAllocSize();
   MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
 } // NATable()
-#pragma warn(770)  // warning elimination
 
 
 NABoolean NATable::doesMissingStatsWarningExist(CollIndexSet & colsSet) const

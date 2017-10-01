@@ -378,4 +378,3 @@ void ExtQualModuleNames::processExtQualModuleNames()
   currentTokenCode_ = scanner();
   parseExternallyQualifiedModuleNames();
 }
-#pragma warning (disable : 4786)   //warning elimination

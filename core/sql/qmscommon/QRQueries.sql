@@ -43,9 +43,6 @@
 #include "csconvert.h"
 #include "catapirequest.h"
 
-// Disable warning 4390 
-#pragma warning ( disable : 4390 )
-
 EXEC SQL MODULE HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.MVQR_N29_000 NAMES ARE ISO88591;
 
 /* For CharSet project: add 3 CQDs */ 
@@ -1034,5 +1031,4 @@ Lng32 QRQueries::reDescribeMV(const NAString& mvName, NABoolean rePublish)
   return SQLCODE;
 }
 
-#pragma warning ( default : 4390 )
 

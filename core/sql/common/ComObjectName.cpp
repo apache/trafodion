@@ -814,9 +814,7 @@ ComObjectName::scan( const NAString &externalObjectName
   // Scan the next ANSI SQL name part
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   Int32 remainingLen = externalObjectNameLen - bytesScanned;
-#pragma warn(1506)  // warning elimination 
   NAString remainingName = externalObjectName(bytesScanned, remainingLen);
   count = trailingJunkIsOk;
   ComAnsiNamePart part2(remainingName, count, 0, 
@@ -845,9 +843,7 @@ ComObjectName::scan( const NAString &externalObjectName
   // Scan the last ANSI SQL name part
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   remainingLen = externalObjectNameLen - bytesScanned;
-#pragma warn(1506)  // warning elimination 
   remainingName = externalObjectName(bytesScanned, remainingLen);
   count = trailingJunkIsOk;
   ComAnsiNamePart part3(remainingName, count, 0,

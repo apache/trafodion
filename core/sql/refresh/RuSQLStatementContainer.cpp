@@ -56,9 +56,7 @@ StoreData(CUOFsIpcMessageTranslator &translator)
 	
 	for (Int32 i=0;i<GetNumOfStmt();i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		GetStmt(i).StoreData(translator);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -76,9 +74,7 @@ void CRUSQLStatementContainer::
 
 	for (Int32 i=0;i<GetNumOfStmt();i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		GetStmt(i).LoadData(translator);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 

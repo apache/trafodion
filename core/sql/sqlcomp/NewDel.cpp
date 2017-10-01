@@ -103,9 +103,7 @@ void * operator new(size_t size)
     if (!p && globalCmpNewHandler) {
       globalCmpNewHandler();
     }
-#pragma nowarn(1506)
     HEAPLOG_ADD_ENTRY(p, size, DEFAULT_SYSTEM_HEAP_ID, "Default System Heap");
-#pragma warn(1506)
     memset(p, 0, size);
     return p;
 
@@ -114,9 +112,7 @@ void * operator new(size_t size)
 void operator delete(void * ptr)
 {
 
-#pragma nowarn(1506)
     HEAPLOG_DELETE_ENTRY(ptr,DEFAULT_SYSTEM_HEAP_ID);
-#pragma warn(1506)
     free(ptr);
 
 }
@@ -136,9 +132,7 @@ void *operator new[](size_t size)
     if (!p && globalCmpNewHandler) {
       globalCmpNewHandler();
     }
-#pragma nowarn(1506)
     HEAPLOG_ADD_ENTRY(p, size, DEFAULT_SYSTEM_HEAP_ID, "Default System Heap");
-#pragma warn(1506)
     //printf("M\tGlobalND\t%10x\t%10x\t%10x\n", p, size, (char *) p + size);
     memset (p, 0, size);
     return p; //malloc(size);
@@ -147,9 +141,7 @@ void *operator new[](size_t size)
 void operator delete[](void * ptr)
 {
 
-#pragma nowarn(1506)
     HEAPLOG_DELETE_ENTRY(ptr,DEFAULT_SYSTEM_HEAP_ID);
-#pragma warn(1506)
     free(ptr);
     //printf("F\tGlobalND\t%10x\n", ptr);
 

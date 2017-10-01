@@ -138,7 +138,6 @@ Lng32 RunDirectory::startNewRun(SBN scrblocknum)
 //  run number of the newly started run.
 //
 //-----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination 
 void RunDirectory::endCurrentRun(void)
 {
   RunDirectoryEntry *tempRdListPtr;
@@ -146,7 +145,6 @@ void RunDirectory::endCurrentRun(void)
   tempRdListPtr = rdListPtr_ + numRunsGenerated_;
   // TIMESTAMP(tempRdListPtr->endTime_);     
 }
-#pragma warn(770)  // warning elimination 
 
 //-----------------------------------------------------------------------
 // Name         : getTotalNumOfRuns

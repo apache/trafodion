@@ -290,14 +290,12 @@ CNATestPoint::SetTrapError ( const Int32 trapError )
 //  A function that keeps calling itself, used to create a stack
 //  overflow trap.
 // -------------------------------------------------------------------
-#pragma warning ( disable : 4717 ) // disable the recursive call / stack overflow warning for this method
 void
 CNATestPoint::RecursiveCall( char buffer[100000] )
 {
    char a[100000];
    RecursiveCall(a);
 }
-#pragma warning ( default : 4717 ) // enable the recursive call / stack overflow warning
 
 // -------------------------------------------------------------------
 // Method: Wait

@@ -85,8 +85,6 @@ class ExpDatetime;
 // static const UInt32 ExpVoaSize = sizeof(Int32);
 
 
-#pragma warning ( disable : 4251 )
-#pragma nowarn(1506)  // warning elimination 
 class Attributes : public NAVersionedObject
 {
 public:
@@ -657,7 +655,6 @@ private:
 // resolve an ambiguity with an LLVM class that is also named Attributes
 typedef Attributes exp_Attributes;
 
-#pragma warn(1506)  // warning elimination 
 
 
 inline void Attributes::needDataAlignment()
@@ -672,9 +669,7 @@ inline void Attributes::dontNeedDataAlignment()
 
 inline Int32 Attributes::isNotAlwaysAligned()
 {
-#pragma nowarn(1506)   // warning elimination 
   return (flags_ & DATA_ALIGNMENT_FLAG);
-#pragma warn(1506)  // warning elimination 
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1051,5 +1046,4 @@ private:
   char            fillers_[4];        // 60-63
 };
 
-#pragma warning ( default : 4251 )
 #endif

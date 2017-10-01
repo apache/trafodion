@@ -74,7 +74,6 @@ void MapInfo::set(const ValueId & valueId, Attributes * attr, CollHeap * heap)
   
 };
 
-#pragma nowarn(270)   // warning elimination 
 short MapInfo::isOffsetAssigned()
   {
     if (attr_->getOffset() >= 0)
@@ -82,7 +81,6 @@ short MapInfo::isOffsetAssigned()
     else
       return 0;
   };
-#pragma warn(270)  // warning elimination
 
  
 //////////////////////////////////////////////////////////////////
@@ -100,9 +98,7 @@ MapInfo * MapTable::addMapInfoToThis(const ValueId & value_id,
 				     Attributes * attr)
 {
   const CollIndex valueId = value_id;
-#pragma nowarn(1506)   // warning elimination 
   const Int32 whichMap      = valueId / bitsPerUnit;
-#pragma warn(1506)  // warning elimination 
 
   // --------------------------------------------------
   // Do we need to allocate more memory for the bitmaps?
@@ -116,9 +112,7 @@ MapInfo * MapTable::addMapInfoToThis(const ValueId & value_id,
       
       // How many bytes is needed for the bitmap array and the integer array.
       const Int32 bytesToAllocate = 
-#pragma nowarn(1506)   // warning elimination 
 	newBitMapArraySize * (sizeof(MTBitmapUnit) + sizeof(short));
-#pragma warn(1506)  // warning elimination 
       
       // Allocate memory from statement heap, which is always defined when
       // compiling a SQL statement.
@@ -231,9 +225,7 @@ MapInfo * MapTable::addMapInfoToThis(const ValueId & value_id,
 	    ? moveXMapInfoPtrsAtATime 
 	    : mapInfosLeftToMove;
 	  
-#pragma nowarn(1506)   // warning elimination 
 	  const Int32 bytesToMove = sizeof(MapInfo *) * ptrsToMove;
-#pragma warn(1506)  // warning elimination 
 	  
 	  // Copy to a local array.
 	  memcpy( 
@@ -324,9 +316,7 @@ MapInfo * MapTable::getMapInfoFromThis(const ValueId & value_id)
   // Find the bits in the bitmap that we're interested in.
   // --------------------------------------------------
   const CollIndex valueId = value_id;
-#pragma nowarn(1506)   // warning elimination 
   const Int32 whichMap = valueId / bitsPerUnit;
-#pragma warn(1506)  // warning elimination 
   
   // Range check.
   if ( whichMap >= vidBitMapArraySize_ )
@@ -430,9 +420,7 @@ void MapTable::shiftAtpIndex(short shiftIndex)
 	      // Only change the atp if the original ATP index is greater 
 	      // than 1. This excludes constants, temps, and persistents.
 	      //
-#pragma nowarn(1506)   // warning elimination 
 	      attr->setAtpIndex( attr->getAtpIndex() + shiftIndex );
-#pragma warn(1506)  // warning elimination 
 	    }
 	}
       

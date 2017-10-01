@@ -1123,17 +1123,13 @@ ex_expr::exp_return_type convLargeDecToAscii(char *target,
   // fill in digits
   Lng32 i = 0;
   for (i = 0; i < (requiredDigits-sourceScale); i++, targetPos++, currPos++)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos] = source[currPos] + '0';
-#pragma warn(1506)  // warning elimination 
 
   // if we have a scale, add decimal point and some digits
   if (sourceScale) {
     target[targetPos++] = '.';
     for (i = 0; i < sourceScale; i++, targetPos++, currPos++)
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos] = source[currPos] + '0';
-#pragma warn(1506)  // warning elimination 
   };
 
   // Right pad blanks for fixed char.
@@ -2114,9 +2110,7 @@ ex_expr::exp_return_type convInt64ToDec(char *target,
       return ex_expr::EXPR_ERROR;
     };
 
-#pragma nowarn(1506)   // warning elimination 
     target[currPos--] = '0' + (char)(source % 10);
-#pragma warn(1506)  // warning elimination 
     source /= 10;
   };
   
@@ -2165,9 +2159,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
       {
 	// pad the target with zeros
 	while (targetPos >= 0)
-#pragma nowarn(1506)   // warning elimination 
 	  target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
 	
 	return ex_expr::EXPR_OK;
       }
@@ -2244,9 +2236,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
   // only zeros found, target is 0
   if (sourceStart == sourceLen) {
-#pragma nowarn(1506)   // warning elimination 
     str_pad(target, targetLen, '0' - offset);
-#pragma warn(1506)  // warning elimination 
     return ex_expr::EXPR_OK;
   };
 
@@ -2269,9 +2259,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
   while ((sourcePos >= sourceStart) && (targetPos >= 0)) {
     // add zeros to adjust scale
     if (targetScale > sourceScale) {
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
       targetScale--;
     }
     else if (targetScale < sourceScale) {
@@ -2296,9 +2284,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
         return ex_expr::EXPR_ERROR;
       };
       // copy source to target
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos--] = source[sourcePos--] - offset;
-#pragma warn(1506)  // warning elimination 
     };
   };
 
@@ -2321,9 +2307,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
   // left pad the target with zeros
   while (targetPos >= 0)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
 
   // add sign
   if (negative)
@@ -2552,9 +2536,7 @@ ex_expr::exp_return_type convAsciiFieldToInt64(Int64 &target,
   while ((currPos < sourceLen) && ((source[currPos] >= '0') && 
                                    (source[currPos] <= '9')))
   { 
-#pragma nowarn(1506)   // warning elimination 
     short thisDigit = source[currPos] - '0';
-#pragma warn(1506)  // warning elimination 
     if (target > (LLONG_MAX / 10))
     { // next power of 10 causes an overflow
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
@@ -2796,9 +2778,7 @@ ex_expr::exp_return_type convAsciiToInterval(char *target,
         return ex_expr::EXPR_ERROR;
       };
       if (negInterval)
-#pragma nowarn(1506)   // warning elimination 
 	*(Target<short> *)target = -(short)intermediate;
-#pragma warn(1506)  // warning elimination 
       else
 	*(Target<short> *)target = (short)intermediate;
       break;
@@ -3251,9 +3231,7 @@ ex_conv_clause::ConvResult convLargeDecToDecAndScale(char *target,
 
   str_pad(target, targetPos, '0');
   while (sourcePos < sourceLen)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos++] = source[sourcePos++] + '0';
-#pragma warn(1506)  // warning elimination 
 
   // do any scaling down needed
   while (exponent > 0)
@@ -4882,7 +4860,6 @@ ex_expr::exp_return_type convCharToChar(
 
 
 
-#pragma warning (disable : 4101)  //warning elimination
 ex_expr::exp_return_type
 convDoIt(char * source,
 	 Lng32 sourceLen,
@@ -5774,9 +5751,7 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)
             { // Set the target value.
-#pragma nowarn(1506)   // warning elimination 
               *(short *)target = *(unsigned short *)source;
-#pragma warn(1506)  // warning elimination 
             }
           else
             { // Check target precision. Then set target value.
@@ -5792,9 +5767,7 @@ convDoIt(char * source,
                                  diagsArea,
                                  tempFlags) == ex_expr::EXPR_OK)
                 {
-#pragma nowarn(1506)   // warning elimination 
                   *(short *)target = *(unsigned short *)source;
-#pragma warn(1506)  // warning elimination 
                 }
               else
                 {
@@ -6356,9 +6329,7 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)
             { // Set the target value.
-#pragma nowarn(1506)   // warning elimination 
               *(Lng32 *)target = *(ULng32 *)source;
-#pragma warn(1506)  // warning elimination 
             }
           else
             { // Check target precision. Then set target value.
@@ -6374,9 +6345,7 @@ convDoIt(char * source,
 		                 diagsArea,
                                  tempFlags) == ex_expr::EXPR_OK)
                 {
-#pragma nowarn(1506)   // warning elimination 
                   *(Lng32 *)target = *(ULng32 *)source;
-#pragma warn(1506)  // warning elimination 
                 }
               else
                 {
@@ -7297,11 +7266,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7374,11 +7339,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7453,11 +7414,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7530,11 +7487,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7609,11 +7562,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7726,9 +7675,7 @@ convDoIt(char * source,
   case CONV_FLOAT32_DECS:
     {
       float floatsource = *floatSrcPtr;
-#pragma nowarn(1506)   // warning elimination 
       if (floatsource < getMinDecValue(targetLen, targetType))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
@@ -7743,9 +7690,7 @@ convDoIt(char * source,
               return ex_expr::EXPR_ERROR;
             }
         }
-#pragma nowarn(1506)   // warning elimination 
       else if (floatsource > getMaxDecValue(targetLen))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
@@ -7766,11 +7711,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7924,11 +7865,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8000,12 +7937,8 @@ convDoIt(char * source,
           Int64 int64source = (Int64) doublesource;
           if (dataConversionErrorFlag != 0)
             {
-#pragma warning (disable : 4244)   //warning elimination
               // Convert back and check for a value change.
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8079,11 +8012,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8156,13 +8085,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
-#pragma warn(1506)  // warning elimination 
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8237,13 +8160,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
-#pragma warn(1506)  // warning elimination 
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8356,9 +8273,7 @@ convDoIt(char * source,
   case CONV_FLOAT64_DECU:
     {
       double doublesource = *doubleSrcPtr;
-#pragma nowarn(1506)   // warning elimination 
       if (doublesource < getMinDecValue(targetLen, targetType))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
@@ -8373,9 +8288,7 @@ convDoIt(char * source,
               return ex_expr::EXPR_ERROR;
             }
         }
-#pragma nowarn(1506)   // warning elimination 
       else if (doublesource > getMaxDecValue(targetLen))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
@@ -8396,11 +8309,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -11417,7 +11326,6 @@ convDoIt(char * source,
   };
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4101)  //warning elimination
       
 ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 					      CollHeap *heap,
@@ -11553,7 +11461,6 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 	source = (char*)ptrVal;
       }
 
-#pragma nowarn(1506)   // warning elimination 
     retcode =  convDoIt(source, //op_data[1],
 			src->getLength(op_data[-MAX_OPERANDS + 1]),
 			src->getDatatype(),
@@ -11572,7 +11479,6 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 			dataConversionErrorFlag,
 			convFlags
                         );
-#pragma warn(1506)  // warning elimination 
 
     if ((flags_ & REVERSE_DATA_ERROR_CONVERSION_FLAG) != 0)
       {

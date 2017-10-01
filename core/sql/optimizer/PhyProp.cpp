@@ -76,12 +76,8 @@ NABoolean PhysicalProperty::isPartKeyPrefixOfSortKey() const
   ValueIdList actualPartKey(
     partFunc->castToRangePartitioningFunction()->getKeyColumnList());
   ValueIdList actualSortKey(getSortKey());
-#pragma nowarn(1506)   // warning elimination
   Lng32 numPartCols = actualPartKey.entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   Lng32 numClusterCols = actualSortKey.entries();
-#pragma warn(1506)  // warning elimination
 
   for (CollIndex index = 0; index < CollIndex(numPartCols); index++)
   {
@@ -127,12 +123,8 @@ PhysicalProperty::compareProperties (const PhysicalProperty &other) const
   // expressions (same ValueId, same NAType, etc.), consisting of
   // the shorter of the two keys.
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
   Lng32 myKeyCount = sortKey_.entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   Lng32 otherKeyCount = other.sortKey_.entries();
-#pragma warn(1506)  // warning elimination
   Lng32 minEntries = MINOF(myKeyCount,otherKeyCount);
 
   for (CollIndex index = 0; index < (CollIndex)minEntries; index++)
@@ -561,16 +553,12 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
       // Compute the number of sort key columns.
 
       if (orderedBy_ != NULL)
-#pragma nowarn(1506)   // warning elimination
 	mySortEntries = orderedBy_->entries();
-#pragma warn(1506)  // warning elimination
       else
 	mySortEntries = 0;
 
       if (other.orderedBy_ != NULL)
-#pragma nowarn(1506)   // warning elimination
 	otherSortEntries = other.orderedBy_->entries();
-#pragma warn(1506)  // warning elimination
       else
 	otherSortEntries = 0;
 

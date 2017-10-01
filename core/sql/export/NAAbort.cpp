@@ -215,14 +215,12 @@ void NAAssert(const char* condition, const char * file_, Int32 line_)
    assert_botch_abend(file_, line_, condition);
 }
 
-#pragma nowarn(770)   // warning elimination 
 void assert_botch_no_abend( const char *f, Int32 l, const char * m)
 {
 
 
 }
 
-#pragma warn(770)  // warning elimination 
 void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
 {
   NAAssertMutexLock(); // Assure "termination synchronization"

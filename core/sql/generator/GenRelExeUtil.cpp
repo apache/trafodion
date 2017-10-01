@@ -185,9 +185,7 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
 
   // remove trailing blanks and append a semicolon, if one is not present.
   char * ddlStmt = NULL;
-#pragma nowarn(1506)   // warning elimination
   Int32 i = strlen(getDDLStmtText());
-#pragma warn(1506)  // warning elimination
   while ((i > 0) && (getDDLStmtText()[i-1] == ' '))
     i--;
 
@@ -238,10 +236,8 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
      (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
      (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
      (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
      getDefault(GEN_DDL_NUM_BUFFERS),
      getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(pvt_tdb);
 
   if(!generator->explainDisabled()) {
@@ -337,9 +333,7 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
   CollIndex i = 0;
   if (stmtText)
     {
-#pragma nowarn(1506)   // warning elimination 
       i = strlen(stmtText);
-#pragma warn(1506)  // warning elimination 
       while ((i > 0) && (getStmtText()[i-1] == ' '))
 	i--;
       
@@ -380,9 +374,7 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -508,9 +500,7 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -535,10 +525,8 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)1024,
-#pragma nowarn(1506)   // warning elimination 
 	 2, // num buffers
 	 32000); // bufferSIze
-#pragma warn(1506)  // warning elimination 
 
   exe_util_tdb->setIsVolatile(isVolatile_);
 
@@ -640,10 +628,8 @@ short ExeUtilWnrInsert::codeGen(Generator * generator)
                (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
                (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
                getDefault(GEN_DDL_NUM_BUFFERS),
                getDefault(GEN_DDL_BUFFER_SIZE)
-#pragma warn(1506)  // warning elimination 
          );
 
   generator->initTdbFields(exe_util_tdb);
@@ -706,9 +692,7 @@ short ExeUtilLoadVolatileTable::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -740,10 +724,8 @@ short ExeUtilLoadVolatileTable::codeGen(Generator * generator)
      (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
      (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
      (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
      getDefault(GEN_DDL_NUM_BUFFERS),
      getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -783,9 +765,7 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -813,10 +793,8 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
 	 (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 	 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 	 (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	 getDefault(GEN_DDL_NUM_BUFFERS),
 	 getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -861,9 +839,7 @@ short ExeUtilGetVolatileInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -912,10 +888,8 @@ short ExeUtilGetVolatileInfo::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000);  //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
  
   generator->initTdbFields(exe_util_tdb);
   
@@ -964,9 +938,7 @@ short ExeUtilGetErrorInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -987,10 +959,8 @@ short ExeUtilGetErrorInfo::codeGen(Generator * generator)
 				 returnedDesc,
 				 (queue_index)8,
 				 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 				 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 				 32000);  //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   generator->initTdbFields(exe_util_tdb);
   
@@ -1052,9 +1022,7 @@ short ExeUtilCreateTableAs::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1085,10 +1053,8 @@ short ExeUtilCreateTableAs::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 	 (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 1024); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   
   exe_util_tdb->setLoadIfExists(loadIfExists_);
   exe_util_tdb->setNoLoad(noLoad_);
@@ -1133,9 +1099,7 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1166,7 +1130,6 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
  
@@ -1182,7 +1145,6 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
  
@@ -1251,9 +1213,7 @@ short ExeUtilGetUID::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1274,10 +1234,8 @@ short ExeUtilGetUID::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -1388,9 +1346,7 @@ short ExeUtilPopulateInMemStats::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -1473,10 +1429,8 @@ short ExeUtilPopulateInMemStats::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)512,
-#pragma nowarn(1506)   // warning elimination 
 	 2, //getDefault(GEN_DDL_NUM_BUFFERS),
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -1514,9 +1468,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -2185,10 +2137,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 					 returnedDesc,
 					 (queue_index)8,
 					 (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
 					 2, 
 					 32000); 
-#pragma warn(1506)  // warning elimination 
 
       exe_util_tdb = gm_exe_util_tdb;
     }
@@ -2208,12 +2158,10 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 				     returnedDesc,
 				     (queue_index)8,
 				     (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
 				     2, 
 				     32000,
                                      server,
                                      zkPort);
-#pragma warn(1506)  // warning elimination 
 
       if (hbaseObjects())
 	{
@@ -2339,9 +2287,7 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -2441,10 +2387,8 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 10240);
-#pragma warn(1506)  // warning elimination 
  
   generator->initTdbFields(exe_util_tdb);
 
@@ -3196,9 +3140,7 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
   CollIndex i = 0;
   if (stmtText)
     {
-#pragma nowarn(1506)   // warning elimination 
       i = strlen(stmtText);
-#pragma warn(1506)  // warning elimination 
       while ((i > 0) && (getStmtText()[i-1] == ' '))
 	i--;
       
@@ -3225,9 +3167,7 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -3948,9 +3888,7 @@ short ExeUtilShowSet::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -3990,10 +3928,8 @@ short ExeUtilShowSet::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 32000); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {
@@ -4029,9 +3965,7 @@ short ExeUtilAQR::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   short rc = processOutputRow(generator, 0, returnedDesc->noTuples()-1,
                               returnedDesc);
@@ -4061,10 +3995,8 @@ short ExeUtilAQR::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)64,
-#pragma nowarn(1506)   // warning elimination 
 	 2, 
 	 32000); 
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(exe_util_tdb);
   
   exe_util_tdb->setParams(sqlcode_, nskcode_, retries_, delay_, type_);
@@ -4103,9 +4035,7 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4258,10 +4188,8 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
 if (handleInStringFormat_)
     exe_util_tdb->setHandleInStringFormat(TRUE);
@@ -4330,9 +4258,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4438,10 +4364,8 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
 
 
@@ -4509,9 +4433,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4612,10 +4534,8 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      returnedDesc,
      (queue_index)8,
      (queue_index)128,
-#pragma nowarn(1506)   // warning elimination 
      2,
      32000);
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -4820,9 +4740,7 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
@@ -4928,9 +4846,7 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
   }
 
   // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   ComTdbExeUtilHiveMDaccess::MDType type = ComTdbExeUtilHiveMDaccess::NOOP_;
   if (mdType_ == "TABLES")
@@ -5454,9 +5370,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
   = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
     const Int32 work_atp = 1;
@@ -5481,12 +5395,10 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
          returnedDesc,
          (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
          getDefault(GEN_DDL_NUM_BUFFERS),
          1024,          //getDefault(GEN_DDL_BUFFER_SIZE));
          errCountTab,
          logLocation);
-#pragma warn(1506)  // warning elimination
 
   exe_util_tdb->setPreloadCleanup(CmpCommon::getDefault(TRAF_LOAD_PREP_CLEANUP) == DF_ON);
   exe_util_tdb->setPreparation(TRUE);
@@ -5664,9 +5576,7 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
   = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
     const Int32 work_atp = 1;
@@ -5693,10 +5603,8 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
          returnedDesc,
          (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
          getDefault(GEN_DDL_NUM_BUFFERS),
          1024); //getDefault(GEN_DDL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
 
   exe_util_tdb->setEmptyTarget(emptyTarget_);
   exe_util_tdb->setLogErrors(logErrors_);

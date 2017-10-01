@@ -58,7 +58,6 @@ typedef NAVersionedObjectPtrArrayTempl<ExpTupleDescPtr> ExpTupleDescPtrPtr;
 typedef NAVersionedObjectPtrTempl<Attributes> AttributesPtr;
 typedef NAVersionedObjectPtrArrayTempl<AttributesPtr> AttributesPtrPtr;
 
-#pragma warning ( disable : 4251 )
 
 
 #define NEG_BIT_MASK 0x0080    //the first bit in a byte - used for finding
@@ -927,6 +926,5 @@ public:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif

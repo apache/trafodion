@@ -34,9 +34,7 @@
  */
 
 #include <string>
-#pragma nowarn(1506)  //warning elimination  (to hide warnings from vector2)
 #include <vector>
-#pragma warn(1506)  //warning elimination
 
 struct ThreePartModuleName {
   std::string catalog, schema, module;
@@ -49,7 +47,6 @@ struct ThreePartModuleName {
   }
 };
 
-#pragma nowarn(1506)  //warning elimination
 class ExtQualModuleNames {
  public:
   // constructor
@@ -122,6 +119,5 @@ class ExtQualModuleNames {
   std::string moduleTableSet_;// default module tableset
   std::string moduleVersion_; // default module version
 };
-#pragma warn(1506)  //warning elimination
 
 #endif // EXTQUALMODULENAMES__H

@@ -48,9 +48,7 @@ void NAWString::initFromSingleByteString(Lng32 charset, const char* str, size_t 
 {
    assert(str!=nanil);
    NAWchar buf[N+1];
-#pragma nowarn(1506)   // warning elimination 
    Lng32 wcs = LocaleStringToUnicode(charset, (char*)str, N, buf, N, FALSE);
-#pragma warn(1506)  // warning elimination 
    buf[wcs] = 0;
    append(buf, wcs);
 }

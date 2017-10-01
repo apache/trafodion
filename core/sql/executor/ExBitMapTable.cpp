@@ -90,9 +90,7 @@ ExBitMapTable::ExBitMapTable(Int32 keySize, Int32 dataSize, Int32 countOffset,
   //   [rowSize] - data, key, and next for group 1
   //   [rowSize] - data, key, and next for group NumberGroups-1
   //
-#pragma nowarn(1506)   // warning elimination 
   const Int32 minimumMemorySize = 32 * (sizeof(char*) + rowSize_);
-#pragma warn(1506)  // warning elimination 
   memSize_ *= 2;
   while(!memory_ && (memSize_ >= 2 * minimumMemorySize)) {
     memSize_ /= 2;
@@ -110,10 +108,8 @@ ExBitMapTable::ExBitMapTable(Int32 keySize, Int32 dataSize, Int32 countOffset,
 
   // Compute the maximum number of groups that can be stored in the table. 
   //
-#pragma nowarn(1506)   // warning elimination 
   maximumNumberGroups_ = (memSize_ - sizeof(char*) * numberHashBuckets_)
     / rowSize_;
-#pragma warn(1506)  // warning elimination 
 
   // The buckets 
   // BitMap at memory_. To start there is only one BitMap.

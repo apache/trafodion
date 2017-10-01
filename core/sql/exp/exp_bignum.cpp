@@ -49,7 +49,6 @@
 #include <iostream>
 #include <stdlib.h>
 
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)
   : length_(length),
     precision_(precision),
@@ -59,48 +58,36 @@ BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)
 {
   setClassID(BigNumID);  
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::BigNum()
 {
   setClassID(BigNumID);  
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::~BigNum()
 {
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 Attributes * BigNum::newCopy()
 {
   BigNum * new_copy = new BigNum(); 
   *new_copy = *this;
   return new_copy;
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 Attributes * BigNum::newCopy(NAMemory * heap)
 {
   BigNum * new_copy = new(heap) BigNum(); 
   *new_copy = *this;
   return new_copy;
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::copyAttrs(Attributes *source) 
 {
   *this = *((BigNum *) source);
   return;
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 Lng32 BigNum::setTempSpaceInfo(OperatorTypeEnum operType,
 				ULong offset, Lng32 length)
 {
@@ -128,9 +115,7 @@ Lng32 BigNum::setTempSpaceInfo(OperatorTypeEnum operType,
   
   return tempSpaceLength_;
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::fixup(Space * space,
                    char * constantsArea,
 		   char * tempsArea,
@@ -146,12 +131,10 @@ void BigNum::fixup(Space * space,
 		    fixupConstsAndTemps, spaceCompOnly);
 
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Convert (i.e. copy) the Big Num from op_data[1] ("source") to op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::conv(Attributes * source, char * op_data[])
 {
   return BigNumHelper::ConvBigNumWithSignToBigNumWithSignHelper(((BigNum *) source)->getLength(),
@@ -159,13 +142,11 @@ short BigNum::conv(Attributes * source, char * op_data[])
                                                                 op_data[1],
                                                                 op_data[0]);
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Compare the Big Num in op_data[1] ("this") with op_data[2] ("other").
 // Return  1, if "this <compOp> other" is true,0, otherwise.
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::comp (OperatorTypeEnum compOp,
 		    Attributes * other, 
 		    char * op_data[])
@@ -227,9 +208,7 @@ short BigNum::comp (OperatorTypeEnum compOp,
 	if (thisSign)                         // both -ve, so if magnitudes 
 	                                      // are different, switch
 	                                      // compCode
-#pragma nowarn(1506)   // warning elimination 
 	  compCode = (compCode ? -compCode : 0); 
-#pragma warn(1506)  // warning elimination 
       } 
   }
   
@@ -270,13 +249,11 @@ short BigNum::comp (OperatorTypeEnum compOp,
   
   return returnValue;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Add the Big Nums in op_data[1] ("left") and op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::add(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -327,13 +304,11 @@ short BigNum::add(Attributes * left,
 
   return 0;
 };
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Subtract the Big Num in op_data[2] ("right") from op_data[1] ("left")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::sub(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -382,13 +357,11 @@ short BigNum::sub(Attributes * left,
   
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Multiply the Big Nums in op_data[1] ("left") and op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::mul(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -423,13 +396,11 @@ short BigNum::mul(Attributes * left,
     
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Divide the Big Num in op_data[1] ("left") by op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::div(Attributes * left,
 		  Attributes * right,
 		  char * op_data[],
@@ -495,12 +466,10 @@ short BigNum::div(Attributes * left,
 
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // This method converts from other simple types to Big Num
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::castFrom (Attributes * source, 
 			char * op_data[],
 			NAMemory *heap,
@@ -532,9 +501,7 @@ short BigNum::castFrom (Attributes * source,
   switch (sourceType) {
     case REC_BIN16_SIGNED: {
       if ( *((short *) op_data[1]) < 0) {
-#pragma nowarn(1506)   // warning elimination 
         thisDataInShorts[0] = -*((short *) op_data[1]);
-#pragma warn(1506)  // warning elimination 
         BIGN_SET_SIGN(op_data[0], getLength());
         }
       else {
@@ -606,9 +573,7 @@ short BigNum::castFrom (Attributes * source,
       char temp = op_data[1][0];
 
       // Temporarily suppress sign bit in source
-#pragma nowarn(1506)   // warning elimination 
       op_data[1][0] = op_data[1][0] & 0177;
-#pragma warn(1506)  // warning elimination 
 
       // Convert source from ASCII to Big Num without sign and store in this. 
       BigNumHelper::ConvAsciiToBigNumHelper(source1->getLength(),
@@ -863,10 +828,8 @@ short BigNum::castFrom (Attributes * source,
   
   return 0;
 };
-#pragma warning (default : 4273)  //warning elimination
 
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::encode(const char * inBuf, char * outBuf, short desc)
 {
   char sign = BIGN_GET_SIGN(inBuf, getLength());
@@ -902,9 +865,7 @@ void BigNum::encode(const char * inBuf, char * outBuf, short desc)
   else
     outBuf[0] |= MSB_SET_MSK;
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::decode(const char * inBuf, char * outBuf, short desc)
 {
   // If MSB set in key, then value is NOT negative.
@@ -932,9 +893,7 @@ void BigNum::decode(const char * inBuf, char * outBuf, short desc)
   if (!neg)
     BIGN_CLR_SIGN(outBuf, getLength());
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::init(char * op_data, char * str)
 
 {
@@ -953,5 +912,4 @@ void BigNum::init(char * op_data, char * str)
   if (str[0] == '-')
     BIGN_SET_SIGN(op_data, getLength());
 }
-#pragma warning (default : 4273)  //warning elimination
 

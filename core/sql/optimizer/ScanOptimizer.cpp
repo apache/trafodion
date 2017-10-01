@@ -3579,9 +3579,7 @@ ScanOptimizer::computeCostObject(
         MINOF((Lng32)activePartitions.getValue(),countOfPAs);
 
       Lng32 numOfDP2Volumes =
-#pragma nowarn(1506)   // warning elimination
         MIN_ONE( ((NodeMap *)(lppf->getNodeMap()))->getNumActiveDP2Volumes() );
-#pragma warn(1506)  // warning elimination
       // Limit the number of PAs by the number of DP2 volumes.
       // This won't need to be done here when we start doing it when
       // we synthesize the physical properties. It is not being done
@@ -5666,7 +5664,6 @@ FileScanOptimizer::computeCostForMultipleSubset
 //    and sparceCoilum information for this mdamKey later
 // -----------------------------------------------------------------------
 
-#pragma nowarn(262)   // warning elimination
 Cost*
 FileScanOptimizer::oldComputeCostForMultipleSubset
    ( MdamKey* mdamKeyPtr,
@@ -6112,9 +6109,7 @@ FileScanOptimizer::oldComputeCostForMultipleSubset
       NABoolean foundLastColumn = FALSE;
       CollIndex lastColumnPosition = keyPredsByCol.entries() - CollIndex(1);
       for (;
-#pragma nowarn(270)   // warning elimination
            lastColumnPosition >= 0;
-#pragma warn(270)  // warning elimination
            lastColumnPosition--)
         {
 
@@ -7193,7 +7188,6 @@ FileScanOptimizer::oldComputeCostForMultipleSubset
   return costPtr;
 
 } // oldComputeCostForMultipleSubset(...)
-#pragma warn(262)  // warning elimination
 
 // -----------------------------------------------------------------------
 // This function will check if current context has the same basic physical

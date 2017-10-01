@@ -355,7 +355,6 @@ private:
 // the derivation hierarchy for ValueDescs.
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1682)   // warning elimination
 class ValueIdRef : public ItemExpr
 {
 
@@ -397,7 +396,6 @@ private:
   ValueId  derivedFrom_;
 
 }; // class ValueIdRef
-#pragma warn(1682)  // warning elimination
 
 //! ValueIdProxy  class
 // -----------------------------------------------------------------------
@@ -415,7 +413,6 @@ private:
 //
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1682)   // warning elimination
 class ValueIdProxy : public ItemExpr
 {
 
@@ -585,7 +582,6 @@ private:
   Int32  outputOrdinalNumber_;
 
 }; // class ValueIdProxy
-#pragma warn(1682)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A ValueIdUnion is used whenever two or more data streams are
@@ -1054,7 +1050,6 @@ private:
 // Its datatype is computed as the minimum of the values that belong
 // to the VEG it references.
 // -----------------------------------------------------------------------
-#pragma nowarn(1682)   // warning elimination
 class VEGReference : public ItemExpr
 {
 
@@ -1410,8 +1405,5 @@ static void usePartofSelectionPredicatesFromTheItemExpressionTree(ValueIdSet& in
   }
  }
 }
-
-#pragma warn(1682)  // warning elimination
-
 
 #endif /* ITEMOTHER_H */

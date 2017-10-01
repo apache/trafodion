@@ -553,9 +553,7 @@ short HashGroupBy::codeGen(Generator * generator) {
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space); 
-#pragma warn(1506)  // warning elimination 
   
   generator->setCriDesc(returnedDesc, Generator::DOWN);
 
@@ -1365,9 +1363,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   ExplainTuple *childExplainTuple = generator->getExplainTuple();
 
   returnedDesc->
-#pragma nowarn(1506)   // warning elimination 
     setTupleDescriptor(returnedDesc->noTuples() - 1, tupleDesc);
-#pragma warn(1506)  // warning elimination 
 
   // This estimate on the number of groups should work correctly even when
   // under the right side of a NestedLoopJoin (i.e., multiple probes are
@@ -1738,9 +1734,7 @@ short GroupByAgg::codeGen(Generator * generator) {
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space); 
-#pragma warn(1506)  // warning elimination 
   
   generator->setCriDesc(returnedDesc, Generator::DOWN);
 
@@ -1772,7 +1766,6 @@ short GroupByAgg::codeGen(Generator * generator) {
   ExplainTuple *childExplainTuple = generator->getExplainTuple();
 
   returnedDesc->
-#pragma nowarn(1506)   // warning elimination 
     setTupleDescriptor(returnedDesc->noTuples() - 1, tupleDesc); 
  
   ComTdbSortGrby * sortGrbyTdb 
@@ -1793,7 +1786,6 @@ short GroupByAgg::codeGen(Generator * generator) {
 				getDefault(GEN_SGBY_NUM_BUFFERS),
 				getDefault(GEN_SGBY_BUFFER_SIZE),
 				generator->getTolerateNonFatalError());
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sortGrbyTdb);
 
   if (isRollup())

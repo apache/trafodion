@@ -625,7 +625,6 @@ void ExSortTcb::createSortDiags()
 ////////////////////////////////////////////////////////////////////////
 // processSortError()
 // 
-#pragma nowarn(262)   // warning elimination 
 NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
 				      queue_index parentIndex,
 				      queue_index downIndex)
@@ -653,7 +652,6 @@ NABoolean ExSortTcb::processSortError(ex_queue_entry *pentry_down,
 
   return TRUE;
 }
-#pragma warn(262)  // warning elimination 
 
 short ExSortTcb::workStatus(short workRC)
 {
@@ -1891,15 +1889,11 @@ ExSortPrivateState::~ExSortPrivateState()
 };
 void ReleaseTupp(void * td)
 {
-#pragma nowarn(1506)   // warning elimination 
   ((tupp_descriptor *)td)->setReferenceCount(((tupp_descriptor *)td)->getReferenceCount() - 1);
-#pragma warn(1506)  // warning elimination 
 }
 void CaptureTupp(void * td)
 {
-#pragma nowarn(1506)   // warning elimination 
   ((tupp_descriptor *)td)->setReferenceCount(((tupp_descriptor *)td)->getReferenceCount() + 1);
-#pragma warn(1506)  // warning elimination 
 }
 ////////////////////////////////////////////////////////////////////////////
 // ExSortFromTopTcb: input is from parent, output is to child

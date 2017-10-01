@@ -257,14 +257,12 @@ ExSequenceTcb::ExSequenceTcb (const ExSequenceTdb &  myTdb,
   childTcb_ = &child_tcb;
 
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(myTdb.numBuffers_,
     myTdb.bufferSize_,
     space);
 
   allocRowLength_ = ROUND8(myTdb.recLen_);
 
-#pragma warn(1506)  // warning elimination 
 
   // Initialize the machinery for maintaining the row history for
   // computing sequence functions.

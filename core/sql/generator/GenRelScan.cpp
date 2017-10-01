@@ -76,9 +76,7 @@ short Describe::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
   
   ex_cri_desc * returned_desc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ExpTupleDesc * tuple_desc = 0;
   ULng32 tupleLength;
@@ -91,9 +89,7 @@ short Describe::codeGen(Generator * generator)
 			    &tuple_desc, ExpTupleDesc::SHORT_FORMAT);
 
   // add this descriptor to the returned cri descriptor.
-#pragma nowarn(1506)   // warning elimination 
   returned_desc->setTupleDescriptor(returned_desc->noTuples()-1, tuple_desc);
-#pragma warn(1506)  // warning elimination 
   
   char * query = 
     space->allocateAndCopyToAlignedSpace(originalQuery_, 
@@ -135,12 +131,8 @@ short Describe::codeGen(Generator * generator)
 	          returned_desc,
 	          (queue_index)getDefault(GEN_DESC_SIZE_DOWN),
 	          (queue_index)getDefault(GEN_DESC_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 	          getDefault(GEN_DESC_NUM_BUFFERS),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 	          getDefault(GEN_DESC_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(desc_tdb);
 
   if(!generator->explainDisabled()) {

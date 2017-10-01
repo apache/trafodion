@@ -61,7 +61,6 @@ DBGDECL( static NAString unp; )
 
 // -----------------------------------------------------------------------
 // -----------------------------------------------------------------------
-// warning elimination (removed "inline")
 static NABoolean canBeSQLUnknown(const ItemExpr *ie,
                                  NABoolean typeMustBeSQLBoolean = TRUE)
 {
@@ -734,7 +733,6 @@ ItemExpr * Between::transformMultiValuePredicate(
   return tfm;
 }
 
-#pragma nowarn(1506)   // warning elimination
 void Between::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -780,7 +778,6 @@ void Between::transformNode(NormWA & normWARef,
   setReplacementExpr(locationOfPointerToMe);
 
 } // Between::transformNode()
-#pragma warn(1506)  // warning elimination
 
 ItemExpr * Between::transformSubtreeOfNot(NormWA & normWARef,
                                           OperatorTypeEnum falseOrNot)
@@ -1405,7 +1402,6 @@ ItemExpr * BiLogic::transformMultiValuePredicate(
   return tfm;
 }
 
-#pragma nowarn(1506)   // warning elimination
 void BiLogic::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -1478,7 +1474,6 @@ void BiLogic::transformNode(NormWA & normWARef,
     setReplacementExpr(locationOfPointerToMe);
 
 } // BiLogic::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // Apply De-Morgan's Laws.  Distribute a NOT over each subtree.
@@ -1904,9 +1899,7 @@ static ItemExpr * transformMultiValueComparison(BiRelat *thisCmp,
                  // For exampl OneRow aggregate
   }
 
-#pragma nowarn(1506)   // warning elimination
   Int32 i = lhs.entries() - 1;
-#pragma warn(1506)  // warning elimination
 
   // As an extension to Ansi, we allow predicates like
   //   select x,y from xy where((select a,b from t),x) = (y,(select m,n from s))
@@ -1925,9 +1918,7 @@ static ItemExpr * transformMultiValueComparison(BiRelat *thisCmp,
           rr = ((Subquery *)rhs[i])->getSubquery()->getDegree();
         if (ll != rr) return NULL;
       }
-#pragma nowarn(1506)   // warning elimination
       i = lhs.entries() - 1;      // reset for loops following
-#pragma warn(1506)  // warning elimination
     }
 
   ItemExpr * tfm;
@@ -2107,7 +2098,6 @@ ItemExpr * BiRelat::transformMultiValuePredicate(
   return tfm;
 } // BiRelat::transformMultiValuePredicate()
 
-#pragma nowarn(1506)   // warning elimination
 void BiRelat::transformNode(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -2476,7 +2466,6 @@ void BiRelat::transformNode(NormWA & normWARef,
     setReplacementExpr(locationOfPointerToMe);
 
 } // BiRelat::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // predicateEliminatesNullAugmentedRows()
@@ -3950,7 +3939,6 @@ ItemExpr * UnLogicMayBeAnEliminableTruthTest(ItemExpr *unlogic, NABoolean aggOK)
   return NULL;
 } // UnLogicMayBeAnEliminableTruthTest()
 
-#pragma nowarn(1506)   // warning elimination
 
 //
 // transformNode2() - a helper routine for UnLogic::transformNode()
@@ -4123,7 +4111,6 @@ void UnLogic::transformNode(NormWA & normWARef,
   setReplacementExpr(locationOfPointerToMe);
 
 } // UnLogic::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A method for transforming a subtree rooted in a NOT.
@@ -5531,7 +5518,6 @@ ItemExpr *ItmSeqOlapFunction::transformOlapFunction(CollHeap *heap)
 
 
 ///---------------
-#pragma nowarn(1506)   // warning elimination
 void ItmSeqRowsSince::transformNode(NormWA & normWARef,
                                  ExprValueId & locationOfPointerToMe,
                                  ExprGroupId & introduceSemiJoinHere,
@@ -5569,7 +5555,6 @@ void ItmSeqRowsSince::transformNode(NormWA & normWARef,
   BuiltinFunction::transformNode(normWARef, locationOfPointerToMe,
                                  introduceSemiJoinHere, externalInputs);
 } // ItmSeqRowsSince::transformNode()
-#pragma warn(1506)  // warning elimination
 
 // ***********************************************************************
 // $$$$ ItmSeqMovingFunction

@@ -69,9 +69,7 @@ IpcMessageObjSize CmpMessageObj::packIntoBuffer(IpcMessageBufferPtr& buffer,
   IpcMessageObjSize result = ::packIntoBuffer(buffer,length);
 
   if (strPtr!=NULL)
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)buffer,strPtr,length);
-#pragma warn(1506)  // warning elimination 
   buffer += length;
   return result+length;
 }
@@ -103,9 +101,7 @@ void CmpMessageObj::unpackBuffer(IpcConstMessageBufferPtr& buffer,
   else {
      strPtr = new(h) char[length];
      assert(strPtr!=NULL);
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)strPtr,(char*) buffer,length);
-#pragma warn(1506)  // warning elimination 
      buffer += length;
   }
 }
@@ -120,9 +116,7 @@ void CmpMessageObj::unpackBuffer(IpcConstMessageBufferPtr& buffer,
   assert(length <= maxSize);
   if ( length > 0 )
   {
-#pragma nowarn(1506)   // warning elimination 
      str_cpy_all((char*)strPtr,(char*) buffer,length);
-#pragma warn(1506)  // warning elimination 
      buffer += length;
   }
   sizeMoved = length;
@@ -523,9 +517,7 @@ IpcMessageObjSize CmpMessageReply::mypackedLength()
 {
   IpcMessageObjSize size = CmpMessageReplyBasic::mypackedLength();
   size += sizeof(sz_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,data_,sz_);
-#pragma warn(1506)  // warning elimination 
   return size;
 }
 
@@ -533,9 +525,7 @@ IpcMessageObjSize CmpMessageReply::packMyself(IpcMessageBufferPtr& buffer)
 {
   IpcMessageObjSize size= CmpMessageReplyBasic::packMyself(buffer);
   size += ::packIntoBuffer(buffer,sz_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer,data_,sz_);
-#pragma warn(1506)  // warning elimination 
   return size;
 }
 
@@ -687,9 +677,7 @@ void CmpMessageRequest::copyToString(char* &dest, CmpMsgBufLenType& sz,
     {
       sz = sz1 + 1;
       dest = new (getHeap()) char[sz];
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(dest, source, sz1);      
-#pragma warn(1506)  // warning elimination 
       dest[sz1] = 0;
     }
   else
@@ -705,9 +693,7 @@ IpcMessageObjSize CmpMessageRequest::mypackedLength()
   size += sizeof(sz_);
   size += sizeof(flags_);
   size += sizeof(charSet_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size, data_, sz_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(parentQidLen_);
   size += parentQidLen_;
   return size;  
@@ -719,9 +705,7 @@ IpcMessageObjSize CmpMessageRequest::packMyself(IpcMessageBufferPtr& buffer)
   size += ::packIntoBuffer(buffer, sz_);
   size += ::packIntoBuffer(buffer, flags_);
   size += ::packIntoBuffer(buffer, charSet_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, data_, sz_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer, parentQidLen_);
   if (parentQidLen_ != 0 && parentQid_ != NULL)
       size += packStrIntoBuffer(buffer, (char *)parentQid_, parentQidLen_);
@@ -942,21 +926,13 @@ IpcMessageObjSize CmpMessageISPRequest::mypackedLength()
   IpcMessageObjSize size = CmpMessageRequest::mypackedLength();
   advanceSize(size, procName_);
   size += sizeof(inputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,inputExpr_,inputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(outputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,outputExpr_,outputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(keyExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,keyExpr_,keyExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(inputDataSize_);
-#pragma nowarn(1506)   // warning elimination 
   advanceSize(size,inputData_,inputDataSize_);
-#pragma warn(1506)  // warning elimination 
   size += sizeof(outputRowSize_);
   size += sizeof(outputTotalSize_);
   
@@ -969,21 +945,13 @@ IpcMessageObjSize CmpMessageISPRequest::packMyself(IpcMessageBufferPtr& buffer)
   size += packIntoBuffer(buffer, procName_);
 
   size += ::packIntoBuffer(buffer,inputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, inputExpr_, inputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,outputExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, outputExpr_, outputExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer, keyExprSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, keyExpr_, keyExprSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,inputDataSize_);
-#pragma nowarn(1506)   // warning elimination 
   size += packIntoBuffer(buffer, inputData_, inputDataSize_);
-#pragma warn(1506)  // warning elimination 
   size += ::packIntoBuffer(buffer,outputRowSize_);
   size += ::packIntoBuffer(buffer,outputTotalSize_);
 

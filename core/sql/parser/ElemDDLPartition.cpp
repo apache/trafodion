@@ -444,9 +444,7 @@ ElemDDLPartitionSystem::setPartitionAttr(ElemDDLNode * pPartitionAttr)
       ElemDDLFileAttrMaxExtents * pMaxExtents =
         pPartitionAttr->castToElemDDLFileAttrMaxExtents();
 	  // error checking for limits when we specify the MAXEXTENTS clause
-#pragma nowarn(1506)   // warning elimination 
 	  Lng32 maxext = pMaxExtents->getMaxExtents();
-#pragma warn(1506)  // warning elimination 
 	  if ((maxext <= 0) || (maxext > COM_MAX_MAXEXTENTS))
       {
 		*SqlParser_Diags << DgSqlCode(-3191);
@@ -618,10 +616,8 @@ ElemDDLPartitionSystem::getDetailInfo() const
   detailText += LongToNAString((Lng32)getMaxSize());
   detailTextList.append(detailText);
 
-#pragma nowarn(1506)   // warning elimination 
   ElemDDLFileAttrMaxSize maxSizeFileAttr(getMaxSize(), 
                                          getMaxSizeUnit());
-#pragma warn(1506)  // warning elimination
 
   detailText = "    max size unit: ";
   detailText += maxSizeFileAttr.getMaxSizeUnitAsNAString();;

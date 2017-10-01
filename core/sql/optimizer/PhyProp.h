@@ -595,7 +595,6 @@ public:
   //  Constructor, copy constructor, destructor, and assignment operator
   // ---------------------------------------------------------------------
 
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(
            const ValueIdSet* const arrangedBy = NULL,
            const ValueIdList* const orderedBy = NULL,
@@ -694,7 +693,6 @@ public:
   // NOTE: required property to another when the partitioning requirement
   // NOTE: is changed
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(const ReqdPhysicalProperty& other,
                   const ValueIdSet* const arrangedBy,
                   const ValueIdList* const orderedBy,
@@ -729,7 +727,6 @@ public:
   // NOTE: required property to another when the partitioning requirement
   // NOTE: is changed
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(const ReqdPhysicalProperty &other,
                   const ValueIdSet* const arrangedBy,
                   const ValueIdList* const orderedBy,
@@ -765,7 +762,6 @@ public:
   // NOTE: required property to another when the partitioning requirement
   // NOTE: is changed
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(const ReqdPhysicalProperty &other,
                   const ValueIdSet* const arrangedBy,
                   const ValueIdList* const orderedBy,
@@ -798,7 +794,6 @@ public:
   }
 
   // create an empty requirement with only a must match in it
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(RelExpr* mustMatch)
     : arrangedBy_(NULL), orderedBy_(NULL),
       sortOrderTypeReq_(NO_SOT),
@@ -827,7 +822,6 @@ public:
   //       attribute of an operator's rpp. This constructor is never
   //       used when creating a new rpp for a child.
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   ReqdPhysicalProperty(const ReqdPhysicalProperty& other,
                               RelExpr* mustMatch
                              )

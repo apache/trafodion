@@ -471,7 +471,6 @@ protected:
 
 }; // AbstractRIConstraint
 
-#pragma nowarn(1026)   // warning elimination 
 class ComplementaryRIConstraint : public NABasicObject
 {
 public:
@@ -521,7 +520,6 @@ public:
   const QualifiedName &getTableName() const { return tableName_; }
 
 }; // ComplementaryRIConstraint
-#pragma warn(1026)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Uniqueness of a combination of columns in a table:
@@ -641,7 +639,6 @@ public:
   inline NABoolean isaForeignKeyinTableBeingUpdated() const;
   inline NABoolean referencesTableBeingUpdated() const;
 
- //warning elimination (removed "inline")
   const QualifiedName &getOtherTableName() const
   {
     return *otherTableName_;

@@ -730,9 +730,7 @@ CmpStatement::process (const CmpMessageDDL& statement)
       // from the UpdateStats() method.
       
       char *userStr= new (heap()) char[2000];
-#pragma nowarn(1506)   // warning elimination 
       Int32 len=strlen(sqlStr);
-#pragma warn(1506)  // warning elimination 
       
       if (len > 1999)
         len=1999;
@@ -1036,7 +1034,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageDescribe& statement)
 {
-#pragma nowarn(262)   // warning elimination 
   ReturnStatus ret = CmpStatement_SUCCESS;
   // There will be memory leak handling CmpMessageReplyCode *bound this way. 
   // The correct way should be making bound a local variable with statementHeap passed in.
@@ -1052,9 +1049,7 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   // the sqlcomp() method.
 
   char *userStr= (char *) (heap())->allocateMemory(sizeof(char) * (2000));
-#pragma nowarn(1506)   // warning elimination 
   Int32 len=strlen(statement.data());
-#pragma warn(1506)  // warning elimination 
 
   if (len > 1999)
     len=1999;
@@ -1089,7 +1084,6 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   sqlTextStr_=NULL;
   return CmpStatement_SUCCESS;
 }
-#pragma warn(262)  // warning elimination 
 
 CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageUpdateHist& statement)
@@ -1099,9 +1093,7 @@ CmpStatement::process (const CmpMessageUpdateHist& statement)
   // the UpdateStats() method.
   
   char *userStr= new (heap()) char[2000];
-#pragma nowarn(1506)   // warning elimination 
   Int32 len=strlen(statement.data());
-#pragma warn(1506)  // warning elimination 
 
   if (len > 1999)
     len=1999;
@@ -1365,7 +1357,6 @@ static NABoolean ISPFetchPut(CmpInternalSP* storedProc, // to fetch data
 {
   NABoolean bufferFull = FALSE;    
   // fetch until there is no more data
-#pragma nowarn(770)   // warning elimination 
   CmpStoredProc::ExecStatus execStatus;
   short putStatus;
   while ( !bufferFull &&
@@ -1385,7 +1376,6 @@ static NABoolean ISPFetchPut(CmpInternalSP* storedProc, // to fetch data
   }
   return bufferFull;
 }
-#pragma warn(770)  // warning elimination 
 
 static  NABoolean ISPPrepareReply(CmpISPDataObject* ispData, 
                                         CmpMessageReply* reply,
@@ -1402,7 +1392,6 @@ static  NABoolean ISPPrepareReply(CmpISPDataObject* ispData,
 CmpStatement::ReturnStatus
 CmpStatementISP::process (CmpMessageISPRequest& isp)
 {
-#pragma nowarn(262)   // warning elimination 
   ReturnStatus ret = CmpStatement_ERROR;
 
 #ifdef _DEBUG
@@ -1458,7 +1447,6 @@ CmpStatementISP::process (CmpMessageISPRequest& isp)
 
   return CmpStatement_SUCCESS;
 }
-#pragma warn(262)  // warning elimination 
 
 CmpStatement::ReturnStatus
 CmpStatementISP::process (const CmpMessageISPGetNext& getNext)

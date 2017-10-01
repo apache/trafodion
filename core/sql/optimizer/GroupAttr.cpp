@@ -908,7 +908,6 @@ HashValue GroupAttributes::hash() const
 //          covered by a partitioning requirement that has no part key cols
 // Returns: A list that is a prefix of the chosen index sort key.
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 ValueIdList GroupAttributes::recommendedOrderForNJProbing(
                                GroupAttributes* child0GA, // IN
                                Lng32 numForcedParts, //IN
@@ -1011,9 +1010,7 @@ ValueIdList GroupAttributes::recommendedOrderForNJProbing(
                           getCharacteristicInputs(),
                           currentIndexUncoveredCols);
 
-#pragma nowarn(1506)   // warning elimination
     currentIndexNumUncoveredCols = currentIndexUncoveredCols.entries();
-#pragma warn(1506)  // warning elimination
 
     // The current index must have at least one equijoincolumn to use it.
     if (currentIndexOrder.entries() == 0)
@@ -1259,7 +1256,6 @@ ValueIdList GroupAttributes::recommendedOrderForNJProbing(
   return chosenIndexOrder;
 
 } // GroupAttributes::recommendedOrderForNJProbing()
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // coverTest()
@@ -2346,9 +2342,7 @@ Int32 GroupAttributes::existsInputLogProp (const EstLogPropSharedPtr& inputLP) c
   for (CollIndex i = 0; i < inputEstLogProp_.entries(); i++)
   {
     if (inputEstLogProp_[i]->compareEstLogProp (inputLP) == SAME)
-#pragma nowarn(1506)   // warning elimination
       return i;
-#pragma warn(1506)  // warning elimination
   }
   return -1;
 }

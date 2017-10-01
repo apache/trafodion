@@ -42,9 +42,7 @@
 #include "udrdecs.h"
 
 #include "rosetta/rosgen.h"
-#pragma warning (disable : 4005)   // warning elimination
 #include "nsk/nskprocess.h"
-#pragma warning (default : 4005)   // warning elimination
 #include "zsysc.h"
 
 extern void processAnInvokeMessage(UdrGlobals *UdrGlob,

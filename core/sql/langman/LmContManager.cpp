@@ -474,9 +474,7 @@ void LmContainerManagerCache::checkCache()
 void LmContainerManagerCache::cleanCache(ComBoolean purge)
 {
   // Try a finite number of times.
-#pragma nowarn(1506)   // warning elimination 
   Int32 attempts = metaContainers_->entries() / 4 + 1;
-#pragma warn(1506)  // warning elimination 
 
   // Update stats.
   if (purge)

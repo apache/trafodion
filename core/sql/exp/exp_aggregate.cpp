@@ -265,9 +265,7 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::eval(char * op_data[],
 	{
 	  // variable length operand. Note that first child (operand1)
 	  // and result have the SAME attributes for min/max aggr.
-#pragma nowarn(1506)   // warning elimination 
 	  Lng32 src_length = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
-#pragma warn(1506)  // warning elimination 
 	  Lng32 tgt_length = getOperand(0)->getLength(); // max varchar length
 	
 	  str_cpy_all(op_data[0], op_data[1], src_length);

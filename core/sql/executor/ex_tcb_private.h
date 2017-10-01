@@ -56,9 +56,7 @@ class ex_tcb;
 //
 //////////////////////////////////////////////////////////////////////////
 
-#pragma nowarn(1103)   // warning elimination 
 class ex_tcb_private_state : public ExGod
-#pragma warn(1103)  // warning elimination 
 {
   // Error related information. For now, make it a long.
   // Later, make it the SQLDiagnosticStruct (or something similar).

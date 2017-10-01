@@ -452,9 +452,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
 	    
             if (attrs[i]->getNullFlag())
               {
-#pragma nowarn(1506)   // warning elimination 
                 attrs[i]->setNullIndOffset(offset);	
-#pragma warn(1506)  // warning elimination 
                 offset += attrs[i]->getNullIndicatorLength();   
               }
 
@@ -564,9 +562,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
 		// Note vcIndicatorLength_ is set to sizeof(Int16) for rowset
 		// SQLVarChars.
 		if (attrs[i]->getNullFlag()){
-#pragma nowarn(1506)   // warning elimination 
 		  attrs[i]->setNullIndOffset(attrStartOffset+sizeof(Int32));
-#pragma warn(1506)  // warning elimination 
 		  elementDataLen += attrs[i]->getNullIndicatorLength();
 		  if (attrs[i]->getVCIndicatorLength() > 0){
 		    attrs[i]->setVCLenIndOffset(attrStartOffset+
@@ -925,9 +921,7 @@ Long ExpTupleDesc::pack(void * space)
 {
   if (! packed())
     {
-#pragma nowarn(1506)   // warning elimination 
       if (attrs_) attrs_.pack(space, numAttrs_);
-#pragma warn(1506)  // warning elimination 
     }
   flags_ |= PACKED;
   return NAVersionedObject::pack(space);
@@ -938,9 +932,7 @@ Int32 ExpTupleDesc::unpack(void * base, void * reallocator)
   if (packed())
     {
       if (attrs_)
-#pragma nowarn(1506)   // warning elimination 
         if (attrs_.unpack(base, numAttrs_, reallocator)) return -1;
-#pragma warn(1506)  // warning elimination 
 
       flags_ &= ~PACKED;
     }

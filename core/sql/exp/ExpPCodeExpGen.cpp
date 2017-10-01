@@ -826,17 +826,13 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
     //
     for(i=0; i<numOps; i++) {
       if(tuppMap[i] && (atpIndexMap[i] > 1)) {
-#pragma nowarn(1506)   // warning elimination 
         tuppMap[i] = opNum + 4;
-#pragma warn(1506)  // warning elimination 
         atpMap[opNum] = atpMap[i];
         atpIndexMap[opNum] = atpIndexMap[i];
         opNum++;
       } else if(tuppMap[i]) {
 	if(atpMap[i] == 0)
-#pragma nowarn(1506)   // warning elimination 
 	  tuppMap[i] = atpIndexMap[i] + 1;
-#pragma warn(1506)  // warning elimination 
 	else
 	  tuppMap[i] = 3;
       }

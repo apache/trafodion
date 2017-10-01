@@ -251,11 +251,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
     break;
   case NA_CHARACTER_TYPE:
     {
-#pragma warning (disable : 4244)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       Lng32 len = CmpCommon::getDefaultNumeric(VARCHAR_PARAM_DEFAULT_SIZE);
-#pragma warn(1506)  // warning elimination
-#pragma warning (default : 4244)  // warning elimination
 
       desiredType = new STMTHEAP
 	SQLVarChar(STMTHEAP, len, //DEFAULT_CHARACTER_LENGTH,
@@ -1736,9 +1732,7 @@ void ValueIdList::replaceOperandsOfInstantiateNull
 void ValueIdList::print(FILE* ofd, const char* indent, const char* title,
                         CollHeap *c, char *buf) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   Space * space = (Space *)c;
   char mybuf[1000];
 
@@ -2157,7 +2151,6 @@ NABoolean ValueIdSet::hasRandom() const
 // Check whether any of the members of this ValueIdSet are contained
 // in the provided ValueIdSet.  Return the number of members found.
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 Int32 ValueIdSet::membersCoveredInSet (const ValueIdSet& vidSet, NABoolean lookBelowInstantiateNull) const
 {
   NABoolean coverFlag = FALSE;
@@ -2184,7 +2177,6 @@ Int32 ValueIdSet::membersCoveredInSet (const ValueIdSet& vidSet, NABoolean lookB
 
   return (membersFound);
 }
-#pragma warn(262)  // warning elimination
 
 //-------------------------------------------------------
 //removeCoveredVidSet()
@@ -4598,7 +4590,6 @@ void ValueIdSet::unparse(NAString &result,
   result += ")";
 } // ValueIdSet::unparse
 
-#pragma nowarn(1506)   // warning elimination
 void ValueIdSet::print(FILE* ofd, const char* indent, const char* title,
                        CollHeap *c, char *buf) const
 {
@@ -4621,14 +4612,12 @@ void ValueIdSet::print(FILE* ofd, const char* indent, const char* title,
     PRINTIT(ofd, c, space, buf, mybuf);
   }
 } // ValueIdSet::print()
-#pragma warn(1506)  // warning elimination
 
 void ValueIdSet::display() const	// To be called from the debugger
 {
   print();
 }
 
-#pragma nowarn(1506)   // warning elimination
 ex_expr::exp_return_type ValueIdList::evalAtCompileTime
 (short addConvNodes, // (IN) : 1 to add conv nodes, 0 otherwise
  ExpTupleDesc::TupleDataFormat tf, // (IN) : tuple format of resulting expr(s)
@@ -4731,7 +4720,6 @@ ex_expr::exp_return_type ValueIdList::evalAtCompileTime
   return rc;
 
 }
-#pragma warn(1506)  // warning elimination
 
 // Used by constant folding. Calls the executor evaluator. The parameters are:
 // 1.- The root of the expression tree to evaluate. It is assumed that it
@@ -4762,7 +4750,6 @@ short ValueIdList::evaluateTree( const ItemExpr * root,
 // Parent is the parent of ch and childNumber is the number of ch. The function
 // computes the value represented by the subtree rooted at ch and puts
 // the new value in the position of ch.	Used by constant folding.
-#pragma nowarn(262)   // warning elimination
 Lng32 ValueIdList::evaluateConstantTree( const ValueId &parent,
 				        const ValueId & ch,
 					Int32 childNumber,
@@ -4884,7 +4871,6 @@ Lng32 ValueIdList::evaluateConstantTree( const ValueId &parent,
   return error;
 
 }
-#pragma warn(262)  // warning elimination
 
 ////////////////////////////////////////////////////////////////////////////
 // Tells us if some sort of algebraic simplification can be done in a tree.
@@ -5965,7 +5951,6 @@ ValueId ValueDesc::create(ItemExpr *expr, const NAType *type, CollHeap *h)
 // ***********************************************************************
 // Methods for class ValueDescArray
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
 void ValueDescArray::print(FILE* ofd, const char* indent, const char* title,
 			   NABoolean dontDisplayErrors) const
 {
@@ -6005,7 +5990,6 @@ void ValueDescArray::print(FILE* ofd, const char* indent, const char* title,
     }
 #endif
 } // ValueDescArray::print()
-#pragma warn(1506)  // warning elimination
 
 void ValueDescArray::display(NABoolean dontDisplayErrors) const
 {

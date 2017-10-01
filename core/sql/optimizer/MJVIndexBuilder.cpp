@@ -233,9 +233,7 @@ ColIndSetBucketVector::insert (ColIndSet& newSet)
   // get the size of new ColIndSet -
   // remember - the size defines the order number of ColIndSetBucket
   // the new ColIndSet will be inserted into.
-#pragma nowarn(1506)   // warning elimination 
   Int32 newSetSize = newSet.entries();
-#pragma warn(1506)  // warning elimination 
   
   if (newSetSize > (Int32)maxNonEmptyEntrySize_) 
   { // if the new ColIndSet is longer than the maximal already inserted
@@ -243,9 +241,7 @@ ColIndSetBucketVector::insert (ColIndSet& newSet)
     // at the last resize(), getSize() entries were allocated 
     // (it can be more than asked) -- so the last entry is 
     // getSize()-1 
-#pragma nowarn(1506)   // warning elimination 
     Int32 oldArrSize = getSize();
-#pragma warn(1506)  // warning elimination 
     // if the size of the new ColIndSet is greater than the number of 
     // the last entry allocated - resize self
     if (newSetSize > (oldArrSize - 1)) 

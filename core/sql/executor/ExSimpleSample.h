@@ -148,14 +148,12 @@ public:
   ExWorkProcRetcode workUp();
 
   // Stub to workUp() used by scheduler.
-// warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   {
     return ((ExSimpleSampleTcb *) tcb)->workUp();
   }
 
   // Stub to workDown() used by scheduler.
-// warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
   {
     return ((ExSimpleSampleTcb *) tcb)->workDown();
@@ -168,7 +166,6 @@ public:
   // }
 
   // Return the parent queue pair. 
-// warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const { return qParent_; }
 
   // Return a reference to the TDB associated with this TCB.

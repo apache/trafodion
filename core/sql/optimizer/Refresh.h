@@ -198,9 +198,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   IUDStatistics(const IUDStatistics& other);
-#pragma nowarn(1026)   // warning elimination 
   IUDStatistics& operator=(const IUDStatistics& other);
-#pragma warn(1026)  // warning elimination 
 
   Lng32         numInsertedRows_;
   Lng32         numDeletedRows_;
@@ -230,9 +228,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaDefIUDLog(const DeltaDefIUDLog& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaDefIUDLog& operator=(const DeltaDefIUDLog& other);
-#pragma warn(1026)  // warning elimination 
 
   Option         op_;
   IUDStatistics *optionalStat_; 
@@ -260,9 +256,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaDefRangeLog(const DeltaDefRangeLog& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaDefRangeLog& operator=(const DeltaDefRangeLog& other);
-#pragma warn(1026)  // warning elimination 
 
   Option op_;
   Lng32   numOfRanges_; 
@@ -290,9 +284,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaDefLogs(const DeltaDefLogs& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaDefLogs& operator=(const DeltaDefLogs& other);
-#pragma warn(1026)  // warning elimination 
 
   DeltaDefRangeLog * rangeDef_;
   DeltaDefIUDLog * iudDef_;
@@ -331,9 +323,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaOptions(const DeltaOptions& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaOptions& operator=(const DeltaOptions& other);
-#pragma warn(1026)  // warning elimination 
 
   const DELevel deLevel_;
   DeltaDefLogs    *pDeltaDefLogs_;
@@ -446,9 +436,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaDefinition(const DeltaDefinition& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaDefinition& operator=(const DeltaDefinition& other);
-#pragma warn(1026)  // warning elimination 
 
   QualifiedName *tableName_;
   const Lng32	 beginEpoch_;
@@ -499,9 +487,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   PipelineClause(const PipelineClause& other);
-#pragma nowarn(1026)   // warning elimination 
   PipelineClause& operator=(const PipelineClause& other);
-#pragma warn(1026)  // warning elimination 
 
   const QualNamePtrList    *firstPipelineDef_;
   const PipelineDefPtrList *pipelineDefList_;
@@ -532,9 +518,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   DeltaDefinitionPtrList(const DeltaDefinitionPtrList& other);
-#pragma nowarn(1026)   // warning elimination 
   DeltaDefinitionPtrList& operator=(const DeltaDefinitionPtrList& other);
-#pragma warn(1026)  // warning elimination 
 };  // class DeltaDefinitionPtrList
 
 //----------------------------------------------------------------------------
@@ -558,9 +542,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   PipelineDef(const PipelineDef& other);
-#pragma nowarn(1026)   // warning elimination 
   PipelineDef& operator=(const PipelineDef& other);
-#pragma warn(1026)  // warning elimination 
 
   QualifiedName	  *fromClause_;
   QualNamePtrList *toClause_;
@@ -584,9 +566,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   PipelineDefPtrList(const PipelineDefPtrList& other);
-#pragma nowarn(1026)   // warning elimination 
   PipelineDefPtrList& operator=(const PipelineDefPtrList& other);
-#pragma warn(1026)  // warning elimination 
 }; // class PipelineDefPtrList
 
 
@@ -609,9 +589,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   RecomputeRefreshOption(const RecomputeRefreshOption& other);
-#pragma nowarn(1026)   // warning elimination 
   RecomputeRefreshOption& operator=(const RecomputeRefreshOption& other);
-#pragma warn(1026)  // warning elimination 
 
   const NABoolean	noDelete_;
 };  // class RecomputeRefreshOption
@@ -641,9 +619,7 @@ public:
 private:
   // Copy Ctor and = operator are not implemented.
   NRowsClause(const NRowsClause& other);
-#pragma nowarn(1026)   // warning elimination 
   NRowsClause& operator=(const NRowsClause& other);
-#pragma warn(1026)  // warning elimination 
 
   Lng32      commitEach_;
   Lng32      phase_;
@@ -697,9 +673,7 @@ public:
 public:
   // Copy Ctor and = operator are not implemented.
   IncrementalRefreshOption(const IncrementalRefreshOption& other);
-#pragma nowarn(1026)   // warning elimination 
   IncrementalRefreshOption& operator=(const IncrementalRefreshOption& other);
-#pragma warn(1026)  // warning elimination 
 
   refreshType		   type_;
   DeltaDefinitionPtrList  *pDeltaDefList_;
