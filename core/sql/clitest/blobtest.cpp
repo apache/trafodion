@@ -44,7 +44,7 @@ Int32 extractLengthOfLobColumn(CliGlobals *cliglob, char *lobHandle,
   char lobLengthResult[200];
   str_cpy_all(lobLengthResult," ",200);
   Int32 lobLengthResultLen = 0;
-  str_sprintf(query,"extract loblength (lob '%s') LENGTH %ld ",lobHandle, lengthOfLob);
+  sprintf(query,"extract loblength (lob '%s') LOCATION %lu ",lobHandle, (unsigned long)&lengthOfLob);
   retcode = cliInterface.executeImmediate(query,lobLengthResult,&lobLengthResultLen,FALSE);
 
   delete query;
@@ -59,7 +59,7 @@ Int32 extractLobHandle(CliGlobals *cliglob, char *& lobHandle,
   ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
   char * query = new char[4096];
   Int32 lobHandleLen = 0;
-  str_sprintf(query,"select %s from %s",lobColumnName,tableName);
+  sprintf(query,"select %s from %s",lobColumnName,tableName);
   
   retcode = cliInterface.executeImmediate(query,lobHandle,&lobHandleLen,FALSE);
 
@@ -84,7 +84,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
   Int64 lobExtractLen = 10000;
   char *lobDataBuf = new char[lobExtractLen];
   
-  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %ld, SIZE %ld) ", lobHandle, (Int64)lobDataBuf, lobExtractLen);
+  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE %ld) ", lobHandle, (unsigned long)lobDataBuf, lobExtractLen);
  
  
   retcode = cliInterface.executeImmediatePrepare(query);
@@ -107,7 +107,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
 
       fclose(lobFileId);
     }
-  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %ld, SIZE 0) ", lobHandle, (Int64)lobDataBuf);
+  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE 0) ", lobHandle, (unsigned long)lobDataBuf);
  
   cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
   delete  lobFinalBuf;
@@ -135,7 +135,7 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
   char *lobDataBuf = new char[lobExtractLen];
   Int64 *inputOutputAddr = &lobExtractLen;
 
-  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %ld, SIZE %ld) ", lobHandle, (Int64)lobDataBuf, lobExtractLen);
+  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE %lu) ", lobHandle, (unsigned long)lobDataBuf, (unsigned long)inputOutputAddr);
  
  
   retcode = cliInterface.executeImmediatePrepare(query);
@@ -152,7 +152,7 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
 	}
     }
   lobExtractLen = 0;
-  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %ld, SIZE %ld) ", lobHandle, (Int64)lobDataBuf, lobExtractLen);
+  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE %ld) ", lobHandle, (unsigned long)lobDataBuf, (unsigned long)inputOutputAddr);
   retcode = cliInterface.executeImmediatePrepare(query);
   cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
 
@@ -181,7 +181,7 @@ Int32 insertBufferToLob(CliGlobals *cliglob, char *tableName)
   Int64 lobInsertLen = 10;
   char *lobDataBuf = new char[lobInsertLen];
   memcpy(lobDataBuf, "xxxxxyyyyy",10);
-  str_sprintf(query,"insert into %s values (1, buffertolob (LOCATION %ld, SIZE %ld))", tableName,(Int64)lobDataBuf, lobInsertLen);
+  sprintf(query,"insert into %s values (1, buffertolob (LOCATION %lu, SIZE %ld))", tableName, (unsigned long)lobDataBuf, lobInsertLen);
  
  
   retcode = cliInterface.executeImmediate(query);
@@ -217,7 +217,7 @@ Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName)
   Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
-  str_sprintf(query,"update %s set %s= buffertolob(LOCATION %ld, SIZE %ld)", tableName,columnName, (Int64)lobDataBuf, lobUpdateLen);
+  sprintf(query,"update %s set %s= buffertolob(LOCATION %lu, SIZE %ld)", tableName,columnName, (unsigned long)lobDataBuf, lobUpdateLen);
  
  
   retcode = cliInterface.executeImmediate(query);
@@ -253,7 +253,7 @@ Int32 updateAppendBufferToLob(CliGlobals *cliglob, char *tableName, char *column
   Int64 lobUpdateLen = 15;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "aaaaabbbbbccccc",15);
-  str_sprintf(query,"update %s set %s=buffertolob (LOCATION %ld, SIZE %ld,append)", tableName, columnName,(Int64)lobDataBuf, lobUpdateLen);
+  sprintf(query,"update %s set %s=buffertolob (LOCATION %lu, SIZE %ld,append)", tableName, columnName, (unsigned long)lobDataBuf, lobUpdateLen);
  
  
   retcode = cliInterface.executeImmediate(query);
@@ -288,7 +288,7 @@ Int32 updateBufferToLobHandle(CliGlobals *cliglob,char *handle)
   Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
-  str_sprintf(query,"update lob (LOB '%s' , LOCATION %ld, SIZE %ld)", handle, (Int64)lobDataBuf, lobUpdateLen);
+  sprintf(query,"update lob (LOB '%s' , LOCATION %lu, SIZE %ld)", handle, (unsigned long)lobDataBuf, lobUpdateLen);
  
  
   retcode = cliInterface.executeImmediate(query);
@@ -321,7 +321,7 @@ Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle, Int64 lobU
   Int32 statusBufLen = 0;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, (char *)sourceAddress,lobUpdateLen);
-  str_sprintf(query,"update lob (LOB '%s' , LOCATION %ld, SIZE %ld,append )", handle, (Int64)lobDataBuf, lobUpdateLen);
+  sprintf(query,"update lob (LOB '%s' , LOCATION %lu, SIZE %ld,append )", handle, (unsigned long)lobDataBuf, lobUpdateLen);
  
  
   retcode = cliInterface.executeImmediate(query);
@@ -356,7 +356,7 @@ Int32 updateTruncateLobHandle(CliGlobals *cliglob,char *handle)
   Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
-  str_sprintf(query,"update lob (LOB '%s' , empty_blob())", handle);
+  sprintf(query,"update lob (LOB '%s' , empty_blob())", handle);
  
  
   retcode = cliInterface.executeImmediate(query);
