@@ -1164,9 +1164,7 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
   // Scale the result to the interval qualifier's fractional precision.
   //
   if (intervalEndField == REC_DATE_SECOND) {
-#pragma nowarn(1506)   // warning elimination 
     short fpDiff = intervalOpType->getScale() - datetimeOpType->getScale();
-#pragma warn(1506)   // warning elimination 
     if (fpDiff > 0) {
       do {
         result *= 10;
@@ -3091,9 +3089,7 @@ convertToAscii(Lng32 value, char *&result, UInt32 width)
   // Format value as a string.
   //
   while ((value != 0) && (i > 0)) {
-#pragma nowarn(1506)   // warning elimination 
     result[--i] = '0' + (char) (value % 10);
-#pragma warn(1506)  // warning elimination 
     value /= 10;
   }
 
@@ -3747,9 +3743,7 @@ short ExpDatetime::getDisplaySize(Lng32 datetimeCode,
      displayLength += 1 /* for separator */ + fractionPrecision;
     }
   }
-#pragma nowarn(1506)   // warning elimination 
   return displayLength;
-#pragma warn(1506)  // warning elimination 
 }
 
 short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
@@ -3764,14 +3758,10 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
 {
   short rc = 0;
 
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   SimpleType tempST(REC_DATETIME, 12, 
             srcScale, srcPrecision,
             ExpTupleDesc::SQLMX_FORMAT,
             0, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
 
   char tempDTBuf[12]; // max length for an internal datetime value.
 
@@ -3782,13 +3772,9 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
   if (rc)
     return rc;
 
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   rc =
     tempDT.convDatetimeToASCII(tempDTBuf, dstData, dstLen, format, NULL,
                    heap, diagsArea);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
   if (rc < 0)
     return rc;
 

@@ -1095,9 +1095,7 @@ void HostArraysWA::processArrayHostVar(ItemExpr *parent, Int32 childNumber)
       // an INSERT, for instance, the types will be determined in the Insert node
       SQLRowset *rowsetType = 
         new (bindWA_->wHeap()) SQLRowset(bindWA_->wHeap(), (new (bindWA_->wHeap()) SQLUnknown(bindWA_->wHeap())),
-#pragma nowarn(1506)   // warning elimination 
                                           size, size);
-#pragma warn(1506)  // warning elimination 
       NAString name = param->getName();
       if (name.isNull()) {
         name = "__array" + bindWA_->fabricateUniqueName();

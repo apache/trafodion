@@ -65,9 +65,7 @@
 ExpSequenceFunction::ExpSequenceFunction
 (OperatorTypeEnum oper_type, Int32 arity, Int32 index,
  Attributes ** attr, Space * space)
-#pragma nowarn(1506)   // warning elimination 
   : ex_function_clause(oper_type, arity, attr, space), offsetIndex_(index), flags_(0) {
-#pragma warn(1506)  // warning elimination 
 };
 
 // ExpSequenceFunction::ExpSequenceFunction

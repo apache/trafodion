@@ -154,7 +154,6 @@ private :
   Int32 useCount_;
 }; 
 
-#pragma nowarn(1506)   // warning elimination 
 class CmpContext
 {
 public :
@@ -647,7 +646,6 @@ private:
   // for any Hive SQL operations we may want to do
   HiveClient_JNI* hiveClient_;
 }; // end of CmpContext 
-#pragma warn(1506)  // warning elimination 
 
 static inline CmpContext::InternalCompileEnum &InternalCompile() 
 { return cmpCurrentContext->internalCompile(); }

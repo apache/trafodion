@@ -543,13 +543,11 @@ QualifiedName::QualifiedName(const NAString &ansiString,
     CmpContext *cmpContext = bindWA ? bindWA->currentCmpContext() : NULL;
     Parser parser(cmpContext);
     NAString ns("TABLE " + ansiString + ";", CmpCommon::statementHeap());
-#pragma nowarn(1506)   // warning elimination 
     // save the current parserflags setting
     ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
     StmtQuery *stmt = (StmtQuery *)parser.parseDML(ns, ns.length(), GetAnsiNameCharSet());
     // Restore parser flags settings 
     Set_SqlParser_Flags (savedParserFlags);
-#pragma warn(1506)  // warning elimination 
     if (stmt) {
       CMPASSERT(stmt->getOperatorType() == STM_QUERY);
       *this = stmt->getQueryExpression()->getScanNode()->getTableName().getQualifiedNameObj();
@@ -811,9 +809,7 @@ void CorrName::applyPrototype(BindWA *bindWA)
       return;
     }
     // upcase value returned by getenv
-#pragma nowarn(1506)   // warning elimination 
     Int32 len = strlen(value);
-#pragma warn(1506)  // warning elimination 
     char * ucValue = new (bindWA->wHeap()) char[len+1];
     str_cpy_convert(ucValue, value, len, -1/*upshift*/);
     ucValue[len] = 0;
@@ -836,13 +832,11 @@ void CorrName::applyPrototype(BindWA *bindWA)
   Parser parser(bindWA->currentCmpContext());
   NAString ns("TABLE " + proto->getPrototypeValue() + ";",
               CmpCommon::statementHeap());
-#pragma nowarn(1506)   // warning elimination 
   // save the current parserflags setting
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
   StmtQuery *stmt = (StmtQuery *)parser.parseDML(ns, ns.length(), GetAnsiNameCharSet());
   // Restore parser flags settings 
   Set_SqlParser_Flags (savedParserFlags);
-#pragma warn(1506)  // warning elimination 
   if (stmt) {
     CMPASSERT(stmt->getOperatorType() == STM_QUERY);
     CorrName &protoCorrName = 

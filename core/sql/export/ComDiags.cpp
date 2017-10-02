@@ -1225,9 +1225,7 @@ void ComCondition::assignStringMember(char *& memberBuff,const char *const src)
        memberBuff = new char[buffsize];
        assert(memberBuff != NULL);
      }
-#pragma nowarn(1506)   // warning elimination 
      str_cpy(memberBuff,src,buffsize);
-#pragma warn(1506)  // warning elimination 
      memberBuff[buffsize-1]=0;
    }
 }
@@ -1712,9 +1710,7 @@ void ComDiagsArea::enforceLengthLimit()
          // make errors a sequence 1..j, where j = errors_.entries() -
          //                             (numToDiscard-warnings_.entries())
 
-#pragma nowarn(1506)   // warning elimination 
          numToDiscard =  numToDiscard - warnings_.entries();
-#pragma warn(1506)  // warning elimination 
          CollIndex j = errors_.entries() - numToDiscard;
          while (numToDiscard-- != 0) {
             errors_[j]->deAllocate();// remove near end and slide towards front
@@ -1880,7 +1876,6 @@ void ComDiagsArea::unpackObj32(IpcMessageObjType objType,
 // Let us not forget the size of the base class.
 //
 // We do not pack newCondition_.
-#pragma nowarn(770)   // warning elimination 
 IpcMessageObjSize ComDiagsArea::packedLength(void)
 {
   // NOTE: changes to any of the following methods also require
@@ -1989,7 +1984,6 @@ IpcMessageObjSize ComDiagsArea::packedLength32(void)
 
   return size;
 }
-#pragma warn(770)   // warning elimination 
 
 IpcMessageObjSize ComDiagsArea::packObjIntoMessage(char *buffer)
 {
@@ -2285,20 +2279,14 @@ NABoolean ComDiagsArea::checkObj(IpcMessageObjType objType,
 
 Lng32     ComDiagsArea::getNumber () const
 {
-#pragma nowarn(1506)   // warning elimination 
    return errors_.entries() + warnings_.entries();
-#pragma warn(1506)  // warning elimination 
 }
 
 Lng32     ComDiagsArea::getNumber (DgSqlCode::ErrorOrWarning type) const
 {
    switch (type) {
-#pragma nowarn(1506)   // warning elimination 
      case DgSqlCode::ERROR_:	return errors_.entries();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
      case DgSqlCode::WARNING_:	return warnings_.entries();
-#pragma warn(1506)  // warning elimination 
      default:			return -1;
    }
 }
@@ -3186,9 +3174,7 @@ static char *copyStringMember(char* src, CollHeap *heap)
   copy = (char*) heap->allocateMemory(buffsize);
   assert(copy!=NULL);
 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy(copy,src,buffsize);
-#pragma warn(1506)  // warning elimination 
   copy[buffsize-1]=0;
 
   return copy;
@@ -3282,18 +3268,14 @@ Lng32 ComDiagsArea::mark() const
 void ComDiagsArea::rewind(Lng32 markValue, NABoolean decId)
 {
    CollIndex  maxError = errors_.entries()-1;
-#pragma nowarn(161)   // warning elimination 
    while (maxError != -1 && errors_[maxError]->getDiagsId() > markValue) {
-#pragma warn(161)  // warning elimination 
        errors_[maxError]->deAllocate();
        NABoolean removed = errors_.removeAt(maxError--); 
        assert(removed);
        if (decId) --maxDiagsId_; // This is the merged line
    }
    CollIndex maxWarning = warnings_.entries()-1;
-#pragma nowarn(161)   // warning elimination 
    while (maxWarning != -1 && warnings_[maxWarning]->getDiagsId() > markValue){
-#pragma warn(161)  // warning elimination 
        warnings_[maxWarning]->deAllocate();
        NABoolean removed = warnings_.removeAt(maxWarning--);
        assert(removed);

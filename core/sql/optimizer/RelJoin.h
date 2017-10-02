@@ -110,7 +110,6 @@ class Join : public RelExpr
 public:
 
   // constructor
-// warning elimination (removed "inline")
   Join(RelExpr *leftChild,
               RelExpr *rightChild,
               OperatorTypeEnum otype = REL_JOIN,
@@ -164,7 +163,6 @@ public:
   Join (const Join &) ; // not written
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~Join() {}
 
   // get the degree of this node (it is a binary op).
@@ -1203,7 +1201,6 @@ class NestedJoin : public Join
 public:
 
   // constructor
-// warning elimination (removed "inline")
   NestedJoin(RelExpr *leftChild,
                     RelExpr *rightChild,
                     OperatorTypeEnum otype = REL_NESTED_JOIN,
@@ -1218,7 +1215,6 @@ public:
   NestedJoin (const NestedJoin &) ; // not written
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~NestedJoin() {}
 
   // get a printable string that identifies the operator
@@ -1359,7 +1355,6 @@ class NestedJoinFlow : public NestedJoin
 public:
 
   // constructor
-// warning elimination (removed "inline")
   NestedJoinFlow(RelExpr  *leftChild,
                         RelExpr  *rightChild,
                         TableDesc *updTableDesc,
@@ -1402,7 +1397,6 @@ class MergeJoin : public Join
 public:
 
   // constructor
-// warning elimination (removed "inline")
   MergeJoin(RelExpr *leftChild,
                    RelExpr *rightChild,
                    OperatorTypeEnum otype = REL_MERGE_JOIN,
@@ -1415,7 +1409,6 @@ public:
   MergeJoin (const MergeJoin &) ; // not written
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~MergeJoin() { }
 
   virtual NABoolean isLogical () const;
@@ -1558,7 +1551,6 @@ class HashJoin : public Join
 public:
 
   // constructor
-// warning elimination (removed "inline")
   HashJoin(RelExpr *leftChild,
                   RelExpr *rightChild,
                   OperatorTypeEnum otype = REL_HASH_JOIN,
@@ -1572,7 +1564,6 @@ public:
     innerAccessOnePartition_(FALSE)
     {}
 
-// warning elimination (removed "inline")
   HashJoin(RelExpr *leftChild,
                   RelExpr *rightChild,
                   CollHeap *oHeap = CmpCommon::statementHeap())
@@ -1586,7 +1577,6 @@ public:
 
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~HashJoin() { }
 
   // Special method added to check for ordered cross product called by
@@ -1869,9 +1859,6 @@ private:
   NABoolean innerAccessOnePartition_;
 
 }; // class HashJoin
-
-#pragma warn(1319)  // warning elimination
-#pragma warn(1506)  // warning elimination
 
 #endif /* RELJOIN_H */
 

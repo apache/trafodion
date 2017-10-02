@@ -729,7 +729,6 @@ NABoolean ComCondition::isLocked () const
 // Class ComDiagsArea
 // -----------------------------------------------------------------------
 
-#pragma warning( disable : 4251 )
 class ComDiagsArea : public IpcMessageObj {
 public:
   // For the ``SQL function'' setting and getting operations, we declare
@@ -1459,7 +1458,6 @@ void          NegateAllErrors  (ComDiagsArea *a)
 {
   a->negateAllErrors();
 }
-// #pragma warning( default : 4251 )
 
 ///////////////////////////////////////////////////////////////
 // These are the inline functions of the ComDiagsArea class. //

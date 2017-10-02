@@ -710,7 +710,6 @@ void ColStats::setSumOfMaxUec (CostScalar value)
 // because they can legitimately become very close to zero but not equal
 // to zero (e.g., join between 2 1-billion row tables returns 1 row ==>
 // redfactor == 1e-18)
-// warning elimination (remove "inline")
 void ColStats::setRedFactor (CostScalar rowred)
 {
   if (rowred < 0)
@@ -1081,7 +1080,6 @@ Histogram::isNullInstantiated() const
 }
 
 // removing that NULL interval (assuming it exists)
-// warning elimination (removed "inline")
 void
 Histogram::removeNullInterval()
 {
@@ -1097,7 +1095,6 @@ Histogram::removeNullInterval()
 }
 
 // inserting a NULL interval (assuming it doesn't already exist)
-// warning elimination (removed "inline")
 void
 Histogram::insertNullInterval()
 {
@@ -4594,9 +4591,7 @@ Criterion ColStats::decideReductionCriterion(Source invokedFrom,
 			}
 
 	}
-#pragma nowarn(203)   // warning elimination
 	return NONE;
-#pragma warn(203)  // warning elimination
 };
 
 //reduce the number of histogram intervals in the histogram
@@ -7634,9 +7629,7 @@ void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
 
 void StatsList::deepDelete()
 {
-#pragma nowarn(1506)   // warning elimination
   unsigned short members = (UInt32)this->entries();
-#pragma warn(1506)  // warning elimination
 	for( unsigned short i=0;i<members;i++)
 	{
 		(*this)[i]->deepDelete();

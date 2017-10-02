@@ -55,7 +55,6 @@ typedef NAVersionedObjectPtrTempl<MdamPred> MdamPredPtr;
 ///////////////////////////////////////////////////////////
 // Class MdamPred
 ///////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 class MdamPred : public NAVersionedObject
 {
 public:
@@ -200,7 +199,6 @@ public:
   ex_expr::exp_return_type getValue2(atp_struct* atp0, atp_struct* atp1)
   { return getValue_(value2_, atp0, atp1); }
 };
-#pragma warn(1506)  // warning elimination 
 
 
 // ---------------------------------------------------------------------

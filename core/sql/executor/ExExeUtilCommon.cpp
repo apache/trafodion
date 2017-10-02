@@ -135,11 +135,9 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
 
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(exe_util_tdb.numBuffers_,
 				     exe_util_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   childTcb_ = child_tcb;
   if (childTcb_)

@@ -323,12 +323,8 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
 	      *(new (CmpCommon::statementHeap()) MaterialDisjuncts(
 		   setOfPredicates)),
               nonKeyColumnSet, indexDesc, UDindexDesc),
-#pragma nowarn(1506)   // warning elimination
       beginKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       endKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
       valuesArePartitionRange_(FALSE),
       _countTimesBoundaryValReq(0)
 {
@@ -357,12 +353,8 @@ SearchKey::SearchKey(const ValueIdList & keyColumns,
               indexDesc,
               UDindexDesc
               ),
-#pragma nowarn(1506)   // warning elimination
       beginKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       endKeyValues_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
       valuesArePartitionRange_(FALSE),
       _countTimesBoundaryValReq(0)
 {
@@ -804,9 +796,7 @@ ValueId SearchKey::computeMissingKeyValue(ValueId keyColumn,
 // -----------------------------------------------------------------------
 void SearchKey::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s \n%s",NEW_INDENT,title,NEW_INDENT);
   getKeyColumns().print(ofd,indent,"Key Columns:");
   getBeginKeyValues().print(ofd,indent,"Begin Key Values:");
@@ -856,7 +846,6 @@ NABoolean SearchKeyBounds::operator == (const SearchKeyBounds & other) const
 //         data from the access path.
 //
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates,
                                               const ValueIdSet & externalInputs)
 {
@@ -936,7 +925,6 @@ void SearchKeyBounds::analyzeSearchPredicates(const ValueIdSet & setOfPredicates
     } // loop over predicates
 
 } // SearchKeyBounds::analyzeSearchPredicate()
-#pragma warn(770)  // warning elimination
 
 
 // -----------------------------------------------------------------------
@@ -1403,9 +1391,7 @@ ValueId SearchKeyBounds::computeMissingKeyValue(NABoolean wantMinValue)
 // -----------------------------------------------------------------------
 void SearchKeyBounds::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s\n%s",NEW_INDENT,title,NEW_INDENT);
   if (isAscendingOrder())
     fprintf(ofd,"ascending , ");
@@ -1468,9 +1454,7 @@ SearchKeyWorkSpace::SearchKeyWorkSpace(const ValueIdList & keyColumns,
 				       const ValueIdList & indexOrder,
 				       const NABoolean forwardSearch,
                                        const SearchKey& searchKey)
-#pragma nowarn(1506)   // warning elimination
                   : keyCount_(keyColumns.entries()),
-#pragma warn(1506)  // warning elimination
 		    keyBounds_(CmpCommon::statementHeap()),
                     searchKey_(searchKey)
 {

@@ -55,7 +55,6 @@
 class MdamEndPoint;
 // End of forward declarations.
 
-#pragma nowarn(1103)   // warning elimination 
 class MdamPoint
 {
 
@@ -114,8 +113,6 @@ private:
 }; // class MdamPoint
 
 
-#pragma warn(1103)   // warning elimination 
-
 // *****************************************************************************
 // Inline member functions for class MdamPoint
 // *****************************************************************************
@@ -133,11 +130,9 @@ inline MdamPoint::MdamPoint(const tupp & tupp,
 inline MdamEnums::MdamOrder MdamPoint::compare
              (const MdamPoint * other, const ULng32 keyLen) const
 {
-#pragma nowarn(1506)   // warning elimination 
   short retVal = str_cmp(tupp_.getDataPointer(), 
                                       other->tupp_.getDataPointer(),
                                       Int32(keyLen));
-#pragma warn(1506)  // warning elimination 
   if (retVal < 0)
      return MdamEnums::MDAM_LESS;
   else

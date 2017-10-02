@@ -169,13 +169,9 @@ SP_STATUS SP_FILEINFO_Process(SP_PROCESS_ACTION action,
     {
       char* nlptr = strchr(p, '\n');
       if (nlptr) *nlptr = '\0';
-#pragma nowarn(1506)   // warning elimination
       short len = strlen(p);
-#pragma warn(1506)  // warning elimination
       memcpy(&tempstr[0], &len, sizeof(len));
-#pragma nowarn(1506)   // warning elimination
       fFunc(0, outputData, strlen(p) + 2, tempstr, 0);
-#pragma warn(1506)  // warning elimination
 
       // error when fetching output
       if (strncmp(&tempstr[2], "errors", 6) == 0)
@@ -199,9 +195,7 @@ SP_STATUS SP_FILEINFO_Process(SP_PROCESS_ACTION action,
         return SP_FAIL;
       }
       // char as output
-#pragma nowarn(1506)   // warning elimination
       fFunc(1, outputData, strlen(fileInfo->desc), fileInfo->desc, 0);
-#pragma warn(1506)  // warning elimination
 
       // datetime as output
       fFunc(2, outputData, 64, fileInfo->dt1, 0);
@@ -306,9 +300,7 @@ inline short string2Varchar(char* string, char* varchar, short size)
 {
   if ((UInt32)strlen(string) + sizeof(short) > (UInt32)size )
     return 0;
-#pragma nowarn(1506)   // warning elimination
   short len = strlen(string);
-#pragma warn(1506)  // warning elimination
   memcpy(varchar, &len, sizeof(short));
   memcpy(varchar+sizeof(short), string, len);
   return 1;

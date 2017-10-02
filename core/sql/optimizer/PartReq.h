@@ -1092,7 +1092,6 @@ class LogicalPartitioningRequirement : public NABasicObject
 public:
 
   // constructor
-// warning elimination (removed "inline")
   LogicalPartitioningRequirement( 
        PartitioningRequirement *logPartReq,
        LogPhysPartitioningFunction::logPartType logPartType = 

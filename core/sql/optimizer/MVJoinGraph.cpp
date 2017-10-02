@@ -220,9 +220,7 @@ static void BitmapToString(const NABitVector& bm, NAString& text)
   CollIndex lastBit;
 
   bm.lastUsed(lastBit);
-#pragma nowarn(1506)   // warning elimination 
   for (Int32 i=lastBit; i>=0; i--)
-#pragma warn(1506)  // warning elimination 
   {
     if (bm.testBit(i))
       text += "1  ";
@@ -248,9 +246,7 @@ void MVJoinTable::print(FILE* ofd, const char* indent, const char* title)const
   CollIndex lastBit;
   
   predicateBitmap_.lastUsed(lastBit);
-#pragma nowarn(1506)   // warning elimination 
   for (Int32 i=lastBit; i>=0  ; i--)
-#pragma warn(1506)  // warning elimination 
   {
 	snprintf( buffer, 20, "%d", i );
     titleString += buffer;

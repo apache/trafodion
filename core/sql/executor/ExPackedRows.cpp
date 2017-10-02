@@ -116,11 +116,9 @@ ExUnPackRowsTcb::ExUnPackRowsTcb(const ExUnPackRowsTdb &unPackRowsTdbLocal,
   // Allocate the buffer pool. Allocate a buffer big enough to hold
   // twice the size of my upqueue.
   //
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) ExSimpleSQLBuffer(unPackRowsTdb().queueSizeUp_ * 2,
                                        unPackRowsTdb().unPackColsTupleLen_,
                                        space);
-#pragma warn(1506)  // warning elimination 
 
   // get the queue used by my child to communicate with me
   //

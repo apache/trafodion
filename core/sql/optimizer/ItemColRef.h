@@ -78,7 +78,6 @@ typedef ClusteredBitmap PositionSet;
 // the ValueDesc.
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1682)   // warning elimination 
 class BaseColumn : public ItemExpr
 {
 
@@ -183,13 +182,11 @@ private:
   // If this is a computed column, the expression used to compute it (NULL otherwise)
   ValueId computedColumnExpr_;
 }; // class BaseColumn
-#pragma warn(1682)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // An index column object is allocated each time when an index is used
 // by a rule that transforms some base table access into an index scan.
 // -----------------------------------------------------------------------
-#pragma nowarn(1682)   // warning elimination 
 class IndexColumn : public ItemExpr
 {
 
@@ -256,7 +253,6 @@ private:
   ValueId indexColDefinition_;
 
 };
-#pragma warn(1682)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // A column reference points to a column in a relational node. Constants
@@ -954,11 +950,8 @@ public:
  // Raj P - 01/2001
   // Parameter  mode, ordinal position and variable index
   // needed for (java) stored procedures
-// warning elimination (removed "inline")
   ComColumnDirection getParamMode () const {return paramMode_;};
-// warning elimination (removed "inline")
   Int32 getOrdinalPosition () const {return ordinalPosition_;};
-// warning elimination (removed "inline")
   Int32 getHVorDPIndex () const { return hvIndex_;}
   virtual void setPMOrdPosAndIndex( ComColumnDirection paramMode,
 				    Int32 ordinalPosition,

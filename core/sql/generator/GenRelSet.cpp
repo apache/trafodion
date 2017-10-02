@@ -95,9 +95,7 @@ short MergeUnion::codeGen(Generator * generator)
 
   ex_cri_desc * returned_desc = NULL;
   if(child(0) || child(1))
-#pragma nowarn(1506)   // warning elimination 
     returned_desc = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
   else
     returned_desc = given_desc;
 
@@ -312,9 +310,7 @@ short MergeUnion::codeGen(Generator * generator)
     }
   
   // describe the returned unioned row
-#pragma nowarn(1506)   // warning elimination 
   returned_desc->setTupleDescriptor(returned_desc->noTuples() - 1, tuple_desc);
-#pragma warn(1506)  // warning elimination 
   
   // if sort-merge union is being done, generate expression to
   // compare the left and the right values.
@@ -373,7 +369,6 @@ short MergeUnion::codeGen(Generator * generator)
 			     merge_expr,
 			     cond_expr,
 			     trig_expr,
-#pragma nowarn(1506)   // warning elimination 
                              tuple_length, // unioned rowlen
 			     returned_desc->noTuples()-1, // tupp index for
 			                                  // unioned buffer
@@ -391,7 +386,6 @@ short MergeUnion::codeGen(Generator * generator)
                              rowsFromRight,
                              afterUpdate,
 			     getInNotAtomicStatement());
-#pragma warn(1506)  // warning elimination 
 
   generator->initTdbFields(union_tdb);
 

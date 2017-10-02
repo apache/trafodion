@@ -3534,12 +3534,10 @@ Lng32 HSGlobalsClass::Initialize()
                   else
                     {
                       xSampleSet = MINOF(sampleValue1, actualRowCount);
-#pragma nowarn(1506)  // warning elimination 
                       // multiply by 100.0001 instead of 100 so that rounding
                       // errors are limited.
                       sampleTblPercent = convertInt64ToDouble(xSampleSet) / 
                                          actualRowCount * 100.0001;
-#pragma warn(1506)    // warning elimination 
 
                       if (sampleTblPercent < 100)
                         {
@@ -9512,9 +9510,7 @@ Lng32 HSGlobalsClass::FixSamplingCounts(HSColGroupStruct *group)
     double lower     = 0;
     const double UEC_FRACTION_UPPER = 0.975;
     const double FRACTION_HIGH = 0.981;
-#pragma nowarn(1506)   // warning elimination 
     const double UPSCALE_FOR_ROWS = convertInt64ToDouble(actualRowCount) / sampleRowCount;
-#pragma warn(1506)  // warning elimination 
     const Lng32 MAX_INTERVAL_JOIN = 4;
     NABoolean processMultiGroups = TRUE;
 
@@ -10148,7 +10144,6 @@ Lng32 HSGlobalsClass::ClearSelectHistograms()
 /* ASSUMPTIONS: A transaction has already been */
 /*              started.                       */
 /***********************************************/
-#pragma nowarn(770)   // warning elimination 
 Lng32 HSGlobalsClass::DeleteOrphanHistograms()
   {
     Lng32     retcode = 0;
@@ -10602,7 +10597,6 @@ HSColGroupStruct* HSGlobalsClass::ReverseList(HSColGroupStruct* list)
    return saveGroup;
 }
 
-#pragma warn(770)   // warning elimination 
 
 /***********************************************/
 /* METHOD:  print()                            */
@@ -14047,9 +14041,7 @@ void formatFixedNumeric(Int64 value, Lng32 scale, char* buffer)
   char digits[] = "0123456789";
   char temp;
   char *p1 = buffer, *p2 = buffer;
-#pragma warning(disable:4146)
   Int64 xval = (Int64)(value >=0 ? value : -value);  // no template for abs()
-#pragma warning(default:4146)
   Int32 numDigits = 0;
 
   // Write the digits out in reverse order, adding the decimal point at the
@@ -14326,7 +14318,6 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
 // Unary minus used in several places in the following code for intervals,
 // which are always encoded as signed integers. The template instantiations for
 // unsigned types will complain about the attempted negation.
-#pragma warning(disable:4146)
 
         // For single-field intervals, all we have to do is right-justify the
         // value in a field with width equal to the interval's precision.
@@ -14452,7 +14443,6 @@ Int32 copyValue(Int64 value, char *valueBuff, const HSColumnStruct &colDesc, sho
           }
           break;
 
-#pragma warning(default:4146)
 
         default:
           retcode = -1;
@@ -15004,9 +14994,7 @@ static short convInt64ToAscii(char *target,
   if (scale) {
     Lng32 low = (currPos - scale);
     for (; currPos > low; currPos--) {
-#pragma nowarn(1506)   // warning elimination 
       target[currPos] = (char)(Int32)(newSource % 10) + '0';
-#pragma warn(1506)   // warning elimination 
       newSource /= 10;
     }
     target[currPos--] = '.';
@@ -15014,9 +15002,7 @@ static short convInt64ToAscii(char *target,
 
   // Convert the integer part.
   for (; currPos >= leftMost; currPos--) {
-#pragma nowarn(1506)   // warning elimination 
     target[currPos] = (char)(Int32)(newSource % 10) + '0';
-#pragma warn(1506)   // warning elimination 
     newSource /= 10;
   }
 

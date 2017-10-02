@@ -310,9 +310,7 @@ ExecuteStatement(CDMPreparedStatement &stmt,
 	short retry_delay = 1000 ; // milliseconds.
 	for (Int32 retry = 0; retry < 2; retry++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		retry_delay = retry_delay * (retry + 1);
-#pragma warn(1506)  // warning elimination 
 
 		try
 		{
@@ -393,7 +391,5 @@ void CRUTaskExecutor::CreateBufferAndTranslator(Int32 bufsize)
 	pIpcBuffer_ = new char[bufsize];
 
 	pIpcTranslator_ = 
-#pragma nowarn(1506)   // warning elimination 
 		new CUOFsIpcMessageTranslator(pIpcBuffer_, bufsize);
-#pragma warn(1506)  // warning elimination 
 }

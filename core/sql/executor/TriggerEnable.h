@@ -121,7 +121,6 @@ private:
 // 
 
 
-#pragma nowarn(1506)   // warning elimination 
 class TriggerStatusWA : public NABasicObject
 {
 
@@ -193,7 +192,6 @@ private:
 	ex_root_tcb* rootTcb_;
 
 };
-#pragma warn(1506)  // warning elimination 
 
 #endif
 

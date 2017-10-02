@@ -181,14 +181,10 @@ PhysUnPackRows::codeGen(Generator *generator)
   ex_cri_desc *givenCriDesc = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc *returnedCriDesc = 
-#pragma nowarn(1506)   // warning elimination 
     new(space) ex_cri_desc(givenCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ex_cri_desc *workCriDesc = 
-#pragma nowarn(1506)   // warning elimination 
     new(space) ex_cri_desc(givenCriDesc->noTuples() + 2, space);
-#pragma warn(1506)  // warning elimination 
 
 
   // unPackCols is the next to the last Tp in Atp 0, the work ATP.
@@ -303,14 +299,10 @@ PhysUnPackRows::codeGen(Generator *generator)
                              &unPackColsTupleDesc,
                              ExpTupleDesc::SHORT_FORMAT);
 
-#pragma nowarn(1506)   // warning elimination 
   workCriDesc->setTupleDescriptor(unPackColsAtpIndex,
-#pragma warn(1506)  // warning elimination 
                                   unPackColsTupleDesc);
 
-#pragma nowarn(1506)   // warning elimination 
   returnedCriDesc->setTupleDescriptor(unPackColsAtpIndex,
-#pragma warn(1506)  // warning elimination 
                                       unPackColsTupleDesc);
 
 
@@ -436,7 +428,6 @@ PhysUnPackRows::codeGen(Generator *generator)
 	new (space) ComTdbUnPackRows(childTdb,
 				     packingFactorExpr,
 				     unPackColsExpr,
-#pragma nowarn(1506)   // warning elimination 
 				     unPackColsTupleLen,
 				     unPackColsAtpIndex,
 				     indexValueAtpIndex,
@@ -452,7 +443,6 @@ PhysUnPackRows::codeGen(Generator *generator)
 				     tolerateNonFatalError);
     }
 
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(unPackTdb);
 
   // Remove child's outputs from mapTable, They are not needed

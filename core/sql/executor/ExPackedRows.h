@@ -219,7 +219,6 @@ public:
   
   // Stub to workUp() used by scheduler.
   //
-  // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   {
     return ((ExUnPackRowsTcb *)tcb)->workUp(); 
@@ -227,7 +226,6 @@ public:
   
   // Stub to workDown() used by scheduler.
   // 
-  // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
   {
     return ((ExUnPackRowsTcb *)tcb)->workDown(); 
@@ -235,7 +233,6 @@ public:
   
   // Stub to processCancel() used by scheduler.
   //
-// warning elimination (removed "inline")
   static ExWorkProcRetcode sCancel(ex_tcb *tcb)
   {
     return ((ExUnPackRowsTcb *)tcb)->processCancel(); 
@@ -243,7 +240,6 @@ public:
 
   // Return the parent queue pair.
   //
-// warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const { return qParent_; }
 
   // Return a reference to the UnPackRows TDB associated with this 

@@ -49,7 +49,6 @@ class ColumnDescList;
 // ***********************************************************************
 // ColumnDesc : A column descriptor
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class ColumnDesc : public NABasicObject
 {
 public:
@@ -145,7 +144,6 @@ private:
   const char * viewFileName_;
 
 }; // class ColumnDesc
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // ColumnDescList : A list of column descriptors

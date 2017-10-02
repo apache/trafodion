@@ -1058,7 +1058,6 @@ private:
 //                    this values (ex. precision > 18).
 //
 // ***********************************************************************
-#pragma nowarn(1319)   // warning elimination
 class SQLBigNum : public NumericType
 {
 public:
@@ -1163,8 +1162,6 @@ private:
   //             are non-bignums)
   NABoolean isARealBigNum_;
 }; // class SQLBigNum
-#pragma warn(1319)  // warning elimination 
-
 
 // ***********************************************************************
 //

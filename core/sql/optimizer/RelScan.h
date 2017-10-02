@@ -1607,7 +1607,6 @@ public:
 // The Describe class represents scan on a 'virtual' table that contains
 // the output of the DESCRIBE(SHOWDDL) command.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 class Describe : public Scan
 {
 public:
@@ -2044,6 +2043,5 @@ private:
   // copy ctor
   Describe (const Describe & des) ;  // not defined - DO NOT USE
 }; // class Describe
-#pragma warn(1506)  // warning elimination
 
 #endif /* RELSCAN_H */

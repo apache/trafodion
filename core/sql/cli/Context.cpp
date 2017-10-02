@@ -390,10 +390,8 @@ void ContextCli::deleteMe()
   ex_assert(cmpContextInUse_.entries() == 0,
             "Should not be inside recursive compilation");
 
-#pragma warning( disable : 4018 )  // warning elimination
   for (short i = 0; i < arkcmpArray_.entries(); i++)
     delete arkcmpArray_[i];
-#pragma warning( default : 4018 )  // warning elimination
 
   arkcmpArray_.clear();   
 
@@ -2180,14 +2178,10 @@ Lng32 ContextCli::setUdrRuntimeOptions(const char *options,
   char *newOptions = (char *) exHeap()->allocateMemory(optionsLen + 1);
   char *newDelims = (char *) exHeap()->allocateMemory(delimsLen + 1);
 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(newOptions, options, optionsLen);
-#pragma warn(1506)  // warning elimination 
   newOptions[optionsLen] = 0;
 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(newDelims, delimiters, delimsLen);
-#pragma warn(1506)  // warning elimination 
   newDelims[delimsLen] = 0;
 
   if (udrRuntimeOptions_)

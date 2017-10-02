@@ -151,14 +151,10 @@ ex_expr::exp_return_type InputOutputExpr::describeOutput(void * output_desc_,
                                      0);
 	    if (NOT isIFIO)
 	      {
-#pragma warning (disable : 4244)   //warning elimination
 		Lng32 displaySize =
 		  ExpInterval::getDisplaySize(operand->getDatatype(),
-#pragma nowarn(1506)   // warning elimination 
 					      operand->getPrecision(),
-#pragma warn(1506)  // warning elimination 
 					      operand->getScale());
-#pragma warning (default : 4244)   //warning elimination
 		length = displaySize;
 	      }
           } else if (operand->getDatatype() == REC_DATETIME) {
@@ -686,7 +682,6 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV2(
 
 
 
-#pragma warning (disable : 4273)   //warning elimination
 void InputOutputExpr::setupBulkMoveInfo(void * desc_, CollHeap * heap,
 					NABoolean isInputDesc,
 					UInt32 flags)
@@ -971,9 +966,7 @@ next_clause:
 	}
     }
 }
-#pragma warning (default : 4273)   //warning elimination
 
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
 						     void * desc_,
 						     char * tgtRowPtr,
@@ -1026,9 +1019,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
 
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4273)   //warning elimination
 
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type
 InputOutputExpr::outputValues(atp_struct *atp,
                               void * output_desc_, 
@@ -1213,9 +1204,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	
       default:
         dataPtr = (atp->getTupp(operand->getAtpIndex())).getDataPointer();
-#pragma nowarn(270)   // warning elimination 
         if (operand->getOffset() < 0) {
-#pragma warn(270)  // warning elimination 
           // Offset is negative. This indicates that this offset
           // is the negative of field number in a base table
           // and this field follows one or more varchar fields.
@@ -2097,7 +2086,6 @@ next_clause:
   
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4273)   //warning elimination
 
 
 ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
@@ -2180,14 +2168,10 @@ ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
                                     0);
 	    if (NOT isIFIO)
 	      {
-#pragma warning (disable : 4244)   //warning elimination
 		displayLength =
 		  ExpInterval::getDisplaySize(dataType,
-#pragma nowarn(1506)   // warning elimination 
 					      operand->getPrecision(),
-#pragma warn(1506)  // warning elimination 
 					      operand->getScale());
-#pragma warning (default : 4244)   //warning elimination
 		
 		length = displayLength;
 	      }
@@ -2516,7 +2500,6 @@ then place the following four lines of code after the call to setRowNumberInCli.
       return ex_expr::EXPR_ERROR;
 */
 // error path not taken . This is only if something bad happens in NVT
-#pragma warning (disable : 4273)   //warning elimination
 ex_expr::exp_return_type
 InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 				     void * inputDesc_,
@@ -2871,9 +2854,7 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 		
 		if (sourceType == REC_NCHAR_V_ANSI_UNICODE)  
 		  {
-#pragma nowarn(1506)   // warning elimination
 		    realSourceLen = NAWstrlen((wchar_t*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination
 		    
 		    if ( realSourceLen > sourceLen )
 		      realSourceLen = sourceLen ;
@@ -3895,9 +3876,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	      Int32 i;
 	      if ((sourceType >= REC_MIN_V_N_CHAR_H) 
 		  && (sourceType <= REC_MAX_V_N_CHAR_H)) {
-#pragma nowarn(1506)   // warning elimination 
 		for (i = strlen(source); i < operand->getLength(); i++) {
-#pragma warn(1506)  // warning elimination 
 		  target[i] = 0;
 		}
 	      }
@@ -3950,9 +3929,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                Lng32 realSourceLen = sourceLen;
 
                if (sourceType == REC_NCHAR_V_ANSI_UNICODE)  {
-#pragma nowarn(1506)   // warning elimination
                   realSourceLen = NAWstrlen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination
 
                   if ( realSourceLen > sourceLen )
                      realSourceLen = sourceLen ;
@@ -4302,9 +4279,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
                   return ex_expr::EXPR_ERROR;
                 }
                 else {
-#pragma nowarn(1506)   // warning elimination 
 		  dynamicRowsetSize = *((ULng32 *) target);
-#pragma warn(1506)  // warning elimination 
 		  break;
                 }
                 
@@ -4351,7 +4326,6 @@ next_clause:
   return ex_expr::EXPR_OK;
 }
 
-#pragma warning (disable : 4273)   //warning elimination
 Lng32 InputOutputExpr::getCompiledOutputRowsetSize(atp_struct *atp)
 {
   ex_clause  * clause = getClauses();
@@ -4369,7 +4343,6 @@ Lng32 InputOutputExpr::getCompiledOutputRowsetSize(atp_struct *atp)
 
   return sourceRowsetSize;
 }
-#pragma warning (default : 4273)   //warning elimination
 
 ex_expr::exp_return_type InputOutputExpr::addDescInfoIntoStaticDesc
 (Descriptor * desc, NABoolean isInput)

@@ -208,9 +208,7 @@ Int32 ex_tcb::fixup()
   Int32 nc = numChildren();
   for (Int32 i=0; i<nc; i++)
   {
-#pragma nowarn(1506)   // warning elimination 
      error = ((ex_tcb *)getChild(i))->fixup();
-#pragma warn(1506)  // warning elimination 
      if (error)
         break;
   }
@@ -226,9 +224,7 @@ Int32 ex_tcb::rollbackSavepoint()
   Int32 nc = numChildren();
   for (Int32 i=0; i<nc; i++)
     {
-#pragma nowarn(1506)   // warning elimination 
       error = ((ex_tcb *)getChild(i))->rollbackSavepoint();
-#pragma warn(1506)  // warning elimination 
       if (error)
         break;
     }
@@ -261,9 +257,7 @@ NABoolean ex_tcb::closeTables()
 unsigned short ex_tcb::getExpressionMode() const
 { 
   if (globals_->getInjectErrorAtExpr())
-#pragma nowarn(1506)   // warning elimination 
     return tdb.expressionMode_ | ex_expr::INJECT_ERROR; 
-#pragma warn(1506)  // warning elimination 
   else
     return tdb.expressionMode_; 
 };
@@ -656,9 +650,7 @@ NABoolean ExExprComputeSpace(ex_tcb * tcb)
 void ex_log_ems( const char *f, Int32 l, const char * m)
 {
 }
-#pragma nowarn(770)   // warning elimination 
 void assert_botch_longjmp( const char *f, Int32 l, const char * m)
 {
 
 }
-#pragma warn(770)  // warning elimination 

@@ -71,7 +71,6 @@ public:
   virtual ~RelSample ();
 
   // RelSample operator has only one child
-// warning elimination (removed "inline")
   virtual Int32 getArity () const { return 1; };
 
   virtual const NAString getText() const {return "Sample";};
@@ -206,7 +205,6 @@ public:
 
   // The constructor
   //
-// warning elimination (removed "inline")
   PhysSample(RelExpr *child = NULL,
                     RelSample::SampleTypeEnum type = ANY,
 		    CollHeap *oHeap = CmpCommon::statementHeap())

@@ -55,7 +55,6 @@ class UdrClientControlStream;
 // DLL. The Windows compiler generates a warning about them requiring
 // a DLL interface in order to be used by ExRsInfo clients. We
 // will suppress such warnings.
-#pragma warning ( disable : 4251 )
 
 //------------------------------------------------------------------------
 // class RsInfo
@@ -243,7 +242,5 @@ private:
   void displayList() const;
 #endif
 }; // class ExRsInfo
-
-#pragma warning ( default : 4251 )
 
 #endif // EX_RS_INFO_H

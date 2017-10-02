@@ -141,9 +141,7 @@ IpcMessageObjSize IpcMessageObj::packObjIntoMessage(IpcMessageBufferPtr buffer,
   // stored directly following the base class data (this may not be the
   // case if multiple inheritance is used!!!!).
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(buffer, (const char *) &this[1], derivedObjLen);
-#pragma warn(1506)  // warning elimination 
 
   return derivedObjLen + sizeof(IpcMessageObj);
 }
@@ -170,9 +168,7 @@ IpcMessageObjSize IpcMessageObj::packObjIntoMessage32(IpcMessageBufferPtr buffer
   // stored directly following the base class data (this may not be the
   // case if multiple inheritance is used!!!!).
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(buffer, (const char *) &this[1], derivedObjLen);
-#pragma warn(1506)  // warning elimination 
 
   return derivedObjLen + sizeof(IpcMessageObj);
 }
@@ -191,9 +187,7 @@ void IpcMessageObj::unpackObj(IpcMessageObjType /*objType*/,
 
   // copy the rest into the memory following the IpcMessageObj data members
   // (should we allow such a dangerous default implementation?)
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all((char *) &this[1], buffer, objSize - sizeof(IpcMessageObj));
-#pragma warn(1506)  // warning elimination 
   // - Change the offset in the next ptr to zero
   //
   s_.next_ = NULL;
@@ -213,9 +207,7 @@ void IpcMessageObj::unpackObj32(IpcMessageObjType /*objType*/,
 
   // copy the rest into the memory following the IpcMessageObj data members
   // (should we allow such a dangerous default implementation?)
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all((char *) &this[1], buffer, objSize - SQL_32BIT_IPC_MESSAGE_OBJ_SIZE);
-#pragma warn(1506)  // warning elimination 
   // - Change the offset in the next ptr to zero
   //
   s_.next_ = NULL;
@@ -334,9 +326,7 @@ IpcMessageObjSize IpcMessageObj::packBaseClassIntoMessage(
          s_.objLength_ = bswap_32(s_.objLength_); 
          s_.refCount_ = bswap_32(s_.refCount_);
       }
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(buffer,(const char *)this,copyLen);
-#pragma warn(1506)  // warning elimination 
 
       if (swapBytes)
       {
@@ -702,9 +692,7 @@ IpcMessageObjSize packCharStarIntoBuffer(IpcMessageBufferPtr &buffer,
   if (strPtr==NULL)
      length=0;
   else
-#pragma nowarn(1506)   // warning elimination 
      length=na_wcslen(strPtr)+1; // 1 is for the null-terminator char
-#pragma warn(1506)  // warning elimination 
   length *= sizeof(NAWchar);
 
    // NOT a recursive call.
@@ -791,9 +779,7 @@ NABoolean checkAndUnpackBuffer (
   }
   else
   {
-#pragma nowarn(1506)   // warning elimination 
     str_cpy_all(dataPtr, (char *) buffer, dataLength);
-#pragma warn(1506)  // warning elimination 
     buffer += dataLength;
   }
   return result;

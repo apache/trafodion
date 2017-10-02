@@ -87,7 +87,6 @@ public:
 ULng32 hashKey(const NARoutineDBKey &);
 
 
-#pragma nowarn(1506)   // warning elimination 
 class NARoutine : public NABasicObject
 {
   friend class NARoutineDB;
@@ -287,7 +286,6 @@ private:
   PrivMgrUserPrivs    *privInfo_;
 
 };
-#pragma warn(1506)  // warning elimination 
 
 
 //-----------------------------------------------------------------------

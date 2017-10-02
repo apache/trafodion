@@ -1358,14 +1358,10 @@ ItemExpr * ItemExpr::transformMultiValuePredicate(	     // virtual method
 
 NABoolean ItemExpr::containsAnAggregate() const
 {
-#pragma warning (disable : 4018)   //warning elimination
   for (Int32 i=0; i<getArity(); i++)
   {
-#pragma warning (default : 4018)   //warning elimination
-#pragma nowarn(1506)   // warning elimination
     if (child(i)->containsAnAggregate())
       return TRUE;
-#pragma warn(1506)  // warning elimination
   }
   return FALSE;
 }
@@ -4635,14 +4631,12 @@ NABoolean ValueIdUnion::isCovered(const ValueIdSet& newExternalInputs,
   for(CollIndex i = 0; i < entries(); i++)
   {
     localSubExpr.clear();
-#pragma nowarn(1506)   // warning elimination
     if (coveringGA.covers(getSource(i), newExternalInputs,
 			  referencedInputs, &localSubExpr) )
       {
 	coveredSubExpr += getSource(i);
         break;
       }
-#pragma warn(1506)  // warning elimination
   }
 
   // ---------------------------------------------------------------------
@@ -4723,9 +4717,7 @@ HashValue ValueIdUnion::topHash()
   // hash any local data members of the derived class
   for(CollIndex i = 0; i < entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     result ^= getSource(i);
-#pragma warn(1506)  // warning elimination
   }
 
   result ^= result_;
@@ -4746,10 +4738,8 @@ NABoolean ValueIdUnion::duplicateMatch(const ItemExpr & other) const
   // and return FALSE if they don't match
   for(CollIndex i = 0; i < entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     if (getSource(i) != o.getSource(i))
       return FALSE;
-#pragma warn(1506)  // warning elimination
   }
 
   if (result_ != o.result_ || flags_ != o.flags_)
@@ -7246,7 +7236,6 @@ ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 // -----------------------------------------------------------------------
 // member functions for class Function
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 Function::Function(OperatorTypeEnum otype,
                    NAMemory *h,
 		   Lng32   argumentCount,
@@ -7284,16 +7273,13 @@ Function::Function(OperatorTypeEnum otype,
       children_.insertAt(i, childx);
     } // end for
 }
-#pragma warn(262)  // warning elimination
 
 Function::Function(OperatorTypeEnum otype, const LIST(ItemExpr *) &children, 
                    CollHeap *h)
          : ItemExpr(otype),
 	   children_(h)
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = children.entries();
-#pragma warn(1506)  // warning elimination
 
   for (Lng32 i = 0; i < ne; i++)
     {
@@ -7305,9 +7291,7 @@ Function::~Function() {}
 
 Lng32 Function::getNumChildren() const
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 count = children_.entries();
-#pragma warn(1506)  // warning elimination
   // $$$$ Skip all the NULL children at the tail end.
   // $$$$ Assumes children that are missing in the middle
   // $$$$ should figure in the count, e.g., F(a, NULL, b, NULL, NULL)
@@ -7327,9 +7311,7 @@ ItemExpr * Function::copyTopNode(ItemExpr * derivedNode, CollHeap* outHeap)
   result->allowsSQLnullArg() = allowsSQLnullArg();
 
   // Make sure we copy the kids as well.
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = children_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 i = 0; i < ne; i++)
     result->children_.insertAt(i, children_[i]);
 
@@ -9021,7 +9003,6 @@ Lng32 RangeLookup::splitKeysLen()
     partFunc_->getRangePartitionBoundaries()->getEncodedBoundaryKeyLength();
 }
 
-#pragma nowarn(770)   // warning elimination
 void RangeLookup::copySplitKeys(char *tgt, Lng32 tgtLen)
 {
   CMPASSERT(tgtLen = splitKeysLen());
@@ -9039,7 +9020,6 @@ void RangeLookup::copySplitKeys(char *tgt, Lng32 tgtLen)
       offset += entryLen;
     }
 }
-#pragma warn(770)  // warning elimination
 
 Lng32 RangeLookup::getNumOfPartitions()
 {
@@ -9137,9 +9117,7 @@ void PackFunc::deriveFormatInfoFromUnpackType(const NAType* unpackType)
   // For bit precision integers, width needs to be in negative no of bits.
   if(unpackType->getFSDatatype() == REC_BPINT_UNSIGNED)
   {
-#pragma nowarn(1506)   // warning elimination
     width_ = ((SQLBPInt*)unpackType)->getDeclaredLength();
-#pragma warn(1506)  // warning elimination
     dataSizeInBytes = (width_*pf-1)/8+1;
     width_ = -width_;
   }
@@ -9955,7 +9933,6 @@ ConstValue::ConstValue()
 }
 
 // constructor for a numeric constant
-#pragma nowarn(262)   // warning elimination
 ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
@@ -9979,7 +9956,6 @@ ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
   // copy the bit pattern as is
   memcpy(value_,(void *)(&intval),(Int32)storageSize_);
 }
-#pragma warn(262)  // warning elimination
 
 ConstValue::ConstValue(const NAString & strval,
              enum CharInfo::CharSet charSet,
@@ -10057,9 +10033,7 @@ void ConstValue::initCharConstValue
 			charSet, collation, coercibility);
 
 
-#pragma nowarn(1506)   // warning elimination
       storageSize_ = strval.length();
-#pragma warn(1506)  // warning elimination
       value_ = (void *)( new (outHeap)
 			 char[storageSize_] );
       memcpy(value_, (void *)(strval.data()), (Int32)storageSize_);
@@ -10144,9 +10118,7 @@ void ConstValue::initCharConstValue(const NAWString& strval,
 		SQLChar(outHeap, num_of_chars, FALSE, FALSE, FALSE, FALSE,
 			charSet, collation, coercibility);
 
-#pragma nowarn(1506)   // warning elimination
       storageSize_ = cachedBPC * strval.length();
-#pragma warn(1506)  // warning elimination
       value_ = (void *)( new (outHeap) 
 			 NAWchar[storageSize_] );
       memcpy(value_, (void *)(strval.data()), (Int32)storageSize_);
@@ -10518,9 +10490,7 @@ void ConstValue::changeStringConstant(const NAString* strval)
      value_ = (void *)( new (CmpCommon::statementHeap()) char[storageSize_] );
      str_pad((char *)value_, (Int32)storageSize_, '\0');
    } else {
-#pragma nowarn(1506)   // warning elimination
      storageSize_ = strval -> length();
-#pragma warn(1506)  // warning elimination
      value_ = (void *)( new (CmpCommon::statementHeap()) char[storageSize_] );
      memcpy(value_,(void *)(strval -> data()),(Int32)storageSize_);
    }
@@ -12236,7 +12206,6 @@ ConstValue * Cast::castToConstValue(NABoolean & negate_it)
   return child(0)->castToConstValue(negate_it);
 }
 
-#pragma nowarn(262)   // warning elimination
 ItemExpr * Cast::foldConstants(ComDiagsArea * diagsArea,
 			       NABoolean newTypeSynthesis)
 {
@@ -12263,7 +12232,6 @@ ItemExpr * Cast::foldConstants(ComDiagsArea * diagsArea,
 
   return ItemExpr::foldConstants(diagsArea,newTypeSynthesis);
 }
-#pragma warn(262)  // warning elimination
 
 NABoolean Cast::isCovered
                    (const ValueIdSet& newExternalInputs,

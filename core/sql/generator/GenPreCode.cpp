@@ -676,12 +676,8 @@ ItemExpr * ValueIdUnion::replaceVEGExpressions
 
   for(CollIndex i = 0; i < entries(); i++) {
     viduPtr->
-#pragma nowarn(1506)   // warning elimination
       setSource(i,
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
 		(viduPtr->getSource(i).getItemExpr()
-#pragma warn(1506)  // warning elimination
 		 ->replaceVEGExpressions(availableValues,inputValues,
                                    thisIsAnMdamKeyPredicate,lookup, 
                                    FALSE, /* replicateExpression default */ 
@@ -6064,12 +6060,8 @@ RelExpr * MergeUnion::preCodeGen(Generator * generator,
       // -------------------------------------------------------------------
       if (outputId.isEmpty())
       {
-#pragma nowarn(1506)   // warning elimination
         Int32 leftIndex = getLeftMap().getTopValues().index(v);
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
         Int32 rightIndex = getRightMap().getTopValues().index(v);
-#pragma warn(1506)  // warning elimination
 
         CMPASSERT((leftIndex != NULL_COLL_INDEX) &&
                   (rightIndex != NULL_COLL_INDEX));
@@ -7821,12 +7813,8 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
     case ITM_PLUS:
     case ITM_MINUS:
       if (type_op1->getTypeQualifier() == NA_DATETIME_TYPE) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 fp1 = ((DatetimeType *) type_op1)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
         Lng32 fp2 = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         if (fp1 < fp2) {
           child(0) = new(generator->wHeap()) Cast(child(0), type_op2);
           child(0)->bindNode(generator->getBindWA());
@@ -7902,12 +7890,10 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
                             new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
-#pragma nowarn(1506)   // warning elimination
                                            interval->getTotalPrecision(),
                                            0,
                                            DisAmbiguate, // added for 64bit proj.
                                            interval->supportsSQLnull()));
-#pragma warn(1506)  // warning elimination
         child(1)->bindNode(generator->getBindWA());
       }
       break;
@@ -7951,12 +7937,10 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
                             new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
-#pragma nowarn(1506)   // warning elimination
                                            interval->getTotalPrecision(),
                                            0,
                                            DisAmbiguate, // added for 64bit proj.
                                            interval->supportsSQLnull()));
-#pragma warn(1506)  // warning elimination
         child(1)->bindNode(generator->getBindWA());
       }
       break;
@@ -7970,19 +7954,15 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
     case ITM_MINUS: {
       if ((type_op1->getTypeQualifier() == NA_INTERVAL_TYPE) &&
           (((IntervalType*) type_op1)->getEndField() == REC_DATE_SECOND)) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 sourceScale = ((IntervalType *) type_op1)->getFractionPrecision();
         Lng32 targetScale = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         child(0) = generator->getExpGenerator()->scaleBy10x(
                                                    child(0)->getValueId(),
                                                    targetScale - sourceScale);
       } else if ((type_op2->getTypeQualifier() == NA_INTERVAL_TYPE) &&
                  (((IntervalType*) type_op2)->getEndField() == REC_DATE_SECOND)) {
-#pragma nowarn(1506)   // warning elimination
         Lng32 targetScale = ((DatetimeType *) type_op1)->getFractionPrecision();
         Lng32 sourceScale = ((IntervalType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
         child(1) = generator->getExpGenerator()->scaleBy10x(
                                                    child(1)->getValueId(),
                                                    targetScale - sourceScale);
@@ -8653,15 +8633,9 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 							   *result_type);
     }
   else if (result_type->getTypeQualifier() == NA_DATETIME_TYPE) {
-#pragma nowarn(1506)   // warning elimination
     Lng32 fp1 = ((DatetimeType *) type_op1)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     Lng32 fp2 = ((DatetimeType *) type_op2)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     Lng32 fpResult = ((DatetimeType *) result_type)->getFractionPrecision();
-#pragma warn(1506)  // warning elimination
     if (fp1 != fpResult) {
       child(0) = new(generator->wHeap()) Cast(child(0), result_type,
 					      ITM_CAST, FALSE);
@@ -9042,9 +9016,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
       // Size (in bytes) of the source value represented as a
       // character string.
       //
-#pragma nowarn(1506)   // warning elimination
       Int32 sourceFieldsSize = sourceType.getDisplayLength();
-#pragma warn(1506)  // warning elimination
 
       // Construct an expression (string) to concatinate the given
       // value with the required fields from the current timestamp as
@@ -10432,12 +10404,8 @@ VEGRewritePairs::insert(const ValueId& original,
 
 void VEGRewritePairs::VEGRewritePair::print(FILE *ofd) const
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 orId = CollIndex(original_),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     reId = CollIndex(rewritten_);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"<%d, %d>",orId,reId);
 }
 
@@ -10446,9 +10414,7 @@ void VEGRewritePairs::print( FILE* ofd,
 			     const char* indent,
 			     const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   fprintf(ofd,"%s %s\n%s",NEW_INDENT,title,NEW_INDENT);
 
   CollIndex *key;

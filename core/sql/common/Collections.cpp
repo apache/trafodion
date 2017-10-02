@@ -40,7 +40,6 @@
 
   #include "Collections.h"
 
-#pragma nowarn(1506)   // warning elimination 
 
 template <class T> NACollection<T>::~NACollection()
 {
@@ -514,7 +513,7 @@ NASubCollection<T> & NASubCollection<T>::addSet( const NASubCollection<T> & othe
          else
             {
             Lng32 entryCount    = 0; 
-            Lng32 trailingWords = (Lng32) (wordSize_ - maxWords);   // warning elimination
+            Lng32 trailingWords = (Lng32) (wordSize_ - maxWords); 
 
             do
                {
@@ -1531,14 +1530,12 @@ NAHashDictionaryIterator<K,V>::~NAHashDictionaryIterator()
 template <class K, class V>
 void NAHashDictionaryIterator<K,V>::getNext(K*& key, V*& value)
 {
-#pragma warning (disable : 4018)  //warning elimination
   if (iteratorPosition_ < iterator_.entries())
     {
       key = iterator_[iteratorPosition_]->getKey();
       value = iterator_[iteratorPosition_]->getValue();
       iteratorPosition_++ ;
     }
-#pragma warning (default : 4018)  //warning elimination
   else
     {
       // If the application has advanced the iterator beyond the number
@@ -1614,5 +1611,4 @@ Int32 NAHashDictionary<K,V>::printStatistics(char *buf)
   return c;
 } //  NAHashDictionary<K,V>::printStatistics()
 
-#pragma warn(1506)   // warning elimination 
 

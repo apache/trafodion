@@ -510,9 +510,7 @@ NABoolean AssignmentStHostVars::updateValueIds(const ValueIdList &returnedList, 
   if (hostVarList || (listSize != returnedList.entries())) {
       // Mismatch in number of variables in SET list and the returned list
      *CmpCommon::diags() << DgSqlCode(-4094)
-#pragma nowarn(1506)   // warning elimination 
       << DgInt0(listSize) << DgInt1(returnedList.entries());
-#pragma warn(1506)  // warning elimination 
      bindWA_->setErrStatus();
      return FALSE;
   }

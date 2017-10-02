@@ -517,9 +517,7 @@ NABoolean Refresh::doesBaseTableHaveSupportingIndex(BindWA *bindWA,
   LIST (MVColumnInfo *) mvGroupByColumns(bindWA->wHeap());
   for (	i = 0 ; i < pMvInfoColumnList.entries() ; i++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *currentMvColInfo = pMvInfoColumnList[i];
-#pragma warn(1506)  // warning elimination 
     if (COM_MVCOL_GROUPBY == currentMvColInfo->getColType())
     {
       mvGroupByColumns.insert(currentMvColInfo);

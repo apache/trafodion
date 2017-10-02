@@ -90,9 +90,7 @@ void TableAccess::print(FILE *ofd, const char *indent, const char *title) const
     fprintf(ofd,"%s - Opaque.\n", title);
   else
   {
-#pragma nowarn(1506)   // warning elimination 
     BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
     fprintf(ofd,"%s%s this=%p, NATable=%p, ",
 	    NEW_INDENT, title, this, tableID_);
     fprintf(ofd,"%s\n", 
@@ -295,9 +293,7 @@ void SubTreeAccessSet::print(FILE *ofd, const char *indent, const char *title) c
 {
   CollIndex i;
 
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   fprintf(ofd,"%s%s %p \n", NEW_INDENT, title, this);
 
   if (this == NULL)

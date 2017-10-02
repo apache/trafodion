@@ -169,9 +169,7 @@ char *convertNAString(const NAString& ns, CollHeap *heap, NABoolean wideNull)
       cerr << "Possible memory leak: convertNAString called with NULL heap\n";
     #endif
   }
-#pragma nowarn(1506)   // warning elimination
   str_cpy_all(buf, ns.data(), len);
-#pragma warn(1506)  // warning elimination
   if (wideNull == TRUE)
     ((NAWchar *)buf)[len / sizeof(NAWchar)] = L'\0';
   else
@@ -454,9 +452,7 @@ NAString ToAnsiIdentifier(const NAString &ns, NABoolean assertShort)
 static Lng32 illegalCharInIdentifier(NAString &ansiIdent,
 				    size_t i, size_t countOfRemoved)
 {
-#pragma nowarn(1506)   // warning elimination
   ansiIdent[(size_t)0] = i + countOfRemoved;
-#pragma warn(1506)  // warning elimination
   return -3127;
 }
 

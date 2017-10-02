@@ -68,9 +68,7 @@ MultiJoin::MultiJoin(const JBBSubset & jbbSubset,
   }
 
   lsrC_ = new (oHeap) LSRConfidence(oHeap);
-#pragma warning (disable : 4018)  //warning elimination
   CMPASSERT (getArity() == jbbcs.entries());
-#pragma warning (default : 4018)  //warning elimination
 }
 
 NABoolean MultiJoin::isSymmetricMultiJoin() const
@@ -473,9 +471,7 @@ RelExpr* MultiJoin::getJBBCRelExpr(CANodeId jbbc) const
     result = exprGroupId.getPtr();
   else
   {
-#pragma nowarn(1506)   // warning elimination
     result = new (outHeap) CutOp(exprGroupId.getGroupId(), outHeap);
-#pragma warn(1506)  // warning elimination
     ((CutOp*)result)->setGroupIdAndAttr(exprGroupId.getGroupId());
     // may be we should re-use existing cut-op rather than creating
     // new one.
@@ -786,9 +782,7 @@ const ExprGroupId &
   JBBCExprGroupMap::getExprGroupIdOfJBBC(CANodeId jbbc) const
 {
 
-#pragma nowarn(1506)   // warning elimination
   Int32 entries = array_.entries();
-#pragma warn(1506)  // warning elimination
   for (Int32 i = 0; i < entries; i++)
   {
     CMPASSERT(array_.used(i));

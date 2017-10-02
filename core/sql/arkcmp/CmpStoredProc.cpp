@@ -78,11 +78,9 @@ static const char emptyString[] = "";
 
 inline static char *copyString(const NAString &s)	// cf. readRealArk.cpp
 {
-#pragma nowarn(1506)   // warning elimination 
   char *c = new(CmpCommon::statementHeap()) char[s.length()+1];
   str_cpy_all(c, s.data(), s.length()+1);
   return c;
-#pragma warn(1506)   // warning elimination 
 }
 
 static void CmpSPERROR2Diags(const SP_ERROR_STRUCT* spError, 
@@ -437,7 +435,6 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
       colDesc->precision = 0;      
     }
 
-#pragma nowarn(1506)   // warning elimination 
   if ( genericType->getTypeQualifier() == NA_CHARACTER_TYPE )
     {
       CharType & charType = (CharType &) *genericType;
@@ -457,7 +454,6 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
       colDesc->datetimefractprec = dti.getFractionPrecision();
       colDesc->intervalleadingprec = dti.getLeadingPrecision();
   }
-#pragma warn(1506)   // warning elimination 
   
   // offset, to be done (do we need it?)
 

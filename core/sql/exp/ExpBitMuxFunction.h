@@ -79,7 +79,6 @@ class ExpBitMuxFunction;
 // expression evaluation engine -- a large performance gain.
 //
 
-#pragma warning ( disable : 4251 )
 
 // ExpBitMuxFunction declaration
 //
@@ -143,7 +142,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif
 

@@ -119,15 +119,11 @@ binary_search(NAWchar wc, Int32 lower, Int32 upper,
 NAWchar unicode_char_set::to_upper(const NAWchar x)
 {
    if ( IN_RANGE(x, 0x61, 0x7a) ) { // frequently used chars checked first
-#pragma nowarn(1506)   // warning elimination 
       return x - 0x61 + 0x41;
-#pragma warn(1506)  // warning elimination 
    }
 
    if ( IN_RANGE(x, 0xe0, 0xf6) ) { // frequently used chars checked first
-#pragma nowarn(1506)   // warning elimination 
       return x - 0xe0 + 0xc0;
-#pragma warn(1506)  // warning elimination 
    }
 
    return binary_search(x, 0, 
@@ -214,15 +210,11 @@ long unicode_char_set::to_upper(NAWchar *str, long srcLen,
 NAWchar unicode_char_set::to_lower(const NAWchar x)
 {
   if ( IN_RANGE(x, 0x41, 0x5a) ) { // frequently used chars checked first
-#pragma nowarn(1506)   // warning elimination 
      return  x + 0x61 - 0x41;
-#pragma warn(1506)  // warning elimination 
   }
 
   if ( IN_RANGE(x, 0xc0, 0xd6) ) { // frequently used chars checked first
-#pragma nowarn(1506)   // warning elimination 
      return x + 0xe0 - 0xc0;
-#pragma warn(1506)  // warning elimination 
   }
 
    return binary_search(x, 0, sizeof(unicode_upper2lower_mapping_table)/sizeof(unicode_mapping_t)-1, 

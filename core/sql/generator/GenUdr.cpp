@@ -43,9 +43,7 @@
 #include "sql_buffer.h"
 #include "NAUserId.h"
 #include "ComUser.h"
-#pragma warning ( disable : 4244 )
 #include "ExplainTuple.h"
-#pragma warning ( default : 4244 )
 
 #include "ExplainTupleMaster.h"
 #include "ComQueue.h"

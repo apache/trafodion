@@ -256,39 +256,33 @@ inline Lng32
 ComTdbExplain::getOffsetModName()
 {
   // The moduleName is the first attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return 
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(0)->
 	  getOffset();
-#pragma warn(1506)  // warning elimination 
 };
 
 inline Lng32
 ComTdbExplain::getLengthModName()
 {
   // The moduleName is the first attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(0)->
 	  getLength();
-#pragma warn(1506)   // warning elimination 
 };
 
 inline Lng32
 ComTdbExplain::getOffsetStmtPattern()
 {
   // The statement Pattern is the second attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(1)->
 	  getOffset();
-#pragma warn(1506)  // warning elimination 
 };
 
 inline Lng32
@@ -317,37 +311,31 @@ inline Lng32
 ComTdbExplain::getLengthStmtPattern()
 {
   // The statement Pattern is the second attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(1)->
 	  getLength();
-#pragma warn(1506)  // warning elimination 
 };
 
 inline Attributes *
 ComTdbExplain::getAttrModName()
 {
   // The moduleName is the first attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(0);
-#pragma warn(1506)  // warning elimination 
 };
 
 inline Attributes *
 ComTdbExplain::getAttrStmtPattern()
 {
   // The statement Pattern is the second attribute in the tuple.
-#pragma nowarn(1506)   // warning elimination 
   return
     criDescParams_->
       getTupleDescriptor(criDescParams_->noTuples() - 1)->
 	getAttr(1);
-#pragma warn(1506)  // warning elimination 
 };
 
 inline ex_expr *

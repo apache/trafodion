@@ -77,15 +77,9 @@ ComTdbStats::ComTdbStats(ULng32 tupleLen,
    inputExpr_(inputExpr),
    projExpr_(projExpr),
    workCriDesc_(workCriDesc),
-#pragma nowarn(1506)   // warning elimination 
    tupleLen_(tupleLen),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
    returnedTupleLen_(returnedTupleLen),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
    inputTupleLen_(inputTupleLen),
-#pragma warn(1506)  // warning elimination 
    statsTupleAtpIndex_(stats_row_atp_index),
    inputTupleAtpIndex_(input_row_atp_index)
 {

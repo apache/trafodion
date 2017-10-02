@@ -98,7 +98,6 @@ public:
   // default implementations that may be sufficient for most TCBs.
   virtual ExWorkProcRetcode work() = 0;
   // default static work proc for scheduler
-// warning elimination (removed "inline")
   static ExWorkProcRetcode sWork(ex_tcb *tcb)
                                                    { return tcb->work(); }
   virtual ExWorkProcRetcode workCancel();
@@ -238,9 +237,7 @@ template <class T> class PstateAllocator
 {
 public:
   
-#pragma nowarn(1103)   // warning elimination 
   ex_tcb_private_state *allocatePstates(
-#pragma warn(1103)  // warning elimination 
        ex_tcb *tcb, 
        Lng32   &numElems,      // inout, desired/actual elements
        Lng32   &elementLength)

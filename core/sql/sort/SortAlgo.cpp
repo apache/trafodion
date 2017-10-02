@@ -81,9 +81,7 @@ SortScratchSpace* SortAlgo::getScratch() const
 
 Lng32 SortAlgo::getRunSize() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return runSize_;
-#pragma warn(1506)  // warning elimination 
 }
 
 //-----------------------------------------------------------------------
@@ -108,18 +106,14 @@ short SortAlgo :: compare(char* key1, char* key2)
   if (key1 && key2 ) {
     result = str_cmp(key1,key2,(Int32)keySize_);
     //return (memcmp(key1,key2,(int)keySize_));       
-#pragma nowarn(1506)   // warning elimination 
     return result;
-#pragma warn(1506)  // warning elimination 
   }
   else {
     if (key1 == NULL && key2 == NULL) return KEYS_ARE_EQUAL;
     if (key1 == NULL) return KEY1_IS_SMALLER;
     /*if (key2 == NULL)*/ return KEY1_IS_GREATER;
   };
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }
 
 

@@ -49,7 +49,6 @@ class DatetimeIntervalCommonType;
 //  DatetimeIntervalCommonType : Ancestor class to DatetimeType & IntervalType
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class DatetimeIntervalCommonType : public NAType
 {
 public:
@@ -155,6 +154,5 @@ private:
   NABitVector DTIFlags_;
  
 }; // class DatetimeIntervalCommonType
-#pragma warn(1506)  // warning elimination 
 
 #endif /* DTICOMMONTYPE_H */

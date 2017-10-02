@@ -285,9 +285,7 @@ public:
 #ifndef _DEBUG
 inline
 #endif
-  //#pragma nowarn(734)
   void removeHead();
-  //#pragma warn(734)
 
   // soln 10-040111-2308 start
   // removes the head entry. Same as removeHead except that it doesn't 
@@ -312,17 +310,13 @@ inline
                                        { insertSubtask_ = insertSubtask; }
   inline void setUnblockSubtask(ExSubtask *unblockSubtask)
                                      { unblockSubtask_ = unblockSubtask; }
-// warning elimination (removed "inline")
   void setCancelSubtask(ExSubtask *cancelSubtask)
   { ExQueueAssert(upDown_ == DOWN_QUEUE,""); cancelSubtask_ = cancelSubtask; }
   inline void setResizeSubtask(ExSubtask *resizeSubtask)
                                        { resizeSubtask_ = resizeSubtask; }
 
-//?johannes?
-  // warning elimination (removed "inline")
   void setNextSubtask(ExSubtask *nextSubtask)
   { ExQueueAssert(upDown_ == DOWN_QUEUE,""); nextSubtask_ = nextSubtask; }
-//?johannes??
 
   static queue_index roundUp2Power(queue_index i);
 
@@ -711,7 +705,6 @@ inline Int32 ex_queue::isVacant(const queue_index i) const
     return !((head_ <= i) || (i < tail_));  
 }
 
-//#pragma nowarn(734)
 #ifndef _DEBUG
 inline void ex_queue::removeHead()
 {
@@ -741,7 +734,6 @@ inline void ex_queue::removeHead()
     }
 } // ex_queue::removeHead()
 #endif
-//#pragma warn(734)
 
 inline void ex_queue::cancelRequest(const queue_index i)
 {

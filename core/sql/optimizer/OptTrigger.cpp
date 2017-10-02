@@ -874,9 +874,7 @@ void
 OptTriggersBackbone::reorder()
 {
   CollIndex idx;
-#pragma nowarn(1506)   // warning elimination 
   Int32 triggerArraySize = triggerList_->entries();
-#pragma warn(1506)  // warning elimination 
   // optTriggerPtrArray - array of pointers to OptTrigger , used for qsort
   OptTriggerPtr *optTriggerPtrArray = new(CmpCommon::statementHeap()) 
     OptTriggerPtr[triggerArraySize];
@@ -1237,16 +1235,11 @@ OptTriggersBackbone::toTree()
 
 void OptTriggersBackbone::forceCardinalityAsIud(RelExpr *expr) const
 {
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (disable : 4244)   //warning elimination
-
   CostScalar card =
     getIudDrivingNode()->getGroupAttr()->getResultCardinalityForEmptyInput();
   expr->getInliningInfo().BuildForceCardinalityInfo(1.0, // factor ignored
 						    card.getValue(),
 						    CmpCommon::statementHeap());
-#pragma warning (default : 4244)   //warning elimination
-#pragma warn(1506)  // warning elimination 
 }
 
 //-----------------------------------------------------------------------------------

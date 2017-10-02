@@ -234,7 +234,6 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 
       // allocate the globals in their own heap, like the master
       // executor does it
-#pragma nowarn(1506)   // warning elimination 
       inst->globals_ = new(stmtHeap) ExEspStmtGlobals(
 	   (short) msgFragment->getNumTemps(),
 	   cliGlobals_,
@@ -246,7 +245,6 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 	   msgFragment->getInjectErrorAtExpr(),
            inst->queryId_,
            inst->queryIdLen_);
-#pragma warn(1506)  // warning elimination 
     }
   else
     inst->globals_ = NULL; // no globals needed for DP2 fragments
@@ -547,7 +545,6 @@ void ExEspFragInstanceDir::releaseOrphanEntries()
     }
 }
 
-#pragma nowarn(770)   // warning elimination 
 void ExEspFragInstanceDir::hasTransidReleaseRequest(
      ExFragInstanceHandle handle)
 {
@@ -629,7 +626,6 @@ void ExEspFragInstanceDir::hasReleaseRequest(
 }
 
 
-#pragma warn(770)  // warning elimination 
 
 void ExEspFragInstanceDir::work(Int64 prevWaitTime)
 {
@@ -1305,7 +1301,6 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
   send(FALSE);
 }
 
-#pragma nowarn(262)   // warning elimination 
 void ExEspControlMessage::actOnLoadFragmentReq(
      IpcConnection *connection,
      ComDiagsArea & /*da*/)
@@ -1359,7 +1354,6 @@ void ExEspControlMessage::actOnLoadFragmentReq(
   
   // the reply is handled by the caller
 }
-#pragma warn(262)  // warning elimination 
 
 void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
 {

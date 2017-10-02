@@ -655,9 +655,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
     {
       /* ADD operation */
     case ADD_BIN16S_BIN16S_BIN16S:
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = *(short *)op_data[1] + *(short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case ADD_BIN16S_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = *(short *)op_data[1] + *(short *)op_data[2];
@@ -694,9 +692,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       break;
      
     case ADD_BIN16U_BIN16U_BIN16U:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = *(unsigned short *)op_data[1] + *(unsigned short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case ADD_BIN16U_BIN16U_BIN32U:
       *(ULng32 *)op_data[0] = *(unsigned short *)op_data[1] + *(unsigned short *)op_data[2];
@@ -769,9 +765,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       
       /* SUB operation */
     case SUB_BIN16S_BIN16S_BIN16S:
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = *(short *)op_data[1] - *(short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case SUB_BIN16S_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = *(short *)op_data[1] - *(short *)op_data[2];
@@ -802,9 +796,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       break;
 
     case SUB_BIN16U_BIN16U_BIN16U:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = *(unsigned short *)op_data[1] - *(unsigned short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case SUB_BIN16U_BIN16U_BIN32U:
       *(ULng32 *)op_data[0] = *(unsigned short *)op_data[1] - *(unsigned short *)op_data[2];
@@ -862,9 +854,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 
       /* MUL operation */
     case MUL_BIN16S_BIN16S_BIN16S:
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = *(short *)op_data[1] * *(short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case MUL_BIN16S_BIN16S_BIN32S:
       *(Lng32 *)op_data[0] = *(short *)op_data[1] * *(short *)op_data[2];
@@ -903,9 +893,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       break;
     
     case MUL_BIN16U_BIN16U_BIN16U:
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = *(unsigned short *)op_data[1] * *(unsigned short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case MUL_BIN16U_BIN16U_BIN32U:
       *(ULng32 *)op_data[0] = *(unsigned short *)op_data[1] * *(unsigned short *)op_data[2];
@@ -944,9 +932,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
         ExRaiseSqlError(heap, diagsArea, EXE_DIVISION_BY_ZERO);
         return ex_expr::EXPR_ERROR;
       }
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = *(short *)op_data[1] / *(short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case DIV_BIN16S_BIN16S_BIN32S:
       if (*(short *)op_data[2] == 0) {
@@ -1248,9 +1234,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
         ExRaiseSqlError(heap, diagsArea, EXE_DIVISION_BY_ZERO);
         return ex_expr::EXPR_ERROR;
       }
-#pragma nowarn(1506)   // warning elimination 
       *(unsigned short *)op_data[0] = *(unsigned short *)op_data[1] / *(unsigned short *)op_data[2];
-#pragma warn(1506)  // warning elimination 
       break;
     case DIV_BIN16U_BIN16U_BIN32U:
       if (*(unsigned short *)op_data[2] == 0) {

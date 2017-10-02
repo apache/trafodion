@@ -160,9 +160,7 @@ CreateInstance(CUOFsIpcMessageTranslator &translator)
 	RUASSERT(size > 0);
 	
 	char *buffer = new char[size];
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buffer, size);
-#pragma warn(1506)  // warning elimination 
 
 	CRUUpdateBitmap *pUpdateBitmap = new CRUUpdateBitmap(size, buffer);
 		
@@ -181,9 +179,7 @@ void CRUUpdateBitmap::StoreData(CUOFsIpcMessageTranslator &translator)
 	RUASSERT(size_ > 0);
 	
 	translator.WriteBlock(&size_, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(buffer_, size_);
-#pragma warn(1506)  // warning elimination 
 }
 
 //--------------------------------------------------------------------------//
@@ -422,7 +418,6 @@ void CRUDeltaStatistics::StoreData(CUOFsIpcMessageTranslator &translator)
 
 TInt32 CRUDeltaStatistics::GetPackedBufferSize(Int32 updateBitmapSize)
 {
-#pragma nowarn(1506)   // warning elimination 
 	return sizeof(TInt32)	// nRanges_ 
 		+ sizeof(TInt32)	// nRangeCoveredRows_
 		+ sizeof(TInt32)	// nInsertedRows_
@@ -431,7 +426,6 @@ TInt32 CRUDeltaStatistics::GetPackedBufferSize(Int32 updateBitmapSize)
 		+ sizeof(Int32)		// update bitmap buffer size
 		+ updateBitmapSize + 1	// update bitmap buffer
 	;
-#pragma warn(1506)  // warning elimination
 }
 
 //--------------------------------------------------------------------------//

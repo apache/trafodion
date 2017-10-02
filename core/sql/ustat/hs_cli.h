@@ -266,7 +266,6 @@ class HSSample
 /*               | LEN  | DATA     |                                         */
 /*               |------------------                                         */
 /*****************************************************************************/
-#pragma nowarn(1506)   // warning elimination 
 class HSDataBuffer
   {
     public:
@@ -340,7 +339,6 @@ class HSDataBuffer
       short len;
       char *val;
   };
-#pragma warn(1506)  // warning elimination 
 
 /*****************************************************************************/
 /* CLASS:    HSTranMan                                                       */

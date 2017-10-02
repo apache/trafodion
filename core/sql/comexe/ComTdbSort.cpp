@@ -76,18 +76,14 @@ ComTdbSort::ComTdbSort(ex_expr * sort_key_expr,
 	   buffer_size),
   sortKeyExpr_(sort_key_expr),
   sortRecExpr_(sort_rec_expr),
-#pragma nowarn(1506)   // warning elimination
   sortRecLen_(sort_rec_len),
   sortKeyLen_(sort_key_len),
   sortPartialKeyLen_(sort_partial_key_len),
   minimalSortRecs_(0),
-#pragma warn(1506)  // warning elimination
   tuppIndex_(tupp_index),
   tdbChild_(child_tdb),
   workCriDesc_(work_cri_desc),
-#pragma nowarn(1506)   // warning elimination 
   maxNumBuffers_(maxNumBuffers),
-#pragma warn(1506)  // warning elimination 
   sortOptions_(sort_options),
   flags_(0),
   sortMemEstInKBPerNode_(0),

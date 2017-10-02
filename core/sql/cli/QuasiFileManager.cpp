@@ -129,11 +129,7 @@ RETCODE QuasiFileManager::disassocFileNumber(ComDiagsArea &diagsArea,
   { 
   RETCODE rc = SUCCESS;  // assume success
 
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   short fileNumber = statement->getFileNumber();
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 
   if (fileNumber == -1)
     {
@@ -208,11 +204,7 @@ RETCODE QuasiFileManager::awaitIox(Lng32 fileNumber,
   RETCODE rc = NOT_FINISHED;  // show no completions yet
   QuasiFile *quasiFile;
  
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   quasiFile = getQuasiFile(fileNumber);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
   if (quasiFile != NULL)
     rc = quasiFile->awaitIox(ipcEnv_, tag, feError);
   else
@@ -489,7 +481,6 @@ short QfoRevealSegs(CliGlobals *&cliGlobals)
 //Code that does SEGMENT_HIDE_ appears in two places
 //  switchToNonPriv() in cli/CliLayerForNsk.cpp
 //  QfoHideSegs() in cli/CliLayerForNsk.cpp
-#pragma nowarn(770)   // warning elimination 
 short QfoHideSegs(CliGlobals *cliGlobals)
   {
 
@@ -497,7 +488,6 @@ short QfoHideSegs(CliGlobals *cliGlobals)
 
   return 0;
   }
-#pragma warn(770)  // warning elimination 
 
 SQL_QFO_FUNCTION_ATTRIBUTES short Sql_Qfo_IOComp(short quasi_file_number /*in*/,
 				     Lng32 *tag /*out*/,

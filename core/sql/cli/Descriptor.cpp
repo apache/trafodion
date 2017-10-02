@@ -176,9 +176,7 @@ Descriptor::Descriptor(SQLDESC_ID * descriptor_id_,
 
   case desc_handle:
     {
-#pragma nowarn(1506)   // warning elimination 
       descriptor_id.handle = (void*)context_->getNextDescriptorHandle();
-#pragma warn(1506)  // warning elimination 
     }
     break;
 
@@ -1278,14 +1276,10 @@ char * desc_var_data_alloc(char   *source,
       if ( CharInfo::is_NCHAR_MP(sourceCharSet) == FALSE )
         sourceDataLen = str_len(source);
       else
-#pragma nowarn(1506)   // warning elimination 
         sourceDataLen = na_wcslen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination 
       break;
   case REC_NCHAR_V_ANSI_UNICODE:
-#pragma nowarn(1506)   // warning elimination 
       sourceDataLen = na_wcslen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination 
       break;
   case REC_BYTE_F_ASCII:
   case REC_NCHAR_F_UNICODE:
@@ -2410,9 +2404,7 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
             // need to set type, len, precision and scale for both
             // source and target
             sourceType = REC_BYTE_V_ANSI;
-#pragma nowarn(1506)   // warning elimination 
             sourceLen = strlen(source) + 1; // max source length including
-#pragma warn(1506)  // warning elimination 
                                             // the null at the end
             sourcePrecision = sourceScale = 0;
 
@@ -2709,27 +2701,15 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
       break;
    
     case SQLDESC_PARAMETER_MODE:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
       descItem.parameterMode = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
       break;
 
     case SQLDESC_ORDINAL_POSITION:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
       descItem.ordinalPosition = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
       break;
 
     case SQLDESC_PARAMETER_INDEX:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
 	descItem.parameterIndex = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 	break;
 
     case SQLDESC_DESCRIPTOR_TYPE:
@@ -3482,8 +3462,6 @@ SQLCLI_OBJ_ID* Descriptor::GetNameViaDesc(SQLDESC_ID *desc_id, ContextCli *conte
       return NULL;
     }          
 
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   short retcode = convDoIt(
        data,
        length,
@@ -3499,8 +3477,6 @@ SQLCLI_OBJ_ID* Descriptor::GetNameViaDesc(SQLDESC_ID *desc_id, ContextCli *conte
        0,
        &heap,
        &diagsArea);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 
   if (retcode != ex_expr::EXPR_OK)
     {

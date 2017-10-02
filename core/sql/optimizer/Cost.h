@@ -905,7 +905,6 @@ class CostWeight : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline")
   virtual ~CostWeight() {}
 
   // ---------------------------------------------------------------------

@@ -566,9 +566,7 @@ void dumpDiagnostics (ComDiagsArea *diags, Lng32 indent)
   return;
   
   // errors and warnings in order added
-#pragma nowarn(220)   // warning elimination 
   for (ii=1; ii <= nbrA; ii++)
-#pragma warn(220)  // warning elimination 
   {
     ServerDebug("%sErrors/Warnings(%ld)  :",     ind, (Lng32) ii);
     dumpComCondition(cc, ind);

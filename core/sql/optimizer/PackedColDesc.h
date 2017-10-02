@@ -165,7 +165,6 @@ public:
   // It is up to the user to ensure that the packing information is
   // properly set.
   //
-// warning elimination (removed "inline") 
   PackedColDesc(Lng32 position,
                        const NAType *type)
     : position_(position),

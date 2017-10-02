@@ -58,14 +58,10 @@ void CRUException::StoreData(CUOFsIpcMessageTranslator &translator)
 		char *buffer = new char[bufsize];
 		
 		GetErrorMsg(i, buffer, bufsize);
-#pragma nowarn(1506)   // warning elimination 
 		Int32 strSize = strlen(buffer)+1;	// Can be smaller than bufsize
-#pragma warn(1506)  // warning elimination 
 
 		translator.WriteBlock(&strSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(buffer, strSize);
-#pragma warn(1506)  // warning elimination 
 
 		delete [] buffer;
 
@@ -95,13 +91,9 @@ void CRUException::StoreErrorParams(CUOFsIpcMessageTranslator &translator,
 	for (i=0;i<numStrParams;i++)
 	{
 		const char *param = GetStrArgument(index,i);
-#pragma nowarn(1506)   // warning elimination 
 		Int32 strSize = strlen(param) + 1;
-#pragma warn(1506)  // warning elimination 
 		translator.WriteBlock(&strSize,sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(param,strSize);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -122,9 +114,7 @@ void CRUException::LoadData(CUOFsIpcMessageTranslator &translator)
 		translator.ReadBlock(&strSize,sizeof(Int32));
 
 		char *buffer = new char[strSize];
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buffer,strSize);
-#pragma warn(1506)  // warning elimination 
 		SetError(errorCode,buffer);
 
 		delete [] buffer;
@@ -160,9 +150,7 @@ LoadErrorParams(CUOFsIpcMessageTranslator &translator,
 		translator.ReadBlock(&strSize,sizeof(Int32));
 
 		char *buffer = new char[strSize];
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buffer,strSize);
-#pragma warn(1506)  // warning elimination 
 		AddArgument(buffer);
 
 		delete [] buffer;

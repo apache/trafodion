@@ -77,7 +77,6 @@ jmp_buf ExeBuf;
 //
 // Build a root tcb
 //
-#pragma nowarn(262)   // warning elimination 
 ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 {
   ExExeStmtGlobals * exe_glob = glob->castToExExeStmtGlobals();
@@ -337,7 +336,6 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 
 } // ex_root_tdb::build
 
-#pragma warn(262)  // warning elimination 
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -624,9 +622,7 @@ void ex_root_tcb::inputPkeyRow(char * pkey_row)
 {
   char * dataPtr =
     workAtp_->getTupp(root_tdb().criDesc_->noTuples()-1).getDataPointer();
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(dataPtr, pkey_row, root_tdb().pkeyLen_);
-#pragma warn(1506)  // warning elimination 
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1112,7 +1108,6 @@ void ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning
 ////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		       ExExeStmtGlobals * glob, 
 		       Descriptor * output_desc,
@@ -1568,9 +1563,7 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
                     da->negateCondition(da->returnIndex(-EXE_CS_EOD));
                     CollIndex index;
 		    while ((index = da->returnIndex(-EXE_CS_EOD)) != NULL_COLL_INDEX ) {
-#pragma nowarn(1506)   // warning elimination 
 		      da->deleteError(index);  
-#pragma warn(1506)  // warning elimination 
 		    }
 		    if (da->getNumber(DgSqlCode::ERROR_) == 0) {
                       retcode = 0;
@@ -1915,12 +1908,10 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 
     } // while
 }
-#pragma warn(262)  // warning elimination 
 
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning
 ////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 Int32 ex_root_tcb::fetchMultiple(CliGlobals *cliGlobals,
 			       ExExeStmtGlobals * glob, 
 			       Descriptor * output_desc,
@@ -2008,7 +1999,6 @@ Int32 ex_root_tcb::fetchMultiple(CliGlobals *cliGlobals,
   return retcode;
 }
 
-#pragma warn(262)  // warning elimination 
 
 //////////////////////////////////////////////////////
 // OLT execute. Does execute/fetch in one shot. Used
@@ -2196,9 +2186,7 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
                     da->negateCondition(da->returnIndex(-EXE_CS_EOD));
                     CollIndex index ;
                     while ((index = da->returnIndex(-EXE_CS_EOD)) != NULL_COLL_INDEX ) {
-#pragma nowarn(1506)   // warning elimination 
                       da->deleteError(index);  }
-#pragma warn(1506)  // warning elimination 
                     if (da->getNumber(DgSqlCode::ERROR_) == 0) {
                       if (setRetcode) {
                         retcode = 0;
@@ -2923,7 +2911,6 @@ void ex_root_tcb::deregisterCB()
   if (isCbFinishedMessageSent())
     return;
 
-#pragma warning (disable : 4291)
 
   // The stream's actOnSend method will delete (or call decrRefCount()) 
   // for this object.
@@ -2939,7 +2926,6 @@ void ex_root_tcb::deregisterCB()
   QueryFinished *queryFinished = 
     new (context->getIpcHeap()) QueryFinished( rtsHandle, 
                                                   context->getIpcHeap());
-#pragma warning (default : 4291)
 
   //Create the stream on the IpcHeap, since we don't dispose of it immediately.
   //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
@@ -3050,12 +3036,10 @@ void QueryStartedMsgStream::actOnReceive(IpcConnection *connection)
   {
     CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
 
-    #pragma warning (disable : 4291)
 
     QueryStartedReply *reply = new (ipcHeap) 
             QueryStartedReply(INVALID_RTS_HANDLE, ipcHeap);
 
-    #pragma warning (default : 4291)
 
     *this >> *reply;
 
@@ -3136,12 +3120,10 @@ void QueryFinishedMsgStream::actOnReceive(IpcConnection *connection)
 
     CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
 
-  #pragma warning (disable : 4291)
 
     RmsGenericReply *reply = new (ipcHeap) 
               RmsGenericReply(ipcHeap);
 
-  #pragma warning (default : 4291)
 
     *this >> *reply;
 

@@ -94,12 +94,10 @@ public:
   // ---------------------------------------------------------------------
   //  Accessor Functions
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   CostScalar getResultCardinality() const 
   { CCMPASSERT (resultCardinality_ >= 0) ; 
     return resultCardinality_; 
   }
-// warning elimination (removed "inline")
   void setResultCardinality(CostScalar v)
   { CCMPASSERT (v >= 0) ;
     v.round();

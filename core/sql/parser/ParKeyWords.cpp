@@ -1440,9 +1440,7 @@ NABoolean normalizeKeyWord(NAWchar *wWord, char *word, UInt32 size)
     // Upper case all words since all the words in the keyword table
     // are also uppercase.
     //
-#pragma nowarn(1506)   // warning elimination
     word[i] = TOUPPER(word[i]);
-#pragma warn(1506)  // warning elimination
 
     i++;
   }

@@ -257,9 +257,7 @@ short Exchange::codeGenForESP(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc         *returned_cri_desc 
-#pragma nowarn(1506)   // warning elimination 
     = new(space) ex_cri_desc(given_cri_desc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination 
 
   ex_cri_desc         *splitTopWorkCriDesc  = new(space) ex_cri_desc(splitTopWorkTupps,space);
   ex_cri_desc         *sendTopWorkCriDesc   = new(space) ex_cri_desc(sendTopWorkTupps,space);
@@ -479,11 +477,9 @@ short Exchange::codeGenForESP(Generator * generator)
                                      &initialESPMapTable);
 
   // we MUST be able to fit at least one row into a buffer
-#pragma nowarn(1506)   // warning elimination
   downSqlBufferLength = 
     MAXOF((ULng32) ComTdbSendTop::minSendBufferSize(downRecordLength),
           (ULng32) (downMessageBufferLength_.getValue() * 1024));
-#pragma warn(1506)  // warning elimination 
 
   CollIndex childFragmentId = 0;
 
@@ -847,17 +843,14 @@ short Exchange::codeGenForESP(Generator * generator)
                                        &returnedValuesMapTable);
 
     // we MUST be able to fit at least one row into a buffer
-#pragma nowarn(1506)   // warning elimination 
     upSqlBufferLength =
       MAXOF((ULng32) ComTdbSendTop::minReceiveBufferSize(upRecordLength),
             (ULng32) (upMessageBufferLength_.getValue() * 1024));
-#pragma warn(1506)  // warning elimination 
 
     // ---------------------------------------------------------------------
     // generate send bottom tdb
     // ---------------------------------------------------------------------
  
-#pragma nowarn(1506)   // warning elimination 
     sendBottom = new(space) ComTdbSendBottom(
        outputMoveExpr,
        (queue_index)getDefault(GEN_SNDB_SIZE_DOWN), 
@@ -874,7 +867,6 @@ short Exchange::codeGenForESP(Generator * generator)
        numUpBuffers,
        (Cardinality) numRowsDown.value(),
        (Cardinality) numRowsUp.value());
-#pragma warn(1506)  // warning elimination 
  
     sendBottom->setConsiderBufferDefrag(considerBufferDefrag);
     sendBottom->setCIFON( (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
@@ -1080,9 +1072,7 @@ short Exchange::codeGenForESP(Generator * generator)
       // the row coming up from the connection is returned as the tupp
       // following the input tupps
       attr->setAtp(0);
-#pragma nowarn(1506)   // warning elimination 
       attr->setAtpIndex(given_cri_desc->noTuples());
-#pragma warn(1506)  // warning elimination 
     }
     
     // ---------------------------------------------------------------------
@@ -1130,7 +1120,6 @@ short Exchange::codeGenForESP(Generator * generator)
   // Generate send top tdb
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   sendTop = new(space) ComTdbSendTop(
        childFragmentId,
        inputMoveExpr,
@@ -1151,7 +1140,6 @@ short Exchange::codeGenForESP(Generator * generator)
        (Cardinality) numRowsDown.value(),
        (Cardinality) numRowsUp.value(),
        (CmpCommon::getDefault(EXE_DIAGNOSTIC_EVENTS) == DF_ON));
-#pragma warn(1506)  // warning elimination 
   generator->initTdbFields(sendTop);
 
   if (isExtractConsumer_)
@@ -1211,14 +1199,10 @@ short Exchange::codeGenForESP(Generator * generator)
        (Cardinality) getGroupAttr()->
        getOutputLogPropList()[0]->getResultCardinality().value(),
        numBottomPartitions,
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
        CmpCommon::getDefaultNumeric(STREAM_TIMEOUT),
        getDefault(GEN_SID_NUM_BUFFERS),
        getDefault(GEN_SID_BUFFER_SIZE)
        );
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
 
   generator->initTdbFields(splitTop);
 

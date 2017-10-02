@@ -45,9 +45,6 @@
 #include "Int64.h"
 #include "ComDefs.h"
 
-#pragma warning (disable : 4005)   //warning elimination
-#pragma warning (default : 4005)   //warning elimination
-
 // External forward declarations
 //
 class NAMemory;

@@ -322,7 +322,6 @@ GuaReceiveFastStart::GuaReceiveFastStart()
 // Startup handling of ESP
 // -----------------------------------------------------------------------
 
-#pragma nowarn(770)   // warning elimination 
 Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
 {
   // initialize ESP global data
@@ -406,7 +405,6 @@ Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
   // nobody wants us anymore, right now that means that we stop
   return 0;
 }
-#pragma warn(770)  // warning elimination 
 
 void DoEspStartup(Int32 argc,
 		  char **argv,

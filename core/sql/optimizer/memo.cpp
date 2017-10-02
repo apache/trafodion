@@ -106,9 +106,7 @@ CascadesGroup::~CascadesGroup()
     groupAttr_->decrementReferenceCount();
 
   // delete associated contexts
-#pragma nowarn(1506)   // warning elimination
   Lng32 maxc = goals_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 i = 0; i < maxc; i++)
     delete goals_[i];
 
@@ -245,9 +243,7 @@ void CascadesGroup::addPlan (CascadesPlan * plan)
 {
   CURRSTMT_OPTGLOBALS->plans_count++;  // increment global counter for # of plans
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 index = plans_.entries();
-#pragma warn(1506)  // warning elimination
   plans_.insertAt(index,plan); // insert plan at end of list
 }
 
@@ -436,14 +432,10 @@ void CascadesGroup::merge(CascadesGroup * other)
       // -----------------------------------------------------------------
       // move all contexts from the other group into this group
       // -----------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
       Lng32 maxg = other->goals_.entries();
-#pragma warn(1506)  // warning elimination
       for (Lng32 i = 0; i < maxg; i++)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  Lng32 maxc = goals_.entries();
-#pragma warn(1506)  // warning elimination
 	  NABoolean found = FALSE;
 
 	  // change the context to the new group number
@@ -553,9 +545,7 @@ Context * CascadesGroup::shareContext(
   Context *newContext = new (CmpCommon::statementHeap())
     Context(groupId_, reqdPhys, inputPhys, inputLogProp) ;
   Context* result = newContext;
-#pragma nowarn(1506)   // warning elimination
   Lng32 maxc       = goals_.entries();
-#pragma warn(1506)  // warning elimination
   NABoolean found = FALSE;
 
   // The "setCostLimitInContext" below is used to indicate whether the
@@ -778,28 +768,18 @@ CascadesMemo::~CascadesMemo()
 		   e = e->getNextInBucket())
 		++ count;
 	    }
-#pragma nowarn(1506)   // warning elimination
 	  m1 += count;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
 	  m2 += count * count;
-#pragma warn(1506)  // warning elimination
 	}
-#pragma nowarn(1506)   // warning elimination
       m1 /= hashSize_; m2 /= hashSize_;
-#pragma warn(1506)  // warning elimination
 
       printf("%.0lf entries / %d buckets = %.6lf, var %.6lf\n",
-#pragma nowarn(1506)   // warning elimination
 	     m1 * hashSize_, hashSize_, m1, m2 - m1 * m1);
-#pragma warn(1506)  // warning elimination
     }
 
   // weed out those groups that have been merged, to avoid deleting
   // some groups twice
-#pragma nowarn(1506)   // warning elimination
   Lng32 groupEntries = group_.entries();
-#pragma warn(1506)  // warning elimination
 
   CascadesGroupId groupId = 0;
   for (groupId = 0; (Lng32)groupId < groupEntries;  groupId++)
@@ -1270,9 +1250,7 @@ Int32 CascadesMemo::garbageCollection()
     }
 
   // return the number of changed expressions
-#pragma nowarn(1506)   // warning elimination
   return changed.entries();
-#pragma warn(1506)  // warning elimination
 
 } // CascadesMemo::garbageCollection()
 

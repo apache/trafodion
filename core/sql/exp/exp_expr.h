@@ -141,7 +141,6 @@ public:
   void  setNExDbgLvl( Int32 Lvl )            { NExDbgLvl_ = Lvl ; }
 };
 
-#pragma warning ( disable : 4251 )
 
 class  ex_expr : public NAVersionedObject
 {
@@ -865,7 +864,6 @@ protected:
 //////////////////////////////////////////////////
 // class AggrExpr
 //////////////////////////////////////////////////
-#pragma nowarn(1319)  // warning elimination 
 class  AggrExpr : public ex_expr {
 
   enum Flags {
@@ -947,7 +945,6 @@ public:
   NABoolean  isOneRowAggr()
                  { return( (flags_ & ONE_ROW_AGGR) != 0); }
 };
-#pragma warn(1319)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Template instantiation to produce a 64-bit pointer emulator class
@@ -1250,7 +1247,6 @@ public:
 };
 
 
-#pragma warning ( default : 4251 )
  
 ///////////////////////////////////////////////////
 // class Target

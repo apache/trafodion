@@ -1353,10 +1353,8 @@ ItemExpr* BiRelat::tryToRelaxCharTypeMatchRules(BindWA *bindWA)
       if ( leafList1 -> entries() != leafList2 -> entries() )
          return this;
 
-#pragma warning (disable : 4018)   //warning elimination
       // relax by pairs
       for ( Int32 i=0; i<leafList1 -> entries(); i++ ) {
-#pragma warning (default : 4018)   //warning elimination
          if ( performRelaxation((*leafList1)[i], (*leafList2)[i], bindWA) == FALSE )
            return this; // If one pair can not be made to be type-compatible, return
                         // right away. The type synthesise code will flag the
@@ -6637,9 +6635,7 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
     if (escapeNode)
     {
       CharInfo::CharSet cs = matchCharType->getCharSet();
-#pragma nowarn(1506)   // warning elimination
       escapeChar_len = escapeNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
       escapeChar = escapeNode->getRawText()->data();
 
       if      (  CharInfo::isSingleByteCharSet(cs) && escapeChar_len == 1) /*ok*/;
@@ -6728,21 +6724,17 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
    Int32 pattern_str_len = 0;
 
    pattern_str = patternNode->getRawText() -> data();
-#pragma nowarn(1506)   // warning elimination
    pattern_str_len = patternNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
 
     CharInfo::CharSet cs = matchCharType->getCharSet();
 
 
-#pragma nowarn(1506)   // warning elimination
     LikePatternString patternString( pattern_str,
 				     pattern_str_len, cs,
 				     escapeChar, escapeChar_len,
 				     underscoreChar, underscoreChar_len,
 				     percentChar, percentChar_len
 				   );
-#pragma warn(1506)  // warning elimination
 
     LikePattern pattern(patternString, heap, cs);
 
@@ -6992,10 +6984,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
       // Zero-pad into prefixZ, e.g. for mv type VARCHAR(4), make "ab\0\0"
       char *prefixZ = new (heap) char[matchLen];
-  #pragma nowarn(1506)   // warning elimination
       byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		   (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
 
       ItemExpr *child1 = new (heap) SystemLiteral(
 			      NAString(prefixZ, matchLen),
@@ -7070,10 +7060,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
       if ( matchCharType->getCharSet() == CharInfo::ISO88591 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UCS2 )
       {
@@ -7083,20 +7071,14 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 	  foundNextKey = matchCharType->computeNextKeyValue(prefixW);
 	  byte_str_cpy(prefixZ, matchLen,
 		       (char*)prefixW.data(), prefixW.length()<<1,
-  #pragma nowarn(1506)   // warning elimination
 		       (char)zeroChar
-  #pragma warn(1506)  // warning elimination
-  #pragma nowarn(1506)   // warning elimination
 		      );
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UTF8 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue_UTF8(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
 
       if ( foundNextKey )
@@ -8890,7 +8872,6 @@ ItemExpr *Replace::bindNode(BindWA *bindWA)
 // member functions for class SelIndex
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 ItemExpr *SelIndex::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -8940,7 +8921,6 @@ ItemExpr *SelIndex::bindNode(BindWA *bindWA)
   setValueId(resultTable->getValueId(i - 1));
   return getValueId().getItemExpr();
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Subquery

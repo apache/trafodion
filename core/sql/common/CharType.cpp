@@ -542,9 +542,7 @@ NABoolean CharType::computeNextKeyValue(NAString &keyValue) const
 {
   ComASSERT(getBytesPerChar() == 1);
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
 	{
 	  unsigned char c = keyValue[i];
 	  if (c < UCHAR_MAX)
@@ -555,18 +553,14 @@ NABoolean CharType::computeNextKeyValue(NAString &keyValue) const
 	  keyValue.remove(i);
   }
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::computeNextKeyValue_UTF8(NAString &keyValue) const
 {
   ComASSERT(getBytesPerChar() == 4);
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
   {
      unsigned char c = keyValue[i];
      if ( (c & 0xC0) == 0x80 ) // If not first byte in a char,
@@ -590,9 +584,7 @@ NABoolean CharType::computeNextKeyValue_UTF8(NAString &keyValue) const
      else keyValue.remove(i);
   }
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
@@ -601,9 +593,7 @@ NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
 
   NAWchar maxValue = (NAWchar)CharType::getMaxSingleCharacterValue();
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
 	{
 	  NAWchar c = keyValue[i];
 
@@ -629,9 +619,7 @@ NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
 	  keyValue.remove(i);
 	}
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::isEncodingNeeded() const
@@ -887,7 +875,6 @@ NABoolean CharType::createSQLLiteral(const char * buf,
 }
 
 
-#pragma nowarn(1506)   // warning elimination
 SQLChar::SQLChar(NAMemory *h,
                  Lng32 maxLen,
 		 NABoolean allowSQLnull,
@@ -905,9 +892,7 @@ SQLChar::SQLChar(NAMemory *h,
 		varLenFlag, cs, co, ce,
 		encoding)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLChar::SQLChar(NAMemory *h,
                  const CharLenInfo & maxLenInfo,
 		 NABoolean allowSQLnull,
@@ -925,9 +910,7 @@ SQLChar::SQLChar(NAMemory *h,
 		varLenFlag, cs, co, ce,
 		encoding)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLVarChar::SQLVarChar(NAMemory *h,
                        Lng32 maxLen,
 		       NABoolean allowSQLnull,
@@ -947,9 +930,7 @@ SQLVarChar::SQLVarChar(NAMemory *h,
       clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
       wasHiveString_(FALSE)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLVarChar::SQLVarChar(NAMemory *h, 
                        const CharLenInfo & maxLenInfo,
 		       NABoolean allowSQLnull,
@@ -999,7 +980,6 @@ NABoolean SQLVarChar::operator==(const NAType& other) const
 // In fact, the varLenFlag param is unused:  lots of things break
 // in cli + rfork if a CharType is both nul-terminated and has a vc-header.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 ANSIChar::ANSIChar(NAMemory *h,
                    Lng32 maxLen,
 		   NABoolean allowSQLnull,
@@ -1020,7 +1000,6 @@ ANSIChar::ANSIChar(NAMemory *h,
 //##		TRUE, allowSQLnull, isUpShifted, varLenFlag, cs, co, ce,
 //##		tokNCHARinParser)
 {}
-#pragma warn(1506)  // warning elimination
 
 short ANSIChar::getFSDatatype() const
 {
@@ -1415,9 +1394,7 @@ const CharType* CharType::desiredCharType(enum CharInfo::CharSet cs)
     default:
       return &latin1Char;
   }
-#pragma nowarn(203)   // warning elimination
   return 0;
-#pragma warn(203)  // warning elimination
 }
 
 // round length up to next bigger quantum step

@@ -240,9 +240,7 @@ void DatetimeType::datetimeToLong(void *bufPtr,
   for (Int32 i = start; i <= end; i++)
     {
       ULng32 val;
-#pragma nowarn(1506)   // warning elimination
       size = storageLen[i - 1];
-#pragma warn(1506)   // warning elimination
       switch (size) {
       case sizeof(char):
 	val = *str;
@@ -276,16 +274,12 @@ void DatetimeType::datetimeToLong(void *bufPtr,
 
 Lng32 DatetimeType::gregorianDays(const ULng32 values[])
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 year = values[0] - 1;
-#pragma warn(1506)   // warning elimination
 
   Lng32 leapDays = year/4 + year/400 - year/100;
   Lng32 days = year * 365 + leapDays;
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 month = values[1];
-#pragma warn(1506)   // warning elimination
 
   for (Int32 i = 1; i < month; i++)
     days += daysInMonth[i];
@@ -344,14 +338,12 @@ Int64 DatetimeType::julianTimestampValue(const char * value, const short valueLe
 //
 // ***********************************************************************
 
-#pragma nowarn(1506)   // warning elimination
 Lng32 DatetimeType::secondsInTime(const ULng32 values[])
 {
   return (values[0] * 60 * 60 +
           values[1] * 60 +
           values[2]);
 }
-#pragma warn(1506)   // warning elimination
 
 enum DatetimeType::Subtype DatetimeType::validate(rec_datetime_field startField,
 						  rec_datetime_field endField,
@@ -695,10 +687,8 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
   Int32 endIndex   = getEndField()   - REC_DATE_YEAR;
   Int32 startOff, endOff, i = 0;
   UInt32 fracPrec = 0;
-#pragma nowarn(1506)   // warning elimination
   for (startOff = 0;        i < startIndex; i++) startOff = startOff + maxFieldLen[i] + 1;
   for (endOff   = startOff; i <= endIndex;  i++) endOff   = endOff + maxFieldLen[i] + 1;
-#pragma warn(1506)   // warning elimination
   if (getFractionPrecision())
   {
    endOff += getFractionPrecision() + 1;
@@ -712,9 +702,7 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
    fracPrec = getFractionPrecision();
    if (getStartField() == REC_DATE_FRACTION_MP)
    {
-#pragma nowarn(1506)   // warning elimination
      Int32 adjust = (6-fracPrec) + 2; // move past "00." (seconds + decimal pt.)
-#pragma warn(1506)   // warning elimination
      startOff += adjust;
      i -= adjust;
    }
@@ -1892,37 +1880,17 @@ NAString DatetimeValue::getValueAsString(const DatetimeType& dt) const
     }
     value += storageLen[index];
     if (index != FRACTION)
-#pragma nowarn(1506)   // warning elimination
       clen = maxFieldLen[index];
-#pragma warn(1506)  // warning elimination
     else
-#pragma nowarn(1506)   // warning elimination
       clen = dt.getFractionPrecision();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     if (! result.isNull()) {
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       sprintf(cbuf, "%c", precedingPunc[index]);
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
       result += cbuf;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     }
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(203)   // warning elimination
     sprintf(cbuf, "%0*u", clen, ulbuf);
-#pragma warn(203)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
     result += cbuf;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   }
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   return result;
-#pragma warn(1506)  // warning elimination
 } // DatetimeValue::getValueAsString
 
 void DatetimeValue::print(const DatetimeType& dt,

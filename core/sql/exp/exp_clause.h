@@ -65,12 +65,10 @@ typedef NABasicPtrTempl<ex_globals>   ExGlobalsPtr;
 // -----------------------------------------------------------------------
 class ex_clause;
 
-#pragma warning ( disable : 4251 )
 
 /////////////////////////////////////////////////
 // Class ex_clause
 /////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 class ex_clause : public NAVersionedObject {
 public:
   // Possible types of clauses
@@ -592,9 +590,7 @@ private:
   // ---------------------------------------------------------------------
   char                       fillers_[16];          // 52-63
 };
-#pragma warn(1506)  // warning elimination 
 
-#pragma warning ( default : 4251 )
 
 inline ex_clause::clause_type ex_clause::getType(){
   

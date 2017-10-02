@@ -390,9 +390,7 @@ short DDLExpr::codeGen(Generator * generator)
   // remove trailing blanks and append a semicolon, if one is not present.
   char * ddlStmt = NULL;
 
-#pragma nowarn(1506)   // warning elimination
   Int32 i = strlen(getDDLStmtText());
-#pragma warn(1506)  // warning elimination
   while ((i > 0) && (getDDLStmtText()[i-1] == ' '))
     i--;
 
@@ -893,9 +891,7 @@ short RelRoot::codeGen(Generator * generator)
     NABoolean blankHV = FALSE ;
     if (item_expr->previousHostVar()) {
       Int32 j = 0;
-#pragma warning (disable : 4018)  //warning elimination
       for (j = 0; j < i; j++) {
-#pragma warning (default : 4018)  //warning elimination
 	ItemExpr *ie = inputVars()[j].getItemExpr();
 	if (ie->getOperatorType() == ITM_HOSTVAR) {
 	  if (item_expr->previousName() == ((HostVar *) ie)->getName()) {
@@ -904,9 +900,7 @@ short RelRoot::codeGen(Generator * generator)
 	}
       }
       
-#pragma warning (disable : 4018)  //warning elimination
       if (i == j) {
-#pragma warning (default : 4018)  //warning elimination
 	NAString str1 = "previousHV__";
 	char str2[30];
 	str_itoa(i, str2);
@@ -1028,16 +1022,12 @@ short RelRoot::codeGen(Generator * generator)
     {
       ItemExpr * item_expr = (newInputVars)[i].getItemExpr();
       if (item_expr->getOperatorType() == ITM_UNIQUE_EXECUTE_ID)
-#pragma nowarn(1506)   // warning elimination
 	uniqueExecuteIdOffset = attrs[i]->getOffset();
-#pragma warn(1506)  // warning elimination
       if (item_expr->getOperatorType() == ITM_GET_TRIGGERS_STATUS)
 	{
 	  GenAssert(getTriggersList()->entries()>0,
 		    "No triggers, yet TriggerStatusOffset != -1");
-#pragma nowarn(1506)   // warning elimination
 	  triggersStatusOffset = attrs[i]->getOffset();
-#pragma warn(1506)  // warning elimination
 	}
     }
   
@@ -1181,9 +1171,7 @@ short RelRoot::codeGen(Generator * generator)
 				 &input_expr);
     }
 
-#pragma nowarn(1506)   // warning elimination
   ex_cri_desc * cri_desc = new(space) ex_cri_desc(num_tupps, space);
-#pragma warn(1506)  // warning elimination
   generator->setCriDesc(cri_desc, Generator::DOWN);
   generator->setInputExpr((void *)input_expr);
 
@@ -1406,9 +1394,7 @@ short RelRoot::codeGen(Generator * generator)
 		  HostVar * hv = (HostVar *)(val_id.getItemExpr());
 
 		  if (hv->getName() == cursorHvar->getName())
-#pragma nowarn(1506)   // warning elimination
 		    fetchedCursorHvar = (short)i+1; // 1-based
-#pragma warn(1506)  // warning elimination
 		}
 	    } // more input
 
@@ -1690,11 +1676,7 @@ short RelRoot::codeGen(Generator * generator)
     }
 
   // UDR Security
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination
   short noOfUdrs = generator->getBindWA()->getUdrStoiList().entries ();
-#pragma warn(1506)  // warning elimination
-#pragma warning (default : 4244)  //warning elimination
 
   SqlTableOpenInfo **udrStoiList = NULL;
   if ( noOfUdrs )
@@ -1765,9 +1747,7 @@ short RelRoot::codeGen(Generator * generator)
   LateNameInfoList * lnil = NULL;
   Int32 numEntries = 0;
   if  (generator->getLateNameInfoList().entries() > 0)
-#pragma nowarn(1506)   // warning elimination
     numEntries = generator->getLateNameInfoList().entries();
-#pragma warn(1506)  // warning elimination
   lnil =
     (LateNameInfoList *)
       space->allocateMemory( sizeof(LateNameInfoList) +
@@ -1796,9 +1776,7 @@ short RelRoot::codeGen(Generator * generator)
       for (CollIndex i = 0;
 	   i < generator->getLateNameInfoList().entries(); i++)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  LateNameInfo * tgt = &(lnil->getLateNameInfo(i));
-#pragma warn(1506)  // warning elimination
 	  LateNameInfo * src = (LateNameInfo *)generator->getLateNameInfoList()[i];
 	  if (src->isVariable())
 	    {
@@ -1895,9 +1873,7 @@ short RelRoot::codeGen(Generator * generator)
 	} // for
     }
 
-#pragma nowarn(1506)   // warning elimination
   lnil->setViewPresent(viewPresent);
-#pragma warn(1506)  // warning elimination
 
   lnil->setVariablePresent(variablePresent);
 
@@ -1910,13 +1886,11 @@ short RelRoot::codeGen(Generator * generator)
   // it to the root_tdb
   NABoolean fragmentQuotas = CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON;
   ExFragDir *exFragDir =
-#pragma nowarn(1506)   // warning elimination
     new(space) ExFragDir(compFragDir->entries(),space,
                          CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON, 
                          fragmentQuotas, 
                          (UInt16)CmpCommon::getDefaultLong(ESP_MULTI_FRAGMENT_QUOTA_VM),
                            (UInt8)CmpCommon::getDefaultLong(ESP_NUM_FRAGMENTS));
-#pragma warn(1506)  // warning elimination
 
   // We compute the space needed in execution time for input Rowset variables
   for (i = 0; i < inputVars().entries(); i++)
@@ -1964,9 +1938,7 @@ short RelRoot::codeGen(Generator * generator)
 	    {
 	      if (baseTablenamePosition == -1)
 		{
-#pragma nowarn(1506)   // warning elimination
 		  baseTablenamePosition = n;
-#pragma warn(1506)  // warning elimination
 		}
 	    }
 	}
@@ -1996,9 +1968,7 @@ short RelRoot::codeGen(Generator * generator)
 	    {
 	      if (baseTablenamePosition == -1)
 		{
-#pragma nowarn(1506)   // warning elimination
 		  baseTablenamePosition = n;
-#pragma warn(1506)  // warning elimination
 		}
 	    }
 	}
@@ -2232,14 +2202,11 @@ short RelRoot::codeGen(Generator * generator)
   // This init() call passes in the space object. The root might allocate
   // more space for its uses inside init().
   // ---------------------------------------------------------------------
-#pragma warning (disable : 4244)  //warning elimination
   root_tdb->init(child_tdb,
                  cri_desc, // input to child
                  (InputOutputExpr *)input_expr,
                  (InputOutputExpr *)output_expr,
-#pragma nowarn(1506)   // warning elimination
                  input_vars_size,
-#pragma warn(1506)  // warning elimination
                  pkey_expr,
                  pkey_len,
                  pred_expr,
@@ -2275,14 +2242,10 @@ short RelRoot::codeGen(Generator * generator)
 		 // Not needed for hbase/seabase access.
 		 (getGroupAttr()->isEmbeddedUpdateOrDelete() &&
 		  (NOT hdfsAccess())),
-#pragma nowarn(1506)   // warning elimination
 		 CmpCommon::getDefaultNumeric(STREAM_TIMEOUT),
-#pragma warn(1506)  // warning elimination
 		 generator->getPlanId(),
 		 qCacheInfoBuf,
-#pragma nowarn(1506)   // warning elimination
 		 cacheVarsSize,
-#pragma warn(1506)  // warning elimination
 		 udrStoiList,
 		 noOfUdrs,
                  maxResultSets,
@@ -2296,7 +2259,6 @@ short RelRoot::codeGen(Generator * generator)
                  compilationStatsData,
                  tmpLoc,
                  listOfSnapshotscanTables);
-#pragma warning (default : 4244)  //warning elimination
 
   root_tdb->setTdbId(generator->getAndIncTdbId());
   
@@ -3180,7 +3142,6 @@ short Sort::generateTdb(Generator * generator,
 	       sortKeyLen,
 	       sortRecLen,
 	       sortPrefixKeyLen,
-#pragma nowarn(1506)   // warning elimination
 	       returned_desc->noTuples() - 1,
 	       child_tdb,
 	       given_desc,
@@ -3200,7 +3161,6 @@ short Sort::generateTdb(Generator * generator,
 	       sort_options,
            sortGrowthPercent);
   sort_tdb->setCollectNFErrors(this->collectNFErrors());
-#pragma warn(1506)  // warning elimination
 
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
@@ -4003,10 +3963,8 @@ short Tuple::codeGen(Generator * generator)
 		    (queue_index)getDefault(GEN_TUPL_SIZE_DOWN),
 		    (queue_index)getDefault(GEN_TUPL_SIZE_UP),
 		    (Cardinality) (getInputCardinality() * getEstRowsUsed()).getValue(),
-#pragma nowarn(1506)   // warning elimination
 		    getDefault(GEN_TUPL_NUM_BUFFERS),
 		    getDefault(GEN_TUPL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tuple_tdb);
 
   if(!generator->explainDisabled()) {
@@ -4033,9 +3991,7 @@ short TupleList::codeGen(Generator * generator)
   ex_cri_desc * givenDesc
     = generator->getCriDesc(Generator::DOWN);
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
   Int32 tuppIndex = returnedDesc->noTuples() - 1;
 
   // disable common subexpression elimination for now.
@@ -4141,9 +4097,7 @@ short TupleList::codeGen(Generator * generator)
       qList->insert(moveExpr);
     }
 
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(tuppIndex, tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // generate expression for selection predicate, if it exists
   ex_expr *predExpr = NULL;
@@ -4158,9 +4112,7 @@ short TupleList::codeGen(Generator * generator)
   // Try to get enough buffer space to hold twice as many records
   // as the up queue.
   ULng32 buffersize = getDefault(GEN_TUPL_BUFFER_SIZE);
-#pragma nowarn(1506)   // warning elimination
   Int32 numBuffers = getDefault(GEN_TUPL_NUM_BUFFERS);
-#pragma warn(1506)  // warning elimination
   queue_index upqueuelength = (queue_index)getDefault(GEN_TUPL_SIZE_UP);
   ULng32 cbuffersize =
     ((tupleLen + sizeof(tupp_descriptor))
@@ -4168,7 +4120,6 @@ short TupleList::codeGen(Generator * generator)
     SqlBufferNeededSize(0,0);
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbTupleLeaf *tupleTdb = new(generator->getSpace())
     ComTdbTupleLeaf(qList,
 		    tupleLen,
@@ -4181,7 +4132,6 @@ short TupleList::codeGen(Generator * generator)
 		    (Cardinality) (getInputCardinality() * getEstRowsUsed()).getValue(),
 		    getDefault(GEN_TUPL_NUM_BUFFERS),
 		    buffersize);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tupleTdb);
 
   if(!generator->explainDisabled())
@@ -4216,14 +4166,10 @@ short ExplainFunc::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * paramsDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
 
   // Assumption (for now): retrievedCols contains ALL columns from
@@ -4262,9 +4208,7 @@ short ExplainFunc::codeGen(Generator * generator)
   NADELETEBASIC(attrs, generator->wHeap());
 
   // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, explTupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // generate explain selection expression, if present
   if (! selectionPred().isEmpty())
@@ -4293,9 +4237,7 @@ short ExplainFunc::codeGen(Generator * generator)
 					 ExpTupleDesc::LONG_FORMAT);
 
       // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
       paramsDesc->setTupleDescriptor(paramsDesc->noTuples()-1, tupleDesc);
-#pragma warn(1506)  // warning elimination
     }
 
   // allocate buffer space to contain atleast 2 rows.
@@ -4303,7 +4245,6 @@ short ExplainFunc::codeGen(Generator * generator)
   bufferSize = MAXOF(bufferSize, 30000); // min buf size 30000
   Int32 numBuffers = 3; // allocate 3 buffers
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbExplain *explainTdb
     = new(space)
       ComTdbExplain(givenDesc,	                 // given_cri_desc
@@ -4319,7 +4260,6 @@ short ExplainFunc::codeGen(Generator * generator)
 						 // the explain parameters
 		    numBuffers,			 // Number of buffers to allocate
                     bufferSize);			 // Size of each buffer
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(explainTdb);
 
   // Add the explain Information for this node to the EXPLAIN
@@ -4419,9 +4359,7 @@ PhysTranspose::codeGen(Generator *generator)
     // along.
     //
     returnedCriDesc =
-#pragma nowarn(1506)   // warning elimination
       new(space) ex_cri_desc(givenCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     // Make all of my child's outputs map to ATP 1. Since they are
     // not needed above, they will not be in the work ATP (0).
@@ -4434,9 +4372,7 @@ PhysTranspose::codeGen(Generator *generator)
     // The child's outputs are needed above, so must pass them along.
     //
     returnedCriDesc =
-#pragma nowarn(1506)   // warning elimination
       new(space) ex_cri_desc(childCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
   }
 
   // transposeCols is the last Tp in Atp 0.
@@ -4600,9 +4536,7 @@ PhysTranspose::codeGen(Generator *generator)
       // Cast to cast it to the proper type.
       //
       castExpr = new(generator->wHeap())
-#pragma nowarn(1506)   // warning elimination
 	Cast(keyValIdUnion->getSource(exprNum).getValueDesc()->getItemExpr(),
-#pragma warn(1506)  // warning elimination
 	     &(keyValIdUnion->getResult().getType()));
 
       // Bind this new item expression.
@@ -4686,9 +4620,7 @@ PhysTranspose::codeGen(Generator *generator)
 	  //
 	  castExpr = new(generator->wHeap())
 	    Cast(valValIdUnion->
-#pragma nowarn(1506)   // warning elimination
 		 getSource(valExprNum).getValueDesc()->getItemExpr(),
-#pragma warn(1506)  // warning elimination
 		 &(valValIdUnion->getResult().getType()));
 	} else {
 
@@ -4769,9 +4701,7 @@ PhysTranspose::codeGen(Generator *generator)
     // This will be set only the first time through the loop.
     //
     if(exprNum == 0) {
-#pragma nowarn(1506)   // warning elimination
       returnedCriDesc->setTupleDescriptor(transColsAtpIndex,
-#pragma warn(1506)  // warning elimination
 					  transColsTupleDesc);
 
       // Take the result (ie. the Cast nodes) of generateContiguousMove
@@ -4843,7 +4773,6 @@ PhysTranspose::codeGen(Generator *generator)
   //
   queue_index upQ = (queue_index)getDefault(GEN_TRSP_SIZE_UP);
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbTranspose *transTdb =
     new (space) ComTdbTranspose(childTdb,
 				transExprs,
@@ -4860,7 +4789,6 @@ PhysTranspose::codeGen(Generator *generator)
 				getDefault(GEN_TRSP_NUM_BUFFERS),
 				getDefault(GEN_TRSP_BUFFER_SIZE),
                                 space);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(transTdb);
   // If the child's outputs are not needed above this node,
   // remove the entries from the map table.
@@ -4914,9 +4842,7 @@ short PhyPack::codeGen(Generator* generator)
   ex_cri_desc* givenCriDesc = generator->getCriDesc(Generator::DOWN);
 
   // PhyPack adds one tupp to what its parent gives in its return tuple.
-#pragma nowarn(1506)   // warning elimination
   unsigned short returnedNoOfTuples = givenCriDesc->noTuples() + 1;
-#pragma warn(1506)  // warning elimination
   ex_cri_desc* returnedCriDesc =
                         new (space) ex_cri_desc(returnedNoOfTuples,space);
 
@@ -4963,9 +4889,7 @@ short PhyPack::codeGen(Generator* generator)
   NADELETEBASIC(attrs,generator->wHeap());
 
   // Store the computed tuple desc for the new tuple added by PhyPack.
-#pragma nowarn(1506)   // warning elimination
   returnedCriDesc->setTupleDescriptor(returnedNoOfTuples - 1,tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // Set the DOWN descriptor in the generator to what my child gets from me.
   generator->setCriDesc(returnedCriDesc,Generator::DOWN);
@@ -5014,14 +4938,12 @@ short PhyPack::codeGen(Generator* generator)
   ComTdbPackRows* packTdb = new (space) ComTdbPackRows (childTdb,
                                               packExpr,
                                               predExpr,
-#pragma nowarn(1506)   // warning elimination
                                               returnedNoOfTuples - 1,
                                               tupleLen,
                                               givenCriDesc,
                                               returnedCriDesc,
                                               (queue_index) 8,
                                               (queue_index) 8);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(packTdb);
 
   // Add explain info of this node to the EXPLAIN fragment. Set explainTuple
@@ -5100,9 +5022,7 @@ short StatisticsFunc::codeGen(Generator* generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   // cri descriptor for work atp has 4 entries:
   // first two entries for consts and temps.
@@ -5195,9 +5115,7 @@ short StatisticsFunc::codeGen(Generator* generator)
 			       0, returnedDesc->noTuples()-1);
 
   Lng32 numBuffers = 3;
-#pragma nowarn(1506)   // warning elimination
   Lng32 bufferSize = 10 * tupleLength;
-#pragma warn(1506)  // warning elimination
   ComTdbStats *statsTdb = new(space) ComTdbStats
     (
 	 tupleLength,			 // Length of stats Tuple

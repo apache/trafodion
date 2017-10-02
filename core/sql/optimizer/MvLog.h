@@ -166,9 +166,7 @@ private:
 private:
   // Copy Ctor and = operator are not implemented.
   MvLog(const MvLog& other);
-#pragma nowarn(1026)   // warning elimination 
   MvLog& operator=(const MvLog& other);
-#pragma warn(1026)  // warning elimination 
 
   const QualifiedName	*tableName_;
   const ItemExpr	*pColumnNamesItem_;

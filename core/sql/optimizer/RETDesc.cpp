@@ -799,9 +799,7 @@ void RETDesc::print(FILE* ofd, const char* indent, const char* title) const
 #ifndef NDEBUG
   CollIndex i;
 
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   fprintf(ofd,"\n NEW RetDesc START \n%s%s %p %s\n --------------------- \n",
     NEW_INDENT, title, this,
     groupedFlag_ ? "(grouped) " : "");

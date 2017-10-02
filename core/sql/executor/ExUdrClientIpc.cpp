@@ -45,7 +45,6 @@
 #ifdef UDR_DEBUG
 #include "ErrorMessage.h"
 
-#pragma nowarn(140)   //warning elimination
 #define UdrDebug0(s) \
   ( UdrPrintf(traceFile_,(s)) )
 #define UdrDebug1(s,a1) \
@@ -58,7 +57,6 @@
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4)) )
 #define UdrDebug5(s,a1,a2,a3,a4,a5) \
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4),(a5)) )
-#pragma warn(140)   //warning elimination
 
 #else
 //
@@ -90,8 +88,6 @@
 //---------------------------------------------------------------------------
 // class UdrClientControlStream
 //---------------------------------------------------------------------------
-#pragma nowarn(109)  // warning elimination 
-#pragma nowarn(1252)  // warning elimination 
 UdrClientControlStream::UdrClientControlStream(IpcEnvironment *env,
                                                ExUdrTcb *tcb,
                                                ExExeStmtGlobals *stmtGlobals,
@@ -109,8 +105,6 @@ UdrClientControlStream::UdrClientControlStream(IpcEnvironment *env,
 #endif
 {
 }
-#pragma warn(109)  // warning elimination 
-#pragma warn(1252)  // warning elimination 
 
 UdrClientControlStream::~UdrClientControlStream()
 {

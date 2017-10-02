@@ -264,9 +264,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
                                     (Long)query.data(), 0);
     HSHandleError(retcode_);
     retcode_ = SQL_EXEC_SetDescItem(srcDesc, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                     query.length() + 1, 0);
-#pragma warn(1506)  // warning elimination
     HSHandleError(retcode_);
     // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
     // it may get reset by other calls to SQL_EXEC_SetDescItem().
@@ -611,9 +609,7 @@ Lng32 HSSqTableDef::setHasSyskeyFlag()
                                     (Long)query.data(), 0);
     HSHandleError(retcode_);
     retcode_ = SQL_EXEC_SetDescItem(srcDesc, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                     query.length() + 1, 0);
-#pragma warn(1506)  // warning elimination
     HSHandleError(retcode_);
     // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
     // it may get reset by other calls to SQL_EXEC_SetDescItem().

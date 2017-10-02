@@ -64,7 +64,6 @@ extern NAString DEFAULT_DATE_DISPLAY_FORMAT;
 //  DatetimeType : The datetime data type
 //
 // ***********************************************************************
-#pragma nowarn(1506)  // warning elimination 
 class DatetimeType : public DatetimeIntervalCommonType
 {
 public:
@@ -282,7 +281,6 @@ private:
   NAString displayFormat_;
   
 }; // class DatetimeType
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 //
@@ -342,7 +340,6 @@ private:
 //  SQLTime : SQL TIME
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class SQLTime : public DatetimeType
 {
 public:
@@ -398,14 +395,12 @@ protected:
 private:
   
 }; // class SQLTime
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 //
 //  SQLTimestamp : SQL TIMESTAMP
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class SQLTimestamp : public DatetimeType
 {
 public:
@@ -466,14 +461,12 @@ protected:
 private:
   
 }; // class SQLTimestamp
-#pragma warn(1506)   // warning elimination
 
 // ***********************************************************************
 //
 //  SQLMPDatetime : A Datetype for non-ANSI SQL/MP Datetimes
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
 class SQLMPDatetime : public DatetimeType
 {
 public:
@@ -517,7 +510,6 @@ public:
 private:                                          
 };
  
-#pragma warn(1506)  // warning elimination 
 // ***********************************************************************
 //
 //  DatetimeValue : A datetime value

@@ -102,16 +102,12 @@ Lng32 ComTdbSendTop::minSendBufferSize(Lng32 downRecLen, Lng32 numRecs)
 {
   // start with the regular size it would take to pack the records
   // into an SqlBuffer
-#pragma nowarn(1506)   // warning elimination 
   Lng32 recSpace = SqlBufferNeededSize(numRecs, downRecLen);
-#pragma warn(1506)  // warning elimination 
 
   // now add the needed space for the ExpControlInfo struct that goes
   // along with each record
-#pragma nowarn(1506)   // warning elimination 
   Lng32 delta = SqlBufferNeededSize(2, sizeof(ControlInfo)) -
     SqlBufferNeededSize(1, sizeof(ControlInfo));
-#pragma warn(1506)  // warning elimination 
 
   return recSpace + numRecs * delta;
 }

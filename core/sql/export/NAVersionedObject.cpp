@@ -150,9 +150,7 @@ void NAVersionedObject::makeRoomForNewVersion(
     {
       char *src = (char *)this + oldSubClassSize;
       char *des = (char *)this + newSubClassSize;
-#pragma nowarn(1506)   // warning elimination 
       short siz = imageSize_ - newSubClassSize;
-#pragma warn(1506)  // warning elimination 
       str_cpy_all(des,src,siz);
     }
   }

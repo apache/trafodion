@@ -47,18 +47,12 @@ static
 unsigned short getHexDigitValue(NAWchar wc)
 {
    if ( isDigit8859_1(wc) )
-#pragma nowarn(1506)   // warning elimination 
       return (unsigned short)wc - '0';
-#pragma warn(1506)  // warning elimination 
    else {
       if ( 'A' <= wc AND wc <= 'F' )
-#pragma nowarn(1506)   // warning elimination 
          return (unsigned short)wc - 'A' + 10;
-#pragma warn(1506)  // warning elimination 
       else
-#pragma nowarn(1506)   // warning elimination 
          return (unsigned short)wc - 'a' + 10;
-#pragma warn(1506)  // warning elimination 
    }
 }
 
@@ -102,18 +96,10 @@ convHexToChar(const NAWchar *s, Int32 inputLen, CharInfo::CharSet cs, CollHeap* 
   for (Int32 i = 0; i < inputLen; i=i+2) {
     if (isHexDigit8859_1(s[i]) AND isHexDigit8859_1(s[i+1])) {
 
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
       upper4Bits = getHexDigitValue(s[i]);
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       lower4Bits = getHexDigitValue(s[i+1]);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 
-#pragma nowarn(1506)   // warning elimination 
       char c = (upper4Bits << 4) | lower4Bits;
-#pragma warn(1506)  // warning elimination 
       r->append(c);
     } else { 
       NADELETE(r, NAString, heap);
@@ -143,9 +129,7 @@ convHexToWChar(const NAWchar *s, Int32 inputLen, CharInfo::CharSet cs, CollHeap*
   	unsigned short third4Bits  = getHexDigitValue(s[i+2]);
   	unsigned short fourth4Bits = getHexDigitValue(s[i+3]);
   
-#pragma nowarn(1506)   // warning elimination 
         NAWchar wc = (first4Bits << 12) | (second4Bits << 8) | (third4Bits << 4) | fourth4Bits;
-#pragma warn(1506)  // warning elimination 
         r->append(wc);
       }
       else {
@@ -154,9 +138,7 @@ convHexToWChar(const NAWchar *s, Int32 inputLen, CharInfo::CharSet cs, CollHeap*
       }
     }
   
-#pragma nowarn(1506)   // warning elimination 
     if (! CharInfo::checkCodePoint(r->data(), r->length(), cs) ) {
-#pragma warn(1506)  // warning elimination 
       NADELETE(r, NAWString, heap);
       return NULL;
     }

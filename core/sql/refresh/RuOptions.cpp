@@ -222,16 +222,12 @@ void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 	// Output filename
 	stringSize = outFilename_.GetLength() + 1;
 	translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(outFilename_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	// Force filename
 	stringSize = forceFilename_.GetLength() + 1;
 	translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(forceFilename_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 
 	// Debug options 
  Int32 size = debugOptionList_.GetCount();
@@ -246,9 +242,7 @@ void CRUOptions::StoreData(CUOFsIpcMessageTranslator &translator)
 		
 		stringSize = opt.objName_.GetLength() + 1;
 		translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 		translator.WriteBlock(opt.objName_.c_string(), stringSize);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -262,18 +256,14 @@ void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 	
 	// Output filename
 	translator.ReadBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	CDSString outFileName(buf);
 	SetOutputFilename(outFileName);
 
 	// Force filename
 	translator.ReadBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	CDSString forceFileName(buf);
 	SetForceFilename(forceFileName);
@@ -292,9 +282,7 @@ void CRUOptions::LoadData(CUOFsIpcMessageTranslator &translator)
 		
 		RUASSERT(PACK_BUFFER_SIZE > stringSize);
 
-#pragma nowarn(1506)   // warning elimination 
 		translator.ReadBlock(buf, stringSize);
-#pragma warn(1506)  // warning elimination 
 		
 		CDSString objName(buf);
 		AddDebugOption(testpoint, objName);

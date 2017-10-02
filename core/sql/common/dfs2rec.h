@@ -373,8 +373,6 @@ struct rec_project_struct
 
 #ifndef FS2_RECORD_DEFINED
 
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(270)   // warning elimination 
 class rec_field_struct
 {
 private:
@@ -594,8 +592,6 @@ public:
   short offset_ix;      // not used
   short default_offset; // not used
 };
-#pragma warn(1506)   // warning elimination 
-#pragma warn(270)   // warning elimination 
 
 // this struct is same as REC^RECORD^STRUCT from sql/mp DFS2REC.
 // DO NOT CHANGE IT IN ANY WAY.

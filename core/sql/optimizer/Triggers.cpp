@@ -265,9 +265,7 @@ Trigger::parseTriggerText() const
 
   // Parse the SQL text.
   Parser parser(CmpCommon::context());
-#pragma nowarn(1506)   // warning elimination 
   if (parser.parseDML(sqlText_->data(), sqlText_->length(), sqlTextCharSet_, &parsedNode))
-#pragma warn(1506)  // warning elimination 
     return NULL;
 
   // Extract the trigger body without the DDL nodes on top
@@ -381,8 +379,6 @@ Trigger::getParsedTrigger(BindWA *bindWA)
 //
 // Debugging aid.
 //
-#pragma nowarn(770)   // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 // used for debugging only
 void 
 Trigger::print(ostream &os, const char* indent, const char* title) const
@@ -413,8 +409,6 @@ Trigger::print(ostream &os, const char* indent, const char* title) const
   os << "TimeStamp: " << convertInt64ToDouble(timeStamp_) << endl;
   os << "Recursion Counter: " << recursionCounter_ << endl;
 }
-#pragma warn(1506)  // warning elimination 
-#pragma warn(770)  // warning elimination 
 
 
 //------------------------------------------------------------------------------
@@ -518,8 +512,6 @@ TriggerList::sortByTimeStamp()
 //
 // Debugging aid.
 //
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(770)   // warning elimination 
 // used for debugging only
 void 
 TriggerList::print(ostream & os, const char* indent, const char* title) const
@@ -532,8 +524,6 @@ TriggerList::print(ostream & os, const char* indent, const char* title) const
     os << ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
   }
 }
-#pragma warn(770)  // warning elimination 
-#pragma warn(1506)  // warning elimination 
 
 //
 // -- TriggerList::clearAndDestroy()

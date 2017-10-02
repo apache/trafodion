@@ -41,7 +41,6 @@
 
 #include "exp_attrs.h"
 
-#pragma warning ( disable : 4251 )
 
 class BigNum : public ComplexType {
 
@@ -188,7 +187,6 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
 
 
  
-#pragma warning ( default : 4251 )
 
 #endif
 

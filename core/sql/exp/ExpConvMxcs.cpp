@@ -401,9 +401,7 @@ static short convInt64ToDecMxcs(char *target, Lng32 targetLen, Int64 source)
       return EXE_STRING_OVERFLOW;
     };
 
-#pragma nowarn(1506)   // warning elimination 
     target[currPos--] = '0' + (char)(source % 10);
-#pragma warn(1506)  // warning elimination 
     source /= 10;
   };
   

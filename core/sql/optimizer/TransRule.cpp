@@ -1631,9 +1631,7 @@ NABoolean IndexJoinRule2::topMatch (RelExpr * expr,
   // for now, return FALSE for this rule (failures in TEST005)
   return FALSE;
 
-#pragma nowarn(203)   // warning elimination
   if (NOT Rule::topMatch(expr, context))
-#pragma warn(203)  // warning elimination
     return FALSE;
 
   Scan * s = (Scan *) expr;
@@ -1717,7 +1715,6 @@ struct IndexToDisjuncts
 
 private:
   // private constructor, object should be created by a friend only
-// warning elimination (removed "inline")
   IndexToDisjuncts() : maxPoints_(0.0)
   {}
 };
@@ -1747,7 +1744,6 @@ NABoolean doesValueIdEvaluateToFalse( ValueId predId )
      return FALSE;
 }
 
-#pragma nowarn(262)   // warning elimination
 RelExpr * OrOptimizationRule::nextSubstitute(
      RelExpr * before,
      Context * /*context*/,
@@ -2017,9 +2013,7 @@ RelExpr * OrOptimizationRule::nextSubstitute(
 		  DCMPASSERT(bc->getOperatorType() == ITM_BASECOLUMN);
 		  if (colNum == (CollIndex) bc->getColNumber())
 		    {
-#pragma nowarn(1506)   // warning elimination
 		      colNumInIndex = ixcolnum;
-#pragma warn(1506)  // warning elimination
 		      break;
 		    }
 		}
@@ -2187,7 +2181,6 @@ RelExpr * OrOptimizationRule::nextSubstitute(
 
   return result;
 }
-#pragma warn(262)  // warning elimination
 
 CostScalar OrOptimizationRule::rateIndexForColumn(
      Int32 colNumInIndex,
@@ -2394,9 +2387,7 @@ RelExpr * OrOptimizationRule::makeSubstituteScan(
 	    ValueIdUnion(resultCharOutputs[i],
 			 newValId,
 			 NULL_VALUE_ID,
-#pragma nowarn(1506)   // warning elimination
 			 unionNode->getUnionFlags());
-#pragma warn(1506)  // warning elimination
 	  vidUnion->synthTypeAndValueId();
 	  unionNode->addValueIdUnion(vidUnion->getValueId(),
 				     CmpCommon::statementHeap());
@@ -4225,9 +4216,7 @@ NABoolean GroupByTernarySplitRule::topMatch(RelExpr * expr,
   // Old Code End
 
 
-#pragma nowarn(203)   // warning elimination
   if (NOT Rule::topMatch(expr,context)) // MUST be a GroupByAgg
-#pragma warn(203)  // warning elimination
     return FALSE;
 
   if (expr->getOperatorType() == REL_SHORTCUT_GROUPBY)
@@ -4769,9 +4758,7 @@ NABoolean GroupBySplitRule::topMatch(RelExpr * expr,
         }
     }
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 dc = distinctColumns.entries();
-#pragma warn(1506)  // warning elimination
 
   if (dc > 0)
     {
@@ -5601,7 +5588,6 @@ NABoolean PartialGroupByOnTSJRule::topMatch (RelExpr * expr,
 // produced from either Cut#0 or Cut#1 above.
 //
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 RelExpr * PartialGroupByOnTSJRule::nextSubstitute(RelExpr * before,
                                                   Context * /*context*/,
                                                   RuleSubstituteMemory * & /*memory*/)
@@ -5711,7 +5697,6 @@ RelExpr * PartialGroupByOnTSJRule::nextSubstitute(RelExpr * before,
 
   return newJoin;
 } // PartialGroupByOnTSJRule::nextSubstitute()
-#pragma warn(770)  // warning elimination
 
 
 // -----------------------------------------------------------------------

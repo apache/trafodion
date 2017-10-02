@@ -50,7 +50,6 @@ class ExpDP2Expr;
 typedef NAOpenObjectPtrTempl<atp_struct> AtpStructPtr;
 typedef NAVersionedObjectPtrTempl<ExpDP2Expr> ExpDP2ExprPtr;
 
-#pragma warning ( disable : 4251 )
 
 /////////////////////////////////////////////////////////////////////////////
 // class ExpDP2Expr
@@ -145,6 +144,5 @@ public:
     
 };
 
-#pragma warning ( default : 4251 )
 
 #endif

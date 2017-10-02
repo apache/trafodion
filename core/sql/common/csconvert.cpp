@@ -38,7 +38,6 @@
 #include "fcconv.h"
 #include "csconvert.h"
 
-#pragma nowarn(161)   // warning elimination
 #include "from_GB18030.c"
 #include "from_GB2312.c"
 #include "from_GBK.c"
@@ -51,7 +50,6 @@
 #include "mb_iconv.c"
 #include "iconv_gen.c"
 
-#pragma warn(161)   // warning elimination
 
 #include "mb_lconv.c"
 #undef   USE_OUR_MB_WC_DATA_TABLES

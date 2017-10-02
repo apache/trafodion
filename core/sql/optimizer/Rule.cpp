@@ -398,9 +398,7 @@ RuleSet::~RuleSet()
 
 void RuleSet::insert(Rule * r)
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 num = r->ruleNumber_ = allRules_.entries();
-#pragma warn(1506)  // warning elimination
   allRules_.insertAt(num,r);
 
   if (num >= MAX_RULE_COUNT)

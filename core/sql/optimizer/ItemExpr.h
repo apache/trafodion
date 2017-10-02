@@ -120,7 +120,6 @@ public:
   inline ItemExpr * operator ->() const;	// defined below class ItemExpr
 
   // same as a "normal" method
-// warning elimination (removed "inline")
   ItemExpr * getPtr() const;		// defined below class ItemExpr
 
   // cast into an ItemExpr *
@@ -129,7 +128,6 @@ public:
   // cast into a ValueId
   inline operator ValueId() const                     { return getValueId(); }
 
-// warning elimination (removed "inline")
   NAColumn *getNAColumn(NABoolean okIfNotColumn = FALSE) const
 			   { return getValueId().getNAColumn(okIfNotColumn); }
 
@@ -1164,7 +1162,6 @@ public:
   virtual ComColumnDirection getParamMode () const;
   virtual Int32 getOrdinalPosition () const;
   virtual Int32 getHVorDPIndex () const;
-// warning elimination (removed "inline")
   virtual void setPMOrdPosAndIndex( ComColumnDirection paramMode,
 					   Int32 ordinalPosition,
                                     Int32 index) { CMPASSERT (0);}

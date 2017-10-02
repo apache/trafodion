@@ -292,7 +292,6 @@ typedef NAVersionedObjectPtrTempl<SecurityInvKeyInfo> SecurityInvKeyInfoPtr;
 //
 // Task Definition Block
 //
-#pragma nowarn(1506)   // warning elimination 
 class ComTdbRoot : public ComTdb
 {
   friend class ex_root_tcb;
@@ -1373,7 +1372,6 @@ public:
   { return (rtFlags4_ & EXPLAIN_IN_RMS_IN_TDB) ? TRUE : FALSE; }
   void setExplainInRms() { rtFlags4_ |= EXPLAIN_IN_RMS_IN_TDB; }
 };
-#pragma warn(1506)  // warning elimination 
 
 /*****************************************************************************
   Description : Return ComTdb* depending on the position argument.

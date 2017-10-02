@@ -74,19 +74,13 @@ char *keyRangeGen::findVTblPtr(short classID)
   switch (classID)
   {
     case KEYSINGLESUBSET:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keySingleSubsetGen);
-#pragma warn(1506)  // warning elimination 
       break;
     case KEYMDAM:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keyMdamGen);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, keyRangeGen);
-#pragma warn(1506)  // warning elimination 
       break;
   }
   return vtblPtr;

@@ -220,7 +220,6 @@ private:
 // Statistics for operators which use clusters (HJ, HGB,
 // materialize)
 //////////////////////////////////////////////////////////////////
-#pragma nowarn(1103)   // warning elimination 
 class ExClusterStats  : public ExStatsBase {
 public:
   ExClusterStats();
@@ -285,16 +284,12 @@ private:
   ExClusterStats * next_;
 };
 
-
-#pragma warn(1103)  // warning elimination 
-
 //////////////////////////////////////////////////////////////////
 // class ExTimeStats
 //
 // ExTimeStats collects time information. Real-time, process or 
 // thread CPU time.
 //////////////////////////////////////////////////////////////////
-#pragma nowarn(1103)   // warning elimination 
 class ExTimeStats  : public ExStatsBase {
 friend class ExOperStats;
 friend class ExHashJoinStats;
@@ -317,7 +312,6 @@ public:
    { 
      sumTime_ += time;
    }
-#pragma warn(1103)  // warning elimination 
 
   // start an active period (record the starting time)
   void start();
@@ -358,9 +352,6 @@ private:
 // Data members that identify an ExOperStats uniquely within
 // a given statement
 //////////////////////////////////////////////////////////////////
-#pragma nowarn(1103)   // warning elimination 
-#pragma nowarn(161)   // warning elimination 
-#pragma nowarn(1026)   // warning elimination 
 struct ExOperStatsId
 {
   ExFragId fragId_;
@@ -384,11 +375,6 @@ struct ExOperStatsId
     ComTdb::CollectStatsType cst) const;
 
  };
-
-
-#pragma warn(1103)  // warning elimination 
-#pragma warn(161)  // warning elimination 
-#pragma warn(1026)  // warning elimination 
 
 
 // Define the number of retcodes here instead of taking the enum
@@ -478,7 +464,6 @@ private:
 //     (this number is included in Total number of bytes sent/recvd
 //  -- sent/recvd counters (See ExStatsCounter)
 /////////////////////////////////////////////////////////////////////
-#pragma nowarn(1103)   // warning elimination 
 class ExBufferStats  : public ExStatsBase
 {
 public:
@@ -544,8 +529,6 @@ private:
 
 };
 
-
-#pragma warn(1103)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////
 // class ExOperStats
@@ -695,7 +678,6 @@ public:
   inline void setCollectStatsType(ComTdb::CollectStatsType s)  
   {collectStatsType_ = s;}
 
-// warning elimination (removed "inline")
   virtual const char * getStatTypeAsString() const {return "EX_OPER_STATS";}; 
 
   inline Int64 getActualRowsReturned() const { return actualRowsReturned_; }

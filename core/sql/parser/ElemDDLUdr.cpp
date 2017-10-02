@@ -387,9 +387,7 @@ ElemDDLUdrMaxResults::getDetailInfo() const
   NATraceList detailTextList;
 
   detailText = "MaxResults: ";
-#pragma nowarn(1506)   // warning elimination 
   detailText += LongToNAString(getMaxResults());
-#pragma warn(1506)  // warning elimination 
   detailTextList.append(detailText);
 
   return detailTextList;
@@ -918,9 +916,7 @@ ElemDDLUdfStateAreaSize::getDetailInfo() const
   NATraceList detailTextList;
 
   detailText = "StateAreaSize: ";
-#pragma nowarn(1506)   // warning elimination
   detailText += LongToNAString(getStateAreaSize());
-#pragma warn(1506)  // warning elimination
   detailTextList.append(detailText);
 
   return detailTextList;

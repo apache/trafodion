@@ -1513,10 +1513,6 @@ NAHeap::computeTreeIndex(size_t size)
   }
 }
 
-#ifdef WIN32
-#pragma warning( disable : 4146 ) // no "unsigned" warnings
-#endif // WIN32
-
 // Isolate the least set bit of a bitmap
 inline NAHeap::binmap_t
 NAHeap::leastBit(binmap_t bits)
@@ -2121,10 +2117,6 @@ NAHeap::tmallocSmall(size_t nb)
   CORRUPTION_ERROR_ACTION;
   return NULL;
 }
-
-#ifdef WIN32
-#pragma warning( default : 4146 ) // allow "unsigned" warnings
-#endif // WIN32
 
 Lng32 NAMemory::getAllocatedSpaceSize()
 {
@@ -4107,9 +4099,7 @@ void * DefaultIpcHeap::allocateIpcHeapMemory(size_t size, NABoolean failureIsFat
      return NULL;
 
   void * rc = ::operator new(size);
-#pragma nowarn(1506)   // warning elimination 
   HEAPLOG_ADD_ENTRY(rc, size, heapID_.heapNum, getName())
-#pragma warn(1506)  // warning elimination 
   if (rc) return rc;
   if (failureIsFatal) 
     {

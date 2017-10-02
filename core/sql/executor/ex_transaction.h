@@ -399,7 +399,6 @@ public:
   ~ExTransTcb();
 
   virtual short work();
-// warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const{return qparent_;}; 
   inline Int32 orderedQueueProtocol() const{return ((const ExTransTdb &)tdb).orderedQueueProtocol();}
 

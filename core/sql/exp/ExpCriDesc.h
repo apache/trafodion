@@ -62,7 +62,6 @@ typedef NAVersionedObjectPtrTempl<ex_cri_desc> ExCriDescPtr;
 // pointers. The cri_desc describes the each of the tupps pointed to.
 //
 
-#pragma warning( disable : 4251 )
 
 class ex_cri_desc : public NAVersionedObject
 {
@@ -115,7 +114,6 @@ public:
   // ---------------------------------------------------------------------
 };  // descriptor for cri
 
-#pragma warning( default : 4251 )
 
 inline unsigned short ex_cri_desc::noTuples() const
 {

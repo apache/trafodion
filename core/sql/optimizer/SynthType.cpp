@@ -927,8 +927,6 @@ const NAType *ItemExpr::synthesizeType()
 // does nothing.  Currently is only redefined by ValueIdUnion
 // to propagate the desired type to the sources of the ValueIdUnion.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ItemExpr::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -965,8 +963,6 @@ void ItemExpr::coerceChildType(NAType& desiredType,
      child(i) -> getValueId().coerceType(desiredType, defaultQualifier);
    }
 }
-#pragma warning (default : 4018)   //warning elimination
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class BuiltinFunction.
@@ -4366,7 +4362,6 @@ const NAType *CompDecode::synthesizeType()
 // member functions for class Extract
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *Extract::synthesizeType()
 {
   // Assert that we are bound, or created by Generator, so we have type info.
@@ -4448,7 +4443,6 @@ const NAType *Extract::synthesizeType()
                disAmbiguate,
                dti.supportsSQLnull());
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Increment
@@ -5504,7 +5498,6 @@ const NAType *Translate::synthesizeType()
 // member functions for class ValueIdUnion
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *ValueIdUnion::synthesizeType()
 {
   const NAType *result = NULL;
@@ -5591,7 +5584,6 @@ const NAType *ValueIdUnion::synthesizeType()
 
   return result;
 }
-#pragma warn(1506)  // warning elimination
 
 // ValueIdUnion::pushDownType() -----------------------------------
 // Propagate type information down the ItemExpr tree.  This method
@@ -5616,7 +5608,6 @@ const NAType *ValueIdUnion::synthesizeType()
 // and re-synthesize the Type of the inner ValueIdUnion node.
 //
 //
-#pragma nowarn(1506)   // warning elimination
 const NAType *
 ValueIdUnion::pushDownType(NAType& desiredType,
                            enum NABuiltInTypeEnum defaultQualifier)
@@ -5628,7 +5619,6 @@ ValueIdUnion::pushDownType(NAType& desiredType,
   return (NAType *)synthesizeType();
 
 }
-#pragma warn(1506)  // warning elimination
 
 
 const NAType *
@@ -5679,8 +5669,6 @@ const NAType *ValueIdProxy::synthesizeType()
 // Propagate type information down the node we are Proxy for.
 // Called by coerceType().  
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ValueIdProxy::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -5983,8 +5971,6 @@ const NAType *RowSubquery::synthesizeType()
 // the RowSubquery is of degree 1 and the returned value in the select
 // list is of unknown or character type.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 RowSubquery::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -6478,7 +6464,6 @@ const NAType *ItmSeqRowsSince::synthesizeType()
 // member functions for class ItmSeqMovingFunction
 // -----------------------------------------------------------------------
 
-#pragma nowarn(262)   // warning elimination
 const NAType *ItmSeqMovingFunction::synthesizeType()
 {
   const NAType *result=NULL;
@@ -6551,7 +6536,6 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
   return result;
 
 }
-#pragma warn(262)  // warning elimination
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqThisFunction
 // -----------------------------------------------------------------------

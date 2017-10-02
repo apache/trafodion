@@ -242,9 +242,7 @@ char* getModNameInLocale(const SQLMODULE_ID* m)
    if (nameInWchar == 0)
      return 0;
 
-#pragma nowarn(1506)   // warning elimination 
    Int32 wcNameLen = NAWstrlen(nameInWchar);
-#pragma warn(1506)  // warning elimination 
 
    static char* nameInLocale = new char[MAX_CHAR_SET_STRING_LENGTH+1];
 
@@ -275,9 +273,7 @@ char* getIdInLocale(SQLCLI_OBJ_ID* x)
    if (nameInWchar == 0)
      return 0;
 
-#pragma nowarn(1506)   // warning elimination 
    Int32 wcNameLen = NAWstrlen(nameInWchar);
-#pragma warn(1506)  // warning elimination 
 
    static char* nameInLocale = new char[MAX_CHAR_SET_STRING_LENGTH+1];
 

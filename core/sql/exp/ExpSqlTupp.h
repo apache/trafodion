@@ -92,7 +92,6 @@ public:
 
 };
 
-#pragma nowarn(1506)   // warning elimination 
 class tupp_descriptor
 {
 
@@ -269,7 +268,6 @@ void resetCommFlags()
 
 
 };
-#pragma warn(1506)   // warning elimination 
 
 
 //
@@ -388,9 +386,7 @@ inline char * tupp::getDataPointer() const
 
 inline unsigned short tupp::getRefCount() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return tuppDescPointer ? tuppDescPointer->getReferenceCount() : 0;
-#pragma warn(1506)  // warning elimination 
 };
 
 inline ULng32 tupp::getAllocatedSize() const

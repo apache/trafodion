@@ -263,9 +263,7 @@ void CRUDupElimLogScanner::SetupScan()
 	for (i=0; i < len; i++)
 	{
 		Int32 colIndex = i + ckStartColumn_;
-#pragma nowarn(1506)   // warning elimination 
 		tupleDesc_.GetItemDesc(i).Build(*pResultSet_, colIndex);
-#pragma warn(1506)  // warning elimination 
 	}
 
 	// Allocate space for input buffer 

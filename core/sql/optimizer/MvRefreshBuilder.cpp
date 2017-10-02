@@ -819,7 +819,6 @@ RelExpr *MvRefreshBuilder::buildReadRangesBlock() const
 // Build the scan on the table and rename the table syskey column if exists
 // to @SYSKEY
 // Excluded from coverage test - used only with range logging.
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MvRefreshBuilder::buildReadBaseTable() const
 {
   RelExpr *topNode = new(heap_) Scan(getLogsInfo().getBaseTableName());
@@ -831,9 +830,7 @@ RelExpr *MvRefreshBuilder::buildReadBaseTable() const
   // For nested-join because the fact that the ranges in the range log
   // do not overlap the scan on the table will not produce more than
   // the table cardinality .
-#pragma warning (disable : 4244)   //warning elimination
   fixScanCardinality(topNode, 1.0, coveredRows);
-#pragma warning (default : 4244)   //warning elimination
 
   // The root select list is (*, isLastExpr).
   ColRefName *star = new(heap_) ColRefName(1);  // isStar
@@ -855,7 +852,6 @@ RelExpr *MvRefreshBuilder::buildReadBaseTable() const
 
   return rootNode;
 }
-#pragma warn(1506)  // warning elimination 
 
 //----------------------------------------------------------------------------
 // Excluded from coverage test - used only with range logging.
@@ -1597,7 +1593,6 @@ RelExpr *MavBuilder::buildDeltaProcessingBlock(DeltaDefinition *deltaDef)
 // WHERE expressions: b = tableForWhere.b
 // This method is also used by MinMaxMavBuilder.
 //////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MavBuilder::buildDPBUpdate(const NAString& tableForSet,
 				    const NAString& tableForWhere) const
 {
@@ -1647,7 +1642,6 @@ RelExpr *MavBuilder::buildDPBUpdate(const NAString& tableForSet,
   updateRoot->setEmptySelectList();
   return updateRoot;
 }
-#pragma warn(1506)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 // Build the Delete sub-tree of the MAV Delta Processing Block.
@@ -1705,7 +1699,6 @@ RelExpr *MavBuilder::buildDPBInsert(DeltaDefinition *deltaDef, RelExpr *topNode)
 
 //////////////////////////////////////////////////////////////////////////////
 // Build the Insert sub-tree of the MAV Delta Processing Block.
-#pragma nowarn(1506)   // warning elimination 
 RelExpr *MavBuilder::buildDPBInsertNodes(const NAString& sourceTable) const
 {
   // The group-by columns are always taken from the DELTA table.
@@ -1760,7 +1753,6 @@ RelExpr *MavBuilder::buildDPBInsertNodes(const NAString& sourceTable) const
 
   return insertRoot;
 }
-#pragma warn(1506)  // warning elimination 
 
 // ===========================================================================
 // ==== Methods for supporting Min/Max.
@@ -1845,7 +1837,6 @@ NABoolean MavBuilder::useUnionBakeboneToMergeEpochs() const
 // Check if the Group by columns are a prefix of the base table clustering 
 // index. The order of the group by columns is not important.
 //----------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 Int32 MavBuilder::isGroupByAprefixOfTableCKeyColumns() const
 {
   if (isGroupByAprefixOfTableCKeyColumns_ != -1)
@@ -1884,7 +1875,6 @@ Int32 MavBuilder::isGroupByAprefixOfTableCKeyColumns() const
   
   return isGroupByAprefixOfTableCKeyColumns_;
 }
-#pragma warn(1506)  // warning elimination 
 
 
 // ===========================================================================
@@ -1992,7 +1982,6 @@ void MinMaxOptimizedMavBuilder::fixGroupingColumns(RelRoot* pRoot) const
 // Remove the GroupBy columns from the select list of the MV select tree.
 // After removing the GroupBy volumns from the GroupBy node, these columns
 // can no longer be used in the select list above the GroupBy node.
-#pragma nowarn(1506)   // warning elimination 
 void MinMaxOptimizedMavBuilder::removeGroupingColsFromSelectList(RelRoot* pRoot) const
 {
   // Convert the root select list from an ItemExpr tree to a list.
@@ -2026,7 +2015,6 @@ void MinMaxOptimizedMavBuilder::removeGroupingColsFromSelectList(RelRoot* pRoot)
   // Set it as the Select list.
   pRoot->addCompExprTree(nonGroupedSelectList);
 }
-#pragma warn(1506)  // warning elimination 
 
 // ===========================================================================
 // ===========================================================================
@@ -2199,7 +2187,6 @@ void MultiDeltaMavBuilder::bindJoinProduct(RelRoot  *product, NABoolean isSignPl
 //    @OP as well as @EPOCH, @IGNORE etc. should be deleted from the RETDesc, 
 //    for both T1 and T3. A new column called @OP should be adde instead: 
 //    (T1.@OP * T3.@OP * -1).
-#pragma nowarn(1506)   // warning elimination 
 void MultiDeltaMavBuilder::prepareRetdescForUnion(RETDesc  *retDesc, NABoolean isSignPlus)
 {
   CMPASSERT(retDesc != NULL);
@@ -2318,7 +2305,6 @@ void MultiDeltaMavBuilder::prepareRetdescForUnion(RETDesc  *retDesc, NABoolean i
   // And add it to the RETDesc.
   retDesc->addColumn(bindWA_, opName, newOpExpr->getValueId());
 }
-#pragma warn(1506)  // warning elimination 
 
 // This method returns TRUE if the columnDesc parameter is an @OP column
 // That needs to be deleted from the RETDesc.
@@ -2767,7 +2753,6 @@ void MultiDeltaRefreshMatrixRow::display() const
 // ===========================================================================
 
 //----------------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 // Construct the matrix from the join graph solution, and add the first row.
 MultiDeltaRefreshMatrix::MultiDeltaRefreshMatrix(Int32	        maxNumOfRows,
 						 MVJoinGraph   *joinGraph,
@@ -2823,7 +2808,6 @@ MultiDeltaRefreshMatrix::MultiDeltaRefreshMatrix(Int32	        maxNumOfRows,
   // And insert it into the matrix.
   theMatrix_[0] = firstRow;
 }
-#pragma warn(1506)  // warning elimination
 
 //----------------------------------------------------------------------------
 MultiDeltaRefreshMatrix::~MultiDeltaRefreshMatrix()

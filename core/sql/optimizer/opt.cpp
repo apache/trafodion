@@ -212,9 +212,6 @@ void clearFailedPlanWarningsForStream()
   }
 }
 
-#pragma warning (disable : 4101)  //warning elimination
-#pragma nowarn(262)   // warning elimination
-
 // This method is for the old driver and not used unless CQD NEW_OPT_DRIVER 
 // is OFF. We use the new driver by default.
 RelExpr * RelExpr::optimize(NABoolean exceptionMode,
@@ -364,9 +361,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
     // maximum parallelism can be forced by setting CDQ COMP_BOOL_69 to ON
     CURRSTMT_OPTGLOBALS->maxParIsFeasible = TRUE;
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 t0 = clock();
-#pragma warn(1506)  // warning elimination
 
     // ---------------------------------------------------------------------
     // -- Triggers.
@@ -927,8 +922,6 @@ if (plan && context->getGroupAttr()->isStream())
   return ( plan );
 } // optimize
 
-#pragma warn(262)  // warning elimination
-#pragma warning (default : 4101)  //warning elimination
 //<pb>
 /* ============================================================ */
 
@@ -1218,7 +1211,6 @@ NAString Context::getRPPString() const
 }
 
 //GTOOL
-#pragma nowarn(262)   // warning elimination
 NAString Context::getIPPString() const
 {
   // Return a one-line description of the input physical properties.
@@ -1273,7 +1265,6 @@ NAString Context::getIPPString() const
 
   return propString;
 }
-#pragma warn(262)  // warning elimination
 
 //GTOOL
 NAString Context::getILPString() const
@@ -2603,7 +2594,6 @@ void PlanWorkSpace::setPartialPlanCostToOperatorCost()
 //  Operator's cost independent of its children.
 //
 //==============================================================================
-#pragma nowarn(770)   // warning elimination
 Cost*
 PlanWorkSpace::getFinalOperatorCost(Lng32 planNumber)
 {
@@ -2758,7 +2748,6 @@ PlanWorkSpace::getFinalOperatorCost(Lng32 planNumber)
   return operatorCost;
 
 } // PlanWorkSpace::getFinalOperatorCost()
-#pragma warn(770)  // warning elimination
 //<pb>
 //==============================================================================
 //  Set partialPlan cost to a newly specified cost.
@@ -3589,9 +3578,7 @@ NABoolean CascadesBinding::advance()
                       // used for that since they are used to represent cascades group).
 
                       CutOp* newPattern = new (CmpCommon::statementHeap())
-#pragma nowarn(1506)   // warning elimination
                         CutOp((*curExpr_)[childIndex].getGroupId(), CmpCommon::statementHeap());
-#pragma warn(1506)  // warning elimination
                       newPattern->setGroupIdAndAttr((*curExpr_)[childIndex].getGroupId());
 		      childBinding = new(CmpCommon::statementHeap())
 		        CascadesBinding(
@@ -3700,9 +3687,7 @@ NABoolean CascadesBinding::advance()
 	  if (children_.entries() > 0)
 	    {
 	      // existing log expr is finished; dealloc children
-#pragma nowarn(1506)   // warning elimination
 	      for (Lng32 childIndex = children_.entries(); -- childIndex >= 0; )
-#pragma warn(1506)  // warning elimination
 		{
 		  childBinding = children_[childIndex];
 		  delete childBinding;
@@ -3749,9 +3734,7 @@ NABoolean CascadesBinding::advance()
         } // state analysis and transitions
     } // loop until either failure or success
 
-#pragma nowarn(203)   // warning elimination
   ABORT("should never terminate this loop");
-#pragma warn(203)  // warning elimination
   return( FALSE );
 } // CascadesBinding::advance
 
@@ -5409,7 +5392,6 @@ NABoolean OptDefaults::cacheHistograms()
      ActiveSchemaDB()->getDefaults().getAsLong(CACHE_HISTOGRAMS_IN_KB)>0);
 }
 
-#pragma warn(262)  // warning elimination
 
 // ---------------------------------------------------------------------
 // OptDebug class methods
@@ -5561,16 +5543,10 @@ void OptDebug::showTree( const ExprNode *tree,
   if ( plan != NULL )
   {
     CollIndex index = 0;
-#pragma nowarn(1506)   // warning elimination
     while ( plan->getSolutionForChild(index) )
-#pragma warn(1506)  // warning elimination
     {
-#pragma nowarn(1506)   // warning elimination
       showTree( plan->getSolutionForChild(index)->getPhysicalExpr(),
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
                 plan->getSolutionForChild(index),
-#pragma warn(1506)  // warning elimination
                 indent,
                 showDetail );
       index++;
@@ -6542,9 +6518,7 @@ void OptDebug::showMemoStats(CascadesMemo *memo,
 	  if (detailedStat)
 	  {
             const CascadesPlanList& grPlanList = groupPtr->getPlans();
-#pragma nowarn(1506)   // warning elimination
 	    grPlanCnt = grPlanList.entries();
-#pragma warn(1506)  // warning elimination
 	    grFailedPlanCnt=0;
 
 	    for (Lng32 j=0; j<grPlanCnt; j++)

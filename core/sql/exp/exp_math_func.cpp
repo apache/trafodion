@@ -105,10 +105,8 @@ ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
       break;
       
     case REC_BIN16_SIGNED:
-#pragma nowarn(1506)   // warning elimination 
       *(short *)op_data[0] = (*(short *)op_data[1] < 0 ? -*(short *)op_data[1]
 			      : *(short *)op_data[1]);
-#pragma warn(1506)   // warning elimination 
       break;
       
     case REC_BIN32_SIGNED:
@@ -800,9 +798,7 @@ ex_expr::exp_return_type ExFunctionBitOper::eval(char *op_data[],
 
     case ITM_CONVERTTOBITS:
       {
-#pragma nowarn(1506)   // warning elimination 
 	Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
-#pragma warn(1506)  // warning elimination 
 	Int32 i;
 	if ( DFS2REC::isDoubleCharacter(getOperand(1)->getDatatype()) ) 
 	  {

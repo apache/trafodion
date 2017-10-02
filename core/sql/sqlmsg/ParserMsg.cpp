@@ -98,9 +98,7 @@ void StoreSyntaxError(const char *input_str, Int32 input_pos,
   if (!input_str) return;
 
   NAWchar wCharBuffer[ErrorMessage::MSG_BUF_SIZE+1]; // extra space for NULL
-#pragma nowarn(1506)   // warning elimination 
   Int32 slen = strlen(input_str);
-#pragma warn(1506)  // warning elimination 
 
   Int32 input_pos_in_numOfNAWchars = input_pos;
   if (input_str_cs != CharInfo::ISO88591)
@@ -142,7 +140,6 @@ static const size_t MAX_FORMAT_LINE = 79;
 static const size_t MAX_DGSTRING_SIZE =
 		      MINOF(ErrorMessage::MSG_BUF_SIZE,1024) - MAX_FORMAT_LINE;
 
-#pragma nowarn(1506)  // warning elimination
 void StoreSyntaxError(const NAWchar *input_str, Int32 input_pos, 
                       ComDiagsArea& diags, Int32 dgStrNum, 
 	              CharInfo::CharSet charset)
@@ -294,5 +291,4 @@ void StoreSyntaxError(const NAWchar *input_str, Int32 input_pos,
   }
   
 } // StoreSyntaxError, Unicode version 
-#pragma warn(1506)  // warning elimination
 

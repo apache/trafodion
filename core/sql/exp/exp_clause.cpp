@@ -593,9 +593,7 @@ ex_clause::ex_clause(clause_type type,
      and offset.                                                      */
   if (op) {
 
-#pragma nowarn(1506)  // warning elimination 
     short numOperands = (op[0]->showplan() ? num_operands*2 : num_operands);
-#pragma warn(1506)  // warning elimination 
 
     if (space)
       
@@ -665,7 +663,6 @@ ex_clause::~ex_clause()
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)  // warning elimination 
 char *ex_clause::findVTblPtr(short classID)
 {
   char *vtblPtr;
@@ -1053,7 +1050,6 @@ char *ex_clause::findVTblPtr(short classID)
     }
   return vtblPtr;
 }
-#pragma warn(1506)  // warning elimination 
 
 
 ex_expr::exp_return_type ex_clause::processNulls(char *null_data[],
@@ -1599,7 +1595,6 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 
    for (Int32 i = 0; i < numOperands_; i++)
    {
-#pragma nowarn(1506)   // warning elimination 
    getOperand(i)->displayContents(space, i,
                                    constsArea,
                                    (showplan 
@@ -1607,7 +1602,6 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
                                    : NULL));
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#pragma warn(1506)  // warning elimination 
   }
  }
 }
@@ -1620,7 +1614,6 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 ///////////////////////////////////////////////////////////
 // class ex_arith_clause
 ///////////////////////////////////////////////////////////
-#pragma nowarn(1506)  // warning elimination 
 ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
 				 Attributes ** attr,
 				 Space * space,
@@ -1728,7 +1721,6 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 
   setInstruction(); 
 }
-#pragma warn(1506)  // warning elimination 
 
 ///////////////////////////////////////////////////////////
 // class ex_inout_clause
@@ -1958,7 +1950,6 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 
    for (Int32 i = 0; i < getNumOperands(); i++)
    {
-#pragma nowarn(1506)   // warning elimination
    getOperand(i)->displayContents(space, i,
                                    constsArea,
                                    (showplan
@@ -1966,7 +1957,6 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
                                    : NULL));
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#pragma warn(1506)  // warning elimination
    }
   }
 }

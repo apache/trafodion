@@ -42,22 +42,12 @@
 #include "ClusteredBitmap.h"
 
 
-#ifdef WIN32
-// The firstSetBit() function produces a warning on Windows.
-// Turn it off temporarily.
-#pragma warning( disable : 4146 ) // disable "unsigned" warnings
-#endif // WIN32
-
 // Isolate the first set bit in the integer value.
 inline ClusteredBitmap::cb_int_t 
 ClusteredBitmap::firstSetBit(cb_int_t value)
 {
   return value & (-value);
 }
-
-#ifdef WIN32
-#pragma warning( default : 4146 ) // allow "unsigned" warnings
-#endif // WIN32
 
 // Return the significant bits for a particular value.  The
 // significant bits are bits 9-31 and are used as a lookup

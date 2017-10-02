@@ -449,34 +449,22 @@ char *ExPartInputDataDesc::findVTblPtr(short classID)
   switch (classID)
     {
     case HASH_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHashPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case RANGE_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExRangePartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case ROUNDROBIN_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExRoundRobinPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case HASH1_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHashDistPartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     case HASH2_PARTITIONED:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExHash2PartInputData);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ExPartInputDataDesc);
-#pragma warn(1506)  // warning elimination 
       break;
     }
   return vtblPtr;

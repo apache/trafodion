@@ -1144,7 +1144,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
      case LE_ASCII_COMP:
      case NE_ASCII_COMP:
         {
-#pragma nowarn(1506)   // warning elimination 
 
        Lng32 length1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
        Lng32 length2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]) ;
@@ -1159,7 +1158,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
        Int32 compare_code =
           charStringCompareWithPad( op_data[1], length1, op_data[2], length2, padChar);
 
-#pragma warn(1506)  // warning elimination 
 
        retcode = processResult(compare_code, (Lng32 *)op_data[0], 
 			       heap, diagsArea);
@@ -1168,7 +1166,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
 
     case UNICODE_COMP: // 11/3/95: Unicode
      {
-#pragma nowarn(1506)   // warning elimination 
        Lng32 length1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]); 
        Lng32 length2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
 
@@ -1177,7 +1174,6 @@ ex_expr::exp_return_type ex_comp_clause::eval(char *op_data[],
                              (NAWchar*)op_data[2], length2>>1,
                               unicode_char_set::space_char()
                             );
-#pragma warn(1506)  // warning elimination 
 
        retcode = processResult(compare_code, (Lng32 *)op_data[0], 
 			       heap, diagsArea);

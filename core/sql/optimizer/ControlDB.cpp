@@ -1133,18 +1133,14 @@ void ControlTableOptions::addTokenAndValue(const NAString &token,
 
 const NAString &ControlTableOptions::getToken(CollIndex index)
 {
-#pragma nowarn(270)   // warning elimination
   CMPASSERT((index >= 0) && (index < tokens_->entries()));
-#pragma warn(270)  // warning elimination
 
   return *((*tokens_)[index]);
 }
 
 const NAString &ControlTableOptions::getValue(CollIndex index)
 {
-#pragma nowarn(270)   // warning elimination
   CMPASSERT((index >= 0) && (index < values_->entries()));
-#pragma warn(270)  // warning elimination
 
   return *((*values_)[index]);
 }
@@ -1595,9 +1591,7 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
       fname == "FILE_SCAN" OR
       fname == "INDEX_SCAN")
     {
-#pragma nowarn(1506)   // warning elimination
       Int32 numArgs = args->entries();
-#pragma warn(1506)  // warning elimination
       Int32 firstNonStringArg=0;
       NAString tableName(CmpCommon::statementHeap());
       NAString indexName(CmpCommon::statementHeap());
@@ -1709,9 +1703,7 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
     {
       result = new (heap) ScanForceWildCard();
       NABoolean dummyNegate = FALSE;
-#pragma nowarn(1506)   // warning elimination
       Int32 numColumns = args->entries();
-#pragma warn(1506)  // warning elimination
       ItemExpr *itm;
 
       ScanForceWildCard::scanOptionEnum* columnAlgorithms
@@ -1938,9 +1930,7 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
     }
   else if (fname == "ISOLATED_SCALAR_UDF")
     {
-#pragma nowarn(1506)   // warning elimination
       Int32 numArgs = args->entries();
-#pragma warn(1506)  // warning elimination
       if (numArgs > 2)
       {
         // No more than two arguments allowed.

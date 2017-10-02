@@ -718,9 +718,7 @@ NABoolean UnLogic::synthSupportedOp() const
       return FALSE;
     }
 
-#pragma nowarn(203)   // warning elimination 
   return TRUE;
-#pragma warn(203)  // warning elimination 
 }
 
 NABoolean UnLogic::applyDefaultPred(ColStatDescList & histograms,

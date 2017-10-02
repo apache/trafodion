@@ -44,7 +44,6 @@
 #include "exp_attrs.h"
 #include "Int64.h"
 
-#pragma warning ( disable : 4251 )
 
 class ExpDatetime : public SimpleType {
 
@@ -393,7 +392,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif
 

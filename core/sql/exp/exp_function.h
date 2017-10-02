@@ -45,7 +45,6 @@
 #include "exp_dp2_expr.h"
 #include "SequenceGeneratorAttributes.h"
 
-#pragma warning ( disable : 4251 )
 
 class ex_function_clause;
 
@@ -4120,7 +4119,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #ifndef ULONG
   #define ULONG ULng32

@@ -92,11 +92,9 @@ ExTupleTcb::ExTupleTcb(const ComTdbTuple & tupleTdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
 
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(tupleTdb.numBuffers_,
 				     tupleTdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
 
   // Allocate the queue to communicate with parent
   allocateParentQueues(qparent);
@@ -229,9 +227,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
             {
               // allocate space to hold the tuple to be returned
               tupp p;
-#pragma nowarn(1506)   // warning elimination 
               if (pool_->get_free_tuple(p, tupleTdb().tupleLen_))
-#pragma warn(1506)  // warning elimination 
                 return WORK_POOL_BLOCKED; // couldn't allocate, try again later.
               up_entry->getTupp(tupleTdb().tuppIndex_) = p;
 
@@ -344,9 +340,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
 
 	} // switch
     } // while
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
 
 ///////////////////////////////////////////////
@@ -636,9 +630,7 @@ ExWorkProcRetcode ExTupleNonLeafTcb::work()
 
 	} // switch
     } // while
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
 
 /////////////////////////////////////////////

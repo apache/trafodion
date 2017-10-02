@@ -150,12 +150,10 @@ void yyerror(const char *errtext)
 	  if (tok.tokenStrLen) 
 	    {
 	      NAString *ti = unicodeToChar
-#pragma nowarn(1506)   // warning elimination 
 		(&inputStr[tok.tokenStrPos], tok.tokenStrLen,
 		 CharInfo::UTF8
 		 , 
 		 PARSERHEAP(), TRUE);
-#pragma warn(1506)  // warning elimination 
 	      cerr << "<" << (ti ? ti->data() : "") << "> ";
 	      delete ti;
 	    }
@@ -165,12 +163,10 @@ void yyerror(const char *errtext)
 	    }
 	}
       NAString *stmt = unicodeToChar
-#pragma nowarn(1506)   // warning elimination 
 	(inputStr, NAWstrlen(inputStr), 
 	 CharInfo::UTF8
 	 , 
 	 PARSERHEAP(), TRUE);
-#pragma warn(1506)  // warning elimination 
       cerr << " " << (stmt ? stmt->data() : "") << endl;
       delete stmt;
     }
@@ -319,9 +315,7 @@ void MarkInteriorNodesAsInCompoundStmt(RelExpr *node)
 
 NAWString* localeMBStringToUnicode(NAString* localeString, Lng32 charset, CollHeap *heap)
 {
-#pragma nowarn(1506)   // warning elimination 
    charBuf cbuf((unsigned char*)(localeString->data()), localeString->length());
-#pragma warn(1506)  // warning elimination 
    NAWcharBuf* wcbuf = 0;
    Int32 errorcode = 0;
    switch (charset) {
@@ -614,7 +608,6 @@ NAString * getSqlStmtStr(CharInfo::CharSet & refparam_targetCharSet, CollHeap * 
       if (NAWstrncmp(temp, WIDE_("DISPLAY"), 7) == 0) 
 	start_pos = 7;
     }
-#pragma nowarn(1506)   // warning elimination 
   
   // SqlParser_CurrentParser->charset_ is the encoding charset of the
   // sql stmt under parsing now. Target is the charset that the stmt
@@ -629,7 +622,6 @@ NAString * getSqlStmtStr(CharInfo::CharSet & refparam_targetCharSet, CollHeap * 
                                  , heap
                                  );
   ParScannedInputCharset = CharInfo::UTF8;
-#pragma warn(1506)  // warning elimination
 
   return stmt;
 }
@@ -747,9 +739,7 @@ NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr,
     }
 
   if (strSize < 5) {
-#pragma nowarn(1506)   // warning elimination 
     shortVal = atoi(*cvtstr);
-#pragma warn(1506)  // warning elimination 
   } else if (strSize < 10) {
     longVal = atol(*cvtstr);
   } else if (strSize < 19) {
@@ -770,21 +760,15 @@ NABoolean literalToNumber(NAString *strptr, char sign, NAString *cvtstr,
       // aware that atoInt64(LLONG_MAX) even with overflow checking can 
       // kill mxcmp with a signal 31!
       // Prepare BCD representation of number
-#pragma nowarn(1506)   // warning elimination 
       Lng32 largestrSize = strSize + 1; // extra byte for sign
-#pragma warn(1506)  // warning elimination 
       char *largestr = new (PARSERHEAP()) char[largestrSize];
       largestr[0] = sign;
       size_t j = (sign == '+') ? 0 : 1;
       for (size_t i = 0; i < strSize; i++)	  // strSize, not largestrSize
-#pragma nowarn(1506)   // warning elimination 
         largestr[i+1] = (*cvtstr)[i+j] - '0';
-#pragma warn(1506)  // warning elimination 
 
       // Convert BCD to Big Num representation
-#pragma nowarn(1506)   // warning elimination 
       bigNumSize = BigNumHelper::ConvPrecisionToStorageLengthHelper(strSize);
-#pragma warn(1506)  // warning elimination 
       *bigNum = new (PARSERHEAP()) char[bigNumSize];
       BigNumHelper::ConvBcdToBigNumWithSignHelper(largestrSize,
                                                   bigNumSize, 
@@ -933,21 +917,15 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
       // aware that atoInt64(LLONG_MAX) even with overflow checking can 
       // kill mxcmp with a signal 31!
       // Prepare BCD representation of number
-#pragma nowarn(1506)   // warning elimination 
       Lng32 largestrSize = strSize + 1; // extra byte for sign
-#pragma warn(1506)  // warning elimination 
       char *largestr = new (PARSERHEAP()) char[largestrSize];
       largestr[0] = sign;
       size_t j = (sign == '+') ? 0 : 1;
       for (size_t i = 0; i < strSize; i++)	  // strSize, not largestrSize
-#pragma nowarn(1506)   // warning elimination 
         largestr[i+1] = (*cvtstr)[i+j] - '0';
-#pragma warn(1506)  // warning elimination 
 
       // Convert BCD to Big Num representation
-#pragma nowarn(1506)   // warning elimination 
       Lng32 bigNumSize = BigNumHelper::ConvPrecisionToStorageLengthHelper(strSize);
-#pragma warn(1506)  // warning elimination 
       char *bigNumData = new (PARSERHEAP()) char[bigNumSize];
       BigNumHelper::ConvBcdToBigNumWithSignHelper(largestrSize,
                                                   bigNumSize, 
@@ -955,7 +933,6 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
                                                   bigNumData);
     
       returnValue = new (PARSERHEAP()) ConstValue
-#pragma nowarn(1506)   // warning elimination 
         (new (PARSERHEAP()) SQLBigNum(PARSERHEAP(), strSize, 
                                       scale,
                                       TRUE,
@@ -964,7 +941,6 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
          (void *) bigNumData,
          bigNumSize,
          strptr);
-#pragma warn(1506)  // warning elimination 
       NADELETEBASIC(largestr, (PARSERHEAP()));	
       NADELETEBASIC(bigNumData, (PARSERHEAP()));
     } else { // precision >= FLT_MAX_10_EXP in a user-specified literal
@@ -1876,9 +1852,7 @@ NABoolean transformIdentifier(NAString& delimIdent,
 void PicStream::skipPicture()
 {
    NAString   theIdentifier;
-#pragma nowarn(1506)   // warning elimination 
    while (isalpha(sgetc())) theIdentifier.append(toupper(sbumpc()));
-#pragma warn(1506)  // warning elimination 
    skipWhite();
    NAString string1 = "PIC";
    NAString string2 = "PICTURE";
@@ -1918,9 +1892,7 @@ NABoolean PicStream::skipCount (UInt32*result, const char pattern, NABoolean isC
 	    
          } while (isdigit(sgetc()));
          skipWhite();
-#pragma nowarn(1506)   // warning elimination 
          char ch = sbumpc();
-#pragma warn(1506)  // warning elimination 
 
          if ( isCharType == TRUE && ( ch=='C' || ch=='c' ) ) {
 
@@ -1931,9 +1903,7 @@ NABoolean PicStream::skipCount (UInt32*result, const char pattern, NABoolean isC
             assert(n == 9 && strcasecmp(len_unit_array, "CHARACTERS") == 0);
 
             skipWhite();
-#pragma nowarn(1506)   // warning elimination 
             ch = sbumpc();
-#pragma warn(1506)  // warning elimination 
          }
 
          assert(ch==')');
@@ -2060,9 +2030,7 @@ NAType *picNAType(const NABoolean      isString,
           break;
         case STYLE_UPSHIFT:
 	    returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
   		SQLChar(PARSERHEAP(), precision,TRUE,TRUE,isCaseinsensitive,FALSE,charset,collation,coerc);
-#pragma warn(1506)  // warning elimination 
             assert(returnValue);
             break;
         case STYLE_LEADING_SIGN:
@@ -2099,9 +2067,7 @@ NAType *picNAType(const NABoolean      isString,
            }
            else
               returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
 		SQLDecimal(PARSERHEAP(), precision,scale,hasSign);
-#pragma warn(1506)  // warning elimination 
            assert(returnValue);
            break;
         case STYLE_UPSHIFT:
@@ -2122,9 +2088,7 @@ NAType *picNAType(const NABoolean      isString,
            else {
               const Int16 DisAmbiguate = 0; // added for 64bit project
               returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
 		SQLNumeric(PARSERHEAP(), hasSign, precision, scale, DisAmbiguate);
-#pragma warn(1506)  // warning elimination 
               assert(returnValue);
            }
            break;

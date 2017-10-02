@@ -57,9 +57,7 @@ ex_expr::exp_return_type ex_function_trim_doublebyte::eval(char *op_data[],
 						ComDiagsArea** diagsArea)
 {
   // find out the length of trim character.
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = (getOperand(1)->getLength(op_data[-MAX_OPERANDS+1])) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
   
   // len1 (length of trim character) must be 1. Raise an exception if greater
   // than 1.
@@ -69,9 +67,7 @@ ex_expr::exp_return_type ex_function_trim_doublebyte::eval(char *op_data[],
       return ex_expr::EXPR_ERROR;
     }   
   
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len2 = (getOperand(2)->getLength(op_data[-MAX_OPERANDS+2])) / sizeof(NAWchar);
-#pragma warn(1506)  // warning elimination 
   
   // Find how many leading characters in operand 2 correspond to the trim
   // character.

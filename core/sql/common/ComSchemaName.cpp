@@ -246,9 +246,7 @@ ComSchemaName::scan(const NAString &externalSchemaName,
   // Scan the last ANSI SQL name part
   // ---------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
   Int32 remainingLen = externalSchemaNameLen - bytesScanned;
-#pragma warn(1506)  // warning elimination 
   NAString remainingName = externalSchemaName(bytesScanned, remainingLen);
   count = 0;
   ComAnsiNamePart part2(remainingName, count);

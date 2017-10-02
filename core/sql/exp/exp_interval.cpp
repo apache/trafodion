@@ -153,8 +153,6 @@ Lng32 ExpInterval::getDisplaySize(Lng32 fsDatatype,
       if (fractionPrecision)
 	result += fractionPrecision + 1;       // 1 for "."
     }
-#pragma nowarn(1506)   // warning elimination 
   return result;
-#pragma warn(1506)  // warning elimination 
 }
   

@@ -369,7 +369,6 @@ ItemExpr *MvMultiTxnMavBuilder::buildSelectionPredicateForScanOnIudLog() const
 }  // MvMultiTxnMavBuilder::buildSelectionPredicateForScanOnIudLog()
 
 //----------------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination 
 ItemExpr *MvMultiTxnMavBuilder::addContextPredicatesOnIUDLog() const
 
 {
@@ -443,7 +442,6 @@ ItemExpr *MvMultiTxnMavBuilder::addContextPredicatesOnIUDLog() const
 
   return CatchupPredicate;
 }  // MvMultiTxnMavBuilder::addContextPredicatesOnIUDLog()
-#pragma warn(262)  // warning elimination 
 
 //----------------------------------------------------------------------------
 // This method is called by Scan::bindNode(), when getting to the Scan on

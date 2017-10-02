@@ -109,9 +109,7 @@ CopyCKTupleValuesToParams(CDMPreparedStatement &stmt,
 	Lng32 len = GetCKLength();
 	for (Int32 i=0; i<len; i++)
 	{
-#pragma nowarn(1506)   // warning elimination 
 		ckTuple_.GetItem(i).SetStatementParam(stmt, firstParam+i);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -210,9 +208,7 @@ ReadCKColumns(CDMResultSet &rs, Int32 startCKColumn)
 	{
 		Int32 colIndex = i + startCKColumn;
 
-#pragma nowarn(1506)   // warning elimination 
 		ckTuple_.GetItem(i).Build(rs, colIndex);
-#pragma warn(1506)  // warning elimination 
 	}
 
 	rs.PresetNotNullable(FALSE);

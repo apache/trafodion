@@ -562,8 +562,6 @@ TableDesc::setBaseSelectivityHintForScan(SelectivityHint *selHint,
 // -----------------------------------------------------------------------
 // Print function for TableDesc
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(770)   // warning elimination
 void TableDesc::print(FILE* ofd, const char* indent, const char* title)
 {
 #ifndef NDEBUG
@@ -581,8 +579,6 @@ void TableDesc::print(FILE* ofd, const char* indent, const char* title)
 
 #endif
 } // TableDesc::print()
-#pragma warn(1506)  // warning elimination
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // Print function for TableDescList
@@ -590,9 +586,7 @@ void TableDesc::print(FILE* ofd, const char* indent, const char* title)
 void TableDescList::print(FILE* ofd, const char* indent, const char* title)
 {
 #ifndef NDEBUG
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
 
   for (CollIndex i = 0; i < entries(); i++)
     {

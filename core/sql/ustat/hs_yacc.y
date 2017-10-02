@@ -47,10 +47,6 @@
 #include "hs_parser.h"
 
 
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4065)//don't complain about empty switch statements.
-
-
 extern "C" { void yyerror(void* scanner, const char *sb); };
 
 union YYSTYPE;
@@ -132,7 +128,6 @@ statement   :  UPDATE STATISTICS { hs_globals_y->isUpdatestatsStmt = TRUE; } FOR
 
 column_name :  identifier
                    {
-#pragma warn(1506)   // warning elimination
 
                      HSColumnStruct *hist_pt = new(STMTHEAP) HSColumnStruct;
 

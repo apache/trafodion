@@ -93,7 +93,6 @@ private:
 // JBBCExprGroupMap :
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)  // warning elimination
 class JBBCExprGroupMap
 {
 public:
@@ -145,7 +144,6 @@ private:
   CollHeap*                        heap_;
 
 };
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class LSRConfidence

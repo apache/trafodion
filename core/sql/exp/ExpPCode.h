@@ -116,7 +116,6 @@ public:
 //
 // this class contains the actual byte code 
 
-#pragma warning ( disable : 4251 )
 class PCodeSegment : public NAVersionedObject {
 public:
   PCodeSegment(PCodeBinary* pcode = 0);
@@ -184,7 +183,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 
 // PCode

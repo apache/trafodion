@@ -58,12 +58,10 @@
 #include "SqlParserGlobals.h"                   // must be last #include
 
 static NAWString appendFraction (Lng32 scale);
-#pragma nowarn(1506)   // warning elimination
 static unsigned char toHexDecimalDigit(unsigned char c)
   {
     return ( c <= 9 ) ? c + '0' : c - 10 + 'A';
   }
-#pragma warn(1506)   // warning elimination
 
 
 NABoolean isSpecialObject(const NAString &tableName)

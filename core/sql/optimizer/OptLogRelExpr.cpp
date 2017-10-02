@@ -3419,7 +3419,6 @@ Union::synthLogProp(NormWA * normWAPtr)
 // -----------------------------------------------------------------------
 // member functions for class GroupByAgg
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 void
 GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
@@ -4423,7 +4422,6 @@ GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 		 myEstProps /* final OLP - after applying grouping and HAVING preds */,
 		 intermedEstProps /* intermediate OLP - after grouping */);
 } // GroupByAgg::synthEstLogProp
-#pragma warn(262)  // warning elimination
 
 void GroupByAgg::handleIndirectDepInGroupingcols(ValueIdSet& workGroup,
 				      ValueIdSet& interestingColSet,
@@ -5703,7 +5701,6 @@ ExplainFunc::synthLogProp(NormWA * normWAPtr)
 // UEC of C4 = 2
 //
 
-#pragma nowarn(770)   // warning elimination
 void
 Transpose::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
@@ -6060,7 +6057,6 @@ Transpose::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
   getGroupAttr()->addInputOutputLogProp(inputEstLogProp, myEstProps);
 
 } // Transpose::synthEstLogProp
-#pragma warn(770)  // warning elimination
 
 
 

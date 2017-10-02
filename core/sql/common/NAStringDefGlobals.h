@@ -132,7 +132,6 @@ private: // not protected -- we don't expect anyone to ever inherit from NAStrin
   // In order to use the above ctor with NAMemory the way we want, we need
   // to make sure that we don't use the globally-defined new.  So we write
   // for NAStringRef.
-#pragma nowarn (1059) // warning elimination
   static inline void* operator new (size_t, void* loc) 
   {
     return loc ;  // yes, it's really this simple!

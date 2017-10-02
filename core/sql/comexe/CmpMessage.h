@@ -69,7 +69,6 @@ class FragmentDir;
 // -----------------------------------------------------------------------
 // The base class for all the executor/compiler messages 
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class CmpMessageObj : public IpcMessageObj
 {
 public:
@@ -220,7 +219,6 @@ private:
   CollHeap* h_;
   
 }; // end of CmpMessageObj
-#pragma warn(1506)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Basic request objects
@@ -302,7 +300,6 @@ protected:
 // Information that is sent to recompile a dynamic or static statement.
 // This class is sent as part of the data() field.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class CmpCompileInfo 
 {
 public:
@@ -426,7 +423,6 @@ protected:
   Lng32  sqlTextCharSet_;            // 40-43
   char fillerBytes_[FILLERSIZE];     // 44-103
 };
-#pragma warn(1506)  // warning elimination 
 
 class CmpMessageRequest : public CmpMessageRequestBasic
 {
@@ -492,7 +488,6 @@ private:
 // Basic class for reply to executor
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination 
 class CmpMessageReply : public CmpMessageReplyBasic
 {
 public:
@@ -560,7 +555,6 @@ private:
   // This CollHeap* is used to allocate data_.
   CollHeap* outh_;
 }; // end of CmpMessageReply
-#pragma warn(1506)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // connection control messages

@@ -274,9 +274,7 @@ void ProcessEnv::removeEnv(char **newenvs, Lng32 nEnvs)
   CollHeap *stmtHeap = CmpCommon::statementHeap();
   NAList<Lng32> deleteArray(stmtHeap, 16);
 
-#pragma warning (disable : 4018)  //warning elimination
   for (j=0; j < envs_.getSize(); j++)
-#pragma warning (default : 4018)  //warning elimination
   {
     if (envs_.used(j))
     {
@@ -300,9 +298,7 @@ void ProcessEnv::removeEnv(char **newenvs, Lng32 nEnvs)
     }
   }
 
-#pragma warning (disable : 4018)  //warning elimination
   for (j=0; j < deleteArray.entries(); j++) {
-#pragma warning (default : 4018)  //warning elimination
     envs_.remove(deleteArray[j]);
   }
 

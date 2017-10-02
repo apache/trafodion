@@ -373,7 +373,6 @@ struct NATableEntryDetails {
 //
 // ***********************************************************************
 
-#pragma nowarn(1506)   // warning elimination 
 class NATable : public NABasicObject
 {
   friend class NATableDB;
@@ -1236,7 +1235,6 @@ private:
   NAList<NAString> allColFams_;
 }; // class NATable
 
-#pragma warn(1506)  // warning elimination 
 
 struct NATableCacheStats {
   char   contextType[8];

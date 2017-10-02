@@ -704,9 +704,7 @@ BOOL CRUForceOptionsParser::IsCurrentWord(const char* word)
 
 void CRUForceOptionsParser::UpCase(char* aLine)
 {
-#pragma nowarn(1506)   // warning elimination 
 	Int32 len = strlen(aLine);
-#pragma warn(1506)  // warning elimination 
 	Int32 i;
 	for (i=0; i<len; i++)
 	{

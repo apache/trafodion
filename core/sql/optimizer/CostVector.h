@@ -76,7 +76,6 @@ class CostVector : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline)
   virtual ~CostVector() {}
 
   // A virtual method that returns the number of entries.
@@ -287,14 +286,12 @@ j*/
 
   SimpleCostVector(const SimpleCostVector &other);
 
-// warning elimination (removed "inline")
   virtual CostVector* copy() const
     { return new(CmpCommon::statementHeap()) SimpleCostVector(*this); }
 
   // ---------------------------------------------------------------------
   // Destructor
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   ~SimpleCostVector() {}
 
   // ---------------------------------------------------------------------

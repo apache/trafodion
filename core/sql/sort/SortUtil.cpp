@@ -371,10 +371,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
   stats_.scrNumBlocks_ = tempScratch->getTotalNumOfScrBlocks();
   
  // Total memory used
-#pragma nowarn(1506)   // warning elimination 
   stats_.memSizeB_ = sortAlgo_->getRunSize()*sizeof(Record) +
   sortAlgo_->getRunSize()*sizeof(RecKeyBuffer);
-#pragma warn(1506)  // warning elimination 
 
   initialRunSize = sortAlgo_->getRunSize();
  
@@ -1231,12 +1229,8 @@ void SortUtil::setupComputations(SortUtilConfig& config)
   config_ = &config;
   config.runSize_ = 2*config.runSize_; 
   
-#pragma nowarn(1506)   // warning elimination 
     stats_.recLen_ = config.recSize_;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     stats_.runSize_ = config.runSize_;
-#pragma warn(1506)  // warning elimination 
 
 }  
 

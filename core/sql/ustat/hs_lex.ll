@@ -51,7 +51,6 @@
 #define YYPARSE_PARAM yyscan_t scanner
 #define YYLEX_PARAM scanner
 #include <errno.h>
-#pragma nowarn(1506)  //warning elimination
 
 extern "C" int isatty(int);
 
@@ -448,7 +447,5 @@ void destroy_scanner(void* &scanner)
 
 
 // LCOV_EXCL_START
-#pragma warn(1506)  //warning elimination
 // LCOV_EXCL_STOP
-#pragma nowarn(262)  //warning elimination
 

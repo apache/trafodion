@@ -353,14 +353,12 @@ public:
   // ---------------------------------------------------------------------
 
   // operator [] is used to access the children of a tree
-// warning elimination (removed "inline")
   virtual ExprGroupId & operator[] (Lng32 index)
     {
       CMPASSERT(index >= 0 AND index < MAX_REL_ARITY);
       return child_[index];
     }
 
-// warning elimination (removed "inline")
   virtual const ExprGroupId & operator[] (Lng32 index) const
     {
       CMPASSERT(index >= 0 AND index < MAX_REL_ARITY);
@@ -1175,7 +1173,6 @@ public:
                           const PartitioningFunction* partFunc,
                           NABoolean rewriteForChild0) ;
 
-// warning elimination (removed "inline")
   virtual void addPartKeyPredsToSelectionPreds(
                           const ValueIdSet& partKeyPreds,
                           const ValueIdSet& pivs)
@@ -1681,7 +1678,6 @@ class CutOp : public RelExpr
 
 public:
 
-// warning elimination (removed "inline")
   CutOp (Int32 index,
                 CollHeap *oHeap = CmpCommon::statementHeap()) :
     RelExpr(REL_CUT_OP, NULL, NULL, oHeap)
@@ -1753,7 +1749,6 @@ class WildCardOp: public RelExpr
 
 public:
 
-// warning elimination (remove "inline")
   WildCardOp(OperatorType otype,
                     Int32 designator = 0,
                     RelExpr  *child0 = NULL,

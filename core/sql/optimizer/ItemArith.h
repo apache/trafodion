@@ -57,7 +57,6 @@ class BiArith : public ItemExpr
 {
   // ITM_PLUS, ITM_MINUS, ITM_TIMES, ITM_DIVIDE, ITM_EXPONENT
 public:
-// warning elimination (removed "inline")
   BiArith(OperatorTypeEnum otype,
 	  ItemExpr *child0 = NULL,
 	  ItemExpr *child1 = NULL)
@@ -71,7 +70,6 @@ public:
   {}
 
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~BiArith() {}
  
   // accessor functions
@@ -194,7 +192,6 @@ private:
 class BiArithSum : public BiArith
 {
 public:
-// warning elimination (removed "inline")
   BiArithSum(OperatorTypeEnum otype,
 		 ItemExpr *child0 = NULL,
 		 ItemExpr *child1 = NULL)
@@ -202,7 +199,6 @@ public:
   {}
   
   // virtual destructor
-// warning elimination (removed "inline")
   virtual ~BiArithSum() {}
  
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,

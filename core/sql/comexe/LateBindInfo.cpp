@@ -99,9 +99,7 @@ NABoolean LateNameInfo::makeSQLIdentifier(char * invalue,
       if (dQuoteSeen)
 	outvalue[i] = invalue[i];
       else
-#pragma nowarn(1506)   // warning elimination 
 	outvalue[i] = TOUPPER(invalue[i]);
-#pragma warn(1506)  // warning elimination 
     }
 
   // remove trailing blanks
@@ -163,9 +161,7 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 {
   // apply defaults to invalue
   UInt32 invalueLen = str_len(invalue);
-#pragma nowarn(1506)   // warning elimination 
   Int32 i = invalueLen-1;
-#pragma warn(1506)  // warning elimination 
   Int32 j = 2;
   Int32 k = 0;
   for (; i >= 0; i--)
@@ -173,9 +169,7 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
       if (invalue[i] == '.')
 	{
 	  inVal[j] = &invalue[i+1];
-#pragma nowarn(1506)   // warning elimination 
 	  inValLen[j] = k;
-#pragma warn(1506)  // warning elimination 
 	  k = 0;
 	  j--;
 	}
@@ -183,25 +177,19 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 	k++;
     }
   inVal[j] = &invalue[i+1];
-#pragma nowarn(1506)   // warning elimination 
   inValLen[j] = k;
-#pragma warn(1506)  // warning elimination 
 
 }
 
 Long LateNameInfoList::pack(void *space)
 {
-#pragma nowarn(1506)   // warning elimination 
   lateNameInfo_.pack(space,numEntries_);
-#pragma warn(1506)  // warning elimination 
   return NAVersionedObject::pack(space);
 }
 
 Lng32 LateNameInfoList::unpack(void * base, void * reallocator)
 {
-#pragma nowarn(1506)   // warning elimination 
   if(lateNameInfo_.unpack(base,numEntries_,reallocator)) return -1;
-#pragma warn(1506)  // warning elimination 
   return NAVersionedObject::unpack(base, reallocator);
 }
 

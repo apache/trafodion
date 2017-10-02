@@ -172,7 +172,6 @@ short ExTransaction::getCurrentXnId(Int64 * tcbref, Int64 *transId,
   return retcode;
 }
 
-#pragma nowarn(262)   // warning elimination
 short ExTransaction::getCurrentTxHandle(short * txHandle)
 { 
   const short NULL_HANDLE[10] = {0,0,0,0,0,0,0,0,0,0};
@@ -183,9 +182,7 @@ short ExTransaction::getCurrentTxHandle(short * txHandle)
 
   return retcode;
 }
-#pragma warn(262)  // warning elimination 
 
-#pragma nowarn(262)   // warning elimination 
 
 // Soln 10-050210-4624
 short ExTransaction::waitForRollbackCompletion(Int64 transid)
@@ -226,9 +223,7 @@ short ExTransaction::waitForRollbackCompletion(Int64 transid)
 
   return 0;
 }
-#pragma warn(262)  // warning elimination 
 
-#pragma nowarn(262)   // warning elimination 
 
 short ExTransaction::waitForCommitCompletion(Int64 transid)
 {
@@ -263,7 +258,6 @@ short ExTransaction::waitForCommitCompletion(Int64 transid)
 
   return 0;
 }
-#pragma warn(262)  // warning elimination 
 
 static void setSpecialAIValues(Lng32 &aivalue)
 {
@@ -633,7 +627,6 @@ short ExTransaction::doomTransaction()
   return 0;
 }
 
-#pragma nowarn(770)   // warning elimination 
 void ExTransaction::cleanupTransaction()
 {
   // commit the transaction but don't do anything with errors.
@@ -646,7 +639,6 @@ void ExTransaction::cleanupTransaction()
   
   resetXnState();
 }
-#pragma warn(770)  // warning elimination
 
 short ExTransaction::commitTransaction(NABoolean waited)
 {
@@ -712,9 +704,7 @@ short ExTransaction::commitTransaction(NABoolean waited)
 
   resetXnState();
 
-#pragma nowarn(1506)   // warning elimination 
   return rc;
-#pragma warn(1506)  // warning elimination 
 }
 
 ////////////////////////////////////////////////////////////
@@ -1067,11 +1057,9 @@ ExTransTcb::ExTransTcb(const ExTransTdb & trans_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(trans_tdb.numBuffers_,
 				     trans_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // Allocate the queue to communicate with parent
   qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -1443,11 +1431,8 @@ short ExTransTcb::work()
     
     qparent_.down->removeHead();
   }  
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
-#pragma warn(262)  // warning elimination
 
 // if diagsArea is not NULL, then its error code is used.
 // Otherwise, err is used to handle error.

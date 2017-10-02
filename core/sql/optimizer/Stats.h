@@ -661,9 +661,7 @@ private:
 
   // NB: the values for these should always be >= 0 !
   // --> and if the value is extremely low (e.g., 1e-16), round it to zero
-// warning elimination (removed "inline")
   void setCardinality (CostScalar card);
-// warning elimination (removed "inline")
   void setUec (CostScalar uec);
 
   EncodedValue boundary_;      // histint boundary (upper bound)
@@ -749,7 +747,6 @@ public:
 
   // returns the # of intervals in the Histogram
   // this number will be somewhere in between 0 and entries()
-// warning elimination (removed "inline")
   CollIndex numIntervals() const
   {
     DCMPASSERT( entries() != 1 ) ; // generic Histogram sanity check
@@ -862,9 +859,7 @@ public:
   inline Interval getFirstInterval() const ;
   inline Interval getLastInterval() const ;
   inline Interval getLastNonNullInterval () const ;
-// warning elimination (removed "inline")
   Interval getNextInterval(const Interval & current) const ;
-// warning elimination (removed "inline")
   Interval getPrevInterval(const Interval & current) const ;
 
   // returns the interval #'d by index
@@ -952,7 +947,6 @@ private:
 //      developer needs to call refreshHiInt()
 // -----------------------------------------------------------------------
 
-#pragma nowarn(270)   // warning elimination
 class Interval : public NABasicObject
 {
 public:
@@ -1001,7 +995,6 @@ public:
   inline NABoolean isLast() const ;
 
   // gets/sets the uec & rowcount values
-// warning elimination (removed "inline")
   CostScalar getUec() const
   {
   OK() ;
@@ -1009,7 +1002,6 @@ public:
   return hiInt_.getUec() ;
   }
 
-// warning elimination (removed "inline")
   CostScalar getRowcount() const
   {
   OK() ;
@@ -1106,7 +1098,6 @@ public:
      return hiInt_.getMCBoundary() ;
   }
 
-// warning elimination (removed "inline")
   const EncodedValue& hiBound() const
   {
     DCMPASSERT(hiInt_ == ((*hist_)[loIndex_+1]));
@@ -1118,7 +1109,6 @@ public:
 
   // gets/sets the bounds incl values
   inline NABoolean isLoBoundInclusive() const ;
-// warning elimination (removed "inline")
   NABoolean isHiBoundInclusive() const
   {
     DCMPASSERT(hiInt_ == ((*hist_)[loIndex_+1]));
@@ -1231,8 +1221,6 @@ private:
   HistogramSharedPtr hist_ ;
   HistInt hiInt_;            // the histogram we're interfacing with
 } ;
-#pragma warn(270)  // warning elimination
-
 
 // get the next/prev Interval
 
@@ -1660,10 +1648,8 @@ public:
 private:
   // these two are private because we never want them used individually
   // ==> use the ::setRowsAndUec() routine instead
-// warning elimination (removed "inline")
   void setRowcount (CostScalar row);
 
-// warning elimination (removed "inline")
   // We have added the allowMinusOne flag to allow uecs to be 
   // initialized to minusOne. This is only used for UDFs, and the minusOne
   // is used to indicate that we do not have valid UEC information for a 
@@ -1677,7 +1663,6 @@ public:
   // See comment above as to the use of the allowMinusOne flag. 
   void setRowsAndUec (CostScalar rows, CostScalar uec, NABoolean allowMinusOne=FALSE) ;
 
-// warning elimination (removed "inline")
   void setBaseRowCount (CostScalar row);
 
   void setBaseUec(CostScalar uec);
@@ -1695,10 +1680,8 @@ public:
   // because they can legitimately become very close to zero but not equal
   // to zero (e.g., join between 2 1-billion row tables returns 1 row ==>
   // redfactor == 1e-18)
-// warning elimination (remove "inline")
   void setRedFactor (CostScalar rowred);
 
-// warning elimination (removed "inline")
   void setUecRedFactor (CostScalar uecred);
 
   // setting the flags
@@ -1737,25 +1720,19 @@ public:
   // ---------------------------------------------------------------------
 
   // is there a NULL interval in the Histogram?
-// warning elimination (removed "inline")
   NABoolean isNullInstantiated () const ;
 
   // removing that NULL interval, if it exists
-// warning elimination (removed "inline")
   void removeNullInterval () ;
 
   // inserting a NULL interval, if it doesn't already exist
-// warning elimination (removed "inline")
   void insertNullInterval () ;
 
   // reporting the number of NULLs / NULL-uecs in that interval
-// warning elimination (removed "inline")
   CostScalar getNullCount () const ;
-// warning elimination (removed "inline")
   CostScalar getNullUec ()   const ;
 
   // setting the number of NULLs and NULL-uecs in that interval
- // warning elimination (removed "inline")
   void setNullRowsAndUec (CostScalar nulls, CostScalar nullUec) ;
 
   // ---------------------------------------------------------------------

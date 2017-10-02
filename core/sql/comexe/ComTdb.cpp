@@ -255,9 +255,7 @@ void ComTdb::displayExpression(Space *space,ULng32 flag)
       for (Int32 i = 0; i < numExpressions(); i++)
 	{
 	  if (getExpressionNode(i))
-#pragma nowarn(1506)   // warning elimination 
 	    getExpressionNode(i)->displayContents(space, expressionMode_,
-#pragma warn(1506)  // warning elimination 
 						  (char *)getExpressionName(i),flag);
 	  else
 	    {
@@ -319,153 +317,115 @@ char *ComTdb::findVTblPtrCom(short classID)
 
     case ex_FIRST_N:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbFirstN);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_HASH_GRBY:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbHashGrby);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SORT_GRBY:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSortGrby);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_TRANSPOSE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTranspose);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_UNPACKROWS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbUnPackRows);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_PACKROWS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbPackRows);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SAMPLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSample);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_LEAF_TUPLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTupleLeaf);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_NON_LEAF_TUPLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTupleNonLeaf);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_COMPOUND_STMT:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbCompoundStmt);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_TUPLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTuple);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SEQUENCE_FUNCTION:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSequence);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_CONTROL_QUERY:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbControl);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_ROOT:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbRoot);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_ONLJ:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbOnlj);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_HASHJ:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbHashj);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_MJ:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbMj);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_UNION:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbUnion);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_EXPLAIN:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExplain);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
@@ -473,342 +433,256 @@ char *ComTdb::findVTblPtrCom(short classID)
 // unused feature, done as part of SQ SQL code cleanup effort
     case ex_SEQ:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSeq);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 #endif // if 0
 
     case ex_SORT:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSort);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SPLIT_TOP:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSplitTop);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SPLIT_BOTTOM:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSplitBottom);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SEND_TOP:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSendTop);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SEND_BOTTOM:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbSendBottom);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_STATS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbStats);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_STORED_PROC:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbStoredProc);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_TUPLE_FLOW:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTupleFlow);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_TRANSACTION:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTransaction);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_DDL:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbDDL);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_DDL_WITH_STATUS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbDDLwithStatus);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_DESCRIBE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbDescribe);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_EXE_UTIL:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtil);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_MAINTAIN_OBJECT:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilMaintainObject);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_LONG_RUNNING:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilLongRunning);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_DISPLAY_EXPLAIN:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilDisplayExplain);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_DISPLAY_EXPLAIN_COMPLEX:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilDisplayExplainComplex);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_LOAD_VOLATILE_TABLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilLoadVolatileTable);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_PROCESS_VOLATILE_TABLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbProcessVolatileTable);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_CLEANUP_VOLATILE_TABLES:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilCleanupVolatileTables);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_GET_VOLATILE_INFO:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetVolatileInfo);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_PROCESS_INMEMORY_TABLE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbProcessInMemoryTable);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_CREATE_TABLE_AS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilCreateTableAs);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_FAST_DELETE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilFastDelete);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_HIVE_TRUNCATE:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilHiveTruncate);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_GET_STATISTICS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetStatistics);
-#pragma warn(1506)  // warning elimination 
       break;
     }
  case ex_LOB_INFO:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilLobInfo);
-#pragma warn(1506)  // warning elimination 
       break;
     }
    case ex_GET_METADATA_INFO:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetMetadataInfo);
-#pragma warn(1506)  // warning elimination 
       break;
     }
     
    case ex_GET_HIVE_METADATA_INFO:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetHiveMetadataInfo);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_GET_UID:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetUID);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_GET_QID:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetQID);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_POP_IN_MEM_STATS:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilPopulateInMemStats);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_SET_TIMEOUT:  
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbTimeout);
-#pragma warn(1506)  // warning elimination 
       break;
     }
     case ex_FAST_EXTRACT:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbFastExtract);
-#pragma warn(1506)  // warning elimination
       break;
     }
     case ex_UDR:
     {
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbUdr);
-#pragma warn(1506)  // warning elimination 
       break;
     }
 
     case ex_PROBE_CACHE:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbProbeCache);
-#pragma warn(1506)  // warning elimination
       break;
     }
     
     case ex_CANCEL:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbCancel);
-#pragma warn(1506)  // warning elimination
       break;
     }
 
   case ex_SHOW_SET:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbExeUtilShowSet);
-#pragma warn(1506)  // warning elimination
       break;
     }
 
   case ex_AQR:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbExeUtilAQR);
-#pragma warn(1506)  // warning elimination
       break;
     }
 
   case ex_GET_ERROR_INFO:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbExeUtilGetErrorInfo);
-#pragma warn(1506)  // warning elimination
       break;
     }
 
   case ex_HDFS_SCAN:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbHdfsScan);
-#pragma warn(1506)  // warning elimination
     }
     break;
 
   case ex_HIVE_MD_ACCESS:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbExeUtilHiveMDaccess);
-#pragma warn(1506)  // warning elimination
     }
     break;
 
@@ -826,9 +700,7 @@ char *ComTdb::findVTblPtrCom(short classID)
 
   case ex_ARQ_WNR_INSERT:
     {
-#pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbExeUtilAqrWnrInsert);
-#pragma warn(1506)  // warning elimination
       break;
     }
 

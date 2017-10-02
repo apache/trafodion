@@ -104,10 +104,8 @@ bool ApplicationFile::mxcmpModule(char *mdf)
   mxcmp = mxcmp ? mxcmp : DEFAULT_MXCMP;
   // make sure we have enough space for the mxcmp invocation string
   assert(args_ != NULL);
-#pragma nowarn(1506)   // warning elimination 
   Int32 cmdLen = strlen(mxcmp)+args_->application().length()+
     args_->otherArgs().length()+strlen(mdf)+7;
-#pragma warn(1506)  // warning elimination 
   // for efficiency we try to use the stack-allocated cmd variable.
   // but, no matter how big we declare it, eg: char cmd[12345],
   // it is always possible for someone like QA try something like

@@ -555,11 +555,9 @@ ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
     cs = ((SimpleType *)getOperand(1))->getIsoMapping();
 
   // get length of operands
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
   Lng32 len3 = 0;
-#pragma warn(1506)  // warning elimination 
   if ( cs == CharInfo::UTF8 )
   {
      Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
@@ -578,9 +576,7 @@ ex_expr::exp_return_type ex_like_clause_char::eval(char *op_data[],
     escapeChar = NULL;
   else {
     // get length of escape character
-#pragma nowarn(1506)   // warning elimination 
     len3 = getOperand(3)->getLength(op_data[-MAX_OPERANDS+3]);
-#pragma warn(1506)  // warning elimination 
     if ( cs == CharInfo::UTF8 )
     {
        Int32 prec3 = ((SimpleType *)getOperand(3))->getPrecision();
@@ -682,10 +678,8 @@ ex_expr::exp_return_type ex_like_clause_doublebyte::eval(char *op_data[],
                                                          ComDiagsArea** diagsArea)
 {
   // get length of operands
-#pragma nowarn(1506)   // warning elimination 
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
   Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-#pragma warn(1506)  // warning elimination 
 
   NAWchar wPercentChar = 0;
   NAWchar wUnderScoreChar = 0;
@@ -726,13 +720,11 @@ ex_expr::exp_return_type ex_like_clause_doublebyte::eval(char *op_data[],
     }
   }
 
-#pragma nowarn(1506)   // warning elimination 
   LikePatternString patternString(op_data[2], (UInt16)len2, 
     getOperand(1)->getCharSet(), escapeChar, BYTES_PER_NAWCHAR,
     (char*)&wUnderScoreChar, BYTES_PER_NAWCHAR,
     (char*)&wPercentChar, BYTES_PER_NAWCHAR
     );
-#pragma warn(1506)  // warning elimination 
   LikePattern pattern(patternString, exHeap, CharInfo::UNICODE);
   if (pattern.error()) {
     ExRaiseSqlError(exHeap, diagsArea, EXE_INVALID_ESCAPE_SEQUENCE);

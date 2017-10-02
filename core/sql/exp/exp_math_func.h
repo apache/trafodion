@@ -42,7 +42,6 @@
 #include "exp_clause.h"
 #include "exp_clause_derived.h"
 
-#pragma warning ( disable : 4251 )
 
 class ex_function_abs : public ex_function_clause {
 public:
@@ -169,6 +168,5 @@ public:
   // ---------------------------------------------------------------------
 };
 
-#pragma warning ( default : 4251 )
 
 #endif

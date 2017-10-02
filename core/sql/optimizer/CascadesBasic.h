@@ -82,7 +82,6 @@ class HashValue : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline")
   HashValue(ULng32 v = 0x0) { val_ = v; }
 
   inline NABoolean operator == (const HashValue &other)

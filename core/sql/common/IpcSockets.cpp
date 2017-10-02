@@ -76,9 +76,7 @@ typedef size_t length_t;
 // comment this out once NAHeap.h is in common
 // #include "NAHeap.h"
 // for now declare overloaded operator new here
-#pragma warning (disable : 4273)   //warning elimination
 void * operator new(size_t size, CollHeap* h);
-#pragma warning (default : 4273)   //warning elimination
 
 
 #ifdef DISABLE_SOCKET_IPC
