@@ -527,9 +527,9 @@ OptTriggersBackbone::~OptTriggersBackbone()
     {
       OptTriggerPtr optTrigger = (*triggerList_)[i];
       // exclude coverage - we don't seem to handle macro expansion very well
-      NADELETEBASIC(optTrigger, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+      NADELETEBASIC(optTrigger, CmpCommon::statementHeap());
     }
-    NADELETEBASIC(triggerList_, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+    NADELETEBASIC(triggerList_, CmpCommon::statementHeap());
   }
 
   if (triggerGroups_)
@@ -537,9 +537,9 @@ OptTriggersBackbone::~OptTriggersBackbone()
     for (CollIndex i = 1; i < triggerGroups_->entries(); i++)
     {
       OptTriggerGroup *optGroup = (*triggerGroups_)[i];
-      NADELETE(optGroup, OptTriggerGroup, (CmpCommon::statementHeap())); // LCOV_EXCL_LINE
+      NADELETE(optGroup, OptTriggerGroup, (CmpCommon::statementHeap()));
     }
-    NADELETEBASIC(triggerGroups_, CmpCommon::statementHeap()); // LCOV_EXCL_LINE
+    NADELETEBASIC(triggerGroups_, CmpCommon::statementHeap());
   }
 
 }
@@ -874,9 +874,7 @@ void
 OptTriggersBackbone::reorder()
 {
   CollIndex idx;
-#pragma nowarn(1506)   // warning elimination 
   Int32 triggerArraySize = triggerList_->entries();
-#pragma warn(1506)  // warning elimination 
   // optTriggerPtrArray - array of pointers to OptTrigger , used for qsort
   OptTriggerPtr *optTriggerPtrArray = new(CmpCommon::statementHeap()) 
     OptTriggerPtr[triggerArraySize];
@@ -921,7 +919,7 @@ OptTriggersBackbone::reorder()
 
   // free the temporary array
   // exclude coverage - we don't seem to handle macro expansion very well
-  NADELETEBASIC(optTriggerPtrArray, (CmpCommon::statementHeap())); // LCOV_EXCL_LINE
+  NADELETEBASIC(optTriggerPtrArray, (CmpCommon::statementHeap()));
 }
 
 //-----------------------------------------------------------------------------------
@@ -1237,16 +1235,11 @@ OptTriggersBackbone::toTree()
 
 void OptTriggersBackbone::forceCardinalityAsIud(RelExpr *expr) const
 {
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (disable : 4244)   //warning elimination
-
   CostScalar card =
     getIudDrivingNode()->getGroupAttr()->getResultCardinalityForEmptyInput();
   expr->getInliningInfo().BuildForceCardinalityInfo(1.0, // factor ignored
 						    card.getValue(),
 						    CmpCommon::statementHeap());
-#pragma warning (default : 4244)   //warning elimination
-#pragma warn(1506)  // warning elimination 
 }
 
 //-----------------------------------------------------------------------------------

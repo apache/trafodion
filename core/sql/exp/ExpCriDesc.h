@@ -41,7 +41,6 @@
 class ExpTupleDesc;
 class ex_cri_desc;
 
-#include "SqlExpDllDefines.h"
 #include "NAVersionedObject.h"
 #include "exp_tuple_desc.h"
 
@@ -63,9 +62,8 @@ typedef NAVersionedObjectPtrTempl<ex_cri_desc> ExCriDescPtr;
 // pointers. The cri_desc describes the each of the tupps pointed to.
 //
 
-#pragma warning( disable : 4251 )
 
-class SQLEXP_LIB_FUNC   ex_cri_desc : public NAVersionedObject
+class ex_cri_desc : public NAVersionedObject
 {
   enum {PACKED = 0x0001};
 
@@ -81,45 +79,41 @@ class SQLEXP_LIB_FUNC   ex_cri_desc : public NAVersionedObject
   char               fillers_[10];      // 14-23
 
 public:
-NA_EIDPROC 
+
   ex_cri_desc(const unsigned short numTuples, void * space_); //constructor
 
-NA_EIDPROC
   ex_cri_desc() : NAVersionedObject(-1), numTuples_(0) {}
 
-NA_EIDPROC 
+
   inline unsigned short noTuples() const;
-NA_EIDPROC 
+
   inline ExpTupleDesc * getTupleDescriptor(const unsigned short tupleNo) const;
-NA_EIDPROC 
+
   inline void setTupleDescriptor(const unsigned short tupleNo, ExpTupleDesc * tupleDesc);
   
-NA_EIDPROC 
+
   Long pack(void *);
-NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
 
-NA_EIDPROC
   void display(const char* title = "");
   
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 };  // descriptor for cri
 
-#pragma warning( default : 4251 )
 
 inline unsigned short ex_cri_desc::noTuples() const
 {

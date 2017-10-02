@@ -79,62 +79,61 @@ class ExpBitMuxFunction;
 // expression evaluation engine -- a large performance gain.
 //
 
-#pragma warning ( disable : 4251 )
 
 // ExpBitMuxFunction declaration
 //
-class SQLEXP_LIB_FUNC  ExpBitMuxFunction : public ex_function_clause {
+class ExpBitMuxFunction : public ex_function_clause {
 public:
   // Construction - this is the "real" constructor
   //
-  NA_EIDPROC ExpBitMuxFunction(OperatorTypeEnum oper_type,
+  ExpBitMuxFunction(OperatorTypeEnum oper_type,
 			       Int32 arity,
 			       Attributes ** attr,
 			       Space * space);
   // This constructor is used only to get at the virtual function table.
   //
-  NA_EIDPROC ExpBitMuxFunction();
+  ExpBitMuxFunction();
 
 
   // isNullInNullOut - Must redefine this virtual function to return 0
   // since a NULL input does not simply produce a NULL output.
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
 
   // isNullRelevant - Must redefine this virtual function to return 0
   // since all the work is done in eval and none in processNulls.
   //
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // eval - Must redefine eval to compute the BitMuxing function.
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
 					   ComDiagsArea** =0);
 
   // pack - Must redefine pack.
-  NA_EIDPROC Long pack(void *);
+  Long pack(void *);
 
   // pCodeGenerate - Must redefine pCodeGenerate the produce specific
   // PCODE instructions for BitMuxing.
   //
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space,
+  ex_expr::exp_return_type pCodeGenerate(Space *space,
 						    UInt32 f);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_function_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
   // There are no private members.
@@ -143,7 +142,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif
 

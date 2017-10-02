@@ -123,6 +123,25 @@ void CExtTmLeaderReq::performRequest()
 
             process = Nodes->GetLNode(tmLeaderNid)->GetProcessLByType( ProcessType_DTM );
 
+            if (!process)
+            {
+                int pnid = Nodes->GetLNode(tmLeaderNid)->GetNode()->GetPNid();
+
+                // If there is a Regroup in progress in the sync thread, 
+                // wait until it is completed. 
+                if ( !Emulate_Down )
+                {
+                    Monitor->EnterSyncCycle();
+                }
+                Monitor->AssignTmLeader( pnid, true );
+                tmLeaderNid = Monitor->GetTmLeader();
+                process = Nodes->GetLNode(tmLeaderNid)->GetProcessLByType( ProcessType_DTM );
+                if ( !Emulate_Down )
+                {
+                    Monitor->ExitSyncCycle();
+                }
+            }
+
             assert(process); 
 
             // populate the TM leader process info

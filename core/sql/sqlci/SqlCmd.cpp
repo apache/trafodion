@@ -96,15 +96,9 @@ const Int32  MAX_OTHERBUF_LEN = ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1+1;
 #define SELECTED_MESSAGE	"--- %d row(s) selected."
 #define SELECTED_BUT_MESSAGE	"--- %d row(s) selected (but none displayed)."
 #define SELECTED_FIRST_ROW_DISPLAY_MESSAGE "--- %d row(s) selected (and first row displayed)."
-#ifdef NA_64BIT
 #define INSERTED_MESSAGE	"--- %ld row(s) inserted."
 #define UPDATED_MESSAGE		"--- %ld row(s) updated."
 #define DELETED_MESSAGE		"--- %ld row(s) deleted."
-#else
-#define INSERTED_MESSAGE	"--- %Ld row(s) inserted."
-#define UPDATED_MESSAGE		"--- %Ld row(s) updated."
-#define DELETED_MESSAGE		"--- %Ld row(s) deleted."
-#endif // NA_64BIT
 #define OP_COMPLETE_MESSAGE	"--- SQL operation complete."
 #define OP_COMPLETED_ERRORS	"--- SQL operation failed with errors."
 #define OP_COMPLETED_WARNINGS	"--- SQL operation completed with warnings."
@@ -365,7 +359,7 @@ void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
 		    const char *outtext = msgtext;
 		    size_t pfxl = strlen("*** ERROR[20109] ");
 		    
-#if defined(USE_WCHAR) && !defined(NA_NSK)
+#if defined(USE_WCHAR)
 		    if (wcsncmp(msgtext, L"*** ERROR[20109] ", pfxl) == 0)
 #else
 		      if (strncmp(msgtext,  "*** ERROR[20109] ", pfxl) == 0)
@@ -457,10 +451,8 @@ void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env)
   lastLineWasABlank = TRUE;
 
   ostringstream errMsg;
-#pragma nowarn(1506)   // warning elimination 
   NADumpDiags(errMsg, &diags, TRUE/*newline*/, 0, NULL, log->isVerbose(),
               sqlci_env->getTerminalCharset());
-#pragma warn(1506)  // warning elimination 
 
   errMsg << ends;
 
@@ -471,9 +463,7 @@ static char * upshiftStr(char * inStr, char * outStr, UInt32 len)
 {
   for (UInt32 i = 0; i < len; i++)
     {
-#pragma nowarn(1506)
       outStr[i] = toupper(inStr[i]);
-#pragma warn(1506)
     }
 
   return outStr;
@@ -751,7 +741,7 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   char * queryBuf = new char[4000];
 
   Int64 ts = NA_JulianTimestamp();
-  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, CONVERTTIMESTAMP(%Ld), '%s', '' ) ",
+  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, CONVERTTIMESTAMP(%ld), '%s', '' ) ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE,
               ts, queryId);
 
@@ -889,9 +879,7 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
   stmt->version = SQLCLI_CURRENT_VERSION;
   stmt->name_mode = stmt_name;
   char * identifier = new char[strlen(stmtName) + 1];
-#pragma nowarn(1506)   // warning elimination 
   stmt->identifier_len = strlen(stmtName);
-#pragma warn(1506)  // warning elimination 
   str_cpy_all(identifier,stmtName, stmt->identifier_len);
   identifier[stmt->identifier_len] = 0;
   stmt->identifier = identifier;
@@ -961,9 +949,7 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
                                  0, (char*)CharInfo::getCharSetName(sqlci_env->getTerminalCharset()));
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_VAR_PTR, (Long)str, 0);
   HandleCLIError(retcode, sqlci_env);
-#pragma nowarn(1506)   // warning elimination 
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_LENGTH, strlen(str) + 1, 0);
-#pragma warn(1506)  // warning elimination 
   HandleCLIError(retcode, sqlci_env);
 
   SQL_QUERY_COST_INFO queryCostInfo;
@@ -1506,9 +1492,7 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 	    param = sqlci_env->get_paramlist()->get(param_name);
 	  }
 	  else if (isUnnamed) {
-#pragma nowarn(1506)   // warning elimination 
 	    short entryOffset = entry - num_named_params;
-#pragma warn(1506)  // warning elimination 
 	    sprintf(param_name, "(UNNAMED_%hd)", entryOffset);
 	    if (numUnnamedParams > 0) {
 	      if (entryOffset <= numUnnamedParams) {
@@ -1952,7 +1936,6 @@ short SqlCmd::getHeadingInfo(SqlciEnv * sqlci_env,
 
   return 0;
 }
-#pragma nowarn(770)  // warning elimination 
 short SqlCmd::displayHeading(SqlciEnv * sqlci_env,
 			     PrepStmt * prep_stmt)
 {
@@ -2005,7 +1988,6 @@ short SqlCmd::displayHeading(SqlciEnv * sqlci_env,
 
   return 0;
 }
-#pragma warn(770)  // warning elimination 
 
 Lng32 SqlCmd::displayRow(SqlciEnv * sqlci_env,
 			 PrepStmt * prep_stmt)
@@ -2463,9 +2445,7 @@ short SqlCmd::executeQuery(const char *query, SqlciEnv *sqlci_env)
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_TYPE_FS,
 				 REC_BYTE_V_ANSI, 0);
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination 
 				 strlen(query) + 1, 0);
-#pragma warn(1506)  // warning elimination 
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_CHAR_SET_NAM,
 				 0,(char*)CharInfo::getCharSetName(sqlci_env->getTerminalCharset()));
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_VAR_PTR,
@@ -2495,11 +2475,7 @@ short SqlCmd::executeQuery(const char *query, SqlciEnv *sqlci_env)
 
 short SqlCmd::setEnviron(SqlciEnv *sqlci_env, Lng32 propagate)
 {
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   short rc = SQL_EXEC_SetEnviron_Internal(propagate);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
   return rc;
 }
 
@@ -2816,21 +2792,6 @@ QueryCacheSt::QueryCacheSt(short option)
   option_(option)
 {}
 
-GoAway::GoAway(const char *tableName)
-: SqlCmd(SqlCmd::GOAWAY_TYPE, NULL)
-{
-  if (tableName)
-    {
-      tableName_ = new char[strlen(tableName)+1];
-      strcpy(tableName_, tableName);
-    }
-}
-
-GoAway::~GoAway()
-{
-}
-
-
 short SqlCmd::deallocate(SqlciEnv * sqlci_env, PrepStmt * prep_stmt)
 {
   Lng32 retcode;
@@ -2866,11 +2827,7 @@ short SqlCmd::deallocate(SqlciEnv * sqlci_env, PrepStmt * prep_stmt)
   if (prep_stmt)
     delete prep_stmt;
 
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   return retcode;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 }
 
 
@@ -2879,7 +2836,6 @@ short SqlCmd::deallocate(SqlciEnv * sqlci_env, PrepStmt * prep_stmt)
 // ::process() methods
 /////////////////////////////////////////////////////////////////
 
-#pragma nowarn(770)   // warning elimination 
 short DML::process(SqlciEnv * sqlci_env)
 {
   Lng32 retcode = 0, prepcode = 0, retcodeExe = 0;
@@ -3030,7 +2986,6 @@ short DML::process(SqlciEnv * sqlci_env)
         return 0;
     } 
 } // end DML::process
-#pragma warn(770)   // warning elimination 
 
 
 /////////////////////////////////////////////
@@ -3361,7 +3316,6 @@ short StoreExplain::process(SqlciEnv * sqlci_env)
 /// Begin Execute
 ///////////////////////////////////////////
 
-#pragma nowarn(770)   // warning elimination 
 short Execute::process(SqlciEnv * sqlci_env)
 {
   Lng32 retcode;
@@ -3390,7 +3344,6 @@ short Execute::process(SqlciEnv * sqlci_env)
 
   return 0;
 }
-#pragma warn(770)  // warning elimination 
 
 //////////////////////////////////////////
 // Begin Cursor
@@ -4047,15 +4000,6 @@ short QueryCacheSt::process(SqlciEnv * sqlci_env)
    delete query;
 
  return (short) retcode;
-}
-
-//////////////////////////////////////////
-// begin GOAWAY
-//////////////////////////////////////////
-
-short GoAway::process(SqlciEnv * sqlci_env)
-{
-  return 0;
 }
 
 //////////////////////////////////////////

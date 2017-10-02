@@ -165,12 +165,10 @@ NABoolean ExprValueId::operator== (const ItemExpr *other) const
 {
   return getPtr() == other;
 }
- // LCOV_EXCL_START
 NABoolean ExprValueId::operator== (const ValueId &other) const
 {
   return (getValueId() == other);
 }
- // LCOV_EXCL_STOP
 
 ValueId ExprValueId::getValueId() const
 {
@@ -182,7 +180,6 @@ ValueId ExprValueId::getValueId() const
   else
     return exprId_;
 }
- // LCOV_EXCL_START
 void ExprValueId::convertToMemoized()
 {
   // set this mode to prevent updates to it: a MEMOIZED object cannot
@@ -194,7 +191,6 @@ void ExprValueId::convertToStandalone()
 {
   exprMode_ = STANDALONE;
 }
- // LCOV_EXCL_STOP
 
 ItemExpr * ExprValueId::getPtr() const
 {
@@ -274,7 +270,6 @@ ItemExpr::~ItemExpr()
   (*counter_).decrementCounter();
 }
 
- // LCOV_EXCL_START
 void ItemExpr::transformToRelExpr(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
@@ -284,7 +279,6 @@ void ItemExpr::transformToRelExpr(NormWA & normWARef,
    locationOfPointerToMe = this;
 
 }
- // LCOV_EXCL_STOP
 
 // operator[] is used to access the children of a tree
 ExprValueId & ItemExpr::operator[] (Lng32 index)
@@ -303,7 +297,6 @@ NABoolean ItemExpr::operator== (const ItemExpr& other) const	// virtual meth
 {
   return (getValueId() == other.getValueId());
 }
- // LCOV_EXCL_START
 void ItemExpr::deleteInstance()
 {
   Int32 nc = getArity();
@@ -311,7 +304,6 @@ void ItemExpr::deleteInstance()
     inputs_[i] = NULL;
   delete this;
 } // ItemExpr::deleteInstance()
- // LCOV_EXCL_STOP
 
 
 void ItemExpr::setChild(Lng32 index, ExprNode * newChild)
@@ -425,7 +417,7 @@ NABoolean ItemExpr::referencesTheGivenValue(const ValueId & vid,
       InstantiateNull *inst = (InstantiateNull *)nie->castToItemExpr();
 
       if (doNotDigInsideInstNulls)
-        return FALSE; // LCOV_EXCL_LINE
+        return FALSE;
       else
       {
         // Need to dig underneath the instantiate null to check if
@@ -808,12 +800,10 @@ ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr,
             }
           else
             { // XXX print warning for now.
-              // LCOV_EXCL_START
 #ifdef DEBUG
               fprintf(stderr, "ItemExpr::createMirrorPred(): Didn't find any references to valueId: %d\n", tempV);
 #endif
               return NULL; 
-              // LCOV_EXCL_STOP
             }
           // now we want to replace the reference to the key column in the compExpr with the keyColExpr
 
@@ -1269,7 +1259,7 @@ ItemExpr * ItemExpr::copyTopNode(ItemExpr *derivedNode,
 
   if (derivedNode == NULL)
     {
-      ABORT("encountered an instantiation of an ItemExpr object"); // LCOV_EXCL_LINE
+      ABORT("encountered an instantiation of an ItemExpr object");
     }
   else
     result = derivedNode;
@@ -1368,14 +1358,10 @@ ItemExpr * ItemExpr::transformMultiValuePredicate(	     // virtual method
 
 NABoolean ItemExpr::containsAnAggregate() const
 {
-#pragma warning (disable : 4018)   //warning elimination
   for (Int32 i=0; i<getArity(); i++)
   {
-#pragma warning (default : 4018)   //warning elimination
-#pragma nowarn(1506)   // warning elimination
     if (child(i)->containsAnAggregate())
       return TRUE;
-#pragma warn(1506)  // warning elimination
   }
   return FALSE;
 }
@@ -1557,7 +1543,6 @@ Lng32 ItemExpr::getTreeSize(Lng32& maxDepth, NABoolean giveUpThreshold)
   return currentSize;
 }
 
-// LCOV_EXCL_START : cnu
 // Find all eqaulity columns in an item expression tree.
 void ItemExpr::findEqualityCols(ValueIdSet& result)
 {
@@ -1594,7 +1579,6 @@ void ItemExpr::findEqualityCols(ValueIdSet& result)
     child(1)->findEqualityCols(result);
   }
 }
-// LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::treeWalk(ItemTreeWalkFunc f,
                               CollHeap *outHeap,
@@ -1742,7 +1726,6 @@ ValueId ItemExpr::mapAndRewriteCommon(ValueIdMap &map, NABoolean mapDownwards)
   return result;
 } // ItemExpr::mapAndRewriteCommon
 
-// LCOV_EXCL_START : cnu
 ItemExpr * ItemExpr::foldConstants(ComDiagsArea *diagsArea,
 				   NABoolean newTypeSynthesis)
 {
@@ -1779,7 +1762,6 @@ ItemExpr * ItemExpr::foldConstants(ComDiagsArea *diagsArea,
 
   return result;
 }
- // LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::applyInverseDistributivityLaw(
      OperatorTypeEnum backboneType,
@@ -1915,11 +1897,9 @@ ItemExpr * ItemExpr::connect2(OperatorTypeEnum op,
     case ITM_AND:
     case ITM_OR:
       return new(CmpCommon::statementHeap()) BiLogic(op, op1, op2);
-// LCOV_EXCL_START : cnu
     default:
       CMPASSERT("Operator type not supported by connect2" == 0);
       return NULL;
-// LCOV_EXCL_STOP
     }
 }
 
@@ -2248,7 +2228,6 @@ NABoolean ItemExpr::maxSelectivitySameAsSelectivity() const
     }
   return FALSE; 
 }
-// LCOV_EXCL_START
 void ItemExpr::print(FILE * f,
 		     const char * prefix,
 		     const char * suffix) const
@@ -2286,7 +2265,6 @@ void ItemExpr::display()
   unparse(result, PARSER_PHASE, USER_FORMAT_DELUXE);
   fprintf(stdout, "%s\n", result.data());
 }
-// LCOV_EXCL_STOP
 
 
 //
@@ -2661,7 +2639,7 @@ void ItemExpr::unparse(NAString &result,
           if (child(0))
             child(0)->unparse(result, phase,form, tabId);
           else
-            result += "NULL"; // LCOV_EXCL_LINE
+            result += "NULL";
 
           if (operatorType == ITM_POSITION)
             result += " IN ";
@@ -2671,7 +2649,7 @@ void ItemExpr::unparse(NAString &result,
           if (child(1))
             child(1)->unparse(result, phase, form, tabId);
           else
-            result += "NULL"; // LCOV_EXCL_LINE
+            result += "NULL";
           result += ")";
           break;
         } // STDDEV, MOD, VARIANCE
@@ -4653,14 +4631,12 @@ NABoolean ValueIdUnion::isCovered(const ValueIdSet& newExternalInputs,
   for(CollIndex i = 0; i < entries(); i++)
   {
     localSubExpr.clear();
-#pragma nowarn(1506)   // warning elimination
     if (coveringGA.covers(getSource(i), newExternalInputs,
 			  referencedInputs, &localSubExpr) )
       {
 	coveredSubExpr += getSource(i);
         break;
       }
-#pragma warn(1506)  // warning elimination
   }
 
   // ---------------------------------------------------------------------
@@ -4741,9 +4717,7 @@ HashValue ValueIdUnion::topHash()
   // hash any local data members of the derived class
   for(CollIndex i = 0; i < entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     result ^= getSource(i);
-#pragma warn(1506)  // warning elimination
   }
 
   result ^= result_;
@@ -4764,10 +4738,8 @@ NABoolean ValueIdUnion::duplicateMatch(const ItemExpr & other) const
   // and return FALSE if they don't match
   for(CollIndex i = 0; i < entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     if (getSource(i) != o.getSource(i))
       return FALSE;
-#pragma warn(1506)  // warning elimination
   }
 
   if (result_ != o.result_ || flags_ != o.flags_)
@@ -7264,7 +7236,6 @@ ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 // -----------------------------------------------------------------------
 // member functions for class Function
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 Function::Function(OperatorTypeEnum otype,
                    NAMemory *h,
 		   Lng32   argumentCount,
@@ -7302,16 +7273,13 @@ Function::Function(OperatorTypeEnum otype,
       children_.insertAt(i, childx);
     } // end for
 }
-#pragma warn(262)  // warning elimination
 
 Function::Function(OperatorTypeEnum otype, const LIST(ItemExpr *) &children, 
                    CollHeap *h)
          : ItemExpr(otype),
 	   children_(h)
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = children.entries();
-#pragma warn(1506)  // warning elimination
 
   for (Lng32 i = 0; i < ne; i++)
     {
@@ -7323,9 +7291,7 @@ Function::~Function() {}
 
 Lng32 Function::getNumChildren() const
 {
-#pragma nowarn(1506)   // warning elimination
   Lng32 count = children_.entries();
-#pragma warn(1506)  // warning elimination
   // $$$$ Skip all the NULL children at the tail end.
   // $$$$ Assumes children that are missing in the middle
   // $$$$ should figure in the count, e.g., F(a, NULL, b, NULL, NULL)
@@ -7345,9 +7311,7 @@ ItemExpr * Function::copyTopNode(ItemExpr * derivedNode, CollHeap* outHeap)
   result->allowsSQLnullArg() = allowsSQLnullArg();
 
   // Make sure we copy the kids as well.
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = children_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 i = 0; i < ne; i++)
     result->children_.insertAt(i, children_[i]);
 
@@ -9039,7 +9003,6 @@ Lng32 RangeLookup::splitKeysLen()
     partFunc_->getRangePartitionBoundaries()->getEncodedBoundaryKeyLength();
 }
 
-#pragma nowarn(770)   // warning elimination
 void RangeLookup::copySplitKeys(char *tgt, Lng32 tgtLen)
 {
   CMPASSERT(tgtLen = splitKeysLen());
@@ -9057,7 +9020,6 @@ void RangeLookup::copySplitKeys(char *tgt, Lng32 tgtLen)
       offset += entryLen;
     }
 }
-#pragma warn(770)  // warning elimination
 
 Lng32 RangeLookup::getNumOfPartitions()
 {
@@ -9155,9 +9117,7 @@ void PackFunc::deriveFormatInfoFromUnpackType(const NAType* unpackType)
   // For bit precision integers, width needs to be in negative no of bits.
   if(unpackType->getFSDatatype() == REC_BPINT_UNSIGNED)
   {
-#pragma nowarn(1506)   // warning elimination
     width_ = ((SQLBPInt*)unpackType)->getDeclaredLength();
-#pragma warn(1506)  // warning elimination
     dataSizeInBytes = (width_*pf-1)/8+1;
     width_ = -width_;
   }
@@ -9973,7 +9933,6 @@ ConstValue::ConstValue()
 }
 
 // constructor for a numeric constant
-#pragma nowarn(262)   // warning elimination
 ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
@@ -9997,7 +9956,6 @@ ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
   // copy the bit pattern as is
   memcpy(value_,(void *)(&intval),(Int32)storageSize_);
 }
-#pragma warn(262)  // warning elimination
 
 ConstValue::ConstValue(const NAString & strval,
              enum CharInfo::CharSet charSet,
@@ -10075,9 +10033,7 @@ void ConstValue::initCharConstValue
 			charSet, collation, coercibility);
 
 
-#pragma nowarn(1506)   // warning elimination
       storageSize_ = strval.length();
-#pragma warn(1506)  // warning elimination
       value_ = (void *)( new (outHeap)
 			 char[storageSize_] );
       memcpy(value_, (void *)(strval.data()), (Int32)storageSize_);
@@ -10162,9 +10118,7 @@ void ConstValue::initCharConstValue(const NAWString& strval,
 		SQLChar(outHeap, num_of_chars, FALSE, FALSE, FALSE, FALSE,
 			charSet, collation, coercibility);
 
-#pragma nowarn(1506)   // warning elimination
       storageSize_ = cachedBPC * strval.length();
-#pragma warn(1506)  // warning elimination
       value_ = (void *)( new (outHeap) 
 			 NAWchar[storageSize_] );
       memcpy(value_, (void *)(strval.data()), (Int32)storageSize_);
@@ -10536,9 +10490,7 @@ void ConstValue::changeStringConstant(const NAString* strval)
      value_ = (void *)( new (CmpCommon::statementHeap()) char[storageSize_] );
      str_pad((char *)value_, (Int32)storageSize_, '\0');
    } else {
-#pragma nowarn(1506)   // warning elimination
      storageSize_ = strval -> length();
-#pragma warn(1506)  // warning elimination
      value_ = (void *)( new (CmpCommon::statementHeap()) char[storageSize_] );
      memcpy(value_,(void *)(strval -> data()),(Int32)storageSize_);
    }
@@ -12254,7 +12206,6 @@ ConstValue * Cast::castToConstValue(NABoolean & negate_it)
   return child(0)->castToConstValue(negate_it);
 }
 
-#pragma nowarn(262)   // warning elimination
 ItemExpr * Cast::foldConstants(ComDiagsArea * diagsArea,
 			       NABoolean newTypeSynthesis)
 {
@@ -12281,7 +12232,6 @@ ItemExpr * Cast::foldConstants(ComDiagsArea * diagsArea,
 
   return ItemExpr::foldConstants(diagsArea,newTypeSynthesis);
 }
-#pragma warn(262)  // warning elimination
 
 NABoolean Cast::isCovered
                    (const ValueIdSet& newExternalInputs,
@@ -14810,121 +14760,9 @@ NABoolean ItemExpr::isARangePredicate() const
 }
 
 
-
-// -----------------------------------------------------------------------
-// member functions for AuditImage
-// -----------------------------------------------------------------------
-AuditImage:: AuditImage(const CorrName &objectName,
-			ItemExpr    *columnValueList)
-                  : objectName_(objectName),
-		    naTable_(NULL),
-		    columnTypeList_(CmpCommon::statementHeap()),
-                    Function(ITM_AUDIT_IMAGE, FALSE /* not a leaf node */)
-{
-
-  // The parser generates a ItemList for the column value arguments.
-
-  // If there is only one item, then a ItemList is not generated.
-  // In that case, set that value as AuditImage's child.
-  if (columnValueList->getOperatorType() != ITM_ITEM_LIST)
-    {
-      children().insertAt(0, (columnValueList));
-    }
-  else
-    {
-
-      // Assert that the columnValueList is of type ItemList.
-      CMPASSERT(columnValueList->getOperatorType() == ITM_ITEM_LIST);
-
-      // Collect all the leaf nodes from the (ItemList) columnList
-      // into a list and set each leaf as a child of AuditImage.
-
-      ExprValueIdList *list = ((ItemList *)columnValueList)->collectLeaves(
-             CmpCommon::statementHeap());
-      const ULng32 num = list->entries();
-
-      for (ULng32 i = 0; i < num; i++)
-	{
-	  children().insertAt(i, (*(*list)[i]));
-	}
-    }
-}
-
-AuditImage::~AuditImage() {}
-
-Int32 AuditImage::getArity() const
-{
-  return Function::getNumChildren();
-}
-
-HashValue AuditImage::topHash()
-{
-  HashValue result = ItemExpr::topHash();
-
-  // hash any local data members of the derived class
-  result ^= objectName_.getQualifiedNameAsString();
-
-  return result;
-}
-
-NABoolean AuditImage::duplicateMatch(const ItemExpr & other) const
-{
-  if (NOT genericDuplicateMatch(other))
-    return FALSE;
-
-  AuditImage &o = (AuditImage &) other;
-
-  // compare any local data members of the derived class
-  // and return FALSE if they don't match
-  if (objectName_ != o.objectName_)
-    return FALSE;
-
-  if (!(columnTypeList_ == o.columnTypeList_))
-    return FALSE;
-
-  return TRUE;
-}
-
-ItemExpr * AuditImage::copyTopNode(ItemExpr *derivedNode,
-					CollHeap* outHeap)
-{
-  AuditImage *result=NULL;
-
-  CMPASSERT(derivedNode == NULL);
-
-  result = new (outHeap) AuditImage(objectName_);
-  result->naTable_ = naTable_;
-  result->columnTypeList_ = columnTypeList_;
-
-  return Function::copyTopNode(result, outHeap);
-}
-
 QR::ExprElement Function::getQRExprElem() const
 {
   return QR::QRFunctionElem;
-}
-
-void AuditImage::unparse(NAString &result,
-		       PhaseEnum phase,
-		       UnparseFormatEnum form,
-		       TableDesc * tabId) const
-{
-
-  result += getText();
-  result += "(INDEX_TABLE ";
-  result += getObjectName().getQualifiedNameAsString();
-
-  result += ", (";
-  for (Int32 i=0; i < getNumChildren(); i++)
-    {
-      if (i>0) // if not the first parameter.
-	result +=", ";
-      child(i)->unparse(result, phase, form, tabId);
-    }
-  result += ")";
-
-  result += ")";
-
 }
 
 // Flipping the tree in 1 pass top->bottom

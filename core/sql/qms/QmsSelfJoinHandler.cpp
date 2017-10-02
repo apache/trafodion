@@ -95,7 +95,6 @@ void Array2D::setElement(UInt32 row, UInt32 col, Int32 value)
 
 //*****************************************************************************
 //*****************************************************************************
-// LCOV_EXCL_START :dpm
 void Array2D::dump(NAString& text)
 {
   char buffer[100];
@@ -113,7 +112,6 @@ void Array2D::dump(NAString& text)
     }
   }
 }
-// LCOV_EXCL_STOP
 
 //========================================================================
 //  Class ShiftMatrix
@@ -241,7 +239,6 @@ void ShiftMatrix::initNext(NABitVector& usedValuesV, // Which values were alread
 
 //*****************************************************************************
 //*****************************************************************************
-// LCOV_EXCL_START :dpm
 void ShiftMatrix::dump(NAString& text)
 {
   char buffer[100];
@@ -249,7 +246,6 @@ void ShiftMatrix::dump(NAString& text)
   text += buffer;
   theMatrix_->dump(text);
 }
-// LCOV_EXCL_STOP
 
 //========================================================================
 //  Class ShiftMatrixFactory
@@ -584,7 +580,6 @@ Int32 SelfJoinHandler::howmanyPermutations()
 
 //*****************************************************************************
 //*****************************************************************************
-// LCOV_EXCL_START :dpm
 void SelfJoinHandler::dump(NAString& text)
 {
   char buffer[100];
@@ -605,4 +600,3 @@ void SelfJoinHandler::dump(NAString& text)
   text += "\nPermutationMatrix:\n";
   permMatrix_->dump(text);
 }
-// LCOV_EXCL_STOP

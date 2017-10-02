@@ -39,10 +39,8 @@
 #include "Platform.h"
 
 
-#ifndef __EID
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
@@ -59,7 +57,6 @@
 ///////////////////////////////////////////////////////////
 // class ex_clause
 ///////////////////////////////////////////////////////////
-NA_EIDPROC
 void ex_clause::copyOperands(ex_clause* clause, Space* space)
 {
   NABoolean showplan = (clause->getOperand() ?
@@ -160,7 +157,7 @@ void ex_clause::copyOperands(ex_clause* clause, Space* space)
   }
 }
 
-NA_EIDPROC 
+
 ex_clause::ex_clause(clause_type type, 
 		     OperatorTypeEnum oper_type,
 		     short num_operands, 
@@ -421,9 +418,6 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_RANGE_LOOKUP:
 	  setClassID(FUNC_RANGE_LOOKUP_ID);
 	  break;
-	case ITM_AUDIT_IMAGE:
-	  setClassID(FUNC_AUDIT_ROW_IMAGE);
-	  break;
 	case ITM_OFFSET:
 	  setClassID(FUNC_OFFSET_ID);
 	  break;
@@ -499,12 +493,8 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_NVL:
 	  setClassID(FUNC_NVL);
 	  break;
-    case ITM_JSONOBJECTFIELDTEXT:
+        case ITM_JSONOBJECTFIELDTEXT:
 	  setClassID(FUNC_JSON_ID);
-	  break;
-      
-	case ITM_EXTRACT_COLUMNS:
-	  setClassID(FUNC_EXTRACT_COLUMNS);
 	  break;
 	case ITM_QUERYID_EXTRACT:
 	  setClassID(FUNC_QUERYID_EXTRACT);
@@ -603,9 +593,7 @@ ex_clause::ex_clause(clause_type type,
      and offset.                                                      */
   if (op) {
 
-#pragma nowarn(1506)  // warning elimination 
     short numOperands = (op[0]->showplan() ? num_operands*2 : num_operands);
-#pragma warn(1506)  // warning elimination 
 
     if (space)
       
@@ -667,7 +655,7 @@ ex_clause::ex_clause(clause_type type,
 };
 
 
-NA_EIDPROC ex_clause::~ex_clause()
+ex_clause::~ex_clause()
 {
 }
 
@@ -675,8 +663,7 @@ NA_EIDPROC ex_clause::~ex_clause()
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)  // warning elimination 
-NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
+char *ex_clause::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
@@ -898,9 +885,6 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_RANGE_LOOKUP_ID:
       GetVTblPtr(vtblPtr, ExFunctionRangeLookup);
       break;
-    case ex_clause::FUNC_AUDIT_ROW_IMAGE:
-      GetVTblPtr(vtblPtr, ExAuditImage);
-      break;
     case ex_clause::FUNC_OFFSET_ID:
       GetVTblPtr(vtblPtr, ExpSequenceFunction);
       break;
@@ -960,9 +944,6 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_JSON_ID:
       GetVTblPtr(vtblPtr, ex_function_json_object_field_text);
-      break;
-    case ex_clause::FUNC_EXTRACT_COLUMNS:
-      GetVTblPtr(vtblPtr, ExFunctionExtractColumns);
       break;
     case ex_clause::FUNC_QUERYID_EXTRACT:
       GetVTblPtr(vtblPtr, ex_function_queryid_extract);
@@ -1069,7 +1050,6 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     }
   return vtblPtr;
 }
-#pragma warn(1506)  // warning elimination 
 
 
 ex_expr::exp_return_type ex_clause::processNulls(char *null_data[],
@@ -1115,7 +1095,7 @@ ex_expr::exp_return_type ex_clause::processNulls(char *null_data[],
   return ex_expr::EXPR_OK;
 }
 
-NA_EIDPROC Long ex_clause::packClause(void * space, Lng32 /*size*/)
+Long ex_clause::packClause(void * space, Lng32 /*size*/)
 {
   if (op_) {
     if (op_[0]->showplan()) {
@@ -1129,12 +1109,12 @@ NA_EIDPROC Long ex_clause::packClause(void * space, Lng32 /*size*/)
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC Long ex_clause::pack(void * space)
+Long ex_clause::pack(void * space)
 {
   return packClause(space, sizeof(ex_clause));
 }
 
-NA_EIDPROC Lng32 ex_clause::unpackClause(void *base, void * reallocator)
+Lng32 ex_clause::unpackClause(void *base, void * reallocator)
 {
   if (op_) {
     if (op_.unpackShallow(base)) return -1;
@@ -1150,12 +1130,12 @@ NA_EIDPROC Lng32 ex_clause::unpackClause(void *base, void * reallocator)
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC Lng32 ex_clause::unpack(void *base, void * reallocator)
+Lng32 ex_clause::unpack(void *base, void * reallocator)
 {
   return unpackClause(base, reallocator);
 }
 
-NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
+const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 {
   switch (ote)
     {
@@ -1166,23 +1146,18 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_OR: return "ITM_OR";
 
     // unary logic operators
-    // LCOV_EXCL_START
     case ITM_NOT: return "ITM_NOT";
     case ITM_IS_TRUE: return "ITM_IS_TRUE";
     case ITM_IS_FALSE: return "ITM_IS_FALSE";
-    // LCOV_EXCL_STOP
     case ITM_IS_NULL: return "ITM_IS_NULL";
     case ITM_IS_NOT_NULL: return "ITM_IS_NOT_NULL";
-    // LCOV_EXCL_START
     case ITM_IS_UNKNOWN: return "ITM_IS_UNKNOWN";
     case ITM_IS_NOT_UNKNOWN: return "ITM_IS_NOT_UNKNOWN";
-    // LCOV_EXCL_STOP
 
     // binary comparison operators
     case ITM_EQUAL: return "ITM_EQUAL";
     case ITM_NOT_EQUAL: return "ITM_NOT_EQUAL";
     case ITM_LESS: return "ITM_LESS";
-    // LCOV_EXCL_START
     case ITM_LESS_EQ: return "ITM_LESS_EQ";
     case ITM_GREATER: return "ITM_GREATER";
     case ITM_GREATER_EQ: return "ITM_GREATER_EQ";
@@ -1190,12 +1165,10 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     // unary arithmetic operators
     case ITM_NEGATE: return "ITM_NEGATE";
     case ITM_INVERSE: return "ITM_INVERSE";
-    // LCOV_EXCL_STOP
     // binary arithmetic operators
     case ITM_PLUS: return "ITM_PLUS";
     case ITM_MINUS: return "ITM_MINUS";
     case ITM_TIMES: return "ITM_TIMES";
-    // LCOV_EXCL_START
     case ITM_DIVIDE: return "ITM_DIVIDE";
     case ITM_EXPONENT: return "ITM_EXPONENT";
 
@@ -1221,23 +1194,18 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_PIVOT_GROUP: return "ITM_PIVOT_GROUP";
 
-    // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
     case ITM_AGGR_GROUPING_FUNC: return "ITM_AGGR_GROUPING_FUNC";
 
     // custom functions
-    // LCOV_EXCL_START
     case ITM_USER_DEF_FUNCTION: return "ITM_USER_DEF_FUNCTION";
     case ITM_BETWEEN: return "ITM_BETWEEN";
-    // LCOV_EXCL_STOP
     case ITM_LIKE: return "ITM_LIKE";
     case ITM_REGEXP: return "ITM_REGEXP";
-    // LCOV_EXCL_START
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
     case ITM_SESSION_USER: return "ITM_SESSION_USER";
     case ITM_USER: return "ITM_USER";
-    // LCOV_EXCL_STOP
     case ITM_AUTHNAME: return "ITM_AUTHNAME";
     case ITM_AUTHTYPE: return "ITM_AUTHTYPE";
 
@@ -1247,14 +1215,11 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_CASE: return "ITM_CASE";
     case ITM_IF_THEN_ELSE: return "ITM_IF_THEN_ELSE";
     case ITM_RETURN_TRUE: return "ITM_RETURN_TRUE";
-    // LCOV_EXCL_START
     case ITM_RETURN_FALSE: return "ITM_RETURN_FALSE";
     case ITM_RETURN_NULL: return "ITM_RETURN_NULL";
-    // LCOV_EXCL_STOP
     case ITM_COMP_ENCODE: return "ITM_COMP_ENCODE";
     case ITM_COMP_DECODE: return "ITM_COMP_DECODE";
     case ITM_HASH: return "ITM_HASH";
-    // LCOV_EXCL_START
     case ITM_REPLACE_NULL: return "ITM_REPLACE_NULL";
     case ITM_PACK_FUNC: return "ITM_PACK_FUNC";
     case ITM_BITMUX: return "ITM_BITMUX";
@@ -1274,9 +1239,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_MOVING_MIN       : return "ITM_MOVING_MIN";
     case ITM_MOVING_SDEV      : return "ITM_MOVING_SDEV";
     case ITM_MOVING_VARIANCE  : return "ITM_MOVING_VARIANCE";
-    // LCOV_EXCL_STOP
     case ITM_OFFSET           : return "ITM_OFFSET";
-    // LCOV_EXCL_START
     case ITM_RUNNING_COUNT    : return "ITM_RUNNING_COUNT";
     case ITM_ROWS_SINCE       : return "ITM_ROWS_SINCE";
     case ITM_RUNNING_SUM      : return "ITM_RUNNING_SUM";
@@ -1290,9 +1253,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // flow control
     case ITM_DO_WHILE         : return "ITM_DO_WHILE";
-    // LCOV_EXCL_STOP
     case ITM_BLOCK            : return "ITM_BLOCK";
-    // LCOV_EXCL_START
     case ITM_WHILE            : return "ITM_WHILE";
 
     // scalar min/max
@@ -1382,7 +1343,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_REPLACE_UNICODE: return "ITM_REPLACE_UNICODE";
     case ITM_UNICODE_CODE_VALUE: return "ITM_UNICODE_CODE_VALUE";
     case ITM_NCHAR_MP_CODE_VALUE: return "ITM_NCHAR_MP_CODE_VALUE";
-    // LCOV_EXCL_STOP
     // translate function
     case ITM_TRANSLATE: return "ITM_TRANSLATE";
 
@@ -1391,7 +1351,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // RowSet expression functions
     case ITM_ROWSETARRAY_SCAN: return "ITM_ROWSETARRAY_SCAN";
-    // LCOV_EXCL_START
     case ITM_ROWSETARRAY_ROWID: return "ITM_ROWSETARRAY_ROWID";
     case ITM_ROWSETARRAY_INTO : return "ITM_ROWSETARRAY_INTO";
 
@@ -1414,10 +1373,8 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_DAYOFYEAR: return "ITM_DAYOFYEAR";
     case ITM_FIRSTDAYOFYEAR: return "ITM_FIRSTDAYOFYEAR";
     case ITM_INTERNALTIMESTAMP: return "ITM_INTERNALTIMESTAMP";
-    // LCOV_EXCL_STOP
     // misc. functions
     case ITM_NARROW: return "ITM_NARROW";
-    // LCOV_EXCL_START
     case ITM_INTERVAL: return "ITM_INTERVAL";
     case ITM_INSTANTIATE_NULL: return "ITM_INSTANTIATE_NULL";
     case ITM_INCREMENT: return "ITM_INCREMENT";
@@ -1426,26 +1383,19 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_LESS_OR_LE: return "ITM_LESS_OR_LE";
     case ITM_RANGE_LOOKUP: return "ITM_RANGE_LOOKUP";
     case ITM_DECODE: return "ITM_DECODE";
-    // LCOV_EXCL_STOP
     case ITM_HDPHASHCOMB: return "ITM_HDPHASHCOMB";
-    // LCOV_EXCL_START
     case ITM_RANDOMNUM: return "ITM_RANDOMNUM";
     case ITM_PROGDISTRIB: return "ITM_PROGDISTRIB";
-    // LCOV_EXCL_STOP
     case ITM_HASHCOMB: return "ITM_HASHCOMB";
     case ITM_HDPHASH: return "ITM_HDPHASH";
     case ITM_EXEC_COUNT: return "ITM_EXEC_COUNT";
-    // LCOV_EXCL_START
     case ITM_CURR_TRANSID: return "ITM_CURR_TRANSID";
     case ITM_NOTCOVERED: return "ITM_NOTCOVERED";
     case ITM_BALANCE: return "ITM_BALANCE";
     case ITM_RAND_SELECTION: return "ITM_RAND_SELECTION";
     case ITM_PROGDISTRIBKEY: return "ITM_PROGDISTRIBKEY";
     case ITM_PAGROUP: return "ITM_PAGROUP";
-    // LCOV_EXCL_STOP
     case ITM_HASH2_DISTRIB: return "ITM_HASH2_DISTRIB";
-    // LCOV_EXCL_START
-    case ITM_EXTRACT_COLUMNS: return "ITM_EXTRACT_COLUMNS";
 
     case ITM_HEADER: return "ITM_HEADER";
 
@@ -1493,7 +1443,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // renaming, conversion, assignment
     case ITM_RENAME_COL: return "ITM_RENAME_COL";
-    // LCOV_EXCL_STOP
     case ITM_CONVERT: return "ITM_CONVERT";
     case ITM_CAST: return "ITM_CAST";
     case ITM_ASSIGN: return "ITM_ASSIGN";
@@ -1503,7 +1452,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // do a cast but adjust target length based
     // on operand (used by ODBC)
-    // LCOV_EXCL_START
     case ITM_CAST_CONVERT: return "ITM_CAST_CONVERT";
 
     case ITM_CAST_TYPE: return "ITM_CAST_TYPE";
@@ -1551,7 +1499,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_SET_TRANS_MULTI_COMMIT: return "ITM_SET_TRANS_MULTI_COMMIT";
 
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
-    case ITM_AUDIT_IMAGE: return "ITM_AUDIT_IMAGE";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
     case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
@@ -1562,22 +1509,19 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_SEQUENCE_VALUE: return "ITM_SEQUENCE_VALUE";
 
-    // LCOV_EXCL_STOP
     // Note, this list is arranged in the same order as the types
     // appear in common/OperTypeEnum.h, please keep the same order
     // when adding new types
     default: 
       {
-#ifndef __EID
 	cout << "OperatorType must be added to getOperTypeEnumAsString()"
 	     << ote << endl;
-#endif  // __EID
 	return "Add To getOperTypeEnumAsString()";
       }
     }
 }
 
-NA_EIDPROC char * exClauseGetText(OperatorTypeEnum ote)
+char * exClauseGetText(OperatorTypeEnum ote)
 {
   char * itmText = (char *)getOperTypeEnumAsString(ote);
   
@@ -1611,12 +1555,12 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 	  getOperTypeEnumAsString(operType_), operType_, numOperands_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    ex_clause::flags_ = %b ",flags_ );
+  str_sprintf(buf, "    ex_clause::flags_ = %x ",flags_ );
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (displayStr)
     {
-      str_sprintf(buf, "    %s::flags_ = %b ", displayStr, clauseFlags);
+      str_sprintf(buf, "    %s::flags_ = %x ", displayStr, clauseFlags);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
 
@@ -1651,17 +1595,13 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 
    for (Int32 i = 0; i < numOperands_; i++)
    {
-#pragma nowarn(1506)   // warning elimination 
    getOperand(i)->displayContents(space, i,
                                    constsArea,
                                    (showplan 
                                    ? getOperand(i+numOperands_) 
                                    : NULL));
-   #ifndef __EID
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-   #endif  
-#pragma warn(1506)  // warning elimination 
   }
  }
 }
@@ -1674,7 +1614,6 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 ///////////////////////////////////////////////////////////
 // class ex_arith_clause
 ///////////////////////////////////////////////////////////
-#pragma nowarn(1506)  // warning elimination 
 ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
 				 Attributes ** attr,
 				 Space * space,
@@ -1782,7 +1721,6 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 
   setInstruction(); 
 }
-#pragma warn(1506)  // warning elimination 
 
 ///////////////////////////////////////////////////////////
 // class ex_inout_clause
@@ -1901,7 +1839,6 @@ ex_like_clause_doublebyte::ex_like_clause_doublebyte(OperatorTypeEnum oper_type,
 /////////////////////////////////////////////////////////////
 // Methods to display Contents
 /////////////////////////////////////////////////////////////
-// LCOV_EXCL_START
 void ex_aggr_one_row_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_aggr_one_row_clause", clauseNum, constsArea);
@@ -1911,7 +1848,6 @@ void ex_aggr_any_true_max_clause::displayContents(Space * space, const char * /*
 {
   ex_clause::displayContents(space, "ex_aggr_any_true_max_clause", clauseNum, constsArea);
 }
-// LCOV_EXCL_STOP
 void ex_aggr_min_max_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_aggr_min_max_clause", clauseNum, constsArea);
@@ -1936,7 +1872,6 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 {
   setInstruction();
 
-#ifndef __EID
   char buf[100];
   str_sprintf(buf, "  Clause #%d: ex_arith_clause", clauseNum);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -1947,8 +1882,6 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 		  (short)arithRoundingMode_, (getDivToDownscale() ? 1 : 0));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
-
-#endif
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 0,
                              ex_arith_clause::getInstruction(getInstrArrayIndex()),
@@ -1983,7 +1916,6 @@ void bool_result_clause::displayContents(Space * space, const char * /*displaySt
 
 void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-#ifndef __EID
   char buf[100];
   str_sprintf(buf, "  Clause #%d: ex_branch_clause", clauseNum);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -1993,7 +1925,7 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
                                   getNumOperands());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    flags_ = %b ", getAllFlags());
+  str_sprintf(buf, "    flags_ = %x ", getAllFlags());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (noPCodeAvailable())
@@ -2009,8 +1941,6 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
   str_sprintf(buf, "    branch to = #%d ",branch_clause->clauseNum());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-#endif
-
   if (getNumOperands() == 0)
     return;
 
@@ -2020,17 +1950,13 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 
    for (Int32 i = 0; i < getNumOperands(); i++)
    {
-#pragma nowarn(1506)   // warning elimination
    getOperand(i)->displayContents(space, i,
                                    constsArea,
                                    (showplan
                                    ? getOperand(i+getNumOperands())
                                    : NULL));
-   #ifndef __EID
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-   #endif
-#pragma warn(1506)  // warning elimination
    }
   }
 }
@@ -2046,7 +1972,7 @@ void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/,
   str_sprintf(buf, "    ex_comp_clause::rollupColumnNum_ = %d", rollupColumnNum_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-  str_sprintf(buf, "    ex_comp_clause::flags_ = %b", flags_);
+  str_sprintf(buf, "    ex_comp_clause::flags_ = %x", flags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 
@@ -2069,7 +1995,6 @@ void ex_function_clause::displayContents(Space * space, const char * /*displaySt
 {
   ex_clause::displayContents(space, "ex_function_clause", clauseNum, constsArea);
 }
-// LCOV_EXCL_START
 void ex_function_abs::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_function_abs", clauseNum, constsArea);
@@ -2084,7 +2009,6 @@ void ExFunctionBitOper::displayContents(Space * space, const char * /*displayStr
 {
   ex_clause::displayContents(space, "ExFunctionBitOper", clauseNum, constsArea);
 }
-// LCOV_EXCL_STOP
 void ex_inout_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_inout_clause", clauseNum, constsArea);
@@ -2111,32 +2035,9 @@ void ExRegexpClauseChar::displayContents(Space * space, const char * /*displaySt
   ex_clause::displayContents(space, "ExRegexpClauseChar", clauseNum, constsArea);
 }
 
-// LCOV_EXCL_START
 void ex_like_clause_doublebyte::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_like_clause_doublebyte", clauseNum, constsArea);
-}
-
-void ExAuditImage::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
-{
-   ex_clause::displayContents(space, "ExAuditImage", clauseNum, constsArea);
-   // LCOV_EXCL_STOP
-
-   // Make sure that you display the ex_expr auditImageExpr_ also.
-   // This ex_expr is enclosed within a header and footer.
-#ifndef __EID
-  char buf[100];
-   str_sprintf(buf, "Start of %s (Clause #%d: %s) \n", "ExAuditRowImageExpr", clauseNum, "ExAuditImage"); 
-  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));  
-#endif
-   
- ((ex_expr *)auditImageContainerExpr_->getExpr())->displayContents(space,
-                                                                   -1 /* mode */, 
-                                                                   "ExAuditRowImageExpr");
-#ifndef __EID
-    str_sprintf(buf, "End of %s (Clause #%d: %s) \n", "ExAuditRowImageExpr", clauseNum, "ExAuditImage"); 
-  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));  
-#endif 
 }
 
 void ExFunctionHbaseTimestamp::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
@@ -2176,7 +2077,7 @@ void ex_function_dateformat::displayContents(Space * space, const char * /*displ
 }
 
 // Function to compare two strings. 
-NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
+Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
                                           char* in_s2, Int32 length2, 
                                           char space)
 {
@@ -2232,7 +2133,7 @@ NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1,
     return compare_code;
 }
 
-NA_EIDPROC Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
+Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
                                            NAWchar* s2, Int32 length2, 
                                            NAWchar space)
 {

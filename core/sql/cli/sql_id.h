@@ -64,7 +64,6 @@
     SQLCHARSETSTRING_ISO88591 : (sqlcli_obj_ptr) -> charset		\
    )
 #if 0
-SQLCLI_LIB_FUNC
 SQLMODULE_ID* new_SQLMODULE_ID(
 	Lng32 version = SQLCLI_CURRENT_VERSION, 
 	const char* module_name = 0,
@@ -74,7 +73,6 @@ SQLMODULE_ID* new_SQLMODULE_ID(
 	);
 #endif
 
-SQLCLI_LIB_FUNC
 void init_SQLMODULE_ID(SQLMODULE_ID* m,
 	Lng32 version = SQLCLI_CURRENT_VERSION, 
 	const char* module_name = 0, 
@@ -83,7 +81,6 @@ void init_SQLMODULE_ID(SQLMODULE_ID* m,
 	Lng32 name_len = 0
 	);
 #if 0
-SQLCLI_LIB_FUNC
 SQLCLI_OBJ_ID* new_SQLCLI_OBJ_ID( Lng32 version = SQLCLI_CURRENT_VERSION, 
 	enum SQLOBJ_ID_NAME_MODE mode = stmt_name, 
 	const SQLMODULE_ID* module = 0, 
@@ -97,7 +94,6 @@ SQLCLI_OBJ_ID* new_SQLCLI_OBJ_ID( Lng32 version = SQLCLI_CURRENT_VERSION,
 #define new_SQLDESC_ID new_SQLCLI_OBJ_ID
 
 #endif
-SQLCLI_LIB_FUNC
 void init_SQLCLI_OBJ_ID(SQLCLI_OBJ_ID* x,
 	Lng32 version = SQLCLI_CURRENT_VERSION, 
 	enum SQLOBJ_ID_NAME_MODE mode = stmt_name, 
@@ -111,27 +107,13 @@ void init_SQLCLI_OBJ_ID(SQLCLI_OBJ_ID* x,
 #define init_SQLSTMT_ID init_SQLCLI_OBJ_ID
 #define init_SQLDESC_ID init_SQLCLI_OBJ_ID
 
-SQLCLI_LIB_FUNC
 Int32 isEqualByName(SQLCLI_OBJ_ID* x, SQLCLI_OBJ_ID* y);
 
-SQLCLI_LIB_FUNC
 Int32 isEqualByName(const SQLMODULE_ID* x, const SQLMODULE_ID* y);
 
-SQLCLI_LIB_FUNC
 void setNameForId(SQLCLI_OBJ_ID* x, const char* name, Lng32 len, 
 	          const char* charset = SQLCHARSETSTRING_ISO88591);
 
-SQLCLI_LIB_FUNC
 void setNameForModule(SQLMODULE_ID* x, const char* name, Lng32 len, 
 	              const char* charset = SQLCHARSETSTRING_ISO88591);
-#if 0
-SQLCLI_LIB_FUNC NAWchar* getModNameInWchar(const SQLMODULE_ID* m);
-
-SQLCLI_LIB_FUNC NAWchar* getIdInWchar(SQLCLI_OBJ_ID* x);
-
-SQLCLI_LIB_FUNC char* getModNameInLocale(const SQLMODULE_ID* m);
-
-SQLCLI_LIB_FUNC char* getIdInLocale(SQLCLI_OBJ_ID* x);
-#endif 
-
 #endif

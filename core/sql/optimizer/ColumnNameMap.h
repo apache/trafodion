@@ -67,7 +67,6 @@ class XCNM;
 // whose name is exposed in a given scope.
 // 
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class ColumnNameMap : public NABasicObject
 {
 public:
@@ -136,7 +135,6 @@ public:
   void setQualifiedColumnAmbiguousFlag()        
   {  qualColAmbiguousFlag_ = TRUE; }
 
-  // LCOV_EXCL_START :dpm
   // ---------------------------------------------------------------------
   // Display/print, for debugging.
   // ---------------------------------------------------------------------
@@ -162,7 +160,6 @@ public:
       fprintf(ofd," (input value)");
     if (strcmp(title, "")) fprintf(ofd,"\n");
   } // print()
-  // LCOV_EXCL_STOP
 
   void display() { print(); }
 
@@ -200,7 +197,6 @@ private:
   NABoolean qualColAmbiguousFlag_;
 
 }; // class ColumnNameMap
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // Implementation for inline functions

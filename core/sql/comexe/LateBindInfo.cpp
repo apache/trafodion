@@ -42,11 +42,9 @@
 #include "exp_stdh.h"
 #include "exp_tuple_desc.h"
 #include "ComQueue.h"
-
-#if !defined(__EID) && !defined(ARKFS_OPEN)
 #include "ComResWords.h"
 #include "ComDistribution.h"
-#endif
+
 //////////////////////////////////////////////////////////////////
 //    Constructor: UninitializedMvName
 //    Description:
@@ -85,7 +83,6 @@ void UninitializedMvName::setAnsiName( const char *ansiName )
 }
 
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since it is not called from anywhere
 NABoolean LateNameInfo::makeSQLIdentifier(char * invalue, 
 					  char * outvalue)
@@ -102,9 +99,7 @@ NABoolean LateNameInfo::makeSQLIdentifier(char * invalue,
       if (dQuoteSeen)
 	outvalue[i] = invalue[i];
       else
-#pragma nowarn(1506)   // warning elimination 
 	outvalue[i] = TOUPPER(invalue[i]);
-#pragma warn(1506)  // warning elimination 
     }
 
   // remove trailing blanks
@@ -116,7 +111,6 @@ NABoolean LateNameInfo::makeSQLIdentifier(char * invalue,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 // return code: TRUE, if error. FALSE, if all is ok.
 // This method assumes that the parts array passed in has 
@@ -162,15 +156,12 @@ NABoolean LateNameInfo::extractParts
   return FALSE;
 }
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since it is not called from anywhere
 static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 {
   // apply defaults to invalue
   UInt32 invalueLen = str_len(invalue);
-#pragma nowarn(1506)   // warning elimination 
   Int32 i = invalueLen-1;
-#pragma warn(1506)  // warning elimination 
   Int32 j = 2;
   Int32 k = 0;
   for (; i >= 0; i--)
@@ -178,9 +169,7 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
       if (invalue[i] == '.')
 	{
 	  inVal[j] = &invalue[i+1];
-#pragma nowarn(1506)   // warning elimination 
 	  inValLen[j] = k;
-#pragma warn(1506)  // warning elimination 
 	  k = 0;
 	  j--;
 	}
@@ -188,35 +177,28 @@ static void extractPartsLocal(char * invalue, char *inVal[], short inValLen[])
 	k++;
     }
   inVal[j] = &invalue[i+1];
-#pragma nowarn(1506)   // warning elimination 
   inValLen[j] = k;
-#pragma warn(1506)  // warning elimination 
 
 }
 
 Long LateNameInfoList::pack(void *space)
 {
-#pragma nowarn(1506)   // warning elimination 
   lateNameInfo_.pack(space,numEntries_);
-#pragma warn(1506)  // warning elimination 
   return NAVersionedObject::pack(space);
 }
 
 Lng32 LateNameInfoList::unpack(void * base, void * reallocator)
 {
-#pragma nowarn(1506)   // warning elimination 
   if(lateNameInfo_.unpack(base,numEntries_,reallocator)) return -1;
-#pragma warn(1506)  // warning elimination 
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-AnsiOrNskName::AnsiOrNskName(char *inName)
+AnsiName::AnsiName(char *inName)
 {
   Int32 len;
 
   extName_[0] = '\0';
   intName_[0] = '\0';
-  isNskName_ = FALSE;
   noOfParts_ = 0;
   len = str_len(inName);
   if (len < sizeof(extName_))
@@ -234,7 +216,7 @@ AnsiOrNskName::AnsiOrNskName(char *inName)
   isValid_ = FALSE;
 }
 
-Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
+Int16 AnsiName::convertAnsiName(bool doCheck)
 {
 
   // If doCheck is false, this function will not uppercase the name and will not check for
@@ -269,7 +251,6 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
   noOfParts_ = 0;
   partPtr = parts_[noOfParts_];
   
-  isNskName_ = FALSE;
   // Remove leading spaces
   while (*ptr != '\0' && *ptr == ' ')
     *ptr++;  
@@ -284,7 +265,6 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
 	  return -1;
 	else
 	{
-	  isNskName_ = TRUE;
 	  if (*(ptr) == '$')
 	     dollarFound = TRUE;
 	}
@@ -293,10 +273,7 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
   }
   else
     return -1; // Error when all are spaces
-  if (isNskName_)
-     partCheckLen = 8;	// NskNameLen
-  else
-     partCheckLen = ComAnsiNamePart::MAX_IDENTIFIER_INT_LEN;
+  partCheckLen = ComAnsiNamePart::MAX_IDENTIFIER_INT_LEN;
   while(*ptr != '\0')
   {
     switch (*ptr)
@@ -364,16 +341,10 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
 	   ptr++;
 	   totalLen++;
 	}
-	if (isNskName_)
-	{
-	  if (noOfParts_ >= 3)  
-  	    return -1;
-	}
-	else
-	{
-	  if (noOfParts_ >= 2)
-	    return -1;
-	}
+
+        if (noOfParts_ >= 2)
+          return -1;
+
 	partBegin = TRUE;
 	partLen = 0;
 	*partPtr = '\0';
@@ -386,41 +357,11 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
 	delimited = FALSE;
 	noOfParts_++;
         partPtr = parts_[noOfParts_];
-	if (isNskName_)
-	{
-	  if (noOfParts_ == 1 && *ptr != '\0')
+        if (*ptr != '\0' && *ptr != '\"') // Check that char is Alpha if not in quotes
 	  {
-	     if (! dollarFound)
-	     {
-	       if (*ptr != '$')
-		 return -1;
-	     }
-	     else
-	     {
-	       if (*ptr != '\"')
-	       {
-		 if (! isAlpha8859_1((unsigned char)(*ptr)))
-		  return -1;
-	       } 
-	     }
+            if (! isAlpha8859_1((unsigned char)(*ptr)))
+              return -1;
 	  }
-	  else
-	  {
-	    if (*ptr != '\0' && *ptr != '\"')
-	    {
-	      if (! isAlpha8859_1((unsigned char)(*ptr)))
-		return -1;
-	    }
-  	  }
-	}
-	else
-	{
-	  if (*ptr != '\0' && *ptr != '\"') // Check that char is Alpha if not in quotes
-	  {
-	      if (! isAlpha8859_1((unsigned char)(*ptr)))
-		return -1;
-	  }
-	}
       }
       else
       {
@@ -547,7 +488,7 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
   return 0;
 }
 
-Int16 AnsiOrNskName::extractParts(Lng32 &numParts,
+Int16 AnsiName::extractParts(Lng32 &numParts,
 		char *parts[])
 {
   Int16 ret;
@@ -555,7 +496,7 @@ Int16 AnsiOrNskName::extractParts(Lng32 &numParts,
 
   if (! isValid_)
   {
-    if ((ret = convertAnsiOrNskName(FALSE)) == -1)
+    if ((ret = convertAnsiName(FALSE)) == -1)
       return ret;
   }
   numParts = noOfParts_;
@@ -564,7 +505,7 @@ Int16 AnsiOrNskName::extractParts(Lng32 &numParts,
   return 0;
 }
 
-Int16 AnsiOrNskName::equals(AnsiOrNskName *inName)
+Int16 AnsiName::equals(AnsiName *inName)
 {
   // Check if the external name are equal 
   if (str_cmp_ne(inName->extName_, extName_) == 0)
@@ -573,12 +514,12 @@ Int16 AnsiOrNskName::equals(AnsiOrNskName *inName)
   {
     if (! isValid_)
     {
-      if (convertAnsiOrNskName(FALSE) != 0)
+      if (convertAnsiName(FALSE) != 0)
 	return -1;
     }
     if (! inName->isValid_)
     {
-      if (inName->convertAnsiOrNskName() != 0)
+      if (inName->convertAnsiName() != 0)
 	  return -1;
     }
     if (str_cmp_ne(inName->intName_, intName_) == 0)
@@ -588,45 +529,45 @@ Int16 AnsiOrNskName::equals(AnsiOrNskName *inName)
   }
 }
 
-char *AnsiOrNskName::getInternalName()
+char *AnsiName::getInternalName()
 {
   if (! isValid_)
   {
-    if (convertAnsiOrNskName() != 0)
+    if (convertAnsiName() != 0)
       return NULL;
   }
   return intName_;
 }
 
-char *AnsiOrNskName::getExternalName()
+char *AnsiName::getExternalName()
 {
-  if (isValid_ && !isNskName_)
+  if (isValid_)
     // Build the ANSI name from the individual parts
     ComBuildANSIName (parts_[0], parts_[1], parts_[2], extName_, sizeof(extName_));
   return extName_;
 }
 
-AnsiOrNskName *LateNameInfo::getLastUsedName(NAMemory *heap)
+AnsiName *LateNameInfo::getLastUsedName(NAMemory *heap)
 {
-  AnsiOrNskName *ansiName;
+  AnsiName *ansiName;
   NABasicPtr    nameStr;
   void *  	addr;
 
   if (! isLastUsedNameEmbedded())
   {
     addr = *((void **)lastUsedAnsiName_);
-    return (AnsiOrNskName *)addr;
+    return (AnsiName *)addr;
   }
   else
   {
     if (heap == NULL)
       return NULL;
     if (isLastUsedNameCompEmbedded())
-      ansiName = new (heap) AnsiOrNskName(lastUsedAnsiName_);
+      ansiName = new (heap) AnsiName(lastUsedAnsiName_);
     else
     {
       memcpy((void *)&nameStr, lastUsedAnsiName_, sizeof(nameStr));
-      ansiName = new (heap) AnsiOrNskName(nameStr.getPointer());
+      ansiName = new (heap) AnsiName(nameStr.getPointer());
     }
     *(void **)lastUsedAnsiName_ = (void *)ansiName;
     setLastUsedNameMode(TRUE);
@@ -634,7 +575,7 @@ AnsiOrNskName *LateNameInfo::getLastUsedName(NAMemory *heap)
   }
 }
 
-Int16 AnsiOrNskName::fillInMissingParts(char *schemaName)
+Int16 AnsiName::fillInMissingParts(char *schemaName)
 {
     char *ptr;
     char *tgt;
@@ -647,11 +588,11 @@ Int16 AnsiOrNskName::fillInMissingParts(char *schemaName)
 
     if (! isValid_)
     {
-      if (convertAnsiOrNskName() != 0)
+      if (convertAnsiName() != 0)
 	return -1;
     }
     partsToFill = (Int16)(3 - noOfParts_);
-    if (isNskName_ || partsToFill == 0)
+    if (partsToFill == 0)
       return 1;
     // Remove leading blanks in the schemaName
     ptr = schemaName;
@@ -730,7 +671,7 @@ Int16 AnsiOrNskName::fillInMissingParts(char *schemaName)
     extName_[totalLen] ='\0';
     isValid_ = FALSE;
     isError_ = FALSE;
-    retCode = convertAnsiOrNskName();
+    retCode = convertAnsiName();
     if (retCode != -1 && noOfParts_ != 3)
       retCode = -1;
     return retCode;
@@ -762,9 +703,9 @@ void LateNameInfo::setLastUsedName(char *name, NAMemory *heap)
 
 }
 
-void LateNameInfo::setLastUsedName(AnsiOrNskName *name)
+void LateNameInfo::setLastUsedName(AnsiName *name)
 {
-  AnsiOrNskName *ansiName;
+  AnsiName *ansiName;
 
   if (! isLastUsedNameEmbedded())
   {
@@ -802,7 +743,7 @@ void LateNameInfo::setCompileTimeName(char *name, NAMemory *heap)
 
 char *LateNameInfo::lastUsedAnsiName()
 {
-  AnsiOrNskName *name;
+  AnsiName *name;
   NABasicPtr	nameStr;
   
   name = getLastUsedName(NULL);
@@ -822,7 +763,7 @@ char *LateNameInfo::lastUsedAnsiName()
 
 char *LateNameInfo::lastUsedExtAnsiName()
 {
-  AnsiOrNskName *name;
+  AnsiName *name;
   NABasicPtr     nameStr;
 
   name = getLastUsedName(NULL);
@@ -842,7 +783,7 @@ char *LateNameInfo::lastUsedExtAnsiName()
 
 void LateNameInfo::zeroLastUsedAnsiName()
 { 
-  AnsiOrNskName *ansiName;
+  AnsiName *ansiName;
 
   if (! isLastUsedNameEmbedded())
   {
@@ -915,138 +856,6 @@ void LateNameInfo::resetRuntimeFlags()
       runtimeFlags_ = LASTUSED_NAME_STR_PTR ;
   else
       runtimeFlags_ = 0; 
-}
-
-bool AnsiOrNskName::isNskName()
-{
-  if (! isValid_)
-  {
-    if (convertAnsiOrNskName() != 0)
-      return FALSE;
-  }
-  return isNskName_;
-}
-
-Int16 AnsiOrNskName::updateNSKInternalName(char *inName)
-{
-  if (isError_ || (! isValid_))
-    return -1;
-  if (noOfParts_ == 4)
-    return -1;
-  char *ptr, *tgt, *partPtr;
-  Int32 len;
-  Int16 partsToFill, partsFilled;
-  
-
-  char temp[ComAnsiNamePart::MAX_ANSI_NAME_EXT_LEN+1];
-
-  len = str_len(extName_);
-  str_cpy_all(temp, extName_, len);
-  temp[len] = '\0';
-
-  partsToFill = (Int16)(4 - noOfParts_);
-  partsFilled = 0;
-  // Move down the parts
-  Int32 i, j;
-  for (i = 3, j = noOfParts_-1 ; j >= 0 ; i--, j--)
-     memcpy(parts_[i], parts_[j], ComAnsiNamePart::MAX_IDENTIFIER_INT_LEN+1);
-  ptr = inName;
-  partPtr = parts_[0];
-  tgt = extName_;
-  // Copy the system name and volume name if needed
-  while (*ptr != '\0')
-  {
-    *tgt = *ptr;
-    tgt++;
-    if (*ptr == '.')
-    {
-      *partPtr = '\0';
-      partsFilled++;
-      partPtr = parts_[partsFilled];
-      if (partsFilled == partsToFill || partsFilled == 2)
-      {
-        ptr++;
-        break;
-      }
-    }
-    else
-    {
-      *partPtr = *ptr;
-      partPtr++;
-    }
-    ptr++;
-  }
-  *tgt = '\0';
-  // Copy the subvolume and quote if reserved name in extName
-  if (partsFilled < partsToFill)
-  {
-    while (*ptr != '\0' && *ptr != '.')
-    {
-      *partPtr = *ptr;
-      ptr++;
-      partPtr++;
-    }
-    // zero-terminate
-    *partPtr = '\0';
-
-    if (*ptr == '\0')
-      return -1;
-    if (IsSqlReservedWord(parts_[2]))
-    {
-      *tgt = '\"';
-      tgt++;
-      *tgt = '\0';
-      str_cat(extName_, parts_[2], extName_);
-      str_cat(extName_, "\".", extName_);
-    }
-    else
-    {
-      str_cat(extName_, parts_[2], extName_);
-      str_cat(extName_, ".", extName_);
-    }
-    partsFilled++;
-  }
-  str_cat(extName_, temp, extName_);
-  // copy the internal name
-  len = str_len(inName);
-  str_cpy_all(intName_, inName, len);
-  intName_[len] = '\0';
-  noOfParts_ = 4;
-  isNskName_ = TRUE;
-  return 0;
-}
-
-Int16 AnsiOrNskName::quoteNSKExtName()
-{
-  Int32 len;
-
-  if (isError_ || (! isValid_))
-    return -1;
-  if (noOfParts_ != 4)
-    return -1;
-  if (IsSqlReservedWord(parts_[3]))
-  {
-    // copy just the table name with quotes
-    extName_[0] = '\"';
-    len = str_len(parts_[3]);
-    str_cpy_all(extName_+1, parts_[3], len);
-    extName_[len+1] =  '\"';
-    extName_[len+2] = '\0';
-    noOfParts_ = 1;
-    return updateNSKInternalName(intName_);
-  }
-  else
-  if (IsSqlReservedWord(parts_[2]))
-  {
-    // copy just the table name
-    len = str_len(parts_[3]);
-    str_cpy_all(extName_, parts_[3], len);
-    extName_[len] = '\0';
-    noOfParts_ = 1;
-    return updateNSKInternalName(intName_);
-  }
-  else
-    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////

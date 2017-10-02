@@ -199,7 +199,6 @@ public:
   inline ValueIdMap & getLeftMap() const         { return unionMap_->leftColMap_; }
   inline ValueIdMap & getRightMap()              { return unionMap_->rightColMap_; }
   inline ValueIdMap & getRightMap() const        { return unionMap_->rightColMap_; }
-// warning elimination (removed "inline")
   ValueIdMap & getMap(Lng32 i)
   {
     CMPASSERT(i == 0 OR i == 1);
@@ -531,7 +530,6 @@ class MergeUnion : public Union
 public:
 
   // constructor
-// warning elimination (removed "inline")
   MergeUnion(RelExpr *leftChild,
 		    RelExpr *rightChild,
 		    UnionMap *unionMap = NULL,

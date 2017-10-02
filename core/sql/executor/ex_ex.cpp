@@ -48,24 +48,9 @@
 #include        "NAError.h"
 #include        "exp_expr.h"
 #include        "ExCextdecs.h"
-
-
-#ifndef __EID
 #include "logmxevent.h"
-#else  // __EID
-#include "ExeDp2.h"
-#endif
 
-
-// -----------------------------------------------------------------------
-// There is currently a bug in the tandem include file sys/time.h that
-// prevents us to get the definition of gettimeofday from there.
-// -----------------------------------------------------------------------
-// NT Port - vs 01/17/97
-// -----------------------------------------------------------------------
-#if (!defined (__TANDEM) && !defined(__EID) )
 extern Int32  gettimeofday(struct timeval *, struct timezone *);
-#endif
 
 // -----------------------------------------------------------------------
 // NT Port - GSH 03/18/97
@@ -223,9 +208,7 @@ Int32 ex_tcb::fixup()
   Int32 nc = numChildren();
   for (Int32 i=0; i<nc; i++)
   {
-#pragma nowarn(1506)   // warning elimination 
      error = ((ex_tcb *)getChild(i))->fixup();
-#pragma warn(1506)  // warning elimination 
      if (error)
         break;
   }
@@ -241,9 +224,7 @@ Int32 ex_tcb::rollbackSavepoint()
   Int32 nc = numChildren();
   for (Int32 i=0; i<nc; i++)
     {
-#pragma nowarn(1506)   // warning elimination 
       error = ((ex_tcb *)getChild(i))->rollbackSavepoint();
-#pragma warn(1506)  // warning elimination 
       if (error)
         break;
     }
@@ -276,9 +257,7 @@ NABoolean ex_tcb::closeTables()
 unsigned short ex_tcb::getExpressionMode() const
 { 
   if (globals_->getInjectErrorAtExpr())
-#pragma nowarn(1506)   // warning elimination 
     return tdb.expressionMode_ | ex_expr::INJECT_ERROR; 
-#pragma warn(1506)  // warning elimination 
   else
     return tdb.expressionMode_; 
 };
@@ -495,7 +474,6 @@ void ex_tcb::computeNeededPoolInfo(
     }
 }
 
-#ifndef __EID
 void ex_tcb::mergeStats(ExStatisticsArea *otherStats)
 {
   ex_globals * glob = getGlobals();
@@ -504,18 +482,13 @@ void ex_tcb::mergeStats(ExStatisticsArea *otherStats)
   if (statsGlobals != NULL)
   {
     semId = glob->getSemId();
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(semId, glob->getPid(), 
-      savedPriority, savedStopMode,
-      FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(semId, glob->getPid());
     glob->getStatsArea()->merge(otherStats);
-    statsGlobals->releaseStatsSemaphore(semId, glob->getPid(), savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(semId, glob->getPid());
   }
   else
     glob->getStatsArea()->merge(otherStats);
 }
-#endif
 
 void ex_tcb::cpuLimitExceeded()
 {
@@ -668,7 +641,6 @@ short ex_tcb::handleDone(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea)
 }
 
 __declspec(dllexport)
-NA_EIDPROC
 NABoolean ExExprComputeSpace(ex_tcb * tcb)
 
 {
@@ -678,43 +650,7 @@ NABoolean ExExprComputeSpace(ex_tcb * tcb)
 void ex_log_ems( const char *f, Int32 l, const char * m)
 {
 }
-#if defined(NA_LINUX) && defined(__EID)
-void assert_botch_in_eid( const char *f, Int32 l, const char * m)
-{
- // longjmp to handler if the assert botches in DP2
-  void * sessionBufPtr;
-  int_32 sessionBufLen;
-  Int32 retCode;
-  ex_log_ems(f, l, m);
-  // testpoint to softdown dp2 before doing longjmp.
-  if (DP2_EXECUTOR_IS_TESTPOINT_SET(SoftDownOnInternalError) != 0)
-  //  DP2_EXECUTOR_PER('test', 'pnts', 011504);
-    DP2_EXECUTOR_PER(0x74657374, 0x706e7473, 011504);
-  char *envvar;
-  envvar = getenv("EID_ABORT_ON_ASSERT");
-  if (envvar && *envvar == '1')
-  {
-    abort();
-  }
-  retCode = DP2_GET_SESSION_CONTEXT(&sessionBufPtr, &sessionBufLen);
-  if (retCode == 0 && sessionBufPtr != EID_NULLP)
-  {
-    jmp_buf *jmpBufPtr;
-    ex_globals * glob;
-    SqlSessionData * sqlSessionData = (SqlSessionData *)sessionBufPtr;
-    if ((glob = sqlSessionData->getGlobals()) != 0)
-    {
-      if (glob->IsJmpInScope() && (jmpBufPtr = glob->getJmpBuf()) != 0)
-        longjmp(*jmpBufPtr, EXASSERT_FAILURE);
-    }
-  }
-  // retCode = DP2_EXECUTOR_PER('asrt', 'fail', 011504);
-  retCode = DP2_EXECUTOR_PER(0x61737274, 0x6661696c, 011504);
-}
-#endif
-#pragma nowarn(770)   // warning elimination 
 void assert_botch_longjmp( const char *f, Int32 l, const char * m)
 {
 
 }
-#pragma warn(770)  // warning elimination 

@@ -44,7 +44,6 @@
 //	Constructor
 //--------------------------------------------------------------------------//
 
-#pragma nowarn(1506)   // warning elimination 
 CRUDupElimTaskExUnit::
 CRUDupElimTaskExUnit(const CRUDupElimGlobals &dupElimGlobals,
 					 CRUSQLDynamicStatementContainer &ctrlStmtContainer,
@@ -53,7 +52,6 @@ CRUDupElimTaskExUnit(const CRUDupElimGlobals &dupElimGlobals,
 	ctrlStmtContainer_(ctrlStmtContainer),
 	stmtContainer_(nStmts) 
 {}
-#pragma warn(1506)  // warning elimination 
 
 //--------------------------------------------------------------------------//
 //	CRUDupElimResolver::ExecuteCQSForceMDAM()

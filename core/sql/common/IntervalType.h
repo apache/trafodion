@@ -44,7 +44,7 @@
 #include "NAType.h"
 #include "DTICommonType.h"
 #include "Int64.h"
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <iostream>
 #endif
 
@@ -67,8 +67,6 @@ short getIntervalFields(Lng32 fsDatatype,
 //  IntervalType : The interval data type
 //
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(1319)  // warning elimination
 class IntervalType : public DatetimeIntervalCommonType
 {
 public:
@@ -128,12 +126,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 
@@ -152,12 +150,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 
@@ -314,8 +312,6 @@ private:
   unsigned short leadingPrecision_;
 
 }; // class IntervalType
-#pragma warn(1506)  // warning elimination
-#pragma warn(1319)  // warning elimination
 
 // ***********************************************************************
 //

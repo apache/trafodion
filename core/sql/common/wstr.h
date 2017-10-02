@@ -62,7 +62,6 @@ Int32 compareWcharWithBlankPadding(const NAWchar *wstr1, UInt32 len1,
 // return 0 if left == right,
 // return a positive value if left > right.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 inline
 Int32 wc_str_cmp(const NAWchar *left, const NAWchar *right, Int32 length)
 {
@@ -76,7 +75,7 @@ Int32 wc_str_cmp(const NAWchar *left, const NAWchar *right, Int32 length)
 // -----------------------------------------------------------------------
 // fill string <str>  for <length> bytes with <padchar>
 // -----------------------------------------------------------------------
-NA_EIDPROC 
+
 inline
 void wc_str_pad(NAWchar *str, Int32 length, 
                 NAWchar padchar = unicode_char_set::SPACE)
@@ -85,7 +84,6 @@ void wc_str_pad(NAWchar *str, Int32 length,
 }
 
 // Swap bytes for each NAWchar in the string. 
-NA_EIDPROC
 inline
 void wc_swap_bytes(NAWchar *str, Int32 length)
 {
@@ -103,7 +101,6 @@ void wc_swap_bytes(NAWchar *str, Int32 length)
     }
 }
 
-NA_EIDPROC
 Int32 na_wstr_cpy_convert(NAWchar *tgt, NAWchar *src, Lng32 length, Int32 upshift);
 
 #endif

@@ -347,9 +347,7 @@ NAString ElemDDLFileAttrBlockSize::getSyntax() const
 {
   NAString syntax = "BLOCKSIZE ";
     
-#pragma nowarn(1506)   // warning elimination 
   syntax += LongToNAString(blockSizeInBytes_);
-#pragma warn(1506)  // warning elimination 
 
   return syntax;
 } // getSyntax() 
@@ -1112,9 +1110,7 @@ ElemDDLFileAttrMVCommitEach::displayLabel1() const
 NAString ElemDDLFileAttrMVCommitEach::getSyntax() const
 {
   NAString syntax = "COMMIT REFRESH EACH ";
-#pragma nowarn(1506)   // warning elimination 
   syntax += LongToNAString(nrows_);
-#pragma warn(1506)  // warning elimination 
 
   return syntax;
 
@@ -1193,9 +1189,7 @@ NAString ElemDDLFileAttrMaxSize::getSyntax() const
   }
   else
   {
-#pragma nowarn(1506)   // warning elimination 
     syntax += LongToNAString(maxSize_);
-#pragma warn(1506)  // warning elimination 
     syntax += " ";
     
     switch(maxSizeUnit_)

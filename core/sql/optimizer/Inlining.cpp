@@ -893,9 +893,7 @@ static ItemExpr *addCheckForTriggerEnabled(BindWA    *bindWA,
 
   ItemExpr *enableCheck = new(heap) 
     GetBitValueAt(new(heap) GetTriggersStatus(), 
-#pragma nowarn(1506)   // warning elimination 
 		  new(heap) ConstValue(triggerIndex) );
-#pragma warn(1506)  // warning elimination 
 
   // Check if whenClause is empty or TRUE
   if (whenClause == NULL || whenClause->getOperatorType() == ITM_RETURN_TRUE)
@@ -1563,7 +1561,6 @@ RelExpr *GenericUpdate::createTentativeSubTree(BindWA *bindWA,
 // child classes only.
 //////////////////////////////////////////////////////////////////////////////
 // we are not supposed to get here
-// LCOV_EXCL_START
 RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA, 
 					  CollHeap *heap, 
 					  TriggersTempTable& tempTableObj,
@@ -1573,7 +1570,6 @@ RelExpr *GenericUpdate::createEffectiveGU(BindWA   *bindWA,
   CMPASSERT(FALSE); // Not supposed to get here !!!
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 // Create an Insert node that inserts the NEW@ values into the subject table.
@@ -1634,14 +1630,10 @@ RelExpr *Update::createEffectiveGU(BindWA   *bindWA,
   for (CollIndex i=0; i<subjectColumns.entries(); i++)
   {
     // If this column was not SET into, no need to change it.
-#pragma nowarn(1506)   // warning elimination 
     if (!colsToSet->contains(i))
-#pragma warn(1506)  // warning elimination 
       continue;
 
-#pragma nowarn(1506)   // warning elimination 
     NAColumn *currentColumn = subjectColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination 
     const NAString &colName = currentColumn->getColName();
 
     // Cannot update a clustering/primary key column!
@@ -2283,9 +2275,7 @@ RelExpr * GenericUpdate::createUndoTempTable(TriggersTempTable *tempTableObj,Bin
   tempCorrName.setCorrName( NEWCorr);
   for (CollIndex i=0; i<tempColumns.entries(); i++) 
     {
-#pragma nowarn(1506)   // warning elimination 
       NAString tempColName(tempColumns.getColumn(i)->getColName());
-#pragma warn(1506)  // warning elimination 
    
 
       ColReference *tempColRef = new(bindWA->wHeap()) 
@@ -2702,9 +2692,7 @@ RelExpr* GenericUpdate::inlineRI (BindWA *bindWA,
 
   CMPASSERT (!refConstraints->isEmpty())
   
-#pragma nowarn(1506)   // warning elimination 
   if ((entries = refConstraints->entries())) 
-#pragma warn(1506)  // warning elimination 
   {
     riSubtree = createRISubtree(bindWA, naTable, *(refConstraints->at(0)), heap);
     for (Int32 i=1; i < entries; i++) 
@@ -2829,7 +2817,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
   if (getOperatorType() == REL_UNARY_INSERT &&
       getTableDesc()->getNATable()->getMvAttributeBitmap().getAutomaticRangeLoggingRequired())
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     ItemExpr *rowType  = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWTYPE);
     ItemExpr *rowCount = new(heap) GenericUpdateOutputFunction(ITM_VSBBROWCOUNT);
@@ -2837,7 +2824,6 @@ void GenericUpdate::prepareForMvLogging(BindWA   *bindWA,
       addVirtualColumn(bindWA, rowType, InliningInfo::getRowTypeVirtualColName(), heap);
     rowCountId = 
       addVirtualColumn(bindWA, rowCount, InliningInfo::getRowCountVirtualColName(), heap);
-    // LCOV_EXCL_STOP
   }
 
   ItemExpr *tsOutExpr = new (heap) 
@@ -2895,7 +2881,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
   RelExpr *topNode = insertNode;
   if (logTableObj.needsRangeLogging() && projectMidRangeRows)
   {
-    // LCOV_EXCL_START
     // dead code, range logging is not supported
     RelRoot *rootNode = new (heap) RelRoot(insertNode);
     rootNode->setEmptySelectList();
@@ -2918,7 +2903,6 @@ RelExpr *GenericUpdate::createMvLogInsert(BindWA   *bindWA,
     ifNode->setCondUnary();
 
     topNode = ifNode;
-    // LCOV_EXCL_STOP
   }
 
   RelRoot *rootNode = new (heap) RelRoot(topNode);
@@ -3115,7 +3099,6 @@ GenericUpdate::getTriggeredMvs(BindWA                 *bindWA,
 //////////////////////////////////////////////////////////////////////////////
 
 // we are not supposed to get here
-// LCOV_EXCL_START
 void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 					  BindWA                 *bindWA,
 					  CollHeap               *heap,
@@ -3126,7 +3109,6 @@ void GenericUpdate::insertMvToTriggerList(BeforeAndAfterTriggers *list,
 {
   CMPASSERT(false); // not implemented in GenericUpdate
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

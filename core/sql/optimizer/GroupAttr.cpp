@@ -367,7 +367,7 @@ void GroupAttributes::addConstraint(ItemExpr *c)
       break;
 
     case ITM_UNIQUE_CONSTRAINT:
-      DCMPASSERT("Wrong constraint type used in GA" == 0); // LCOV_EXCL_LINE
+      DCMPASSERT("Wrong constraint type used in GA" == 0);
       break;
 
     default:
@@ -478,8 +478,8 @@ NABoolean GroupAttributes::hasCardConstraint(Cardinality &minNumOfRows,
 {
   NABoolean found = FALSE;
 
-  minNumOfRows = (Cardinality)0;  // NT_PORT ( bd 10/22/96 ) cast to Cardinality
-  maxNumOfRows = (Cardinality)INFINITE_CARDINALITY;  // NT_PORT ( bd 10/22/96 ) cast to Cardinality
+  minNumOfRows = (Cardinality)0;
+  maxNumOfRows = (Cardinality)INFINITE_CARDINALITY;
 
   for (ValueId x= constraints_.init();
        constraints_.next(x);
@@ -502,7 +502,6 @@ NABoolean GroupAttributes::hasCardConstraint(Cardinality &minNumOfRows,
   return found;
 }
 
-// LCOV_EXCL_START
 NABoolean GroupAttributes::hasConstraintOfType(OperatorTypeEnum constraintType) const
 {
   for (ValueId x= constraints_.init();
@@ -527,7 +526,6 @@ void GroupAttributes::getConstraintsOfType(OperatorTypeEnum constraintType,
 	  vidSet.insert(x);
     }
 }
-// LCOV_EXCL_STOP
 
 // This method is used flow RefOpt constraints (optimizer version of foreign key
 // side of a RI constraint) up the query tree. The input argument is typically
@@ -782,7 +780,7 @@ void GroupAttributes::lomerge (GroupAttributes &other, NABoolean mergeCIO)
     {
       if (NOT (requiredInputs_ == other.requiredInputs_) OR
                NOT (requiredOutputs_ == other.requiredOutputs_))
-        ABORT("Internal error, merging incompatible group attributes"); // LCOV_EXCL_LINE
+        ABORT("Internal error, merging incompatible group attributes");
     }
 
   // To add the constraints from the other group to this one, we
@@ -910,7 +908,6 @@ HashValue GroupAttributes::hash() const
 //          covered by a partitioning requirement that has no part key cols
 // Returns: A list that is a prefix of the chosen index sort key.
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 ValueIdList GroupAttributes::recommendedOrderForNJProbing(
                                GroupAttributes* child0GA, // IN
                                Lng32 numForcedParts, //IN
@@ -1013,9 +1010,7 @@ ValueIdList GroupAttributes::recommendedOrderForNJProbing(
                           getCharacteristicInputs(),
                           currentIndexUncoveredCols);
 
-#pragma nowarn(1506)   // warning elimination
     currentIndexNumUncoveredCols = currentIndexUncoveredCols.entries();
-#pragma warn(1506)  // warning elimination
 
     // The current index must have at least one equijoincolumn to use it.
     if (currentIndexOrder.entries() == 0)
@@ -1261,7 +1256,6 @@ ValueIdList GroupAttributes::recommendedOrderForNJProbing(
   return chosenIndexOrder;
 
 } // GroupAttributes::recommendedOrderForNJProbing()
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // coverTest()
@@ -2348,9 +2342,7 @@ Int32 GroupAttributes::existsInputLogProp (const EstLogPropSharedPtr& inputLP) c
   for (CollIndex i = 0; i < inputEstLogProp_.entries(); i++)
   {
     if (inputEstLogProp_[i]->compareEstLogProp (inputLP) == SAME)
-#pragma nowarn(1506)   // warning elimination
       return i;
-#pragma warn(1506)  // warning elimination
   }
   return -1;
 }
@@ -2496,7 +2488,6 @@ NABoolean GroupAttributes::addInputOutputLogProp (const EstLogPropSharedPtr& inp
 } //GroupAttributes::addInputOutputLogProp
 
 
-// LCOV_EXCL_START
 // this method is used by the GUI debugger for displaying the
 // estimated logical properties which are cached by the ASM
 
@@ -2561,7 +2552,6 @@ SHPTR_LIST(EstLogPropSharedPtr) * GroupAttributes::getCachedStatsList()
   }
   return statsList;
 }
-// LCOV_EXCL_STOP
 
 ColStatsSharedPtr GroupAttributes::getColStatsForSkewDetection(
                                               const ValueId vId,
@@ -2623,7 +2613,6 @@ CostScalar GroupAttributes::getSkewnessFactor(const ValueId vId,
 } // GroupAttributes::getSkewnessFactor
 
 
-// LCOV_EXCL_START
 
 SkewedValueList* GroupAttributes::getSkewedValues(const ValueId& vId,
                                               double threshold,
@@ -2884,7 +2873,6 @@ GroupAttributes::setEssentialCharacteristicOutputs(const ValueIdSet & vset)
   CMPASSERT(NOT misMatchFound);
   requiredEssentialOutputs_ = vset;
 }
-// LCOV_EXCL_STOP
 
 void 
 GroupAttributes::addEssentialCharacteristicOutputs(const ValueIdSet & vset)

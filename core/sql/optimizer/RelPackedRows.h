@@ -390,7 +390,6 @@ public:
 
   // The constructor
   //
-  // warning elimination (removed "inline")
   PhysUnPackRows(RelExpr *child = NULL,
                         CollHeap *oHeap = CmpCommon::statementHeap())
     : UnPackRows(0, NULL,NULL,NULL,child, NULL_VALUE_ID, oHeap)

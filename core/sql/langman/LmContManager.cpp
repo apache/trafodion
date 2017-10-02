@@ -330,11 +330,9 @@ LmResult LmContainerManagerCache::getContainer(const char *containerName,
   }
 
 // Exclude the following lines for coverage as caching is not used.
-// LCOV_EXCL_START
   // Check the cache as required.
   if (updates_ % checkPeriod_ == 0)
     checkCache();
-// LCOV_EXCL_STOP
 
   return (*container != NULL)? LM_OK: LM_ERR;
 }
@@ -450,7 +448,6 @@ LmMetaContainer *LmContainerManagerCache::getMetaContainer(const char *path)
 }
 
 // Exclude the following lines for coverage as caching is not used.
-// LCOV_EXCL_START
 //////////////////////////////////////////////////////////////////////
 // checkCache: Check if the cached needs cleaning or decaying.
 //////////////////////////////////////////////////////////////////////
@@ -477,9 +474,7 @@ void LmContainerManagerCache::checkCache()
 void LmContainerManagerCache::cleanCache(ComBoolean purge)
 {
   // Try a finite number of times.
-#pragma nowarn(1506)   // warning elimination 
   Int32 attempts = metaContainers_->entries() / 4 + 1;
-#pragma warn(1506)  // warning elimination 
 
   // Update stats.
   if (purge)
@@ -556,7 +551,6 @@ void LmContainerManagerCache::decayCache()
   while ((mc = (LmMetaContainerCache*)metaContainers_->getNext()) != NULL)
     mc->decay(d);
 }
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////////
 //

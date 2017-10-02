@@ -23,10 +23,6 @@
 
 #include "Platform.h" // Must precede zsysc.h or weird errors occur
 
-#ifndef NA_LINUX
-#include <zsysc.h>
-#endif
-
 #include "QmsRequest.h"
 #include "QmsQms.h"
 #include "QmsInitializer.h"
@@ -35,14 +31,6 @@
 using namespace QR;
 #define XML_BUFF_SIZE 32768
 
-#ifdef NA_NSK
-extern "C" 
-{
-  #include "cextdecs.h(PROCESSHANDLE_TO_FILENAME_, \
-                       PROCESSHANDLE_GETMINE_,     \
-                       PROCESS_GETINFO_)"
-}
-#elif defined (NA_LINUX)
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 #include "seabed/int/opts.h"
@@ -53,7 +41,6 @@ extern "C" {
 #include "cextdecs/cextdecs.h"
 #include "zsysc.h"
 }
-#endif
 
 QRMessageRequest::~QRMessageRequest()
 {
@@ -182,21 +169,8 @@ void QRCommandLineRequest::getNextParameter(NAString& param)
 QmsGuaReceiveControlConnection::QmsGuaReceiveControlConnection(IpcEnvironment* env)
   : GuaReceiveControlConnection(env)
 {
-#ifndef NA_LINUX
-  // Get the name of this qms process.
-  short myProcHandle[10];
-  short actualLen;
-  PROCESSHANDLE_GETMINE_(myProcHandle);
-  PROCESSHANDLE_TO_FILENAME_(myProcHandle, procName_,
-                             PROCESSNAME_STRING_LEN, &actualLen);
-  procName_[actualLen] = '\0';
-#else // (NA_LINUX)
-
   memset(procName_, 0, sizeof(procName_));
   short retval = msg_mon_get_my_process_name(procName_, sizeof(procName_) - 1);
-
-#endif
-
 
   // If the process is "unnamed" (i.e., the name is not one we assign to a
   // public qms), mark it as private, so we'll know to terminate if we get a
@@ -305,21 +279,17 @@ void QmsMessageStream::actOnReceive(IpcConnection* connection)
     respond(responseObj);
 }
 
-// LCOV_EXCL_START :rfi
 static void error(const char* text)
 {
   cerr << text << endl;
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :rfi
 static void usage(char *progName)
 {
   cerr << "Usage: " << progName << " infile outfile" << endl;
   QRLogger::log(CAT_QR_IPC, LL_ERROR,
     "Usage: %s infile outfile", progName);
 }
-// LCOV_EXCL_STOP
 
 // These static member functions are called from QmsMain.cpp.
 
@@ -351,11 +321,9 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
 
     if (!descriptor)
       {
-        // LCOV_EXCL_START :rfi
         QRLogger::log(CAT_QMS_MAIN, LL_WARN,
           "XMLDocument.parse() returned NULL.");
         return XMLParseError;
-        // LCOV_EXCL_STOP
       }
     else
       {
@@ -363,7 +331,6 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
           "Parsed XML document successfully.");
       }
    }
-  // LCOV_EXCL_START :rfi
   catch (XMLException& ex)
     {
       QRLogger::log(CAT_QMS_MAIN, LL_MVQR_FAIL,
@@ -382,7 +349,6 @@ QRRequestResult QRRequest::parseXMLDoc(QRRequest& request,
         "An Unknown exception occurred");
       return InternalError;
     }
-  // LCOV_EXCL_STOP
 
   return Success;
 }  // End of parseXmlDoc
@@ -504,12 +470,10 @@ QRRequestResult QRRequest::handleMatchRequest(QRRequest& request,
     // something else.
     if (descriptor->getElementType() != ET_QueryDescriptor)
     {
-      // LCOV_EXCL_START :rfi
       result = WrongDescriptor;
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR,
         "XML document parsed ok, but had wrong document element -- %s",
                   descriptor->getElementName());
-      // LCOV_EXCL_STOP
     }
 
     // If it is Success, perform "match" and add the resulting Result
@@ -596,7 +560,7 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             // collect and log qms stats
             if (qmsInitializer.doCollectQMSStats())
             {
-              qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu cqd that drives this does not exist
+              qmsInitializer.logQMSStats();
             }
 
             if (result == QR::Success)
@@ -622,7 +586,7 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             // collect and log qms stats
             if (qmsInitializer.doCollectQMSStats())
             {
-              qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu CQD that controls this is not defined.
+              qmsInitializer.logQMSStats();
             }
 
             if (result == QR::Success)
@@ -667,14 +631,12 @@ QRMessageObj* QRMessageRequest::processRequestMessage(QRMessageStream* msgStream
             responseMsgPtr = new QRStatusMessageObj(QR::InvalidRequest);
             break;
 
-          // LCOV_EXCL_START :rfi
           default:
             QRLogger::log(CAT_QMS_MAIN, LL_ERROR,
               "Unhandled message: %d", msgStream->getNextObjType());
             noBadRequest = FALSE;
             responseMsgPtr = new QRStatusMessageObj(QR::InvalidRequest);
             break;
-          // LCOV_EXCL_STOP
         } // switch
     } // while
 
@@ -721,22 +683,18 @@ Int32 QRCommandLineRequest::processCommandLine(Int32 argc, char *argv[])
 
   if (!inFile.rdbuf()->is_open())
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR, "Can't open input file. %s", argv[1]);
       error("Can't open input file.");
       usage(argv[0]);
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   if (!outFile.rdbuf()->is_open())
     {
-      // LCOV_EXCL_START :rfi
       QRLogger::log(CAT_QMS_MAIN, LL_ERROR, "Can't open output file. %s", argv[2]);
       error("Can't open output file.");
       usage(argv[0]);
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   QRCommandLineRequest request(inFile);
@@ -821,7 +779,7 @@ Int32 QRCommandLineRequest::processCommandLine(Int32 argc, char *argv[])
       // collect and log qms stats
       if (qmsInitializer.doCollectQMSStats())
       {
-        qmsInitializer.logQMSStats();  // LCOV_EXCL_LINE :cnu CQD that controls this is not defined.
+        qmsInitializer.logQMSStats();
       }
 
       moreInput = request.readRequestType(requestType);

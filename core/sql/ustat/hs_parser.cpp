@@ -374,13 +374,11 @@ Lng32 AddTableName( const hs_table_type type
             LM->Log(LM->msg);
          }
         HSGlobalsClass::schemaVersion = getTableSchemaVersion(hs_globals->user_table->data());
-        // LCOV_EXCL_START :rfi
         if (HSGlobalsClass::schemaVersion == COM_VERS_UNKNOWN)
         {
            HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "GET_SCHEMA_VERSION");
            return -1;
         }
-        // LCOV_EXCL_STOP
 
 
         if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) 
@@ -416,7 +414,6 @@ Lng32 AddTableName( const hs_table_type type
       }
     else
       {
-        // LCOV_EXCL_START :nsk
         *hs_globals->hstogram_table = hs_globals->objDef->getCatalogLoc(HSTableDef::EXTERNAL_FORMAT);
         hs_globals->hstogram_table->append(".HISTOGRM");
         
@@ -426,7 +423,6 @@ Lng32 AddTableName( const hs_table_type type
         // RESET CQDS:
         HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
-        // LCOV_EXCL_STOP
       }
   
     return 0;
@@ -1034,21 +1030,17 @@ Lng32 AddEveryColumn(const char *startColumn, const char *endColumn)
     else
       {
         start = hs_globals->objDef->getColNum(startColumn);
-        // LCOV_EXCL_START :rfi
         if (start < 0)
           {
             retcode = -1;
             HSHandleError(retcode);
           }
-        // LCOV_EXCL_STOP
         upto  = hs_globals->objDef->getColNum(endColumn);
-        // LCOV_EXCL_START :rfi
         if (upto < 0)
           {
             retcode = -1;
             HSHandleError(retcode);
           }
-        // LCOV_EXCL_STOP
 
         if (start > upto)
           {

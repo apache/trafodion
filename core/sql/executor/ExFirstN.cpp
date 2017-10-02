@@ -74,11 +74,9 @@ ExFirstNTcb::ExFirstNTcb(const ExFirstNTdb & firstn_tdb,
   CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(firstn_tdb.numBuffers_,
 				     firstn_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
   
   // get the queue that child use to communicate with me
   qchild_  = child_tcb.getParentQueue(); 
@@ -177,7 +175,6 @@ short ExFirstNTcb::moveChildDataToParent()
 ////////////////////////////////////////////////////////////////////////////
 // This is where the action is.
 ////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 short ExFirstNTcb::work()
 {
   // if no parent request, return
@@ -475,7 +472,6 @@ short ExFirstNTcb::work()
 
   return 0;
 }
-#pragma warn(262)  // warning elimination 
 
 short ExFirstNTcb::cancel()
 {

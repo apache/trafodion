@@ -24,24 +24,6 @@
 #ifndef WIDECHAR_H
 #define WIDECHAR_H 1
 
-/* uncomment out for debug
-#if !defined(NA_NSK)   // for debug on NT only
-#include <wchar.h>
-#else
-#include "NAWinnt.h"
-#endif
-
-#ifdef NAWchar
-#undef NAWchar
-#endif
-
-#if !defined(NA_NSK) // for debug on NT only
-#define NAWchar NAWchar
-#else
-#define NAWchar NAWchar
-#endif
-*/
-
 #include "NAWinNT.h"
 
 struct _scanfbuf {
@@ -68,7 +50,7 @@ typedef struct _sprintf_buf SPRINTF_BUF;
 Int32
 na_wsprintf(NAWchar *str, NAWchar const *fmt, ...);
 
-#if (defined(NA_C89) || defined(NA_WINNT) || defined(NA_HSC_WINDOWS)) 
+#if (defined(NA_C89) || defined(NA_WINNT)) 
 typedef UInt64  u_quad_t;
 typedef Int64 quad_t;
 #endif

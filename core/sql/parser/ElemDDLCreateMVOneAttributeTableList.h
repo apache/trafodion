@@ -63,9 +63,7 @@ public:
 	ElemDDLCreateMVOneAttributeTableList( ComMVSUsedTableAttribute type, 
 											ElemDDLNode *pTableList);
 
-// LCOV_EXCL_START :dd
 	virtual ~ElemDDLCreateMVOneAttributeTableList(){}
-// LCOV_EXCL_STOP
 
 	virtual ElemDDLCreateMVOneAttributeTableList* 
 										castToElemDDLCreateMVOneAttributeTableList()

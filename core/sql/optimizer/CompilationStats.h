@@ -64,7 +64,7 @@ public:
   Int64 compileEndTime();
 
   // pass in a buffer of size COMPILER_ID_LEN
-  void getCompilerId(char *cmpId); 
+  void getCompilerId(char *cmpId, int len); 
   //
   // metadata cache counters
   ULng32 metadataCacheHits();

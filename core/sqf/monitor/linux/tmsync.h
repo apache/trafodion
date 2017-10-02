@@ -138,7 +138,7 @@ private:
 
     void EndTmSync( MSGTYPE type );
     void EndPendingTmSync( struct sync_def *sync );
-    void ExchangeTmSyncState( void );
+    void ExchangeTmSyncState( bool bumpSync );
     struct sync_def *PackSyncData( void );        // return sync_def for current TmSyncReqQ entries
     void SendUnsolicitedMessages( void );
     void UnPackSyncData( struct sync_def *sync ); // process sync_def received from another node

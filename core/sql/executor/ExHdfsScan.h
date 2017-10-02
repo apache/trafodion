@@ -46,9 +46,6 @@
 // -----------------------------------------------------------------------
 class ExHdfsScanTdb;
 class ExHdfsScanTcb;
-#ifdef NEED_PSTATE
-class ExBlockingHdfsScanPrivateState;
-#endif
 
 // -----------------------------------------------------------------------
 // Classes referenced in this file
@@ -72,16 +69,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExHdfsScanTdb()
+  ExHdfsScanTdb()
   {}
 
-  NA_EIDPROC virtual ~ExHdfsScanTdb()
+  virtual ~ExHdfsScanTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -113,10 +110,6 @@ private:
 
 class ExHdfsScanTcb  : public ex_tcb
 {
-#ifdef NEED_PSTATE
-  friend class ExHdfsScanPrivateState;
-#endif
-
 public:
   ExHdfsScanTcb( const ComTdbHdfsScan &tdb,
                          ex_globals *glob );
@@ -150,12 +143,6 @@ public:
     else
       return NULL;
   }
-#ifdef NEED_PSTATE
-  // For dynamic queue resizing.
-  virtual ex_tcb_private_state * allocatePstates(
-       Lng32 &numElems,      // inout, desired/actual elements
-       Lng32 &pstateLength); // out, length of one element
-#endif
 
 protected:
   enum {
@@ -374,16 +361,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExOrcFastAggrTdb()
+  ExOrcFastAggrTdb()
   {}
 
-  NA_EIDPROC virtual ~ExOrcFastAggrTdb()
+  virtual ~ExOrcFastAggrTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------

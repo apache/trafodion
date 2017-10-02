@@ -68,9 +68,7 @@ void DefaultValidator::applyUpper(NAString &value) const
 				    if (*s == '"')
 				      quoted = !quoted;
 				    else if (!quoted)
-#pragma nowarn(1506)   // warning elimination 
 				      *s = toupper(*s);
-#pragma warn(1506)  // warning elimination 
 				  }
 				  value = tmp;
 				  return;
@@ -127,7 +125,6 @@ Int32 ValidateTraceStr::validate( const char       *value,
   return TRUE;
 }
 
-// LCOV_EXCL_START :cnu
 Int32 ValidateAnsiList::validate( const char *value,  
 				const NADefaults *nad,
 			 Int32 attrEnum,
@@ -220,7 +217,6 @@ Int32 ValidateRoleNameList::validate( const char *value,
 
   return TRUE;
 }
-// LCOV_EXCL_STOP
 
 Int32 ValidatePOSTableSizes::validate(const char *value,
                                     const NADefaults *nad,
@@ -380,9 +376,7 @@ Int32 ValidateNumericRange::validate( const char *value,
     }
 
     if (multiple_ && !multipleOK)
-#pragma nowarn(1506)   // warning elimination 
       *CmpCommon::diags() << DgSqlCode(ERRWARN(2057)) << DgInt0(multiple_);
-#pragma warn(1506)  // warning elimination 
 
   }
 
@@ -477,7 +471,6 @@ Int32 ValidateCollationList::validate(const char *value,
     // Set collStr to be the fragment up to (excluding) the semicolon or zero;
     // set collList to be the rest of itself (after the semicolon).
     //
-// LCOV_EXCL_START :mp
     char *s = collList;
     for (NABoolean quoted = FALSE; *s; s++) {
       if (*s == '"')
@@ -546,7 +539,6 @@ Int32 ValidateCollationList::validate(const char *value,
 	    << DgString0(collStr)
 	    << DgString1(nad->lookupAttrName(attrEnum, errOrWarn));
 
-// LCOV_EXCL_STOP
     }	// !collStr.isNull()
   } // while
 

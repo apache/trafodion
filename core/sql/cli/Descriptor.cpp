@@ -56,12 +56,7 @@
 #include "exp_clause_derived.h"
 
 // WARNING: assuming varchar length indicator of sizeof(long) == 4
-#ifdef NA_64BIT
-// dg64 - should be 4 bytes - see WARNING above
 #define VCPREFIX_LEN sizeof(Int32)
-#else
-#define VCPREFIX_LEN sizeof(Lng32)
-#endif
 
 // extern declaration
 extern short
@@ -181,9 +176,7 @@ Descriptor::Descriptor(SQLDESC_ID * descriptor_id_,
 
   case desc_handle:
     {
-#pragma nowarn(1506)   // warning elimination 
       descriptor_id.handle = (void*)context_->getNextDescriptorHandle();
-#pragma warn(1506)  // warning elimination 
     }
     break;
 
@@ -483,19 +476,9 @@ void setVCLength(char * tgt, Lng32 len, size_t vcPrefixLength)
        return;
    }
 
-#ifdef NA_64BIT
-    // dg64 - should be 4 bytes
    if (vcPrefixLength == sizeof(Int32))
-#else
-   if (vcPrefixLength == sizeof(Lng32))
-#endif
    {
-#ifdef NA_64BIT
-      // dg64 - should be 4 bytes
       str_cpy_all(tgt, (char *)&len, sizeof(Int32));
-#else
-      str_cpy_all(tgt, (char *)&len, sizeof(Lng32));
-#endif
    }
    else if (vcPrefixLength == sizeof(short))
    {
@@ -521,19 +504,9 @@ Lng32 getVCLength(const char * source_string, size_t vcPrefixLength)
        return 0L;
    }
 
-#ifdef NA_64BIT
-   // dg64 - should be 4 bytes
    if (vcPrefixLength == sizeof(Int32))
-#else
-   if (vcPrefixLength == sizeof(Lng32))
-#endif
    {
-#ifdef NA_64BIT
-      // dg64 - should be 4 bytes
       str_cpy_all((char *)&returned_len, source_string, sizeof(Int32));
-#else
-      str_cpy_all((char *)&returned_len, source_string, sizeof(Lng32));
-#endif
    }
    else if (vcPrefixLength == sizeof(short))
    {
@@ -1303,14 +1276,10 @@ char * desc_var_data_alloc(char   *source,
       if ( CharInfo::is_NCHAR_MP(sourceCharSet) == FALSE )
         sourceDataLen = str_len(source);
       else
-#pragma nowarn(1506)   // warning elimination 
         sourceDataLen = na_wcslen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination 
       break;
   case REC_NCHAR_V_ANSI_UNICODE:
-#pragma nowarn(1506)   // warning elimination 
       sourceDataLen = na_wcslen((NAWchar*)source) * SQL_DBCHAR_SIZE;
-#pragma warn(1506)  // warning elimination 
       break;
   case REC_BYTE_F_ASCII:
   case REC_NCHAR_F_UNICODE:
@@ -2271,12 +2240,7 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
       case SQLDESC_LENGTH:
       case SQLDESC_IND_TYPE:
         targetType = REC_BIN32_SIGNED;
-#ifdef NA_64BIT
-        // dg64 - should be 4 bytes
         targetLen = sizeof(Int32);
-#else
-        targetLen = sizeof(Lng32);
-#endif
         targetPrecision = 31;
         targetScale = 0;
         break;
@@ -2440,9 +2404,7 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
             // need to set type, len, precision and scale for both
             // source and target
             sourceType = REC_BYTE_V_ANSI;
-#pragma nowarn(1506)   // warning elimination 
             sourceLen = strlen(source) + 1; // max source length including
-#pragma warn(1506)  // warning elimination 
                                             // the null at the end
             sourcePrecision = sourceScale = 0;
 
@@ -2739,27 +2701,15 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
       break;
    
     case SQLDESC_PARAMETER_MODE:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
       descItem.parameterMode = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
       break;
 
     case SQLDESC_ORDINAL_POSITION:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
       descItem.ordinalPosition = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
       break;
 
     case SQLDESC_PARAMETER_INDEX:
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
 	descItem.parameterIndex = numeric_value;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 	break;
 
     case SQLDESC_DESCRIPTOR_TYPE:
@@ -3512,8 +3462,6 @@ SQLCLI_OBJ_ID* Descriptor::GetNameViaDesc(SQLDESC_ID *desc_id, ContextCli *conte
       return NULL;
     }          
 
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   short retcode = convDoIt(
        data,
        length,
@@ -3529,8 +3477,6 @@ SQLCLI_OBJ_ID* Descriptor::GetNameViaDesc(SQLDESC_ID *desc_id, ContextCli *conte
        0,
        &heap,
        &diagsArea);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 
   if (retcode != ex_expr::EXPR_OK)
     {

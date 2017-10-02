@@ -47,10 +47,8 @@ class ComTdbSequence : public ComTdb
   friend class ExSequencePrivateState;
 
 public:
-  NA_EIDPROC
   ComTdbSequence();
   
-  NA_EIDPROC
   ComTdbSequence(ex_expr * sequenceExpr,
                  ex_expr * returnExpr,
                  ex_expr * postPred,
@@ -81,7 +79,6 @@ public:
                  NABoolean noOverflow,
                  ex_expr * partExpr);
   
-  NA_EIDPROC
   ~ComTdbSequence();
   
   // ---------------------------------------------------------------------
@@ -100,34 +97,24 @@ public:
 
   virtual short getClassSize()     { return (short)sizeof(*this); }
   
-  NA_EIDPROC
   Long pack(void *);
-  NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
   
-  NA_EIDPROC
   void display() const;
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
-  NA_EIDPROC
   inline ComTdb * getChildTdb();
 
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const;
 
-  NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const;
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
-  NA_EIDPROC
   virtual const char *getNodeName() const { return "EX_SEQUENCE_FUNCTION"; };
-  NA_EIDPROC
   virtual Int32 numExpressions() const { return 5; }
-  NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos) {
     if (pos == 0)
       return sequenceExpr_;
@@ -189,25 +176,21 @@ public:
  {
    return maxRowsInOLAPBuffer_;
  }
- NA_EIDPROC
  Int32  getMinNumberOfOLAPBuffers() const 
  {
    return minNumberOfOLAPBuffers_;
  }
- NA_EIDPROC
  Int32  getMaxNumberOfOLAPBuffers() const 
  {
    return maxNumberOfOLAPBuffers_;
  }
 
 
- NA_EIDPROC
  Int32  getNumberOfWinOLAPBuffers() const 
  {
    return numberOfWinOLAPBuffers_;
  }
 
- NA_EIDPROC
  Int32 getMinFollowing() const
  {
    return minFollowing_;
@@ -269,7 +252,6 @@ protected:
   char         fillers_[2];              // 102-103
 };
 
-NA_EIDPROC
 inline ComTdb * ComTdbSequence::getChildTdb(){
   return tdbChild_;
 };

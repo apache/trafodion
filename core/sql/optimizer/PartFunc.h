@@ -785,7 +785,6 @@ protected:
   inline void storePartitioningKeyPredicates(const ValueIdSet& partKeyPreds)
                            { partitioningKeyPredicates_ = partKeyPreds;
 			     partKeyPredsCreated_ = TRUE; }
-// warning elimination (removed "inline")
   void storePartitionInputValues(const ValueIdList& partInputValues)
                        { partitionInputValues_ = partInputValues;
                          partitionInputValuesLayout_ = partInputValues; }
@@ -2558,7 +2557,6 @@ private:
 // partitions in a random fashion so as to balance the number of records
 // in each partition.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 class RoundRobinPartitioningFunction : public PartitioningFunction
 {
 public:
@@ -2616,13 +2614,11 @@ public:
   // --------------------------------------------------------------------
   // Destructor functions
   // --------------------------------------------------------------------
-// warning elimination (removed "inline")
   virtual ~RoundRobinPartitioningFunction() {}
 
   // ---------------------------------------------------------------------
   // see base class for explanations of the virtual methods
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   virtual const RoundRobinPartitioningFunction *
   castToRoundRobinPartitioningFunction() const { return this; }
 
@@ -2704,7 +2700,6 @@ private:
   NABoolean resetAfterStatement_;
 
 }; // class RoundRobinPartitioningFunction
-// LCOV_EXCL_STOP
 //
 
 

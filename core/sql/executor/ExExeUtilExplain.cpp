@@ -143,7 +143,6 @@ ex_tcb_private_state * ExExeUtilDisplayExplainTcb::allocatePstates(
   return pa.allocatePstates(this, numElems, pstateLength);
 }
 
-#pragma nowarn(1313)  // warning elimination
 static const QueryString displayExplainQuery[] =
 {
   {" select translate(case when module_name is null then cast(_ucs2'?' as char(60) character set ucs2 not null) "},
@@ -1882,7 +1881,7 @@ void ExExeUtilDisplayExplainTcb::DoHeader()
   FormatLongLine("STATEMENT_NAME", statementName_, 14, valSize);
   
   //convert the Int64 to string
-  str_sprintf(outStr, "%Ld", planId_);
+  str_sprintf(outStr, "%ld", planId_);
   FormatLine("PLAN_ID", outStr, 7, (Lng32)str_len(outStr));
   
   // rework cardinality as rows out.  Assume probe count is always 1

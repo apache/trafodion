@@ -2072,9 +2072,7 @@ short ex_mj_unique_tcb::work()
 	} // switch pstate.step
     } // while
 
-#pragma nowarn(203)   // warning elimination
   return WORK_OK;
-#pragma warn(203)  // warning elimination
 }
 
 ///////////////////////////////////////////////////////////////////////////

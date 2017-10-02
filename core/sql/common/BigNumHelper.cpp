@@ -174,9 +174,7 @@ short BigNumHelper::SubHelper(Lng32 dataLength,
       carry = ( temp < 0 ? -1 : 0);
     }      
      
-#pragma nowarn(1506)   // warning elimination 
   return neg;
-#pragma warn(1506)  // warning elimination 
 
 }
 
@@ -598,12 +596,8 @@ short BigNumHelper::ConvBigNumToBcdHelper(Lng32 sourceLength,
         }
       finalTargetData--;
       finalTargetLength++;
-#pragma nowarn(1506)   // warning elimination 
       finalTargetData[0] = remainder % 10;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       remainder = remainder / 10;
-#pragma warn(1506)  // warning elimination 
     }
   }
 
@@ -618,12 +612,8 @@ short BigNumHelper::ConvBigNumToBcdHelper(Lng32 sourceLength,
       }
     finalTargetData--;
     finalTargetLength++;
-#pragma nowarn(1506)   // warning elimination 
     finalTargetData[0] = remainder % 10;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
     remainder = remainder / 10;
-#pragma warn(1506)  // warning elimination 
   }
 
   if (heap)
@@ -693,9 +683,7 @@ short BigNumHelper::ConvBcdToBigNumHelper(Lng32 sourceLength,
     unsigned short temp1 = 0;
     Int32 j = 0;
     while ((j < 4) && (i+j < actualSourceLength)) {
-#pragma nowarn(1506)   // warning elimination 
       temp1 = temp1*10 + actualSourceData[i+j];
-#pragma warn(1506)  // warning elimination 
       j++;
     }
     unsigned short power = powersOfTen[j - 1];
@@ -927,9 +915,7 @@ short BigNumHelper::ConvPowersOfTenToBigNumHelper(Lng32 exponent,
   unsigned short * targetDataInShorts = (unsigned short *) targetData;
   *finalTargetLength = BigNumHelper::ConvPrecisionToStorageLengthHelper(exponent); 
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 diffExponent = exponent - sizeof(powersOfTenInBigNumForm)/8 + 1;
-#pragma warn(1506)  // warning elimination 
 
 #ifdef NA_LITTLE_ENDIAN
   union {

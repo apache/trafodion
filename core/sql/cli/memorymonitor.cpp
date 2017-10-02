@@ -164,8 +164,6 @@ MemoryMonitor::~MemoryMonitor() {
 // Called by main thread only.
 Lng32 MemoryMonitor::memoryPressure() {
 
-//SQ_LINUX #ifdef NA_WINNT
-
   return pressure_;
 };
 

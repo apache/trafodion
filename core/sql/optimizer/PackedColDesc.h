@@ -37,7 +37,6 @@
 *
 ******************************************************************************
 */
-// LCOV_EXCL_START
 // exclude this whole file from coverage since this code is related to vertical
 // partitioning and that feature is not active anymore
 #include "Collections.h"
@@ -166,7 +165,6 @@ public:
   // It is up to the user to ensure that the packing information is
   // properly set.
   //
-// warning elimination (removed "inline") 
   PackedColDesc(Lng32 position,
                        const NAType *type)
     : position_(position),
@@ -445,6 +443,5 @@ private:
   //
   NABoolean callFromCatMan_;
 };
-// LCOV_EXCL_STOP
 
 #endif

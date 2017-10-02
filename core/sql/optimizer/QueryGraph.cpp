@@ -20,7 +20,6 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-// LCOV_EXCL_START
 // code that is not compiled, but for some reason is reported
 // just excluding the entire file
 #include "AppliedStatMan.h"
@@ -181,7 +180,6 @@ void JBB::displayReductionPaths()
 }
 
 #ifndef NDEBUG
-#pragma nowarn(770)  // warning elimination
 void JBB::debugQueryGraph(){
   //get integer representing the reduction path to be built
   Lng32 reductionPathString=0;
@@ -230,7 +228,6 @@ void JBB::debugQueryGraph(){
   }
 
 }
-#pragma warn(770)  // warning elimination
 #endif
 
 const NAString JBBC::getQueryGraphNodeText() const{
@@ -245,11 +242,7 @@ const NAString JBBC::getQueryGraphNodeText() const{
     //print the reduction path
     result += (*reductionPaths_)[i]->getText();
 
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
     Int32 cardinality = ((*cardinalityOfReductionPaths_)[i]).getValue();
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
     result += ("cardinality: " + istring(cardinality)+"\n");
   }
 
@@ -282,9 +275,7 @@ void JBBC::initializeQueryGraphNode()
   CANodeIdSet connectedJBBCs = getJoinedJBBCs();
 
   //Allocate the list that will store all incoming connections
-#pragma nowarn(1506)   // warning elimination 
   Int32 numIncomingConnections = connectedJBBCs.entries();
-#pragma warn(1506)  // warning elimination 
   incomingConnections_ = new (heap_) NAList<QueryGraphConnection *>(heap_,numIncomingConnections);
 
   //create a QueryGraphConnection object representing a connection from
@@ -725,4 +716,3 @@ const CANodeIdSet * QueryGraphConnection::getBestIncomingReductionPath()
   return bestIncomingReductionPath_;
 }
 //QueryGraphConnection::getBestIncomingReductionPath
-// LCOV_EXCL_STOP

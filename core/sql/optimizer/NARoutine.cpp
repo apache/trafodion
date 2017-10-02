@@ -58,7 +58,6 @@
 // -----------------------------------------------------------------------
 // Copy a string.  A null terminated buffer is returned.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 char *UDRCopyString ( const ComString &sourceString, CollHeap *heap )
 {
   char *string = new(heap)char [sourceString.length()+1];
@@ -68,7 +67,6 @@ char *UDRCopyString ( const ComString &sourceString, CollHeap *heap )
 	      );
   return string;
 } // UDRCopyString
-#pragma warn(1506)  // warning elimination 
 
 
 

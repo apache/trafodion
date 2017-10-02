@@ -36,7 +36,6 @@
 #ifndef COMTDB_H
 #define COMTDB_H
 
-#include "Platform.h"           // for NA_EIDPROC
 #include "Int64.h"              // for Int64
 #include "NAVersionedObject.h"  // for NAVersionedObject
 #include "BaseTypes.h"          // for Cardinality
@@ -142,18 +141,8 @@ public:
 	       ex_cri_desc *criUp,
 	       queue_index sizeDown,
 	       queue_index sizeUp,
-#ifdef NA_64BIT
-               // dg64 - match signature
 	       Int32  numBuffers,
-#else
-	       Lng32 numBuffers,
-#endif
-#ifdef NA_64BIT
-               // dg64 - match signature
 	       UInt32  bufferSize,
-#else
-	       ULng32 bufferSize,
-#endif
 	       Int32 firstNRows
 	       )
        : estimatedRowCount_(estimatedRowCount),
@@ -168,18 +157,8 @@ public:
 		 ExCriDescPtr &criUp,
 		 queue_index &sizeDown,
 		 queue_index &sizeUp,
-#ifdef NA_64BIT
-                 // dg64 - match signature
 		 Int32  &numBuffers,
-#else
-		 Lng32 &numBuffers,
-#endif
-#ifdef NA_64BIT
-                 // dg64 - match signature
 		 UInt32  &bufferSize,
-#else
-		 ULng32 &bufferSize,
-#endif
 		 Int32 &firstNRows);
 
 private:
@@ -188,18 +167,8 @@ private:
   ex_cri_desc *criUp_;
   queue_index sizeDown_;
   queue_index sizeUp_;
-#ifdef NA_64BIT
-  // dg64 - match signature
   Int32  numBuffers_;
-#else
-  Lng32 numBuffers_;
-#endif
-#ifdef NA_64BIT
-  // dg64 - match signature
   UInt32  bufferSize_;
-#else
-  ULng32 bufferSize_;
-#endif
   Int32 firstNRows_;
   char filler_[40];
 
@@ -209,7 +178,6 @@ private:
 // -----------------------------------------------------------------------
 // ComTdb
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 class ComTdb : public NAVersionedObject
 {
   // ---------------------------------------------------------------------
@@ -331,25 +299,15 @@ public:
   // If params is not NULL, then initialize variable from ComTdbParams
   // object passed in.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ComTdb(ex_node_type type,
+  ComTdb(ex_node_type type,
                     const char *eye,
                     Cardinality estRowsUsed = 0.0,
                     ex_cri_desc *criDown = NULL,
                     ex_cri_desc *criUp = NULL,
                     queue_index sizeDown = 0,
                     queue_index sizeUp = 0,
-#ifdef NA_64BIT
-                    // dg64 - match signature
                     Int32  numBuffers = 0,
-#else
-                    Lng32 numBuffers = 0,
-#endif
-#ifdef NA_64BIT
-                    // dg64 - match signature
                     UInt32  bufferSize = 0,
-#else
-                    ULng32 bufferSize = 0,
-#endif
 		    Lng32          uniqueId = 0,
 		    ULng32 initialQueueSizeDown = 4,
 		    ULng32 initialQueueSizeUp = 4,
@@ -360,17 +318,17 @@ public:
   // ---------------------------------------------------------------------
   // Dummy constructor used in findVTblPtr()
   // ---------------------------------------------------------------------
-  NA_EIDPROC ComTdb();
+  ComTdb();
 
-  NA_EIDPROC virtual ~ComTdb();
+  virtual ~ComTdb();
 
   // ---------------------------------------------------------------------
   // Pack a TDB before storing it on disk or transporting it to another
   // process. Unpack a TDB after it's retrieved from disk or receive from
   // another process.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual Long pack(void *space);
-  NA_EIDPROC virtual Lng32 unpack(void *base, void * reallocator);
+  virtual Long pack(void *space);
+  virtual Lng32 unpack(void *base, void * reallocator);
   
   // ---------------------------------------------------------------------
   // Fix up the virtual function table pointer of a TDB retrieved from
@@ -379,18 +337,18 @@ public:
   // fixes up the result to an Executor version of TDB which redefines
   // project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void fixupVTblPtr();
-  NA_EIDPROC void fixupVTblPtrCom();
-  NA_EIDPROC void fixupVTblPtrExe();
+  void fixupVTblPtr();
+  void fixupVTblPtrCom();
+  void fixupVTblPtrExe();
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual char *findVTblPtr(short classID);
-  NA_EIDPROC virtual unsigned char getClassVersionID()       { return 1; }
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual char *findVTblPtr(short classID);
+  virtual unsigned char getClassVersionID()       { return 1; }
+  virtual void populateImageVersionIDArray()
                              { setImageVersionID(0,getClassVersionID()); }
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                          { return (short)sizeof(ComTdb); }
 
   // ---------------------------------------------------------------------
@@ -401,70 +359,68 @@ public:
   // which has the build() method defined, while the latter returns the
   // one of a "compiler" TDB with no build() method.
   // ---------------------------------------------------------------------  
-  NA_EIDPROC char *findVTblPtrExe(short classID);
-  NA_EIDPROC char *findVTblPtrCom(short classID);
+  char *findVTblPtrExe(short classID);
+  char *findVTblPtrCom(short classID);
 
   // ---------------------------------------------------------------------
   // Whether the TDB supports out-of-order replies to its requests.
   // ---------------------------------------------------------------------
-// LCOV_EXCL_START
-  NA_EIDPROC virtual Int32 orderedQueueProtocol() const { return 1; }
-// LCOV_EXCL_STOP
+  virtual Int32 orderedQueueProtocol() const { return 1; }
   
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
-  NA_EIDPROC virtual void displayExpression(Space *space,ULng32 flag);
-  NA_EIDPROC virtual void displayChildren(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayExpression(Space *space,ULng32 flag);
+  virtual void displayChildren(Space *space,ULng32 flag);
 
   // ---------------------------------------------------------------------
   // Accessors/Mutators.
   // ---------------------------------------------------------------------
-  NA_EIDPROC inline ex_node_type getNodeType() const
+  inline ex_node_type getNodeType() const
                             { return (ComTdb::ex_node_type)getClassID(); }
-  NA_EIDPROC inline void setNodeType(ex_node_type t)    { setClassID(t); }
+  inline void setNodeType(ex_node_type t)    { setClassID(t); }
   inline void setEyeCatcher(const char * eye) { str_cpy_all((char*)&eyeCatcher_, eye, 4); }
 
-  NA_EIDPROC inline ComTdb *getParentTdb()          { return parentTdb_; }
-  NA_EIDPROC inline void setParentTdb(ComTdb *tdb)   { parentTdb_ = tdb; }
-  NA_EIDPROC inline void setTdbId(Lng32 uniqueId)    { tdbId_ = uniqueId; }
-  NA_EIDPROC inline Lng32 getTdbId() const               { return tdbId_; }
-  NA_EIDPROC inline Cardinality getEstRowsAccessed() const
+  inline ComTdb *getParentTdb()          { return parentTdb_; }
+  inline void setParentTdb(ComTdb *tdb)   { parentTdb_ = tdb; }
+  inline void setTdbId(Lng32 uniqueId)    { tdbId_ = uniqueId; }
+  inline Lng32 getTdbId() const               { return tdbId_; }
+  inline Cardinality getEstRowsAccessed() const
   { 
     return estRowsAccessed_; 
   }
   
-  NA_EIDPROC inline void setEstRowsAccessed(Cardinality estRowsAccessed)
+  inline void setEstRowsAccessed(Cardinality estRowsAccessed)
   {
     estRowsAccessed_ = estRowsAccessed;
   }
 
-  NA_EIDPROC inline Cardinality getEstRowsUsed() const
+  inline Cardinality getEstRowsUsed() const
   { 
     return estRowsUsed_; 
   }
   
-  NA_EIDPROC inline void setEstRowsUsed(Cardinality estRowsUsed)
+  inline void setEstRowsUsed(Cardinality estRowsUsed)
   {
     estRowsUsed_ = estRowsUsed;
   }
 
-  NA_EIDPROC inline  ULng32 getMaxQueueSizeDown() const
+  inline  ULng32 getMaxQueueSizeDown() const
                                                 { return queueSizeDown_; }
-  NA_EIDPROC inline  ULng32 getMaxQueueSizeUp() const
+  inline  ULng32 getMaxQueueSizeUp() const
                                                   { return queueSizeUp_; }
-  NA_EIDPROC inline  void setMaxQueueSizeUp(ULng32 qSize)
+  inline  void setMaxQueueSizeUp(ULng32 qSize)
                                                   { queueSizeUp_ = qSize; }
-  NA_EIDPROC inline  ULng32 getInitialQueueSizeDown() const
+  inline  ULng32 getInitialQueueSizeDown() const
                                          { return initialQueueSizeDown_; }
-  NA_EIDPROC inline  ULng32 getInitialQueueSizeUp() const
+  inline  ULng32 getInitialQueueSizeUp() const
                                            { return initialQueueSizeUp_; }
-  NA_EIDPROC inline short getQueueResizeLimit() const
+  inline short getQueueResizeLimit() const
                                              { return queueResizeLimit_; }
-  NA_EIDPROC inline short getQueueResizeFactor() const
+  inline short getQueueResizeFactor() const
                                             { return queueResizeFactor_; }
-  NA_EIDPROC inline void setQueueResizeParams(
+  inline void setQueueResizeParams(
        ULng32 initialQueueSizeDown,
        ULng32 initialQueueSizeUp,
        short queueResizeLimit,
@@ -478,7 +434,7 @@ public:
 
   // this method should be defined in any TDB which store the plan
   // version.
-  NA_EIDPROC virtual
+  virtual
   void setPlanVersion(UInt32 /*pv*/) 
   { 
     // should never reach here.
@@ -487,19 +443,19 @@ public:
   // ---------------------------------------------------------------------
   // numChildren() -- Returns the number of children for this TDB
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual Int32 numChildren() const { return -1; } // LCOV_EXCL_LINE
+  virtual Int32 numChildren() const { return -1; }
 
   // ---------------------------------------------------------------------
   // getNodeName() -- Returns the name of this TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual const char *getNodeName() const  { return "ComTDB"; } // LCOV_EXCL_LINE
+  virtual const char *getNodeName() const  { return "ComTDB"; }
 
   // ---------------------------------------------------------------------
   // getChild(int child) -- Returns a pointer to the nth child TDB of this
   // TDB. This function cannot be used to get children which reside in
   // other processes -- see getChildForGUI.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual const ComTdb *getChild(Int32) const    { return NULL; } // LCOV_EXCL_LINE
+  virtual const ComTdb *getChild(Int32) const    { return NULL; }
 
   // ---------------------------------------------------------------------
   // getChildForGUI() takes as additional arguments the fragment directory
@@ -511,53 +467,51 @@ public:
   // to be looked up. See ComTdbPartnAccess.h_tdb::getChildForGUI() for an
   // example of how this could be done.
   // ---------------------------------------------------------------------
-// LCOV_EXCL_START
   virtual const ComTdb *getChildForGUI(Int32 pos,
                                        Lng32 /*base*/, 
                                        void * /*frag_dir*/) const 
   {
     return getChild(pos);
   }
-// LCOV_EXCL_STOP
 
   // ---------------------------------------------------------------------
   // numExpressions() -- Returns the number of expression for this TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual Int32 numExpressions() const              { return 0; }
+  virtual Int32 numExpressions() const              { return 0; }
 
   // ---------------------------------------------------------------------
   // GetExpressionName(int) -- Returns a string identifying the nth
   // expression for this TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual const char *getExpressionName(Int32) const
+  virtual const char *getExpressionName(Int32) const
                                                         { return "none"; }
 
   // ---------------------------------------------------------------------
   // GetExpressionNode(int) -- Returns the nth expression for this TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_expr *getExpressionNode(Int32)         { return 0; }
+  virtual ex_expr *getExpressionNode(Int32)         { return 0; }
 
   // ---------------------------------------------------------------------
   // overloaded to return TRUE for root operators (master executor root,
   // EID root, ESP root)
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual NABoolean isRoot() const            { return FALSE; }
+  virtual NABoolean isRoot() const            { return FALSE; }
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals)   { return NULL; }
+  virtual ex_tcb *build(ex_globals *globals)   { return NULL; }
 
-  NA_EIDPROC Lng32 getBufferSize() const             {return bufferSize_;}
-  NA_EIDPROC Lng32 getNumBuffers() const             {return numBuffers_;}
+  Lng32 getBufferSize() const             {return bufferSize_;}
+  Lng32 getNumBuffers() const             {return numBuffers_;}
 
-  NA_EIDPROC void resetBufInfo(Int32 numBuffers, UInt32 bufferSize)
+  void resetBufInfo(Int32 numBuffers, UInt32 bufferSize)
   {
     numBuffers_ = numBuffers;
     bufferSize_ = bufferSize;
   }
 
-  NA_EIDPROC Int32 &firstNRows() 
+  Int32 &firstNRows() 
     {
       return firstNRows_;
     }
@@ -568,69 +522,57 @@ public:
   // The root nodes allocate a stats area if the indicator is true. All
   // other tcbs allocate a stats entry if the stats area is present
   // ---------------------------------------------------------------------
-  NA_EIDPROC NABoolean getCollectStats()
+  NABoolean getCollectStats()
     { return (flags_ & COLLECT_STATS) != 0; }
-  NA_EIDPROC inline void setCollectStats(NABoolean v) 
+  inline void setCollectStats(NABoolean v) 
     { (v ? flags_ |= COLLECT_STATS : flags_ &= ~COLLECT_STATS); }
 
-  NA_EIDPROC NABoolean denseBuffers()
+  NABoolean denseBuffers()
     { return (flags_ & DENSE_BUFFERS) != 0; }
-  NA_EIDPROC inline void setDenseBuffers(NABoolean v) 
+  inline void setDenseBuffers(NABoolean v) 
     { (v ? flags_ |= DENSE_BUFFERS : flags_ &= ~DENSE_BUFFERS); }
 
-  NA_EIDPROC
     short doOltQueryOpt() const{return flags_ & DO_OLT_QUERY_OPT;}
 
-  NA_EIDPROC
     void setDoOltQueryOpt(NABoolean v)
     { (v ? flags_ |= DO_OLT_QUERY_OPT : flags_ &= ~DO_OLT_QUERY_OPT); };
 
-  NA_EIDPROC
     short doOltQueryOptLean() const{return flags_ & DO_OLT_QUERY_OPT_LEAN;}
 
-  NA_EIDPROC
     void setDoOltQueryOptLean(NABoolean v)
     { (v ? flags_ |= DO_OLT_QUERY_OPT_LEAN : flags_ &= ~DO_OLT_QUERY_OPT_LEAN); };
 
- NA_EIDPROC NABoolean getCollectRtsStats()
+ NABoolean getCollectRtsStats()
     { return (flags_ & COLLECT_RTS_STATS) != 0; }
- NA_EIDPROC inline void setCollectRtsStats(NABoolean v) 
+ inline void setCollectRtsStats(NABoolean v) 
     { (v ? flags_ |= COLLECT_RTS_STATS : flags_ &= ~COLLECT_RTS_STATS); }
 
-  NA_EIDPROC
   short floatFieldsAreIEEE() const{return flags_ & FLOAT_FIELDS_ARE_IEEE;}
 
-NA_EIDPROC
   short isNonFatalErrorTolerated() const { return flags_ & TOLERATE_NONFATAL_ERROR;}
 
-NA_EIDPROC
   void setTolerateNonFatalError(NABoolean v){ v ? flags_ |= TOLERATE_NONFATAL_ERROR: flags_ &= ~TOLERATE_NONFATAL_ERROR;}
 
-NA_EIDPROC
   short isCIFON() const { return flags_ & CIFON;}
 
-NA_EIDPROC
   void setCIFON(NABoolean v){ v ? flags_ |= CIFON: flags_ &= ~CIFON;}
 
-NA_EIDPROC
   short processLOB() const { return flags_ & PROCESS_LOB;}
 
-NA_EIDPROC
   void setProcessLOB(NABoolean v){ v ? flags_ |= PROCESS_LOB: flags_ &= ~PROCESS_LOB;}
 
   enum CollectStatsType
   {
     NO_STATS      = SQLCLI_NO_STATS,
-    MEASURE_STATS = SQLCLI_MEASURE_STATS,         // collect statistics for measure counters
-    ACCUMULATED_STATS = SQLCLI_ACCUMULATED_STATS, // collect accumulated stats. Same as measure.
-    PERTABLE_STATS   = SQLCLI_PERTABLE_STATS,     // collect same stats that were collected in sql/mp
+    ACCUMULATED_STATS = SQLCLI_ACCUMULATED_STATS, // collect accumulated stats.
+    PERTABLE_STATS   = SQLCLI_PERTABLE_STATS,     // collect per table stats that
     ALL_STATS     = SQLCLI_ALL_STATS,             // collect all stats about all exe operators
     OPERATOR_STATS = SQLCLI_OPERATOR_STATS,       // collect all stats but merge at operator(tdb)
                                                   // granularity. Used to return data at user operator
                                                   // level.
-    CPU_OFFENDER_STATS = SQLCLI_CPU_OFFENDER_STATS,    // Collection of ROOT_OPER_STATS or MEAS_STATS of 
+    CPU_OFFENDER_STATS = SQLCLI_CPU_OFFENDER_STATS,    // Collection of ROOT_OPER_STATS of 
                                                        // all currently running queries in a cpu 
-    QID_DETAIL_STATS = SQLCLI_QID_DETAIL_STATS,   // Collection of ROOT_OPER_STATS or MEAS_STATS for
+    QID_DETAIL_STATS = SQLCLI_QID_DETAIL_STATS,   // Collection of ROOT_OPER_STATS for
                                                   // a given QID
     SE_OFFENDER_STATS = SQLCLI_SE_OFFENDER_STATS,
     RMS_INFO_STATS = SQLCLI_RMS_INFO_STATS,
@@ -641,23 +583,16 @@ NA_EIDPROC
 
   };
 
-NA_EIDPROC
   CollectStatsType getCollectStatsType() { return (CollectStatsType)collectStatsType_; };
-NA_EIDPROC
   void setCollectStatsType(CollectStatsType s) 
   { collectStatsType_ = s; };
 
-NA_EIDPROC
   Lng32 getExplainNodeId() const { return (Lng32) explainNodeId_; }
-NA_EIDPROC
   void setExplainNodeId(Lng32 id) { explainNodeId_ = (Int32) id; }
 
-NA_EIDPROC
   UInt16 getPertableStatsTdbId() const { return pertableStatsTdbId_; }
-NA_EIDPROC
   void setPertableStatsTdbId(UInt16 id) { pertableStatsTdbId_ = id; }
 
-NA_EIDPROC
   Float32 getFloatValue(char * v) const
   {
     Float32 f;
@@ -666,7 +601,6 @@ NA_EIDPROC
     return f;
   }
 
-NA_EIDPROC
   Float64 getDoubleValue(char * v) const
   {
     Float64 f;
@@ -695,6 +629,7 @@ NA_EIDPROC
   ex_cri_desc *getCriDescUp() { return criDescUp_; };
   void setCriDescUp(ex_cri_desc *cri) { criDescUp_ = cri; };
 
+  virtual Float32 getEstimatedMemoryUsage() { return 0; }
   enum Type
   {
     TABLE_INFO,
@@ -842,7 +777,6 @@ protected:
   // ---------------------------------------------------------------------
   char                    fillersComTdb_[34];                    // 94-127
 };
-#pragma warn(1506)  // warning elimination 
 
 class ComTdbVirtTableBase
 {

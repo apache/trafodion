@@ -41,7 +41,7 @@ class QRXmlMessageObj;
 
 //============================================================================
 class MvQueryRewriteHandler : public NABasicObject
-{ // LCOV_EXCL_LINE -- for some reason, LCOV marks this brace as "not covered"
+{ 
 public:
   MvQueryRewriteHandler(CollHeap* heap)
     : mvName_(heap),

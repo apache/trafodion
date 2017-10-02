@@ -730,7 +730,7 @@ void copyCommonDeleteFields(Delete *result,
 // methods for class FileScanRule
 // -----------------------------------------------------------------------
 
-FileScanRule::~FileScanRule() {} // LCOV_EXCL_LINE 
+FileScanRule::~FileScanRule() {} 
 
 /**************************************************************************
 * Input : list of indexes of the same table
@@ -875,7 +875,6 @@ IndexDesc * findMostPartitionedIndex(const LIST(IndexProperty *)& indexes,CollIn
 * plan.
 ***************************************************************************/
 // This function is never code in the code base (checked in M5):1064
-// LCOV_EXCL_START
 NABoolean oneViableIndexJoin(const LIST(IndexProperty *) & indexes)
 {
   CollIndex ixCount = indexes.entries();
@@ -888,7 +887,6 @@ NABoolean oneViableIndexJoin(const LIST(IndexProperty *) & indexes)
   }
   return FALSE;
 }
-// LCOV_EXCL_STOP
 
 
 /**************************************************************************
@@ -1623,13 +1621,12 @@ RelExpr * FileScanRule::nextSubstitute(RelExpr * before,
    return generateScanSubstitutes(before, context, memory, FALSE);
 }
 
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // methods for class HbaseScanRule
 // -----------------------------------------------------------------------
 
-HbaseScanRule::~HbaseScanRule() {} // LCOV_EXCL_LINE 
+HbaseScanRule::~HbaseScanRule() {} 
 
 NABoolean HbaseScanRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -1667,7 +1664,7 @@ RelExpr * HbaseScanRule::nextSubstitute(RelExpr * before,
 // methods for class UnionRule
 // -----------------------------------------------------------------------
 
-UnionRule::~UnionRule() {} // LCOV_EXCL_LINE 
+UnionRule::~UnionRule() {} 
 
 NABoolean UnionRule::topMatch(RelExpr * relExpr, Context * context)
 {
@@ -1736,7 +1733,7 @@ RelExpr * UnionRule::nextSubstitute(RelExpr * before,
 // methods for class SortGroupByRule
 // -----------------------------------------------------------------------
 
-SortGroupByRule::~SortGroupByRule() {} // LCOV_EXCL_LINE 
+SortGroupByRule::~SortGroupByRule() {} 
 
 NABoolean SortGroupByRule::topMatch (RelExpr *relExpr,
                                      Context *context)
@@ -1859,7 +1856,7 @@ RelExpr * SortGroupByRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 // methods for class AggregateRule
 // -----------------------------------------------------------------------
-AggregateRule::~AggregateRule() {} // LCOV_EXCL_LINE 
+AggregateRule::~AggregateRule() {} 
 
 NABoolean AggregateRule::topMatch (RelExpr *relExpr,
                                    Context *context)
@@ -1921,7 +1918,7 @@ NABoolean AggregateRule::topMatch (RelExpr *relExpr,
 // methods for class PhysShortCutGroupByRule
 // -----------------------------------------------------------------------
 
-PhysShortCutGroupByRule::~PhysShortCutGroupByRule() {} // LCOV_EXCL_LINE 
+PhysShortCutGroupByRule::~PhysShortCutGroupByRule() {} 
 
 NABoolean PhysShortCutGroupByRule::topMatch (RelExpr *relExpr,
                                              Context *context)
@@ -1997,7 +1994,7 @@ RelExpr * PhysShortCutGroupByRule::nextSubstitute(RelExpr * before,
 // methods for class HashGroupByRule
 // -----------------------------------------------------------------------
 
-HashGroupByRule::~HashGroupByRule() {} // LCOV_EXCL_LINE 
+HashGroupByRule::~HashGroupByRule() {} 
 
 NABoolean HashGroupByRule::topMatch (RelExpr *relExpr,
                                      Context *context)
@@ -2139,7 +2136,7 @@ NABoolean Insert::isDataSorted(Insert *bef, const Context *context)
 // methods for class HbaseDeleteRule
 // -----------------------------------------------------------------------
 
-HbaseDeleteRule::~HbaseDeleteRule() {} // LCOV_EXCL_LINE 
+HbaseDeleteRule::~HbaseDeleteRule() {} 
 
 NABoolean HbaseDeleteRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2244,7 +2241,7 @@ RelExpr * HbaseDeleteRule::nextSubstitute(RelExpr * before,
 // methods for class HbaseDeleteCursorRule
 // -----------------------------------------------------------------------
 
-HbaseDeleteCursorRule::~HbaseDeleteCursorRule() {} // LCOV_EXCL_LINE 
+HbaseDeleteCursorRule::~HbaseDeleteCursorRule() {} 
 
 NABoolean HbaseDeleteCursorRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2322,7 +2319,7 @@ RelExpr * HbaseDeleteCursorRule::nextSubstitute(RelExpr * before,
 // methods for class HbaseUpdateRule
 // -----------------------------------------------------------------------
 
-HbaseUpdateRule::~HbaseUpdateRule() {} // LCOV_EXCL_LINE 
+HbaseUpdateRule::~HbaseUpdateRule() {} 
 
 NABoolean HbaseUpdateRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2429,7 +2426,7 @@ RelExpr * HbaseUpdateRule::nextSubstitute(RelExpr * before,
 // methods for class HbaseUpdateCursorRule
 // -----------------------------------------------------------------------
 
-HbaseUpdateCursorRule::~HbaseUpdateCursorRule() {} // LCOV_EXCL_LINE 
+HbaseUpdateCursorRule::~HbaseUpdateCursorRule() {} 
 
 NABoolean HbaseUpdateCursorRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2506,7 +2503,7 @@ RelExpr * HbaseUpdateCursorRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 // methods for class HiveInsertRule
 // -----------------------------------------------------------------------
-HiveInsertRule::~HiveInsertRule() {} // LCOV_EXCL_LINE 
+HiveInsertRule::~HiveInsertRule() {} 
 
 NABoolean HiveInsertRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2598,7 +2595,7 @@ RelExpr * HiveInsertRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 // methods for class HbaseInsertRule
 // -----------------------------------------------------------------------
-HbaseInsertRule::~HbaseInsertRule() {} // LCOV_EXCL_LINE 
+HbaseInsertRule::~HbaseInsertRule() {} 
 
 NABoolean HbaseInsertRule::topMatch(RelExpr * relExpr, Context *context)
 {
@@ -2704,7 +2701,7 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
 // methods for class NestedJoinRule
 // -----------------------------------------------------------------------
 
-NestedJoinRule::~NestedJoinRule() {} // LCOV_EXCL_LINE 
+NestedJoinRule::~NestedJoinRule() {} 
 
 NABoolean NestedJoinRule::topMatch(RelExpr * relExpr,
                                    Context * context)
@@ -3000,7 +2997,7 @@ NABoolean NestedJoinRule::canBePruned(RelExpr * relExpr) const
 // methods for class NestedJoinFlowRule
 // -----------------------------------------------------------------------
 
-NestedJoinFlowRule::~NestedJoinFlowRule() {} // LCOV_EXCL_LINE 
+NestedJoinFlowRule::~NestedJoinFlowRule() {} 
 
 NABoolean NestedJoinFlowRule::topMatch (RelExpr *relExpr,
                                         Context *context)
@@ -3097,7 +3094,7 @@ RelExpr * NestedJoinFlowRule::nextSubstitute(RelExpr * before,
 // methods for class HashJoinRule
 // -----------------------------------------------------------------------
 
-HashJoinRule::~HashJoinRule() {} // LCOV_EXCL_LINE 
+HashJoinRule::~HashJoinRule() {} 
 
 NABoolean HashJoinRule::topMatch (RelExpr * relExpr,
                                   Context * context)
@@ -3530,7 +3527,6 @@ RelExpr * HashJoinRule::nextSubstitute(RelExpr * before,
 
   // The following block of code is old and contains bugs.
   // Mask the block out for code coverage.
-  // LCOV_EXCL_START
 
   // Check if this is a BMO
   NABoolean isBMO = result->isBigMemoryOperatorSetRatio(context, 0, bmoFactor);
@@ -3606,7 +3602,6 @@ RelExpr * HashJoinRule::nextSubstitute(RelExpr * before,
   return setResult(result,bef,useOrderedHashJoin, FALSE);
   //end Heuristics
 
-  // LCOV_EXCL_STOP
 
 } // HashJoinRule::nextSubstitute()
 
@@ -3614,7 +3609,7 @@ RelExpr * HashJoinRule::nextSubstitute(RelExpr * before,
 // methods for class MergeJoinRule
 // -----------------------------------------------------------------------
 
-MergeJoinRule::~MergeJoinRule() {} // LCOV_EXCL_LINE 
+MergeJoinRule::~MergeJoinRule() {} 
 
 NABoolean MergeJoinRule::topMatch (RelExpr *relExpr,
                                    Context * context)
@@ -3860,7 +3855,7 @@ RelExpr *PhysCompoundStmtRule::nextSubstitute(
 // methods for class PhysicalMapValueIdsRule
 // -----------------------------------------------------------------------
 
-PhysicalMapValueIdsRule::~PhysicalMapValueIdsRule() {} // LCOV_EXCL_LINE 
+PhysicalMapValueIdsRule::~PhysicalMapValueIdsRule() {} 
 
 // This rule is context sensitive
 NABoolean PhysicalMapValueIdsRule::isContextSensitive() const
@@ -3913,7 +3908,7 @@ NABoolean PhysicalMapValueIdsRule::canMatchPattern (const RelExpr *) const
 // methods for class PhysicalRelRootRule
 // -----------------------------------------------------------------------
 
-PhysicalRelRootRule::~PhysicalRelRootRule() {} // LCOV_EXCL_LINE 
+PhysicalRelRootRule::~PhysicalRelRootRule() {} 
 
 RelExpr * PhysicalRelRootRule::nextSubstitute(RelExpr * before,
                                               Context * /*context*/,
@@ -3938,7 +3933,7 @@ RelExpr * PhysicalRelRootRule::nextSubstitute(RelExpr * before,
 // methods for class PhysicalTupleRule
 // -----------------------------------------------------------------------
 
-PhysicalTupleRule::~PhysicalTupleRule() {} // LCOV_EXCL_LINE 
+PhysicalTupleRule::~PhysicalTupleRule() {} 
 
 NABoolean PhysicalTupleRule::topMatch (RelExpr *relExpr,
                                        Context *context)
@@ -3986,7 +3981,7 @@ RelExpr * PhysicalTupleRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 // methods for class PhysicalTupleListRule
 // -----------------------------------------------------------------------
-PhysicalTupleListRule::~PhysicalTupleListRule() {} // LCOV_EXCL_LINE 
+PhysicalTupleListRule::~PhysicalTupleListRule() {} 
 
 NABoolean PhysicalTupleListRule::topMatch (RelExpr *relExpr,
                                            Context *context)
@@ -4032,7 +4027,7 @@ RelExpr * PhysicalTupleListRule::nextSubstitute(RelExpr * before,
 // methods for class PhysicalExplainRule
 // -----------------------------------------------------------------------
 
-PhysicalExplainRule::~PhysicalExplainRule() {} // LCOV_EXCL_LINE 
+PhysicalExplainRule::~PhysicalExplainRule() {} 
 
 RelExpr * PhysicalExplainRule::nextSubstitute(RelExpr * before,
                                               Context * /*context*/,
@@ -4057,7 +4052,7 @@ RelExpr * PhysicalExplainRule::nextSubstitute(RelExpr * before,
 // methods for class PhysicalHiveMDRule
 // -----------------------------------------------------------------------
 
-PhysicalHiveMDRule::~PhysicalHiveMDRule() {} // LCOV_EXCL_LINE 
+PhysicalHiveMDRule::~PhysicalHiveMDRule() {} 
 
 RelExpr * PhysicalHiveMDRule::nextSubstitute(RelExpr * before,
                                               Context * /*context*/,
@@ -4083,12 +4078,11 @@ RelExpr * PhysicalHiveMDRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 
 // Destructor.
-PhysicalPackRule::~PhysicalPackRule() // LCOV_EXCL_LINE 
+PhysicalPackRule::~PhysicalPackRule()
 {
 }
 
 // PhysicalPackRule::topMatch()
-#pragma nowarn(262)   // warning elimination
 NABoolean PhysicalPackRule::topMatch(RelExpr* relExpr, Context* context)
 {
   // Match the node type first.
@@ -4209,7 +4203,6 @@ NABoolean PhysicalPackRule::topMatch(RelExpr* relExpr, Context* context)
 
   return TRUE;
 }
-#pragma warn(262)  // warning elimination
 
 RelExpr* PhysicalPackRule::nextSubstitute(RelExpr* before,
                                           Context* /*context*/,
@@ -4247,7 +4240,7 @@ NABoolean PhysicalPackRule::canMatchPattern (const RelExpr *) const
 
 // Destructor for the PhysicalTransposeRule
 //
-PhysicalTransposeRule::~PhysicalTransposeRule() {} // LCOV_EXCL_LINE 
+PhysicalTransposeRule::~PhysicalTransposeRule() {} 
 
 // PhysicalTransposeRule::topMatch() -------------------------------------
 // The method is used to determine if a rule should fire.  If
@@ -4413,7 +4406,7 @@ RelExpr * PhysicalTransposeRule::nextSubstitute(RelExpr * before,
 
 // Destructor for the PhysicalUnPackRowsRule
 //
-PhysicalUnPackRowsRule::~PhysicalUnPackRowsRule() {} // LCOV_EXCL_LINE 
+PhysicalUnPackRowsRule::~PhysicalUnPackRowsRule() {} 
 
 // PhysicalUnPackRowsRule::topMatch() -------------------------------------
 // The method is used to determine if a rule should fire.  If
@@ -4633,7 +4626,7 @@ NABoolean PhysicalUnPackRowsRule::canMatchPattern (const RelExpr *) const
 // methods for class SortEnforcerRule
 // -----------------------------------------------------------------------
 
-SortEnforcerRule::~SortEnforcerRule() {} // LCOV_EXCL_LINE 
+SortEnforcerRule::~SortEnforcerRule() {} 
 
 NABoolean SortEnforcerRule::topMatch (RelExpr *  /* relExpr */,
                                       Context *context)
@@ -4728,7 +4721,7 @@ Int32 SortEnforcerRule::promiseForOptimization(RelExpr *,
 // methods for class ExchangeEnforcerRule
 // -----------------------------------------------------------------------
 
-ExchangeEnforcerRule::~ExchangeEnforcerRule() {} // LCOV_EXCL_LINE 
+ExchangeEnforcerRule::~ExchangeEnforcerRule() {} 
 
 NABoolean ExchangeEnforcerRule::topMatch(RelExpr *  /* relExpr */,
                                          Context *context)
@@ -4777,7 +4770,7 @@ Int32 ExchangeEnforcerRule::promiseForOptimization(RelExpr *,
 // -----------------------------------------------------------------------
 // Destructor for the PhysicalSequenceRule
 //
-PhysicalSequenceRule::~PhysicalSequenceRule() {} // LCOV_EXCL_LINE 
+PhysicalSequenceRule::~PhysicalSequenceRule() {} 
 
 // PhysicalSequenceRule::topMatch() ----------------------------------
 // The method is used to determine if a rule should fire.  If
@@ -4937,7 +4930,7 @@ RelExpr * PhysicalSequenceRule::nextSubstitute(RelExpr * before,
 
 // Destructor for the PhysicalSampleRule
 //
-PhysicalSampleRule::~PhysicalSampleRule() {} // LCOV_EXCL_LINE 
+PhysicalSampleRule::~PhysicalSampleRule() {} 
 
 // PhysicalSampleRule::topMatch() -------------------------------------
 // The method is used to determine if a rule should fire.  If
@@ -5108,7 +5101,7 @@ RelExpr * PhysicalSampleRule::nextSubstitute(RelExpr * before,
 // -----------------------------------------------------------------------
 // methods for class PhysicalSPProxyFuncRule
 // -----------------------------------------------------------------------
-PhysicalSPProxyFuncRule::~PhysicalSPProxyFuncRule() // LCOV_EXCL_LINE 
+PhysicalSPProxyFuncRule::~PhysicalSPProxyFuncRule()
 {}
 
 NABoolean PhysicalSPProxyFuncRule::topMatch(RelExpr *relExpr,
@@ -5141,7 +5134,7 @@ RelExpr *PhysicalSPProxyFuncRule::nextSubstitute(RelExpr *before,
 // -----------------------------------------------------------------------
 // methods for class PhysicalExtractSourceRule
 // -----------------------------------------------------------------------
-PhysicalExtractSourceRule::~PhysicalExtractSourceRule() {} // LCOV_EXCL_LINE 
+PhysicalExtractSourceRule::~PhysicalExtractSourceRule() {} 
 
 NABoolean PhysicalExtractSourceRule::topMatch(RelExpr *relExpr,
                                               Context *context)
@@ -5168,7 +5161,7 @@ RelExpr *PhysicalExtractSourceRule::nextSubstitute(RelExpr *before,
   return (RelExpr *) result;
 }
 
-PhysicalIsolatedScalarUDFRule::~PhysicalIsolatedScalarUDFRule() {} // LCOV_EXCL_LINE 
+PhysicalIsolatedScalarUDFRule::~PhysicalIsolatedScalarUDFRule() {} 
 
 NABoolean PhysicalIsolatedScalarUDFRule::topMatch (RelExpr *relExpr,
                                                 Context *context)
@@ -5217,7 +5210,7 @@ RelExpr * PhysicalIsolatedScalarUDFRule::nextSubstitute(RelExpr * before,
   return result;
 }
 
-PhysicalTMUDFRule::~PhysicalTMUDFRule() {} // LCOV_EXCL_LINE 
+PhysicalTMUDFRule::~PhysicalTMUDFRule() {} 
 
 NABoolean PhysicalTMUDFRule::topMatch (RelExpr *relExpr,
                                        Context *context)
@@ -5279,7 +5272,7 @@ NABoolean PhysicalTMUDFRule::canMatchPattern (const RelExpr *pattern) const
     }
 }
 
-PhysicalFastExtractRule::~PhysicalFastExtractRule() {} // LCOV_EXCL_LINE
+PhysicalFastExtractRule::~PhysicalFastExtractRule() {}
 
 NABoolean PhysicalFastExtractRule::topMatch (RelExpr *relExpr,
                                                 Context *context)

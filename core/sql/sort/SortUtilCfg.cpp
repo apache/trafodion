@@ -86,7 +86,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  estimateErrorPenalty_ = 0;
  pMemoryContingencyMB_ = 0;
  bmoCitizenshipFactor_ = 0;
- sortMemEstInMbPerCpu_ = 0;
+ sortMemEstInKBPerNode_ = 0;
  bmoMaxMemThresholdMB_ = 0;
  intermediateScratchCleanup_ = TRUE;
  topNSort_ = FALSE;

@@ -39,7 +39,6 @@
 #ifndef ExpPCodeList_h
 #define ExpPCodeList_h
 
-#include "SqlExpDllDefines.h"
 #include "ExpPCodeInstruction.h"
 
 // Forward External Declaractions
@@ -54,10 +53,10 @@ class PCILink;
 class PCIList;
 class PCIListIter;
 
-class SQLEXP_LIB_FUNC  ListLink {
+class ListLink {
 public:
-  NA_EIDPROC ListLink() { prev_ = 0; next_ = 0; };
-  NA_EIDPROC ListLink(ListLink *prev, ListLink *next) { prev_ = prev; next_ = next; };
+  ListLink() { prev_ = 0; next_ = 0; };
+  ListLink(ListLink *prev, ListLink *next) { prev_ = prev; next_ = next; };
 
   ListLink *getNext() { return next_; };
   ListLink *getPrev() { return prev_; };
@@ -71,10 +70,10 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  ListBase {
+class ListBase {
 public:
-  NA_EIDPROC ListBase() { tail_ = NULL; }
-  NA_EIDPROC ListBase(ListLink *tail) { tail_ = tail; }
+  ListBase() { tail_ = NULL; }
+  ListBase(ListLink *tail) { tail_ = tail; }
 
   void insert(ListLink *item) { 
     if(tail_) { 
@@ -124,13 +123,12 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  ListBaseIter {
+class ListBaseIter {
 public:
-  NA_EIDPROC ListBaseIter(const ListBase &base) { 
+  ListBaseIter(const ListBase &base) { 
     base_ = &base; link_ = base_->getTail(); 
   };
   
-  NA_EIDPROC
   ListBaseIter(ListBaseIter &iter) {
     base_ = iter.base_; link_ = iter.link_;
   };
@@ -156,9 +154,8 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  PCILink : public ListLink {
+class PCILink : public ListLink {
 public:
-  NA_EIDPROC
   PCILink(PCodeInstruction *pci) : info_(pci) { ; };
   PCodeInstruction *getData() { return info_; };
 
@@ -168,12 +165,12 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  PCIList : private ListBase {
+class PCIList : private ListBase {
   friend class PCIListIter;
 
 public:
-  NA_EIDPROC PCIList(CollHeap *heap) : heap_(heap) { ; };
-  NA_EIDPROC PCIList(PCILink *base, CollHeap *heap) : 
+  PCIList(CollHeap *heap) : heap_(heap) { ; };
+  PCIList(PCILink *base, CollHeap *heap) : 
                         ListBase(base), heap_(heap) { ; };
 
   void insert(PCodeInstruction *pci) { 
@@ -209,12 +206,10 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  PCIListIter : private ListBaseIter {
+class PCIListIter : private ListBaseIter {
 public:
-  NA_EIDPROC
   PCIListIter(const PCIList &pcilist)
     : ListBaseIter(pcilist) { ; };
-  NA_EIDPROC
   PCIListIter(PCIListIter &pciListIter)
     : ListBaseIter(pciListIter) { ; };
   PCodeInstruction *next() { 

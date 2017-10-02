@@ -42,9 +42,7 @@
 #include "udrdecs.h"
 
 #include "rosetta/rosgen.h"
-#pragma warning (disable : 4005)   // warning elimination
 #include "nsk/nskprocess.h"
-#pragma warning (default : 4005)   // warning elimination
 #include "zsysc.h"
 
 extern void processAnInvokeMessage(UdrGlobals *UdrGlob,
@@ -251,7 +249,7 @@ void UdrServerDataStream::actOnReceive(IpcConnection *conn)
   
 } // UdrServerDataStream::actOnReceive()
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 void
 UdrGuaControlConnection::actOnSystemMessage(
   short                  messageNum,

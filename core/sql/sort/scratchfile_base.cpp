@@ -225,9 +225,7 @@ RESULT ScratchFile::processAsynchronousReadCompletion(Int32 index)
     numReadsPending_--;
     AsyncIOBuffer * completedAB = fileHandle_[index].associatedAsyncIOBuffer;
     
-#pragma nowarn(161)   // warning elimination 
     completedAB->tag_ = -1;
-#pragma warn(161)  // warning elimination 
     completedAB->state_ = READCOMPLETE;
     completedAB->processMisc();
     

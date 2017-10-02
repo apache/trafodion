@@ -43,16 +43,6 @@
 #include "NABoolean.h"
 #include "NAWinNT.h"
 
-#ifdef _WINDOWS
-    #ifdef SQLERRORS_LIB
-      #define SQLERRORS_LIB_FUNC __declspec( dllexport )
-    #else
-      #define SQLERRORS_LIB_FUNC __declspec( dllimport )
-    #endif
-#else
-    #define SQLERRORS_LIB_FUNC
-#endif
-
 enum MsgTextType { ERROR_TEXT=1,
                    CAUSE_TEXT,
                    EFFECT_TEXT,
@@ -74,15 +64,15 @@ extern "C"
 #endif
 
 
-SQLERRORS_LIB_FUNC void 	 GetErrorMessageRebindMessageFile();
-SQLERRORS_LIB_FUNC char 	*GetPastHeaderOfErrorMessage(char *text);
+void 	 GetErrorMessageRebindMessageFile();
+char 	*GetPastHeaderOfErrorMessage(char *text);
 
 
-SQLERRORS_LIB_FUNC const char 	*GetErrorMessageFileName();
+const char 	*GetErrorMessageFileName();
 
-SQLERRORS_LIB_FUNC short GetErrorMessageRC (Lng32 num, NAWchar *msgBuf, Lng32 bufSize);
+short GetErrorMessageRC (Lng32 num, NAWchar *msgBuf, Lng32 bufSize);
 
-SQLERRORS_LIB_FUNC short GetErrorMessage (Lng32 error_code, 
+short GetErrorMessage (Lng32 error_code, 
                                           NAWchar*& return_text,
                                           MsgTextType M_type = ERROR_TEXT,
                                           NAWchar *alternate_return_text = NULL,
@@ -92,7 +82,7 @@ SQLERRORS_LIB_FUNC short GetErrorMessage (Lng32 error_code,
 
 
 
-SQLERRORS_LIB_FUNC void ErrorMessageOverflowCheckW (NAWchar *buf, size_t maxsiz);
+void ErrorMessageOverflowCheckW (NAWchar *buf, size_t maxsiz);
 
 
 #ifdef __cplusplus

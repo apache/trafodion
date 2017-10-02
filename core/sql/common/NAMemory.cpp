@@ -54,25 +54,13 @@
 #include <errno.h>
 #include "seabed/fs.h"
 
-#ifndef __EID
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
-#endif
 
-#ifndef STAND_ALONE
 #include "str.h"
 #include "ComSpace.h"
-#else
-#define MEMALLOC_FAILURE 1
-#endif
-
-#ifdef __EID
-#include "ExeDp2.h"
-#endif
-
-
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -83,12 +71,10 @@
 #include <fstream>
 #endif
 
-#ifndef STAND_ALONE
 #include "NAError.h"
 #include "HeapLog.h"
 #include "Platform.h"
 #include "NAAssert.h"
-#endif
 
 #include "ComRtUtils.h"
 #include "StmtCompilationMode.h"
@@ -155,7 +141,6 @@ THREAD_P DeallocTraceEntry (*deallocTraceArray)[deallocTraceEntries] = 0;
 #include "Collections.h"
 #endif // _DEBUG
 
-#if defined(NA_LINUX) && !defined(__EID)
 class NAMutex
 {
   bool threadSafe_;
@@ -184,29 +169,21 @@ public:
     }
   }
 };
-#endif
 
 
-#if !defined (NA_WINNT) && !defined(__EID)
 #include "logmxevent.h"
-#endif //!defined (NA_WINNT) && !defined(__EID)
-
 
 #define NO_MERGE        0x0
 #define BACKWARD_MERGE  0x1
 #define FORWARD_MERGE   0x2
 
-#if !defined (NA_WINNT) && !defined(__EID)
 #include "logmxevent.h"
-#endif //!defined (NA_WINNT) && !defined(__EID)
 
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
 extern short getRTSSemaphore();     // Functions implemented in SqlStats.cpp
 extern void releaseRTSSemaphore();
 extern NABoolean checkIfRTSSemaphoreLocked();
 extern void updateMemStats();
 extern SB_Phandle_Type *getMySsmpPhandle();
-#endif
 
 //CollHeap *CTXTHEAP__ = NULL;     // a global, set by CmpContext ctor and used by
 	              		 // Collections.cpp allocate method
@@ -214,16 +191,12 @@ const size_t DEFAULT_NT_HEAP_INIT_SIZE      = 524288;
 const size_t DEFAULT_NT_HEAP_MAX_SIZE       = (size_t)-1; // by default, heaps have no max size
 const size_t DEFAULT_NT_HEAP_INCR_SIZE      = 524288;
 
-
-#ifdef HAVE_MMAP
 // MIN_MMAP_ALLOC_SIZE defines the minimum user size that will be used to
 // allocate a NABlock using mmap().
 const size_t MIN_MMAP_ALLOC_SIZE = 524288;
-#endif
 
-
-// Ignore all HEAPLOG stuff if STAND_ALONE or MUSE
-#if defined(STAND_ALONE) || defined(MUSE)
+// Ignore all HEAPLOG stuff if MUSE
+#if defined(MUSE)
 #undef HEAPLOG_ON
 #undef HEAPLOG_OFF
 #undef HEAPLOG_REINITIALIZE
@@ -234,7 +207,7 @@ const size_t MIN_MMAP_ALLOC_SIZE = 524288;
 #define HEAPLOG_REINITIALIZE(a)
 #define HEAPLOG_ADD_ENTRY(a, b, c, d)
 #define HEAPLOG_DELETE_ENTRY(a, b)
-#endif // STAND_ALONE
+#endif 
 
 // ****************************************************************************
 // Numeric constants that are local to this file
@@ -275,11 +248,7 @@ const size_t DEFAULT_MAX_INCREMENT          = 4194304;
 
 #define BLOCK_OVERHEAD (sizeof(NABlock) + 2 * sizeof(size_t))
 
-#ifdef NA_64BIT
 #define MAX_REQUEST    (0x7fffffffffffff - FRAG_ALIGN_MASK - FRAGMENT_OVERHEAD)
-#else
-#define MAX_REQUEST    (0x7fffffff - FRAG_ALIGN_MASK - FRAGMENT_OVERHEAD)
-#endif // NA_64BIT
 #define MIN_REQUEST    (MIN_FRAGMENT_SIZE - FRAGMENT_OVERHEAD - 1)
 #define SMALLBIN_SHIFT 3
 #define TREEBIN_SHIFT  8
@@ -299,7 +268,7 @@ const size_t DEFAULT_MAX_INCREMENT          = 4194304;
 
 // addressing by index. See above about smallbin repositioning
 
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
 #define RTCHECK(e)                  (e)
 #define CORRUPTION_ERROR_ACTION     assert(0)
 #define USAGE_ERROR_ACTION          assert(0)
@@ -325,7 +294,7 @@ const size_t DEFAULT_MAX_INCREMENT          = 4194304;
 #define checkTopFragment(P)
 #define checkMallocedFragment(P,N)
 #define checkMallocState()
-#endif // !( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
+#endif // !( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
 // ****************************************************************************
 
 #ifdef NA_YOS_SIMULATION
@@ -393,14 +362,12 @@ NABlock::isExternSegment()
   return (sflags_ & EXTERN_BIT) != 0;
 }
 
-#ifdef HAVE_MMAP
 // Return whether this NABlock was allocated using mmap().
 inline NABoolean
 NABlock::isMMapped()
 {
   return (sflags_ & MMAP_BIT) != 0;
 }
-#endif // HAVE_MMAP
 
 // Return the offset of the first fragment in the block
 inline size_t
@@ -682,7 +649,6 @@ NAHeapFragment::setFencePosts()
   next->head_ = FENCEPOST_HEAD;
 }
 
-#ifdef HAVE_MMAP
 // Return whether the MMAPPED_BIT is set. This bit is only set when a
 // NABlock contains a single large fragment and the NABlock was allocated
 // using mmap().
@@ -701,7 +667,6 @@ NAHeapFragment::setSizeOfMMapFragment(size_t size)
   ((NAHeapFragment*)((char*)this + size))->head_ = FENCEPOST_HEAD;
   ((NAHeapFragment*)((char*)this + size + sizeof(size_t)))->head_ = FENCEPOST_HEAD;
 }
-#endif
 
 // mark free pages in this fragment as "non-dirty". Benefits are:
 // 1) pages will become readily stealable if needed by the OS. 
@@ -782,7 +747,6 @@ NATreeFragment::setFreedNSKMemory(short value)
   freedNSKMemory_ = value;
 }
 
-#if (defined(NA_LINUX) && !defined(__EID))
   Lng32 NAMemory::getVmSize()
   {
     pid_t myPid;
@@ -835,9 +799,7 @@ NATreeFragment::setFreedNSKMemory(short value)
        crowdedTotalSize_ = 0ll;
     }
   }
-#endif // (defined(NA_LINUX) && !defined(__EID))
 
-#ifdef HAVE_MMAP
 NABlock*
 NAMemory::allocateMMapBlock(size_t s)
 {
@@ -846,15 +808,11 @@ NAMemory::allocateMMapBlock(size_t s)
                        (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
   if (blk == (NABlock*)-1)
   {
-#ifndef __EID
     mmapErrno_ = errno;
-#endif //__EID
     return NULL;
   }
-#ifndef __EID
   else
     allocationIncrement(s);
-#endif // __EID
 
   // one more block allocated
   blockCnt_++;
@@ -873,37 +831,22 @@ NAMemory::allocateMMapBlock(size_t s)
 inline void
 NAMemory::deallocateMMapBlock(NABlock *blk)
 {
-#ifndef __EID
   allocationDecrement(blk->size_);
-#endif // __EID
   Int32 munmapRetVal;
   munmapRetVal = munmap((void*)blk, blk->size_);
-#ifndef __EID
   if (munmapRetVal == -1)
     munmapErrno_ = errno;
-#endif // __EID
 }
-
-#endif // HAVE_MMAP
 
 // Either the correct call to free the memory used by a NABlock. This function
 // prevents a lot of extra #ifdef code in later sections of code.
 inline void
 NAMemory::sysFreeBlock(NABlock *blk)
 {
-#ifdef HAVE_MMAP
   if (blk->isMMapped())
     deallocateMMapBlock(blk);
   else
     free((void*)blk);
-#else
-  {
-#if (defined(NA_LINUX) && !defined(__EID))
-    allocationDecrement(blk->size_);
-#endif // NA_LINUX
-    free((void*)blk);
-  }
-#endif
 }
 
 #ifndef MUSE
@@ -929,7 +872,6 @@ NAMemory::NAMemory(const char * name)
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
-#ifndef __EID
     , allocationDelta_(0ll)
     , procStatusFile_(NULL)
     , mmapErrno_(0)
@@ -937,9 +879,8 @@ NAMemory::NAMemory(const char * name)
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
-#endif // __EID
 {
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
   char * debugLevel = getenv("MEMDEBUG");
   if (debugLevel)
     debugLevel_ = (Lng32)atoi(debugLevel);
@@ -953,13 +894,11 @@ NAMemory::NAMemory(const char * name)
   else
     setName("Unnamed memory");
 
-#ifndef STAND_ALONE
   // need to initialize an NAStringRef object "on top" of the array
   // (don't touch this unless you know what you're doing!)
   NAStringRef * tmp = 
     new ( (void*) (&nullNAStringRep_[3]) ) 
     NAStringRef (NAStringRef::NULL_CTOR, this) ;
-#endif
 }
 
 NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
@@ -985,7 +924,6 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
    exhaustedMem_(FALSE),
    errorsMask_(0),
     crowdedTotalSize_(0ll)
-#ifndef __EID
     , allocationDelta_(0ll)
     , procStatusFile_(NULL)
     , mmapErrno_(0)
@@ -993,15 +931,12 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
-#endif // __EID
 {
-#ifndef __EID
   if (parent_->getSharedMemory())
      setSharedMemory();
-#endif
   // a derived memory has to have a parent from which it is derived
   assert(parent_);
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID)
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )
   char * debugLevel = getenv("MEMDEBUG");
   if (debugLevel)
     debugLevel_ = (Lng32)atoi(debugLevel);
@@ -1017,13 +952,11 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
     blockSize = (Lng32)524288;
   initialSize_ = incrementSize_ = blockSize;
 
-#ifndef STAND_ALONE
   // need to initialize an NAStringRef object "on top" of the array
   // (don't touch this unless you know what you're doing!)
   NAStringRef * tmp = 
     new ( (void*) (&nullNAStringRep_[3]) ) 
     NAStringRef (NAStringRef::NULL_CTOR, this) ;
-#endif
 }
 
 NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
@@ -1049,7 +982,6 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
-#ifndef __EID
     , allocationDelta_(0ll)
     , procStatusFile_(NULL)
     , mmapErrno_(0)
@@ -1057,11 +989,10 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
-#endif // __EID
 {
   // call setType to initialize the values of all the sizes
   setType(type_, blockSize);
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID)
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) 
   char * debugLevel = getenv("MEMDEBUG");
   if (debugLevel)
     debugLevel_ = (Lng32)atoi(debugLevel);
@@ -1072,13 +1003,11 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
 #endif
   setName(name);
 
-#ifndef STAND_ALONE
   // need to initialize an NAStringRef object "on top" of the array
   // (don't touch this unless you know what you're doing!)
   NAStringRef * tmp = 
     new ( (void*) (&nullNAStringRep_[3]) ) 
     NAStringRef (NAStringRef::NULL_CTOR, this) ;
-#endif
 }
 
 NAMemory::NAMemory(const char * name,
@@ -1109,7 +1038,6 @@ NAMemory::NAMemory(const char * name,
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
-#ifndef __EID
     , allocationDelta_(0ll)
     , procStatusFile_(NULL)
     , mmapErrno_(0)
@@ -1117,7 +1045,6 @@ NAMemory::NAMemory(const char * name,
     , lastVmSize_(0l)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
-#endif // __EID
 {
   segGlobals_->setFirstSegInfo(extFirstSegId,
                                extFirstSegStart,
@@ -1129,7 +1056,7 @@ NAMemory::NAMemory(const char * name,
   // call setType to initialize the values of all the sizes
   setType(type_, 0);
 
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID)
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) 
   char * debugLevel = getenv("MEMDEBUG");
   if (debugLevel)
     debugLevel_ = (Lng32)atoi(debugLevel);
@@ -1157,13 +1084,11 @@ NAMemory::NAMemory(const char * name,
     }
   }
 
-#ifndef STAND_ALONE
   // need to initialize an NAStringRef object "on top" of the array
   // (don't touch this unless you know what you're doing!)
   NAStringRef * tmp = 
     new ( (void*) (&nullNAStringRep_[3]) ) 
     NAStringRef (NAStringRef::NULL_CTOR, this) ;
-#endif
 }
 
 void NAMemory::reInitialize()
@@ -1179,16 +1104,6 @@ void NAMemory::reInitialize()
   if (p != NULL) {
 
     switch (type_) {
-    case DP2_MEMORY:
-#ifdef __EID
-      while (p) {
-        NABlock *q = p->next_;
-        DP2_EXECUTOR_DROP_MEMORY(p);
-        p = q;
-      }
-#endif
-      break;
-#ifndef __EID
     case EXECUTOR_MEMORY:
     case SYSTEM_MEMORY: 
     case IPC_MEMORY:
@@ -1217,7 +1132,6 @@ void NAMemory::reInitialize()
         assert(parent_);
         HEAPLOG_OFF() // no recursive logging. (eric)
 
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
         // This code provides mutual exclusion for the runtime stats shared
         // memory segment.
         short semRetcode = 0;
@@ -1226,13 +1140,11 @@ void NAMemory::reInitialize()
             parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()) {
           semRetcode = getRTSSemaphore();
         }
-#endif
         while (p) {
           NABlock *q = p->next_;
           parent_->deallocateHeapMemory((void*)p);
           p = q;
         }
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX))  && !defined(__EID)
         if (semRetcode == 1)
           releaseRTSSemaphore();
         if (parent_->type_ == NAMemory::EXECUTOR_MEMORY &&
@@ -1240,11 +1152,9 @@ void NAMemory::reInitialize()
         {
             updateMemStats();
         }
-#endif
         HEAPLOG_ON()
       }
       break;
-#endif // __EID
     default:
       assert(0);
     } // switch(_type)
@@ -1287,7 +1197,6 @@ NAMemory::~NAMemory()
 void NAMemory::setType(NAMemoryType type, Lng32 blockSize)
 {
   // upperLimit_ must be zero for EXECUTOR_MEMORY, IPC_MEMORY, SYSTEM_MEMORY,
-  // DP2_MEMORY.
 
   type_ = type;
 
@@ -1301,21 +1210,6 @@ void NAMemory::setType(NAMemoryType type, Lng32 blockSize)
   // initialSize_ + n * incrementSize_ = maximumSize_
 
   switch(type_) {
-  case DP2_MEMORY:
-    if (blockSize > 0)
-      {
-	initialSize_ = blockSize;
-	incrementSize_ = blockSize * 2; // nothing special about *2 here.
-      }
-    else
-      {
-	initialSize_ = 100000;
-	incrementSize_ = 100000;
-      }
-
-    maximumSize_ = (size_t)-1;      // not used for this memory type
-    break;
-	
   case EXECUTOR_MEMORY:
     // input parameter blockSize is ignored
     // this is an NAMemory using flat segments on NSK
@@ -1412,7 +1306,7 @@ void NAMemory::deallocateMemory(void* addr)
 // dump() writes memory statistics to an output file that the caller must open.
 // It is used as an aid for debugging memory problems and for saving memory
 // statistics during certain tests.
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void NAMemory::dump(ostream* outstream, Lng32 indent)
 {
   switch (derivedClass_)
@@ -1509,7 +1403,7 @@ NAHeap::idx2bit(bindex_t idx)
 inline NAHeap::bindex_t
 NAHeap::bit2idx(binmap_t x)
 {
-#if defined(NA_LINUX) && defined(i386)
+#if defined(i386)
   UInt32 ret;
   __asm__("bsfl %1,%0\n\t" : "=r" (ret) : "rm" (x));
   return (NAHeap::bindex_t)ret;
@@ -1605,7 +1499,7 @@ NAHeap::computeTreeIndex(size_t size)
     return NTREEBINS - 1;
   else {
     UInt32 k;
-#if defined(NA_LINUX) && defined(i386)
+#if defined(i386)
     __asm__("bsrl %1,%0\n\t" : "=r" (k) : "rm" (x));
 #else
     UInt32 y = (UInt32)x;
@@ -1618,10 +1512,6 @@ NAHeap::computeTreeIndex(size_t size)
     return (k << 1) + ((size >> (k + (TREEBIN_SHIFT-1)) & 1));
   }
 }
-
-#ifdef WIN32
-#pragma warning( disable : 4146 ) // no "unsigned" warnings
-#endif // WIN32
 
 // Isolate the least set bit of a bitmap
 inline NAHeap::binmap_t
@@ -1973,7 +1863,6 @@ NAHeap::replaceDV(NAHeapFragment *p, size_t size)
 }
 
 // Resize the top fragment when a segment changes size.
-// LCOV_EXCL_START
 inline void
 NAHeap::resizeTop(size_t newsize)
 {
@@ -1985,7 +1874,6 @@ NAHeap::resizeTop(size_t newsize)
   NAHeapFragment *next = top_->nextFragment();
   next->setFencePosts();
 }
-// LCOV_EXCL_STOP
 
 // Initialize the top fragment
 inline void
@@ -2075,12 +1963,6 @@ NAHeap::deallocateFreeBlock(NAHeapFragment *p)
   // Now release the memory to the operating system.
   switch (type_)
   {
-  case DP2_MEMORY:
-#ifdef __EID
-    DP2_EXECUTOR_DROP_MEMORY(curr);
-#endif
-    break;
-#ifndef __EID
   case EXECUTOR_MEMORY:
   case SYSTEM_MEMORY:
   case IPC_MEMORY:
@@ -2092,7 +1974,6 @@ NAHeap::deallocateFreeBlock(NAHeapFragment *p)
   case DERIVED_MEMORY:
     assert(parent_);
     HEAPLOG_OFF() // no recursive logging.
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
     // This code provides mutual exclusion for the runtime stats shared
     // memory segment.
     if (parent_->getType() == EXECUTOR_MEMORY &&
@@ -2105,12 +1986,8 @@ NAHeap::deallocateFreeBlock(NAHeapFragment *p)
     } else {
       parent_->deallocateHeapMemory((void*)curr);
     }
-#else
-    parent_->deallocateHeapMemory((void*)curr);
-#endif
     HEAPLOG_ON()
     break;
-#endif // __EID
   default:
     assert(0);  // Shouldn't happen
     break;
@@ -2241,30 +2118,19 @@ NAHeap::tmallocSmall(size_t nb)
   return NULL;
 }
 
-#ifdef WIN32
-#pragma warning( default : 4146 ) // allow "unsigned" warnings
-#endif // WIN32
-
 Lng32 NAMemory::getAllocatedSpaceSize()
 {
   assert(type_ != NO_MEMORY_TYPE);
   return allocSize_;
 }
-// LCOV_EXCL_STOP
 
 void NAMemory::setName(const char * name)
 {
-#ifndef __EID
-#ifndef STAND_ALONE
   Lng32 copyLen = str_len(name);
-#else
-  Lng32 copyLen = strlen(name);
-#endif
   if (copyLen > 20)
     copyLen = 20;
   memcpy(name_, name, copyLen);
   name_[copyLen] = 0;
-#endif
 }
 
 void NAMemory::registerMemory(NAMemory * child)
@@ -2352,87 +2218,53 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
   NABlock *p = NULL;              // Pointer to the returned block.
 
   switch (type_) {
-  case DP2_MEMORY: {
-#ifdef __EID
-
-    short returnCode = DP2_EXECUTOR_ADD_MEMORY (blockSize, &addr);
-
-    if (returnCode == FEOK) {
-#ifdef TRACE_DP2_MALLOCS
-      extern ostream *TraceFile;
-      *TraceFile << "DP2_EXECUTOR_ADD_MEMORY alloc'd " << size
-                 << " bytes at " << (void *) addr 
-                 << " which the executor will use as an NAMemory block." << endl;
-#endif
-
-      p = (NABlock*)addr;
-    }
-
-#endif
-  }
-  break;
-
-#ifndef __EID
   case EXECUTOR_MEMORY: {
 
     // This could be either Global Executor Memory or Stats Globals
     // Don't add a block if Stats Globals!
-    // (segGlobals_->reachedMaxSegCnt which is used in the NA_NSK case
-    // is obsolete)
     if (getSegGlobals()->getFirstSegId() == getStatsSegmentId())
       return NULL;
-#ifdef HAVE_MMAP
+
     // Try to allocate the NABlock using mmap(). If it succeeds return the
     // NABlock.  Otherwise, fall through and try to allocate the normal way.
     if (blockSize >= MIN_MMAP_ALLOC_SIZE &&
         (p = allocateMMapBlock(blockSize)) != NULL)
       return p;
-#endif
 
     // allocate a block from the OS memory
     p = (NABlock*)malloc(blockSize);
-#if (defined(NA_LINUX) && !defined(__EID))
     if (p)
       allocationIncrement(blockSize);
-#endif // NA_LINUX
   }
   break;
 
   case SYSTEM_MEMORY: 
   case IPC_MEMORY:
   {
-
-#ifdef HAVE_MMAP
     // Try to allocate the NABlock using mmap(). If it succeeds return the
     // NABlock.  Otherwise, fall through and try to allocate the normal way.
     if (blockSize >= MIN_MMAP_ALLOC_SIZE &&
         (p = allocateMMapBlock(blockSize)) != NULL)
       return p;
-#endif
 
     // allocate a block from the OS memory
     p = (NABlock*)malloc(blockSize);
-#if (defined(NA_LINUX) && !defined(__EID))
     if (p)
       allocationIncrement(blockSize);
-#endif // (defined(NA_LINUX) && !defined(__EID))
   }
   break;
 
   case DERIVED_FROM_SYS_HEAP: {
     // allocate a block from the OS memory
-#ifdef HAVE_MMAP
     // Try to allocate the NABlock using mmap(). If it succeeds return the
     // NABlock.  Otherwise, fall through and try to allocate the normal way.
     if (blockSize >= MIN_MMAP_ALLOC_SIZE &&
         (p = allocateMMapBlock(blockSize)) != NULL)
       return p;
-#endif
+
     p = (NABlock*)malloc(blockSize);
-#if (defined(NA_LINUX) && !defined(__EID))
     if (p)
       allocationIncrement(blockSize);
-#endif // (defined(NA_LINUX) && !defined(__EID))
   }
   break;
 
@@ -2442,7 +2274,6 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
     // allocate a block from the parent
     HEAPLOG_OFF()  // no recursive logging. (eric)
 
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
     // This code provides mutual exclusion for the runtime stats shared
     // memory segment.
     // The IF condition below is not needed since we are checking if
@@ -2456,7 +2287,6 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
       p = (NABlock*)parent_->allocateHeapMemory(blockSize, FALSE);
 
       if (p == NULL)
-//LCOV_EXCL_START 
 // Unit tested this code with the test case in QC 1387
 // - 3/22/2012.
       {
@@ -2487,40 +2317,29 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
             char coreFile[1024];
             msg_mon_dump_process_name(NULL, ssmpName, coreFile);
           }
-#ifdef SQ_PHANDLE_VERIFIER
           Int32 ndRetcode = msg_mon_node_down2(nid,
                               "RMS shared segment is exhausted.");
-#else
-          Int32 ndRetcode = msg_mon_node_down(nid);
-#endif
           sleep(30);
           NAExit(0);    // already made a core.
         }
         else
           assert(p != NULL);
-//LCOV_EXCL_STOP
       }
 
       if (retcode == 1)
         releaseRTSSemaphore();
     } else {
       p = (NABlock*)parent_->allocateHeapMemory(blockSize, failureIsFatal);
-#ifndef __EID
      if (parent_->type_ == NAMemory::EXECUTOR_MEMORY &&
             parent_->parent_ == NULL)
      {
         updateMemStats();
      }
-#endif
     }
-#else
-    p = (NABlock*)parent_->allocateHeapMemory(blockSize, failureIsFatal);
-#endif
     segmentId = NABlock::DERIVED_SEGMENT_ID;  // Add another check for muse
     HEAPLOG_ON()
   }
   break;
-#endif // ifndef __EID
   }  // switch(type_)
 
   // if the allocation was not sucessfull, we return a NULL
@@ -2541,7 +2360,6 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
 } // NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
 #endif // !MUSE
 
-#ifndef __EID
 void NAMemory::showStats(ULng32 level)
 {
   char indent[100];
@@ -2554,9 +2372,6 @@ void NAMemory::showStats(ULng32 level)
   switch(type_) {
   case NO_MEMORY_TYPE:
     cerr << "NO_MEMORY_TYPE";
-    break;
-  case DP2_MEMORY:
-    cerr << "DP2_MEMORY";
     break;
   case EXECUTOR_MEMORY:
     cerr << "EXECUTOR_MEMORY";
@@ -2591,7 +2406,6 @@ void NAMemory::showStats(ULng32 level)
   for (NAMemory * p = memoryList_; p != NULL; p = p->nextEntry_)
     p->showStats(level + 1);
 }
-#endif //__EID
 
 // this method used to belong to CollHeap
 #ifndef MUSE
@@ -2601,9 +2415,7 @@ NAMemory::handleExhaustedMemory()
   exhaustedMem_ = TRUE;
   if (heapJumpBuf_)
     {
-#ifndef STAND_ALONE
       ARKCMP_EXCEPTION_EPILOGUE("NAMemory");
-#endif
       longjmp(*heapJumpBuf_, MEMALLOC_FAILURE);
     }
 }
@@ -2612,7 +2424,6 @@ NAMemory::handleExhaustedMemory()
 void
 NAMemory::logAllocateError(short error, SEG_ID segmentId, Lng32 blockSize, short errorDetail)
 {
-#if !defined (NA_WINNT) && !defined(__EID)
   char msg[128], msgErrorDetail[32];
   if (error != 0 && error != 15)
   {
@@ -2630,15 +2441,12 @@ NAMemory::logAllocateError(short error, SEG_ID segmentId, Lng32 blockSize, short
       SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
     }
   }
-#endif //!defined (NA_WINNT) && !defined(__EID)
 }
 
 void NAMemory::setJmpBuf( jmp_buf *newJmpBuf )
 { 
-#if defined(NA_LINUX) && !defined(__EID)
   if (derivedClass_ == NAHEAP_CLASS)
     assert(((NAHeap*)this)->getThreadSafe() == false);
-#endif
   heapJumpBuf_ = newJmpBuf;
 }
 
@@ -2673,6 +2481,17 @@ NABoolean NAMemory::getUsage(size_t * lastBlockSize, size_t * freeSize, size_t *
   return crowded;
 }
 
+NABoolean NAMemory::checkSize(size_t size, NABoolean failureIsFatal)
+{
+  if (size > MAX_MEMORY_SIZE_IN_AN_ALLOC) {
+     if (failureIsFatal) 
+        abort();
+     else
+        return FALSE;  
+  }
+  return TRUE;
+}
+
 // ---------------------------------------------------------------------------
 // NASegGlobals methods
 // ---------------------------------------------------------------------------
@@ -2698,7 +2517,6 @@ void NASegGlobals::setFirstSegInfo(SEG_ID firstSegId,
   }
 }
 
-// LCOV_EXCL_START
 Int32 NASegGlobals::addSegId(short segId, void *start, size_t len)
 {
   if (addedSegCount_ == NA_MAX_SECONDARY_SEGS)
@@ -2813,7 +2631,6 @@ NABoolean NASegGlobals::overlaps(void *start, size_t len) const
     }
   return FALSE;
 }
-// LCOV_EXCL_STOP
 
 // ---------------------------------------------------------------------------
 // NAHeap methods
@@ -2833,10 +2650,8 @@ NAHeap::NAHeap()
   initBins();
   derivedClass_ = NAHEAP_CLASS;
 
-#if defined(NA_LINUX) && !defined(__EID)
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
-#endif
 
 #ifdef _DEBUG
   setAllocTrace();
@@ -2860,10 +2675,8 @@ NAHeap::NAHeap(const char * name,
   initBins();
   derivedClass_ = NAHEAP_CLASS;
 
-#if defined(NA_LINUX) && !defined(__EID)
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
-#endif
   if (parent != NULL)
   {
      NAMutex mutex(parent->threadSafe_, &parent->mutex_);
@@ -2892,10 +2705,8 @@ NAHeap::NAHeap(const char * name,
   initBins();
   derivedClass_ = NAHEAP_CLASS;
 
-#if defined(NA_LINUX) && !defined(__EID)
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
-#endif
 
 #ifdef _DEBUG
   setAllocTrace();
@@ -2941,10 +2752,8 @@ NAHeap::NAHeap(const char  * name,
     }
   }
 
-#if defined(NA_LINUX) && !defined(__EID)
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
-#endif
 
 #ifdef _DEBUG
   setAllocTrace();
@@ -2958,7 +2767,6 @@ NAHeap::~NAHeap()
      pthread_mutex_destroy(&mutex_);
 }
 
-#if defined(NA_LINUX) && !defined(__EID)
 void NAHeap::setThreadSafe()
 {
   assert(((NAMemory*)this)->getJmpBuf() == NULL);
@@ -2981,7 +2789,6 @@ void NAHeap::setThreadSafe()
     heap = heap->parent_;
   }
 }
-#endif
 
 // destroy() is called by the NAMemory destructor to perform the
 // derived class destructor.  It is part of the mechanism that
@@ -2989,10 +2796,8 @@ void NAHeap::setThreadSafe()
 // runtime statistics.
 void NAHeap::destroy() 
 {
-#if defined(NA_LINUX) && !defined(__EID)
   if (parent_ != NULL)
      NAMutex mutex(parent_->threadSafe_, &parent_->mutex_);
-#endif
 
 #ifdef _DEBUG
   if (la_)
@@ -3015,11 +2820,9 @@ void NAHeap::destroy()
 // NAMemory reInitialize(), which may either be called directly or from a destructor.
 void NAHeap::reInitializeHeap()
 {
-#if defined(NA_LINUX) && !defined(__EID)
   NAMutex mutex(threadSafe_, &mutex_);
-#endif
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
   // Before freeing the NABlocks in reInitialize(), check to see whether any
   // of the memory fragments in the blocks have overflowed
   if (debugLevel_ == 2)
@@ -3122,10 +2925,7 @@ void * NAHeap::allocateAlignedHeapMemory(size_t userSize, size_t alignment, NABo
 void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
 {
 
-#if defined(NA_LINUX) && !defined(__EID)
   NAMutex mutex(threadSafe_, &mutex_);
-#endif
-
 
   assert(type_ != NO_MEMORY_TYPE);
 
@@ -3133,9 +2933,11 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   // allocate 0 bytes. But this would waste memory to maintain a
   // heap fragment of size 0.
   if (userSize == 0)
-    return NULL;
+     return NULL;
 
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
+  if (! checkSize(userSize, failureIsFatal))
+     return NULL;
+
   // getSharedMemory() check alone is enough since it will return for both
   // global and process stats heap. Leaving the rest of the condition here
   //
@@ -3147,16 +2949,15 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
     if (! checkIfRTSSemaphoreLocked())
        NAExit(1);
   }
-#endif
+
   // Some additional bytes are added in debug mode, but the original userSize
   // must be retained.
   size_t additionalUserSize = userSize;
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))  
   if (debugLevel_)
     dynamicAllocs.addEntry(userSize);
 
-#ifndef STAND_ALONE
   // Allocate some additional memory to help with memory debugging. At
   // debug level 2 on Windows, there are 40 bytes allocated to store
   // 10 program counters of 4 bytes each.  There are 4 bytes to store
@@ -3172,8 +2973,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
     const size_t additionalBytes[4] = { 12, 15, 14, 13 };
     additionalUserSize += additionalBytes[userSize & 0x3];
   }
-#endif // !STAND_ALONE
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) 
 
   size_t nb;
   NAHeapFragment *p;
@@ -3183,7 +2983,6 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   // checking logic to work.
   NABoolean cleanUpPrevNext = debugLevel_== 0 ? TRUE : FALSE;
 
-#ifdef HAVE_MMAP
   // If the user is allocating a large piece of memory from a non-derived
   // heap that is also not the runtime statistics shared memory segment,
   // then allocate a NABlock using mmap(). This prevents any changes
@@ -3222,7 +3021,6 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
     }
     // Fall through and try to allocate the regular way.
   }
-#endif // HAVE_MMAP
 
   if (additionalUserSize <= MAX_SMALL_REQUEST) {
 
@@ -3370,7 +3168,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
         // If we return from this call it means that the caller wanted
         // a memory allocation failure to be fatal yet did not set the
         // the jump buffer.  This is not good.
-        assert(0);
+        abort();
       }
 
       // Caller will handle the error so just return null.
@@ -3474,12 +3272,8 @@ void NAHeap::deallocateHeapMemory(void* addr)
 
   assert(type_ != NO_MEMORY_TYPE);
 
-#if defined(NA_LINUX) && !defined(__EID)
   NAMutex mutex(threadSafe_, &mutex_);
-#endif
-
-#if !defined(STAND_ALONE) && (defined(__TANDEM) || defined(NA_LINUX)) && !defined(__EID)
-
+ 
   if (getSharedMemory() || (parent_ && parent_->getType() == EXECUTOR_MEMORY &&
              parent_->getSegGlobals() != NULL &&
              parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()))
@@ -3488,7 +3282,6 @@ void NAHeap::deallocateHeapMemory(void* addr)
     if (! checkIfRTSSemaphoreLocked())
        NAExit(1);
   }
-#endif
 
   HEAPLOG_DELETE_ENTRY(addr, heapID_.heapNum)
 
@@ -3534,12 +3327,10 @@ void NAHeap::deallocateHeapMemory(void* addr)
     deallocTraceIndex = i;
   }
 
-#ifdef HAVE_MMAP
   if (p->isMMapped()) {
     deallocateFreeBlock(p);
     return;
   }
-#endif // HAVE_MMAP
 
   // Get a pointer to the next fragment
   NAHeapFragment *next = p->fragmentPlusOffset(psize);
@@ -3660,12 +3451,10 @@ void NAHeap::deallocateHeapMemory(void* addr)
 
 #endif // !MUSE
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void NAHeap::dumpHeapInfo(ostream* outstream, Lng32 indent)
 {
-#if defined(NA_LINUX) && !defined(__EID)
   NAMutex mutex(threadSafe_, &mutex_);
-#endif
 
   char ind[100];
 
@@ -3696,7 +3485,6 @@ void NAHeap::dumpHeapInfo(ostream* outstream, Lng32 indent)
   
   MemoryStats freeStats;
   MemoryStats allocStats;
-#ifndef STAND_ALONE
   NABlock * p = firstBlk_;
   while (p) {
     p->dump(outstream, debugLevel_, freeStats, allocStats, top_, indent);
@@ -3719,9 +3507,8 @@ void NAHeap::dumpHeapInfo(ostream* outstream, Lng32 indent)
     derivedHeap->dump(outstream, indent + 2);
     derivedHeap = derivedHeap->nextEntry_;
   }
-#endif // !STAND_ALONE
 }
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) ...
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))  ...
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -3729,7 +3516,7 @@ void NAHeap::dumpHeapInfo(ostream* outstream, Lng32 indent)
 // NABlock methods
 // ---------------------------------------------------------------------------
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void NABlock::dump(ostream* outstream,
                    Lng32 debugLevel,
                    MemoryStats& freeStats,
@@ -3765,11 +3552,10 @@ void NABlock::dump(ostream* outstream,
     q = q->nextFragment();
   }
 }
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) ...
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))  ...
 
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef __EID
 MemoryStats::MemoryStats()
   : count_(0),
     sum_(0.0),
@@ -3797,7 +3583,7 @@ void MemoryStats::addEntry(size_t value)
   histBuckets_[i]++;
 }
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void MemoryStats::dump(ostream* outstream, const char * name, Lng32 indent)
 {
   char ind[100];
@@ -3834,17 +3620,15 @@ void MemoryStats::dump(ostream* outstream, const char * name, Lng32 indent)
 	     << " : " << histBuckets_[17] << endl;
   
 }
-#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-#endif // #ifndef __EID
+#endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) 
 
 
 // -------------------- Debugging Support ---------------------------
-#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
+#if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
 
 // The below values are used for buffer overflow detection. Lookup
 // tables are used so that the logic for checking the remaining
 // bytes in a word can be very quick.
-#ifndef STAND_ALONE
 const UInt32 buf_overflow_val = 0xF2F2F2F2; 
 #ifdef NA_LITTLE_ENDIAN
 const UInt32 overflow_mask[4] = { 0, 0xFFFFFF00, 0xFFFF0000, 0xFF000000 };
@@ -3853,7 +3637,6 @@ const UInt32 overflow_val[4] = { 0, 0xF2F2F200, 0xF2F20000, 0xF2000000 };
 const UInt32 overflow_mask[4] = { 0, 0xFFFFFF, 0xFFFF, 0xFF };
 const UInt32 overflow_val[4] = { 0, 0xF2F2F2, 0xF2F2, 0xF2 };
 #endif 
-#endif // !STAND_ALONE
 
 // doAllocDebugProcess() is called with debugLevel_ is set to at
 // least 1.  It resets newly allocated memory to a 0xfafafafa. On
@@ -3861,7 +3644,6 @@ const UInt32 overflow_val[4] = { 0, 0xF2F2F2, 0xF2F2, 0xF2 };
 // information to indicate whether the end of the buffer has been
 // overwritten and saves the last 10 levels of the stack frame.
 
-// LCOV_EXCL_START
 void
 NAHeap::doAllocDebugProcess(NAHeapFragment *p, size_t userSize)
 {
@@ -3869,7 +3651,6 @@ NAHeap::doAllocDebugProcess(NAHeapFragment *p, size_t userSize)
   // Disabled for now, see Todo 1)
   // memset(p->getMemory(), 0xfa, userSize);
 
-#ifndef STAND_ALONE
   if (debugLevel_ == 2 && p->fragmentSize() < INT_MAX) {
 
     // Determine location that the user requested size is stored
@@ -3895,31 +3676,25 @@ NAHeap::doAllocDebugProcess(NAHeapFragment *p, size_t userSize)
     *userSizePtr = (UInt32) userSize;
 
   }
-#endif // !STAND_ALONE
 }
-// LCOV_EXCL_STOP
 
 // doDeallocDebugProcess() resets the deallocated memory to
 // a 0xfdfdfdfd.  This function is only called when debugLevel_ is
 // at set to at least 1.
 
-// LCOV_EXCL_START
 void
 NAHeap::doDeallocDebugProcess(NAHeapFragment *p)
 {
-#ifndef STAND_ALONE
   if (debugLevel_ == 2 && p->fragmentSize() < INT_MAX) {
-    // Check for buffer overflows (if not STAND_ALONE)
+    // Check for buffer overflows
     p->checkBufferOverflow();
   }
-#endif
 
   // Reset the user memory to a 0xfdfdfdfd pattern.
   // size_t userSize = p->fragmentSize() - sizeof(size_t);
   // Disabled for now, see Todo 1)
   // memset(p->getMemory(), 0xfd, userSize);
 }
-// LCOV_EXCL_STOP
 
 // Check properties of any fragment, whether free, inuse, etc.
 void
@@ -4198,15 +3973,11 @@ NAHeap::traverseAndCheck()
       if (s->isExternSegment()) {
         assert(!q->getFirstFragmentBit());
       } else {
-#ifdef HAVE_MMAP
         if (s->isMMapped()) {
           assert(q->getFirstFragmentBit() || q->isMMapped());
         } else {
           assert(q->getFirstFragmentBit());
         }
-#else
-        assert(q->getFirstFragmentBit());
-#endif
       }
 
       NAHeapFragment *lastq = NULL;
@@ -4229,9 +4000,7 @@ NAHeap::traverseAndCheck()
         if (q->isFencePost())
           break;
         assert(!q->getFirstFragmentBit());
-#ifdef HAVE_MMAP
         assert(!q->isMMapped());
-#endif // HAVE_MMAP
       }
       s = (NABlock*)s->next_;
     }
@@ -4240,8 +4009,6 @@ NAHeap::traverseAndCheck()
   return sum;
 }
 
-#ifndef STAND_ALONE
-// LCOV_EXCL_START
 void
 NAHeapFragment::checkBufferOverflow()
 {
@@ -4284,10 +4051,8 @@ NAHeap::checkForOverflow()
     bp = bp->next_;
   }
 }
-// LCOV_EXCL_STOP
 
-#endif // !STAND_ALONE
-#endif // ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
+#endif // ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
 
 #ifdef _DEBUG
 void
@@ -4316,7 +4081,6 @@ NAHeap::setAllocTrace()
 // methods for class DefaultIpcHeap
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 // This object is allocated on either global or a passed-in heap. 
 // Its dstr (defined here) is never explicitly called. 
 DefaultIpcHeap::~DefaultIpcHeap()
@@ -4328,20 +4092,20 @@ void DefaultIpcHeap::destroy()
   // This class can't delete anything because it doesn't keep track of
   // any of its allocations.
 }
-// LCOV_EXCL_STOP
 
 void * DefaultIpcHeap::allocateIpcHeapMemory(size_t size, NABoolean failureIsFatal)
 {
+  if (! checkSize(size, failureIsFatal))
+     return NULL;
+
   void * rc = ::operator new(size);
-#pragma nowarn(1506)   // warning elimination 
   HEAPLOG_ADD_ENTRY(rc, size, heapID_.heapNum, getName())
-#pragma warn(1506)  // warning elimination 
   if (rc) return rc;
   if (failureIsFatal) 
     {
       // Might never return...
       handleExhaustedMemory();
-      assert(0);
+      abort();
     }
   return rc; 
 }
@@ -4352,14 +4116,12 @@ void DefaultIpcHeap::deallocateIpcHeapMemory(void * buffer)
   ::operator delete(buffer);
 }
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
-// LCOV_EXCL_START
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 void DefaultIpcHeap::dumpIpcHeapInfo(ostream* outstream, Lng32 indent)
 {
   // This class doesn't keep track of anything so it can't dump anything
   // useful.
 }
-// LCOV_EXCL_STOP
 #endif
 
 // Release unused memory in the heap back to kernel. This will help
@@ -4373,7 +4135,6 @@ void NAHeapFragment::releaseFreePages(NAHeapFragment *prev,
 SEG_ID gStatsSegmentId_ = -1;
 #define RMS_SEGMENT_ID_OFFSET 0x10000000
 
-#if ((defined(NA_NSK) || defined (NA_LINUX)) && (!defined(__EID)))
 SEG_ID getStatsSegmentId()
 
 {
@@ -4387,4 +4148,4 @@ SEG_ID getStatsSegmentId()
   }
   return gStatsSegmentId_; 
 }
-#endif
+

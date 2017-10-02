@@ -157,7 +157,7 @@ public:
   
   TimeoutData(CollHeap *heap, ULng32 estimatedMaxEntries = 16);  // ctor
   
-  ~TimeoutData() {} ; // do nothing dtor // LCOV_EXCL_LINE
+  ~TimeoutData() {} ; // do nothing dtor
   
   // for lock timeout
   void setAllLockTimeout( Lng32 lockTimeoutValue );
@@ -171,7 +171,7 @@ public:
   void setStreamTimeout( Lng32 streamTimeoutValue );
   void resetStreamTimeout();
   NABoolean isStreamTimeoutSet()   { return streamTimeoutSet_;} ;
-  Lng32 getStreamTimeout() { return streamTimeoutValue_;} ; // LCOV_EXCL_LINE
+  Lng32 getStreamTimeout() { return streamTimeoutValue_;} ;
 
   // copy relevant data from this TimeoutData object into another object,
   // The "anotherTD" may need to be allocated (if there's relevant data)
@@ -192,7 +192,7 @@ public:
   void unpackObj(IpcConstMessageBufferPtr &buffer);
 
 #if _DEBUG   // for debugging only
-  ULng32 entries() { return timeoutsHT_.entries() ; } ;  // LCOV_EXCL_LINE
+  ULng32 entries() { return timeoutsHT_.entries() ; } ;
 #endif  
 
 private:

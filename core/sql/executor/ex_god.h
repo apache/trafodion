@@ -44,19 +44,14 @@
 #include <stdlib.h>
 #include "NAHeap.h"
 
-#pragma nowarn(1103)   // warning elimination 
 class ExGod : public NABasicObject 
 {
 protected:
-NA_EIDPROC
   virtual ~ExGod();
 };
-#pragma warn(1103)  // warning elimination 
-
 
 // the next two methods will eventually be removed after all
 // executor objects have been derived from ExGod(or something
 // similar).
-NA_EIDPROC
 void * operator new(size_t size, Space *s);
 #endif

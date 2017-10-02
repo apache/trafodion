@@ -84,13 +84,13 @@ enum DGTYPE
 class DgBase
 {
 public:
-NA_EIDPROC 
+
   virtual DGTYPE getTypeName() const = 0;
 
 }; 
 
 
-NA_EIDPROC 
+
 ComDiagsArea& operator<<(ComDiagsArea&, const DgBase &);
 
 
@@ -106,13 +106,11 @@ class DgSqlCode : public DgBase
 {
 public:
   enum ErrorOrWarning { ERROR_ = -1, WARNING_ = +1 };
-NA_EIDPROC
   DgSqlCode   (Lng32   aSqlCode);
-NA_EIDPROC
   DgSqlCode   (Lng32   aSqlCode, ErrorOrWarning e);
-NA_EIDPROC 
+
   Lng32        getSQLCODE() const {return theSQLCODE_; }
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   Lng32        theSQLCODE_;
@@ -122,11 +120,11 @@ private:
 class DgColumnName : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgColumnName  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -136,11 +134,11 @@ private:
 class DgCustomSQLState : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgCustomSQLState  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -150,11 +148,11 @@ private:
 class DgCatalogName : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgCatalogName  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -164,11 +162,11 @@ private:
 class DgSchemaName : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgSchemaName  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -178,11 +176,11 @@ private:
 class DgTableName : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgTableName  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -192,11 +190,11 @@ private:
 class DgConstraintCatalog : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgConstraintCatalog  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -206,11 +204,11 @@ private:
 class DgConstraintSchema : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgConstraintSchema  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -220,11 +218,11 @@ private:
 class DgConstraintName : public DgBase
 {
 public:
-NA_EIDPROC 
+
   DgConstraintName  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -234,11 +232,11 @@ private:
 class DgRowNumber : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgRowNumber  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   Lng32 theLong_;
@@ -248,11 +246,8 @@ private:
 class DgTriggerCatalog : public DgBase
 {
 public:
-NA_EIDPROC
   DgTriggerCatalog  (const char * const);
-NA_EIDPROC
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -262,11 +257,8 @@ private:
 class DgTriggerSchema : public DgBase
 {
 public:
-NA_EIDPROC
   DgTriggerSchema  (const char * const);
-NA_EIDPROC
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -276,11 +268,8 @@ private:
 class DgTriggerName : public DgBase
 {
 public:
-NA_EIDPROC
   DgTriggerName  (const char * const);
-NA_EIDPROC
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -290,11 +279,11 @@ private:
 class DgNskCode : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgNskCode  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   Lng32 theLong_;
@@ -304,11 +293,11 @@ private:
 class DgString0 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgString0  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -318,11 +307,11 @@ private:
 class DgString1 : public DgBase 
 { 
 public:
-NA_EIDPROC 
+
   DgString1  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -332,11 +321,11 @@ private:
 class DgString2 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgString2  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -346,11 +335,11 @@ private:
 class DgString3 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgString3  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   const char * const theCharStr_;
@@ -360,11 +349,11 @@ private:
 class DgString4 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgString4  (const char * const);
-NA_EIDPROC 
+
   const char * getCharStr  () const {return theCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   const char * const theCharStr_;
@@ -375,11 +364,11 @@ private:
 class DgWString0 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgWString0  (const NAWchar* const x) : theWCharStr_(x) {};
-NA_EIDPROC 
+
   const NAWchar* getWCharStr  () const {return theWCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const { return DGWSTRING0; };
 private:
   const NAWchar* const theWCharStr_;
@@ -389,11 +378,11 @@ private:
 class DgWString1 : public DgBase 
 { 
 public:
-NA_EIDPROC 
+
   DgWString1  (const NAWchar* const x) : theWCharStr_(x) {};
-NA_EIDPROC 
+
   const NAWchar* getWCharStr  () const {return theWCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const { return DGWSTRING1; };
 private:
   const NAWchar* const theWCharStr_;
@@ -403,11 +392,11 @@ private:
 class DgWString2 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgWString2  (const NAWchar* const x) : theWCharStr_(x) {};
-NA_EIDPROC 
+
   const NAWchar* getWCharStr  () const {return theWCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const  { return DGWSTRING2; };
 private:
   const NAWchar* const theWCharStr_;
@@ -417,11 +406,11 @@ private:
 class DgWString3 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgWString3  (const NAWchar* const x) : theWCharStr_(x) {};
-NA_EIDPROC 
+
   const NAWchar* getWCharStr  () const {return theWCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const { return DGWSTRING3; };
 private:
   const NAWchar* const theWCharStr_;
@@ -431,11 +420,11 @@ private:
 class DgWString4 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgWString4  (const NAWchar* const x) : theWCharStr_(x) {};
-NA_EIDPROC 
+
   const NAWchar* getWCharStr  () const {return theWCharStr_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const { return DGWSTRING4; };
 private:
   const NAWchar* const theWCharStr_;
@@ -445,11 +434,11 @@ private:
 class DgInt0 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgInt0  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const;
 private:
   Lng32 theLong_;
@@ -459,11 +448,11 @@ private:
 class DgInt1 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgInt1  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   Lng32 theLong_;
@@ -473,11 +462,11 @@ private:
 class DgInt2 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgInt2  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   Lng32 theLong_;
@@ -487,11 +476,11 @@ private:
 class DgInt3 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgInt3  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   Lng32 theLong_;
@@ -501,11 +490,11 @@ private:
 class DgInt4 : public DgBase
 { 
 public:
-NA_EIDPROC 
+
   DgInt4  (Lng32);
-NA_EIDPROC 
+
   Lng32 getLong  () const {return theLong_; };
-NA_EIDPROC 
+
   DGTYPE      getTypeName() const ;
 private:
   Lng32 theLong_;

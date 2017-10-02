@@ -55,11 +55,7 @@
 #include "CmpContext.h"
 #include "CmpCommon.h"
 
-
-
-#ifdef NA_STD_NAMESPACE
 using namespace std;
-#endif
 
 //****************************************************************************
 // CHARSET stuff
@@ -171,7 +167,7 @@ NABoolean CharInfo::isCharSetSupported(CharSet cs)
   if (cs >= CHARSET_MIN && cs <= CHARSET_MAX)
     {
       // Special for running regress/fullstack/TEST001 on NSK:
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
       if (IF_WIDE == FALSE &&
           mapCSArray[cs-CHARSET_MIN].maxBytesPerChar > 1 &&	// SJIS or UNICODE
           getenv("NCHAR_SJIS_DEBUG"))
@@ -188,7 +184,7 @@ NABoolean CharInfo::isCharSetFullySupported(CharSet cs)
   if (cs >= CHARSET_MIN && cs <= CHARSET_MAX)
     {
       // Special for running regress/fullstack/TEST001 on NSK:
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
       if (IF_WIDE == FALSE &&
           mapCSArray[cs-CHARSET_MIN].maxBytesPerChar > 1 &&	// SJIS or UNICODE
           getenv("NCHAR_SJIS_DEBUG"))
@@ -219,11 +215,10 @@ NABoolean CharInfo::isMsgCharSetSupported(CharSet cs) {
   return ( (cs == CharInfo::UTF8) || (cs == CharInfo::UNICODE) );
 }
 
-//LCOV_EXCL_START :rfi
 // see TESTCHARSET in CmpMain.cpp
 void CharInfo::toggleCharSetSupport(CharSet cs)
 {
-#ifdef NA_DEBUG_C_RUNTIME		
+#ifdef _DEBUG		
     size_t i;
     for (i = 0; i < SIZEOF_CS; i++)
       if (cs == mapCSArray[i].cs)
@@ -239,7 +234,6 @@ void CharInfo::toggleCharSetSupport(CharSet cs)
     }
 #endif
 }
-//LCOV_EXCL_STOP
 
 // for R2 FCS. 
 CharInfo::CharSet CharInfo::getEncoding(const CharInfo::CharSet x)
@@ -350,16 +344,12 @@ CollationInfo::CollationInfo(CollHeap *h,
   ComASSERT(name);
   namelen_ = strlen(name);	// allowed to be 0 if siz[] not passed in
   if (siz) {
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
     size_t cnt = siz[0];
-#pragma nowarn(270)   // warning elimination 
     ComASSERT(cnt >= 0 && cnt < MAX_NAME_PARTS);
-#pragma warn(270)  // warning elimination 
     ComASSERT(namelen_ > 0 && namelen_ == siz[1]);
     for (size_t off = 0; off < OFFSETARRAY_SIZE; off++) {
       synonymOffset_[off] = (off < cnt) ? siz[off+2] : 0;
     }
-//LCOV_EXCL_STOP
   } else
     synonymOffset_[0] = synonymOffset_[1] = synonymOffset_[2] = 0;
   if (flags_ & NO_ALLOC_AND_COPY_IN_CTOR)
@@ -373,11 +363,9 @@ CollationInfo::CollationInfo(CollHeap *h,
 
 
 
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
 void CollationInfo::display() const
 {
 }
-//LCOV_EXCL_STOP
 //
 CollationDB::CollationDB(CollHeap *h)
   : CollationDBSupertype(h), heap_(h), refreshNeeded_(TRUE)
@@ -402,11 +390,9 @@ CollationDB::~CollationDB()
 }
 
 
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
 void CollationDB::display() const
 {
 }
-//LCOV_EXCL_STOP
 
 void CollationDB::Display()
 {
@@ -485,10 +471,6 @@ Int32 CollationDB::getCollationFlags(CharInfo::Collation co) const
 // (can be delimited and contain spaces).
 //
 // So we must check that any spaces are *trailing* spaces only.
-//
-// The smdio/CmColumnsRow.cpp and sqlcat/ReadTableDef.cpp
-// callers do not have a '\0'-terminated string,
-// hence our needing this length arg to pass in.
 //
 // We can't use plain old strcmp here, because we want both
 //	"SJIS"  and  "SJIS  "
@@ -593,7 +575,6 @@ Int32 CharInfo::getCollationFlags(Collation co)
 // COERCIBILITY stuff
 //****************************************************************************
 
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
 const char* CharInfo::getCoercibilityText(Coercibility ce)
 {
   // These are not keywords, not tokens, not part of Ansi syntax.
@@ -606,7 +587,6 @@ const char* CharInfo::getCoercibilityText(Coercibility ce)
     default:			return "unknown";
   }
 }
-//LCOV_EXCL_STOP
 
 // "Which coercibility wins?"
 // Returns 0 if they're equal, 1 if the first one wins, 2 if the second.
@@ -616,7 +596,6 @@ const char* CharInfo::getCoercibilityText(Coercibility ce)
 // ## (As an aside, note that CharType::computeCoAndCo()
 // ## could be pulled out into a static CharInfo:: method placed here.)
 //
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
 Int32 CharInfo::compareCoercibility(CharInfo::Coercibility ce1,
 				  CharInfo::Coercibility ce2)
 {
@@ -634,7 +613,6 @@ Int32 CharInfo::compareCoercibility(CharInfo::Coercibility ce1,
   ComASSERT(FALSE);			// ceN IMPLICIT already handled above!
   return -1;
 }
-//LCOV_EXCL_STOP
 
 
 //****************************************************************************
@@ -650,7 +628,6 @@ Lng32 CharInfo::findLocaleCharSet()
 
 }
 
-//LCOV_EXCL_START :cnu -- As of 8/30/2011, only caller is #if'd out
 const char* CharInfo::getLocaleCharSetAsString()
 {
    if (!localeCharSet_) {
@@ -670,11 +647,8 @@ const char* CharInfo::getLocaleCharSetAsString()
    } else
      return localeCharSet_;
 
-#pragma nowarn(203)   // warning elimination 
    return SQLCHARSETSTRING_UNKNOWN;
-#pragma warn(203)  // warning elimination 
 }
-//LCOV_EXCL_STOP
 
 Int32 CharInfo::getTargetCharTypeFromLocale()
 {

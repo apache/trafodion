@@ -163,13 +163,11 @@ public:
       return "EX_EXE_UTIL";
   };
 
-NA_EIDPROC
   virtual Int32 numExpressions() const
     {
       return (ComTdbGenericUtil::numExpressions() + 1);
     }
 
-NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos) {
     if (pos >= numExpressions())
       return NULL;
@@ -180,7 +178,6 @@ NA_EIDPROC
 	return scanExpr_;
   }
 
-NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const {
     if (pos >= numExpressions())
       return NULL;
@@ -220,7 +217,6 @@ protected:
   char fillersComTdbExeUtil_[104];          // 40-135
 
 };
-#pragma warn(1506)  // warning elimination
 
 
 static const ComTdbVirtTableColumnInfo exeUtilDisplayExplainVirtTableColumnInfo[] =
@@ -301,7 +297,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   NABoolean isOptionE() { return ((flags_ & OPTION_E) != 0); };
   NABoolean isOptionF() { return ((flags_ & OPTION_F) != 0); };
@@ -418,7 +414,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   enum
@@ -996,7 +992,7 @@ void setLabelStatsIncRelated(NABoolean v)
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 protected:
   //enum for flags_
@@ -1232,7 +1228,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   NABasicPtr insertQuery_;                                   // 00-07
@@ -1280,7 +1276,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   void setCleanupAllTables(NABoolean v)
   {(v ? flags_ |= CLEANUP_ALL_TABLES : flags_ &= ~CLEANUP_ALL_TABLES); };
@@ -1358,7 +1354,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   enum GetType
@@ -1412,7 +1408,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   Lng32 errNum_;                                           // 00-03
@@ -1480,7 +1476,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   enum
@@ -1571,7 +1567,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   void setDoPurgedataCat(NABoolean v)
   {(v ? flags_ |= DO_PURGEDATA_CAT : flags_ &= ~DO_PURGEDATA_CAT); };
@@ -1694,7 +1690,7 @@ public:
     return hdfsPort_;
   }
 
-  Lng32 getModTS() const
+  Int64 getModTS() const
   {
     return modTS_;
   }
@@ -1716,7 +1712,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   NABasicPtr hiveTableName_;                     // 00-07
@@ -1766,7 +1762,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   NABasicPtr hiveQuery_;                     // 00-07
@@ -1851,7 +1847,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
   inline const char * getStmtName() const { return stmtName_.getPointer(); }
 
 protected:
@@ -1928,7 +1924,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 private:
 };
 
@@ -1998,7 +1994,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   Int64 uid_;                                        // 00-07
@@ -2074,7 +2070,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   NABasicPtr stmtName_;
@@ -2129,7 +2125,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   inline const char * getInMemHistogramsTableName() const
      { return inMemHistogramsTableName_.getPointer() ; } ;
@@ -2209,7 +2205,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
 
@@ -2258,7 +2254,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   void setLongRunningDelete(NABoolean v)
   {(v ? flags_ |= LR_DELETE : flags_ &= ~LR_DELETE); };
@@ -2385,7 +2381,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
 
@@ -2457,7 +2453,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   Lng32 task_;
@@ -2684,7 +2680,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 protected:
   enum
@@ -2781,7 +2777,7 @@ public:
  // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
  private:
 
@@ -2865,7 +2861,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   void setHandleInStringFormat(NABoolean v)
   {(v ? flags_ |= STRING_FORMAT : flags_ &= ~STRING_FORMAT); };
@@ -3001,7 +2997,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   void setAppend(NABoolean v)
   {(v ? flags_ |= APPEND_ : flags_ &= ~APPEND_); };
@@ -3099,7 +3095,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   short getLOBnum(short i);
   char * getLOBloc(short i);
@@ -3421,7 +3417,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   // Virtual routines to provide a consistent interface to TDB's
 
@@ -3636,7 +3632,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   enum
@@ -3780,7 +3776,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
 private:
   enum

@@ -73,11 +73,9 @@ ExStoredProcTcb::ExStoredProcTcb(const ExStoredProcTdb &  sp_tdb,
   Space * space = (glob ? glob->getSpace() : 0);
   
   // Allocate the buffer pool
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(sp_tdb.numBuffers_,
 				     sp_tdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
 
   // Allocate the queue to communicate with parent
   qparent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -712,9 +710,7 @@ short ExStoredProcTcb::work()
 	} // switch step_
     } // while
   
-#pragma nowarn(203)   // warning elimination 
   return WORK_OK;
-#pragma warn(203)  // warning elimination 
 }
 
 
@@ -757,9 +753,7 @@ short ExSPInputOutput::inputValue(ULng32 fieldNum, char * inputRow,
 
   // diagsArea must be present. And fieldNum must be within range.
   if ((diagsArea == NULL) ||
-#pragma nowarn(270)   // warning elimination 
       (fieldNum < 0) || 
-#pragma warn(270)  // warning elimination 
       (fieldNum >= tupleDesc_->numAttrs()))
     {
       // return error
@@ -767,7 +761,6 @@ short ExSPInputOutput::inputValue(ULng32 fieldNum, char * inputRow,
     }
 
   if (casting == FALSE)
-#pragma nowarn(1506)   // warning elimination 
     convDoIt(&inputRow[attr->getOffset()],
 	     attr->getLength(&inputRow[attr->getVCLenIndOffset()]),
 	     attr->getDatatype(),
@@ -788,7 +781,6 @@ short ExSPInputOutput::inputValue(ULng32 fieldNum, char * inputRow,
 	     NULL, /*CollHeap *heap,*/
 	     &diagsArea,
 	     CONV_UNKNOWN_LEFTPAD);
-#pragma warn(1506)  // warning elimination 
   else
     {
       //      TBD:
@@ -800,7 +792,6 @@ short ExSPInputOutput::inputValue(ULng32 fieldNum, char * inputRow,
       // target has to be formatted as a varchar. The first two bytes
       // of target will contain the actual target length, followed
       // by data bytes.
-#pragma nowarn(1506)   // warning elimination 
       convDoIt(&inputRow[attr->getOffset()],
 	       attr->getLength(&inputRow[attr->getVCLenIndOffset()]),
 	       attr->getDatatype(),
@@ -816,7 +807,6 @@ short ExSPInputOutput::inputValue(ULng32 fieldNum, char * inputRow,
 	       NULL, /*CollHeap *heap,*/
 	       &diagsArea,
 	       CONV_UNKNOWN);
-#pragma warn(1506)  // warning elimination 
     }
 
   return 0;
@@ -851,9 +841,7 @@ short ExSPInputOutput::outputValue(ULng32 fieldNum,
 
   // diagsArea must be present. And fieldNum must be within range.
   if ((diagsArea == NULL) ||
-#pragma nowarn(270)   // warning elimination 
       (fieldNum < 0) || 
-#pragma warn(270)  // warning elimination 
       (fieldNum >= tupleDesc_->numAttrs()))
     {
       // return error
@@ -882,7 +870,6 @@ short ExSPInputOutput::outputValue(ULng32 fieldNum,
     } // null value
 
   if (casting == FALSE)
-#pragma nowarn(1506)   // warning elimination 
     status = convDoIt(
 		      // Pass in pointer to real data.
 		      // if varchar, then data points to varchar length and
@@ -902,9 +889,7 @@ short ExSPInputOutput::outputValue(ULng32 fieldNum,
 		      heap,
 		      &diagsArea,
 		      CONV_UNKNOWN_LEFTPAD);
-#pragma warn(1506)  // warning elimination 
   else
-#pragma nowarn(1506)   // warning elimination 
     status = convDoIt(&data[0],
 		      datalen,
 		      REC_BYTE_F_ASCII,
@@ -922,7 +907,6 @@ short ExSPInputOutput::outputValue(ULng32 fieldNum,
 		      &diagsArea,
 		      (getCaseIndexArray() ? getCaseIndexArray()[fieldNum]
 		                           : CONV_UNKNOWN_LEFTPAD)); 
-#pragma warn(1506)  // warning elimination    
 
   if ((status == ex_expr::EXPR_OK) && attr->getNullFlag())
     {

@@ -31,11 +31,6 @@
 //       for them can be used in not only the SQL/MX compiler build,
 //       but also used by the ODBC build and maybe others.
 
-#ifndef NA_EIDPROC
-#define NA_EIDPROC
-#define _resident
-#endif
-
 enum cnv_version { cnv_version1 = 1 }; /* For future expansion */
 
 #ifndef cnv_charset_DEFINED
@@ -59,7 +54,6 @@ enum cnv_charset { cnv_UnknownCharSet =  0,  cnv_UTF8     = 1,
 #endif
 
 //NOTE: The following definitions assume that FALSE = 0 and TRUE <> 0
-NA_EIDPROC
 int  LocaleToUTF8(  const enum cnv_version version,
                     const char *in_bufr,  const int in_len, 
                     const char *out_bufr, const int out_len,
@@ -69,7 +63,6 @@ int  LocaleToUTF8(  const enum cnv_version version,
                     const int addNullAtEnd_flag          = FALSE,
                     unsigned int *translated_char_cnt_p  = NULL );
 
-NA_EIDPROC
 int  UTF8ToLocale(  const enum cnv_version version,
                     const char *in_bufr,  const int in_len, 
                     const char *out_bufr, const int out_len,
@@ -81,7 +74,6 @@ int  UTF8ToLocale(  const enum cnv_version version,
                     unsigned int * translated_char_cnt_p = NULL ,
                     const char *substitution_char        = NULL );
 
-NA_EIDPROC
 int  LocaleToUTF16( const enum cnv_version version,
                     const char *in_bufr,  const int in_len, 
                     const char *out_bufr, const int out_len,
@@ -93,7 +85,6 @@ int  LocaleToUTF16( const enum cnv_version version,
                     unsigned int *translated_char_cnt_p  = NULL ,
                     unsigned int max_chars_to_convert    = 0xffffffff);
 
-NA_EIDPROC
 int  UTF16ToLocale( const enum cnv_version version,
                     const char *in_bufr,  const int in_len, 
                     const char *out_bufr, const int out_len,
@@ -106,7 +97,6 @@ int  UTF16ToLocale( const enum cnv_version version,
                     unsigned int * translated_char_cnt_p = NULL  ,
                     const char *substitution_char        = NULL );
 
-NA_EIDPROC
 int gbkToUtf8(char* gbkString, size_t gbklen,
               char* result ,size_t outlen, bool addNullAtEnd=FALSE);
 
@@ -115,7 +105,6 @@ int gbkToUtf8(char* gbkString, size_t gbklen,
  * UCS4 value.  Returns the UCS4 value at location specified AND the
  * length of the input character in bytes as the return value.
  */
-NA_EIDPROC
 int  LocaleCharToUCS4( const char *in_bufr,       //Ptr to Input string
                        const int in_len,          //Len of Input string (bytes)
                        unsigned int *UCS4ptr ,    //Ptr to output location
@@ -125,7 +114,6 @@ int  LocaleCharToUCS4( const char *in_bufr,       //Ptr to Input string
  * and stores the character in the output buffer specified.
  * Returns length of the output character in bytes as the return value.
  */
-NA_EIDPROC
 int  UCS4ToLocaleChar( const unsigned int *UCS4ptr , //Ptr to input char
                        const char *out_bufr,         //Ptr to output bufr
                        const int out_len,            //Len of output bufr
@@ -250,13 +238,11 @@ int  UCS4ToLocaleChar( const unsigned int *UCS4ptr , //Ptr to input char
  * truncated with blanks
  */
 
-NA_EIDPROC
 int lightValidateUTF8Str(const char *bufr,                 // ptr to buffer to validate
                          int in_len,                       // len in bytes of buffer
                          int max_chars = 0,                // max chars allowed in buffer or 0 for unlimited
                          int ignore_trailing_blanks = 1);  // don't count trailing blanks as chars   
 
-NA_EIDPROC
 int lightValidateUTF8StrAndPad(char *bufr,
                                int in_len,
                                int max_chars = 0,
@@ -285,7 +271,6 @@ inline int fillWithMinMaxUTF8Chars(char *bufr,
 /* A method to find the beginning of a UTF8 char that is at the end off
    a buffer.
 */
-NA_EIDPROC
 char * findStartOfChar( char *someByteInChar, char *startOfBuffer );
 
 

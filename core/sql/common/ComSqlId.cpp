@@ -65,7 +65,7 @@ Lng32 ComSqlId::createSqlSessionId
   // The format of current session id is:
   //  MXID<version><segment><cpu><pin><processStartTS><sessNum><unLen><userName><snLen><sessionName>
   str_sprintf
-    (sessionId, "%s%02d%03d%06d%018Ld%010d%02d%s%02d%s",
+    (sessionId, "%s%02d%03d%06d%018ld%010d%02d%s%02d%s",
      COM_SESSION_ID_PREFIX,
      SQ_SQL_ID_VERSION,
      nodeNumber,                      // 3 digits
@@ -105,7 +105,7 @@ Lng32 ComSqlId::createSqlQueryId
   // number of digits delimited by underscores. 
   // Ex, queryNum of 12 will be store as _12_
   //
-  str_sprintf(queryId, "%s_%Ld_",
+  str_sprintf(queryId, "%s_%ld_",
 	      sessionId,
 	      queryUniqueNum
 	      );

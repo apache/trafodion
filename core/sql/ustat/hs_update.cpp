@@ -39,7 +39,7 @@
 
 
 #include <stdlib.h>
-#include "Platform.h"                                    // NT_PORT SK 02/08/97
+#include "Platform.h"
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "cli_stdh.h"
@@ -54,7 +54,6 @@
 #define   SQLPARSERGLOBALS_FLAGS				  
 #include "SqlParserGlobals.h"
 #include "SchemaDB.h"
-#include "ReadTableDef.h"
 
 THREAD_P char *hs_input = NULL;
 THREAD_P HSGlobalsClass *hs_globals_y = NULL; // Declare global pointer to hs_globals.  Used by 
@@ -119,14 +118,12 @@ Lng32 ShowStats(const char* input, char* &outBuf,
     if (hs_globals_obj.tableFormat == SQLMX) 
       {
         HSGlobalsClass::schemaVersion = getTableSchemaVersion(*(hs_globals_obj.user_table));
-        // LCOV_EXCL_START :rfi
         if (HSGlobalsClass::schemaVersion == COM_VERS_UNKNOWN)
         {
           HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "GET_SCHEMA_VERSION");
           retcode = -1;
           HSExitIfError(retcode);
         }
-        // LCOV_EXCL_STOP
       }
     if (LM->LogNeeded())
       {
@@ -333,14 +330,12 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
                                              /*==============================*/
     // Also checked in AddTableName() during parse.  Check again, just in case we don't 
     // reach that code.  HISTOGRAM corruption can occur if this is not set.
-    // LCOV_EXCL_START :rfi
     if (hs_globals_obj.tableFormat == SQLMX && HSGlobalsClass::schemaVersion == COM_VERS_UNKNOWN)
     {
       HSFuncMergeDiags(-UERR_INTERNAL_ERROR, "GET_SCHEMA_VERSION");
       retcode = -1;
       HSExitIfError(retcode);
     }
-    // LCOV_EXCL_STOP
 
                                                 /*==============================*/
                                                 /* HANDLE OPTIONS WHICH DO NOT  */

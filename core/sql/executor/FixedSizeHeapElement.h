@@ -58,41 +58,41 @@ class FixedSizeHeapElement
 public:
 
   // Constructor.
-  NA_EIDPROC FixedSizeHeapElement
+  FixedSizeHeapElement
     (FixedSizeHeapElement * nextElementPtr = 0)
     : nextElementPtr_(nextElementPtr) {}
 
 
   // Destructor.
-  NA_EIDPROC inline ~FixedSizeHeapElement() {}
+  inline ~FixedSizeHeapElement() {}
 
   // Operator new.
-  NA_EIDPROC inline void * operator new(size_t, char * ptr);
+  inline void * operator new(size_t, char * ptr);
 
   // Operator new. This should never be called.
-  NA_EIDPROC void * operator new(size_t)
+  void * operator new(size_t)
   {
   ex_assert(0,"FixedSizeHeapElement::operator new(size_t) called.");
   return 0;
   }
 
   // Operator delete.  This should never be called.
-  NA_EIDPROC void operator delete(void *)
+  void operator delete(void *)
   {
   ex_assert(0,"FixedSizeHeapElement::operator delete(void *) called.");
   }
 
 
   // Get function for nextElementPtr_.
-  NA_EIDPROC inline FixedSizeHeapElement * getNextElementPtr() const;
+  inline FixedSizeHeapElement * getNextElementPtr() const;
 
   // Print the status of the element.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC inline void print(const char * header = "") const;
+  inline void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
   // Set function for nextElementPtr_.
-  NA_EIDPROC inline void setNextElementPtr
+  inline void setNextElementPtr
     (FixedSizeHeapElement * nextElementPtr);
 
 private:
@@ -110,7 +110,7 @@ private:
 
 
 // Operator new.
-NA_EIDPROC inline void * FixedSizeHeapElement::operator new(size_t, char * ptr)
+inline void * FixedSizeHeapElement::operator new(size_t, char * ptr)
 {
   return (void *)ptr;  // $$$$ is the cast necessary?
 }

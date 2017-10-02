@@ -52,7 +52,6 @@
 
 PhysicalProperty::~PhysicalProperty() {}
 
-// LCOV_EXCL_START
 void PhysicalProperty::print(FILE* ofd,
 			     const char * /* prefix */,
 			     const char * /* suffix */) const
@@ -77,12 +76,8 @@ NABoolean PhysicalProperty::isPartKeyPrefixOfSortKey() const
   ValueIdList actualPartKey(
     partFunc->castToRangePartitioningFunction()->getKeyColumnList());
   ValueIdList actualSortKey(getSortKey());
-#pragma nowarn(1506)   // warning elimination
   Lng32 numPartCols = actualPartKey.entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   Lng32 numClusterCols = actualSortKey.entries();
-#pragma warn(1506)  // warning elimination
 
   for (CollIndex index = 0; index < CollIndex(numPartCols); index++)
   {
@@ -93,7 +88,6 @@ NABoolean PhysicalProperty::isPartKeyPrefixOfSortKey() const
   return TRUE;
 
 } // PhysicalProperty::isPartKeyPrefixOfSortKey()
-// LCOV_EXCL_STOP
 
 // The following method is used by the overloaded implementations of
 // '<', '>', '==' for physical properties.
@@ -129,15 +123,10 @@ PhysicalProperty::compareProperties (const PhysicalProperty &other) const
   // expressions (same ValueId, same NAType, etc.), consisting of
   // the shorter of the two keys.
   // ---------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
   Lng32 myKeyCount = sortKey_.entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
   Lng32 otherKeyCount = other.sortKey_.entries();
-#pragma warn(1506)  // warning elimination
   Lng32 minEntries = MINOF(myKeyCount,otherKeyCount);
 
-  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
   for (CollIndex index = 0; index < (CollIndex)minEntries; index++)
     if (NOT (sortKey_[index] == other.sortKey_[index]))
       {
@@ -307,7 +296,6 @@ ReqdPhysicalProperty::~ReqdPhysicalProperty()
 }
 
 
-// LCOV_EXCL_START
 void ReqdPhysicalProperty::print(FILE* ofd,
 				 const char * /* prefix */,
 				 const char * /* suffix */) const
@@ -316,7 +304,6 @@ void ReqdPhysicalProperty::print(FILE* ofd,
  availableCPUs_, pipelinesPerCPU_);
 }
 
-// LCOV_EXCL_STOP
 
 // --------------------------------------------------------------------
 // does a given plan satisfy the required property
@@ -566,21 +553,17 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
       // Compute the number of sort key columns.
 
       if (orderedBy_ != NULL)
-#pragma nowarn(1506)   // warning elimination
 	mySortEntries = orderedBy_->entries();
-#pragma warn(1506)  // warning elimination
       else
 	mySortEntries = 0;
 
       if (other.orderedBy_ != NULL)
-#pragma nowarn(1506)   // warning elimination
 	otherSortEntries = other.orderedBy_->entries();
-#pragma warn(1506)  // warning elimination
       else
 	otherSortEntries = 0;
 
       // The columns in coreesponding positions must be the same.
-      for (CollIndex i = 0; i < (CollIndex)MINOF(mySortEntries,otherSortEntries); i++)  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
+      for (CollIndex i = 0; i < (CollIndex)MINOF(mySortEntries,otherSortEntries); i++) 
 	{
 	  if (NOT (orderedBy_->at(i) == other.orderedBy_->at(i)))
 	    {
@@ -886,7 +869,6 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
 } // ReqdPhysicalProperty::compareRequirements
 
 
-// LCOV_EXCL_START
 // Checked in M5. This function is never called
 RelExpr * ReqdPhysicalProperty::getInputMustMatch(Lng32 childIndex) const
 {
@@ -903,7 +885,6 @@ RelExpr * ReqdPhysicalProperty::getInputMustMatch(Lng32 childIndex) const
     else
       return NULL; // pattern has fewer children, no need for a match
 }
-// LCOV_EXCL_STOP
 
 // ||opt this method should never be called because we always
 // have a location requirement???

@@ -63,9 +63,6 @@
 #include <setjmp.h>
 
 #include "NAMemory.h"
-#ifndef BUILD_MUSE
-#include "ExMeas.h"
-#endif
 #include "sqlcli.h"
 #include "QuasiFileManager.h"
 #include "Ipc.h"
@@ -75,7 +72,7 @@
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
 class ContextCli;
-class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
+class Statement;  // $$$ possibly a stub for QuasiFileberManager
 class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
 class ExEspManager;
 class ExSsmpManager;
@@ -109,7 +106,6 @@ enum ArkcmpFailMode { arkcmpIS_OK_ = FALSE/*no failure*/,
 arkcmpWARN_,
 arkcmpERROR_ };
 
-#pragma nowarn(1506)   // warning elimination
 class CliGlobals : public NAAssertGlobals
 {
 public:
@@ -149,7 +145,6 @@ public:
   void setExProcessStats(ExProcessStats *processStats)
   { processStats_ = processStats; }
 
-SQLCLI_LIB_FUNC
   ExSqlComp * getArkcmp(short index = 0);
 
   IpcEnvironment *getEnvironment();
@@ -166,7 +161,6 @@ SQLCLI_LIB_FUNC
   inline void setMemoryMonitor(MemoryMonitor *memMon) { memMonitor_ = memMon; }
   inline QuasiFileManager * getQuasiFileManager() { return quasiFileManager_; }
 
-  // ss_cc_change This is an unused feature on seaquest
   inline NAHeap * getExecutorMemory()      { return &executorMemory_; }
   inline NAHeap * getNoWaitHeap()  { return noWaitSQLHeap_; }
 
@@ -175,8 +169,6 @@ SQLCLI_LIB_FUNC
   inline const NASegGlobals * getSegGlobals() const
       
                                          { return &segGlobals_; }
-  //ss_cc_change : these are unused methods in seaquest
-  //LCOV_EXCL_START
   inline UInt32 getDefaultVolSeed()       { return defaultVolSeed_; }
   inline void     setDefaultVolSeed( UInt32 seed)
                                             { defaultVolSeed_ = seed; }
@@ -190,7 +182,6 @@ SQLCLI_LIB_FUNC
                                    { return listOfVolNamesCacheTime_; }
   inline void     setListOfVolNamesCacheTime(Int64 cacheTime)
                               { listOfVolNamesCacheTime_ = cacheTime; }
-  //LCOV_EXCL_STOP
   inline NABoolean isSysVolNameInitialized()
                                      { return sysVolNameInitialized_; }
   inline void setSysVolNameIsInitialized() 
@@ -200,8 +191,6 @@ SQLCLI_LIB_FUNC
   void clearQualifiedDiskInfo();
   void addQualifiedDiskInfo(const char *volumeName, Lng32 primaryCpu,
                             Lng32 capacity, Lng32 freeSpace, Lng32 largestFragment);
-  // ss_cc_change
-  //LCOV_EXCL_START
   inline void setNodeName(const char *nodeName)
                     { strncpy(nodeName_, nodeName, sizeof(nodeName_)); }
   inline char *getNodeName() { return nodeName_; }
@@ -212,7 +201,6 @@ SQLCLI_LIB_FUNC
   inline Lng32 getCapacityForVol(Lng32 i) { return capacities_[i]; }
   inline Lng32 getFreespaceForVol(Lng32 i) { return freespaces_[i]; }
   inline Lng32 getLargestFragmentForVol(Lng32 i) { return largestFragments_[i]; }
-  //LCOV_EXCL_STOP
 
   inline Lng32 incrNumOfCliCalls()                   { return ++numCliCalls_; }
   inline Lng32 decrNumOfCliCalls()                   
@@ -227,7 +215,6 @@ SQLCLI_LIB_FUNC
     return ++totalCliCalls_; 
   }
 
-  //LCOV_EXCL_STOP
   inline UInt32 * getEventConsumed()   { return &eventConsumed_; }
   inline NABoolean processIsStopping() { return processIsStopping_; }
   
@@ -243,16 +230,6 @@ SQLCLI_LIB_FUNC
   Lng32 boundsCheck(void          *startAddress,
 		   ULng32 length,
 		   Lng32          &retcode);
-
-  // Measure support
-  inline NABoolean getMeasStmtEnabled() { return measStmtEnabled_; }
-  inline NABoolean getMeasProcEnabled() { return measProcEnabled_; }
-  inline NABoolean getMeasSubsysRunning() { return measSubsysRunning_; }
-#ifndef BUILD_MUSE
-  inline ExMeasProcCntrs * getMeasProcCntrs() { return measProcCntrs_; }
-#else
-  inline void * getMeasProcCntrs() { return measProcCntrs_; }
-#endif
 
   inline NABoolean breakEnabled() { return breakEnabled_; }
   inline void setBreakEnabled(NABoolean enabled) 
@@ -305,7 +282,6 @@ SQLCLI_LIB_FUNC
   const char* getJniErrorStrPtr();
   void updateTransMode(TransMode *transMode);
 
-SQLCLI_LIB_FUNC
 
 inline
   short getGlobalSbbCount()
@@ -356,9 +332,7 @@ inline
   char * myNodeName() { return myNodeName_; }
   Int32 myCpu() { return myCpu_; };
   Int32 myPin() { return myPin_; };
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier() const {return myVerifier_;}
-#endif
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
@@ -381,10 +355,8 @@ inline
 
   IpcPriority myPriority() { return myPriority_; }
   void setMyPriority(IpcPriority p) { myPriority_= p; }
-  //LCOV_EXCL_START
   NABoolean priorityChanged() { return priorityChanged_;}
   void setPriorityChanged(NABoolean v) { priorityChanged_ = v; }
-  //LCOV_EXCL_STOP
   IpcPriority myCurrentPriority();
 
   Int64 getNextUniqueNumber()
@@ -402,7 +374,7 @@ inline
   Long &getSemId() { return semId_; };
   void setSemId(Long semId) { semId_ = semId; }
 
-  void setSavedVersionOfCompiler(short version) { savedCompilerVersion_ = version;}  //LCOV_EXCL_LINE
+  void setSavedVersionOfCompiler(short version) { savedCompilerVersion_ = version;}
   short getSavedVersionOfCompiler() { return savedCompilerVersion_;}
   void setSavedSqlTerminateAction(short val) { savedSqlTerminateAction_ = val; }
   short getSavedSqlTerminateAction() { return savedSqlTerminateAction_; }
@@ -431,11 +403,14 @@ inline
   LmLanguageManagerC * getLanguageManagerC();
   LmLanguageManagerJava * getLanguageManagerJava();
 
-
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG
-
+  NABoolean grabMemoryQuotaIfAvailable(ULng32 size);
+  void resetMemoryQuota();
+  ULng32 unusedMemoryQuota();
+  void yieldMemoryQuota(ULng32 size);
+  NABoolean isEspProcess() { return espProcess_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -503,17 +478,6 @@ private:
   char sysVolName_[ 18 ];  // '$' + VOLNAME +  '.' +
                           // SUBVOL + null-terminator
 
-
-  NABoolean measProcEnabled_;
-  NABoolean measStmtEnabled_;
-  NABoolean measSubsysRunning_;
-
-#ifndef BUILD_MUSE
-  ExMeasProcCntrs * measProcCntrs_;
-#else
-  void * measProcCntrs_;
-#endif
-
   // copy of the oss envvars
   char ** envvars_;
 
@@ -566,9 +530,7 @@ private:
   // node, cpu and pin this process is running at.
   char myNodeName_[8];
   Int32 myCpu_;
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier_;
-#endif
   pid_t myPin_;
   Lng32  myNodeNumber_;
 
@@ -622,8 +584,8 @@ private:
   // for trusted UDR invocations from executor and compiler
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
+  NABoolean espProcess_;
 };
-#pragma warn(1506)   // warning elimination
 
 // -----------------------------------------------------------------------
 // A global method to get a pointer to the CLI globals. The method
@@ -634,7 +596,6 @@ private:
 // a lot of times. It is better to cache the pointer to the globals.
 // -----------------------------------------------------------------------
 
-SQLCLI_LIB_FUNC
 CliGlobals * GetCliGlobals();
 
 #endif /* __cplusplus */

@@ -8971,6 +8971,11 @@ bool checkSyntaxInfoDisk(char* sqlString, char *diskName)
 
 bool isInfoDisk(char*& sqlString, const IDL_char *stmtLabel, short& error, char *errBuf )
 {
+  return true;
+
+#if 0
+  // Obsolete function, should not be used
+
 	static char buffer[1000];
 	static char * str = NULL;
 	static int strSize = 0;
@@ -9165,6 +9170,7 @@ out:
 	}
 
 	return true;
+#endif        
 }
 
 

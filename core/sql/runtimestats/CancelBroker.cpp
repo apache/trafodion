@@ -345,10 +345,8 @@ void PendingQueryMgr::killPendingCanceled()
   {
     if (!haveSema4)
     {
-      short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
-                      ssmpGlobals_->myPin(),
-                      savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                      ssmpGlobals_->myPin());
       haveSema4 = true;
     }
 
@@ -416,8 +414,8 @@ void PendingQueryMgr::killPendingCanceled()
                 "Internal error in PendingQueryMgr::killPendingCanceled()");
 
       // Release semaphore before messaging.
-      statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-                  ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), 
+          ssmpGlobals_->myPin());
       haveSema4 = false;
 
       askSscpsToStopServers(pq);
@@ -454,7 +452,7 @@ void PendingQueryMgr::killPendingCanceled()
 
         // Release semaphore.
         statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-                  ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+                  ssmpGlobals_->myPin());
         haveSema4 = false;
 
         gph.dumpAndStop(makeSavebend, // do make a core-file.
@@ -487,7 +485,7 @@ void PendingQueryMgr::killPendingCanceled()
   if (haveSema4)
   {
     statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
-                ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+                ssmpGlobals_->myPin());
     haveSema4 = false;
   }
 

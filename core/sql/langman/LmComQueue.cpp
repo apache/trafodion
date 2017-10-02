@@ -36,7 +36,6 @@
 #include "ComPackDefs.h"
 
 // Exclude the following functions for coverage as they are not used in LM.
-// LCOV_EXCL_START
 template<>
 Long Q_EntryPtr::pack(void *space, short isSpacePtr)
 {
@@ -440,7 +439,6 @@ void Queue::packTailIntoBuffer(char * buffer,
 
   currPos += tail->packedLength();
 }
-// LCOV_EXCL_STOP
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -600,7 +598,6 @@ void * HashQueue::getNext() {
 };
 
 // Exclude the following functions for coverage as they are not used in LM.
-// LCOV_EXCL_START
 void * HashQueue::getCurr() {
 
   if (current_)
@@ -693,7 +690,6 @@ void HashQueue::remove(void * entry) {
   lastReturned_ = NULL;
   hashValue_ = 0;
 };
-// LCOV_EXCL_STOP
 
 
 

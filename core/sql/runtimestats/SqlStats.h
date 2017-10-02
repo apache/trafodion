@@ -64,9 +64,7 @@ class ExOperStats;
 class ExProcessStats;
 class MemoryMonitor;
 
-#ifndef __EID
 #include "rts_msg.h"
-#endif
 #include "ComTdb.h"
 #include "SQLCLIdev.h"
 #include "memorymonitor.h"
@@ -76,11 +74,7 @@ class MemoryMonitor;
 typedef struct GlobalStatsArray
 {
   pid_t  processId_;
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type  phandleSeqNum_;
-#else
-  NABoolean      removedAtAdd_;
-#endif
   Int64  creationTime_;
   ProcessStats  *processStats_;
 } GlobalStatsArray;
@@ -367,16 +361,12 @@ public:
                   NABoolean calledFromRemoveProcess = FALSE); 
 
   // global scan when the stmtList is positioned from begining and searched for pid
-  short openStatsSemaphore(Long &semId);
-  short getStatsSemaphore(Long &semId, pid_t pid, short &savedPriority, 
-       short &savedStopMode, NABoolean shouldTimeout = FALSE);
-  void releaseStatsSemaphore(Long &semId, pid_t pid, short savedPriority, 
-       short savedStopMode, NABoolean canAssert = TRUE);
+  int openStatsSemaphore(Long &semId);
+  int getStatsSemaphore(Long &semId, pid_t pid);
+  void releaseStatsSemaphore(Long &semId, pid_t pid);
 
-  short releaseAndGetStatsSemaphore(Long &semId, 
-       pid_t pid, pid_t releasePid,
-       short &savedPriority,
-       short &savedStopMode, NABoolean shouldTimeout = FALSE);
+  int releaseAndGetStatsSemaphore(Long &semId, 
+       pid_t pid, pid_t releasePid);
   void cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolder);
   void checkForDeadProcesses(pid_t myPid);
   SyncHashQueue *getStmtStatsList() { return stmtStatsList_; }
@@ -449,7 +439,6 @@ public:
           { ssmpDumpedTimestamp_ = dumpTime; }
   inline Int64 getSsmpDumpTimestamp() 
           { return ssmpDumpedTimestamp_; }
-#ifndef __EID
   Int64 getLastGCTime();
   void setLastGCTime(Int64 gcTime) ;
   void incStmtStatsGCed(short inc) ;
@@ -472,7 +461,6 @@ public:
   void decProcessRegd();
   void incProcessStatsHeaps();
   void decProcessStatsHeaps();
-#endif
   inline short getCpu() { return cpu_; }
   inline short getNodeId() { return nodeId_; }
   inline void setAbortedSemPid()
@@ -495,9 +483,7 @@ public:
   NABoolean isShmDirty() { return isBeingUpdated_; }
   void setShmDirty() { isBeingUpdated_ = TRUE; }
   void cleanup_SQL(pid_t pidToCleanup, pid_t myPid);
-#ifdef SQ_PHANDLE_VERIFIER
   void verifyAndCleanup(pid_t pidThatDied, SB_Int64_Type seqNum);
-#endif
 
   void updateMemStats(pid_t pid, NAHeap *exeMem, NAHeap *ipcHeap);
   SB_Phandle_Type *getSsmpProcHandle() { return &ssmpProcHandle_; }
@@ -554,9 +540,5 @@ NABoolean filterStmtStats(ExMasterStats *masterStats, short activeQueryNum, shor
 short getRTSSemaphore();
 void releaseRTSSemaphore();
 SB_Phandle_Type *getMySsmpPhandle();
-#ifdef __EID
-void updateProcessMemStats(size_t alloc,
-        size_t used, size_t highWM);
-#endif
 short getDefineNumericValue(char * defineName, short *numValue);
 #endif

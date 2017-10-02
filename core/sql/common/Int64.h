@@ -38,24 +38,12 @@
 #include <limits.h>
 #include "Platform.h"
 
-#if   defined( __linux__ ) && defined( NA_64BIT )
-
-  #ifndef LLONG_MAX
-    #define LLONG_MAX LONG_MAX
-  #endif
-
-  #ifndef LLONG_MIN
-    #define LLONG_MIN LONG_MIN
-  #endif
-
-
-#else
-
 #ifndef LLONG_MAX
-#define LLONG_MAX _I64_MAX
+#define LLONG_MAX LONG_MAX
 #endif
 
-
+#ifndef LLONG_MIN
+#define LLONG_MIN LONG_MIN
 #endif
 
 // ***********************************************************************
@@ -65,20 +53,17 @@
 // -----------------------------------------------------------------------
 // Convert an unsigned int to Int64.
 // ----------------------------------------------------------------------- 
-NA_EIDPROC
 Int64 uint32ToInt64(UInt32 value);
 
 // -----------------------------------------------------------------------
 // Convert an Int64 to long.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 int64ToInt32(Int64 value);
 
 // -----------------------------------------------------------------------
 // Convert the integer from array of two longs, most significant first
 // (Guardian-style LARGEINT datatype).
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int64 uint32ArrayToInt64(const UInt32 array[2]);
 
 // -----------------------------------------------------------------------
@@ -87,43 +72,36 @@ Int64 uint32ArrayToInt64(const UInt32 array[2]);
 // endian and big endian problems.  Parameter tgt must point to
 // an array of two (2) unsigned long elements.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void convertInt64ToUInt32Array(const Int64 &src, UInt32 *tgt);
 
 // -----------------------------------------------------------------------
 // Convert the integer from ascii.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 aToInt32(const char* src);
 
 // -----------------------------------------------------------------------
 // Convert the integer from ascii.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int64 atoInt64(const char* src);
 
 // -----------------------------------------------------------------------
 // Convert the integer to ascii.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void convertInt64ToAscii(const Int64 &src, char* tgt);
 
 // -----------------------------------------------------------------------
 // Convert the unsigned integer to ascii.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void convertUInt64ToAscii(const UInt64 &src, char* tgt);
 
 // -----------------------------------------------------------------------
 // Convert the integer to double.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 double convertInt64ToDouble(const Int64 &src);
 
 // -----------------------------------------------------------------------
 // Convert the integer to double.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 double convertUInt64ToDouble(const UInt64 &src);
 
 #endif /* INT64_H */

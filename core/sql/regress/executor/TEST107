@@ -160,23 +160,28 @@ insert into t107t3 values(1,'a','b','c','d','e','f'), (2,'a','b','c','d','e','f'
 -- Test #1: In memory sort ,double & copy
 prepare xx from SELECT [last 1] c100k from t107100k order by c100k;
 execute xx;
+execute xx;
 
 -- Test #1A: uses TOPN sort
 prepare xx from SELECT [first 10] c100k from t107100k order by c100k;
+execute xx;
 execute xx;
 
 -- Test#1B: negetive test, zero records to sort.
 prepare xx from SELECT c100k from t107100k where c100k < 0 order by c100k;
 execute xx;
+execute xx;
 
 -- Test#1C: negetive test, zero records to sort, TOPN
 prepare xx from SELECT [first 10] c100k from t107100k where c100k < 0 order by c100k;
+execute xx;
 execute xx;
 
 -- Test #2: SQL buffer overflow, overflow and merge
 set envvar SCRATCH_IO_PENDING 280;
 control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
 prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
+execute xx;
 execute xx;
 
 -- Test #2a: sortRecLen > 512kb scratchIOBlock, overflow.
@@ -200,6 +205,7 @@ control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
 control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
 control query default SORT_MAX_HEAP_SIZE_MB    '1';
 prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
+execute xx;
 execute xx;
 
 ?section dml1

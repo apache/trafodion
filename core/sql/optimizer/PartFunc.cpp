@@ -67,7 +67,6 @@
 // an undefined symbol.
 // ***********************************************************************
 
-// LCOV_EXCL_START
 void displayPartitioningFunction(const PartitioningFunction& pf)
 {
   pf.display();
@@ -89,7 +88,6 @@ void displayPartitionBoundaries(const RangePartitionBoundaries* pb)
   if (pb)
     pb->display();
 }
-// LCOV_EXCL_STOP
 
 
 // ***********************************************************************
@@ -276,14 +274,12 @@ PartitioningFunction::replaceNodeMap(NodeMap* nodeMap)
 // PartitioningFunction::copy()
 // Virtual copy constructor returns a copy of myself.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 PartitioningFunction* PartitioningFunction::copy() const
 {
   // illegal to call copy() of the base class
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::normalizePartitioningKeys()
@@ -384,14 +380,12 @@ NABoolean PartitioningFunction::isAGroupingOf(
   return (comparePartFuncToFunc(other) == SAME);
 }
 
-// LCOV_EXCL_START
 PartitioningRequirement* PartitioningFunction::makePartitioningRequirement()
 {
   // Redefine PartitioningFunction::makePartitioningRequirement()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // PartitioningFunction::scaleNumberOfPartitions
@@ -538,14 +532,12 @@ NABoolean PartitioningFunction::shouldUseSynchronousAccess(
 // -----------------------------------------------------------------------
 // Virtual functions that must be redefined for derived classes.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 Lng32 PartitioningFunction::getCountOfPartitions() const
 {
   // Redefine PartitioningFunction::getCountOfPartitions()
   CMPABORT;
   return 1;
 }
-// LCOV_EXCL_STOP
 
 NABoolean PartitioningFunction::canProducePartitioningKeyPredicates() const
 {
@@ -570,7 +562,6 @@ const ValueIdList& PartitioningFunction::getPartitionInputValuesLayout() const
   return partitionInputValuesLayout_;
 }
 
-// LCOV_EXCL_START
 void PartitioningFunction::createPartitioningKeyPredicates()
 {
   // Redefine PartitioningFunction::createPartitioningKeyPredicates()
@@ -600,7 +591,6 @@ ItemExpr* PartitioningFunction::createPartitioningExpression()
   CMPABORT;
   return NULL;
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::createPartSelectionExprFromSearchKey(
       const ValueId beginPartSelId,
@@ -636,14 +626,12 @@ void PartitioningFunction::preCodeGen(const ValueIdSet& availableValues)
 
 } // PartitioningFunction::preCodeGen()
 
-// LCOV_EXCL_START
 const NAString PartitioningFunction::getText() const
 {
   CMPABORT;
   return NAString("some type of partitioning function",
                    CmpCommon::statementHeap());
 }
-// LCOV_EXCL_STOP
 
 void PartitioningFunction::setupForStatement()
 {
@@ -675,13 +663,10 @@ void PartitioningFunction::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void PartitioningFunction::print(FILE* ofd, const char* indent,
 				 const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
 
   fprintf(ofd,"%s--Partitioning-Function----------------\n",NEW_INDENT);
   fprintf(ofd,"%s%s (%d)\n",
@@ -725,7 +710,6 @@ void PartitioningFunction::print(FILE* ofd, const char* indent,
 } // PartitioningFunction::print()
 
 void PartitioningFunction::display() const  { print(); }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // SinglePartitionPartitioningFunction
@@ -766,7 +750,6 @@ void SinglePartitionPartitioningFunction::createPartitioningKeyPredicates()
   storePartitioningKeyPredicates(ValueIdSet());
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::replacePivs(
        const ValueIdList& newPivs,
        const ValueIdSet& newPartKeyPreds)
@@ -774,7 +757,6 @@ void SinglePartitionPartitioningFunction::replacePivs(
   // do nothing, there aren't any pivs for a single
   // partition
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SinglePartitionPartitioningFunction::createPartitioningExpression()
@@ -849,14 +831,12 @@ const NAString SinglePartitionPartitioningFunction::getText() const
   return "exactly 1 partition";
 }
 
-// LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::print(FILE* ofd, const char* indent,
 						const char* title) const
 {
   PartitioningFunction::print(ofd, indent,
 			      "SinglePartitionPartitioningFunction");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // ReplicateViaBroadcastPartitioningFunction
@@ -1440,13 +1420,11 @@ const NAString HashPartitioningFunction::getText() const
    return getTextImp("hash"); 
 }
 
-// LCOV_EXCL_START
 void HashPartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashPartitioningFunction");
 } // HashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // Return an expression casting an encoded skew value to oType.
 static 
@@ -2056,13 +2034,11 @@ const NAString HashDistPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void HashDistPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HashDistPartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // HashDistPartitioningFunction::createPartitioningFunctionForIndexDesc()
@@ -2464,13 +2440,11 @@ const NAString Hash2PartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void Hash2PartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "Hash2PartitioningFunction");
 } // TableHashPartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 
 // -----------------------------------------------------------------------
@@ -2933,13 +2907,11 @@ const NAString SkewedDataPartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void SkewedDataPartitioningFunction::print(FILE* ofd, const char* indent,
                                          const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "SkewedDataPartitioningFunction");
 }  
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::comparePartFuncToFunc(): Compare this
@@ -2977,7 +2949,6 @@ comparePartFuncToFunc(const PartitioningFunction &other) const
 // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START
 
 //::scaleNUmberOfPartitions() are called in following locations
 //
@@ -3006,7 +2977,6 @@ scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
     return this;
 
 } // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // SkewedDataPartitioningFunction::isAGroupingOf()
@@ -3355,9 +3325,7 @@ NABoolean RangePartitionBoundaries::compareRangePartitionBoundaries(
   // Since we didn't look at the last group, we need to compute the
   // number of partitions in it and see if it is the group with
   // the largest number of partitions.
-#pragma nowarn(1506)   // warning elimination
   numOfPartsInLastGroup = (other.partitionCount_ - otherix) + 1;
-#pragma warn(1506)  // warning elimination
   if ((maxPartsPerGroup != NULL) AND
       (numOfPartsInLastGroup > *maxPartsPerGroup))
   {
@@ -3505,9 +3473,7 @@ RangePartitionBoundaries::merge(const RangePartitionBoundaries& other,
     }
 
   result->encodedBoundaryKeyLength_ = encodedBoundaryKeyLength_;
-#pragma nowarn(1506)   // warning elimination
   result->partitionCount_ = resultix - 1;
-#pragma warn(1506)  // warning elimination
 
   return result;
 } // RangePartitionBoundaries::merge
@@ -3544,9 +3510,7 @@ Lng32 RangePartitionBoundaries::getOptimizedNumberOfPartKeys()
       }
     }
 
-#pragma nowarn(1506)   // warning elimination
   return numPartKeyCols;
-#pragma warn(1506)  // warning elimination
 }
 
 Lng32 RangePartitionBoundaries::scaleNumberOfPartitions(
@@ -3813,9 +3777,7 @@ void RangePartitionBoundaries::completePartitionBoundaries(
     ItemExprList(CmpCommon::statementHeap());
 
   // set some data members that could not be set before
-#pragma nowarn(1506)   // warning elimination
   partKeyColumnCount_ = partitioningKeyOrder.entries();
-#pragma warn(1506)  // warning elimination
   encodedBoundaryKeyLength_ = encodedBoundaryKeyLength;
 
   Lng32 i;
@@ -3948,9 +3910,7 @@ void RangePartitionBoundaries::setupForStatement(NABoolean useStringVersion)
 
   for(UInt32 i=0; i < boundaryValuesList_.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination
     bindAddBoundaryValue(i);
-#pragma warn(1506)  // warning elimination
   }
 
   setupForStatement_ = TRUE;
@@ -3973,13 +3933,10 @@ void RangePartitionBoundaries::resetAfterStatement()
 // -----------------------------------------------------------------------
 // Method for debugging.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START
 void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
 				     const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
   char  btitle[50];
   char* S = btitle;
   Lng32 index;
@@ -4006,7 +3963,6 @@ void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
     }
 
 } // RangePartitionBoundaries::print()
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RangePartitioningFunction
@@ -4138,9 +4094,7 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
 
       CollIndex nCols = keyColumnList_.entries();
       ValueIdSet setOfKeyPredicates;
-#pragma nowarn(1506)   // warning elimination
       ValueIdList partInputValues(2*nCols+1);
-#pragma warn(1506)  // warning elimination
       ValueIdList loValues;
       ValueIdList hiValues;
 
@@ -4479,9 +4433,7 @@ RangePartitioningFunction::createPartitioningFunctionForIndexDesc
   for (i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id list
@@ -4606,9 +4558,7 @@ ItemExpr* RangePartitioningFunction::createPartitioningExpression()
 	   dataConversionErrorFlag,
 	   &oType);
       // form the key encoding of the key column (a character string)
-#pragma nowarn(1506)   // warning elimination
       ItemExpr *e = new (CmpCommon::statementHeap()) CompEncode (c,descOrder);
-#pragma warn(1506)  // warning elimination
 
       // concatenate the individual key encodings of the key columns
       if (encKey == NULL)
@@ -4863,12 +4813,8 @@ RangePartitioningFunction::partFuncAndFuncPushDownCompatible(
 
    if ( other == NULL ) return FALSE;
 
-#pragma nowarn(1506)   // warning elimination
    Lng32 thisKeyCount = getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
    Lng32 otherKeyCount = other->getPartitioningKey().entries();
-#pragma warn(1506)  // warning elimination
 
    // same key count
    if (thisKeyCount != otherKeyCount)
@@ -4995,7 +4941,6 @@ const NAString RangePartitioningFunction::getText() const
   return result;
 }
 
-// LCOV_EXCL_START
 void RangePartitioningFunction::print(FILE* ofd, const char* indent,
 					const char* title) const
 {
@@ -5135,7 +5080,6 @@ RangePartitioningFunction::computeNumOfActivePartitions(SearchKey* skey, const T
 }
 
 
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // LogPhysPartitioningFunction
@@ -5664,7 +5608,6 @@ const NAString LogPhysPartitioningFunction::getPhysForSplitTop() const
   return physPartFunc_->getText();
 }
 
-// LCOV_EXCL_START
 void LogPhysPartitioningFunction::print(
      FILE* ofd,
      const char* indent,
@@ -5674,13 +5617,11 @@ void LogPhysPartitioningFunction::print(
   logPartFunc_->print(ofd,"logical:  ");
   physPartFunc_->print(ofd,"physical: ");
 }
-// LCOV_EXCL_STOP
 
 // ***********************************************************************
 // RoundRobinPartitioningFunction
 // ***********************************************************************
 
-// LCOV_EXCL_START
 PartitioningRequirement*
 RoundRobinPartitioningFunction::makePartitioningRequirement()
 {
@@ -5802,9 +5743,7 @@ createPartitioningFunctionForIndexDesc(IndexDesc *idesc) const
   for (CollIndex i = 0; i < partKeyColumns.entries(); i++)
     {
       // which column of the index is this (usually this will be == i)
-#pragma nowarn(1506)   // warning elimination
       ixColNumber = allColumns.index(partKeyColumns[i]);
-#pragma warn(1506)  // warning elimination
 
       // insert the value id of the index column into the partitioning
       // key column value id set
@@ -6323,7 +6262,6 @@ void RoundRobinPartitioningFunction::print(
   PartitioningFunction::print(ofd,indent,"RoundRobinPartitioningFunction");
 }
 
-// LCOV_EXCL_STOP
 
 const skewProperty ANY_SKEW_PROPERTY(skewProperty::ANY, NULL);
   
@@ -6546,13 +6484,11 @@ const NAString HivePartitioningFunction::getText() const
    return getTextImp("hive"); 
 }
 
-// LCOV_EXCL_START
 void HivePartitioningFunction::print(FILE* ofd, const char* indent,
 	   			     const char* title) const
 {
   PartitioningFunction::print(ofd, indent, "HivePartitioningFunction");
 } // HivePartitioningFunction::print()
-// LCOV_EXCL_STOP
 
 PartitioningFunction*
 HivePartitioningFunction::

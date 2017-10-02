@@ -40,7 +40,6 @@
 // -----------------------------------------------------------------------
 // contents of this file
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination 
 
 struct ComResWord;
 class ComResWords;
@@ -184,6 +183,5 @@ private:
   static const ComResWord resWords_[];
 
 };
-#pragma warn(1506)  // warning elimination 
 
 #endif /* COMRESWORDS_H */

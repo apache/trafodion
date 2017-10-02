@@ -214,7 +214,7 @@ A            B            C
 >>invoke t009hivecust1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST1
--- Definition current  Wed Jul 12 21:37:45 2017
+-- Definition current  Tue Sep  5 08:23:44 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -263,7 +263,7 @@ A            B            C
 >>invoke t009hivecust2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST2
--- Definition current  Wed Jul 12 21:37:55 2017
+-- Definition current  Tue Sep  5 08:23:55 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -434,7 +434,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Wed Jul 12 21:39:07 2017
+-- Definition current  Tue Sep  5 08:25:19 2017
 
   (
     A                                INT
@@ -516,7 +516,7 @@ ROW_ID      COLS
 >>invoke bblike1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE1
--- Definition current  Wed Jul 12 21:39:20 2017
+-- Definition current  Tue Sep  5 08:25:34 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -533,7 +533,7 @@ ROW_ID      COLS
 >>invoke bblike2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE2
--- Definition current  Wed Jul 12 21:39:25 2017
+-- Definition current  Tue Sep  5 08:25:40 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -572,7 +572,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Wed Jul 12 21:39:32 2017
+-- Definition current  Tue Sep  5 08:25:49 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -616,7 +616,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID ................ 212356315820604834
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -629,11 +629,11 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
   total_overflow_size    ###
@@ -917,7 +917,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jul 12 21:39:40 2017
+-- Definition current  Tue Sep  5 08:25:55 2017
 
   (
     D_DATE_SK                        INT
@@ -1001,7 +1001,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 5537310018384739180 */
+/* ObjectUID = 1585406280815125826 */
 
 /* Trafodion DDL */
 
@@ -1061,7 +1061,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID ................ 212356315833683208
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
@@ -1076,11 +1076,11 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
   total_overflow_size    ###
@@ -1152,7 +1152,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jul 12 21:39:56 2017
+-- Definition current  Tue Sep  5 08:26:10 2017
 
   (
     D_DATE_SK                        INT
@@ -1236,7 +1236,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 5537310018384739180 */
+/* ObjectUID = 1585406280815125826 */
 
 /* Trafodion DDL */
 
@@ -1287,8 +1287,6 @@ CREATE EXTERNAL TABLE DATE_DIM
 
 --- SQL operation complete.
 >>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
-
-*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>explain options 'p' s;

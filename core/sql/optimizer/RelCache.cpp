@@ -1208,10 +1208,6 @@ void Scan::generateCacheKey(CacheWA &cwa) const
   if (stream_) { 
     cwa += " stream "; 
   }
-  // mark mpalias queries so they can be decached upon user request
-  if (getTableDesc()->getNATable()->isAnMPTableWithAnsiName()) {
-    cwa += AM_AN_MPALIAS_QUERY;
-  }
 
   if (getHbaseAccessOptions())
     {
@@ -1237,11 +1233,7 @@ NABoolean Scan::isCacheableExpr(CacheWA& cwa)
     if (stream_) { // pub-sub streams are not cacheable
       return FALSE;
     }
-    // mpalias SELECT is not cacheable unless explicitly requested
-    if (getTableDesc()->getNATable()->isAnMPTableWithAnsiName() &&
-        CmpCommon::getDefault(QUERY_CACHE_MPALIAS) == DF_OFF) {
-      return FALSE;
-    }
+
     cwa.setConditionallyCacheable(); 
     if (CmpCommon::getDefaultLong(MVQR_REWRITE_LEVEL) >= 1 &&
         QRDescGenerator::hasRewriteEnabledMVs(getTableDesc())) {

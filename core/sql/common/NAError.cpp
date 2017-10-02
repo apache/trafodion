@@ -90,9 +90,7 @@ NAError::NAError(const NAErrorCode errCode,
 		 ) 
        : errCode_(errCode), errType_(errType), subsysId_(subsys),
 	 procName_(procName),
-#pragma nowarn(1506)   // warning elimination 
          lineNumber_(lineNumber), offset_(offset), next_(0)
-#pragma warn(1506)  // warning elimination 
 {
   errParams_ = errParams;
 }

@@ -316,6 +316,6 @@ ComDiagsArea& operator<<(ComDiagsArea& d, const DgBase & dgObj)
 
     } // end switch.
 
-	return d;  // NT_PORT ( bd 1/14/97 ) eliminate compiler warning
+  return d; 
 } // end operator <<.
 

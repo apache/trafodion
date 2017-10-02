@@ -285,7 +285,6 @@ ExWorkProcRetcode ExCancelTcb::work()
         break;
       }  // end case NOT_STARTED
 
-#pragma warning (disable : 4291)
 
       case SEND_MESSAGE:
       {
@@ -320,7 +319,6 @@ ExWorkProcRetcode ExCancelTcb::work()
                       pid_,
                       cancelTdb().getCancelPidBlockThreshold());
 
-#pragma warning (default : 4291)
 
           *cancelStream_ << *cancelMsg;
 
@@ -332,13 +330,11 @@ ExWorkProcRetcode ExCancelTcb::work()
           bool suspendLogging = (TRUE == cliGlobals->currContext()->
                     getSessionDefaults()->getSuspendLogging());
 
-#pragma warning (disable : 4291)
           SuspendQueryRequest * suspendMsg = new (cliGlobals->getIpcHeap()) 
             SuspendQueryRequest(rtsHandle, cliGlobals->getIpcHeap(),
                                 ComTdbCancel::Force ==
                                 cancelTdb().forced_,
                                 suspendLogging);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *suspendMsg;
 
@@ -353,11 +349,9 @@ ExWorkProcRetcode ExCancelTcb::work()
           bool suspendLogging = (TRUE == cliGlobals->currContext()->
                     getSessionDefaults()->getSuspendLogging());
 
-#pragma warning (disable : 4291)
           ActivateQueryRequest * activateMsg = new (cliGlobals->getIpcHeap()) 
             ActivateQueryRequest(rtsHandle, cliGlobals->getIpcHeap(),
                                  suspendLogging);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *activateMsg;
 
@@ -370,10 +364,8 @@ ExWorkProcRetcode ExCancelTcb::work()
           char * qid = cancelTdb().qid_;
           Lng32 qid_len = str_len(qid);
 
-#pragma warning (disable : 4291)
           RtsQueryId *rtsQueryId = new (cliGlobals->getIpcHeap())
                            RtsQueryId( cliGlobals->getIpcHeap(), qid, qid_len);
-#pragma warning (default : 4291)
 
           *cancelStream_ << *rtsQueryId;
           rtsQueryId->decrRefCount();
@@ -430,12 +422,10 @@ ExWorkProcRetcode ExCancelTcb::work()
         if (!cancelStream_->moreObjects())
           return WORK_OK; 
 
-#pragma warning (disable : 4291)
 
         ControlQueryReply *reply = new (cliGlobals->getIpcHeap()) 
               ControlQueryReply(INVALID_RTS_HANDLE, cliGlobals->getIpcHeap());
 
-#pragma warning (default : 4291)
 
         *cancelStream_ >> *reply;
 

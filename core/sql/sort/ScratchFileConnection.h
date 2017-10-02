@@ -44,7 +44,6 @@ class ex_queue;
 #include "ExScheduler.h"
 class ScratchFile;
 
-// LCOV_EXCL_START
 class ScratchFileConnection: public IpcConnection
 {
 public :
@@ -78,5 +77,4 @@ private:
     NABoolean isWriteIO_; // Indicates if read or write IO
     Int32 fileIndex_; //Corresponds to a perticular open on the scratch file among multiple opens.
 };
-// LCOV_EXCL_STOP
 #endif

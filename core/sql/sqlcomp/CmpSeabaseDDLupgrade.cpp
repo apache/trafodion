@@ -425,7 +425,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  str_sprintf(msgBuf, "  Current Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld.",
+		  str_sprintf(msgBuf, "  Current Version %ld.%ld.%ld. Expected Version %d.%d.%d.",
 			      mdCurrMajorVersion, 
                               mdCurrMinorVersion,
                               mdCurrUpdateVersion,
@@ -548,7 +548,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
                   else
                     {
                       if (retcode == -1395)
-                        str_sprintf(msgBuf, "   Metadata needs to be upgraded or reinitialized (Current Version %Ld.%Ld.%Ld, Expected Version %Ld.%Ld.%Ld).",
+                        str_sprintf(msgBuf, "   Metadata needs to be upgraded or reinitialized (Current Version %ld.%ld.%ld, Expected Version %ld.%ld.%ld).",
                                     mdCurrMajorVersion, mdCurrMinorVersion, mdCurrUpdateVersion,
                                     (Int64)METADATA_MAJOR_VERSION, (Int64)METADATA_MINOR_VERSION, (Int64)METADATA_UPDATE_VERSION);   
                       else
@@ -566,7 +566,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
                   Int64 expSWMajorVersion = SOFTWARE_MAJOR_VERSION;
                   Int64 expSWMinorVersion = SOFTWARE_MINOR_VERSION;
                   Int64 expSWUpdVersion = SOFTWARE_UPDATE_VERSION;
-		  str_sprintf(msgBuf, "  System Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld.",
+		  str_sprintf(msgBuf, "  System Version %ld.%ld.%ld. Expected Version %ld.%ld.%ld.",
 			      sysSWMajorVersion, sysSWMinorVersion, sysSWUpdVersion,
 			      expSWMajorVersion, expSWMinorVersion, expSWUpdVersion);
 		  mdui->setMsg(msgBuf);
@@ -659,7 +659,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    {
 		      // no version mismatch detected.
 		      // Metadata is uptodate.
-		      str_sprintf(msgBuf, "  Metadata is already at Version %Ld.%Ld.",
+		      str_sprintf(msgBuf, "  Metadata is already at Version %ld.%ld.",
 				  mdCurrMajorVersion, mdCurrMinorVersion);
 		      mdui->setMsg(msgBuf);
 		      mdui->setEndStep(FALSE);
@@ -700,7 +700,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
                                   upgItems += ".";
                                 }
                             }
-			  str_sprintf(msgBuf, "  Metadata needs to be upgraded from Version %Ld.%Ld.%Ld to %Ld.%Ld.%Ld.%s",
+			  str_sprintf(msgBuf, "  Metadata needs to be upgraded from Version %ld.%ld.%ld to %d.%d.%d.%s",
 				      mdCurrMajorVersion, mdCurrMinorVersion/10, 
                                       (mdCurrMinorVersion - (mdCurrMinorVersion/10)*10),
 				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION,
@@ -716,7 +716,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      else
 			{
 			  // metadata cannot be upgraded with the current release.
-			  str_sprintf(msgBuf, "  Metadata cannot to be upgraded from Version %Ld.%Ld to %Ld.%Ld with this software",
+			  str_sprintf(msgBuf, "  Metadata cannot to be upgraded from Version %ld.%ld to %d.%d with this software",
 				      mdCurrMajorVersion, mdCurrMinorVersion,
 				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
 			  
@@ -1827,7 +1827,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 	case METADATA_UPGRADED:
 	  {
-	    str_sprintf(msgBuf, "Metadata Upgrade to Version %Ld.%Ld.%Ld: done",
+	    str_sprintf(msgBuf, "Metadata Upgrade to Version %d.%d.%d: done",
                         METADATA_MAJOR_VERSION, 
                         METADATA_MINOR_VERSION,
                         METADATA_UPDATE_VERSION);
@@ -2207,7 +2207,7 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
                 hbaseCreateOptions = hbaseCreateOptions.strip();
               }
                
-            str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %Ld",
+            str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %ld",
                         getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                         numSaltPartns,
                         tableUID);
@@ -2265,7 +2265,7 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
             return -1;
           }
            
-        str_sprintf(buf, "merge into %s.\"%s\".%s using (select object_uid, sum(column_size + case when nullable != 0 then 1 else 0 end), sum(column_size + case when nullable != 0 then 1 else 0 end + %d + %d), count(*) from %s.\"%s\".%s group by 1) T(a,b,c,d) on table_uid = T.a when matched then update set (row_data_length, row_total_length) = (T.b, T.c + key_length * T.d)",
+        str_sprintf(buf, "merge into %s.\"%s\".%s using (select object_uid, sum(column_size + case when nullable != 0 then 1 else 0 end), sum(column_size + case when nullable != 0 then 1 else 0 end + %lu + %d), count(*) from %s.\"%s\".%s group by 1) T(a,b,c,d) on table_uid = T.a when matched then update set (row_data_length, row_total_length) = (T.b, T.c + key_length * T.d)",
                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                     sizeof(Int64),
                     5,

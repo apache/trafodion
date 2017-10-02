@@ -123,9 +123,7 @@ void CRUTableSyncTaskExecutor::
 
 	Int32 stringSize = tableName_.GetLength() + 1;
 	translator.WriteBlock(&stringSize, sizeof(Int32));
-#pragma nowarn(1506)   // warning elimination 
 	translator.WriteBlock(tableName_.c_string(), stringSize);;
-#pragma warn(1506)  // warning elimination 
 	
 	syncTableDynamicContainer_.StoreData(translator);
 
@@ -150,9 +148,7 @@ void CRUTableSyncTaskExecutor::
 	
 	RUASSERT(maxStringSize > stringSize);
 
-#pragma nowarn(1506)   // warning elimination 
 	translator.ReadBlock(buffer, stringSize);
-#pragma warn(1506)  // warning elimination 
 	
 	tableName_ = CDSString(buffer);
 

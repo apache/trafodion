@@ -59,19 +59,7 @@
 //Opcode map defines
 #define OPCODE_MAP_FIRSTSIX_BITS  0x000000000000003F
 
-/* #ifdef NA_DEBUG_C_RUNTIME
 #ifdef _DEBUG
-#ifdef _EID
-#if !defined(NA_NSK)
-#define DEBUG_PCODE
-#endif  // NA_WINNT
-#else // _EID
-#define DEBUG_PCODE
-#endif // _EID
-#endif // _DEBUG
-#endif */
-
-#ifdef NA_DEBUG_C_RUNTIME
 #include <stdio.h>
 #endif
 
@@ -123,17 +111,12 @@ public:
   Int32 length;
   Int32 numAmodes;
 };
-//#if defined( __EID ) && defined( NA_NSK )
-//#pragma class_functions PCodeInstructionMap (resident)
-//#endif
-
 
 // class PCodeSegment
 //
 // this class contains the actual byte code 
 
-#pragma warning ( disable : 4251 )
-class SQLEXP_LIB_FUNC PCodeSegment : public NAVersionedObject {
+class PCodeSegment : public NAVersionedObject {
 public:
   PCodeSegment(PCodeBinary* pcode = 0);
 
@@ -147,11 +130,7 @@ public:
   // Adds pointer to PCodeBinary sequences and advance idx
   Int32 setPtrAsPCodeBinary(PCodeBinary *pcode, Int32 idx, Long ptr)
     {
-    #ifdef NA_64BIT
       *(Long*)&(pcode[idx]) = ptr;
-    #else
-      pcode[idx] = (PCodeBinary) ptr;
-    #endif
       return (sizeof(ptr)/sizeof(PCodeBinary));
     }
 
@@ -204,7 +183,6 @@ private:
 
 };
 
-#pragma warning ( default : 4251 )
 
 
 // PCode
@@ -223,7 +201,7 @@ private:
 // functions that operate on PCI's.
 //
 //
-class SQLEXP_LIB_FUNC  PCode {
+class  PCode {
 public:
 
   // Construction/Destruction
@@ -394,12 +372,11 @@ public:
   //
   static void print(PCIList pciList);
 
-#ifndef __EID
   // Used by SHOWPLAN to display PCI's
   //
   static void displayContents(PCIList pciList, Space *space);
   static void displayContents(PCodeBinary* pCode, Space *space);
-#endif
+
   // for debug
   static Int32 dumpContents(PCIList pciList, char *buf, Int32 bufLen);
   static void dumpContents(PCodeBinary* pCode, char *buf, Int32 bufLen);

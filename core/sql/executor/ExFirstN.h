@@ -66,16 +66,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExFirstNTdb()
+  ExFirstNTdb()
   {}
 
-  NA_EIDPROC virtual ~ExFirstNTdb()
+  virtual ~ExFirstNTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -144,29 +144,29 @@ class ExFirstNTcb : public ex_tcb
   
 public:
   // Constructor
-  NA_EIDPROC ExFirstNTcb(const ExFirstNTdb & firstn_tdb,    
+  ExFirstNTcb(const ExFirstNTdb & firstn_tdb,    
 	      const ex_tcb &    child_tcb,    // child queue pair
 	      ex_globals *glob
 	      );
   
-  NA_EIDPROC ~ExFirstNTcb();  
+  ~ExFirstNTcb();  
   
-  NA_EIDPROC short moveChildDataToParent();
+  short moveChildDataToParent();
 
-  NA_EIDPROC void freeResources();  // free resources
+  void freeResources();  // free resources
   
-  NA_EIDPROC short work();                     // when scheduled to do work
-  NA_EIDPROC virtual void registerSubtasks();  // register work procedures with scheduler
-  NA_EIDPROC short cancel();                   // for the fickle.
+  short work();                     // when scheduled to do work
+  virtual void registerSubtasks();  // register work procedures with scheduler
+  short cancel();                   // for the fickle.
 
-  NA_EIDPROC inline ExFirstNTdb & firstnTdb() const { return (ExFirstNTdb &) tdb; }
+  inline ExFirstNTdb & firstnTdb() const { return (ExFirstNTdb &) tdb; }
 
  
-  NA_EIDPROC ex_queue_pair getParentQueue() const { return qparent_;}
+  ex_queue_pair getParentQueue() const { return qparent_;}
 
 
-  NA_EIDPROC virtual Int32 numChildren() const { return 1; }   
-  NA_EIDPROC virtual const ex_tcb* getChild(Int32 /*pos*/) const { return childTcb_; }
+  virtual Int32 numChildren() const { return 1; }   
+  virtual const ex_tcb* getChild(Int32 /*pos*/) const { return childTcb_; }
 
 }; 
 
@@ -176,9 +176,9 @@ class ExFirstNPrivateState : public ex_tcb_private_state
   friend class ExFirstNTcb;
   
 public:
-  NA_EIDPROC ExFirstNPrivateState(const ExFirstNTcb * tcb); //constructor
-  NA_EIDPROC ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
-  NA_EIDPROC ~ExFirstNPrivateState();       // destructor
+  ExFirstNPrivateState(const ExFirstNTcb * tcb); //constructor
+  ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
+  ~ExFirstNPrivateState();       // destructor
 };
 
 #endif

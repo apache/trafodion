@@ -128,10 +128,7 @@ extern THREAD_P NABoolean ASSERTIONS_ALWAYS_ON ;
 #define ASSERT_IS_A_VALID_COSTSCALAR
 #endif // NDEBUG
 
-// for some reason, you might not want to use <math.h> functions ...
-#ifndef DONT_USE_MATH_H
 #include <math.h>
-#endif
 
 // -----------------------------------------------------------------------
 // The following classes are defined in this file.
@@ -316,31 +313,15 @@ public:
   // getCeiling : ceiling of 12.34 = 13.0, assumes non-negative CostScalar
   CostScalar getCeiling() const
   {
-#ifdef DONT_USE_MATH_H
-    CMPASSERT (dpv_ >= 0) ;
-    // we assume that cast-to-long does truncation
-    Lng32 valLong = Lng32(dpv_) ; 
-    if (double(valLong) < dpv_)
-      return CostScalar (double(valLong+1)) ; // go "up" to next integer
-    else
-      return CostScalar (double(valLong)) ;   // already exactly equal to a integer
-#else
-  // use ANSI c-runtime function defined in <math.h>:
-  return CostScalar(ceil(getValue()));
-#endif
+    // use ANSI c-runtime function defined in <math.h>:
+    return CostScalar(ceil(getValue()));
   }
 
   // getFloor : floor of 12.34 = 12.0, assumes non-negative CostScalar
   CostScalar getFloor() const
   {
-#ifdef DONT_USE_MATH_H
-    CMPASSERT (dpv_ >= 0) ;
-    // we assume that cast-to-long does truncation
-    return CostScalar (double(Lng32(dpv_))) ; 
-#else
-  // use ANSI c-runtime function defined in <math.h>:
-  return CostScalar(floor(getValue()));
-#endif
+    // use ANSI c-runtime function defined in <math.h>:
+    return CostScalar(floor(getValue()));
   }
 
   // getValue, value : getting at the underlying double value explicitly

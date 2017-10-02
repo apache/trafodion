@@ -110,7 +110,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("ATTRIBUTE",          TOK_ATTRIBUTE,   NONRESTOKEN_),
   ParKeyWord("ATTRIBUTES",         TOK_ATTRIBUTES,  NONRESTOKEN_),
   ParKeyWord("AUDIT",              TOK_AUDIT,       NONRESTOKEN_),
-  ParKeyWord("AUDIT_IMAGE",        TOK_AUDIT_IMAGE, NONRESTOKEN_),
   ParKeyWord("AUDITCOMPRESS",      TOK_AUDITCOMPRESS, NONRESTOKEN_),
   ParKeyWord("AUTHENTICATION",     TOK_AUTHENTICATION, NONRESTOKEN_),
   ParKeyWord("AUDITONREFRESH",     TOK_AUDITONREFRESH, FLAGSNONE_),
@@ -680,7 +679,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("MOVINGSTDDEV",       TOK_MSTDDEV,     NONRESTOKEN_),
   ParKeyWord("MOVINGSUM",          TOK_MSUM,        NONRESTOKEN_),
   ParKeyWord("MOVINGVARIANCE",     TOK_MVARIANCE,   NONRESTOKEN_),
-  ParKeyWord("MPLOC",              TOK_MPLOC,       NONRESTOKEN_),
   ParKeyWord("MTS",                TOK_MTS,         NONRESTOKEN_),
   ParKeyWord("MULTI",              TOK_MULTI,       NONRESTOKEN_),
   ParKeyWord("MULTIDELTA",         TOK_MULTIDELTA,  FLAGSNONE_),
@@ -1442,9 +1440,7 @@ NABoolean normalizeKeyWord(NAWchar *wWord, char *word, UInt32 size)
     // Upper case all words since all the words in the keyword table
     // are also uppercase.
     //
-#pragma nowarn(1506)   // warning elimination
     word[i] = TOUPPER(word[i]);
-#pragma warn(1506)  // warning elimination
 
     i++;
   }

@@ -40,7 +40,6 @@
 #include "ComOptIncludes.h"
 #include "GroupAttr.h"
 #include "ItemColRef.h"
-#include "ReadTableDef.h"
 #include "RelEnforcer.h"
 #include "RelJoin.h"
 #include "RelExeUtil.h"
@@ -391,9 +390,7 @@ short DDLExpr::codeGen(Generator * generator)
   // remove trailing blanks and append a semicolon, if one is not present.
   char * ddlStmt = NULL;
 
-#pragma nowarn(1506)   // warning elimination
   Int32 i = strlen(getDDLStmtText());
-#pragma warn(1506)  // warning elimination
   while ((i > 0) && (getDDLStmtText()[i-1] == ' '))
     i--;
 
@@ -894,9 +891,7 @@ short RelRoot::codeGen(Generator * generator)
     NABoolean blankHV = FALSE ;
     if (item_expr->previousHostVar()) {
       Int32 j = 0;
-#pragma warning (disable : 4018)  //warning elimination
       for (j = 0; j < i; j++) {
-#pragma warning (default : 4018)  //warning elimination
 	ItemExpr *ie = inputVars()[j].getItemExpr();
 	if (ie->getOperatorType() == ITM_HOSTVAR) {
 	  if (item_expr->previousName() == ((HostVar *) ie)->getName()) {
@@ -905,9 +900,7 @@ short RelRoot::codeGen(Generator * generator)
 	}
       }
       
-#pragma warning (disable : 4018)  //warning elimination
       if (i == j) {
-#pragma warning (default : 4018)  //warning elimination
 	NAString str1 = "previousHV__";
 	char str2[30];
 	str_itoa(i, str2);
@@ -1029,16 +1022,12 @@ short RelRoot::codeGen(Generator * generator)
     {
       ItemExpr * item_expr = (newInputVars)[i].getItemExpr();
       if (item_expr->getOperatorType() == ITM_UNIQUE_EXECUTE_ID)
-#pragma nowarn(1506)   // warning elimination
 	uniqueExecuteIdOffset = attrs[i]->getOffset();
-#pragma warn(1506)  // warning elimination
       if (item_expr->getOperatorType() == ITM_GET_TRIGGERS_STATUS)
 	{
 	  GenAssert(getTriggersList()->entries()>0,
 		    "No triggers, yet TriggerStatusOffset != -1");
-#pragma nowarn(1506)   // warning elimination
 	  triggersStatusOffset = attrs[i]->getOffset();
-#pragma warn(1506)  // warning elimination
 	}
     }
   
@@ -1182,9 +1171,7 @@ short RelRoot::codeGen(Generator * generator)
 				 &input_expr);
     }
 
-#pragma nowarn(1506)   // warning elimination
   ex_cri_desc * cri_desc = new(space) ex_cri_desc(num_tupps, space);
-#pragma warn(1506)  // warning elimination
   generator->setCriDesc(cri_desc, Generator::DOWN);
   generator->setInputExpr((void *)input_expr);
 
@@ -1407,9 +1394,7 @@ short RelRoot::codeGen(Generator * generator)
 		  HostVar * hv = (HostVar *)(val_id.getItemExpr());
 
 		  if (hv->getName() == cursorHvar->getName())
-#pragma nowarn(1506)   // warning elimination
 		    fetchedCursorHvar = (short)i+1; // 1-based
-#pragma warn(1506)  // warning elimination
 		}
 	    } // more input
 
@@ -1664,17 +1649,9 @@ short RelRoot::codeGen(Generator * generator)
 	      char * varName;
 	      GenAssert(hv->getName().data(), "Hostvar pointer must have name");
 
-#pragma nowarn(1506)   // warning elimination
 	      lateNameInfo->setEnvVar(hv->isEnvVar());
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
-	      lateNameInfo->setDefine(hv->isDefine());
-#pragma warn(1506)  // warning elimination
-
-#pragma nowarn(1506)   // warning elimination
 	      lateNameInfo->setCachedParam(hv->isCachedParam());
-#pragma warn(1506)  // warning elimination
 
 	      varName = convertNAString(hv->getName(), generator->wHeap());
 	      strcpy(lateNameInfo->variableName(), varName);
@@ -1699,11 +1676,7 @@ short RelRoot::codeGen(Generator * generator)
     }
 
   // UDR Security
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination
   short noOfUdrs = generator->getBindWA()->getUdrStoiList().entries ();
-#pragma warn(1506)  // warning elimination
-#pragma warning (default : 4244)  //warning elimination
 
   SqlTableOpenInfo **udrStoiList = NULL;
   if ( noOfUdrs )
@@ -1774,9 +1747,7 @@ short RelRoot::codeGen(Generator * generator)
   LateNameInfoList * lnil = NULL;
   Int32 numEntries = 0;
   if  (generator->getLateNameInfoList().entries() > 0)
-#pragma nowarn(1506)   // warning elimination
     numEntries = generator->getLateNameInfoList().entries();
-#pragma warn(1506)  // warning elimination
   lnil =
     (LateNameInfoList *)
       space->allocateMemory( sizeof(LateNameInfoList) +
@@ -1795,7 +1766,6 @@ short RelRoot::codeGen(Generator * generator)
   for (j = 0; j < numEntries; j++)
     lnil->setLateNameInfo(j,((LateNameInfo *)(lnil + 1)) + j);
 
-  NABoolean definePresent = FALSE;
   NABoolean viewPresent = FALSE;
   NABoolean variablePresent = FALSE;
 
@@ -1806,21 +1776,17 @@ short RelRoot::codeGen(Generator * generator)
       for (CollIndex i = 0;
 	   i < generator->getLateNameInfoList().entries(); i++)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  LateNameInfo * tgt = &(lnil->getLateNameInfo(i));
-#pragma warn(1506)  // warning elimination
 	  LateNameInfo * src = (LateNameInfo *)generator->getLateNameInfoList()[i];
 	  if (src->isVariable())
 	    {
               doTablenameOltOpt = FALSE;
-	      if (src->isDefine())
-		definePresent = TRUE;
 	    }
 
 	  // *tgt = *src wouldn't work since it doesn't copy over the vtblptr.
 	  memmove(tgt,src,sizeof(LateNameInfo));
 	  // find the position of this hostvar in input var list.
-	  if ((src->isVariable()) && (! src->isEnvVar()) && (! src->isDefine()))
+	  if ((src->isVariable()) && (! src->isEnvVar()))
 	    {
 	      if (tgt->isCachedParam())
 		{
@@ -1854,18 +1820,11 @@ short RelRoot::codeGen(Generator * generator)
         {
 	  if (NOT tgt->isVariable())
 	    {
-	      if (NOT tgt->isMPalias())
-		tgt->setAnsiPhySame(TRUE);
-	      else
-		tgt->setAnsiPhySame(FALSE);
+              tgt->setAnsiPhySame(TRUE);
 	    }
 	  else
 	    {
-	      if (tgt->isMPalias())
-		tgt->setAnsiPhySame(FALSE);
-	      else if (tgt->isDefine())
-		tgt->setAnsiPhySame(TRUE);
-	      else if (tgt->isEnvVar())
+	      if (tgt->isEnvVar())
 		tgt->setAnsiPhySame(TRUE);
 	      else
 		{
@@ -1888,9 +1847,6 @@ short RelRoot::codeGen(Generator * generator)
 	      char * compileTimeAnsiName = space->AllocateAndCopyToAlignedSpace(
 		   qn.getQualifiedNameAsAnsiString(), 0);
               tgt->setCompileTimeName(compileTimeAnsiName, space);
-	      
-	      if (tgt->isView())
-		tgt->setMPalias(1);
 	    }
 	} // else
       
@@ -1917,13 +1873,7 @@ short RelRoot::codeGen(Generator * generator)
 	} // for
     }
 
-#pragma nowarn(1506)   // warning elimination
-  lnil->setDefinePresent(definePresent);
-#pragma warn(1506)  // warning elimination
-
-#pragma nowarn(1506)   // warning elimination
   lnil->setViewPresent(viewPresent);
-#pragma warn(1506)  // warning elimination
 
   lnil->setVariablePresent(variablePresent);
 
@@ -1934,17 +1884,13 @@ short RelRoot::codeGen(Generator * generator)
   // fragments of the plan that are executed locally or are downloaded
   // to DP2 or to ESPs) from the generator's copy <compFragDir> and attach
   // it to the root_tdb
-  NABoolean fragmentQuotas = CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) == DF_ON;
+  NABoolean fragmentQuotas = CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON;
   ExFragDir *exFragDir =
-#pragma nowarn(1506)   // warning elimination
     new(space) ExFragDir(compFragDir->entries(),space,
                          CmpCommon::getDefault(ESP_MULTI_FRAGMENTS) == DF_ON, 
                          fragmentQuotas, 
                          (UInt16)CmpCommon::getDefaultLong(ESP_MULTI_FRAGMENT_QUOTA_VM),
-                         fragmentQuotas ?
-                           (UInt8)CmpCommon::getDefaultLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS) :
                            (UInt8)CmpCommon::getDefaultLong(ESP_NUM_FRAGMENTS));
-#pragma warn(1506)  // warning elimination
 
   // We compute the space needed in execution time for input Rowset variables
   for (i = 0; i < inputVars().entries(); i++)
@@ -1992,9 +1938,7 @@ short RelRoot::codeGen(Generator * generator)
 	    {
 	      if (baseTablenamePosition == -1)
 		{
-#pragma nowarn(1506)   // warning elimination
 		  baseTablenamePosition = n;
-#pragma warn(1506)  // warning elimination
 		}
 	    }
 	}
@@ -2024,9 +1968,7 @@ short RelRoot::codeGen(Generator * generator)
 	    {
 	      if (baseTablenamePosition == -1)
 		{
-#pragma nowarn(1506)   // warning elimination
 		  baseTablenamePosition = n;
-#pragma warn(1506)  // warning elimination
 		}
 	    }
 	}
@@ -2260,14 +2202,11 @@ short RelRoot::codeGen(Generator * generator)
   // This init() call passes in the space object. The root might allocate
   // more space for its uses inside init().
   // ---------------------------------------------------------------------
-#pragma warning (disable : 4244)  //warning elimination
   root_tdb->init(child_tdb,
                  cri_desc, // input to child
                  (InputOutputExpr *)input_expr,
                  (InputOutputExpr *)output_expr,
-#pragma nowarn(1506)   // warning elimination
                  input_vars_size,
-#pragma warn(1506)  // warning elimination
                  pkey_expr,
                  pkey_len,
                  pred_expr,
@@ -2303,14 +2242,10 @@ short RelRoot::codeGen(Generator * generator)
 		 // Not needed for hbase/seabase access.
 		 (getGroupAttr()->isEmbeddedUpdateOrDelete() &&
 		  (NOT hdfsAccess())),
-#pragma nowarn(1506)   // warning elimination
 		 CmpCommon::getDefaultNumeric(STREAM_TIMEOUT),
-#pragma warn(1506)  // warning elimination
 		 generator->getPlanId(),
 		 qCacheInfoBuf,
-#pragma nowarn(1506)   // warning elimination
 		 cacheVarsSize,
-#pragma warn(1506)  // warning elimination
 		 udrStoiList,
 		 noOfUdrs,
                  maxResultSets,
@@ -2324,7 +2259,6 @@ short RelRoot::codeGen(Generator * generator)
                  compilationStatsData,
                  tmpLoc,
                  listOfSnapshotscanTables);
-#pragma warning (default : 4244)  //warning elimination
 
   root_tdb->setTdbId(generator->getAndIncTdbId());
   
@@ -2733,7 +2667,6 @@ short RelRoot::codeGen(Generator * generator)
       if ((NOT root_tdb->getUpdAbortOnError()) &&
 	  (NOT root_tdb->getUpdSavepointOnError()) &&
 	  (NOT root_tdb->getUpdPartialOnError()) &&
-	  (NOT definePresent) &&
 	  (retryableStmt) &&
 	  (NOT root_tdb->thereIsACompoundStatement()))
 	{
@@ -2819,6 +2752,9 @@ short RelRoot::codeGen(Generator * generator)
 
   if(generator->hiveAccess())
     root_tdb->setHiveAccess(TRUE);
+
+  root_tdb->setBmoMemoryLimitPerNode(ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB));
+  root_tdb->setEstBmoMemoryPerNode(generator->getTotalBMOsMemoryPerNode().value());
 
   Int32 numSikEntries = securityKeySet_.entries();
   if (numSikEntries > 0)
@@ -2937,9 +2873,9 @@ short RelRoot::codeGen(Generator * generator)
 
       // now set the values of the previously allocated directory entry
 
-      NABoolean mlimitPerCPU = CmpCommon::getDefaultLong(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerNode = CmpCommon::getDefaultLong(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
       UInt16 BMOsMemoryUsage = 0;
-      if (mlimitPerCPU == TRUE)
+      if (mlimitPerNode == TRUE)
         BMOsMemoryUsage = (UInt16)compFragDir->getBMOsMemoryUsage(i);
       else if (compFragDir->getNumBMOs(i) > 1 ||
                (compFragDir->getNumBMOs(i) == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON))
@@ -2980,6 +2916,8 @@ short RelRoot::codeGen(Generator * generator)
   compilerStatsInfo->bmo() = generator->getTotalNumBMOs();
   compilerStatsInfo->queryType() = (Int16)root_tdb->getQueryType();
   compilerStatsInfo->subqueryType() = (Int16)root_tdb->getSubqueryType();
+  compilerStatsInfo->bmoMemLimitPerNode() = root_tdb->getBmoMemoryLimitPerNode();
+  compilerStatsInfo->estBmoMemPerNode() = root_tdb->getEstBmoMemoryPerNode();
 
   NADELETEBASIC(partInputDataDescs, generator->wHeap());
   NADELETEBASIC(nodeMap, generator->wHeap());
@@ -3126,10 +3064,12 @@ short Sort::generateTdb(Generator * generator,
   sort_options->setConsiderBufferDefrag(considerBufferDefrag);
 
   short memoryQuotaMB = 0;
+  double memoryQuotaRatio;
+  Lng32 numStreams;
+  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
 
-  if(CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF)
+  if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF)
   {
-
     // The CQD EXE_MEM_LIMIT_PER_BMO_IN_MB has precedence over the mem quota sys
     memoryQuotaMB = (UInt16)defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB);
 
@@ -3143,28 +3083,35 @@ short Sort::generateTdb(Generator * generator,
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
       
-      NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
   
-      if ( mlimitPerCPU || numBMOsInFrag > 1 ) {
+      if ( mlimitPerNode || numBMOsInFrag > 1 ||
+         (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
   
           memoryQuotaMB = (short)
              computeMemoryQuota(generator->getEspLevel() == 0,
-                                mlimitPerCPU,
-                                generator->getBMOsMemoryLimitPerCPU().value(),
-                                generator->getTotalNumBMOsPerCPU(),
-                                generator->getTotalBMOsMemoryPerCPU().value(),
+                                mlimitPerNode,
+                                generator->getBMOsMemoryLimitPerNode().value(),
+                                generator->getTotalNumBMOs(),
+                                generator->getTotalBMOsMemoryPerNode().value(),
                                 numBMOsInFrag, 
-                                generator->getFragmentDir()->getBMOsMemoryUsage()
+                                bmoMemoryUsagePerNode,
+                                numStreams,
+                                memoryQuotaRatio
                                );
   
-                  
-          Lng32 sortMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_SORT);
+      }            
+      Lng32 sortMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_SORT);
+      Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
   
-          if ( memoryQuotaMB < sortMemoryLowbound )
-             memoryQuotaMB = (short)sortMemoryLowbound;
+      if ( memoryQuotaMB < sortMemoryLowbound ) {
+         memoryQuotaMB = (short)sortMemoryLowbound;
+         memoryQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
       }
+      else if (memoryQuotaMB >  memoryUpperbound)
+         memoryQuotaMB = memoryUpperbound;
     }
-   }
+  }
 
    //BMO settings. By Default set this value to max available 
    //irrespective of quota is enabled or disabled. Sort at run time
@@ -3195,7 +3142,6 @@ short Sort::generateTdb(Generator * generator,
 	       sortKeyLen,
 	       sortRecLen,
 	       sortPrefixKeyLen,
-#pragma nowarn(1506)   // warning elimination
 	       returned_desc->noTuples() - 1,
 	       child_tdb,
 	       given_desc,
@@ -3215,11 +3161,11 @@ short Sort::generateTdb(Generator * generator,
 	       sort_options,
            sortGrowthPercent);
   sort_tdb->setCollectNFErrors(this->collectNFErrors());
-#pragma warn(1506)  // warning elimination
 
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
   sort_tdb->setTopNSortEnabled(CmpCommon::getDefault(GEN_SORT_TOPN) == DF_ON);
+  sort_tdb->setBmoQuotaRatio(memoryQuotaRatio);
   
   if (generator->getUserSidetreeInsert())
     sort_tdb->setUserSidetreeInsert(TRUE);
@@ -3232,6 +3178,7 @@ short Sort::generateTdb(Generator * generator,
   generator->initTdbFields(sort_tdb);
 
   double sortMemEst = getEstimatedRunTimeMemoryUsage(sort_tdb);
+  sort_tdb->setEstimatedMemoryUsage(sortMemEst / 1024);
   generator->addToTotalEstimatedMemory(sortMemEst);
 
   generator->addToTotalOverflowMemory(
@@ -3247,21 +3194,12 @@ short Sort::generateTdb(Generator * generator,
   float bmoCtzFactor;
   defs.getFloat(BMO_CITIZENSHIP_FACTOR, bmoCtzFactor);
   sort_tdb->setBmoCitizenshipFactor((Float32)bmoCtzFactor);
-
- //if(!generator->explainDisabled()) {
-  Lng32 sortMemEstInKBPerCPU = (Lng32)(sortMemEst / 1024) ;
-  sortMemEstInKBPerCPU = sortMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  sort_tdb->setSortMemEstInMbPerCpu
-    ( Float32(MAXOF(sortMemEstInKBPerCPU/1024,1)) );
-
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(sortMemEstInKBPerCPU );
-
+  sort_tdb->setSortMemEstInKBPerNode(bmoMemoryUsagePerNode /1024);
+  if (sortNRows())
+     sort_tdb->setTopNThreshold(defs.getAsLong(GEN_SORT_TOPN_THRESHOLD));
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(sort_tdb, childExplainTuple, 0, generator));
-
-    generator->setOperEstimatedMemory(0);
   }
 
   // set the new up cri desc.
@@ -3948,52 +3886,42 @@ double Sort::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
   return 0;
 }
 
-CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   Lng32 childRecordSize = 
       childGroupAttr->getCharacteristicOutputs().getRowLength();
-  CostScalar totalMemory = getEstRowsUsed() * childRecordSize;
+  CostScalar rowsUsed;
+  if (sortNRows() && (topNRows_ > 0)
+            && (topNRows_ <= getDefault(GEN_SORT_TOPN_THRESHOLD)))
+     rowsUsed = topNRows_; 
+  else
+     rowsUsed = getEstRowsUsed();
+  CostScalar totalMemory = rowsUsed * childRecordSize;
 
-  if ( perCPU == TRUE ) {
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL)
-    {
-      PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-      totalMemory /= partFunc->getCountOfPartitions();
-    }
+  Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  if (phyProp != NULL)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
   }
-
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if (perNode) 
+      totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
+      totalMemory /= numOfStreams;
   return totalMemory;
 }
 
 double Sort::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  const Int32 numBuffs = ActiveSchemaDB()->getDefaults().getAsLong(GEN_SORT_MAX_NUM_BUFFERS);
-  const Int32 bufSize = ActiveSchemaDB()->getDefaults().getAsLong(GEN_SORT_MAX_BUFFER_SIZE);
-  double memoryLimitPerCpu;
-  short memoryQuotaInMB = ((ComTdbSort *)tdb)->getSortOptions()->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
-  else
-    memoryLimitPerCpu = numBuffs * bufSize ;
-
-  const PhysicalProperty* const phyProp = getPhysicalProperty();
   Lng32 numOfStreams = 1;
-  if (phyProp != NULL)
-  {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
-  }
-
-  CostScalar memoryPerCpu = totalMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
-  {
-      memoryPerCpu = memoryLimitPerCpu;
-  }
-  totalMemory = memoryPerCpu * numOfStreams ;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
   return totalMemory.value();
 }
 
@@ -4035,10 +3963,8 @@ short Tuple::codeGen(Generator * generator)
 		    (queue_index)getDefault(GEN_TUPL_SIZE_DOWN),
 		    (queue_index)getDefault(GEN_TUPL_SIZE_UP),
 		    (Cardinality) (getInputCardinality() * getEstRowsUsed()).getValue(),
-#pragma nowarn(1506)   // warning elimination
 		    getDefault(GEN_TUPL_NUM_BUFFERS),
 		    getDefault(GEN_TUPL_BUFFER_SIZE));
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tuple_tdb);
 
   if(!generator->explainDisabled()) {
@@ -4065,9 +3991,7 @@ short TupleList::codeGen(Generator * generator)
   ex_cri_desc * givenDesc
     = generator->getCriDesc(Generator::DOWN);
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
   Int32 tuppIndex = returnedDesc->noTuples() - 1;
 
   // disable common subexpression elimination for now.
@@ -4173,9 +4097,7 @@ short TupleList::codeGen(Generator * generator)
       qList->insert(moveExpr);
     }
 
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(tuppIndex, tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // generate expression for selection predicate, if it exists
   ex_expr *predExpr = NULL;
@@ -4190,9 +4112,7 @@ short TupleList::codeGen(Generator * generator)
   // Try to get enough buffer space to hold twice as many records
   // as the up queue.
   ULng32 buffersize = getDefault(GEN_TUPL_BUFFER_SIZE);
-#pragma nowarn(1506)   // warning elimination
   Int32 numBuffers = getDefault(GEN_TUPL_NUM_BUFFERS);
-#pragma warn(1506)  // warning elimination
   queue_index upqueuelength = (queue_index)getDefault(GEN_TUPL_SIZE_UP);
   ULng32 cbuffersize =
     ((tupleLen + sizeof(tupp_descriptor))
@@ -4200,7 +4120,6 @@ short TupleList::codeGen(Generator * generator)
     SqlBufferNeededSize(0,0);
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbTupleLeaf *tupleTdb = new(generator->getSpace())
     ComTdbTupleLeaf(qList,
 		    tupleLen,
@@ -4213,7 +4132,6 @@ short TupleList::codeGen(Generator * generator)
 		    (Cardinality) (getInputCardinality() * getEstRowsUsed()).getValue(),
 		    getDefault(GEN_TUPL_NUM_BUFFERS),
 		    buffersize);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(tupleTdb);
 
   if(!generator->explainDisabled())
@@ -4248,14 +4166,10 @@ short ExplainFunc::codeGen(Generator * generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   ex_cri_desc * paramsDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
 
   // Assumption (for now): retrievedCols contains ALL columns from
@@ -4294,9 +4208,7 @@ short ExplainFunc::codeGen(Generator * generator)
   NADELETEBASIC(attrs, generator->wHeap());
 
   // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
   returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, explTupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // generate explain selection expression, if present
   if (! selectionPred().isEmpty())
@@ -4325,9 +4237,7 @@ short ExplainFunc::codeGen(Generator * generator)
 					 ExpTupleDesc::LONG_FORMAT);
 
       // add this descriptor to the work cri descriptor.
-#pragma nowarn(1506)   // warning elimination
       paramsDesc->setTupleDescriptor(paramsDesc->noTuples()-1, tupleDesc);
-#pragma warn(1506)  // warning elimination
     }
 
   // allocate buffer space to contain atleast 2 rows.
@@ -4335,7 +4245,6 @@ short ExplainFunc::codeGen(Generator * generator)
   bufferSize = MAXOF(bufferSize, 30000); // min buf size 30000
   Int32 numBuffers = 3; // allocate 3 buffers
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbExplain *explainTdb
     = new(space)
       ComTdbExplain(givenDesc,	                 // given_cri_desc
@@ -4351,7 +4260,6 @@ short ExplainFunc::codeGen(Generator * generator)
 						 // the explain parameters
 		    numBuffers,			 // Number of buffers to allocate
                     bufferSize);			 // Size of each buffer
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(explainTdb);
 
   // Add the explain Information for this node to the EXPLAIN
@@ -4451,9 +4359,7 @@ PhysTranspose::codeGen(Generator *generator)
     // along.
     //
     returnedCriDesc =
-#pragma nowarn(1506)   // warning elimination
       new(space) ex_cri_desc(givenCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
     // Make all of my child's outputs map to ATP 1. Since they are
     // not needed above, they will not be in the work ATP (0).
@@ -4466,9 +4372,7 @@ PhysTranspose::codeGen(Generator *generator)
     // The child's outputs are needed above, so must pass them along.
     //
     returnedCriDesc =
-#pragma nowarn(1506)   // warning elimination
       new(space) ex_cri_desc(childCriDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
   }
 
   // transposeCols is the last Tp in Atp 0.
@@ -4632,9 +4536,7 @@ PhysTranspose::codeGen(Generator *generator)
       // Cast to cast it to the proper type.
       //
       castExpr = new(generator->wHeap())
-#pragma nowarn(1506)   // warning elimination
 	Cast(keyValIdUnion->getSource(exprNum).getValueDesc()->getItemExpr(),
-#pragma warn(1506)  // warning elimination
 	     &(keyValIdUnion->getResult().getType()));
 
       // Bind this new item expression.
@@ -4718,9 +4620,7 @@ PhysTranspose::codeGen(Generator *generator)
 	  //
 	  castExpr = new(generator->wHeap())
 	    Cast(valValIdUnion->
-#pragma nowarn(1506)   // warning elimination
 		 getSource(valExprNum).getValueDesc()->getItemExpr(),
-#pragma warn(1506)  // warning elimination
 		 &(valValIdUnion->getResult().getType()));
 	} else {
 
@@ -4801,9 +4701,7 @@ PhysTranspose::codeGen(Generator *generator)
     // This will be set only the first time through the loop.
     //
     if(exprNum == 0) {
-#pragma nowarn(1506)   // warning elimination
       returnedCriDesc->setTupleDescriptor(transColsAtpIndex,
-#pragma warn(1506)  // warning elimination
 					  transColsTupleDesc);
 
       // Take the result (ie. the Cast nodes) of generateContiguousMove
@@ -4875,7 +4773,6 @@ PhysTranspose::codeGen(Generator *generator)
   //
   queue_index upQ = (queue_index)getDefault(GEN_TRSP_SIZE_UP);
 
-#pragma nowarn(1506)   // warning elimination
   ComTdbTranspose *transTdb =
     new (space) ComTdbTranspose(childTdb,
 				transExprs,
@@ -4892,7 +4789,6 @@ PhysTranspose::codeGen(Generator *generator)
 				getDefault(GEN_TRSP_NUM_BUFFERS),
 				getDefault(GEN_TRSP_BUFFER_SIZE),
                                 space);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(transTdb);
   // If the child's outputs are not needed above this node,
   // remove the entries from the map table.
@@ -4946,9 +4842,7 @@ short PhyPack::codeGen(Generator* generator)
   ex_cri_desc* givenCriDesc = generator->getCriDesc(Generator::DOWN);
 
   // PhyPack adds one tupp to what its parent gives in its return tuple.
-#pragma nowarn(1506)   // warning elimination
   unsigned short returnedNoOfTuples = givenCriDesc->noTuples() + 1;
-#pragma warn(1506)  // warning elimination
   ex_cri_desc* returnedCriDesc =
                         new (space) ex_cri_desc(returnedNoOfTuples,space);
 
@@ -4995,9 +4889,7 @@ short PhyPack::codeGen(Generator* generator)
   NADELETEBASIC(attrs,generator->wHeap());
 
   // Store the computed tuple desc for the new tuple added by PhyPack.
-#pragma nowarn(1506)   // warning elimination
   returnedCriDesc->setTupleDescriptor(returnedNoOfTuples - 1,tupleDesc);
-#pragma warn(1506)  // warning elimination
 
   // Set the DOWN descriptor in the generator to what my child gets from me.
   generator->setCriDesc(returnedCriDesc,Generator::DOWN);
@@ -5046,14 +4938,12 @@ short PhyPack::codeGen(Generator* generator)
   ComTdbPackRows* packTdb = new (space) ComTdbPackRows (childTdb,
                                               packExpr,
                                               predExpr,
-#pragma nowarn(1506)   // warning elimination
                                               returnedNoOfTuples - 1,
                                               tupleLen,
                                               givenCriDesc,
                                               returnedCriDesc,
                                               (queue_index) 8,
                                               (queue_index) 8);
-#pragma warn(1506)  // warning elimination
   generator->initTdbFields(packTdb);
 
   // Add explain info of this node to the EXPLAIN fragment. Set explainTuple
@@ -5132,9 +5022,7 @@ short StatisticsFunc::codeGen(Generator* generator)
     = generator->getCriDesc(Generator::DOWN);
 
   ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
 
   // cri descriptor for work atp has 4 entries:
   // first two entries for consts and temps.
@@ -5227,9 +5115,7 @@ short StatisticsFunc::codeGen(Generator* generator)
 			       0, returnedDesc->noTuples()-1);
 
   Lng32 numBuffers = 3;
-#pragma nowarn(1506)   // warning elimination
   Lng32 bufferSize = 10 * tupleLength;
-#pragma warn(1506)  // warning elimination
   ComTdbStats *statsTdb = new(space) ComTdbStats
     (
 	 tupleLength,			 // Length of stats Tuple
@@ -5348,8 +5234,6 @@ TrafDesc *ProxyFunc::createVirtualTableDesc()
     table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // doesn't matter.
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc *i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   i_files_desc->filesDesc()->setAudited(TRUE); // audited table
   index_desc->indexesDesc()->files_desc = i_files_desc;

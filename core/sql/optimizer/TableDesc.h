@@ -196,12 +196,7 @@ public:
   //
   // 64-bit Project: Cast 'this' to "long" first to avoid C++ error
   //
-#ifdef NA_64BIT
   ULng32 hash() const { return (ULng32) ((Long)this/8);}
-#else
-  ULng32 hash() const { return (ULng32) this/4;}
-#endif
-
 
   // get local predicates for this table
   ValueIdSet getLocalPreds();
@@ -374,10 +369,8 @@ public:
   SelectivityHint(double selectivityFactor = -1.0);
 
   // Destructor
-// LCOV_EXCL_START :dd
   virtual ~SelectivityHint()
   {}
-// LCOV_EXCL_STOP
 
   inline double getScanSelectivityFactor () const { return selectivityFactor_     ; }
   void setScanSelectivityFactor (double selectivityFactor);
@@ -409,10 +402,8 @@ public:
     const ValueIdSet & localPreds);
 
   // Destructor
-// LCOV_EXCL_START :dd
   virtual ~CardinalityHint()
   {}
-// LCOV_EXCL_STOP
 
   inline CostScalar getScanCardinality () const { return scanCardinality_     ; }
   void setScanCardinality (CostScalar scanCardinality) { scanCardinality_ = MIN_ONE_CS(scanCardinality); }

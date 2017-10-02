@@ -3529,12 +3529,12 @@ short CmpSeabaseDDL::getObjectName(
   ExeCliInterface cqdCliInterface(STMTHEAP);
 
   if (lookInObjectsIdx)
-    str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %Ld ",
+    str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %ld ",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
                 objUID);
   else
     {
-      str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from %s.\"%s\".%s where object_uid = %Ld ",
+      str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from %s.\"%s\".%s where object_uid = %ld ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                   objUID);
     }
@@ -3922,7 +3922,7 @@ Int64 CmpSeabaseDDL::getConstraintOnIndex(
 
   char buf[4000];
 
-  str_sprintf(buf, "select C.constraint_uid, O.catalog_name, O.schema_name, O.object_name from %s.\"%s\".%s C, %s.\"%s\".%s O where C.table_uid = %Ld and C.index_uid = %Ld and C.constraint_type = '%s' and C.constraint_uid = O.object_uid",
+  str_sprintf(buf, "select C.constraint_uid, O.catalog_name, O.schema_name, O.object_name from %s.\"%s\".%s C, %s.\"%s\".%s O where C.table_uid = %ld and C.index_uid = %ld and C.constraint_type = '%s' and C.constraint_uid = O.object_uid",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               btUID, indexUID, constrType);
@@ -3957,7 +3957,7 @@ short CmpSeabaseDDL::getUsingObject(ExeCliInterface *cliInterface,
   Lng32 cliRC = 0;
   
   char buf[4000];
-  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) from %s.\"%s\".%s T, %s.\"%s\".%s VU where VU.used_object_uid = %Ld and T.object_uid = VU.using_view_uid  and T.valid_def = 'Y' ",
+  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) from %s.\"%s\".%s T, %s.\"%s\".%s VU where VU.used_object_uid = %ld and T.object_uid = VU.using_view_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objUID);
@@ -4067,7 +4067,7 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
   str_sprintf(buf, "select '\"' || trim(catalog_name) || '\"' || '.' || '\"' || trim(schema_name) || '\"' || '.' || '\"' || trim(object_name) || '\"' "
                    "from %s.\"%s\".%s T, %s.\"%s\".%s VU "
                    "where T.object_uid = VU.using_view_uid  and "
-                   "T.valid_def = 'Y' and VU.used_object_uid = %Ld ",
+                   "T.valid_def = 'Y' and VU.used_object_uid = %ld ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objectUID);
@@ -4202,7 +4202,7 @@ short CmpSeabaseDDL::getAllIndexes(ExeCliInterface *cliInterface,
   Lng32 cliRC = 0;
 
   char query[4000];
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, O.object_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid and I.keytag != 0 for read committed access ",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, O.object_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid and I.keytag != 0 for read committed access ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
@@ -4563,7 +4563,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, %Ld )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, %ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit,
@@ -4712,7 +4712,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Lng32 rowTotalLength = 0;
   for (Lng32 i = 0; i < numKeys; i++)
     {
-      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%ld, '%s', %d, %d, %d, %d, 0)",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   objUID,
                   keyInfo->colName, 
@@ -4898,7 +4898,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
       else
         {
-          str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %Ld)",
+          str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %ld)",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                       objUID,
                       colInfo->colName, 
@@ -5006,7 +5006,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
 
-      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, %Ld) ",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%ld, '%s', '%s', %d, %d, %d, %d, %ld) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                   objUID, 
                   rowFormat,
@@ -5049,7 +5049,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                      catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
                      COM_BASE_TABLE_OBJECT_LIT);
                         
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, %d, %d, %Ld, 0) ",
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, %d, %d, %ld, 0) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   baseTableUID,
                   indexInfo->keytag,
@@ -5121,7 +5121,7 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
   NAString quotedLibObjName;
   ToQuotedString(quotedLibObjName, NAString(libName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedLibObjName.data(),
               COM_LIBRARY_OBJECT_LIT,
@@ -5140,7 +5140,7 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
       return -1;
     }
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
               libObjUID, libPath, routineInfo->library_version);
   
@@ -5193,7 +5193,7 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
     return -1;
                                  
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %Ld, '%s', 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s', '%s', '%s', '%s', %ld, '%s', 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
               spjObjUID,
               routineInfo->UDR_type,
@@ -5221,7 +5221,7 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
       return -1;
     }
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %Ld, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, %ld, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
               libObjUID, spjObjUID);
 
@@ -5267,7 +5267,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
 
   if (objType == COM_LIBRARY_OBJECT) 
     {
-      str_sprintf(buf, "delete from %s.\"%s\".%s where library_uid = %Ld",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where library_uid = %ld",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -5281,7 +5281,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
   
   if (objType == COM_SEQUENCE_GENERATOR_OBJECT) 
     {
-      str_sprintf(buf, "delete from %s.\"%s\".%s where seq_uid = %Ld",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where seq_uid = %ld",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -5292,7 +5292,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
         }
     }
   
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5304,7 +5304,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
     }
 
   // delete data from TEXT table
-  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5317,7 +5317,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
 
   if (objType == COM_USER_DEFINED_ROUTINE_OBJECT)
   {
-    str_sprintf(buf, "delete from %s.\"%s\".%s where udr_uid = %Ld",
+    str_sprintf(buf, "delete from %s.\"%s\".%s where udr_uid = %ld",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
                 objUID);
     cliRC = cliInterface->executeImmediate(buf);
@@ -5326,7 +5326,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
         cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
         return -1;
       }
-    str_sprintf(buf, "delete from %s.\"%s\".%s where used_udr_uid = %Ld",
+    str_sprintf(buf, "delete from %s.\"%s\".%s where used_udr_uid = %ld",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
                 objUID);
     cliRC = cliInterface->executeImmediate(buf);
@@ -5338,7 +5338,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
     return 0;  // nothing else to do for routines
   }
 
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld ",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %ld ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
               objUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5349,7 +5349,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
       return -1;
     }
 
-  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld ",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %ld ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               objUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5362,7 +5362,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
 
   if (objType == COM_INDEX_OBJECT)
     {
-      str_sprintf(buf, "delete from %s.\"%s\".%s where index_uid = %Ld ",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where index_uid = %ld ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -5376,7 +5376,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
 
   if (objType == COM_VIEW_OBJECT)
     {
-      str_sprintf(buf, "delete from %s.\"%s\".%s where view_uid  = %Ld ",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where view_uid  = %ld ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -5387,7 +5387,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
           return -1;
         }
 
-      str_sprintf(buf, "delete from %s.\"%s\".%s where using_view_uid  = %Ld ",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where using_view_uid  = %ld ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -5424,7 +5424,7 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
     return -1;
   
   // delete data from table constraints MD
-  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid  = %Ld and constraint_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid  = %ld and constraint_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               tableUID, constrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5436,7 +5436,7 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
     }
   
   // delete data from ref constraints MD
-  str_sprintf(buf, "delete from %s.\"%s\".%s where ref_constraint_uid  = %Ld and unique_constraint_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where ref_constraint_uid  = %ld and unique_constraint_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
               constrUID, otherConstrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5448,7 +5448,7 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
     }
 
   // delete data from unique ref constraints usage MD
-  str_sprintf(buf, "delete from %s.\"%s\".%s where unique_constraint_uid = %Ld and foreign_constraint_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where unique_constraint_uid = %ld and foreign_constraint_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
               otherConstrUID, constrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5460,7 +5460,7 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
     }
 
   // delete data from TEXT table
-  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               constrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -5599,13 +5599,13 @@ short CmpSeabaseDDL::updateObjectRedefTime(
   if ((flags & MD_OBJECTS_STORED_DESC) != 0)
     {
       if (rt == -2)
-        str_sprintf(buf, "update %s.\"%s\".%s set flags = bitor(flags, %Ld) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ", 
+        str_sprintf(buf, "update %s.\"%s\".%s set flags = bitor(flags, %ld) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ", 
                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                     flags,
                     catName.data(), quotedSchName.data(), quotedObjName.data(),
                     objType);
       else
-        str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld, flags = bitor(flags, %Ld) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+        str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %ld, flags = bitor(flags, %ld) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                     redefTime,
                     flags,
@@ -5614,7 +5614,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
     }
   else if (rt != -2)
     {
-      str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+      str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                   redefTime,
                   catName.data(), quotedSchName.data(), quotedObjName.data(),
@@ -5686,7 +5686,7 @@ short CmpSeabaseDDL::updateObjectName(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
-  str_sprintf(buf, "update %s.\"%s\".%s set catalog_name = '%s', schema_name = '%s', object_name = '%s' where object_uid = %Ld ",
+  str_sprintf(buf, "update %s.\"%s\".%s set catalog_name = '%s', schema_name = '%s', object_name = '%s' where object_uid = %ld ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objUID);
@@ -5718,7 +5718,7 @@ short CmpSeabaseDDL::updateObjectAuditAttr(
   
   if (objectUID < 0)
      return -1;
-  str_sprintf(buf, "update %s.\"%s\".%s set is_audited = '%s' where  table_uid = %Ld ",
+  str_sprintf(buf, "update %s.\"%s\".%s set is_audited = '%s' where  table_uid = %ld ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               (audited ? "Y" : "N"),
               objectUID);
@@ -5749,11 +5749,11 @@ short CmpSeabaseDDL::updateObjectFlags(
     flags = ~inFlags;
 
   if (reset)
-    str_sprintf(buf, "update %s.\"%s\".%s set flags = bitand(flags, %Ld) where object_uid = %Ld",
+    str_sprintf(buf, "update %s.\"%s\".%s set flags = bitand(flags, %ld) where object_uid = %ld",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                 flags, objUID);
   else
-    str_sprintf(buf, "update %s.\"%s\".%s set flags = bitor(flags, %Ld) where object_uid = %Ld",
+    str_sprintf(buf, "update %s.\"%s\".%s set flags = bitor(flags, %ld) where object_uid = %ld",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                 flags, objUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -6342,7 +6342,7 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
       else
         currDataLen = dataLen - currPos;
 
-      str_sprintf(queryBuf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, cast(? as char(%d bytes) not null))",
+      str_sprintf(queryBuf, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, cast(? as char(%d bytes) not null))",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
                   objUID,
                   textType,
@@ -6386,7 +6386,7 @@ short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
   Lng32 cliRC = 0;
 
   char buf[1000];
-  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld and text_type = %d and sub_id = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID, static_cast<int>(textType), subID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -7043,7 +7043,7 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
 
   // delete any histogram statistics
   
-  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %ld",
               catName, schName, HBASE_HIST_NAME, tableUID);
 
   cliRC = cliInterface->executeImmediate(buf);
@@ -7064,7 +7064,7 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
           return -1;
         }
 
-      str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %ld",
                   catName, schName, HBASE_HISTINT_NAME, tableUID);
       cliRC = cliInterface->executeImmediate(buf);
 
@@ -7081,7 +7081,7 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
   // Delete the row in the persistent_samples table if one exists
 
   str_sprintf(buf, "select translate(sample_name using ucs2toutf8) from "
-                   " (delete from %s.\"%s\".%s where table_uid = %Ld) as t",
+                   " (delete from %s.\"%s\".%s where table_uid = %ld) as t",
               catName, schName, HBASE_PERS_SAMP_NAME, tableUID);
     
   Lng32 len = 0;
@@ -7131,7 +7131,7 @@ short CmpSeabaseDDL::updateSeabaseVersions(
 
   Int64 initTime = NA_JulianTimestamp();
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('METADATA', %d, %d, %Ld, 'initialize trafodion'), ('DATAFORMAT', %d, %d, %Ld, 'initialize trafodion'), ('SOFTWARE', %d, %d, %Ld, 'initialize trafodion') ",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('METADATA', %d, %d, %ld, 'initialize trafodion'), ('DATAFORMAT', %d, %d, %ld, 'initialize trafodion'), ('SOFTWARE', %d, %d, %ld, 'initialize trafodion') ",
               sysCat, SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
               (majorVersion != -1 ? majorVersion : METADATA_MAJOR_VERSION),
               (METADATA_MINOR_VERSION * 10 + METADATA_UPDATE_VERSION), initTime,
@@ -7167,7 +7167,7 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 
   Int64 initTime = NA_JulianTimestamp();
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, 'DB__ROOT', 'TRAFODION', 'U', %d, 'Y', %Ld,%Ld, 0) ",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, 'DB__ROOT', 'TRAFODION', 'U', %d, 'Y', %ld,%ld, 0) ",
               sysCat, SEABASE_MD_SCHEMA, SEABASE_AUTHS,
               SUPER_USER, SUPER_USER, initTime, initTime);
   cliRC = cliInterface->executeImmediate(buf);
@@ -7786,7 +7786,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
   ToQuotedString(quotedSeqObjName, seqNamePart, FALSE);
 
   Int32 objOwner = ComUser::getCurrentUser();
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedSeqObjName.data(),
               COM_SEQUENCE_GENERATOR_OBJECT_LIT,
@@ -7805,7 +7805,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
       return;
     }
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', %Ld, %d, %Ld, %Ld, %Ld, %Ld, '%s', %Ld, %Ld, %Ld, %Ld, %Ld, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', %ld, %d, %ld, %ld, %ld, %ld, '%s', %ld, %ld, %ld, %ld, %ld, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
               (sgo->isExternalSG() ? COM_EXTERNAL_SG_LIT : COM_INTERNAL_SG_LIT),
               seqObjUID, 
@@ -7817,9 +7817,9 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
               (sgo->getCycle() ? COM_YES_LIT : COM_NO_LIT), 
               sgo->getCache(),
               sgo->getStartValue(),
-              0LL,
+              0L,
               createTime,
-              0LL);
+              0L);
 
   cliRC = cliInterface.executeImmediate(buf);
   if (cliRC < 0)
@@ -7930,25 +7930,25 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
   strcpy(setOptions, " set ");
   if (sgo->isIncrementSpecified())
     {
-      str_sprintf(tmpBuf, " increment = %Ld,", sgo->getIncrement());
+      str_sprintf(tmpBuf, " increment = %ld,", sgo->getIncrement());
       strcat(setOptions, tmpBuf);
     }
 
   if (sgo->isMaxValueSpecified())
     {
-      str_sprintf(tmpBuf, " max_value = %Ld,", sgo->getMaxValue());
+      str_sprintf(tmpBuf, " max_value = %ld,", sgo->getMaxValue());
       strcat(setOptions, tmpBuf);
     }
 
   if (sgo->isMinValueSpecified())
     {
-      str_sprintf(tmpBuf, " min_value = %Ld,", sgo->getMinValue());
+      str_sprintf(tmpBuf, " min_value = %ld,", sgo->getMinValue());
       strcat(setOptions, tmpBuf);
     }
 
   if (sgo->isCacheSpecified())
     {
-      str_sprintf(tmpBuf, " cache_size = %Ld,", sgo->getCache());
+      str_sprintf(tmpBuf, " cache_size = %ld,", sgo->getCache());
       strcat(setOptions, tmpBuf);
     }
 
@@ -7965,10 +7965,10 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
     }
   
   Int64 redefTime = NA_JulianTimestamp();
-  str_sprintf(tmpBuf, " redef_ts = %Ld", redefTime);
+  str_sprintf(tmpBuf, " redef_ts = %ld", redefTime);
   strcat(setOptions, tmpBuf);
 
-  str_sprintf(buf, "update %s.\"%s\".%s %s where seq_uid = %Ld",
+  str_sprintf(buf, "update %s.\"%s\".%s %s where seq_uid = %ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
               setOptions,
               seqUID);
@@ -8581,7 +8581,7 @@ void CmpSeabaseDDL::updateVersion()
   
   Int64 updateTime = NA_JulianTimestamp();
 
-  str_sprintf(queryBuf, "update %s.\"%s\".%s set major_version = %Ld, minor_version = %Ld, init_time = %Ld, comment = 'update version'  where version_type = 'SOFTWARE' ",
+  str_sprintf(queryBuf, "update %s.\"%s\".%s set major_version = %ld, minor_version = %ld, init_time = %ld, comment = 'update version'  where version_type = 'SOFTWARE' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
               softMajorVersion, softMinorVersion,
               updateTime);
@@ -10495,7 +10495,7 @@ std::string commandString;
      roleList += to_string((long long int)roleIDs[i]);
    }
 
-   str_sprintf(buf, "update %s.\"%s\".%s set auth_redef_time = %Ld "
+   str_sprintf(buf, "update %s.\"%s\".%s set auth_redef_time = %ld "
                     "where auth_id in (%s)",
               systemCatalog.c_str(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
               redefTime, roleList.c_str());

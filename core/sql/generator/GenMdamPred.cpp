@@ -276,9 +276,7 @@ short BiRelat::mdamPredGen(Generator * generator,
   vnode->bindNode(generator->getBindWA());
   vnode->preCodeGen(generator);
 
-#pragma nowarn(1506)   // warning elimination 
   vnode = new(generator->wHeap()) CompEncode(vnode,mdamHelper.isDescending());
-#pragma warn(1506)  // warning elimination 
   vnode->bindNode(generator->getBindWA());
   
   ValueIdList vnodeList;
@@ -296,12 +294,10 @@ short BiRelat::mdamPredGen(Generator * generator,
        dummyLen, // out
        &vexpr);
 
-#pragma nowarn(1506)   // warning elimination   
   *head = *tail = new(generator->getSpace()) MdamPred(
        mdamHelper.getDisjunctNumber(),
        predType,
        vexpr);
-#pragma warn(1506)  // warning elimination 
   
   return rc;
 }
@@ -377,9 +373,7 @@ void BiRelat::getMdamPredDetails(Generator* generator,
   vnode->bindNode(generator->getBindWA());
   vnode->preCodeGen(generator);
 
-#pragma nowarn(1506)  // warning elimination 
   vnode = new(generator->wHeap()) CompEncode(vnode,mdamHelper.isDescending());
-#pragma warn(1506)    // warning elimination 
   vnode->bindNode(generator->getBindWA());
   
   ValueIdList vnodeList;
@@ -438,14 +432,12 @@ void BiLogic::mdamPredGenSubrange(Generator* generator,
     GenAssert(FALSE, "mdamPredGenSubrange: subrange does not conform to "
                      "rangespec canonical form.");
   
-#pragma nowarn(1506)   // warning elimination   
   *head = *tail = new(generator->getSpace()) MdamPred(
        mdamHelper.getDisjunctNumber(),
        MdamPred::MDAM_BETWEEN,
        vexpr1, vexpr2,
        val1Inclusive, val2Inclusive,
        (Int16)mdamHelper.isDescending());
-#pragma warn(1506)  // warning elimination 
 }
 
 
@@ -473,9 +465,7 @@ short TriRelational::mdamPredGen(Generator * generator,
   return -1;
   // end temp code
 
-#pragma nowarn(269)   // warning elimination 
   short rc = 0;
-#pragma warn(269)  // warning elimination 
 
   enum MdamPred::MdamPredType predType = 
     MdamPred::MDAM_EQ; // just to initialize
@@ -558,9 +548,7 @@ short TriRelational::mdamPredGen(Generator * generator,
                 Cast(keyValue,mdamHelper.getTargetType()->newCopy());
     }
 
-#pragma nowarn(1506)   // warning elimination 
   vnode = new CompEncode(vnode,mdamHelper.isDescending());
-#pragma warn(1506)  // warning elimination 
 
   vnode->bindNode(generator->getBindWA());
  
@@ -623,12 +611,10 @@ short TriRelational::mdamPredGen(Generator * generator,
                                         ex_expr::exp_ARITH_EXPR,
                                         &vexpr);
 
-#pragma nowarn(1506)   // warning elimination 
   *head = *tail = new(generator->getSpace()) 
                     MdamPred(mdamHelper.getDisjunctNumber(),
                              predType,
                              vexpr);
-#pragma warn(1506)  // warning elimination 
   
   return rc;
 }
@@ -670,12 +656,10 @@ short UnLogic::mdamPredGen(Generator * generator,
       }
     }
 
-#pragma nowarn(1506)   // warning elimination   
   *head = *tail = new(generator->getSpace())
                     MdamPred(mdamHelper.getDisjunctNumber(),
                              predType,
                              0 /* no expression for IS NULL and IS NOT NULL */);
-#pragma warn(1506)  // warning elimination 
   
   return rc;
 }

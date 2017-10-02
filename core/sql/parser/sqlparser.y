@@ -99,8 +99,6 @@
      YYERROR; \
   }
                                
-#pragma warning (disable : 4065)//don't complain about empty switch statements
-
 #define INCLUDE_UNION
 #   include <alloca.h>
 #include "ComCextdecs.h"
@@ -182,9 +180,6 @@ using namespace std;
 #include "ItemFuncUDF.h"
 
 #include "ExpLOBenums.h"
-
-#pragma warning (disable : 4065)//don't complain about empty switch statements.
-
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // The SQL parser auxiliary methods that used to be here had to be moved
@@ -336,7 +331,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 //   makeQuotedStringISO88591 = makeQuotedStringISO88591CurrentValue;
 // }
 
-#pragma nowarn(1506)   // warning elimination
 %}
 %define api.pure full
 
@@ -466,7 +460,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ASC
 %token <tokval> TOK_ASCII
 %token <tokval> TOK_ATOMIC
-%token <tokval> TOK_AUDIT_IMAGE 		// Utilities.
 %token <tokval> TOK_AUDITONREFRESH		// MV
 %token <tokval> TOK_AUTOABORT
 %token <tokval> TOK_AUTOBEGIN
@@ -854,7 +847,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 // %token <tokval> TOK_M -- already defined below
 %token <tokval> TOK_MONTHNAME
 %token <tokval> TOK_MORE                /* ANSI SQL non-reserved word */
-%token <tokval> TOK_MPLOC               /* Tandem extension non-reserved word */
 %token <tokval> TOK_MRANK               /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSTDDEV             /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSUM                /* Tandem extension non-reserved word */
@@ -2003,9 +1995,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>				insert_value_expression_list_paren
 // left recursion for insert statement values.
 
-%type <item>                audit_image_value
-%type <item>                audit_image_arg_list
-%type <corrName>            audit_image_object
 %type <hbaseColumnCreateOptionsList>                hbase_column_create_list
 %type <hbaseColumnCreateOptions>                hbase_column_create_value
 %type <item>      			cast_specification
@@ -2484,7 +2473,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <boolean>                 optional_with_shared_access_clause
 %type <stringval>               fully_expanded_guardian_loc_name
 %type <stringval>               guardian_location_name
-%type <stringval>               guardian_subvolume_name
 %type <stringval>               partition_name
 %type <pElemDDL>  		location_list
 %type <pElemDDL>  		source_location_list
@@ -3020,7 +3008,6 @@ enableCharsetInferenceInColDefaultVal :
 /* type item */
 numeric_literal_exact :       NUMERIC_LITERAL_EXACT_NO_SCALE
                 {
-#pragma warn(1506)   // warning elimination  (goes with the nowarn above. do not remove.
                   $$ = literalOfNumericNoScale($1);
                   if (! $$) YYERROR;
                   SqlParser_CurrentParser->collectItem4HQC($$);
@@ -3191,9 +3178,7 @@ literal :       numeric_literal
               | TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier
                 {
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-#pragma nowarn(1506)   // warning elimination
                   $$ = literalOfInterval($4, $5, $3);
-#pragma warn(1506)   // warning elimination
 		  if (! $$) YYERROR;
                   SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
@@ -3210,9 +3195,7 @@ literal :       numeric_literal
               | '{' TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier '}'
                 {
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-#pragma nowarn(1506)   // warning elimination
                   $$ = literalOfInterval($5, $6, $4);
-#pragma warn(1506)   // warning elimination
 		  if (! $$) YYERROR;
                   SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
@@ -3342,7 +3325,6 @@ character_literal_notcasespecific_option : '(' TOK_NOT_CASESPECIFIC ')'
 literal_negatable : literal
               | sign NUMERIC_LITERAL_EXACT_NO_SCALE
                 {
-#pragma nowarn(1506)   // warning elimination 
                   $$ = literalOfNumericNoScale($2, $1);
                   if (! $$) YYERROR;
                   SqlParser_CurrentParser->collectItem4HQC($$);
@@ -3375,7 +3357,6 @@ literal_negatable : literal
 		  if (! $$) YYERROR;
                   SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
-#pragma warn(1506)  // warning elimination
                 }
 
 /* type stringval */
@@ -6228,14 +6209,12 @@ rowset_input_host_variable_list : rowset_input_host_variable
 /* type item */
 rowset_size: unsigned_integer
    {
-#pragma nowarn(1506)   // warning elimination 
      $$ = new (PARSERHEAP()) ConstValue($1);
    }
 | simple_host_variable
    {
      TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
      $$ = $1;
-#pragma warn(1506)  // warning elimination
    }
 | dynamic_parameter
    
@@ -10080,12 +10059,6 @@ misc_function :
 				  ((BiArith*) $$)->setStandardNormalization();
                 }
 
-     | TOK_AUDIT_IMAGE '(' audit_image_object ',' '(' audit_image_arg_list ')' ')'
-             {
-	       // Create an AuditImage function.
-	       $$ = new(PARSERHEAP()) AuditImage(*$3, $6);
-	     }
-
          | TOK_LAST_DAY '(' value_expression ')'
              {
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_LAST_DAY, $3);
@@ -10327,76 +10300,6 @@ date_time_operand : TOK_YEAR    { $$ = ITM_DATEDIFF_YEAR   ;}
                       }
                     }
 
-/* type corrname  */
-audit_image_object: TOK_INDEX_TABLE actual_table_name 
-                           {
-			     // This syntax is only allowed if the internal 
-			     // parser flag is set, since this is internal syntax.
-			     // For showplan, note that currently, the internal 
-			     // sqlparser flags are not correctly propagated to 
-			     // the second mxcmp, hence a check for the control
-			     // session value for showplan is also needed.
-			     const NAString * val =
-			       ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-			     if (((val) && (*val == "ON")) ||
-				 (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)) 
-#ifdef _DEBUG
-                                 || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                                )
-			       {
-				 $2->setSpecialType(ExtendedQualName::INDEX_TABLE);
-				 $$ = $2;
-			       }
-                               else
-                               {
-                                 yyerror(""); YYERROR;
-                               }
-			   } // TOK_INDEX_TABLE
-                    | TOK_TABLE actual_table_name 
-                        {
-			  
-			  // Enable AUDIT_IMAGE functions for tables. 
-			  // This is used only for testing purpose right now.
-			  if (CmpCommon::getDefault(AUDIT_IMAGE_FOR_TABLES) == DF_ON)
-			    {
-			      // This syntax is only allowed if the internal 
-			      // parser flag is set, since this is internal 
-			      // syntax. For showplan, note that currently, 
-			      // the internal sqlparser flags are not correctly 
-			      // propagated to the second mxcmp,
-			      // hence a check for the control session value for 
-			      // showplan is also needed.
-			      
-			      // In addition, AuditImage for TOK_TABLE must be allowed
-			      // only if CQD AUDIT_IMAGE_FOR_TABLES is set to ON.
-			      const NAString * val =
-				ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-			      if (((val) && (*val == "ON")) ||
-				  (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-#ifdef _DEBUG
-                                  || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                                 )
-				{
-				  // NORMAL_TABLE should be the default. Setting it 
-				  // anyway to be consistent with its INDEX_TABLE 
-				  // counterpart.
-				  $2->setSpecialType(ExtendedQualName::NORMAL_TABLE);
-				  $$ = $2;
-				}
-                                else
-                                {
-                                   yyerror(""); YYERROR;
-                                }
-			      
-			    } // End of CQD AUDIT_IMAGE_FOR_TABLES
-                            else
-                            {
-                               yyerror(""); YYERROR;
-                            }
-			}
-
 // The value_expression must be cast to the Token Type
 /* type token */
 datetime_keywords : TOK_QUARTER  ',' value_expression 		  // 3 months	Cast 3*num_expr to months
@@ -10555,20 +10458,6 @@ timestamp_keywords : IDENTIFIER ',' value_expression
         YYERROR;
       }
   }
-
-/* type item */
-audit_image_arg_list:  audit_image_value 
-                      {
-			$$ = $1;
-                      }
-                      | audit_image_value ',' audit_image_arg_list
-                      {
-			$$ = new(PARSERHEAP()) ItemList($1, $3);
-                      }
-
-/* type item */
-audit_image_value : value_expression
-
 
 /* type item */
 encode_key_cast_spec : cast_specification
@@ -10927,7 +10816,6 @@ predefined_type : date_time_type
 /* type na_type */
 rowset_type : TOK_ROWSET unsigned_integer predefined_type
 	      {
-#pragma nowarn(1506)   // warning elimination 
 		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
 	      }
              | TOK_ROWSET unsigned_integer float_type
@@ -10943,7 +10831,6 @@ proc_arg_rowset_type : TOK_ROWSET unsigned_integer predefined_type
              | TOK_ROWSET unsigned_integer proc_arg_float_type
 	      {
 		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
-#pragma warn(1506)  // warning elimination
 	      }
 
 /* type na_type */
@@ -11021,7 +10908,6 @@ numeric_type_token :    TOK_NUMERIC
 /* na type for the numeric */
 non_int_type : numeric_type_token left_uint_uint_right signed_option
              {
-#pragma nowarn(1506)   // warning elimination 
 
 	       if (! ($2->left() > 0 ))  {
 		 // Precision must be > 0.
@@ -11100,7 +10986,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 	     }
 	 | TOK_LSDECIMAL left_uint_uint_right signed_option
              {
-#pragma nowarn(1506)   // warning elimination 
                 if ($2->left() > 18) {
 		  // Precision of a Decimal, " << $2->left()
                   // may not exceed 18.
@@ -11135,7 +11020,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		$$ = new (PARSERHEAP())
 		  LSDecimal(PARSERHEAP(), $2->left(), $2->right(), $3);
                 delete $2;
-#pragma warn(1506)  // warning elimination
              }
 	 | TOK_LSDECIMAL signed_option 
              {
@@ -11144,7 +11028,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 	     }
 	 | TOK_DECIMAL left_uint_uint_right signed_option
              {
-#pragma nowarn(1506)   // warning elimination 
                 if ($2->left() > 18) {
 		  // Precision of a Decimal, " << $2->left()
                   // may not exceed 18.
@@ -11179,7 +11062,6 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 		$$ = new (PARSERHEAP())
 		  SQLDecimal(PARSERHEAP(), $2->left(), $2->right(), $3);
                 delete $2;
-#pragma warn(1506)  // warning elimination
              }
 	 | TOK_DECIMAL signed_option
              {
@@ -11223,9 +11105,7 @@ proc_arg_float_type : TOK_FLOAT_IEEE
              }
 	 | TOK_FLOAT_IEEE left_unsigned_right
              {
-#pragma nowarn(1506)  // warning elimination
 		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, $2);
-#pragma warn(1506)  // warning elimination
                 if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
                    YYERROR;
              }
@@ -11243,9 +11123,7 @@ proc_arg_float_type : TOK_FLOAT_IEEE
              }
 	 | TOK_FLOAT left_unsigned_right
              {
-#pragma nowarn(1506)  // warning elimination
 		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, $2);
-#pragma warn(1506)  // warning elimination
                 if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
                    YYERROR;
              }
@@ -11285,9 +11163,7 @@ pic_type : TOK_PICTURE char_set collation_option pic_tail pic_notcasespecific_op
                    */
                 if (! (precision > 0 ))  {
 		  // Precision must be > 0.
-#pragma nowarn(1506)  // warning elimination
                     *SqlParser_Diags << DgSqlCode(-3003) << DgInt0(precision);
-#pragma warn(1506)  // warning elimination
                     yyerror("");
                     YYABORT;
                    }
@@ -11303,12 +11179,10 @@ pic_type : TOK_PICTURE char_set collation_option pic_tail pic_notcasespecific_op
 		    (NOT hasSign))
 		  {
                     // $1~int0, cannot exceed 9. 
-#pragma nowarn(1506)  // warning elimination
                     *SqlParser_Diags << DgSqlCode(-3008)
                                      << DgString0("DECIMAL")
                                      << DgInt0(precision)
 				     << DgInt1(9);
-#pragma warn(1506)  // warning elimination
                     yyerror("");
                     YYABORT;
 		  }
@@ -11399,21 +11273,17 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  ((SQLChar *)$$)->generateTextThenSetDisplayDataType ( eCharSet , ddt );
                }
                else // keep the old behavior
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLChar
 			(PARSERHEAP(), specifiedLength, TRUE, $5, $6, FALSE, 
 			 eCharSet, $4.collation_, $4.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
 
             }
      | TOK_ANSIVARCHAR left_charlen_right char_set collation_option upshift_flag notcasespecific_option
             {
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) ANSIChar
 	       		(PARSERHEAP(), $2, TRUE, $5, TRUE,
 			 $3, $4.collation_, $4.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
             }
      | tok_char_or_character_or_byte TOK_VARYING toggled_optional_left_charlen_right char_set 
@@ -11433,10 +11303,8 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                if ( $3/*toggled_optional_left_charlen_right*/->isCharLenUnitSpecified()  AND
                     $1/*tok_char_or_character_or_byte*/ EQU TOK_BYTE )
                {
-                 //LCOV_EXCL_START : cnu - Used only in ModeSpecial1
                  emitError3435( $1, eCharSet, parCLU ); // BYTES/CHARS not allowed with BYTE VARYING
                  YYERROR;
-                 //LCOV_EXCL_STOP : cnu - Used only in ModeSpecial1
                }
                if ( eCharSet EQU CharInfo::UCS2 AND parCLU EQU ParAuxCharLenSpec::eBYTES )
                {
@@ -11468,11 +11336,9 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  ((SQLVarChar *)$$)->generateTextThenSetDisplayDataType ( eCharSet , ddt );
                }
                else // keep the old behavior
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
 			(PARSERHEAP(), specifiedLength, TRUE, $6, $7,
 			 eCharSet, $5.collation_, $5.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
  
             }
@@ -11517,11 +11383,9 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  ((SQLVarChar *)$$)->generateTextThenSetDisplayDataType ( eEncodingCharSet , ddt );
                }
                else // keep the old behavior
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
 			(PARSERHEAP(), specifiedLength, TRUE, $5, $6,
 			 eCharSet, $4.collation_, $4.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
 
             }
@@ -11579,14 +11443,12 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          ParAuxCharLenSpec::ECharLenUnit parCLU = $3/*new_left_charlen_right*/->getCharLenUnit();
 
          Int32 maxSize = getDefaultMaxLengthForLongVarChar(eCharSet);
-#pragma warning (disable : 4018)   //warning elimination
          if (maxLenInBytes > maxSize) {
            *SqlParser_Diags << DgSqlCode(-3213) << DgInt0(maxSize);
            YYABORT;
          }
          Int32 minSize = getDefaultMinLengthForLongVarChar(eCharSet);
          if (maxLenInBytes < minSize) {
-#pragma warning (default : 4018)   //warning elimination
            *SqlParser_Diags << DgSqlCode(-3214) << DgInt0(minSize);
            YYABORT;
          }
@@ -11620,7 +11482,6 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
            ((CharType *)$$)->generateTextThenSetDisplayDataType ( eEncodingCharSet , ddt );
          }
          else // keep the old behavior
-#pragma nowarn(1506)  // warning elimination
          // KLUDGE begin: fix cases 10-040511-5169, 10-040610-2860, 
          // soln 10-040610-6863 by temporarily mapping
          //   "create table t(c long varchar, w longwvarchar)" into
@@ -11628,50 +11489,41 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          $$ = new (PARSERHEAP()) SQLVarChar
            (PARSERHEAP(), maxLenInBytes, TRUE, $6, $7, eCharSet, $5.collation_, $5.coercibility_);
          // end KLUDGE.
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
 
        }
      | nchar optional_left_charlen_right collation_option upshift_flag notcasespecific_option
             {
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLChar
 		 	(PARSERHEAP(), $2, TRUE, $4, $5, FALSE,
 			 SqlParser_NATIONAL_CHARSET,
 			 $3.collation_, $3.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
             }
      | nchar_varying left_charlen_right collation_option upshift_flag notcasespecific_option
             {
-#pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
 		 	(PARSERHEAP(), $2, TRUE, $4, $5,
 			 SqlParser_NATIONAL_CHARSET,
 			 $3.collation_, $3.coercibility_);
-#pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
             }
      | TOK_WCHAR left_unsigned_right collation_option upshift_flag notcasespecific_option
        {
          // odbc SQL_WCHAR is WCHAR(n): Unicode character string
          // of fixed string length n.
-#pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLChar
            (PARSERHEAP(), $2, TRUE, $4, $5, FALSE, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
      | TOK_VARWCHAR left_unsigned_right collation_option upshift_flag notcasespecific_option
        {
          // odbc SQL_WVARCHAR is VARWCHAR(n): Unicode variable-length
          // character string with a maximum string length n.
-#pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLVarChar
            (PARSERHEAP(), $2, TRUE, $4, $5, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
      | TOK_LONGWVARCHAR collation_option upshift_flag notcasespecific_option
@@ -11689,7 +11541,6 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
        {
          Lng32 maxSize = getDefaultMaxLengthForLongVarChar(CharInfo::UNICODE);
 
-#pragma warning (disable : 4018)   //warning elimination
          if ($2 > maxSize) {
            *SqlParser_Diags << DgSqlCode(-3209) << DgInt0(maxSize);
            YYABORT;
@@ -11697,32 +11548,25 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          Lng32 minSize = getDefaultMinLengthForLongVarChar(CharInfo::UNICODE);
 
          if ($2 < minSize) {
-#pragma warning (default : 4018)   //warning elimination
            *SqlParser_Diags << DgSqlCode(-3210) << DgInt0(minSize);
            YYABORT;
          }
-#pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLLongVarChar
            (PARSERHEAP(), $2, TRUE, TRUE, $4, $5, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
      | TOK_BINARY left_unsigned_right
        {
          // odbc SQL_BINARY is BINARY(n). Binary data of fixed length n.
-#pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(), $2, TRUE, FALSE, FALSE);
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
      | TOK_VARBINARY left_unsigned_right
        {
          // odbc SQL_VARBINARY is VARBINARY(n). Variable length binary data 
          // of maximum length n. The maximum length is set by the user.
-#pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
      | TOK_LONG TOK_VARBINARY
@@ -11735,25 +11579,21 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
      | TOK_LONG TOK_VARBINARY left_unsigned_right
        {
          Lng32 maxSize = getDefaultMaxLengthForLongVarChar(CharInfo::ISO88591);
-#pragma warning (disable : 4018)   //warning elimination
          if ($3 > maxSize) {
            *SqlParser_Diags << DgSqlCode(-3211) << DgInt0(maxSize);
            YYABORT;
          }
          Lng32 minSize = getDefaultMinLengthForLongVarChar(CharInfo::ISO88591);
          if ($3 < minSize) {
-#pragma warning (default : 4018)   //warning elimination
            *SqlParser_Diags << DgSqlCode(-3212) << DgInt0(minSize);
            YYABORT;
          }
-#pragma nowarn(1506)  // warning elimination
          // KLUDGE begin: fix cases 10-040511-5169, 10-040610-2860, 
          // soln 10-040610-6863 by temporarily mapping
          //   "create table t(b long varbinary(n))" into
          //   "create table t(b varchar(n))".
          $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $3);
          // end KLUDGE.
-#pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
 
@@ -18626,10 +18466,8 @@ routine_invocation: routine_name '(' routine_arg_list ')'
 	    // Error
 	    NAString errName;
 	    errName.append($1->extract (0)->data ());
-#pragma warning (disable : 4018)   //warning elimination
 	    for (Int32 i=1; i < $1->numParts (); i++)
 	    {
-#pragma warning (default : 4018)   //warning elimination
 	      errName.append (".");
 	      errName.append ($1->extract (i)->data ());
 	    }
@@ -21524,19 +21362,6 @@ declare_or_set_cqd: TOK_DECLARE TOK_CATALOG character_string_literal
                                     ControlQueryDefault(
                                       SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "NAMETYPE", *$3);
 				}
-                  | TOK_DECLARE TOK_MPLOC character_string_literal
-                                {
-                                  // DEFAULT_CHARSET has no effect on character_string_literal in this context
-                                  $$ = new (PARSERHEAP())
-                                    ControlQueryDefault(
-                                      SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "MP_SUBVOLUME", *$3);
-                                }
-                  | TOK_DECLARE TOK_MPLOC guardian_subvolume_name
-                                {
-                                  $$ = new (PARSERHEAP())
-                                    ControlQueryDefault(
-                                      SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "MP_SUBVOLUME", *$3);
-                                }
 
 		  /* The SET flavor is dynamic (the extra TRUE flag).
 		  /* See the comments way at the top for when
@@ -21627,17 +21452,6 @@ declare_or_set_cqd: TOK_DECLARE TOK_CATALOG character_string_literal
 				  $$ = normalizeDynamicCQD(
 				    "NAMETYPE", *$3);
 				}
-                  | TOK_SET TOK_MPLOC character_string_literal 
-                                {
-                                  // DEFAULT_CHARSET has no effect on character_string_literal in this context
-				  $$ = normalizeDynamicCQD(
-				    "MP_SUBVOLUME", *$3);
-                                }
-                  | TOK_SET TOK_MPLOC guardian_subvolume_name 
-                                {
-				  $$ = normalizeDynamicCQD(
-				    "MP_SUBVOLUME", *$3);
-                                }
 
 /* type tokval */
 query_shape_options : TOK_IMPLICIT TOK_EXCHANGE
@@ -22174,9 +21988,7 @@ query_shape_control : shape_identifier
 				    {
 				      $$ = new (PARSERHEAP()) ScanForceWildCard();
 				      NABoolean dummyNegate = FALSE;
-#pragma nowarn(1506)   // warning elimination 
 				      Int32 numColumns = $4->entries();
-#pragma warn(1506)  // warning elimination
 				      ItemExpr *itm;
 				      
 				      ScanForceWildCard::scanOptionEnum* columnAlgorithms
@@ -22773,9 +22585,6 @@ show_statement:
                case ExtendedQualName::TRIGTEMP_TABLE:
                  labelAnsiNameSpace = COM_TRIGTEMP_TABLE_NAME;
                  break;
-               case ExtendedQualName::RESOURCE_FORK:
-                 labelAnsiNameSpace = COM_TABLE_NAME;
-                 break;
                default :
                  // There should be a case for every special type that
                  // is specified by the production extended_label_name.
@@ -23103,15 +22912,6 @@ collate_clause : TOK_COLLATE TOK_DEFAULT   { $$ = CharInfo::DefaultCollation; }
 		     //
 		     $$ = CharInfo::UNKNOWN_COLLATION;
 		     NABoolean lookupNameAsNSK = FALSE;
-		     if (SqlParser_NAMETYPE == DF_NSK) {
-		       if (qn->getCatalogName().isNull()) {
-			 lookupNameAsNSK = TRUE;
-			 if (qn->getSchemaName().isNull()) {
-			   NAString n(qn->getObjectName());
-			   $$ = CharInfo::getCollationEnum(n, lookupNameAsNSK);
-			 }	// SJIS
-		       }	// Y.SJIS or SJIS
-		     }		// NAMETYPE NSK
 
 		     if ($$ == CharInfo::UNKNOWN_COLLATION) {
 
@@ -26598,11 +26398,9 @@ file_attribute :        file_attribute_allocate_clause
 /* type pElemDDL */           
 file_attribute_allocate_clause : TOK_ALLOCATE unsigned_smallint
                                 {
-#pragma nowarn(1506)   // warning elimination 
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrAllocate(
                                        $2 /*unsigned_smallint*/);
-#pragma warn(1506)  // warning elimination
                                 }
  
 /* type pElemDDL */
@@ -26762,87 +26560,67 @@ file_attribute_extent : TOK_UNBOUNDED
 
                       | extent_page
                                 {
-#pragma nowarn(1506)   // warning elimination
                                   $$ = new (PARSERHEAP())
                                     ElemDDLFileAttrExtents( 
                                        $1 /*unsigned_integer (pri ext)*/,
                                        $1 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
                                 }
 
                       | '(' extent_page ')'
                                 {
-#pragma nowarn(1506)  // warning elimination
-#pragma nowarn(106)  // warning elimination
                                   $$ = new (PARSERHEAP())
                                     ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/,
 			               $2 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
-#pragma warn(106)  // warning elimination
                                 }
 
                       | '(' extent_page ',' extent_page ')'
                                 {
-#pragma nowarn(1506)  // warning elimination
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/,
                                        $4 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
 
                                 }
 
                       | signed_extent_page
                         {
-#pragma nowarn(1506)   // warning elimination
 				  $$ = new (PARSERHEAP())
                                   ElemDDLFileAttrExtents( 
                                        $1 /*unsigned_integer (pri ext)*/,
                                        $1 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
                         }
 
                       | '(' signed_extent_page ')'
                         {
-#pragma nowarn(1506)  // warning elimination
-#pragma nowarn(106)  // warning elimination
                                   $$ = new (PARSERHEAP())
                                     ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/);
 			              /*since no sec ext was supplied, let the default be used*/
-#pragma warn(1506)  // warning elimination
-#pragma warn(106)  // warning elimination
                         }
 
                       | '(' signed_extent_page ',' extent_page ')'
                         {
-#pragma nowarn(1506)  // warning elimination
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/,
                                        $4 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
                         }
 
                       | '(' extent_page ',' signed_extent_page ')'
                         {
-#pragma nowarn(1506)  // warning elimination
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/,
                                        $4 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
                         }
 
                       | '(' signed_extent_page ',' signed_extent_page ')'
                         {
-#pragma nowarn(1506)  // warning elimination
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrExtents(
                                        $2 /*unsigned_integer (pri ext)*/,
                                        $4 /*unsigned_integer (sec ext)*/);
-#pragma warn(1506)  // warning elimination
                         }
 
 /* type pElemDDL */
@@ -26859,11 +26637,9 @@ file_attribute_maxextent : TOK_UNBOUNDED
 
                       | extent_page
                                 {
-#pragma nowarn(1506)  // warning elimination
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrMaxExtents(
                                        $1 /*unsigned_integer (max ext)*/);
-#pragma warn(1506)  // warning elimination
                                 }
 
 /* type pElemDDL */
@@ -26972,8 +26748,8 @@ file_attribute_uid_clause : TOK_UID NUMERIC_LITERAL_EXACT_NO_SCALE
        // This syntax to be used by Backup/Restore only.
        // If Backup/Restore is ever implemented then add a parserflag for it 
        // and report the 3001 error only if flag is not set.
-                                  *SqlParser_Diags << DgSqlCode(-3001) << DgString0("UID");  // LCOV_EXCL_LINE
-                                  YYERROR;                                                   // LCOV_EXCL_LINE
+                                  *SqlParser_Diags << DgSqlCode(-3001) << DgString0("UID");
+
        // Uncomment the next 2 lines if Backup/Restore is ever implemented.
 				  //$$ = new (PARSERHEAP()) ElemDDLFileAttrUID(atoInt64($2->data()));
 				  //delete $2;		   
@@ -28905,18 +28681,6 @@ location_definition : guardian_location_name
  */
 
 /* type stringval */
-/* ...lu-shung... kludge */
-// Use identifier instead of regular_identifier to allow reserved words all 
-// caps in double quotes as subvolume name.  Double quotes are handled in 
-// ValidateNSKNamePart::validate of DefaultValidator.cpp and
-// ComMPLoc::parse of ComMPLoc.cpp.
-guardian_subvolume_name : guardian_volume_name '.' identifier
-                                {
-                                  $1->append("." + *$3);
-                                  delete $3;
-                                  $$ = $1;
-                                }
-/* type stringval */
 guardian_location_name : guardian_volume_name
                        | guardian_volume_name '.' 
 		         regular_identifier   '.'
@@ -29635,9 +29399,7 @@ mv_file_attribute : mv_audit_type
 		  }
 		  | TOK_COMMIT TOK_REFRESH TOK_EACH unsigned_integer
 		  {
-#pragma nowarn(1506)   // warning elimination 
 		    $$ = new (PARSERHEAP())ElemDDLFileAttrMVCommitEach($4);
-#pragma warn(1506)  // warning elimination
 		  }
 
 
@@ -30818,14 +30580,12 @@ incremental_refresh_options : TOK_FROM TOK_SINGLEDELTA delta_definition_list opt
 			    }
 			    | TOK_FROM TOK_MULTIDELTA delta_definition_list TOK_PHASE unsigned_integer optional_pipeline_clause
 			    {
-#pragma nowarn(1506)   // warning elimination 
 			      $$ = new (PARSERHEAP())IncrementalRefreshOption
 					  (
 					  $3, //pDeltaDefinitionPtrList 
 					  $5, // uint
 					  $6  // pOptionalPipelineClause
 					  );
-#pragma warn(1506)  // warning elimination
 
 			    }
 
@@ -30846,7 +30606,6 @@ delta_definition_list : delta_definition_node
 //pDeltaDefinition		
 delta_definition_node: qualified_name TOK_BETWEEN begin_epoch TOK_AND end_epoch delta_options
 					   {
-#pragma nowarn(1506)   // warning elimination 
 					      $$ = new(PARSERHEAP())DeltaDefinition
 						  (
 							  qualifiedNameFromStrings($1),
@@ -30854,7 +30613,6 @@ delta_definition_node: qualified_name TOK_BETWEEN begin_epoch TOK_AND end_epoch 
 							  $5, // end_epoch
 							  $6 // pDeltaOptions
 						  );
-#pragma warn(1506)  // warning elimination
 					      
 					      // delete $1 done in qualifiedNameFromStrings;
 
@@ -30872,9 +30630,7 @@ end_epoch : unsigned_integer
 //pDeltaOptions
 delta_options : TOK_DE TOK_LEVEL unsigned_integer delta_def_logs
 		{
-#pragma nowarn(1506)  // warning elimination
 		  $$ = new (PARSERHEAP())DeltaOptions($3, $4);
-#pragma warn(1506)  // warning elimination
 		}
 
 //pDeltaDefLogs
@@ -30890,15 +30646,11 @@ delta_def_range_log : TOK_USE TOK_NO TOK_RANGELOG
 		      }
 	  	      | TOK_USE TOK_RANGELOG unsigned_integer TOK_NUM_OF_RANGES
 		      {
-#pragma nowarn(1506)  // warning elimination
 		        $$ = new (PARSERHEAP())DeltaDefRangeLog(DeltaDefRangeLog::CARDINALITY_ONLY, $3);
-#pragma warn(1506)  // warning elimination
 		      }
 		      | TOK_USE TOK_RANGELOG unsigned_integer TOK_NUM_OF_RANGES unsigned_integer TOK_ROWS_COVERED
 		      {
-#pragma nowarn(1506)  // warning elimination
 		        $$ = new (PARSERHEAP())DeltaDefRangeLog(DeltaDefRangeLog::ALL, $3, $5);
-#pragma warn(1506)  // warning elimination
 		      }
 
 //pDeltaDefIUDLog
@@ -30925,9 +30677,7 @@ delta_def_iud_log :  TOK_USE TOK_IUDLOG iud_statistics_rows
 //pIUDStatistics
 iud_statistics_rows : num_inserted num_deleted num_updated optional_update_collumns
 		    {
-#pragma nowarn(1506)  // warning elimination
 		      $$ = new (PARSERHEAP())IUDStatistics($1,$2,$3,$4);
-#pragma warn(1506)  // warning elimination
 		    }
 
 //uint						
@@ -30964,15 +30714,11 @@ optional_update_collumns :  TOK_COLUMNS '(' columns_num_list ')'
 columns_num_list : unsigned_integer 
 		 {
 		  $$ = new (PARSERHEAP())IntegerList();
-#pragma nowarn(1506)   // warning elimination 
 		  $$->insert($1);
-#pragma warn(1506)  // warning elimination
 		 }
 		 | columns_num_list ',' unsigned_integer
 		 {
-#pragma nowarn(1506)  // warning elimination
 		  $1->insert($3);
-#pragma warn(1506)  // warning elimination
 		  $$ = $1;
 		 }
 			  
@@ -30984,12 +30730,10 @@ optional_nrows_clause: empty
 		     | TOK_COMMIT TOK_EACH unsigned_integer TOK_PHASE phase_num optional_catchup
 		     {
 		      
-#pragma nowarn(1506)  // warning elimination 
 		       $$ = new (PARSERHEAP())NRowsClause( $3, // commit each
 							  $5, // PHASE
 							  $6 // pOptionalCatchupClause
 							  );
-#pragma warn(1506)  // warning elimination	
 		     }
 
 
@@ -31004,9 +30748,7 @@ optional_catchup : empty
 		  }
 		  | TOK_CATCHUP unsigned_integer
 		  {
-#pragma nowarn(1506)  // warning elimination
 		    $$ = new (PARSERHEAP())ConstValue($2);
-#pragma warn(1506)  // warning elimination	
 		  }
 		  | TOK_CATCHUP dynamic_parameter
 		  {
@@ -33753,7 +33495,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MORE
                       | TOK_MOVE
                       | TOK_MOVEMENT
-                      | TOK_MPLOC             /* Tandem extension */
                       | TOK_MTS
                       | TOK_MV  
                       | TOK_MULTI            /* Long Running */
@@ -34084,7 +33825,6 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_ASIN
                       | TOK_ATAN
                       | TOK_ATAN2
-                      | TOK_AUDIT_IMAGE  // Utilities
                       | TOK_AUTHNAME
                       | TOK_AUTHTYPE
                       | TOK_BITAND

@@ -335,7 +335,6 @@ NABoolean NAType::isNumeric() const
 // Methods that return the binary form of the minimum and the maximum
 // representable values.
 // ---------------------------------------------------------------------
-//LCOV_EXCL_START : - Derived types MUST define the real routines
 void NAType::minRepresentableValue(void*, Lng32*, NAString**,
 				   NAMemory * h) const {}
 
@@ -395,17 +394,14 @@ NABoolean NAType::computeNextKeyValue(NAString &keyValue) const
   ComASSERT(keyValue == temp);
   return FALSE;
 }
-//LCOV_EXCL_STOP : - Derived types MUST define the real routines
 
-//LCOV_EXCL_START :
 void NAType::print(FILE* ofd, const char* indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s nominal size %d, total %d\n",
           indent,getNominalSize(),getTotalSize());
 #endif
 }
-//LCOV_EXCL_STOP :
 
 // -- The external name for the type (text representation)
 
@@ -443,12 +439,10 @@ Lng32 NAType::getPrecision() const
   return -1;
 }
 
-//LCOV_EXCL_START : Routine must be defined, but used only by numeric types.
 Lng32 NAType::getMagnitude() const
 {
   return -1;
 }
-//LCOV_EXCL_STOP :
 
 Lng32 NAType::getScale() const
 {
@@ -627,9 +621,7 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
                              (UInt32) precision,
                              endField,
                              (UInt32) scale);
-#pragma nowarn(1506)   // warning elimination 
         d_len = interval.getDisplayLength();
-#pragma warn(1506)  // warning elimination 
       }
       break;
 
@@ -826,12 +818,8 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
       
       dtStartField = (ComDateTimeStartEnd)dtiCommonType.getStartField();
       dtEndField = (ComDateTimeStartEnd)dtiCommonType.getEndField();
-#pragma nowarn(1506)   // warning elimination 
       dtTrailingPrecision = dtiCommonType.getFractionPrecision();
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
       dtLeadingPrecision = dtiCommonType.getLeadingPrecision();
-#pragma warn(1506)  // warning elimination 
     }
   
   // Prepare parameters in case of a CHARACTER type
@@ -888,16 +876,12 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
 
 Lng32 NAType::getSize() const  
 {
-#pragma nowarn(1506)   // warning elimination 
   return sizeof(*this) + typeName_.length();
-#pragma warn(1506)  // warning elimination 
 }
 
 Lng32 NAType::hashKey() const  
 {
-#pragma nowarn(1506)   // warning elimination 
   return typeName_.hash();
-#pragma warn(1506)  // warning elimination 
 }
 
 // return true iff it is safe to call NAType::hashKey on me

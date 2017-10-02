@@ -83,9 +83,7 @@ NABoolean MdamPoint::beginContains(const ULng32 keyLen, const char * v)
     {
       return FALSE;
     };
-#pragma nowarn(203)   // warning elimination 
   return TRUE;  // To get rid of compiler warning.
-#pragma warn(203)  // warning elimination 
 }
 
 
@@ -113,9 +111,7 @@ NABoolean MdamPoint::endContains(const ULng32 keyLen, const char * v) const
     {
       return FALSE;
     };
-#pragma nowarn(203)   // warning elimination 
   return TRUE;  // To get rid of compiler warning.
-#pragma warn(203)  // warning elimination 
 }
 
 

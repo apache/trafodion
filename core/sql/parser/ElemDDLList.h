@@ -77,7 +77,6 @@ class ElemDDLList;
 // -----------------------------------------------------------------------
 // A list of elements in DDL statement.
 // -----------------------------------------------------------------------
-#pragma nowarn(1319)   // warning elimination 
 class ElemDDLList : public ElemDDLNode
 {
 
@@ -185,7 +184,6 @@ private:
   ElemDDLNode * children_[MAX_ELEM_DDL_LIST_ARITY];
 
 }; // class ElemDDLList
-#pragma warn(1319)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // definitions of inline methods for class ElemDDLList

@@ -37,7 +37,6 @@
 #ifndef EXP_SQL_TUPP_H
 #define EXP_SQL_TUPP_H
 
-#include "SqlExpDllDefines.h"
 #include "BaseTypes.h"
 
 // Local defines for assertions
@@ -57,53 +56,43 @@ class ex_queue;
 // In the executor and expression code no variables of class tuppDescriptor *
 // should be used. Only tupp should be used.
 //
-class SQLEXP_LIB_FUNC  tupp
+class tupp
 {	
   tupp_descriptor *	tuppDescPointer;
   
 public:
-NA_EIDPROC
    ~tupp();				// destructor
-NA_EIDPROC
    tupp();				// constructor
-NA_EIDPROC
   tupp(const tupp_descriptor * source); // constructor
-NA_EIDPROC
   tupp(const tupp & source); // constructor
   
-NA_EIDPROC 
+
   inline void init();			// Initialize a newly allocated tupp
-NA_EIDPROC 
+
   inline void	operator=(const tupp	& source); 
-NA_EIDPROC 
+
   inline void	operator=(const tupp_descriptor * source); 
-NA_EIDPROC 
+
   inline void	release();		// Release the tuple this tupp refers to
-NA_EIDPROC 
+
   inline char *	getDataPointer() const;
-NA_EIDPROC 
+
   inline void   setDataPointer(char *dp);
-NA_EIDPROC 
+
   inline tupp_descriptor* get_tupp_descriptor();  
-NA_EIDPROC 
+
   inline unsigned short getRefCount() const;
-NA_EIDPROC
   inline ULng32   getAllocatedSize() const;
 
-NA_EIDPROC
   Long pack(void * space);
-NA_EIDPROC
   Lng32 unpack(Lng32 base);
-NA_EIDPROC
   NABoolean isAllocated(){return (tuppDescPointer ? TRUE : FALSE);};
 
-NA_EIDPROC
   void display();
 
 };
 
-#pragma nowarn(1506)   // warning elimination 
-class SQLEXP_LIB_FUNC  tupp_descriptor
+class tupp_descriptor
 {
 
 #ifdef COMING_FROM_NATIVE_EXPR_SOURCE_FILE
@@ -165,21 +154,19 @@ friend class tupp;
     };
 
 protected:
-NA_EIDPROC
   unsigned short& nextTDIOffset() { return tdiOffset_.nextTDIOffset_; }
-NA_EIDPROC
   unsigned short& prevTDIOffset() { return tdiOffset_.prevTDIOffset_; }
 
 public:
-NA_EIDPROC 
+
    tupp_descriptor(); //  construct and initiliaze a descriptor
-NA_EIDPROC 
+
   inline void	init();		// initialize a newly allocated descriptor
-NA_EIDPROC 
+
   inline void	init(ULng32 allocatedSize, tupp_descriptor * relocatedAddress, char *tupleAddress);
-NA_EIDPROC 
+
   inline unsigned short getReferenceCount() const;
-NA_EIDPROC void setReferenceCount(unsigned short ref_count)
+void setReferenceCount(unsigned short ref_count)
   {
     referenceCount_ = ref_count;
   }
@@ -188,38 +175,37 @@ NA_EIDPROC void setReferenceCount(unsigned short ref_count)
   // being in transit between PA and EID. Once they are received,
   // and the flags are looked at, these must be initialized to zero
   // as they are overloaded with the reference count for this tupp.
-NA_EIDPROC void resetCommFlags()
+void resetCommFlags()
   {
     flags_ = 0;
   }
 
-NA_EIDPROC 
+
   inline char *getTupleAddress() const;
-NA_EIDPROC 
+
   inline Lng32 getTupleOffset() const
     {
       return offset_;
     }
-NA_EIDPROC 
+
   inline void setTupleOffset(Lng32 offset)
     {
       offset_ = offset;
     }
-NA_EIDPROC 
+
   inline void setTupleAddress(char * tuple_address)
     {
       tupleAddress_ = tuple_address;
     }
-NA_EIDPROC 
+
   inline void setRelocatedAddress(tupp_descriptor * relocated_address)
     {
       relocatedAddress_ = relocated_address;
     }
   
-NA_EIDPROC 
+
   inline ULng32 getAllocatedSize(){return allocatedSize_;};
 
-NA_EIDPROC
   inline void setAllocatedSize(Lng32 size) 
     {
       allocatedSize_ = size;
@@ -231,60 +217,50 @@ NA_EIDPROC
 // and data data. The control data (see ex_io_control.h) includes
 // information about queue state.
 ////////////////////////////////////////////////////////////////////
-NA_EIDPROC
   NABoolean isControlTuple()
   {
     return (flags_ == CONTROL_TUPP);
   };
 
-NA_EIDPROC
   NABoolean isDataTuple()
   {
     return (flags_ == DATA_TUPP);
   };
 
-NA_EIDPROC
   NABoolean isDiagsTuple()
   {
     return (flags_ == DIAGS_TUPP);
   };
 
-NA_EIDPROC
   NABoolean isStatsTuple()
   {
     return (flags_ == STATS_TUPP);
   };
 
-NA_EIDPROC
   NABoolean isInvalidTuple()
   {
     return (flags_ == INVALID_DATA_VSBB_TUPP);
   };
 
-NA_EIDPROC
  void setControlTupleType()
   {
     flags_ = CONTROL_TUPP;
   };
   
-NA_EIDPROC
  void setDataTupleType()
   {
     flags_ = DATA_TUPP;
   };
   
-NA_EIDPROC
  void setDiagsTupleType()
   {
     flags_ = DIAGS_TUPP;
   };
   
-NA_EIDPROC
  void setStatsTupleType()
   {
     flags_ = STATS_TUPP;
   };
-NA_EIDPROC
  void setInvalidTupleType()
   {
     flags_ = INVALID_DATA_VSBB_TUPP;
@@ -292,7 +268,6 @@ NA_EIDPROC
 
 
 };
-#pragma warn(1506)   // warning elimination 
 
 
 //
@@ -411,9 +386,7 @@ inline char * tupp::getDataPointer() const
 
 inline unsigned short tupp::getRefCount() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return tuppDescPointer ? tuppDescPointer->getReferenceCount() : 0;
-#pragma warn(1506)  // warning elimination 
 };
 
 inline ULng32 tupp::getAllocatedSize() const

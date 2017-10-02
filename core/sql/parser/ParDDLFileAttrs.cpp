@@ -120,9 +120,7 @@ ParDDLFileAttrsAlterIndex::operator = (
 NAString
 ParDDLFileAttrsAlterIndex::getMaxSizeUnitAsNAString() const
 {
-#pragma nowarn(1506)   // warning elimination
   ElemDDLFileAttrMaxSize maxSizeFileAttr(getMaxSize(), getMaxSizeUnit());
-#pragma warn(1506)   // warning elimination
   return maxSizeFileAttr.getMaxSizeUnitAsNAString();
 }
 
@@ -443,9 +441,7 @@ ParDDLFileAttrsAlterIndex::setFileAttr(ElemDDLFileAttr * pFileAttr)
 	  /////////////////////////////////////////////////////////////////
 	  //error checking while specifying the MAXEXTENTS attribute clause
 	  /////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
 	  Lng32 maxext = pMaxExtents->getMaxExtents();
-#pragma warn(1506)  // warning elimination 
 	  if ((maxext <= 0) || (maxext > COM_MAX_MAXEXTENTS))
       {
 		*SqlParser_Diags << DgSqlCode(-3191);
@@ -672,12 +668,8 @@ ParDDLFileAttrsAlterTable::operator = (
 NAString
 ParDDLFileAttrsAlterTable::getMaxSizeUnitAsNAString() const
 {
-#pragma nowarn(1506)   // warning elimination 
   ElemDDLFileAttrMaxSize maxSizeFileAttr(getMaxSize(), getMaxSizeUnit());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   return maxSizeFileAttr.getMaxSizeUnitAsNAString();
-#pragma warn(1506)  // warning elimination 
 }
 
 //
@@ -1050,9 +1042,7 @@ ParDDLFileAttrsAlterTable::setFileAttr(ElemDDLFileAttr * pFileAttr)
       ElemDDLFileAttrMaxExtents * pMaxExtents =
         pFileAttr->castToElemDDLFileAttrMaxExtents();
 	  // error checking for limits when we specify the MAXEXTENTS clause
-#pragma nowarn(1506)   // warning elimination 
 	  Lng32 maxext = pMaxExtents->getMaxExtents();
-#pragma warn(1506)  // warning elimination 
 	  if ((maxext <= 0) || (maxext > COM_MAX_MAXEXTENTS))
       {
 		*SqlParser_Diags << DgSqlCode(-3191);
@@ -1316,9 +1306,7 @@ ParDDLFileAttrsCreateIndex::operator = (
 NAString
 ParDDLFileAttrsCreateIndex::getMaxSizeUnitAsNAString() const
 {
-#pragma nowarn(1506)   // warning elimination 
   ElemDDLFileAttrMaxSize maxSizeFileAttr(getMaxSize(), getMaxSizeUnit());
-#pragma warn(1506)  // warning elimination 
   return maxSizeFileAttr.getMaxSizeUnitAsNAString();
 }
 
@@ -1693,9 +1681,7 @@ ParDDLFileAttrsCreateIndex::setFileAttr(ElemDDLFileAttr * pFileAttr)
 	  //////////////////////////////////////////////////////
 	  // error checking when we define the MAXEXTENTS clause
 	  //////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination 
       Lng32 maxext = pMaxExtents->getMaxExtents();
-#pragma warn(1506)  // warning elimination 
       if ((maxext <= 0) || (maxext > COM_MAX_MAXEXTENTS))
       {
 		*SqlParser_Diags << DgSqlCode(-3191);

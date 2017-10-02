@@ -221,7 +221,6 @@ CRUMVList& CRUMVEquivSetBuilder::GetEquivSetsRootsByMVUID(TInt64 uid)
 }
 
 #ifdef _DEBUG
-// LCOV_EXCL_START :dpm
 //--------------------------------------------------------------------------//
 //	CRUMVEquivSetBuilder::DumpSets() 
 //--------------------------------------------------------------------------//
@@ -252,5 +251,4 @@ void CRUMVEquivSetBuilder::DumpSets()
 		}
 	}
 }
-// LCOV_EXCL_STOP
 #endif

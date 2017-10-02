@@ -106,9 +106,7 @@ CascadesGroup::~CascadesGroup()
     groupAttr_->decrementReferenceCount();
 
   // delete associated contexts
-#pragma nowarn(1506)   // warning elimination
   Lng32 maxc = goals_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 i = 0; i < maxc; i++)
     delete goals_[i];
 
@@ -116,12 +114,10 @@ CascadesGroup::~CascadesGroup()
 //<pb>
 
 
-// LCOV_EXCL_START
 void CascadesGroup::print(FILE * f, const char * prefix, const char *) const
 {
 } // CascadesGroup::print
 
-// LCOV_EXCL_STOP
 //<pb>
 void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
 {
@@ -158,7 +154,7 @@ void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
       // improve log prop's/group attributes; recost all plans if required
       if (expr->reconcileGroupAttr(getGroupAttr()))
 	// XXX recost all plans in this group
-	ABORT("reoptimizing after improveLogProp() not implemented"); // LCOV_EXCL_LINE
+	ABORT("reoptimizing after improveLogProp() not implemented");
     }
 
   // remember that expr came from src
@@ -247,9 +243,7 @@ void CascadesGroup::addPlan (CascadesPlan * plan)
 {
   CURRSTMT_OPTGLOBALS->plans_count++;  // increment global counter for # of plans
 
-#pragma nowarn(1506)   // warning elimination
   Lng32 index = plans_.entries();
-#pragma warn(1506)  // warning elimination
   plans_.insertAt(index,plan); // insert plan at end of list
 }
 
@@ -290,7 +284,6 @@ RelExpr * CascadesGroup::unlinkLogExpr(RelExpr *expr)
 }
 //<pb>
 // A dangling method
-// LCOV_EXCL_START
 RelExpr * CascadesGroup::unlinkPhysExpr(RelExpr *expr)
 {
   // -------------------------------------------------------------
@@ -326,7 +319,6 @@ RelExpr * CascadesGroup::unlinkPhysExpr(RelExpr *expr)
   // to remind the calling procedure that it owns that expression now)
   return expr;
 }
-// LCOV_EXCL_STOP
 
 //<pb>
 CascadesPlan * CascadesGroup::getFirstPlan() const
@@ -351,7 +343,6 @@ RelExpr * CascadesGroup::getLastLogExpr() const
 }
 
 // use by OptDebug::showMemoStats(). Mask it out from code coverage
-// // LCOV_EXCL_START
 Lng32 CascadesGroup::getCountOfLogicalExpr() const
 {
   RelExpr * expr = logExprs_;
@@ -392,7 +383,6 @@ double CascadesGroup::calculateNoOfLogPlans() const
   result = result + (result*numOfMergedExprs);
   return result;
 }
-// LCOV_EXCL_STOP
 
 HashValue CascadesGroup::hash()
 {
@@ -442,14 +432,10 @@ void CascadesGroup::merge(CascadesGroup * other)
       // -----------------------------------------------------------------
       // move all contexts from the other group into this group
       // -----------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
       Lng32 maxg = other->goals_.entries();
-#pragma warn(1506)  // warning elimination
       for (Lng32 i = 0; i < maxg; i++)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  Lng32 maxc = goals_.entries();
-#pragma warn(1506)  // warning elimination
 	  NABoolean found = FALSE;
 
 	  // change the context to the new group number
@@ -559,9 +545,7 @@ Context * CascadesGroup::shareContext(
   Context *newContext = new (CmpCommon::statementHeap())
     Context(groupId_, reqdPhys, inputPhys, inputLogProp) ;
   Context* result = newContext;
-#pragma nowarn(1506)   // warning elimination
   Lng32 maxc       = goals_.entries();
-#pragma warn(1506)  // warning elimination
   NABoolean found = FALSE;
 
   // The "setCostLimitInContext" below is used to indicate whether the
@@ -767,7 +751,6 @@ CascadesMemo::CascadesMemo(CascadesGroupId groups, Lng32 buckets)
 // RelExpr::optimizeNode() by setting memo = NULL. This is a speeding
 // deletion.
 
-// LCOV_EXCL_START
 CascadesMemo::~CascadesMemo()
 {
   if (NOT (CURRSTMT_OPTGLOBALS->BeSilent))
@@ -785,28 +768,18 @@ CascadesMemo::~CascadesMemo()
 		   e = e->getNextInBucket())
 		++ count;
 	    }
-#pragma nowarn(1506)   // warning elimination
 	  m1 += count;
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
 	  m2 += count * count;
-#pragma warn(1506)  // warning elimination
 	}
-#pragma nowarn(1506)   // warning elimination
       m1 /= hashSize_; m2 /= hashSize_;
-#pragma warn(1506)  // warning elimination
 
       printf("%.0lf entries / %d buckets = %.6lf, var %.6lf\n",
-#pragma nowarn(1506)   // warning elimination
 	     m1 * hashSize_, hashSize_, m1, m2 - m1 * m1);
-#pragma warn(1506)  // warning elimination
     }
 
   // weed out those groups that have been merged, to avoid deleting
   // some groups twice
-#pragma nowarn(1506)   // warning elimination
   Lng32 groupEntries = group_.entries();
-#pragma warn(1506)  // warning elimination
 
   CascadesGroupId groupId = 0;
   for (groupId = 0; (Lng32)groupId < groupEntries;  groupId++)
@@ -820,10 +793,8 @@ CascadesMemo::~CascadesMemo()
     delete group_[groupId];
 
 } // CascadesMemo::~CascadesMemo
-// LCOV_EXCL_STOP
 
 //<pb>
-// LCOV_EXCL_START
 void CascadesMemo::print(FILE * f, const char *, const char *) const
 {
 } // CascadesMemo::print
@@ -841,7 +812,6 @@ void CascadesMemo::print_all_trees(CascadesGroupId root,
   // entire body of this method is essentially dead code until someone
   // resurrects the MOTIF/X11 based mxcmp "display" GUI too.
 } // CascadesMemo::print_all_trees
-// LCOV_EXCL_STOP
 
 //<pb>
 RelExpr * CascadesMemo::include(RelExpr * expr,
@@ -1280,9 +1250,7 @@ Int32 CascadesMemo::garbageCollection()
     }
 
   // return the number of changed expressions
-#pragma nowarn(1506)   // warning elimination
   return changed.entries();
-#pragma warn(1506)  // warning elimination
 
 } // CascadesMemo::garbageCollection()
 

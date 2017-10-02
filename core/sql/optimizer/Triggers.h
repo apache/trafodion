@@ -107,7 +107,6 @@ class Trigger : public NABasicObject
 public:	
 
   // Explicit ctor
-// warning elimination (removed "inline") 
   Trigger(const QualifiedName    &name,
 		 const QualifiedName	&subjectTable,
 		 ComOperation		operation,
@@ -134,7 +133,6 @@ public:
 
   // copy ctor
   // should not use
-  // LCOV_EXCL_START
   Trigger (const Trigger &other)
    :  name_(other.name_),
       subjectTable_(other.subjectTable_),
@@ -145,18 +143,15 @@ public:
       updateCols_(other.updateCols_)
       // Should never be called. Supplied only for collections.
   { CMPASSERT(FALSE); }
-  // LCOV_EXCL_STOP
 
   // dtor
-  virtual ~Trigger();  // LCOV_EXCL_LINE
+  virtual ~Trigger();
   
   // assignment operator
   // should not use
-  // LCOV_EXCL_START
   Trigger&  operator = (const Trigger& other)
     // Should never be called. Supplied only because of collections.
     { CMPASSERT(FALSE); return *this; }
-  // LCOV_EXCL_STOP
 
   // equality operator
   NABoolean operator ==(const Trigger &other) const;
@@ -169,14 +164,12 @@ public:
     { return subjectTable_.getQualifiedNameAsAnsiString(); }
 
   // used for debugging only - print methods
-  // LCOV_EXCL_START
   inline ComOperation getOperation()		        const 
     { return operation_; }
   inline NABoolean  isBeforeTrigger() const 
     { return (activation_ == COM_BEFORE); }
   inline NABoolean  isStatementTrigger() const 
     { return (granularity_== COM_STATEMENT); }
-  // LCOV_EXCL_STOP
 
   inline NABoolean  isAfterTrigger() const 
     { return (activation_ == COM_AFTER); }
@@ -184,7 +177,6 @@ public:
     { return (granularity_== COM_ROW); }
 
   // MV
-// warning elimination (removed "inline")
   virtual NABoolean isMVImmediate() const
     { return false; } // this is a regular trigger
 
@@ -211,9 +203,7 @@ public:
   inline void decRecursionCounter()       { recursionCounter_--; }
   
   // no longer used
-  // LCOV_EXCL_START
   inline void resetRecursionCounter()		{ recursionCounter_=0; }
-  // LCOV_EXCL_STOP
 
   //-------------------------------------------------------------------------
   //				Memory Management and Trigger Persistence
@@ -319,7 +309,6 @@ public:
   {};
 
   virtual RelExpr *getParsedTrigger(BindWA *bindWA);
-// warning elimination (removed "inline")
   virtual NABoolean isMVImmediate() const 
     { return true; } // this is a special trigger (ON STATEMENT MV)
 
@@ -347,7 +336,6 @@ class UpdateColumns : public NABasicObject
 {
 public:
 
-// warning elimination (removed "inline")
   UpdateColumns(NABoolean allColumns)
     :  allColumns_(allColumns)
   {
@@ -407,9 +395,6 @@ public:
 
   void print(ostream& os, const char* indent, const char* title) const;
 
-
-  // LCOV_EXCL_STOP
-
 };
 
 //-----------------------------------------------------------------------------
@@ -461,11 +446,8 @@ public:
   // Should never be called. Needed for compilation. We rely on 
   // NAHashBucket::contains() being called with a default NULL argument for
   // Values in the triggerDB hash where BeforeAndAfterTriggers are Values.
-  // warning elimination (removed "inline")
-  // LCOV_EXCL_START
   NABoolean operator == (const BeforeAndAfterTriggers &other) const 
     { CMPASSERT(FALSE); return FALSE; }
-  // LCOV_EXCL_STOP
 
   void print(ostream& os, const char* indent, const char* title) const;
 

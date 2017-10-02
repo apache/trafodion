@@ -86,9 +86,7 @@ void SqlBufferBase::init(ULng32 in_size_in_bytes,
 			 NABoolean clear)
 {
   baseFlags_ = 0;
-#pragma nowarn(1506)   // warning elimination 
   sizeInBytes_      = in_size_in_bytes;
-#pragma warn(1506)  // warning elimination 
 
   SqlBufferHeader::init();
 }
@@ -222,7 +220,7 @@ SqlBufferBase::moveStatus
 				       NABoolean useExternalDA,
 				       NABoolean callerHasExternalDA,
 				       tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 				       ,ex_tcb * tcb
 #endif
 				       ,NABoolean noMoveWarnings
@@ -366,14 +364,12 @@ void SqlBuffer::printInfo() {
     << " freeSpace: " << freeSpace_;
   Lng32 refcount = 0;
   Lng32 firstref = -1;
-#pragma warning (disable : 4018)   //warning elimination
   for (Int32 i = 0; (i < maxTuppDesc_); i++)
     if (tupleDesc(i)->getReferenceCount()) {
       if (firstref == -1)
 	firstref = i;
       refcount++;
     };
-#pragma warning (default : 4018)   //warning elimination
   cerr << " ref tupps: " << refcount << " first: " << firstref << endl;
 };
 
@@ -411,7 +407,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
                                             NABoolean useExternalDA,
                                             NABoolean callerHasExternalDA,
                                             tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
                                             ,ex_tcb * tcb
 #endif
 					    ,NABoolean noMoveWarnings
@@ -505,9 +501,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
     {
       if (controlInfoLen > 0)
 	{
-#pragma nowarn(1506)   // warning elimination 
 	  cdesc = add_tuple_desc(controlInfoLen);
-#pragma warn(1506)  // warning elimination 
 	  
 	  if (!cdesc)
 	    {
@@ -556,7 +550,6 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 #endif
   if (doMoveData == TRUE)
     {
-#pragma nowarn(1506)   // warning elimination 
 #ifndef UDRSERV_BUILD
     if (defragTd &&
         projRowLen > 0 &&
@@ -575,7 +568,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
       {
         defragLength = rowLen;
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
         char txt[] = "exchange";
         sql_buffer_pool::logDefragInfo(txt,
                         SqlBufferGetTuppSize(projRowLen, bufType()),
@@ -594,7 +587,6 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 
 
 
-#pragma warn(1506)  // warning elimination 
       if (! tdesc)
 	{
 	  // no space to move data. Release the control
@@ -602,53 +594,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 
 	  if (controlInfoMoved == TRUE)
 	    remove_tuple_desc();
-#if defined(__EID)          
-	  if (getTotalTuppDescs() == 0)
-          {
-            if (diagsArea == NULL)
-            {
-              // tbd - is expr ever null?  Is expr->getHeap() ?
-              diagsArea = ComDiagsArea::allocate(expr->getHeap());
-            }
-            *diagsArea  << DgSqlCode(-EXE_ROWLENGTH_EXCEEDS_BUFFER);
 
-            up_state errorUpState;
-            errorUpState.status = ex_queue::Q_SQLERROR;
-
-            tupp_descriptor * dDesc = NULL;
-            Int32 moveRetcode = 0;
-
-            moveRetcode = moveInSendOrReplyData(isSend,// false b/c this is EID
-						doMoveControl,
-						FALSE,   // <-------- doMoveData.
-						&errorUpState,
-						controlInfoLen,
-						controlInfo,
-						projRowLen,
-						outTdesc,
-						diagsArea ,
-						&dDesc,
-						expr, atp1, workAtp,
-						destAtp, 
-						tuppIndex, 
-						doMoveStats,
-						statsArea, 
-						statsDesc, 
-						useExternalDA, 
-						useExternalDA,
-						NULL,
-						noMoveWarnings
-                                 );
-            ex_assert((moveRetcode != SqlBuffer::BUFFER_FULL),
-                      "sending an empty buffer from EID");
-
-            if (dDesc)
-            {
-              diagsArea->packObjIntoMessage(dDesc->getTupleAddress());
-              diagsArea->decrRefCount();
-            }
-          }
-#endif
           return SqlBuffer::BUFFER_FULL;
 	}
       
@@ -793,7 +739,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
                                    useExternalDA, 
                                    useExternalDA, // always have ext. DA if used
                                    defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
                                    ,tcb
 #endif
 				   ,noMoveWarnings
@@ -839,9 +785,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
     {
       // allocate space for diags area.
       tupp_descriptor * tempDiagsDesc = add_tuple_desc(
-#pragma nowarn(1506)   // warning elimination 
                                 diagsArea->packedLength());
-#pragma warn(1506)  // warning elimination 
       if (tempDiagsDesc == NULL)
 	{
 	  // don't have enough space in this input buffer for diags.
@@ -855,53 +799,6 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 
 	  if (daMark >= 0)
 	    diagsArea->rewind(daMark);
-#if defined(__EID)          
-	  if (getTotalTuppDescs() == 0)
-          {
-           //there is no room for DA even, clear DA and send one condition only
-            if(!space_available(diagsArea->packedLength()))
-              diagsArea->clear();
-
-            *diagsArea  << DgSqlCode(-EXE_ROWLENGTH_EXCEEDS_BUFFER);
-
-            up_state errorUpState;
-            errorUpState.status = ex_queue::Q_SQLERROR;
-
-            tupp_descriptor * dDesc = NULL;
-            Int32 moveRetcode ;
-
-            moveRetcode = moveInSendOrReplyData(isSend,// false b/c this is EID
-                                 doMoveControl,
-                                 FALSE,   // <-------- doMoveData.
-                                 &errorUpState,
-                                 controlInfoLen,
-                                 controlInfo,
-                                 projRowLen,
-                                 outTdesc,
-                                 diagsArea ,
-                                 &dDesc,
-                                 expr, atp1, workAtp,
-                                 destAtp, 
-                                 tuppIndex, 
-				 doMoveStats,
-                                 statsArea, 
-                                 statsDesc, 
-                                 useExternalDA, 
-                                 useExternalDA,
-				 NULL,
-				 noMoveWarnings
-                                 );
-            ex_assert((moveRetcode != SqlBuffer::BUFFER_FULL),
-                      "Sending an empty buffer from EID");
-
-            if (dDesc)
-            {
-              diagsArea->packObjIntoMessage(dDesc->getTupleAddress());
-              diagsArea->decrRefCount();
-            }
-          
-          }
-#endif
 
 	  return  SqlBuffer::BUFFER_FULL;  // not enough space.
 	}
@@ -921,9 +818,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
       ex_assert((tdesc == NULL), "Cannot have data with stats");
 
       // allocate space for stats area.
-#pragma nowarn(1506)   // warning elimination 
       *statsDesc = add_tuple_desc(statsArea->packedLength());
-#pragma warn(1506)  // warning elimination 
       if (*statsDesc == NULL)
 	{
 	  // don't have enough space in this input buffer for stats.
@@ -1083,9 +978,7 @@ NABoolean SqlBuffer::moveOutSendOrReplyData(NABoolean isSend,
 	{
 	case NORMAL_:
 	  {
-#pragma nowarn(1506)   // warning elimination 
 	    tuppDesc = tupleDesc(tuppDescIndex_);
-#pragma warn(1506)  // warning elimination 
 	    
 	    if (tuppDesc->isControlTuple())
 	      {
@@ -1465,9 +1358,7 @@ NABoolean SqlBuffer::findAndCancel( queue_index pindex, NABoolean startFromBegin
   // if so, change downstate.request to GET_NOMORE & return TRUE, 
   // if not found, return FALSE.
   // save and restore tuppDescIndex_, regardless of outcome.
-#pragma nowarn(1506)   // warning elimination 
   Lng32 saveTuppDescIndex = tuppDescIndex_;
-#pragma warn(1506)  // warning elimination 
   NABoolean wasFound = FALSE;
 
   if (startFromBeginning)
@@ -1729,17 +1620,14 @@ void SqlBufferNormal::printInfo() {
     << " maxTuppDesc: " << maxTuppDesc_
     << " freeSpace: " << freeSpace_
     << " numInvalidTuplesUptoCurrentPosition:  " << numInvalidTuplesUptoCurrentPosition_ ;
-#pragma warn(161)   // warning elimination 
   Lng32 refcount = 0;
   Lng32 firstref = -1;
-#pragma warning (disable : 4018)   //warning elimination
   for (Int32 i = 0; (i < maxTuppDesc_); i++)
     if (tupleDesc(i)->getReferenceCount()) {
       if (firstref == -1)
 	firstref = i;
       refcount++;
     };
-#pragma warning (default : 4018)   //warning elimination
   cerr << " ref tupps: " << refcount << " first: " << firstref << endl;
 };
 
@@ -1748,9 +1636,7 @@ void SqlBufferNormal::printInfo() {
 tupp_descriptor * SqlBufferNormal::getNext()
 {
   if (tuppDescIndex_ < maxTuppDesc_)
-#pragma nowarn(1506)   // warning elimination 
     return tupleDesc(tuppDescIndex_++);
-#pragma warn(1506)  // warning elimination 
   else
     return 0;
 }
@@ -1760,9 +1646,7 @@ tupp_descriptor * SqlBufferNormal::getNext()
 tupp_descriptor * SqlBufferNormal::getPrev()
 {
   if (tuppDescIndex_ > 0)
-#pragma nowarn(1506)   // warning elimination 
     return tupleDesc(tuppDescIndex_--);
-#pragma warn(1506)  // warning elimination 
   else
     return 0;
 }
@@ -1773,9 +1657,7 @@ tupp_descriptor * SqlBufferNormal::getPrev()
 // Returns NULL, if tupp_desc_num is greater than maxTuppDesc_.
 tupp_descriptor * SqlBufferNormal::getTuppDescriptor(Lng32 tupp_desc_num)
 {
-#pragma warning (disable : 4018)   //warning elimination
   if (tupp_desc_num > maxTuppDesc_)
-#pragma warning (default : 4018)   //warning elimination
     return 0;
   else
     return tupleDesc(tupp_desc_num-1);
@@ -1883,9 +1765,7 @@ SqlBufferDense::SqlBufferDense() : SqlBuffer(DENSE_)
 {
   currTupleDesc() = NULL;
   lastTupleDesc() = NULL;
-#pragma nowarn(161)   // warning elimination 
   numInvalidTuplesUptoCurrentPosition_  = (unsigned short) NO_INVALID_TUPLES;
-#pragma warn(161)   // warning elimination 
 
   str_pad(filler_, 2, '\0');
 }
@@ -1897,9 +1777,7 @@ void SqlBufferDense::init(ULng32 in_size_in_bytes,
 
   lastTupleDesc_ = NULL;
   currTupleDesc_ = NULL;
-#pragma nowarn(161)   // warning elimination 
   numInvalidTuplesUptoCurrentPosition_  = (unsigned short) NO_INVALID_TUPLES;
-#pragma warn(161)   // warning elimination 
 
   str_pad(filler_, 2, '\0');
 }
@@ -1910,9 +1788,7 @@ void SqlBufferDense::init()
 
   lastTupleDesc_ = NULL;
   currTupleDesc_ = NULL;
-#pragma nowarn(161)   // warning elimination 
   numInvalidTuplesUptoCurrentPosition_  = (unsigned short) NO_INVALID_TUPLES;
-#pragma warn(161)   // warning elimination 
 
   str_pad(filler_, 2, '\0');
 }
@@ -1922,9 +1798,7 @@ tupp_descriptor *SqlBufferDense::add_tuple_desc(Lng32 tup_data_size)
   ULng32 rounded_size = ROUND8(tup_data_size);
   short td_size = ROUND8(sizeof(TupleDescInfo));
   
-#pragma nowarn(1506)   // warning elimination 
   Lng32 freeSpaceNeeded = td_size + rounded_size;
-#pragma warn(1506)  // warning elimination 
   if (freeSpace_ < freeSpaceNeeded) // no free space to allocate this tuple
     return NULL;
   
@@ -2019,11 +1893,9 @@ void SqlBufferDense::position()
 void SqlBufferDense::position(Lng32 tupp_desc_num)
 {
   position();
-#pragma warning (disable : 4018)   //warning elimination
   while ((tuppDescIndex_ != tupp_desc_num) &&
          (tuppDescIndex_ < maxTuppDesc_))
     advanceDense();
-#pragma warning (default : 4018)   //warning elimination
 }
 
 // returns the 'next' tuple descriptor. Increments the
@@ -2062,10 +1934,8 @@ tupp_descriptor * SqlBufferDense::getPrev()
 // Returns NULL, if tupp_desc_num is greater than maxTuppDesc_.
 tupp_descriptor * SqlBufferDense::getTuppDescriptor(Lng32 tupp_desc_num)
 {
-#pragma warning (disable : 4018)   //warning elimination
   if (tupp_desc_num > maxTuppDesc_)
     return 0;
-#pragma warning (default : 4018)   //warning elimination
   else
     return tupleDesc(tupp_desc_num-1);
 }
@@ -2484,9 +2354,7 @@ short sql_buffer_pool::get_free_tuple(tupp &tp, Lng32 tupDataSize,
   if (tupDataSize <= 0)
     tupDataSize = 8;
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 neededSpace = SqlBufferGetTuppSize(tupDataSize,bufType_);
-#pragma warn(1506)  // warning elimination 
 
   SqlBuffer *currBuffer;
   if (!(currBuffer =getCurrentBuffer(neededSpace)))
@@ -2555,9 +2423,7 @@ tupp_descriptor * sql_buffer_pool::get_free_tupp_descriptor(Lng32 tupDataSize,
   if(buf)
     *buf = NULL;
 
-#pragma nowarn(1506)   // warning elimination 
   Lng32 neededSpace = SqlBufferGetTuppSize(tupDataSize,bufType_);
-#pragma warn(1506)  // warning elimination 
   
   // get a buffer which is not FULL and can allocate tup_data_size 
   //SqlBuffer *currBuffer = (SqlBuffer*)getBuffer(neededSpace);
@@ -2628,7 +2494,6 @@ void sql_buffer_pool::compact_buffers()
     }
 }
 
-#if (!defined(NA_NSK) && defined(_DEBUG))  ||  !defined(__EID)
 // for debugging purposes
 void sql_buffer_pool::printAllBufferInfo() {
   staticBufferList_->position();
@@ -2640,7 +2505,6 @@ void sql_buffer_pool::printAllBufferInfo() {
   while (buf = (SqlBuffer *)dynBufferList_->getNext())
     buf->printInfo();
 };
-#endif
 
 SqlBufferBase * sql_buffer_pool::findBuffer(Lng32 freeSpace,
 					    Int32 mustBeEmpty)
@@ -2696,11 +2560,6 @@ SqlBufferBase * sql_buffer_pool::getBuffer(Lng32 freeSpace,
 
   result = findBuffer(freeSpace,mustBeEmpty);
 
-// #if defined(NA_WINNT) && defined(_DEBUG)
-//   if (! result)
-//     printAllBufferInfo();
-// #endif
-
   if (! result)
     {
       if (staticMode())
@@ -2711,7 +2570,6 @@ SqlBufferBase * sql_buffer_pool::getBuffer(Lng32 freeSpace,
 	  // (guess that there are 10)
 	  Lng32 neededStaticBufferSize;
 
-#pragma warning (disable : 4018)   //warning elimination
 	  if (freeSpace > 0)
 	    neededStaticBufferSize = 
 	      MINOF((Lng32) SqlBufferNeededSize(
@@ -2719,7 +2577,6 @@ SqlBufferBase * sql_buffer_pool::getBuffer(Lng32 freeSpace,
 		   freeSpace,
 		   bufType_),
 		    defaultBufferSize_);
-#pragma warning (default : 4018)   //warning elimination
 	  else
 	    neededStaticBufferSize = defaultBufferSize_;
 
@@ -2817,7 +2674,7 @@ sql_buffer_pool::moveIn(atp_struct *atp1,
     }
     if (!get_free_tuple(atp2->getTupp(tuppIndex), defRowLen))
     {
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
       char txt[] = "hashj";
       SqlBuffer *buf = getCurrentBuffer();
       sql_buffer_pool::logDefragInfo(txt,
@@ -3048,14 +2905,11 @@ SqlBufferBase::moveStatus
 
   // since we are not allocating a tupp desc to indicate the input
   // row length, set this value in the sizeInBytes_ field.
-#pragma nowarn(1506)   // warning elimination 
   sizeInBytes_ = sizeof(SqlBufferOltSmall) + projRowLen;
-#pragma warn(1506)  // warning elimination 
   
   return MOVE_SUCCESS;
 }
 
-#pragma nowarn(770)   // warning elimination 
 SqlBufferBase::moveStatus 
   SqlBufferOlt::moveInReplyData(NABoolean doMoveControl,
 				NABoolean doMoveData,
@@ -3190,7 +3044,6 @@ SqlBufferBase::moveStatus
 
   return MOVE_SUCCESS;
 }
-#pragma warn(770)  // warning elimination 
 
 SqlBufferBase::moveStatus 
   SqlBufferOlt::moveInSendOrReplyData(NABoolean isSend,
@@ -3214,7 +3067,7 @@ SqlBufferBase::moveStatus
 				      NABoolean useExternalDA,
 				      NABoolean callerHasExternalDA,
 				      tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 				      ,ex_tcb * tcb
 #endif
 				       ,NABoolean noMoveWarnings
@@ -3313,9 +3166,7 @@ SqlBufferBase::moveStatus
 	  setContents(ERROR_);
 
 	  // allocate space for error diags area.
-#pragma nowarn(1506)   // warning elimination 
 	  tdesc = getNextTuppDesc(NULL, diagsArea->packedLength());
-#pragma warn(1506)  // warning elimination 
 	}
       else
 	{
@@ -3353,9 +3204,7 @@ SqlBufferBase::moveStatus
 	  }
 
 	// move diags area plus warning(s)
-#pragma nowarn(1506)   // warning elimination 
 	tdesc = getNextTuppDesc(tdesc, diagsArea->packedLength());
-#pragma warn(1506)  // warning elimination 
 
 	switch (getContents())
 	  {
@@ -3382,9 +3231,7 @@ SqlBufferBase::moveStatus
   if ((doMoveStats) && (statsArea != NULL))
     {
       // allocate space for stats area.
-#pragma nowarn(1506)   // warning elimination 
       tdesc = getNextTuppDesc(tdesc, statsArea->packedLength());
-#pragma warn(1506)  // warning elimination 
 
       if (statsDesc)
 	*statsDesc = tdesc;
@@ -3561,28 +3408,20 @@ NABoolean SqlBufferOltSmall::moveOutReplyData(void * currQState,
   short statsAreaLen = 0;
   if ((replyData()) || (replyStats()))
     {
-#pragma nowarn(1506)   // warning elimination 
       dataLoc = (Long)this + sizeof(SqlBufferOltSmall);
-#pragma warn(1506)  // warning elimination 
       if (replyData())
 	{
 	  replyDataLoc = dataLoc;
 	  if (replyStats())
-#pragma nowarn(1506)   // warning elimination 
 	    dataLoc = dataLoc + ROUND2(returnedRowLen);
-#pragma warn(1506)  // warning elimination 
 	  else
-#pragma nowarn(1506)   // warning elimination 
 	    dataLoc = dataLoc + ROUND4(returnedRowLen);
-#pragma warn(1506)  // warning elimination 
 	}
 
       if (replyStats())
 	{
 	  statsAreaLen = *(short*)dataLoc;
-#pragma nowarn(1506)   // warning elimination 
 	  statsAreaLoc = dataLoc + sizeof(short);
-#pragma warn(1506)  // warning elimination 
 	  //	  statsAreaLoc = ROUND8(statsAreaLoc);
 	  dataLoc = statsAreaLoc + ROUND8(statsAreaLen);
 	}
@@ -3621,7 +3460,7 @@ NABoolean SqlBufferOltSmall::moveOutReplyData(void * currQState,
   return FALSE;
 }
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 void sql_buffer_pool::logDefragInfo(char * txt,
                                     Lng32 neededSpace,
                                     Lng32 actNeededSpace,

@@ -44,7 +44,6 @@
 char LmJavaHooks::textBuf_[LMJ_HOOK_TEXT_BUF_SIZE] = {'\0'};
 
 // Exclude the following methods for coverage as they are called when JVM aborts
-// LCOV_EXCL_START
 void JNICALL LmJavaHooks::abortHookJVM()
 {
   LM_DEBUG0("[HOOK] Invoking JVM abort hook");
@@ -127,7 +126,6 @@ jint JNICALL LmJavaHooks::vfprintfHookJVM(FILE *stream, const char *fmt,
   LM_DEBUG0("[END vfprintf hook]");
   return 0;
 }
-// LCOV_EXCL_STOP
 
 void LmJavaHooks::init_vfprintfHook()
 {

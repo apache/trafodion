@@ -100,7 +100,6 @@ private:
 /**
  * Exception thrown when an error in the program logic is found.
  */
-// LCOV_EXCL_START :rfi
 class QRLogicException : public QRException
 {
   public:
@@ -124,6 +123,5 @@ class QRLogicException : public QRException
     {}
 
 }; //QRLogicException
-// LCOV_EXCL_STOP
 
 #endif  /* _QRLOGGER_H_ */

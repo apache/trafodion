@@ -53,12 +53,7 @@
 #include "ComUser.h"
 #include "ExpError.h"
 #include "ComSqlId.h"
-#if !defined(__EID) && !defined(NA_WINNT)
-#endif
 #include "PortProcessCalls.h"
-
-
-
 #include "cextdecs/cextdecs.h"
 #include "security/dsecure.h"
 #define psecure_h_including_section
@@ -78,7 +73,7 @@ DEFINE_DOVERS(tdm_arkesp)
 #include "Context.h"
 #include "StmtCompilationMode.h"
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // ESP control connection, handle system messages
 // -----------------------------------------------------------------------
@@ -129,7 +124,7 @@ private:
   // we only need these members in non-WINNT builds.
 
 };
-#endif // NA_GUARDIAN_IPC || NA_GUARDIAN_MSG
+#endif // NA_GUARDIAN_IPC
 
 class EspSockControlConnection : public SockControlConnection
 {
@@ -301,11 +296,8 @@ GuaReceiveFastStart::GuaReceiveFastStart()
       awaitiox_ = TRUE;
       if (fileGetInfoError_ == 0 && awaitioxError_ == 6)
       {
-#ifdef SQ_NEW_PHANDLE
 	fileGetReceiveInfoError_ = BFILE_GETRECEIVEINFO_((FS_Receiveinfo_Type *)&receiveInfo_);
-#else
-	fileGetReceiveInfoError_ = BFILE_GETRECEIVEINFO_((short *)&receiveInfo_);
-#endif
+
 	// fileGetReceiveInfo_ -- altered
 	fileGetReceiveInfo_ = TRUE;
 	if (fileGetReceiveInfoError_ == 0)
@@ -330,7 +322,6 @@ GuaReceiveFastStart::GuaReceiveFastStart()
 // Startup handling of ESP
 // -----------------------------------------------------------------------
 
-#pragma nowarn(770)   // warning elimination 
 Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
 {
   // initialize ESP global data
@@ -414,7 +405,6 @@ Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
   // nobody wants us anymore, right now that means that we stop
   return 0;
 }
-#pragma warn(770)  // warning elimination 
 
 void DoEspStartup(Int32 argc,
 		  char **argv,
@@ -469,7 +459,7 @@ void DoEspStartup(Int32 argc,
   // create control connection (open $RECEIVE in Tandemese)
   switch (allocMethod)
     {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG)) // (3/19/97)
+#if (defined(NA_GUARDIAN_IPC))
     case IPC_LAUNCH_GUARDIAN_PROCESS:
     case IPC_SPAWN_OSS_PROCESS:
       {
@@ -489,7 +479,7 @@ void DoEspStartup(Int32 argc,
       env.setIdleTimestamp();
       }
      break;
-#endif //NA_GUARDIAN_IPC || NA_GUARDIAN_MSG
+#endif //NA_GUARDIAN_IPC
       
     case IPC_INETD:
     case IPC_POSIX_FORK_EXEC:
@@ -527,7 +517,7 @@ void DoEspStartup(Int32 argc,
     }
 }
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG)) // (3/19/97)
+#if (defined(NA_GUARDIAN_IPC))
 void EspGuaControlConnection::actOnSystemMessage(
        short                  messageNum,
        IpcMessageBufferPtr    sysMsg,
@@ -571,7 +561,6 @@ void EspGuaControlConnection::actOnSystemMessage(
         // Master is gone, stop this process and let the OS cleanup.
         if (getEnv()->getLogEspGotCloseMsg())
         {
-          // LCOV_EXCL_START
           /*
           Coverage notes: to test this code in a dev regression requires
           changing $TRAF_HOME/etc/ms.env, so I made a manual test on
@@ -585,14 +574,12 @@ void EspGuaControlConnection::actOnSystemMessage(
           char *sysMsgName = NULL;
           switch (messageNum)
           {
-          // LCOV_EXCL_STOP
           case ZSYS_VAL_SMSG_CPUDOWN:
             sysMsgName = (char *) "CPUDOWN";
             break;
           case ZSYS_VAL_SMSG_REMOTECPUDOWN:
             sysMsgName = (char *) "REMOTECPUDOWN";
             break;
-          // LCOV_EXCL_START
           case ZSYS_VAL_SMSG_CLOSE:
             sysMsgName = (char *) "CLOSE";
             break;
@@ -605,7 +592,6 @@ void EspGuaControlConnection::actOnSystemMessage(
                             sysMsgName, myName);
           SQLMXLoggingArea::logExecRtInfo(__FILE__, 
                                           __LINE__, buf, 0);
-          // LCOV_EXCL_STOP
         }
         getEnv()->stopIpcEnvironment();
       }
@@ -849,7 +835,7 @@ void EspNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
           // set.
           NABoolean doAuthIdCheck = TRUE;
           Int32 status = 0;
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           const char *envvar = getenv("NO_EXTRACT_AUTHID_CHECK");
           if (envvar && envvar[0])
             doAuthIdCheck = FALSE;
@@ -877,7 +863,7 @@ void EspNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
             // Make sure user id passed in ExMsgSecurityInfo matches
             // the user id associated with the current session
 
-#if defined(NA_DEBUG_C_RUNTIME)
+#if defined(_DEBUG)
             NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
             if (doDebug)
               printf("[DBUSER:%d] ESP extract user ID: "

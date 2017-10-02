@@ -54,13 +54,13 @@
 
 class ContextCli;
 class Attributes;
-class CliStatement;
+class Statement;
 
 // -----------------------------------------------------------------------
 // BulkMoveInfo
 // -----------------------------------------------------------------------
 
-class SQLCLI_LIB_FUNC BulkMoveInfo 
+class BulkMoveInfo 
 {
 public:
   friend class Descriptor;
@@ -129,9 +129,7 @@ private:
 // -----------------------------------------------------------------------
 // Descriptor
 // -----------------------------------------------------------------------
-#pragma warning (disable : 4275)   //warning elimination
-class SQLCLI_LIB_FUNC Descriptor : public ExGod {
-#pragma warning (default : 4275)   //warning elimination
+class Descriptor : public ExGod {
   enum Flags
   {
   /*************************************************************
@@ -387,7 +385,7 @@ class SQLCLI_LIB_FUNC Descriptor : public ExGod {
   BulkMoveInfo *bmInfo_;
 
   // the statement for which bulk move was done from/to this descriptor.
-  CliStatement * bulkMoveStmt_;
+  Statement * bulkMoveStmt_;
 
   ContextCli *context_;        // the context that contains this descriptor
 
@@ -729,7 +727,7 @@ public:
     return ((rowwiseRowsetV2()) && (NOT rowwiseRowsetDisabled()));
   }
 
-  CliStatement* &bulkMoveStmt() { return bulkMoveStmt_; }
+  Statement* &bulkMoveStmt() { return bulkMoveStmt_; }
 
   NABoolean isDescTypeWide();
   void setDescTypeWide(NABoolean v)

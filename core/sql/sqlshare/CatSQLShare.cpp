@@ -76,7 +76,6 @@
 // On LINUX, use 49 bits, for other platforms, use 51 bits
 #define MASK 0x1ffffffffffffLL
 
-#pragma nowarn(770)   // warning elimination 
 SQLShareInt64 CATSQLSHARE_LIB_FUNC
 generateUniqueValue (void)
 {
@@ -161,7 +160,6 @@ generateUniqueValue (void)
 
   return tempLastGeneratedUID;
 }
-#pragma warn(770)  // warning elimination
 
 //similar to generateUniqueValue
 //except that it is faster since it does not use 

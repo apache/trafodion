@@ -90,8 +90,8 @@ DEFINE_DOVERS(tdm_udrserv)
 // Global pointer to the UdrGlobals instance
 UdrGlobals *UDR_GLOBALS = NULL;
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf* ExportJmpBufPtr;
+extern THREAD_P jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf* ExportJmpBufPtr;
 
 void processASessionMessage(UdrGlobals *UdrGlob,
                             UdrServerReplyStream &msgStream,
@@ -168,13 +168,11 @@ static Int32 invokeUdrMethod(const char *method,
                            Int32 nTimesToInvoke,
                            UdrGlobals &glob);
 
-// LCOV_EXCL_START
 // Dead Code
 // These methods are not used, and the interface has not been tested for a long time.
 // We might want to retire them
 static Int32 processCommandsFromFile(const char *filename, UdrGlobals &glob);
 static Int32 processSingleCommandFromFile(FILE *f, UdrGlobals &glob);
-// LCOV_EXCL_STOP
 
 static NAString initErrText("");
 /*************************************************************************
@@ -361,7 +359,7 @@ Int32 main(Int32 argc, char **argv)
 
 static void runServer(Int32 argc, char **argv)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   UDR_DEBUG1("Process ID: %ld", (Lng32) GETPID());
   UDR_DEBUG0("[BEGIN argv]");
   Int32 i;
@@ -396,7 +394,7 @@ static void runServer(Int32 argc, char **argv)
     showMsgBox = TRUE;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   putenv((char *)"MXUDR_DEBUG_BUILD=1");
 #endif
 
@@ -483,7 +481,7 @@ static void runServer(Int32 argc, char **argv)
         UdrServerReplyStream *stream = replyStreams[0];
         replyStreams.removeAt(0);
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           Lng32 crashPoint = 0;
 #endif
         if (stream->moreObjects())
@@ -491,7 +489,7 @@ static void runServer(Int32 argc, char **argv)
           UdrIpcObjectType msgType =
            (UdrIpcObjectType) stream->getNextObjType();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           // Bring the process down if an environment variable value
           // matches the message type
           const char *crashString = getenv("MXUDR_CRASH_POINT");
@@ -511,7 +509,7 @@ static void runServer(Int32 argc, char **argv)
           // Do some real work on the incoming message
           processARequest(UDR_GLOBALS, *stream, *env);
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           // Bring the process down if the environment variable checked
           // earlier has a negative value and its positive value matches
           // the message type
@@ -1077,7 +1075,6 @@ void sendDataReply(UdrGlobals *UdrGlob,
 
 } // sendDataReply()
 
-// LCOV_EXCL_START
 static void displayUsageInfo()
 {
   fprintf(stdout, "Usage:\n"); 
@@ -1088,7 +1085,7 @@ static void displayUsageInfo()
   fprintf(stdout, "    Verify UDR Server and Language Manager startup.\n");
   fprintf(stdout, "\n");
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // The "-invoke" and "-obey" options are supported in the release
   // build but we do not tell users about them in this help message.
   fprintf(stdout, "  mxudr -invoke [-n N] [-param java|c] [-rs numRS]\n");
@@ -1115,7 +1112,6 @@ static void displayUsageInfo()
 
   fprintf(stdout, "\n");
 }
-// LCOV_EXCL_STOP
 
 NABoolean processCmdLine(UdrGlobals *UdrGlob, Int32 argc, char **argv)
 {
@@ -1149,7 +1145,6 @@ NABoolean processCmdLine(UdrGlobals *UdrGlob, Int32 argc, char **argv)
   UdrGlob->logFileProvided_ = FALSE;
 
 
-// LCOV_EXCL_START
   // NSK or Linux can use environment variables...
   if (const char *logFileName = getenv("UDRSERV_TRACE_FILENAME"))
   {
@@ -1196,7 +1191,6 @@ NABoolean processCmdLine(UdrGlobals *UdrGlob, Int32 argc, char **argv)
 
   if (UdrGlob->showUnload_)
     ServerDebug("    Trace Unload Module Active");
-// LCOV_EXCL_STOP
 
   //
   // Now we parse command-line arguments. We support the following
@@ -1364,7 +1358,6 @@ NABoolean processCmdLine(UdrGlobals *UdrGlob, Int32 argc, char **argv)
     // See if the user wants us to obey commands from a text file
     else if (!stricmp(argv[i], "-obey"))
     {
-      // LCOV_EXCL_START
       // Dead Code
       // obey option is not tested, and Andy thinks it should be obsoleted.
       UdrGlob->setCommandLineMode(TRUE);
@@ -1387,7 +1380,6 @@ NABoolean processCmdLine(UdrGlobals *UdrGlob, Int32 argc, char **argv)
       Int32 result = processCommandsFromFile(argv[i], *UdrGlob);
       exit(result);
 
-      // LCOV_EXCL_STOP
     } // -obey
 
   } // for each arg in argv
@@ -2205,7 +2197,6 @@ static Int32 invokeUdrMethod(const char *method,
 
 } // invokeUdrMethod()
 
-// LCOV_EXCL_START
 // Dead Code
 // Andy thinks we should retire this interface...
 
@@ -2458,7 +2449,6 @@ void udrAbort(const char *f, Int32 l, const char *m)
   makeTFDSCall(m, f, l, FALSE);
   // should not reach here
 }
-// LCOV_EXCL_STOP
 
 // Stubs
 #ifdef UDR_OSS_RELEASE

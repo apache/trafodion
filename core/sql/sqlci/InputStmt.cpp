@@ -249,9 +249,7 @@ Int32 InputStmt::getLine(char * input_str, FILE * nonstdin, Int32 first_line)
      {
        while ((a != '\n'&& a != '\t' && a != '-') && !feof(nonstdin))
        {
-#pragma nowarn(1506)   // warning elimination 
        	a = getc(nonstdin);
-#pragma warn(1506)  // warning elimination 
        }
       sqlci_env->resetPrevErrFlushInput();
       if (a == '\t' || a == '-')
@@ -259,9 +257,7 @@ Int32 InputStmt::getLine(char * input_str, FILE * nonstdin, Int32 first_line)
      }
 
      if (!skipGetc)
-#pragma nowarn(1506)   // warning elimination 
 	  	a = getc(nonstdin);
-#pragma warn(1506)  // warning elimination 
 
      skipGetc = 0;
 	  // if after a statement, there is no '\n'
@@ -606,23 +602,13 @@ Int32 InputStmt::readStmt(FILE * nonstdin, Int32 suppress_blank_line_output)
 	{
 	  Int32 eolSeenOrig = sqlci_env->eolSeenOnInput();
 
-	  if ((prompt && eolSeenOrig && !(sqlci_env->sqlciRWEnv()->isSelectInProgress()) && !(sqlci_env->isMXCSMode())) || (sqlci_env->prevErrFlushInput() && !nonstdin))
+	  if ((prompt && eolSeenOrig) || (sqlci_env->prevErrFlushInput() && !nonstdin))
 	  {
 
 	    cout << ">>";
 	    //cout << ">>" << endl;
 	  }
 
-	
-	  if (prompt && eolSeenOrig && sqlci_env->sqlciRWEnv()->isSelectInProgress())
-	  {
-		cout << "S>";
-	  }
-
-          if (prompt && eolSeenOrig && sqlci_env->isMXCSMode())
-          {
-              cout << "CS>";
-          }
 	  error = getLine(input_str, nonstdin, -1/*first line*/);
           sqlci_env->resetPrevErrFlushInput();
     // Let NSK ESC be equivalent of NT ^Z or F6, i.e. EOF
@@ -1046,9 +1032,7 @@ Int32 InputStmt::pack()
 		     // works on frags, not the packed string, so don't bother
 		     // converting the latter).
 		     char * frag = curr_fragment->fragment;
-#pragma nowarn(270)   // warning elimination 
 		     for (j = strlen(frag); j>0 && frag[j] != quote_seen; j--)
-#pragma warn(270)  // warning elimination 
 		       if (frag[j] == '\t')
 			 frag[j] = ' ';
 		    }
@@ -1107,9 +1091,7 @@ char * InputStmt::findEnd(char * s, size_t &quote_seen_pos)
 {
   char *orig = s;
   char quote_seen;
-#pragma nowarn(1506)   // warning elimination 
   for (quote_seen=quote_seen_pos=0; ; s++)
-#pragma warn(1506)  // warning elimination 
     switch (*s)
       {
       case '\'':
@@ -1120,9 +1102,7 @@ char * InputStmt::findEnd(char * s, size_t &quote_seen_pos)
 	    quote_seen_pos = s - orig + 1;	// +1: one-based position!
 	  }
 	else if (quote_seen == *s)
-#pragma nowarn(1506)   // warning elimination 
 	  quote_seen = quote_seen_pos = 0;
-#pragma warn(1506)  // warning elimination 
 	break;
       case ';':
 	if (!quote_seen)
@@ -1144,9 +1124,7 @@ void InputStmt::syntaxErrorOnMissingQuote(char * str)
   findEnd(str, quote_pos);
 
   // subtract one from quote_pos to convert 1-based offset to 0-based
-#pragma nowarn(1506)   // warning elimination 
   StoreSyntaxError(str, --quote_pos, sqlci_DA);
-#pragma warn(1506)  // warning elimination 
   sqlci_parser_syntax_error_cleanup(NULL,sqlci_env);
 }	// syntaxErrorOnMissingQuote
 
@@ -1252,9 +1230,7 @@ void InputStmt::logStmt(NABoolean noPrompt) const
       size_t fraglen = strlen(fragment->fragment);
       strncpy(&log_str[start], fragment->fragment, fraglen);
 
-#pragma nowarn(1506)   // warning elimination 
       sqlci_env->get_logfile()->Write(log_str, start + fraglen);
-#pragma warn(1506)  // warning elimination 
 
       delete [] log_str;
 
@@ -1359,9 +1335,7 @@ void InputStmt::processInsert()
 	  if (j-- == 0) break;
 	}
 
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(&text[text_pos], &command[command_pos], command_len);
-#pragma warn(1506)  // warning elimination 
       command_pos += command_len;
 
       text_pos += 2 * command_len + 1;
@@ -1378,9 +1352,7 @@ void InputStmt::processReplace()
 
   if (command_len > 0)
     {
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(&text[text_pos], &command[command_pos], command_len);
-#pragma warn(1506)  // warning elimination 
       command_pos += command_len;
 
       text_pos += command_len;
@@ -1422,12 +1394,8 @@ InputStmt::Option InputStmt::fix_string(const char * in_data,
 
   text = fixed_data;
   text_maxlen = strlen(in_data);
-#pragma nowarn(1506)   // warning elimination 
   str_pad(text, data_maxlen, ' ');
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(text, in_data, strlen(in_data));
-#pragma warn(1506)  // warning elimination 
 
   char c;
   Option option;
@@ -1435,12 +1403,10 @@ InputStmt::Option InputStmt::fix_string(const char * in_data,
   cout << ">>" << in_data << endl;
   cout << "..";
 
-#pragma nowarn(1506)   // warning elimination
   if (cin.peek() != '\n')
      cin.get(command, data_maxlen, '\n');
   else
      command[0] = '\0';
-#pragma warn(1506)  // warning elimination
  
   if (cin.eof())
     {
@@ -1500,12 +1466,10 @@ InputStmt::Option InputStmt::fix_string(const char * in_data,
 	  text[text_maxlen] = ' ';
 
 	  cout << "..";
-#pragma nowarn(1506)   // warning elimination 
           if (cin.peek() != '\n')
              cin.get(command, data_maxlen, '\n');
           else
              command[0] = '\0';
-#pragma warn(1506)  // warning elimination 
 	  if (cin.eof())
 	    {
 	      CLEAR_STDIN_EOF;
@@ -1605,9 +1569,7 @@ Int32 InputStmt::sectionMatches(const char * section_name)
   char tmp[10];
   size_t i = 0;
   for (i=0; i < 8; i++)
-#pragma nowarn(1506)   // warning elimination 
     tmp[i] = toupper(str[i]);
-#pragma warn(1506)  // warning elimination 
   tmp[i] = '\0';
   tmp[0] = '?';				// #SECTION -> ?SECTION
   if (strncmp(tmp, "?SECTION", 8) != 0)
@@ -1723,7 +1685,6 @@ static NABoolean isIfdefStmtTransition(NAString &nsUpTrim,  // toUpper+trimmed
 // The caller is responsible for ignoring all input between stmts on which
 // this function returns -1.
 //////////////////////////////////////////
-#pragma nowarn(770)   // warning elimination 
 Int32 InputStmt::isIgnoreStmt(const char *str, NABoolean *ignoreJustThis)
 {
   if (!str) {
@@ -1784,7 +1745,6 @@ Int32 InputStmt::isIgnoreStmt(const char *str, NABoolean *ignoreJustThis)
 
   return (ignoreAll ? -1 : 0);
 }       // isIgnoreStmt
-#pragma warn(770)  // warning elimination 
 
 //////////////////////////////////////////
 //  Block statement handler. 

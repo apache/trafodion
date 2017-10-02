@@ -94,18 +94,16 @@ public:
   // ---------------------------------------------------------------------
   //  Accessor Functions
   // ---------------------------------------------------------------------
-// warning elimination (removed "inline")
   CostScalar getResultCardinality() const 
   { CCMPASSERT (resultCardinality_ >= 0) ; 
     return resultCardinality_; 
   }
-// warning elimination (removed "inline")
   void setResultCardinality(CostScalar v)
   { CCMPASSERT (v >= 0) ;
     v.round();
     v.minCsOne();
     if ( v.getValue() > COSTSCALAR_MAX )
-      resultCardinality_ = COSTSCALAR_MAX; // LCOV_EXCL_LINE :rfi
+      resultCardinality_ = COSTSCALAR_MAX;
     else
       resultCardinality_ = v; 
   }   
@@ -124,7 +122,7 @@ public:
   void setMaxCardEst(CostScalar v)
     { //CCMPASSERT (v >= 0) ; 
       if ( v.getValue() > COSTSCALAR_MAX )
-        maxCardinality_ = COSTSCALAR_MAX; // LCOV_EXCL_LINE :rfi
+        maxCardinality_ = COSTSCALAR_MAX;
       else
         maxCardinality_ = v; 
     }   

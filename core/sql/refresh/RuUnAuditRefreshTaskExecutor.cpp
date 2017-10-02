@@ -206,17 +206,11 @@ void CRUUnAuditRefreshTaskExecutor::
 	if (0 < numOfIndexes_)
 	{
 		pUnAuditPopIndexdynamicContainer_ = 
-#pragma nowarn(1506)   // warning elimination 
 			new CRUSQLDynamicStatementContainer(numOfIndexes_);
-#pragma warn(1506)  // warning elimination 
 		pUnAuditAvailableIndeXdynamicContainer_ =
-#pragma nowarn(1506)   // warning elimination 
 			new CRUSQLDynamicStatementContainer(numOfIndexes_);
-#pragma warn(1506)  // warning elimination 
 		pUnAuditUnavailableIndeXdynamicContainer_ = 
-#pragma nowarn(1506)   // warning elimination 
 			new CRUSQLDynamicStatementContainer(numOfIndexes_);
-#pragma warn(1506)  // warning elimination 
 
 		pUnAuditPopIndexdynamicContainer_->LoadData(translator);
 		pUnAuditAvailableIndeXdynamicContainer_->LoadData(translator);
@@ -537,9 +531,7 @@ void CRUUnAuditRefreshTaskExecutor::ComposeMySql()
 			CRUTbl *pTbl = tblList.GetNext(pos);
 			myComposer.ComposeLock(pTbl->GetFullName(), FALSE /*shared*/);
 			pLockTablesTEDynamicContainer_->SetStatementText
-#pragma nowarn(1506)   // warning elimination 
 				(i,myComposer.GetSQL());
-#pragma warn(1506)  // warning elimination 
 			i++;
 		}
 	}
@@ -579,25 +571,19 @@ void CRUUnAuditRefreshTaskExecutor::ComposeIndexesSql()
 	
 		CDSString popIdxRqst;
 		GetRootMV().GetPopIndexCatApiRequestText(popIdxRqst, pddIndex);
-#pragma nowarn(1506)   // warning elimination 
 		pUnAuditPopIndexdynamicContainer_->SetStatementText(i, popIdxRqst);
-#pragma warn(1506)  // warning elimination 
 
 		CDSString availablepopIdxRqst;
 		GetRootMV().GetUpdateIndexStatusCatApiRequestText(availablepopIdxRqst, 
 														  TRUE, /*available*/
 														  pddIndex);
-#pragma nowarn(1506)   // warning elimination 
 		pUnAuditAvailableIndeXdynamicContainer_->SetStatementText(i, availablepopIdxRqst);
-#pragma warn(1506)  // warning elimination 
 
 		CDSString unavailableIdxRqst; 
 		GetRootMV().GetUpdateIndexStatusCatApiRequestText(unavailableIdxRqst, 
 														  FALSE, /*unavailable*/
 														  pddIndex);
-#pragma nowarn(1506)   // warning elimination 
 		pUnAuditUnavailableIndeXdynamicContainer_->SetStatementText(i, unavailableIdxRqst);
-#pragma warn(1506)  // warning elimination 
 	}
 }
 
@@ -803,9 +789,7 @@ void CRUUnAuditRefreshTaskExecutor::EpilogueHandleOnStatementMV()
 		CRUTbl *pTbl = tblList.GetNext(pos);
 	
 		CDMPreparedStatement *pStat = 
-#pragma nowarn(1506)   // warning elimination 
 			pLockTablesTEDynamicContainer_->GetPreparedStatement(i);
-#pragma warn(1506)  // warning elimination 
 
 		// Perform the LOCK TABLE statement on the used table
 		// (the lock overlaps the original RP open, therefore

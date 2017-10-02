@@ -159,7 +159,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
   // ****  information for GUI  *** -------------
 				 
@@ -478,7 +478,7 @@ private:
   ExExprPtr    checkInnerNullExpr_;                 // 296-303
   ExExprPtr    checkOuterNullExpr_;                 // 304-311
   ExExprPtr    afterJoinPred5_;                     // 312-319
-  Float32      hjMemEstInMbPerCpu_;                 // 320-323
+  Float32      hjMemEstInKBPerNode_;                 // 320-323
   Float32      bmoCitizenshipFactor_;               // 324-327
   Int32        pMemoryContingencyMB_;               // 328-331
   Int16        scratchIOVectorSize_;                // 332-333
@@ -506,7 +506,8 @@ private:
   // additional tuple for the min max values.
   ExCriDescPtr leftDownCriDesc_;                    // 352-369
   UInt16       hjFlags2_;                           // 370-371
-  char         fillersComTdbHashj_[4];              // 372-375
+  Float32      estMemoryUsage_;                     // 372-375
+  Float32        bmoQuotaRatio_;
   
 
 protected:
@@ -533,8 +534,8 @@ protected:
   Int32 getMemoryContingencyMB(void)
     { return pMemoryContingencyMB_; }
 
-  void    setHjMemEstInMbPerCpu(Float32 s) {hjMemEstInMbPerCpu_=s;}
-  Float32 getHjMemEstInMbPerCpu() {return hjMemEstInMbPerCpu_;}
+  void    setHjMemEstInKBPerNode(Float32 s) {hjMemEstInKBPerNode_=s;}
+  Float32 getHjMemEstInKBPerNode() {return hjMemEstInKBPerNode_;}
   Float32 hjGrowthPercent() {return Float32(hjGrowthPercent_/100.0);}
   void  setBmoMinMemBeforePressureCheck(UInt16 m)
   { bmoMinMemBeforePressureCheck_ = m ; }
@@ -544,6 +545,15 @@ protected:
   { bmoMaxMemThresholdMB_ = m ; }
   UInt16  getBMOMaxMemThresholdMB()
   { return bmoMaxMemThresholdMB_; }
+  void setEstimatedMemoryUsage(Float32 estMemory)
+    { estMemoryUsage_ = estMemory; }
+  virtual Float32 getEstimatedMemoryUsage(void)
+    { return estMemoryUsage_;}
+
+  void setBmoQuotaRatio(Float32 bmoQuotaRatio)
+    { bmoQuotaRatio_ = bmoQuotaRatio; }
+  virtual Float32 getBmoQuotaRatio(void)
+    { return bmoQuotaRatio_;}
 };
 
 inline ComTdb * ComTdbHashj::getLeftChildTdb() {

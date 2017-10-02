@@ -122,6 +122,7 @@ public:
                               + SyncBuffer->msgInfo.msg_offset; };
     inline int GetSyncHdrSize() { return  sizeof(cluster_state_def_t)
                                           + sizeof(msgInfo_t); };
+    struct sync_buffer_def * GetLastSyncBuffer() { return lastSyncBuffer_; };
     struct sync_buffer_def * GetSyncBuffer() { return SyncBuffer; };
     bool    IsShutdownActive( void );
     void    KillAll( CProcess *process );
@@ -131,6 +132,7 @@ public:
     struct internal_msg_def *PopMsg( struct sync_buffer_def *recvBuf );
     bool    SpaceAvail ( int msgSize );
     void    AddMsg (struct internal_msg_def *&msg, int msgSize );
+    void    SaveMyLastSyncBuffer( void );
     void    SetClusterConfig( CClusterConfig *clusterConfig ) { clusterConfig_ = clusterConfig; }
     void    SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, int **indexToPnid );
     void    RemoveFromSpareNodesList( CNode *node );
@@ -156,6 +158,7 @@ private:
     CNode  *tail_;  // tail of physical nodes linked list
     size_t  syncBufferFreeSpace_;
 
+    struct sync_buffer_def *lastSyncBuffer_;
     struct sync_buffer_def *SyncBuffer;
 
     void    AddLNodes( CNode  *node );

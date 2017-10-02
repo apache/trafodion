@@ -40,7 +40,6 @@
 
   #include "Collections.h"
 
-#pragma nowarn(1506)   // warning elimination 
 
 template <class T> NACollection<T>::~NACollection()
 {
@@ -73,10 +72,8 @@ void NACollection<T>::insert(CollIndex posToInsert,
 			     CollIndex newUsage)
 {
   // is a valid position and usage given?
-#ifndef PRIV_SRL 
   assert((posToInsert < MAX_COLL_INDEX) AND
 	 (newUsage    != UNUSED_COLL_ENTRY));
-#endif // PRIV_SRL 
   
   // do we need to increase the size?
   if (posToInsert >= maxLength_)
@@ -124,16 +121,12 @@ CollIndex NACollection<T>::resize(CollIndex newSize)
 	}
   
       // shouldn't even come close to this
-#ifndef PRIV_SRL 
       assert (newSize < MAX_COLL_INDEX);
-#endif // PRIV_SRL 
 
       // use a temp collection with the new size
       NACollection<T> newOne(heap_,newSize);
     
-#ifndef PRIV_SRL 
       assert(newSize >= usedLength_);
-#endif // PRIV_SRL 
 
       for (CollIndex i = FIRST_COLL_INDEX; i < usedLength_; i++)
 	{
@@ -175,9 +168,7 @@ template <class T> void NACollection<T>::allocate(CollIndex initLen)
 {
   // NOTE: this assumes that the heap_ data member has been set.
   // No other data members need to be set before calling this.
-#ifndef PRIV_SRL 
   assert(initLen < MAX_COLL_INDEX);
-#endif // PRIV_SRL 
  
   maxLength_  = initLen;
   usedLength_ = 0;
@@ -522,7 +513,7 @@ NASubCollection<T> & NASubCollection<T>::addSet( const NASubCollection<T> & othe
          else
             {
             Lng32 entryCount    = 0; 
-            Lng32 trailingWords = (Lng32) (wordSize_ - maxWords);   // warning elimination
+            Lng32 trailingWords = (Lng32) (wordSize_ - maxWords); 
 
             do
                {
@@ -1394,16 +1385,12 @@ K* NAHashBucket<K,V>::remove(K* key)
 template <class K, class V>
 NAHashDictionary<K,V>::NAHashDictionary(
 // see long detailed comment in Collections.h about the hash function param.
-//#if !defined(NA_UNIX) || defined(NA_LINUX)
 			ULng32 (*hashFunction)(const K &), 
-//#endif
 			ULng32 hashSize,
 			NABoolean enforceUniqueness,
 			NAMemory* heap)
 			: heap_(heap),
-//#if !defined(NA_UNIX) || defined(NA_LINUX)
 		       hash_(hashFunction),
-//#endif
 		       entries_(0), 
 		       enforceUniqueness_(enforceUniqueness)
 {
@@ -1414,9 +1401,7 @@ template <class K, class V>
 NAHashDictionary<K,V>::NAHashDictionary (const NAHashDictionary<K,V> & other,
                                          NAMemory * heap) 
      : heap_( (heap==NULL) ? other.heap_ : heap ),
-//#if !defined(NA_UNIX) || defined(NA_LINUX)
        hash_(other.hash_),
-//#endif
        entries_(other.entries_), 
        enforceUniqueness_(other.enforceUniqueness_)
 {
@@ -1471,7 +1456,6 @@ void NAHashDictionary<K,V>::createHashTable(ULng32 hashSize)
 template <class K, class V>
 ULng32 NAHashDictionary<K,V>::getHashCode(const K& key) const
 {
-//#if defined(NA_UNIX) && !defined(NA_LINUX)
   // use the key's hash method to get the hash value
 //  unsigned long hashValue = key.hash() % hashSize_;
 //#else
@@ -1546,14 +1530,12 @@ NAHashDictionaryIterator<K,V>::~NAHashDictionaryIterator()
 template <class K, class V>
 void NAHashDictionaryIterator<K,V>::getNext(K*& key, V*& value)
 {
-#pragma warning (disable : 4018)  //warning elimination
   if (iteratorPosition_ < iterator_.entries())
     {
       key = iterator_[iteratorPosition_]->getKey();
       value = iterator_[iteratorPosition_]->getValue();
       iteratorPosition_++ ;
     }
-#pragma warning (default : 4018)  //warning elimination
   else
     {
       // If the application has advanced the iterator beyond the number
@@ -1629,5 +1611,4 @@ Int32 NAHashDictionary<K,V>::printStatistics(char *buf)
   return c;
 } //  NAHashDictionary<K,V>::printStatistics()
 
-#pragma warn(1506)   // warning elimination 
 

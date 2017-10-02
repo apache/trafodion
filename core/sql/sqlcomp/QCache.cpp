@@ -301,7 +301,6 @@ CompilerEnv::CompilerEnv(NAHeap *h, CmpPhase phase,
         case QUERY_CACHE_STATISTICS_FILE:
         case QUERY_TEMPLATE_CACHE:
         case QUERY_TEXT_CACHE:
-        case QUERY_CACHE_MPALIAS:
         case SHARE_TEMPLATE_CACHED_PLANS: 
           break;
           // skip these CQD settings -- they are represented in CacheKey
@@ -596,10 +595,13 @@ NABoolean ParameterTypeList::operator==(const ParameterTypeList& other) const
   if (nParms != other.entries()) {
     return FALSE;
   }
+  const NABoolean STRICT_CHK=FALSE;
+  NABoolean typeEqual;
   for (CollIndex i = 0; i < nParms; i++) {
-    const NABoolean STRICT_CHK=FALSE;
-    if (NOT (at(i).type_->isCompatible(*other.at(i).type_)) ||
-        other.at(i).type_->errorsCanOccur(*at(i).type_, STRICT_CHK)) {
+    typeEqual = (at(i).type_ == other.at(i).type_);
+    if (!typeEqual && // if types are equal don't check any further
+	(!(at(i).type_->isCompatible(*other.at(i).type_)) ||
+	 other.at(i).type_->errorsCanOccur(*at(i).type_, STRICT_CHK))) {
       return FALSE;
     }
     if (*at(i).posns_ != *other.at(i).posns_) 
@@ -1990,7 +1992,6 @@ ULng32 QCache::getSizeOfPostParserEntry(KeyDataPair& entry)
     + sizeof(CacheEntry) + CacheHashTbl::getBucketEntrySize();
 }
 
-// LCOV_EXCL_START
 // this routine is used for debugging qcache bugs only
 void QCache::sanityCheck(Int32 mark)
 {
@@ -2001,7 +2002,6 @@ void QCache::sanityCheck(Int32 mark)
     getSizeOfPostParserEntry(entry);
   }
 }
-// LCOV_EXCL_STOP
 
 // return TRUE iff cache can accommodate a new entry of this size
 NABoolean QCache::canFit(ULng32 size)
@@ -2484,27 +2484,6 @@ void QCache::deCacheAll(TextKey *stmt, RelExpr *qry)
   // else it's not in cache, so we're done
 }
 
-// decache all mpalias queries
-// LCOV_EXCL_START
-void QCache::deCacheAliases()
-{
-  // decache all entries whose keys indicate they are mpalias queries
-  LRUList::iterator mru = begin();
-  while (mru != end()) {
-    KeyDataPair& entry = *mru;
-    // am I an mpalias query?
-    if (entry.first_ &&
-        !((CacheKey*)(entry.first_))->contains(AM_AN_MPALIAS_QUERY))
-      ++mru; // no, advance to next entry.
-    else { // yes.
-      if (entry.first_)
-        deCache((CacheKey*)(entry.first_)); // decache it.
-      mru = begin(); // restart iterator.
-    }
-  }
-}
-// LCOV_EXCL_STOP
-
 // increment number of compiles
 void QCache::incNOfCompiles(IpcMessageObjType op)
 {
@@ -2756,7 +2735,7 @@ QCache* QCache::resizeCache(ULng32 maxSize, ULng32 maxVictims)
         freeLRUentries(getFreeSize() + currentSize - maxSize -
                  ULng32(totalHashTblSize_ * 
                          (1 - float(maxSize) / currentSize)), 
-                 INT_MAX);  // NA_64BIT - revisit if large value is needed.
+                 INT_MAX);
       }
     }
     else { // desired size is bigger

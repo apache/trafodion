@@ -92,7 +92,6 @@ void CRUDupElimGlobals::Init(
 //
 //	Singletone initialization from the IPC buffer
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimGlobals::LoadData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.ReadBlock(&isRangeResolv_, sizeof(BOOL));
@@ -107,14 +106,12 @@ void CRUDupElimGlobals::LoadData(CUOFsIpcMessageTranslator &translator)
 	translator.ReadBlock(&wasPrevDEInvocationCompleted_, sizeof(BOOL));
 	translator.ReadBlock(&isSkipCrossTypeResoultion_, sizeof(BOOL));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDupElimGlobals::StoreData()
 //
 //	Serialization to the IPC buffer
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimGlobals::StoreData(CUOFsIpcMessageTranslator &translator)
 {
 	translator.WriteBlock(&isRangeResolv_, sizeof(BOOL));
@@ -129,4 +126,3 @@ void CRUDupElimGlobals::StoreData(CUOFsIpcMessageTranslator &translator)
 	translator.WriteBlock(&wasPrevDEInvocationCompleted_, sizeof(BOOL));
 	translator.WriteBlock(&isSkipCrossTypeResoultion_, sizeof(BOOL));
 }
-// LCOV_EXCL_STOP

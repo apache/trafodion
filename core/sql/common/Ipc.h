@@ -67,13 +67,7 @@
 #include "ComExeTrace.h"
 #include <time.h>
 
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
 #include "seabed/fs.h"
-#endif // NA_LINUX
-
-#ifdef ERROR_STATE
-#undef ERROR_STATE
-#endif // ERROR_STATE
 
 // -----------------------------------------------------------------------
 // Contents of this file
@@ -185,8 +179,7 @@ public:
   // IpcNodeName(const IpcProcessId &proc);
   // make a node name from an Internet address or from a phandle
   IpcNodeName(const SockIPAddress &iPNode);
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG) || defined(NA_HSC))
-// LCOV_EXCL_START
+#if (defined(NA_GUARDIAN_IPC))
   IpcNodeName(const GuaProcessHandle &phandle);
   // Return the Guardian node name as a character string, without trailing spaces.
   inline void getNodeNameAsString (char * nodeName) const
@@ -198,7 +191,6 @@ public:
       else
         nodeName[i+1] = 0;
   };
-// LCOV_EXCL_STOP
 #endif
   IpcNodeName & operator = (const IpcNodeName &other);
   NABoolean operator == (const IpcNodeName &other);
@@ -274,39 +266,26 @@ const Int32 NumIpcConnTraces = 8;
 // -----------------------------------------------------------------------
 struct GuaProcessHandle
 {
-#if (defined(NA_LINUX) && defined (SQ_NEW_PHANDLE))
   SB_Phandle_Type phandle_;
-#else
-  // on NSK systems, this is called a PHANDLE
-  short phandle_[10];
-#endif // NA_LINUX
 
   NABoolean operator == (const GuaProcessHandle &other) const;
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   NABoolean compare(const GuaProcessHandle &other) const;
   NABoolean fromAscii(const char *ascii);
   Int32 toAscii(char *ascii, Int32 asciiLen) const;
 #endif
-#if (defined (NA_LINUX) && defined(SQ_NEW_PHANDLE))
   Lng32 decompose(Int32 &cpu, Int32 &pin, Int32 &nodeNumber
-#ifdef SQ_PHANDLE_VERIFIER
                   , SB_Int64_Type &seqNum
-#endif
                   ) const;
-#else
-  Lng32 decompose(short &cpu, short &pin, Int32 &nodeNumber) const;
-#endif // NA_LINUX
 
   Int32 decompose2(Int32 &cpu, Int32 &pin, Int32 &node
-#ifdef SQ_PHANDLE_VERIFIER
                   , SB_Int64_Type &seqNum
-#endif
                   ) const;
 
   void dumpAndStop(bool doDump, bool doStop) const;
 };
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 class MyGuaProcessHandle : public GuaProcessHandle
 {
 public:
@@ -477,10 +456,8 @@ private:
 
   // the domain under which this process is addressable
   IpcNetworkDomain domain_;
-#ifdef NA_64BIT
   // to make phandle_ 8-byte aligned
   Int32 spare_;
-#endif
 
   union
     {
@@ -490,7 +467,7 @@ private:
 
   // private methods
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   IpcCpuNum getCpuNumFromPhandle() const;
 #endif
 };
@@ -1081,7 +1058,7 @@ private:
   SockIPAddress  ipAddr_;
 };
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // A Guardian connection on the client side that connects to a server
 // by opening its process file
@@ -1100,10 +1077,6 @@ public:
 			, NABoolean parallelOpen = FALSE
 			, Int32 *openCompletionScheduled = NULL
                         , NABoolean dataConnectionToEsp = FALSE
-#ifndef SQ_PHANDLE_VERIFIER
-                        , time_t childCreationTimeSec = 0
-                        , long childCreationTimenSec = 0
-#endif
                         );
 
   virtual ~GuaConnectionToServer();
@@ -1194,10 +1167,6 @@ private:
   void handleIOErrorForStream(IpcMessageStreamBase *msgStream);
   void handleIOErrorForEntry(ActiveIOQueueEntry &entry);
   void cleanUpActiveIOEntry(ActiveIOQueueEntry &entry);
-#ifndef SQ_PHANDLE_VERIFIER
-  // Fix for CR 7128
-  bool childProcessPidRecycled();
-#endif
 
   // ---------------------------------------------------------------------
   // The send and receive queues of a Guardian connection to a server are
@@ -1288,18 +1257,7 @@ private:
   Int32             openRetries_;
   struct timespec   beginOpenTime_;
   struct timespec   completeOpenTime_;
-#ifndef SQ_PHANDLE_VERIFIER
-                    // Fix for CR 7128
-                    // this childCreationTime_ is non-zero only for
-                    // control connections from master to servers that
-                    // the master created.
-  struct timespec   childCreationTime_;
-#endif
   NABoolean         tscoOpen_;
-#if 0
-  char *sentMsgHdr_;
-  short sentMsgHdrInd_;
-#endif
 };
 
 // -----------------------------------------------------------------------
@@ -1541,7 +1499,7 @@ private:
   SockListnerPort *listnerPort_;
 };
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // A control connection for a Guardian server using $RECEIVE
 // -----------------------------------------------------------------------
@@ -2008,21 +1966,13 @@ public:
   InternalMsgHdrInfoStruct(IpcBufferedMsgStream* msgStream);
   
   // get header sequence number (used to preserve send order)
-#ifdef NA_64BIT
-  // dg64 - 32-bit seq number
+  // 32-bit seq number
   UInt32  getSeqNum() const
-#else
-  ULng32 getSeqNum() const
-#endif
     { return(seqNum_); }
 
   // set header sequence number
-#ifdef NA_64BIT
-  // dg64 - 32-bit seq number
+  // 32-bit seq number
   void setSeqNum(UInt32  seqNum)
-#else
-  void setSeqNum(ULng32 seqNum)
-#endif
     { seqNum_ = seqNum; }
 
   short getSockReplyTag() const
@@ -2090,18 +2040,8 @@ public:
   short             flags_;        // enum IpcMessageObjFlags
   short             format_;       // compressed, ...
   short             sockReplyTag_; // spare for Guardian, reply tag for sock.
-#ifdef NA_64BIT
-  // dg64 - 32-bit eye
   Int32               eyeCatcher_;   // bit pattern to detect junk messages
-#else
-  Lng32              eyeCatcher_;   // bit pattern to detect junk messages
-#endif
-#ifdef NA_64BIT
-  // dg64 - 32-bit seq num
   UInt32      seqNum_;       // sequence number to preserve send order 
-#else
-  ULng32     seqNum_;       // sequence number to preserve send order 
-#endif
   // stream id is actually the pointer to the stream
   Long		msgStreamId_;  // stream id for coalescing multi-buf msg
 
@@ -2385,7 +2325,6 @@ private:
 // -----------------------------------------------------------------------
 // IpcBufferedMsgStream
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)  // warning elimination 
 class IpcBufferedMsgStream : public IpcMessageStreamBase
 {
 friend class IpcClientMsgStream;
@@ -2577,7 +2516,6 @@ private:
 
   NABoolean smContinueProtocol_;
 }; 
-#pragma warn(1506)  // warning elimination  
 
 // ----------------------------------------------------------------------------
 // IpcClientMsgStream
@@ -2789,7 +2727,7 @@ protected:
   virtual void stop();
 };
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // Specialization for a Guardian server process
 // -----------------------------------------------------------------------
@@ -2946,14 +2884,6 @@ private:
   // when sending messages, don't delete the message until the I/O completed
   char        * activeMessage_;
 
-#ifndef SQ_PHANDLE_VERIFIER
-  // When stopping an ESP by name, check the ESPs creation timestamp 
-  // to see if the ESP was started by this master.  Helps when process
-  // names are reused.  See ALM CR 4528.  When SQF is enhanced to 
-  // handle this problem (see enhancement CR 4780) we can remove this 
-  // work-around logic.
- struct timespec creationTime_;
-#endif
  NABoolean unhooked_;
 };
 #endif /* NA_GUARDIAN_IPC */
@@ -3509,12 +3439,8 @@ private:
 // -----------------------------------------------------------------------
 // Default heap for IPC, using global operator new and delete
 // -----------------------------------------------------------------------
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream; // needed for decl below
-#endif
 
 // convenience function to make sure a diagnostics area is allocated
 void IpcAllocateDiagsArea(ComDiagsArea *&diags, CollHeap *diagsHeap);

@@ -57,7 +57,6 @@
  *	-1 - Invalid sequence (EILSEQ)
  *	-2 - Input incomplete
  */
-NA_EIDPROC
 int
 __gbk_index(_LC_fcconv_iconv_t * cd, uchar_t **in, int len)
 {
@@ -97,7 +96,6 @@ __gbk_index(_LC_fcconv_iconv_t * cd, uchar_t **in, int len)
  * This routine performs the conversion from a GBK code to GBK:GLGR
  * code.
  */
-NA_EIDPROC
 int
 __gbk_to_gbkglgr(WChar_t code)
 {
@@ -109,7 +107,6 @@ __gbk_to_gbkglgr(WChar_t code)
 /*
  * This routine maps UDC characters in Unicode to those in GBK
  */
-NA_EIDPROC
 WChar_t
 __UDC_to_gbk(ucs4_t ucs)
 {

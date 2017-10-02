@@ -52,7 +52,6 @@ ComTdbUnion::ComTdbUnion() :
 }
 
 
-// LCOV_EXCL_START
 // not called, tested by removing the code and testing
 ComTdbUnion::ComTdbUnion(const ComTdbUnion *union_tdb)
   : ComTdb(ComTdb::ex_UNION,
@@ -77,7 +76,6 @@ ComTdbUnion::ComTdbUnion(const ComTdbUnion *union_tdb)
     csErrFlags_(union_tdb->csErrFlags_)
 {
 }
-// LCOV_EXCL_STOP
 
 ComTdbUnion::ComTdbUnion(ComTdb * left_tdb,
 			 ComTdb * right_tdb,
@@ -164,10 +162,8 @@ Int32 ComTdbUnion::numChildren() const
   return ( ( tdbRight_ == (ComTdbPtr) NULL ) ? 1 : 2 );
 }
 
-// LCOV_EXCL_START
 // exclude from code coverage since this is used only GUI
 void ComTdbUnion::display() const {}; 
-// LCOV_EXCL_STOP
 
 Long ComTdbUnion::pack(void * space)
 {
@@ -225,14 +221,14 @@ const char * ComTdbUnion::getExpressionName(Int32 pos) const
     return NULL;
 }
 
-NA_EIDPROC void ComTdbUnion::displayContents(Space * space,ULng32 flag)
+void ComTdbUnion::displayContents(Space * space,ULng32 flag)
 {
       ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 
       if(flag & 0x00000008)
         {
 		      char buf[100];
-	   		str_sprintf(buf, "\nFor ComTdbUnion :\nFlags = %b, unionReclen = %d ",
+	   		str_sprintf(buf, "\nFor ComTdbUnion :\nFlags = %x, unionReclen = %d ",
       						flags_,unionReclen_);
 		      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }

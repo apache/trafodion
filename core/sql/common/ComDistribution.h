@@ -39,10 +39,8 @@
 #include "NABoolean.h"
 #include "ComSizeDefs.h"
 #include "ComCharSetDefs.h"
-#if !defined (ARKFS_OPEN) 
-  #include "ComDiags.h"
-  #include "ComSmallDefs.h"
-#endif
+#include "ComDiags.h"
+#include "ComSmallDefs.h"
 
   #ifndef __DERROR__
     #include "fs/feerrors.h"
@@ -147,13 +145,11 @@ ComBuildANSIName ( const char * catalogName,   // in, catalog name (internal for
 //  Convert between various enums and literals. Output literal must 
 //  be at least 3 characters.
 //
-#pragma nowarn(449)   // Disregard warning 449: No constructor to 
 typedef struct        // initialize const members
 {
   Int32                      enum_;
   const char *               literal_;
 } literalAndEnumStruct;
-#pragma warn(449)
 
 // General enum to literal translation
 void enumToLiteral ( const literalAndEnumStruct * conversionTable,
@@ -307,8 +303,6 @@ void ComFeatureVersionInfoSPInputTypeToLiteral ( const FeatureVersionInfoSPInput
 FeatureVersionInfoSPInputType ComFeatureVersionInfoSPLiteralToInputType 
                                                ( const char * inputTypeLiteral );
 
-
-#if !defined (ARKFS_OPEN) 
 //----------------------------------------------------------------------
 //
 //  Translate an anchor file access error to something more sensible.
@@ -352,9 +346,7 @@ private:
 //         objects survive the table name's allocation.
 //
 //     NB: Metadata access through DDOL will not use this class in R2.0. That is,
-//         utilities will not perform the SMD table error translation. The RFork
-//         error translation is done by the DDL layer, utilities that access RForks 
-//         using classes from DDL will see RFork access error translation.
+//         utilities will not perform the SMD table error translation.
 //
 class MetaDataErrorTranslator : public ComDiagsTranslator
 {
@@ -408,8 +400,6 @@ private:
   Lng32 nskError_;
 
 };
-
-#endif
 
 //----------------------------------------------------------------------
 //

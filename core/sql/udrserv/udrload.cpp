@@ -372,13 +372,13 @@ void processALoadMessage(UdrGlobals *UdrGlob,
     ServerDebug("[UdrServ (%s)] About to send LOAD reply", moduleName);
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   if (UdrGlob && UdrGlob->getJavaLM())
   {
     sleepIfPropertySet(*(UdrGlob->getJavaLM()),
                        "MXUDR_LOAD_DELAY", diags);
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   sendControlReply(UdrGlob, msgStream, sp);
 
@@ -585,7 +585,6 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
   return sp;
 } // processLoadParameters
 
-// LCOV_EXCL_START
 void displayLoadParameters(UdrLoadMsg &request)
 {
   ServerDebug("");
@@ -713,7 +712,6 @@ void displayLoadParameters(UdrLoadMsg &request)
   ServerDebug("");
   
 } // displayLoadParameters
-// LCOV_EXCL_STOP
 
 void reportLoadResults(UdrGlobals *UdrGlob, SPInfo *sp, LmRoutine *lmr_)
 {

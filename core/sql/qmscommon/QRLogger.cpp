@@ -332,7 +332,6 @@ void QRLogger::introduceSelf ()
 // form of the query, cause an informational rather than an error notification
 // to be entered in the system log.
 // **************************************************************************
-// LCOV_EXCL_START :rfi
 void QRLogger::logError(const char* file, 
                             Int32       line, 
                             std::string &cat,
@@ -380,7 +379,6 @@ void QRLogger::logError(const char* file,
 
   va_end(args);
 }
-// LCOV_EXCL_STOP
 
 // This temporary function is used for logging QVP messages only. More extensive
 // changes to the CommonLogger hierarchy will be made when the QI integration
@@ -471,7 +469,6 @@ CommonTracer::CommonTracer(const char*   fnName,
 {
   if (level_ == TL_all)
   {
-    // LCOV_EXCL_START :cnu
     if (file_.length() == 0)
       logger_.log(category_, LL_DEBUG,
                   "Entering %s", fnName_.data());
@@ -479,7 +476,6 @@ CommonTracer::CommonTracer(const char*   fnName,
       logger_.log(category_, LL_DEBUG,
                   "Entering %s (file %s, line %d)",
                   fnName_.data(), file_.data(), line_);
-    // LCOV_EXCL_STOP
   }
 }
 
@@ -492,17 +488,15 @@ CommonTracer::~CommonTracer()
   if (level_ >= TL_exceptionOnly && std::uncaught_exception())
     logMsg.append("Exiting %s with uncaught exception");
   else if (level_ == TL_all)
-    logMsg.append("Exiting %s");  // LCOV_EXCL_LINE :cnu
+    logMsg.append("Exiting %s");
   else
     return;
 
   if (file_.length() > 0)
   {
-    // LCOV_EXCL_START :cnu
     logMsg.append("(file %s, line %d)");
     logger_.log(category_, LL_DEBUG,
                 logMsg, fnName_.data(), file_.data(), line_);
-    // LCOV_EXCL_STOP
   }
   else
   {

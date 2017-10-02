@@ -119,14 +119,14 @@ Lng32 ComTdbSortGrby::unpack(void * base, void * reallocator)
   if(havingExpr_.unpack(base, reallocator)) return -1;
   return ComTdb::unpack(base, reallocator);
 }
-NA_EIDPROC void ComTdbSortGrby::displayContents(Space * space,ULng32 flag)
+void ComTdbSortGrby::displayContents(Space * space,ULng32 flag)
 {
       ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 
       if(flag & 0x00000008)
         {
 	  			char buf[100];
-			   str_sprintf(buf, "\nFor ComTdbSortGrby :\nFlags = %b, recLen = %d ",flags_,recLen_ );
+			   str_sprintf(buf, "\nFor ComTdbSortGrby :\nFlags = %x, recLen = %d ",flags_,recLen_ );
       		space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 

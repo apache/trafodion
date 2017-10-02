@@ -66,7 +66,6 @@
 #include "FragDir.h"
 #include "HeapLog.h"
 #include "parser.h"
-#include "ReadTableDef.h"
 #include "RelControl.h"
 #include "RelExpr.h"
 #include "RelExeUtil.h"
@@ -1097,7 +1096,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
  }  // end of try block
 
- // LCOV_EXCL_START
  // exception handling
  catch(...)
  {
@@ -1112,7 +1110,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
     }
     rc = -1;
  }
- // LCOV_EXCL_STOP
 
 finally:
 
@@ -1399,7 +1396,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                         char* &srcStrBuf, Lng32 &srcStrSize)
 {
   Lng32 retcode = 0;
-  ULong stmtHandle = (ULong)stmt_id.handle;  // NA_64BIT
+  ULong stmtHandle = (ULong)stmt_id.handle;
 
   // Now get the generated code to describe the plan.
   // do not advance to next statement yet, if all stmts are to be retrieved.
@@ -1412,9 +1409,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                            &stmt_id);
 
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   rootTdbBuf = new (heap) char[rootTdbSize];
   srcStrBuf  = new (heap) char[srcStrSize+1];
@@ -1430,9 +1425,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                                        srcStrSize,
                                        &stmt_id);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   if (srcStrSize > 0)
     srcStrBuf[srcStrSize] = 0;
@@ -1670,9 +1663,7 @@ static short CmpDescribePlan(
 
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   //Allocate a SQL statement
   stmt_id.name_mode = stmt_handle;
@@ -1779,9 +1770,7 @@ static short CmpDescribePlan(
    // free up resources
   retcode = SQL_EXEC_DeallocDesc(&sql_src);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   retcode = SQL_EXEC_DeallocStmt(&stmt_id);
   if (retcode)
@@ -2322,7 +2311,7 @@ short CmpDescribeHiveTable (
           NAString bufnas(buf);
           outputLongLine(space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(space, buf);
         }
 
@@ -2449,7 +2438,7 @@ short CmpDescribeHiveTable (
       NAString bufnas(buf);
       outputLongLine(space, bufnas, 0);
 
-      str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+      str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
       outputShortLine(space, buf);
     }
 
@@ -3781,7 +3770,7 @@ short CmpDescribeSeabaseTable (
           NAString bufnas(buf);
           outputLongLine(*space, bufnas, 0);
 
-          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(*space, buf);
         }
     }

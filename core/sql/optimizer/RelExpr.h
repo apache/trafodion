@@ -293,22 +293,20 @@ public:
   // change literals in cacheable query's kids into ConstantParameters
   void normalizeKidsForCache(CacheWA& cachewa, BindWA& bindWA);
 
-  // How much memory do we expect this operator's executor to be able to use? 
-  // The method takes into consideration the memory needed by ODBC.
-  Lng32 getExeMemoryAvailable(NABoolean inMaster, Lng32 BMOsMemoryLimit) const;
-
   // How much memory do we expect this operator's executor to be able to use 
   // per ESP/master fragment ?
   Lng32 getExeMemoryAvailable(NABoolean inMaster) const;
 
   // compute the memory quota 
   double computeMemoryQuota(NABoolean inMaster,
-                            NABoolean perCPU,
+                            NABoolean perNode,
                             double BMOsMemoryLimit,
                             UInt16 totalNumBMOs,
                             double totalBMOsMemoryUsage,
                             UInt16 numBMOsPerFragment,
-                            double BMOsMemoryUsagePerFragment
+                            double BMOMemoryUsage,
+                            Lng32  numStreams,
+                            double &memQuotaRatio
                            );
 
  
@@ -355,14 +353,12 @@ public:
   // ---------------------------------------------------------------------
 
   // operator [] is used to access the children of a tree
-// warning elimination (removed "inline")
   virtual ExprGroupId & operator[] (Lng32 index)
     {
       CMPASSERT(index >= 0 AND index < MAX_REL_ARITY);
       return child_[index];
     }
 
-// warning elimination (removed "inline")
   virtual const ExprGroupId & operator[] (Lng32 index) const
     {
       CMPASSERT(index >= 0 AND index < MAX_REL_ARITY);
@@ -1177,7 +1173,6 @@ public:
                           const PartitioningFunction* partFunc,
                           NABoolean rewriteForChild0) ;
 
-// warning elimination (removed "inline")
   virtual void addPartKeyPredsToSelectionPreds(
                           const ValueIdSet& partKeyPreds,
                           const ValueIdSet& pivs)
@@ -1296,11 +1291,12 @@ public:
   // ---------------------------------------------------------------------
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
+/*
+  virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perNode) 
+      { return getEstimatedRunTimeMemoryUsage(perNode) / (1024*1024); }
+*/
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perCPU) 
-      { return getEstimatedRunTimeMemoryUsage(perCPU) / (1024*1024); }
-
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU) {return 0;}
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL) {return 0;}
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
 
   inline NABoolean isinBlockStmt() const
@@ -1682,7 +1678,6 @@ class CutOp : public RelExpr
 
 public:
 
-// warning elimination (removed "inline")
   CutOp (Int32 index,
                 CollHeap *oHeap = CmpCommon::statementHeap()) :
     RelExpr(REL_CUT_OP, NULL, NULL, oHeap)
@@ -1754,7 +1749,6 @@ class WildCardOp: public RelExpr
 
 public:
 
-// warning elimination (remove "inline")
   WildCardOp(OperatorType otype,
                     Int32 designator = 0,
                     RelExpr  *child0 = NULL,

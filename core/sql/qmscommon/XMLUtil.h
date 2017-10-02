@@ -120,7 +120,6 @@ typedef UInt32 NumericID;
 #define WHITESPACE " \t\n\r\v\f"
 #define XMLPARSEHEAP XML_GetNAHeap((XML_Parser)parser)
 
-// LCOV_EXCL_START :rfi
 /**
  * Exception thrown when an error occurs in processing or generating an XML
  * message.
@@ -163,7 +162,6 @@ class XMLException
     /** Buffer used to construct the message in. */
     char msgBuffer_[200];
 }; //XMLException
-// LCOV_EXCL_STOP
 
 /**
  * An \c NAString subclass with special formatting capabilities for XML. This
@@ -190,7 +188,6 @@ class XMLString : public NAString
     virtual ~XMLString()
       {}
 
-    // LCOV_EXCL_START :cnu
     /**
      * This function is effectively a no-op; it is redefined in the subclass
      * used for writing formatted XML.
@@ -270,7 +267,6 @@ class XMLString : public NAString
         append(charData);
         return *this;
       }
-    // LCOV_EXCL_STOP
 }; // XMLString
 
 /**
@@ -335,7 +331,6 @@ class XMLFormattedString : public XMLString
     virtual ~XMLFormattedString()
       {}
 
-    // LCOV_EXCL_START :cnu
     /**
      * Returns the nesting level for this string. The level starts at 0. It goes
      * up by one each time #incrementLevel is called, and down by one when
@@ -348,7 +343,6 @@ class XMLFormattedString : public XMLString
       {
         return level_;
       }
-    // LCOV_EXCL_STOP
 
     /**
      * Adds one to the current nesting level of the XML content being written
@@ -478,10 +472,8 @@ class XMLAttributeIterator
             inx_ += 2;
             inRange_ = TRUE;
           }
-        // LCOV_EXCL_START :rfi
         else
           throw XMLException("Attribute index out of range");
-        // LCOV_EXCL_STOP
       }
 
     /**
@@ -492,10 +484,8 @@ class XMLAttributeIterator
      */
     const char* getName() const
       {
-        // LCOV_EXCL_START :rfi
         if (!inRange_)
           throw XMLException("Attribute index out of range");
-        // LCOV_EXCL_STOP
         return *(atts_+inx_);
       }
 
@@ -507,10 +497,8 @@ class XMLAttributeIterator
      */
     const char* getValue() const
       {
-        // LCOV_EXCL_START :rfi
         if (!inRange_)
           throw XMLException("Attribute index out of range");
-        // LCOV_EXCL_STOP
         return *(atts_+inx_+1);
       }
 
@@ -869,7 +857,7 @@ class XMLElement : public NAIntrusiveSharedPtrObject
         // content.
         if (strspn(data, WHITESPACE) < (size_t)len)
           throw XMLException("Character content not allowed for element %s",
-                                      getElementName());  // LCOV_EXCL_LINE :rfi
+                                      getElementName());
       }
 
     /**

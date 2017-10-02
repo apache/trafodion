@@ -77,9 +77,7 @@ static void unsignedLongToAscii(ULng32 number, char * asciiString,
   char temp;
   Int32 i,j;
 
-#pragma nowarn(1506)   // warning elimination
   for (i = 0, j = strlen(asciiString)-1; i < j; i++, j--)
-#pragma warn(1506)  // warning elimination
     {
       temp = asciiString[i];
       asciiString[i] = asciiString[j];
@@ -802,7 +800,7 @@ NABoolean NumericType::createSQLLiteral(const char * buf,
 // -----------------------------------------------------------------------
 void NumericType::print(FILE* ofd, const char* indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s %s\n",indent,getTypeSQLname());
 #endif
 } // NumericType::print()
@@ -1078,7 +1076,6 @@ NAString* SQLSmall::convertToString(double v, CollHeap* h) const
 //  Methods for SQLBPInt
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 SQLBPInt::SQLBPInt(NAMemory *heap, UInt32 declared,
 		   NABoolean allowSQLnull,
 		   NABoolean allowNegValues)
@@ -1096,7 +1093,6 @@ SQLBPInt::SQLBPInt(NAMemory *heap, UInt32 declared,
   assert (allowNegValues == FALSE);
   declaredSize_ = declared;
 } // SQLBPInt()
-#pragma warn(1506)  // warning elimination
 
 // Are two BPInt types equal if they have different storage sizes??
 NABoolean SQLBPInt::operator==(const NAType& other) const
@@ -1493,8 +1489,6 @@ SQLNumeric::SQLNumeric(NAMemory *heap, Lng32 length, Lng32 precision, Lng32 scal
 } // SQLNumeric()
 
 
-// Note: DisAmbiguate arg added so Compiler can distinguish between
-//       this constructor and the one above...for 64bit project.
 SQLNumeric::SQLNumeric(NAMemory *heap, NABoolean allowNegValues, Lng32 precision, Lng32 scale,
                        const Int16 DisAmbiguate,
                        NABoolean allowSQLnull)
@@ -1720,9 +1714,7 @@ void SQLNumeric::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
         Lng32 i=0;
         for (; i<getPrecision(); i++)
           {
-#pragma nowarn(1506)   // warning elimination
             temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
           }
         
         for (i = 0; i < getNominalSize(); i++)
@@ -1776,12 +1768,7 @@ NAString* SQLNumeric::convertToString(double v, CollHeap* h)  const
         }
         break;
 
-#ifdef NA_64BIT
-        // dg64 - a bit of a guess
         case sizeof(Int32):
-#else
-        case sizeof(Lng32):
-#endif
         {
 	   Lng32 temp = (Lng32)v;
 	   signedLongToAscii(temp, nameBuf);
@@ -1870,12 +1857,7 @@ double SQLNumeric::getMinValue() const
 	    }
 	    break;
 
-#ifdef NA_64BIT
-            // dg64 - a bit of a guess
 	    case sizeof(Int32):
-#else
-	    case sizeof(Lng32):
-#endif
 	    {
 	       Lng32 temp = 0;
 	       Lng32 i=0;
@@ -1897,13 +1879,9 @@ double SQLNumeric::getMinValue() const
 	       Lng32 i=0;
 	       for (; i<getPrecision(); i++)
 	       {
-#pragma nowarn(1506)   // warning elimination
 		  temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
 	       }
-#pragma nowarn(1506)   // warning elimination
 	       temp = -temp;
-#pragma warn(1506)  // warning elimination
 
                temp *= pow(10.0, -1 * getScale());
                return double(temp);
@@ -1935,12 +1913,7 @@ double SQLNumeric::getMaxValue() const
         }
         break;
 
-#ifdef NA_64BIT
-        // dg64 - a bit of a guess
         case sizeof(Int32):
-#else
-        case sizeof(Lng32):
-#endif
         {
 	   Lng32 temp = 0;
 	   Lng32 i=0;
@@ -1962,9 +1935,7 @@ double SQLNumeric::getMaxValue() const
 	   Lng32 i=0;
 	   for (; i<getPrecision(); i++)
 	   {
-#pragma nowarn(1506)   // warning elimination
 	      temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
 	   }
 
            temp *= pow(10.0, -1 * getScale());
@@ -2016,9 +1987,7 @@ double SQLDecimal::encode(void * input) const
   // Reset the bit before converting to double.
   if (temp_dec[0] & 0200)
     {
-#pragma nowarn(1506)   // warning elimination
       temp_dec[0] = temp_dec[0] & 0177;
-#pragma warn(1506)  // warning elimination
       temp = - atof(temp_dec);
     }
   else

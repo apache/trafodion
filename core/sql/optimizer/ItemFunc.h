@@ -2570,10 +2570,10 @@ public:
   void setSrcIsVarcharPtr(NABoolean v)
        { (v ? flags_ |= SRC_IS_VARCHAR_PTR : flags_ &= ~SRC_IS_VARCHAR_PTR); }
 
-  NA_EIDPROC NABoolean allowSignInInterval()
+  NABoolean allowSignInInterval()
     { return ((flags_ & ALLOW_SIGN_IN_INTERVAL) != 0); };
 
-  NA_EIDPROC void setAllowSignInInterval(NABoolean v)
+  void setAllowSignInInterval(NABoolean v)
     { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
 
   NABoolean convertNullWhenError() 
@@ -5353,94 +5353,6 @@ public:
                                  CollHeap* outHeap = 0);
 
 } ;     // class ItmSeqNotTHISFunction
-
-
-
-//
-// This function creates an audit row image given the
-// name of the object (table or index - initially just index) and 
-// the list of expressions (column values) that make the row.
-//
-
-class AuditImage : public Function
-{
-public:
-  AuditImage(const CorrName &objectName,
-	     ItemExpr    *columnValueList);
- 
-  AuditImage(const CorrName &objectName)
-    : objectName_(objectName),
-      naTable_ (NULL),
-      columnTypeList_(CmpCommon::statementHeap()),
-      Function(ITM_AUDIT_IMAGE, CmpCommon::statementHeap(), 0){};
-
- 
-  // copy ctor
-  AuditImage (const AuditImage &, CollHeap * h=0) ; // not written
-
-  // virtual destructor
-  virtual ~AuditImage();
-
-  // get the degree of this node (it depends on the type of the operator)
-  virtual Int32 getArity() const;
-
-  // Does semantic checks and binds the function.
-  virtual ItemExpr * bindNode(BindWA * bindWA);
-
-  // a virtual function that does type synthesis.
-  //
-  virtual const NAType * synthesizeType();
-
-  // virtual method to do code generation
-  //
-  virtual short codeGen(Generator*);
-
-  // get a printable string that identifies the operator
-  //
-  virtual const NAString getText() const
-  {
-    return "AUDIT_IMAGE";
-  };
-
-  virtual HashValue topHash();
-  
-  virtual NABoolean duplicateMatch(const ItemExpr & other) const;
-  
-  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
-				 CollHeap* outHeap = 0);
-
-  // produce an ascii-version of the object (for display or saving into a file)
-  virtual void unparse(NAString &result,
-		       PhaseEnum phase = DEFAULT_PHASE,
-		       UnparseFormatEnum form = EXPLAIN_FORMAT,
-		       TableDesc * tabId = NULL) const;
-
-
-  const CorrName & getObjectName() const  { return objectName_; }
-        CorrName & getObjectName()        { return objectName_; }
-
-  inline const NATable  *getNATable()           const { return naTable_; }
-  void setNATable (NATable *naTable) {naTable_ = naTable;}
-
-private:
-  // ---------------------------------------------------------------//
-  // the user-specified name of the table or an index or any other
-  // SQL/MX object.
-  // -------------------------------------------------------------- //
-  CorrName objectName_;
-  // ---------------------------------------------------------------------
-  // This stores the original column values. The original column values 
-  // can be replaced with an equivalent value as a result of 
-  // VEGReference resolution. If this happens, we refer to this list to 
-  // cast the replaced value to the data type in this original list.
-  // ---------------------------------------------------------------------
-  LIST(const NAType *) columnTypeList_;
-
-  // NATable for the object (INDEX) referenced by objectName_. 
-  // This is needed to do semantic checks
-  const NATable *naTable_;
-
-};
 
 // lookup a column in a native hbase table that is being accessed in row format
 class HbaseColumnLookup : public BuiltinFunction

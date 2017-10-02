@@ -232,7 +232,7 @@ Lng32 Qsort::sortSend(void *rec, ULng32 len, void* tupp)
 			{
 			  char msg[500];
 			  str_sprintf(msg,
-						  "QSort::SortSend, Sort has overflowed due to unavailable memory request of size %d MB",
+						  "QSort::SortSend, Sort has overflowed due to unavailable memory request of size %ld MB",
 						   (sizeof(Record) * allocRunSize_ * 2)/ ONE_MB);
 			  SQLMXLoggingArea::logExecRtInfo(NULL,0,msg,explainNodeId_);
 		  sortUtil_->config()->setLogInfoEventDone();

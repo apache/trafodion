@@ -88,19 +88,19 @@ protected:
   UInt32         numInBatch_;                    // 176-179
   UInt16         forceOverflowEvery_;            // 180-181
   UInt16         hgbGrowthPercent_;              // 182-183
-  Float32        hgbMemEstInMbPerCpu_;           // 184-187
+  Float32        hgbMemEstInKBPerNode_;           // 184-187
   Int16          scratchIOVectorSize_;           // 188-189
   UInt16         bmoMinMemBeforePressureCheck_;  // 190-191
   UInt16         bmoMaxMemThresholdMB_;          // 192-193
-  char           fillersComTdbHashGrby_[6];      // 194-199
+  char           fillersComTdbHashGrby_[2];      // 194-195
+  Float32        estMemoryUsage_;                // 196-199
+  Float32        bmoQuotaRatio_;
  
 public:
 
-NA_EIDPROC
   ComTdbHashGrby();                // dummy constructor.
                                      // Used by 'unpack' routines.
   
-NA_EIDPROC
   ComTdbHashGrby(ComTdb * childTdb,
 		 ex_cri_desc * givenDesc,
 		 ex_cri_desc * returnedDesc,
@@ -145,37 +145,32 @@ NA_EIDPROC
                  short hgbGrowthPercent
 		 );
   
-NA_EIDPROC
   ~ComTdbHashGrby();
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                  { return (short)sizeof(ComTdbHashGrby); }  
   Long pack(void *);
 
-NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
   
-NA_EIDPROC
   void display() const;
 
-NA_EIDPROC
   inline ComTdb * getChildTdb();
 
-NA_EIDPROC
   Int32 orderedQueueProtocol() const;
 
   AggrExpr * hbAggrExpr()  const { return (AggrExpr*)((ex_expr*)hbAggrExpr_); }
@@ -185,10 +180,10 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
 #if 0
-NA_EIDPROC 
+
   //virtual
   void allocateStatsEntry(Int64 operID,
 				  Int64 estRowsReturned,
@@ -196,19 +191,14 @@ NA_EIDPROC
 #endif
   
    // **** GUI ****
-NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const;
 
-NA_EIDPROC
   virtual Int32 numChildren() const { return 1; };
 
-NA_EIDPROC
   virtual const char *getNodeName() const { return "EX_HASH_GRBY"; };
 
-NA_EIDPROC
   virtual Int32 numExpressions() const { return 13; };
 
-NA_EIDPROC
   virtual ex_expr * getExpressionNode(Int32 pos) {
   if (pos == 0)
     return hashExpr_;
@@ -240,7 +230,6 @@ NA_EIDPROC
     return NULL;
 };
 
-NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const {
   if (pos == 0)
     return "hashExpr_";
@@ -284,20 +273,18 @@ NA_EIDPROC
   {(v ? hashGroupByFlags_ |= LOG_DIAGNOSTICS_ : hashGroupByFlags_ &= ~LOG_DIAGNOSTICS_);}
 
 
-  NA_EIDPROC
   NABoolean isPossibleMultipleCalls() 
   {return (hashGroupByFlags_ & POSSIBLE_MULTIPLE_CALLS) != 0;}
 
-  NA_EIDPROC  
+   
   void setPossibleMultipleCalls(NABoolean v)
   {(v ? hashGroupByFlags_ |= POSSIBLE_MULTIPLE_CALLS : 
     hashGroupByFlags_ &= ~POSSIBLE_MULTIPLE_CALLS);}  
   
-  NA_EIDPROC
   NABoolean isPassPartialRows() 
   {return (hashGroupByFlags_ & PASS_PARTIAL_ROWS) != 0;}
 
-  NA_EIDPROC  
+   
   void setPassPartialRows(NABoolean v)
   {(v ? hashGroupByFlags_ |= PASS_PARTIAL_ROWS : 
     hashGroupByFlags_ &= ~PASS_PARTIAL_ROWS);}  
@@ -313,60 +300,56 @@ NA_EIDPROC
   NABoolean considerBufferDefrag() const {return (hashGroupByFlags_ & CONSIDER_BUFFER_DEFRAG) !=0; };
   void setConsiderBufferDefrag() {hashGroupByFlags_ |= CONSIDER_BUFFER_DEFRAG;};
 
-  NA_EIDPROC  UInt16 forceOverflowEvery()  {return forceOverflowEvery_;}
+   UInt16 forceOverflowEvery()  {return forceOverflowEvery_;}
 
-  NA_EIDPROC  
+   
     void setForceOverflowEvery(UInt16 times)  { forceOverflowEvery_ = times; }
   
-  NA_EIDPROC
   ULng32 memoryQuotaMB() { return (ULng32) memoryQuotaMB_; }
 
-  NA_EIDPROC
   void setMemoryQuotaMB(UInt16 v) { memoryQuotaMB_ = v; }
 
-  NA_EIDPROC
   ULng32 partialGrbyMemoryMB() { return (ULng32) partialGrbyMemoryMB_; }
 
-  NA_EIDPROC
   void setPartialGrbyMemoryMB(UInt16 v) { partialGrbyMemoryMB_ = v; }
 
-  NA_EIDPROC
-  void setHgbMemEstInMbPerCpu(Float32 s) {hgbMemEstInMbPerCpu_=s;}
+  void setHgbMemEstInKBPerNode(Float32 s) {hgbMemEstInKBPerNode_=s;}
 
-  NA_EIDPROC
-  Float32 getHgbMemEstInMbPerCpu() {return hgbMemEstInMbPerCpu_;}
+  Float32 getHgbMemEstInKBPerNode() {return hgbMemEstInKBPerNode_;}
 
-  NA_EIDPROC
   Float32 hgbGrowthPercent() {return Float32(hgbGrowthPercent_/100.0);}
 
-  NA_EIDPROC
   Int32 scratchIOVectorSize() { return (Int32) scratchIOVectorSize_; }
 
-  NA_EIDPROC
   void setScratchIOVectorSize(Int16 v) { scratchIOVectorSize_ = v; }
 
-  NA_EIDPROC
   void  setBmoMinMemBeforePressureCheck(UInt16 m)
   { bmoMinMemBeforePressureCheck_ = m ; }
 
-  NA_EIDPROC
   UInt16  getBmoMinMemBeforePressureCheck()
   { return bmoMinMemBeforePressureCheck_; }
   
-  NA_EIDPROC
   void  setBMOMaxMemThresholdMB(UInt16 m)
   { bmoMaxMemThresholdMB_ = m ; }
 
-  NA_EIDPROC
   UInt16  getBMOMaxMemThresholdMB()
   { return bmoMaxMemThresholdMB_; }
+
+  void setEstimatedMemoryUsage(Float32 estMemory)
+    { estMemoryUsage_ = estMemory; }
+  virtual Float32 getEstimatedMemoryUsage(void)
+    { return estMemoryUsage_;}
+
+  void setBmoQuotaRatio(Float32 bmoQuotaRatio)
+    { bmoQuotaRatio_ = bmoQuotaRatio; }
+  virtual Float32 getBmoQuotaRatio(void)
+    { return bmoQuotaRatio_;}
 
   NABoolean isNonBMOPartialGroupBy() { return (isPartialGroup_ == TRUE); }
 
 };
 
 
-NA_EIDPROC
 inline ComTdb * ComTdbHashGrby::getChildTdb(){
   return childTdb_;
 };
@@ -379,7 +362,6 @@ inline ComTdb * ComTdbHashGrby::getChildTdb(){
   History     : Yeogirl Yun                                      8/22/95
                  Initial Revision.
 *****************************************************************************/
-NA_EIDPROC
 inline const ComTdb* ComTdbHashGrby::getChild(Int32 pos) const {
   if (pos == 0)
     return childTdb_;

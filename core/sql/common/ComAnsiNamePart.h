@@ -40,12 +40,8 @@
 
 #include "Platform.h"
 #include "NAWinNT.h"		// for wchar (tcr)
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 #include <string.h>
 #include "ComOperators.h"
 #include "ComSmallDefs.h"
@@ -245,7 +241,7 @@ class ComAnsiNamePart : public NABasicObject
     //
     NABoolean operator== (const ComAnsiNamePart &rhs) const;
 
-    NA_EIDPROC inline Int32      compareTo  (const ComAnsiNamePart &rhs) const;
+    inline Int32      compareTo  (const ComAnsiNamePart &rhs) const;
 
     //
     // accessors
@@ -375,7 +371,6 @@ class ComAnsiNamePart : public NABasicObject
 // definitions of inline methods
 // -----------------------------------------------------------------------
 
-NA_EIDPROC
 Int32 ComAnsiNamePart::compareTo (const ComAnsiNamePart &rhs) const
 {
   if (this EQU &rhs) return 0;

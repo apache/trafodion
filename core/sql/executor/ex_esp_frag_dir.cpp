@@ -48,7 +48,7 @@
 #include "ex_tcb.h"
 #include "ex_split_bottom.h"
 #include "ex_send_bottom.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "ComDiags.h"
 #include "LateBindInfo.h"
 #include "NAHeap.h"
@@ -92,7 +92,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
   numActiveInstances_ = 0;
   highWaterMark_      = 0;
   numMasters_         = 1;
-  short error;
+  int error;
 
   //Phandle wrapper in porting layer
   NAProcessHandle phandle;
@@ -127,10 +127,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
     {
       cliGlobals_->setStatsGlobals(statsGlobals_);
       cliGlobals_->setSemId(semId_);
-      short savedPriority, savedStopMode;
-      error = statsGlobals_->getStatsSemaphore(semId_, pid_,savedPriority, savedStopMode,
-                      FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      error = statsGlobals_->getStatsSemaphore(semId_, pid_);
       statsHeap_ = (NAHeap *)statsGlobals->getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_);
       statsHeap_ = new (statsHeap_, statsGlobals->getStatsHeap()) 
         NAHeap("Process Stats Heap", statsGlobals->getStatsHeap(),
@@ -144,7 +141,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
            statsGlobals_->getExProcessStats(pid_);
       processStats->setStartTime(cliGlobals_->myStartTime());
       cliGlobals_->setExProcessStats(processStats);
-      statsGlobals_->releaseStatsSemaphore(semId_, pid_, savedPriority, savedStopMode);
+      statsGlobals_->releaseStatsSemaphore(semId_, pid_);
     }
   }
   cliGlobals_->setStatsHeap(statsHeap_);
@@ -185,13 +182,10 @@ ExEspFragInstanceDir::~ExEspFragInstanceDir()
   // no point in making error checks
   if (statsGlobals_ != NULL)
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals_->getStatsSemaphore(semId_, pid_, savedPriority, savedStopMode,
-                        FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals_->getStatsSemaphore(semId_, pid_);
     statsGlobals_->removeProcess(pid_);
-    statsGlobals_->releaseStatsSemaphore(semId_, pid_, savedPriority, savedStopMode);
-   sem_close((sem_t *)semId_);
+    statsGlobals_->releaseStatsSemaphore(semId_, pid_);
+    sem_close((sem_t *)semId_);
   }
 }
 
@@ -240,7 +234,6 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 
       // allocate the globals in their own heap, like the master
       // executor does it
-#pragma nowarn(1506)   // warning elimination 
       inst->globals_ = new(stmtHeap) ExEspStmtGlobals(
 	   (short) msgFragment->getNumTemps(),
 	   cliGlobals_,
@@ -252,7 +245,6 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 	   msgFragment->getInjectErrorAtExpr(),
            inst->queryId_,
            inst->queryIdLen_);
-#pragma warn(1506)  // warning elimination 
     }
   else
     inst->globals_ = NULL; // no globals needed for DP2 fragments
@@ -553,7 +545,6 @@ void ExEspFragInstanceDir::releaseOrphanEntries()
     }
 }
 
-#pragma nowarn(770)   // warning elimination 
 void ExEspFragInstanceDir::hasTransidReleaseRequest(
      ExFragInstanceHandle handle)
 {
@@ -635,7 +626,6 @@ void ExEspFragInstanceDir::hasReleaseRequest(
 }
 
 
-#pragma warn(770)  // warning elimination 
 
 void ExEspFragInstanceDir::work(Int64 prevWaitTime)
 {
@@ -1182,9 +1172,7 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
                 int otherCPU, otherPID, otherNode_unused;
                 SB_Int64_Type seqNum = -1;
                 phandle.decompose(otherCPU, otherPID, otherNode_unused
-#ifdef SQ_PHANDLE_VERIFIER
                                  , seqNum
-#endif
                                  );
                 
                 sm_target_t target;
@@ -1313,7 +1301,6 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
   send(FALSE);
 }
 
-#pragma nowarn(262)   // warning elimination 
 void ExEspControlMessage::actOnLoadFragmentReq(
      IpcConnection *connection,
      ComDiagsArea & /*da*/)
@@ -1367,7 +1354,6 @@ void ExEspControlMessage::actOnLoadFragmentReq(
   
   // the reply is handled by the caller
 }
-#pragma warn(262)  // warning elimination 
 
 void ExEspControlMessage::actOnFixupFragmentReq(ComDiagsArea &da)
 {

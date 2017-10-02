@@ -1988,77 +1988,58 @@ NABoolean RelExpr::containsNode(OperatorTypeEnum nodeType)
 }
 
 double RelExpr::computeMemoryQuota(NABoolean inMaster,
-                                   NABoolean perCPU,
-                                   double BMOsMemoryLimit, // in bytes 
-                                   UInt16 totalNumBMOs, // per CPU
-                                   double totalBMOsMemoryUsage, // per CPU, in bytes 
+                                   NABoolean perNode,
+                                   double BMOsMemoryLimit, // in MB 
+                                   UInt16 totalNumBMOs, // per query 
+                                   double totalBMOsMemoryUsage, // for all BMOs per node in bytes 
                                    UInt16 numBMOsPerFragment, // per fragment
-                                   double BMOsMemoryUsagePerFragment // per fragment, in bytes
+                                   double bmoMemoryUsage, // for the current BMO/Operator per node in bytes
+                                   Lng32 numStreams,
+                                   double &bmoQuotaRatio
                                    ) 
 {
-   if ( perCPU == TRUE ) {
-     Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
+   if ( perNode == TRUE ) {
+      Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
 
-     if ( inMaster && CmpCommon::getDefault(ODBC_PROCESS) == DF_ON ) {
-        
-        // Limiting the total memory in the master process when in both
-        // the per-CPU estimation and the ODBC mode.
-
-        NADefaults &defs = ActiveSchemaDB()->getDefaults();
-
-        Lng32 inCpuLimitDelta = 
-                    defs.getAsLong(EXE_MEMORY_AVAILABLE_IN_MB)
-                       -
-                    defs.getAsLong(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-        if ( inCpuLimitDelta < 0 )
-          inCpuLimitDelta = 50;
-
-        if (exeMem > inCpuLimitDelta)
-           exeMem = inCpuLimitDelta;
+     // the quota is allocated in 2 parts
+     // The constant part divided equally across all bmo operators
+     // The variable part allocated in proportion of the given BMO operator
+     // estimated memory usage to the total estimated memory usage of all BMOs
+   
+     // The ratio can be capped by the CQD
+     double equalQuotaShareRatio = 0;
+     equalQuotaShareRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO);
+     double constMemQuota = 0;
+     double variableMemLimit = exeMem;
+     if (equalQuotaShareRatio > 0 && totalNumBMOs > 1) {
+        constMemQuota = (exeMem * equalQuotaShareRatio )/ totalNumBMOs;
+        variableMemLimit = (1-equalQuotaShareRatio) * exeMem;
      }
-
-     // the quota is propotional to both the # of BMOs and the estimated memory 
-     // usage in the fragment, and evenly distrbuted among BMOs in the fragment.
-     return ((exeMem/2) * (BMOsMemoryUsagePerFragment/totalBMOsMemoryUsage + 
-                        double(numBMOsPerFragment)/totalNumBMOs)
-            ) / numBMOsPerFragment;
+     double bmoMemoryRatio = bmoMemoryUsage / totalBMOsMemoryUsage;
+     double capMemoryRatio = 1; 
+     if (totalNumBMOs > 1) {
+        capMemoryRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_RATIO_CAP);
+        if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
+           bmoMemoryRatio = capMemoryRatio;
+     }
+     bmoQuotaRatio = bmoMemoryRatio;
+     double bmoMemoryQuotaPerNode = constMemQuota + (variableMemLimit * bmoMemoryRatio);
+     double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
+     double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;
+     return bmoMemoryQuotaPerInstance;
   } else {
      // the old way to compute quota 
      Lng32 exeMem = getExeMemoryAvailable(inMaster);
+     bmoQuotaRatio = BMOQuotaRatio::NO_RATIO;
      return exeMem / numBMOsPerFragment; 
   }
 }
-
-Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster, 
-                                    Lng32 BMOsMemoryLimit) const
-{
-  Lng32 exeMemAvailMB = BMOsMemoryLimit;
-
-  if ((CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) &&
-       inMaster  &&
-      (exeMemAvailMB != 0))  // if the cqd is zero, then we do not do BMO quota
-  {
-    // Adjustment because MXOSRVR has QIO segments in competition with 
-    // executor.
-    exeMemAvailMB -= 
-      ActiveSchemaDB()->getDefaults().getAsLong(
-                            EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-    if (exeMemAvailMB < 50)
-      exeMemAvailMB = 50;
-  }
-
-  return exeMemAvailMB;
-}  // RelExpr::getExeMemoryAvailable() 
-
 
 Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster) const
 {
    Lng32 exeMemAvailMB = 
       ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB);
-
-   return getExeMemoryAvailable(inMaster, exeMemAvailMB);
+   return exeMemAvailMB;
 }
 
 // -----------------------------------------------------------------------
@@ -2386,9 +2367,7 @@ RelExpr * WildCardOp::copyTopNode(RelExpr * derivedNode,
 	}
     }
 
-#pragma nowarn(203)   // warning elimination
   return NULL; // shouldn't really reach here
-#pragma warn(203)  // warning elimination
 }
 
 // -----------------------------------------------------------------------
@@ -6850,9 +6829,7 @@ void Union::getPotentialOutputValues(ValueIdSet & outputValues) const
   // The output of the union is defined by the ValueIdUnion
   // expressions that are maintained in the colMapTable_.
   //
-#pragma nowarn(1506)   // warning elimination
   Lng32 ne = unionMap_->colMapTable_.entries();
-#pragma warn(1506)  // warning elimination
   for (Lng32 index = 0; index < ne; index++)
     {
       // Accumulate the ValueIds of the result of the union
@@ -7305,7 +7282,6 @@ HashValue MergeUnion::topHash()
   return result;
 }
 
-#pragma nowarn(262)   // warning elimination
 NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
 {
   if (!RelExpr::duplicateMatch(other))
@@ -7319,7 +7295,6 @@ NABoolean MergeUnion::duplicateMatch(const RelExpr & other) const
   return FALSE;
 
 }
-#pragma warn(262)  // warning elimination
 
 RelExpr * MergeUnion::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
@@ -9949,7 +9924,6 @@ const NAString FileScan::getTypeText() const
   return descr;
 }
 
-#pragma nowarn(262)   // warning elimination
 void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 			    LIST(NAString) &llist) const
 {
@@ -10091,7 +10065,6 @@ void FileScan::addLocalExpr(LIST(ExprNode *) &xlist,
 
   RelExpr::addLocalExpr(xlist,llist);
 }
-#pragma warn(262)  // warning elimination
 
 const Disjuncts& FileScan::getDisjuncts() const
 {
@@ -11506,9 +11479,7 @@ Tuple::Tuple(const Tuple & other) : RelExpr(other.getOperatorType())
 
 Tuple::~Tuple() {}
 
-#pragma nowarn(1026)   // warning elimination
 Int32 Tuple::getArity() const { return 0; }
-#pragma warn(1026)  // warning elimination
 
 // -----------------------------------------------------------------------
 // A virtual method for computing output values that an operator can
@@ -11914,9 +11885,7 @@ RelExpr * BeforeTrigger::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 	  else
 	  {
 		CMPASSERT(setList_ != NULL);  // Must have either SET or SIGNAL clause.
-#pragma nowarn(1506)   // warning elimination
 		ItemExprList *setList = new(outHeap) ItemExprList(setList_->entries(), outHeap);
-#pragma warn(1506)  // warning elimination
 		for (CollIndex i=0; i<setList_->entries(); i++)
 		  setList->insert(setList_->at(i)->copyTree(outHeap));
 

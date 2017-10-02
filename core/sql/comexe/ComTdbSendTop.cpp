@@ -93,27 +93,21 @@ ComTdbSendTop::ComTdbSendTop(ExFragId           childFragId,
   smTag_                  = 0;
 }
   
-// LCOV_EXCL_START
 Int32 ComTdbSendTop::orderedQueueProtocol() const
 {
   return TRUE;
 } // these lines won't be covered, obsolete but not in the list yet
-// LCOV_EXCL_STOP
 
 Lng32 ComTdbSendTop::minSendBufferSize(Lng32 downRecLen, Lng32 numRecs)
 {
   // start with the regular size it would take to pack the records
   // into an SqlBuffer
-#pragma nowarn(1506)   // warning elimination 
   Lng32 recSpace = SqlBufferNeededSize(numRecs, downRecLen);
-#pragma warn(1506)  // warning elimination 
 
   // now add the needed space for the ExpControlInfo struct that goes
   // along with each record
-#pragma nowarn(1506)   // warning elimination 
   Lng32 delta = SqlBufferNeededSize(2, sizeof(ControlInfo)) -
     SqlBufferNeededSize(1, sizeof(ControlInfo));
-#pragma warn(1506)  // warning elimination 
 
   return recSpace + numRecs * delta;
 }
@@ -124,18 +118,14 @@ Lng32 ComTdbSendTop::minReceiveBufferSize(Lng32 upRecLen, Lng32 numRecs)
   return minSendBufferSize(upRecLen,numRecs);
 }
 
-// LCOV_EXCL_START
 void ComTdbSendTop::display() const
 {
 } // these 3 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 const ComTdb* ComTdbSendTop::getChild(Int32 /*pos*/) const
 {
   return NULL;
 } // these 4 lines won't be covered, used by Windows GUI only
-// LCOV_EXCL_STOP
 
 const ComTdb * ComTdbSendTop::getChildForGUI(
 	Int32 /*pos*/, 
@@ -206,7 +196,7 @@ void ComTdbSendTop::displayContents(Space *space, ULng32 flag)
     str_sprintf(buf, "\nFor ComTdbSendTop :");
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     
-    str_sprintf(buf, "childFragId_ = %d, sendTopFlags_ = %b",
+    str_sprintf(buf, "childFragId_ = %d, sendTopFlags_ = %x",
                 (Lng32) childFragId_, (Lng32) sendTopFlags_);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 

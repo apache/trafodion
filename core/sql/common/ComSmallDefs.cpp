@@ -68,16 +68,7 @@
 // This function now for non-NSKLite platforms only (UNIX)
 Int64 ComSmallDef_local_GetTimeStamp(void)
 {
-  //#if defined(NA_HSC_LINUX) || defined(NA_LINUX)
-#if defined(NA_HSC_LINUX)
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return(Int64(tv.tv_usec) + (Int64(tv.tv_sec)*Int64(1000000L)));
-
-#else
   return(JULIANTIMESTAMP());
-
-#endif
 }
 
 
@@ -144,11 +135,9 @@ ostream & operator << (ostream &s, const ComUID &uid)
   num = uid.data;
   while (num > 0)
   {
-    digit = (Int32) (num % 10);          // NT_PORT (10/17/96)
+    digit = (Int32) (num % 10);     
     num = num / 10;
-#pragma nowarn(1506)   // warning elimination
     buf[i--] = digit+'0';
-#pragma warn(1506)  // warning elimination
   }
   i++;
   while (buf[i] != 0)

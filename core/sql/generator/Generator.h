@@ -40,7 +40,7 @@
 
 #include "GenMapTable.h"
 #include "FragmentDir.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_clause.h"
 #include "str.h"
 #include "Int64.h"
@@ -89,7 +89,6 @@ struct CifAvgVarCharSizeCache
 //////////////////////////////////////////////////////////////////////////
 // class Generator
 //////////////////////////////////////////////////////////////////////////
-#pragma nowarn(1506)   // warning elimination
 class Generator : public NABasicObject
 {
   enum {TRANSACTION_FLAG   = 0x0001,   // transaction is needed somewhere
@@ -426,15 +425,15 @@ class Generator : public NABasicObject
 
   // temporary value holder (during pre code gen) for #BMOs in this fragment
   unsigned short numBMOs_;
-  unsigned short totalNumBMOsPerCPU_; // accumulated # of BMO, per CPU
+  unsigned short totalNumBMOsPerNode_; // accumulated # of BMO, per Node
 
   CostScalar BMOsMemoryPerFrag_; // accumulated BMO memory, per fragment 
-  CostScalar totalBMOsMemoryPerCPU_; // accumulated BMO memory, per CPU
+  CostScalar totalBMOsMemoryPerNode_; // accumulated BMO memory, per Node
 
-  CostScalar nBMOsMemoryPerCPU_; // accumulated nBMO memory, per CPU
+  CostScalar nBMOsMemoryPerNode_; // accumulated nBMO memory, per Node
 
-  // BMO memory limit per CPU
-  CostScalar BMOsMemoryLimitPerCPU_; 
+  // BMO memory limit per Node
+  CostScalar BMOsMemoryLimitPerNode_; 
 
   // Total number of BMOs in the query
   unsigned short totalNumBMOs_;
@@ -561,7 +560,7 @@ private:
 
   // estimated memory for an individual operator. Used by Explain
   // set to 0 after Explain has been called so that next operator
-  // can used this field. In KB and on a per CPU basis.
+  // can used this field. In KB and on a per Node basis.
   Lng32 operEstimatedMemory_ ;
 
   Int16 maxCpuUsage_ ;
@@ -604,6 +603,8 @@ private:
   char NExLogPathNam_[1024] ; // Only 1 needed, so we put it in Generator object
 
   LIST(CifAvgVarCharSizeCache) avgVarCharSizeList_;
+
+  UInt32 topNRows_;
   //LIST(double) avgVarCharSizeValList_;
   void addCifAvgVarCharSizeToCache( ValueId vid, double size)
   {
@@ -1462,7 +1463,7 @@ public:
   inline CostScalar getBMOsMemory() { return BMOsMemoryPerFrag_; }
 
   inline void incrBMOsMemory(CostScalar x) 
-     { incrBMOsMemoryPerFrag(x); totalBMOsMemoryPerCPU_ += x; }
+     { incrBMOsMemoryPerFrag(x); totalBMOsMemoryPerNode_ += x; }
 
   inline void incrBMOsMemoryPerFrag(CostScalar x) 
      { BMOsMemoryPerFrag_ += x;  }
@@ -1473,11 +1474,11 @@ public:
     BMOsMemoryPerFrag_ = newVal;
     return retVal;
   }
-  inline CostScalar getTotalBMOsMemoryPerCPU() 
-                 { return totalBMOsMemoryPerCPU_; }
+  inline CostScalar getTotalBMOsMemoryPerNode() 
+                 { return totalBMOsMemoryPerNode_; }
 
   inline void incrNumBMOs() 
-     {  incrNumBMOsPerFrag(1);  totalNumBMOsPerCPU_++; totalNumBMOs_++;}
+     {  incrNumBMOsPerFrag(1);  totalNumBMOsPerNode_++; totalNumBMOs_++;}
 
   inline void incrNumBMOsPerFrag(UInt32 x) { numBMOs_ += x; }
 
@@ -1487,15 +1488,15 @@ public:
     numBMOs_ = newVal;
     return retVal;
   }
-  inline unsigned short getTotalNumBMOsPerCPU() { return totalNumBMOsPerCPU_; }
+  inline unsigned short getTotalNumBMOsPerNode() { return totalNumBMOsPerNode_; }
   
-  inline CostScalar getTotalNBMOsMemoryPerCPU() { return nBMOsMemoryPerCPU_; }
-  inline void incrNBMOsMemoryPerCPU(CostScalar x) { nBMOsMemoryPerCPU_ += x; }
+  inline CostScalar getTotalNBMOsMemoryPerNode() { return nBMOsMemoryPerNode_; }
+  inline void incrNBMOsMemoryPerNode(CostScalar x) { nBMOsMemoryPerNode_ += x; }
 
-  inline void setBMOsMemoryLimitPerCPU(CostScalar x) 
-            { BMOsMemoryLimitPerCPU_ = x; }
+  inline void setBMOsMemoryLimitPerNode(CostScalar x) 
+            { BMOsMemoryLimitPerNode_ = x; }
 
-  inline CostScalar getBMOsMemoryLimitPerCPU() { return BMOsMemoryLimitPerCPU_; }
+  inline CostScalar getBMOsMemoryLimitPerNode() { return BMOsMemoryLimitPerNode_; }
 
   inline unsigned short getTotalNumBMOs() { return totalNumBMOs_; }
 
@@ -1608,9 +1609,6 @@ public:
   inline void addToTotalOverflowMemory(double val)
         {totalOverflowMemory_ += val;}
 
-  inline Lng32 getOperEstimatedMemory(){return operEstimatedMemory_;}
-  inline void setOperEstimatedMemory(Lng32 val){operEstimatedMemory_ = val;}
-
   inline ComTdb::OverflowModeType getOverflowMode() {return overflowMode_; }
 
   // Each of these two mutators return the old value
@@ -1691,8 +1689,11 @@ public:
     }
     return snapshotScanTmpLocation_;
   }
+  inline void setTopNRows(ULng32 topNRows) 
+     { topNRows_ = topNRows; }
+  inline ULng32 getTopNRows() { return topNRows_; }
+        
 }; // class Generator
-#pragma warn(1506)   // warning elimination
 
 class GenOperSimilarityInfo : public NABasicObject
 {

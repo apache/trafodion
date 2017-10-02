@@ -92,12 +92,10 @@ void SetStaticCompiler(NABoolean isStaticCompiler)
   gIsStaticCompiler = isStaticCompiler;
 }
 
-// LCOV_EXCL_START
 NABoolean IsStaticCompiler()
 {
   return gIsStaticCompiler;
 } 
-// LCOV_EXCL_STOP
 
 //------------------------------------------------------------------------
 // Global pointer to cluster information is initially null and remains so
@@ -122,10 +120,8 @@ THREAD_P NAClusterInfo* gpClusterInfo = NULL;
 void setUpClusterInfo(CollHeap* heap)
 {
   #ifndef NDEBUG
-  // LCOV_EXCL_START
   if (getenv("NO_SERVICES"))  // KSKSKS
     return;                   // KSKSKS
-  // LCOV_EXCL_STOP
   #endif
 
 
@@ -370,7 +366,6 @@ NAClusterInfo::numOfSMPs()
   return result; 
 
 } // NAClusterInfo::numOfSMPs()  
-#pragma warn(1506)  // warning elimination 
 
 // Returns total number of CPUs (including down CPUs)
 Lng32 NAClusterInfo::getTotalNumberOfCPUs()
@@ -378,12 +373,10 @@ Lng32 NAClusterInfo::getTotalNumberOfCPUs()
   Lng32 cpuCount = cpuArray_.entries();
 
 #ifndef NDEBUG
-// LCOV_EXCL_START
   if ( inTestMode() ) {
     NADefaults & defs = ActiveSchemaDB()->getDefaults();
     cpuCount = (Int32)(defs.getAsLong(POS_TEST_NUM_NODES));
   }
-// LCOV_EXCL_STOP
 #endif
   // 
   return cpuCount;
@@ -420,12 +413,10 @@ NAClusterInfoLinux::NAClusterInfoLinux(CollHeap * heap) : NAClusterInfo(heap),
       // Simulate the NAClusterInfo.
       simulateNAClusterInfoLinux();
       break;
-    // LCOV_EXCL_START
     default:
       // The OSIM must run under OFF (normal), CAPTURE or SIMULATE mode.
       OSIM_errorMessage("Invalid OSIM mode - It must be OFF or CAPTURE or SIMULATE.");
       break;
-    // LCOV_EXCL_STOP
   }
 }
 

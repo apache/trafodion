@@ -182,10 +182,8 @@ public:
 		      const char * suffix = "");
 
   // methods to get instance variables / data members
-// LCOV_EXCL_START
 // method is used by debug code and therefore not exercised in mainline code
   inline const char * getName () const                   { return name_; }
-// LCOV_EXCL_STOP
   inline RelExpr * getPattern () const                { return pattern_; }
   inline NAUnsigned getNumber() const              { return ruleNumber_; }
   inline RelExpr * getSubstitute () const          { return substitute_; }
@@ -296,7 +294,6 @@ public:
   // copy ctor
   RuleSubset (const RuleSubset & orig, CollHeap * h=0) ; // not written
 
-  // warning elimination (removed "inline")
   virtual ~RuleSubset() {}
 
   inline RuleSubset & operator = (const RuleSubset &other)
@@ -306,7 +303,6 @@ public:
 // -----------------------------------------------------------------------
 // The set of rules used in Cascades
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 class RuleSet : public NABasicObject
 {
 friend class RuleSubset;
@@ -344,12 +340,10 @@ public:
 
   // Methods dealing with the current pass number.
   inline void initializeCurrentPassNumber()          { currentPass_ = 0; }
-// LCOV_EXCL_START
 // method is called in an old code path not exercised any more
 // this gets called when RelExpr::optimize was used as the optimization
 // driver. The new driver (for quite some time now) is RelExpr::optimize2
   inline void incrementCurrentPassNumber()             { currentPass_++; }
-// LCOV_EXCL_STOP
 
   inline Lng32 getCurrentPassNumber() const        { return currentPass_; }
 
@@ -370,7 +364,6 @@ public:
 
   // return a (sub) set of currently applicable rules
   // (see also Guidance::applicableRules())
-// warning elimination (remove "inline")
   const RuleSubset * applicableRules()
    {
      CMPASSERT( (currentPass_ >= getFirstPassNumber()) AND
@@ -380,7 +373,6 @@ public:
 
   // used to recognize first pass rules for the use
   // in optimization Level 1
-// warning elimination (removed "inline")
   const RuleSubset * getPassNRules(Lng32 passNum)
    {
      CMPASSERT( (passNum >= getFirstPassNumber()) AND
@@ -420,10 +412,8 @@ public:
 
   // accessor functions
   inline Lng32 getCountOfRules() const       { return allRules_.entries(); }
-// LCOV_EXCL_START
 // method is used in debugging and therefore not exercised in mainline code
   inline Int32 getRuleApplCount() const            { return ruleApplCount_; }
-// LCOV_EXCL_STOP
   inline void bumpRuleApplCount()                     { ruleApplCount_++; }
 
   inline const RuleSubset & oldRules()                { return oldRules_; }
@@ -456,7 +446,6 @@ private:
   RuleSubset          passSensitiveRules_; // all rules that look at the pass #
   RuleSubset          patternSensitiveRules_; // rules using the expl. pattern
 };
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // Rule substitute memory
@@ -509,13 +498,11 @@ public:
   // copy ctor
   RulesPerContext (const RulesPerContext &) ; // not written
 
-// LCOV_EXCL_START
 // destructors a generally not called for objects involved in
 // optimization (unless the class is heavy weight). This is 
 // because the entire statement heap is discarded at the end
 // of compilation.
   ~RulesPerContext() {}
-// LCOV_EXCL_STOP
 
   // Accessor methods
   inline const Context* getContext() const { return context_; }

@@ -107,10 +107,8 @@ public:
   inline void setLeftTdb(ComTdb *left)                { tdbLeft_ = left; }
   inline void setRightTdb(ComTdb *right)            { tdbRight_ = right; }
 
-// LCOV_EXCL_START
 // exclude from code coverage since this code is obsolete
   Int32 orderedQueueProtocol() const  { return -1; }
-// LCOV_EXCL_STOP
 
   virtual const ComTdb* getChild(Int32 pos) const;
   virtual Int32 numChildren() const;
@@ -122,20 +120,16 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
-  NA_EIDPROC
   inline NABoolean expectingLeftRows() const
                 { return (csErrFlags_ & ROWS_FROM_LEFT) != 0; }
 
-  NA_EIDPROC
   inline NABoolean expectingRightRows() const
                 { return (csErrFlags_ & ROWS_FROM_RIGHT) != 0; }
 
-  NA_EIDPROC
   inline NABoolean afterUpdate() const
                 { return (csErrFlags_ & AFTER_UPDATE) != 0; }
-  NA_EIDPROC
   inline NABoolean inNotAtomicStmt() const       { return (flags_ & IN_NOT_ATOMIC_STMT) != 0; }
 
 
@@ -196,7 +190,6 @@ protected:
 
 };
 
-// LCOV_EXCL_START
 // exclude from code coverage analysis since this is used only by GUI
 inline const ComTdb* ComTdbUnion::getChild(Int32 pos) const
 {
@@ -207,7 +200,6 @@ inline const ComTdb* ComTdbUnion::getChild(Int32 pos) const
    else
       return NULL;
 }
-// LCOV_EXCL_STOP
 
 
 #endif

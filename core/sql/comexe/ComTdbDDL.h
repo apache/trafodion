@@ -40,7 +40,6 @@
 
 #include "ComTdb.h"
 
-#pragma nowarn(1506)   // warning elimination 
 ////////////////////////////////////////////////////////////////////
 // class ComTdbGenericUtil
 ////////////////////////////////////////////////////////////////////
@@ -149,7 +148,6 @@ protected:
   Int16  queryCharSet_;                // 66-67
   char fillersComTdbGenericUtil_[12];  // 68-79
 };
-#pragma warn(1506)  // warning elimination 
 
 ////////////////////////////////////////////////////////////////////
 // class ComTdbDDL
@@ -260,7 +258,6 @@ protected:
   UInt16 flags_;                       // 00-01
   char fillersComTdbDDL_[30];          // 02-31
 };
-#pragma warn(1506)  // warning elimination 
 
 class ComTdbDDLwithStatus : public ComTdbDDL
 {

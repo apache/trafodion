@@ -269,7 +269,7 @@ void ComTdbUdr::displayContents(Space *space, ULng32 flag)
 
     Lng32 lowFlags = (Lng32) (flags_ % 65536);
     Lng32 highFlags = (Lng32) ((flags_ - lowFlags) / 65536);
-    str_sprintf(buf, "flags = %b%b", highFlags, lowFlags);
+    str_sprintf(buf, "flags = %x%x", highFlags, lowFlags);
     space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
 
     if (sqlName_)
@@ -393,7 +393,7 @@ void ComTdbUdr::displayContents(Space *space, ULng32 flag)
       str_sprintf(buf, "  name [%s]", p->getParamName());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
 
-      str_sprintf(buf, "  flags %b, type %d", p->getFlags(),
+      str_sprintf(buf, "  flags %x, type %d", p->getFlags(),
                   (Int32) p->getType());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
 

@@ -54,7 +54,6 @@ QRLatticeIndexNode::QRLatticeIndexNode(const LatticeKeyList& keys,
   isValid_ = lattice->addKeysToBitmap(keys, noNewEntry, keyBitmap_);
 }
 
-// LCOV_EXCL_START :cnu Supports currently unused feature of QRLatticeIndexSearchNode
 QRLatticeIndexNode::QRLatticeIndexNode(QRLatticeIndexPtr lattice,
                                        NABoolean noNewEntry,
                                        ADD_MEMCHECK_ARGS_DEF(CollHeap* heap))
@@ -74,7 +73,6 @@ QRLatticeIndexNode::QRLatticeIndexNode(QRLatticeIndexPtr lattice,
   QRTRACER("QRLatticeIndexNode::QRLatticeIndexNode()");
   *nodeName_ = '\0';
 }
-// LCOV_EXCL_STOP
 
 QRLatticeIndexNode::QRLatticeIndexNode(const char* const name,
                                        QRLatticeIndexPtr lattice,
@@ -193,14 +191,12 @@ void QRLatticeIndexNode::dumpNode(NAString& nodeContents,
 
   for (CollIndex i=0; i<mapList_.entries(); i++)
   {
-    // LCOV_EXCL_START :dpm
     if (first)
       first = FALSE;
     else
       nodeContents.append(", ");
 
     nodeContents.append(mapList_[i]->getMVDetails()->getMVName().data());
-    // LCOV_EXCL_STOP
   }
 
   char gbText[50];
@@ -229,7 +225,6 @@ void QRLatticeIndexNode::dumpNode(NAString& nodeContents,
  * Currently not used.
  *****************************************************************************
  */
-// LCOV_EXCL_START :cnu
 void QRLatticeIndexNode::dumpLattice(NAString& graphText,
                                      NAString& graphLabel)
 {
@@ -256,7 +251,6 @@ void QRLatticeIndexNode::dumpLattice(NAString& graphText,
     child->dumpLattice(graphText, graphLabel);
   }
 }
-// LCOV_EXCL_STOP
 
 void QRLatticeIndexNode::collectMVGroups(WorkloadAnalysisPtr workload, Int32 minQueriesPerMV, CollHeap* heap)
 {
@@ -489,7 +483,6 @@ NABoolean QRLatticeIndex::addKeysToBitmap(const LatticeKeyList& keys,
   return isOK;
 }
 
-// LCOV_EXCL_START :cnu
 void QRLatticeIndex::findSubsets(QRLatticeIndexNode& supersetNode,
                                  NAPtrList<QRLatticeIndexNodePtr>& subsets)
 {
@@ -502,9 +495,7 @@ void QRLatticeIndex::findSubsets(QRLatticeIndexNode& supersetNode,
   else
     getSubsets(exactNode, subsets);
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :cnu
 void QRLatticeIndex::findSubsets_(QRLatticeIndexNode& supersetNode,
                                   QRLatticeIndexNodePtr childNode,
                                   NAPtrList<QRLatticeIndexNodePtr>& subsets)
@@ -527,9 +518,7 @@ void QRLatticeIndex::findSubsets_(QRLatticeIndexNode& supersetNode,
         }
     }
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START :cnu
 void QRLatticeIndex::getSubsets(QRLatticeIndexNodePtr node,
                                 NAPtrList<QRLatticeIndexNodePtr>& subsets)
 {
@@ -547,7 +536,6 @@ void QRLatticeIndex::getSubsets(QRLatticeIndexNodePtr node,
       getSubsets(subsetNode, subsets);
     }
 }
-// LCOV_EXCL_STOP
 
 void QRLatticeIndex::findSupersets(QRLatticeIndexNode& subsetNode,
                                    NAPtrList<QRLatticeIndexNodePtr>& supersets)
@@ -807,7 +795,6 @@ NABoolean QRLatticeIndex::contains(LatticeIndexablePtr key)
  * Currently not used.
  *****************************************************************************
  */
-// LCOV_EXCL_START :dpm
 void QRLatticeIndex::dumpLattice(NAString& graphText, const char* tag)
 {
   QRTRACER("QRLatticeIndex::dumpLattice()");
@@ -829,7 +816,6 @@ void QRLatticeIndex::dumpLattice(NAString& graphText, const char* tag)
   (graphText += "}\n#ENDLATTICE ") += tag;
   graphText += '\n';
 }
-// LCOV_EXCL_STOP
 
 void QRLatticeIndex::collectMVGroups(WorkloadAnalysisPtr workload, Int32 minQueriesPerMV, CollHeap* heap)
 {

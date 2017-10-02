@@ -41,7 +41,6 @@
  */
 
 
-#include "SqlExpDllDefines.h"
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 
@@ -422,87 +421,87 @@ class ExpLOBiud : public ExpLOBoper {
 				      CollHeap*h,
 				      ComDiagsArea** diagsArea);
 
-  NA_EIDPROC NABoolean isAppend()
+  NABoolean isAppend()
   {
     return ((liudFlags_ & IS_APPEND) != 0);
   };
 
-  NA_EIDPROC inline void setIsAppend(NABoolean v)
+  inline void setIsAppend(NABoolean v)
   {
     (v) ? liudFlags_ |= IS_APPEND: liudFlags_ &= ~IS_APPEND;
   };
 
-  NA_EIDPROC NABoolean fromString()
+  NABoolean fromString()
   {
     return ((liudFlags_ & FROM_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setFromString(NABoolean v)
+  inline void setFromString(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_STRING: liudFlags_ &= ~FROM_STRING;
   };
-  NA_EIDPROC NABoolean fromBuffer()
+  NABoolean fromBuffer()
   {
     return ((liudFlags_ & FROM_BUFFER) != 0);
   };
-  NA_EIDPROC inline void setFromBuffer(NABoolean v)
+  inline void setFromBuffer(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_BUFFER: liudFlags_ &= ~FROM_BUFFER;
   };
-  NA_EIDPROC inline void setFromEmpty(NABoolean v)
+  inline void setFromEmpty(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_EMPTY: liudFlags_ &= ~FROM_EMPTY;
   };
-  NA_EIDPROC NABoolean fromEmpty()
+  NABoolean fromEmpty()
   {
     return ((liudFlags_ & FROM_EMPTY) != 0);
   };
  
-  NA_EIDPROC NABoolean fromFile()
+  NABoolean fromFile()
   {
     return ((liudFlags_ & FROM_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setFromFile(NABoolean v)
+  inline void setFromFile(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_FILE: liudFlags_ &= ~FROM_FILE;
   };
 
-  NA_EIDPROC NABoolean fromLoad()
+  NABoolean fromLoad()
   {
     return ((liudFlags_ & FROM_LOAD) != 0);
   };
 
-  NA_EIDPROC inline void setFromLoad(NABoolean v)
+  inline void setFromLoad(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOAD: liudFlags_ &= ~FROM_LOAD;
   };
 
-  NA_EIDPROC NABoolean fromLob()
+  NABoolean fromLob()
   {
     return ((liudFlags_ & FROM_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setFromLob(NABoolean v)
+  inline void setFromLob(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOB: liudFlags_ &= ~FROM_LOB;
   };
-  NA_EIDPROC NABoolean fromLobExternal()
+  NABoolean fromLobExternal()
   {
     return ((liudFlags_ & FROM_LOB_EXTERNAL) != 0);
   };
 
-  NA_EIDPROC inline void setFromLobExternal(NABoolean v)
+  inline void setFromLobExternal(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_LOB_EXTERNAL: liudFlags_ &= ~FROM_LOB_EXTERNAL;
   };
 
-  NA_EIDPROC NABoolean fromExternal()
+  NABoolean fromExternal()
   {
     return ((liudFlags_ & FROM_EXTERNAL) != 0);
   };
 
-  NA_EIDPROC inline void setFromExternal(NABoolean v)
+  inline void setFromExternal(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_EXTERNAL: liudFlags_ &= ~FROM_EXTERNAL;
   };
@@ -696,21 +695,21 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
-   NA_EIDPROC NABoolean toLob()
+   NABoolean toLob()
   {
     return ((lsFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lsFlags_ |= TO_LOB: lsFlags_ &= ~TO_LOB;
   };
-  NA_EIDPROC NABoolean toFile()
+  NABoolean toFile()
   {
     return ((lsFlags_ & TO_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setToFile(NABoolean v)
+  inline void setToFile(NABoolean v)
   {
     (v) ? lsFlags_ |= TO_FILE: lsFlags_ &= ~TO_FILE;
   };
@@ -779,31 +778,31 @@ public:
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC NABoolean toString()
+  NABoolean toString()
   {
     return ((lcFlags_ & TO_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setToString(NABoolean v)
+  inline void setToString(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_STRING: lcFlags_ &= ~TO_STRING;
   };
 
-  NA_EIDPROC NABoolean toLob()
+  NABoolean toLob()
   {
     return ((lcFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_LOB: lcFlags_ &= ~TO_LOB;
   };
-  NA_EIDPROC NABoolean toFile()
+  NABoolean toFile()
   {
     return ((lcFlags_ & TO_FILE) != 0);
   };
 
-  NA_EIDPROC inline void setToFile(NABoolean v)
+  inline void setToFile(NABoolean v)
   {
     (v) ? lcFlags_ |= TO_FILE: lcFlags_ &= ~TO_FILE;
   };
@@ -872,22 +871,22 @@ public:
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC NABoolean toString()
+  NABoolean toString()
   {
     return ((lchFlags_ & TO_STRING) != 0);
   };
 
-  NA_EIDPROC inline void setToString(NABoolean v)
+  inline void setToString(NABoolean v)
   {
     (v) ? lchFlags_ |= TO_STRING: lchFlags_ &= ~TO_STRING;
   };
 
-  NA_EIDPROC NABoolean toLob()
+  NABoolean toLob()
   {
     return ((lchFlags_ & TO_LOB) != 0);
   };
 
-  NA_EIDPROC inline void setToLob(NABoolean v)
+  inline void setToLob(NABoolean v)
   {
     (v) ? lchFlags_ |= TO_LOB: lchFlags_ &= ~TO_LOB;
   };
@@ -992,18 +991,18 @@ public:
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ExpLOBoper::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
  
  private:
 }

@@ -42,7 +42,7 @@
 #include "Generator.h"
 #include "exp_expr.h"
 #include "GenMapTable.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_tuple_desc.h"
 #include "parser.h"
 #include "ComKeyRange.h"
@@ -615,21 +615,6 @@ public:
                            ConstNAStringPtr *colNamesForExpr,
                            ConstQualifiedNamePtr *tblNamesForExpr);
 
-  // generate code to extract columns from an audit row image, as required
-  // by the INTERPRET_AS_ROW function.
-  short generateIarExtractionExpr(Int32 workAtp,
-                                  Int32 workAtpIndex,
-                                  const ValueIdList &extractedColIdList,
-                                  Int32 extractedRowLen,
-                                  const ValueId &auditImageId,
-                                  const ValueId &mfMapId,
-                                  ExpTupleDesc *extractedRowDesc,
-                                  ExpTupleDesc *auditImageDesc,
-                                  ULng32 *extractColList,
-                                  UInt32 compressedAuditFlag,
-                                  ULng32 encodedKeyLength,
-                                  ex_expr ** expr );
-
   //////////////////////////////////////////////////////////////////////
   // Input is a ValueIdList to be copied into a contiguous buffer.
   // Adds convert nodes before moving, if addConvNodes is true.
@@ -1053,7 +1038,7 @@ public:
       flags_ &= ~SAVE_CLAUSES_IN_EXPR;
   };
 
-  NA_EIDPROC NABoolean saveClausesInExpr() {
+  NABoolean saveClausesInExpr() {
     return ((flags_ & SAVE_CLAUSES_IN_EXPR) != 0);
   };
 

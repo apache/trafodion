@@ -52,16 +52,13 @@ class CRUMVForceOptionsList;
 //----------------------------------------------------------------------------
 
 // used by Range logging
-// LCOV_EXCL_START
 DECLARE_PTRLIST(REFRESH_LIB_CLASS, CRUMVForceOptions);
-// LCOV_EXCL_STOP
    
 //----------------------------------------------------------------------------
 // CRUForceOptions
 // Store data about the force options for a group of MVs
 //----------------------------------------------------------------------------
 
-// LCOV_EXCL_START :cnu
 
 class REFRESH_LIB_CLASS CRUForceOptions {
 public:
@@ -317,6 +314,5 @@ private:
 inline CRUMVForceOptionsList::~CRUMVForceOptionsList() {}
 inline CRUTableForceOptionsList::~CRUTableForceOptionsList() {}
 
-// LCOV_EXCL_STOP
 
 #endif

@@ -77,7 +77,6 @@ jmp_buf ExeBuf;
 //
 // Build a root tcb
 //
-#pragma nowarn(262)   // warning elimination 
 ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 {
   ExExeStmtGlobals * exe_glob = glob->castToExExeStmtGlobals();
@@ -139,8 +138,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   UInt32 numOfNewEspsStarted = 0; // num of new esps started by this operator.
   UInt32 numOfTotalEspsUsed = 0;  // num of total esps used by this operator.
   Int64 newprocessTime = 0;
-  if ((getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-      (getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
+  if ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
       (getCollectStatsType() == ComTdb::OPERATOR_STATS) ||
       (getCollectStatsType() == ComTdb::PERTABLE_STATS))
     {
@@ -151,10 +149,9 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   rtFragTable->assignEsps(TRUE, numOfTotalEspsUsed, numOfNewEspsStarted 
                           );
 
-  if (((getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-       (getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
+  if (((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
        (getCollectStatsType() == ComTdb::OPERATOR_STATS) ||
-      (getCollectStatsType() == ComTdb::PERTABLE_STATS)) &&
+       (getCollectStatsType() == ComTdb::PERTABLE_STATS)) &&
       (numOfNewEspsStarted > 0))
     {
       newprocessTime = JULIANTIMESTAMP(OMIT,OMIT,OMIT,OMIT) - newprocessTime;
@@ -245,14 +242,9 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
             }
           else
             {
-              short savedPriority, savedStopMode;
-              short error = 
+              int error = 
                 statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                  cliGlobals->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-
-              ex_assert(error == 0, "getStatsSemaphore() returned an error");
-
+                  cliGlobals->myPin());
               statsArea = new(cliGlobals->getStatsHeap())
                               ExStatisticsArea(cliGlobals->getStatsHeap(), 0, 
                               getCollectStatsType());
@@ -273,7 +265,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
               statsArea->setRtsStatsCollectEnabled(getCollectRtsStats());
               root_tcb->allocateStatsEntry();
               statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), 
-                                 cliGlobals->myPin(),savedPriority, savedStopMode);
+                                 cliGlobals->myPin());
             }
         }
       statsArea->setExplainPlanId(explainPlanId_);
@@ -344,7 +336,6 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
 
 } // ex_root_tdb::build
 
-#pragma warn(262)  // warning elimination 
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -603,11 +594,10 @@ ExOperStats * ex_root_tcb::doAllocateStatsEntry(CollHeap *heap, ComTdb *tdb)
     if (ss != NULL)
       ((ExFragRootOperStats *)stat)->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
   }
-  else if (statsType == ComTdb::MEASURE_STATS ||
-	  statsType == ComTdb::ACCUMULATED_STATS)
+  else if (statsType == ComTdb::ACCUMULATED_STATS)
   {
-    // if measure or accumulated statistics are to be collected, allocate
-    // one measure stats entry and insert it into the queue.
+    // if accumulated statistics are to be collected, allocate
+    // one stats entry and insert it into the queue.
     // All executor operators that collect stats will use this
     // entry to update stats.
     // These stats are not associated with any particular
@@ -632,9 +622,7 @@ void ex_root_tcb::inputPkeyRow(char * pkey_row)
 {
   char * dataPtr =
     workAtp_->getTupp(root_tdb().criDesc_->noTuples()-1).getDataPointer();
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(dataPtr, pkey_row, root_tdb().pkeyLen_);
-#pragma warn(1506)  // warning elimination 
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -732,7 +720,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
     }
 
 #ifdef _DEBUG
-// LCOV_EXCL_START
 // Do not need to cover debug code since customers and QA do no receive it.
   char *testCancelFreq  = getenv("TEST_ERROR_AT_QUEUE");
   if (testCancelFreq)
@@ -749,7 +736,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
         }
       getGlobals()->setInjectErrorAtQueue(freq);
     }
-// LCOV_EXCL_STOP
   else
       getGlobals()->setInjectErrorAtQueue(0);
 #endif
@@ -921,7 +907,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
   // This code block must be placed right before insert().
   // ------------------------------------------------------------
   CancelState old = master_glob->setCancelState(CLI_CANCEL_TCB_READY);
-// LCOV_EXCL_START
   if (old == CLI_CANCEL_REQUESTED)
     {
       // Don't bother to continue if async cancel has been requested.
@@ -933,7 +918,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
       populateCancelDiags(*diagsArea);
       return -1; 
     }
-// LCOV_EXCL_STOP
 
 	// ++Trigger,
 	//
@@ -1124,7 +1108,6 @@ void ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning
 ////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		       ExExeStmtGlobals * glob, 
 		       Descriptor * output_desc,
@@ -1580,9 +1563,7 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
                     da->negateCondition(da->returnIndex(-EXE_CS_EOD));
                     CollIndex index;
 		    while ((index = da->returnIndex(-EXE_CS_EOD)) != NULL_COLL_INDEX ) {
-#pragma nowarn(1506)   // warning elimination 
 		      da->deleteError(index);  
-#pragma warn(1506)  // warning elimination 
 		    }
 		    if (da->getNumber(DgSqlCode::ERROR_) == 0) {
                       retcode = 0;
@@ -1839,7 +1820,7 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		    // Note that NA_JulianTimestamp is in micro seconds and that
 		    //  streamTimeout_ is in .01 seconds
                     Int64 wait64 = streamTimeout_; // to avoid timeout overflow
-                    // Extra time may be needed, if Measure is running for stats
+                    // Extra time may be needed
                     IpcTimeout extraTime = 0;
                     if (getGlobals()->statsEnabled())
                         extraTime = 100;
@@ -1870,7 +1851,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		}
 
               // $$$ no-wait CLI prototype VV
-// LCOV_EXCL_START 
 // Obsolete in SQ.
               if (timeLimit == 0)
                 {
@@ -1880,7 +1860,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
                 // diagnostics in this way...
                 return NOT_FINISHED;
                 }
-// LCOV_EXCL_STOP
 
               // $$$ no-wait CLI prototype ^^
 
@@ -1897,7 +1876,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
           schedRetcode = glob->getScheduler()->work(prevWaitTime);
 
 #ifdef _DEBUG
-// LCOV_EXCL_START 
 // We do not need coverage for DEBUG builds since QA or customers do no recieve.
           if (earliestTimeToCancel && getenv("TEST_CANCEL_ABORT"))
             {
@@ -1909,7 +1887,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
               return -1;
             }
 #endif
-// LCOV_EXCL_STOP
 
           if (schedRetcode == WORK_BAD_ERROR)
             {
@@ -1931,12 +1908,10 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 
     } // while
 }
-#pragma warn(262)  // warning elimination 
 
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning
 ////////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 Int32 ex_root_tcb::fetchMultiple(CliGlobals *cliGlobals,
 			       ExExeStmtGlobals * glob, 
 			       Descriptor * output_desc,
@@ -2024,7 +1999,6 @@ Int32 ex_root_tcb::fetchMultiple(CliGlobals *cliGlobals,
   return retcode;
 }
 
-#pragma warn(262)  // warning elimination 
 
 //////////////////////////////////////////////////////
 // OLT execute. Does execute/fetch in one shot. Used
@@ -2212,9 +2186,7 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
                     da->negateCondition(da->returnIndex(-EXE_CS_EOD));
                     CollIndex index ;
                     while ((index = da->returnIndex(-EXE_CS_EOD)) != NULL_COLL_INDEX ) {
-#pragma nowarn(1506)   // warning elimination 
                       da->deleteError(index);  }
-#pragma warn(1506)  // warning elimination 
                     if (da->getNumber(DgSqlCode::ERROR_) == 0) {
                       if (setRetcode) {
                         retcode = 0;
@@ -2391,7 +2363,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
               // diags area. It would be nice to have a more general
               // fix, but meanwhile, we store off the curr context diags 
               // area before calling scheduler and restore afterwards.
-              CliStatement *statement = 
+              Statement *statement = 
                 glob->castToExMasterStmtGlobals()->getStatement();
               ContextCli *context = statement->getContext();
               ComDiagsArea *savedContextDiags = context->diags().copy();
@@ -2906,29 +2878,20 @@ void ex_root_tcb::deregisterCB()
     mStats = sStats->getMasterStats();
   if (statsGlobals && mStats && mStats->isReadyToSuspend())
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                cliGlobals->myPin(), savedPriority, savedStopMode,
-                FALSE /*shouldTimeout*/);
-
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                cliGlobals->myPin());
 
     while (mStats->isQuerySuspended())
     {
       // See comments around allowUnitTestSuspend above.  This code has
       // been manually unit tested, and it too difficult and costly to 
       // test in an automated script.
-      // LCOV_EXCL_START
       statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-               cliGlobals->myPin(),savedPriority, savedStopMode);
+               cliGlobals->myPin());
       DELAY(300);
 
-      short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                  cliGlobals->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
-      // LCOV_EXCL_STOP
+      int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                  cliGlobals->myPin());
     }
 
     // Now we have the semaphore, and the query is not suspended.  Quick
@@ -2937,7 +2900,7 @@ void ex_root_tcb::deregisterCB()
 
     // Now it is safe to let MXSSMP process another SUSPEND.
     statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-               cliGlobals->myPin(),savedPriority, savedStopMode);
+               cliGlobals->myPin());
   }
 
   // No started message sent, so no finished message should be sent.
@@ -2948,7 +2911,6 @@ void ex_root_tcb::deregisterCB()
   if (isCbFinishedMessageSent())
     return;
 
-#pragma warning (disable : 4291)
 
   // The stream's actOnSend method will delete (or call decrRefCount()) 
   // for this object.
@@ -2964,7 +2926,6 @@ void ex_root_tcb::deregisterCB()
   QueryFinished *queryFinished = 
     new (context->getIpcHeap()) QueryFinished( rtsHandle, 
                                                   context->getIpcHeap());
-#pragma warning (default : 4291)
 
   //Create the stream on the IpcHeap, since we don't dispose of it immediately.
   //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
@@ -3037,11 +2998,8 @@ void ex_root_tcb::dumpCb()
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals == NULL)
     return; 
-  short savedPriority, savedStopMode;
-  short error =
-         statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-          cliGlobals->myPin(), savedPriority, savedStopMode,
-          FALSE /*shouldTimeout*/);
+  int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+          cliGlobals->myPin());
   bool doDump = false;
   Int64 timenow = NA_JulianTimestamp();
   if ((timenow - statsGlobals->getSsmpDumpTimestamp()) > 
@@ -3051,7 +3009,7 @@ void ex_root_tcb::dumpCb()
     statsGlobals->setSsmpDumpTimestamp(timenow);
   }
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-                      cliGlobals->myPin(),savedPriority, savedStopMode);
+                      cliGlobals->myPin());
   if (doDump)
     cbServer_->getServerId().getPhandle().dumpAndStop(true, false);
 }
@@ -3078,12 +3036,10 @@ void QueryStartedMsgStream::actOnReceive(IpcConnection *connection)
   {
     CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
 
-    #pragma warning (disable : 4291)
 
     QueryStartedReply *reply = new (ipcHeap) 
             QueryStartedReply(INVALID_RTS_HANDLE, ipcHeap);
 
-    #pragma warning (default : 4291)
 
     *this >> *reply;
 
@@ -3164,12 +3120,10 @@ void QueryFinishedMsgStream::actOnReceive(IpcConnection *connection)
 
     CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
 
-  #pragma warning (disable : 4291)
 
     RmsGenericReply *reply = new (ipcHeap) 
               RmsGenericReply(ipcHeap);
 
-  #pragma warning (default : 4291)
 
     *this >> *reply;
 

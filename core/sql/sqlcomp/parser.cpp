@@ -53,7 +53,6 @@
 #include "csconvert.h"
 #include "ulexer.h"
 
-#include "catapirequest.h"
 #include "CmpContext.h"
 #include "CmpStatement.h"
 #include "CmpErrLog.h"
@@ -62,7 +61,6 @@
 #include "NAMemory.h"
 #include "ParserMsg.h"
 #include "parser.h"
-#include "purify.h"
 #include "QueryText.h"
 #include "RelExeUtil.h"
 #include "RelMisc.h"		// for RelRoot
@@ -768,9 +766,7 @@ Int32 Parser::parseSQL
     {      
       if (wInputStr() &&
           stringScanWillTerminateInParser(wInputStr(), internalExpr, 
-#pragma nowarn(1506)   // warning elimination 
                                           wInputStrLen()))
-#pragma warn(1506)  // warning elimination 
         {
           // convert str to Unicode
           delete lexer;
@@ -1167,9 +1163,7 @@ ExprNode *Parser::getExprTree(const char * str,
     {
       // add a semicolon and a null character to the end of str (required by the parser)
       newstr = new(wHeap()) char[newlen + 1 + 1];
-#pragma nowarn(1506)   // warning elimination 
       str_cpy_all(newstr, str, newlen);
-#pragma warn(1506)  // warning elimination 
       newstr[newlen]   = ';' ;
       newstr[newlen+1] = '\0';
       newlen++;
@@ -1200,9 +1194,7 @@ ExprNode *Parser::getExprTree(const char * str,
   // save the current SqlParser_Flags and restore them after parse step.
   ULng32 saved_SqlParser_Flags = SqlParser_Flags;
 
-#pragma nowarn(1506)   // warning elimination 
   parseDML(newstr, newlen, strCharSet, &node, token, paramItemList);
-#pragma warn(1506)  // warning elimination 
   delete paramItemList;
   
   // restore the saved SqlParser_Flags 
@@ -1263,9 +1255,7 @@ ExprNode *Parser::get_w_ExprTree(const NAWchar * str, // strCharSet should be Ch
       if (num_params >= 6)    paramItemList->insert(p6);
     }
 
-#pragma nowarn(1506)   // warning elimination 
     parse_w_DML(newstr, newlen, &node, token, paramItemList);
-#pragma warn(1506)  // warning elimination 
     delete paramItemList;
   
   if (newstr != str)
@@ -1497,6 +1487,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 	}
     }
 
+#ifdef __ignore
   // Check for "CREATE TANDEM_CAT_REQUEST&" 
   if (ns.index(CATAPI) == 0)
     {                 
@@ -1523,6 +1514,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 
       specialDDL = TRUE;      
     }
+#endif
 
   // If a special DDL is found, go ahead and create a DDLExpr node
   if (specialDDL)

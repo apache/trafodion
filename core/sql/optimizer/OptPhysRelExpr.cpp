@@ -7074,7 +7074,6 @@ NABoolean MergeJoin::parentAndChildPartReqsCompatible(
         // are disjoint, then the requirement must allow a single
         // partition part func, because this will be the only way
         // to satisfy both the requirement and the join cols.
-#pragma nowarn(1506)   // warning elimination
         if (joinLeftPartKey.isEmpty() AND
             joinRightPartKey.isEmpty() AND
             (reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
@@ -7084,7 +7083,6 @@ NABoolean MergeJoin::parentAndChildPartReqsCompatible(
              EXACTLY_ONE_PARTITION)
            )
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
     } // end if fuzzy requirement
   } // end if there was a partitioning requirement for the join
@@ -11582,7 +11580,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
       {
         // Scalar aggregates cannot execute in parallel, so the
         // requirement must allow a single partition part func.
-#pragma nowarn(1506)   // warning elimination
         if ((reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
             ((reqPartCount -
               (reqPartCount * partReq->castToRequireApproximatelyNPartitions()->
@@ -11590,7 +11587,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
              EXACTLY_ONE_PARTITION)
            )
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
       else if (partReq->getPartitioningKey().entries() > 0)
       {
@@ -11600,7 +11596,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
         // are disjoint, then the requirement must allow a single
         // partition part func, because this will be the only way
         // to satisfy both the requirement and the GB cols.
-#pragma nowarn(1506)   // warning elimination
         if (myPartKey.isEmpty() AND
             (reqPartCount != ANY_NUMBER_OF_PARTITIONS) AND
             ((reqPartCount -
@@ -11608,7 +11603,6 @@ NABoolean GroupByAgg::rppAreCompatibleWithOperator
                                         getAllowedDeviation())) >
              EXACTLY_ONE_PARTITION))
           return FALSE;
-#pragma warn(1506)  // warning elimination
       }
     } // end if fuzzy requirement
   } // end if there was a partitioning requirement for the GB
@@ -13057,9 +13051,7 @@ computeDP2CostDataThatDependsOnSPP(
 
   //  Assume at least one DP2 volume even if node map indicates otherwise.
   Lng32 numOfDP2Volumes =
-#pragma nowarn(1506)   // warning elimination
     MIN_ONE(((NodeMap *)(physicalPartFunc.getNodeMap()))->getNumOfDP2Volumes());
-#pragma warn(1506)  // warning elimination
 
   //  The number of cpus executing DP2's cannot be more than the number
   //  of active partitions :
@@ -13368,9 +13360,7 @@ computeDP2CostDataThatDependsOnSPP(
               // the synthesis for AP:
 
               Lng32 affectedPartitions =
-#pragma nowarn(1506)   // warning elimination
                 newNodeMapPtr->getNumActivePartitions();
-#pragma warn(1506)  // warning elimination
 
               // Now estimate the RC:
 
@@ -15828,7 +15818,6 @@ Tuple::costMethod() const
 // should change as well.
 //
 //==============================================================================
-#pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 Tuple::synthPhysicalProperty(const Context* myContext,
                              const Lng32     planNumber,
@@ -16067,7 +16056,6 @@ Tuple::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 
 } //  Tuple::synthPhysicalProperty()
-#pragma warn(262)  // warning elimination
 
 //<pb>
 //==============================================================================
@@ -17163,7 +17151,6 @@ PhysicalIsolatedScalarUDF::costMethod() const
 // should change as well.
 //
 //==============================================================================
-#pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
                                          const Lng32     planNumber,
@@ -17341,7 +17328,6 @@ IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 
 } //  IsolatedScalarUDF::synthPhysicalProperty()
-#pragma warn(262)  // warning elimination
 
 
 PhysicalProperty *CallSP::synthPhysicalProperty(const Context* context,

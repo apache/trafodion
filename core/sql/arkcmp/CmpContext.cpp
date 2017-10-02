@@ -51,7 +51,6 @@
 #include "NAHeap.h"
 #include "NewDel.h"
 #include "OptimizerSimulator.h"
-#include "ReadTableDef.h"	// for ReadTableDef::endTransaction
 #include "SchemaDB.h"
 #include "CmpCommon.h"
 #include "Rule.h"               
@@ -60,9 +59,7 @@
 #include "PhyProp.h"            // for InitCostVariables()
 #include "NAClusterInfo.h"
 #include "UdfDllInteraction.h"
-#ifdef NA_CMPDLL
 #define   SQLPARSERGLOBALS_FLAGS   // needed to set SqlParser_Flags
-#endif // NA_CMPDLL
 #include "SqlParserGlobals.h"			// last #include
 #include "CmpErrLog.h"
 #include "QRLogger.h"
@@ -74,10 +71,8 @@
 
 #include "PCodeExprCache.h"
 #include "HBaseClient_JNI.h"
-#ifdef NA_CMPDLL
 #include "CompException.h"
 #include "CostMethod.h"
-#endif // NA_CMPDLL
 
 //++MV
 extern "C" {
@@ -120,7 +115,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   internalCompile_(NOT_INTERNAL_COMPILE),
   // Template changes for Yosemite compiler incompatible with others
   staticCursors_(hashCursor),
-  readTableDef_(NULL), schemaDB_(NULL), controlDB_(NULL),tmpFileNumber_(-1),
+  schemaDB_(NULL), controlDB_(NULL),tmpFileNumber_(-1),
   isRuntimeCompile_(TRUE),
   mxcmpPrimarySecondaryStatusSet_(FALSE),
   sqlmxRegress_(0),
@@ -177,9 +172,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
 
   // initialize CmpStatement related members.
   statements_.insert(0);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(0);
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
 
   diags_ = ComDiagsArea::allocate(heap_);
@@ -207,10 +200,9 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     }
 
     CDBList_ = new (heap_) CollationDBList(heap_);
-    readTableDef_ = new(heap_) ReadTableDef();
 
     // globals for Optimizer -- also causes NADefaults table to be read in
-    schemaDB_ = new(heap_) SchemaDB(readTableDef_);
+    schemaDB_ = new(heap_) SchemaDB();
 
     // error during nadefault creation. Cannot proceed. Return.
     if (! schemaDB_->getDefaults().getSqlParser_NADefaults_Ptr())
@@ -248,7 +240,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   gmtDiff_ = timezone / 60;
 
   CmpProcess p;
-  p.getCompilerId(compilerId_);
+  p.getCompilerId(compilerId_, COMPILER_ID_LEN);
 
 
   //  CmpSeabaseDDL cmpSBD;
@@ -356,7 +348,6 @@ CmpContext::~CmpContext()
   if (diags_)
     diags_->decrRefCount();
 
-  delete readTableDef_;
   delete schemaDB_;
   delete controlDB_;
   NADELETE(optDefaults_, OptDefaults, heap_);
@@ -368,7 +359,6 @@ CmpContext::~CmpContext()
       delete  optSimulator_;
    optSimulator_ = NULL;
   
-  readTableDef_ = 0;
   schemaDB_ = 0;
   controlDB_ = 0;
   optDefaults_ = 0;
@@ -603,9 +593,7 @@ void CmpContext::setStatement(CmpStatement* s)
   init();
   statements_.insert(s);
   s->setPrvCmpStatement(statements_[currentStatement_]);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(s);
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
 
   // Commented this out, as init() is now a no-op:
@@ -616,9 +604,7 @@ void CmpContext::unsetStatement(CmpStatement* s, NABoolean exceptionRaised)
 {
   CollIndex i = statements_.index(s);
   statements_.removeAt(i);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = statements_.index(s->prvCmpStatement());
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
   for ( i = 0; i < statements_.entries(); i++ )
     if (statements_[i] && statements_[i]->prvCmpStatement() == s)
@@ -632,9 +618,7 @@ void CmpContext::unsetStatement(CmpStatement* s, NABoolean exceptionRaised)
 void CmpContext::setCurrentStatement(CmpStatement* s)
 {
   CollIndex i = statements_.index(s);
-#pragma nowarn(1506)   // warning elimination
   currentStatement_ = ( i == NULL_COLL_INDEX ) ? 0 : i;
-#pragma warn(1506)  // warning elimination
   currentStatementPtrCache_ = statements_[currentStatement_];
   CMPASSERT(s->diags()->getNumber() == 0);
   // diags()->clear();
@@ -773,7 +757,6 @@ CmpStatementISP* CmpContext::getISPStatement(Int64 id)
   return 0;
 }
 
-#ifdef NA_CMPDLL
 // Interface to the embedded arkcmp, used for executor master to compile
 // query statement using this SQL compiler inside the same process.
 //
@@ -1227,5 +1210,3 @@ void CmpContext::clearAllCaches()
    if(histogramCache_)
       histogramCache_->invalidateCache();
 }
-
-#endif // NA_CMPDLL

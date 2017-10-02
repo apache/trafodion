@@ -64,7 +64,6 @@ subjectNameToTrigTemp( const NAString & subjectTableName )
 //   by  subjectNameToTrigTemp() ) )
 //
 // no longer used -buggy
-// LCOV_EXCL_START
 NAString 
 trigTempToSubjectName( const NAString & trigTempTableName )
 {
@@ -86,7 +85,6 @@ trigTempToSubjectName( const NAString & trigTempTableName )
 
   return subjectTableName;
 }
-// LCOV_EXCL_STOP
 
 //-----------------------------------------------------------------------------
 //
@@ -181,7 +179,6 @@ UpdateColumns::markColumnsOnBitmap(unsigned char *bitmap, CollIndex numBytes) co
 // Debugging aid
 //
 // used for debugging only
-// LCOV_EXCL_START
 void 
 UpdateColumns::print(ostream & os, const char* indent, const char* title) const
 {
@@ -199,7 +196,6 @@ UpdateColumns::print(ostream & os, const char* indent, const char* title) const
 
   os << endl;
 }
-// LCOV_EXCL_STOP
 
 //-----------------------------------------------------------------------------
 //
@@ -212,7 +208,6 @@ UpdateColumns::print(ostream & os, const char* indent, const char* title) const
 // are trigger object's get desructed explicitly
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 Trigger::~Trigger()
 {
   // only when persistence is active, trigger object's get desructed
@@ -235,7 +230,6 @@ Trigger::~Trigger()
   if (sqlText_)
     delete sqlText_;	
 }
-// LCOV_EXCL_STOP
 
 //
 // -- Trigger:: equality
@@ -271,9 +265,7 @@ Trigger::parseTriggerText() const
 
   // Parse the SQL text.
   Parser parser(CmpCommon::context());
-#pragma nowarn(1506)   // warning elimination 
   if (parser.parseDML(sqlText_->data(), sqlText_->length(), sqlTextCharSet_, &parsedNode))
-#pragma warn(1506)  // warning elimination 
     return NULL;
 
   // Extract the trigger body without the DDL nodes on top
@@ -387,10 +379,7 @@ Trigger::getParsedTrigger(BindWA *bindWA)
 //
 // Debugging aid.
 //
-#pragma nowarn(770)   // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 // used for debugging only
-// LCOV_EXCL_START
 void 
 Trigger::print(ostream &os, const char* indent, const char* title) const
 {
@@ -420,9 +409,6 @@ Trigger::print(ostream &os, const char* indent, const char* title) const
   os << "TimeStamp: " << convertInt64ToDouble(timeStamp_) << endl;
   os << "Recursion Counter: " << recursionCounter_ << endl;
 }
-// LCOV_EXCL_STOP
-#pragma warn(1506)  // warning elimination 
-#pragma warn(770)  // warning elimination 
 
 
 //------------------------------------------------------------------------------
@@ -526,10 +512,7 @@ TriggerList::sortByTimeStamp()
 //
 // Debugging aid.
 //
-#pragma nowarn(1506)   // warning elimination 
-#pragma nowarn(770)   // warning elimination 
 // used for debugging only
-// LCOV_EXCL_START
 void 
 TriggerList::print(ostream & os, const char* indent, const char* title) const
 {
@@ -541,9 +524,6 @@ TriggerList::print(ostream & os, const char* indent, const char* title) const
     os << ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
   }
 }
-// LCOV_EXCL_STOP
-#pragma warn(770)  // warning elimination 
-#pragma warn(1506)  // warning elimination 
 
 //
 // -- TriggerList::clearAndDestroy()
@@ -555,7 +535,6 @@ TriggerList::print(ostream & os, const char* indent, const char* title) const
 // only used when triggers are allocated from the cntext heap. 
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h
-// LCOV_EXCL_START
 void
 TriggerList::clearAndDestroy()
 {
@@ -568,7 +547,6 @@ TriggerList::clearAndDestroy()
   }
   this->clear();
 }
-// LCOV_EXCL_STOP
 
 
 //------------------------------------------------------------------------------
@@ -583,7 +561,6 @@ TriggerList::clearAndDestroy()
 // Debugging aid.
 //
 // used for debugging only
-// LCOV_EXCL_START
 void 
 BeforeAndAfterTriggers::print(ostream&    os, 
 			      const char *indent, 
@@ -596,7 +573,6 @@ BeforeAndAfterTriggers::print(ostream&    os,
   if (getAfterRowTriggers())
     getAfterRowTriggers()->print(os, indent, "After Row Triggers: ");
 }
-// LCOV_EXCL_STOP
 
 
 //
@@ -608,7 +584,6 @@ BeforeAndAfterTriggers::print(ostream&    os,
 // are trigger object's get desructed explicitly
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 void
 BeforeAndAfterTriggers::clearAndDestroy()
 {
@@ -630,7 +605,6 @@ BeforeAndAfterTriggers::clearAndDestroy()
     delete beforeTriggers_;
   }
 }
-// LCOV_EXCL_STOP
 
 
 // 
@@ -641,13 +615,11 @@ BeforeAndAfterTriggers::clearAndDestroy()
 // are trigger object's get desructed explicitly
 // Currently triggers are allocated from the statement heap.
 // See method Trigger::Heap() in file Triggers.h for more details
-// LCOV_EXCL_START
 BeforeAndAfterTriggers::~BeforeAndAfterTriggers() 
 {
   // NOTE: if deep-destruction is required then
   // call this->clearAndDestroyAllEntries() here
 }
-// LCOV_EXCL_STOP
 
 // 
 // -- BeforeAndAfterTriggers::entries

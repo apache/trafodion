@@ -3128,7 +3128,7 @@ short ExExeUtilLobExtractTcb::work()
               {
                 if ((lobTdb().getBufAddr() != -1) && (lobTdb().getBufAddr() != 0))
                   str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobDataLen_,sizeof(Int64));
-                str_sprintf(statusString_," LOB Length : %d", lobDataLen_);
+                str_sprintf(statusString_," LOB Length : %ld", lobDataLen_);
                 step_ = RETURN_STATUS_;
                 break;	
               }
@@ -3207,7 +3207,7 @@ short ExExeUtilLobExtractTcb::work()
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
-		str_sprintf(statusString_, "Success. Targetfile :%s  Length : %Ld", lobTdb().getFileName(), lobDataOutputLen);
+		str_sprintf(statusString_, "Success. Targetfile :%s  Length : %ld", lobTdb().getFileName(), lobDataOutputLen);
 		step_ = RETURN_STATUS_;
 	      }
 	    else if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
@@ -3323,7 +3323,7 @@ short ExExeUtilLobExtractTcb::work()
             
             if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
 	      {
-		str_sprintf(statusString_," Success: LOB data length returned : %d", lobDataOutputLen);
+		str_sprintf(statusString_," Success: LOB data length returned : %ld", lobDataOutputLen);
 	       
 		//lobTdb().setExtractSizeIOAddr((Int64)(&lobDataOutputLen));
 		memcpy((char *)lobTdb().dataExtractSizeIOAddr(), (char *)&lobDataOutputLen,sizeof(Int64));
@@ -3687,7 +3687,7 @@ short ExExeUtilLobUpdateTcb::work()
 	      }  
             if (so == Lob_Buffer)
 	      {
-		str_sprintf(statusString_," Updated/Replaced %d bytes of LOB data ", lobLen);
+		str_sprintf(statusString_," Updated/Replaced %ld bytes of LOB data ", lobLen);
 		step_ = RETURN_STATUS_;
 	      }
             
@@ -3783,7 +3783,7 @@ short ExExeUtilLobUpdateTcb::work()
 	      }  
             if (so == Lob_Buffer)
 	      {
-		str_sprintf(statusString_," Updated/Appended %d bytes of LOB data ", lobLen);
+		str_sprintf(statusString_," Updated/Appended %ld bytes of LOB data ", lobLen);
 		step_ = RETURN_STATUS_;
 	      }
             

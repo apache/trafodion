@@ -50,9 +50,7 @@ LmResult setLMObjectMapping(
   char *origSigPtr = sig;
   LmResult retCode = LM_OK;
 
-#pragma nowarn(1506)   // warning elimination 
   str_cpy_all(sig, routineSig, sigLen);
-#pragma warn(1506)  // warning elimination 
   sig[sigLen] = '\0';
  
   ComUInt32 pos = 0;

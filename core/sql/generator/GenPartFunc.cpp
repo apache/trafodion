@@ -346,7 +346,6 @@ short RangePartitioningFunction::codeGen(Generator *generator,
 //  begEndAttrs[2*numPartKeyCols-1]->getOffset(),
 //    "begin/end piv keys have different layouts");
 
-#pragma nowarn(1506)   // warning elimination 
   generatedObject = new(generator->getSpace()) ExRangePartInputData(
        partInputCriDesc,
        partInputDataLength,
@@ -357,7 +356,6 @@ short RangePartitioningFunction::codeGen(Generator *generator,
        TRUE); // uses expressions to calculate ranges in the executor
   generatedObject->setPartitionExprAtp(pivMoveAtp);
   generatedObject->setPartitionExprAtpIndex(pivMoveAtpIndex);
-#pragma warn(1506)  // warning elimination 
 
   // now fill in the individual partition boundaries
   // (NOTE: there is one more than there are partitions)

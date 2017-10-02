@@ -46,23 +46,11 @@
 #include "ExStats.h"
 #include "ex_error.h"
 
-#ifndef __EID
 // wait method need more include files
 #include "ex_exe_stmt_globals.h"
 #include "Ipc.h"
 #include "ex_frag_rt.h"
 #include "ex_root.h"
-#endif
-
-
-#ifdef __EID
-#if !defined(NDEBUG)
-// See test harness below
-#include "ex_eid_stmt_globals.h"
-#include "SqlSessionData.h"
-#endif
-#include "ex_dp2exe_root.h"
-#endif
 
 #include "ExCextdecs.h"
 #include "ComRtUtils.h"
@@ -98,24 +86,19 @@ ExScheduler::ExScheduler(ex_globals *glob)
      #endif
      subtaskTrace_[i].rmsTimeConsumed_ = -1;
   }
-#ifndef __EID
   exeTrace_ = 0;
-#endif
 }
 
 ExScheduler::~ExScheduler()
 {
-#ifndef __EID
   if (exeTrace_ && glob_->castToExExeStmtGlobals()->getCliGlobals())
   {
     ExeTraceInfo *ti = glob_->castToExExeStmtGlobals()->getCliGlobals()
                             ->getExeTraceInfo();
     ti->removeTrace(exeTrace_);
   }
-#endif
 }
 
-#ifndef __EID
 Int32 ExScheduler::printALiner(Int32 lineno, char *buf)
 {
   if (lineno >= NumLastCalled)
@@ -132,10 +115,6 @@ Int32 ExScheduler::printALiner(Int32 lineno, char *buf)
                  subtaskTrace_[lineno].rmsTimeConsumed_);
   return rv;
 }
-#endif // not __EID
-
-// const char * NodeTypeToString(ComTdb::ex_node_type nodeType);
-
 
 ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 {
@@ -158,7 +137,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
   if (suspended_)
     return WORK_OK;
 
-#ifndef __EID
   if (exeTrace_ == 0 && glob_->castToExExeStmtGlobals()->getCliGlobals())
   {
     ExeTraceInfo *ti = glob_->castToExExeStmtGlobals()->getCliGlobals()
@@ -183,29 +161,7 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
       }
     }
   }
-#endif  // not __EID
 
-#ifdef __EID
-#if !defined(NDEBUG)
-  // This is for DEBUG exe-in-dp2.  Note the double negative in the test
-  // above.
-
-  // Test harness for EID loop detection -- only for EID.  Also, 
-  // only for debug to avoid a small performance penalty.
-  // Run through the subtasks and "unschedule" them all.  This
-  // should trigger the EID loop detection code.
-  if (((ExEidStmtGlobals *)glob_)->getSqlSessionData()->isEidLoopTest())
-    {
-      subtask = subtasks_;
-      while (subtask)
-        {
-          subtask->reset();
-          subtask = subtask->getNext();
-        }
-    }  
-#endif   // endif eid debug.
-#endif
-  
   ExOperStats *rootStats = NULL;
   ExFragRootOperStats *fragRootOperStats = NULL;
   ExMeasStats *measStats = NULL;
@@ -226,7 +182,7 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
     fragRootOperStats = rootStats->castToExFragRootOperStats();
     measStats = rootStats->castToExMeasStats();
   }
-#ifndef __EID
+
   ExProcessStats *processStats;
   if (fragRootOperStats != NULL)
   {
@@ -235,7 +191,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
      if (processStats != NULL)
          processStats->setRecentQid(fragRootOperStats->getQueryId());
   }     
-#endif     
 
   // ---------------------------------------------------------------------
   // Loop through all events that are managed by this scheduler
@@ -322,10 +277,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
           // taken before the subtask has returned.
           subtaskTrace_[lastCalledIdx_].lastWorkRetcode_ = 666;
 
-#ifndef __EID
-//          cout << "Calling subtask " << subtask << ", tcb " << subtask->tcb_ << ", name_ " << subtask->taskName_ << endl;
-#endif
-
 	  // Do the work
 	  //
           rc = subtask->work();
@@ -377,7 +328,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
               ex_queue_pair pq = subtask->tcb_->getParentQueue();
               if (pq.down != NULL)
               {
-#pragma warning (disable : 4244)   //warning elimination
                 stats->getDownQueueStats().addEntry(
                                            (double)pq.down->getLength());
                 stats->setDownQueueSize(pq.down->getSize());
@@ -386,7 +336,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
               {
                 stats->getUpQueueStats().addEntry(
                                          (double)pq.up->getLength());
-#pragma warning (default : 4244)   //warning elimination
                  stats->setUpQueueSize(pq.up->getSize());
               }
             }
@@ -425,12 +374,7 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 		    {
 		      // reset flag (may not have to but can't hurt)
 		      externalEventCompleted_ = FALSE;
-#ifdef __EID
-                      QueryIDStats qidstats;
-                      if ((maxCpuTime_ != LLONG_MAX) &&
-                          (qidstats.getProcessBusyTime() > maxCpuTime_))
-                        localRootTcb_->cpuLimitExceeded();
-#else
+
 
                       // Special case for cancel: master must check for I/O
                       // completion here.
@@ -447,7 +391,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 
                       }
 
-#endif
 		      return rc;
 		    }
 
@@ -486,12 +429,10 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 	      poolsBlocked = 0;
 	      prevPoolsBlocked = 0;
 
-#ifndef __EID
 	      // poll each active connection once for each cycle through
 	      // the scheduled subtasks
 	      glob_->castToExExeStmtGlobals()->getIpcEnvironment()->
 		getAllConnections()->waitOnAll(IpcImmediately);
-#endif
 	    }
 	  else if (poolsBlocked)
 	    {
@@ -520,25 +461,7 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
 	      poolsBlocked = 0;
 	      subtask = subtasks_;
           }  // if poolsBlocked
-#ifdef __EID
-          if (subtaskLoopCnt_++ == maxSubtaskLoops_)
-          {
-            QueryIDStats qidstats;
-            if ((maxCpuTime_ != LLONG_MAX) &&
-                (qidstats.getProcessBusyTime() > maxCpuTime_))
-            {
-              localRootTcb_->cpuLimitExceeded();
 
-              // reset subtask to NULL to ensure we return to the EID root
-              // operator before any scan tcb gets a chance to process
-              // the cancel.  This is needed since the scan tcb can insert
-              // Q_NO_DATA directly into the reply buffer.  We have to make
-              // sure that the root tcb inserts Q_SQLERROR first.
-              subtask = NULL;
-            }
-            subtaskLoopCnt_ = 1;
-          }
-#else
           if (rootStats)
           {
             if ((subtaskLoopCnt_ == maxSubtaskLoops_) ||
@@ -550,7 +473,6 @@ ExWorkProcRetcode ExScheduler::work(Int64 prevWaitTime)
             else
               subtaskLoopCnt_++;
           }
-#endif
         }  // if subtask == NULL
   } // While Loop
   // reset flag
@@ -700,7 +622,6 @@ ExExceptionSubtask * ExScheduler::addOrFindExceptionSubtask(
 
 NABoolean ExScheduler::checkSuspendAndLimit()
 {
-#ifndef __EID
   ExFragRootOperStats *fragRootStats = NULL;
   ExMeasStats *measRootStats = NULL;
   Int64 localCpuTime = 0;
@@ -743,7 +664,7 @@ NABoolean ExScheduler::checkSuspendAndLimit()
       }
     }
   }
-#endif // not EID
+
   return FALSE;
 }
 
@@ -762,12 +683,6 @@ ExOperStats * ExScheduler::getRootStats()
 void ExScheduler::setRootTcb(ex_tcb *tcb)
 { 
   localRootTcb_ = tcb; 
-#ifdef __EID
-  // In the EID, the interval to check CPU time is config'd with 
-  // QUERY_LIMIT_SQL_PROCESS_CPU_DP2_FREQ.
-  maxSubtaskLoops_ = ((ExEIDRootTcb *) localRootTcb_)->getSchLoopCnt();
-  subtaskLoopCnt_ = maxSubtaskLoops_;
-#endif
 }
 
 const char *ExWorkProcRetcodeToString(ExWorkProcRetcode r)
@@ -782,11 +697,7 @@ const char *ExWorkProcRetcodeToString(ExWorkProcRetcode r)
     case WORK_NOBODY_WORKED:         return "WORK_NOBODY_WORKED";
     case WORK_STATS_PREEMPT:         return "WORK_STATS_PREEMPT";
     case WORK_HASHJ_PREEMPT:         return "WORK_HASHJ_PREEMPT";
-#ifdef __EID
-    default: return "UNKNOWN";
-#else
     default: return ComRtGetUnknownString((Int32) r);
-#endif
   }
 }
 

@@ -134,24 +134,18 @@ Int32 na_wcsnncmp (const NAWchar *wstr1, UInt32 len1,
         return 0;
     }
   else
-#pragma nowarn(1506)   // warning elimination
     return *--wstr1 - *--wstr2;
 //    return (*(const UInt16*)--wstr1 - *(const UInt16*)--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 
 Int32 na_wcsncmp (const NAWchar * wstr1, const NAWchar * wstr2, UInt32 len)
 {
    if ( len == 0 ) return 0;
 
-#pragma warning (disable : 4018)   //warning elimination
    for (Int32 i=0; i<len; i++ )
-#pragma warning (default : 4018)   //warning elimination
    {
      if ( *wstr1 != *wstr2 )
-#pragma nowarn(1506)   // warning elimination 
         return ( *wstr1 - *wstr2 );
-#pragma warn(1506)  // warning elimination 
 
      if ( *wstr1 == 0 ) break;
 
@@ -166,9 +160,7 @@ Int32 na_wcscmp (const NAWchar * wstr1, const NAWchar * wstr2)
    while (*wstr1 == *wstr2++)
 		if (*wstr1++ == 0)
 			return (0);
-#pragma nowarn(1506)   // warning elimination 
 	return (*wstr1 - *--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 
 #if 0 /* As of 8/30/2011, there are no callers in SQ SQL. */
@@ -177,9 +169,7 @@ Int32 na_wcsicmp (const NAWchar * wstr1, const NAWchar * wstr2)
    while (na_towlower(*wstr1) == na_towlower(*wstr2++))
 		if (*wstr1++ == 0)
 			return (0);
-#pragma nowarn(1506)   // warning elimination 
 	return (*wstr1 - *--wstr2);
-#pragma warn(1506)  // warning elimination 
 }
 #endif /* As of 8/30/2011, there are no callers in SQ SQL. */
 
@@ -360,13 +350,11 @@ Lng32 na_wcstol (const NAWchar * wstr)
   return (Lng32)na_wcstoll(wstr);
 }
 
-//LCOV_EXCL_START : cnu - used only by swscanf() (which is not used) and EncodedValue.cpp (in DEBUG code)
 double na_wcstod(const NAWchar *, NAWchar **)
 {
    // not implemented!
    return (double)0;
 }
-//LCOV_EXCL_STOP
 
 NAWchar *na_wmemchr(const NAWchar *ws, NAWchar wc, Int32 n) 
 {
@@ -402,7 +390,6 @@ size_t na_mbstowcs(NAWchar* wp, const char* p,  size_t mx_wp)
   return n;
 }
 
-//LCOV_EXCL_START : cnu [ used only by CIEDelimDataFileDoubleByte::PositionFile() in the IMPORT utility ]
 NAWchar* na_wcswcs(const NAWchar* wp1, const NAWchar* wp2)
 { 
    if ( wp2 == NULL || *wp2 == (NAWchar)0 ) 
@@ -419,7 +406,6 @@ NAWchar* na_wcswcs(const NAWchar* wp1, const NAWchar* wp2)
 
    return NULL;
 }
-//LCOV_EXCL_STOP
 
 #include "swscanf.cpp"
 #include "swsprintf.cpp"

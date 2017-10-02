@@ -89,11 +89,9 @@ inline Int32 QueryText::canBeUsedBySqlcompTest(char** text)
 
 inline Int32 QueryText::octetLength()
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset_==SQLCHARSETCODE_UCS2 ? 
     na_wcslen((const NAWchar*)wText()) * 
     CharInfo::maxBytesPerChar((CharInfo::CharSet)charset_) : str_len(text());
-#pragma warn(1506)  // warning elimination 
 }
 
 inline Int32 QueryText::octetLenPlusOne()
@@ -103,9 +101,7 @@ inline Int32 QueryText::octetLenPlusOne()
 
 inline Int32 QueryText::length()
 {
-#pragma nowarn(1506)   // warning elimination 
   return charset_==SQLCHARSETCODE_UCS2 ? na_wcslen(wText()) : str_len(text());
-#pragma warn(1506)  // warning elimination 
 }
 
 

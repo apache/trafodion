@@ -232,6 +232,7 @@ struct DefaultDefault
 #define	 DDui0_5(name,value)		 DD(name,value,&validateUIntFrom0To5)
 #define	XDDui0_5(name,value)		XDD(name,value,&validateUIntFrom0To5)
 #define	 DDui1_6(name,value)		 DD(name,value,&validateUIntFrom1To6)
+#define	 DDui1_8(name,value)		 DD(name,value,&validateUIntFrom1To8)
 #define	 DDui1_10(name,value)		 DD(name,value,&validateUIntFrom1To10)
 #define	 DDui2_10(name,value)		 DD(name,value,&validateUIntFrom2To10)
 #define	 DDui1500_4000(name,value)	 DD(name,value,&validateUIntFrom1500To4000)
@@ -301,6 +302,7 @@ const ValidateUInt2		validateUI512(512);	// pos multiples of 512 only
 const ValidateUIntFrom0To5	validateUIntFrom0To5;	// integer from 0 to 5
 const ValidateUIntFrom1500To4000 validateUIntFrom1500To4000;	// integer from 1 to 6
 const ValidateUIntFrom1To6	validateUIntFrom1To6;	// integer from 1 to 6
+const ValidateUIntFrom1To8	validateUIntFrom1To8;	// integer from 1 to 8
 const ValidateUIntFrom1To10	validateUIntFrom1To10;	// integer from 1 to 10
 const ValidateUIntFrom2To10	validateUIntFrom2To10;	// integer from 2 to 10
 const ValidateIPCBuf		validateIPCBuf;	// for IPC message buffers (DP2 msgs)
@@ -444,11 +446,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   DDkwd__(ATTEMPT_ESP_PARALLELISM,		"ON"),
   DDkwd__(ATTEMPT_REVERSE_SYNCHRONOUS_ORDER,    "ON"),
 
- //  Online Populate Index uses AuditImage for index tables only.
- // By setting this CQD to ON, one can generate AuditImage for
- // tables also.
- DDkwd__(AUDIT_IMAGE_FOR_TABLES,	       "OFF"),
-
   DDkwd__(AUTOMATIC_RECOMPILATION,		"OFF"),
 
   DDkwd__(AUTO_QUERY_RETRY,                     "SYSTEM"),
@@ -463,6 +460,14 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  XDDkwd__(BLOCK_TO_PREVENT_HALLOWEEN,           "ON"),
 
   DDflte_(BMO_CITIZENSHIP_FACTOR,             "1."),
+
+  DDflte_(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,        "0.5"),
+  DDflte_(BMO_MEMORY_ESTIMATE_RATIO_CAP,             "0.7"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,     "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,        "200"),
+ XDDui___(BMO_MEMORY_LIMIT_PER_NODE_IN_MB,	     "10240"),
+  DDui___(BMO_MEMORY_LIMIT_UPPER_BOUND,              "1200"),
 
   DDui1__(BMO_MEMORY_SIZE,                      "204800"),
   // percentage of physical main memory availabe for BMO.
@@ -1304,10 +1309,8 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
   DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
-  DDkwd__(ESP_MULTI_FRAGMENT_QUOTAS,		"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
-  DDui1_6(ESP_NUM_FRAGMENTS,			"3"),
-  DDui1_6(ESP_NUM_FRAGMENTS_WITH_QUOTAS,	"6"),
+  DDui1_8(ESP_NUM_FRAGMENTS,			"3"),
 
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
@@ -1333,24 +1336,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
+ SDDui___(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,	"100"),
+
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN, "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN, "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PA , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE , "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SORT , "10"),
-
-  // total memory limit per CPU per query in MB
-  DDpct1_50(EXE_MEMORY_LIMIT_NONBMOS_PERCENT, "15"),
-  XDDui___(EXE_MEMORY_LIMIT_PER_CPU,	"0"),
-
-
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  DDui___(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,"544"),
 
  // Override the memory quota system; set limit per each and every BMO
  SDDflt__(EXE_MEM_LIMIT_PER_BMO_IN_MB,	        "0"),
@@ -1544,10 +1535,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_HSHJ_NUM_BUFFERS,			"1"),
   DDui1__(GEN_HSHJ_SIZE_DOWN,			"2048"),
   DDui1__(GEN_HSHJ_SIZE_UP,			"2048"),
-  DDui1__(GEN_IAR_BUFFER_SIZE,                  "10240"),
-  DDui1__(GEN_IAR_NUM_BUFFERS,                  "1"),
-  DDui1__(GEN_IAR_SIZE_DOWN,                    "2"),
-  DDui1__(GEN_IAR_SIZE_UP,                      "4"),
   DDui1__(GEN_IMDT_BUFFER_SIZE,			"2"),
   DDui1__(GEN_IMDT_NUM_BUFFERS,			"1"),
   DDui1__(GEN_IMDT_SIZE_DOWN,			"2"),
@@ -1644,6 +1631,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_SORT_SIZE_DOWN,			"2"),
   DDui1__(GEN_SORT_SIZE_UP,			"1024"),
   DDkwd__(GEN_SORT_TOPN,		        "ON"),
+  DDui1__(GEN_SORT_TOPN_THRESHOLD,              "10000"),
   DDui1__(GEN_SPLB_BUFFER_SIZE,			"2"),
   DDui1__(GEN_SPLB_NUM_BUFFERS,			"1"),
   DDui1__(GEN_SPLB_SIZE_DOWN,			"2"),
@@ -2949,7 +2937,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
  // the largest number of cache entries that an unusually large cache
  // entry is allowed to displace from mxcmp's cache of query plans
  DD0_200000(QUERY_CACHE_MAX_VICTIMS,      "10"),
- DDkwd__(QUERY_CACHE_MPALIAS,               "OFF"),
  DD0_255(QUERY_CACHE_REQUIRED_PREFIX_KEYS, "255"),
  DDkwd__(QUERY_CACHE_RUNTIME,               "ON"),
 SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
@@ -2987,11 +2974,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  DDkwd__(RANGESPEC_TRANSFORMATION,         "ON"), // RangeSpec Transformation CQD.
  // To be ANSI compliant you would have to set this default to 'FALSE'
  DDkwd__(READONLY_CURSOR,			"TRUE"),
-
- // ReadTableDef compares transactional identifiers during endTransaction() processing
- DDkwd__(READTABLEDEF_TRANSACTION_ASSERT,			"OFF"),
- DDkwd__(READTABLEDEF_TRANSACTION_ENABLE_WARNINGS,		"OFF"),
- DDint__(READTABLEDEF_TRANSACTION_TESTPOINT,                    "0"),
 
  DDflt0_(READ_AHEAD_MAX_BLOCKS,	    "16.0"),
  // OFF means Ansi/NIST setting, ON is more similar to the SQL/MP behavior
@@ -3636,7 +3618,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
  XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
-  DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
 
@@ -3710,9 +3691,7 @@ inline static UInt32 getFlags(Int32 attrEnum)
 
 inline static NABoolean isFlagOn(Int32 attrEnum, NADefaultFlags flagbit)
 {
-#pragma nowarn(1506)   // warning elimination
   return defaultDefaults[defDefIx_[attrEnum]].flags & (UInt32)flagbit;
-#pragma warn(1506)  // warning elimination
 }
 
 inline static void setFlagOn(Int32 attrEnum, NADefaultFlags flagbit)
@@ -3961,7 +3940,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
           return;
          }
 
-      // LCOV_EXCL_START
       // for debugging only
       #ifndef NDEBUG
        if (nadval) {	// additional sanity checking we want to do occasionally
@@ -4027,7 +4005,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 	    }
 	}	// if env-var
       #endif	// NDEBUG
-      // LCOV_EXCL_STOP
 
     } // for i
 
@@ -4037,7 +4014,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
     {
       currentDefaults_[GENERATE_EXPLAIN] = "ON";
       currentDefaults_[DO_RUNTIME_EID_SPACE_COMPUTATION] = "ON";
-      currentDefaults_[DETAILED_STATISTICS] = "MEASURE";
     }
   else
     {
@@ -4093,15 +4069,11 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   for ( i = 0; i < numAttrs; i++ )
   {
 #ifndef NDEBUG
-#pragma nowarn(1506)   // warning elimination
     const DefaultValidatorType validatorType = validator(i)->getType();
-#pragma warn(1506)  // warning elimination
 #endif
 
-#pragma nowarn(1506)   // warning elimination
     if ( validator(i)->getType() == VALID_KWD && (i != NATIONAL_CHARSET) &&
          (i != INPUT_CHARSET) && (i != ISO_MAPPING) )
-#pragma warn(1506)  // warning elimination
     {
       currentTokens_[i] = new NADHEAP DefaultToken;
 
@@ -4110,9 +4082,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
       if (isNonResetableAttribute(defaultDefaults[defDefIx_[i]].attrName))
 	*currentTokens_[i] = DF_OFF;
       else
-#pragma nowarn(1506)   // warning elimination
 	*currentTokens_[i] = token( i, tmp );
-#pragma warn(1506)  // warning elimination
     }
   }
 
@@ -4295,9 +4265,7 @@ enum DefaultConstants NADefaults::lookupAttrName(const char *name,
   while (cresult != 0 && lo < hi);
 
   if (position != 0)
-#pragma nowarn(1506)   // warning elimination
     *position = split;
-#pragma warn(1506)  // warning elimination
 
   // if the last comparison result was equal, return value at "split"
   if (cresult == 0)
@@ -5068,7 +5036,6 @@ NABoolean NADefaults::domainMatch(Int32 attrEnum,
   // and calling getAsULong, instead of using 'long' fields to retrieve
   // unsigned(DDui*) attr values via getAsLong ...
   //
-  // LCOV_EXCL_START
   // if we get here the compiler will crash
   if (flt) {
     DefaultValidator *validator = NULL;
@@ -5097,7 +5064,6 @@ NABoolean NADefaults::domainMatch(Int32 attrEnum,
       		DefaultValidatorType(expectedType))
       << " " << (flt ? *flt : 123.45) << endl;
   #endif
-  // LCOV_EXCL_STOP
 
   return FALSE;
 }
@@ -5178,12 +5144,10 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
        ( stricmp(attrName, "VALIDATE_VIEWS_AT_OPEN_TIME") == 0 ) ||
        ( stricmp(attrName, "USER_EXPERIENCE_LEVEL") == 0 ) ||
        ( stricmp(attrName, "POS_DISKS_IN_SEGMENT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PA") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE") == 0 ) ||
        ( stricmp(attrName, "SORT_ALGO") == 0 ) ||
@@ -6170,21 +6134,17 @@ static void setCatSchErr(NAString &value,
     stmt += value;
     stmt += "\"";
     stmt += ";";
-#pragma nowarn(1506)   // warning elimination
     parser.parseDML(stmt, stmt.length(),
                     OBJECTNAMECHARSET
                     );
-#pragma warn(1506)  // warning elimination
   }
   if (errs == CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) {
     stmt = pfx;
     stmt += value;
     stmt += ";";
-#pragma nowarn(1506)   // warning elimination
     parser.parseDML(stmt, stmt.length(),
                     OBJECTNAMECHARSET
                     );
-#pragma warn(1506)  // warning elimination
   }
 
   // Change errors to warnings if errOrWarn is +1 (i.e. warning).
@@ -6342,7 +6302,6 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "LOCAL_NODE",
   "LOG",
   "MAXIMUM",
-  "MEASURE",
   "MEDIUM",
   "MEDIUM_LOW",
   "MERGE",
@@ -6351,7 +6310,6 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "MULTI_NODE",
   "MVCC",
   "NONE",
-  "NSK",
   "OFF",
   "ON",
   "OPENS_FOR_WRITE",
@@ -6590,7 +6548,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case DETAILED_STATISTICS:
-      if (tok == DF_ALL || tok == DF_MEASURE ||
+      if (tok == DF_ALL ||
 	  tok == DF_ACCUMULATED || tok == DF_OPERATOR ||
 	  tok == DF_PERTABLE || tok == DF_OFF)
 	isValid = TRUE;
@@ -6632,7 +6590,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
            tok == DF_REPSEL || tok == DF_QS)
           isValid = TRUE;
      break;
-    case QUERY_CACHE_MPALIAS:
+
     case QUERY_TEMPLATE_CACHE:
     case SHARE_TEMPLATE_CACHED_PLANS:
     case VSBB_TEST_MODE:
@@ -6713,8 +6671,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case NAMETYPE:
-      if (tok == DF_ANSI	 || tok == DF_SHORTANSI ||
-          tok == DF_NSK)
+      if (tok == DF_ANSI	 || tok == DF_SHORTANSI)
         isValid = TRUE;
       break;
 

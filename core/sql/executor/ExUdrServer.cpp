@@ -64,7 +64,6 @@ static const char *GetStatusString(ExUdrServer::ExUdrServerStatus s)
   return "***UNKNOWN***";
 } */
 
-#pragma nowarn(140)   // warning elimination 
 #define UdrDebug0(s) \
   ( UdrPrintf(traceFile_,(s)) )
 #define UdrDebug1(s,a1) \
@@ -77,7 +76,6 @@ static const char *GetStatusString(ExUdrServer::ExUdrServerStatus s)
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4)) )
 #define UdrDebug5(s,a1,a2,a3,a4,a5) \
   ( UdrPrintf(traceFile_,(s),(a1),(a2),(a3),(a4),(a5)) )
-#pragma warn(140)  // warning elimination
 
 #else
 //
@@ -267,7 +265,7 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::start(ComDiagsArea **diags,
 
     Lng32 nowaitDepth = 2;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
     char *e = getenv("UDR_NOWAIT_DEPTH");
     if (e && e[0])
       nowaitDepth = atol(e);
@@ -709,34 +707,13 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::kill(ComDiagsArea *diags)
   {
     if (serverProcessId_.getDomain() == IPC_DOM_GUA_PHANDLE)
     {
-#ifdef SQ_PHANDLE_VERIFIER
     NAProcessHandle serverPhandle(
         (SB_Phandle_Type *) &(serverProcessId_.getPhandle().phandle_));
     Int32 guaRetcode = serverPhandle.decompose();
     if (XZFIL_ERR_OK == guaRetcode)
       msg_mon_stop_process_name(serverPhandle.getPhandleString());
-#else
-    char procName[200];
-    short procNameLen = 200;
-    Int32 nid = 0;
-    Int32 pid = 0;
-    short result = 0;
-
-    //ProcessHandle wrapper in porting layer
-    NAProcessHandle serverPhandle((SB_Phandle_Type *)&(serverProcessId_.getPhandle().phandle_));
-
-    Int32 guaRetcode = serverPhandle.decompose();
-    if (!guaRetcode)
-    {
-       // Extract procName from serverPhandle 
-       //procName = serverPhandle.getPhandleString();
-       memcpy(procName,  serverPhandle.getPhandleString(), serverPhandle.getPhandleStringLen() + 1); 
-       msg_mon_get_process_info (procName, &nid, &pid);
-       msg_mon_stop_process(procName, nid, pid);
-    }
-#endif
-      UdrDebug1("  PROCESS_STOP_ returned %d", (Int32) result);
-      if (diags != NULL)
+    UdrDebug1("  PROCESS_STOP_ returned %d", (Int32) result);
+    if (diags != NULL)
       {
         *diags << DgSqlCode(EXE_UDR_ATTEMPT_TO_KILL)
                << DgString0(asciiPhandle)
@@ -793,7 +770,7 @@ IpcConnection *ExUdrServer::getAnIpcConnection() const
   {
     Lng32 nowaitDepth = DEFAULT_NOWAIT_DEPTH;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
     char *e = getenv("UDR_NOWAIT_DEPTH");
     if (e && e[0])
       nowaitDepth = atol(e);

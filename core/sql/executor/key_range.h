@@ -95,21 +95,21 @@ protected:
 
 public:
 
-  NA_EIDPROC keyRangeEx(const keyRangeGen & tdb_key,
+  keyRangeEx(const keyRangeGen & tdb_key,
 		   ex_globals * globals,
 		   const short in_version,
 		   sql_buffer_pool *pool);
 
-  NA_EIDPROC virtual ~keyRangeEx();
+  virtual ~keyRangeEx();
 
-  NA_EIDPROC virtual void freeResources();	// free resources
+  virtual void freeResources();	// free resources
 
-  NA_EIDPROC virtual void release(); // release
+  virtual void release(); // release
 
-  NA_EIDPROC virtual void display() const {}; // LCOV_EXCL_LINE
+  virtual void display() const {};
 
   // key range iterator methods
-  NA_EIDPROC virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
+  virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
 				        	   atp_struct *atp0) = 0;
 
   enum getNextKeyRangeReturnType { NO_MORE_RANGES,
@@ -117,35 +117,33 @@ public:
 				   PROBE_RANGE,
 				   EXPRESSION_ERROR };
 
-  NA_EIDPROC virtual getNextKeyRangeReturnType getNextKeyRange(
+  virtual getNextKeyRangeReturnType getNextKeyRange(
        atp_struct *atp0,NABoolean fetchRangeHadRows,
        NABoolean detectNullRange = TRUE) = 0;
 
   // on the next method, we pass in NULL if a probe resulted in no
   // data; we pass in the encoded key value if data was obtained
-// LCOV_EXCL_START
-  NA_EIDPROC virtual void reportProbeResult(char *)
+  virtual void reportProbeResult(char *)
   { 
     ex_assert(0,"reportProbeResult() was called when it shouldn't have been");
   };
-// LCOV_EXCL_STOP
 
   // when getNextKeyRange() returns FETCH_RANGE or PROBE_RANGE, the
   // caller should call the next four methods to get its hands on the
   // key values
-  NA_EIDPROC tupp & getBkData()
+  tupp & getBkData()
   { return bkData_; };
 
-  NA_EIDPROC tupp & getEkData()
+  tupp & getEkData()
   { return ekData_; };
 
-  NA_EIDPROC short getBkExcludeFlag()
+  short getBkExcludeFlag()
   { return bkExcludeFlag_; };
 
-  NA_EIDPROC short getEkExcludeFlag()
+  short getEkExcludeFlag()
   { return ekExcludeFlag_; };
 
-  NA_EIDPROC ULng32 getKeyLength()
+  ULng32 getKeyLength()
   { return tdbKey_.getKeyLength(); };
 
 };

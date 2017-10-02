@@ -40,7 +40,7 @@
 //#include "Statement.h"
 //#include "Descriptor.h"
 
-class CliStatement;
+class Statement;
 class Descriptor;
 class NoWaitOp;
 

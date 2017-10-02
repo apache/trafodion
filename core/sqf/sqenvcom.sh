@@ -47,10 +47,6 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
-# Uncomment Trafodion Configuration store type
-#export TRAF_CONFIG_DBSTORE=Sqlite
-#export TRAF_CONFIG_DBSTORE=Zookeeper
-
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
 # IBV for infiniband, TCP for tcp
 export SQ_IC=${SQ_IC:-TCP}
@@ -681,10 +677,9 @@ export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
 # Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 64 seconds (4 second timeout, 16 retries)
-export SQ_MON_EPOLL_WAIT_TIMEOUT=4
-# Note: the retry count is ignored when SQ_MON_ZCLIENT_ENABLED=1 (the default)
-export SQ_MON_EPOLL_RETRY_COUNT=16
+# Currently set to 64 seconds (16 second timeout, 4 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=16
+export SQ_MON_EPOLL_RETRY_COUNT=4
 
 # Monitor Zookeeper client
 #  - A zero value disables the zclient logic in the monitor process.

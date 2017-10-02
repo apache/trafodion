@@ -85,9 +85,7 @@ class ExpDatetime;
 // static const UInt32 ExpVoaSize = sizeof(Int32);
 
 
-#pragma warning ( disable : 4251 )
-#pragma nowarn(1506)  // warning elimination 
-class SQLEXP_LIB_FUNC  Attributes : public NAVersionedObject
+class Attributes : public NAVersionedObject
 {
 public:
 
@@ -657,7 +655,6 @@ private:
 // resolve an ambiguity with an LLVM class that is also named Attributes
 typedef Attributes exp_Attributes;
 
-#pragma warn(1506)  // warning elimination 
 
 
 inline void Attributes::needDataAlignment()
@@ -672,9 +669,7 @@ inline void Attributes::dontNeedDataAlignment()
 
 inline Int32 Attributes::isNotAlwaysAligned()
 {
-#pragma nowarn(1506)   // warning elimination 
   return (flags_ & DATA_ALIGNMENT_FLAG);
-#pragma warn(1506)  // warning elimination 
 }
 
 ///////////////////////////////////////////////////////////////
@@ -683,7 +678,7 @@ inline Int32 Attributes::isNotAlwaysAligned()
 //   Operations on these are supported by underlying hardware
 //   and thus are performed as a 'fastpath'.
 ///////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  SimpleType : public Attributes 
+class SimpleType : public Attributes 
 {
 public:
 
@@ -875,7 +870,7 @@ private:
 //    classes derived from ComplexType.
 //    
 /////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ComplexType : public Attributes
+class ComplexType : public Attributes
 {
 public:
 
@@ -1011,7 +1006,7 @@ private:
   char            fillers_[22];        // 02-23
 };
 
-class SQLEXP_LIB_FUNC  ShowplanAttributes : public Attributes
+class ShowplanAttributes : public Attributes
 {
 public:
   ShowplanAttributes(Int32 valueId, char * text);
@@ -1051,5 +1046,4 @@ private:
   char            fillers_[4];        // 60-63
 };
 
-#pragma warning ( default : 4251 )
 #endif

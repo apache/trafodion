@@ -1805,8 +1805,6 @@ enum DefaultConstants
   QUERY_TEMPLATE_CACHE,
   // turn pre-parser query caching ON or OFF
   QUERY_TEXT_CACHE,
-  // enable/disable caching of mpalias queries
-  QUERY_CACHE_MPALIAS,
 
   // allows users to specify a limit on the number of nonfatal errors that will be
   // tolerated for a non-atomic statement.
@@ -2134,17 +2132,7 @@ enum DefaultConstants
   // Controls for utility testware support (query plan logging and testpoints)
   SQLMX_UTIL_EXPLAIN_PLAN,
 
-  // Controls for INTERPRET_AS_ROW
-  GEN_IAR_BUFFER_SIZE,
-  GEN_IAR_NUM_BUFFERS,
-  GEN_IAR_SIZE_DOWN,
-  GEN_IAR_SIZE_UP,
-
-  AUDIT_IMAGE_FOR_TABLES,
-
   ALLOW_DP2_ROW_SAMPLING,
-
-
 
   POS_ALLOW_NON_PK_TABLES,
   INCORPORATE_SKEW_IN_COSTING,
@@ -2696,9 +2684,6 @@ enum DefaultConstants
   // perform substring transformation (ICBC PoC)
   SUBSTRING_TRANSFORMATION,
 
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,
 
   // by default, a primary key or unique constraint must be non-nullable.
   // This default, if set, allows them to be nullable.
@@ -2848,8 +2833,6 @@ enum DefaultConstants
   // These CQDs are for Multi-Fragment ESPs
   ESP_MULTI_FRAGMENTS,
   ESP_NUM_FRAGMENTS,
-  ESP_NUM_FRAGMENTS_WITH_QUOTAS,
-  ESP_MULTI_FRAGMENT_QUOTAS,
   ESP_MULTI_FRAGMENT_QUOTA_VM,
   EXE_SINGLE_BMO_QUOTA, // Quota system applys to fragments with single BMO
 
@@ -2906,20 +2889,15 @@ enum DefaultConstants
 
 
   // Total mem size (MB) for a query
-  EXE_MEMORY_LIMIT_PER_CPU, 
-
-  // The percent of total nBMO memory in EXE_MEMORY_LIMIT_PER_CPU 
-  EXE_MEMORY_LIMIT_NONBMOS_PERCENT, 
+  BMO_MEMORY_LIMIT_PER_NODE_IN_MB, 
 
   // lower-bound memory limit for BMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
   EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_SORT ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,
 
   // lower-bound memory limit for nBMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PA ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE ,
 
@@ -2949,11 +2927,8 @@ enum DefaultConstants
   // for schema access control
   DEFAULT_SCHEMA_ACCESS_ONLY,
 
-  VALIDATE_RFORK_REDEF_TS,
-
   // PUBLISH/UNPUBLISH command
   PUBLISHING_ROLES,
-
 
   // default used to test catman features
   CAT_TEST_BOOL,
@@ -3019,16 +2994,6 @@ enum DefaultConstants
 
 // Gen Sol:10-100408-9393
   ALLOW_RISKY_UPDATE_WITH_NO_ROLLBACK,
-
-  // Assert if a fatal transaction identifier mismatch is found.
-  READTABLEDEF_TRANSACTION_ASSERT,
-
-  // Allow non-fatal transaction identifier mismatch warnings to be posted
-  // from ReadTableDef
-  READTABLEDEF_TRANSACTION_ENABLE_WARNINGS,
-
-  // Force transaction mismatch errors for testing
-  READTABLEDEF_TRANSACTION_TESTPOINT,
 
   // used for controlling multi-join transformation level.
   ASYMMETRIC_JOIN_TRANSFORMATION,
@@ -3905,12 +3870,24 @@ enum DefaultConstants
   // on hive could be created without registering them.
   // This default is for internal testing usage only and not externalized.
   HIVE_NO_REGISTER_OBJECTS,
+ 
+  BMO_MEMORY_LIMIT_UPPER_BOUND,
+  BMO_MEMORY_ESTIMATE_RATIO_CAP,
 
   // if set, cleanse output of explain text by filtering values that
   // may not be deterministic on different systems.
   // Same as explain format: options 'c'
   // Used during dev regressions to cleanse explain output.
   EXPLAIN_OPTION_C,
+
+  // Threshold when TOPN sort becomes a regular sort
+  GEN_SORT_TOPN_THRESHOLD,
+
+  // Ratio of BMO_MEMORY_LIMIT_PER_NODE_IN_MB that will be divided
+  // equally across all BMO operators 
+  BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,
+
+  EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
@@ -4000,7 +3977,6 @@ enum DefaultToken {
  DF_LOCAL_NODE,
  DF_LOG,
  DF_MAXIMUM,
- DF_MEASURE,
  DF_MEDIUM,
  DF_MEDIUM_LOW,
  DF_MERGE,
@@ -4009,7 +3985,6 @@ enum DefaultToken {
  DF_MULTI_NODE,
  DF_MVCC,
  DF_NONE,
- DF_NSK,
  DF_OFF,
  DF_ON,
  DF_OPENS_FOR_WRITE,

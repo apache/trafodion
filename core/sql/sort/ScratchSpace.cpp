@@ -1440,9 +1440,7 @@ RESULT SortScratchSpace::flushRun(NABoolean endrun,NABoolean waited)
     else {
         blockHead_.nextBlockNum_ = totalNumOfScrBlocks_ + 1;      
     }
-#pragma nowarn(1506)   // warning elimination 
     blockHead_.runNum_       = currentRun_;
-#pragma warn(1506)  // warning elimination 
     memcpy(currentBlock_, &blockHead_, sizeof(ScrBlockHeader));
 
     retval = ScratchSpace::writeFile(currentBlock_,

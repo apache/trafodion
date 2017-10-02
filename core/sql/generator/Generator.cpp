@@ -163,23 +163,23 @@ Generator::Generator(CmpContext* currentCmpContext) :
   tempSpace_ = NULL;
 
   numBMOs_ = 0;
-  totalNumBMOsPerCPU_ = 0;
+  totalNumBMOsPerNode_ = 0;
 
   BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
+  totalBMOsMemoryPerNode_ = 0;
 
-  nBMOsMemoryPerCPU_ = 0;
+  nBMOsMemoryPerNode_ = 0;
 
-  BMOsMemoryLimitPerCPU_ = 0;
+  BMOsMemoryLimitPerNode_ = 0;
 
-  totalNumBMOsPerCPU_ = 0;
+  totalNumBMOsPerNode_ = 0;
 
   BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
+  totalBMOsMemoryPerNode_ = 0;
 
-  nBMOsMemoryPerCPU_ = 0;
+  nBMOsMemoryPerNode_ = 0;
 
-  BMOsMemoryLimitPerCPU_ = 0;
+  BMOsMemoryLimitPerNode_ = 0;
   
   totalNumBMOs_ = 0;
 
@@ -288,6 +288,7 @@ Generator::Generator(CmpContext* currentCmpContext) :
   //
   computeStats_ = FALSE;
   explainInRms_ = TRUE;
+  topNRows_ = 0;
 }
 
 void Generator::initTdbFields(ComTdb *tdb)
@@ -415,8 +416,6 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
       	collectStatsType_ = ComTdb::ALL_STATS;
       else if (tmp == "ACCUMULATED")
 	collectStatsType_ = ComTdb::ACCUMULATED_STATS;
-      else if (tmp == "MEASURE")
-	collectStatsType_ = ComTdb::MEASURE_STATS;
       else if (tmp == "PERTABLE")
 	collectStatsType_ = ComTdb::PERTABLE_STATS;
       else if (tmp == "OPERATOR")
@@ -1043,16 +1042,6 @@ Generator::remapESPAllocationAS()
       
     NABoolean cycleSegs = (layersInCycle > 0);
 
-    // Use CQD ESP_NUM_FRAGMENTS_WITH_QUOTAS when the multi-ESP is on. That is
-    // we will shift the layers within a SQ node subset <n> times before we
-    // advance to next SQ node subset. Here <n> is the value of the cqd
-    // ESP_NUM_FRAGMENTS_WITH_QUOTAS. When the layer (or fragment) contains BMOs, then, 
-    // the layer is counted twice.
-    // 
-    if ( CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) ==  DF_ON ) 
-      layersInCycle = 
-          (ActiveSchemaDB()->getDefaults()).getAsLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS);
-      
     // if shiftESPs TRUE, then shift node map within each segment.
     //
     NABoolean shiftESPs =
@@ -1837,7 +1826,7 @@ TrafDesc * Generator::createRefConstrDescStructs(
  
 }
 
-static Lng32 createDescStructs(char * rforkName,
+static Lng32 createDescStructs(char * tableName,
                                Int32 numCols,
                                ComTdbVirtTableColumnInfo * columnInfo,
                                Int32 numKeys,
@@ -1851,7 +1840,7 @@ static Lng32 createDescStructs(char * rforkName,
   UInt32 reclen = 0;
 
   // create column descs
-  colDescs = Generator::createColDescs(rforkName, columnInfo, (Int16) numCols,
+  colDescs = Generator::createColDescs(tableName, columnInfo, (Int16) numCols,
                                        reclen, space);
 
   keyDescs = Generator::createKeyDescs(numKeys, keyInfo, space);
@@ -2273,8 +2262,6 @@ TrafDesc * Generator::createVirtualTableDesc
   if (privInfo)
       priv_desc = createPrivDescs(privInfo, space);
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
   i_files_desc->filesDesc()->setAudited(TRUE); // audited table
   index_desc->indexesDesc()->files_desc = i_files_desc;

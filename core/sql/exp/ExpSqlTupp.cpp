@@ -63,7 +63,6 @@ tupp::~tupp()		// destructor
   // release the pointer before deallocating the space for it
   release();
 }
-// LCOV_EXCL_START
 Long tupp::pack(void * space)
 {
   if (tuppDescPointer)
@@ -82,7 +81,6 @@ Lng32 tupp::unpack(Lng32 base)
 
   return 0;
 }
-// LCOV_EXCL_STOP
 tupp_descriptor::tupp_descriptor()
 {
   init();

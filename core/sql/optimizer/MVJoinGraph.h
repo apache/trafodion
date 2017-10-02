@@ -151,7 +151,6 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 // This class describes an ordered traverse of the join tree, where each
 // table is connected to at lease one of its predecessors.
-#pragma nowarn(1506)   // warning elimination 
 class MVJoinGraphSolution : public NABasicObject
 {
 public:
@@ -190,7 +189,6 @@ private:
   NABitVector   bitmap_;    // Bitmap of route tables.
   MVTableSet	riTables_;  // Set of tables for which RI opt. can be used.
 }; // MVJoinGraphSolution
-#pragma warn(1506)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 // Holds the state of the graph during the traverse.

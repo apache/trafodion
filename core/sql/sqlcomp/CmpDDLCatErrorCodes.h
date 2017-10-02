@@ -215,7 +215,6 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   //
                   , CAT_EXTERNAL_NAME_MISMATCH                    = 1180
                   , CAT_EXTERNAL_SCHEMA_NAME_TOO_LONG             = 1181
-                  , CAT_RFORK_SQL_ERROR                           = 1182
                   , CAT_METADATA_SQL_ERROR                        = 1183
                   , CAT_INSUFFICIENT_PRIV_ON_COLUMN               = 1184
                   , CAT_LOCATION_INVALID_OR_MISSING               = 1185

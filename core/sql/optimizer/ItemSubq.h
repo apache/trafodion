@@ -60,12 +60,10 @@ class GenericUpdate;
 // ***********************************************************************
 // A subquery 
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class Subquery : public ItemExpr
 {
 public:
 
-// warning elimination (removed "inline")
   Subquery(OperatorTypeEnum otype,
                   RelExpr * tableExpr, ItemExpr * scalarExpr = NULL)
          : ItemExpr(otype,scalarExpr),
@@ -73,7 +71,6 @@ public:
            tableExpr_(tableExpr)
   {}
 
-// warning elimination (removed "inline")
   virtual ~Subquery() {}
 
   // get the degree of this node
@@ -207,7 +204,6 @@ public:
   RelExpr * tableExpr_;
   
 }; // class Subquery
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // Row subquery 
@@ -217,11 +213,9 @@ class RowSubquery : public Subquery
   // ITM_ROW_SUBQUERY
 public:
 
-// warning elimination (removed "inline")
   RowSubquery(RelExpr * tableExpr)
          : Subquery(ITM_ROW_SUBQUERY, tableExpr) {}
 
-// warning elimination (removed "inline")
   virtual ~RowSubquery() {}
 
   // a virtual function for type propagating the node
@@ -255,7 +249,6 @@ class QuantifiedComp : public Subquery
   // ITM_GREATER_EQ_ALL, ITM_GREATER_EQ_ANY
 public:
 
-// warning elimination (removed "inline")
   QuantifiedComp(OperatorTypeEnum otype,
                  ItemExpr * scalarExpr,
                  RelExpr  * tableExpr,
@@ -267,7 +260,6 @@ public:
     setAvoidHalloweenR2(avoidHalloweenR2);
   }
 
-// warning elimination (removed "inline")
   virtual ~QuantifiedComp() {}
 
   // a virtual function for type propagating the node
@@ -317,13 +309,11 @@ class InSubquery : public Subquery
   // ITM_IN_SUBQUERY
 public:
 
-// warning elimination (removed "inline")
   InSubquery(OperatorTypeEnum otype,
 		    ItemExpr * scalarExpr,
 		    RelExpr  * tableExpr) 
          : Subquery(otype, tableExpr, scalarExpr) {}
 
-// warning elimination (removed "inline")
   virtual ~InSubquery() {}
 
   // get a printable string that identifies the operator

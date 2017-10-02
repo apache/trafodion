@@ -80,12 +80,10 @@ public:
 	virtual void Run();
 
 	// These functions are used for retrieving the results
-	// LCOV_EXCL_START :cnu
 	virtual Int32 GetNumOfSets() 
 	{
 		return equivSetsRootsList_.GetCount();
 	}
-	// LCOV_EXCL_STOP
 
 	CRUMVList& GetEquivSetsRootsByMVUID(TInt64 uid);
 

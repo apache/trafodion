@@ -940,16 +940,6 @@
 
 --- SQL operation complete.
 >>
->>control query default VALIDATE_RFORK_REDEF_TS 'ON';
-
---- SQL operation complete.
->>prepare xx from select * from t006t7;
-
---- SQL command prepared.
->>control query default VALIDATE_RFORK_REDEF_TS reset;
-
---- SQL operation complete.
->>
 >>control query default COMP_BOOL_108 'OFF';
 
 --- SQL operation complete.

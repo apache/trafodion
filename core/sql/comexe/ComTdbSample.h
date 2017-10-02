@@ -50,10 +50,8 @@ class ComTdbSample : public ComTdb
   friend class ExSamplePrivateState;
 
 public:
-  NA_EIDPROC
   ComTdbSample();
   
-  NA_EIDPROC
   ComTdbSample(ex_expr *initExpr,
 	       ex_expr *balanceExpr,
 	       Int32 returnFactorOffset,
@@ -64,51 +62,37 @@ public:
 	       queue_index down,
 	       queue_index up);
   
-  NA_EIDPROC
   ~ComTdbSample();
   
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC
   virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC
   virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC
   virtual short getClassSize()     { return (short)sizeof(*this); }
   
-  NA_EIDPROC
   Long pack(void *);
-  NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
   
-  NA_EIDPROC
   void display() const;
 
-  NA_EIDPROC
   inline ComTdb * getChildTdb();
 
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const;
 
-  NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const;
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
-  NA_EIDPROC
   virtual const char *getNodeName() const { return "EX_SAMPLE"; };
-  NA_EIDPROC
   virtual Int32 numExpressions() const { return 3; }
-  NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos) {
     if (pos == 0)
       return initExpr_;
@@ -119,7 +103,6 @@ public:
     else
       return NULL;
   }
-  NA_EIDPROC
   virtual const char * getExpressionName(Int32 pos) const {
     if (pos == 0)
       return "initExpr_";
@@ -146,7 +129,6 @@ protected:
   char      fillers_[36];        // 36-71
 };
 
-NA_EIDPROC
 inline ComTdb * ComTdbSample::getChildTdb(){
   return tdbChild_;
 };

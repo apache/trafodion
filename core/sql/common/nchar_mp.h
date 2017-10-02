@@ -53,30 +53,20 @@
 // A simple class devoting to the concept of MP KANJI charset 
 ////////////////////////////////////////////////////////////////////
 
-//LCOV_EXCL_START : cnu  -- As of 8/30/2011, not used in SQ SQL.
 
 class kanji_char_set 
 {
 public:
 
-NA_EIDPROC
    kanji_char_set() {};
 
-#ifndef PRIV_SRL 
-NA_EIDPROC
    virtual ~kanji_char_set() {};
-#else
-NA_EIDPROC ~kanji_char_set() {};
-#endif // PRIV_SRL 
 
-
-NA_EIDPROC
    static NAWchar space_char() { return ' '; };
 
-NA_EIDPROC
    static NAWchar null_char() {return 0;};
 
-NA_EIDPROC static NAWchar underscore_char() 
+static NAWchar underscore_char() 
 { 
 #ifdef NA_LITTLE_ENDIAN
 // need to flip the two bytes because KANJI_MP data is in multi-byte 
@@ -87,7 +77,7 @@ NA_EIDPROC static NAWchar underscore_char()
 #endif
 };
 
-NA_EIDPROC static NAWchar percent_char() 
+static NAWchar percent_char() 
 { 
 #ifdef NA_LITTLE_ENDIAN
 // need to flip the two bytes because KANJI_MP data is in multi-byte 
@@ -98,44 +88,33 @@ NA_EIDPROC static NAWchar percent_char()
 #endif
 };
 
-NA_EIDPROC static NAWchar maxCharValue() { return USHRT_MAX; };
+static NAWchar maxCharValue() { return USHRT_MAX; };
 
-NA_EIDPROC static short bytesPerChar() { return 2; };
+static short bytesPerChar() { return 2; };
 
 private:
 
 };
-//LCOV_EXCL_STOP : cnu
 
 
 ////////////////////////////////////////////////////////////////////
 // A simple class devoting to the concept of MP KSC5601 charset 
 ////////////////////////////////////////////////////////////////////
 
-//LCOV_EXCL_START : cnu  -- As of 8/30/2011, not used in SQ SQL.
 
 class ksc5601_char_set 
 {
 public:
 
-NA_EIDPROC
    ksc5601_char_set() {};
 
-#ifndef PRIV_SRL 
-NA_EIDPROC
    virtual ~ksc5601_char_set() {};
-#else
-NA_EIDPROC ~ksc5601_char_set() {};
-#endif // PRIV_SRL 
 
-
-NA_EIDPROC
    static NAWchar space_char() { return ' '; };
 
-NA_EIDPROC
    static NAWchar null_char() {return 0;};
 
-NA_EIDPROC static NAWchar underscore_char() 
+static NAWchar underscore_char() 
 { 
 #ifdef NA_LITTLE_ENDIAN
 // need to flip the two bytes because KANJI_MP data is in multi-byte 
@@ -146,7 +125,7 @@ NA_EIDPROC static NAWchar underscore_char()
 #endif
 };
 
-NA_EIDPROC static NAWchar percent_char() 
+static NAWchar percent_char() 
 { 
 #ifdef NA_LITTLE_ENDIAN
 // need to flip the two bytes because KANJI_MP data is in multi-byte 
@@ -157,15 +136,13 @@ NA_EIDPROC static NAWchar percent_char()
 #endif
 };
 
-NA_EIDPROC
    static NAWchar maxCharValue() { return USHRT_MAX; };
 
-NA_EIDPROC static short bytesPerChar() { return 2; };
+static short bytesPerChar() { return 2; };
 
 private:
 
 };
-//LCOV_EXCL_STOP : cnu
 
 
 #endif

@@ -75,7 +75,6 @@
 #include "memorymonitor.h"
 
 #include "dfs2rec.h"
-#include "ExMeas.h"
 #include "Statement.h"
 #include "ComSqlId.h"
 
@@ -93,21 +92,14 @@ CLISemaphore globalSemaphore ;
 #include <unistd.h>
 #include "QRLogger.h"
 
-#ifndef CLI_PRIV_SRL
-#pragma warning (disable : 4273)   //warning elimination
 extern char ** environ;
-#pragma warning (default : 4273)   //warning elimination
-#endif
 
-#ifndef CLI_PRIV_SRL
 // this is set to true after the first CLI call.
 // On the first cli call, method CliNonPrivPrologue is called.
 // Only used for the top level CLI calls and not if cli is called
 // from within priv srl.
 NABoolean __CLI_NONPRIV_INIT__ = FALSE;
-#endif
 
-#ifndef CLI_PRIV_SRL
 #define CLI_NONPRIV_PROLOGUE(rc) \
   if (NOT __CLI_NONPRIV_INIT__) \
     { \
@@ -125,39 +117,6 @@ NABoolean __CLI_NONPRIV_INIT__ = FALSE;
         return rc; \
       __CLI_NONPRIV_INIT__ = TRUE; \
     }
-
-#endif
-
-#ifndef CLI_PRIV_SRL
-
-#if 0
-// GetConditionCount
-//
-// Find the count of conditions (SQLDIAG_NUMBER) related to
-// the current statement
-
-Int32 GetConditionCount(void)
-{
-    Int32 cond_count;
-
-    SQLMODULE_ID module;
-    Lng32 stmt_items[1];
-    module.module_name = 0;
-    module.module_name_len = 0;
-
-    SQLDESC_ID cond_desc = { 1, desc_name, &module, "dummy_input_name", 0, 0, 10 };
-
-    SQL_EXEC_AllocDesc(&cond_desc,1);
-    SQL_EXEC_SetDescItem(&cond_desc, 1, SQLDESC_TYPE_FS, REC_BIN32_SIGNED, 0);
-    SQL_EXEC_SetDescItem(&cond_desc, 1, SQLDESC_VAR_PTR, (Long) &cond_count, 0);
-    stmt_items[0] = SQLDIAG_NUMBER;
-
-    SQL_EXEC_GetDiagnosticsStmtInfo(stmt_items, &cond_desc);
-    SQL_EXEC_DeallocDesc(&cond_desc);
-
-    return (cond_count);
-}
-#endif
 
 // Check if the current system default experience level and the error experience levels are
 // compatible. Compatible here means that the error experience level is higher or equal to 
@@ -808,7 +767,6 @@ void logAnMXEventForError( ComCondition & condition, SQLMXLoggingArea::Experienc
 */
     }
 }
-#endif // CLI_PRIV_SRL
 
 
 // RecordError
@@ -821,8 +779,6 @@ Lng32 RecordError(SQLSTMT_ID * currentSqlStmt,
 {
     if (inRetcode == 0)
         return inRetcode;
-
-#ifndef CLI_PRIV_SRL
 
    // Get the SQL ID (aka SQL_ATTR_UNIQUE_STMT_ID) from the statement (SQLSTMT_ID)
 
@@ -838,7 +794,6 @@ Lng32 RecordError(SQLSTMT_ID * currentSqlStmt,
         }
 
     }
-#endif // CLI_PRIV_SRL
     return(inRetcode);
 }
 
@@ -924,7 +879,6 @@ short sqInit()
   return 0;
 }
 
-#ifndef CLI_PRIV_SRL
 static Lng32 CliNonPrivPrologue()
 {
 
@@ -945,7 +899,6 @@ static Lng32 CliNonPrivPrologue()
   }
   return 0;
 }
-#endif
 
 CLISemaphore *getCliSemaphore(ContextCli *&context) 
 {
@@ -955,7 +908,6 @@ CLISemaphore *getCliSemaphore(ContextCli *&context)
    else
       return cli_globals->getSemaphore();
 }
-//SQ_LINUX #ifdef NA_WINNT
 #if 0
 Lng32 cliWillThrow()
 {
@@ -981,65 +933,6 @@ Lng32 cliWillThrow()
 }
 #endif
 
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_AddModule(/*IN*/ SQLMODULE_ID * module_name)
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-      
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode =
-      SQLCLI_AddModule(GetCliGlobals(),
-		       module_name);
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-   retcode = RecordError(NULL, retcode);
-   return retcode;
-}
-//ss_cc_change // ignore all COBOL functions
-// COBOL change : For all the wrapper functions that we provide for the COBOL
-// preprocessor, we assume that if there is a struct that is passed in with 
-// name_mode == -1 , then this means that that struct is a just a "dummy". 
-// This is because COBOL applications do not have the ability to pass in a 
-// NULL pointer into the function as a parameter. 
-
-//LCOV_EXCL_START 
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_ADDMODULE (
-		/*IN*/ SQLMODULE_ID * module_name)
-{
-  // See comment above  : "COBOL change"
- if (module_name)
-   {
-     if (module_name->version == -1)
-       return SQL_EXEC_AddModule(0); 
-   }
-  return SQL_EXEC_AddModule(module_name);
-};
-//LCOV_EXCL_STOP
-
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
                         /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor)
 {
@@ -1076,7 +969,6 @@ Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ALLOCDESC (
 	        /*INOUT*/ SQLDESC_ID * desc_id,
 		/*IN OPTIONAL*/ SQLDESC_ID * input_descriptor)
@@ -1087,10 +979,8 @@ Lng32 SQL_EXEC_ALLOCDESC (
 
   return SQL_EXEC_AllocDesc(desc_id, input_descriptor);
 };
-//LCOV_EXCL_STOP
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AllocDescBasic(/*INOUT*/       SQLDESC_ID * desc_id,
                              /*IN OPTIONAL*/       Lng32   max_entries)
 {
@@ -1128,7 +1018,6 @@ Lng32 SQL_EXEC_AllocDescBasic(/*INOUT*/       SQLDESC_ID * desc_id,
 
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AllocStmt(/*INOUT*/       SQLSTMT_ID * new_statement_id,
                         /*IN OPTIONAL*/ SQLSTMT_ID * cloned_statement)
 {
@@ -1168,88 +1057,6 @@ Lng32 SQL_EXEC_AllocStmt(/*INOUT*/       SQLSTMT_ID * new_statement_id,
 }
 
 
-
-SQLCLI_LIB_FUNC 
-Int32  SQL_EXEC_GetDiskMaxSize (
-		/*IN*/ char *volname,
-		/*OUT*/ Int64 *totalCapacity,
-		/*OUT*/ Int64 *totalFreespace)
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = GetCliGlobals()->getSemaphore();
-      tmpSemaphore->get();
-      retcode =
-      SQLCLI_GetDiskMaxSize(GetCliGlobals(),
-			    volname,
-			    totalCapacity,
-			    totalFreespace
-               );
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   tmpSemaphore->release();
-
-   retcode = RecordError(NULL, retcode);
-   return retcode;
-}
-SQLCLI_LIB_FUNC 
-Int32  SQL_EXEC_GetListOfDisks (
-		/*IN/OUT*/ char *diskBuffer,
-		/* OUT */ Int32 *numTSEs,
-		/* OUT */ Int32 *maxTSELength, 
-		/* IN/OUT */ Int32 *diskBufferLength
-		)
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = GetCliGlobals()->getSemaphore();
-      tmpSemaphore->get();
-      retcode =
-      SQLCLI_GetListOfDisks(GetCliGlobals(),
-			    diskBuffer,numTSEs,maxTSELength, diskBufferLength
-			   
-               );
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   tmpSemaphore->release();
-
-   retcode = RecordError(NULL, retcode);
-   return retcode;
-}
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_ALLOCSTMT (
 		/*INOUT*/ SQLSTMT_ID * new_statement_id,
 		/*IN OPTIONAL*/ SQLSTMT_ID * cloned_statement)
@@ -1260,9 +1067,7 @@ Lng32 SQL_EXEC_ALLOCSTMT (
 
   return SQL_EXEC_AllocStmt(new_statement_id, cloned_statement);
 };
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AllocStmtForRS(/*IN*/ SQLSTMT_ID *callStmtId,
                              /*IN*/ Lng32 resultSetIndex,
                              /*INOUT*/ SQLSTMT_ID *resultSetStmtId)
@@ -1301,8 +1106,6 @@ Lng32 SQL_EXEC_AllocStmtForRS(/*IN*/ SQLSTMT_ID *callStmtId,
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_ALLOCSTMTFORRS (
                 /*IN*/ SQLSTMT_ID *callStmtId,
                 /*IN*/ Lng32 resultSetIndex,
@@ -1311,11 +1114,8 @@ Lng32 SQL_EXEC_ALLOCSTMTFORRS (
   return SQL_EXEC_AllocStmtForRS(callStmtId, resultSetIndex, resultSetStmtId);
 }
 
-//LCOV_EXCL_STOP
 
 //nowait CLI 
-//LCOV_EXCL_START 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AssocFileNumber(/*IN*/ SQLSTMT_ID * statement_id,
 			      /*IN*/ short        file_number)
 {
@@ -1352,15 +1152,12 @@ Lng32 SQL_EXEC_AssocFileNumber(/*IN*/ SQLSTMT_ID * statement_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ASSOCFILENUMBER (/*IN*/ SQLSTMT_ID * statement_id,
 			       /*IN*/ short        file_number)
 {
   return SQL_EXEC_AssocFileNumber(statement_id, file_number);
 };
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ClearDiagnostics(/*IN*/ SQLSTMT_ID *statement_id)
 {
    Lng32 retcode;
@@ -1396,8 +1193,6 @@ Lng32 SQL_EXEC_ClearDiagnostics(/*IN*/ SQLSTMT_ID *statement_id)
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CLEARDIAGNOSTICS (/*IN*/ SQLSTMT_ID *statement_id){
   return SQL_EXEC_ClearDiagnostics(statement_id);
 };
@@ -1405,15 +1200,12 @@ Lng32 SQL_EXEC_CLEARDIAGNOSTICS (/*IN*/ SQLSTMT_ID *statement_id){
 #if defined (CLI_LIB)
 #pragma srlexports
 #endif
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CLI_VERSION()
 {
   return CLI_VERSION;
 }
 
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CloseStmt(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
@@ -1450,15 +1242,13 @@ Lng32 SQL_EXEC_CloseStmt(/*IN*/ SQLSTMT_ID * statement_id)
    return retcode;
 }
 
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_CLOSESTMT (
+Lng32 SQL_EXEC_CLOSESTMT (
 		/*IN*/ SQLSTMT_ID * statement_id){
   return SQL_EXEC_CloseStmt(statement_id);
 };
 
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CreateContext(/*OUT*/ SQLCTX_HANDLE * context_handle,
 			    /*IN*/ char* sqlAuthId,
                             /*IN*/ Lng32 forFutureUse)
@@ -1490,7 +1280,6 @@ Lng32 SQL_EXEC_CreateContext(/*OUT*/ SQLCTX_HANDLE * context_handle,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CREATECONTEXT(/*OUT*/ SQLCTX_HANDLE * context_handle,
 			    /*IN*/ char* sqlAuthId,
                             /*IN*/ Lng32 forFutureUse)
@@ -1498,9 +1287,7 @@ Lng32 SQL_EXEC_CREATECONTEXT(/*OUT*/ SQLCTX_HANDLE * context_handle,
 {
   return SQL_EXEC_CreateContext(context_handle, sqlAuthId, forFutureUse);
 }
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CurrentContext(/*OUT*/ SQLCTX_HANDLE * contextHandle)
 {
    Lng32 retcode;
@@ -1526,15 +1313,12 @@ Lng32 SQL_EXEC_CurrentContext(/*OUT*/ SQLCTX_HANDLE * contextHandle)
    retcode = RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_CURRENTCONTEXT(/*OUT*/ SQLCTX_HANDLE * contextHandle){
 
   return SQL_EXEC_CurrentContext(contextHandle);
 };
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DeleteContext(/*IN*/ SQLCTX_HANDLE contextHandle)
 {
    Lng32 retcode;
@@ -1561,14 +1345,12 @@ Lng32 SQL_EXEC_DeleteContext(/*IN*/ SQLCTX_HANDLE contextHandle)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_DELETECONTEXT(/*IN*/ SQLCTX_HANDLE contextHandle){
 
   return SQL_EXEC_DeleteContext(contextHandle);
 };
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DropModule(/*IN*/ SQLMODULE_ID * module_name)
 {
    Lng32 retcode;
@@ -1605,7 +1387,6 @@ Lng32 SQL_EXEC_DropModule(/*IN*/ SQLMODULE_ID * module_name)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ResetContext(/*IN*/ SQLCTX_HANDLE contextHandle, /*IN*/ void *contextMsg)
 {
    Lng32 retcode;
@@ -1631,7 +1412,6 @@ Lng32 SQL_EXEC_ResetContext(/*IN*/ SQLCTX_HANDLE contextHandle, /*IN*/ void *con
    return retcode;
 }
 
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_RESETCONTEXT(/*IN*/ SQLCTX_HANDLE contextHandle, /*IN*/ void *contextMsg){
 
   return SQL_EXEC_ResetContext(contextHandle, contextMsg);
@@ -1639,7 +1419,6 @@ Lng32 SQL_EXEC_RESETCONTEXT(/*IN*/ SQLCTX_HANDLE contextHandle, /*IN*/ void *con
 
 // new UDR interface, internal use
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetUdrErrorFlags_Internal(/*OUT*/ Lng32 *udrErrorFlags)
 {
   Lng32 retcode;
@@ -1674,8 +1453,6 @@ Lng32 SQL_EXEC_GetUdrErrorFlags_Internal(/*OUT*/ Lng32 *udrErrorFlags)
 
    return retcode;
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetUdrAttributes_Internal(/*IN*/ Lng32 sqlAccessMode,
 					/*IN*/ Lng32 forFutureUse)
 {
@@ -1714,7 +1491,6 @@ Lng32 SQL_EXEC_SetUdrAttributes_Internal(/*IN*/ Lng32 sqlAccessMode,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ResetUdrErrorFlags_Internal()
 {
   Lng32 retcode;
@@ -1750,7 +1526,6 @@ Lng32 SQL_EXEC_ResetUdrErrorFlags_Internal()
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetUdrRuntimeOptions_Internal(/*IN*/ const char *options,
                                             /*IN*/ ULng32 optionsLen,
                                             /*IN*/ const char *delimiters,
@@ -1791,7 +1566,6 @@ Lng32 SQL_EXEC_SetUdrRuntimeOptions_Internal(/*IN*/ const char *options,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DeallocDesc(/*IN*/ SQLDESC_ID * desc_id)
 {
    Lng32 retcode;
@@ -1822,13 +1596,10 @@ Lng32 SQL_EXEC_DeallocDesc(/*IN*/ SQLDESC_ID * desc_id)
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_DEALLOCDESC (
+Lng32 SQL_EXEC_DEALLOCDESC (
 		/*IN*/ SQLDESC_ID * desc_id ){
   return SQL_EXEC_DeallocDesc(desc_id);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DeallocStmt(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
@@ -1874,15 +1645,11 @@ Lng32 SQL_EXEC_DeallocStmt(/*IN*/ SQLSTMT_ID * statement_id)
    }
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DEALLOCSTMT (
 		/*IN*/ SQLSTMT_ID * statement_id){
   return SQL_EXEC_DeallocStmt(statement_id);
 };
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DefineDesc(/*IN*/ SQLSTMT_ID * statement_id,
         /* (SQLWHAT_DESC) *IN*/       Lng32   what_descriptor,
                          /*IN*/ SQLDESC_ID * sql_descriptor)
@@ -1920,16 +1687,12 @@ Lng32 SQL_EXEC_DefineDesc(/*IN*/ SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DEFINEDESC (
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN* (SQLWHAT_DESC) */ Lng32 what_descriptor,
 		/*IN*/ SQLDESC_ID * sql_descriptor){
   return SQL_EXEC_DefineDesc(statement_id, what_descriptor, sql_descriptor);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DescribeStmt(/*IN*/          SQLSTMT_ID * statement_id,
                            /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
                            /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor)
@@ -1969,8 +1732,6 @@ Lng32 SQL_EXEC_DescribeStmt(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DESCRIBESTMT (
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -1986,7 +1747,6 @@ Lng32 SQL_EXEC_DESCRIBESTMT (
   return SQL_EXEC_DescribeStmt(statement_id, input_descriptor, output_descriptor);
 };
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DisassocFileNumber(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
@@ -2021,13 +1781,11 @@ Lng32 SQL_EXEC_DisassocFileNumber(/*IN*/ SQLSTMT_ID * statement_id)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DISASSOCFILENUMBER (/*IN*/ SQLSTMT_ID * statement_id){
   return SQL_EXEC_DisassocFileNumber(statement_id);
 };
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DropContext(/*IN*/ SQLCTX_HANDLE context_handle)
 {
    Lng32 retcode;
@@ -2055,15 +1813,12 @@ Lng32 SQL_EXEC_DropContext(/*IN*/ SQLCTX_HANDLE context_handle)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DROPCONTEXT (
 		/*IN*/ SQLCTX_HANDLE context_handle ){
   return SQL_EXEC_DropContext(context_handle);
 };
 
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Exec(/*IN*/          SQLSTMT_ID * statement_id,
                    /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
                    /*IN*/                Lng32   num_ptr_pairs,
@@ -2120,8 +1875,6 @@ Lng32 SQL_EXEC_Exec(/*IN*/          SQLSTMT_ID * statement_id,
    return retcode;
 }
 
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_EXEC (
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -2165,8 +1918,6 @@ Lng32 SQL_EXEC_EXEC (
    return retcode;
 
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ExecClose(/*IN*/          SQLSTMT_ID * statement_id,
                         /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
                         /*IN*/                Lng32   num_ptr_pairs,
@@ -2216,8 +1967,6 @@ Lng32 SQL_EXEC_ExecClose(/*IN*/          SQLSTMT_ID * statement_id,
 }
 
 
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_EXECCLOSE (
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -2261,9 +2010,7 @@ Lng32 SQL_EXEC_EXECCLOSE (
    retcode = RecordError(statement_id, retcode);
    return retcode;
 };
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ExecDirect(/*IN*/          SQLSTMT_ID * statement_id,
                          /*IN*/          SQLDESC_ID * sql_source,
                          /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -2313,7 +2060,6 @@ Lng32 SQL_EXEC_ExecDirect(/*IN*/          SQLSTMT_ID * statement_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ExecDirect2(/*IN*/          SQLSTMT_ID * statement_id,
                          /*IN*/          SQLDESC_ID * sql_source,
 			   /*IN */       Int32 prep_flags,
@@ -2365,8 +2111,6 @@ Lng32 SQL_EXEC_ExecDirect2(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_EXECDIRECT (
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN*/ SQLDESC_ID * sql_source,
@@ -2411,8 +2155,6 @@ Lng32 SQL_EXEC_EXECDIRECT (
    retcode = RecordError(statement_id, retcode);
    return retcode;  
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ExecDirectDealloc(/*IN*/          SQLSTMT_ID * statement_id,
                                 /*IN*/          SQLDESC_ID * sql_source,
                                 /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -2462,8 +2204,6 @@ Lng32 SQL_EXEC_ExecDirectDealloc(/*IN*/          SQLSTMT_ID * statement_id,
                          retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_EXECDIRECTDEALLOC(/*IN*/          SQLSTMT_ID * statement_id,
                                 /*IN*/          SQLDESC_ID * sql_source,
                                 /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
@@ -2509,9 +2249,7 @@ Lng32 SQL_EXEC_EXECDIRECTDEALLOC(/*IN*/          SQLSTMT_ID * statement_id,
                          retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ExecFetch(/*IN*/          SQLSTMT_ID * statement_id,
                         /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
                         /*IN*/                Lng32   num_ptr_pairs,
@@ -2567,8 +2305,6 @@ Lng32 SQL_EXEC_ExecFetch(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_EXECFETCH(/*IN*/          SQLSTMT_ID * statement_id,
                         /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
                         /*IN*/                Lng32   num_ptr_pairs,
@@ -2611,8 +2347,6 @@ Lng32 SQL_EXEC_EXECFETCH(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ClearExecFetchClose(/*IN*/          SQLSTMT_ID * statement_id,
 				  /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
 				  /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
@@ -2675,8 +2409,6 @@ Lng32 SQL_EXEC_ClearExecFetchClose(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_CLEAREXECFETCHCLOSE(/*IN*/ SQLSTMT_ID * statement_id,
 				  /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor,
 				  /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
@@ -2727,9 +2459,7 @@ Lng32 SQL_EXEC_CLEAREXECFETCHCLOSE(/*IN*/ SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Fetch(/*IN*/          SQLSTMT_ID * statement_id,
                     /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
                     /*IN*/                Lng32   num_ptr_pairs,
@@ -2784,8 +2514,6 @@ Lng32 SQL_EXEC_Fetch(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_FETCH(/*IN*/          SQLSTMT_ID * statement_id,
                     /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
                     /*IN*/                Lng32   num_ptr_pairs,
@@ -2830,9 +2558,7 @@ Lng32 SQL_EXEC_FETCH(/*IN*/          SQLSTMT_ID * statement_id,
 
   return retcode;
 }
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_FetchClose(/*IN*/          SQLSTMT_ID * statement_id,
                          /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
                          /*IN*/                Lng32   num_ptr_pairs,
@@ -2879,8 +2605,6 @@ Lng32 SQL_EXEC_FetchClose(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_FETCHCLOSE(/*IN*/          SQLSTMT_ID * statement_id,
                          /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor,
                          /*IN*/                Lng32   num_ptr_pairs,
@@ -2923,9 +2647,7 @@ Lng32 SQL_EXEC_FETCHCLOSE(/*IN*/          SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_FetchMultiple(/*IN*/           SQLSTMT_ID * statement_id,
                             /*IN  OPTIONAL*/ SQLDESC_ID * output_descriptor,
                             /*IN*/                 Lng32   rowset_size,
@@ -2978,8 +2700,6 @@ Lng32 SQL_EXEC_FetchMultiple(/*IN*/           SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_FETCHMULTIPLE(/*IN*/           SQLSTMT_ID * statement_id,
                             /*IN  OPTIONAL*/ SQLDESC_ID * output_descriptor,
                             /*IN*/                 Lng32   rowset_size,
@@ -3028,13 +2748,11 @@ Lng32 SQL_EXEC_FETCHMULTIPLE(/*IN*/           SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
 
 // Called by the cancel thread.
 // Don't use getCliSemaphore(currContext)->to acquire a critical section.
 // Don't use cliSemaphore->to acquire a critical section.
 // cancelSemaphore is used inside SQLCLI_Cancel.
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Cancel(/*IN OPTIONAL*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
@@ -3062,7 +2780,7 @@ Lng32 SQL_EXEC_Cancel(/*IN OPTIONAL*/ SQLSTMT_ID * statement_id)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_CANCEL (
+Lng32 SQL_EXEC_CANCEL (
 		/*IN OPTIONAL*/ SQLSTMT_ID * statement_id){
 // See comment above  : "COBOL change"
  if (statement_id && (statement_id->name_mode == -1))
@@ -3071,7 +2789,6 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_CANCEL (
  return SQL_EXEC_Cancel(statement_id);
 };
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/ SQLDESC_ID * output_descriptor)
 {
@@ -3109,16 +2826,12 @@ Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
    retcode = RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_GETDESCENTRYCOUNT(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ SQLDESC_ID * output_descriptor){
   return SQL_EXEC_GetDescEntryCount(sql_descriptor, output_descriptor);
 };
-//LCOV_EXCL_STOP
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescEntryCountBasic(/*IN*/  SQLDESC_ID * sql_descriptor,
                                      /*OUT*/       Lng32 * num_entries)
 {
@@ -3154,7 +2867,6 @@ Lng32 SQL_EXEC_GetDescEntryCountBasic(/*IN*/  SQLDESC_ID * sql_descriptor,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescItem(/*IN*/     SQLDESC_ID * sql_descriptor,
                           /*IN*/           Lng32   entry,
       /* (SQLDESC_ITEM_ID) *IN*/           Lng32   what_to_get,
@@ -3204,8 +2916,6 @@ Lng32 SQL_EXEC_GetDescItem(/*IN*/     SQLDESC_ID * sql_descriptor,
    retcode = RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDESCITEM(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Lng32 entry,
@@ -3226,8 +2936,6 @@ Lng32 SQL_EXEC_GETDESCITEM(
                               len_of_item,
                               start_from_offset);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
                            /*IN*/ SQLDESC_ITEM   desc_items[],
                            /*IN*/   SQLDESC_ID * value_num_descriptor,
@@ -3269,8 +2977,6 @@ Lng32 SQL_EXEC_GetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
    retcode = RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDESCITEMS(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ SQLDESC_ITEM desc_items[],
@@ -3281,8 +2987,6 @@ Lng32 SQL_EXEC_GETDESCITEMS(
                                value_num_descriptor,
                                output_descriptor);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescItems2(/*IN*/   SQLDESC_ID * sql_descriptor,
 			    /*IN*/   Lng32 no_of_desc_items,
 			    /*IN*/ SQLDESC_ITEM   desc_items[])
@@ -3320,8 +3024,6 @@ Lng32 SQL_EXEC_GetDescItems2(/*IN*/   SQLDESC_ID * sql_descriptor,
    retcode = RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDESCITEMS2(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Lng32 no_of_desc_items,
@@ -3330,8 +3032,6 @@ Lng32 SQL_EXEC_GETDESCITEMS2(
 				no_of_desc_items,
 				desc_items);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDiagnosticsStmtInfo(/*IN*/       Lng32 * stmt_info_items,
                                      /*IN*/ SQLDESC_ID * output_descriptor)
 {
@@ -3369,11 +3069,10 @@ Lng32 SQL_EXEC_GetDiagnosticsStmtInfo(/*IN*/       Lng32 * stmt_info_items,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDiagnosticsStmtInfo2(
      /*IN OPTIONAL*/ SQLSTMT_ID * statement_id,
      /*IN* (SQLDIAG_STMT_INFO_ITEM_ID) */ Lng32 what_to_get,
-     /*OUT OPTIONAL*/ void * numeric_value,  // NA_64BIT
+     /*OUT OPTIONAL*/ void * numeric_value,
      /*OUT OPTIONAL*/ char * string_value,
      /*IN OPTIONAL*/ Lng32 max_string_len,
      /*OUT OPTIONAL*/ Lng32 * len_of_item)
@@ -3414,21 +3113,16 @@ Lng32 SQL_EXEC_GetDiagnosticsStmtInfo2(
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDIAGNOSTICSSTMTINFO(
 		/*IN*/ Lng32 *stmt_info_items,
 		/*IN*/ SQLDESC_ID * output_descriptor){
   return SQL_EXEC_GetDiagnosticsStmtInfo(stmt_info_items, output_descriptor);
 };
 
-
-#ifndef CLI_PRIV_SRL
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDIAGNOSTICSSTMTINFO2(
 		/*IN OPTIONAL*/ SQLSTMT_ID * statement_id,
 		/*IN* (SQLDIAG_STMT_INFO_ITEM_ID) */ Lng32 what_to_get,
-		/*OUT OPTIONAL*/ void * numeric_value,  // NA_64BIT
+		/*OUT OPTIONAL*/ void * numeric_value,
 		/*OUT OPTIONAL*/ char * string_value,
 		/*IN OPTIONAL*/ Lng32 max_string_len,
 		/*OUT OPTIONAL*/ Lng32 * len_of_item) {
@@ -3459,7 +3153,6 @@ static void copyResultString(char * dest, const char * src, Lng32 destLen,
   else
     *dest = '\0';
 }
-//LCOV_EXCL_STOP
 
 //
 // GetAutoSizedCondInfo
@@ -3569,7 +3262,6 @@ static Lng32 GetAutoSizedCondInfo(Lng32                   * retcode,
   return (condition_item_count_needed);
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDiagnosticsCondInfo(
                 /*IN*/ SQLDIAG_COND_INFO_ITEM * cond_info_items,
                 /*IN*/             SQLDESC_ID * cond_num_descriptor,
@@ -3817,7 +3509,6 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo(
   return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO(
 		/*IN*/ SQLDIAG_COND_INFO_ITEM *cond_info_items,
 		/*IN*/ SQLDESC_ID * cond_num_descriptor,
@@ -3827,11 +3518,7 @@ Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO(
                                          output_descriptor);
 
 };
-#endif
 
-#pragma nowarn(770)   // warning elimination 
-#ifndef CLI_PRIV_SRL
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
      /*IN* (SQLDIAG_COND_INFO_ITEM_ID) */ Lng32 what_to_get,
      /*IN*/ Lng32 conditionNum,
@@ -3945,9 +3632,7 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
   return retcode;
 }
 
-#pragma warn(770)  // warning elimination 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO2(
      /*IN* (SQLDIAG_COND_INFO_ITEM_ID) */ Lng32 what_to_get,
      /*IN*/ Lng32 conditionNum,
@@ -3964,7 +3649,7 @@ Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO2(
 					  len_of_item);
 }
 
-SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
+Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
 		/*IN*/ Lng32 no_of_condition_items,
 		/*IN*/ SQLDIAG_COND_INFO_ITEM_VALUE
 			  diag_cond_info_item_values[])
@@ -4062,7 +3747,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
      tmpSemaphore->release();
 
      retcode = RecordError(NULL, retcode);
-     //LCOV_EXCL_START
      if (retcode < 0) 
      {
        delete [] message_buffer_ptr;
@@ -4070,7 +3754,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
        diagsArea->deAllocate();
        return retcode;
      }
-     //LCOV_EXCL_STOP
 
      // The actual diags area resides in the context heap and is inaccessible
      // here in non-priv code. We must unpack the copy which has been
@@ -4085,7 +3768,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
      for(Int32 i=0; i<no_of_condition_items && retcode == 0; i++)
      {
        diagItemValues = diag_cond_info_item_values[i];
-       //LCOV_EXCL_START
        if (diagItemValues.num_val_or_len == NULL)
        {
 	 delete [] message_buffer_ptr;
@@ -4093,7 +3775,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
 	 diagsArea->deAllocate();
 	 return -CLI_INVALID_ATTR_VALUE;
        }
-       //LCOV_EXCL_STOP
        string_value = diagItemValues.string_val;
        max_string_len = string_value ? *(diagItemValues.num_val_or_len) : 0;
        conditionNum = diagItemValues.item_id_and_cond_number.cond_number_desc_entry;
@@ -4115,14 +3796,12 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
 	   {
 	      if(condition.getCustomSQLState() == NULL) 
 	      {
-		//LCOV_EXCL_START
 		if (max_string_len < 6) {
 		  delete [] message_buffer_ptr;
 		  diagsArea->clear();
 		  diagsArea->deAllocate();
 		  return -CLI_INVALID_ATTR_VALUE;
 		}
-		//LCOV_EXCL_STOP
 		ComSQLSTATE(condition.getSQLCODE(), string_value);
 		if (len_of_item)
 		  *len_of_item = 6;
@@ -4211,7 +3890,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
                   break;
                 } // switch
               }
-		//LCOV_EXCL_START
                 if (msgInLocaleLen == 0 && wMsgLen > 0 && max_string_len > 80)
                 {                                                               // UTF8
                   char * pMsg   = string_value;                                 // SJIS
@@ -4224,7 +3902,6 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
                   str_cat(pMsg, SQLCHARSETSTRING_UTF8, pMsg);
                   msgInLocaleLen = str_len(pMsg);
                 } // if (msgInLocaleLen == 0 && wMsgLen > 0 && max_string_len > 80)
-		//LCOV_EXCL_STOP
               }
 
 		if(msgInLocaleLen == 0)
@@ -4255,8 +3932,7 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
    return retcode;
 
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO3(
+Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO3(
 		/*IN*/ Lng32 no_of_condition_items,
 		/*IN*/ SQLDIAG_COND_INFO_ITEM_VALUE
 			  diag_cond_info_item_values[])
@@ -4265,7 +3941,7 @@ SQLCLI_LIB_FUNC	Lng32 SQL_EXEC_GETDIAGNOSTICSCONDINFO3(
 		       			   diag_cond_info_item_values);
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetMainSQLSTATE(
+Lng32 SQL_EXEC_GetMainSQLSTATE(
                 /*IN*/ SQLSTMT_ID * stmtId,
 		/*IN*/  Lng32 sqlcode,
 		/*OUT*/ char * sqlstate /* assumed to be char[6] */)
@@ -4288,18 +3964,14 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetMainSQLSTATE(
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GETMAINSQLSTATE(
+Lng32 SQL_EXEC_GETMAINSQLSTATE(
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN*/  Lng32 sqlcode,
 		/*OUT*/ char * sqlstate /* assumed to be char[6] */)
 {
   return SQL_EXEC_GetMainSQLSTATE(statement_id, sqlcode, sqlstate);
 }
-//LCOV_EXCL_STOP
-#endif // CLI_PRIV_SRL
  
-#ifndef CLI_PRIV_SRL
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetCSQLSTATE(/*OUT*/ char * theSQLSTATE /* assumed char[6] */,
                            /*IN*/  Lng32   theSQLCODE)
 {
@@ -4310,45 +3982,14 @@ Lng32 SQL_EXEC_GetCSQLSTATE(/*OUT*/ char * theSQLSTATE /* assumed char[6] */,
    ComSQLSTATE(theSQLCODE,theSQLSTATE);
    return retcode;
 }
-#else
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_GetCSQLSTATE(/*OUT*/ char * theSQLSTATE /* assumed char[6] */,
-                           /*IN*/  Lng32   theSQLCODE)
-{
-  Lng32 retcode = 0;
-  
-  // when this method is called from a priv caller(executor), then
-  // we cannot look at the msgs file(it could be looked at only thru
-  // a non-priv interface since it uses c-runtime and globals).
-  // Just return the string representation of the input state.
-  ULng32 sqlCodeUnsigned;
-  if (theSQLCODE < 0)
-    sqlCodeUnsigned = -theSQLCODE;
-  else 
-    sqlCodeUnsigned = theSQLCODE;
 
-  str_itoa(sqlCodeUnsigned, theSQLSTATE);
-
-  if (theSQLCODE < 0)
-  {
-     for (Int32 i = 5; i > 0; i--)
-       theSQLSTATE[i] = theSQLSTATE[i-1];
-     theSQLSTATE[0] = '-';
-  }
-  return retcode;
-}
-#endif
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GETCSQLSTATE(
+Lng32 SQL_EXEC_GETCSQLSTATE(
 		/*OUT*/ char * sqlstate /* assumed to be char[6] */,
 		/*IN*/  Lng32 sqlcode){
   return SQL_EXEC_GetCSQLSTATE(sqlstate, sqlcode);
 };
 
 
-#ifndef CLI_PRIV_SRL
-
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetCobolSQLSTATE(/*OUT*/ char * theSQLSTATE /*assumed char[5]*/,
                                /*IN*/  Lng32   theSQLCODE)
 {
@@ -4363,15 +4004,13 @@ Lng32 SQL_EXEC_GetCobolSQLSTATE(/*OUT*/ char * theSQLSTATE /*assumed char[5]*/,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_GETCOBOLSQLSTATE(
 		/*OUT*/ char * sqlstate /* assumed to be char[5] */,
 		/*IN*/  Lng32 sqlcode){
   
   return SQL_EXEC_GetCobolSQLSTATE(sqlstate, sqlcode);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
+
 Lng32 SQL_EXEC_GetSQLSTATE(/*OUT*/ char * SQLSTATE /* assumed to be char[6] */)
 {
    Lng32 retcode;
@@ -4409,17 +4048,13 @@ Lng32 SQL_EXEC_GetSQLSTATE(/*OUT*/ char * SQLSTATE /* assumed to be char[6] */)
    ComSQLSTATE(sqlcode, SQLSTATE);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
+
 Lng32 SQL_EXEC_GETSQLSTATE(
 		/*OUT*/ char * sqlstate /* assumed to be char[6] */){
   
   return SQL_EXEC_GetSQLSTATE(sqlstate);
 };
-//LCOV_EXCL_STOP
-#endif 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetSessionAttr(
                           /*IN (SESSIONATTR_TYPE )*/ Lng32 attrName,
 			  /*OUT OPTIONAL*/      Lng32 * numeric_value,
@@ -4505,7 +4140,6 @@ Lng32 retcode;
 }
  
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetAuthName_Internal(
    Lng32   auth_id,
    char   *string_value,
@@ -4550,7 +4184,6 @@ Lng32 retcode;
 }
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDatabaseUserName_Internal (
     /*IN*/            Lng32   user_id,
     /*OUT*/           char   *string_value,
@@ -4593,7 +4226,6 @@ Lng32 SQL_EXEC_GetDatabaseUserName_Internal (
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
                                            /*OUT*/  Lng32  *numeric_value)
 {
@@ -4631,7 +4263,6 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Int32 SQL_EXEC_GetAuthState(
    /*OUT*/  bool & authenticationEnabled,
    /*OUT*/  bool & authorizationEnabled,
@@ -4677,7 +4308,6 @@ Int32 SQL_EXEC_GetAuthState(
 }
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetSessionAttr_Internal(
     /*IN (SESSIONATTR_TYPE)*/  Lng32  attrName,
     /*IN OPTIONAL*/            Lng32  numeric_value,
@@ -4760,7 +4390,6 @@ Lng32 SQL_EXEC_GetRoleList(
 }
 
  
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ResetRoleList_Internal()
 {
    Lng32 retcode;
@@ -4797,7 +4426,6 @@ Lng32 SQL_EXEC_ResetRoleList_Internal()
 }
 
  
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetUniqueQueryIdAttrs(
                 /*IN*/    char * uniqueQueryId,
 		/*IN*/    Lng32 uniqueQueryIdLen,
@@ -4839,7 +4467,6 @@ Lng32 SQL_EXEC_GetUniqueQueryIdAttrs(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
                           /*IN (SQLATTR_TYPE )*/ Lng32 attrName,
 			  /*OUT OPTIONAL*/      Lng32 * numeric_value,
@@ -4883,8 +4510,6 @@ Lng32 SQL_EXEC_GetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETSTMTATTR(/*IN*/ SQLSTMT_ID * statement_id,
                           /*IN* (SQLATTR_TYPE) */ Lng32 attrName,
 			  /*OUT OPTIONAL*/      Lng32 * numeric_value,
@@ -4896,8 +4521,6 @@ Lng32 SQL_EXEC_GETSTMTATTR(/*IN*/ SQLSTMT_ID * statement_id,
 			      numeric_value, string_value,
 			      max_string_len, len_of_item);
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetStmtAttrs(/*IN*/ SQLSTMT_ID * statement_id,
                            /*IN*/           Lng32 number_of_attrs,
                            /*INOUT*/        SQLSTMT_ATTR attrs[],
@@ -4937,8 +4560,6 @@ Lng32 SQL_EXEC_GetStmtAttrs(/*IN*/ SQLSTMT_ID * statement_id,
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GETSTMTATTRS(/*IN*/ SQLSTMT_ID * statement_id,
                            /*IN*/           Lng32 number_of_attrs,
                            /*INOUT*/        SQLSTMT_ATTR attrs[],
@@ -4947,19 +4568,16 @@ Lng32 SQL_EXEC_GETSTMTATTRS(/*IN*/ SQLSTMT_ID * statement_id,
   return SQL_EXEC_GetStmtAttrs(statement_id, number_of_attrs,
                                attrs, num_returned);
 }
-//LCOV_EXCL_STOP
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetStatistics(/*IN OPTIONAL*/ SQLSTMT_ID * statement_id,
 			    /*INOUT*/ SQL_QUERY_STATISTICS *query_statistics)
 {
   return -CLI_INTERNAL_ERROR;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GETSTATISTICS(
+Lng32 SQL_EXEC_GETSTATISTICS(
 		/*IN OPTIONAL*/ SQLSTMT_ID * statement_id)
 {
   return SQL_EXEC_GetStatistics(statement_id, NULL);
@@ -4970,93 +4588,6 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GETSTATISTICS(
 }
 #endif /*__cplusplus*/
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GETMPCATALOG(
-		/*IN*/    char * ANSIObjName,
-		/*INOUT*/ char * MPObjName,
-		/*IN*/    Lng32   MPObjNameMaxLen,
-		/*INOUT*/ Lng32 * MPObjNameLen,
-		/*OUT*/   char * MPCatalogName,
-		/*IN*/    Lng32   MPCatalogNameMaxLen,
-		/*OUT*/   Lng32 * MPCatalogNameLen)
-{
-   Lng32 retcode = 0;
-   return retcode;
-};
-//LCOV_EXCL_STOP
-
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_GetPfsSize(/*OUT*/Int32 *pfsSize,
-                          /*OUT*/Int32 *pfsCurUse,
-                          /*OUT*/Int32 *pfsMaxUse)
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode =
-      SQLCLI_GetPfsSize(GetCliGlobals(),
-		        pfsSize, pfsCurUse, pfsMaxUse);
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-   retcode = RecordError(NULL, retcode);
-   return retcode;
-}
-
-Lng32 SQL_EXEC_CleanUpPfsResources()
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode =
-      SQLCLI_CleanUpPfsResources(GetCliGlobals());
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-   retcode = RecordError(NULL, retcode);
-   return retcode;
-}
-
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Prepare(/*IN*/ SQLSTMT_ID * statement_id,
                       /*IN*/ SQLDESC_ID * sql_source)
 {
@@ -5095,7 +4626,6 @@ Lng32 SQL_EXEC_Prepare(/*IN*/ SQLSTMT_ID * statement_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Prepare2(/*IN*/ SQLSTMT_ID * statement_id,
                       /*IN*/ SQLDESC_ID * sql_source,
 		       /*INOUT*/ char * gencode_ptr,
@@ -5160,14 +4690,13 @@ Lng32 SQL_EXEC_Prepare2(/*IN*/ SQLSTMT_ID * statement_id,
    return retcode;
 }
 
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_PREPARE(
+Lng32 SQL_EXEC_PREPARE(
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN*/ SQLDESC_ID * sql_source){
   return SQL_EXEC_Prepare(statement_id, sql_source);
 };
 
-SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetExplainData(
+Int32 SQL_EXEC_GetExplainData(
                                               /*IN*/    SQLSTMT_ID * statement_id,
                                               /*INOUT*/ char * explain_ptr,
                                               /*IN*/    Int32 explain_len,
@@ -5211,7 +4740,7 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetExplainData(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC Int32 SQL_EXEC_StoreExplainData(
+Int32 SQL_EXEC_StoreExplainData(
                                                 /*IN*/ Int64 * exec_start_utc_ts,
                                                 /*IN*/    char * query_id,
                                                 /*INOUT*/ char * explain_ptr,
@@ -5255,7 +4784,6 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_StoreExplainData(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ResDescName(/*INOUT*/       SQLDESC_ID * statement_id,
                           /*IN OPTIONAL*/ SQLSTMT_ID * from_statement,
          /* (SQLWHAT_DESC) *IN OPTIONAL*/       Lng32   what_desc)
@@ -5296,14 +4824,13 @@ Lng32 SQL_EXEC_ResDescName(/*INOUT*/       SQLDESC_ID * statement_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_RESDESCNAME(
+Lng32 SQL_EXEC_RESDESCNAME(
 		/*INOUT*/ SQLDESC_ID * statement_id,
 		/*IN OPTIONAL*/ SQLSTMT_ID * from_statement,
 		/*IN OPTIONAL (SQLWHAT_DESC) */ Lng32 what_desc){
   return SQL_EXEC_ResDescName(statement_id, from_statement, what_desc);
 };
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_ResStmtName(/*INOUT*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
@@ -5340,14 +4867,11 @@ Lng32 SQL_EXEC_ResStmtName(/*INOUT*/ SQLSTMT_ID * statement_id)
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_RESSTMTNAME(
 		/*INOUT*/ SQLSTMT_ID * statement_id){
 
   return SQL_EXEC_ResStmtName(statement_id);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetCursorName(/*IN*/ SQLSTMT_ID * statement_id,
                             /*IN*/ SQLSTMT_ID * cursor_name)
 {
@@ -5385,16 +4909,12 @@ Lng32 SQL_EXEC_SetCursorName(/*IN*/ SQLSTMT_ID * statement_id,
    retcode = RecordError(statement_id, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETCURSORNAME(
 		/*IN*/ SQLSTMT_ID * statement_id,
 		/*IN*/ SQLSTMT_ID * cursor_name){
 
   return SQL_EXEC_SetCursorName(statement_id, cursor_name);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
                           /*IN* (SQLATTR_TYPE) */ Lng32 attrName,
                           /*IN OPTIONAL*/       Lng32   numeric_value,
@@ -5438,8 +4958,6 @@ Lng32 SQL_EXEC_SetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
       RecordError( statement_id, retcode );
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETSTMTATTR(/*IN*/ SQLSTMT_ID * statement_id,
                           /*IN* (SQLATTR_TYPE) */ Lng32 attrName,
                           /*IN OPTIONAL*/       Lng32   numeric_value,
@@ -5449,7 +4967,6 @@ Lng32 SQL_EXEC_SETSTMTATTR(/*IN*/ SQLSTMT_ID * statement_id,
 			       numeric_value, string_value);
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/ SQLDESC_ID * input_descriptor)
 {
@@ -5487,7 +5004,6 @@ Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SETDESCENTRYCOUNT(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ SQLDESC_ID * input_descriptor){
@@ -5495,7 +5011,6 @@ Lng32 SQL_EXEC_SETDESCENTRYCOUNT(
   return  SQL_EXEC_SetDescEntryCount(sql_descriptor, input_descriptor);
 };
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescEntryCountBasic(/*IN*/ SQLDESC_ID * sql_descriptor,
                                      /*IN*/       Lng32   num_entries)
 {
@@ -5533,8 +5048,6 @@ Lng32 SQL_EXEC_SetDescEntryCountBasic(/*IN*/ SQLDESC_ID * sql_descriptor,
    RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescItem(/*IN*/          SQLDESC_ID * sql_descriptor,
                           /*IN*/                Lng32   entry,
       /* (SQLDESC_ITEM_ID) *IN*/                Lng32   what_to_set,
@@ -5577,8 +5090,6 @@ Lng32 SQL_EXEC_SetDescItem(/*IN*/          SQLDESC_ID * sql_descriptor,
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETDESCITEM(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Lng32 entry,
@@ -5588,8 +5099,6 @@ Lng32 SQL_EXEC_SETDESCITEM(
 
   return SQL_EXEC_SetDescItem(sql_descriptor, entry, what_to_set, numeric_value, string_value);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
                            /*IN*/ SQLDESC_ITEM   desc_items[],
                            /*IN*/   SQLDESC_ID * value_num_descriptor,
@@ -5631,8 +5140,6 @@ Lng32 SQL_EXEC_SetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
    RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETDESCITEMS(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ SQLDESC_ITEM desc_items[],
@@ -5643,8 +5150,7 @@ Lng32 SQL_EXEC_SETDESCITEMS(
 
   return SQL_EXEC_SetDescItems(sql_descriptor, desc_items, value_num_descriptor, input_descriptor);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetDescItems2(
+Lng32 SQL_EXEC_SetDescItems2(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Lng32 no_of_desc_items,
 		/*IN*/ SQLDESC_ITEM desc_items[])
@@ -5682,8 +5188,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetDescItems2(
    RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SETDESCITEMS2(
+Lng32 SQL_EXEC_SETDESCITEMS2(
 		/*IN*/ SQLDESC_ID * sql_descriptor,
 		/*IN*/ Lng32 no_of_desc_items,
 		/*IN*/ SQLDESC_ITEM desc_items[])
@@ -5691,8 +5196,6 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SETDESCITEMS2(
 {
   return SQL_EXEC_SetDescItems2(sql_descriptor, no_of_desc_items, desc_items);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescPointers(/*IN*/ SQLDESC_ID * sql_descriptor,
                               /*IN*/       Lng32   starting_entry,
                               /*IN*/       Lng32   num_ptr_pairs,
@@ -5739,8 +5242,6 @@ Lng32 SQL_EXEC_SetDescPointers(/*IN*/ SQLDESC_ID * sql_descriptor,
   RecordError(NULL, retcode);
   return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETDESCPOINTERS(/*IN*/       SQLDESC_ID * sql_descriptor,
                               /*IN*/       Lng32   starting_entry,
                               /*IN*/       Lng32   num_ptr_pairs,
@@ -5783,8 +5284,6 @@ Lng32 SQL_EXEC_SETDESCPOINTERS(/*IN*/       SQLDESC_ID * sql_descriptor,
   RecordError(NULL, retcode);
   return retcode;
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetRowsetDescPointers(SQLDESC_ID * sql_descriptor,
                                            Lng32    rowset_size,
                                            Lng32    *rowset_status_ptr,
@@ -5835,7 +5334,6 @@ Lng32 SQL_EXEC_SetRowsetDescPointers(SQLDESC_ID * sql_descriptor,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SETROWSETDESCPOINTERS(SQLDESC_ID * sql_descriptor,
                                            Lng32    rowset_size,
                                            Lng32    *rowset_status_ptr,
@@ -5883,7 +5381,6 @@ Lng32 SQL_EXEC_SETROWSETDESCPOINTERS(SQLDESC_ID * sql_descriptor,
 }
 
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SwitchContext(/*IN*/           SQLCTX_HANDLE   ctxt_handle,
                             /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_ctxt_handle)
 {
@@ -5912,15 +5409,11 @@ Lng32 SQL_EXEC_SwitchContext(/*IN*/           SQLCTX_HANDLE   ctxt_handle,
    RecordError(NULL, retcode);
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SWITCHCONTEXT(
 		/*IN*/ SQLCTX_HANDLE context_handle,
                 /*OUT OPTIONAL*/ SQLCTX_HANDLE * prev_context_handle){
   return SQL_EXEC_SwitchContext(context_handle, prev_context_handle);
 };
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_Xact(/*IN* (SQLTRANS_COMMAND) */       Lng32   command,
                    /*OUT OPTIONAL*/            SQLDESC_ID * transid_descriptor)
 {
@@ -5957,15 +5450,12 @@ Lng32 SQL_EXEC_Xact(/*IN* (SQLTRANS_COMMAND) */       Lng32   command,
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_XACT(
 		/*IN* (SQLTRANS_COMMAND) */ Lng32 command,
 		/*OUT OPTIONAL*/ SQLDESC_ID * transid_descriptor){
 
   return SQL_EXEC_Xact(command, transid_descriptor);
 }; 
-//LCOV_EXCL_STOP
 
 Lng32 SQL_EXEC_SetAuthID(
    const char * externalUsername,
@@ -6018,7 +5508,6 @@ Lng32 SQL_EXEC_SetAuthID(
 
 /* temporary functions -- for use by sqlcat simulator only */
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
                         /*IN OPTIONAL*/       Lng32   max_entries)
 {
@@ -6056,7 +5545,6 @@ Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/  SQLDESC_ID * sql_descriptor,
                                 /*OUT*/       Lng32 * num_entries)
 {
@@ -6094,7 +5582,6 @@ Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/  SQLDESC_ID * sql_descriptor,
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/       Lng32   num_entries)
 {
@@ -6135,7 +5622,6 @@ Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
 
 // For internal use only -- do not document!
 // This method merges the CLI diags area into the caller's diags area
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_MergeDiagnostics_Internal (/*INOUT*/ ComDiagsArea & newDiags)
 {
    Lng32 retcode;
@@ -6170,36 +5656,9 @@ Lng32 SQL_EXEC_MergeDiagnostics_Internal (/*INOUT*/ ComDiagsArea & newDiags)
    tmpSemaphore->release();
    return retcode;
 }
-//LCOV_EXCL_START
-// For internal use only -- do not document
-// A new CLI call to allow catman to specify the the CLI which version of compiler
-// to use to prepare a query. The caller can specify either a node name or a version but
-// not both. If both are specified an error will be returned.
 
-SQLCLI_LIB_FUNC Lng32  SQL_EXEC_SetCompilerVersion_Internal(  short mxcmpVersionToUse, char *nodeName)
-{
-  Lng32 retcode;
-
-  CLI_NONPRIV_PROLOGUE(retcode);
-  retcode = SQLCLI_SetCompilerVersion_Internal(GetCliGlobals(),mxcmpVersionToUse, nodeName);
-  return retcode;
-}
-
-// A new CLI call to return the compiler vesion in the current context. 
-// The caller can specify a node name to get the version of a remote node.
-
-
-SQLCLI_LIB_FUNC Lng32  SQL_EXEC_GetCompilerVersion_Internal(  short &mxcmpVersionToUse, char *nodeName)
-{
-  Lng32 retcode;
-
-  CLI_NONPRIV_PROLOGUE(retcode);
-  retcode = SQLCLI_GetCompilerVersion_Internal(GetCliGlobals(),mxcmpVersionToUse, nodeName);
-  return retcode;
-}
 // For internal use only -- do not document!
 // This method returns the CLI diags area in packed format
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetPackedDiagnostics_Internal(
       /*OUT*/            char * message_buffer_ptr,
       /*IN*/    ULng32   message_obj_size,
@@ -6245,14 +5704,12 @@ Lng32 SQL_EXEC_GetPackedDiagnostics_Internal(
 }
 
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC
 void SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 {
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(flagbits);
 }
 
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 {
    Lng32 retcode;
@@ -6357,14 +5814,12 @@ Lng32 SQL_EXEC_GetParserFlagsForExSqlComp_Internal(ULng32 &flagbits)
 }
 
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC 
 void SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 {
   SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(flagbits);
 }
 
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 {
    Lng32 retcode;
@@ -6399,312 +5854,7 @@ Lng32 SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
    return retcode;
 }
 
-//LCOV_EXCL_START
-// For internal use only -- do not document!
-SQLCLI_LIB_FUNC const char *const *const
-SQL_EXEC_GetListOfVolumes_Internal()
-{
-  return SQLCLI_GetListOfVolumes_Internal();
-
-} // SQL_EXEC_GetListOfVolumes_Internal()
-
-// For internal use only -- do not document!
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetListOfAuditedVolumes_Internal(
-                /*INOUT*/ char **volNames,
-                /*INOUT*/ Lng32 *numOfVols)
-{
-  Lng32 retcode=0;
-  retcode = SQLCLI_GetListOfAuditedVolumes_Internal
-                      (GetCliGlobals(), volNames, numOfVols);
-
-  return retcode;
-
-} // SQL_EXEC_GetListOfAuditedVolumes_Internal()
-
-// For internal use only -- do not document!
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetNumOfQualifyingVolumes_Internal
-                           (/*IN*/ const char *nodeName,
-                            /*INOUT*/ Lng32 *numOfVols)
-{
-  Lng32 retcode=0;
-
-   retcode = SQLCLI_GetNumOfQualifyingVolumes_Internal
-                       (GetCliGlobals(), nodeName, numOfVols);
-
-   return retcode;
-} // SQL_EXEC_GetListOfAuditedVolumes_Internal()
-
-
-// For internal use only -- do not document!
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetListOfQualifyingVolumes_Internal
-                                  (/*IN*/ const char *nodeName,
-                                   /*IN*/ Lng32 numOfVols,
-                                   /*OUT*/   char **volNames,
-                                   /*OUT*/   Lng32 *cpuNums,
-                                   /*OUT*/   Lng32 *capacities,
-                                   /*OUT*/   Lng32 *freespaces,
-                                   /*OUT*/   Lng32 *largestFragments)
-{
-  Lng32 retcode=0;
-
-   retcode = SQLCLI_GetListOfQualifyingVolumes_Internal
-                  (GetCliGlobals(), nodeName, numOfVols, volNames, cpuNums,
-                   capacities, freespaces, largestFragments);
-
-   return retcode;
-} // SQL_EXEC_GetListOfAuditedVolumes_Internal()
-
-
-// For internal use only -- do not document!
-SQLCLI_LIB_FUNC short
-SQL_EXEC_GetDefaultVolume_Internal(char *const outBuf,
-                                   const short outBufMaxLen,
-                                   short &defaultVolLen)
-{
-   short retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-
-   CLI_NONPRIV_PROLOGUE_SHORT(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode = SQLCLI_GetDefaultVolume_Internal(outBuf, outBufMaxLen,
-						 defaultVolLen);
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-   return retcode;
-} // SQL_EXEC_GetDefaultVolume_Internal()
-
-//LCOV_EXCL_STOP
-
-SQLCLI_LIB_FUNC Lng32
-SQL_EXEC_IsVolumeUseful_Internal (const char *const volName,
-                                  short &fsErr)
-{
-  const Int32 noOfItems = 3;
-  short itemList[noOfItems] = {30, 31, 33};
-  short resultList[noOfItems];
-
-  if (SQLCLI_IsVolume7Chars_Internal(volName))
-  {
-    fsErr = FEBADNAME;
-    return FALSE;
-  }
-
-
-  MS_Mon_Process_Info_Type info;
-  char                     dp2Name[100];  // including NULL terminator
-  size_t                   dp2NameLen = 0;
-  char *                   ptr = NULL;
-
-  if (volName[0] == '\\')
-  {
-    size_t sysNameLen = 0;
-    // volume qualified with node name - we don't really like that
-    // except if the node name is \NSK. Go check if that is the case.
-    ptr = str_chr(volName, '.');
-    if (ptr == NULL || (sysNameLen = ptr - volName) != 4 /* strlen("\\NSK") */)
-    {
-      // name is invalid, bail out
-      fsErr = XZFIL_ERR_BADNAME;
-      return FALSE;
-    }
-    else
-    {
-      char sysName[10];
-      str_cpy_all(sysName, volName, sysNameLen);
-      sysName[sysNameLen] = '\0';
-      for (Int32 i = 0; i < sysNameLen; i++) sysName[i] = TOUPPER(sysName[i]);
-      if (str_cmp(sysName, "\\NSK", sysNameLen) != 0)
-      {
-        // system name can only be \NSK (case insensitive)
-        fsErr = XZFIL_ERR_BADNAME;
-        return FALSE;
-      }
-    }
-
-    ptr++; // advance past the period (dot) separator
-    dp2NameLen = str_len(ptr);
-    str_cpy_all(dp2Name, ptr, dp2NameLen);
-    dp2Name[dp2NameLen] = '\0';
-  }
-  else
-  {
-    // volName[0] should be '$'
-    dp2NameLen = str_len(volName);
-    str_cpy_all(dp2Name, volName, dp2NameLen);
-    dp2Name[dp2NameLen] = '\0';
-  }
-
-  fsErr = msg_mon_get_process_info_detail(dp2Name, // in  - vol name w/out sys name part
-                                          &info);  // out - process information
-  if (fsErr == XZFIL_ERR_OK)
-  {
-    // massage the outcome to resemble the one from FILE_GETINFOLISTBYNAME_
-    switch (info.type)
-    {
-    case MS_ProcessType_TSE:
-      resultList[0] = 3;   // a disk
-      resultList[1] = 0;   // not a fancy SQL/MP disk type
-      resultList[2] = 1;   // TSE volume - Always audited
-      break;
-    case MS_ProcessType_ASE:
-      resultList[0] = 3;   // a disk
-      resultList[1] = 0;   // not a fancy SQL/MP disk type
-      resultList[2] = 0;   // ASE Audit Trail volume - Not audited
-      break;
-    default:               // Not a DP2 volume
-      fsErr = XZFIL_ERR_NOSUCHDEV;
-      break;
-    } // switch
-  }
-  else if (fsErr == XZFIL_ERR_BOUNDSERR)
-  {
-    // -- process (name) not found --
-    // Replace this unfriendly fs error condition
-    // with the one we are familiar with
-    fsErr = XZFIL_ERR_NOSUCHDEV;
-  }
-
-
-  // Note that FEOK (used on Windows NT and NSK platforms)
-  // and XZERR_FIL_OK  are the same
-  if (fsErr != FEOK)
-    // Some file system error, assume that the device 
-    // is not a useful volume
-    return FALSE;
-
-  if (resultList[0] != 3)
-  {
-    // not a disk ...
-    fsErr = FEINVALOP;
-    return FALSE;
-  }
-
-  if ((resultList[1] == 36) || (resultList[1] == 56))
-  {
-    // an SMF volume or an OSF 
-    fsErr = FEINVALOP;
-    return FALSE;
-  }
-
-
-  if (resultList[2] == 0)
-  {
-    // not TMF volume
-    fsErr = FEAUDITINVALOP;
-    return FALSE;
-  }
-
-  // Volume is physical, available and audited
-  return TRUE;
-} // SQL_EXEC_IsVolumeUseful_Internal()
-
-
-
-// For internal use only -- do not document!
-//
-// returns pointer pointing to the Tandem System Volume name
-// (NULL-terminated) cached in the Executor dynamic global
-// memory area.  Returns NULL if cannot get the name (after
-// logging an error message in the Windows NT Even log).
-//
-// On NT make a call to this routine to get a pointer to the SMD location 
-// in the CLI globals
-//
-// On NSK the CLI globals are hidden so we need the CLI to copy the SMD location
-// to a local variable. In this case allocate storage for SMDLocation and
-// make a call to SQL_EXEC_GetSystemVolume_InternalNSK(SMDLocation);
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_GetSystemVolume_Internal(
-     /*INOUT*/ char * SMDlocation)
-{
-  Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-  Lng32 fsError;     // unexposed error reporting.
-
-try 
-  {   
-    tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-    retcode = SQLCLI_GetSystemVolume_Internal(GetCliGlobals(),
-					    SMDlocation, &fsError);
-  }
- catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
- threadContext->decrNumOfCliCalls();
- tmpSemaphore->release();
-
-   
-  return retcode;
-}
-//LCOV_EXCL_STOP
-// For internal use only -- do not document!
-//
-// returns pointer pointing to the Tandem System Volume name
-// (NULL-terminated).
-//
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_GetRemoteSystemVolume_Internal(
-     /*INOUT*/ char * SMDlocation,
-     /*IN*/    const char *nodeName,
-     /*INOUT*/ Lng32 *fsError)
-{
-  Lng32 retcode = 0;
-
-  if ((nodeName == NULL) ||
-      (strcmp("NSK", nodeName) == 0) ||
-      (strcmp("\\NSK", nodeName) == 0))
-  {
-    retcode = SQLCLI_GetSystemVolume_Internal(GetCliGlobals(),
-					    SMDlocation,
-                                            fsError);
-  }
-  else
-  {
-    // Notice that there is no need to define the function
-    // SQLCLI_GetRemoteSystemVolume_Internal for NT.
-    // We do want to return sensibly looking error information, though.
-    SMDlocation[0] = '\0';
-    retcode = -EXE_NAME_MAPPING_FS_ERROR;
-    *fsError = FENOSUCHSYS;
-  }
-   
-  return retcode;
-}
-
-SQLCLI_LIB_FUNC Lng32
+Lng32
 SQL_EXEC_GetTotalTcbSpace(char *tdb, char * otherInfo)
 {
    Lng32 retcode = 0;
@@ -6713,49 +5863,9 @@ SQL_EXEC_GetTotalTcbSpace(char *tdb, char * otherInfo)
    return retcode;
 }
   
-//********************************************************************
-//* 
-//*  putenvCLI(const char * envStr)
-//* 
-//* This function is being made available due to a specific 
-//* request from ODBC. It should not be used by any other component
-//* since the results may be unknown.
-//*
-//* Technicalese :  The component in which ODBC sets env. variables
-//*                 is a DLL. Due to some NT quirck, those env. 
-//*                 variables are not visible in tdm_sqlcli.dll.
-//*                 This function would ensure that the environment
-//*                 is set in tdm_sqlcli.dll and will always be 
-//*                 available.
-//*
-//* Futures      :  When the executor group implements the API for
-//*                 setting ContextOptions, then this function would
-//*                 not be required and should be removed from here.
-//*
-//* NOTE         :  The header for this function is NOT being made
-//*                 available via SQLCLIdev.h to prevent additional 
-//*                 components from using it.
-//********************************************************************
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
-Int32 putenvCLI (const char * envStr)
-{
-  return -1;
-}
-  //LCOV_EXCL_STOP
-#ifdef __cplusplus
-}
-#endif
-
 // for now include this and build it here
 // #include "CliDll.cpp"
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetCollectStatsType_Internal (
      /*OUT*/ ULng32 * collectStatsType,
      /*IN*/ SQLSTMT_ID * statement_id)
@@ -6771,8 +5881,6 @@ Lng32 SQL_EXEC_GetCollectStatsType_Internal (
 						statement_id);
    return retcode;
 }
-//LCOV_EXCL_STOP
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_BreakEnabled_Internal (
      /*IN*/ UInt32 enabled)
 {
@@ -6782,8 +5890,6 @@ Lng32 SQL_EXEC_BreakEnabled_Internal (
 				  enabled);
    return retcode;
 } 
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SPBreakReceived_Internal (
      /*OUT*/ UInt32 *breakRecvd)
 {
@@ -6792,17 +5898,14 @@ Lng32 SQL_EXEC_SPBreakReceived_Internal (
    *breakRecvd = 0;
    return retcode;
 }
-//LCOV_EXCL_STOP
 
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
 {
    Lng32 retcode = 0;
    CLISemaphore *tmpSemaphore;
    ContextCli   *threadContext;
 
-#ifndef CLI_PRIV_SRL
   try
     {
       tmpSemaphore = getCliSemaphore(threadContext);
@@ -6824,104 +5927,21 @@ Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
 	 }
       threadContext->decrNumOfCliCalls();
       tmpSemaphore->release();
-#else
-   // this method should not be called from inside of the priv srl.
-   retcode = -CLI_INTERNAL_ERROR;
-#endif
 
    return retcode;
 }
-//LCOV_EXCL_START
-SQLCLI_LIB_FUNC
-Lng32 SQL_EXEC_GetVersion_Internal
-(/*IN*/  Lng32 versionType,
- /*OUT*/ Lng32 * versionValue,
- /*IN OPTIONAL*/ const char * nodeName,
- /*IN OPTIONAL*/ const SQLMODULE_ID * module_name,
- /*IN OPTIONAL*/ const SQLSTMT_ID * statement_id)
-{
-   Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode = SQLCLI_GetVersion_Internal(GetCliGlobals(),
-					versionType, versionValue,
-					nodeName, module_name, statement_id);
-   }
-     catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-       {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-       }
-#endif
-   }
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-
-   return retcode;
-}
-//LCOV_EXCL_STOP
-
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-  //LCOV_EXCL_START
 // For internal use only -- do not document!
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SETENVIRON_INTERNAL(Lng32 propagate)
 {
   return SQL_EXEC_SetEnviron_Internal(propagate);
 }
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_DecodeAndFormatKey(
-               /*IN*/void    * RCB_Pointer_Addr,
-               /*IN*/void    * KeyAddr,
-               /*IN*/Int32     KeyLength,
-               /*INOUT*/void * DecodedKeyBufAddr,
-               /*INOUT*/void * FormattedKeyBufAddr,
-               /*IN*/Int32     FormattedKeyBufLen,
-               /*OUT*/Int32  * NeededKeyBufLen  )
-{
-  Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
 
-  
-  RecordError(NULL, retcode);
-  return retcode;
-}
-
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetPartitionKeyFromRow(
-               /*IN*/void    * RCB_Pointer_Addr,
-               /*IN*/void    * Row_Addr,
-               /*IN*/Int32     Row_Length,
-               /*INOUT*/void * KeyAddr,
-               /*IN*/Int32     KeyLength)
-{
-  Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-
-  
-  RecordError(NULL, retcode);
-  return retcode;
-}
-//LCOV_EXCL_STOP
-
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LocaleToUTF8 (
+Lng32 SQL_EXEC_LocaleToUTF8 (
                /*IN*/Int32      conv_charset,
                /*IN*/void     * Input_Buffer_Addr,
                /*IN*/Int32      Input_Buffer_Length,
@@ -6948,7 +5968,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LocaleToUTF8 (
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_UTF8ToLocale(
+Lng32 SQL_EXEC_UTF8ToLocale(
                /*IN*/Int32      conv_charset,
                /*IN*/void     * Input_Buffer_Addr,
                /*IN*/Int32      Input_Buffer_Length,
@@ -6978,7 +5998,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_UTF8ToLocale(
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LocaleToUTF16 (
+Lng32 SQL_EXEC_LocaleToUTF16 (
                /*IN*/Int32      conv_charset,
                /*IN*/void     * Input_Buffer_Addr,
                /*IN*/Int32      Input_Buffer_Length,
@@ -7007,7 +6027,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LocaleToUTF16 (
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_UTF16ToLocale(
+Lng32 SQL_EXEC_UTF16ToLocale(
                /*IN*/Int32      conv_charset,
                /*IN*/void     * Input_Buffer_Addr,
                /*IN*/Int32      Input_Buffer_Length,
@@ -7039,7 +6059,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_UTF16ToLocale(
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetErrorCodeInRTS(
+Lng32 SQL_EXEC_SetErrorCodeInRTS(
     /*IN*/ SQLSTMT_ID * statement_id,
     /*IN*/ Lng32     sqlErrorCode)
 {
@@ -7071,7 +6091,6 @@ try
   return retcode;
 }
 
-SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SetSecInvalidKeys(
             /* IN */   Int32 numSiKeys,
            /* IN */    SQL_QIKEY siKeys[])
@@ -7108,7 +6127,6 @@ Lng32 SQL_EXEC_SetSecInvalidKeys(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetSecInvalidKeys(
             /* IN */      Int64 prevTimestamp,
             /* IN/OUT */  SQL_QIKEY siKeys[],
@@ -7152,7 +6170,6 @@ Lng32 SQL_EXEC_GetSecInvalidKeys(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetStatistics2(
              /* IN */  	short statsReqType,
 	    /* IN */  	char *statsReqStr,
@@ -7203,7 +6220,6 @@ Lng32 SQL_EXEC_GetStatistics2(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetStatisticsItems(
             /* IN */  	short statsReqType,
 	    /* IN */  	char *queryId,
@@ -7246,7 +6262,6 @@ Lng32 SQL_EXEC_GetStatisticsItems(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_RegisterQuery(SQLQUERY_ID *queryId,
                             Lng32 fragId,
                             Lng32 tdbId,
@@ -7289,7 +6304,6 @@ try
    return retcode;
 }
 
-SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_DeregisterQuery(SQLQUERY_ID *queryId,
                             Lng32 fragId)
 {
@@ -7374,7 +6388,7 @@ Lng32 SQL_EXEC_GetStatisticsArea_Internal
    return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetChildQueryInfo(
+Lng32 SQL_EXEC_GetChildQueryInfo(
      /*IN*/    SQLSTMT_ID * statement_id,
      /*INOUT*/ char * uniqueQueryId,
      /*IN */   Lng32 uniqueQueryIdMaxLen,
@@ -7417,7 +6431,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetChildQueryInfo(
    return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
+Lng32 SQL_EXEC_LOBcliInterface
 (
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
@@ -7779,7 +6793,7 @@ Lng32 SQL_EXEC_SeqGenCliInterface
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetRoutine
+Lng32 SQL_EXEC_GetRoutine
 (
  /* IN */     const char  *serializedInvocationInfo,
  /* IN */     Int32        invocationInfoLen,
@@ -7835,7 +6849,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetRoutine
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Int32 SQL_EXEC_InvokeRoutine
+Int32 SQL_EXEC_InvokeRoutine
 (
  /* IN */     Int32 handle,
  /* IN */     Int32 phaseEnumAsInt,
@@ -7895,7 +6909,7 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_InvokeRoutine
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetRoutineInvocationInfo
+Int32 SQL_EXEC_GetRoutineInvocationInfo
 (
  /* IN */     Int32 handle,
  /* IN/OUT */ char  *serializedInvocationInfo,
@@ -7945,7 +6959,7 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetRoutineInvocationInfo
   return retcode;
 }
 
-SQLCLI_LIB_FUNC Lng32 SQL_EXEC_PutRoutine
+Lng32 SQL_EXEC_PutRoutine
 (
  /* IN */    Int32        handle
  )

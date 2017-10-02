@@ -89,10 +89,8 @@ NABoolean isParentQueryCanceled()
   const char *parentQid = CmpCommon::context()->sqlSession()->getParentQid();
   if (statsGlobals && parentQid)
   {
-    short savedPriority, savedStopMode;
     statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-      cliGlobals->myPin(), savedPriority, savedStopMode,
-      FALSE /*shouldTimeout*/);
+      cliGlobals->myPin());
     StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid, 
       strlen(parentQid), RtsQueryId::ANY_QUERY_);
     if (ss)
@@ -102,7 +100,7 @@ NABoolean isParentQueryCanceled()
         isCanceled = TRUE;
     }
     statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-       cliGlobals->myPin(), savedPriority, savedStopMode);
+       cliGlobals->myPin());
   }
   return isCanceled;
 }

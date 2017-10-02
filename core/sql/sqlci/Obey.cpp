@@ -90,13 +90,9 @@ short Obey::process(SqlciEnv * sqlci_env)
 	    for (Int32 i = 0; i < 2 && !file_stream; i++, U = !U)
 	      {
 		if (U)
-#pragma nowarn(1506)   // warning elimination 
 		  {for (char *n=name; *n; n++) *n = toupper(*n);}
-#pragma warn(1506)  // warning elimination 
 		else
-#pragma nowarn(1506)   // warning elimination 
 		  {for (char *n=name; *n; n++) *n = tolower(*n);}
-#pragma warn(1506)  // warning elimination 
 		file_stream = fopen(name, "r");
 	      }
 
@@ -104,19 +100,13 @@ short Obey::process(SqlciEnv * sqlci_env)
 	      {
 		// We've tried the original name aBc,
 		// and ABC and abc, so as a last-ditch effort we try Abc.
-#pragma nowarn(1506)   // warning elimination 
 		{for (char *n=name; *n; n++) *n = tolower(*n);}
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 		*name = toupper(*name);
-#pragma warn(1506)  // warning elimination 
 		file_stream = fopen(name, "r");
 
 		// If all failed, ensure name all upper for prettier error msg
 		if (!file_stream)
-#pragma nowarn(1506)   // warning elimination 
 		  {for (char *n=name; *n; n++) *n = toupper(*n);}
-#pragma warn(1506)  // warning elimination 
 	      }
 	  }
 	if (!file_stream)
@@ -218,9 +208,7 @@ short Obey::process(SqlciEnv * sqlci_env)
 
 	case PROCESS_STMT:
 	  {
-#pragma nowarn(1506)   // warning elimination 
 	    short section_match = input_stmt->sectionMatches();
-#pragma warn(1506)  // warning elimination 
 
 	    if (!section_name && section_match)
 	      {
@@ -257,11 +245,9 @@ short Obey::process(SqlciEnv * sqlci_env)
 		  {
 		    if (!read_error || read_error == -4)
                       {
-#pragma nowarn(1506)   // warning elimination 
                         retcode = sqlci_parser(input_stmt->getPackedString(),
                                                input_stmt->getPackedString(),
                                                &sqlci_node,sqlci_env);
-#pragma warn(1506)  // warning elimination 
                         if (sqlci_node)
                           {
                             retcode = sqlci_node->process(sqlci_env);

@@ -38,7 +38,6 @@
  *****************************************************************************
  */
 
-#include "SqlExpDllDefines.h"
 #include "ExpAlignedFormat.h"
 
 // Forward external references
@@ -59,7 +58,6 @@ typedef NAVersionedObjectPtrArrayTempl<ExpTupleDescPtr> ExpTupleDescPtrPtr;
 typedef NAVersionedObjectPtrTempl<Attributes> AttributesPtr;
 typedef NAVersionedObjectPtrArrayTempl<AttributesPtr> AttributesPtrPtr;
 
-#pragma warning ( disable : 4251 )
 
 
 #define NEG_BIT_MASK 0x0080    //the first bit in a byte - used for finding
@@ -69,7 +67,7 @@ typedef NAVersionedObjectPtrArrayTempl<AttributesPtr> AttributesPtrPtr;
 // Size of each VOA array entry for SQLMX_FORMAT.
 // The SQLMX_ALIGNED_FORMAT has its own constant in ExpAlignedFormat.h
 static const UInt32 ExpVoaSize = sizeof(Int32);
-static const UInt32 ExpOffsetMax = UINT_MAX; // NA_64BIT
+static const UInt32 ExpOffsetMax = UINT_MAX;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -77,7 +75,7 @@ static const UInt32 ExpOffsetMax = UINT_MAX; // NA_64BIT
 // class ExpTupleDesc
 //
 ////////////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ExpTupleDesc : public NAVersionedObject
+class ExpTupleDesc : public NAVersionedObject
 {
 public:
   //
@@ -928,6 +926,5 @@ public:
 
 };
 
-#pragma warning ( default : 4251 )
 
 #endif

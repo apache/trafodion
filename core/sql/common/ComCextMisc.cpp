@@ -1228,13 +1228,8 @@ extern "C"
 DLLEXPORT
 int_16 PROCESSHANDLE_DECOMPOSE_
   (int_16        *prochand, // INPUT
-#ifdef SQ_NEW_PHANDLE
    int        *cpu, // OUTPUT
    int        *pin, // OUTPUT
-#else
-   int_16        *cpu, // OUTPUT
-   int_16        *pin, // OUTPUT
-#endif // SQ_NEW_PHANDLE
    int_32        *node,     // OUTPUT  THE NODE NUMBER
    unsigned_char *nn,       // OUTPUT  NODE NAME
    int_16         nnml,     // INPUT   MAXIMUM OUTPUT LENGTH
@@ -1244,14 +1239,9 @@ int_16 PROCESSHANDLE_DECOMPOSE_
    int_16        *nl,       // OUTPUT
    fixed_0       *seq )
 {
-#ifdef SQ_NEW_PHANDLE
    PNSK_PORT_HANDLE    phandle = (PNSK_PORT_HANDLE)prochand;
    return XPROCESSHANDLE_DECOMPOSE_(phandle, cpu, pin, node, (char *)nn,
                                     nnml, nnl, (char *)name, nml, nl, seq);
-#else
-   return XPROCESSHANDLE_DECOMPOSE_(prochand, cpu, pin, node, (char *)nn,
-                                    nnml, nnl, (char *)name, nml, nl, seq);
-#endif // SQ_NEW_PHANDLE
 }
 
 extern "C"

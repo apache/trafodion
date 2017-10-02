@@ -65,16 +65,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExTupleLeafTdb()
+  ExTupleLeafTdb()
   {}
 
-  NA_EIDPROC virtual ~ExTupleLeafTdb()
+  virtual ~ExTupleLeafTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -104,7 +104,6 @@ private:
   // ---------------------------------------------------------------------
 };
 
-// LCOV_EXCL_START
 // -----------------------------------------------------------------------
 // ExTupleNonLeafTdb
 // -----------------------------------------------------------------------
@@ -117,16 +116,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExTupleNonLeafTdb()
+  ExTupleNonLeafTdb()
   {}
 
-  NA_EIDPROC virtual ~ExTupleNonLeafTdb()
+  virtual ~ExTupleNonLeafTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -155,10 +154,6 @@ private:
   //    the classes to the comexe project.
   // ---------------------------------------------------------------------
 };
- // LCOV_EXCL_STOP
-
-
-
 
 ////////////////////////////////////////
 // class ExTupleTcb
@@ -178,38 +173,32 @@ public:
     HANDLE_SQLERROR
   };
 
-NA_EIDPROC  
+ 
   ExTupleTcb(const ComTdbTuple & tupleTdb,
 	     ex_globals * glob);
  
-NA_EIDPROC
   ~ExTupleTcb();
 
-NA_EIDPROC
   virtual short work();
 
-NA_EIDPROC
   void freeResources();
 
-NA_EIDPROC
   ex_queue_pair getParentQueue() const
   { 
     return (qparent);
   }
 
-NA_EIDPROC
   virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
-NA_EIDPROC
   Int32 orderedQueueProtocol() const
   { 
     return ((const ComTdbTuple &)tdb).orderedQueueProtocol();
   };
   
-  NA_EIDPROC virtual Int32 numChildren() const { return 0;};
-  NA_EIDPROC virtual const ex_tcb* getChild(Int32 pos) const { return NULL;}; //LCOV_EXCL_LINE
+  virtual Int32 numChildren() const { return 0;};
+  virtual const ex_tcb* getChild(Int32 pos) const { return NULL;};
 
 protected:
   ex_queue_pair qparent;
@@ -219,13 +208,11 @@ protected:
   // Atp and buffers to build expressions
   atp_struct * workAtp_;
 
-NA_EIDPROC
   ComTdbTuple & tupleTdb() const
   { 
     return (ComTdbTuple &) tdb;
   };
 
-NA_EIDPROC
   Queue * tupleExprList() const { return tupleTdb().tupleExprList_; };
 };
 
@@ -235,33 +222,28 @@ NA_EIDPROC
 class ExTupleLeafTcb : public ExTupleTcb
 {
 public:
-NA_EIDPROC
   ExTupleLeafTcb(const ExTupleLeafTdb & tupleTdb,
 		 ex_globals * glob = 0);
 
-NA_EIDPROC
   ExWorkProcRetcode work();  
 };
 
 
 
-// LCOV_EXCL_START
 ////////////////////////////////////////////////
 // class ExTupleNonLeafTcb
 ////////////////////////////////////////////////
 class ExTupleNonLeafTcb : public ExTupleTcb
 {
 public:
-NA_EIDPROC
   ExTupleNonLeafTcb(const ExTupleNonLeafTdb & tupleTdb,
 		    const ex_tcb & tcbChild,
 		    ex_globals * glob = 0);
 
-NA_EIDPROC
   ExWorkProcRetcode work();  
 
-  NA_EIDPROC virtual Int32 numChildren() const { return 1;};
-  NA_EIDPROC virtual const ex_tcb* getChild(Int32 pos) const
+  virtual Int32 numChildren() const { return 1;};
+  virtual const ex_tcb* getChild(Int32 pos) const
   {
     ex_assert((pos >= 0), ""); 
     if (pos == 0)
@@ -276,8 +258,6 @@ private:
   queue_index nextToSendDown_; // next down queue index to send to server
 
 };
-// LCOV_EXCL_STOP
-
 
 class ExTuplePrivateState : public ex_tcb_private_state
 {
@@ -289,9 +269,7 @@ class ExTuplePrivateState : public ex_tcb_private_state
 
   ExTupleTcb::TupleStep step_;	// step in processing this parent row
 public:	
-NA_EIDPROC
   ExTuplePrivateState(); //constructor
-NA_EIDPROC
   ~ExTuplePrivateState();	// destructor
 };
 

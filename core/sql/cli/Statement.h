@@ -72,8 +72,7 @@ class ExRsInfo;
 class AQRStatementInfo;
 class StrTarget;
 
-class CliStatement;
-#define Statement CliStatement
+class Statement;
 
 ////////////////////////////////////////////////////////////////////////
 // this class stores statement information that is needed on each cli
@@ -178,10 +177,6 @@ public:
      // The transaction is only committed at the end of a statement
      // execution if this flag is set for that statement.
      AUTOCOMMIT_XN = 0x0200,
-
-     // set, if nametype was specified as NSK at static compilation time.
-     // Used to send this info to mxcmp at auto recompilation time.
-     NAMETYPE_NSK = 0x0400,
 
      // set, if odbc_process was on at static compilation time.
      // Used to send this info to mxcmp at auto recompilation time.
@@ -417,7 +412,6 @@ private:
   void buildConsumerQueryTemplate();
 
   // returns true, if plan has been fixed up. 0, otherwise.
-  // NT_PORT ( bd 10/22/96 )
   inline short fixupState();
   inline void  setFixupState(short state);
   
@@ -437,12 +431,6 @@ private:
   // Returns rollbackXn as TRUE, if savepoint rollback returned an error
   // and the Xn needs to be aborted.
   short rollbackSavepoint(ComDiagsArea &diagsArea, NABoolean &rollbackXn);
-
-  // a private helper function to get trigger status info from the rfork
-  RETCODE  rforkReadTriggerStatus(TriggerStatusWA* triggerStatusWA, 
-				  char* physFileName,
-				  const char* ansiName,
-				  ComDiagsArea &diagsArea);
 
   unsigned short &defineContext() { return defineContext_;};
 
@@ -582,7 +570,7 @@ public:
 
   // reads trigger status from rfork and updates trigger status vector in TCB.
   RETCODE getTriggersStatus(SqlTableOpenInfoPtr* stoiList, 
-							ComDiagsArea &diagsArea);
+                            ComDiagsArea &diagsArea);
   inline void * getStmtHandle();
 
   inline Module * getModule() { return module_; }
@@ -733,10 +721,6 @@ public:
   NABoolean autocommitXn() { return (flags_ & AUTOCOMMIT_XN) != 0; };
   void setAutocommitXn(short v) 
   { (v ? flags_ |= AUTOCOMMIT_XN : flags_ &= ~AUTOCOMMIT_XN); };
-
-  NABoolean nametypeNsk() { return (flags_ & NAMETYPE_NSK) != 0; };
-  void setNametypeNsk(short v) 
-  { (v ? flags_ |= NAMETYPE_NSK : flags_ &= ~NAMETYPE_NSK); };
 
   NABoolean odbcProcess() { return (flags_ & ODBC_PROCESS) != 0; };
   void setOdbcProcess(short v) 
@@ -908,7 +892,7 @@ public:
   //return TRUE if query is prefixed by display,
   // e.g. display select ...
   NABoolean isDISPLAY();
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 public:
   void StmtPrintf(const char *formatString, ...) const;
   NABoolean stmtDebugEnabled() const { return stmtDebug_; }
@@ -1060,7 +1044,7 @@ class UdrSecurityInfo : public NABasicObject
 public:
     UdrSecurityInfo () :
       previousSecurityTS_(0), previouslyChecked_(FALSE)
-     ,previousResult_(ERROR), rforkLastModTS_(0)
+     ,previousResult_(ERROR)
     {
     }
 
@@ -1085,11 +1069,6 @@ public:
       return previousResult_;
     }
 
-    Int64 getRforkLastModTS() const
-    {
-      return rforkLastModTS_;
-    }
-
     // Mutators
     void setUdrName(char *udrName)
     {
@@ -1111,16 +1090,10 @@ public:
       previousResult_ = result;
     }
 
-    void setRforkLastModTS(Int64 modTime)
-    {
-      rforkLastModTS_ = modTime;
-    }
-
 private:
 
     char       *udrName_;
     Int64      previousSecurityTS_;
-    Int64      rforkLastModTS_;
     NABoolean  previouslyChecked_;
     RETCODE    previousResult_;
 };

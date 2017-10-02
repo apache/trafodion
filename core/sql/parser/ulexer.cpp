@@ -46,10 +46,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#pragma warning (disable : 4005)   //warning elimination
 // Use a reserved UCS-2 character (but not the last one) as EOF substitute
 #define WEOF (NAWchar)(0xFFEF)
-#pragma warning (default : 4005)   //warning elimination
 #include  "arkcmp_parser_defs.h"
 #undef    SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
@@ -192,9 +190,7 @@ void yyULexer::yyULexer_ctor(const NAWchar *str, Int32 charCount)
   /* yy_ch_buf has to be 2 characters longer than the size given because
    * we need to put in 2 end-of-buffer characters.
    */
-#pragma nowarn(1506)   // warning elimination 
   Int32 buf_size = charCount * BYTES_PER_NAWCHAR;
-#pragma warn(1506)  // warning elimination 
   b->yy_ch_buf = b->yy_buf_pos = yy_c_buf_p_ = new (PARSERHEAP()) NAWchar[charCount+2];
   if ( ! b->yy_ch_buf )
     // UR2-CNTNSK
@@ -1394,9 +1390,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           }     // switch (keyWordEntry1->getTokenCode())
           // control should not reach here. but if it does, we may be
           // seeing an identifier beginning with letter [Cc]
-#pragma nowarn(203)   // warning elimination 
           return anIdentifier(lvalp);
-#pragma warn(203)  // warning elimination 
           break;
         case L'G': case L'g':
           // identifier prefix specified by [Gg]
@@ -3232,9 +3226,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
         return setTokval(0, DBGMSG("The end symbol %s\n"), lvalp);
       }
     }
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }
 
 

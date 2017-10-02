@@ -41,9 +41,7 @@
 
 // Exclude this code from coverage analysis since this feature is
 // obsolete and not used.
-// LCOV_EXCL_START
 
-NA_EIDPROC
 ex_tcb * ExVPJoinTdb::build(ex_globals * glob)
 {
   // first build the child TCBs
@@ -67,7 +65,6 @@ ex_tcb * ExVPJoinTdb::build(ex_globals * glob)
 }
 
 
-NA_EIDPROC
 ExVPJoinTcb::ExVPJoinTcb(const ExVPJoinTdb & vpjTdb,
 			 const ex_tcb ** childTcbs,
 			 ex_globals *glob)
@@ -116,7 +113,6 @@ ExVPJoinTcb::ExVPJoinTcb(const ExVPJoinTdb & vpjTdb,
   nextReqIx_ = qParent_.down->getHeadIndex();
 }
 
-NA_EIDPROC
 ExVPJoinTcb::~ExVPJoinTcb()
 {
   delete qParent_.up;
@@ -143,11 +139,9 @@ Int32 ExVPJoinTcb::numChildren() const
 
 
 
-NA_EIDPROC
 void ExVPJoinTcb::freeResources()
 {}
 
-NA_EIDPROC
 void ExVPJoinTcb::registerSubtasks()
 {
   ExScheduler *sched = getGlobals()->getScheduler();
@@ -173,7 +167,6 @@ void ExVPJoinTcb::registerSubtasks()
   exceptionEvent_ = sched->registerNonQueueSubtask(sWorkUp, this);
 }
 
-NA_EIDPROC
 short ExVPJoinTcb::work()
 {
   // The work procedures for VPJoin first pass a request from the
@@ -191,7 +184,6 @@ short ExVPJoinTcb::work()
   return WORK_OK;
 }
 
-NA_EIDPROC
 ExWorkProcRetcode ExVPJoinTcb::workDown()
 {
   // Move requests from parent down queue to child down queues.
@@ -255,7 +247,6 @@ ExWorkProcRetcode ExVPJoinTcb::workDown()
   return WORK_OK;
 }
 
-NA_EIDPROC
 ExWorkProcRetcode ExVPJoinTcb::workUp()
 {
   // Move replies from child nodes up to parent.  The replies at the
@@ -359,14 +350,10 @@ ExWorkProcRetcode ExVPJoinTcb::workUp()
 
 		      // Append this child's output to result ATP.
 		      //
-#pragma nowarn(1506)   // warning elimination 
 		      short numResTups = reply->numTuples()-vpJoinTdb().firstReplyAtpIx_;
-#pragma warn(1506)  // warning elimination 
 		      short dest_start_tupp = outIx;
 		      short src_start_tupp = vpJoinTdb().firstReplyAtpIx_;
-#pragma nowarn(1506)   // warning elimination 
 		      short src_end_tupp =  numResTups + vpJoinTdb().firstReplyAtpIx_ - 1;
-#pragma warn(1506)  // warning elimination 
 		      
 
 		      resAtp->copyPartialAtp(reply->getAtp(), // source atp
@@ -435,7 +422,6 @@ ExWorkProcRetcode ExVPJoinTcb::workUp()
     return WORK_OK;
 }
 
-NA_EIDPROC
 void ExVPJoinTcb::cancelParentRequest(ex_queue_entry * pentry, 
 				      queue_index pix)
 {
@@ -453,7 +439,6 @@ void ExVPJoinTcb::cancelParentRequest(ex_queue_entry * pentry,
     }
 }
 
-NA_EIDPROC
 ExWorkProcRetcode ExVPJoinTcb::workCancel()
 {
   // Walk through already processed down requests and cancel those
@@ -472,30 +457,23 @@ ExWorkProcRetcode ExVPJoinTcb::workCancel()
   return WORK_OK;
 }
 
-NA_EIDPROC
 short ExVPJoinTcb::sWorkDown(ex_tcb *tcb)
    { return ((ExVPJoinTcb *) tcb)->workDown(); }
-NA_EIDPROC
 short ExVPJoinTcb::sWorkUp(ex_tcb *tcb) 
    { return ((ExVPJoinTcb *) tcb)->workUp(); }
-NA_EIDPROC
 short ExVPJoinTcb::sWorkCancel(ex_tcb *tcb)
    { return ((ExVPJoinTcb *) tcb)->workCancel(); }
 
-NA_EIDPROC
 ExVPJoinPrivateState::ExVPJoinPrivateState(const ExVPJoinTcb * tcb)
 {
   init();
 }
 
-NA_EIDPROC
 ex_tcb_private_state * ExVPJoinPrivateState::allocate_new(const ex_tcb * tcb)
 {
   return new (((ex_tcb*)tcb)->getSpace()) ExVPJoinPrivateState((ExVPJoinTcb*) tcb);
 }
 
-NA_EIDPROC
 ExVPJoinPrivateState::~ExVPJoinPrivateState()
 {}
 
-// LCOV_EXCL_STOP

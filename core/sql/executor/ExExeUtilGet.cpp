@@ -1721,11 +1721,11 @@ short ExExeUtilGetMetadataInfoTcb::work()
             NAString userQuery;
 
 	    char ausStr[1000];
-	    str_sprintf(ausStr, "");
+            ausStr[0] = '\0';
 	    char catSchValue[ComMAX_2_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+50];
-	    str_sprintf(catSchValue, "");
+            catSchValue[0] = '\0';
 	    char endQuote[10];
-	    str_sprintf(endQuote, "");
+            endQuote[0] = '\0';
 
 	    if (getMItdb().returnFullyQualNames())
 	      {
@@ -3013,7 +3013,7 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	case SETUP_QUERY_:
 	  {
-	    str_sprintf(patternStr_, "");
+	    patternStr_[0] = '\0';
 	    if (getMItdb().getPattern())
 	      {
 		str_sprintf(patternStr_, ", match '%s' ",
@@ -3844,9 +3844,8 @@ short ExExeUtilGetMetadataInfoVersionTcb::work()
 	    Int32 sizeOfqs = 0;
 
 	    char predStr[2000];
-	    str_sprintf(predStr, "");
-
-	    str_sprintf(patternStr_, "");
+            predStr[0] = '\0';
+            patternStr_[0] = '\0';
 	    if (getMItdb().getPattern())
 	      {
 		str_sprintf(patternStr_, ", match '%s' ",
@@ -4513,7 +4512,6 @@ short ExExeUtilShowSetTcb::work()
   return 0;
 }
 
-//LCOV_EXCL_START
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilGetUIDTdb::build(ex_globals * glob)
@@ -6664,23 +6662,23 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  TotalUncompressedSize:   %Ld", statsTotals_->storeFileUncompSize);
+            str_sprintf(buf, "  TotalUncompressedSize:   %ld", statsTotals_->storeFileUncompSize);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-           str_sprintf(buf, "  TotalStoreFileSize:      %Ld", statsTotals_->storeFileSize);
+           str_sprintf(buf, "  TotalStoreFileSize:      %ld", statsTotals_->storeFileSize);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  TotalMemStoreSize:       %Ld", statsTotals_->memStoreSize);
+            str_sprintf(buf, "  TotalMemStoreSize:       %ld", statsTotals_->memStoreSize);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  TotalReadRequestsCount:  %Ld", statsTotals_->readRequestsCount);
+            str_sprintf(buf, "  TotalReadRequestsCount:  %ld", statsTotals_->readRequestsCount);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  TotalWriteRequestsCount: %Ld", statsTotals_->writeRequestsCount);
+            str_sprintf(buf, "  TotalWriteRequestsCount: %ld", statsTotals_->writeRequestsCount);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
@@ -6773,7 +6771,7 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    short rc = 0;
 
             str_sprintf(buf, "  RegionServer:       %s", 
-                        removeTrailingBlanks(stats_->regionServer, STATS_NAME_MAX_LEN).data(), TRUE);
+                        removeTrailingBlanks(stats_->regionServer, STATS_NAME_MAX_LEN).data());
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
   
@@ -6782,7 +6780,7 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	      return rc;
 
             str_sprintf(buf, "  RegionName:         %s", 
-                        removeTrailingBlanks(stats_->regionName, STATS_REGION_NAME_MAX_LEN).data(), TRUE);
+                        removeTrailingBlanks(stats_->regionName, STATS_REGION_NAME_MAX_LEN).data());
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
             
@@ -6795,31 +6793,31 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	      return rc;
 
             if (stats_->storeFileUncompSize == 0)
-              str_sprintf(buf, "  UncompressedSize:   %Ld (less than 1MB)", stats_->storeFileUncompSize);
+              str_sprintf(buf, "  UncompressedSize:   %ld (less than 1MB)", stats_->storeFileUncompSize);
             else
-              str_sprintf(buf, "  UncompressedSize:   %Ld Bytes", stats_->storeFileUncompSize);
+              str_sprintf(buf, "  UncompressedSize:   %ld Bytes", stats_->storeFileUncompSize);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
             if (stats_->storeFileSize == 0)
-              str_sprintf(buf, "  StoreFileSize:      %Ld (less than 1MB)", stats_->storeFileSize);
+              str_sprintf(buf, "  StoreFileSize:      %ld (less than 1MB)", stats_->storeFileSize);
             else
-              str_sprintf(buf, "  StoreFileSize:      %Ld Bytes", stats_->storeFileSize);
+              str_sprintf(buf, "  StoreFileSize:      %ld Bytes", stats_->storeFileSize);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
             if (stats_->memStoreSize == 0)
-              str_sprintf(buf, "  MemStoreSize:       %Ld (less than 1MB)", stats_->memStoreSize);
+              str_sprintf(buf, "  MemStoreSize:       %ld (less than 1MB)", stats_->memStoreSize);
             else
-              str_sprintf(buf, "  MemStoreSize:       %Ld Bytes", stats_->memStoreSize);              
+              str_sprintf(buf, "  MemStoreSize:       %ld Bytes", stats_->memStoreSize);              
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  ReadRequestsCount:  %Ld", stats_->readRequestsCount);
+            str_sprintf(buf, "  ReadRequestsCount:  %ld", stats_->readRequestsCount);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  WriteRequestsCount: %Ld", stats_->writeRequestsCount);
+            str_sprintf(buf, "  WriteRequestsCount: %ld", stats_->writeRequestsCount);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
@@ -7331,7 +7329,7 @@ else
   else
     lobEOD = 0;
   
-  str_sprintf(buf, "  LOB EOD :  %Ld", lobEOD);
+  str_sprintf(buf, "  LOB EOD :  %ld", lobEOD);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
     return rc;
 
@@ -7354,7 +7352,7 @@ else
       return cliRC;
     }
 
-  str_sprintf(buf, "  LOB Used Len :  %Ld", outlen);
+  str_sprintf(buf, "  LOB Used Len :  %ld", outlen);
   if (moveRowToUpQueue(buf, strlen(buf), &rc))
     return rc;
   return 0;
@@ -7452,7 +7450,7 @@ short ExExeUtilLobInfoTcb::work()
           {
             if (getLItdb().getNumLobs() == 0)
               {
-                str_sprintf(buf, "  Num Lob Columns = 0", tableName_);
+                strcpy(buf, "  Num Lob Columns = 0");
                 if (moveRowToUpQueue(buf, strlen(buf), &rc))
                   return rc;
                 step_ = DONE_;
@@ -7506,7 +7504,6 @@ short ExExeUtilLobInfoTcb::work()
 
   return WORK_OK;
 }
-//LCOV_EXCL_STOP
 
 
 
@@ -7803,4 +7800,3 @@ short ExExeUtilLobInfoTableTcb::work()
 
   return WORK_OK;
 }
-//LCOV_EXCL_STOP

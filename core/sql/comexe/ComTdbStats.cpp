@@ -77,15 +77,9 @@ ComTdbStats::ComTdbStats(ULng32 tupleLen,
    inputExpr_(inputExpr),
    projExpr_(projExpr),
    workCriDesc_(workCriDesc),
-#pragma nowarn(1506)   // warning elimination 
    tupleLen_(tupleLen),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
    returnedTupleLen_(returnedTupleLen),
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
    inputTupleLen_(inputTupleLen),
-#pragma warn(1506)  // warning elimination 
    statsTupleAtpIndex_(stats_row_atp_index),
    inputTupleAtpIndex_(input_row_atp_index)
 {
@@ -212,7 +206,9 @@ CompilerStatsInfo::CompilerStatsInfo()
        ofMode_((UInt16)ComTdb::OFM_DISK),
        collectStatsType_((UInt16)ComTdb::NO_STATS),
        queryType_((Int16)ComTdbRoot::SQL_UNKNOWN),
-       subqueryType_((Int16)ComTdbRoot::SQL_STMT_NA)
+       subqueryType_((Int16)ComTdbRoot::SQL_STMT_NA),
+       bmoMemLimitPerNode_(0),
+       estBmoMemPerNode_(0)
 {
 
 }
@@ -250,7 +246,8 @@ CompilerStatsInfo& CompilerStatsInfo::operator=(CompilerStatsInfo&csi)
   ofMode_ = csi.ofMode_;
   queryType_ = csi.queryType_;
   subqueryType_ = csi.subqueryType_;
-
+  bmoMemLimitPerNode_ = csi.bmoMemLimitPerNode_;
+  estBmoMemPerNode_ = csi.estBmoMemPerNode_;
   return *this;
 }
 
@@ -323,7 +320,8 @@ void CompilerStatsInfo :: translateToExternalFormat(SQL_QUERY_COMPILER_STATS_INF
     = queryType();
   query_comp_stats_info->subqueryType
     = subqueryType();
- 
+  query_comp_stats_info->bmoMemLimitPerNode = bmoMemLimitPerNode(); 
+  query_comp_stats_info->estBmoMemPerNode = estBmoMemPerNode(); 
 
 }
 

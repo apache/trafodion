@@ -55,13 +55,13 @@ class ExpSequenceExpression;
 
 // ExpSequenceFunction declaration
 //
-class SQLEXP_LIB_FUNC  ExpSequenceFunction : public ex_function_clause {
+class ExpSequenceFunction : public ex_function_clause {
 public:
   enum { SF_NONE, SF_OFFSET };
 
   // Construction - this is the "real" constructor
   //
-  NA_EIDPROC ExpSequenceFunction(OperatorTypeEnum oper_type,
+  ExpSequenceFunction(OperatorTypeEnum oper_type,
 				 Int32 arity,
 				 Int32 index,
 				 Attributes ** attr,
@@ -69,85 +69,85 @@ public:
 
   // This constructor is used only to get at the virtual function table.
   //
-  NA_EIDPROC ExpSequenceFunction();
+  ExpSequenceFunction();
 
 
   // isNullInNullOut - Must redefine this virtual function to return 0
   // since a NULL input does not simply produce a NULL output.
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
 
   // isNullRelevant - Must redefine this virtual function to return 0
   // since all the work is done in eval and none in processNulls.
   //
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
+  ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
   // eval - Must redefine eval to do the effective NOP sequence function.
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
 					   ComDiagsArea** =0);
 
-  NA_EIDPROC inline NABoolean nullRowIsZero(void)
+  inline NABoolean nullRowIsZero(void)
   {
     return ((flags_ & SF_NULL_ROW_IS_ZERO) != 0);
   };
 
-  NA_EIDPROC inline void setNullRowIsZero(NABoolean v)
+  inline void setNullRowIsZero(NABoolean v)
   {
     (v)? flags_ |= SF_NULL_ROW_IS_ZERO: flags_ &= ~SF_NULL_ROW_IS_ZERO;
   };
 
-  NA_EIDPROC inline NABoolean isOLAP(void)
+  inline NABoolean isOLAP(void)
   {
     return ((flags_ & SF_IS_OLAP) != 0);
   };
 
-  NA_EIDPROC inline void setIsOLAP(NABoolean v)
+  inline void setIsOLAP(NABoolean v)
   {
     (v)? flags_ |= SF_IS_OLAP: flags_ &= ~SF_IS_OLAP;
   };
 
-  NA_EIDPROC inline NABoolean isLeading(void)
+  inline NABoolean isLeading(void)
   {
     return ((flags_ & SF_IS_LEADING) != 0);
   };
 
-  NA_EIDPROC inline void setIsLeading(NABoolean v)
+  inline void setIsLeading(NABoolean v)
   {
     (v)? flags_ |= SF_IS_LEADING: flags_ &= ~SF_IS_LEADING;
   };
 
-  NA_EIDPROC inline Int32 winSize(void)
+  inline Int32 winSize(void)
   {
     return winSize_;
   };
 
-  NA_EIDPROC inline void setWinSize(Int32 winSize)
+  inline void setWinSize(Int32 winSize)
   {
     winSize_ = winSize;
   };
   
 
   // pack - Must redefine pack.
-  NA_EIDPROC Long pack(void *);
+  Long pack(void *);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_function_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
   enum
@@ -171,9 +171,9 @@ public:
 
 // ExpSequenceExpression
 //
-class SQLEXP_LIB_FUNC ExpSequenceExpression : public ex_expr {
+class ExpSequenceExpression : public ex_expr {
 public:
-  NA_EIDPROC inline void seqFixup(void *data, 
+  inline void seqFixup(void *data, 
                                   char *(*getRow)(void*,Int32,NABoolean,Lng32,Int32&),
                                   char *(*getRowOLAP)(void*,Int32,NABoolean,Lng32,Int32&))
   {
@@ -218,18 +218,18 @@ public:
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_expr::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 };

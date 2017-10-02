@@ -136,11 +136,9 @@ ExExplainTcb::ExExplainTcb(const ExExplainTdb &explainTdb, ex_globals *glob)
 
   // Allocate the buffer pool
   // Allocate the specified number of buffers each can hold 5 tuples.
-#pragma nowarn(1506)   // warning elimination 
   pool_ = new(space) sql_buffer_pool(explainTdb.numBuffers_,
 				     explainTdb.bufferSize_,
 				     space);
-#pragma warn(1506)  // warning elimination 
 
   // Allocate the queues used to communicate with parent
   qParent_.down = new(space) ex_queue(ex_queue::DOWN_QUEUE,
@@ -256,23 +254,12 @@ ExExplainTcb::loadModule()
       SQLMODULE_ID moduleId;
 
       // Added for multi charset module names
-#pragma nowarn(1506)   // warning elimination 
       init_SQLMODULE_ID(&moduleId, 
 			SQLCLI_CURRENT_VERSION,
 			modName_,
 			0, SQLCHARSETSTRING_ISO88591, strlen(modName_)
 		       );
-#pragma warn(1506)  // warning elimination 
       //moduleId.module_name = modName_;
-
-      // If the module isn't already loaded (added) load it
-      if(!context->moduleAdded(&moduleId))
-	{
-	  rc = context->addModule(&moduleId, FALSE /*no timestamp check*/,
-				  TRUE /* unpack tdbs*/, 
-				  (modDir_[0] ? modDir_ : NULL),
-				  FALSE /*do not look in global mod dir*/);
-	}
     }
   
   // Get a pointer to the statement list for this context.
@@ -1066,13 +1053,11 @@ ExExplainTcb::getNextExplainTree()
     {
       // Define the pattern string
       // The Wild Card character is '\'
-#pragma nowarn(1506)   // warning elimination
       LikePatternString 
 	patternString(stmtPattern_, 
 		      (stmtPattern_ ? str_len(stmtPattern_) : 0), 
 		      CharInfo::ISO88591,
 		      "\\", 1 );
-#pragma warn(1506)  // warning elimination 
 
       // Define a pattern for the pattern string
       LikePattern pattern(patternString, getHeap());
@@ -1138,9 +1123,7 @@ ExExplainTcb::getNextExplainTree()
 	      (str_cmp(modName_, moduleName, length) == 0)));
 
 	  if(modNameMatches &&
-#pragma nowarn(1506)   // warning elimination 
 	     (pattern.matches(ident, (ident ? str_len(ident) : 0), CharInfo::UTF8) == TRUE) &&
-#pragma warn(1506)  // warning elimination 
 	     stmt->getRootTdb())
           {
 	      // Remember the current statement, so that the position
@@ -1819,7 +1802,7 @@ short ExExplainTcb::storeExplainInRepos(
     }
 
   queryBuf = new(heap) char[4000];
-  str_sprintf(queryBuf, "update %s.\"%s\".%s set explain_plan = cast(? as varchar(%d) not null) where exec_start_utc_ts = CONVERTTIMESTAMP(%Ld)  and query_id = '%s' ",
+  str_sprintf(queryBuf, "update %s.\"%s\".%s set explain_plan = cast(? as varchar(%d) not null) where exec_start_utc_ts = CONVERTTIMESTAMP(%ld)  and query_id = '%s' ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE, 
               REPOS_MAX_EXPLAIN_PLAN_LEN,
               *execStartUtcTs, qid);

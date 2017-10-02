@@ -205,7 +205,7 @@ public:
   const NAString &getConstraintText() const { return constraintText_; }
 
   NABoolean isViewWithCheckOption() const   { return isViewWithCheckOption_; }
-  void setViewWithCheckOption(NABoolean t)  { isViewWithCheckOption_ = t; } // LCOV_EXCL_LINE
+  void setViewWithCheckOption(NABoolean t)  { isViewWithCheckOption_ = t; }
   const QualifiedName &getCascadingViewName() const { return cascadingView_; }
   NABoolean isTheCascadingView() const 	    { return isViewWithCheckOption_ &&
   						getConstraintName() ==
@@ -471,7 +471,6 @@ protected:
 
 }; // AbstractRIConstraint
 
-#pragma nowarn(1026)   // warning elimination 
 class ComplementaryRIConstraint : public NABasicObject
 {
 public:
@@ -521,7 +520,6 @@ public:
   const QualifiedName &getTableName() const { return tableName_; }
 
 }; // ComplementaryRIConstraint
-#pragma warn(1026)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Uniqueness of a combination of columns in a table:
@@ -597,7 +595,7 @@ private:
 //
 // The whole scheme with the ComplementaryRIConstraint's array of columns
 // "parallel" to the defining constraint's columns assumes that constraint info
-// is is stored in CatMan (or at least by the ReadTableDef/NATable) in the
+// is stored in CatMan (or at least by NATable) in the
 // manner described for this example:
 //   CREATE TABLE U ... CONSTRAINT U0 UNIQUE(V,W,X)    [ or PRIMARY KEY(V,W,X) ]
 //   CREATE TABLE F ... CONSTRAINT R1 FOREIGN KEY(G,H,I) REFERENCES U(X,W,V)
@@ -641,7 +639,6 @@ public:
   inline NABoolean isaForeignKeyinTableBeingUpdated() const;
   inline NABoolean referencesTableBeingUpdated() const;
 
- //warning elimination (removed "inline")
   const QualifiedName &getOtherTableName() const
   {
     return *otherTableName_;

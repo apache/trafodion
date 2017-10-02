@@ -46,7 +46,6 @@
 #include "CmpISPStd.h"
 
 // for the table descriptions
-#include "enum.h"
 #include "CmpCommon.h"
 #include "Collections.h"  // for NAList
 #include "Int64.h"
@@ -587,7 +586,6 @@ public:
     const CmpISPFuncs& operator = (const CmpISPFuncs&);
 }; // end of CmpISPFuncs
 
-#pragma nowarn(1319)   // warning elimination 
 class CmpInternalSP : public CmpStoredProc 
 {
 public:  
@@ -663,7 +661,6 @@ private:
   CmpInternalSP(const CmpInternalSP&);
   const CmpInternalSP& operator=(const CmpInternalSP&);
 }; // CmpInternalSP
-#pragma warn(1319)  // warning elimination 
 
 inline const CmpISPFuncs::ProcFuncsStruct& 
 	CmpISPFuncs::operator[](const NAString& name) const

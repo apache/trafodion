@@ -49,7 +49,6 @@ class ColumnDescList;
 // ***********************************************************************
 // ColumnDesc : A column descriptor
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class ColumnDesc : public NABasicObject
 {
 public:
@@ -92,7 +91,6 @@ public:
   const char * getViewFileName() const          { return viewFileName_; }
   void setViewFileName(const char * name)       { viewFileName_ = name;  }
 
-  // LCOV_EXCL_START :dpm
   // ---------------------------------------------------------------------
   // Display/print, for debugging.
   // ---------------------------------------------------------------------
@@ -110,7 +108,6 @@ public:
       groupedFlag_? " grp " : "");
     if (strcmp(title, "")) fprintf(ofd,"\n");
   } // ColumnDesc::print()
-  //LCOV_EXCL_STOP
 
   void display() const { print(); }
 
@@ -147,7 +144,6 @@ private:
   const char * viewFileName_;
 
 }; // class ColumnDesc
-#pragma warn(1506)  // warning elimination 
 
 // ***********************************************************************
 // ColumnDescList : A list of column descriptors

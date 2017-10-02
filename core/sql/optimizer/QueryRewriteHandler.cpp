@@ -52,7 +52,6 @@ void MvQueryRewriteHandler::createMvDescriptor(QueryAnalysis* qa, RelExpr* expr,
   {
     mvDescriptor_ = descGenerator.createMvDescriptor(qa, expr);
   }
-  // LCOV_EXCL_START :rfi
   catch (QRDescriptorException& ex)
   {
     QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
@@ -65,7 +64,6 @@ void MvQueryRewriteHandler::createMvDescriptor(QueryAnalysis* qa, RelExpr* expr,
       "An Unknown exception occurred while generating MV descriptor.");
     warningMessage = "Unknown internal error.";
   }
-  // LCOV_EXCL_STOP
 }
 
 // -----------------------------------------------------------------------
@@ -115,16 +113,13 @@ static QRRequestResult parseXML(char* xmlText, Int32 xmlLen,
 
       if (!descriptor)
         {
-          // LCOV_EXCL_START :rfi
           QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
             "XMLDocument.parse() returned NULL.");
           return XMLParseError;
-          // LCOV_EXCL_STOP
         }
       else
         ;//debugMessage("Parsed XML document successfully.");
     }
-  // LCOV_EXCL_START :rfi
   catch (XMLException& ex)
     {
       QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
@@ -143,7 +138,6 @@ static QRRequestResult parseXML(char* xmlText, Int32 xmlLen,
         "An Unknown exception occurred");
       return InternalError;
     }
-  // LCOV_EXCL_STOP
 
   return Success;
 }
@@ -250,7 +244,6 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
                    ? descGenerator.createXmlText(requestDescriptor)
                    : NULL);
   }
-  // LCOV_EXCL_START :rfi
   catch(QRDescriptorException e)
   {
     // Just ignore it and leave xmlText_ as NULL to skip the rest of this method.
@@ -272,7 +265,6 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
     warningMessage = "Internal error";
     return rootExpr;
   }
-  // LCOV_EXCL_STOP
 
   if (xmlText_ == NULL)
   {
@@ -313,13 +305,11 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
           IpcServer* qms = MvQueryRewriteServer::getQmsServer(publishDest);
           if (!qms)
           {
-            // LCOV_EXCL_START :rfi
             QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_MVQR_FAIL,
               "Match failed due to inability to connect to QMS.");
             if (rootExpr->isAnalyzeOnly())
               rootExpr = handleAnalyzeOnlyQuery(rootExpr, "Can't connect to QMS");
             return rootExpr;  // Can't get a QMS
-            // LCOV_EXCL_STOP
           }
 	    
           // Do QMS MATCH protocol here.
@@ -345,19 +335,17 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
               xmlResponse->decrRefCount();
             }
           else
-            result = ProtocolError;  // LCOV_EXCL_LINE :rfi
+            result = ProtocolError;
 
           if (result == Success)
           {
             // Make sure the parsed document was a result descriptor.
             if (responseDescriptor->getElementType() !=  ET_ResultDescriptor)
             {
-              // LCOV_EXCL_START :rfi
               QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
                           "Response to MATCH request was an XML document with "
                           "document element <%s> instead of <%s>",
                           responseDescriptor->getElementName(), QRResultDescriptor::elemName);
-              // LCOV_EXCL_STOP
             }
             else
             {
@@ -369,7 +357,6 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
           }
         }
       }
-      // LCOV_EXCL_START :rfi
       catch(QRDescriptorException e)
       {
         // Exception has generated mx event, but not mvqr-logged. 
@@ -398,7 +385,6 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
           rootExpr = handleAnalyzeOnlyQuery(rootExpr, "Unknown exception thrown");
         return rootExpr;
       }
-      // LCOV_EXCL_STOP
     }
   
     delete xmlText_;
@@ -409,7 +395,6 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
 }  // handleMvQueryRewrite()
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :dpm
 void MvQueryRewriteHandler::dumpToFile(const char* fileName, const char* data)
 {
   FILE *mvqr_fd = fopen(fileName, "w+");
@@ -421,7 +406,6 @@ void MvQueryRewriteHandler::dumpToFile(const char* fileName, const char* data)
     fclose(mvqr_fd);
   }
 }  // dumpToFile()
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 #if 0

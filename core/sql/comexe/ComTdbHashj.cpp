@@ -199,7 +199,7 @@ ComTdbHashj::ComTdbHashj(ComTdb * leftChildTdb,
     checkInnerNullExpr_(checkInnerNullExpr),
     checkOuterNullExpr_(checkOuterNullExpr),
     afterJoinPred5_(afterJoinPred5),
-    hjMemEstInMbPerCpu_(0),
+    hjMemEstInKBPerNode_(0),
     bmoCitizenshipFactor_(0),
     pMemoryContingencyMB_(0),
     bmoMinMemBeforePressureCheck_(0),
@@ -329,7 +329,7 @@ void ComTdbHashj::displayContents(Space * space,ULng32 flag)
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       str_sprintf(buf,
-		  "hjFlags = %b, isSemiJoin = %d, isLeftJoin = %d, isRightJoin = %d",
+		  "hjFlags = %x, isSemiJoin = %d, isLeftJoin = %d, isRightJoin = %d",
 		  hjFlags_,isSemiJoin(),isLeftJoin(),isRightJoin());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
@@ -379,8 +379,8 @@ void ComTdbHashj::displayContents(Space * space,ULng32 flag)
 		  memUsagePercent_,pressureThreshold_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf,"hjMemEstInMbPerCpu = %f, estimateErrorPenalty = %d ",
-		  hjMemEstInMbPerCpu_, hjGrowthPercent_);
+      str_sprintf(buf,"hjMemEstInKbPerNode = %f, estimateErrorPenalty = %d ",
+		  hjMemEstInKBPerNode_, hjGrowthPercent_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
       
       str_sprintf(buf,"bmoCitizenshipFactor = %f, PhyMemoryContingencyMB = %d ",

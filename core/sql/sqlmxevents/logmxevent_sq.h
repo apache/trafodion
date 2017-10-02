@@ -99,9 +99,7 @@ class SQLMXLoggingArea
   SQLEVENTS_LIB_FUNC static void init() ;
  
 
-#pragma nowarn (728) // warning elimination
 #pragma SRLExportClassMembers  ZEVNTSRL  *
-#pragma warn (728) // warning elimination
   enum Category   // For NT this needs to correspong to 
                   // theLogEvent::Categories enum
                   // in the file tdm_logevent/tdm_logevent.h. 

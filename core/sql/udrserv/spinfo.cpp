@@ -283,7 +283,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
 
   Lng32 diagsPad = 1000;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   //
   // In a debug build we can get the pad size from the Java system
   // property UDR_BUFFER_PAD.
@@ -297,7 +297,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
       diagsPad = tempPad;
     }
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   maxBufSize += diagsPad;
   IpcMessageBuffer::alignOffset(maxBufSize);
@@ -607,7 +607,6 @@ void SPInfo::resetLastCallTs()
   numResultSets_ = 0;
 }
 
-// LCOV_EXCL_START
 // displaySPInfo - Used when tracing objects
 void SPInfo::displaySPInfo(Lng32 indent)
 {
@@ -763,7 +762,6 @@ void SPInfo::displaySPInfoId(Lng32 indent)
   ServerDebug("%sObject ID         : " INT64_SPEC , ind, udrHandle_ );
 
 } // SPInfo::displaySPInfoId
-// LCOV_EXCL_STOP
 
 // createUniqueIdentifier
 Int64 SPInfo::createUniqueIdentifier()
@@ -1689,7 +1687,7 @@ SPInfo::processOneRequestRow(SqlBuffer *reqSqlBuf,
     udrGlobals_->numErrInvokeSP_++;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // In the debug build we allow the UDR server to corrupt the reply
   // by reversing the diags flag for this reply row. In response the
   // executor should cause the statement to fail due to some sort of

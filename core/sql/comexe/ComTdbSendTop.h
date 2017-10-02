@@ -173,7 +173,7 @@ virtual const char *getNodeName() const { return "EX_SEND_TOP"; };
 
   NABoolean getUseOldStatsNoWaitDepth() const 
   { return (sendTopFlags_ & STATS_NOWAIT_DEP) ? TRUE : FALSE; }
-  void setUseOldStatsNoWaitDepth() { sendTopFlags_ |= STATS_NOWAIT_DEP; } // LCOV_EXCL_LINE - ignore, test code controlled by COMP_BOOL_118, see comments in generator/GenRelEnforcer.cpp
+  void setUseOldStatsNoWaitDepth() { sendTopFlags_ |= STATS_NOWAIT_DEP; }
 
 protected:
 

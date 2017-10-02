@@ -80,7 +80,6 @@ ExeErrorCode keySingleSubsetEx::initNextKeyRange(sql_buffer_pool *,atp_struct *)
   return (ExeErrorCode)0;
 };
 
-#pragma nowarn(770)   // warning elimination 
 keyRangeEx::getNextKeyRangeReturnType keySingleSubsetEx::getNextKeyRange(
      atp_struct *atp0,NABoolean /* fetchRangeHadRows */,
      NABoolean detectNullRange)
@@ -247,12 +246,8 @@ keyRangeEx::getNextKeyRangeReturnType keySingleSubsetEx::getNextKeyRange(
 	      //    flags was set.
 	      // 
 	      // str_cmp returns -1, 0, 1 for <, =, >
-#pragma nowarn(1506)   // warning elimination 
 	      Int32 cmpCode = str_cmp(bktarget, ektarget, 
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 				      tdbBeginEndKey().getKeyLength());
-#pragma warn(1506)  // warning elimination 
 	      if (((detectNullRange) &&
 		   (cmpCode > 0)) || // begin key > end key
 		  ((cmpCode == 0) && 
@@ -281,7 +276,6 @@ keyRangeEx::getNextKeyRangeReturnType keySingleSubsetEx::getNextKeyRange(
 
   return rc;
 };
-#pragma warn(770)  // warning elimination 
 
 
 

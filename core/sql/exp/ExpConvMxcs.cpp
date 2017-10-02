@@ -109,7 +109,7 @@
 
 #endif
 
-#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)                            // NT_PORT SK 08/13/96
+#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)
 #ifndef LLONG_MAX
 #define LLONG_MAX _I64_MAX
 #endif
@@ -401,9 +401,7 @@ static short convInt64ToDecMxcs(char *target, Lng32 targetLen, Int64 source)
       return EXE_STRING_OVERFLOW;
     };
 
-#pragma nowarn(1506)   // warning elimination 
     target[currPos--] = '0' + (char)(source % 10);
-#pragma warn(1506)  // warning elimination 
     source /= 10;
   };
   

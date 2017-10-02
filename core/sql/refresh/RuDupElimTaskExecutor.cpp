@@ -209,7 +209,6 @@ Lng32 CRUDupElimTaskExecutor::GetIpcBufferSize() const
 //  build the units and load their SQL text.
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimTaskExecutor::
 LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -246,14 +245,12 @@ LoadRequest(CUOFsIpcMessageTranslator &translator)
 		pRangeResolver_->LoadRequest(translator);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDupElimTaskExecutor::StoreReply()
 //
 //	REMOTE before sending to MAIN, pack the statistics 
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimTaskExecutor::
 StoreReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -289,14 +286,12 @@ StoreReply(CUOFsIpcMessageTranslator &translator)
 		translator.WriteBlock(&flag, sizeof(BOOL));
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDupElimTaskExecutor::LoadReply()
 //
 //	MAIN after receiving from REMOTE, unpack the statistics 
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimTaskExecutor::
 LoadReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -321,7 +316,6 @@ LoadReply(CUOFsIpcMessageTranslator &translator)
 		pRangeResolver_->LoadReply(translator);
 	}
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUDupElimTaskExecutor::StoreRequest()
@@ -329,7 +323,6 @@ LoadReply(CUOFsIpcMessageTranslator &translator)
 //	MAIN before sending to REMOTE, pack the DE globals and the SQL text.
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUDupElimTaskExecutor::
 StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -370,7 +363,6 @@ StoreRequest(CUOFsIpcMessageTranslator &translator)
 	
 	translator.SetMessageType(CUOFsIpcMessageTranslator::RU_DE_EXECUTOR);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	PRIVATE AREA
@@ -469,17 +461,13 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 	for (i=0; i<CRUDupElimConst::NUM_CONTROL_STMTS; i++)
 	{
 		comp.ComposeControlText(i);
-#pragma nowarn(1506)   // warning elimination 
 		ctrlStmtContainer_.SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 	}
 
 	for (i=0; i<CRUDupElimConst::NUM_QUERY_STMTS; i++)
 	{
 		comp.ComposeQueryText(i);
-#pragma nowarn(1506)   // warning elimination 
 		pLogScanner_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 	}
 
 	if (NULL != pSingleRowResolver_)
@@ -487,9 +475,7 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 		for (i=0; i<CRUDupElimConst::NUM_SINGLE_RESOLV_STMTS; i++)
 		{
 			comp.ComposeSingleRowResolvText(i);
-#pragma nowarn(1506)   // warning elimination 
 			pSingleRowResolver_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 		}
 	}
 
@@ -498,9 +484,7 @@ void CRUDupElimTaskExecutor::InitSQL(CRUDupElimTask *pParentTask)
 		for (i=0; i<CRUDupElimConst::NUM_RNG_RESOLV_STMTS; i++)
 		{
 			comp.ComposeRangeResolvText(i);
-#pragma nowarn(1506)   // warning elimination 
 			pRangeResolver_->SetStatementText(i, comp.GetSQL());
-#pragma warn(1506)  // warning elimination 
 		}
 	}
 }
@@ -868,7 +852,6 @@ BOOL CRUDupElimTaskExecutor::CanCompletePhase()
 //--------------------------------------------------------------------------//
 
 #ifdef _DEBUG
-// LCOV_EXCL_START :dpm
 void CRUDupElimTaskExecutor::DumpPerformanceStatistics()
 {
 	CRUOptions &options = CRUGlobals::GetInstance()->GetOptions();
@@ -896,5 +879,4 @@ void CRUDupElimTaskExecutor::DumpPerformanceStatistics()
 		journal.LogMessage(str);		
 	}
 }
-// LCOV_EXCL_STOP
 #endif

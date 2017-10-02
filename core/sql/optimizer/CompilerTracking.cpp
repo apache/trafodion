@@ -632,7 +632,7 @@ CompilerTrackingInfo::logIntervalInPrivateTable()
 
   getTimestampAsBuffer(beginIntervalTime(), beginTime);
   getTimestampAsBuffer(endIntervalTime(), endTime);  
-  p->getCompilerId(compilerId);
+  p->getCompilerId(compilerId, COMPILER_ID_LEN);
   NAString tableName = ActiveSchemaDB()->getDefaultSchema().getSchemaNameAsAnsiString() + "." + COMPILER_TRACKING_TABLE_NAME_PRIVATE;
   //
   // update the fields
@@ -733,7 +733,7 @@ CompilerTrackingInfo::printToFile()
   fileout << endl;
      
   char compilerId[COMPILER_ID_LEN];
-  p->getCompilerId(compilerId);
+  p->getCompilerId(compilerId, COMPILER_ID_LEN);
   fileout << "Compiler ID\t\t: " << compilerId << endl; 
   fileout << "Process ID\t\t: " << p->getPin() << endl;  
   fileout << "Compiler Age\t\t: " << compilerAge() << " minutes\n";

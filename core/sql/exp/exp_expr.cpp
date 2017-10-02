@@ -39,17 +39,14 @@
 #include "Platform.h"
 
 
-#ifndef __EID
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #include "exp_stdh.h"
 #include "exp_expr.h"
 #include "ExpPCode.h"
 #include "ExpPCodeOptimizations.h"
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
 
 
@@ -57,30 +54,22 @@ void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *ex_expr::findVTblPtr(short classID)
+char *ex_expr::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
   {
     case exp_INPUT_OUTPUT:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, InputOutputExpr);
-#pragma warn(1506)  // warning elimination 
       break;
     case exp_AGGR:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, AggrExpr);
-#pragma warn(1506)  // warning elimination 
       break;
     case exp_LEAN_EXPR:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ex_expr_lean);
-#pragma warn(1506)  // warning elimination 
       break;
     default:
-#pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblPtr, ex_expr);
-#pragma warn(1506)  // warning elimination 
       break;
   }
   return vtblPtr;
@@ -104,7 +93,6 @@ Lng32 ex_expr::initExpr()
   return rc;
 }
 
-// LCOV_EXCL_START
 // lean expressions are not used not tested
 void ex_expr_lean::displayContents(Space * space, short mode,
 				   const char * displayStr,
@@ -112,25 +100,17 @@ void ex_expr_lean::displayContents(Space * space, short mode,
 {
   char buf[200];
 
-#ifndef __EID
   str_sprintf(buf, "Expression: %s", displayStr);
-#endif
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#ifndef __EID
   str_sprintf(buf, "  Total Expr Len: %d, Consts Area Len: %d", getLength(), getConstsLength());
-#endif
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#ifndef __EID
   str_sprintf(buf, "  Temps Area Len: %d, Persistent Area Len: %d", getTempsLength(), persistentLength());
-#endif
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
   str_sprintf(buf, "  PCode Expr Length: %d\n", getPCodeSize());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
   
   if (flag & 0x00000002)
     {
-#ifndef __EID
-      
       // Clear the fixup flag, since the expression has not been fixed up
       // (pCodeGenerate undoes, the fixup of Const and Temp offsets.)
       //
@@ -172,11 +152,8 @@ void ex_expr_lean::displayContents(Space * space, short mode,
 	  str_sprintf(buf, "\n");
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
-      
-#endif   //__EID
     }
 }
-// LCOV_EXCL_STOP
 // make a 'lean' copy of 'this' and point it back to itself.  Supports all
 // expressions.  Do not copy clauses_ or pCodeObject_.  Caller is responsible
 // for proper deallocation of memory.
@@ -224,7 +201,6 @@ void ex_expr::makeLeanCopyAll(Space * space)
 
 // make a 'lean' copy of 'this' to 'other'.
 // Do not copy clauses_ or pCodeObject_.
-// LCOV_EXCL_START
 void ex_expr::makeLeanCopy(ex_expr_lean * other, Space * space)
 {
   //  *((ex_expr_base*)other) = *((ex_expr_base*)this);
@@ -259,22 +235,17 @@ void ex_expr::makeLeanCopy(ex_expr_lean * other, Space * space)
       other->persistentArea_ = space->allocateAlignedSpace(persistentLength_);
     }
 }
-// LCOV_EXCL_STOP
 void ex_expr::displayContents(Space * space, short mode, const char * displayStr,ULng32 flag)
 {
   char buf[100] = {0};	// Soln 10-041117-1848
 
   ULng32 exprLen = getLength();
 
-#ifndef __EID
   str_sprintf(buf, "Expression: %s", displayStr);
-#endif
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#ifndef __EID
   str_sprintf(buf, "Expr Len: %d, Consts Len: %d", exprLen, getConstsLength());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-  str_sprintf(buf, "flags_ = %b ",flags_ );
-#endif
+  str_sprintf(buf, "flags_ = %x ",flags_ );
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
   if (flag & 0x00000004)
@@ -292,8 +263,6 @@ void ex_expr::displayContents(Space * space, short mode, const char * displayStr
   
   if (flag & 0x00000002)
     {
-#ifndef __EID
-      
       if (getPCodeBinary())
         {
           str_sprintf(buf, "  PCode:\n");
@@ -308,14 +277,12 @@ void ex_expr::displayContents(Space * space, short mode, const char * displayStr
       else if ((flag & 0x00000010) &&
 	       (getPCodeBinary()))
 	{
-// LCOV_EXCL_START
 	  str_sprintf(buf, "  PCode:\n");
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	  str_sprintf(buf, "PCode Expr Length: %d", getPCodeSize());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	  
 	  PCode::displayContents(getPCodeBinary(), space);
-// LCOV_EXCL_STOP
 	}
       else
 	{
@@ -337,17 +304,14 @@ void ex_expr::displayContents(Space * space, short mode, const char * displayStr
 	  
 	  if(getPCodeObject())
 	    {
-		  // LCOV_EXCL_START
 	      str_sprintf(buf, "  PCode:\n");
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	      str_sprintf(buf, "PCode Expr Length: %d", getPCodeSize());
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	      
 	      PCode::displayContents(getPCodeObject()->getPCIList(), space);
-	      // LCOV_EXCL_STOP
 	    }
 	}
-#endif   //__EID
     }
 }
 
@@ -500,27 +464,21 @@ void AggrExpr::displayContents(Space * space, short mode, const char * displaySt
 
   if (initExpr_)
     {
-#ifndef __EID
-  str_sprintf(buf, "%s::initExpr_", displayStr);
-#endif
+      str_sprintf(buf, "%s::initExpr_", displayStr);
 
       initExpr_->displayContents(space, mode, buf, flag);
     }
 
   if (finalNullExpr_)
     {
-#ifndef __EID
-  str_sprintf(buf, "%s::finalNullExpr_", displayStr);
-#endif
+      str_sprintf(buf, "%s::finalNullExpr_", displayStr);
 
       finalNullExpr_->displayContents(space, mode, buf, flag);
     }
 
   if (finalExpr_)
     {
-#ifndef __EID
-  str_sprintf(buf, "%s::finalExpr_", displayStr);
-#endif
+      str_sprintf(buf, "%s::finalExpr_", displayStr);
 
       finalExpr_->displayContents(space, mode, buf, flag);
     }

@@ -47,8 +47,6 @@
 #include "ComDiags.h"
 #include "str.h"
 #include "SqlciParseGlobals.h"
-#include "SqlciRWCmd.h"
-#include "SqlciCSCmd.h"
 #include "SqlciError.h"
 #include "sqlcmd.h"
 
@@ -73,18 +71,14 @@ static Int32 sqlci_parser_subproc(char *instr, char *origstr, SqlciNode ** node,
   if (origstr)
     {
       // remove trailing blanks
-#pragma nowarn(1506)   // warning elimination 
       Lng32 j = strlen(origstr) - 1;
-#pragma warn(1506)  // warning elimination 
       while ((j >= 0) && (origstr[j] == ' '))
 	j--;
       origstr[j+1] = 0;
       
         if (j >= 0)
 	{
-#ifdef NA_FLEXBUILD
-	  SqlciLexReinit(); // NT_PORT ( bd 10/11/96 )
-#endif
+	  SqlciLexReinit();
 	  
 	  retval = sqlciparse();
 	  
@@ -93,19 +87,12 @@ static Int32 sqlci_parser_subproc(char *instr, char *origstr, SqlciNode ** node,
 	    {
 	      assert(SqlciParseTree->isSqlciNode());
 	      
-	      // check to see if the SqlciNode is valid or not.Returns 1 if it is 
-	      // valid and 0 if invalid.
-	      retval = sqlci_parser_handle_report_writer(sqlci_env,retval);
-	      
-	      if (retval)
-		{ 
-		  if (retval = SqlciParseTree->errorCode())	  // oops, an error
-		    {
-		      delete SqlciParseTree;
-		      SqlciParseTree = NULL;
-		      retval = -ABS(retval);	// error, caller won't retry
-		    }
-		}
+              if (retval = SqlciParseTree->errorCode())	  // oops, an error
+                {
+                  delete SqlciParseTree;
+                  SqlciParseTree = NULL;
+                  retval = -ABS(retval);	// error, caller won't retry
+                }
 	    }
 	  else
 	    retval = +ABS(retval);	// error, caller will retry
@@ -150,7 +137,6 @@ Int32 sqlci_parser(char *instr, char *origstr, SqlciNode ** node, SqlciEnv *sqlc
   if (retval > 0)
     {
       SqlciParse_OriginalStr = origstr;
-      retval = sqlci_parser_handle_error(node, retval);
     }
 
   if (newstr != origstr)
@@ -180,77 +166,4 @@ Int32 sqlci_parser_syntax_error_cleanup(char *instr, SqlciEnv *sqlci_env)
   return 0;
 }
 
-Int32 sqlci_parser_handle_report_writer(SqlciEnv *sqlci_env, Lng32 retval)
-{
-  // if success in parsing so far and we have a valid SqlciParseTree which
-  // is a SqlciNode then you check for RW mode or MACL/MXCS mode.
-  if (!retval) 
-    {
-      if ( (sqlci_env->sqlciRWEnv()->isSelectInProgress()) &&
-	   !(SqlciParseTree->isAllowedInSIP())
-	   )
-	{
-	  SqlciError (SQLCI_RW_SELECT_IN_PROGRESS,
-		      (ErrorParam *) 0 );
-	  delete SqlciParseTree;
-	  SqlciParseTree = NULL;
-	  return 0;
-	}
-      else if ( !(sqlci_env->sqlciRWEnv()->isSelectInProgress()) &&
-		!(SqlciParseTree->isAllowedInRWMode())
-		)
-	{
-	  SqlciError (SQLCI_RW_ALLOWED_ONLY_DURING_SIP,
-		      (ErrorParam *) 0 );
-	  delete SqlciParseTree;
-	  SqlciParseTree = NULL;
-	  return 0;
-	}
-      else if ((sqlci_env->isMXCSMode()) && !(SqlciParseTree->isAllowedInCSMode()))
-      {
-	  delete SqlciParseTree;
-        SqlciParseTree = (SqlciNode *)new SqlciCSQueryCmd(SqlciParse_OriginalStr,
-                               (Lng32)strlen(SqlciParse_OriginalStr));
-	assert(SqlciParseTree->isSqlciNode());
-        return 1;
-
-      }
-      else
-	return 1;
-    }
-  else
-    return 1;
-}
-
-Int32 sqlci_parser_handle_error(SqlciNode **node, Lng32 retval)
-{
-  NABoolean syntaxError_ = sqlci_DA.contains(-SQLCI_SYNTAX_ERROR);
-  
-  if (retval && syntaxError_)
-    {	
-      if (SqlciEnvGlobal->isReportWriterMode())
-	{
-	  SqlciParseTree = (SqlciNode *)new SqlciRWQueryCmd(SqlciParse_OriginalStr,
-			(Lng32)strlen(SqlciParse_OriginalStr));
-	  assert(SqlciParseTree->isSqlciNode());
-	  *node = SqlciParseTree;	
-	  sqlci_DA.clear(); // clear the diagonistics
-	  return 0;
-	}
-      else if (SqlciEnvGlobal->isMXCSMode())
-      {
-        SqlciParseTree = (SqlciNode *)new SqlciCSQueryCmd(SqlciParse_OriginalStr,
-                               (Lng32)strlen(SqlciParse_OriginalStr));
-	  assert(SqlciParseTree->isSqlciNode());
-	  *node = SqlciParseTree;	
-	  sqlci_DA.clear(); // clear the diagonistics
-	  return 0;
-      }
-      else
-	return retval;
-    }
-  else
-    return retval;
-  
-}
 		

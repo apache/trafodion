@@ -53,7 +53,6 @@ ComSInt32 ComMvAttributeBitmap::getBitmap() const
 
 
 //----------------------------------------------------------------------------
-// LCOV_EXCL_START
 // exclude from coverage since this is a debugging method
 void ComMvAttributeBitmap::trace()
 {
@@ -220,10 +219,8 @@ void ComMvAttributeBitmap::trace()
 #endif
 
 } // trace
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
-// LCOV_EXCL_START
 // exclude from coverage - this code is not used for now
 ComMvAttributeBitmap::Result 
 ComMvAttributeBitmap::setLogsCreatedOnMVCreation()
@@ -234,7 +231,6 @@ ComMvAttributeBitmap::setLogsCreatedOnMVCreation()
 
   return (initialVal != bitmap_) ? ATTRIBUTE_SET : NO_CHAGE;
 }
-// LCOV_EXCL_STOP
 
 //----------------------------------------------------------------------------
 ComMvAttributeBitmap::Result
@@ -356,7 +352,6 @@ ComMvAttributeBitmap::setRangeLogType(ComRangeLogType rangeLogType)
       setToOtherThanManualRangeLog = TRUE;
       break;
 	    
-// LCOV_EXCL_START
 // exclude from coverage - range logging is not supported
 // and default condition not reacheable
     default:
@@ -370,7 +365,6 @@ ComMvAttributeBitmap::setRangeLogType(ComRangeLogType rangeLogType)
   {
     SetBit(LOGGING_REQUIRED);
   }
-// LCOV_EXCL_STOP
   
   return (initialVal != bitmap_) ? ATTRIBUTE_SET : NO_CHAGE;
 }
@@ -464,7 +458,6 @@ ComMvAttributeBitmap::setMvsAllowed(ComMvsAllowed mvsAllowedType)
       SetBit(RECOMPUTE_MVS_ALLOWED);
       break;
 
-// LCOV_EXCL_START
 // an exception code that we should not hit
     case COM_MVS_ALLOWED_UNKNOWN:
       bitmap_ = initialVal;
@@ -472,7 +465,6 @@ ComMvAttributeBitmap::setMvsAllowed(ComMvsAllowed mvsAllowedType)
 
     default:
       assert(0); 
-// LCOV_EXCL_STOP
   }
   
   return (initialVal != bitmap_) ? ATTRIBUTE_SET : NO_CHAGE;
@@ -505,7 +497,6 @@ ComMvAttributeBitmap::setMvStatus(ComMVStatus value)
 
     case COM_MVSTATUS_UNKNOWN:
     default:
-      // LCOV_EXCL_LINE  
       assert(0);
   }
   
@@ -536,7 +527,6 @@ ComMvAttributeBitmap::setMvAudit(ComMvAuditType value)
 
     case COM_MV_AUDIT_UNKNOWN:
     default:
-      // LCOV_EXCL_LINE  
       assert(0);
   }
   

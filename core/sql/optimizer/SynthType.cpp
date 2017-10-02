@@ -87,7 +87,6 @@ static void shortenTypeSQLname(const NAType &op,
   }
 }
 
-// This one's NOT static -- GenRfork calls it!
 void emitDyadicTypeSQLnameMsg(Lng32 sqlCode,
 			      const NAType &op1,
 			      const NAType &op2,
@@ -268,7 +267,6 @@ static void propagateCoAndCoToChildren(ItemExpr *parentOp,
   }
 }
 
-// LCOV_EXCL_START - cnu
 static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
 {
   Int32 n = 0;
@@ -280,7 +278,6 @@ static Int32 getNumCHARACTERArgs(ItemExpr *parentOp)
   }
   return n;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // The virtual NAType::isComparable() methods -- implemented here rather than
@@ -400,7 +397,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
   #ifndef NDEBUG
     if (NCHAR_DEBUG < 0) NCHAR_DEBUG = getenv("NCHAR_DEBUG") ? +1 : 0;
     if (NCHAR_DEBUG > 0) {
-// LCOV_EXCL_START - dpm
       NAString p(CmpCommon::statementHeap());
       parentOp->unparse(p);
       NAString s(getTypeSQLname(TRUE /*terse*/));
@@ -421,7 +417,6 @@ NABoolean CharType::isComparable(const NAType &otherNA,
 	   << endl;
       if (!cmpOK)
         cerr << endl;
-// LCOV_EXCL_STOP
     }
   #endif
 
@@ -550,7 +545,7 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 
       if ( DoCompatibilityTest && NOT operand1->isCompatible(*operand2) ) {
          // 4041 comparison between these two types is not allowed
-         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2); // LCOV_EXCL_LINE - cnu
+         emitDyadicTypeSQLnameMsg(-4041, *operand1, *operand2);
          return FALSE;
       }
     }
@@ -932,8 +927,6 @@ const NAType *ItemExpr::synthesizeType()
 // does nothing.  Currently is only redefined by ValueIdUnion
 // to propagate the desired type to the sources of the ValueIdUnion.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ItemExpr::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -963,7 +956,6 @@ Cast::pushDownType(NAType& desiredType,
    return (NAType *)synthesizeType();
 }
 
-// LCOV_EXCL_START - cnu
 void ItemExpr::coerceChildType(NAType& desiredType,
                    enum NABuiltInTypeEnum defaultQualifier)
 {
@@ -971,9 +963,6 @@ void ItemExpr::coerceChildType(NAType& desiredType,
      child(i) -> getValueId().coerceType(desiredType, defaultQualifier);
    }
 }
-// LCOV_EXCL_STOP
-#pragma warning (default : 4018)   //warning elimination
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class BuiltinFunction.
@@ -1281,21 +1270,17 @@ const NAType *BuiltinFunction::synthesizeType()
 	const CharType &typ1 = (CharType&)child(0)->getValueId().getType();
 	if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	const CharType &typ2 = (CharType&)child(1)->getValueId().getType();
 	if (typ2.getTypeQualifier() != NA_CHARACTER_TYPE)
 	  {
-// LCOV_EXCL_START - cnu
 	    // 4043 The operand of a $0~String0 function must be character.
 	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
 	    return NULL;
-// LCOV_EXCL_STOP
 	  }
 
 	retType = new HEAP
@@ -1556,7 +1541,6 @@ const NAType *CodeVal::synthesizeType()
 
   switch (getOperatorType())
   {
-// LCOV_EXCL_START - rfi
     case ITM_NCHAR_MP_CODE_VALUE:
        if ( CharInfo::is_NCHAR_MP(typ1.getCharSet()) != TRUE )
        {
@@ -1579,7 +1563,6 @@ const NAType *CodeVal::synthesizeType()
          return NULL;
        }
        break;
-// LCOV_EXCL_STOP
 
     case ITM_ASCII:
        {
@@ -1610,12 +1593,10 @@ const NAType *CodeVal::synthesizeType()
      {
        switch ( typ1.getCharSet() )
        {
-// LCOV_EXCL_START - mp
           case CharInfo::KANJI_MP:
           case CharInfo::KSC5601_MP:
             setOperatorType(ITM_NCHAR_MP_CODE_VALUE);
             break;
-// LCOV_EXCL_STOP
 
           case CharInfo::UNICODE:
             setOperatorType(ITM_UNICODE_CODE_VALUE);
@@ -1705,10 +1686,8 @@ const NAType *Aggregate::synthesizeType()
 
     if (!operand.isSupportedType())
     {
-// LCOV_EXCL_START - mp
       emitDyadicTypeSQLnameMsg(-4041, operand, operand);
       return NULL;
-// LCOV_EXCL_STOP
     }
 
     if (inScalarGroupBy())
@@ -3229,12 +3208,10 @@ const NAType *DynamicParam::synthesizeType()
 }
 
 
-// LCOV_EXCL_START - cnu
 const NAType *ExplodeVarchar::synthesizeType()
 {
   return getType();
 }
-// LCOV_EXCL_STOP
 
 const NAType *Format::synthesizeType()
 {
@@ -3652,11 +3629,9 @@ const NAType *BitOperFunc::synthesizeType()
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -3802,11 +3777,9 @@ const NAType *MathFunc::synthesizeType()
 
     default:
       {
-// LCOV_EXCL_START - rfi
 	// 4000 Internal Error. This function not supported.
 	*CmpCommon::diags() << DgSqlCode(-4000);
 	result = NULL;
-// LCOV_EXCL_STOP
       }
       break;
     }
@@ -4389,7 +4362,6 @@ const NAType *CompDecode::synthesizeType()
 // member functions for class Extract
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *Extract::synthesizeType()
 {
   // Assert that we are bound, or created by Generator, so we have type info.
@@ -4471,7 +4443,6 @@ const NAType *Extract::synthesizeType()
                disAmbiguate,
                dti.supportsSQLnull());
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Increment
@@ -4703,12 +4674,10 @@ const NAType *Lower::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     // 3217: Character set KANJI/KSC5601 is not allowed in the LOWER function.
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("LOWER");
-// LCOV_EXCL_STOP
   }
 
   if ((ct->isUpshifted()) ||
@@ -4760,11 +4729,9 @@ const NAType *Upper::synthesizeType()
   CharType *ct = (CharType *)&operand;
 
   if ( CharInfo::is_NCHAR_MP(ct->getCharSet()) ) {
-// LCOV_EXCL_START - mp
     *CmpCommon::diags() << DgSqlCode(-3217)
                         << DgString0(CharInfo::getCharSetName(ct->getCharSet()))
                         << DgString1("UPPER");
-// LCOV_EXCL_STOP
   }
 
   if (NOT ct->isUpshifted()) {
@@ -5531,7 +5498,6 @@ const NAType *Translate::synthesizeType()
 // member functions for class ValueIdUnion
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 const NAType *ValueIdUnion::synthesizeType()
 {
   const NAType *result = NULL;
@@ -5618,7 +5584,6 @@ const NAType *ValueIdUnion::synthesizeType()
 
   return result;
 }
-#pragma warn(1506)  // warning elimination
 
 // ValueIdUnion::pushDownType() -----------------------------------
 // Propagate type information down the ItemExpr tree.  This method
@@ -5643,7 +5608,6 @@ const NAType *ValueIdUnion::synthesizeType()
 // and re-synthesize the Type of the inner ValueIdUnion node.
 //
 //
-#pragma nowarn(1506)   // warning elimination
 const NAType *
 ValueIdUnion::pushDownType(NAType& desiredType,
                            enum NABuiltInTypeEnum defaultQualifier)
@@ -5655,7 +5619,6 @@ ValueIdUnion::pushDownType(NAType& desiredType,
   return (NAType *)synthesizeType();
 
 }
-#pragma warn(1506)  // warning elimination
 
 
 const NAType *
@@ -5706,8 +5669,6 @@ const NAType *ValueIdProxy::synthesizeType()
 // Propagate type information down the node we are Proxy for.
 // Called by coerceType().  
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 ValueIdProxy::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -6010,8 +5971,6 @@ const NAType *RowSubquery::synthesizeType()
 // the RowSubquery is of degree 1 and the returned value in the select
 // list is of unknown or character type.
 //
-#pragma nowarn(1506)   // warning elimination
-#pragma warning (disable : 4018)   //warning elimination
 const NAType *
 RowSubquery::pushDownType(NAType& desiredType,
                        enum NABuiltInTypeEnum defaultQualifier)
@@ -6505,7 +6464,6 @@ const NAType *ItmSeqRowsSince::synthesizeType()
 // member functions for class ItmSeqMovingFunction
 // -----------------------------------------------------------------------
 
-#pragma nowarn(262)   // warning elimination
 const NAType *ItmSeqMovingFunction::synthesizeType()
 {
   const NAType *result=NULL;
@@ -6578,7 +6536,6 @@ const NAType *ItmSeqMovingFunction::synthesizeType()
   return result;
 
 }
-#pragma warn(262)  // warning elimination
 // -----------------------------------------------------------------------
 // member functions for class ItmSeqThisFunction
 // -----------------------------------------------------------------------
@@ -6649,76 +6606,6 @@ const NAType *ItmSeqNotTHISFunction::synthesizeType()
  NAType *result = operand.newCopy(HEAP);
  result->setNullable(TRUE);
  return result;
-}
-
-// -----------------------------------------------------------------------
-// member functions for class AuditImage
-// -----------------------------------------------------------------------
-
-const NAType *AuditImage::synthesizeType()
-{
-  const NAType * type = NULL;
-
-  const NATable *naTable = getNATable();
-
-  // The data types of the columns (in order) in the object
-  // must match the data types of columns specified in the
-  // expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-
-  const NAColumnArray &naColumns = naTable->getNAColumnArray();
-  for (UInt32 i=0; i < naColumns.entries(); i++)
-    {
-
-      const NAColumn *tableNACol = naColumns[i];
-      const NAType *tableColumnType = tableNACol->getType();
-
-      // Populate member varaible columnTypeList_ (to be used
-      // during codeGen. See AuditImage::codeGen()) with the
-      // column types of the object.
-      columnTypeList_.insert(tableColumnType);
-
-      // Actual datatype checking is done only for non-Constants.
-      // Compatiblity type checking is done for Constants.
-      // Note: Constants are used only for internal testing.
-      const NAType *childType = &children()[i].getValueId().getType();
-      if (children()[i].getPtr()->getOperatorType() == ITM_CONSTANT ||
-	  childType->getTypeQualifier() == NA_UNKNOWN_TYPE)
-	{
-	  children()[i].getValueId().coerceType(*tableColumnType);
-	  // the coerceType method above might have changed
-	  // the childType. So, get it one more time.
-	  childType = &children()[i].getValueId().getType();
-	  if (NOT childType->isCompatible(*tableColumnType))
- 	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-      else
-	{
-	  // Not a constant, so enforce type checking; but w.r.t NULL - check
-	  // only if it's physical and not if the value of
-	  // has the exact enum NAType::SupportsSQLnull.
- 	  if (!(tableColumnType->equalPhysical(*childType)))
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-    }
-
-
-  const Lng32 recordLength = naTable->getRecordLength();
-
-  type = new HEAP
-    SQLVarChar(HEAP, recordLength);
-
-  return type;
 }
 
 const NAType * HbaseColumnLookup::synthesizeType()

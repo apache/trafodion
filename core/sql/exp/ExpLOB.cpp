@@ -69,7 +69,7 @@ char * ExpLOBoper::ExpGetLOBname(Int64 uid, Lng32 num, char * outBuf, Lng32 outB
   if (outBufLen < 31)
     return NULL;
 
-  str_sprintf(outBuf, "LOBP_%020Ld_%04d",
+  str_sprintf(outBuf, "LOBP_%020ld_%04d",
 	      uid, num);
 
   return outBuf;
@@ -82,7 +82,7 @@ char * ExpLOBoper::ExpGetLOBDescName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBDsc_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"LOBDsc_%020ld_%04d\"",
 	      schName, uid, num);
 
   return outBuf;
@@ -94,7 +94,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleObjNamePrefix(Int64 uid,
   if (outBufLen < 512)
     return NULL;
   
-  str_sprintf(outBuf, "%s_%020Ld", LOB_DESC_HANDLE_PREFIX,uid);
+  str_sprintf(outBuf, "%s_%020ld", LOB_DESC_HANDLE_PREFIX,uid);
   
   return outBuf;
 }
@@ -107,7 +107,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld_%04d\"",
 	      schName, LOB_DESC_HANDLE_PREFIX,uid, num);
   
   return outBuf;
@@ -115,7 +115,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 
 Lng32 ExpLOBoper::ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen)
 {
-  // Desc Name Format: LOBDescHandle_%020Ld_%04d
+  // Desc Name Format: LOBDescHandle_%020ld_%04d
   char * lobNumPtr = &descName[sizeof(LOB_DESC_HANDLE_PREFIX) + 20 + 1];
   Lng32 lobNum = str_atoi(lobNumPtr, 4);
   
@@ -131,7 +131,7 @@ char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld_%04d\"",
 	      schName, LOB_DESC_CHUNK_PREFIX,uid, num);
 
   return outBuf;
@@ -146,7 +146,7 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"%s_%020Ld\"",
+  str_sprintf(outBuf, "%s.\"%s_%020ld\"",
 	      schName, LOB_MD_PREFIX,uid);
 
   return outBuf;
@@ -471,7 +471,7 @@ void ExpLOBoper::createLOBhandleString(Int16 flags,
 				       char * schName,
 				       char * lobHandleBuf)
 {
-  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020ld%02d%ld%02d%ld%03d%s",
 	      flags, lobType, lobNum, uid,
 	      findNumDigits(descKey), descKey, 
 	      findNumDigits(descTS), descTS,
@@ -493,7 +493,7 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
 				       Lng32 handleLen)
 {
   // opp of:
-  //  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  //  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020ld%02d%ld%02d%ld%03d%s",
   //	      flags, lobType, lobNum, uid,
   //	      findNumDigits(descKey), descKey, 
   //	      findNumDigits(descTS), descTS,
@@ -675,13 +675,10 @@ void ExpLOBinsert::displayContents(Space * space, const char * displayStr,
 {
   ex_clause::displayContents(space, "ExpLOBinsert", clauseNum, constsArea);
 
-#ifndef __EID
   char buf[100];
 
   str_sprintf(buf, "    liFlags_ = %d", liFlags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#endif
-
 }
 
 ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
@@ -758,13 +755,6 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   
 
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   // temp. Pass lobLen. When ExLobsOper fixes it so len is not needed during
@@ -987,13 +977,6 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 
  
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1058,11 +1041,9 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   if(fromEmpty())
     return err;
 
-#ifndef __EID
   char * handle = op_data[0];
   Lng32 handleLen = getOperand(0)->getLength();
   err = insertData(handleLen, handle, op_data, h, diagsArea);
-#endif
 
   return err;
 }
@@ -1119,13 +1100,6 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
     return ex_expr::EXPR_ERROR;
 
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1188,13 +1162,10 @@ void ExpLOBupdate::displayContents(Space * space, const char * displayStr,
 {
   ExpLOBoper::displayContents(space, "ExpLOBupdate", clauseNum, constsArea);
 
-#ifndef __EID
   char buf[100];
 
   str_sprintf(buf, "    luFlags_ = %d", luFlags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#endif
-
 }
 
 ex_expr::exp_return_type 
@@ -1354,13 +1325,6 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   else
     lobMaxSize = getLobMaxSize();
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1554,14 +1518,8 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
   Lng32 waitedOp = 0;
   Int64 lobLen = 0; 
   char *lobData = NULL;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
   waitedOp = 1;
-#endif
 
-  //temptemp. Remove after ExLobsOper adds nowaited support.
-  waitedOp = 1;
   extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
 			   &descKey, &descTS, 
 			   &schNameLen, schName,

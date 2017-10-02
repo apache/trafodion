@@ -99,7 +99,7 @@ public:
   // oops I need to delete theArray_ and arrayValid_, but since I dont 
   // have time to run regression again and RAList is only used within
   // CmpStatementHeap so far, then I will delay this to next checkin
-  NA_EIDPROC virtual ~RAList() {};
+  virtual ~RAList() {};
 
   // assignment
   RAList<T> & operator =(const RAList<T> &other);

@@ -47,9 +47,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include "ComSysUtils.h"
-#ifndef __EID
 #include "SequenceFileReader.h" 
-#endif
 #include  "cli_stdh.h"
 #include "ComSmallDefs.h"
 
@@ -599,10 +597,6 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
 
 ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 {
-#ifdef __EID 
-  // This class should not be instantiated in EID.
-  return WORK_BAD_ERROR;
-#else
   Lng32 retcode = 0;
   SFW_RetCode sfwRetCode = SFW_OK;
   ULng32 recSepLen = strlen(myTdb().getRecordSeparator());
@@ -687,7 +681,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       if (retcode == 1) // check failed
       {
         char errStr[200];
-        str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+        str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                     myTdb().getModTSforDir(), failedModTS);
         
         ComDiagsArea * diagsArea = NULL;
@@ -1159,7 +1153,6 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
   } // while
 
   return WORK_OK;
-#endif
 }//ExHdfsFastExtractTcb::work()
 
 void ExHdfsFastExtractTcb::insertUpQueueEntry(ex_queue::up_status status, ComDiagsArea *diags, NABoolean popDownQueue)

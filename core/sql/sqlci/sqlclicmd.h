@@ -47,10 +47,6 @@ public:
   SqlCliCmd();
   virtual ~SqlCliCmd();
   virtual short process(SqlciEnv * sqlci_env) = 0;
-  NABoolean isAllowedInSIP() { return FALSE; };
-  NABoolean isAllowedInRWMode() { return TRUE; };
-  NABoolean isAllowedInCSMode() { return FALSE; };
-
 };
 
 class CheckViolation : public SqlCliCmd {

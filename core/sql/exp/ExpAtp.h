@@ -38,7 +38,6 @@
 #ifndef EXP_ATP_H
 #define EXP_ATP_H
 
-#include "SqlExpDllDefines.h"
 // Local defines for assertions
 //
 //#define ExAtpAssert(a,b) ex_assert(a,b)
@@ -68,70 +67,50 @@ class ExStatisticsArea;
 // The first member of the array is actually a pointer to the composite row
 // descriptor.
 
-#pragma warning ( disable : 4251 )
 
-class SQLEXP_LIB_FUNC  atp_struct
+class atp_struct
 {
  public:
 
-  NA_EIDPROC
     inline ex_cri_desc* getCriDesc() const;
-  NA_EIDPROC
     inline tupp &       getTupp(Lng32 i);
-  NA_EIDPROC
     inline tupp &       getTuppForNativeExpr(long i);
-  NA_EIDPROC
     inline void         setCriDesc(ex_cri_desc *p);
   // defined in ex_queue.h
-  NA_EIDPROC
     inline void         copyAtp(const ex_queue_entry *from);
-  NA_EIDPROC
     inline void         copyAtp(atp_struct *from);
-  NA_EIDPROC
     inline void         copyPartialAtp(atp_struct * from);
-  NA_EIDPROC
     inline void         copyPartialAtp(atp_struct * from, 
 				       short first_tupp,
 				       short last_tupp);
-  NA_EIDPROC
     inline void         copyPartialAtp(atp_struct * from, 
 				       short my_first_tupp,
 				       short from_first_tupp,
 				       short last_tupp);
-  NA_EIDPROC
     inline unsigned short  numTuples() const;
-  NA_EIDPROC
     inline void         release();   // de-initialize
+    inline void releasePartialAtp(short from_first_tupp,
+				  short last_tupp) ;
 
   // 
   // Methods for manipulating diagnostics area.
   //
-  NA_EIDPROC
     inline ComDiagsArea *getDiagsArea() const;
-  NA_EIDPROC
     inline void setDiagsArea(ComDiagsArea* diagsArea);
-  NA_EIDPROC
     inline void initDiagsArea(ComDiagsArea* diagsArea);
-  NA_EIDPROC
     Long pack(void * space);
-  NA_EIDPROC
     Lng32 unpack(Lng32 base);
   
   // ****  information for GUI  *** -------------
-  NA_EIDPROC
     inline void set_tag(Int32 tag);
-  NA_EIDPROC
     inline Int32 get_tag() const;
-  NA_EIDPROC
     inline void unset_tag();
 
   // The passed-in cri will be used if it is not NULL. Otherwise
   // the cri associated with the atp is used.
-  NA_EIDPROC
   void display(const char* title = "", ex_cri_desc* cri = NULL);
   //
   // print the content of a data field, based on the data type dt
-  NA_EIDPROC
   void print(char* title, Int16 dt, char* ptr, UInt32 len);
   //---------------------------------------------
    
@@ -153,7 +132,6 @@ class SQLEXP_LIB_FUNC  atp_struct
 			      // are allocated, then the length is 3
 };                  
 
-#pragma warning ( default : 4251 )
 
 // Constructor of an Atp given a cri descriptor.  Can't make it a simple 
 // constructor since we need to allocate a variable length array.  In
@@ -162,29 +140,23 @@ class SQLEXP_LIB_FUNC  atp_struct
 // the ATP.
 // TBD: move to exp/ExpAtp.h
 
-extern SQLEXP_LIB_FUNC
 atp_struct * allocateAtp (Lng32 numTuples, CollHeap * space);
 
-extern SQLEXP_LIB_FUNC
 atp_struct * allocateAtp (ex_cri_desc * criDesc, CollHeap * space);
 
 // Create an atp inside a pre-allocated buffer instead of allocating it from
 // a space object. Used by ExpDP2Expr.
-extern SQLEXP_LIB_FUNC
 atp_struct * createAtpInBuffer (ex_cri_desc * criDesc, char * & buf);
 
 
-extern SQLEXP_LIB_FUNC
 void deallocateAtp (atp_struct * atp, CollHeap * space);
 
-extern SQLEXP_LIB_FUNC
 atp_struct * allocateAtpArray (ex_cri_desc * criDesc,
 			       Lng32 cnt,
 			       Int32 *atpSize,
 			       CollHeap * space,
                                NABoolean failureIsFatal=FALSE);
 
-extern SQLEXP_LIB_FUNC
 void deallocateAtpArray(atp_struct **atp, CollHeap * space);
 
 //
@@ -315,9 +287,7 @@ inline void atp_struct::copyPartialAtp(atp_struct * from,
 
 inline void atp_struct::copyPartialAtp(atp_struct * from)
 {
-#pragma nowarn(1506)   // warning elimination 
   copyPartialAtp(from, 0, from->numTuples()-1);
-#pragma warn(1506)  // warning elimination 
 }
 
 // De-initialize atp. deallocation is done elsewhere
@@ -333,6 +303,21 @@ inline void atp_struct::release()
     tuppArray_[i].release();
   }
 
+  // null-out diags area pointer; setDiagsArea releases existing
+  // reference to diags area if it is non-null
+  setDiagsArea(0);
+}
+
+inline void atp_struct::releasePartialAtp(short from_first_tupp,
+ 					  short last_tupp)
+{
+  // Release each tupp.
+  //
+  for(Int32 i=from_first_tupp; i<=last_tupp; i++)
+  {
+    tuppArray_[i].release();
+  }
+  
   // null-out diags area pointer; setDiagsArea releases existing
   // reference to diags area if it is non-null
   setDiagsArea(0);

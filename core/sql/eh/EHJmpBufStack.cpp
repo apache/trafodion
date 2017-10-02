@@ -33,7 +33,7 @@
 */
 
 
-#include <stdio.h>  // NT_PORT ( bd 10/22/96 ) NULL must be defined
+#include <stdio.h> 
 #include "EHCommonDefs.h"
 
 

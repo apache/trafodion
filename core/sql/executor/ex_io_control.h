@@ -47,48 +47,30 @@
 class ControlInfo 
 {
 public:
-NA_EIDPROC
   ControlInfo(): ciFlags_(HAS_NOTHING) {};
-NA_EIDPROC
   ~ControlInfo(){};
   
-NA_EIDPROC
   inline up_state &getUpState();
-NA_EIDPROC
   inline down_state &getDownState();
-NA_EIDPROC 
+
   inline ULng32 getBufferSequenceNumber();
-NA_EIDPROC 
+
   inline void setBufferSequenceNumber(ULng32 snum);
-NA_EIDPROC
   inline NABoolean getIsDiagsAreaPresent() const;
-NA_EIDPROC
   inline void setIsDiagsAreaPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsDiagsAreaUnpacked() const;
-NA_EIDPROC
   inline void setIsDiagsAreaUnpacked(NABoolean);
 // an external diags area is one that gets sent outside of the sql_buffer
-NA_EIDPROC
   inline NABoolean getIsExtDiagsAreaPresent() const;
-NA_EIDPROC
   inline void setIsExtDiagsAreaPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsDataRowPresent() const;
-NA_EIDPROC
   inline void setIsDataRowPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsStatsAreaPresent() const;
-NA_EIDPROC
   inline void setIsStatsAreaPresent(NABoolean);
 // an external stats area is one that gets sent outside of the sql_buffer
-NA_EIDPROC
   inline NABoolean getIsExtStatsAreaPresent() const;
-NA_EIDPROC
   inline void setIsExtStatsAreaPresent(NABoolean);
-NA_EIDPROC
   inline void resetFlags();
-NA_EIDPROC
   inline void copyFlags(const ControlInfo &other);
 
 private:
@@ -134,9 +116,7 @@ inline void ControlInfo::setBufferSequenceNumber(ULng32 snum)
 
 inline NABoolean ControlInfo::getIsDiagsAreaPresent() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return (ciFlags_ & HAS_DIAGSAREA);
-#pragma warn(1506)  // warning elimination 
 }
 
 inline void ControlInfo::setIsDiagsAreaPresent(NABoolean val)
@@ -162,9 +142,7 @@ inline void ControlInfo::setIsDiagsAreaUnpacked(NABoolean val)
 
 inline NABoolean ControlInfo::getIsExtDiagsAreaPresent() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return (ciFlags_ & HAS_EXT_DIAGSAREA);
-#pragma warn(1506)  // warning elimination 
 }
 
 inline void ControlInfo::setIsExtDiagsAreaPresent(NABoolean val)
@@ -177,9 +155,7 @@ inline void ControlInfo::setIsExtDiagsAreaPresent(NABoolean val)
 
 inline NABoolean ControlInfo::getIsDataRowPresent() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return (ciFlags_ & HAS_DATA);
-#pragma warn(1506)  // warning elimination 
 }
 
 inline void ControlInfo::setIsDataRowPresent(NABoolean val)
@@ -192,9 +168,7 @@ inline void ControlInfo::setIsDataRowPresent(NABoolean val)
 
 inline NABoolean ControlInfo::getIsStatsAreaPresent() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return (ciFlags_ & HAS_STATSAREA);
-#pragma warn(1506)  // warning elimination 
 }
 
 inline void ControlInfo::setIsStatsAreaPresent(NABoolean val)
@@ -207,9 +181,7 @@ inline void ControlInfo::setIsStatsAreaPresent(NABoolean val)
 
 inline NABoolean ControlInfo::getIsExtStatsAreaPresent() const
 {
-#pragma nowarn(1506)   // warning elimination 
   return (ciFlags_ & HAS_EXT_STATSAREA);
-#pragma warn(1506)  // warning elimination 
 }
 
 inline void ControlInfo::setIsExtStatsAreaPresent(NABoolean val)

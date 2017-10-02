@@ -98,11 +98,9 @@ CharType::CharType( NAMemory *h,
 	collation_	(co),
 	coercibility_	(ce)
 {
-//LCOV_EXCL_START :rfi
   ComASSERT(adtName == LiteralCHAR || adtName == LiteralVARCHAR
             || adtName == LiteralBYTE || adtName == LiteralVARBYTE
 		    || adtName == LiteralSchema || adtName == LiteralCatalog);
-//LCOV_EXCL_STOP
 
   if ( encoding == CharInfo::UnknownCharSet )
     encodingCharSet_ = charSet_;
@@ -147,11 +145,9 @@ CharType::CharType( NAMemory *h,
 	collation_	(co),
 	coercibility_	(ce)
 {
-//LCOV_EXCL_START :rfi
   ComASSERT(adtName == LiteralCHAR || adtName == LiteralVARCHAR
             || adtName == LiteralBYTE || adtName == LiteralVARBYTE
 		    || adtName == LiteralSchema || adtName == LiteralCatalog);
-//LCOV_EXCL_STOP
 
   if ( encoding == CharInfo::UnknownCharSet )
     encodingCharSet_ = charSet_;
@@ -187,12 +183,10 @@ NAString CharType::getCollateClause(CharInfo::Collation co)
   return NAString("COLLATE ") + CharInfo::getCollationName(co);
 }
 
-//LCOV_EXCL_START :rfi
 NAString CharType::getCoercibilityText(CharInfo::Coercibility ce)
 {
   return NAString("(") + CharInfo::getCoercibilityText(ce) + " coercibility)";
 }
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Return the SQL name for this type.
@@ -548,9 +542,7 @@ NABoolean CharType::computeNextKeyValue(NAString &keyValue) const
 {
   ComASSERT(getBytesPerChar() == 1);
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
 	{
 	  unsigned char c = keyValue[i];
 	  if (c < UCHAR_MAX)
@@ -561,18 +553,14 @@ NABoolean CharType::computeNextKeyValue(NAString &keyValue) const
 	  keyValue.remove(i);
   }
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::computeNextKeyValue_UTF8(NAString &keyValue) const
 {
   ComASSERT(getBytesPerChar() == 4);
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
   {
      unsigned char c = keyValue[i];
      if ( (c & 0xC0) == 0x80 ) // If not first byte in a char,
@@ -596,9 +584,7 @@ NABoolean CharType::computeNextKeyValue_UTF8(NAString &keyValue) const
      else keyValue.remove(i);
   }
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
@@ -607,9 +593,7 @@ NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
 
   NAWchar maxValue = (NAWchar)CharType::getMaxSingleCharacterValue();
 
-#pragma nowarn(259)   // warning elimination
   for (size_t i = keyValue.length(); i--; i)
-#pragma warn(259)  // warning elimination
 	{
 	  NAWchar c = keyValue[i];
 
@@ -635,9 +619,7 @@ NABoolean CharType::computeNextKeyValue(NAWString &keyValue) const
 	  keyValue.remove(i);
 	}
 
-#pragma nowarn(1506)   // warning elimination
   return keyValue.length();
-#pragma warn(1506)  // warning elimination
 }
 
 NABoolean CharType::isEncodingNeeded() const
@@ -733,10 +715,8 @@ Lng32 CharType::getMaxSingleCharacterValue() const
       break;
   } // switch (getCharSet())
 
-//LCOV_EXCL_START :rfi - unhandled charset&collation combination
   ComASSERT(FALSE);
   return INT_MIN;
-//LCOV_EXCL_STOP
 }
 
 NABoolean CharType::isCharSetAndCollationComboOK() const
@@ -895,7 +875,6 @@ NABoolean CharType::createSQLLiteral(const char * buf,
 }
 
 
-#pragma nowarn(1506)   // warning elimination
 SQLChar::SQLChar(NAMemory *h,
                  Lng32 maxLen,
 		 NABoolean allowSQLnull,
@@ -913,9 +892,7 @@ SQLChar::SQLChar(NAMemory *h,
 		varLenFlag, cs, co, ce,
 		encoding)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLChar::SQLChar(NAMemory *h,
                  const CharLenInfo & maxLenInfo,
 		 NABoolean allowSQLnull,
@@ -933,9 +910,7 @@ SQLChar::SQLChar(NAMemory *h,
 		varLenFlag, cs, co, ce,
 		encoding)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLVarChar::SQLVarChar(NAMemory *h,
                        Lng32 maxLen,
 		       NABoolean allowSQLnull,
@@ -955,9 +930,7 @@ SQLVarChar::SQLVarChar(NAMemory *h,
       clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
       wasHiveString_(FALSE)
 {}
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
 SQLVarChar::SQLVarChar(NAMemory *h, 
                        const CharLenInfo & maxLenInfo,
 		       NABoolean allowSQLnull,
@@ -1007,7 +980,6 @@ NABoolean SQLVarChar::operator==(const NAType& other) const
 // In fact, the varLenFlag param is unused:  lots of things break
 // in cli + rfork if a CharType is both nul-terminated and has a vc-header.
 // -----------------------------------------------------------------------
-#pragma nowarn(1506)   // warning elimination
 ANSIChar::ANSIChar(NAMemory *h,
                    Lng32 maxLen,
 		   NABoolean allowSQLnull,
@@ -1028,7 +1000,6 @@ ANSIChar::ANSIChar(NAMemory *h,
 //##		TRUE, allowSQLnull, isUpShifted, varLenFlag, cs, co, ce,
 //##		tokNCHARinParser)
 {}
-#pragma warn(1506)  // warning elimination
 
 short ANSIChar::getFSDatatype() const
 {
@@ -1043,10 +1014,8 @@ short ANSIChar::getFSDatatype() const
 #endif
        return REC_BYTE_V_ANSI_DOUBLE;
   default:
-//LCOV_EXCL_START :rfi - ANSIChar can be ISO88591 or UCS2 only
     ComASSERT(FALSE);
     return REC_BYTE_V_ANSI;
-//LCOV_EXCL_STOP
   }
 }
 
@@ -1068,10 +1037,8 @@ short SQLChar::getFSDatatype() const
       return REC_BYTE_F_ASCII;
     // fall through
   default:
-//LCOV_EXCL_START :rfi - no values other than 1,2, & 4 are supported by the code.
     ComASSERT(FALSE);
     return REC_BYTE_F_ASCII;
-//LCOV_EXCL_STOP
   }
 }
 
@@ -1093,20 +1060,16 @@ short SQLVarChar::getFSDatatype() const
       return REC_BYTE_V_ASCII;
     // fall through
   default:
-//LCOV_EXCL_START :rfi - - no values other than 1,2, & 4 are supported by the code.
     ComASSERT(FALSE);
     return REC_BYTE_V_ASCII;
-//LCOV_EXCL_STOP
   }
 }
 
-//LCOV_EXCL_START :rfi
 short CharType::getFSDatatype() const
 {
   ComASSERT(FALSE);
   return -1;
 }
-//LCOV_EXCL_STOP
 
 Lng32 CharType::getPrecisionOrMaxNumChars() const
 {
@@ -1161,14 +1124,12 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
 // -----------------------------------------------------------------------
 // Print function for debugging
 // -----------------------------------------------------------------------
-//LCOV_EXCL_START :rfi
 void CharType::print(FILE *ofd, const char *indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s%s\n",indent,getTypeSQLname());
 #endif
 } // CharType::print()
-//LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // A method for generating the hash key.
@@ -1231,7 +1192,7 @@ void CharType::minMaxRepresentableValue(void* bufPtr,
     break;
 
   default:
-    ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- no other CharSets are supported yet.
+    ComASSERT(FALSE);
   }
 
   // copy the output value length into the varchar len header
@@ -1297,7 +1258,6 @@ double SQLChar::getMinValue() const
 }
 
 
-//LCOV_EXCL_START : cnu -- As of 8/30/2011, needed to link successfully, but not actually called.
 double SQLChar::encode (void *bufPtr) const
 {
 #if 1  /* Stub */
@@ -1311,7 +1271,6 @@ return 0;
   return encodeString(charBufPtr,getNominalSize());
 #endif
 }
-//LCOV_EXCL_STOP : cnu -- As of 8/30/2011, needed to link successfully, but not actually called.
 
 // -- Min and max permissible values for a VARCHAR string
 // ## These too will need to be changed to handle different collating sequences
@@ -1331,7 +1290,6 @@ void SQLVarChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
   minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, TRUE, h);
 }
 
-//LCOV_EXCL_START : cnu -- As of 8/30/2011, needed to link successfully, but not actually called.
 double SQLVarChar::encode (void *bufPtr) const
 {
 #if 1  /* Stub */
@@ -1350,7 +1308,6 @@ return 0;
   return encodeString(&charBufPtr[getVarLenHdrSize()],actualLen);
 #endif
 }
-//LCOV_EXCL_STOP : cnu -- As of 8/30/2011, needed to link successfully, but not actually called.
 
 THREAD_P NABoolean pushDownRequiredByODBC = TRUE;
 
@@ -1437,9 +1394,7 @@ const CharType* CharType::desiredCharType(enum CharInfo::CharSet cs)
     default:
       return &latin1Char;
   }
-#pragma nowarn(203)   // warning elimination
   return 0;
-#pragma warn(203)  // warning elimination
 }
 
 // round length up to next bigger quantum step

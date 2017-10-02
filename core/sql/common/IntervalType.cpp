@@ -493,7 +493,6 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
   } // switch
 } // synthesizeType()
 
-#pragma nowarn(1319)   // warning elimination 
 Lng32 IntervalType::getDisplayLength() const
   {
     //
@@ -501,7 +500,6 @@ Lng32 IntervalType::getDisplayLength() const
     //
     return getStringSize() - 1;
   }
-#pragma warn(1319)  // warning elimination 
 
 // ***********************************************************************
 //  IntervalType : Min and max values, and encoding
@@ -523,9 +521,7 @@ void IntervalType::getRepresentableValue(char sign,
     *v++ = sign;
     digit = '9';
   }
-#pragma nowarn(1506)   // warning elimination 
   Int32 i = getLeadingPrecision();
-#pragma warn(1506)  // warning elimination 
   for (; i > 0; i--) *v++ = digit;
   if (getStartField() != REC_DATE_FRACTION_MP) {
     for (Int32 field = getStartField() + 1; field <= getEndField(); field++) {
@@ -534,9 +530,7 @@ void IntervalType::getRepresentableValue(char sign,
             digit == '0' ? 0 : maxITVal[index]);
     v += IntervalFieldStringSize;
     }
-#pragma nowarn(1506)   // warning elimination 
     if (i = getFractionPrecision()) {
-#pragma warn(1506)  // warning elimination 
     *v++ = '.';
     for ( ; i > 0; i--) *v++ = digit;
     }
@@ -1029,22 +1023,12 @@ double SQLInterval::encode(void *bufPtr) const
     val = temp;
     break;
   }
-#ifdef NA_64BIT
-  // dg64 - a bit of a guess
   case sizeof(Int32): {
     Int32 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int32));
     val = temp;
     break;
   }
-#else
-  case sizeof(Lng32): {
-    Lng32 temp;
-    memcpy((char *) &temp, valPtr, sizeof(Lng32));
-    val = temp;
-    break;
-  }
-#endif
   case sizeof(Int64): {
     Int64 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int64));

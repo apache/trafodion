@@ -40,12 +40,8 @@
  */
 
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 
 #include <stdio.h>
 #include "NAAssert.h"   // required after including a RogueWave file!
@@ -1945,6 +1941,13 @@ enum ComQiScope
 // max size 16Mb
 #define MAX_CHAR_COL_LENGTH_IN_BYTES 16777216
 #define MAX_CHAR_COL_LENGTH_IN_BYTES_STR "16777216"
+
+enum BMOQuotaRatio 
+ {
+    NO_RATIO = -1,
+    MIN_QUOTA = 0,
+    MAX_QUOTA = 1 
+ };
 
 //
 // Definition of class ComUID

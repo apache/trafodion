@@ -165,7 +165,6 @@ ExpGenerator::ExpGenerator(Generator * generator_)
                    ex_expr::PCODE_LLO;
       break;
     }
-#ifdef NA_64BIT
   static Int32 pcodeEnvSet = 0;
   static Int32 pcodeEnv = 1;  // if non-zero, pcode is enabled as before.
   if (pcodeEnvSet == 0)
@@ -178,7 +177,6 @@ ExpGenerator::ExpGenerator(Generator * generator_)
     }
   if (pcodeEnv == 0)
     pCodeMode_ = ex_expr::PCODE_NONE;
-#endif
 
   addPCodeMode( ex_expr::PCODE_SPECIAL_FIELDS );
 
@@ -273,9 +271,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 
       attr->setRowsetSize(rsSize);
       result = attr;
-#pragma nowarn(1506)   // warning elimination
       attr->setNullFlag(naType->supportsSQLnull());
-#pragma warn(1506)  // warning elimination
       attr->setNullIndicatorLength((short) naType->getSQLnullHdrSize());
       attr->setVCIndicatorLength((short) naType->getVarLenHdrSize());
       attr->setDatatype(naType->getFSDatatype());
@@ -284,9 +280,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
       if (naType_x.getTypeQualifier() == NA_ROWSET_TYPE) {
 	if (((SQLRowset *)(&naType_x))->useTotalSize()) {
 	  // This indicates us to use the whole array size
-#pragma nowarn(1506)   // warning elimination
  	  attr->setLength(sizeof(Lng32) + (attr->getRowsetSize() * naType->getTotalSize()));
-#pragma warn(1506)  // warning elimination
 	  result->setUseTotalRowsetSize();
 	  ((SQLRowset *)(&naType_x))->useTotalSize() = FALSE;
 	}
@@ -350,19 +344,13 @@ Attributes * ExpGenerator::convertNATypeToAttributes
           {
             attr->setPrecision(REC_DTCODE_SECOND);
           }
-#pragma nowarn(1506)   // warning elimination
           attr->setScale(datetimeType->getFractionPrecision());
-#pragma warn(1506)  // warning elimination
         }
       else if (naType->getTypeQualifier() == NA_INTERVAL_TYPE)
         {
           const IntervalType *intervalType = (const IntervalType *) naType;
-#pragma nowarn(1506)   // warning elimination
           attr->setPrecision(intervalType->getLeadingPrecision());
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(1506)   // warning elimination
           attr->setScale(intervalType->getFractionPrecision());
-#pragma warn(1506)  // warning elimination
           if (attr->getDatatype() == REC_INT_FRACTION)
           {
            attr->setDatatype(REC_INT_SECOND);
@@ -397,16 +385,12 @@ Attributes * ExpGenerator::convertNATypeToAttributes
             BigNum(numericType->getNominalSize(),
                    numericType->getPrecision(),
                    (short)numericType->getScale(),
-#pragma nowarn(1506)   // warning elimination
                    numericType->isUnsigned());
-#pragma warn(1506)  // warning elimination
 
 	  attr->setRowsetSize(rsSize);
           result = attr;
 
-#pragma nowarn(1506)   // warning elimination
           attr->setNullFlag(naType->supportsSQLnull());
-#pragma warn(1506)  // warning elimination
           attr->setNullIndicatorLength((short) naType->getSQLnullHdrSize());
           attr->setVCIndicatorLength((short) naType->getVarLenHdrSize());
           attr->setDatatype(numericType->getFSDatatype());
@@ -415,9 +399,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 	  if (naType_x.getTypeQualifier() == NA_ROWSET_TYPE) {
 	    if (((SQLRowset *)(&naType_x))->useTotalSize()) {
 	      // This indicates us to use the whole array size
-#pragma nowarn(1506)   // warning elimination
 	      attr->setLength(sizeof(Lng32) + (attr->getRowsetSize() * naType->getTotalSize()));
-#pragma warn(1506)  // warning elimination
 	      result->setUseTotalRowsetSize();
 	      ((SQLRowset *)(&naType_x))->useTotalSize() = FALSE;
 	    }
@@ -1090,14 +1072,12 @@ ItemExpr * ExpGenerator::matchScalesNoCast(const ValueId & source,
   // Upscale or downscale the source to the target scale.  If the source scale
   // is the same as the target scale, return the source tree unchanged.
   //
-#pragma nowarn(1506)   // warning elimination
   Lng32 sourceScale = (source.getType().getTypeQualifier() == NA_NUMERIC_TYPE)
     ? ((NumericType &) source.getType()).getScale()
     : ((IntervalType &) source.getType()).getFractionPrecision();
   Lng32 targetScale = (targetType.getTypeQualifier() == NA_NUMERIC_TYPE)
     ? ((NumericType &) targetType).getScale()
     : ((IntervalType &) targetType).getFractionPrecision();
-#pragma warn(1506)  // warning elimination
   if (sourceScale == targetScale)
     return retTree;
 
@@ -1159,7 +1139,6 @@ ItemExpr * ExpGenerator::convertIntervalToNumeric(const ValueId & source)
   //
   // Convert the source interval to numeric, bind the tree, and return it.
   //
-#pragma nowarn(1506)   // warning elimination
   const Int16 DisAmbiguate = 0;
   retTree = new(wHeap())
     Cast(retTree, new(wHeap()) SQLNumeric(wHeap(), TRUE, /* signed */
@@ -1167,7 +1146,6 @@ ItemExpr * ExpGenerator::convertIntervalToNumeric(const ValueId & source)
 				     sourceInterval.getFractionPrecision(),
 				     DisAmbiguate, // added for 64bit proj.
 				     sourceInterval.supportsSQLnull()));
-#pragma warn(1506)  // warning elimination
   retTree->bindNode(generator->getBindWA());
 
   return retTree;
@@ -2958,9 +2936,7 @@ NABoolean ExpGenerator::processKeyEncodingOptimization(
   CollIndex i = 0;
   while ( i < prevColNumber )
     {
-#pragma nowarn(1506)   // warning elimination
       if (allColumns.getColumn(i)->getType()->getVarLenHdrSize() > 0)
-#pragma warn(1506)  // warning elimination
 	return TRUE;
       else
 	i++;
@@ -2973,27 +2949,21 @@ NABoolean ExpGenerator::processKeyEncodingOptimization(
     {
       ValueId valId = indexKey[i];
 
-#pragma nowarn(1506)   // warning elimination
       NAColumn * naCol = indexKeyColumns.getColumn(i);
-#pragma warn(1506)  // warning elimination
 
       Attributes * thisAttr = generator->getMapInfo(valId)->getAttr();
 
-#pragma warning (disable : 4018)  //warning elimination
       if ((valId.getType().isEncodingNeeded() == TRUE)  ||
 	  ((valId.getType().getTypeQualifier() == NA_CHARACTER_TYPE) &&  
 	   ((((CharType&)valId.getType()).isCaseinsensitive())  ||
            (CollationInfo::isSystemCollation(((CharType&)valId.getType()).getCollation())))) ||
 	  (valId.getType().supportsSQLnull()  == TRUE)  ||
 	  (indexKeyColumns.isAscending(i) == FALSE)     ||
-#pragma nowarn(270)   // warning elimination
 	  ((naCol->getPosition() - prevColNumber) < 0)   ||
-#pragma warn(270)  // warning elimination
 	  ((naCol->getPosition() - prevColNumber) > 1)   ||
 	  ((thisAttr->getOffset() - prevAttr->getOffset())
 	   > prevAttr->getStorageLength())               ||
           (!naCol->isStoredOnDisk()))
-#pragma warning (default : 4018)  //warning elimination
 	return TRUE;
 
       prevColNumber = naCol->getPosition();
@@ -3406,9 +3376,7 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
       relativeMin = new(wHeap()) Cast(relativeMin,targetType);
 
       // Add an encode node here.
-#pragma nowarn(1506)   // warning elimination
       relativeMin = new(wHeap()) CompEncode(relativeMin, desc_flag);
-#pragma warn(1506)  // warning elimination
 
       ItemExpr * relativeMax = new(wHeap()) ConstValue(targetType->newCopy(wHeap()),
 						       desc_flag,
@@ -3416,9 +3384,7 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
       relativeMax = new(wHeap()) Cast(relativeMax,targetType);
 
       // Add an encode node here.
-#pragma nowarn(1506)   // warning elimination
       relativeMax = new(wHeap()) CompEncode(relativeMax, desc_flag);
-#pragma warn(1506)  // warning elimination
 
       knode = createExprTree("CASE WHEN @A1 = 0 THEN @A2 WHEN @A1 < 0 THEN @A3 ELSE @A4 END",
                              0,
@@ -3617,13 +3583,11 @@ short ExpGenerator::generateInputExpr(const ValueIdList &val_id_list,
 	  //	  attr[0] = generator->getMapInfo(val_id)->getAttr();
 	  attr[0] = generator->getAttr(item_expr);
 
-#pragma nowarn(1506)   // warning elimination
 	  if (getShowplan())
 	    attr[1] =
 	      new(wHeap()) ShowplanAttributes(val_id,
 					      convertNAString(item_expr->getText(),
 							      generator->wHeap()));
-#pragma warn(1506)  // warning elimination
 
 	  num_input_entries++;
 
@@ -4593,13 +4557,9 @@ short ExpGenerator::assignAtpAndAtpIndex(ValueIdList valIdList,
     {
       Attributes * attr = generator->getMapInfo(valIdList[i])->getAttr();
       if (atp >= 0)
-#pragma nowarn(1506)   // warning elimination
 	attr->setAtp(atp);
-#pragma warn(1506)  // warning elimination
       if (atpIndex >= 0)
-#pragma nowarn(1506)   // warning elimination
 	attr->setAtpIndex(atpIndex);
-#pragma warn(1506)  // warning elimination
     }
 
   return 0;
@@ -4683,9 +4643,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
   // get the PCode mode from the ctor ExpGenerator and set it in the
   // expression itself.  This allows us to regenerate PCode at runtime
   // (for versioning) with the same mode specified at compile time.
-#pragma nowarn(1506)   // warning elimination
   (*expr)->setPCodeMode( getPCodeMode() );
-#pragma warn(1506)  // warning elimination
 
   // Get default low-level opt flags and prevent predicate reordering from
   // happening if this expression represents a case statement.
@@ -4730,33 +4688,23 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 
   // Set the constant expression storage length and area.
   //
-#pragma nowarn(1506)   // warning elimination
   char * constants_area = placeConstants(getConstantList(), getConstLength());
-#pragma warn(1506)  // warning elimination
   (*expr)->setConstantsArea(constants_area);
-#pragma nowarn(1506)   // warning elimination
   (*expr)->setConstsLength(getConstLength());
-#pragma warn(1506)  // warning elimination
 
   // Set the persistent expression storage length and initialization area.
   //
   char *persistentInitializationArea
-#pragma nowarn(1506)   // warning elimination
     = placeConstants(getPersistentList(), persistentLength());
-#pragma warn(1506)  // warning elimination
   (*expr)->persistentInitializationArea() = persistentInitializationArea;
-#pragma nowarn(1506)   // warning elimination
   (*expr)->persistentLength() = persistentLength();
-#pragma warn(1506)  // warning elimination
   (*expr)->persistentArea()
     = getSpace()->allocateAlignedSpace(persistentLength());
 
 
   // Set the temporary expression storage length.
   //
-#pragma nowarn(1506)   // warning elimination
   (*expr)->setTempsLength(getTempsLength());
-#pragma warn(1506)  // warning elimination
 
   // set the pointer to the first clause in the ex_expr
   (*expr)->setClauses((ex_clause *)(getClauseList()->getElement()));
@@ -4790,9 +4738,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
   Lng32 totalExprLen =
     getSpace()->getAllocatedSpaceSize() - (*expr)->getLength();
 
-#pragma nowarn(1506)   // warning elimination
   (*expr)->setLength(totalExprLen);
-#pragma warn(1506)  // warning elimination
 #ifdef NEW_LEAN_EXPR
   // If tempSpace exists, then the entire expression was written to it, so
   // we need to now make a "lean" copy of it and copy it back into the
@@ -4832,9 +4778,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
          clause;
          clause = clause->getNextClause())
       {
-	if ((clause->getClassID() == ex_clause::FUNC_EXTRACT_COLUMNS) ||
-	    (clause->getClassID() == ex_clause::FUNC_AUDIT_ROW_IMAGE) ||
-	    (clause->getClassID() == ex_clause::FUNC_HBASE_COLUMN_CREATE) ||
+        if ((clause->getClassID() == ex_clause::FUNC_HBASE_COLUMN_CREATE) ||
 	    (clause->getClassID() == ex_clause::FUNC_HBASE_COLUMNS_DISPLAY))
 	  tooHard = TRUE;
         break;
@@ -5057,9 +5001,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 	    getSpace()->getAllocatedSpaceSize() - len1;
 	  pcodeExprLen = ((ex_expr_lean*)newExpr)->getPCodeSize();
 
-#pragma nowarn(1506)   // warning elimination
 	  ((ex_expr_lean*)newExpr)->setLength(totalExprLen);
-#pragma warn(1506)  // warning elimination
 	}
 
       delete tempSpace;
@@ -5269,9 +5211,7 @@ NABoolean GenEvalPredicate(ItemExpr * rootPtr)
 					       workCriDesc,
 					       space);
 
-#pragma nowarn(1506)   // warning elimination
   dp2Expr->setPCodeMode( expGen.getPCodeMode() );
-#pragma warn(1506)  // warning elimination
 
   dp2Expr->getExpr()->fixup(0,0,0,NULL,NULL,FALSE,NULL);
 
@@ -5325,155 +5265,9 @@ short ExpGenerator::generateSamplingExpr(const ValueId &valId, ex_expr **expr,
   GenAssert(attr->getAtpIndex() == 1,
 	    "Sampling result must be a persistent expression variable.");
 
-#pragma nowarn(1506)   // warning elimination
   returnFactorOffset = attr->getOffset();
-#pragma warn(1506)  // warning elimination
 
   return 0;
-}
-
-short ExpGenerator::generateIarExtractionExpr (
-                                          Int32 workAtp,
-                                          Int32 workAtpIndex,
-                                          const ValueIdList &extractedColIdList,
-                                          Int32 extractedRowLen,
-                                          const ValueId &auditImageId,
-                                          const ValueId &mfMapId,
-                                          ExpTupleDesc *extractedRowDesc,
-                                          ExpTupleDesc *auditImageDesc,
-                                          ULng32 *extractColList,
-                                          UInt32 compressedAuditFlag,
-                                          ULng32 encodedKeyLength,
-                                          ex_expr ** expr )
-{
-   ExFunctionExtractColumns *extractClause = 0;
-
-   // 3 operands.
-   // input: the audit row image and possibly the mfMap, in the
-   //        upEntry/downEntry atp, atp 0.
-   // output: the extracted tuple, in the upEntry atp, atp 0.
-   short numOperands;
-   short totalNumOperands;
-   Attributes **attr;
-
-   // Compute how many input operands this expression will work with. If
-   // a null constant is passed in for the modified field map (this is allowed
-   // by the parser), then there is no need to process it or pass it in as an
-   // operand. A flag is set in the expression indicating that a null constant
-   // was used. Note that only a null constant can be passed in - any other
-   // constant value should be caught by the parser, but if not, will cause
-   // an assertion here.
-   if (mfMapId.getItemExpr()->getOperatorType() == ITM_CONSTANT)
-   {
-      ConstValue * constant = (ConstValue *)(mfMapId.getItemExpr());
-      GenAssert((constant->isNull()), "Cannot have a non-null constant value for the modified field map parameter to INTERPRET_AS_ROW");
-
-      numOperands = 2;
-   }
-   else
-      numOperands = 3;
-
-   totalNumOperands = numOperands;
-
-   // Initialize clause list, constants list etc. and allocate a map table.
-   // By not calling initExprGen() we avoid using tempSapce. 
-   // We don't want to use tempSpace here because the datamembers of 
-   // EXE_IAR_ERROR_EXTRACTING_COLUMNS actully use fagment space.
-   // Such uses confuse the codeGenerator() during packing and unpacking
-   // that is used as part of the Leaner Expressiopn project.
-   // Hence we use fragment space for generating IAR expressions.
-   // initExprGen();
-   startExprGen(expr,ex_expr::exp_ARITH_EXPR);
-
-   // This is a showplan statement.
-   if (getShowplan())
-#pragma nowarn(1506)
-     totalNumOperands = totalNumOperands * 2;
-#pragma warn(1506)
-
-   attr = new(generator->wHeap()) Attributes * [totalNumOperands];
-
-   // attr[0] gives the extracted row, i.e., the extracted columns. Allocate
-   // an Attribute object with the atp set to the workAtp and the atpIndex
-   // set to workAtpIndex. Initialize all the other relevant attributes.
-   attr[0] = (Attributes *) new(generator->wHeap())
-                               SimpleType(extractedRowLen, 1, 0);
-   attr[0]->setDatatype(REC_BYTE_F_ASCII);
-   attr[0]->setTupleFormat(ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
-   attr[0]->setOffset(0);
-   attr[0]->setNullIndicatorLength(0);
-   attr[0]->setNullFlag(0);
-   attr[0]->setVCIndicatorLength(0);
-#pragma nowarn(1506)
-   attr[0]->setAtpIndex(workAtpIndex);
-   attr[0]->setAtp(workAtp);
-#pragma warn(1506)
-
-   // attr[1] gives the input audit row image
-   attr[1] = generator->getMapInfo(auditImageId)->getAttr();
-
-   if (numOperands == 3)
-   {
-      // attr[2] gives the input modified field map
-      attr[2] = generator->getMapInfo(mfMapId)->getAttr();
-   }
-
-   if (getShowplan())
-   {
-     attr[0]->setShowplan();
-     NAString extractedCols;
-     for (CollIndex i=0; i<extractedColIdList.entries(); i++)
-     {
-        extractedCols += extractedColIdList[i].getItemExpr()->getText();
-        if (i < extractedColIdList.entries() - 1)
-           extractedCols += ", ";
-     }
-
-#pragma nowarn(1506)
-     ValueId dummyValId(NULL_VALUE_ID);
-     attr[numOperands] = new(generator->wHeap())
-                  ShowplanAttributes
-                   (dummyValId,
-                    convertNAString(extractedCols,
-                                    generator->wHeap())
-                   );
-     attr[numOperands+1] = new(generator->wHeap())
-                  ShowplanAttributes
-                   (auditImageId,
-                    convertNAString(auditImageId.getItemExpr()->getText(),
-                                    generator->wHeap())
-                   );
-     if (numOperands == 3)
-     {
-        attr[numOperands+2] = new(generator->wHeap())
-                     ShowplanAttributes
-                       (mfMapId,
-                        convertNAString(mfMapId.getItemExpr()->getText(),
-                                        generator->wHeap())
-                       );
-     }
-#pragma warn(1506)
-
-   }
-
-   // Create the extraction clause, which has the information to do the
-   // actual work.
-   extractClause = new(getSpace()) ExFunctionExtractColumns(ITM_EXTRACT_COLUMNS,
-                                                            numOperands,
-                                                            attr,
-                                                            getSpace(),
-                                                            compressedAuditFlag,
-                                                            extractColList,
-                                                            encodedKeyLength,
-                                                            auditImageDesc,
-                                                            extractedRowDesc);
-
-   // Add extract clause to the clause_list. This is attached to the expression
-   // by the method endExprGen().
-   linkClause(0, extractClause);
-
-   endExprGen (expr, -1);
-   return 0;
 }
 
 MapInfo *ExpGenerator::addTemporary(ValueId val, MapTable *mapTable)

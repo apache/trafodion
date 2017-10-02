@@ -481,9 +481,7 @@ ComResWords::isSqlReservedWord(const char *word,NABoolean mp_context,
     // Upper case all words since all the words in the resword table
     // are also uppercase.
     //
-#pragma nowarn(1506)   // warning elimination 
     uword[i] = TOUPPER(word[i]);
-#pragma warn(1506)  // warning elimination 
     i++;
   }
   uword[i] = '\0';
@@ -506,16 +504,12 @@ ComResWord * ComResWords::binarySearch(ComResWord *val)
    Int32 lower = 0;
    size_t numEntries = sizeof(resWords_)/sizeof(ComResWord);
 
-#pragma nowarn(1506)   // warning elimination 
    Int32 upper = numEntries -1;
-#pragma warn(1506)  // warning elimination 
    short result = 0;
    while ( lower <= upper ) 
    {
     Int32 middle = (lower+upper) >> 1;
-#pragma nowarn(1506)   // warning elimination 
     result = wordCompare(&(resWords_[middle]), val);
-#pragma warn(1506)  // warning elimination 
 
     if ( result == 0 )
        return (ComResWord*)(&(resWords_[middle]));

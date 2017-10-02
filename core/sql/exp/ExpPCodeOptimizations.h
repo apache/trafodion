@@ -66,7 +66,7 @@
 #include "exp_attrs.h"
 
 #include "Collections.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "Int64.h"
 #include "OperTypeEnum.h"
 #include "ExpAtp.h"
@@ -123,7 +123,6 @@ inline uint16_t _byteswap_ushort(uint16_t value) {
 
 #include "ExecutionEngine/ExecutionEngine.h"
 
-#ifndef __EID  /* When in EID, must NOT reference routines in LLVM libraries */
 #include "ExecutionEngine/JIT.h"
 #include "LLVMContext.h"
 #include "llvm/Module.h"  /* Must put llvm/ here to avoid including .../cli/Module.h */
@@ -132,7 +131,6 @@ inline uint16_t _byteswap_ushort(uint16_t value) {
 #include "Analysis/Passes.h"
 #include "DataLayout.h"
 #include "Transforms/Scalar.h"
-#endif  /* __EID */
 
 #include "IRBuilder.h"
 #include "Config/config.h"
@@ -200,7 +198,7 @@ typedef NAList<NExTempListEntry*> NExTEMPSLIST ;
 
 typedef NAArray<PCodeBlock*> BLOCKARRAY;
 
-NA_EIDPROC ULng32 collIndexHashFunc2(const CollIndex & o);
+ULng32 collIndexHashFunc2(const CollIndex & o);
 
 // -----------------------------------------------------------------------
 // Macros
@@ -555,7 +553,7 @@ public:
   Int32 len_;   // Length of data
   Int32 align_; // Alignment of data
 
-  friend NA_EIDPROC ULng32 constHashFunc(const PCodeConstants& c);
+  friend ULng32 constHashFunc(const PCodeConstants& c);
 
   // Two constants are equal if their lengths, alignment, and data are the same.
   NABoolean operator==(const PCodeConstants& other) const {
@@ -659,7 +657,7 @@ public:
   Int32 idx_;  // Tupp index of null indicator
   Int32 off_;  // Column offset of null indicator
 
-  friend NA_EIDPROC ULng32 nullTripleHashFunc(const NullTriple& o);
+  friend ULng32 nullTripleHashFunc(const NullTriple& o);
 
   NABoolean operator==(const NullTriple& other) const {
     return ((other.off_ == off_) && (other.idx_ == idx_) &&
@@ -829,9 +827,9 @@ private:
 public:
 
   // Hash function used to insert operand bv element into hash table
-  NA_EIDPROC friend ULng32 operandHashFunc(const PCodeOperand& o);
+  friend ULng32 operandHashFunc(const PCodeOperand& o);
 
-  NA_EIDPROC friend ULng32 collIndexHashFunc(const CollIndex & o);
+  friend ULng32 collIndexHashFunc(const CollIndex & o);
 
   // Operator equals function to compare two operand bv elements
   NABoolean operator==(const PCodeOperand& other) const {
@@ -1305,7 +1303,7 @@ public:
   NABitVector zeroesVector;  // Zeroes constant vector
   NABitVector neg1Vector;    // Neg1 constant vector
 
-  friend NA_EIDPROC ULng32 collIndexHashFunc2(const CollIndex & o);
+  friend ULng32 collIndexHashFunc2(const CollIndex & o);
 
   ReachDefsTable* reachingDefsTab_;
 
@@ -1679,18 +1677,14 @@ public:
   static const Int32 INVALID_INT32  = 0xFEFEFEFE;
   static const Int64 INVALID_INT64  = 0xFEFEFEFEFEFEFEFELL;
 
-#ifdef NA_64BIT
   #define INVALID_LONG INVALID_INT64
-#else
-  #define INVALID_LONG INVALID_INT32
-#endif 
 
   // Static const variables used.
   static const Int32 MAX_NUM_PCODE_INSTS = 500;
   static const Int32 MAX_HASHCOMB_BULK_OPERANDS = 100;
 
   // Friend classes
-  // friend NA_EIDPROC ULng32 targetHashFunc(const Int32 & o);
+  // friend ULng32 targetHashFunc(const Int32 & o);
 
   // Constructor Routines
   PCodeCfg(ex_expr* expr,
@@ -1711,11 +1705,7 @@ public:
     // deallocation can be done quickly.  If we're called from within EID,
     // however, heap_ should just be the heap passed in.
 
-#ifndef __EID
     heap_ = new(heap) NAHeap("Pcode", (NAHeap*)heap, (Lng32)32768);
-#else
-    heap_ = heap;
-#endif
 
     allBlocks_ = new(heap) BLOCKLIST(heap_, 10);
     allInsts_ = new(heap) INSTLIST(heap_, 20);

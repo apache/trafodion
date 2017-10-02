@@ -38,7 +38,7 @@
 #include "Platform.h"
 
 extern "C" { 
-NA_EIDPROC void
+void
 VPROC (PRODNUMEID,DATE1EID,EID_CC_LABEL)
 () {} }
 

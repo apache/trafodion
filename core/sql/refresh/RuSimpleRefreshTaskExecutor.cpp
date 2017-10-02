@@ -60,7 +60,6 @@ CRUSimpleRefreshTaskExecutor(CRURefreshTask *pParentTask) :
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::StoreRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSimpleRefreshTaskExecutor::
 	StoreRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -72,12 +71,10 @@ void CRUSimpleRefreshTaskExecutor::
 	// Handle refresh executor sql dynamic container
 	simpleRefreshTEDynamicContainer_.StoreData(translator);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::StoreReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSimpleRefreshTaskExecutor::
 	StoreReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -86,12 +83,10 @@ void CRUSimpleRefreshTaskExecutor::
 	// Handle numOfPhases_ data member
 	translator.WriteBlock(&numOfPhases_,sizeof(short));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::LoadRequest()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSimpleRefreshTaskExecutor::
 	LoadRequest(CUOFsIpcMessageTranslator &translator)
 {
@@ -103,12 +98,10 @@ void CRUSimpleRefreshTaskExecutor::
 	// Handle refresh executor sql dynamic container
 	simpleRefreshTEDynamicContainer_.LoadData(translator);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::LoadReply()
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :cnu
 void CRUSimpleRefreshTaskExecutor::
 	LoadReply(CUOFsIpcMessageTranslator &translator)
 {
@@ -117,7 +110,6 @@ void CRUSimpleRefreshTaskExecutor::
 	// Handle numOfPhases_ data member
 	translator.ReadBlock(&numOfPhases_,sizeof(short));
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::Init()
@@ -197,7 +189,6 @@ void CRUSimpleRefreshTaskExecutor::ComposeMySql()
 // (an MV with min/max on non insert only tables may require this method).
 //
 //--------------------------------------------------------------------------//
-// LCOV_EXCL_START :rfi
 void CRUSimpleRefreshTaskExecutor::HandleSqlError(CDSException &ex,
 												  Lng32 errorCode,
 												  const char *errorArgument)
@@ -209,7 +200,6 @@ void CRUSimpleRefreshTaskExecutor::HandleSqlError(CDSException &ex,
 
 	inherited::HandleSqlError(ex,errorCode,errorArgument);
 }
-// LCOV_EXCL_STOP
 
 //--------------------------------------------------------------------------//
 //	CRUSimpleRefreshTaskExecutor::PrepareRecomputeMV()
@@ -392,7 +382,6 @@ BOOL CRUSimpleRefreshTaskExecutor::
 		pStat = simpleRefreshTEDynamicContainer_.
 						GetPreparedStatement(INTERNAL_REFRESH, FALSE);
 	}
-	// LCOV_EXCL_START :rfi
 	catch (CDSException &ex)
 	{
 		if (ex.GetErrorCode(0) == MIN_MAX_RECOMPUTATION_NEEDED   ||
@@ -408,7 +397,6 @@ BOOL CRUSimpleRefreshTaskExecutor::
 							GetLastSQL(INTERNAL_REFRESH));
 		throw ex;	// Re-throw
 	}
-	// LCOV_EXCL_STOP
 
 	if (TRUE == pStat->HasWarning() )
 	{

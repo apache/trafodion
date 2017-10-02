@@ -40,7 +40,7 @@
 
 
 
-#include "Platform.h"                           // NT_PORT SK 02/08/97
+#include "Platform.h"           
 #include "Collections.h"
 #include "ProcessEnv.h"
 #include "CmpCommon.h"
@@ -136,7 +136,6 @@ Int32 ProcessEnv::unsetEnv(char* env)
   return 0;
 }
 
-#ifdef NA_CMPDLL
 void ProcessEnv::resetEnv(const char* envName)
 {
   if (!envName)
@@ -172,7 +171,6 @@ void ProcessEnv::resetEnv(const char* envName)
     envs_.remove(deleteArray[j]);
   }
 }
-#endif // NA_CMPDLL
 
 Int32 ProcessEnv::chdir(char* dir) 
 {
@@ -276,9 +274,7 @@ void ProcessEnv::removeEnv(char **newenvs, Lng32 nEnvs)
   CollHeap *stmtHeap = CmpCommon::statementHeap();
   NAList<Lng32> deleteArray(stmtHeap, 16);
 
-#pragma warning (disable : 4018)  //warning elimination
   for (j=0; j < envs_.getSize(); j++)
-#pragma warning (default : 4018)  //warning elimination
   {
     if (envs_.used(j))
     {
@@ -302,9 +298,7 @@ void ProcessEnv::removeEnv(char **newenvs, Lng32 nEnvs)
     }
   }
 
-#pragma warning (disable : 4018)  //warning elimination
   for (j=0; j < deleteArray.entries(); j++) {
-#pragma warning (default : 4018)  //warning elimination
     envs_.remove(deleteArray[j]);
   }
 

@@ -346,7 +346,6 @@ NABoolean ViewColumnConnection::operator==(const ViewColumnConnection &other) co
 //============================================================================
 // ViewColumnConnection and ViewTableConnection classes ignored from coverage
 // testing until MV on view is supported.
-// LCOV_EXCL_START
 
 //----------------------------------------------------------------------------
 ViewTableConnection::~ViewTableConnection()
@@ -637,7 +636,6 @@ void ViewColumnGraph::display() const
 
 #endif
 
-// LCOV_EXCL_STOP
 
 //============================================================================
 //=======================  class MVVegPredicateColumn ========================
@@ -673,7 +671,6 @@ MVVegPredicateColumn::MVVegPredicateColumn(const BaseColumn  *baseCol,
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVVegPredicateColumn::print(FILE* ofd, const char* indent, const char* title) const
 {
   NAString tableText =  getTableName().getQualifiedNameAsString();
@@ -700,7 +697,6 @@ void MVVegPredicateColumn::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -949,9 +945,7 @@ Lng32 MVVegPredicate::findIndexFor(const QualifiedName& tableName,
     const MVVegPredicateColumn *col = at(i);
     if ((col->getTableName() == tableName) && 
 	(col->getColNumber() == colPosition))
-#pragma nowarn(1506)   // warning elimination 
       return i;
-#pragma warn(1506)  // warning elimination 
   }
   return -1;
 }
@@ -1000,7 +994,6 @@ void MVVegPredicate::insert(const MVVegPredicateColumn *newCol)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVVegPredicate::print(FILE* ofd, const char* indent, const char* title) const
 {
   fprintf(ofd, "\tVegPredicate:");
@@ -1017,7 +1010,6 @@ void MVVegPredicate::display() const
 {
   print();
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -1217,7 +1209,6 @@ NABoolean MVUsedObjectInfo::processSelectionPredicates(ValueIdSet&  expr,
 // ---------------------------------------------------------------------
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVUsedObjectInfo::print( FILE* ofd,	  // = stdout,
 			      const char* indent, // = DEFAULT_INDENT,
 			      const char* title   // = "MVInfo"
@@ -1266,7 +1257,6 @@ void MVUsedObjectInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2080,8 +2070,6 @@ Int32 MVColumnInfo::newMavDependentColumn(ExpressionHash&     expHash,
 // STDDEVW(a,b) and VARIANCE(a,b) need SUM(b), SUM(a*b) and SUM(a*a*b).
 // If a is NOT NULL, then COUNT(a) can be replaced by COUNT(*).
 //////////////////////////////////////////////////////////////////////////////
-#pragma nowarn(770)   // warning elimination 
-#pragma nowarn(262)   // warning elimination 
 void MVColumnInfo::createDependentColumns(ExpressionHash& expHash, 
 					  MVInfoForDDL&	  mvInfoObj,
 					  CollHeap	 *heap)
@@ -2160,8 +2148,6 @@ void MVColumnInfo::createDependentColumns(ExpressionHash& expHash,
     dep1_ = newStddevwDepColumn(2, expHash, newExprText, mvInfoObj, heap);
   }
 }
-#pragma warn(770)  // warning elimination 
-#pragma warn(262)  // warning elimination 
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -2220,7 +2206,6 @@ NABoolean MVColumnInfo::isNonRepeatableExpressionUsed(BindWA *bindWA)
 // ---------------------------------------------------------------------
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVColumnInfo::print( FILE* ofd,          //  = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title
@@ -2280,7 +2265,6 @@ void MVColumnInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2524,7 +2508,6 @@ void MVColumns::setNewColumnName(MVColumnInfo *colInfo, const NAString& newName)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVColumns::print( FILE* ofd,          //  = stdout,
 		       const char* indent, // = DEFAULT_INDENT,
 		       const char* title
@@ -2547,7 +2530,6 @@ void MVColumns::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -2625,9 +2607,7 @@ MVInfo::MVInfo( const NAString&             nameOfMV,
   {
     switch (directColumnList[i]->getOperatorType())
     {
-#pragma nowarn(1506)   // warning elimination 
       case ITM_COUNT: posOfCountStar_ = i;
-#pragma warn(1506)  // warning elimination 
 		      break;
       case ITM_MIN  :
       case ITM_MAX  : isMinMaxUsed_ = TRUE;
@@ -2747,9 +2727,7 @@ void MVInfo::fixMvSelectList(RelRoot *mvSelectTree) const
        selectListIndex < selectList.entries(); 
        selectListIndex++, mvColIndex++)
   {
-#pragma nowarn(1506)   // warning elimination 
     const MVColumnInfo *mvCol = mvColumns[mvColIndex];
-#pragma warn(1506)  // warning elimination 
     const NAString& mvColName = mvCol->getColName();
     ItemExpr *colExpr = selectList[selectListIndex];
 
@@ -2805,9 +2783,7 @@ RelRoot *MVInfo::buildMVSelectTree(const NAString* alternativeText, CharInfo::Ch
 
   // Parse the SQL text.
   Parser parser(CmpCommon::context());
-#pragma nowarn(1506)   // warning elimination 
   if (parser.parseDML(MVSelectText.data(), MVSelectText.length(), textCharSet, &parsedNode))
-#pragma warn(1506)  // warning elimination 
     return NULL;
 
   // Skip the DDL nodes of the CREATE MV command.
@@ -2960,7 +2936,6 @@ NABoolean MVInfo::addTableNamesToList(BindWA        *bindWA,
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfo::print( FILE* ofd,		// = stdout,
 		    const char* indent, // = DEFAULT_INDENT,
 		    const char* title   // = "MVInfo"
@@ -3020,7 +2995,6 @@ void MVInfo::display() const
 { 
   print(); 
 }
-// LCOV_EXCL_STOP
 #endif
 
 // - functions used in showddl
@@ -3168,9 +3142,7 @@ NAString MVInfo::getOptionalNameClause(StmtDDLCreateMV *createMvNode,
   const MVColumns& mvCols = getMVColumns();
   for (CollIndex ci(0); ci < mvCols.entries() ; ci++)
   {
-#pragma nowarn(1506)   // warning elimination 
     const MVColumnInfo *mvCol = mvCols[ci];
-#pragma warn(1506)  // warning elimination 
     if (!mvCol->isSystem())
     { // skip columns that are not system added. 
       continue;
@@ -3218,9 +3190,7 @@ NAString MVInfo::getSelectPhraseAsString(NAString& sysAddedCols) const
   selectListIndex++, mvColIndex++)
   {
     CMPASSERT(mvColIndex <  mvCols.entries());
-#pragma nowarn(1506)   // warning elimination 
     const MVColumnInfo *mvCol = mvCols[mvColIndex];
-#pragma warn(1506)  // warning elimination 
     const NAString& mvColName = mvCol->getColName();
     ItemExpr *colExpr = selectList[selectListIndex];
     NAString origColName("", heap_);
@@ -3509,9 +3479,7 @@ MVInfo::buildColumnInfoListFromColIndList(const ColIndList &currentRCI) const
   {
     currentColNumber = currentRCI.at(i);
     MVColumnInfo *currentColInfo = 
-#pragma nowarn(1506)   // warning elimination 
       getMVColumns().getMvColInfoByIndex(currentColNumber);
-#pragma warn(1506)  // warning elimination 
     currentColumnInfoList->insert(currentColInfo);
   }
   return currentColumnInfoList;
@@ -3614,9 +3582,7 @@ void MVInfoForDDL::setRootNode(RelRoot *rootNode, BindWA *bindWA)
   // Get the unbound column text.
   ItemExprList selectList(selectItemList, getHeap());
   for (CollIndex colNumber=0; colNumber<selectList.entries(); colNumber++)
-#pragma nowarn(1506)   // warning elimination 
     extractParsedColumnText(colNumber, selectList[colNumber]);
-#pragma warn(1506)  // warning elimination 
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3730,9 +3696,7 @@ void MVInfoForDDL::initUsedObjectsList(BindWA *bindWA)
   }
 
   // Construct the join graph.
-#pragma nowarn(1506)   // warning elimination 
   newJoinGraph(scanNodesNumber);
-#pragma warn(1506)  // warning elimination 
 
   // For each Scan node on the tree
   for (CollIndex scanNodeIndex=0; 
@@ -3761,9 +3725,7 @@ void MVInfoForDDL::initUsedObjectsList(BindWA *bindWA)
       getUsedObjectsList().insert(usedInfo);
 
     // And into the join graph.
-#pragma nowarn(1506)   // warning elimination 
     getJoinGraph()->addTable(scanNodeIndex, scanNodeIndex, naTable);
-#pragma warn(1506)  // warning elimination 
   }
 
   // Now make sure Views' usage is marked correctly, the default is
@@ -4004,14 +3966,10 @@ void MVInfoForDDL::addMavSystemColumns(BindWA *bindWA)
   // Add the user columns to the expression hash.
   for (CollIndex i=0; i<columnList.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *colInfo = columnList[i];
-#pragma warn(1506)  // warning elimination 
     // Remember the position of the COUNT(*) column.
     if (colInfo->isCountStarColumn())
-#pragma nowarn(1506)   // warning elimination 
       setPosOfCountStar(i);
-#pragma warn(1506)  // warning elimination 
     else
     {
       // Remember if we are using any Min/Max functions.
@@ -4046,9 +4004,7 @@ void MVInfoForDDL::addMavSystemColumns(BindWA *bindWA)
     // Identify them by ValueId from the column expression.
     for (CollIndex j=0; j<columnList.entries(); j++)
     {
-#pragma nowarn(1506)   // warning elimination 
       MVColumnInfo *colInfo = columnList[j];
-#pragma warn(1506)  // warning elimination 
       if (colInfo->getColType() == COM_MVCOL_GROUPBY)
   	groupingCols.remove(colInfo->getColExpr()->getValueId());
     }
@@ -4073,9 +4029,7 @@ void MVInfoForDDL::addMavSystemColumns(BindWA *bindWA)
   // so createDependentColumns() is called for these new columns as well.
   for (CollIndex k=0; k<columnList.entries(); k++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *colInfo = columnList[k];
-#pragma warn(1506)  // warning elimination 
     colInfo->createDependentColumns(expHash, *this, getHeap());
   }
 }
@@ -4238,9 +4192,7 @@ void MVInfoForDDL::addBaseColsUsedByComputedMvColumns()
   MVColumns& columnList = getMVColumns();
   for (CollIndex mvCol=0; mvCol<columnList.entries(); mvCol++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *colInfo = columnList[mvCol];
-#pragma warn(1506)  // warning elimination 
 
     // Insert only base columns (not complex)
     if (colInfo->getColType() != COM_MVCOL_FUNCTION)
@@ -4414,9 +4366,7 @@ void MVInfoForDDL::processBoundInformation(BindWA *bindWA)
   // build the MV column list is taken from.
   colDescList_ = rootNode_->getRETDesc()->getColumnList();
   CMPASSERT(colDescList_ != NULL);
-#pragma nowarn(1506)   // warning elimination 
   userColumnCount_ = colDescList_->entries();
-#pragma warn(1506)  // warning elimination 
 
   // Only one GroupBy node allowed on the direct tree.
   if (groupByNodes_.entries()>1)
@@ -4635,9 +4585,7 @@ void MVInfoForDDL::verifyGroupByColumns(GroupByAgg *groupByNode)
   for (CollIndex i=0; i<columnList.entries(); i++)
   {
     // Check only column of type GROUPBY
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *colInfo = columnList[i];
-#pragma warn(1506)  // warning elimination 
     if (colInfo->getColType() != COM_MVCOL_GROUPBY)
       continue;
     
@@ -4750,7 +4698,6 @@ void MVInfoForDDL::setColAsIndirectUpdate(MVColumnInfo *colInfo)
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfoForDDL::print( FILE* ofd,	      // = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title   // = "MVInfo"
@@ -4773,7 +4720,6 @@ void MVInfoForDDL::print( FILE* ofd,	      // = stdout,
   }
   fprintf(ofd,"\n");
 } // MVInfoForDDL::print()
-// LCOV_EXCL_STOP
 #endif
 
 //============================================================================
@@ -4818,9 +4764,7 @@ void MVInfoForDML::getMavGroupByColumns(LIST(Lng32)& gbColList) const
 
   for (CollIndex i=0; i<columnList.entries(); i++)
   {
-#pragma nowarn(1506)   // warning elimination 
     MVColumnInfo *currentCol = columnList[i];
-#pragma warn(1506)  // warning elimination 
     if (currentCol->getColType() == COM_MVCOL_GROUPBY)
       gbColList.insert(currentCol->getColNumber());
   }
@@ -4869,9 +4813,7 @@ MVJoinGraph *MVInfoForDML::initJoinGraph(BindWA		              *bindWA,
     CMPASSERT(naTable != NULL);
 
     MVJoinTable *newNode = new(getHeap()) 
-#pragma nowarn(1506)   // warning elimination 
       MVJoinTable(nodeNumber, usedObjectsIndex, directTables, naTable, getHeap());
-#pragma warn(1506)  // warning elimination 
 
     DeltaDefinition *deltaDef =
       deltaDefList->findEntryFor(usedInfo->getObjectName());
@@ -4981,7 +4923,6 @@ const MVUsedObjectInfo *MVInfoForDML::findUsedInfoForTable(const QualifiedName& 
 //////////////////////////////////////////////////////////////////////////////
 #ifndef NDEBUG
 // Exclude from coverage testing - Debugging code
-// LCOV_EXCL_START
 void MVInfoForDML::print( FILE* ofd,	      // = stdout,
 			  const char* indent, // = DEFAULT_INDENT,
 			  const char* title   // = "MVInfo"
@@ -4992,7 +4933,6 @@ void MVInfoForDML::print( FILE* ofd,	      // = stdout,
 
   if (strcmp(title, "")) fprintf(ofd,"\n");
 } // MVInfoForDDL::print()
-// LCOV_EXCL_STOP
 #endif
 
 //----------------------------------------------------------------------------
@@ -5110,9 +5050,7 @@ void MVUsedObjectColNameMap::initColNameMap(const NATable *naTable, CollHeap *he
     const NAColumn *naCol = naColumns[i];
     
     // Initialize the current position of the array with i.
-#pragma nowarn(1506)   // warning elimination 
     *colPositionPtr = i;
-#pragma warn(1506)  // warning elimination 
     // Insert the entry into the hash table.
     colNameHash_.insert(&naCol->getColName(), colPositionPtr);
   }

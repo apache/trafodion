@@ -43,7 +43,6 @@
 #include "RuSQLComposer.h"
 #include "uofsIpcMessageTranslator.h"
 
-// LCOV_EXCL_START :rfi
 
 //--------------------------------------------------------------------------//
 //	CRUTestTaskExecutor::Work()
@@ -91,9 +90,7 @@ void CRUTestTaskExecutor::Work()
 void CRUTestTaskExecutor::ReadSqlStatement()
 {
 	pDynamicSQLContainer_ = 
-#pragma nowarn(1506)   // warning elimination 
 		new CRUSQLDynamicStatementContainer(numberOfStatements_);
-#pragma warn(1506)  // warning elimination 
 
 	pNumberOfExecutions_ = new Int32[numberOfStatements_];
 	pNumberOfRetries_	 = new Int32[numberOfStatements_];
@@ -152,9 +149,7 @@ void CRUTestTaskExecutor::ReadSqlStatement()
 
 		text.TrimLeft();
 		
-#pragma nowarn(1506)   // warning elimination 
 		pDynamicSQLContainer_->SetStatementText(i,text);
-#pragma warn(1506)  // warning elimination 
 
 		i++;		
 	}
@@ -216,9 +211,7 @@ void CRUTestTaskExecutor::ExecuteAllStatements()
 			}
 			
 			CDMPreparedStatement *pStmt =
-#pragma nowarn(1506)   // warning elimination 
 			pDynamicSQLContainer_->GetPreparedStatement(i);
-#pragma warn(1506)  // warning elimination 
 
 			pStmt->Close();
 			continue;
@@ -233,16 +226,10 @@ void CRUTestTaskExecutor::ExecuteAllStatements()
 void CRUTestTaskExecutor::ExecuteStatement(Int32 i)
 {
 	CDMPreparedStatement *pStmt =
-#pragma nowarn(1506)   // warning elimination 
 		pDynamicSQLContainer_->GetPreparedStatement(i);
-#pragma warn(1506)  // warning elimination 
 
-#pragma nowarn(1506)   // warning elimination 
 	if (pDynamicSQLContainer_->GetLastSQL(i)[0] == 'S' ||
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 		pDynamicSQLContainer_->GetLastSQL(i)[0] == 's' )
-#pragma warn(1506)  // warning elimination 
 	{
 //		Sleep(10);
 
@@ -254,12 +241,8 @@ void CRUTestTaskExecutor::ExecuteStatement(Int32 i)
 	}
 	else
 	{
-#pragma nowarn(1506)   // warning elimination 
 		if (pDynamicSQLContainer_->GetLastSQL(i)[0] == 'R' ||
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
 			pDynamicSQLContainer_->GetLastSQL(i)[0] == 'r' )
-#pragma warn(1506)  // warning elimination 
 		{
 			if (TRUE == IsTransactionOpen())
 			{
@@ -363,4 +346,3 @@ void CRUTestTaskExecutor::
 	translator.ReadBlock(&groupId_,sizeof(Int32));
 }
 
-// LCOV_EXCL_STOP

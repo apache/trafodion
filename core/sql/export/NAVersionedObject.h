@@ -62,7 +62,6 @@
 #include "NAAssert.h"
 #include "str.h"
 #include "Int64.h"
-#include "SqlExportDllDefines.h"
 
 // ---------------------------------------------------------------------
 // No of VersionID's supported by NAVersionedObject::versionIDArray_
@@ -94,7 +93,7 @@
 // ---------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------
-NA_EIDPROC inline void swapInt64(char *c)
+inline void swapInt64(char *c)
 {
   char y;
   y=c[0]; c[0]=c[7]; c[7]=y;
@@ -103,7 +102,7 @@ NA_EIDPROC inline void swapInt64(char *c)
   y=c[3]; c[3]=c[4]; c[4]=y;
 }
 
-NA_EIDPROC inline void swapInt32(Int32 *x)
+inline void swapInt32(Int32 *x)
 {
   char *c = (char *) x;
   char y;
@@ -111,7 +110,7 @@ NA_EIDPROC inline void swapInt32(Int32 *x)
   y=c[1]; c[1]=c[2]; c[2]=y;
 }
 
-NA_EIDPROC inline void swapInt16(Int16 *x)
+inline void swapInt16(Int16 *x)
 {
   char *c = (char *) x;
   char y;
@@ -165,7 +164,7 @@ public:
   // -------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------
-  NA_EIDPROC NABasicPtrTempl(Type *ptr = (Type *)NULL)
+  NABasicPtrTempl(Type *ptr = (Type *)NULL)
     : ptr_(ptr)
   {
     // -----------------------------------------------------------------
@@ -179,43 +178,40 @@ public:
   // -------------------------------------------------------------------
   // Accessors and Mutators
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type *getPointer() const            { return ptr_; }
-  NA_EIDPROC inline Type *&pointer()                    { return ptr_; }
-  NA_EIDPROC inline operator Type *() const             { return ptr_; }
-  NA_EIDPROC inline short isNull() const{ return (ptr_==(Type *)NULL); }
-  NA_EIDPROC inline Type & operator *() const          { return *ptr_; }
+  inline Type *getPointer() const            { return ptr_; }
+  inline Type *&pointer()                    { return ptr_; }
+  inline operator Type *() const             { return ptr_; }
+  inline short isNull() const{ return (ptr_==(Type *)NULL); }
+  inline Type & operator *() const          { return *ptr_; }
 
   // -------------------------------------------------------------------
   // delete operators
   // -------------------------------------------------------------------
-  // NA_EIDPROC inline void remove()          { deleteObjectReferenced(); }
-  // NA_EIDPROC inline void deleteObjectReferenced()       { delete ptr_; }
+  // inline void remove()          { deleteObjectReferenced(); }
+  // inline void deleteObjectReferenced()       { delete ptr_; }
 
   // -------------------------------------------------------------------
   // Assume pointer is stored as a 64-bit offset
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline void toggleEndianness()       { swapInt64((char *)(&ptr_)); }
 
   // -------------------------------------------------------------------
   // Assignment operators - support assignment of the "real" pointer
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator = (const void * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-#ifdef NA_64BIT
-  // dg64 - need long assignment
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator = (const Long ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator = (const Int32 ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator = (const Type * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator = (
                                       const NABasicPtrTempl<Type> & ptr)
                                       { ptr_ = ptr.ptr_; return *this; }
@@ -223,130 +219,113 @@ public:
   // -------------------------------------------------------------------
   // Comparison operators - support comparisons with the "real" pointer.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline Int32 operator == (const Int32 ptr) const
                                        { return (ptr_ == (Type *)ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator == (const NABasicPtrTempl<Type> & other) const
                                         { return (ptr_ == other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator == (const Type * const ptr) const
                                                { return (ptr_ == ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const Int32 ptr) const
                                        { return (ptr_ != (Type *)ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const NABasicPtrTempl<Type> & other) const
                                         { return (ptr_ != other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const Type * const ptr) const
                                                { return (ptr_ != ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator ! () const    { return (ptr_ == (Type *)NULL); }
 
   // -------------------------------------------------------------------
   // Arithmetic operators - support pointer arithmetic.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator +(const Int32 n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator +(const short n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
     inline NABasicPtrTempl<Type> operator +(const Long n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator +(const UInt32 n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NABasicPtrTempl<Type> operator +(const unsigned short n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+
     inline NABasicPtrTempl<Type> operator +(const ULong n) const
                              { return NABasicPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator -(const Int32 n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator -(const short n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator -(const Long n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator -(const UInt32 n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NABasicPtrTempl<Type> operator -(const unsigned short n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> operator -(const ULong n) const
                              { return NABasicPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const Int32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const short n)
                                             { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const Long n)
                                             { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const UInt32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const unsigned short n)
                                             { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator +=(const ULong n)
                                             { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+
     inline NABasicPtrTempl<Type> & operator -=(const Int32 n)
                                             { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator -=(const short n)
                                             { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator -=(const Long n)
                                             { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator -=(const UInt32 n)
                                             { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator -=(const unsigned short n)
                                             { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator -=(const ULong n)
                                             { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator ++()
                                                { ++ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator ++(const Int32 n)
                                                { ptr_++; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator --()
                                                { --ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NABasicPtrTempl<Type> & operator --(const Int32 n)
                                                { ptr_--; return *this; }
 
@@ -355,27 +334,26 @@ public:
   // represent an array of the base type. This operator is useful in
   // such cases.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type & operator [] (const Int32 i) const
+  inline Type & operator [] (const Int32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const short i) const
+  inline Type & operator [] (const short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const Long i) const
+
+  inline Type & operator [] (const Long i) const
                                                      { return ptr_[i]; }
-#endif
-  NA_EIDPROC inline Type & operator [] (const UInt32 i) const
+
+  inline Type & operator [] (const UInt32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const unsigned short i) const
+  inline Type & operator [] (const unsigned short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const ULong i) const
+
+  inline Type & operator [] (const ULong i) const
                                                      { return ptr_[i]; }
-#endif
 
   // -------------------------------------------------------------------
   // Packing and Unpacking
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Long pack(void *space, short isSpacePtr = 1)
+  inline Long pack(void *space, short isSpacePtr = 1)
   {
     Long offset = 0;
     if(ptr_ != 0)
@@ -385,43 +363,21 @@ public:
       else
         offset = ((char *)space - (char *)ptr_);
       offset_ = offset;
-
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
     }
     else offset_ = 0;
     return offset;
   }
 
-  NA_EIDPROC inline Lng32 unpack(void *base, short isSpacePtr = 0)
+  inline Lng32 unpack(void *base, short isSpacePtr = 0)
   {
     if(offset_ != 0)
     {
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
-#ifdef NA_64BIT
       if (!isSpacePtr) {
         ptr_ = (Type *)((char *)base - offset_);
       }
       else {
         ptr_ = (Type *)(((Space*)base)->convertToPtr(offset_));
       }
-#else
-      if (!isSpacePtr) {
-        ptr_ = (Type *)((char *)base - int64ToInt32(offset_));
-      }
-      else {
-        ptr_ = (Type *)(((Space*)base)->convertToPtr(int64ToInt32(offset_)));
-      }
-#endif
     }
     return 0;
   }
@@ -488,7 +444,7 @@ public:
   // -------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------
-  NA_EIDPROC NAOpenObjectPtrTempl(Type *ptr = (Type *)NULL)
+  NAOpenObjectPtrTempl(Type *ptr = (Type *)NULL)
     : ptr_(ptr)
   {
     // -----------------------------------------------------------------
@@ -502,40 +458,40 @@ public:
   // -------------------------------------------------------------------
   // Accessors and Mutators
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type *getPointer() const            { return ptr_; }
-  NA_EIDPROC inline Type *&pointer()                    { return ptr_; }
-  NA_EIDPROC inline operator Type *() const             { return ptr_; }
-  NA_EIDPROC inline short isNull() const{ return (ptr_==(Type *)NULL); }
-  NA_EIDPROC inline Type & operator *() const          { return *ptr_; }
+  inline Type *getPointer() const            { return ptr_; }
+  inline Type *&pointer()                    { return ptr_; }
+  inline operator Type *() const             { return ptr_; }
+  inline short isNull() const{ return (ptr_==(Type *)NULL); }
+  inline Type & operator *() const          { return *ptr_; }
 
   // -------------------------------------------------------------------
   // delete operators
   // -------------------------------------------------------------------
-  // NA_EIDPROC inline void remove()          { deleteObjectReferenced(); }
-  // NA_EIDPROC inline void deleteObjectReferenced()       { delete ptr_; }
+  // inline void remove()          { deleteObjectReferenced(); }
+  // inline void deleteObjectReferenced()       { delete ptr_; }
 
   // -------------------------------------------------------------------
   // Assume pointer is stored as a 64-bit offset
   // -------------------------------------------------------------------
-  NA_EIDPROC inline void toggleEndianness()
+  inline void toggleEndianness()
                                          { swapInt64((char *)(&ptr_)); }
 
   // -------------------------------------------------------------------
   // Assignment operators - support assignment of the "real" pointer
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> &
       operator = (const void * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> &
       operator = (const Int32 ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator = (const Type * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> &
         operator = (const NAOpenObjectPtrTempl<Type> & ptr)
@@ -544,145 +500,129 @@ public:
   // -------------------------------------------------------------------
   // Comparison operators - support comparisons with the "real" pointer.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline Int32 operator == (const Int32 ptr) const
                                        { return (ptr_ == (Type *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32 operator == (const NAOpenObjectPtrTempl<Type> & other) const
                                         { return (ptr_ == other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator == (const Type * const ptr) const
                                                { return (ptr_ == ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const Int32 ptr) const
                                        { return (ptr_ != (Type *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32 operator != (const NAOpenObjectPtrTempl<Type> & other) const
                                         { return (ptr_ != other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const Type * const ptr) const
                                                { return (ptr_ != ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator ! () const    { return (ptr_ == (Type *)NULL); }
 
   // -------------------------------------------------------------------
   // Arithmetic operators - support pointer arithmetic.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator +(const Int32 n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator +(const short n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator +(const Long n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> operator +(const UInt32 n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type>
         operator +(const unsigned short n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> operator +(const ULong n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator -(const Int32 n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator -(const short n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> operator -(const Long n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> operator -(const UInt32 n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type>
         operator-(const unsigned short n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> operator -(const ULong n) const
                         { return NAOpenObjectPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator +=(const Int32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator +=(const short n)
                                             { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator +=(const Long n)
                                             { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator +=(const UInt32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator +=(const unsigned short n)
                                             { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+
     inline
       NAOpenObjectPtrTempl<Type> & operator +=(const ULong n)
                                             { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator -=(const Int32 n)
                                             { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator -=(const short n)
                                             { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator -=(const Long n)
                                             { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator -=(const UInt32 n)
                                             { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator -=(const unsigned short n)
                                             { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAOpenObjectPtrTempl<Type> & operator -=(const ULong n)
                                             { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator ++()
                                                { ++ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator ++(const Int32 n)
                                                { ptr_++; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator --()
                                                { --ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NAOpenObjectPtrTempl<Type> & operator --(const Int32 n)
                                                { ptr_--; return *this; }
 
@@ -691,27 +631,25 @@ public:
   // represent an array of objects. This operator is useful in such
   // cases.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type & operator [] (const Int32 i) const
+  inline Type & operator [] (const Int32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const short i) const
+  inline Type & operator [] (const short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const Long i) const
+  inline Type & operator [] (const Long i) const
                                                      { return ptr_[i]; }
-#endif
-  NA_EIDPROC inline Type & operator [] (const UInt32 i) const
+
+  inline Type & operator [] (const UInt32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const unsigned short i) const
+  inline Type & operator [] (const unsigned short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const ULong i) const
+
+  inline Type & operator [] (const ULong i) const
                                                      { return ptr_[i]; }
-#endif
 
   // -------------------------------------------------------------------
   // Dereferencing operator
   // ------------------------------------------------------------------- 
-  NA_EIDPROC Type *operator ->() const
+  Type *operator ->() const
                                           { assert(ptr_); return ptr_; }
 
   // -------------------------------------------------------------------
@@ -719,7 +657,7 @@ public:
   // template instantiator. packShallow() and unpackShallow() are just
   // helper methods provided.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Long packShallow(void *space, short isSpacePtr = 1)
+  inline Long packShallow(void *space, short isSpacePtr = 1)
   {
     Long offset = 0;
     if(ptr_ != 0)
@@ -729,33 +667,16 @@ public:
       else
         offset = ((char *)space - (char *)ptr_);
       offset_ = offset;
-
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
     }
     else offset_ = 0;
     return offset;
   }
 
-  NA_EIDPROC inline Lng32 unpackShallow(void *base)
+  inline Lng32 unpackShallow(void *base)
   {
     if(offset_ != 0)
     {
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
-#ifdef NA_64BIT
       ptr_ = (Type *)((char *)base - offset_);
-#else
-      ptr_ = (Type *)((char *)base - int64ToInt32(offset_));
-#endif
     }
     return 0;
   }
@@ -764,13 +685,13 @@ public:
   // The template instantiator should define all or some of these four
   // methods according to needs.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     Long pack(void *space, short isSpacePtr = 1);
-  NA_EIDPROC
+  
     Lng32 unpack(void *base);
-  NA_EIDPROC
+  
     Long packArray(void *space, Lng32 numEntries, short notSpacePtr = 1);
-  NA_EIDPROC
+  
     Lng32 unpackArray(void *base, Lng32 numEntries);
 
 protected:
@@ -820,7 +741,7 @@ public:
   // -------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObjectPtrTempl(Type *ptr = (Type *)NULL)
+  NAVersionedObjectPtrTempl(Type *ptr = (Type *)NULL)
     : ptr_(ptr)
   {
     // -----------------------------------------------------------------
@@ -834,213 +755,188 @@ public:
   // -------------------------------------------------------------------
   // Accessors and Mutators
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type *getPointer() const            { return ptr_; }
-  NA_EIDPROC inline Type *&pointer()                    { return ptr_; }
-  NA_EIDPROC inline operator Type *() const             { return ptr_; }
-  NA_EIDPROC inline short isNull() const      { return ((short)(ptr_ == (Type *)NULL)); }
-  NA_EIDPROC inline Type & operator *() const          { return *ptr_; }
-  NA_EIDPROC inline Int64 getOffset() const             { return offset_; }
+  inline Type *getPointer() const            { return ptr_; }
+  inline Type *&pointer()                    { return ptr_; }
+  inline operator Type *() const             { return ptr_; }
+  inline short isNull() const      { return ((short)(ptr_ == (Type *)NULL)); }
+  inline Type & operator *() const          { return *ptr_; }
+  inline Int64 getOffset() const             { return offset_; }
 
   // -------------------------------------------------------------------
   // delete operators
   // -------------------------------------------------------------------
-  // NA_EIDPROC inline void remove()          { deleteObjectReferenced(); }
-  // NA_EIDPROC inline void deleteObjectReferenced()       { delete ptr_; }
+  // inline void remove()          { deleteObjectReferenced(); }
+  // inline void deleteObjectReferenced()       { delete ptr_; }
 
   // -------------------------------------------------------------------
   // Assume pointer is stored as a 64-bit offset
   // -------------------------------------------------------------------
-  NA_EIDPROC inline void toggleEndianness()
+  inline void toggleEndianness()
                                          { swapInt64((char *)(&ptr_)); }
 
   // -------------------------------------------------------------------
   // Assignment operators - support assignment of the "real" pointer
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> &
       operator = (const void * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-#ifdef NA_64BIT
-  // dg64 - need long assignment
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> &
       operator = (const Long ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> &
       operator = (const Int32 ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator = (const Type * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator = (const NAVersionedObjectPtrTempl<Type> & ptr)
                                       { ptr_ = ptr.ptr_; return *this; }
-#ifndef NA_64BIT
-  NA_EIDPROC
-    inline void
-        operator = (const Int64 offset)
-                                  { offset_ = offset; }
-#endif
 
   // -------------------------------------------------------------------
   // Comparison operators - support comparisons with the "real" pointer.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline Int32 operator ==(const Int32 ptr) const
                                        { return (ptr_ == (Type *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32
         operator ==(const NAVersionedObjectPtrTempl<Type> & other) const
                                         { return (ptr_ == other.ptr_); }
-  NA_EIDPROC
+  
     inline
       Int32 operator ==(const Type * const ptr) const
                                                { return (ptr_ == ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator !=(const Int32 ptr) const
                                        { return (ptr_ != (Type *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32
         operator !=(const NAVersionedObjectPtrTempl<Type> & other) const
                                         { return (ptr_ != other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator !=(const Type * const ptr) const
                                                { return (ptr_ != ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator !() const     { return (ptr_ == (Type *)NULL); }
 
   // -------------------------------------------------------------------
   // Arithmetic operators - support pointer arithmetic.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> operator +(const Int32 n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> operator +(const short n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> operator +(const Long n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator +(const UInt32 n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator +(const unsigned short n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator +(const ULong n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> operator -(const Int32 n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> operator -(const short n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> operator -(const Long n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator -(const UInt32 n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator-(const unsigned short n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type>
         operator -(const ULong n) const
                    { return NAVersionedObjectPtrTempl<Type>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator +=(const Int32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator +=(const short n)
                                             { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator +=(const Long n)
                                             { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator +=(const UInt32 n)   { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator +=(const unsigned short n) { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator +=(const ULong n)  { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator -=(const Int32 n)            { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator -=(const short n)
                                             { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator -=(const Long n)
                                             { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator -=(const UInt32 n)   { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator -=(const unsigned short n) { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrTempl<Type> &
         operator -=(const ULong n)  { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator ++()
                                                { ++ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator ++(const Int32 n)
                                                { ptr_++; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator --()
                                                { --ptr_; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrTempl<Type> & operator --(const Int32 n)
                                                { ptr_--; return *this; }
 
@@ -1049,33 +945,30 @@ public:
   // to represent an array of objects. This operator is useful in such
   // cases.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Type & operator [] (const Int32 i) const
+  inline Type & operator [] (const Int32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const short i) const
+  inline Type & operator [] (const short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const Long i) const
+  inline Type & operator [] (const Long i) const
                                                      { return ptr_[i]; }
-#endif
-  NA_EIDPROC inline Type & operator [] (const UInt32 i) const
+
+  inline Type & operator [] (const UInt32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline Type & operator [] (const unsigned short i) const
+  inline Type & operator [] (const unsigned short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline Type & operator [] (const ULong i) const
+  inline Type & operator [] (const ULong i) const
                                                      { return ptr_[i]; }
-#endif
 
   // -------------------------------------------------------------------
   // Dereferencing operator
   // -------------------------------------------------------------------
-  NA_EIDPROC Type *operator ->() const
+  Type *operator ->() const
                                           { assert(ptr_); return ptr_; }
 
   // -------------------------------------------------------------------
   // Packing and Unpacking
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Long packShallow(void *space, short isSpacePtr = 1)
+  inline Long packShallow(void *space, short isSpacePtr = 1)
   {
     Long offset = 0;
     if(ptr_ != 0)
@@ -1085,48 +978,31 @@ public:
       else
         offset = ((char *)space - (char *)ptr_);
       offset_ = offset;
-
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
     }
     else offset_ = 0;
     return offset;
   }
 
-  NA_EIDPROC inline Long pack(void *space, short isSpacePtr = 1)
+  inline Long pack(void *space, short isSpacePtr = 1)
   {
     if(ptr_ != 0) ptr_->drivePack(space, isSpacePtr);
     return packShallow(space, isSpacePtr);
   }
 
-  NA_EIDPROC inline Lng32 unpackShallow(void *base)
+  inline Lng32 unpackShallow(void *base)
   {
     if(offset_ != 0)
     {
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
-#ifdef NA_64BIT
       ptr_ = (Type *)((char *)base - offset_);
-#else
-      ptr_ = (Type *)((char *)base - int64ToInt32(offset_));
-#endif
     }
     return 0;
   }
 
   // This one is NOT an inline function to avoid putting an object of
   // type "Type" on the stack. See the definition further down in this file.
-  NA_EIDPROC char * getVTblPtr(Int16 classID);
+  char * getVTblPtr(Int16 classID);
 
-  NA_EIDPROC inline Lng32 unpack(void *base, void * reallocator)
+  inline Lng32 unpack(void *base, void * reallocator)
   {
     if(ptr_ != 0)
     {
@@ -1144,7 +1020,7 @@ public:
   // The two methods below assume that ptr_ is the beginning address of
   // an array of Type objects with numEntries.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline Long packArray(void *space, Lng32 numEntries, short isSpacePtr = 1)
   {
     if(ptr_ != 0)
@@ -1155,7 +1031,7 @@ public:
     return pack(space,isSpacePtr);
   }
 
-  NA_EIDPROC inline Lng32 unpackArray(void *base, Lng32 numEntries,
+  inline Lng32 unpackArray(void *base, Lng32 numEntries,
 				     void * reallocator)
   {
     if(unpack(base, reallocator)) return -1;
@@ -1228,7 +1104,7 @@ public:
   // -------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObjectPtrArrayTempl(PtrType *ptr = (PtrType *)NULL)
+  NAVersionedObjectPtrArrayTempl(PtrType *ptr = (PtrType *)NULL)
     : ptr_(ptr)
   {
     // -----------------------------------------------------------------
@@ -1243,7 +1119,7 @@ public:
   // This constructor allocates the 64-bit pointer array and copies the
   // pointer array given (which may be a 32-bit pointer array).
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObjectPtrArrayTempl(Space *space, 
+  NAVersionedObjectPtrArrayTempl(Space *space, 
                                             void **ptrArray,
                                             Int32 numEntries)
                  { allocateAndCopyPtrArray(space,ptrArray,numEntries); }
@@ -1251,35 +1127,35 @@ public:
   // -------------------------------------------------------------------
   // Accessors and Mutators
   // -------------------------------------------------------------------
-  NA_EIDPROC inline PtrType *getPointer() const         { return ptr_; }
-  NA_EIDPROC inline PtrType *&pointer()                 { return ptr_; }
-  NA_EIDPROC inline operator PtrType *() const          { return ptr_; }
-  NA_EIDPROC inline short isNull() const{return(ptr_==(PtrType *)NULL);}
-  NA_EIDPROC inline PtrType & operator *() const       { return *ptr_; }
+  inline PtrType *getPointer() const         { return ptr_; }
+  inline PtrType *&pointer()                 { return ptr_; }
+  inline operator PtrType *() const          { return ptr_; }
+  inline short isNull() const{return(ptr_==(PtrType *)NULL);}
+  inline PtrType & operator *() const       { return *ptr_; }
 
   // -------------------------------------------------------------------
   // delete operators
   // -------------------------------------------------------------------
-  // NA_EIDPROC inline void remove()          { deleteObjectReferenced(); }
-  // NA_EIDPROC inline void deleteObjectReferenced()       { delete ptr_; }
+  // inline void remove()          { deleteObjectReferenced(); }
+  // inline void deleteObjectReferenced()       { delete ptr_; }
 
   // -------------------------------------------------------------------
   // Assignment operators - support assignment of the "real" pointer
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrArrayTempl<PtrType> &
       operator = (const void * const ptr)
                                 { ptr_ = (PtrType *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrArrayTempl<PtrType> &
       operator = (const Int32 ptr)
                                 { ptr_ = (PtrType *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator = (const PtrType * const ptr)
                                 { ptr_ = (PtrType *)ptr; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator = (const NAVersionedObjectPtrArrayTempl<PtrType> & ptr)
@@ -1288,169 +1164,153 @@ public:
   // -------------------------------------------------------------------
   // Comparison operators - support comparisons with the "real" pointer.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline Int32 operator == (const Int32 ptr) const
                                     { return (ptr_ == (PtrType *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32 operator == (
         const NAVersionedObjectPtrArrayTempl<PtrType> & other) const
                                         { return (ptr_ == other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator == (const PtrType * const ptr) const
                                                { return (ptr_ == ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const Int32 ptr) const
                                     { return (ptr_ != (PtrType *)ptr); }
-  NA_EIDPROC
+  
     inline
       Int32 operator != (
         const NAVersionedObjectPtrArrayTempl<PtrType> & other) const
                                         { return (ptr_ != other.ptr_); }
-  NA_EIDPROC
+  
     inline Int32 operator != (const PtrType * const ptr) const
                                                { return (ptr_ != ptr); }
-  NA_EIDPROC
+  
     inline Int32 operator ! () const { return (ptr_ == (PtrType *)NULL); }
 
   // -------------------------------------------------------------------
   // Arithmetic operators - support pointer arithmetic.
   // -------------------------------------------------------------------
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const Int32 n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const short n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const Long n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const UInt32 n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const unsigned short n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator +(const ULong n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ + n); }
-#endif
-  NA_EIDPROC
+
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator -(const Int32 n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator -(const short n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator -(const Long n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator -(const UInt32 n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator-(const unsigned short n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType>
         operator -(const ULong n) const
            { return NAVersionedObjectPtrArrayTempl<PtrType>(ptr_ - n); }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> & operator +=(const Int32 n)
                                             { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator +=(const short n)          { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator +=(const Long n)           { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator +=(const UInt32 n)   { ptr_ += n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator +=(const unsigned short n) { ptr_ += n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator +=(const ULong n)  { ptr_ += n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> & operator -=(const Int32 n)
                                             { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator -=(const short n)          { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator -=(const Long n)           { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator -=(const UInt32 n)   { ptr_ -= n; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator -=(const unsigned short n) { ptr_ -= n; return *this; }
-#ifdef NA_64BIT
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &
         operator -=(const ULong n)  { ptr_ -= n; return *this; }
-#endif
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrArrayTempl<PtrType> & operator ++()
                                                { ++ptr_; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> & operator ++(const Int32 n)
                                                { ptr_++; return *this; }
-  NA_EIDPROC
+  
     inline NAVersionedObjectPtrArrayTempl<PtrType> & operator --()
                                                { --ptr_; return *this; }
-  NA_EIDPROC
+  
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> & operator --(const Int32 n)
                                                { ptr_--; return *this; }
@@ -1458,34 +1318,33 @@ public:
   // -------------------------------------------------------------------
   // Subscript operator.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline PtrType & operator [] (const Int32 i) const
+  inline PtrType & operator [] (const Int32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline PtrType & operator [] (const short i) const
+  inline PtrType & operator [] (const short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline PtrType & operator [] (const Long i) const
+
+  inline PtrType & operator [] (const Long i) const
                                                      { return ptr_[i]; }
-#endif
-  NA_EIDPROC inline PtrType & operator [] (const UInt32 i) const
+
+  inline PtrType & operator [] (const UInt32 i) const
                                                      { return ptr_[i]; }
-  NA_EIDPROC inline PtrType & operator [] (const unsigned short i) const
+  inline PtrType & operator [] (const unsigned short i) const
                                                      { return ptr_[i]; }
-#ifdef NA_64BIT
-  NA_EIDPROC inline PtrType & operator [] (const ULong i) const
+
+  inline PtrType & operator [] (const ULong i) const
                                                      { return ptr_[i]; }
-#endif
 
   // -------------------------------------------------------------------
   // Functions subclasses should redefine despite they are non-virtual
   // because we want to keep size of this class 8 bytes.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline PtrType *operator ->() const
+  inline PtrType *operator ->() const
                                           { assert(ptr_); return ptr_; }
 
   // -------------------------------------------------------------------
   // Support for allocating and copying the array of pointers.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline void allocatePtrArray(Space *space,
+  inline void allocatePtrArray(Space *space,
                                           UInt32 numEntries)
   {
     if (numEntries != 0)
@@ -1496,13 +1355,13 @@ public:
     else ptr_ = (PtrType *)NULL;
   }
 
-  NA_EIDPROC inline void copyPtrArray(void **ptrArray,
+  inline void copyPtrArray(void **ptrArray,
                                       UInt32 numEntries)
   {
     for(UInt32 i=0; i<numEntries; i++) ptr_[i] = (PtrType *)(ptrArray[i]);
   }
 
-  NA_EIDPROC inline void allocateAndCopyPtrArray(Space *space,
+  inline void allocateAndCopyPtrArray(Space *space,
                                                  void **ptrArray,
                                                  UInt32 numEntries)
   {
@@ -1513,7 +1372,7 @@ public:
   // -------------------------------------------------------------------
   // Packing and Unpacking.
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Long packShallow(void *space, short isSpacePtr = 1)
+  inline Long packShallow(void *space, short isSpacePtr = 1)
   {
     Long offset = 0;
     if(ptr_ != 0)
@@ -1523,19 +1382,12 @@ public:
       else
         offset = ((char *)space - (char *)ptr_);
       offset_ = offset;
-
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
     }
     else offset_ = 0;
     return offset;
   }
 
-  NA_EIDPROC
+  
     inline Long pack(void *space, Lng32 numEntries, short isSpacePtr = 1)
   {
     // Pack the pointer objects in the array.
@@ -1545,26 +1397,16 @@ public:
     return packShallow(space,isSpacePtr);
   }
 
-  NA_EIDPROC inline Lng32 unpackShallow(void *base)
+  inline Lng32 unpackShallow(void *base)
   {
     if(offset_ != 0)
     {
-#ifndef NA_LITTLE_ENDIAN
-#ifndef NA_64BIT
-      // dg64 - don't swap - since NA_LITTLE_ENDIAN is true, this ifndef shouldn't be necessary
-      swapInt64((char *)(&offset_));
-#endif
-#endif
-#ifdef NA_64BIT
       ptr_ = (PtrType *)((char *)base - offset_);
-#else
-      ptr_ = (PtrType *)((char *)base - int64ToInt32(offset_));
-#endif
     }
     return 0;
   }
 
-  NA_EIDPROC inline Lng32 unpack(void *base, Lng32 numEntries, void * reallocator)
+  inline Lng32 unpack(void *base, Lng32 numEntries, void * reallocator)
   {
     // Convert this pointer object from offset to a real pointer.
     if(unpackShallow(base)) return -1;
@@ -1596,13 +1438,12 @@ protected:
 // ---------------------------------------------------------------------
 typedef NAVersionedObjectPtrTempl<NAVersionedObject> NAVersionedObjectPtr;
 
-#pragma warning ( disable : 4251 )
 
 // ---------------------------------------------------------------------
 // Class NAVersionedObject
 // ---------------------------------------------------------------------
 
-class SQLEXPORT_LIB_FUNC NAVersionedObject
+class NAVersionedObject
 {
 public:
 
@@ -1621,10 +1462,10 @@ public:
   // This arrangement avoids the dependence on the constructors of sub-
   // classes of NAVersionedObject on setting these values correctly.
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObject(Int16 classID = -1);
+  NAVersionedObject(Int16 classID = -1);
 
 
-  NA_EIDPROC inline void init(Int16 classID = -1)
+  inline void init(Int16 classID = -1)
   {
     classID_ = classID;
     populateImageVersionIDArray();
@@ -1638,7 +1479,7 @@ public:
   // -------------------------------------------------------------------
   // Utility to toggle the endianness of all applicable members
   // -------------------------------------------------------------------
-  NA_EIDPROC inline void toggleEndiannessOfVersionHeader()
+  inline void toggleEndiannessOfVersionHeader()
   {
     swapInt16(&classID_);
     swapInt16(&imageSize_);
@@ -1661,19 +1502,19 @@ public:
   // The left-over space will be zero'ed. Finally, reallocatedAddress_
   // field in the older object is set to the address of the new object.
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObject *reallocateImage(void * reallocator);
+  NAVersionedObject *reallocateImage(void * reallocator);
 
   // -------------------------------------------------------------------
   // Accessors and Mutators
   // -------------------------------------------------------------------
-  NA_EIDPROC inline Int16 getClassID() const        { return classID_; }
-  NA_EIDPROC inline void setClassID(Int16 classID) 
+  inline Int16 getClassID() const        { return classID_; }
+  inline void setClassID(Int16 classID) 
                                                  { classID_ = classID; }
 
-  NA_EIDPROC inline unsigned char * getImageVersionIDArray()
+  inline unsigned char * getImageVersionIDArray()
                                              { return versionIDArray_; }
 
-  NA_EIDPROC inline unsigned char getImageVersionID(unsigned short ix) const
+  inline unsigned char getImageVersionID(unsigned short ix) const
   {
     assert(ix < VERSION_ID_ARRAY_SIZE);
     // add the following to prevent false alarm on "ix"
@@ -1682,7 +1523,7 @@ public:
     return versionIDArray_[ix];
   }
 
-  NA_EIDPROC void setImageVersionID(unsigned short ix,
+  void setImageVersionID(unsigned short ix,
                                            unsigned char versionID)
   {
     assert(ix < VERSION_ID_ARRAY_SIZE);
@@ -1692,40 +1533,40 @@ public:
     versionIDArray_[ix] = versionID;
   }
 
-  NA_EIDPROC inline NAVersionedObjectPtr getReallocatedAddress() const
+  inline NAVersionedObjectPtr getReallocatedAddress() const
                                          { return reallocatedAddress_; }
-  NA_EIDPROC inline void setReallocatedAddress(
+  inline void setReallocatedAddress(
                                            NAVersionedObjectPtr address)
                                       { reallocatedAddress_ = address; }
-  NA_EIDPROC inline void setReallocatedAddress(
+  inline void setReallocatedAddress(
                                              NAVersionedObject *address)
                                       { reallocatedAddress_ = address; }
 
-  NA_EIDPROC inline Int16 getImageSize() const    { return imageSize_; }
-  NA_EIDPROC inline void setImageSize(Int16 size) { imageSize_ = size; }
+  inline Int16 getImageSize() const    { return imageSize_; }
+  inline void setImageSize(Int16 size) { imageSize_ = size; }
 
-  NA_EIDPROC inline void setVTblPtr(char *ptr)
+  inline void setVTblPtr(char *ptr)
   {
     *((char **)this) = ptr;
   }
 
-  NA_EIDPROC inline NABoolean isPacked() const
+  inline NABoolean isPacked() const
                             { return (flags_ & VOBJ_PACKED) != 0; }
-  NA_EIDPROC inline void markAsPacked()
+  inline void markAsPacked()
                                     { flags_ |= VOBJ_PACKED; }
-  NA_EIDPROC inline void markAsNotPacked()
+  inline void markAsNotPacked()
                                    { flags_ &= ~VOBJ_PACKED; }
 
-  NA_EIDPROC inline NABoolean isBigEndian() const
+  inline NABoolean isBigEndian() const
                         { return (flags_ & VOBJ_BIG_ENDIAN) != 0; }
-  NA_EIDPROC inline void markAsBigEndian()
+  inline void markAsBigEndian()
                                 { flags_ |= VOBJ_BIG_ENDIAN; }
-  NA_EIDPROC inline void markAsLittleEndian()
+  inline void markAsLittleEndian()
                                { flags_ &= ~VOBJ_BIG_ENDIAN; }
 
-  NA_EIDPROC
+  
     NABoolean isSpacePtr() { return (flags_ & IS_SPACE_PTR) != 0; }
-  NA_EIDPROC
+  
     void setIsSpacePtr(NABoolean v) 
     { (v ? flags_ |= IS_SPACE_PTR : flags_ &= ~IS_SPACE_PTR); }
 
@@ -1738,11 +1579,7 @@ public:
   // the specific subclass. This number should be consistent with the
   // number supplied to the constructor when an object is constructed.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual unsigned char getClassVersionID() = 0;
-#else
-  NA_EIDPROC unsigned char getClassVersionID();
-#endif//PRIV_SRL
+  virtual unsigned char getClassVersionID() = 0;
   
   // -------------------------------------------------------------------
   // Subclass MUST redefine this method to set its class version ID in
@@ -1753,22 +1590,14 @@ public:
   // direct subclass of those subclasses should set versionIDArray_[1]
   // and so on...
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual void populateImageVersionIDArray() = 0;
-#else
-  NA_EIDPROC void populateImageVersionIDArray();
-#endif //PRIV_SRL
+  virtual void populateImageVersionIDArray() = 0;
   
   // -------------------------------------------------------------------
   // An immediate subclass (aka the Anchor class) MUST redefine this
   // method to return the virtual table function pointer of the subclass
   // under it with the class ID given.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual char *findVTblPtr(Int16 classID)
-#else
-  NA_EIDPROC char *findVTblPtr(Int16 classID)
-#endif //PRIV_SRL
+  virtual char *findVTblPtr(Int16 classID)
   {
     // -----------------------------------------------------------------
     // If subclass doesn't redefine this method, return the virtual
@@ -1788,12 +1617,8 @@ public:
   // All subclasses MUST redefine this method to return the correct
   // object sizes.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual short getClassSize()
-#else
-  NA_EIDPROC short getClassSize()
-#endif //PRIV_SRL
-                            { return (short)sizeof(NAVersionedObject); }
+  virtual short getClassSize()
+  { return (short)sizeof(NAVersionedObject); }
 
   // -------------------------------------------------------------------
   // All subclasses MUST redefine toggleEndianness() to toggle the
@@ -1802,11 +1627,7 @@ public:
   // Header (members of NAVersionedObject) is handled separately by
   // NAVersionedObject::toggleEndiannessOfVersionHeader().
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual void toggleEndianness()                          {}
-#else
-  NA_EIDPROC void toggleEndianness()                          {}
-#endif //PRIV_SRL
+  virtual void toggleEndianness()                          {}
 
   // -------------------------------------------------------------------
   // All subclasses could redefine convertToReference/LocalPlatform() to 
@@ -1814,13 +1635,8 @@ public:
   // platform and vice versa. Typically, this only involves toggling the
   // endianness of some members.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual void convertToReferencePlatform();
-  NA_EIDPROC virtual void convertToLocalPlatform();
-#else
-  NA_EIDPROC void convertToReferencePlatform();
-  NA_EIDPROC void convertToLocalPlatform();
-#endif //PRIV_SRL
+  virtual void convertToReferencePlatform();
+  virtual void convertToLocalPlatform();
 
   // -------------------------------------------------------------------
   // Subclasses could redefine this method to provide a migration path
@@ -1829,11 +1645,8 @@ public:
   // due to the upgrade to their appropriate values so that the object
   // can be understood properly by the new executable.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual void initNewMembers()                            {}
-#else
-  NA_EIDPROC void initNewMembers()                            {}
-#endif
+  virtual void initNewMembers()                            {}
+
   // -------------------------------------------------------------------
   // Subclasses MUST redefine pack() to drive the packing of objects
   // referenced by their members which are pointers and convert them to
@@ -1842,11 +1655,7 @@ public:
   // platform. Note that endianness of the Version Header is handled
   // separately in drivePack().
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual Long pack(void *space)
-#else
-  NA_EIDPROC Long pack(void *space)  
-#endif //PRIV_SRL
+  virtual Long pack(void *space)
     { 
       if (isSpacePtr())
 	return ((Space *)space)->convertToOffset((char *)this); 
@@ -1864,11 +1673,7 @@ public:
   // platform. Note that endianness of the Version Header is handled
   // separately in driveUnpack().
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual Lng32 unpack(void *base, void * reallocator)               { return 0; }
-#else
-  NA_EIDPROC Lng32 unpack(void *base, void * reallocator)               { return 0; }
-#endif //PRIV_SRL
+  virtual Lng32 unpack(void *base, void * reallocator)               { return 0; }
 
   // -------------------------------------------------------------------
   // This is a utility for use by redefined migrateToNewVersion() at the
@@ -1878,7 +1683,7 @@ public:
   // assumes the image has been reallocated so that it is big enough to
   // make this expansion.
   // -------------------------------------------------------------------
-  NA_EIDPROC void makeRoomForNewVersion(Int16 oldSubClassSize,
+  void makeRoomForNewVersion(Int16 oldSubClassSize,
                                         Int16 newSubClassSize);
 
   // -------------------------------------------------------------------
@@ -1936,11 +1741,8 @@ public:
   // own members. The object is reallocated if needed at the "real" sub-
   // class the object belongs.
   // -------------------------------------------------------------------
-#ifndef PRIV_SRL
-  NA_EIDPROC virtual Lng32 migrateToNewVersion(NAVersionedObject *&newImage);
-#else
-  NA_EIDPROC Lng32 migrateToNewVersion(NAVersionedObject *&newImage);
-#endif //PRIV_SRL
+  virtual Lng32 migrateToNewVersion(NAVersionedObject *&newImage);
+
   // -------------------------------------------------------------------
   // Driver for Packing
   //
@@ -1948,7 +1750,7 @@ public:
   // later when 64-bit platforms are really available since it doesn't
   // affect object layout.
   // -------------------------------------------------------------------
-  NA_EIDPROC Long drivePack(void *space, short isSpacePtr = 1);
+  Long drivePack(void *space, short isSpacePtr = 1);
 
   // -------------------------------------------------------------------
   // Driver for Unpacking
@@ -1964,9 +1766,9 @@ public:
   // 6. initialize new members added in the new version
   //
   // -------------------------------------------------------------------
-  NA_EIDPROC NAVersionedObject *driveUnpack(void *base, char *vtblPtr, 
+  NAVersionedObject *driveUnpack(void *base, char *vtblPtr, 
 					    void * reallocator);
-  NA_EIDPROC NAVersionedObject *driveUnpack(void *base,
+  NAVersionedObject *driveUnpack(void *base,
 					    NAVersionedObject *ptrToAnchorClass,
 					    void * reallocator);
 
@@ -1982,24 +1784,21 @@ private:
   // private member functions
   // -------------------------------------------------------------------
 
-  NA_EIDPROC inline void clearFillers()
+  inline void clearFillers()
   {
-#ifndef NA_64BIT
-    fillers1_ = 0;
-#endif
   }
 
-  NA_EIDPROC inline void clearVersionIDArray()
+  inline void clearVersionIDArray()
   {
     memset(versionIDArray_, 0, VERSION_ID_ARRAY_SIZE);
   }
 
-  NA_EIDPROC inline void copyFlags(const NAVersionedObject & obj)
+  inline void copyFlags(const NAVersionedObject & obj)
   {
     flags_ = obj.flags_;
   }
 
-  NA_EIDPROC inline void initFlags()
+  inline void initFlags()
   {
     flags_ = 0;
     markAsNotPacked();
@@ -2010,12 +1809,12 @@ private:
 #endif
   }
 
-  NA_EIDPROC inline void copyVersionIDArray(unsigned char *versionIDArray)
+  inline void copyVersionIDArray(unsigned char *versionIDArray)
   {
     str_cpy_all((char *)versionIDArray_,(char *)versionIDArray,VERSION_ID_ARRAY_SIZE);
   }
 
-  NA_EIDPROC inline void copyVersionIDArray(const NAVersionedObject & obj)
+  inline void copyVersionIDArray(const NAVersionedObject & obj)
   {
     str_cpy_all((char*)versionIDArray_, (char*)obj.versionIDArray_,
                  VERSION_ID_ARRAY_SIZE);
@@ -2025,11 +1824,6 @@ private:
   // private data members
   // -------------------------------------------------------------------
 
-#ifndef NA_64BIT
-//char                 *HIDDEN_VTBLPTR_ON_32_BIT_NT;            // 00-03
-  Lng32                  fillers1_;                              // 04-07
-#endif
-
   char                  eyeCatcher_[2];                         // 08-09
   Int16                 classID_;                               // 10-11
   Int16                 imageSize_;                             // 12-13
@@ -2038,14 +1832,9 @@ private:
 
   NAVersionedObjectPtr  reallocatedAddress_;                    // 24-31
 
-#ifdef PRIV_SRL
-  void * dummyvtbl_; //solve offset problems for priv srls
-#endif //PRIV_SRL
-
 };  // END of class declaration for NAVersionedObject ------------------
 
 
-#pragma warning ( default : 4251 )
 
 #endif  // ---------------------------------------------------- EOF ----
 

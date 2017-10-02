@@ -203,18 +203,7 @@ RETCODE NoWaitOp::awaitIox(Lng32 * tag)
 	      rc = SUCCESS;
 	      }
 	    }   // end if rc != NOT_FINISHED
-	  // update Measure elapsed time if Measure enabled.
-	  if (stmt_->getRootTdb() &&
-	      ((ComTdb*)stmt_->getRootTdb())->getCollectStatsType() == 
-				   ComTdb::MEASURE_STATS &&
-	      stmt_->getGlobals()->getStatsArea() != NULL)	
-	    {
-	    if (stmt_->getGlobals()->getStatsArea()->getStmtCntrs() != NULL)
-	      {
-	      stmt_->getGlobals()->getStatsArea()->getStmtCntrs()->
-		incElapseBusyTime(NA_JulianTimestamp() - startTime);
-	      }
-	    }
+
 	  }
 
 	  if (rc != NOT_FINISHED && op_ == FETCH_CLOSE)

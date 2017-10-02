@@ -111,7 +111,6 @@ volumeFound(const DP2VolumeNamesContainer& container, const char& volumeName)
 //  none
 //
 //==============================================================================
-#pragma nowarn(1506)   // warning elimination 
 NodeMapEntry::NodeMapEntry(char* fullName, char* givenName, CollHeap* heap,
                            Int32 tableIdent, NABoolean noService)
 : heap_(heap), 
@@ -121,9 +120,7 @@ NodeMapEntry::NodeMapEntry(char* fullName, char* givenName, CollHeap* heap,
   Int32   error;
 
   CMPASSERT(fullName);
-#pragma nowarn(1506)   // warning elimination 
   short nameBufferSize = strlen(fullName) + 1;
-#pragma warn(1506)  // warning elimination 
   char* name = new (heap_) char[nameBufferSize];
   short length=4;
 
@@ -183,7 +180,6 @@ NodeMapEntry::NodeMapEntry(char* fullName, char* givenName, CollHeap* heap,
   }
 
 } // NodeMapEntry constructor
-#pragma warn(1506)  // warning elimination 
 
 //<pb>
 //==============================================================================
@@ -261,7 +257,6 @@ NodeMapEntry::NodeMapEntry(const NodeMapEntry& other, CollHeap* heap )
 //
 //==============================================================================
 // The function is not called anywhere
-// LCOV_EXCL_START
 void
 NodeMapEntry::setDp2Name(char* dp2Name)
 {
@@ -279,7 +274,6 @@ NodeMapEntry::setDp2Name(char* dp2Name)
   strcpy(dp2Name_,dp2Name);
 
 } //NodeMapEntry::setDp2Name()
-// LCOV_EXCL_STOP
 
 //<pb>
 //==============================================================================
@@ -446,13 +440,10 @@ NodeMapEntry::getText() const
 //  none
 //
 //==============================================================================
-// LCOV_EXCL_START
 void
 NodeMapEntry::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination 
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination 
   
   fprintf(ofd,"%s %s (%-8s %s %2d, %s %2d, %s %2d)\n",
                                                      NEW_INDENT,
@@ -463,7 +454,6 @@ NodeMapEntry::print(FILE* ofd, const char* indent, const char* title) const
                                                      "State: ",partitionState_);
 
 } // NodeMapEntry::print()
-// LCOV_EXCL_STOP
 
 //<pb>
 //============================================================================
@@ -615,7 +605,6 @@ NodeMap::NodeMap(const NodeMap& other, CollHeap* heap)
 //
 //==============================================================================
 // NodeMaps are deleted with the statement heap. 
-// LCOV_EXCL_START
 NodeMap::~NodeMap()
 {
 
@@ -645,7 +634,6 @@ NodeMap::~NodeMap()
     QueryAnalysis::Instance()->tempMonitor().exit();
 
 } // NodeMap destructor.
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Make a copy of this NodeMap object in a specified heap.
@@ -708,7 +696,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
   // number of CPUs in cluster.
   //-----------------------------------------------------------------------
 #ifdef _DEBUG
-// LCOV_EXCL_START
     if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
         (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
 	  CURRCONTEXT_OPTDEBUG->stream()
@@ -716,7 +703,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 	    << "logicalNumEntries = " << logicalNumEntries << endl
 	    << "totalESPs= " << totalESPs << endl;
     }
-// LCOV_EXCL_STOP
 #endif
 
   Lng32 requiredESPs = CURRSTMT_OPTDEFAULTS->getRequiredESPs();
@@ -877,7 +863,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 //
 //==============================================================================
 // the method is not used under SQ, except in OSM mode simulating NSK
-// LCOV_EXCL_START
 void
 NodeMap::deriveGrouping(const CollIndex         numGroups,
                               CollIndexPointer& groupStart,
@@ -1095,7 +1080,6 @@ NodeMap::deriveGrouping(const CollIndex         numGroups,
       }
     }
 } // NodeMap::deriveGrouping()
-// LCOV_EXCL_STOP
 //<pb>
 //==============================================================================
 //  Determine if node map has a node specification for all entries.
@@ -1391,7 +1375,6 @@ NodeMap::getClusterNumber(const CollIndex position) const
 //  Number of active partitions for this node map.
 //
 //==============================================================================
-#pragma nowarn(1506)   // warning elimination 
 CollIndex
 NodeMap::getNumActivePartitions() 
 {
@@ -1471,7 +1454,6 @@ NodeMap::getEstNumActivePartitionsAtRuntime()
 //  Number of DP2 volumes for this node map.
 //
 //==============================================================================
-#pragma nowarn(1506)   // warning elimination 
 CollIndex
 NodeMap::getNumOfDP2Volumes()
 {
@@ -1490,10 +1472,8 @@ NodeMap::getNumOfDP2Volumes()
   //--------------------------------------------------------------
   if (CmpCommon::getDefault(FAKE_VOLUME_ASSIGNMENTS) == DF_ON)
     {
-#pragma warning (disable : 4244)   //warning elimination
       numOfDP2Volumes_ = MINOF(getNumEntries(), 
 			       CmpCommon::getDefaultNumeric(FAKE_VOLUME_NUM_VOLUMES));
-#pragma warning (default : 4244)   //warning elimination
       return numOfDP2Volumes_;
     }
 
@@ -1528,21 +1508,17 @@ NodeMap::getNumOfDP2Volumes()
   return numOfDP2Volumes_;
 
 } // NodeMap::getNumOfDP2Volumes()
-#pragma warn(1506)  // warning elimination 
 
 // COLOCATION CHECKING: test whether the locations of partitions match
-#pragma nowarn(1506)   // warning elimination 
 NABoolean NodeMap::isCoLocated(const NodeMap* rMap) const
 {
   const NodeMapEntry *n_entry = NULL;
   const NodeMapEntry *r_entry = NULL;
   Int32 numEntries;
 
-#pragma warning (disable : 4018)   //warning elimination
   if ((numEntries=getNumEntries()) != rMap->getNumEntries()) return FALSE;
 
   for (CollIndex i=0; i<numEntries; i++ ) {
-#pragma warning (default : 4018)   //warning elimination
     n_entry = getNodeMapEntry(i);
     r_entry = rMap->getNodeMapEntry(i);
 
@@ -1567,7 +1543,6 @@ NABoolean NodeMap::isCoLocated(const NodeMap* rMap) const
   }
   return TRUE;
 }
-#pragma warn(1506)  // warning elimination 
 
 //<pb>
 //==============================================================================
@@ -1585,7 +1560,6 @@ NABoolean NodeMap::isCoLocated(const NodeMap* rMap) const
 //   partitions. 
 //
 //==============================================================================
-#pragma nowarn(1506)   // warning elimination 
 CollIndex
 NodeMap::getNumActiveDP2Volumes()
 {
@@ -1605,10 +1579,8 @@ NodeMap::getNumActiveDP2Volumes()
   //---------------------------------------------------
   if (CmpCommon::getDefault(FAKE_VOLUME_ASSIGNMENTS) == DF_ON)
     {
-#pragma warning (disable : 4244)   //warning elimination
       numOfActiveDP2Volumes_ = MINOF(getNumActivePartitions(), 
 				     CmpCommon::getDefaultNumeric(FAKE_VOLUME_NUM_VOLUMES));
-#pragma warning (default : 4244)   //warning elimination
       return numOfActiveDP2Volumes_;
     }
 
@@ -1653,7 +1625,6 @@ NodeMap::getNumActiveDP2Volumes()
   return numOfActiveDP2Volumes_;
   
 } // NodeMap::getNumActiveDP2Volumes()
-#pragma warn(1506)  // warning elimination 
 //<pb>
 //==============================================================================
 //  Determine if a contiguous set of entries includes more than one cluster,
@@ -1774,7 +1745,6 @@ NodeMap::containsPartition(const char *fullName) const
 //  none
 //
 //==============================================================================
-#pragma nowarn(270)   // warning elimination 
 void
 NodeMap::setPartitionState(const CollIndex& position,
                            const NodeMapEntry::PartitionState& newState)
@@ -1803,7 +1773,6 @@ NodeMap::setPartitionState(const CollIndex& position,
   resetCachedValues();
 
 } // NodeMap::setPartitionState()
-#pragma warn(270)  // warning elimination 
 //<pb>
 //==============================================================================
 //  Change node number of a node map entry at a specified position within the
@@ -1820,7 +1789,6 @@ NodeMap::setPartitionState(const CollIndex& position,
 //  none
 //
 //==============================================================================
-#pragma nowarn(270)   // warning elimination 
 void
 NodeMap::setNodeNumber(const CollIndex position, const Lng32 nodeNumber)
 {
@@ -1836,7 +1804,6 @@ NodeMap::setNodeNumber(const CollIndex position, const Lng32 nodeNumber)
   map_[position]->setNodeNumber(nodeNumber);
 
 } // NodeMap::setNodeNumber()
-#pragma warn(270)  // warning elimination 
 
 //==============================================================================
 //  Change cluster number of a node map entry at a specified position within the
@@ -1853,7 +1820,6 @@ NodeMap::setNodeNumber(const CollIndex position, const Lng32 nodeNumber)
 //  none
 //
 //==============================================================================
-#pragma nowarn(270)   // warning elimination 
 void
 NodeMap::setClusterNumber(const CollIndex position, const Lng32 clusterNumber)
 {
@@ -1867,7 +1833,6 @@ NodeMap::setClusterNumber(const CollIndex position, const Lng32 clusterNumber)
 
   map_[position]->setClusterNumber(clusterNumber);
 }
-#pragma warn(270)  // warning elimination 
 //<pb>
 
 //<pb>
@@ -1904,9 +1869,7 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
   char clusterNameTemp[256];
   NABoolean result;
   
-#pragma warning (disable : 4018)   //warning elimination
   assert(numESPs == compNodeMap->getNumEntries());
-#pragma warning (default : 4018)   //warning elimination
   assert(IPC_CPU_DONT_CARE == ANY_NODE);
 
   exeNodeMap->setMapArray(numESPs, mapEntries);
@@ -2386,7 +2349,6 @@ void NodeMap::balanceScanInfos(HivePartitionAndBucketKey *hiveSearchKey,
 } // NodeMap::balanceScanInfos
 
 // to be called from the debugger
-// LCOV_EXCL_START
 void 
 NodeMap::display() const
 {
@@ -2408,7 +2370,6 @@ NodeMap::display() const
 //  none
 //
 //==============================================================================
-#pragma nowarn(1506)   // warning elimination 
 void
 NodeMap::print(FILE* ofd, const char* indent, const char* title) const
 {
@@ -2493,8 +2454,6 @@ NodeMap::print(FILE* ofd, const char* indent, const char* title) const
          );
 
 } // NodeMap::print()
-// LCOV_EXCL_STOP
-#pragma warn(1506)  // warning elimination 
 
 //=======================================================
 // Generate a string representation of this NodeMap.
@@ -2651,9 +2610,7 @@ Int32 NodeMap::getNumberOfUniqueNodes() const
 void
 HiveNodeMapEntry::print(FILE* ofd, const char* indent, const char* title) const
 {
-#pragma nowarn(1506)   // warning elimination
   BUMP_INDENT(indent);
-#pragma warn(1506)  // warning elimination
 
   for (CollIndex i=0; i<scanInfo_.entries(); i++) {
      fprintf(ofd,"%s %s [offs=%12ld, span=%12ld, %s file=%s]\n",

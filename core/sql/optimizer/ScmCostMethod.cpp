@@ -3688,7 +3688,6 @@ NABoolean CostMethodHbaseUpdateOrDelete::allKeyColumnsHaveHistogramStatistics(
 // result of applying key predicates. Assumes that histograms exist for
 // all key columns.
 // -----------------------------------------------------------------------
-#pragma nowarn(262)   // warning elimination
 CostScalar
 CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
   IndexDescHistograms & histograms,
@@ -3769,7 +3768,6 @@ CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
 
   return numRowsToScan;
 }   // CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms()
-#pragma warn(262)  // warning elimination
 
 // -----------------------------------------------------------------------
 // CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation().

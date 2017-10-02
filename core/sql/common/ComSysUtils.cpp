@@ -80,7 +80,6 @@
 // ****************************************************************************
 
 extern "C" {
-NA_EIDPROC
 Int32 NA_gettimeofday(struct NA_timeval *tp, struct NA_timezone *tzp)
   {
     return gettimeofday(tp, 0);

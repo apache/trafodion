@@ -79,7 +79,6 @@ Lng32 SortStatistics::getStatNumRuns() const
 }
 
 
-// LCOV_EXCL_START
 
 Lng32 SortStatistics::getStatMemSizeB() const
 {
@@ -173,7 +172,6 @@ Lng32 SortStatistics::getStatScrAwaitIo() const
   return scrNumAwaitio_;
 }
 
-// LCOV_EXCL_STOP
 
 
 

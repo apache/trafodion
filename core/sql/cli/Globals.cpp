@@ -48,7 +48,6 @@
 #include "ex_stdh.h"
 #include "ex_frag_rt.h"
 #include "memorymonitor.h"
-#include "ExMeas.h"
 #include "ExStats.h"
 #include "ExUdrServer.h"
 #include "ExSqlComp.h"
@@ -77,14 +76,8 @@ CliGlobals * cli_globals = NULL;
 // segment id.
 #endif
 
-
-
-#ifdef NA_CMPDLL
 #include "CmpContext.h"
-#endif // NA_CMPDLL
 
-//ss_cc_change
-//LCOV_EXCL_START
 CliGlobals::CliGlobals(NABoolean espProcess)
      : inConstructor_(TRUE),
        executorMemory_("Global Executor Memory",0,0,
@@ -118,16 +111,14 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        defaultContext_(NULL),
        langManC_(NULL),
        langManJava_(NULL)
-#ifdef SQ_PHANDLE_VERIFIER
        , myVerifier_(-1)
-#endif
+       , espProcess_(espProcess)
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
   init(espProcess, NULL);
   globalsAreInitialized_ = TRUE;
 }
-//LCOV_EXCL_STOP
 
 void CliGlobals::init( NABoolean espProcess,
                        StatsGlobals *statsGlobals
@@ -171,19 +162,15 @@ void CliGlobals::init( NABoolean espProcess,
 				  myNodeNumber_, myNodeName_, nodeNameLen, 
 				  myStartTime_, myProcessNameString_,
 				  parentProcessNameString_
-#ifdef SQ_PHANDLE_VERIFIER
                                   , &myVerifier_
-#endif
                                  );
 
   if (retcomrt)
   {
-    char errStr[128];//LCOV_EXCL_LINE
-    sprintf (errStr, "Could not initialize CLI globals.ComRtGetProgramInfo returned an error :%d.", retcomrt);//LCOV_EXCL_LINE
-    ex_assert(0,errStr);//LCOV_EXCL_LINE
+    char errStr[128];
+    sprintf (errStr, "Could not initialize CLI globals.ComRtGetProgramInfo returned an error :%d.", retcomrt);
+    ex_assert(0,errStr);
   }
-
-  
 
   ComRtGetProcessPriority(myPriority_);
   savedPriority_ = (short)myPriority_;
@@ -192,35 +179,7 @@ void CliGlobals::init( NABoolean espProcess,
   // create global structures for IPC environment
 #if !(defined(__SSCP) || defined(__SSMP))
 
-  // check if Measure is enabled and allocate Measure process counters.
-  measProcCntrs_ = NULL;
-  measProcEnabled_  = 0;
-  measStmtEnabled_  = 0;
-  measSubsysRunning_ = 0;
-  
-  measProcCntrs_ = new(&executorMemory_) ExMeasProcCntrs();  
-
-  // Ask Measure for status
-  ExMeasGetStatus( measStmtEnabled_,
-		   measProcEnabled_,
-		   measSubsysRunning_ );
-
-  if (measProcEnabled_)
-    {
-      //ss_cc_change This will not get hit on seaquest
-      //LCOV_EXCL_START
-      Int32 measError = measProcCntrs_->ExMeasProcCntrsBump();
-      if (measError)
-	{
-	  NADELETEBASIC (measProcCntrs_, &executorMemory_);
-	  measProcCntrs_ = NULL;
-	  measProcEnabled_  = 0;
-	  measStmtEnabled_  = 0;
-	}
-      //LCOV_EXCL_STOP
-    }
-
-    ipcHeap_ = new(&executorMemory_) NAHeap("IPC Heap",
+  ipcHeap_ = new(&executorMemory_) NAHeap("IPC Heap",
                                      NAMemory::IPC_MEMORY, 2048 * 1024);
     ipcHeap_->setThreadSafe();
   if (! espProcess)
@@ -238,7 +197,7 @@ void CliGlobals::init( NABoolean espProcess,
     // before cli_globals is fully initialized, but it is being done
     // here because the code below expects it 
     cli_globals = this;
-    short error;
+    int error;
     statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
     if (statsGlobals_ == NULL
       || (statsGlobals_ != NULL && 
@@ -255,20 +214,14 @@ void CliGlobals::init( NABoolean espProcess,
     {
       error = statsGlobals_->openStatsSemaphore(semId_);
       // Behave like as if stats is not available
-      //ss_cc_change - rare error case
-      //LCOV_EXCL_START
       if (error != 0)
       {
 	statsGlobals_ = NULL;
 	statsHeap_ = getExecutorMemory();
       }
-      //LCOV_EXCL_STOP
       else
       {
-        short savedPriority, savedStopMode;
-        error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-                      savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
 
         statsHeap_ = (NAHeap *)statsGlobals_->
                getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_, FALSE);
@@ -286,7 +239,7 @@ void CliGlobals::init( NABoolean espProcess,
 	statsGlobals_->addProcess(myPin_, statsHeap_);
         processStats_ = statsGlobals_->getExProcessStats(myPin_);
         processStats_->setStartTime(myStartTime_);
-	statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+	statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
       }
     }
     // create a default context and make it the current context
@@ -350,8 +303,6 @@ void CliGlobals::init( NABoolean espProcess,
   // could initialize the program file name here but ...
   myProgName_[0] = '\0';
 }
-//ss_cc_change
-//LCOV_EXCL_START
 CliGlobals::~CliGlobals()
 {
   arkcmpInitFailed_ = arkcmpERROR_; // (it's corrupt after deleting, anyway...)
@@ -369,12 +320,9 @@ CliGlobals::~CliGlobals()
   }
   if (statsGlobals_ != NULL)
   {
-    short savedPriority, savedStopMode;
-    error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-              savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
     statsGlobals_->removeProcess(myPin_);
-    statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+    statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
     sem_close((sem_t *)semId_);
   }
 }
@@ -388,7 +336,6 @@ Lng32 CliGlobals::getNextUniqueContextHandle()
     return contextHandle;
 }
 
-//LCOV_EXCL_STOP
 IpcPriority CliGlobals::myCurrentPriority()
 {
   IpcPriority myPriority;
@@ -400,7 +347,6 @@ IpcPriority CliGlobals::myCurrentPriority()
   return myPriority;
 }
 
-//LCOV_EXCL_STOP
 
 // NOTE: Unlike REFPARAM_BOUNDSCHECK, this method does not verify that
 //       the pointer "startAddress" actually points to a valid address
@@ -540,7 +486,6 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
   return result;
 }
 
-//LCOV_EXCL_START
 void * CliGlobals::getSegmentStartAddrOnNSK()
 {
 
@@ -590,8 +535,6 @@ Lng32 CliGlobals::createContext(ContextCli* &newContext)
    
   return 0;
 }
-//ss_cc_change : This was relevant only when we supported nowait CLI
-//LCOV_EXCL_START
 Lng32 CliGlobals::dropContext(ContextCli* context)
 {
   if (!context)
@@ -636,7 +579,6 @@ Lng32 CliGlobals::dropContext(ContextCli* context)
   cliSemaphore_->release();
   return 0;
 }
-//LCOV_EXCL_STOP
 
 ContextCli * CliGlobals::getContext(SQLCTX_HANDLE context_handle, 
                                     NABoolean calledFromDrop)
@@ -777,9 +719,7 @@ Lng32 CliGlobals::setEnvVars(char ** envvars)
   for (nEnvs=0; envvars[nEnvs]; nEnvs++);
 
   // one extra to null terminate envvar list
-#pragma nowarn(1506)   // warning elimination 
   Lng32 envvarsLen = (nEnvs + 1) * sizeof(char*);
-#pragma warn(1506)  // warning elimination 
 
   Int32 count;
   for (count=0; count < nEnvs; count++) 
@@ -939,14 +879,12 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 
   envvarsContext_++;
 
-#ifdef NA_CMPDLL
   // need to set the env to the embedded compiler too
   if (currContext()->isEmbeddedArkcmpInitialized())
     {
       currContext()->getEmbeddedArkcmpContext()
                    ->setArkcmpEnvDirect(name, value, reset);
     }
-#endif // NA_CMPDLL
 
   return sendEnvironToMxcmp();
 }
@@ -956,17 +894,12 @@ char * CliGlobals::getEnv(const char * name)
   return (char*)ComRtGetEnvValueFromEnvvars((const char**)envvars_, name);
 }
 //
-//ss_cc_change : unused anywhere in our code base
-//LCOV_EXCL_START
 Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
 {
     theContext->reset(contextMsg);  
     return SUCCESS;
 }
-//LCOV_EXCL_STOP
 
-//ss_cc_change POS featue no longer used
-//LCOV_EXCL_START
 void CliGlobals::clearQualifiedDiskInfo()
 {
   CollHeap *heap = defaultContext_->exCollHeap();
@@ -1140,6 +1073,52 @@ void CliGlobals::deleteContexts()
     }
 }
 #endif  // _DEBUG
+
+// The unused BMO memory quota can now be utilized by the other
+// BMO instances from the same or different fragment
+// In case of ESP process, the unused memory quota is maintained
+// at the default context. In case of master process, the ununsed
+// memory quota is maintained in statement globals
+
+NABoolean CliGlobals::grabMemoryQuotaIfAvailable(ULng32 size)
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->grabMemoryQuotaIfAvailable(size);
+}
+
+void CliGlobals::resetMemoryQuota() 
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->resetMemoryQuota();
+}
+
+ULng32 CliGlobals::unusedMemoryQuota() 
+{ 
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->unusedMemoryQuota();
+}
+
+void CliGlobals::yieldMemoryQuota(ULng32 size)
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->yieldMemoryQuota(size);
+}
 
 void SQ_CleanupThread(void *arg)
 {

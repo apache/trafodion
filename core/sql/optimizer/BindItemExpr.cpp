@@ -1231,7 +1231,6 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_MOVING_MIN:            // b) possibly different orderings
      case ITM_SCALAR_MIN:            // b) ordering, also may eliminate data
      case ITM_SCALAR_MAX:            // b) ordering, also may eliminate data
-     case ITM_AUDIT_IMAGE:           // a), b) output is binary disguised as ISO
      case ITM_OLAP_MAX:              // b) ordering, also may eliminate data
      case ITM_OLAP_MIN:              // b) ordering, also may eliminate data
      case ITM_CONVERTTOHEX:          // b) operator depends on encoding
@@ -1354,10 +1353,8 @@ ItemExpr* BiRelat::tryToRelaxCharTypeMatchRules(BindWA *bindWA)
       if ( leafList1 -> entries() != leafList2 -> entries() )
          return this;
 
-#pragma warning (disable : 4018)   //warning elimination
       // relax by pairs
       for ( Int32 i=0; i<leafList1 -> entries(); i++ ) {
-#pragma warning (default : 4018)   //warning elimination
          if ( performRelaxation((*leafList1)[i], (*leafList2)[i], bindWA) == FALSE )
            return this; // If one pair can not be made to be type-compatible, return
                         // right away. The type synthesise code will flag the
@@ -1879,7 +1876,6 @@ ItemExpr *ItemExpr::bindNodeRoot(BindWA *bindWA)
 
 } // ItemExpr::bindNodeRoot()
 
-// LCOV_EXCL_START :rfi
 ItemExpr* ItemExpr::_bindNodeRoot(BindWA *bindWA)
 {
   return 0;
@@ -1893,7 +1889,6 @@ ItemExpr * ItemExpr::foldConstants(BindWA *bindWA)
     bindWA->setErrStatus();
   return result;
 }
-// LCOV_EXCL_STOP
 
 ItemExpr * ItemExpr::bindUDFsOrSubqueries(BindWA *bindWA)
 {
@@ -3545,7 +3540,7 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
 
     case CharInfo::KANJI_MP:
     case CharInfo::KSC5601_MP:
-      setOperatorType(ITM_NCHAR_MP_CHAR); //LCOV_EXCL_LINE - mp
+      setOperatorType(ITM_NCHAR_MP_CHAR);
       break;
 
     default:
@@ -3553,7 +3548,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
   }
 
   if (!CharInfo::isCharSetSupported(charSet_)) {
-// LCOV_EXCL_START - rfi
     // 3010 Character set $0~string0 is not yet supported.
     // 4062 The preceding error actually occurred in function $0~String0.
     *CmpCommon::diags() << DgSqlCode(-3010)
@@ -3563,7 +3557,6 @@ ItemExpr *CharFunc::bindNode(BindWA *bindWA)
     *CmpCommon::diags() << DgSqlCode(-4062) << DgString0(unparsed);
     bindWA->setErrStatus();
     return NULL;
-// LCOV_EXCL_STOP
   }
 
   // CharFunc inherits from BuiltinFunction .. Function .. ItemExpr.
@@ -6642,9 +6635,7 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
     if (escapeNode)
     {
       CharInfo::CharSet cs = matchCharType->getCharSet();
-#pragma nowarn(1506)   // warning elimination
       escapeChar_len = escapeNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
       escapeChar = escapeNode->getRawText()->data();
 
       if      (  CharInfo::isSingleByteCharSet(cs) && escapeChar_len == 1) /*ok*/;
@@ -6733,21 +6724,17 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
    Int32 pattern_str_len = 0;
 
    pattern_str = patternNode->getRawText() -> data();
-#pragma nowarn(1506)   // warning elimination
    pattern_str_len = patternNode->getRawText()->length();
-#pragma warn(1506)  // warning elimination
 
     CharInfo::CharSet cs = matchCharType->getCharSet();
 
 
-#pragma nowarn(1506)   // warning elimination
     LikePatternString patternString( pattern_str,
 				     pattern_str_len, cs,
 				     escapeChar, escapeChar_len,
 				     underscoreChar, underscoreChar_len,
 				     percentChar, percentChar_len
 				   );
-#pragma warn(1506)  // warning elimination
 
     LikePattern pattern(patternString, heap, cs);
 
@@ -6997,10 +6984,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
       // Zero-pad into prefixZ, e.g. for mv type VARCHAR(4), make "ab\0\0"
       char *prefixZ = new (heap) char[matchLen];
-  #pragma nowarn(1506)   // warning elimination
       byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		   (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
 
       ItemExpr *child1 = new (heap) SystemLiteral(
 			      NAString(prefixZ, matchLen),
@@ -7075,10 +7060,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
       if ( matchCharType->getCharSet() == CharInfo::ISO88591 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UCS2 )
       {
@@ -7088,20 +7071,14 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 	  foundNextKey = matchCharType->computeNextKeyValue(prefixW);
 	  byte_str_cpy(prefixZ, matchLen,
 		       (char*)prefixW.data(), prefixW.length()<<1,
-  #pragma nowarn(1506)   // warning elimination
 		       (char)zeroChar
-  #pragma warn(1506)  // warning elimination
-  #pragma nowarn(1506)   // warning elimination
 		      );
-  #pragma warn(1506)  // warning elimination
       }
       else if ( matchCharType->getCharSet() == CharInfo::UTF8 )
       {
 	  foundNextKey = matchCharType->computeNextKeyValue_UTF8(prefix);
-  #pragma nowarn(1506)   // warning elimination
 	  byte_str_cpy(prefixZ, matchLen, prefix.data(), prefix.length(),
 		       (char)zeroChar);
-  #pragma warn(1506)  // warning elimination
       }
 
       if ( foundNextKey )
@@ -8895,7 +8872,6 @@ ItemExpr *Replace::bindNode(BindWA *bindWA)
 // member functions for class SelIndex
 // -----------------------------------------------------------------------
 
-#pragma nowarn(1506)   // warning elimination
 ItemExpr *SelIndex::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -8945,7 +8921,6 @@ ItemExpr *SelIndex::bindNode(BindWA *bindWA)
   setValueId(resultTable->getValueId(i - 1));
   return getValueId().getItemExpr();
 }
-#pragma warn(1506)  // warning elimination
 
 // -----------------------------------------------------------------------
 // member functions for class Subquery
@@ -11798,7 +11773,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		    i--;
 		  }
 		
-		str_sprintf(buf, "@A1 / %Ld", denom);
+		str_sprintf(buf, "@A1 / %ld", denom);
 	      }
 	    
 	    if (strlen(buf) > 0)
@@ -11819,7 +11794,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 		
 		// multiply by 10 ** (number of digits rounded off) to
 		// get back to the original scale.
-		str_sprintf(buf, "cast(@A1 * %Ld as numeric(%d,%d))", 
+		str_sprintf(buf, "cast(@A1 * %ld as numeric(%d,%d))", 
                   denom, MAX_NUMERIC_PRECISION, MAXOF(type_op1.getScale(), roundTo));
 		parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 2, divExpr, child(1));
 		if (! parseTree)
@@ -12359,11 +12334,9 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
          olap->isFrameEndUnboundedFollowing()) || //olap->getframeEnd() ==  INT_MAX) || 
         (olap->getframeStart() > olap->getframeEnd()))
     {
-// LCOV_EXCL_START - rfi
       //The specified window frame clause is not valid.
       *CmpCommon::diags() << DgSqlCode(-4342);
       bindWA->setErrStatus();
-// LCOV_EXCL_STOP
     } 
 
     if (!olap->isFrameStartUnboundedPreceding() && //olap->getframeStart() != -INT_MAX &&
@@ -12595,42 +12568,6 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
     return equivId.getItemExpr();
   else
     return getValueId().getItemExpr();
-}
-
-//-------------------------------------------------------------------------
-//
-// member functions for class AuditImage
-//
-//-------------------------------------------------------------------------
-ItemExpr *AuditImage::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound())
-    return getValueId().getItemExpr();
-
-  ItemExpr * boundExpr = NULL;
-     
-  // Obtain the NATable for the objectName.
-  NATable *table = bindWA->getNATable(getObjectName());
-  if (bindWA->errStatus()) return NULL; 
-
-  setNATable(table);
-
-  // The number of columns in the object must match the number of columns
-  // in the expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-  if (table->getColumnCount() != (ULng32) getArity())
-    {
-      *CmpCommon::diags() << DgSqlCode(-4315)
-			  << DgTableName(getObjectName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return NULL;
-    }
- 
-  // Binds self; Binds children; AuditImage::synthesize();
-  boundExpr = Function::bindNode(bindWA);
-  if (bindWA->errStatus()) return NULL;
- 
-  return boundExpr;
 }
 
 //---------------------------------------------------------------------------

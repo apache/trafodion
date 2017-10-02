@@ -54,8 +54,7 @@ enum HostVarRole {
   HV_IS_DESC_DEST,
   HV_IS_DESC_SOURCE,
   HV_IS_DYNPARAM,
-  HV_IS_INPUT_OUTPUT,  // A variable appearing in a SET statement of a Compound Statement
-  HV_IS_DEFINE  // NSK define
+  HV_IS_INPUT_OUTPUT  // A variable appearing in a SET statement of a Compound Statement
 };
 
 

@@ -70,7 +70,6 @@ CPPSRC := Allocator.cpp \
 	ExHbaseSelect.cpp \
 	ExHbaseIUD.cpp \
 	ExHbaseDDL.cpp \
-	ExMeas.cpp \
 	ExPack.cpp \
 	ExPackedRows.cpp \
 	ExProbeCache.cpp \
@@ -104,10 +103,7 @@ CPPSRC := Allocator.cpp \
 	SqlStats.cpp \
 	rts_msg.cpp \
 	sql_buffer.cpp \
-	stubs.cpp \
-	stubs2.cpp \
 	SwapSpace.cpp \
-	tempfile.cpp \
 	timeout_data.cpp \
 	TriggerEnable.cpp \
 	TupleSpace.cpp \

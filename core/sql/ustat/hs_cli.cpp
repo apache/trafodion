@@ -57,7 +57,6 @@
 #include "ComMPLoc.h"
 #include "CmpContext.h"
 #include "CompException.h"
-#include "ReadTableDef.h"
 #include "hs_globals.h"
 #include "hs_cli.h"
 #include "hs_auto.h"
@@ -76,7 +75,6 @@
 // -----------------------------------------------------------------------
 // Class to deallocate statement and descriptor.
 // -----------------------------------------------------------------------
-#pragma nowarn(770)   // warning elimination
 class HSRefDesc {
 
 public:
@@ -112,7 +110,6 @@ private:
   SQLSTMT_ID *ps_;
   SQLDESC_ID *pd_;
 };
-#pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
 // DESCRIPTION: Call SQL CLI to execute a SQL statement. The caller is
@@ -280,16 +277,9 @@ Lng32 HSFuncExecQueryBody( const char *dml
                                  (Long)dml, 0);
   HSHandleError(retcode);
   retcode = SQL_EXEC_SetDescItem(&srcDesc, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                   strlen(dml) + 1, 0);
-#pragma warn(1506)  // warning elimination
-#pragma nowarn(734)   // warning elimination
   HSHandleError(retcode);
-#pragma warn(734)  // warning elimination
-#pragma nowarn(734)   // warning elimination
 
-#pragma warn(734)  // warning elimination
-#pragma nowarn(770)   // warning elimination
   // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
   // it may get reset by other calls to SQL_EXEC_SetDescItem().
   NAString charSet = ActiveSchemaDB()->getDefaults().getValue(ISO_MAPPING);
@@ -656,7 +646,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
                                                  FALSE,
                                                  STMTHEAP);
       }
-    // LCOV_EXCL_START :nsk
     else
       {
         ComMPLoc tempObj(tblName, ComMPLoc::FILE);
@@ -714,7 +703,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
         //entry-sequence tables, have a 2G limit
           ddl += HS_EXTENT_SIZE_MP_FMT1;
       }
-    // LCOV_EXCL_STOP
 
 
     HSSqTableDef sampleDef(*sampleName, tableType);
@@ -2393,9 +2381,7 @@ HSCliStatement::HSCliStatement( statementIndex ix,
       strncpy(moduleName, HS_MODULE, HS_MODULE_LENGTH);
 
       module.module_name = (char *)moduleName;
-#pragma nowarn(1506)   // warning elimination
       module.module_name_len = strlen((char*)moduleName);
-#pragma warn(1506)  // warning elimination
       module.creation_timestamp = 1234567890;
       moduleSet = TRUE;
     }
@@ -2408,9 +2394,7 @@ HSCliStatement::HSCliStatement( statementIndex ix,
   strncpy(stmtID_, StatementNames[ix & 0xFFFF], HS_STMTID_LENGTH);
 
   stmt_.identifier = (char *)stmtID_;
-#pragma nowarn(1506)   // warning elimination
   stmt_.identifier_len = strlen((char *)stmtID_);
-#pragma warn(1506)  // warning elimination
 
   stmt_.handle = 0;
 
@@ -2433,9 +2417,7 @@ HSCliStatement::HSCliStatement( statementIndex ix,
   strncat(descID_, "_IVAR", HS_STMTID_LENGTH);
 
   desc_.identifier = (char *)descID_;
-#pragma nowarn(1506)   // warning elimination
   desc_.identifier_len = strlen((char *)descID_);
-#pragma warn(1506)  // warning elimination
 
   stmt_.handle = 0;
   retcode_ = SQL_EXEC_SetDescPointers(pInputDesc_, PRESET_VARS_NUM, (numVars_ - PRESET_VARS_NUM + 1),
@@ -2785,23 +2767,19 @@ Lng32 HSCursor::prepareRowsetInternal
           }
         while (col = col->next);
       }
-    // LCOV_EXCL_START :rfi
     else
     {
       LM->Log("***[ERROR] prepareRowset: GROUP PTR IS NULL\n");
       return -1;
     }
-    // LCOV_EXCL_STOP
 
     LM->Log(cliStr);
 
       // Cannot reuse a cursor.  This causes memory leak.
     if (stmtAllocated_)
       {
-        // LCOV_EXCL_START :rfi
         LM->Log("***[ERROR] REUSING ALLOCATED CURSOR\n");
         return -1;
-        // LCOV_EXCL_STOP
       }
 
 
@@ -2909,10 +2887,8 @@ Lng32 HSCursor::prepareRowsetInternal
     LM->StopTimer();
     if (retcode_ < 0)
       {
-        // LCOV_EXCL_START :rfi
         LM->Log("***[FAILED] Unable to open rowset cursor.\n");
         HSHandleError(retcode_);
-        // LCOV_EXCL_STOP
       }
 
     closeStmtNeeded_ = TRUE;
@@ -3004,10 +2980,8 @@ Lng32 HSCursor::prepare( const char *clistr
   // Cannot reuse a cursor.  This causes memory leak.
   if (stmtAllocated_)
     {
-      // LCOV_EXCL_START :rfi
       LM->Log("***[ERROR] REUSING ALLOCATED CURSOR\n");
       return -1;
-      // LCOV_EXCL_STOP
     }
 
   retcode_ = SQL_EXEC_ClearDiagnostics(stmt_);
@@ -3032,9 +3006,7 @@ Lng32 HSCursor::prepare( const char *clistr
                                   (Long)clistr, 0);
   HSHandleError(retcode_);
   retcode_ = SQL_EXEC_SetDescItem(srcDesc_, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination
                                   strlen(clistr) + 1, 0);
-#pragma warn(1506)  // warning elimination
   HSHandleError(retcode_);
 
   // SQLDESC_CHAR_SET must be the last descriptor item set, otherwise
@@ -3155,9 +3127,7 @@ Lng32 HSCursor::prepare( const char *clistr
     } // for loop
 
   // aligned on 4-byte boundary
-#pragma nowarn(1506)   // warning elimination
   outputDataLen_ = roundup4(outputDataLen_);
-#pragma warn(1506)  // warning elimination
 
   // Make sure dataBuf_ starts at a 4-byte boundary.
   dataBuf_ = (char *)(new(heap_) Lng32[(outputDataLen_ >> 2) + 1]);
@@ -3197,14 +3167,12 @@ Lng32 HSCursor::prepare( const char *clistr
   LM->StopTimer();
   if (retcode_)
     {
-      // LCOV_EXCL_START :rfi
       if (LM->LogNeeded())
         {
           snprintf(LM->msg, sizeof(LM->msg), "***[FAILED] OPEN CURSOR, retcode=%d", retcode_);
           LM->Log(LM->msg);
         }
       HSHandleError(retcode_);
-      // LCOV_EXCL_STOP
     }
 
   closeStmtNeeded_ = TRUE;
@@ -3218,7 +3186,6 @@ Lng32 HSCursor::prepare( const char *clistr
 #define ALIGN4(addr) ((addr & 0x3) == 0)
 #define ALIGN8(addr) ((addr & 0x7) == 0)
 
-// LCOV_EXCL_START :cnu
 template <class T> class HSBin : public SQLInt {
 
 public:
@@ -3234,10 +3201,8 @@ private:
 
   Lng32 id_;
 };
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 class HSLargeint : public SQLInt {
 
 public:
@@ -3253,7 +3218,6 @@ private:
 
   Lng32 id_;
 };
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 class HSDate : public SQLDate {
@@ -3271,7 +3235,6 @@ public:
 };
 
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 NAType* ConstructNumericType( Long addr
                                    , Lng32 id
                                    , Lng32 length
@@ -3326,14 +3289,11 @@ NAType* ConstructNumericType( Long addr
   }
   return type;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // Construct a NA type from an SQL type so that NAtype.encode can be
 // called later.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
-#pragma nowarn(770)   // warning elimination
 Lng32 HSCursor::buildNAType()
 {
 #define REC_INTERVAL REC_MIN_INTERVAL
@@ -3381,19 +3341,15 @@ Lng32 HSCursor::buildNAType()
        case REC_BIN16_SIGNED:
           if (precision <= 0)
             length = 2;
-#pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
                                       TRUE, nullflag, heap_);
-#pragma warn(1506)  // warning elimination
           break;
         case REC_BPINT_UNSIGNED:
         case REC_BIN16_UNSIGNED:
           if (precision <= 0)
             length = 2;
-#pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
                                       FALSE, nullflag, heap_);
-#pragma warn(1506)  // warning elimination
           break;
 
         //
@@ -3401,28 +3357,22 @@ Lng32 HSCursor::buildNAType()
         case REC_BIN32_SIGNED:
           if (precision <= 0)
             length = 4;
-#pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
                                       TRUE, nullflag, heap_);
-#pragma warn(1506)  // warning elimination
           break;
         case REC_BIN32_UNSIGNED:
           if (precision <= 0)
             length = 4;
-#pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
                                       FALSE, nullflag, heap_);
-#pragma warn(1506)  // warning elimination
           break;
         //
         //
         case REC_BIN64_SIGNED:
           if (precision <= 0)
             length = 8;
-#pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
                                       TRUE, nullflag, heap_);
-#pragma warn(1506)  // warning elimination
           break;
         case REC_BIN64_UNSIGNED:
           if (precision <= 0)
@@ -3508,8 +3458,6 @@ Lng32 HSCursor::buildNAType()
 
   return 0;
 }
-#pragma warn(770)  // warning elimination
-// LCOV_EXCL_STOP
 
 /***********************************************/
 /* METHOD:  fetchRowset()                      */
@@ -3738,8 +3686,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
 
   switch(colDesc_[0].length)
     {
-#ifdef NA_64BIT
-    // dg64 - Int64 already taken care of below
     case sizeof(Int32):
       {
         Int32 tmp;
@@ -3752,20 +3698,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
           *pLargeValue = (Int64)tmp;
         break;
       }
-#else
-    case sizeof(Lng32):
-      {
-        Lng32 tmp;
-        memcpy((char *) &tmp,
-               colDesc_[0].data,
-               sizeof(Lng32));
-        if (pSmallValue != NULL)
-          *pSmallValue = tmp;
-        if (pLargeValue != NULL)
-          *pLargeValue = (Int64)tmp;
-        break;
-      }
-#endif
     case sizeof(Int64):
       {
         Int64 tmp;
@@ -3792,7 +3724,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
 // -----------------------------------------------------------------------
 // Fetch char type and largeint type columns from a table.
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START :cnu
 Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &value2, double &value3)
 {
   HSErrorCatcher errorCatcher(retcode_, - UERR_INTERNAL_ERROR, "fetchCharColumn", TRUE);
@@ -3811,7 +3742,7 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   {
     // Copy varchar output to 'value'.  First byte is length of varchar.
     // Varchar data starts at byte 3.
-#if defined(NA_LITTLE_ENDIAN) || defined(NA_WINNT)
+#if defined(NA_LITTLE_ENDIAN)
     char length = colDesc_[0].data[0];
 #elif defined(NA_BIG_ENDIAN)
     char length = colDesc_[0].data[1];
@@ -3838,7 +3769,6 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   return 0;
 }
 
-// LCOV_EXCL_STOP
 
 // Constructor used for static interface.
 HSinsertHist::HSinsertHist(const char *stmtID,
@@ -3862,9 +3792,7 @@ HSinsertHist::HSinsertHist(const char *stmtID,
         strncpy(moduleName, HS_MODULE, HS_MODULE_LENGTH);
 
         module.module_name = (char *)moduleName;
-#pragma nowarn(1506)   // warning elimination
         module.module_name_len = strlen((char*)moduleName);
-#pragma warn(1506)  // warning elimination
         module.creation_timestamp = 1234567890;
         moduleSet = TRUE;
       }
@@ -3874,9 +3802,7 @@ HSinsertHist::HSinsertHist(const char *stmtID,
     stmt_.module = &module;
     strncpy(stmtID_, stmtID, HS_STMTID_LENGTH);
     stmt_.identifier = (char *)stmtID_;
-#pragma nowarn(1506)   // warning elimination
     stmt_.identifier_len = strlen((char *)stmtID_);
-#pragma warn(1506)  // warning elimination
     stmt_.handle = 0;
 
 
@@ -3886,9 +3812,7 @@ HSinsertHist::HSinsertHist(const char *stmtID,
     strncpy(descID_, stmtID_, HS_STMTID_LENGTH);
     strncat(descID_, "_IVAR", HS_STMTID_LENGTH);
     desc_.identifier = (char *)descID_;
-#pragma nowarn(1506)   // warning elimination
     desc_.identifier_len = strlen((char *)descID_);
-#pragma warn(1506)  // warning elimination
     stmt_.handle = 0;
   }
 
@@ -4356,9 +4280,7 @@ HSinsertHistint::HSinsertHistint(const char *stmtID,
         strncpy(moduleName, HS_MODULE, HS_MODULE_LENGTH);
 
         module.module_name = (char *)moduleName;
-#pragma nowarn(1506)   // warning elimination
         module.module_name_len = strlen((char*)moduleName);
-#pragma warn(1506)  // warning elimination
         module.creation_timestamp = 1234567890;
         moduleSet = TRUE;
       }
@@ -4368,9 +4290,7 @@ HSinsertHistint::HSinsertHistint(const char *stmtID,
     stmt_.module = &module;
     strncpy(stmtID_, stmtID, HS_STMTID_LENGTH);
     stmt_.identifier = (char *)stmtID_;
-#pragma nowarn(1506)   // warning elimination
     stmt_.identifier_len = strlen((char *)stmtID_);
-#pragma warn(1506)  // warning elimination
     stmt_.handle = 0;
 
 
@@ -4380,9 +4300,7 @@ HSinsertHistint::HSinsertHistint(const char *stmtID,
     strncpy(descID_, stmtID_, HS_STMTID_LENGTH);
     strncat(descID_, "_IVAR", HS_STMTID_LENGTH);
     desc_.identifier = (char *)descID_;
-#pragma nowarn(1506)   // warning elimination
     desc_.identifier_len = strlen((char *)descID_);
-#pragma warn(1506)  // warning elimination
     stmt_.handle = 0;
   }
 

@@ -373,7 +373,6 @@ struct NATableEntryDetails {
 //
 // ***********************************************************************
 
-#pragma nowarn(1506)   // warning elimination 
 class NATable : public NABasicObject
 {
   friend class NATableDB;
@@ -623,21 +622,17 @@ public:
     return isAlignedFormat;
   }
  
-// LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
-// LCOV_EXCL_STOP
 
   NABoolean isVerticalPartition() const
   {  return (flags_ & IS_VERTICAL_PARTITION) != 0; }
 
-// LCOV_EXCL_START :cnu
   void setHasVerticalPartitions( NABoolean value )
   {
     value ?
        flags_ |= HAS_VERTICAL_PARTITIONS : flags_ &= ~HAS_VERTICAL_PARTITIONS;
   }
-// LCOV_EXCL_STOP
 
   NABoolean hasVerticalPartitions() const
   {  return (flags_ & HAS_VERTICAL_PARTITIONS) != 0; }
@@ -1018,13 +1013,13 @@ private:
   UInt32 flags_;
 
   // ---------------------------------------------------------------------
-  // NORMAL, INDEX, RFORK, VIRTUAL, etc.
+  // NORMAL, INDEX, VIRTUAL, etc.
   // ---------------------------------------------------------------------
   // ExtendedQualName::SpecialTableType specialType_;
 
   // ---------------------------------------------------------------------
   // Extended Qualified name for the table. This also has the specialType
-  // (NORMAL, INDEX, RFORK, VIRTUAL, etc.) and the location Name.
+  // (NORMAL, INDEX, VIRTUAL, etc.) and the location Name.
   // ---------------------------------------------------------------------
   ExtendedQualName qualifiedName_;
 
@@ -1240,7 +1235,6 @@ private:
   NAList<NAString> allColFams_;
 }; // class NATable
 
-#pragma warn(1506)  // warning elimination 
 
 struct NATableCacheStats {
   char   contextType[8];
@@ -1356,10 +1350,8 @@ public:
   void getCacheStats(NATableCacheStats & stats);
 
 
-// LCOV_EXCL_START :cnu
   inline ULng32 currentCacheSize() { return currentCacheSize_; }
   inline ULng32 intervalWaterMark() { return intervalWaterMark_; }
-// LCOV_EXCL_STOP
   inline ULng32 hits() { return totalCacheHits_; }
   inline ULng32 lookups() { return totalLookupsCount_; }
 

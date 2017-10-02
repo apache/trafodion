@@ -125,26 +125,16 @@ typedef struct comp_buf {
 #define RLE_PACKBITS_MAXBUF_BYTE    (RLE_PACKBITS_MAXCOPY_BYTE + RLE_PACKBITS_MINRUN - 1)
 #define RLE_PACKBITS_MAXBUF_SHORT    (RLE_PACKBITS_MAXCOPY_SHORT + RLE_PACKBITS_MINRUN - 1)
 
-NA_EIDPROC
 static Int32 encode_byte(unsigned char *dbuf, Int32 dlen, unsigned char *ebuf, Int32 *elen);
-NA_EIDPROC
 static Int32 pb_encode_byte(unsigned char *dbuf, Int32 dlen, unsigned char *ebuf, Int32 *elen);
-NA_EIDPROC
 static Int32 encode_short(unsigned short *dbuf, Int32 dlen_bytes, unsigned short *ebuf, Int32 *elen_bytes);
-NA_EIDPROC
 static Int32 pb_encode_short(unsigned short *dbuf, Int32 dlen_bytes, unsigned short *ebuf, Int32 *elen_bytes);
-NA_EIDPROC
 static Int32 decode_byte(unsigned char *ebuf, Int32 elen, unsigned char *dbuf, Int32 *dlen);
-NA_EIDPROC
 static Int32 pb_decode_byte(unsigned char *ebuf, Int32 elen, unsigned char *dbuf, Int32 *dlen);
-NA_EIDPROC
 static Int32 decode_short(unsigned short *ebuf, Int32 elen_bytes, unsigned short *dbuf, Int32 *dlen_bytes);
-NA_EIDPROC
 static Int32 pb_decode_short(unsigned short *ebuf, Int32 elen_bytes, unsigned short *dbuf, Int32 *dlen_bytes);
 
-NA_EIDPROC
 Int32 ExEncode(unsigned char *dbuf, Int32 dlen, unsigned char *ebuf, Int32 *elen, Int32 flags);
-NA_EIDPROC
 Int32 ExDecode(unsigned char *ebuf, Int32 elen, unsigned char *dbuf, Int32 *dlen,
 	     Lng32 &param1, Lng32 &param2);
 

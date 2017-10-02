@@ -54,7 +54,6 @@ public:
   
   
   // virtual destructor
-  // LCOV_EXCL_LINE  
   virtual ~ElemDDLLobAttrs(){}
   
   // cast
@@ -88,7 +87,6 @@ public:
     }
   
   // virtual destructor
-  // LCOV_EXCL_LINE  
   virtual ~ElemDDLSeabaseSerialized(){}
   
   // cast

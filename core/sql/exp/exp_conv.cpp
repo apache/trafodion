@@ -38,14 +38,9 @@
 
 
 #include "Platform.h"
-
-
-
 #include "exp_ieee.h"
-//#ifndef NA_NO_C_RUNTIME
 #include <stdlib.h>
 #include <errno.h>
-//#endif
 
 #include <math.h>
 # define MathPow(op1, op2, err) pow(op1, op2)
@@ -53,13 +48,9 @@
 #define MathLog10(op, err) log10(op)
 #include <stdlib.h>
 
-#if defined( NA_SHADOWCALLS )
-#include "sqlclisp.h" //shadow
-#endif
-
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
-//#include "exp_tuple_desc.h"
+
 #include "float.h"
 #include "str.h"
 #include "wstr.h"
@@ -70,30 +61,19 @@
 #include "exp_datetime.h"
 #include "SQLTypeDefs.h"
 #include "exp_bignum.h"
-
-
-
 #include "fenv.h"
-
-//#pragma innerlist
 
 // forward declarations
 
-NA_EIDPROC
-//SQ_LINUX #ifdef NA_HSC
 static 
 rec_datetime_field getIntervalStartField(Lng32 datatype);
 
-NA_EIDPROC
 Int64 getMaxDecValue(Lng32 targetLen);
 
-NA_EIDPROC
 Lng32 getDigitCount(UInt64 value);
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
 
-NA_EIDPROC
 ex_expr::exp_return_type checkPrecision(Int64 source,
 					Lng32 sourceLen,
                                         short sourceType,
@@ -115,7 +95,6 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
 // length calculated by the Ascii function. 6/3/98
 // 
 //////////////////////////////////////////////////////////////////
-NA_EIDPROC
 void double_varchar_length(
          char * varCharLen,      // NULL if not a varChar
          Lng32 varCharLenSize     // 0 if not a varChar
@@ -123,11 +102,9 @@ void double_varchar_length(
 {
    if (varCharLenSize == sizeof(Lng32)) {
        Lng32 x;
-       // LCOV_EXCL_START
        str_cpy_all((char*)&x, varCharLen, sizeof(Lng32));
        x *= BYTES_PER_NAWCHAR;
        str_cpy_all(varCharLen, (char *)&x, sizeof(Lng32));
-       // LCOV_EXCL_STOP
    } else {
        short x;
        str_cpy_all((char*)&x, varCharLen, sizeof(short));
@@ -185,7 +162,6 @@ static const char* scaleToString(short scale)
 // a string of digits to double. jdu 6/10/02
 // 
 //////////////////////////////////////////////////////////////////
-NA_EIDPROC
 static Int32 safe_add_digit_to_double(
          double dvalue,        // Original value
          Int32 digit,            // Single digit to be added
@@ -220,7 +196,6 @@ static Int32 safe_add_digit_to_double(
 // Returns ex_expr::EXPR_ERROR if (a conversion error occurred) and
 // (no data conversion error flag is present).
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convBinToBinScaleMult(
   char *target,
   short targetType,
@@ -271,7 +246,6 @@ if ((intermediate < LLONG_MAX/scaleFactor) &&
   {
   intermediate = intermediate * scaleFactor;
   }
-// LCOV_EXCL_START
 else if (dataConversionErrorFlag)
   {
   if (intermediate > 0)
@@ -293,7 +267,6 @@ else
                         sourceLen, sourceType, 0, targetType, flags);
   return ex_expr::EXPR_ERROR; 
   }
-// LCOV_EXCL_STOP
 
 // now move converted intermediate to target
 
@@ -403,7 +376,6 @@ else
 // Returns ex_expr::EXPR_ERROR if (a conversion error occurred) and
 // (no data conversion error flag is present).
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convBinToBinScaleDiv(
   char *target,
   short targetType,
@@ -594,7 +566,6 @@ else
 // e.g., caller wants to convert 7 -> 07        as in month -> ascii
 //                           or  8 -> '    8'   as in sqlci display
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convInt64ToAscii(char *target,
 					  Lng32 targetLen,
                                           Lng32 targetPrecision, // max. characters
@@ -772,7 +743,6 @@ ex_expr::exp_return_type convInt64ToAscii(char *target,
 // 1 byte for at least one digit after decimal point
 // 5 bytes for exponent (E+DDD)
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 short convFloat64ToAscii(char *target,
 			Lng32 targetLen,
                         Lng32 targetPrecision, // max. characters
@@ -974,7 +944,6 @@ short convFloat64ToAscii(char *target,
 //////////////////////////////////////////////////////////////////
 // function to convert an Int64  to a Big Num
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convInt64ToBigNum(char *target,
                                            Lng32 targetLen,
                                            Int64 source,
@@ -1000,7 +969,6 @@ ex_expr::exp_return_type convInt64ToBigNum(char *target,
 //////////////////////////////////////////////////////////////////
 // function to convert a UInt64 to a Big Num
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convUInt64ToBigNum(char *target,
                                             Lng32 targetLen,
                                             UInt64 source,
@@ -1026,7 +994,7 @@ ex_expr::exp_return_type convUInt64ToBigNum(char *target,
 //////////////////////////////////////////////////////////////////
 // function to convert BIGNUM to LARGEDEC
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC 
+
 ex_expr::exp_return_type convBigNumToLargeDec(char *target,
 		                              Lng32 targetLen,
                                               char *source,
@@ -1068,7 +1036,6 @@ ex_expr::exp_return_type convBigNumToLargeDec(char *target,
 // convDoIt sets leftPad to TRUE if callers pass in a 
 // CONV_UNKNOWN_LEFTPAD to convDoIt.
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convLargeDecToAscii(char *target,
 					     Lng32 targetLen,
                                              Lng32 targetPrecision, // max chars
@@ -1092,7 +1059,6 @@ ex_expr::exp_return_type convLargeDecToAscii(char *target,
   if(source[0] < 2)
     {
       unsigned short realSource[256];
-      // LCOV_EXCL_START
       str_cpy_all((char *)realSource, source, sourceLen);
 
       if(realSource[0]) source[0] = '-';
@@ -1110,7 +1076,6 @@ ex_expr::exp_return_type convLargeDecToAscii(char *target,
 	      r <<= 16;
 	    }
 	  source[srcPos] = (char)(r >>= 16);
-	  // LCOV_EXCL_STOP
 	}
     }
 
@@ -1158,17 +1123,13 @@ ex_expr::exp_return_type convLargeDecToAscii(char *target,
   // fill in digits
   Lng32 i = 0;
   for (i = 0; i < (requiredDigits-sourceScale); i++, targetPos++, currPos++)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos] = source[currPos] + '0';
-#pragma warn(1506)  // warning elimination 
 
   // if we have a scale, add decimal point and some digits
   if (sourceScale) {
     target[targetPos++] = '.';
     for (i = 0; i < sourceScale; i++, targetPos++, currPos++)
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos] = source[currPos] + '0';
-#pragma warn(1506)  // warning elimination 
   };
 
   // Right pad blanks for fixed char.
@@ -1196,7 +1157,6 @@ ex_expr::exp_return_type convLargeDecToAscii(char *target,
 // This function first converts the BIGNUM to an intermediate
 // LARGEDEC, then calls the previous function convLargeDecToAscii() 
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convBigNumToAscii(char *target,
 					   Lng32 targetLen,
                                            Lng32 targetPrecision, // max chars
@@ -1265,7 +1225,6 @@ ex_expr::exp_return_type convBigNumToAscii(char *target,
 // datetime types and all combinations of conversions.
 // ===================================================================
 //
-NA_EIDPROC
 ex_expr::exp_return_type convDatetimeToAscii(char *target,
                                              Lng32 targetLen,
                                              Lng32 targetPrecision, // tgt length in char or 0
@@ -1370,7 +1329,6 @@ ex_expr::exp_return_type convDatetimeToAscii(char *target,
 // IMPORT conversion performance.
 // ===================================================================
 //
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiToDatetime(char *target,
                                              Lng32 targetLen,
                                              REC_DATETIME_CODE code,
@@ -1408,8 +1366,6 @@ ex_expr::exp_return_type convAsciiToDatetime(char *target,
   
 }
 
-// LCOV_EXCL_START
-NA_EIDPROC
 ex_expr::exp_return_type convUnicodeToDatetime(char *target,
 					 Lng32 targetLen,
 					 REC_DATETIME_CODE code,
@@ -1454,7 +1410,6 @@ ex_expr::exp_return_type convUnicodeToDatetime(char *target,
    return ex_expr::EXPR_ERROR;
 
 }
-// LCOV_EXCL_STOP
 
 // convDatetimeDatetime() ============================================
 // This function supports any datetime to datetime conversions with
@@ -1473,7 +1428,6 @@ ex_expr::exp_return_type convUnicodeToDatetime(char *target,
 // datetime types and all combinations of conversions.
 // ===================================================================
 //
-NA_EIDPROC
 ex_expr::exp_return_type convDatetimeDatetime(char * target,
                                               Lng32 targetLen,
                                               REC_DATETIME_CODE targetCode,
@@ -1558,7 +1512,6 @@ ex_expr::exp_return_type convDatetimeDatetime(char * target,
 // The function assumes that source is at least
 // sourceLen long. Trailing '\0' is not recongnized
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiToFloat64(char * target,
 					    char *source,
 					    Lng32 sourceLen,
@@ -1755,31 +1708,25 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
 
   if (NOT validNum)
     {
-	  // LCOV_EXCL_START
       char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
       ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     };
     
   double scale = MathPow(10.0, (double)numScale, err);
   if (isinf(scale))
     {
-	  // LCOV_EXCL_START
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
                             sourceLen, REC_BYTE_F_ASCII,
                             SQLCHARSETCODE_ISO88591, REC_FLOAT64, flags);
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     }
   if (err)
     {
-	  // LCOV_EXCL_START
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
                             sourceLen, REC_BYTE_F_ASCII, 
                             SQLCHARSETCODE_ISO88591,REC_FLOAT64, flags);
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     }
 
   if (negMantissa)
@@ -2133,7 +2080,6 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
 // function to convert an Int64  to Decimal
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 ex_expr::exp_return_type convInt64ToDec(char *target,
 					Lng32 targetLen,
 					Int64 source,
@@ -2164,9 +2110,7 @@ ex_expr::exp_return_type convInt64ToDec(char *target,
       return ex_expr::EXPR_ERROR;
     };
 
-#pragma nowarn(1506)   // warning elimination 
     target[currPos--] = '0' + (char)(source % 10);
-#pragma warn(1506)  // warning elimination 
     source /= 10;
   };
   
@@ -2189,7 +2133,6 @@ ex_expr::exp_return_type convInt64ToDec(char *target,
 // The function assumes that source is at least
 // sourceLen long. Trailing '\0' is not recongnized
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiToDec(char *target,
 					Lng32 targetType,
 					Lng32 targetLen,
@@ -2212,14 +2155,11 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
   // only blanks found, error
   if (sourceStart == sourceLen) {
-	  // LCOV_EXCL_START
     if (flags & CONV_TREAT_ALL_SPACES_AS_ZERO)
       {
 	// pad the target with zeros
 	while (targetPos >= 0)
-#pragma nowarn(1506)   // warning elimination 
 	  target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
 	
 	return ex_expr::EXPR_OK;
       }
@@ -2229,7 +2169,6 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
     return ex_expr::EXPR_ERROR;
   };
-  // LCOV_EXCL_STOP
 
   // skip trailing blanks. We know that we found already some
   // non-blank character, thus sourceLen is always > sourceStart
@@ -2258,7 +2197,6 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
       // scale the intermediate
       for (Lng32 j = 0; j < targetScale; j++) {
-   // LCOV_EXCL_START
 	intermediate *= 10.0;
  
 	if ((intermediate < LLONG_MIN) || (intermediate > LLONG_MAX)) {
@@ -2267,7 +2205,6 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
                                 SQLCHARSETCODE_ISO88591,
                                 REC_DECIMAL_UNSIGNED, flags);
 	  return ex_expr::EXPR_ERROR;
-	  // LCOV_EXCL_STOP
 	};
       }
 
@@ -2299,9 +2236,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
   // only zeros found, target is 0
   if (sourceStart == sourceLen) {
-#pragma nowarn(1506)   // warning elimination 
     str_pad(target, targetLen, '0' - offset);
-#pragma warn(1506)  // warning elimination 
     return ex_expr::EXPR_OK;
   };
 
@@ -2324,9 +2259,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
   while ((sourcePos >= sourceStart) && (targetPos >= 0)) {
     // add zeros to adjust scale
     if (targetScale > sourceScale) {
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
       targetScale--;
     }
     else if (targetScale < sourceScale) {
@@ -2351,9 +2284,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
         return ex_expr::EXPR_ERROR;
       };
       // copy source to target
-#pragma nowarn(1506)   // warning elimination 
       target[targetPos--] = source[sourcePos--] - offset;
-#pragma warn(1506)  // warning elimination 
     };
   };
 
@@ -2376,9 +2307,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 
   // left pad the target with zeros
   while (targetPos >= 0)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos--] = '0' - offset;
-#pragma warn(1506)  // warning elimination 
 
   // add sign
   if (negative)
@@ -2390,7 +2319,6 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 ///////////////////////////////////////////////////////////////////
 // function to convert a DOUBLE to BIGNUM. 
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convDoubleToBigNum(char *target,
                                             Lng32 targetLen,
                                             Lng32 targetType,
@@ -2427,7 +2355,6 @@ ex_expr::exp_return_type convDoubleToBigNum(char *target,
 // First convert from ASCII to LARGEDEC, then convert from LARGEDEC
 // to BIGNUM
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiToBigNum(char *target,
 					   Lng32 targetLen,
 					   Lng32 targetType,
@@ -2565,7 +2492,6 @@ static rec_datetime_field getIntervalStartField(Lng32 datatype)
   return REC_DATE_YEAR;
 }
 
-NA_EIDPROC
 static rec_datetime_field getIntervalEndField(Lng32 datatype)
 {
   switch (datatype) {
@@ -2597,7 +2523,6 @@ static rec_datetime_field getIntervalEndField(Lng32 datatype)
 // This function is used for ASCII to INTERVAL conversions only. 
 // Blanks and sign are already removed.  
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiFieldToInt64(Int64 &target,
                                                Lng32 targetScale,
                                                char *source,
@@ -2611,9 +2536,7 @@ ex_expr::exp_return_type convAsciiFieldToInt64(Int64 &target,
   while ((currPos < sourceLen) && ((source[currPos] >= '0') && 
                                    (source[currPos] <= '9')))
   { 
-#pragma nowarn(1506)   // warning elimination 
     short thisDigit = source[currPos] - '0';
-#pragma warn(1506)  // warning elimination 
     if (target > (LLONG_MAX / 10))
     { // next power of 10 causes an overflow
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
@@ -2651,7 +2574,6 @@ ex_expr::exp_return_type convAsciiFieldToInt64(Int64 &target,
 ///////////////////////////////////////////////////////////////////
 // function to convert an ASCII string to an interval datatype.
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convAsciiToInterval(char *target,
 					     Lng32 targetLen,
 					     Lng32 targetDatatype,
@@ -2856,9 +2778,7 @@ ex_expr::exp_return_type convAsciiToInterval(char *target,
         return ex_expr::EXPR_ERROR;
       };
       if (negInterval)
-#pragma nowarn(1506)   // warning elimination 
 	*(Target<short> *)target = -(short)intermediate;
-#pragma warn(1506)  // warning elimination 
       else
 	*(Target<short> *)target = (short)intermediate;
       break;
@@ -2892,7 +2812,6 @@ ex_expr::exp_return_type convAsciiToInterval(char *target,
 ///////////////////////////////////////////////////////////////////
 // function to convert a INTERVAL to a string. 
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convIntervalToAscii(char *source,
 					     Lng32 sourceLen,
                                              Lng32 leadingPrecision,
@@ -3141,7 +3060,6 @@ ex_expr::exp_return_type convIntervalToAscii(char *source,
 ///////////////////////////////////////////////////////////////////
 // function to convert a BIGNUM to Int64
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convBigNumToInt64(Int64 *target,
 					   char *source,
 					   Lng32 sourceLen,
@@ -3200,7 +3118,6 @@ ex_expr::exp_return_type convBigNumToUInt64(UInt64 *target,
 // or minimum value is returned.
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 ex_conv_clause::ConvResult convBigNumToInt64AndScale(Int64 *target,
 					             char *source,
 					             Lng32 sourceLen,
@@ -3239,8 +3156,6 @@ ex_conv_clause::ConvResult convBigNumToInt64AndScale(Int64 *target,
 // with scaling -- returns a return code indicating whether
 // the result is equal to the original or if rounding occurred
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ex_conv_clause::ConvResult convLargeDecToDecAndScale(char *target,
 				  	   Lng32 targetLen,
 					   char *source,
@@ -3316,9 +3231,7 @@ ex_conv_clause::ConvResult convLargeDecToDecAndScale(char *target,
 
   str_pad(target, targetPos, '0');
   while (sourcePos < sourceLen)
-#pragma nowarn(1506)   // warning elimination 
     target[targetPos++] = source[sourcePos++] + '0';
-#pragma warn(1506)  // warning elimination 
 
   // do any scaling down needed
   while (exponent > 0)
@@ -3351,8 +3264,6 @@ ex_conv_clause::ConvResult convLargeDecToDecAndScale(char *target,
 // We first convert from BIGNUM to LARGEDEC, then convert from LARGEDEC
 // to DEC and scale
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ex_conv_clause::ConvResult convBigNumToDecAndScale(char *target,
 				  	           Lng32 targetLen,
 					           char *source,
@@ -3387,7 +3298,6 @@ ex_conv_clause::ConvResult convBigNumToDecAndScale(char *target,
 ///////////////////////////////////////////////////////////////////
 // function to convert a BIGNUM to BIGNUM
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convBigNumToBigNum(char *target,
 					    Lng32 targetLen,
 					    Lng32 targetType,
@@ -3455,11 +3365,9 @@ ex_expr::exp_return_type convBigNumToBigNum(char *target,
 
       if (sign)
 	{
-    	  // LCOV_EXCL_START
 	  ExRaiseSqlError(heap, diagsArea, EXE_UNSIGNED_OVERFLOW);
 	  
 	  return ex_expr::EXPR_ERROR;
-	  // LCOV_EXCL_STOP
 	}
     }
 
@@ -3469,12 +3377,10 @@ ex_expr::exp_return_type convBigNumToBigNum(char *target,
 								   target);
   if (retCode== -1) {
     // target is not long enough - overflow
-	  // LCOV_EXCL_START
     ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
 		          sourceLen, REC_NUM_BIG_SIGNED, 0, REC_NUM_BIG_SIGNED,
                           flags);
     return ex_expr::EXPR_ERROR;
-    // LCOV_EXCL_STOP
   };
 
   return ex_expr::EXPR_OK;
@@ -3486,7 +3392,6 @@ ex_expr::exp_return_type convBigNumToBigNum(char *target,
 // function to convert Decimal to Int64
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 ex_expr::exp_return_type convDecToInt64(Int64 &target,
 					char *source,
 					Lng32 sourceLen,
@@ -3543,8 +3448,6 @@ ex_expr::exp_return_type convDecToInt64(Int64 &target,
 //////////////////////////////////////////////////////////////////
 // function to convert Decimal to Decimal
 ///////////////////////////////////////////////////////////////////
-// LCOV_EXCL_START
-NA_EIDPROC
 ex_expr::exp_return_type convDecToDec(char *target,
 				      Lng32 targetLen,
 				      char *source,
@@ -3589,7 +3492,6 @@ ex_expr::exp_return_type convDecToDec(char *target,
 //////////////////////////////////////////////////////////////////
 // function to convert DecimalLS to ASCII
 ///////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type convDecLStoAscii(char *target,
 					  Lng32 targetLen,
                                           Lng32 targetPrecision, // num chars in tgt
@@ -3705,7 +3607,6 @@ ex_expr::exp_return_type convDecLStoAscii(char *target,
 
   return ex_expr::EXPR_OK;
 };
-// LCOV_EXCL_STOP
 
 //////////////////////////////////////////////////////////////////
 // This function returns an int64 with the minimum value that
@@ -3717,7 +3618,6 @@ ex_expr::exp_return_type convDecLStoAscii(char *target,
 //   REC_DECIMAL_LSE (152).
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 Int64 getMinDecValue(Lng32 targetLen,
                      short targetType)
   {
@@ -3732,7 +3632,6 @@ Int64 getMinDecValue(Lng32 targetLen,
                                -9999999,
                                -99999999,
                                -999999999,
-//SQ_LINUX #ifndef NA_HSC
                                -9999999999LL,
                                -99999999999LL,
                                -999999999999LL,
@@ -3764,7 +3663,6 @@ Int64 getMinDecValue(Lng32 targetLen,
 // - MARIA - 11/06/98
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 Int64 getMinIntervalValue(Lng32 targetPrecision,
                           short targetType) {
 
@@ -3778,7 +3676,6 @@ Int64 getMinIntervalValue(Lng32 targetPrecision,
   // so where a target type and precision would demand a value
   // smaller than this, we use this minimum instead.
 
-//SQ_LINUX #ifndef NA_HSC
   static const Int64 MinValue[][19] = 
   {
   {0, -9, -99, -999, -9999, -99999, -999999, -9999999, -99999999, 
@@ -3886,7 +3783,6 @@ Int64 getMinIntervalValue(Lng32 targetPrecision,
 // The function assumes that targetLen is 1 to 19, inclusive.
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 Lng32 getDigitCount(UInt64 value)
   {
     static const UInt64 decValue[] = {0,
@@ -3936,7 +3832,6 @@ Lng32 getDigitCount(UInt64 value)
 // The function assumes that targetLen is 0 to 18, inclusive.
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 Int64 getMaxDecValue(Lng32 targetLen)
   {
     static const Int64 decValue[] = {0,
@@ -3949,7 +3844,6 @@ Int64 getMaxDecValue(Lng32 targetLen)
                                9999999,
                                99999999,
                                999999999,
-//SQ_LINUX #ifndef NA_HSC
                                9999999999LL,
                                99999999999LL,
                                999999999999LL,
@@ -3973,7 +3867,6 @@ Int64 getMaxDecValue(Lng32 targetLen)
 ///////////////////////////////////////////////////////////////////
 
 
-NA_EIDPROC
 Int64 getMaxIntervalValue(Lng32 targetPrecision,
                           short targetType) {
   targetType -= REC_MIN_INTERVAL;  //REC_MIN_INTERVAL should be 195
@@ -3984,7 +3877,6 @@ Int64 getMaxIntervalValue(Lng32 targetPrecision,
   // so where a target type and precision would demand a value
   // larger than this, we use this maximum instead.
 
-//SQ_LINUX #ifndef NA_HSC
   static const Int64 MaxValue[][19] = 
   {
   {0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999,
@@ -4086,7 +3978,6 @@ Int64 getMaxIntervalValue(Lng32 targetPrecision,
 // NUMERIC(m)  NUMERIC(n), where m > n
 // FLOAT       NUMERIC(n)
 //////////////////////////////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type checkPrecision(Int64 source,
 					Lng32 sourceLen,
                                         short sourceType,
@@ -4268,7 +4159,6 @@ ex_expr::exp_return_type checkPrecision(Int64 source,
 //   REC_DECIMAL_LSE (152).
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 void setMinDecValue(char *target,
                     Lng32 targetLen,
                     short targetType)
@@ -4297,7 +4187,6 @@ void setMinDecValue(char *target,
 // decimal type specified by the arguement.
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 void setMaxDecValue(char *target,
                     Lng32 targetLen)
 {
@@ -4314,7 +4203,6 @@ void setMaxDecValue(char *target,
 // int64 to decimal.
 ///////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 ex_expr::exp_return_type convExactToDec(char *target,
                                         Lng32 targetLen,
                                         short targetType,
@@ -4381,7 +4269,6 @@ ex_expr::exp_return_type convExactToDec(char *target,
 ///////////////////////////////////////////////
 // find the first non blank character
 ///////////////////////////////////////////////
-NA_EIDPROC
 char * str_find_first_nonblank(char *s, Lng32 len) {
   for (Lng32 i = 0; i < len; i++)
     if (s[i] != ' ') 
@@ -4392,7 +4279,6 @@ char * str_find_first_nonblank(char *s, Lng32 len) {
 ///////////////////////////////////////////////
 // find the first non blank wide character
 ///////////////////////////////////////////////
-NA_EIDPROC
 NAWchar * wc_str_find_first_nonblank(NAWchar *s, Lng32 len) {
   for (Lng32 i = 0; i < len; i++)
     if (s[i] != unicode_char_set::space_char())
@@ -4404,17 +4290,13 @@ NAWchar * wc_str_find_first_nonblank(NAWchar *s, Lng32 len) {
 ////////////////////////////////////////////////
 // find the first non zero(character 0) character
 ////////////////////////////////////////////////
-// LCOV_EXCL_START
-NA_EIDPROC
 char*  str_find_first_nonzero(char* s, Lng32 len) {
   for (Lng32 i = 0; i< len; i++)
     if (s[i] != '0')
       return &s[i];
   return 0;
 }
-// LCOV_EXCL_STOP
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value) {
   if (VCLenSize == sizeof(short)) {
     assert(value <= USHRT_MAX);
@@ -4437,7 +4319,6 @@ typedef charBuf* (*unicodeToChar_FP)(
 ///////////////////////////////////////////////
 // Unicode to single byte string 
 ///////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type
 unicodeToSByteTarget(
 	 unicodeToChar_FP conv_func, // convert function pointer
@@ -4493,7 +4374,6 @@ unicodeToSByteTarget(
       
       if (first_nonblank)  // if truncated portion isn't all blanks
         {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag) // want conversion flag instead of warning?
           {
           // yes - determine whether target is greater than or less than source
@@ -4502,7 +4382,6 @@ unicodeToSByteTarget(
             *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
           else
             *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
-          // LCOV_EXCL_STOP
           }
         else
           // no - raise a warning
@@ -4518,7 +4397,6 @@ unicodeToSByteTarget(
 ///////////////////////////////////////////////
 // Unicode to multiple byte string 
 ///////////////////////////////////////////////
-NA_EIDPROC
 ex_expr::exp_return_type
 unicodeToMByteTarget(
 	 unicodeToChar_FP conv_func, // conversion function pointer
@@ -4566,7 +4444,6 @@ unicodeToMByteTarget(
        
        NADELETE(cBuf, charBuf, heap);
     } else {
-    	// LCOV_EXCL_START
        convertedLen = 0;
        copyLen = 0;
 
@@ -4581,7 +4458,6 @@ unicodeToMByteTarget(
               *(*diagsArea) << DgString0("UNICODE") << DgString1("SJIS") << DgString2(stringToHex(hexstr,sizeof(hexstr),source,sourceLen));
           }
           retcode = ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
        }
     }
 
@@ -4596,12 +4472,10 @@ unicodeToMByteTarget(
         // TBD - if needed some day: If only blanks are truncated, don't
         // generate an error.
 
-    	// LCOV_EXCL_START
         if (dataConversionErrorFlag) 
          *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED;
         else
           ExRaiseSqlWarning(heap, diagsArea, EXE_STRING_OVERFLOW);
-        // LCOV_EXCL_STOP
       }
       // If requested, blank pad so we don't leave garbage at end of target buf
       if ( padSpace == TRUE && targetLen > copyLen ) 
@@ -4616,7 +4490,6 @@ unicodeToMByteTarget(
 // we ever support that). It does handle things like ISO8859-1 to UTF-8
 // and UTF-8 to UTF-8.
 
-NA_EIDPROC
 ex_expr::exp_return_type convCharToChar(
      char *source,
      Lng32 sourceLen,
@@ -4703,7 +4576,6 @@ ex_expr::exp_return_type convCharToChar(
       
       if (rc && rc != CNV_ERR_BUFFER_OVERRUN)
         {
-    	  // LCOV_EXCL_START
           ExeErrorCode errCode = EXE_INVALID_CHAR_IN_TRANSLATE_FUNC;
           
           if (rc != CNV_ERR_INVALID_CHAR)
@@ -4718,7 +4590,6 @@ ex_expr::exp_return_type convCharToChar(
           if (intermediateStr && intermediateStr != stackBuffer)
             NADELETEBASIC(intermediateStr, heap);
           return ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
         }
       
       if (rc || (targetPrecision && targetPrecision < (Lng32) translatedCharCnt))
@@ -4736,7 +4607,7 @@ ex_expr::exp_return_type convCharToChar(
                                                    (Int32)outputDataLen,
                                                    (Int32)targetPrecision,
                                                    ignoreTrailingBlanksInSource);
-              assert((Int32)outputDataLen >= 0);   //LCOV_EXCL_LINE : rfi
+              assert((Int32)outputDataLen >= 0);
               firstUntranslatedChar = &utf8Tgt[outputDataLen];
             }
           else
@@ -4747,11 +4618,9 @@ ex_expr::exp_return_type convCharToChar(
           if (ignoreTrailingBlanksInSource)
             {
               // check whether the characters from firstUntranslatedChar onwards are all blanks
-        	  // LCOV_EXCL_START
               remainingScanStringLen = input_length - (firstUntranslatedChar - input_to_scan);
               canIgnoreOverflowChars = 
                 !(str_find_first_nonblank(firstUntranslatedChar, remainingScanStringLen));
-              // LCOV_EXCL_STOP
             }
 
           if (!canIgnoreOverflowChars)
@@ -4991,8 +4860,6 @@ ex_expr::exp_return_type convCharToChar(
 
 
 
-#pragma warning (disable : 4101)  //warning elimination
-NA_EIDPROC SQLEXP_LIB_FUNC
 ex_expr::exp_return_type
 convDoIt(char * source,
 	 Lng32 sourceLen,
@@ -5843,7 +5710,6 @@ convDoIt(char * source,
     {
       if (*(unsigned short *)source > limits[targetPrecision-1])
       {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag != 0)
         {
           *(unsigned short *)target = limits[targetPrecision-1];
@@ -5855,7 +5721,6 @@ convDoIt(char * source,
                                 sourceLen, sourceType, sourceScale,
                                 targetType, tempFlags);
           return ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
         }
       }
       else
@@ -5871,10 +5736,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(short *)target = SHRT_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -5888,9 +5751,7 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)
             { // Set the target value.
-#pragma nowarn(1506)   // warning elimination 
               *(short *)target = *(unsigned short *)source;
-#pragma warn(1506)  // warning elimination 
             }
           else
             { // Check target precision. Then set target value.
@@ -5906,9 +5767,7 @@ convDoIt(char * source,
                                  diagsArea,
                                  tempFlags) == ex_expr::EXPR_OK)
                 {
-#pragma nowarn(1506)   // warning elimination 
                   *(short *)target = *(unsigned short *)source;
-#pragma warn(1506)  // warning elimination 
                 }
               else
                 {
@@ -5955,11 +5814,9 @@ convDoIt(char * source,
   break;
 
   case CONV_BIN16U_BIN32U: {
-	  // LCOV_EXCL_START
     *(ULng32 *)target = *(unsigned short *)source;
   };
   break;
-  // LCOV_EXCL_STOP
       
   case CONV_BIN16U_BIN64S: {
     *(Int64 *)target = *(unsigned short *)source;
@@ -6091,7 +5948,6 @@ convDoIt(char * source,
     {
       if (*(Lng32 *)source < 0)
       {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag != 0)
         {
           *(unsigned short *)target = 0;
@@ -6102,11 +5958,9 @@ convDoIt(char * source,
           ExRaiseSqlError(heap, diagsArea, EXE_UNSIGNED_OVERFLOW);
           return ex_expr::EXPR_ERROR;
         }
-        // LCOV_EXCL_STOP
       }
       else if (*(Lng32 *)source > (Lng32)limits[targetPrecision-1])
       {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag != 0)
         {
           *(unsigned short *)target = limits[targetPrecision-1];
@@ -6118,7 +5972,6 @@ convDoIt(char * source,
                                 sourceLen, sourceType, sourceScale,
                                 targetType, tempFlags);
           return ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
         }
       }
       else
@@ -6338,7 +6191,6 @@ convDoIt(char * source,
   
   case CONV_BIN32U_BPINTU: 
     {
-    	// LCOV_EXCL_START
       if (*(ULng32 *)source > (ULng32)limits[targetPrecision-1])
       {
         if (dataConversionErrorFlag != 0)
@@ -6360,7 +6212,6 @@ convDoIt(char * source,
       }
     }
     break;
-    // LCOV_EXCL_STOP
   case CONV_BIN32U_BIN16S:
     {
       if (*(ULng32 *)source > SHRT_MAX)
@@ -6478,9 +6329,7 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)
             { // Set the target value.
-#pragma nowarn(1506)   // warning elimination 
               *(Lng32 *)target = *(ULng32 *)source;
-#pragma warn(1506)  // warning elimination 
             }
           else
             { // Check target precision. Then set target value.
@@ -6496,9 +6345,7 @@ convDoIt(char * source,
 		                 diagsArea,
                                  tempFlags) == ex_expr::EXPR_OK)
                 {
-#pragma nowarn(1506)   // warning elimination 
                   *(Lng32 *)target = *(ULng32 *)source;
-#pragma warn(1506)  // warning elimination 
                 }
               else
                 {
@@ -6608,7 +6455,6 @@ convDoIt(char * source,
     {
       if (*(Int64 *)source < 0)
       {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag != 0)
         {
           *(unsigned short *)target = 0;
@@ -6620,10 +6466,8 @@ convDoIt(char * source,
           return ex_expr::EXPR_ERROR;
         }
       }
-      // LCOV_EXCL_STOP
       else if (*(Int64 *)source > (Int64)limits[targetPrecision-1])
       {
-    	  // LCOV_EXCL_START
         if (dataConversionErrorFlag != 0)
         {
           *(unsigned short *)target = limits[targetPrecision-1];
@@ -6635,7 +6479,6 @@ convDoIt(char * source,
                                 sourceLen, sourceType, sourceScale,
                                 targetType, tempFlags);
           return ex_expr::EXPR_ERROR;
-          // LCOV_EXCL_STOP
         }
       }
       else
@@ -7332,7 +7175,6 @@ convDoIt(char * source,
 
   case CONV_FLOAT32_BPINTU: 
     {
-    	// LCOV_EXCL_START
       float floatsource = *floatSrcPtr;
       if (floatsource < 0)
         {
@@ -7385,7 +7227,6 @@ convDoIt(char * source,
         }
     }
     break;
-    // LCOV_EXCL_STOP
   case CONV_FLOAT32_BIN16S:
     {
       float floatsource = *floatSrcPtr;
@@ -7393,10 +7234,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(short *)target = SHRT_MIN;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7410,10 +7249,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(short *)target = SHRT_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7429,16 +7266,10 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
-            	  // LCOV_EXCL_START
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
-                  // LCOV_EXCL_STOP
                 }
               else
                 {
@@ -7478,10 +7309,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(unsigned short *)target = 0;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7493,10 +7322,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(unsigned short *)target = USHRT_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7512,12 +7339,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
-        	  // LCOV_EXCL_START
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7527,7 +7349,6 @@ convDoIt(char * source,
                   if (floatsource2 < floatsource)
                     {
                       *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
-                      // LCOV_EXCL_STOP
                     }
                 }
             }
@@ -7561,10 +7382,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(Lng32 *)target = INT_MIN;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7578,10 +7397,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(Lng32 *)target = INT_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7597,11 +7414,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7655,7 +7468,6 @@ convDoIt(char * source,
         }
       else if (floatsource > UINT_MAX)
         {
-    	  // LCOV_EXCL_START
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
               *(ULng32 *)target = UINT_MAX;
@@ -7667,7 +7479,6 @@ convDoIt(char * source,
                                     source, sourceLen, sourceType, sourceScale,
                                     targetType, tempFlags);
               return ex_expr::EXPR_ERROR;
-              // LCOV_EXCL_STOP
             }
         }
       else
@@ -7676,11 +7487,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7721,7 +7528,6 @@ convDoIt(char * source,
       float floatsource = *floatSrcPtr;
       if (floatsource < LLONG_MIN)
         {
-    	  // LCOV_EXCL_START
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
               *(Int64 *)target = LLONG_MIN;
@@ -7733,12 +7539,10 @@ convDoIt(char * source,
                                     source, sourceLen, sourceType, sourceScale,
                                     targetType, tempFlags);
               return ex_expr::EXPR_ERROR;
-              // LCOV_EXCL_STOP
             }
         }
       else if (floatsource > LLONG_MAX)
         {
-    	  // LCOV_EXCL_START
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
               *(Int64 *)target = LLONG_MAX;
@@ -7751,7 +7555,6 @@ convDoIt(char * source,
                                     targetType, tempFlags);
               return ex_expr::EXPR_ERROR;
             }
-          // LCOV_EXCL_STOP
         }
       else
         {
@@ -7759,12 +7562,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
-        	  // LCOV_EXCL_START
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7775,7 +7573,6 @@ convDoIt(char * source,
                     {
                       *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
                     }
-                  // LCOV_EXCL_STOP
                 }
             }
           if ((dataConversionErrorFlag != 0) ||
@@ -7878,16 +7675,12 @@ convDoIt(char * source,
   case CONV_FLOAT32_DECS:
     {
       float floatsource = *floatSrcPtr;
-#pragma nowarn(1506)   // warning elimination 
       if (floatsource < getMinDecValue(targetLen, targetType))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
-        	  // LCOV_EXCL_START
               setMinDecValue(target, targetLen, targetType);
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -7897,9 +7690,7 @@ convDoIt(char * source,
               return ex_expr::EXPR_ERROR;
             }
         }
-#pragma nowarn(1506)   // warning elimination 
       else if (floatsource > getMaxDecValue(targetLen))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
@@ -7916,16 +7707,11 @@ convDoIt(char * source,
         }
       else
         {
-    	  // LCOV_EXCL_START
           Int64 int64source = (Int64) floatsource;
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               float floatsource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (floatsource2 > floatsource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -7949,7 +7735,6 @@ convDoIt(char * source,
         }
     }
   break;
-  // LCOV_EXCL_STOP
   case CONV_FLOAT32_FLOAT32: {
     *floatTgtPtr = *floatSrcPtr;
   };
@@ -7962,11 +7747,9 @@ convDoIt(char * source,
 
   case CONV_FLOAT32_ASCII: {
     if (targetLen < SQL_REAL_MIN_DISPLAY_SIZE) {
-    	// LCOV_EXCL_START
       ExRaiseDetailSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
         source, sourceLen, sourceType, sourceScale, targetType, tempFlags);
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     };
     
     //    double intermediate = (double) *(float *) source;
@@ -7981,11 +7764,9 @@ convDoIt(char * source,
 		           varCharLen,
 		           varCharLenSize,
                            leftPad) != 0) {
-    	// LCOV_EXCL_START
       ExRaiseDetailSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
          source, sourceLen, sourceType, sourceScale, targetType, tempFlags);
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     }
   };
   break;
@@ -7995,7 +7776,6 @@ convDoIt(char * source,
       double doublesource = *doubleSrcPtr;
       if (doublesource < 0)
         {
-    	  // LCOV_EXCL_START
           if (dataConversionErrorFlag != 0)
             {
               *(unsigned short *)target = 0;
@@ -8005,17 +7785,14 @@ convDoIt(char * source,
             {
               ExRaiseSqlError(heap, diagsArea, EXE_UNSIGNED_OVERFLOW);
               return ex_expr::EXPR_ERROR;
-              // LCOV_EXCL_STOP
             }
         }
       else if (doublesource > limits[targetPrecision-1])
         {
           if (dataConversionErrorFlag != 0)
             {
-        	  // LCOV_EXCL_START
               *(unsigned short *)target = limits[targetPrecision-1];
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8056,10 +7833,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(short *)target = SHRT_MIN;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8090,16 +7865,10 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
-            	  // LCOV_EXCL_START
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
-                  // LCOV_EXCL_STOP
                 }
               else
                 {
@@ -8139,10 +7908,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(unsigned short *)target = 0;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8154,10 +7921,8 @@ convDoIt(char * source,
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(unsigned short *)target = USHRT_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8172,13 +7937,8 @@ convDoIt(char * source,
           Int64 int64source = (Int64) doublesource;
           if (dataConversionErrorFlag != 0)
             {
-#pragma warning (disable : 4244)   //warning elimination
               // Convert back and check for a value change.
-#pragma nowarn(1506)   // warning elimination 
-        	  // LCOV_EXCL_START
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8189,7 +7949,6 @@ convDoIt(char * source,
                     {
                       *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
                     }
-                  // LCOV_EXCL_STOP
                 }
             }
           if ((dataConversionErrorFlag != 0) ||
@@ -8253,11 +8012,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8330,13 +8085,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
-#pragma warn(1506)  // warning elimination 
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8377,7 +8126,6 @@ convDoIt(char * source,
       double doublesource = *doubleSrcPtr;
       if (doublesource < LLONG_MIN)
         {
-    	  // LCOV_EXCL_START
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
               *(Int64 *)target = LLONG_MIN;
@@ -8389,17 +8137,14 @@ convDoIt(char * source,
                                     source, sourceLen, sourceType, sourceScale,
                                     targetType, tempFlags);
               return ex_expr::EXPR_ERROR;
-              // LCOV_EXCL_STOP
             }
         }
       else if (doublesource > LLONG_MAX)
         {
           if (dataConversionErrorFlag != 0)  // Capture error in variable?
             {
-        	  // LCOV_EXCL_START
               *(Int64 *)target = LLONG_MAX;
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8415,14 +8160,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
-        	  // LCOV_EXCL_START
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
-#pragma warn(1506)  // warning elimination 
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8433,7 +8171,6 @@ convDoIt(char * source,
                     {
                       *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
                     }
-                  // LCOV_EXCL_STOP
                 }
             }
           if ((dataConversionErrorFlag != 0) ||
@@ -8536,16 +8273,12 @@ convDoIt(char * source,
   case CONV_FLOAT64_DECU:
     {
       double doublesource = *doubleSrcPtr;
-#pragma nowarn(1506)   // warning elimination 
       if (doublesource < getMinDecValue(targetLen, targetType))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
-        	  // LCOV_EXCL_START
               setMinDecValue(target, targetLen, targetType);
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8555,16 +8288,12 @@ convDoIt(char * source,
               return ex_expr::EXPR_ERROR;
             }
         }
-#pragma nowarn(1506)   // warning elimination 
       else if (doublesource > getMaxDecValue(targetLen))
-#pragma warn(1506)  // warning elimination 
         {
           if (dataConversionErrorFlag != 0)
             {
-        	  // LCOV_EXCL_START
         	  setMaxDecValue(target, targetLen);
               *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
-              // LCOV_EXCL_STOP
             }
           else
             {
@@ -8580,12 +8309,7 @@ convDoIt(char * source,
           if (dataConversionErrorFlag != 0)
             {
               // Convert back and check for a value change.
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination
-        	  // LCOV_EXCL_START
               double doublesource2 = int64source;
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
               if (doublesource2 > doublesource)
                 {
                   *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
@@ -8596,7 +8320,6 @@ convDoIt(char * source,
                     {
                       *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
                     }
-                  // LCOV_EXCL_STOP
                 }
             }
           if (convInt64ToDec(target,
@@ -8673,11 +8396,9 @@ convDoIt(char * source,
 	{
 	  if (ov)
             {
-		  // LCOV_EXCL_START
               ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
                                     source, sourceLen, sourceType, sourceScale,
                                     targetType, tempFlags);
-              // LCOV_EXCL_STOP
               return ex_expr::EXPR_ERROR;
             }
 	}
@@ -8687,7 +8408,6 @@ convDoIt(char * source,
 
 	  if (ov == 1) // overflow
 	    {
-		  // LCOV_EXCL_START
 	      if (doubleTarget < 0) // < -DBL_MAX
 		{
 		  *doubleTgtPtr = -DBL_MAX;
@@ -8700,11 +8420,9 @@ convDoIt(char * source,
 		  *dataConversionErrorFlag = 
 		    ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
 		}
-	      // LCOV_EXCL_STOP
 	    } // overflow
 	  else if (ov == -1)      // underflow
 	    {
-		  // LCOV_EXCL_START
 	      if (doubleTarget < 0)  // > -DBL_MIN
 		{
 		  *doubleTgtPtr = 0;
@@ -8716,7 +8434,6 @@ convDoIt(char * source,
 		  *doubleTgtPtr = 0;
 		  *dataConversionErrorFlag = 
 		    ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
-		  // LCOV_EXCL_STOP
 		}
 	    } // underflow
 	} // data conversion flag
@@ -9017,7 +8734,6 @@ convDoIt(char * source,
                           tempFlags | CONV_INTERMEDIATE_CONVERSION) != ex_expr::EXPR_OK) {
       //if a EXE_NUMERIC OVERFLOW error was generated during the conversion, 
       //change it to a warning.
-    	// LCOV_EXCL_START
       if (*diagsArea) {
         Lng32 errorMark2 = (*diagsArea)->getNumber(DgSqlCode::ERROR_);
         Int32 counter = errorMark2 - errorMark;
@@ -9034,7 +8750,6 @@ convDoIt(char * source,
         heap->deallocateMemory((void *)intermediate);
         return ex_expr::EXPR_ERROR;
         }
-      // LCOV_EXCL_STOP
 
     }
 
@@ -9095,7 +8810,6 @@ convDoIt(char * source,
   break;
 
   case CONV_DECLS_DECLS: {
-	  // LCOV_EXCL_START
     if (targetLen < sourceLen) {
       // overflow
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, source,
@@ -9193,7 +8907,6 @@ convDoIt(char * source,
     return ex_expr::EXPR_OK;
   };
   break;
-  // LCOV_EXCL_STOP
   case CONV_INTERVALY_INTERVALMO:  // convert years to months
     {
       if (convBinToBinScaleMult(target,
@@ -10576,7 +10289,6 @@ convDoIt(char * source,
         ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
     }
     else {
-      // LCOV_EXCL_START
       convLen = 0;
       copyLen = 0;
       if ( varCharLen )
@@ -10585,7 +10297,6 @@ convDoIt(char * source,
       ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL, NULL, NULL, NULL, stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
 
       return ex_expr::EXPR_ERROR;
-      // LCOV_EXCL_STOP
     }
   };
   break;
@@ -10596,7 +10307,6 @@ convDoIt(char * source,
   case CONV_SJIS_V_UNICODE_V: 
   {
     Lng32 copyLen, convertedLen;
-    // LCOV_EXCL_START
     const charBuf cBuf((unsigned char*)source, sourceLen, heap);
     NAWcharBuf *wBuf = NULL;
 
@@ -10621,12 +10331,10 @@ convDoIt(char * source,
                  {
                    // yes - determine whether target is greater than or less than source
                    // note assumption: UNICODE character set
-            	   // LCOV_EXCL_START
                    if (*first_nonblank < unicode_char_set::space_char())  
                      *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP;
                    else
                      *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN;
-                   // LCOV_EXCL_STOP
                  }
                else
                  // no - raise a warning
@@ -10637,12 +10345,9 @@ convDoIt(char * source,
        NADELETE(wBuf, NAWcharBuf, heap);
 
     } else {
-    	// LCOV_EXCL_START
        convertedLen = 0;
        copyLen = 0;
-       // LCOV_EXCL_STOP
     }
-    // LCOV_EXCL_STOP
 // There is no need to change the char string storage format
 //      for Unicode string.
 
@@ -10850,7 +10555,6 @@ convDoIt(char * source,
         
   case CONV_ANSI_V_UNICODE_TO_ASCII_V: // ansi unicode (null terminalted)-> ascii
   {
-	  // LCOV_EXCL_START
     NAWchar* w_source = (NAWchar*)source;
     Lng32 w_sourceLen = sourceLen/BYTES_PER_NAWCHAR;
 
@@ -10865,7 +10569,6 @@ convDoIt(char * source,
 
     sourceLen = i*BYTES_PER_NAWCHAR;
   }
-  // LCOV_EXCL_STOP
 
   //fall through
 
@@ -11623,7 +11326,6 @@ convDoIt(char * source,
   };
   return ex_expr::EXPR_OK;
 }
-#pragma warning (default : 4101)  //warning elimination
       
 ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 					      CollHeap *heap,
@@ -11759,7 +11461,6 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 	source = (char*)ptrVal;
       }
 
-#pragma nowarn(1506)   // warning elimination 
     retcode =  convDoIt(source, //op_data[1],
 			src->getLength(op_data[-MAX_OPERANDS + 1]),
 			src->getDatatype(),
@@ -11778,7 +11479,6 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 			dataConversionErrorFlag,
 			convFlags
                         );
-#pragma warn(1506)  // warning elimination 
 
     if ((flags_ & REVERSE_DATA_ERROR_CONVERSION_FLAG) != 0)
       {
@@ -11962,8 +11662,6 @@ ex_expr::exp_return_type ex_conv_clause::processNulls(char *op_data[],
 ////////////////////////////////////////////////////////////////////////
 // up- or downscale an exact numeric.
 ////////////////////////////////////////////////////////////////////////
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ex_expr::exp_return_type scaleDoIt(char *operand,
 				   Lng32 operandLen,
 			           Lng32 operandType,
@@ -12051,7 +11749,6 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
   break;           
   default:
     return ex_expr::EXPR_ERROR;
-	// LCOV_EXCL_STOP
   };
   Lng32 scale = operandCurrScale - newScale;
 
@@ -12082,7 +11779,6 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
     // Check for overflow. TBD.
     while (scale--) intermediateDouble /= 10;
   }
-	// LCOV_EXCL_START
   else if (intermediateString != 0) {
     if (DFS2REC::isBigNum(operandType))
       {
@@ -12120,13 +11816,11 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
 	    NADELETEBASIC(intermediateString, heap);
 	    return ex_expr::EXPR_ERROR;
 	  }
-	  // LCOV_EXCL_STOP
 	}
       } // decimal
   } // intermediateString != 0
   else
   if (decimalString != 0) {
-	  // LCOV_EXCL_START
     decimalString = new (heap) char[operandLen];
     memset(decimalString, '0', operandLen);
     if (scale > 0) {  //downscale
@@ -12152,7 +11846,6 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
       else {
 	NADELETEBASIC(decimalString, heap);
         return ex_expr::EXPR_ERROR;
-        // LCOV_EXCL_STOP
       }
     }
   }
@@ -12179,10 +11872,8 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
   }
   break;
   case REC_FLOAT32: {
-	  // LCOV_EXCL_START
     floatOperandPtr  = (float *)operand;
     *floatOperandPtr = (float)intermediateDouble;
-    // LCOV_EXCL_STOP
   }
   break;
   case REC_FLOAT64: {
@@ -12204,15 +11895,11 @@ ex_expr::exp_return_type scaleDoIt(char *operand,
       operand[0] |= 0x80;
     break;
   };
-  // LCOV_EXCL_STOP
   return ex_expr::EXPR_OK;
 
 };
 
 
-// LCOV_EXCL_START
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ex_expr::exp_return_type swapBytes(Attributes *attr,
                                    void *ptr)
 {
@@ -12267,4 +11954,3 @@ ex_expr::exp_return_type swapBytes(Attributes *attr,
   }
   return ex_expr::EXPR_OK;
 }
-// LCOV_EXCL_STOP

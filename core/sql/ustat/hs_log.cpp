@@ -124,7 +124,6 @@ void HSFuncMergeDiags( Lng32 sqlcode
   // If an internal error was triggered by some other error, add a parameter
   // that specifies that error number. The format of the message is such that
   // it will read correctly with or without this parameter.
-  // LCOV_EXCL_START :rfi
   if (sqlcode == -UERR_INTERNAL_ERROR)
     {
       if (sqlcode2 < 0)
@@ -136,7 +135,6 @@ void HSFuncMergeDiags( Lng32 sqlcode
       else
         diagsArea << DgString2("");
     }
-  // LCOV_EXCL_STOP
     
   if (fsError)
     diagsArea << DgInt0(fsError);
@@ -573,7 +571,7 @@ void HSLogMan::LogTimeDiff(const char *text, NABoolean reset)
 
     timeval curTime;
     if (gettimeofday(&curTime, 0) != 0)
-      Log("ERROR: gettimeofday failed.\n");  // LCOV_EXCL_LINE :rfi
+      Log("ERROR: gettimeofday failed.\n"); 
     else
       // calcualte time difference only when this is not a reset and prevtime has been set
       if (!reset && (prevTime_.tv_sec != 0 || prevTime_.tv_usec != 0))  

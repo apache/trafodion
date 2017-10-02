@@ -21,8 +21,6 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := readRealArk.cpp \
-	  ReadTableDef.cpp \
-	  TrafDDLdesc.cpp \
+CPPSRC := TrafDDLdesc.cpp \
 	  vers_libsqlcat.cpp
 

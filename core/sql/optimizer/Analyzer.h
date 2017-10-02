@@ -141,12 +141,10 @@ public:
   // assumes the CANodeId represents a JBBC
   EstLogPropSharedPtr getJBBInput();
 
-  // LCOV_EXCL_START :dpm
   const NAString getText() const
   {
     return NAString("CANodeId: ") + istring(id_);
   }
-  // LCOV_EXCL_STOP
   
   inline ValueIdSet getUsedTableCols();
   inline const UInt32 toUInt32() const { return id_; };
@@ -295,11 +293,9 @@ public:
   CANodeIdSetMap(ULng32 init_size = Default_Size,
                  CollHeap *outHeap = CmpCommon::statementHeap());
 
-  // LCOV_EXCL_START :dd
   // Destructor
   virtual ~CANodeIdSetMap()
   {}
-  // LCOV_EXCL_STOP
 
   inline JBBSubsetAnalysis* get(const CANodeIdSet & key) const
   {
@@ -595,7 +591,6 @@ public:
   // Handle all the MV query rewrite stuff.
   RelExpr* handleMvQueryRewrite(RelExpr* expr);
 
-  // LCOV_EXCL_START :tt
   /* Do not inspect monitor members and methods */
   // Compile Time Monitors
   inline TaskMonitor & pilotPhaseMonitor()
@@ -657,7 +652,6 @@ public:
   {
     return compilerPhase_;
   }
-  // LCOV_EXCL_STOP
 
 
   inline void setCompilerPhase(CompilerPhaseEnum phase)
@@ -984,13 +978,11 @@ class NodeAnalysis : public NABasicObject
 
 public:
 
-  // LCOV_EXCL_START :dd
   // destruct the NodeAnalysis
   virtual ~NodeAnalysis()
   {
     // jbbc_, groupBy_, and table_ are deleted seperately
   }
-  // LCOV_EXCL_STOP
 
   // get the CA Id for this node
   inline CANodeId getId()
@@ -1061,12 +1053,10 @@ public:
 
   CostScalar getCardinality();
 
-  // LCOV_EXCL_START :cnu
   inline RowSize getRecordSize() const
   {
     return recordSize_;
   }
-  // LCOV_EXCL_STOP
 
 ///////////////////////////////////
 
@@ -1177,13 +1167,11 @@ public:
     PART_KEY
   };
 
-  // LCOV_EXCL_START :dd
   // destruct a TableAnalysis
   virtual ~TableAnalysis()
   {
     // loop over access path analysis and delete them
   }
-  // LCOV_EXCL_STOP
 
   // Get NodeAnalysis for this table
   inline NodeAnalysis * getNodeAnalysis() const
@@ -1322,12 +1310,10 @@ public:
     }    
   }
   
-  // LCOV_EXCL_START :cnu
   inline const ValueIdSet & getEqualityConnectedCols() const
   {
     return equalityConnectedCols_;
   }
-  // LCOV_EXCL_STOP
 
   inline const ValueIdSet & getEqualityConnectingPreds() const
   {
@@ -1612,11 +1598,9 @@ public:
   AccessPathAnalysis(CollHeap *outHeap = CmpCommon::statementHeap())
   {}
 
-  // LCOV_EXCL_START :dd
   // destruct an AccessPathAnalysis
   virtual ~AccessPathAnalysis()
   {}
-  // LCOV_EXCL_STOP
 
   // return the IndexDesc
   inline IndexDesc * getIndexDesc() const
@@ -1680,11 +1664,9 @@ class GBAnalysis : public NABasicObject
 
 public:
 
-  // LCOV_EXCL_START :dd
   // destruct a GBAnalysis
   virtual ~GBAnalysis()
   {}
-  // LCOV_EXCL_STOP
 
   // This returns a copy of the original GB expression that the NodeAnalysis
   // was computed for. Please use this method only if necessary. Our ultimate
@@ -1725,12 +1707,10 @@ public:
     return jbb_;
   }
 
-  // LCOV_EXCL_START :dpm
   const NAString getText() const
   {
     return "GBAnalysis";
   }
-  // LCOV_EXCL_STOP
 
 private:
 
@@ -2180,7 +2160,6 @@ public:
   JBBSubsetAnalysis(const JBBSubset & subset,
                     CollHeap *outHeap = CmpCommon::statementHeap());
 
-  // LCOV_EXCL_START :dd
   // destruct a JBBSubsetAnalysis
   virtual ~JBBSubsetAnalysis()
   {}
@@ -2190,7 +2169,6 @@ public:
   {
     return (allMembers_ == other.allMembers_);
   }
-  // LCOV_EXCL_STOP
 
   // Get all JBBCs that are joined to this JBBSubset and do not have
   // dependency relation with this JBBSubset. For definition of join dependency
@@ -2240,7 +2218,6 @@ public:
     return localJoinPreds_;
   }
 
-  // LCOV_EXCL_START :cnu
   // Get the inner join preds between my jbbcs
   virtual const ValueIdSet & getLocalInnerNonSemiJoinPreds() const
   {
@@ -2253,7 +2230,6 @@ public:
   {
     return localDependentJoinPreds_;
   }
-  // LCOV_EXCL_STOP
 
   // which JBBCs can I add to this subset while reserving its self-dpendency
   CANodeIdSet legalJBBCAdditions() const;
@@ -2330,7 +2306,6 @@ public:
     return mjStarJoinRuleWA_;
   }
 
-  // LCOV_EXCL_START :cnu
   void setMJStarJoinIRuleWA(MJStarJoinIRuleWA * mjStarJoinIRuleWA)
   {
     mjStarJoinIRuleWA_ = mjStarJoinIRuleWA;
@@ -2340,7 +2315,6 @@ public:
   {
     return mjStarJoinIRuleWA_;
   }
-  // LCOV_EXCL_STOP
 
   void setMJStarBDRuleWA(MJStarBDRuleWA * mjStarBDRuleWA)
   {
@@ -2661,7 +2635,6 @@ public:
     return getJBBSubsetAnalysis()->getLocalJoinPreds();
   }
 
-  // LCOV_EXCL_START :cnu
   // Get the innerNonSemi join preds between my jbbcs
   virtual const ValueIdSet & getLocalInnerNonSemiJoinPreds() const
   {
@@ -2674,7 +2647,6 @@ public:
   {
     return getJBBSubsetAnalysis()->getLocalDependentJoinPreds();
   }
-  // LCOV_EXCL_STOP
 
   // check if this JBBSubset is legal i.e.
   // predecessor of each node is found within
@@ -2812,12 +2784,10 @@ public:
     return jbbSubsetAnalysis_;
   }
 
-  // LCOV_EXCL_START :cnu
   inline NABoolean allJoinsInnerNonSemi() const
   {
     return getJBBSubsetAnalysis()->allJoinsInnerNonSemi();
   }
-  // LCOV_EXCL_STOP
 
   // get the minimum row count from all JBBCs in the JBBSubset after applying
   // local predicates to individual JBBCs
@@ -3064,11 +3034,9 @@ class JBB : public NABasicObject
 
 public:
 
-  // LCOV_EXCL_START :dd
   // destruct a JBB
   virtual ~JBB()
   {}
-  // LCOV_EXCL_STOP
 
   // initialize and compute the JBB starting from the top join node
   void analyze(Join* topJoinExpr);
@@ -3214,11 +3182,9 @@ public:
   predicate_(predicate)
   {}
 
-  // LCOV_EXCL_START :dd
   // Destructor
   virtual ~PredAnalysis()
   {}
-  // LCOV_EXCL_STOP
 
   // Get the predicate ValueId
   inline ValueId getPredicate()
@@ -3381,11 +3347,9 @@ class ColAnalysis : public NABasicObject
 
 public:
 
-  // LCOV_EXCL_START :dd
   // Destructor
   virtual ~ColAnalysis()
   {}
-  // LCOV_EXCL_STOP
 
   // Get the Column ValueId
   inline ValueId getColumnId()
@@ -3604,11 +3568,9 @@ public:
   TableConnectivityGraph(CollHeap *outHeap = CmpCommon::statementHeap())
   {}
 
-  // LCOV_EXCL_START :dd
   // Destuctor
   virtual ~TableConnectivityGraph()
   {}
-  // LCOV_EXCL_STOP
 
   // get the set of all base columns in the query
   inline const ValueIdSet & getColumns()
@@ -3665,10 +3627,8 @@ private:
 
 public:
   CANodeId populateReturnCANodeId(RelExpr *, CqsWA*);
-  // LCOV_EXCL_START :ale
   NABoolean operator == (CQSRelExprCANodeIdPair other)
          {return forcedNode_ == other.forcedNode_;}
-  // LCOV_EXCL_STOP
 };
 
 

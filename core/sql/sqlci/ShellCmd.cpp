@@ -114,7 +114,7 @@ short Chdir::process(SqlciEnv * sqlci_env)
 
   NAString dir = LookupDefineName(cmd);
 
-  if (chdir(dir))			// NT_PORT: Use _chdir() instead?
+  if (chdir(dir))
     {
       //use constructor and destructor when C++ compiler bug is fixed 
       ErrorParam *ep1 = new ErrorParam(errno);

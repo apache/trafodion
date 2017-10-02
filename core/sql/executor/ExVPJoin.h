@@ -64,7 +64,6 @@ class ExVPJoinTcbPrivateState;
 
 // Exclude this code from coverage analysis since this feature is
 // obsolete and not used.
-// LCOV_EXCL_START
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -88,16 +87,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExVPJoinTdb()
+  ExVPJoinTdb()
   {}
 
-  NA_EIDPROC virtual ~ExVPJoinTdb()
+  virtual ~ExVPJoinTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -136,16 +135,16 @@ class ExVPJoinTcb: public ex_tcb
 
 public:
   
-  NA_EIDPROC ExVPJoinTcb(const ExVPJoinTdb & vpjTdb, // TDB from which to build TCB
+  ExVPJoinTcb(const ExVPJoinTdb & vpjTdb, // TDB from which to build TCB
 			 const ex_tcb ** childTcbs,  // child TCBs
 			 ex_globals *glob            // globals
 			 );
         
-  NA_EIDPROC ~ExVPJoinTcb();
+  ~ExVPJoinTcb();
 
-  NA_EIDPROC void freeResources();
-  NA_EIDPROC ExWorkProcRetcode work();
-  NA_EIDPROC void registerSubtasks();
+  void freeResources();
+  ExWorkProcRetcode work();
+  void registerSubtasks();
 
   const ex_tcb* getChild(Int32 pos) const;
   ex_queue_pair  getParentQueue() const;
@@ -157,19 +156,16 @@ private:
 
   // Work methods.
   //
-  NA_EIDPROC ExWorkProcRetcode workDown();
-  NA_EIDPROC ExWorkProcRetcode workUp();
-  NA_EIDPROC ExWorkProcRetcode workCancel();
+  ExWorkProcRetcode workDown();
+  ExWorkProcRetcode workUp();
+  ExWorkProcRetcode workCancel();
 
   // Static work procedures for scheduler.
   //
-  NA_EIDPROC
   static short sWorkDown(ex_tcb *tcb);
   //                          { return ((ExVPJoinTcb *) tcb)->workDown(); }
-  NA_EIDPROC
   static short sWorkUp(ex_tcb *tcb);
   //                          { return ((ExVPJoinTcb *) tcb)->workUp(); }
-  NA_EIDPROC
   static short sWorkCancel(ex_tcb *tcb);
   //                          { return ((ExVPJoinTcb *) tcb)->workCancel(); }
 
@@ -178,7 +174,7 @@ private:
   // Cancel request from parent.  pReq points to (parent down)
   // queue entry containing the request, and pIx identifies the 
   // queue index of this entry.
-  NA_EIDPROC void cancelParentRequest(ex_queue_entry *pReq, queue_index pIx);
+  void cancelParentRequest(ex_queue_entry *pReq, queue_index pIx);
 
   // Event by which we can tell the scheduler to call workUp().  This
   // is sometimes necessary to handle cancelled requests correctly.
@@ -205,9 +201,9 @@ class ExVPJoinPrivateState : public ex_tcb_private_state
   friend class ExVPJoinTcb;
 
 public:
-  NA_EIDPROC ExVPJoinPrivateState(const ExVPJoinTcb * tcb);
-  NA_EIDPROC ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
-  NA_EIDPROC ~ExVPJoinPrivateState();
+  ExVPJoinPrivateState(const ExVPJoinTcb * tcb);
+  ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
+  ~ExVPJoinPrivateState();
 
 private:
   inline void init();
@@ -235,7 +231,6 @@ inline ex_expr * ExVPJoinTcb::filterPred()
   return vpJoinTdb().filterExpr_; 
 }
  
-// LCOV_EXCL_STOP
 
 #endif
 

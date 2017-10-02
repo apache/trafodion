@@ -776,10 +776,6 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   AQREntry(   4023,      0,      1,     0,      1,   1, "03",  0,     0),
   AQREntry(   4039,      0,      1,     0,      1,   1, "03",  0,     0),
 
-  // ReadTableDef mismatch transaction, transaction state needs to be cleaned up in compiler - kill compiler
-  // only valid after prepare errors
-  AQREntry(  4419,       0,      1,     0,      4,   0, "",    0,     0),
-
   // parallel purgedata failed
   AQREntry(   8022,      0,      3,    60,      0,   0, "",    0,     1),
 

@@ -76,9 +76,7 @@ public:
                        AlterType alterType);
 
 
-// LCOV_EXCL_START :dd
 	virtual ~StmtDDLAlterMV() {}
-// LCOV_EXCL_STOP
 
 	void synthesize();
 	
@@ -179,7 +177,6 @@ private:
 // definitions of inline methods for class StmtDDLAlterMV
 // -----------------------------------------------------------------------
 
-// LCOV_EXCL_START :cnu
 inline const NAString StmtDDLAlterMV::displayLabel1() const
 {  
 	return NAString("Materialized View name: ") + getMVName();  
@@ -189,7 +186,6 @@ inline const NAString StmtDDLAlterMV::getText() const
 {
 	return "StmtDDLAlterMV";      
 }
-// LCOV_EXCL_STOP
 
 inline const NAString StmtDDLAlterMV::getMVName() const
 {

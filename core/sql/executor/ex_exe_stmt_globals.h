@@ -52,12 +52,8 @@
 #include "ex_frag_inst.h"
 #include "Int64.h"
 #include "ExCollections.h"
-#ifndef __EID
 #include "timeout_data.h"
-#endif
-#if (defined (NA_NSK) || defined(NA_LINUX)) && !defined(__EID)
 #include "ex_esp_frag_dir.h"
-#endif
 
 // forward
 class SequenceValueGenerator;
@@ -66,7 +62,7 @@ class SequenceValueGenerator;
 // 
 //#define TRACE_ESP_ACCESS 1
 
-#if !defined(__EID) && defined(_DEBUG) && defined(TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined(TRACE_ESP_ACCESS)
 
 class ESPTraceEntry
 {
@@ -112,9 +108,9 @@ public:
  
   ~ESPTraceList();
  
-  NA_EIDPROC void insertNewTraceEntry(char *msg);
+  void insertNewTraceEntry(char *msg);
 
-  NA_EIDPROC void logESPTraceToFile(char *fn, char *signature, ESPTraceList &traceList);
+  void logESPTraceToFile(char *fn, char *signature, ESPTraceList &traceList);
 
   // Remove all entries the list and call their destructors
   void clearAndDestroy();
@@ -151,7 +147,7 @@ class MemoryMonitor;
 class ExMsgResourceInfo;
 class ExScratchFileOptions;
 class ComTdbRoot;
-class CliStatement;
+class Statement;
 class ExUdrServer;
 class ExRsInfo;
 class ex_send_top_tcb;
@@ -171,9 +167,9 @@ public:
 
   // Deletes objects this object points to... does NOT destroy
   // this object
-  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
+  virtual void deleteMe(NABoolean fatalError);
   
-  NA_EIDPROC virtual ExExeStmtGlobals * castToExExeStmtGlobals();
+  virtual ExExeStmtGlobals * castToExExeStmtGlobals();
   virtual ExMasterStmtGlobals * castToExMasterStmtGlobals();
   virtual ExEspStmtGlobals * castToExEspStmtGlobals();
 
@@ -222,7 +218,7 @@ public:
   inline ComDiagsArea *getDiagsArea() const           { return diagsArea_; }
   void setGlobDiagsArea(ComDiagsArea *da);
 
-#if !defined(__EID) && defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
   inline ESPTraceList *getESPTraceList() const {return espTraceList_; }
   void setESPTraceList(ESPTraceList *traceList) {espTraceList_ = traceList;}
 #endif
@@ -299,8 +295,6 @@ public:
   void setCloseAllOpens(NABoolean v)         { closeAllOpens_ = v; }
   NABoolean closeAllOpens()                  { return closeAllOpens_; }
 
-#ifndef __EID
-
   // return TRUE iff this timeout was set, and then put value in timeoutValue
   inline NABoolean getLockTimeout( char * tableName, Lng32 & timeoutValue )
   { 
@@ -313,19 +307,37 @@ public:
 
   inline NABoolean grabMemoryQuotaIfAvailable(ULng32 size)
   { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->grabMemoryQuotaIfAvailable(size);
     if ( unusedBMOsMemoryQuota_ < size ) return FALSE;
     unusedBMOsMemoryQuota_ -= size ;
     return TRUE;
   }
 
-  inline void resetMemoryQuota() { unusedBMOsMemoryQuota_ = 0 ; }
+  inline void resetMemoryQuota() 
+  {
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->resetMemoryQuota();
+    unusedBMOsMemoryQuota_ = 0 ; 
+  }
 
-  inline ULng32 unusedMemoryQuota() { return unusedBMOsMemoryQuota_; }
+  inline ULng32 unusedMemoryQuota() 
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->unusedMemoryQuota();
+    return unusedBMOsMemoryQuota_;
+  }
 
   inline void yieldMemoryQuota(ULng32 size) 
-  { unusedBMOsMemoryQuota_ += size; }
-
-#endif
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->yieldMemoryQuota(size);
+    unusedBMOsMemoryQuota_ += size; 
+  }
   
   // getStreamTimeout: return TRUE (FALSE) if the stream-timeout was set (was
   // not set). If set, the timeoutValue parameter would return that value
@@ -398,16 +410,14 @@ private:
 
   NABoolean closeAllOpens_;
 
-#ifndef __EID
   // Hold all the dynamicly set timeout data (relevant to this statement)
   // (Note: This pointer is NULL when there are no relevant timeouts set.)
   TimeoutData  * timeouts_; 
 
   // memory quota allocation given back by BMOs to be used by other BMOs
   ULng32 unusedBMOsMemoryQuota_;
-#endif
 
-#if !defined(__EID) && defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
   ESPTraceList *espTraceList_;
 #endif
 
@@ -458,14 +468,14 @@ public:
 
   ExMasterStmtGlobals(short num_temps,
 		      CliGlobals *cliGlobals,
-                      CliStatement *statement,
+                      Statement *statement,
 		      short create_gui_sched = 0,
 		      Space * space = NULL,
 		      CollHeap * heap = NULL);
 
   // Deletes objects this object points to... does NOT destroy
   // this object
-  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
+  virtual void deleteMe(NABoolean fatalError);
   
   virtual ExMasterStmtGlobals * castToExMasterStmtGlobals();
 
@@ -515,10 +525,10 @@ public:
 
   NABoolean udrRuntimeOptionsChanged() const;
 
-  NA_EIDPROC Int64 getRowsAffected() const           {return rowsAffected_;}
+  Int64 getRowsAffected() const           {return rowsAffected_;}
   void setRowsAffected(Int64 newRows)             {rowsAffected_ = newRows;}
 
-  inline CliStatement *getStatement()                 { return statement_; }
+  inline Statement *getStatement()                 { return statement_; }
 
   // For asynchronous CLI cancel.
   inline CancelState getCancelState() const           {return cancelState_;}
@@ -527,14 +537,12 @@ public:
   void resetCancelState();
 
   // The following two methods are called in /cli/Statement.cpp :
-#ifndef __EID
   // copy timeout data relevant to this stmt (from the global CLI context)
   // (This method is called after the statement was fixed up)
   void      setLocalTimeoutData(ComTdbRoot * rootTdb);
   // check if a previous SET TIMEOUT statement affects this fixedup statement
   // (This method is called before executing a previously fixedup statement)
   NABoolean timeoutSettingChanged();
-#endif
 
   ExRsInfo *getResultSetInfo(NABoolean createIfNecessary = FALSE);
   void deleteResultSetInfo();
@@ -544,7 +552,6 @@ public:
                                IpcProcessId &pid,        // OUT
                                ExRsInfo *&rsInfo);       // OUT
 
-#if (defined (NA_NSK) || defined(NA_LINUX)) && !defined (__EID)
  StatsGlobals *getStatsGlobals() 
  { return (cliGlobals_ ?  cliGlobals_->getStatsGlobals() : NULL); }
  Long getSemId() 
@@ -557,8 +564,6 @@ public:
  }
 
  Lng32 myNodeNumber() { return (cliGlobals_ ?  cliGlobals_->myNodeNumber() : (short)0);}
-
-#endif
 
   inline NABoolean verifyESP() { return verifyESP_; }
   inline void setVerifyESP() { verifyESP_ = TRUE; }
@@ -596,7 +601,7 @@ private:
   ExRtFragTable *fragTable_;
 
   // Current statement
-  CliStatement *statement_;
+  Statement *statement_;
 
   // rows affected during the execution of this statement.
   // Applies to rows updated/deleted/inserted ONLY.
@@ -608,9 +613,6 @@ private:
   // local snapshot of the global timeout-change-counter at the time this
   // stmt was fixed up (speeds up checking that timeout values are up-to-date)
   ULng32  localSnapshotOfTimeoutChangeCounter_;
-
-  // Measure stmt counters
-  ExMeasStmtCntrs *stmtCntrs_;
 
   // Store Procedure Result Set Info
   // will always be NULL except for CALL statements that produce result sets.
@@ -737,7 +739,6 @@ public:
 
   virtual void decrementSendTopMsgesOut();
   
-#if (defined (NA_NSK) || defined(NA_LINUX)) && !defined (__EID)
  StatsGlobals *getStatsGlobals() 
       { return espFragInstanceDir_->getStatsGlobals(); }
  Long getSemId() 
@@ -746,7 +747,6 @@ public:
       { return espFragInstanceDir_->getPid();}
 pid_t getTid() 
       { return espFragInstanceDir_->getTid();}
-#endif
 
   NABoolean isAnESPAccess() {return isAnESPAccess_;}
   void setIsAnESPAccess(NABoolean a) { isAnESPAccess_ = a;}

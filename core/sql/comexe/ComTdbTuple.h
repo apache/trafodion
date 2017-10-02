@@ -52,10 +52,8 @@ public:
   enum TupleTdbType {
     LEAF_, NON_LEAF_ };
 
-NA_EIDPROC
   ComTdbTuple();
 
-NA_EIDPROC
   ComTdbTuple(TupleTdbType ttt,
 	      Queue * tupleExprList,
 	      const ULng32 tupleLen,
@@ -69,12 +67,9 @@ NA_EIDPROC
 	      ULng32 bufferSize,
               ex_expr *predExpr = NULL);
 
-NA_EIDPROC
   ~ComTdbTuple();
 
-// LCOV_EXCL_START
 // only derived class is used, see GenRelMisc.cpp
-NA_EIDPROC
   Int32 orderedQueueProtocol() const
   {
     return -1;
@@ -83,29 +78,25 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                     { return (short)sizeof(ComTdbTuple); }
 
-NA_EIDPROC
   virtual Long pack (void *);
-NA_EIDPROC
   virtual Lng32 unpack(void *, void * reallocator);
 
-NA_EIDPROC
   void display() const;
 
-NA_EIDPROC
   TupleTdbType getTupleType() { return (TupleTdbType)ttt_; }
 
   virtual const ComTdb* getChild(Int32 pos) const
@@ -119,7 +110,6 @@ NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos);
   virtual const char * getExpressionName(Int32 pos) const;
 
-// LCOV_EXCL_STOP
 // end of excluding the base tuple operator class from coverage checking
 protected:
 
@@ -145,10 +135,8 @@ class ComTdbTupleLeaf: public ComTdbTuple
   friend class ExTupleLeafPrivateState;
 
 public:
-NA_EIDPROC
   ComTdbTupleLeaf(){};
 
-NA_EIDPROC
   ComTdbTupleLeaf(Queue * tupleExprList,
 		  const ULng32 tupleLen,
 		  const unsigned short tuppIndex,
@@ -165,18 +153,18 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ComTdbTuple::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                 { return (short)sizeof(ComTdbTupleLeaf); }
 
   virtual Int32 numChildren() const                            { return 0; }
@@ -187,7 +175,6 @@ protected:
 
 };
 
-// LCOV_EXCL_START
 // This non-leaf tuple operator was not used so far on SQ, see GenRelMisc.cpp
 ////////////////////////////////////////////////
 // class ComTdbTupleNonLeaf
@@ -198,10 +185,8 @@ class ComTdbTupleNonLeaf : public ComTdbTuple
   friend class ExTupleNonLeafPrivateState;
 
 public:
-NA_EIDPROC
   ComTdbTupleNonLeaf(){};
 
-NA_EIDPROC
   ComTdbTupleNonLeaf(Queue * tupleExprList,
 		     ComTdb* childTdb,
 		     const ULng32 tupleLen,
@@ -218,23 +203,21 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ComTdbTuple::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                              { return (short)sizeof(ComTdbTupleNonLeaf); }
 
-NA_EIDPROC
   virtual Long pack (void *);
-NA_EIDPROC
   virtual Lng32 unpack(void *, void * reallocator);
 
   virtual Int32 numChildren() const { return 1; }
@@ -254,7 +237,6 @@ protected:
   char fillersComTdbNonLeaf_[40];  // 08-47  unused
 };
 
-// LCOV_EXCL_STOP
 // end of excluding non-leaf operator from coverage checking
 
 #endif

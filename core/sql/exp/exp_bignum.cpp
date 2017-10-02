@@ -46,22 +46,9 @@
 #include "SQLTypeDefs.h"
 #include "exp_clause_derived.h"
 
-#if (!defined (__TANDEM) && !defined(__EID))
 #include <iostream>
-#endif
 #include <stdlib.h>
 
-#if !defined( NA_NSK) && defined( NA_IX86 )
-
-#if defined( NA_MSVC )
-#   include <limits.h>
-#endif
-
-#pragma warning( default : 4035 )
-
-#endif
-
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)
   : length_(length),
     precision_(precision),
@@ -71,52 +58,36 @@ BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)
 {
   setClassID(BigNumID);  
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::BigNum()
 {
   setClassID(BigNumID);  
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 BigNum::~BigNum()
 {
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 Attributes * BigNum::newCopy()
 {
   BigNum * new_copy = new BigNum(); 
   *new_copy = *this;
   return new_copy;
-// LCOV_EXCL_STOP
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 Attributes * BigNum::newCopy(NAMemory * heap)
 {
   BigNum * new_copy = new(heap) BigNum(); 
   *new_copy = *this;
   return new_copy;
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 void BigNum::copyAttrs(Attributes *source) 
 {
   *this = *((BigNum *) source);
- // LCOV_EXCL_STOP
   return;
 };
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 Lng32 BigNum::setTempSpaceInfo(OperatorTypeEnum operType,
 				ULong offset, Lng32 length)
 {
@@ -144,9 +115,7 @@ Lng32 BigNum::setTempSpaceInfo(OperatorTypeEnum operType,
   
   return tempSpaceLength_;
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::fixup(Space * space,
                    char * constantsArea,
 		   char * tempsArea,
@@ -162,13 +131,10 @@ void BigNum::fixup(Space * space,
 		    fixupConstsAndTemps, spaceCompOnly);
 
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Convert (i.e. copy) the Big Num from op_data[1] ("source") to op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 short BigNum::conv(Attributes * source, char * op_data[])
 {
   return BigNumHelper::ConvBigNumWithSignToBigNumWithSignHelper(((BigNum *) source)->getLength(),
@@ -176,14 +142,11 @@ short BigNum::conv(Attributes * source, char * op_data[])
                                                                 op_data[1],
                                                                 op_data[0]);
 }
-// LCOV_EXCL_STOP
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Compare the Big Num in op_data[1] ("this") with op_data[2] ("other").
 // Return  1, if "this <compOp> other" is true,0, otherwise.
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::comp (OperatorTypeEnum compOp,
 		    Attributes * other, 
 		    char * op_data[])
@@ -245,9 +208,7 @@ short BigNum::comp (OperatorTypeEnum compOp,
 	if (thisSign)                         // both -ve, so if magnitudes 
 	                                      // are different, switch
 	                                      // compCode
-#pragma nowarn(1506)   // warning elimination 
 	  compCode = (compCode ? -compCode : 0); 
-#pragma warn(1506)  // warning elimination 
       } 
   }
   
@@ -288,13 +249,11 @@ short BigNum::comp (OperatorTypeEnum compOp,
   
   return returnValue;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Add the Big Nums in op_data[1] ("left") and op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::add(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -345,13 +304,11 @@ short BigNum::add(Attributes * left,
 
   return 0;
 };
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Subtract the Big Num in op_data[2] ("right") from op_data[1] ("left")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::sub(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -400,13 +357,11 @@ short BigNum::sub(Attributes * left,
   
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Multiply the Big Nums in op_data[1] ("left") and op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::mul(Attributes * left,
 		  Attributes * right,
 		  char * op_data[])
@@ -441,13 +396,11 @@ short BigNum::mul(Attributes * left,
     
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // Divide the Big Num in op_data[1] ("left") by op_data[2] ("right")
 // and store in op_data[0] ("this").
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::div(Attributes * left,
 		  Attributes * right,
 		  char * op_data[],
@@ -513,12 +466,10 @@ short BigNum::div(Attributes * left,
 
   return 0;
 }
-#pragma warning (default : 4273)  //warning elimination
 
 
 // This method converts from other simple types to Big Num
 
-#pragma warning (disable : 4273)  //warning elimination
 short BigNum::castFrom (Attributes * source, 
 			char * op_data[],
 			NAMemory *heap,
@@ -530,7 +481,6 @@ short BigNum::castFrom (Attributes * source,
   unsigned short * thisDataInShorts = (unsigned short *) op_data[0];
   
   if ((sourceType >= REC_MIN_INTERVAL) && (sourceType <= REC_MAX_INTERVAL)) {
-	  // LCOV_EXCL_START
     switch (source1->getLength()) {
     case SQL_SMALL_SIZE:
       sourceType = REC_BIN16_SIGNED;
@@ -540,7 +490,6 @@ short BigNum::castFrom (Attributes * source,
       break;
     case SQL_LARGE_SIZE:
       sourceType = REC_BIN64_SIGNED;
-      // LCOV_EXCL_STOP
       break;
     }
   }
@@ -551,23 +500,18 @@ short BigNum::castFrom (Attributes * source,
   
   switch (sourceType) {
     case REC_BIN16_SIGNED: {
-    	// LCOV_EXCL_START
       if ( *((short *) op_data[1]) < 0) {
-#pragma nowarn(1506)   // warning elimination 
         thisDataInShorts[0] = -*((short *) op_data[1]);
-#pragma warn(1506)  // warning elimination 
         BIGN_SET_SIGN(op_data[0], getLength());
         }
       else {
         thisDataInShorts[0] = *((short *) op_data[1]);
         }
-      // LCOV_EXCL_STOP
       }
       break;
      
     case REC_BPINT_UNSIGNED:
     case REC_BIN16_UNSIGNED: {
-    	// LCOV_EXCL_START
       thisDataInShorts[0] = *((unsigned short *) op_data[1]);
       }
       break;
@@ -579,7 +523,6 @@ short BigNum::castFrom (Attributes * source,
         }
       else {
         *((ULng32 *) op_data[0])  = *((Lng32 *) op_data[1]);
-        // LCOV_EXCL_STOP
         }
 
 #ifdef NA_LITTLE_ENDIAN
@@ -627,13 +570,10 @@ short BigNum::castFrom (Attributes * source,
       
     case REC_DECIMAL_LSE: {
       // Remember first char of source in temp
-    	// LCOV_EXCL_START
       char temp = op_data[1][0];
 
       // Temporarily suppress sign bit in source
-#pragma nowarn(1506)   // warning elimination 
       op_data[1][0] = op_data[1][0] & 0177;
-#pragma warn(1506)  // warning elimination 
 
       // Convert source from ASCII to Big Num without sign and store in this. 
       BigNumHelper::ConvAsciiToBigNumHelper(source1->getLength(),
@@ -762,7 +702,6 @@ short BigNum::castFrom (Attributes * source,
       }
 
       break;
-      // LCOV_EXCL_STOP
     case REC_FLOAT64: {
 
       // The code below is modeled on the corresponding code in large decimals.
@@ -889,11 +828,8 @@ short BigNum::castFrom (Attributes * source,
   
   return 0;
 };
-#pragma warning (default : 4273)  //warning elimination
 
 
-#pragma warning (disable : 4273)  //warning elimination
-// LCOV_EXCL_START
 void BigNum::encode(const char * inBuf, char * outBuf, short desc)
 {
   char sign = BIGN_GET_SIGN(inBuf, getLength());
@@ -929,9 +865,7 @@ void BigNum::encode(const char * inBuf, char * outBuf, short desc)
   else
     outBuf[0] |= MSB_SET_MSK;
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::decode(const char * inBuf, char * outBuf, short desc)
 {
   // If MSB set in key, then value is NOT negative.
@@ -959,9 +893,7 @@ void BigNum::decode(const char * inBuf, char * outBuf, short desc)
   if (!neg)
     BIGN_CLR_SIGN(outBuf, getLength());
 }
-#pragma warning (default : 4273)  //warning elimination
 
-#pragma warning (disable : 4273)  //warning elimination
 void BigNum::init(char * op_data, char * str)
 
 {
@@ -979,7 +911,5 @@ void BigNum::init(char * op_data, char * str)
   // Set sign bit
   if (str[0] == '-')
     BIGN_SET_SIGN(op_data, getLength());
-  // LCOV_EXCL_STOP
 }
-#pragma warning (default : 4273)  //warning elimination
 

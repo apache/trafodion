@@ -41,7 +41,6 @@
 
 // -----------------------------------------------------------------------
 
-#include "SqlExpDllDefines.h"
 #include "NAVersionedObject.h" // for NAVersionedObject
 #include "ExpAtp.h"
 #include "ExpPCode.h"
@@ -111,7 +110,7 @@ struct exp_eye_catcher {
   char name_[4];
 };
 
-class SQLEXP_LIB_FUNC  NExDbgInfo {
+class  NExDbgInfo {
 private:
 
    char       * NExLogPath_     ;  // Ptr to Native Expr. Log Pathname
@@ -142,9 +141,8 @@ public:
   void  setNExDbgLvl( Int32 Lvl )            { NExDbgLvl_ = Lvl ; }
 };
 
-#pragma warning ( disable : 4251 )
 
-class SQLEXP_LIB_FUNC  ex_expr : public NAVersionedObject
+class  ex_expr : public NAVersionedObject
 {
   friend class NodeInfo;
   //----------------------------------------------------------------------
@@ -208,7 +206,7 @@ public:
 
   // Construction/Destruction
   //
-  NA_EIDPROC ex_expr(exp_node_type type = exp_ANCHOR)
+  ex_expr(exp_node_type type = exp_ANCHOR)
     : NAVersionedObject(type), 
       pCodeMaxOptBrCnt_(9999999),
       pCodeMaxOptInCnt_(9999999),
@@ -235,33 +233,33 @@ public:
     NExDbgInfo_ = NULL;
   }
 
-  NA_EIDPROC ~ex_expr() {}
+  ~ex_expr() {}
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC exp_node_type getType()
+  exp_node_type getType()
   {
     return (exp_node_type)getClassID();
   };
 
   // Accessors for Heap
   //
-  NA_EIDPROC inline void setHeap(CollHeap * heap)     { heap_ = heap; }
-  NA_EIDPROC inline CollHeap *getHeap()               { return heap_; }
+  inline void setHeap(CollHeap * heap)     { heap_ = heap; }
+  inline CollHeap *getHeap()               { return heap_; }
   
   ex_expr_lean * castToExExprLean()
   {
@@ -275,62 +273,62 @@ public:
 
   // Accessors for interogation
   //
-  NA_EIDPROC virtual void displayContents(ComSpace * space, short mode,
+  virtual void displayContents(ComSpace * space, short mode,
 					  const char * displayStr,ULng32 flag = 0x00000006);
 
   // Accessors for the clause linked list
   //
-  NA_EIDPROC ex_clause *getClauses(){
+  ex_clause *getClauses(){
     return clauses_.getPointer();
   };
 
-  NA_EIDPROC void setClauses(ex_clause * clause)
+  void setClauses(ex_clause * clause)
   {
     clauses_ = clause;
   };
   
-  NA_EIDPROC void              linkClause(ex_clause*);
+  void              linkClause(ex_clause*);
 
   // Accessors for the constants and temps areas and sizes
   //
-  NA_EIDPROC Lng32 getConstsLength()   { return constantsAreaLength_; };
-  NA_EIDPROC  void setConstsLength(Lng32 constants_area_length)
+  Lng32 getConstsLength()   { return constantsAreaLength_; };
+   void setConstsLength(Lng32 constants_area_length)
                                              {constantsAreaLength_ = constants_area_length;}
 
-  NA_EIDPROC inline char *getConstantsArea()
+  inline char *getConstantsArea()
   {
     return constantsArea_;
   }
   
-  NA_EIDPROC char *getMyConstantsArea()
+  char *getMyConstantsArea()
   {
     return constantsArea_;
   }
   
-  NA_EIDPROC  void setConstantsArea(char * constants_area)
+   void setConstantsArea(char * constants_area)
   {constantsArea_ = constants_area;};
   
-  NA_EIDPROC inline char *getTempsArea()     
+  inline char *getTempsArea()     
   {return tempsArea_;}
-  NA_EIDPROC char *getMyTempsArea()     
+  char *getMyTempsArea()     
   {return tempsArea_;}
-  NA_EIDPROC  void setTempsArea(char * temps_area)
+   void setTempsArea(char * temps_area)
   {tempsArea_ = temps_area;};
 
-  NA_EIDPROC Lng32 getTempsLength()
+  Lng32 getTempsLength()
   {
     return tempsAreaLength_;
   };
   
-  NA_EIDPROC void setTempsLength(Lng32 tempsLength){
+  void setTempsLength(Lng32 tempsLength){
     tempsAreaLength_ = tempsLength;
   };
 
-  NA_EIDPROC void setLength(Lng32 length){
+  void setLength(Lng32 length){
     length_ = length;
   };
   
-  NA_EIDPROC Lng32 getLength(){
+  Lng32 getLength(){
     return length_;
   };
   
@@ -339,7 +337,7 @@ public:
   // computeSpaceOnly: if TRUE, then compute space requirement only.
   //                Do not make any changes to the generated expressions,
   //                (like assigning tempsArea, assigning generated pcode, etc).
-  NA_EIDPROC virtual exp_return_type fixup(Lng32, unsigned short,
+  virtual exp_return_type fixup(Lng32, unsigned short,
                                            const ex_tcb * tcb,
 					   ComSpace * space,
 					   CollHeap * exHeap,
@@ -382,13 +380,13 @@ public:
   // update processing. See processUpdate() in ex_dp2_oper.cpp and
   // exp/exp_eval.cpp for details.
   ////////////////////////////////////////////////////////////////////
-  NA_EIDPROC exp_return_type 
+  exp_return_type 
     evalPCodeAligned(PCodeBinary*pCode,
                      atp_struct*,
                      atp_struct*,
                      ULng32 *rowlen);
 
-  NA_EIDPROC exp_return_type 
+  exp_return_type 
     evalPCode(PCodeBinary*pCode,
 	      atp_struct*,
 	      atp_struct*,
@@ -400,77 +398,77 @@ public:
   // being inlined.
 
   //Moves
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast4(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast202(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast203(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
 
   //Compares
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast33(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast36(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast37(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast40(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast117(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast130(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast131(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast132(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast133(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast162(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast262(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast275(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
   // Hash
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast94(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast170(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast171(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast173(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
-  static NA_EIDPROC exp_return_type
+  static exp_return_type
   evalFast223(PCodeBinary*,atp_struct*,atp_struct*,ex_expr*);
 
 
-  NA_EIDPROC exp_return_type
+  exp_return_type
     reportOverflowError(atp_struct*,
                         PCodeBinary* pCodeOpcode,
                         PCodeBinary* pCode,
                         Long* stack);
 
-  NA_EIDPROC exp_return_type 
+  exp_return_type 
     evalClauses(ex_clause *, 
 		atp_struct *,
 		atp_struct *,
@@ -479,20 +477,20 @@ public:
 		short *lastFldIndex,
 		char * fetchedDataPtr);
   
-  NA_EIDPROC virtual char *findVTblPtr(short classID);
+  virtual char *findVTblPtr(short classID);
 
-  NA_EIDPROC virtual Long pack(void *);
-  NA_EIDPROC virtual Lng32 unpack(void *, void * reallocator);
-  NA_EIDPROC void packStuff(void *);
+  virtual Long pack(void *);
+  virtual Lng32 unpack(void *, void * reallocator);
+  void packStuff(void *);
 
-  NA_EIDPROC void makeLeanCopyAll(ComSpace * space);
-  NA_EIDPROC void makeLeanCopy(ex_expr_lean * other, ComSpace * space);
+  void makeLeanCopyAll(ComSpace * space);
+  void makeLeanCopy(ex_expr_lean * other, ComSpace * space);
 
-  NA_EIDPROC inline Long packExpr(void * space) {
+  inline Long packExpr(void * space) {
     return ex_expr::pack(space);
   }
 
-  NA_EIDPROC inline Lng32 unpackExpr(void * base, void * reallocator) {
+  inline Lng32 unpackExpr(void * base, void * reallocator) {
     return ex_expr::unpack(base, reallocator);
   }
 
@@ -502,72 +500,72 @@ public:
 
   // Accessors and Methods for PCode
   //
-  NA_EIDPROC PCodeBinary *getPCodeBinary() 
+  PCodeBinary *getPCodeBinary() 
   { 
     return (pCode_.getPointer() ? pCode_.getPointer()->getPCodeBinary() : NULL);
   };
 
-  NA_EIDPROC void setPCodeLean(PCodeBinary *pCode)
+  void setPCodeLean(PCodeBinary *pCode)
   {
     pCodeLean_ = pCode;
   }
 
-  NA_EIDPROC PCode *getPCodeObject()  
+  PCode *getPCodeObject()  
   { 
     return pCodeObject_; 
   }
   
-  NA_EIDPROC PCodeSegment * getPCodeSegment()
+  PCodeSegment * getPCodeSegment()
   { return pCode_.getPointer(); }
 
-  NA_EIDPROC Int32 getPCodeSize()
+  Int32 getPCodeSize()
   {
     return pCode_.getPointer()->getPCodeSegmentSize();
   }
 
-  NA_EIDPROC virtual void setPCodeBinary(PCodeBinary *pCode)  
+  virtual void setPCodeBinary(PCodeBinary *pCode)  
                                     { pCode_.getPointer()->setPCodeBinary(pCode); }
-  NA_EIDPROC void setPCodeObject(PCode *pCodeObject)
+  void setPCodeObject(PCode *pCodeObject)
                                     {pCodeObject_ = pCodeObject; }
-  NA_EIDPROC Int16 getPCodeMode()
+  Int16 getPCodeMode()
                                     { return pCodeMode_ ; }
-  NA_EIDPROC void setPCodeMode(Int16 mode)
+  void setPCodeMode(Int16 mode)
                                     { pCodeMode_ = mode; }
-  NA_EIDPROC UInt32 getPCodeOptFlags()
+  UInt32 getPCodeOptFlags()
                                     { return pCodeOptFlags_; }
-  NA_EIDPROC void setPCodeOptFlags(UInt32 flags)
+  void setPCodeOptFlags(UInt32 flags)
                                     { pCodeOptFlags_ = flags; }
-  NA_EIDPROC UInt32 getPCodeMaxOptBrCnt()
+  UInt32 getPCodeMaxOptBrCnt()
                                     { return pCodeMaxOptBrCnt_; }
-  NA_EIDPROC UInt32 getPCodeMaxOptInCnt()
+  UInt32 getPCodeMaxOptInCnt()
                                     { return pCodeMaxOptInCnt_; }
-  NA_EIDPROC void setPCodeMaxOptBrCnt(UInt32 cnt)
+  void setPCodeMaxOptBrCnt(UInt32 cnt)
                                     { pCodeMaxOptBrCnt_ = cnt; }
-  NA_EIDPROC void setPCodeMaxOptInCnt(UInt32 cnt)
+  void setPCodeMaxOptInCnt(UInt32 cnt)
                                     { pCodeMaxOptInCnt_ = cnt; }
-  NA_EIDPROC void setEvalPtr( NABoolean isSamePrimary );
+  void setEvalPtr( NABoolean isSamePrimary );
 
-  NA_EIDPROC void setEvalPtr(evalPtrType e) { evalPtr_ = e; }
+  void setEvalPtr(evalPtrType e) { evalPtr_ = e; }
 
-  NA_EIDPROC void setNExDbgInfo(NExDbgInfo * NExDbgPtr)
+  void setNExDbgInfo(NExDbgInfo * NExDbgPtr)
                             { NExDbgInfo_ =  NExDbgPtr; }
 
-  NA_EIDPROC NExDbgInfo * getNExDbgInfoPtr() { return NExDbgInfo_ ; }
+  NExDbgInfo * getNExDbgInfoPtr() { return NExDbgInfo_ ; }
 
-  NA_EIDPROC Long getEvalPtrOffset() { return evalPtrOff_ ; }
+  Long getEvalPtrOffset() { return evalPtrOff_ ; }
 
-  NA_EIDPROC exp_return_type pCodeGenerate(ComSpace *space, CollHeap *heap,
+  exp_return_type pCodeGenerate(ComSpace *space, CollHeap *heap,
 					   UInt32 flags);
-  NA_EIDPROC void pCodePrint();
+  void pCodePrint();
 
   // Takes pointer out of PCodeBinary sequences
-  // NA_EIDPROC Long getPCodeBinaryAsPtr(PCodeBinary *pcode, Int32 idx)
+  // Long getPCodeBinaryAsPtr(PCodeBinary *pcode, Int32 idx)
   //   {
   //     return *(Long*)&pcode[idx];
   //   }
 
   // Adds pointer to PCodeBinary sequences and returns # of PCodeBinary occupied
-  NA_EIDPROC Int32 setPtrAsPCodeBinary(PCodeBinary *pcode, Int32 idx, Long ptr)
+  Int32 setPtrAsPCodeBinary(PCodeBinary *pcode, Int32 idx, Long ptr)
     {
       *(Long*)&pcode[idx] = ptr;
       return (sizeof(ptr)/sizeof(PCodeBinary));
@@ -576,72 +574,67 @@ public:
 
   // Accessors/Mutators and Methods for persisent expression storage.
   //
-  NA_EIDPROC inline char * getPersistentArea() 
+  inline char * getPersistentArea() 
   { 
     return persistentArea_;
   }
 
-  NA_EIDPROC char * getMyPersistentArea() 
+  char * getMyPersistentArea() 
   { 
     return persistentArea_;
   }
 
-  NA_EIDPROC char *getPersistentData(Int32 offset =0);
-  NA_EIDPROC char* &persistentArea() { return persistentArea_.pointer(); }
-  NA_EIDPROC char* &persistentInitializationArea() 
+  char *getPersistentData(Int32 offset =0);
+  char* &persistentArea() { return persistentArea_.pointer(); }
+  char* &persistentInitializationArea() 
   { return persistentInitializationArea_.pointer(); }
-#ifdef NA_64BIT
-  // dg64 - Match ref type
-  NA_EIDPROC Int32 &persistentLength() { return persistentLength_; }
-#else
-  NA_EIDPROC Lng32 &persistentLength() { return persistentLength_; }
-#endif
-  NA_EIDPROC void initializePersistentData() { 
+  Int32 &persistentLength() { return persistentLength_; }
+  void initializePersistentData() { 
     str_cpy_all(persistentArea_, 
 		persistentInitializationArea_,
 		persistentLength_);
   }
 
-  NA_EIDPROC void addPCodeMode(Int16 mode)
+  void addPCodeMode(Int16 mode)
                                     { pCodeMode_ |= mode; }
 
-  NA_EIDPROC NABoolean pCodeSpecialFields() {
+  NABoolean pCodeSpecialFields() {
     return (pCodeMode_ & PCODE_SPECIAL_FIELDS) != 0;
   };
 
-  NA_EIDPROC void setFixupConstsAndTemps(short v) {
+  void setFixupConstsAndTemps(short v) {
     if (v != 0) flags_ |= FIXUP_CONSTS_AND_TEMPS;
     else flags_ &= ~FIXUP_CONSTS_AND_TEMPS;
   };
-  NA_EIDPROC NABoolean getFixupConstsAndTemps() {
+  NABoolean getFixupConstsAndTemps() {
     return ((flags_ & FIXUP_CONSTS_AND_TEMPS) != 0);
   };
 
-  NA_EIDPROC NABoolean generateNoPCode() {
+  NABoolean generateNoPCode() {
     return ((flags_ & GENERATE_NO_PCODE) != 0);
   }
 
-  NA_EIDPROC void setGeneratePcode(short v) {
+  void setGeneratePcode(short v) {
     if (v != 0) flags_ |= GENERATE_NO_PCODE;
     else flags_ &= ~GENERATE_NO_PCODE;
   }
 
-  NA_EIDPROC NABoolean getPCodeGenCompile() {
+  NABoolean getPCodeGenCompile() {
     return ((flags_ & PCODE_GEN_COMPILE) != 0);
   }
 
-  NA_EIDPROC void setPCodeGenCompile (short v) {
+  void setPCodeGenCompile (short v) {
     if (v != 0) 
       flags_ |= PCODE_GEN_COMPILE;
     else flags_ &= ~PCODE_GEN_COMPILE;
   }
 
-  NA_EIDPROC void setPCodeNative(NABoolean v) {
+  void setPCodeNative(NABoolean v) {
     if (v) flags_ |= PCODE_EVAL_NATIVE;
     else flags_ &= ~PCODE_EVAL_NATIVE;
   };
 
-  NA_EIDPROC NABoolean getPCodeNative() {
+  NABoolean getPCodeNative() {
     return ((flags_ & PCODE_EVAL_NATIVE) != 0);
   };
 
@@ -654,44 +647,44 @@ public:
          flags_ &= ~PCODE_NE_IN_SHOWPLAN );
   };
 
-  NA_EIDPROC void setPCodeMoveFastpath(NABoolean v) {
+  void setPCodeMoveFastpath(NABoolean v) {
     if (v) flags_ |= PCODE_MOVE_FASTPATH;
     else flags_ &= ~PCODE_MOVE_FASTPATH;
   };
-  NA_EIDPROC NABoolean getPCodeMoveFastpath() {
+  NABoolean getPCodeMoveFastpath() {
     return ((flags_ & PCODE_MOVE_FASTPATH) != 0);
   };
 
-  NA_EIDPROC void setForInsertUpdate(NABoolean value)
+  void setForInsertUpdate(NABoolean value)
   {
     if (value)
       flags_ |= FOR_INSERT_UPDATE;
     else
       flags_ &= ~FOR_INSERT_UPDATE;
   };
-  NA_EIDPROC NABoolean forInsertUpdate() {
+  NABoolean forInsertUpdate() {
     return ((flags_ & FOR_INSERT_UPDATE) != 0);
   };
 
-  NA_EIDPROC void setPCodeEvalAligned(NABoolean value)
+  void setPCodeEvalAligned(NABoolean value)
   {
     if (value)
       flags_ |= PCODE_EVAL_ALIGNED;
     else
       flags_ &= ~PCODE_EVAL_ALIGNED;
   };
-  NA_EIDPROC NABoolean usePCodeEvalAligned() {
+  NABoolean usePCodeEvalAligned() {
     return ((flags_ & PCODE_EVAL_ALIGNED) != 0);
   };
 
-  NA_EIDPROC void setHandleIndirectVC(NABoolean value) {
+  void setHandleIndirectVC(NABoolean value) {
     if (value) 
       flags_ |= HANDLE_INDIRECT_VC;
     else 
       flags_ &= ~HANDLE_INDIRECT_VC;
   };
 
-  NA_EIDPROC NABoolean handleIndirectVC() {
+  NABoolean handleIndirectVC() {
     return ((flags_ & HANDLE_INDIRECT_VC) != 0);
   };
 
@@ -704,7 +697,6 @@ public:
   static void setNotValidateFloat64(UInt32 &f, NABoolean v)
   { ( v ? f |= NOT_VALIDATE_FLOAT64 : f &= ~NOT_VALIDATE_FLOAT64 );}
 
-  NA_EIDPROC
     static int formatARow2(const char** srcFldsPtr,
                           const int* srcFldsLength,
                           const int * srcFieldsConvIndex,
@@ -802,9 +794,6 @@ protected:
 
   // heap will be set by the executor?
   CollHeap               *heap_;
-#ifndef NA_64BIT
-  char                    fillerHeap_[4];
-#endif                                                           // 08-15 
 
   union                                                          // 16-19
   {
@@ -812,19 +801,12 @@ protected:
     PCode * pCodeObject_;
   };
 
-#ifndef NA_64BIT
-  char                    fillerPCodeObject_[4];                 // 20-23
-#endif                                                           
-
   PCodeSegmentPtr         pCode_;                                // 24-31
 
   ExClausePtr             clauses_;                              // 32-39
 
   // For error injection testing.
   const ex_tcb           *myTcb_;
-#ifndef NA_64BIT
-  char                    fillerMyTcb_[4];
-#endif                                                           // 40-47 
 
   Int32                   errorInjection_;                       // 48-51
   Int32                   warningInjection_;                     // 52-55
@@ -864,10 +846,6 @@ protected:
     NExDbgInfo         *  NExDbgInfo_ ;
   };
 
-#ifndef NA_64BIT
-  char                    fillerEvalPtr_[4];
-#endif                                                           // 116-119 
-
   UInt32                  pCodeMaxOptBrCnt_;                     // 120-123
   UInt32                  pCodeMaxOptInCnt_;                     // 124-127
 
@@ -878,7 +856,7 @@ protected:
   // ---------------------------------------------------------------------
   char                   fillers_[8];                           // 128-135
 
-  NA_EIDPROC void fixupNextClause();
+  void fixupNextClause();
 
 };
 
@@ -886,8 +864,7 @@ protected:
 //////////////////////////////////////////////////
 // class AggrExpr
 //////////////////////////////////////////////////
-#pragma nowarn(1319)  // warning elimination 
-class SQLEXP_LIB_FUNC  AggrExpr : public ex_expr {
+class  AggrExpr : public ex_expr {
 
   enum Flags {
     ONE_ROW_AGGR = 0x0001
@@ -908,10 +885,8 @@ class SQLEXP_LIB_FUNC  AggrExpr : public ex_expr {
   char                   fillers_[12];  // 44-55
 
 public:
-NA_EIDPROC
   AggrExpr() : ex_expr(ex_expr::exp_AGGR), flags_(0) {}
 
-NA_EIDPROC
   AggrExpr( ex_expr * init_expr, 
 	    ex_expr * perrec_expr, 
 	    ex_expr * final_expr, 
@@ -927,31 +902,24 @@ NA_EIDPROC
   flags_(0)
     {}
  
-NA_EIDPROC ~AggrExpr() {}
+~AggrExpr() {}
 
  ex_expr * perrecExpr()   { return perrecExpr_;}
  ex_expr * groupingExpr() { return groupingExpr_;}
 
-NA_EIDPROC
   exp_return_type initializeAggr(atp_struct *);
-NA_EIDPROC
   exp_return_type finalizeAggr(atp_struct *);
-NA_EIDPROC
   exp_return_type finalizeNullAggr(atp_struct *);
 
  exp_return_type evalGroupingForNull(Int16 startEntry, Int16 endEntry);
 
-NA_EIDPROC
   virtual Long pack(void *);
-NA_EIDPROC
   virtual Lng32 unpack(void *, void * reallocator);
-NA_EIDPROC
   virtual exp_return_type fixup(Lng32, unsigned short, const ex_tcb * tcb,
 				ComSpace * space = 0,
 				CollHeap * exHeap = 0,
 				NABoolean computeSpaceOnly = FALSE,
 				ex_globals * glob = FALSE);
-NA_EIDPROC
   virtual void displayContents(ComSpace * space, short mode, const char * displayStr,
                                ULng32 flag);
 
@@ -959,25 +927,24 @@ NA_EIDPROC
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_expr::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC void       setOneRowAggr()  { flags_ |= ONE_ROW_AGGR; }
-  NA_EIDPROC NABoolean  isOneRowAggr()
+  void       setOneRowAggr()  { flags_ |= ONE_ROW_AGGR; }
+  NABoolean  isOneRowAggr()
                  { return( (flags_ & ONE_ROW_AGGR) != 0); }
 };
-#pragma warn(1319)  // warning elimination 
 
 // -----------------------------------------------------------------------
 // Template instantiation to produce a 64-bit pointer emulator class
@@ -1043,15 +1010,14 @@ public:
    void setCall(NABoolean flag) { isCall_ = (UInt32)flag; }
    NABoolean isCall() { return (NABoolean)isCall_; }
 
-  SQLEXP_LIB_FUNC InputOutputExpr() 
+  InputOutputExpr() 
     : ex_expr(ex_expr::exp_INPUT_OUTPUT),
       flags_(0), isCall_(0),
       numEntries_(-1)
   {}
 
-  SQLEXP_LIB_FUNC InputOutputExpr(Generator * generator);
-  NA_EIDPROC
-  SQLEXP_LIB_FUNC ~InputOutputExpr() {}
+  InputOutputExpr(Generator * generator);
+  ~InputOutputExpr() {}
 
   ex_expr::exp_return_type describeInput(void*, void*, UInt32);
   ex_expr::exp_return_type describeOutput(void*, UInt32);
@@ -1062,14 +1028,14 @@ public:
 
   Lng32 getMaxParamIdx();
 
-  SQLEXP_LIB_FUNC ex_expr::exp_return_type inputSingleRowValue
+  ex_expr::exp_return_type inputSingleRowValue
   (atp_struct*,
    void*,
    char*,
    CollHeap *exHeap,
    UInt32 flags);
   
-  SQLEXP_LIB_FUNC ex_expr::exp_return_type inputRowwiseRowsetValues
+  ex_expr::exp_return_type inputRowwiseRowsetValues
   (atp_struct*,
    void*,
    void*,
@@ -1077,98 +1043,98 @@ public:
    CollHeap *exHeap,
    UInt32 flags);
 
-  SQLEXP_LIB_FUNC ex_expr::exp_return_type inputValues
+  ex_expr::exp_return_type inputValues
   (atp_struct *atp,
    void * inputDesc_,
    NABoolean tolerateNonFatalError,
    CollHeap * heap,
    UInt32 flags);
 
-  SQLEXP_LIB_FUNC ex_expr::exp_return_type outputValues(atp_struct*,
+  ex_expr::exp_return_type outputValues(atp_struct*,
 							void*, 
                                                         CollHeap *exHeap,
 							UInt32 flags);
 
-  SQLEXP_LIB_FUNC  Lng32 getCompiledOutputRowsetSize(atp_struct *);
+   Lng32 getCompiledOutputRowsetSize(atp_struct *);
 
-  SQLEXP_LIB_FUNC virtual Long pack(void *);
+  virtual Long pack(void *);
 
-  SQLEXP_LIB_FUNC  Lng32 getNumEntries(){
+   Lng32 getNumEntries(){
     return numEntries_;
   };
   
-  SQLEXP_LIB_FUNC  void setNumEntries(Lng32 entries){
+   void setNumEntries(Lng32 entries){
     numEntries_ = entries;
   };
 
-  SQLEXP_LIB_FUNC NABoolean noEval() 
+  NABoolean noEval() 
   { return (flags_ & NO_EVAL) != 0; };
 
-  SQLEXP_LIB_FUNC void setNoEval(NABoolean v)      
+  void setNoEval(NABoolean v)      
   { (v ? flags_ |= NO_EVAL : flags_ &= ~NO_EVAL); }
 
-  SQLEXP_LIB_FUNC NABoolean skipTypeCheck() 
+  NABoolean skipTypeCheck() 
   { return (flags_ & SKIP_TYPE_CHECK) != 0; };
 
-  SQLEXP_LIB_FUNC void setSkipTypeCheck(NABoolean v)      
+  void setSkipTypeCheck(NABoolean v)      
   { (v ? flags_ |= SKIP_TYPE_CHECK : flags_ &= ~SKIP_TYPE_CHECK); }
 
-  SQLEXP_LIB_FUNC NABoolean restrictedSkipTypeCheck() 
+  NABoolean restrictedSkipTypeCheck() 
   { return (flags_ & RESTRICTED_SKIP_TYPE_CHECK) != 0; };
 
-  SQLEXP_LIB_FUNC void setRestrictedSkipTypeCheck(NABoolean v)      
+  void setRestrictedSkipTypeCheck(NABoolean v)      
   { (v ? flags_ |= RESTRICTED_SKIP_TYPE_CHECK : flags_ &= ~RESTRICTED_SKIP_TYPE_CHECK); }
 
-  SQLEXP_LIB_FUNC NABoolean isDBTR(UInt32 flags) 
+  NABoolean isDBTR(UInt32 flags) 
   { return (flags & IS_DBTR_) != 0; };
 
-  SQLEXP_LIB_FUNC void setIsDBTR(UInt32 &flags, NABoolean v)      
+  void setIsDBTR(UInt32 &flags, NABoolean v)      
   { (v ? flags |= IS_DBTR_ : flags &= ~IS_DBTR_); }
 
-  SQLEXP_LIB_FUNC NABoolean isODBC(UInt32 flags) 
+  NABoolean isODBC(UInt32 flags) 
   { return (flags & IS_ODBC_) != 0; };
 
-  SQLEXP_LIB_FUNC void setIsODBC(UInt32 &flags, NABoolean v)      
+  void setIsODBC(UInt32 &flags, NABoolean v)      
   { (v ? flags |= IS_ODBC_ : flags &= ~IS_ODBC_); }
 
-  SQLEXP_LIB_FUNC NABoolean isRWRS(UInt32 flags) 
+  NABoolean isRWRS(UInt32 flags) 
   { return (flags & IS_RWRS_) != 0; };
 
-  SQLEXP_LIB_FUNC void setIsRWRS(UInt32 &flags, NABoolean v)      
+  void setIsRWRS(UInt32 &flags, NABoolean v)      
   { (v ? flags |= IS_RWRS_ : flags &= ~IS_RWRS_); }
 
-  SQLEXP_LIB_FUNC NABoolean isInternalFormatIO(UInt32 flags) 
+  NABoolean isInternalFormatIO(UInt32 flags) 
   { return (flags & INTERNAL_FORMAT_IO_) != 0; };
 
-  SQLEXP_LIB_FUNC void setInternalFormatIO(UInt32 &flags, NABoolean v)
+  void setInternalFormatIO(UInt32 &flags, NABoolean v)
   { (v ? flags |= INTERNAL_FORMAT_IO_ : flags &= ~INTERNAL_FORMAT_IO_); }
 
-  SQLEXP_LIB_FUNC NABoolean noDatetimeValidation()
+  NABoolean noDatetimeValidation()
     { return ((flags_ & NO_DATETIME_VALIDATION) != 0); };
 
-  SQLEXP_LIB_FUNC void setNoDatetimeValidation(NABoolean v)
+  void setNoDatetimeValidation(NABoolean v)
     { (v) ? flags_ |= NO_DATETIME_VALIDATION : flags_ &= ~NO_DATETIME_VALIDATION; }
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  SQLEXP_LIB_FUNC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  SQLEXP_LIB_FUNC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_expr::populateImageVersionIDArray();
   }
 
-  SQLEXP_LIB_FUNC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
-  SQLEXP_LIB_FUNC void setupBulkMoveInfo(void * desc_, CollHeap * heap,
+  void setupBulkMoveInfo(void * desc_, CollHeap * heap,
 					 NABoolean isInputDesc,
 					 UInt32 flags);
-  SQLEXP_LIB_FUNC ex_expr::exp_return_type doBulkMove(atp_struct * atp, 
+  ex_expr::exp_return_type doBulkMove(atp_struct * atp, 
 						      void * desc_, 
 						      char * tgtRowPtr,
 						      NABoolean isInputDesc);
@@ -1182,7 +1148,7 @@ public:
   //        For datetime and interval types, a detailed compatibility
   //        (matching qualifiers) is done later at conversion time.
   /////////////////////////////////////////////////////////////////////
-  static SQLEXP_LIB_FUNC NABoolean areCompatible(short source, short target)
+  static NABoolean areCompatible(short source, short target)
   {
     if ((((source >= REC_MIN_NUMERIC) && (source <= REC_MAX_NUMERIC)) &&
 	 ((target >= REC_MIN_NUMERIC) && (target <= REC_MAX_NUMERIC))) ||
@@ -1199,7 +1165,7 @@ public:
       return FALSE;
   }
 	
-  static SQLEXP_LIB_FUNC NABoolean implicitConversionSupported(short source, short target)
+  static NABoolean implicitConversionSupported(short source, short target)
   {
     if ((((source >= REC_MIN_CHARACTER) && (source <= REC_MAX_CHARACTER)) &&
 	 ((target == REC_DATETIME) || ((target >= REC_MIN_BINARY) && (target <= REC_MAX_BINARY)))) ||
@@ -1210,7 +1176,7 @@ public:
       return FALSE;
   }
 
-  SQLEXP_LIB_FUNC NABoolean isExactNumeric(short type)
+  NABoolean isExactNumeric(short type)
   {
     if ((type >= REC_MIN_BINARY) && (type <= REC_MAX_BINARY) ||
 	(type >= REC_MIN_DECIMAL) && (type <= REC_MAX_DECIMAL))
@@ -1224,7 +1190,7 @@ public:
 };
 
 
-class SQLEXP_LIB_FUNC  ex_expr_lean : public ex_expr
+class  ex_expr_lean : public ex_expr
 {
   friend class ex_expr;
   //  Int32                   pCodeSize_;         
@@ -1240,28 +1206,28 @@ public:
   // computeSpaceOnly: if TRUE, then compute space requirement only.
   //                Do not make any changes to the generated expressions,
   //                (like assigning tempsArea, assigning generated pcode, etc).
-  NA_EIDPROC virtual exp_return_type fixup(Lng32, unsigned short,
+  virtual exp_return_type fixup(Lng32, unsigned short,
                                            const ex_tcb * tcb,
 					   ComSpace * space = 0,
 					   CollHeap * exHeap = 0,
 					   NABoolean computeSpaceOnly = FALSE);
 
-  NA_EIDPROC virtual Long pack(void *);
-  NA_EIDPROC virtual Lng32 unpack(void *, void * reallocator);
+  virtual Long pack(void *);
+  virtual Lng32 unpack(void *, void * reallocator);
 
   void convAddrToOffsetInPCode(void * space);
   void convOffsetToAddrInPCode(void* base);
 
-  NA_EIDPROC virtual void displayContents(ComSpace * space, short mode,
+  virtual void displayContents(ComSpace * space, short mode,
 					  const char * displayStr,
 					  ULng32 flag = 0x00000006);
 
-  //  NA_EIDPROC Int32 *getMyPCode() 
+  //  Int32 *getMyPCode() 
   //  { 
   //    return &pCodeLean_[1];
   //  }
 
-  NA_EIDPROC Int32 getPCodeSize()
+  Int32 getPCodeSize()
   {
     return pCodeLean_[0];
     //    return pCodeSize_;
@@ -1281,7 +1247,6 @@ public:
 };
 
 
-#pragma warning ( default : 4251 )
  
 ///////////////////////////////////////////////////
 // class Target
@@ -1290,17 +1255,10 @@ template <class t> class Target {
 public:
 	t operator=(t source)
 	{
-		t *targetBuffer;
-#if defined( NA_SHADOWCALLS )
-		targetBuffer = (t *)SqlCliSp_GetBufPtr((char *)this, false);
-#else
-                targetBuffer = (t *)this;
-#endif
-		*targetBuffer = source;
-#if defined( NA_SHADOWCALLS )
-		SqlCliSp_SetWriteLength((char *)this, sizeof(source));
-#endif
-		return source;
+          t *targetBuffer;
+          targetBuffer = (t *)this;
+          *targetBuffer = source;
+          return source;
 	}
 };
 

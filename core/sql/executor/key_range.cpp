@@ -52,12 +52,8 @@ keyRangeEx::keyRangeEx(const keyRangeGen & tdb_key,
 	     ) :
      tdbKey_(tdb_key),globals_(g),bkExcludeFlag_(0),ekExcludeFlag_(0)
 {
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(bkData_, tdb_key.getKeyLength());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
   pool->get_free_tuple(ekData_, tdb_key.getKeyLength());
-#pragma warn(1506)  // warning elimination 
 
   workAtp_ = allocateAtp(tdbKey_.getWorkCriDesc(),g->getSpace());
   pool->get_free_tuple(workAtp_->getTupp(tdbKey_.getKeyValuesAtpIndex()),

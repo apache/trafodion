@@ -37,21 +37,13 @@
 *
 **************************************************************************** */
 
-#include "SqlExportDllDefines.h"
-
 // -----------------------------------------------------------------------
 //  The following classes are defined in this file.
 // -----------------------------------------------------------------------
 class ComMemoryDiags;   // used to diagnose memory leaks
 
-
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream ; // forward decl 
-#endif
-
 
 //
 // class ComMemoryDiags is simply a wrapper around the static data member
@@ -75,7 +67,7 @@ class ostream ; // forward decl
 // The static data member is initialized in ComMemoryDiags.cpp.
 //
 
-class SQLEXPORT_LIB_FUNC ComMemoryDiags {
+class ComMemoryDiags {
 public:
   static ostream *& DumpMemoryInfo() { return dumpMemoryInfo_ ; }
 private:

@@ -78,11 +78,9 @@ static const char emptyString[] = "";
 
 inline static char *copyString(const NAString &s)	// cf. readRealArk.cpp
 {
-#pragma nowarn(1506)   // warning elimination 
   char *c = new(CmpCommon::statementHeap()) char[s.length()+1];
   str_cpy_all(c, s.data(), s.length()+1);
   return c;
-#pragma warn(1506)   // warning elimination 
 }
 
 static void CmpSPERROR2Diags(const SP_ERROR_STRUCT* spError, 
@@ -335,8 +333,6 @@ NABoolean CmpSPOutputFormat::SetFormat(Lng32 nCols,
     table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   index_desc->indexesDesc()->files_desc = i_files_desc;
 
@@ -392,9 +388,6 @@ NABoolean CmpSPOutputFormat::getKeysDesc(Lng32 nKeys,
   return TRUE;
 }
 
-// ##TODO:  this code might be better put into ReadTableDef or readRealArk.cpp
-// ##For now for new data types, etc. this piece will be changed accordingly.
- 
 NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
   (ElemDDLColDef* elem,
   const char* tableName,
@@ -442,7 +435,6 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
       colDesc->precision = 0;      
     }
 
-#pragma nowarn(1506)   // warning elimination 
   if ( genericType->getTypeQualifier() == NA_CHARACTER_TYPE )
     {
       CharType & charType = (CharType &) *genericType;
@@ -462,7 +454,6 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
       colDesc->datetimefractprec = dti.getFractionPrecision();
       colDesc->intervalleadingprec = dti.getLeadingPrecision();
   }
-#pragma warn(1506)   // warning elimination 
   
   // offset, to be done (do we need it?)
 

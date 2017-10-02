@@ -93,7 +93,6 @@ class GroupByAgg : public RelExpr
 public:
 
   // constructor
-// warning elimination (removed "inline")
   GroupByAgg(RelExpr *child,
              OperatorTypeEnum otype = REL_GROUPBY,
              ItemExpr *groupExpr = NULL,
@@ -660,7 +659,6 @@ class SortGroupBy : public GroupByAgg
 public:
 
   // constructor
-// warning elimination (removed "inline")
   SortGroupBy(RelExpr *child,
 		     OperatorTypeEnum otype = REL_ORDERED_GROUPBY,
 		     ItemExpr *groupExpr = NULL,
@@ -702,7 +700,6 @@ class ShortCutGroupBy : public GroupByAgg
 public:
 
   // constructor
-// warning elimination (removed "inline")
   ShortCutGroupBy(RelExpr *child,
 		        OperatorTypeEnum otype = REL_SHORTCUT_GROUPBY,
 		        ItemExpr *groupExpr = NULL,
@@ -756,7 +753,6 @@ class PhysShortCutGroupBy : public ShortCutGroupBy
 public:
 
   // constructor
-// warning elimination (removed "inline")
   PhysShortCutGroupBy(RelExpr *child,
                              OperatorTypeEnum otype = REL_SHORTCUT_GROUPBY,
                              ItemExpr *groupExpr = NULL,
@@ -789,7 +785,6 @@ class HashGroupBy : public GroupByAgg
 public:
 
   // constructor
-// warning elimination (removed "inline")
   HashGroupBy(RelExpr *child,
 		     OperatorTypeEnum otype = REL_HASHED_GROUPBY,
 		     ItemExpr *groupExpr = NULL,
@@ -826,7 +821,7 @@ public:
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
 
   virtual double getEstimatedRunTimeOverflowSize(double memoryQuotaMB);

@@ -254,7 +254,7 @@ Ex_Lob_Error ExLob::fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOff
         
       }
 
-    str_sprintf(logBuf, " Returned after ::fetchCursor %Ld,%Ld",outOffset,outSize);
+    str_sprintf(logBuf, " Returned after ::fetchCursor %ld,%ld",outOffset,outSize);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
 
     return err;
@@ -287,7 +287,7 @@ Ex_Lob_Error ExLob::getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, 
     desc.setOffset(offset);
     desc.setSize(size);
    
-    str_sprintf(logBuf,"After Cli LOB_CLI_SELECT_UNIQUE:descOffset:%Ld, descSize: %Ld",offset,size);
+    str_sprintf(logBuf,"After Cli LOB_CLI_SELECT_UNIQUE:descOffset:%ld, descSize: %ld",offset,size);
     lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
     return err;
 }
@@ -602,7 +602,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
        else
 	 return LOB_SOURCE_FILE_OPEN_ERROR;
        
-       str_sprintf(logBuf,"Returning EOF of %Ld for file %s", sourceEOF,srcfile);
+       str_sprintf(logBuf,"Returning EOF of %ld for file %s", sourceEOF,srcfile);
        lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
      }
 
@@ -629,7 +629,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
 
        flock(fdSrcFile, LOCK_UN);
        close(fdSrcFile);
-       str_sprintf(logBuf,"Returning EOF of %Ld for file %s", sourceEOF,srcfile);
+       str_sprintf(logBuf,"Returning EOF of %ld for file %s", sourceEOF,srcfile);
        lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
        
      }
@@ -704,7 +704,7 @@ Ex_Lob_Error ExLob::readSourceFile(char *srcfile, char *&fileData, Int32 &size, 
 Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
  {
      char logBuf[4096];
-     str_sprintf(logBuf,"Calling ::readHdfsSourceFile: %s Offset:%Ld, Size: %Ld",srcfile, offset,size);
+     str_sprintf(logBuf,"Calling ::readHdfsSourceFile: %s Offset:%ld, Size: %d",srcfile, offset,size);
      lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
   
    
@@ -733,7 +733,7 @@ Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &si
 Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
    {  
      char logBuf[4096];
-     str_sprintf(logBuf,"Calling ::readLocalSourceFile: %s Offset:%Ld, Size: %Ld",srcfile, offset,size);
+     str_sprintf(logBuf,"Calling ::readLocalSourceFile: %s Offset:%ld, Size: %d",srcfile, offset,size);
      lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
   
      int openFlags = O_RDONLY;
@@ -926,7 +926,7 @@ Ex_Lob_Error ExLob::insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 
    NABoolean foundUnused = FALSE;
    char logBuf[4096];
    lobDebugInfo("In ExLob::InsertDesc",0,__LINE__,lobTrace_);
-   str_sprintf(logBuf,"Calling Cli LOB_CLI_INSERT: Offset:%Ld, Size: %Ld",
+   str_sprintf(logBuf,"Calling Cli LOB_CLI_INSERT: Offset:%ld, Size: %ld",
                offset,size);
    lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
    clierr = SQL_EXEC_LOBcliInterface(handleIn, 
@@ -938,7 +938,7 @@ Ex_Lob_Error ExLob::insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 
                                      &outDescPartnKey, &outDescSyskey, 
 				     0,
 				     xnId,lobTrace_);
-   str_sprintf(logBuf,"After LOB_CLI_INSERT: ChunkNum: OutSyskey:%Ld",
+   str_sprintf(logBuf,"After LOB_CLI_INSERT: ChunkNum:%d OutSyskey:%ld",
                chunkNum,outDescSyskey);
    lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
    lobDebugInfo("Leaving ExLob::InsertDesc",0,__LINE__,lobTrace_);
@@ -967,7 +967,7 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
         allocMemSize = MINOF(lobMaxChunkMemSize, inputSize);
 	if (subOperation == Lob_File) 
 	  {
-            str_sprintf(logBuf,"reading source file %s allocMemSize : %Ld, readOffset:%Ld", source,allocMemSize,readOffset);
+            str_sprintf(logBuf,"reading source file %s allocMemSize : %d, readOffset:%ld", source,allocMemSize,readOffset);
             lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
 	    err = readSourceFile(source, inputAddr, allocMemSize, readOffset);
 	    if (err != LOB_OPER_OK)
@@ -983,7 +983,7 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
 	err = writeData(writeOffset, inputAddr, allocMemSize, operLen);
 	if (err != LOB_OPER_OK)
 	  {
-            str_sprintf(logBuf,"::writeData returned error .writeOffset:%Ld, allocMemSize:%Ld, operLen %Ld ", writeOffset,allocMemSize,operLen);
+            str_sprintf(logBuf,"::writeData returned error .writeOffset:%ld, allocMemSize:%d, operLen %ld ", writeOffset,allocMemSize,operLen);
             lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
 	    //handle errors that happen in one of the chunks.
 	   return err;
@@ -993,7 +993,7 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
 	  readOffset = readOffset+allocMemSize;
 	  inputSize = inputSize-lobMaxChunkMemSize;
 	  getLobGlobalHeap()->deallocateMemory(inputAddr);
-          str_sprintf(logBuf,"Bookkeeping for Lob_File source.writeOffset:%Ld, readOffset:%Ld, inputSize: %Ld ", writeOffset,readOffset, inputSize);
+          str_sprintf(logBuf,"Bookkeeping for Lob_File source.writeOffset:%ld, readOffset:%ld, inputSize: %ld ", writeOffset,readOffset, inputSize);
           lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
 	}
 	else
@@ -1001,7 +1001,7 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
 	    writeOffset = writeOffset+allocMemSize;
 	    inputSize = inputSize-lobMaxChunkMemSize;
 	    inputAddr = inputAddr+allocMemSize;
-            str_sprintf(logBuf,"Bookkeeping for Lob_Memory source. writeOffset:%Ld,  inputSize: %Ld ", writeOffset, inputSize);
+            str_sprintf(logBuf,"Bookkeeping for Lob_Memory source. writeOffset:%ld,  inputSize: %ld ", writeOffset, inputSize);
             lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
 	  }
       }
@@ -1045,7 +1045,7 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size,  Int64 &operLen,char * 
        sizeToRead = size;
        multipleChunks = TRUE;
      }
-   str_sprintf(logBuf,"sizeToRead:%Ld, desc.size :%Ld", sizeToRead, desc.getSize());
+   str_sprintf(logBuf,"sizeToRead:%ld, desc.size :%d", sizeToRead, desc.getSize());
    lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
    err = readDataToMem(memAddr, desc.getOffset(),sizeToRead, operLen, handleIn,handleInLen, multipleChunks,transId);
 
@@ -1290,7 +1290,7 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
 
     char *inputAddr = data;
    
-     str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,sourceLen,dataOffset);
+     str_sprintf(logBuf,"Calling writeLobData: inputAddr: %ld, InputSize%ld, tgtOffset:%ld",(long)inputAddr,sourceLen,dataOffset);
     err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
     if (err != LOB_OPER_OK)
       {
@@ -1307,7 +1307,7 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
    operLen = 0;
    char logBuf[4096];
    lobDebugInfo("In ExLob::InsertData",0,__LINE__,lobTrace_);
-   str_sprintf(logBuf,"data:%Ld, size %Ld, lobMaxSize:%Ld, lobMaxChunkMemSize:%Ld", (long)data, size,lobMaxSize,lobMaxChunkMemSize);
+   str_sprintf(logBuf,"data:%ld, size %ld, lobMaxSize:%ld, lobMaxChunkMemSize:%ld", (long)data, size,lobMaxSize,lobMaxChunkMemSize);
   
    // get offset and input size from desc (the one that was just  
    // inserted into the descriptor handle table)
@@ -1327,7 +1327,7 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
    
     Int64 inputSize = desc.getSize();
     Int64 tgtOffset = desc.getOffset();
-    str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,inputSize,tgtOffset);
+    str_sprintf(logBuf,"Calling writeLobData: inputAddr: %ld, InputSize%ld, tgtOffset:%ld",(long)inputAddr,inputSize,tgtOffset);
 
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
     err = writeLobData(inputAddr, inputSize,so, tgtOffset, 
@@ -1359,7 +1359,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
     lobDebugInfo("In ExLob::update",0,__LINE__,lobTrace_);
     if ((so == Lob_File) || (so == Lob_External_File))
       {
-        str_sprintf(logBuf,"Calling statSourceFile: source:%s, sourceLen: %Ld",
+        str_sprintf(logBuf,"Calling statSourceFile: source:%s, sourceLen: %ld",
                data,sourceLen);
         lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
 	err = statSourceFile(data, sourceLen); 
@@ -1399,11 +1399,11 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
       }
     char *inputAddr = data;
    
-    str_sprintf(logBuf,"Calling writeLobData.sourceLen:%Ld, dataOffset:%Ld",sourceLen,dataOffset);
+    str_sprintf(logBuf,"Calling writeLobData.sourceLen:%ld, dataOffset:%ld",sourceLen,dataOffset);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
            
     err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
-    str_sprintf(logBuf,"writeLobData returned. operLen:%Ld",operLen);
+    str_sprintf(logBuf,"writeLobData returned. operLen:%ld",operLen);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
     if (err != LOB_OPER_OK){
        lobDebugInfo("writeLobData Failed",0,__LINE__,lobTrace_); 
@@ -1610,7 +1610,7 @@ Ex_Lob_Error ExLob::readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int32 h
     {
        cursor = it->second; 
     } 
-    str_sprintf(logBuf,"ExLob::readCursor:: cliInterface:%Ld,bytesRead_:%Ld,descOffset_:%LddescSize_:%Ld,eod_:%d,eor_:%d,eol_:%d,",(long)cursor.cliInterface_,cursor.bytesRead_,cursor.descOffset_,cursor.descSize_,cursor.eod_,cursor.eor_,cursor.eol_);
+    str_sprintf(logBuf,"ExLob::readCursor:: cliInterface:%ld,bytesRead_:%ld,descOffset_:%lddescSize_:%ld,eod_:%d,eor_:%d,eol_:%d,",(long)cursor.cliInterface_,cursor.bytesRead_,cursor.descOffset_,cursor.descSize_,cursor.eod_,cursor.eor_,cursor.eol_);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
     if (cursor.eod_) {
        // remove cursor from the map.
@@ -1746,7 +1746,7 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
 
     if ((lobGCLimit != 0) && (dataOffset > lobGCLimit)) // 5 GB default
       {
-        str_sprintf(logBuf,"Starting GC. Current Offset : %Ld",dataOffset);
+        str_sprintf(logBuf,"Starting GC. Current Offset : %ld",dataOffset);
         lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
            
          
@@ -1781,10 +1781,10 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
       lobDataFileSubstr[len] = '\0';
 
       if (GCDone)
-        str_sprintf(logBuf,"Done GC. Allocating new Offset %Ld in %s",
+        str_sprintf(logBuf,"Done GC. Allocating new Offset %ld in %s",
                     dataOffset,lobDataFileSubstr);
       else
-        str_sprintf(logBuf,"Allocating new Offset %Ld in %s ",
+        str_sprintf(logBuf,"Allocating new Offset %ld in %s ",
                     dataOffset,lobDataFileSubstr);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       //Find the last offset in the file
@@ -2075,7 +2075,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       clock_gettime(CLOCK_MONOTONIC, &startTime);
 
       bytesRead = hdfsPread(fs_, fdData_, offset, tgt, bytesToCopy);
-      str_sprintf(logBuf,"After hdfsPread: BytesToCopy:%Ld, Offset:%Ld, tgt:%Ld, BytesRead :%Ld",
+      str_sprintf(logBuf,"After hdfsPread: BytesToCopy:%ld, Offset:%ld, tgt:%ld, BytesRead :%ld",
                   bytesToCopy,offset,(long)tgt,bytesRead);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       clock_gettime(CLOCK_MONOTONIC, &endTime);
@@ -2177,8 +2177,10 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
       lobDataFileSubstr[len] = '\0';
 
-      str_sprintf(logBuf,"After hdfsPread: File:%s, Offset:%Ld, Size:%Ld,Target Mem Addr:%Ld",
-                  lobDataFileSubstr,offset,size,memAddr);
+      //str_sprintf(logBuf,"After hdfsPread: File:%s, Offset:%ld, Size:%ld,Target Mem Addr:%d",
+       //           lobDataFileSubstr,offset,size,memAddr);
+      str_sprintf(logBuf,"After hdfsPread: File:%s, Offset:%ld, Size:%ld",
+                  lobDataFileSubstr,offset,size);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       operLen = bytesRead;
       return LOB_OPER_OK;
@@ -2580,7 +2582,7 @@ Ex_Lob_Error ExLobsOper (
 	  if (err != LOB_OPER_OK)
             {
               char buf[5000];
-              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;hdfsPort:%d;lobMaxSize:%Ld",fileName,lobStorageLocation,hdfsServer,lobMaxSize);
+              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;lobMaxSize:%ld",fileName,lobStorageLocation,hdfsServer,lobMaxSize);
               lobDebugInfo(buf,err,__LINE__,lobGlobals->lobTrace_);
               return err;
             }
@@ -2673,7 +2675,7 @@ Ex_Lob_Error ExLobsOper (
 	  if (err != LOB_OPER_OK)
             {
               char buf[5000];
-              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;hdfsPort:%d;lobMaxSize:%Ld",srcLobName,lobStorageLocation,hdfsServer,lobMaxSize);
+              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;lobMaxSize:%ld",srcLobName,lobStorageLocation,hdfsServer,lobMaxSize);
               lobDebugInfo(buf,err,__LINE__,lobGlobals->lobTrace_);
               return err;
             }

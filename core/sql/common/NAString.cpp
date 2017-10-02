@@ -166,14 +166,10 @@ char *convertNAString(const NAString& ns, CollHeap *heap, NABoolean wideNull)
   else {
     buf = new char[len + nullSpaceLen];
     #ifndef NDEBUG
-//LCOV_EXCL_START :rfi
       cerr << "Possible memory leak: convertNAString called with NULL heap\n";
-//LCOV_EXCL_STOP
     #endif
   }
-#pragma nowarn(1506)   // warning elimination
   str_cpy_all(buf, ns.data(), len);
-#pragma warn(1506)  // warning elimination
   if (wideNull == TRUE)
     ((NAWchar *)buf)[len / sizeof(NAWchar)] = L'\0';
   else
@@ -403,7 +399,7 @@ NABoolean IsCIdentifier(const char *id)
 
 NABoolean /*NAString::*/setMPLoc()
 {
-  if (!SqlParser_Initialized() || SqlParser_NAMETYPE == DF_NSK)
+  if (!SqlParser_Initialized() )
     return TRUE;
   else
     return FALSE;
@@ -429,10 +425,8 @@ NAString ToAnsiIdentifier(const NAString &ns, NABoolean assertShort)
   if ((Int32) internalFormatNameInUCS2.length() >
       (Int32) (assertShort ? ComMAX_1_PART_INTERNAL_UCS2_NAME_LEN_IN_NAWCHARS : SMAX))
   {
-//LCOV_EXCL_START :rfi
     ComASSERT(0);
     return NAString();
-//LCOV_EXCL_STOP
   }
 
   char buf[SMAX];
@@ -458,9 +452,7 @@ NAString ToAnsiIdentifier(const NAString &ns, NABoolean assertShort)
 static Lng32 illegalCharInIdentifier(NAString &ansiIdent,
 				    size_t i, size_t countOfRemoved)
 {
-#pragma nowarn(1506)   // warning elimination
   ansiIdent[(size_t)0] = i + countOfRemoved;
-#pragma warn(1506)  // warning elimination
   return -3127;
 }
 
@@ -946,7 +938,7 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
           i++;
           break;
 	default:
-          ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi  (Note: no-op in Release build)
+          ComASSERT(FALSE); 
         }		 // switch
       }		 // while
 
@@ -1254,15 +1246,12 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
     }
   if (pic)
     {
-//LCOV_EXCL_START : cnu - SeaQuest does not support COBOL
       if (tok == " B "  || tok == " X " ||
           tok == " S9 " || tok == " S 9 " || tok == " SV9 " || tok == " V9 ")
 	return TRUE;
-//LCOV_EXCL_STOP
     }
   if (tok == " V9 ")	// PICTURE S V9(nnn)
     {
-//LCOV_EXCL_START : cnu - SeaQuest does not support COBOL
       if (prevtok.length() > 3)
 	{
 	  prevtok.remove(3);
@@ -1282,7 +1271,6 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 		}
 	    }
 	}
-//LCOV_EXCL_STOP
     }
 
   return FALSE;

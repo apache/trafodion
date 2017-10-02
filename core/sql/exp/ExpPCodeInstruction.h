@@ -51,14 +51,8 @@ typedef PCIType PCIT;
 typedef PCIAddressingModeList AML;
 typedef PCIOperandList OL;
 typedef PCodeInstruction PCI;
-#ifdef NA_64BIT
-// dg64 - a bit of a guess
 typedef Int64 PCIID; 
-#else
-typedef Int32 PCIID; 
-#endif
 
-// NA_64BIT PCode changes
 // PCode Binary (formally referred as code) remains to be 32-bit long on
 // 64-bit platform but when it contains pointers/addresses it takes two
 // consecutive storge space. The same applies to the operand list as Operand
@@ -74,7 +68,6 @@ typedef Int32 PCodeBinary;
 // Currently 1 on 32-bit platform and 2 on 64-bit platform
 #define PCODEBINARIES_PER_PTR sizeof(char*)/sizeof(PCodeBinary)
 
-#include "SqlExpDllDefines.h"
 // PCIType
 //
 // The PCIType class encapsulates and provides a uniform name space
@@ -83,7 +76,7 @@ typedef Int32 PCodeBinary;
 // static member functions for converting these enumerations to strings
 // for display.
 //
-class SQLEXP_LIB_FUNC  PCIType {
+class PCIType {
 public:
 
   // PCode operations -- These enumerations represent the different PCode
@@ -759,13 +752,10 @@ public:
 
   // Helper functions for displaying the enumerations
   //
-NA_EIDPROC
   static const char *operationString(PCIType::Operation op);
-NA_EIDPROC
   static const char *addressingModeString(PCIType::AddressingMode am);
   
   //buf should be 32 bytes
-NA_EIDPROC
   static void operandString(Int32 operand, char* buf); 
 
   static char *instructionString(PCIType::Instruction instr);
@@ -790,11 +780,10 @@ NA_EIDPROC
 // The AML and OL classes are only meant to be used to simply argument
 // passing to the PCI constructors. Nothing more.
 //
-class SQLEXP_LIB_FUNC  PCIAddressingModeList {
+class PCIAddressingModeList {
 public:
   // Constructor
   //
-  NA_EIDPROC
   PCIAddressingModeList(PCIType::AddressingMode am1 =PCIType::AM_NONE,
 			PCIType::AddressingMode am2 =PCIType::AM_NONE,
 			PCIType::AddressingMode am3 =PCIType::AM_NONE,
@@ -818,9 +807,7 @@ public:
   
   // Accessors
   //
-NA_EIDPROC
   Int32 getNumberAddressingModes() const { return numberAddressingModes_; };
-NA_EIDPROC
   PCIType::AddressingMode getAddressingMode(Int32 mode) const
   { return addressingMode_[mode]; };
   
@@ -849,77 +836,76 @@ private:
 //
 // See PCIAddressingMode comments above. 
 //
-class SQLEXP_LIB_FUNC  PCIOperandList {
+class PCIOperandList {
 public:
   // Constructors
   //
-  NA_EIDPROC PCIOperandList() { initList(0); };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1) { initList(1, arg1); };
+  PCIOperandList() { initList(0); };
+  PCIOperandList(PCIType::Operand arg1) { initList(1, arg1); };
 
-  NA_EIDPROC PCIOperandList(Int64 arg1) { 
+  PCIOperandList(Int64 arg1) { 
     numberOperands_ = 2;
     *((Int64*)operand_) = arg1;
   };
 
-#ifdef NA_64BIT
-  NA_EIDPROC PCIOperandList(Int64 arg1, PCIType::Operand arg2) {
+  PCIOperandList(Int64 arg1, PCIType::Operand arg2) {
     numberOperands_ = 3;
     *((Int64*)&operand_[0]) = arg1;
     operand_[2] = arg2;
   };
-  NA_EIDPROC PCIOperandList(Int64 arg1, Int64 arg2) {
+  PCIOperandList(Int64 arg1, Int64 arg2) {
     numberOperands_ = 4;
     *((Int64*)&operand_[0]) = arg1;
     *((Int64*)&operand_[2]) = arg2;
   };
-#endif
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2) { initList(2, arg1, arg2); };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3) { 
+
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2) { initList(2, arg1, arg2); };
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3) { 
     initList(3, arg1, arg2, arg3); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, Int32 arg4) { 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, Int32 arg4) { 
     initList(4, arg1, arg2, arg3, arg4); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, Int64 arg4) { 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, Int64 arg4) { 
     initList(5, arg1, arg2, arg3, 0, 0); 
     numberOperands_ = 5;
     *((Int64*)&operand_[3]) = arg4;
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5) 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5) 
   { 
     initList(5, arg1, arg2, arg3, arg4, arg5); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6) { 
     initList(6, arg1, arg2, arg3, arg4, arg5, arg6); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7) { 
     initList(7, arg1, arg2, arg3, arg4, arg5, arg6, arg7); 
   };
-#ifdef NA_64BIT
-  NA_EIDPROC PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8) { 
     numberOperands_ = 10;
     *((Int64*)&operand_[0]) = arg1; *((Int64*)&operand_[2]) = arg2;
     operand_[4] = arg3; operand_[5] = arg4; operand_[6] = arg5;
     operand_[7] = arg6; operand_[8] = arg7; operand_[9] = arg8;
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, Int64 arg7, Int64 arg8) { 
     numberOperands_ = 10;
     operand_[0] = arg1; operand_[1] = arg2; operand_[2] = arg3;
     operand_[3] = arg4; operand_[4] = arg5; operand_[5] = arg6;
     *((Int64*)&operand_[6]) = arg7; *((Int64*)&operand_[8]) = arg8;
   };
-#endif
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8) { 
     initList(8, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); 
   };
-#ifdef NA_64BIT
-  NA_EIDPROC PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9) { 
     numberOperands_ = 11;
     *((Int64*)&operand_[0]) = arg1; *((Int64*)&operand_[2]) = arg2;
@@ -927,17 +913,17 @@ public:
     operand_[7] = arg6; operand_[8] = arg7; operand_[9] = arg8;
     operand_[10] = arg9;
   }; 
-#endif
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9) { 
     initList(9, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
   }; 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10){
     initList(10, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
   };
-#ifdef NA_64BIT
-  NA_EIDPROC PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(Int64 arg1, Int64 arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
 			    PCIType::Operand arg11){
     numberOperands_ = 13;
@@ -946,41 +932,41 @@ public:
     operand_[7] = arg6; operand_[8] = arg7; operand_[9] = arg8;
     operand_[10] = arg9; operand_[11] = arg10; operand_[12] = arg11;
   };
-#endif
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
 			    PCIType::Operand arg11){
     initList(11, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
 	     arg11); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
 			    PCIType::Operand arg11, PCIType::Operand arg12){
     initList(12, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
 	     arg11, arg12); 
   };
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
 			    PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13){
     initList(13, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
 	     arg11, arg12, arg13); 
   };
   
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14){
     initList(14, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
              arg11, arg12, arg13, arg14); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14, PCIType::Operand arg15){
     initList(15, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
              arg11, arg12, arg13, arg14, arg15); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14,
                             PCIType::Operand arg15, PCIType::Operand arg16){
@@ -988,7 +974,7 @@ public:
              arg11, arg12, arg13, arg14, arg15, arg16); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14,
                             PCIType::Operand arg15, PCIType::Operand arg16, PCIType::Operand arg17){
@@ -996,7 +982,7 @@ public:
              arg11, arg12, arg13, arg14, arg15, arg16, arg17); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14,
                             PCIType::Operand arg15, PCIType::Operand arg16, PCIType::Operand arg17, PCIType::Operand arg18){
@@ -1004,7 +990,7 @@ public:
              arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14, 
                             PCIType::Operand arg15, PCIType::Operand arg16, PCIType::Operand arg17, PCIType::Operand arg18,
@@ -1013,7 +999,7 @@ public:
              arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19); 
   };
 
-  NA_EIDPROC PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
+  PCIOperandList(PCIType::Operand arg1, PCIType::Operand arg2, PCIType::Operand arg3, PCIType::Operand arg4, PCIType::Operand arg5, 
 			    PCIType::Operand arg6, PCIType::Operand arg7, PCIType::Operand arg8, PCIType::Operand arg9, PCIType::Operand arg10,
                             PCIType::Operand arg11, PCIType::Operand arg12, PCIType::Operand arg13, PCIType::Operand arg14, 
                             PCIType::Operand arg15, PCIType::Operand arg16, PCIType::Operand arg17, PCIType::Operand arg18,
@@ -1025,15 +1011,13 @@ public:
 
   // Accessors
   //
-NA_EIDPROC
   Int32 getNumberOperands() { return numberOperands_; };
-NA_EIDPROC
   PCIType::Operand getOperand(Int32 op) { return operand_[op]; };
     
 private:
   // Helper for constuctors
   //
-  NA_EIDPROC 
+  
   void initList(Int32 numberOperands, 
 		PCIType::Operand op1 =0, PCIType::Operand op2 =0, PCIType::Operand op3 =0, PCIType::Operand op4 =0, 
 		PCIType::Operand op5 =0, PCIType::Operand op6 =0, PCIType::Operand op7 =0, PCIType::Operand op8 =0, 
@@ -1078,33 +1062,29 @@ class PCodeInstruction {
 public:
   // Constructors
   //
-  NA_EIDPROC PCodeInstruction(PCIType::Operation operation) {
+  PCodeInstruction(PCIType::Operation operation) {
     AML aml;
     OL ol;
     init(operation, aml, ol);
   };
 
-  NA_EIDPROC PCodeInstruction(PCIType::Operation operation, AML &aml) {
+  PCodeInstruction(PCIType::Operation operation, AML &aml) {
     OL ol;
     init(operation, aml, ol);
   };
 
-  NA_EIDPROC PCodeInstruction(PCIType::Operation operation, AML &aml, OL &ol) { 
+  PCodeInstruction(PCIType::Operation operation, AML &aml, OL &ol) { 
     init(operation, aml, ol);
   }
 
-  NA_EIDPROC PCodeInstruction(const PCodeInstruction *pci) { copy(pci); };
+  PCodeInstruction(const PCodeInstruction *pci) { copy(pci); };
 
   // Accessors
   //
-NA_EIDPROC
   Int32 getNumberAddressingModes() { return numberAddressingModes_; };
-NA_EIDPROC
   Int32 getNumberOperands() { return numberOperands_; };
-NA_EIDPROC
   void setNumberOperands(Int32 numOperands) { numberOperands_ = numOperands; };
 
-NA_EIDPROC
   void replaceAddressingModesAndOperands(AML &aml, OL &ol) {
     numberAddressingModes_ = aml.getNumberAddressingModes();
     Int32 i = 0;
@@ -1118,58 +1098,35 @@ NA_EIDPROC
       operand_[i] = ol.getOperand(i);
   };
 
-NA_EIDPROC
   PCIType::Operation getOperation() { return operation_; };
-NA_EIDPROC
   PCIType::AddressingMode getAddressingMode(Int32 am) 
     { return addressingMode_[am]; };
-NA_EIDPROC
-#ifdef NA_64BIT
   Long getLongOperand(Int32 op) { return *(Long*)&operand_[op]; };
-#else
-  PCIType::Operand getLongOperand(Int32 op) { return operand_[op]; };
-#endif // NA_64BIT
-NA_EIDPROC
   PCIType::Operand getOperand(Int32 op) { return operand_[op]; };
-NA_EIDPROC
-#ifdef NA_64BIT
   void setLongOperand(Int32 op, Long val) { *(Long*)&operand_[op] = val; };
-#else
-  void setLongOperand(Int32 op, PCIType::Operand val) { operand_[op] = val; };
-#endif // NA_64BIT
-NA_EIDPROC
   void setOperand(Int32 op, PCIType::Operand val) { operand_[op] = val; };
 
-NA_EIDPROC
   Int32 getCodePosition() const { return codePosition_; };
-NA_EIDPROC
   void setCodePosition(Int32 codePosition) { codePosition_ = codePosition; };
 
-NA_EIDPROC
   Int32 getStackChange();
-NA_EIDPROC
   Int32 getGeneratedCodeSize();
 
   // Helpers
   //
-NA_EIDPROC
   static Int32 temporaryStoreLoadMatch(PCodeInstruction *store, PCodeInstruction *load);
-NA_EIDPROC
   static Int32 temporaryStoreLoadOverlap(PCodeInstruction *store, PCodeInstruction *load);
-NA_EIDPROC
   static Int32 replaceUsesOfTarget(PCodeInstruction *store, PCodeInstruction *use, Int32 check);
-NA_EIDPROC
   Int32 getMemoryOperandLength(PCIType::AddressingMode, Int32 operand);
 
   // Display
   //
-NA_EIDPROC
   void print();
 
 private:
   // Private helper for constructors
   //
-  NA_EIDPROC 
+  
   void init(PCIType::Operation operation, AML &aml, OL &ol) {
     operation_ = operation;
     numberAddressingModes_ = aml.getNumberAddressingModes();
@@ -1186,7 +1143,7 @@ private:
 
   // Private helper for constructors
   //
-  NA_EIDPROC 
+  
   void copy(const PCodeInstruction *pci) {
     operation_ = pci->operation_;
     numberAddressingModes_ = pci->numberAddressingModes_;
@@ -1240,10 +1197,6 @@ private:
 
 // A general method to take pointers out of PCode binary stream
 // Takes pointer out of PCodeBinary sequences
-#ifdef NA_64BIT
 #define GetPCodeBinaryAsPtr(pcode, idx) (*(Long*)&(pcode[idx]))
-#else
-#define GetPCodeBinaryAsPtr(pcode, idx) (pcode[idx])
-#endif
 
 #endif  // ExpPCodeInstruction_h

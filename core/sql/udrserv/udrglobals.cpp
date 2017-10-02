@@ -128,12 +128,7 @@ UdrGlobals::UdrGlobals(NAHeap *udrheap, NAHeap *ipcheap)
   Int32 i;
   Int32 j;
   for (i=0; i<UDRMAXOPENERS_V100; i++)
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
-          XPROCESSHANDLE_NULLIT_(&(gOpenerPhandle_[i].phandle_));
-#else
-	  for (j=0; j<10; j++)
-		gOpenerPhandle_[i].phandle_[j] = NULL;
-#endif // NA_LINUX
+    XPROCESSHANDLE_NULLIT_(&(gOpenerPhandle_[i].phandle_));
 
   str_cpy_all(serverName_, "tdm_udrserv", str_len("tdm_udrserv"));
   serverName_[str_len("tdm_udrserv")] = '\0';
@@ -194,7 +189,6 @@ UdrGlobals::UdrGlobals(NAHeap *udrheap, NAHeap *ipcheap)
   UDR_DEBUG1("Session User : %s", sessionUserName_); 
 }
 
-// LCOV_EXCL_START
 // we don't have any way of invoking these at this point.
 // we should provide a way for procedure bodies to set a java property
 // that the language manager can use to check to determine if it should
@@ -266,7 +260,6 @@ void UdrGlobals::displayStats(ostream& out, Lng32 indent)
   ServerDebug("%sNum Total RSets    : " INT64_SPEC , ind, numTotalRSets_ );
   ServerDebug("%sNum Curr RSets     : " INT64_SPEC , ind, numCurrRSets_ );
 }
-// LCOV_EXCL_STOP
 
 
 LmLanguageManager *UdrGlobals::getLM(ComRoutineLanguage language) const

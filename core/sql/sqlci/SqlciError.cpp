@@ -103,13 +103,9 @@ void SqlciError ( short errorCode, ...)
    while ((Param=va_arg(ap, ErrorParam *)) != (ErrorParam *) 0)
      {
        if (Param->Param_type() == STRING_TYPE) 
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalString(cur_string_p++, Param->Str_Param());
-#pragma warn(1506)  // warning elimination 
        else
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalInteger(cur_int_p++, Param->Int_Param());
-#pragma warn(1506)  // warning elimination 
      }
 
    sqlci_DA.acceptNewCondition();
@@ -132,13 +128,9 @@ void SqlciError2 ( Int32 errorCode, ...)
    while ((Param=va_arg(ap, ErrorParam *)) != (ErrorParam *) 0)
      {
        if ((Param->Param_type() == STRING_TYPE) && Param->Str_Param() ) 
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalString(cur_string_p++, Param->Str_Param());
-#pragma warn(1506)  // warning elimination 
        if ((Param->Param_type() == INT_TYPE) && Param->Int_Param() != -1)
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalInteger(cur_int_p++, Param->Int_Param());
-#pragma warn(1506)  // warning elimination 
      }
 
    sqlci_DA.acceptNewCondition();
@@ -161,13 +153,9 @@ void SqlciWarning ( short errorCode, ...)
    while ((Param=va_arg(ap, ErrorParam *)) != (ErrorParam *) 0)
      {
        if (Param->Param_type() == STRING_TYPE) 
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalString(cur_string_p++, Param->Str_Param());
-#pragma warn(1506)  // warning elimination 
        else
-#pragma nowarn(1506)   // warning elimination 
 	 Condition->setOptionalInteger(cur_int_p++, Param->Int_Param());
-#pragma warn(1506)  // warning elimination 
      }
 
    sqlci_DA.acceptNewCondition();

@@ -335,16 +335,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExTransTdb()
+  ExTransTdb()
   {}
 
-  NA_EIDPROC virtual ~ExTransTdb()
+  virtual ~ExTransTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -399,15 +399,14 @@ public:
   ~ExTransTcb();
 
   virtual short work();
-// warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const{return qparent_;}; 
   inline Int32 orderedQueueProtocol() const{return ((const ExTransTdb &)tdb).orderedQueueProtocol();}
 
-  void freeResources(){};  // LCOV_EXCL_LINE Code not used
+  void freeResources(){};
   
   Int32 numChildren() const { return 0; }   
 
-  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; }  // LCOV_EXCL_LINE Code not used
+  const ex_tcb* getChild(Int32 /*pos*/) const { return 0; }
 
 private:
   ex_queue_pair	qparent_;

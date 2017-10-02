@@ -1928,7 +1928,6 @@ public:
 
   // The constructor
   //
-// warning elimination (removed "inline")
   PhysTranspose(RelExpr *child = NULL,
 		       CollHeap *oHeap = CmpCommon::statementHeap())
     : Transpose(NULL,NULL,child,oHeap) {};

@@ -46,7 +46,6 @@
 
 #if 0
 // Create a new SQL module id.
-SQLCLI_LIB_FUNC
 SQLMODULE_ID* new_SQLMODULE_ID(
 	Lng32 version, const char* name, 
 	Lng32 timestamp, 
@@ -59,7 +58,6 @@ SQLMODULE_ID* new_SQLMODULE_ID(
 }
 #endif
 // intialize a SQL module id.
-SQLCLI_LIB_FUNC
 void init_SQLMODULE_ID(SQLMODULE_ID* m,
 	Lng32 version, const char* name, 
 	Lng32 timestamp,
@@ -75,7 +73,6 @@ void init_SQLMODULE_ID(SQLMODULE_ID* m,
 #if 0
 
 // Create a new SQL object id.
-SQLCLI_LIB_FUNC
 SQLCLI_OBJ_ID* new_SQLCLI_OBJ_ID(
 	Lng32 version, enum SQLOBJ_ID_NAME_MODE mode, 
 	const SQLMODULE_ID* module, const char* id, 
@@ -90,7 +87,6 @@ SQLCLI_OBJ_ID* new_SQLCLI_OBJ_ID(
 #endif
 
 // initialize a SQL object id.
-SQLCLI_LIB_FUNC
 void init_SQLCLI_OBJ_ID(SQLCLI_OBJ_ID* x,
 	Lng32 version, enum SQLOBJ_ID_NAME_MODE mode, 
 	const SQLMODULE_ID* module, const char* id, 
@@ -111,7 +107,6 @@ void init_SQLCLI_OBJ_ID(SQLCLI_OBJ_ID* x,
 // compare two SQL object ids for equality.
 ////////////////////////////////////////////
 
-SQLCLI_LIB_FUNC
 Int32 isEqualByName(SQLCLI_OBJ_ID* x, SQLCLI_OBJ_ID* y)
 {
 // 8/6/98: Unicode based comparison is not enabled yet
@@ -132,7 +127,6 @@ Int32 isEqualByName(SQLCLI_OBJ_ID* x, SQLCLI_OBJ_ID* y)
 // compare two SQL module ids for equality.
 ////////////////////////////////////////////
 
-SQLCLI_LIB_FUNC
 Int32 isEqualByName(const SQLMODULE_ID* x, const SQLMODULE_ID* y)
 {
 // 8/6/98: Unicode based comparison is not enabled yet
@@ -152,7 +146,6 @@ Int32 isEqualByName(const SQLMODULE_ID* x, const SQLMODULE_ID* y)
 ////////////////////////////////////////////
 // set the name for a SQL object id.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 void setNameForId(SQLCLI_OBJ_ID* x, const char* name, Lng32 len, const char* charset)
 {
    x->identifier = name;
@@ -166,7 +159,6 @@ void setNameForId(SQLCLI_OBJ_ID* x, const char* name, Lng32 len, const char* cha
 ////////////////////////////////////////////
 // set the name for a SQL module id.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 void setNameForModule(SQLMODULE_ID* m, const char* name, Lng32 len, const char* charset)
 {
    m->module_name = name;
@@ -183,7 +175,6 @@ void setNameForModule(SQLMODULE_ID* m, const char* name, Lng32 len, const char* 
 // get the name of a SQL module id in 
 // Unicode.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 NAWchar* getModNameInWchar(const SQLMODULE_ID* m)
 {
    static NAWcharBuf * buf = new NAWcharBuf(MAX_CHAR_SET_STRING_LENGTH+1);
@@ -211,7 +202,6 @@ NAWchar* getModNameInWchar(const SQLMODULE_ID* m)
 // get the name of a SQL object id in 
 // Unicode.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 NAWchar* getIdInWchar(SQLCLI_OBJ_ID* x)
 {
    static NAWcharBuf * buf = new NAWcharBuf(MAX_CHAR_SET_STRING_LENGTH+1);
@@ -238,7 +228,6 @@ NAWchar* getIdInWchar(SQLCLI_OBJ_ID* x)
 ////////////////////////////////////////////
 // get the name of a SQL module id in locale.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 char* getModNameInLocale(const SQLMODULE_ID* m)
 {
    if ( m == 0 ) return 0;
@@ -253,9 +242,7 @@ char* getModNameInLocale(const SQLMODULE_ID* m)
    if (nameInWchar == 0)
      return 0;
 
-#pragma nowarn(1506)   // warning elimination 
    Int32 wcNameLen = NAWstrlen(nameInWchar);
-#pragma warn(1506)  // warning elimination 
 
    static char* nameInLocale = new char[MAX_CHAR_SET_STRING_LENGTH+1];
 
@@ -272,7 +259,6 @@ char* getModNameInLocale(const SQLMODULE_ID* m)
 ////////////////////////////////////////////
 // get the name of a SQL object id in locale.
 ////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 char* getIdInLocale(SQLCLI_OBJ_ID* x)
 {
    if ( x == 0 ) return 0;
@@ -287,9 +273,7 @@ char* getIdInLocale(SQLCLI_OBJ_ID* x)
    if (nameInWchar == 0)
      return 0;
 
-#pragma nowarn(1506)   // warning elimination 
    Int32 wcNameLen = NAWstrlen(nameInWchar);
-#pragma warn(1506)  // warning elimination 
 
    static char* nameInLocale = new char[MAX_CHAR_SET_STRING_LENGTH+1];
 

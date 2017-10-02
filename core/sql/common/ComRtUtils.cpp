@@ -92,7 +92,6 @@ static const ModName internalSystemSchemaModNameList[] = {
   ,{"CMSMDIOWRITEM_N29_000"} 
   ,{"MVQR_N29_000"} 
   ,{"READDEF_N29_000"} 
-  ,{"RFORK_N29_000"} 
   ,{"SQLHIST_N29_000"} 
   ,{"SQLUTILS_N29_000"} 
   ,{"HP_ROUTINES_N29_000"} 
@@ -411,9 +410,7 @@ Lng32 ComRtGetMPSysCatName(
       {
 	if (sysName[i] == ' ') break;
       }
-#pragma nowarn(1506)   // warning elimination
     str_cpy_all(sysCatLoc, sysName, i);
-#pragma warn(1506)  // warning elimination
     if (i)
       sysCatLoc[i++] = '.';
     z = i;
@@ -425,26 +422,16 @@ Lng32 ComRtGetMPSysCatName(
       }
     //ComDEBUG(i > 2);
     sysCatLoc[z++] = '$';
-#pragma nowarn(1506)   // warning elimination
-#pragma nowarn(252)   // warning elimination
     str_cpy_all(sysCatLoc + z, tab->cat_volname + 2, i - 2);
-#pragma warn(252)  // warning elimination
-#pragma warn(1506)  // warning elimination
     z += i - 2;
     sysCatLoc[z++] = '.';
     for (i = 0; i < 8; i++)  //padded with blanks
       {
 	if (tab->cat_subvolname[i] == ' ') break;
       }
-#pragma nowarn(252)   // warning elimination
-#pragma nowarn(1506)   // warning elimination
     str_cpy_all(sysCatLoc + z, tab->cat_subvolname, i);
-#pragma warn(252)  // warning elimination
-#pragma warn(1506)  // warning elimination
     sysCatLoc[z+i] = '\0';
-#pragma nowarn(1506)   // warning elimination
     *sysCatLength = (Lng32)z+i;
-#pragma warn(1506)  // warning elimination
 
   }
 
@@ -476,9 +463,7 @@ void ComRt_Upshift (char * buf)
 
         while (*pBuf)
         {
-#pragma nowarn(1506)   // warning elimination
 	    *pBuf = TOUPPER(*pBuf);
-#pragma warn(1506)  // warning elimination
             ++pBuf;
         }
     }
@@ -516,7 +501,7 @@ const char * ComRtGetEnvValueFromEnvvars(const char ** envvars,
   return NULL;
 }
 
-#if defined (_DEBUG) && !defined (ARKFS_OPEN) && !defined (__EID)
+#if defined (_DEBUG)
 // -----------------------------------------------------------------------
 // Convenient handling of envvars: Return a value if one exists
 // NB: DEBUG mode only!
@@ -544,9 +529,7 @@ NABoolean ComRtGetEnvValue(const char * envvar, Lng32 * envvarValue)
     // envvar not there or no value
     return FALSE;
 
-#pragma nowarn(1506)   // warning elimination
   Int32 max = strlen(ptr);
-#pragma warn(1506)  // warning elimination
   Lng32 tempValue = 0;
   for (Int32 i = 0;i < max;i++)
   {
@@ -706,9 +689,7 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
 			 Int64  &processCreateTime,
 			 char *processNameString,
 			 char *parentProcessNameString
-#ifdef SQ_PHANDLE_VERIFIER
                          , SB_Verif_Type *verifier
-#endif
 )
 {
   Lng32 retcode = 0;
@@ -721,10 +702,8 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
   myPhandle.decompose();
   cpu = myPhandle.getCpu();
   pin = myPhandle.getPin();
-#ifdef SQ_PHANDLE_VERIFIER
   if (verifier)
     *verifier = myPhandle.getSeqNum();
-#endif
 
   // Map the node number to cpu
   nodeNumber = cpu;

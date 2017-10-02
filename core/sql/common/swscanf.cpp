@@ -114,7 +114,6 @@ typedef quad_t (*ccfnT)(const NAWchar*);
 #include <string.h>
 
 
-NA_EIDPROC
 Int32
 __srefill(SCANBUF* fp)
 	
@@ -122,7 +121,6 @@ __srefill(SCANBUF* fp)
    return 1;
 }
 
-NA_EIDPROC
 void ungetc(NAWchar c, SCANBUF* fp)
 {
    fp->_p--;
@@ -135,7 +133,6 @@ void ungetc(NAWchar c, SCANBUF* fp)
  * closing `]'.  The table has a 1 wherever characters should be
  * considered part of the scanset.
  */
-NA_EIDPROC
 static NAWchar *
 __sccl(NAWchar* tab, NAWchar* fmt)
 {
@@ -150,9 +147,7 @@ __sccl(NAWchar* tab, NAWchar* fmt)
 		v = 0;		/* default => reject */
 	/* should probably use memset here */
 	for (n = 0; n < 256; n++)
-#pragma nowarn(1506)   // warning elimination 
 		tab[n] = v;
-#pragma warn(1506)  // warning elimination 
 	if (c == 0)
 		return (fmt - 1);/* format ended before closing ] */
 
@@ -165,9 +160,7 @@ __sccl(NAWchar* tab, NAWchar* fmt)
 	 */
 	v = 1 - v;
 	for (;;) {
-#pragma nowarn(1506)   // warning elimination 
 		tab[c] = v;		/* take character c */
-#pragma warn(1506)  // warning elimination 
 doswitch:
 		n = *fmt++;		/* and examine the next */
 		switch (n) {
@@ -201,9 +194,7 @@ doswitch:
 			}
 			fmt++;
 			do {		/* fill in the range */
-#pragma nowarn(1506)   // warning elimination 
 				tab[++c] = v;
-#pragma warn(1506)  // warning elimination 
 			} while (c < n);
 #if 1	/* XXX another disgusting compatibility hack */
 			/*
@@ -236,7 +227,6 @@ doswitch:
 /*
  * vfscanf
  */
-NA_EIDPROC
 Int32
 __svfscanf(SCANBUF* fp, NAWchar const* fmt0, va_list ap)
 {
@@ -269,9 +259,7 @@ __svfscanf(SCANBUF* fp, NAWchar const* fmt0, va_list ap)
 		c = *fmt++;
 		if (c == 0)
 			return (nassigned);
-#pragma nowarn(1506)   // warning elimination 
 		if (na_iswspace(c)) {
-#pragma warn(1506)  // warning elimination 
 			for (;;) {
 				if (fp->_r <= 0 && __srefill(fp))
 					return (nassigned);
@@ -411,9 +399,7 @@ literal:
 			if (flags & SUPPRESS)	/* ??? */
 				continue;
 			if (flags & SHORT)
-#pragma nowarn(1506)   // warning elimination 
 				*va_arg(ap, short *) = nread;
-#pragma warn(1506)  // warning elimination 
 			else if (flags & LONG)
 				*va_arg(ap, Lng32 *) = nread;
 			else
@@ -674,9 +660,7 @@ literal:
 				/*
 				 * c is legal: store it and look at the next.
 				 */
-#pragma nowarn(1506)   // warning elimination 
 				*p++ = c;
-#pragma warn(1506)  // warning elimination 
 				if (--fp->_r > 0)
 					fp->_p++;
 				else if (__srefill(fp))
@@ -696,9 +680,7 @@ literal:
 			c = ((NAWchar *)p)[-1];
 			if (c == L'x' || c == L'X') {
 				--p;
-#pragma nowarn(1506)   // warning elimination 
 				(void) ungetc(c, fp);
-#pragma warn(1506)  // warning elimination 
             
 			}
 			if ((flags & SUPPRESS) == 0) {
@@ -712,19 +694,13 @@ literal:
 					*va_arg(ap, void **) =
 					    (void *)(Lng32)res;
 				else if (flags & QUAD)
-#pragma nowarn(1506)   // warning elimination 
 					*va_arg(ap, quad_t *) = res;
-#pragma warn(1506)  // warning elimination 
 				else if (flags & LONG)
-#pragma nowarn(1506)   // warning elimination 
 					*va_arg(ap, Lng32 *) = (Lng32) res;
-#pragma warn(1506)  // warning elimination 
 				else if (flags & SHORT)
 					*va_arg(ap, Int16 *) = (Int16) res;
 				else
-#pragma nowarn(1506)   // warning elimination 
 					*va_arg(ap, Int32 *) = (Int32) res;
-#pragma warn(1506)  // warning elimination 
 				nassigned++;
 			}
 			nread += p - buf;
@@ -784,10 +760,8 @@ literal:
 				}
 				break;
 		fok:
-#pragma nowarn(1506)   // warning elimination 
 				*p++ = c;
 				*q++ = (char)c;
-#pragma warn(1506)  // warning elimination 
 				if (--fp->_r > 0)
 					fp->_p++;
 				else if (__srefill(fp))
@@ -808,14 +782,10 @@ literal:
 				/* just a bad exponent (e and maybe sign) */
 				c = *(NAWchar *)--p;
 				if (c != L'e' && c != L'E') {
-#pragma nowarn(1506)   // warning elimination 
 					(void) ungetc(c, fp);/* sign */
-#pragma warn(1506)  // warning elimination 
                c = *(NAWchar *)--p;
 				}
-#pragma nowarn(1506)   // warning elimination 
 				(void) ungetc(c, fp);
-#pragma warn(1506)  // warning elimination 
 			}
 			if ((flags & SUPPRESS) == 0) {
 				double res;
@@ -824,9 +794,7 @@ literal:
 				//res = na_wcstod(buf, (NAWchar **) NULL);
 				res = strtod(sb_buf, NULL);
 				if (flags & LONGDBL)
-#pragma nowarn(1255)   // warning elimination 
 					*va_arg(ap, long double *) = res;
-#pragma warn(1255)  // warning elimination 
 				else if (flags & LONG)
 					*va_arg(ap, double *) = res;
 				else
@@ -844,7 +812,6 @@ match_failure:
 	return (nassigned);
 }
 
-NA_EIDPROC
 Int32 na_swscanf(const NAWchar *str, NAWchar const *fmt, ...)
 {
 	Int32 ret;

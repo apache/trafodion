@@ -51,15 +51,12 @@ class ComTdbPackRows: public ComTdb
 public:
 
   // Default Constructor.
-  NA_EIDPROC
   ComTdbPackRows();
   
   // Copy constructor.
-  NA_EIDPROC
   ComTdbPackRows(const ComTdbPackRows* packTdb);
 
   // Constructor used by the PhyPack::codeGen() in GenRelMisc.cpp.
-  NA_EIDPROC
   ComTdbPackRows(ComTdb* childTdb,
             ex_expr* packExpr,
             ex_expr* predExpr,
@@ -72,27 +69,21 @@ public:
 
  
   // Pack the pack TDB for transmission from one process to another.
-  NA_EIDPROC
   Long pack(void *);
 
   // Unpack the pack TDB after receiving it from another process.
-  NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
  
   // Don't know what it is for ??
-  NA_EIDPROC
   void display() const;
 
   // Return a pointer to the child TBD of this Pack TDB.
-  NA_EIDPROC
   inline ComTdb* getChildTdb() { return childTdb_; }
 
   // We are observing order queue protocol.
-  NA_EIDPROC
   Int32 orderedQueueProtocol() const ;
 
   // Return a pointer to the specifed (by position) child TDB.
-  NA_EIDPROC
   virtual const ComTdb* getChild(Int32 pos) const
   {
     if(pos == 0) return childTdb_;
@@ -100,15 +91,12 @@ public:
   }
 
   // Return the number of children for this node.
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
 
   // Return the number of expression this node has.
-  NA_EIDPROC
   virtual Int32 numExpressions() const { return 2; }
 
   // Return the expression by position.
-  NA_EIDPROC
   virtual ex_expr* getExpressionNode(Int32 pos) 
   {
     switch(pos)
@@ -121,7 +109,6 @@ public:
   }
 
   // Return the name of an expression by position.
-  NA_EIDPROC
   virtual const char* getExpressionName(Int32 pos) const
   {
     switch(pos)

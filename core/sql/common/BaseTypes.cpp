@@ -64,11 +64,8 @@ extern void my_mpi_fclose();
 #include "CompException.h"
 #include "StmtCompilationMode.h"
 
-#if defined(NA_LINUX) && !defined(__EID)
 extern void releaseRTSSemaphore();  // Functions implemented in SqlStats.cpp
-#endif
 
-// LCOV_EXCL_START :dpm
 void NADebug()
 {
   if (getenv("SQL_DEBUGLOOP") == NULL)
@@ -85,13 +82,11 @@ void NADebug()
   }
 
 }
-// LCOV_EXCL_STOP :dpm
 
 
 // Called by NAAbort, NAAssert, CollHeap, EHExceptionHandler::throwException
 // as the NAError.h #define ARKCMP_EXCEPTION_EPILOGUE().
 //
-// LCOV_EXCL_START :dpm
 void NAArkcmpExceptionEpilogue()
 {
 #ifdef SQLPARSERGLOBALS_FLAGS
@@ -99,17 +94,14 @@ void NAArkcmpExceptionEpilogue()
 #endif
   NAError_stub_for_breakpoints();
 }
-// LCOV_EXCL_STOP :dpm
 
 // wrapper for exit(), calling NAError_stub_for_breakpoints() first
 void NAExit(Int32 status)
 {
-#ifndef __EID
     NAAssertMutexLock(); // Serialize termination
-#endif
     releaseRTSSemaphore();
   if (status)
-    NAError_stub_for_breakpoints(); // LCOV_EXCL_LINE :dpm
+    NAError_stub_for_breakpoints();
   if (status != 0)
     {
 #ifndef _DEBUG

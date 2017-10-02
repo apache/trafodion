@@ -27,14 +27,12 @@
 #include "QRLogger.h"
 #include "NAType.h"
 
-#if defined (NA_LINUX)
 #include "nsk/nskport.h"
 #include "seabed/ms.h"
 #include "seabed/fs.h"
 extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_arkqmm)
-#endif
 
 /**
  * \file
@@ -144,10 +142,6 @@ static short getDefaultQmpCpu(const IpcEnvironment* ipcEnv)
 {
   short qmpCpu;
 
-#ifdef NA_WINNT
-  qmpCpu = 0;
-#elif defined(NA_LINUX)
-
   // Default QMP location is the same cpu QMM is running on.
   SB_Phandle_Type procHandle;
   Int32 lc_cpu;
@@ -161,24 +155,19 @@ static short getDefaultQmpCpu(const IpcEnvironment* ipcEnv)
                                "XPROCESSHANDLE_DECOMPOSE_ returned error %d", error);
       qmpCpu = 3;  // best-guess default
     }
-#endif
 
   return qmpCpu;
 }
 
 
-#ifdef NA_LINUX
 extern "C"
 {
 Int32 sq_fs_dllmain();
 }
-#endif
-
 
 Int32 main(Int32 argc, char *argv[])
 {
 
-#ifdef NA_LINUX
   dovers(argc, argv);
 
   try
@@ -194,7 +183,6 @@ Int32 main(Int32 argc, char *argv[])
     cerr << "Error while initializing messaging system. Exiting..." << endl;
     exit(1);
   }
-#endif
 
   Lng32 result = 0;
 
@@ -206,13 +194,6 @@ Int32 main(Int32 argc, char *argv[])
   //for (int i=0; i<argc; i++)
   //  debugMessage2("Program argument %d is %s", i, argv[i]);
    
-#ifdef NA_WINNT
-  if (getenv("QMP_MSGBOX_PROCESS") != NULL)
-  {
-    MessageBox( NULL, "QMM Process Launched", (CHAR *)argv[0], MB_OK|MB_ICONINFORMATION );
-  };
-#endif
-
   Qmm* qmm = NULL;
   try
     {

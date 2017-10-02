@@ -79,7 +79,7 @@
 #include "ex_exe_stmt_globals.h"
 #include "ExUdrClientIpc.h"
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <stdarg.h>
 #define ExRsDebug0(s) ExRsPrintf((s))
 #define ExRsDebug1(s,a1) ExRsPrintf((s),(a1))
@@ -129,7 +129,7 @@ ExRsInfo::ExRsInfo()
     numReturnedByLastCall_(0),
     numClosedSinceLastCall_(0)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // We enable the debug_ flag if either the UDR_DEBUG or UDR_RS_DEBUG
   // env var is set. We enable the txDebug_ flag if either debug_ is
   // enabled or the UDR_TX_DEBUG env var is set.
@@ -664,7 +664,7 @@ void ExRsInfo::setNumEntries(ComUInt32 maxEntries)
 */
 void ExRsInfo::setIpcProcessId(const IpcProcessId &ipcProcessId)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   char buf[300];
   ipcProcessId.toAscii(buf, 300);
   ExRsDebug1("[BEGIN setIpcProcessId] ipcProcessId=%s", buf);
@@ -673,7 +673,7 @@ void ExRsInfo::setIpcProcessId(const IpcProcessId &ipcProcessId)
   ExRsDebug0("[END setIpcProcessId]");
 }// ExRsInfo::setIpcProcessId
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void ExRsInfo::displayList() const  
 {
   ULng32 e = getNumEntries();
@@ -723,7 +723,7 @@ void ExRsInfo::ExRsPrintf(const char *formatString, ...) const
 // encountered.
 void ExRsInfo::enterUdrTx(ExExeStmtGlobals &stmtGlobals)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   NABoolean oldDebug = debug_;
   if (txDebug_)
     debug_ = TRUE;
@@ -737,7 +737,7 @@ void ExRsInfo::enterUdrTx(ExExeStmtGlobals &stmtGlobals)
     sendTxMessage(stmtGlobals, ENTER);
   }
   
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   ExRsDebug2("[END enterUdrTx] %p, state %s",
              this, getTxStateString(txState_));
   debug_ = oldDebug;
@@ -750,7 +750,7 @@ void ExRsInfo::enterUdrTx(ExExeStmtGlobals &stmtGlobals)
 // IPC errors are encountered.
 void ExRsInfo::suspendUdrTx(ExExeStmtGlobals &stmtGlobals)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   NABoolean oldDebug = debug_;
   if (txDebug_)
     debug_ = TRUE;
@@ -764,7 +764,7 @@ void ExRsInfo::suspendUdrTx(ExExeStmtGlobals &stmtGlobals)
     sendTxMessage(stmtGlobals, SUSPEND);
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   ExRsDebug2("[END suspendUdrTx] %p, state %s",
              this, getTxStateString(txState_));
   debug_ = oldDebug;
@@ -777,7 +777,7 @@ void ExRsInfo::suspendUdrTx(ExExeStmtGlobals &stmtGlobals)
 // encountered.
 void ExRsInfo::exitUdrTx(ExExeStmtGlobals &stmtGlobals)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   NABoolean oldDebug = debug_;
   if (txDebug_)
     debug_ = TRUE;
@@ -796,7 +796,7 @@ void ExRsInfo::exitUdrTx(ExExeStmtGlobals &stmtGlobals)
     sendTxMessage(stmtGlobals, EXIT);
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   ExRsDebug2("[END exitUdrTx] %p, state %s",
              this, getTxStateString(txState_));
   debug_ = oldDebug;
@@ -843,7 +843,7 @@ void ExRsInfo::sendTxMessage(ExExeStmtGlobals &stmtGlobals, TxMsgType t)
   if (!(ipcProcessId_ == otherEnd) ||
       (udrServer_->getState() == ExUdrServer::EX_UDR_BROKEN))
   {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
     if (!(ipcProcessId_ == otherEnd))
     {
       char buf1[300];
@@ -958,7 +958,7 @@ void ExRsInfo::sendTxMessage(ExExeStmtGlobals &stmtGlobals, TxMsgType t)
     exitOrSuspendStream_ = s;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   if (debug_)
     s->setTraceFile(stdout);
 #endif

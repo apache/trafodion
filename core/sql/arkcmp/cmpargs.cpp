@@ -33,7 +33,7 @@
 ******************************************************************************
 */
 
-#include "Platform.h"                                     // NT_PORT SK 02/08/97
+#include "Platform.h"   
 
 #include <ctype.h>
 #include <iostream>
@@ -285,9 +285,7 @@ void Cmdline_Args::processArgs(Int32 argc, char **argv)
         { 
           NAString nam(optarg);
           // find the = if it exists
-#pragma nowarn(1506)   // warning elimination 
           Int32 loopx = 0, len = nam.length();
-#pragma warn(1506)  // warning elimination 
           while((loopx < len) && ((nam)(loopx) != '=') )loopx++;
           if (len == loopx) {
             diags << DgSqlCode(mxcmpUmIllformatedOptionD) << DgString0(optarg);

@@ -113,7 +113,7 @@ raiseDateConvErrorWithSrcDataNumeric(ComDiagsArea** diagsArea, long srcData, Col
 {
    char errstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
    str_pad(errstr, sizeof(errstr), 0 );
-   str_sprintf(errstr,"%Ld",srcData);
+   str_sprintf(errstr,"%ld",srcData);
    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,errstr);
 }
 //////////////////////////////////////////////
@@ -172,27 +172,23 @@ ExpDatetime::ExpDatetime()
 ExpDatetime::~ExpDatetime()
 {
 }
-// LCOV_EXCL_START
 Attributes * ExpDatetime::newCopy()
 {
   ExpDatetime * new_copy = new ExpDatetime();
   *new_copy = *this;
   return new_copy;
 };
-// LCOV_EXCL_STOP
 Attributes * ExpDatetime::newCopy(CollHeap * heap)
 {
   ExpDatetime * new_copy = new(heap) ExpDatetime();
   *new_copy = *this;
   return new_copy;
 };
-// LCOV_EXCL_START
 void ExpDatetime::copyAttrs(Attributes *source_) // copy source attrs to this.
 {
   *this = *((ExpDatetime *)source_);
   return;
 };
-// LCOV_EXCL_STOP
 ExpDatetime * 
 ExpDatetime::castToExpDatetime()
 {
@@ -255,7 +251,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_YEAR_SECOND:
     startField = REC_DATE_YEAR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_MONTH:
   case REC_DTCODE_MONTH_DAY:
   case REC_DTCODE_MONTH_HOUR:
@@ -269,14 +264,12 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_DAY_SECOND:
     startField = REC_DATE_DAY;
     break;
-	// LCOV_EXCL_STOP
   case REC_DTCODE_TIME:
   case REC_DTCODE_HOUR:
   case REC_DTCODE_HOUR_MINUTE:
   case REC_DTCODE_HOUR_SECOND:
     startField = REC_DATE_HOUR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_MINUTE:
   case REC_DTCODE_MINUTE_SECOND:
     startField = REC_DATE_MINUTE;
@@ -287,17 +280,14 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   default:
     return -1;
   }
-	// LCOV_EXCL_STOP
 
   switch (datetimeCode) {
   case REC_DTCODE_YEAR:
     endField = REC_DATE_YEAR;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_YEAR_MONTH:
   case REC_DTCODE_MONTH:
     endField = REC_DATE_MONTH;
-	// LCOV_EXCL_STOP
     break;
   case REC_DTCODE_DATE:
   case REC_DTCODE_YEAR_DAY:
@@ -305,7 +295,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_DAY:
     endField = REC_DATE_DAY;
     break;
-	// LCOV_EXCL_START
   case REC_DTCODE_YEAR_HOUR:
   case REC_DTCODE_MONTH_HOUR:
   case REC_DTCODE_DAY_HOUR:
@@ -319,7 +308,6 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   case REC_DTCODE_MINUTE:
     endField = REC_DATE_MINUTE;
     break;
-	// LCOV_EXCL_STOP
   case REC_DTCODE_TIMESTAMP:
   case REC_DTCODE_YEAR_SECOND:
   case REC_DTCODE_MONTH_SECOND:
@@ -1176,9 +1164,7 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
   // Scale the result to the interval qualifier's fractional precision.
   //
   if (intervalEndField == REC_DATE_SECOND) {
-#pragma nowarn(1506)   // warning elimination 
     short fpDiff = intervalOpType->getScale() - datetimeOpType->getScale();
-#pragma warn(1506)   // warning elimination 
     if (fpDiff > 0) {
       do {
         result *= 10;
@@ -1221,7 +1207,6 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
 // project.
 // ===================================================================
 //
-NA_EIDPROC
 static Lng32
 scaleFraction(Int32 srcFractPrec,
               Lng32 srcFraction,
@@ -1371,7 +1356,6 @@ ExpDatetime::currentTimeStamp(char *dstData,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static Lng32
 sizeofDatetimeFields(rec_datetime_field startField,
                      rec_datetime_field endField,
@@ -1411,7 +1395,6 @@ sizeofDatetimeFields(rec_datetime_field startField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static short
 copyDatetimeFields(rec_datetime_field startField,
                    rec_datetime_field endField,
@@ -1474,7 +1457,6 @@ copyDatetimeFields(rec_datetime_field startField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static short
 minimumTimeStamp(char *dstData,
                  rec_datetime_field dstStartField,
@@ -1686,7 +1668,6 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 ExpDatetime::DatetimeFormats
 determineFormat(char *src,
@@ -1778,7 +1759,6 @@ determineFormat(char *src,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 NABoolean
 containsField(rec_datetime_field field,
@@ -1843,7 +1823,6 @@ containsField(rec_datetime_field field,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 NABoolean
 scanField(char *&src,
@@ -3102,7 +3081,6 @@ ExpDatetime::convAsciiToDate(char *srcData,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static void
 convertToAscii(Lng32 value, char *&result, UInt32 width)
 {
@@ -3111,9 +3089,7 @@ convertToAscii(Lng32 value, char *&result, UInt32 width)
   // Format value as a string.
   //
   while ((value != 0) && (i > 0)) {
-#pragma nowarn(1506)   // warning elimination 
     result[--i] = '0' + (char) (value % 10);
-#pragma warn(1506)  // warning elimination 
     value /= 10;
   }
 
@@ -3127,7 +3103,6 @@ convertToAscii(Lng32 value, char *&result, UInt32 width)
   result += width;
 }
 
-NA_EIDPROC
 static void 
 convertMonthToStr(Lng32 value, char *&result, UInt32 width)
 {
@@ -3768,9 +3743,7 @@ short ExpDatetime::getDisplaySize(Lng32 datetimeCode,
      displayLength += 1 /* for separator */ + fractionPrecision;
     }
   }
-#pragma nowarn(1506)   // warning elimination 
   return displayLength;
-#pragma warn(1506)  // warning elimination 
 }
 
 short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
@@ -3785,14 +3758,10 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
 {
   short rc = 0;
 
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   SimpleType tempST(REC_DATETIME, 12, 
             srcScale, srcPrecision,
             ExpTupleDesc::SQLMX_FORMAT,
             0, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
 
   char tempDTBuf[12]; // max length for an internal datetime value.
 
@@ -3803,21 +3772,15 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
   if (rc)
     return rc;
 
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
   rc =
     tempDT.convDatetimeToASCII(tempDTBuf, dstData, dstLen, format, NULL,
                    heap, diagsArea);
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
   if (rc < 0)
     return rc;
 
   return 0;
 }
 
-
-#ifndef __EID
 
 // getFieldName() ====================================================
 // This static helper function of the ExpDatetime class returns the
@@ -3869,7 +3832,6 @@ getFieldName(rec_datetime_field field)
 //
 // This method is only called from the generator
 // (ExpGenerator::addDefaultValue() in generator/GenExpGenerator.cpp)
-// thus the #ifndef __EID above.
 //
 // This method was added as part of the MP Datetime Compatibility
 // project.
@@ -3973,6 +3935,3 @@ ExpDatetime::getDefaultStringValue(CollHeap *heap)
 
   return ptr;
 }
-
-
-#endif

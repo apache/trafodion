@@ -66,63 +66,61 @@ class MdamRefList
   public:
 
     // Default constructor.  Creates an empty list.
-    NA_EIDPROC MdamRefList() : lastEntryPtr_(0) {}
+    MdamRefList() : lastEntryPtr_(0) {}
 
     // Constructor.  Creates a list with one entry.
-    NA_EIDPROC inline MdamRefList(const Int32 disjunctNum,
+    inline MdamRefList(const Int32 disjunctNum,
 				  FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Copy constructor is not supported.
 
     // Destructor.
-    NA_EIDPROC ~MdamRefList();
+    ~MdamRefList();
 
     // Assignment operator is not supported.
 
-// LCOV_EXCL_START
 // this operator was defined for completeness but is not currently used
     // Test for equality.
-    NA_EIDPROC NABoolean operator==(const MdamRefList & otherList) const;
-// LCOV_EXCL_STOP
+    NABoolean operator==(const MdamRefList & otherList) const;
 // end of excluding this equal operator from coverage checking
 
     // Copy the entries from one reference list to another.
     // Source list is otherList.  Target list is this list.
-    NA_EIDPROC void copyEntries(const MdamRefList & otherList,
+    void copyEntries(const MdamRefList & otherList,
 				FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Delete all reference list entries.
-    NA_EIDPROC void deleteEntries(FixedSizeHeapManager & mdamRefListEntryHeap);
+    void deleteEntries(FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Insert an entry into the reference list.
-    NA_EIDPROC MdamRefList & insert(const Int32 disjunctNum,
+    MdamRefList & insert(const Int32 disjunctNum,
 				    FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Calculate the intersection of two reference lists.
-    NA_EIDPROC void intersect(const MdamRefList & refList0Ref,
+    void intersect(const MdamRefList & refList0Ref,
 			      const MdamRefList & refList1Ref,
 			      FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Determine if the intersection of two reference lists is empty.
-    NA_EIDPROC NABoolean intersectEmpty(const MdamRefList & otherList);
+    NABoolean intersectEmpty(const MdamRefList & otherList);
 
 
     // Determine if the intersection of three reference lists (this, refList1
     // and refList2) is empty.
-    NA_EIDPROC NABoolean intersectEmpty(const MdamRefList & refList1,
+    NABoolean intersectEmpty(const MdamRefList & refList1,
 					const MdamRefList & refList2);
 
     // Determine if the list is empty.
-    NA_EIDPROC inline NABoolean isEmpty() const;
+    inline NABoolean isEmpty() const;
 
     // Print functions.
     #ifdef NA_MDAM_EXECUTOR_DEBUG
-    NA_EIDPROC void print(const char * header = "") const;
-    NA_EIDPROC void printBrief() const;
+    void print(const char * header = "") const;
+    void printBrief() const;
     #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
     // Calculate the union of two reference lists.
-    NA_EIDPROC void unionx(const MdamRefList & refList0Ref,
+    void unionx(const MdamRefList & refList0Ref,
 			   const MdamRefList & refList1Ref,
 			   FixedSizeHeapManager & mdamRefListEntryHeap);
 
@@ -132,7 +130,7 @@ private:
     MdamRefListEntry * lastEntryPtr_;
 
     // Assignment operator is not supported.
-    NA_EIDPROC MdamRefList & operator=(const MdamRefList & otherList);
+    MdamRefList & operator=(const MdamRefList & otherList);
 
 
 };  // class MdamRefList
@@ -150,14 +148,12 @@ inline MdamRefList::MdamRefList(const Int32 disjunctNum,
   insert(disjunctNum, mdamRefListEntryHeap);
 }
 
-// LCOV_EXCL_START
 // this method is only called in the destruct, see MdamRefList.cpp for reason
 // Determine if the list is empty.
-NA_EIDPROC inline NABoolean MdamRefList::isEmpty() const
+inline NABoolean MdamRefList::isEmpty() const
 {
   return lastEntryPtr_ == 0;
 }
 
-// LCOV_EXCL_STOP
 // end of excluding isEmpty from coverage checking
 #endif /* MDAMREFLIST_H */

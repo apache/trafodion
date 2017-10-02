@@ -46,7 +46,6 @@ class SequenceGeneratorAttributes;
 // SequenceGeneratorAttributes contains all the attributes of a
 // sequence generator
 // ***********************************************************************
-#pragma nowarn(1506)   // warning elimination 
 class SequenceGeneratorAttributes : public NABasicObject
 {
 public:
@@ -207,6 +206,5 @@ private:
   Int64                        sgEndValue_;
   Int64                        sgRedefTime_;
 }; // class SequenceGeneratorAttributes
-#pragma warn(1506)  // warning elimination 
 
 #endif  /* SEQUENCEGENERATORATTRIBUTES_H */

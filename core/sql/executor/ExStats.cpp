@@ -84,7 +84,7 @@
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 
-NA_EIDPROC inline void advanceSize2(UInt32 &size, const char * const buffPtr)
+inline void advanceSize2(UInt32 &size, const char * const buffPtr)
 {
   const Int32 lenSize = sizeof(Lng32);
   size += lenSize;
@@ -315,9 +315,9 @@ void ExClusterStats::getVariableStatsInfo(char * dataBuffer,
 {
   char *buf = dataBuffer;
 
-  str_sprintf (
+  sprintf (
        buf,
-       "NumBuckets: %u ActRows: %Ld NumChains: %u MaxChain: %Ld VarChain: %f ",
+       "NumBuckets: %u ActRows: %ld NumChains: %u MaxChain: %ld VarChain: %f ",
        bucketCnt_,
        actRows_,
        hashChains_.entryCnt(),
@@ -359,7 +359,7 @@ void ExClusterStats::getVariableStatsInfoAggr(char * dataBuffer,
       tempNext = tempNext->next_;
     }
   
-  str_sprintf(buf,
+  sprintf(buf,
 	      "NumClusters: %u ResidentClusters: %u TotNumBuckets: %u ",
 	      numClusters,
 	      residentClusters,
@@ -371,36 +371,36 @@ void ExClusterStats::getVariableStatsInfoAggr(char * dataBuffer,
   val = totalSizeTot.sum();
   if (val)
     {
-      str_sprintf(buf, "TotHashTableSize: %Ld ", val);
+      sprintf(buf, "TotHashTableSize: %ld ", val);
       buf += str_len(buf);
     }
   val = writeIOCntTot;
   if (val)
     {
-      str_sprintf(buf, "TotWriteIOs: %Ld ", val);
+      sprintf(buf, "TotWriteIOs: %ld ", val);
       buf += str_len(buf);
     }
   val = readIOCntTot;
   if (val)
     {
-      str_sprintf(buf, "TotReadIOs: %Ld ", val );
+      sprintf(buf, "TotReadIOs: %ld ", val );
       buf += str_len(buf);
     }
   val = actRowsTot.min();
   if (val)
     {
-      str_sprintf(buf, "MinClusterRows: %Ld ", val);
+      sprintf(buf, "MinClusterRows: %ld ", val);
       buf += str_len(buf);
     }
   val = actRowsTot.max();
   if (val)
     {
-      str_sprintf(buf, "MaxClusterRows: %Ld ", val);
+      sprintf(buf, "MaxClusterRows: %ld ", val);
       buf += str_len(buf);
     }
   if (actRowsTot.entryCnt())
     {
-      str_sprintf(buf, "ClusterRowsVar: %f ", actRowsTot.variance());
+      sprintf(buf, "ClusterRowsVar: %f ", actRowsTot.variance());
       buf += str_len(buf);
     }
 
@@ -411,7 +411,7 @@ void ExClusterStats::getVariableStatsInfoAggr(char * dataBuffer,
   ULng32 c = 0;
   while (tempNext && tempMaxLen > 200)
     {
-      str_sprintf(buf, "ClusterNo: %u ", c);
+      sprintf(buf, "ClusterNo: %u ", c);
       tempMaxLen -= str_len(buf);
       buf += str_len(buf);
 
@@ -458,7 +458,7 @@ void ExTimeStats::start()
       if (clock_gettime(clockid_, &startTime_))
       {
         char buf[256];
-        str_sprintf(buf, "clock_gettime failed, errno %d", errno);
+        sprintf(buf, "clock_gettime failed, errno %d", errno);
         ex_assert(0, buf);
       }
     }
@@ -474,7 +474,7 @@ Int64 ExTimeStats::stop()
       if (clock_gettime(clockid_, &endTime))
       {
         char buf[256];
-        str_sprintf(buf, "clock_gettime failed, errno %d", errno);
+        sprintf(buf, "clock_gettime failed, errno %d", errno);
         ex_assert(0, buf);
       }
       
@@ -1142,44 +1142,6 @@ ExUDRBaseStats *ExOperStats::castToExUDRBaseStats()
   return NULL;
 }
 
-void MeasureInDp2::unpackBuffer(const char* &buffer, Lng32 version)
-{
-  if (version == _STATS_PRE_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));
-    buffer += (sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_)); 
-    processBusyTime_ = 0;
-    lockWaits_ = 0;
-  }
-  else
-  if (version >= _STATS_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this));
-    buffer += sizeof(*this);  
-  }
-  else
-    return;
-}
-
-void MeasureOltInDp2::unpackBuffer(const char* &buffer, Lng32 version)
-{
-  if (version == _STATS_PRE_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));
-    buffer += (sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));  
-    processBusyTime_ = 0;
-    lockWaits_ = 0;
-  }
-  else
-  if (version >= _STATS_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this));
-    buffer += sizeof(*this);  
-  }
-  else
-    return;
-}  
-
 const char * ExOperStats::getNumValTxt(Int32 i) const 
 { 
   switch (i)
@@ -1216,18 +1178,18 @@ void ExOperStats::getVariableStatsInfo(char * dataBuffer,
 
   ex_assert(maxLen > 1000, "Assume varchar has plenty of room");
 
-  str_sprintf(buf, "statsRowType: %d ", statType());
+  sprintf(buf, "statsRowType: %d ", statType());
   buf += str_len(buf);
   if (collectStatsType_ == ComTdb::OPERATOR_STATS ||
     collectStatsType_ == ComTdb::ALL_STATS ||
     collectStatsType_ == ComTdb::QID_DETAIL_STATS)
   {
-    str_sprintf(buf, "DOP: %d OperCpuTime: %Ld ", dop_, operTimer_.getTime());
+    sprintf(buf, "DOP: %d OperCpuTime: %ld ", dop_, operTimer_.getTime());
     buf += str_len(buf);
   }
   if (hasSentMsgIUD())
   {
-     str_sprintf(buf, "HasSentIudMsg: 1 ");
+     sprintf(buf, "HasSentIudMsg: 1 ");
      buf += str_len(buf);
   }
   if (collectStatsType_ == ComTdb::ALL_STATS)
@@ -1235,7 +1197,7 @@ void ExOperStats::getVariableStatsInfo(char * dataBuffer,
   // queue utilization
     if (allStats.upQueueSize_ || allStats.downQueueSize_)
     {
-      str_sprintf(
+      sprintf(
 	   buf,
 	   "QUtilUpMax: %u QUtilUpAvg: %u QUtilDnMax: %u QUtilDnAvg: %u ",
 	   (ULng32) allStats.upQueueStats_.max(),
@@ -1247,22 +1209,22 @@ void ExOperStats::getVariableStatsInfo(char * dataBuffer,
     // Work procedure return codes other than WORK_OK
     if (allStats.retCodes_[-WORK_OK])
     {
-      str_sprintf(buf, "RetOK: %u ", allStats.retCodes_[-WORK_OK]);
+      sprintf(buf, "RetOK: %u ", allStats.retCodes_[-WORK_OK]);
       buf += str_len(buf);
     }
     if (allStats.retCodes_[-WORK_CALL_AGAIN])
     {
-      str_sprintf(buf, "RetCallAgain: %u ", allStats.retCodes_[-WORK_CALL_AGAIN]);
+      sprintf(buf, "RetCallAgain: %u ", allStats.retCodes_[-WORK_CALL_AGAIN]);
       buf += str_len(buf);
     }
     if (allStats.retCodes_[-WORK_POOL_BLOCKED])
     {
-      str_sprintf(buf, "RetPoolBlocked: %u ", allStats.retCodes_[-WORK_POOL_BLOCKED]);
+      sprintf(buf, "RetPoolBlocked: %u ", allStats.retCodes_[-WORK_POOL_BLOCKED]);
       buf += str_len(buf);
     }
     if (allStats.retCodes_[-WORK_BAD_ERROR])
     {
-      str_sprintf(buf, "RetBadError: %u ",allStats. retCodes_[-WORK_BAD_ERROR]);
+      sprintf(buf, "RetBadError: %u ",allStats. retCodes_[-WORK_BAD_ERROR]);
       buf += str_len(buf);
     }
   }
@@ -1891,8 +1853,8 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
   const char *txtVal;
   if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
-    str_sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %Ld SpaceUsed: %u "
-      "SpaceTotal: %u HeapUsed: %u HeapTotal: %u PMemUsed: %Ld diffCpuTime: %Ld ",
+    sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %ld SpaceUsed: %u "
+      "SpaceTotal: %u HeapUsed: %u HeapTotal: %u PMemUsed: %ld diffCpuTime: %ld ",
       statType(),
       (((txtVal = getTextVal()) != NULL) ? txtVal : "NULL"),
       ((queryId_ != NULL) ? queryId_ : "NULL"),
@@ -1908,15 +1870,15 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
   {
     ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
     buf += *((short *) dataLen);
-    str_sprintf(buf,
-		"CpuTime: %Ld ProcessId: %s StmtIndex: %d Timestamp: %Ld "
+    sprintf(buf,
+		"CpuTime: %ld ProcessId: %s StmtIndex: %d Timestamp: %ld "
 		"SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u HeapWM: %u "
-		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
-		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %d "
-		"scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIOSize: %d " 
-		"scrWriteCount:%Ld scrReadCount: %Ld scrIOMaxTime: %Ld bmoInterimRowCount: %Ld udrCpuTime: %Ld "
-		"maxWaitTime: %Ld avgWaitTime: %Ld hdfsAccess: %d ",
+		"Newprocess: %u NewprocessTime: %ld reqMsgCnt: %ld "
+		"regMsgBytes: %ld replyMsgCnt: %ld replyMsgBytes: %ld "
+		"PMemUsed: %ld scrOverFlowMode: %d sortTopN: %d "
+		"scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %ld scrIOSize: %d " 
+		"scrWriteCount:%ld scrReadCount: %ld scrIOMaxTime: %ld bmoInterimRowCount: %ld udrCpuTime: %ld "
+		"maxWaitTime: %ld avgWaitTime: %ld hdfsAccess: %d ",
 		cpuTime_,
 		(((txtVal = getTextVal()) != NULL) ? txtVal : "NULL"),
 		stmtIndex_,
@@ -1963,7 +1925,7 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   {
      if (sqlStats_item->str_value != NULL)
      {
-         str_sprintf(tmpBuf, "%Ld",
+         sprintf(tmpBuf, "%ld",
              cpuTime_ + espCpuTime_);
          len = str_len(tmpBuf);
          if (len > sqlStats_item->str_max_len)
@@ -2101,7 +2063,7 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap,
   const char * name = hdfsTdb->tableName();
   Lng32 len = (Lng32)str_len(name); 
   tableName_ = (char *)heap_->allocateMemory(len + 1);
-  str_sprintf(tableName_, "%s", name);
+  sprintf(tableName_, "%s", name);
 
   queryId_ = NULL;
   queryIdLen_ = 0;
@@ -2344,7 +2306,7 @@ void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
   char *buf = dataBuffer;
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
-     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+     sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
         statType(),
         ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
      buf += str_len(buf);
@@ -2357,8 +2319,8 @@ void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
      lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
      buf += *((short *) dataLen);
   }
-  str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HiveIOCalls: %Ld HiveSumIOTime: %Ld HdfsMaxIOTime: %Ld",
+  sprintf (buf, 
+	   "AnsiName: %s  MessagesBytes: %ld AccessedRows: %ld UsedRows: %ld HiveIOCalls: %ld HiveSumIOTime: %ld HdfsMaxIOTime: %ld",
 	       (char*)tableName_,
 	       numBytesRead(), 
 	       rowsAccessed(),
@@ -2439,7 +2401,7 @@ Lng32 ExHdfsScanStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
       }
       else 
         len = 0; 
-      str_sprintf(tmpBuf, "|%Ld|%Ld", accessedRows_,
+      sprintf(tmpBuf, "|%ld|%ld", accessedRows_,
                numBytesRead_);
       len1 = str_len(tmpBuf);
       if ((len+len1) > sqlStats_item->str_max_len)
@@ -2478,7 +2440,7 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
       const char * name = hbaseTdb->getTableName();
       Lng32 len = (Lng32)str_len(name); 
       tableName_ = (char *)heap_->allocateMemory(len + 1);
-      str_sprintf(tableName_, "%s", name);
+      sprintf(tableName_, "%s", name);
     }
   else
     {
@@ -2737,7 +2699,7 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
   char *buf = dataBuffer;
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
-     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+     sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
         statType(),
         ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
      buf += str_len(buf);
@@ -2750,8 +2712,8 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
      lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
      buf += *((short *) dataLen);
   }
-  str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseSumIOCalls: %Ld HbaseSumIOTime: %Ld HbaseMaxIOTime: %Ld",
+  sprintf (buf, 
+	   "AnsiName: %s  MessagesBytes: %ld AccessedRows: %ld UsedRows: %ld HbaseSumIOCalls: %ld HbaseSumIOTime: %ld HbaseMaxIOTime: %ld",
 	       (char*)tableName_,
 	       numBytesRead(), 
 	       rowsAccessed(),
@@ -2832,7 +2794,7 @@ Lng32 ExHbaseAccessStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
       }
       else 
         len = 0; 
-      str_sprintf(tmpBuf, "|%Ld|%Ld", accessedRows_,
+      sprintf(tmpBuf, "|%ld|%ld", accessedRows_,
                numBytesRead_);
       len1 = str_len(tmpBuf);
       if ((len+len1) > sqlStats_item->str_max_len)
@@ -3051,20 +3013,20 @@ void ExProbeCacheStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf, "CacheHits: %d CacheMisses: %d ",
+  sprintf(buf, "CacheHits: %d CacheMisses: %d ",
 	            cacheHits_,    cacheMisses_ );
   buf += str_len(buf);
 
-  str_sprintf(buf, 
+  sprintf(buf, 
              "CanceledHits: %d CanceledMisses: %d CanceledNotStarted: %d ",
 	      canceledHits_,    canceledMisses_,    canceledNotStarted_);
   buf += str_len(buf);
 
-  str_sprintf(buf, "LongestChain: %d MaxNumChains: %d ",
+  sprintf(buf, "LongestChain: %d MaxNumChains: %d ",
 	            longestChain_,    maxNumChains_);
   buf += str_len(buf);
 
-  str_sprintf(buf, 
+  sprintf(buf, 
     "HighestUseCount: %d ResultBufferSizeBytes: %d NumCacheEntries: %d",
      highestUseCount_,    bufferSize_,                numCacheEntries_);
   buf += str_len(buf);
@@ -3153,12 +3115,7 @@ void ExPartitionAccessStats::merge(ExPartitionAccessStats* other)
   openTime_ += other->openTime_;
 }
 
-#ifdef NA_64BIT
-// dg64 - match return type
 UInt32        ExPartitionAccessStats::packedLength()
-#else
-ULng32 ExPartitionAccessStats::packedLength()
-#endif
 {
   UInt32 size = ExOperStats::packedLength();
   alignSizeForNextObj(size);
@@ -3278,27 +3235,26 @@ void ExPartitionAccessStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf,
-	      "AnsiName: %s PhysName: %s BuffersSize: %u BuffersSent: %u BuffersRcvd: %u NumMessages: %Ld MsgBytes: %Ld StatsBytes: %Ld MsgBytesSent: %Ld MsgBytesRcvd: %Ld ",
+  sprintf(buf,
+	      "AnsiName: %s PhysName: %s BuffersSize: %u BuffersSent: %u BuffersRcvd: %u NumMessages: %ld MsgBytes: %ld MsgBytesSent: %ld MsgBytesRcvd: %ld ",
 	      ansiName_, fileName_,
 	      bufferStats()->sendBufferSize(), bufferStats()->sentBuffers().entryCnt(), bufferStats()->recdBuffers().entryCnt(), 
 	      exeSEStats()->getNumIOCalls(),
 	      exeSEStats()->getNumIOBytes(),
-              0,
 	      bufferStats()->totalSentBytes(),
 	      bufferStats()->totalRecdBytes());
   buf += str_len(buf);
 
-  str_sprintf(buf,
-    "SendUtilMin: %Ld SendUtilMax: %Ld SendUtilAvg: %f RecvUtilMin: %Ld RecvUtilMax: %Ld RecvUtilAvg: %f Opens: %u OpenTime: %Ld ",
+  sprintf(buf,
+    "SendUtilMin: %ld SendUtilMax: %ld SendUtilAvg: %f RecvUtilMin: %ld RecvUtilMax: %ld RecvUtilAvg: %f Opens: %u OpenTime: %ld ",
 	      bufferStats()->sentBuffers().min(),
 	      bufferStats()->sentBuffers().max(),
 	      bufferStats()->sentBuffers().mean(), 
 	      bufferStats()->recdBuffers().min(),
 	      bufferStats()->recdBuffers().max(),
-	      bufferStats()->recdBuffers().mean()),
+	      bufferStats()->recdBuffers().mean(),
               opens_,
-              openTime_;
+              openTime_);
   buf += str_len(buf);
 
   *(short*)dataLen = (short) (buf - dataBuffer);
@@ -3537,12 +3493,12 @@ void ExHashGroupByStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf, "Memory: %Ld IOBytes: %Ld ", memSize_, ioSize_);
+  sprintf(buf, "Memory: %ld IOBytes: %ld ", memSize_, ioSize_);
   buf += str_len(buf);
 
   if (partialGroups_)
     {
-      str_sprintf(buf, "PartialGroups: %Ld ", partialGroups_);
+      sprintf(buf, "PartialGroups: %ld ", partialGroups_);
       buf += str_len(buf);
     }
 
@@ -3822,11 +3778,11 @@ void ExHashJoinStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf, "Memory: %Ld IOBytes: %Ld ", memSize_, ioSize_);
+  sprintf(buf, "Memory: %ld IOBytes: %ld ", memSize_, ioSize_);
   buf += str_len(buf);
 
   if ( clusterSplits_ || hashLoops_ ) {
-    str_sprintf(buf, "ClusterSplits: %u HashLoops: %u ", clusterSplits_, hashLoops_);
+    sprintf(buf, "ClusterSplits: %u HashLoops: %u ", clusterSplits_, hashLoops_);
     buf += str_len(buf);
   }
 
@@ -4012,11 +3968,11 @@ void ExESPStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
   maxLen -= (buf - dataBuffer);
 
-  str_sprintf(buf, "SendBufferSize: %u ", bufferStats()->sendBufferSize());
+  sprintf(buf, "SendBufferSize: %u ", bufferStats()->sendBufferSize());
   buf += str_len(buf);
   
-  str_sprintf(buf,
-	      "BuffersSent: %u MsgBytesSent: %Ld SendUtilMin: %Ld SendUtilMax: %Ld SendUtilAvg: %f ",
+  sprintf(buf,
+	      "BuffersSent: %u MsgBytesSent: %ld SendUtilMin: %ld SendUtilMax: %ld SendUtilAvg: %f ",
 	      bufferStats()->sentBuffers().entryCnt(),
 	      bufferStats()->totalSentBytes(),
 	      bufferStats()->sentBuffers().min(),
@@ -4024,11 +3980,11 @@ void ExESPStats::getVariableStatsInfo(char * dataBuffer,
 	      bufferStats()->sentBuffers().mean());
   buf += str_len(buf);
 
-  str_sprintf(buf, "RecvBufferSize: %u ", bufferStats()->recdBufferSize());
+  sprintf(buf, "RecvBufferSize: %u ", bufferStats()->recdBufferSize());
   buf += str_len(buf);
 
-  str_sprintf(buf,
-	      "BuffersRcvd: %u MsgBytesRcvd: %Ld RecvUtilMin: %Ld RecvUtilMax: %Ld RecvUtilAvg: %f ",
+  sprintf(buf,
+	      "BuffersRcvd: %u MsgBytesRcvd: %ld RecvUtilMin: %ld RecvUtilMax: %ld RecvUtilAvg: %f ",
 	      bufferStats()->recdBuffers().entryCnt(),
 	      bufferStats()->totalRecdBytes(),
 	      bufferStats()->recdBuffers().min(),
@@ -4158,7 +4114,7 @@ void ExSplitTopStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
   maxLen -= (buf - dataBuffer);
 
-  str_sprintf(buf, "MaxChildren: %u ActChildren: %u", 
+  sprintf(buf, "MaxChildren: %u ActChildren: %u", 
 	      maxChildren_, actChildren_);
   buf += str_len(buf);
   
@@ -4364,7 +4320,7 @@ void ExSortStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf, "RunSize: %u NumRuns: %u NumCompares: %u NumDupRecs: %u ScratchBlockSize: %u NumScratchBlocks: %u NumScratchWrites: %u NumScratchReads: %u", 
+  sprintf(buf, "RunSize: %u NumRuns: %u NumCompares: %u NumDupRecs: %u ScratchBlockSize: %u NumScratchBlocks: %u NumScratchWrites: %u NumScratchReads: %u", 
 	     runSize_, numRuns_, numCompares_, numDupRecs_,
 	      scrBlockSize_, scrNumBlocks_, scrNumWrites_, scrNumReads_);
   buf += str_len(buf);
@@ -5026,7 +4982,7 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
   char * buf = dataBuffer;
   if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
-    str_sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %Ld SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u ",
+    sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %ld SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u ",
       statType(),
       "NULL",
       ((queryId_ != NULL) ? queryId_ : "NULL"),
@@ -5039,7 +4995,7 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
   else
   if ((Int32)getCollectStatsType() == SQLCLI_QID_DETAIL_STATS)
   {
-    str_sprintf(buf, "statsRowType: %d ProcessId: %s CpuTime: %Ld SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u HeapWM: %u reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld ",
+    sprintf(buf, "statsRowType: %d ProcessId: %s CpuTime: %ld SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u HeapWM: %u reqMsgCnt: %ld reqMsgBytes: %ld replyMsgCnt: %ld replyMsgBytes: %ld ",
       statType(),
       "NULL",
       cpuTime_,
@@ -5059,13 +5015,13 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
   ExMeasBaseStats::getVariableStatsInfo(dataBuffer, datalen, maxLen);
   buf += *((short *) datalen);
 
-  str_sprintf(buf, 
-    "statsRowType: %d Newprocess: %u NewprocessTime: %Ld Timeouts: %u NumSorts: %u SortElapsedTime: %Ld "
-    "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d HeapWM: %u CpuTime: %Ld "
-    "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
-    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %d "
-    "scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIoSize: %d "
-    "scrWriteCount: %Ld scrReadCount: %Ld scrIOMaxTime: %Ld interimRowCount: %Ld udrCpuTime: %Ld ",
+  sprintf(buf, 
+    "statsRowType: %d Newprocess: %u NewprocessTime: %ld Timeouts: %u NumSorts: %u SortElapsedTime: %ld "
+    "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d HeapWM: %u CpuTime: %ld "
+    "reqMsgCnt: %ld reqMsgBytes: %ld replyMsgCnt: %ld "
+    "replyMsgBytes: %ld scrOverflowMode: %d sortTopN: %d "
+    "scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %ld scrIoSize: %d "
+    "scrWriteCount: %ld scrReadCount: %ld scrIOMaxTime: %ld interimRowCount: %ld udrCpuTime: %ld ",
 	      statType(),
               getNewprocess(),
 	      getNewprocessTime(),
@@ -5371,13 +5327,13 @@ void ExUDRStats::getVariableStatsInfo(char * dataBuffer,
   ULng32 startUpSec = startUp / 1000000;
   ULng32 startUpMilli = (startUp % 1000000) / 10000;
 
-  str_sprintf(buf, "SendBufferSize: %u RecvBufferSize: %u UDRServerId: %s ", 
+  sprintf(buf, "SendBufferSize: %u RecvBufferSize: %u UDRServerId: %s ", 
               (ULng32) bufferStats()->sendBufferSize(),
               (ULng32) bufferStats()->recdBufferSize(),
               getUDRServerId() ? getUDRServerId() : "No Server Id info");
   buf += str_len(buf);
 
-  str_sprintf(buf, "UDRServerInit: %u.%03u CtrlMsgNum: %u CtrlMsgMean: %f DataMsgNum: %u DataMsgMean: %f ContMsgNum: %u ContMsgMean: %f ",
+  sprintf(buf, "UDRServerInit: %u.%03u CtrlMsgNum: %u CtrlMsgMean: %f DataMsgNum: %u DataMsgMean: %f ContMsgNum: %u ContMsgMean: %f ",
               startUpSec, startUpMilli,
               (ULng32) sentControlBuffers_.entryCnt(),
               sentControlBuffers_.mean(),
@@ -5440,8 +5396,6 @@ ExStatisticsArea::ExStatisticsArea(NAMemory * heap, Lng32 sendBottomNum,
     sendBottomNum_(sendBottomNum),
     sendBottomCnt_(0),
     collectStatsType_(cst) ,
-    deallocStmtCntrs_(FALSE),
-    stmtCntrs_(NULL),
     flags_(0),
     masterStats_(NULL),
     rootStats_(NULL),
@@ -5542,10 +5496,6 @@ ExStatisticsArea::~ExStatisticsArea()
 {
   removeEntries();
 
-  if ( stmtCntrs_ && deallocStmtCntrs_ ) {
-    heap_->deallocateMemory((void *)stmtCntrs_);
-    stmtCntrs_ = NULL;
-  }
   if (masterStats_ != NULL)
   {
     NADELETE(masterStats_, ExMasterStats, masterStats_->getHeap());
@@ -6237,14 +6187,6 @@ IpcMessageObjSize ExStatisticsArea::packedLength()
 {
 
   IpcMessageObjSize  size = 0;
-
-  /*
-  if ((statsInDp2()) &&
-      ((numEntries() == 1) &&
-       ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
-	(getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-	(getCollectStatsType() == ComTdb::PERTABLE_STATS))))
-	*/
   if (smallStatsObj())
     {
       size = sizeof(unsigned char) // version
@@ -6509,8 +6451,7 @@ void
 ExStatisticsArea::unpackSmallObjFromEid(IpcConstMessageBufferPtr buffer,
 					Lng32 version)
 {
-  if ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
-      (getCollectStatsType() == ComTdb::MEASURE_STATS))
+  if (getCollectStatsType() == ComTdb::ACCUMULATED_STATS)
   {
     ExMeasStats * stat = new(heap_) ExMeasStats(heap_);
     stat->setStatsInDp2(statsInDp2());
@@ -6959,8 +6900,6 @@ const char *ExStatisticsArea::getStatsTypeText(short statsType)
   {
   case SQLCLI_NO_STATS: 
     return "NO_STATS";
-  case SQLCLI_MEASURE_STATS:
-    return "MEASURE_STATS";
   case SQLCLI_ACCUMULATED_STATS:
     return "ACCUMULATED_STATS";
   case SQLCLI_PERTABLE_STATS:
@@ -7610,14 +7549,10 @@ short ExStatsTcb::work()
                           if (statsGlobals != NULL)
                           {
                             semId = getGlobals()->getSemId();
-                            short savedPriority, savedStopMode;
-                            short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                            int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                             stats_->merge(stats, statsMergeType_);
                             setDeleteStats(TRUE);
-                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                      savedPriority, savedStopMode);
+                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                           }
                           else
                           {
@@ -7683,14 +7618,10 @@ short ExStatsTcb::work()
                             if (statsGlobals != NULL)
                             {
                               semId = getGlobals()->getSemId();
-                              short savedPriority, savedStopMode;
-                              short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                    savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                              ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                              int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                               stats_->merge(stats, statsMergeType_);
                               setDeleteStats(TRUE);
-                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                        savedPriority, savedStopMode);
+                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                             }
                             else
                             {
@@ -8817,14 +8748,14 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     stmtState = Statement::SUSPENDED_;
   if ((Int32)getCollectStatsType() == SQLCLI_ET_OFFENDER_STATS)
   {
-     str_sprintf(buf,"statsRowType: %d Qid: %s CompStartTime: %Ld "
-    "CompEndTime: %Ld "
-    "ExeStartTime: %Ld ExeEndTime: %Ld CanceledTime: %Ld RowsAffected: %Ld "
+     sprintf(buf,"statsRowType: %d Qid: %s CompStartTime: %ld "
+    "CompEndTime: %ld "
+    "ExeStartTime: %ld ExeEndTime: %ld CanceledTime: %ld RowsAffected: %ld "
     "SqlErrorCode: %d StatsErrorCode: %d State: %s StatsType: %s queryType: %s "
-    "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
-    "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
-    "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
+    "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %ld "
+    "exeElapsedTime: %ld parentQid: %s parentQidSystem: %s childQid: %s "
+    "rowsReturned: %ld firstRowReturnTime: %ld numSqlProcs: %d  numCpus: %d "
+    "exePriority: %d transId: %ld suspended: %s lastSuspendTime: %ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d "
     "reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
@@ -8871,17 +8802,17 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
    }
    else
    {
-     str_sprintf(buf,"statsRowType: %d Qid: %s CompStartTime: %Ld "
-    "CompEndTime: %Ld "
-    "ExeStartTime: %Ld ExeEndTime: %Ld CanceledTime: %Ld RowsAffected: %Ld "
+     sprintf(buf,"statsRowType: %d Qid: %s CompStartTime: %ld "
+    "CompEndTime: %ld "
+    "ExeStartTime: %ld ExeEndTime: %ld CanceledTime: %ld RowsAffected: %ld "
     "SqlErrorCode: %d StatsErrorCode: %d State: %d StatsType: %d queryType: %d "
-    "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
-    "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
-    "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
+    "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %ld "
+    "exeElapsedTime: %ld parentQid: %s parentQidSystem: %s childQid: %s "
+    "rowsReturned: %ld firstRowReturnTime: %ld numSqlProcs: %d  numCpus: %d "
+    "exePriority: %d transId: %ld suspended: %s lastSuspendTime: %ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
-    "exeCount: %Ld, exeTimeMin: %Ld exeTimeMax: %Ld exeTimeAvg: %Ld "
+    "exeCount: %u, exeTimeMin: %ld exeTimeMax: %ld exeTimeAvg: %f "
                   "sqlSrcLen: %d sqlSrc: \"%s\"",
               statType(),
               ((queryId_ != NULL) ? queryId_ : "NULL"),
@@ -9553,16 +9484,12 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
   if ((numSIKeys > PreAllocatedSikKeys) || 
       (numObjUIDs > PreAllocatedObjUIDs))
   {
-    short savedPriority, savedStopMode;
     Long semId = cliGlobals->getSemId();
     StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
     if (statsGlobals)
     {
-      short error = statsGlobals->getStatsSemaphore(
-                    semId, cliGlobals->myPin(), 
-                    savedPriority, savedStopMode,
-                    FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(
+                    semId, cliGlobals->myPin());
     }
 
     if (numSIKeys > PreAllocatedSikKeys)
@@ -9580,8 +9507,7 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
 
     if (statsGlobals)
       statsGlobals->releaseStatsSemaphore(
-                      semId, cliGlobals->myPin(), 
-                      savedPriority, savedStopMode);
+                      semId, cliGlobals->myPin());
   }
 
   numSIKeys_ = numSIKeys;
@@ -10227,7 +10153,7 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
 
   if (subReqType()== SQLCLI_STATS_REQ_RMS_CHECK)
   {
-      str_sprintf(buf,
+      sprintf(buf,
          "statsRowType: %d nodeId: %d nodeName: %s ",
          SQLCLI_RMS_CHECK_STATS,
          cpu_,
@@ -10235,14 +10161,14 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
       );
       if (sscpOpens_ != 0 && nodesInCluster_ != sscpOpens_)
       {    
-         str_sprintf(tmpbuf, "sscpOpens: %d ", sscpOpens_);
+         sprintf(tmpbuf, "sscpOpens: %d ", sscpOpens_);
          if (status < 1)
             status = 1;
          strcat(buf, tmpbuf);
       }   
       if (sscpDeletedOpens_ > 0)
       {    
-         str_sprintf(tmpbuf, "sscpDeletedOpens: %d ", sscpDeletedOpens_);
+         sprintf(tmpbuf, "sscpDeletedOpens: %d ", sscpDeletedOpens_);
          if (status < 1)
             status = 1;
          strcat(buf, tmpbuf);
@@ -10257,7 +10183,7 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
                   (double) currGlobalStatsHeapAlloc_) > 
                     (100 - statsHeapFreePercent))
       {
-         str_sprintf(tmpbuf, "statsHeapUsed: %Ld statsHeapTotal: %Ld statsHeapWM: %Ld ",
+         sprintf(tmpbuf, "statsHeapUsed: %ld statsHeapTotal: %ld statsHeapWM: %ld ",
                   currGlobalStatsHeapUsage_,
                   currGlobalStatsHeapAlloc_,
                   globalStatsHeapWatermark_);
@@ -10267,29 +10193,29 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
       } 
       if ((currNoOfProcessStatsHeap_ - currNoOfRegProcesses_) > 100)
       {
-         str_sprintf(tmpbuf, "noOfProcessRegd: %d  noOfProcessStatsHeaps: %d ",
+         sprintf(tmpbuf, "noOfProcessRegd: %d  noOfProcessStatsHeaps: %d ",
                    currNoOfRegProcesses_,
                    currNoOfProcessStatsHeap_);
          if (status < 1)
             status = 1;
          strcat(buf, tmpbuf);
       } 
-      str_sprintf(tmpbuf, "Status: %s ", statusStr[status]);
+      sprintf(tmpbuf, "Status: %s ", statusStr[status]);
       strcat(buf, tmpbuf);
   }
   else
   {
-    str_sprintf (
+    sprintf (
        buf,
        "statsRowType: %d rmsVersion: %d nodeName: %s cpu: %d nodeId: %d "
-       "sscpPid: %d sscpPri: %d sscpTimestamp: %Ld "
-       "ssmpPid: %d ssmpPri: %d ssmpTimestamp: %Ld srcLen: %d rtsEnvType: %d "
-        "statsHeapUsed: %Ld "
-        "statsHeapTotal: %Ld statsHeapWM: %Ld noOfProcessRegd: %d  noOfProcessStatsHeaps: %d "
+       "sscpPid: %d sscpPri: %d sscpTimestamp: %ld "
+       "ssmpPid: %d ssmpPri: %d ssmpTimestamp: %ld srcLen: %d rtsEnvType: %d "
+        "statsHeapUsed: %ld "
+        "statsHeapTotal: %ld statsHeapWM: %ld noOfProcessRegd: %d  noOfProcessStatsHeaps: %d "
         "noOfQidRegd: %d semPid: %d sscpOpens: %d sscpDeleted: %d "
-        "stmtStatsGCed: %d lastGCTime: %Ld "
-        "totalStmtStatsGCed: %Ld ssmpReqMsgCnt: %Ld ssmpReqMsgBytes: %Ld ssmpReplyMsgCnt: %Ld ssmpReplyMsgBytes: %Ld "
-        "sscpReqMsgCnt: %Ld sscpReqMsgBytes: %Ld sscpReplyMsgCnt: %Ld sscpReplyMsgBytes: %Ld resetTimestamp: %Ld " 
+        "stmtStatsGCed: %d lastGCTime: %ld "
+        "totalStmtStatsGCed: %ld ssmpReqMsgCnt: %ld ssmpReqMsgBytes: %ld ssmpReplyMsgCnt: %ld ssmpReplyMsgBytes: %ld "
+        "sscpReqMsgCnt: %ld sscpReqMsgBytes: %ld sscpReplyMsgCnt: %ld sscpReplyMsgBytes: %ld resetTimestamp: %ld " 
         "numQueryInvKeys: %d ",
         statType(),
         rmsVersion_,
@@ -10480,6 +10406,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType)
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
+  estMemoryUsage_ = 0; 
 }
 
 ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
@@ -10490,10 +10417,14 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
   init(FALSE);
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
-  if (tdb != NULL)
+  if (tdb != NULL) {
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
-  else
+    estMemoryUsage_ = ((ComTdb *)tdb)->getEstimatedMemoryUsage();
+  }
+  else {
     scratchOverflowMode_ = -1;
+    estMemoryUsage_ = 0;
+  }
 }
 
 ExBMOStats::ExBMOStats(NAMemory *heap, 
@@ -10505,10 +10436,14 @@ ExBMOStats::ExBMOStats(NAMemory *heap,
   init(FALSE);
   spaceBufferSize_ = -1;
   scratchIOSize_ = -1;
-  if (tdb != NULL)
+  if (tdb != NULL) {
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
-  else
+    estMemoryUsage_ = ((ComTdb *)tdb)->getEstimatedMemoryUsage();
+  }
+  else {
     scratchOverflowMode_ = -1;
+    estMemoryUsage_ = 0;
+  }
 }
 
 void ExBMOStats::init(NABoolean resetDop)
@@ -10618,16 +10553,17 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
           		  Lng32 maxLen)
 {
   char *buf = dataBuffer;
-  str_sprintf (
+  sprintf (
        buf,
-       "statsRowType: %d explainTdbId: %d bmoPhase: %s bmoIntCount: %Ld estMemory: %f bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
+       "statsRowType: %d explainTdbId: %d bmoPhase: %s bmoIntCount: %ld estMemory: %f bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld sortTopN: %d scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
+       "scrWriteCount: %ld scrReadCount: %ld sortTopN: %d scrIOSize: %d scrIOTime: %ld scrIOMaxTime: %ld ",
         statType(),
         getExplainNodeId(),
         getBmoPhaseStr(),
         interimRowCount_,
+        estMemoryUsage_, 
         bmoHeapUsage_,
         bmoHeapAlloc_,
         bmoHeapWM_,
@@ -10753,6 +10689,9 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SCRATCH_IO_MAX_TIME:
     sqlStats_item->int64_value = scratchIOMaxTime_;
     break;
+  case SQLSTATS_BMO_EST_MEMORY:
+    sqlStats_item->double_value = estMemoryUsage_;
+    break;
   case SQLSTATS_INTERIM_ROW_COUNT:
     sqlStats_item->int64_value = interimRowCount_;
     break;
@@ -10773,7 +10712,7 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_DETAIL:
    if (sqlStats_item->str_value != NULL)
     {
-      str_sprintf(tmpBuf, "%d|%d|%d", 
+      sprintf(tmpBuf, "%d|%d|%d", 
               scratchBufferBlockRead_,
               scratchBufferBlockWritten_,
               scratchFileCount_);
@@ -10907,10 +10846,10 @@ void ExUDRBaseStats::getVariableStatsInfo(char * dataBuffer,
 {
   char *buf = dataBuffer;
   char tmpBuf[50];
-  str_sprintf (
+  sprintf (
        buf,
-       "statsRowType: %d reqMsgCnt: %Ld regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-       "udrCpuTime: %Ld recentReqTS: %Ld recentReplyTS: %Ld ",
+       "statsRowType: %d reqMsgCnt: %ld regMsgBytes: %ld replyMsgCnt: %ld replyMsgBytes: %ld "
+       "udrCpuTime: %ld recentReqTS: %ld recentReplyTS: %ld ",
         statType(),
         reqMsgCnt_,
         reqMsgBytes_,
@@ -10922,7 +10861,7 @@ void ExUDRBaseStats::getVariableStatsInfo(char * dataBuffer,
        );
   if ((Int32)getCollectStatsType() == SQLCLI_QID_DETAIL_STATS)
   { 
-    str_sprintf(tmpBuf, " UDRServerId: %s ", (UDRServerId_[0] =='\0' ? "None" : UDRServerId_));
+    sprintf(tmpBuf, " UDRServerId: %s ", (UDRServerId_[0] =='\0' ? "None" : UDRServerId_));
     str_cat(buf, tmpBuf, buf);
   }
   buf += str_len(buf);
@@ -11188,7 +11127,7 @@ void ExFastExtractStats::getVariableStatsInfo(char * dataBuffer,
   ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
   buf += *((short *) dataLen);
 
-  str_sprintf(buf,
+  sprintf(buf,
               "BufferCount: %u processedRowsCount: %u errorRowsCount: %u "
               "readyToSendBuffersCount: %u sentBuffersCount: %u "
               "partition Number: %u bufferAllocFailuresCount: %u "
@@ -11372,11 +11311,11 @@ void ExProcessStats::getVariableStatsInfo(char * dataBuffer,
                           Lng32 maxLen)
 {
   char *buf = dataBuffer;
-  str_sprintf (
+  sprintf (
        buf,
-       "statsRowType: %d nodeId: %d processId: %d startTime: %Ld "
-       "exeMemHighWMInMB: %Ld exeMemAllocInMB: %Ld exeMemUsedInMB: %Ld "
-       "ipcMemHighWMInMB: %Ld ipcMemAllocInMB: %Ld ipcMemUsedInMB: %Ld "
+       "statsRowType: %d nodeId: %d processId: %d startTime: %ld "
+       "exeMemHighWMInMB: %ld exeMemAllocInMB: %ld exeMemUsedInMB: %ld "
+       "ipcMemHighWMInMB: %ld ipcMemAllocInMB: %ld ipcMemUsedInMB: %ld "
        "pfsAllocSize: %d pfsCurUse: %d pfsMaxUse: %d "
        "numSqlOpens: %d arkfsSessionCount: %d "
        "staticStmtCount: %d dynamicStmtCount: %d "
