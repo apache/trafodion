@@ -966,7 +966,7 @@ class InterfaceStatement {
 		else {
 			switch(this.ic_.getMode()) {
 			case InterfaceConnection.MODE_SQL:
-				if ((str3.equals("SELECT")) || (str3.equals("SHOWSHAPE")) || (str3.equals("INVOKE"))
+				if ((str3.equals("SELECT")) || (str3.equals("WITH"))|| (str3.equals("SHOWSHAPE")) || (str3.equals("INVOKE"))
 						|| (str3.equals("SHOWCONTROL")) || (str3.equals("SHOWDDL")) || (str3.equals("EXPLAIN"))
 						|| (str3.equals("SHOWPLAN")) || (str3.equals("REORGANIZE")) || (str3.equals("MAINTAIN"))
 						|| (str3.equals("SHOWLABEL")) || (str3.equals("VALUES"))
