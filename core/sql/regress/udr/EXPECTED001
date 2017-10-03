@@ -519,7 +519,29 @@ IPADDR           SESSION_ID            SEQUENCE_NO
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212334861599500000  12.345.567.345 
+                   1                     1  super-user                          212373741599500000  12.345.567.345 
+
+--- 1 row(s) selected.
+>>
+>>-- eliminate all columns
+>>prepare s from
++>SELECT COUNT(*)
++>FROM UDF(sessionize_java(TABLE(SELECT userid,
++>                                      JULIANTIMESTAMP(ts) as TS,
++>                                      ipAddr
++>                               FROM clicks
++>                               PARTITION BY ipaddr ORDER BY ts),
++>                         'IPADDR',
++>                         cast('TS' as char(2)),
++>                         60000000)) XO;
+
+--- SQL command prepared.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   4
 
 --- 1 row(s) selected.
 >>
