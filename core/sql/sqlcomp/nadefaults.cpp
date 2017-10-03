@@ -2180,6 +2180,15 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // very good plans, because they prevent us from considering MDAM plans
   // that probe prefix columns before a column with high UEC, for example).
   DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "0"),
+
+  // MDAM_COSTING_REWRITE: If ON, then the simple cost model costing
+  // for MDAM will use the rewritten code. If OFF, it will use the
+  // older code (which was current in September 2017, at the time
+  // the rewrite commenced). This only has an effect if SIMPLE_COST_MODEL
+  // is ON (which is the current default).
+  XDDkwd__(MDAM_COSTING_REWRITE,		"OFF"),
+
+
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2202,6 +2211,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
   DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+
+  // Overhead charge for a subset in the rewritten MDAM costing code
+  DDflt0_(MDAM_SUBSET_FACTOR,                   "8.0"),
 
   DDflt0_(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD, "10000"),
   DDflt0_(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,	 "0.2"),

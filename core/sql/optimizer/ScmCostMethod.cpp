@@ -1154,13 +1154,14 @@ FileScanOptimizer::scmComputeCostForSingleSubset()
     Cost* c = 
       sfso->optimize(searchKey, mdamKey);//scmComputeCostForSingleSubset();
 			      
-  // transfer probe counters from sfso to this (the FileScan optimizer)
+  // transfer various counters from sfso to this (the FileScan optimizer)
   setProbes(sfso->getProbes());
   setSuccessfulProbes(sfso->getSuccessfulProbes());
   setUniqueProbes(sfso->getUniqueProbes());
   setDuplicateSuccProbes(sfso->getDuplicateSuccProbes());
   setTuplesProcessed(sfso->getTuplesProcessed());
   setEstRowsAccessed(sfso->getEstRowsAccessed());
+  setSingleSubsetSize(sfso->getSingleSubsetSize());
 
   return c;
 } // FileScanOptimizer::ScmComputeCostForSingleSubset()
