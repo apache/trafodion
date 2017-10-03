@@ -2070,13 +2070,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   pulledNewInputs -= (ValueIdSet) inputVars();
   GenAssert(pulledNewInputs.isEmpty(),"root can't produce these values");
 
-  // propagate the need to return top sorted N rows to all sort
-  // nodes in the query.
-  if (needFirstSortedRows() == TRUE)
-    {
-      needSortedNRows(TRUE);
-    }
-
   // Do not rollback on error for INTERNAL REFRESH commands.
   if (isRootOfInternalRefresh())
     {

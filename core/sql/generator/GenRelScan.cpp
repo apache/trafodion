@@ -3115,21 +3115,31 @@ short HbaseAccess::codeGen(Generator * generator)
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
   if (CmpCommon::getDefault(COMP_BOOL_184) == DF_ON)
     hbpa->setUseMinMdamProbeSize(TRUE);
+
+  Lng32 hbaseRowSize;
+  Lng32 hbaseBlockSize;
+   if(getIndexDesc() && getIndexDesc()->getNAFileSet())
+   {
+     const NAFileSet * fileset = getIndexDesc()->getNAFileSet() ;
+     hbaseRowSize = fileset->getRecordLength();
+     hbaseRowSize += ((NAFileSet *)fileset)->getEncodedKeyLength();
+     hbaseBlockSize = fileset->getBlockSize();
+   }
+   else
+   {
+     hbaseRowSize = computedHBaseRowSizeFromMetaData;
+     hbaseBlockSize = CmpCommon::getDefaultLong(HBASE_BLOCK_SIZE);
+   }
+
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
                                   hbpa, samplePercent()) ;
-  generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
+  generator->setHBaseCacheBlocks(hbaseRowSize,
                                  getEstRowsAccessed().getValue(),hbpa);
-
-  Lng32 hbaseBlockSize = 65536; //default HBaseValue, should not be useful as the if statement should always pass
-  if(getIndexDesc() && getIndexDesc()->getNAFileSet())
-    hbaseBlockSize = getIndexDesc()->getNAFileSet()->getBlockSize();
-
-  generator->setHBaseSmallScanner(computedHBaseRowSizeFromMetaData,
-                                getEstRowsAccessed().getValue(),
-                                hbaseBlockSize,
-                                hbpa);
-
+  generator->setHBaseSmallScanner(hbaseRowSize,
+                                  getEstRowsAccessed().getValue(),
+                                  hbaseBlockSize,
+                                  hbpa);
   generator->setHBaseParallelScanner(hbpa);
 
 

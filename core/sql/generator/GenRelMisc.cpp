@@ -3031,11 +3031,6 @@ short Sort::generateTdb(Generator * generator,
   
   sort_options->scratchIOVectorSize() = (Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_SORT);
 
-  if (sortNRows())
-    {
-      sort_options->sortNRows() = TRUE;
-    }
-
   if (CmpCommon::getDefault(EXE_BMO_SET_BUFFERED_WRITES) == DF_ON)
     sort_options->setBufferedWrites(TRUE);
   if (CmpCommon::getDefault(EXE_DIAGNOSTIC_EVENTS) == DF_ON)

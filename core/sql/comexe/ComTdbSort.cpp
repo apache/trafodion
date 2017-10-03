@@ -172,8 +172,8 @@ void SortOptions::displayContents(Space *space)
 {
 	char buf[100];
 
-   str_sprintf(buf, "\nFor SortOptions:\nsortNRows = %d, sortType = %d, internalSort = %d",
-   							sortNRows_,sortType_,internalSort_);
+   str_sprintf(buf, "\nFor SortOptions:\nsortType = %d, internalSort = %d",
+   							sortType_,internalSort_);
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
    str_sprintf(buf,"Sort Option Flags = %x", flags_);
