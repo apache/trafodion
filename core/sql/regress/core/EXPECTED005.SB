@@ -1220,13 +1220,12 @@ H
 S   OPERATOR              LC  RC  TAB_NAME  
 --  --------------------  --  --  ----------
 
-05  ROOT                  4   ?             
-04  NESTED_JOIN           1   3             
-03  PROBE_CACHE           2   ?             
+04  ROOT                  3   ?             
+03  NESTED_JOIN           1   2             
 02  TRAFODION_VSBB_SCAN   ?   ?   T005T4    
 01  TRAFODION_INDEX_SCAN  ?   ?   T005T4    
 
---- 5 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>control query shape cut;
 

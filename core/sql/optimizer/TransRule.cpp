@@ -1618,6 +1618,12 @@ RelExpr * IndexJoinRule1::makeSubstituteFromIndexInfo(Scan *bef,
   // QSTUFF
   leftScan->synthLogProp();
   rightScan->synthLogProp();
+  // we don't call synthLogProp() for the substitute, since its
+  // logical properties are already stored in the group attributes,
+  // but there are join data members that need to be set. This is
+  // done in the synthConstraints() method, which returns early
+  // if the logical properties are already set.
+  subs->synthConstraints(NULL);
 
   return subs;
 }

@@ -2374,7 +2374,7 @@ Join::synthConstraints(NormWA * normWAPtr)
   else
     rightHasUniqueMatches_ = FALSE;
 
-  if (isSemiJoin() OR isAntiSemiJoin())
+  if (isSemiJoin() OR isAntiSemiJoin() OR isIndexJoin_)
     leftHasUniqueMatches_ = TRUE;
 
   // QSTUFF
@@ -2394,7 +2394,7 @@ Join::synthConstraints(NormWA * normWAPtr)
   (void) leftGA.hasCardConstraint(minLeft,maxLeft);
   (void) rightGA.hasCardConstraint(minRight,maxRight);
 
-  if (maxLeft == 1)
+  if (maxLeft == 1 || isIndexJoin_)
     rightHasUniqueMatches_ = TRUE;
 
   if (maxRight == 1)
