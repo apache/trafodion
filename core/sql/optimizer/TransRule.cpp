@@ -1477,6 +1477,7 @@ RelExpr * IndexJoinRule1::makeSubstituteFromIndexInfo(Scan *bef,
 
   // the index predicates go to the left scan
   leftScan->selectionPred() += ixi->indexPredicates_;
+  leftScan->setComputedPredicates(bef->getComputedPredicates());
 
   ValueIdSet selectionpreds;
   if ((CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
