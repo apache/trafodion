@@ -1527,8 +1527,6 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
   cliInterface->getPtrAndLen(2, ptr, len);
   errCode = *(Int32 *)ptr;
 
-  // in code below methodName may need to be added to the signature that is printed 
-  // out in some error messages.
   // Check for errors returned from VALIDATEROUTINE
   switch (errCode)
   {
@@ -1560,25 +1558,25 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
     case 11231://Method found but not public
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11232://Method found but not static
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11233://Method found but not void
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     case 11234://Method not found
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     default://Unknown error code
