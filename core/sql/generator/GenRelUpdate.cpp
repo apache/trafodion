@@ -315,12 +315,12 @@ static short genUpdConstraintExpr(Generator * generator,
     {
       NAColumn * sourceCol = ((IndexColumn*)sourceValId.getItemExpr())->getNAColumn();
       ValueId targetValId;
-      NAColumn *targetCol = NULL;
       NABoolean found = FALSE;
       for (CollIndex ni = 0; (!found) && (ni < targetRecExprArray.entries()); ni++)
         {
           const ItemExpr *assignExpr = targetRecExprArray[ni].getItemExpr();
-          targetValId = assignExpr->child(0)->castToItemExpr()->getValueId();            
+          targetValId = assignExpr->child(0)->castToItemExpr()->getValueId();
+          NAColumn *targetCol = NULL;         
           if (targetValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
             targetCol = ((BaseColumn*)targetValId.getItemExpr())->getNAColumn();
           else if (targetValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
