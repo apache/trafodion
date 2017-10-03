@@ -493,7 +493,7 @@ else
 cd $JDBCTEST_DIR
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
   --target=localhost:$MY_DCS_MASTER_PORT --dbmaj=\$TRAFODION_VER_MAJOR --dbmin=\$TRAFODION_VER_MINOR \\
-  --jdbctype=T4 --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar "\$@"
+  --jdbctype=T4 --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-\${TRAFODION_VER}.jar "\$@"
 EOF
     chmod +x $TRAF_HOME/sql/scripts/swjdbc
 
