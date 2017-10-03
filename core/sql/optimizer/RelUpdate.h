@@ -1438,10 +1438,6 @@ private:
   // inlining for the new insert and delete nodes)
   RelExpr *transformUpdatePrimaryKey(BindWA *bindWA);
 
-  // right now, hbase updates are done as cursor update...select followed
-  // by deletes.
-  RelExpr *transformHbaseUpdate(BindWA *bindWA);
-
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
 
   // Estimated number of rows accessed by Update operator.

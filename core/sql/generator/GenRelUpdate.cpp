@@ -292,8 +292,85 @@ static short genUpdExpr(
   return 0;
 }
 
-static short genUpdConstraintExpr(Generator *generator)
+// Used to generate update or insert constraint expressions for update operators
+static short genUpdConstraintExpr(Generator * generator,
+                                  ItemExpr * constrTree,
+                                  const ValueIdSet & constraintColumns,
+                                  ValueIdArray & targetRecExprArray,
+                                  ex_expr ** targetExpr /* out */)
 {
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  // The Attributes for the table columns refer to the old values of the column.
+  // The constraints must operate on the new values, though. So we must do a
+  // switcheroo on the Attributes for the update expression. The target value IDs
+  // come from targetRecExprArray.
+
+  ValueIdList savedSourceVIDlist;
+  NAList<Attributes*> savedSourceAttrsList(generator->wHeap());
+
+  for (ValueId sourceValId = constraintColumns.init();
+       constraintColumns.next(sourceValId);
+       constraintColumns.advance(sourceValId))
+    {
+      NAColumn * sourceCol = ((IndexColumn*)sourceValId.getItemExpr())->getNAColumn();
+      ValueId targetValId;
+      NAColumn *targetCol = NULL;
+      NABoolean found = FALSE;
+      for (CollIndex ni = 0; (!found) && (ni < targetRecExprArray.entries()); ni++)
+        {
+          const ItemExpr *assignExpr = targetRecExprArray[ni].getItemExpr();
+          targetValId = assignExpr->child(0)->castToItemExpr()->getValueId();            
+          if (targetValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+            targetCol = ((BaseColumn*)targetValId.getItemExpr())->getNAColumn();
+          else if (targetValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
+            targetCol = ((IndexColumn*)targetValId.getItemExpr())->getNAColumn();
+                
+          if ((targetCol) &&
+              (targetCol->getColName() == sourceCol->getColName()) &&
+              (targetCol->getHbaseColFam() == sourceCol->getHbaseColFam()) &&
+              (targetCol->getHbaseColQual() == sourceCol->getHbaseColQual()) &&
+              (targetCol->getNATable()->getTableName().getQualifiedNameAsAnsiString() ==
+               sourceCol->getNATable()->getTableName().getQualifiedNameAsAnsiString()))
+            {
+              found = TRUE;
+              break;
+            }
+        }
+
+      if (found)
+	{
+          Attributes * sourceValAttr = (generator->addMapInfo(sourceValId, 0))->getAttr();
+          Attributes * targetValAttr = (generator->getMapInfo(targetValId, 0))->getAttr();
+
+          // Save original location attributes so we can change them back after
+          // generating the update constraint expression
+
+          Attributes * savedValAttr = new(generator->wHeap()) Attributes();
+          savedValAttr->copyLocationAttrs(sourceValAttr);
+          savedSourceAttrsList.insert(savedValAttr);
+          savedSourceVIDlist.insert(sourceValId);
+
+          sourceValAttr->copyLocationAttrs(targetValAttr);
+        }
+
+    }
+
+  // Now that we have remapped the Attributes for the columns to their values
+  // in the new record, we can generate the update constraint expression.
+
+  expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
+                       targetExpr);
+
+  // Now put the Attributes back the way they were.
+
+  for (Lng32 i = 0; i < savedSourceVIDlist.entries(); i++)
+    {
+      ValueId sourceValId = savedSourceVIDlist[i];
+      Attributes * sourceValAttr = (generator->getMapInfo(sourceValId, 0))->getAttr();
+      sourceValAttr->copyLocationAttrs(savedSourceAttrsList[i]);
+    }
+
   return 0;
 }
 
@@ -1718,19 +1795,56 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
   else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
     {
-      GenAssert(FALSE, "Should not reach here. This update should have been transformed to delete/insert");
-      // To be uncommented when TRAFODION-1610 is implemented
-      // Need to generate insConstraintExpr also
-/*
+      // Generate the update and insert constraint check expressions
+
+      // The attributes for the columns referenced in the constraint expressions
+      // refer to the source values of the columns. We want to evaluate the
+      // constraints aganst the target values, though. So, there is some
+      // Attributes gymnastics that has to happen to generate them.
+
+      // Obtain the ValueIds of base table columns referenced in the
+      // constraints
+
+      ValueId constraintId;
+      ValueIdSet constraintColumns;
+      for (CollIndex ci = 0; ci < getCheckConstraints().entries(); ci++)
+        {
+          constraintId = getCheckConstraints()[ci];
+          constraintId.getItemExpr()->findAll(ITM_INDEXCOLUMN,
+                                              constraintColumns, // out, has append semantics
+                                              TRUE, // visitVEGmembers
+                                              FALSE); // don't visit index descriptors
+        }
+
+      // Prepare the constraint tree for generation
+
       ItemExpr *constrTree =
         getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
-        constrTree = generator->addCompDecodeForDerialization(constrTree);
+        constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
-      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-                            &updConstraintExpr);
-*/
+      // Generate the update constraint expression, substituting Attributes for
+      // the new update record
+
+      genUpdConstraintExpr(generator,
+                           constrTree,
+                           constraintColumns,
+                           newRecExprArray(),
+                           &updConstraintExpr /* out */);
+
+      if ((isMerge()) && (mergeInsertRecExprArray().entries() > 0))
+        {
+          // Generate the insert constraint expression, substituting Attributes for
+          // the new insert record
+
+          genUpdConstraintExpr(generator,
+                               constrTree,
+                               constraintColumns,
+                               mergeInsertRecExprArray(),
+                               &insConstraintExpr /* out */);   
+        }
+
     }
  
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -2409,9 +2523,6 @@ short HbaseInsert::codeGen(Generator *generator)
   ex_expr * rowIdExpr = NULL;
   ULng32 rowIdLen = 0;
 
-  ValueIdList savedInputVIDlist;
-  NAList<Attributes*> savedInputAttrsList(generator->wHeap());
-
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
     {
@@ -2427,65 +2538,6 @@ short HbaseInsert::codeGen(Generator *generator)
       
       colAttr->copyLocationAttrs(castAttr);
       indexAttr->copyLocationAttrs(castAttr);
-      // To be removed when TRAFODION-1610 is implemented
-      //  `
-      // if any of the target column is also an input value to this operator, then
-      // make the value id of that input point to the location of the target column.
-      // This is done as the input column value will become the target after this
-      // insert expr is evaluated.
-      // This is done if this value will be part of an expression that need to
-      // be evaluated on the updated columns.
-      const ValueIdSet& inputSet = getGroupAttr()->getCharacteristicInputs();
-      ValueId inputValId;
-      if ((inputSet.entries() > 0) &&
-          (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries()))
-	{
-	  NAColumn *inputCol = NULL;
-	  NABoolean found = FALSE;
-	  for (inputValId = inputSet.init();
-	       ((NOT found) && (inputSet.next(inputValId)));
-	       inputSet.advance(inputValId) )
-	    {
-	      if ((inputValId.getItemExpr()->getOperatorType() != ITM_BASECOLUMN) &&
-		  (inputValId.getItemExpr()->getOperatorType() != ITM_INDEXCOLUMN))
-		{
-		  continue;
-		}
-	      
-	      if (inputValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
-		{
-		  inputCol = ((BaseColumn*)inputValId.getItemExpr())->getNAColumn();
-		}
-	      else
-		{
-		  inputCol = ((IndexColumn*)inputValId.getItemExpr())->getNAColumn();
-		}
-	      
-	      if ((col->getColName() == inputCol->getColName()) &&
-                  (col->getHbaseColFam() == inputCol->getHbaseColFam()) &&
-                  (col->getHbaseColQual() == inputCol->getHbaseColQual()) &&
-                  (col->getNATable()->getTableName().getQualifiedNameAsAnsiString() ==
-                   inputCol->getNATable()->getTableName().getQualifiedNameAsAnsiString()))
-		{
-		  found = TRUE;
-		  break;
-		}
-	    } // for
-
-	  if (found)
-	    {
-	      Attributes * inputValAttr = (generator->addMapInfo(inputValId, 0))->getAttr();
-
-              // save original location attributes. These will be restored back once
-              // constr expr has been generated.
-              Attributes * savedValAttr = new(generator->wHeap()) Attributes();
-              savedValAttr->copyLocationAttrs(inputValAttr);
-              savedInputAttrsList.insert(savedValAttr);
-              savedInputVIDlist.insert(inputValId);
-
-	      inputValAttr->copyLocationAttrs(castAttr);
-	    }
-	} // if
     }
 
   ex_expr* preCondExpr = NULL;
@@ -2520,15 +2572,6 @@ short HbaseInsert::codeGen(Generator *generator)
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &insConstraintExpr);
-
-      // restore original attribute values
-      // To be removed when TRAFODION-1610 is implemented
-      for (Lng32 i = 0; i < savedInputVIDlist.entries(); i++)
-        {
-          ValueId inputValId = savedInputVIDlist[i];
-          Attributes * inputValAttr = (generator->getMapInfo(inputValId, 0))->getAttr();
-          inputValAttr->copyLocationAttrs(savedInputAttrsList[i]);
-        }
     }
   
   listOfUpdatedColNames = new(space) Queue(space);
