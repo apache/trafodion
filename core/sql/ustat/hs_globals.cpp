@@ -8470,6 +8470,34 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 
     // Initialize the pointer to the group list we will build.
     groupList = NULL;
+    
+    // if showstats for a native hbase table,hive table or table under seabase schema, 
+    // need to check if the table SB_HISTOGRAMS exist
+    NAString schemaName;
+    if (strcmp(hstogram_table->data(), "TRAFODION.\"_HBASESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HBASESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.\"_HIVESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HIVESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.SEABASE.SB_HISTOGRAMS") == 0)
+      schemaName = "SEABASE";
+    if (!schemaName.isNull())
+      {
+        NAString queryStr = "SELECT count(*) FROM \"_MD_\".OBJECTS WHERE SCHEMA_NAME='" + schemaName + 
+                            "' AND OBJECT_NAME='SB_HISTOGRAMS' AND OBJECT_TYPE='BT';";
+        HSCursor cursor;
+        retcode = cursor.prepareQuery(queryStr.data(), 0, 1);
+        HSHandleError(retcode);
+        retcode = cursor.open();
+        HSHandleError(retcode);
+        ULng32 cnt;
+        retcode = cursor.fetch (1, (void *)&cnt);
+        HSHandleError(retcode);
+        if (cnt == 0)
+          {
+            LM->StopTimer();
+            return 0;
+          }
+      }
 
 #ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
     HSCliStatement::statementIndex stmt;
