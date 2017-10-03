@@ -492,11 +492,13 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
   // zero, and less than operand's precision or op's precision is zero.
   //
   // Bulk move for char datatype is only done if both source and
-  // target are single byte charsets.
+  // target are single byte charsets and the target doesn't enforce
+  // character limits.
   else if ((descItem.datatype != op->getDatatype())    ||
 	   ((DFS2REC::isAnyCharacter(op->getDatatype())) &&
 	    ((descItem.charset != op->getCharSet()) ||
-	     (NOT CharInfo::isSingleByteCharSet((CharInfo::CharSet)descItem.charset)))) ||
+	     (NOT CharInfo::isSingleByteCharSet((CharInfo::CharSet)descItem.charset)) ||
+             op->getPrecision() /*char limit*/ > 0)) ||
 	   ((NOT DFS2REC::isAnyCharacter(op->getDatatype())) &&
 	    (descItem.scale != op->getScale())) || 
 	   (descItem.length != op->getLength())        ||
@@ -4008,15 +4010,18 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		source = intermediate;
 	      } // sourceType == REC_BYTE_V_ANSI
 	    
-	    if ((sourceType >= REC_MIN_BINARY) &&
-		(sourceType <= REC_MAX_BINARY) &&
-		(sourceType == operand->getDatatype()) &&
-		(sourcePrecision > 0) &&
-		(sourcePrecision == operand->getPrecision()))
+	    if ((sourcePrecision > 0) &&
+		((sourceType >= REC_MIN_BINARY) &&
+                 (sourceType <= REC_MAX_BINARY) &&
+                 (sourceType == operand->getDatatype()) &&
+                 (sourcePrecision == operand->getPrecision()) ||
+                 (DFS2REC::isAnyCharacter(sourceType) && !suppressCharLimitCheck())))
 	      {
-		// validate source precision. Make the source precision
+		// Validate source precision. Make the source precision
 		// zero, that will trigger the validation. See method
-		// checkPrecision in exp_conv.cpp.
+		// checkPrecision in exp_conv.cpp. This also applies to
+                // source chars or varchars, where we don't trust the
+                // precision (max number of chars) in the value
 		sourcePrecision = 0;
 	      }
 
@@ -4056,7 +4061,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 		    else
                       {
                         sourceType = REC_BYTE_F_ASCII;
-                        sourcePrecision = 0;  // TBD $$$$ add source max chars later
+                        sourcePrecision = 0;
                         sourceScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII-compatible
 
                         convFlags |= CONV_NO_HADOOP_DATE_FIX;
