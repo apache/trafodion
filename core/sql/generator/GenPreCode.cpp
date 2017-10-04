@@ -2511,13 +2511,18 @@ RelExpr * Join::preCodeGen(Generator * generator,
   ValueIdSet joinInputAndPotentialOutput;
   getInputAndPotentialOutputValues(joinInputAndPotentialOutput);
 
-  if (isTSJ())
+  if (isTSJ() || beforeJoinPredOnOuterOnly())
     {
       availableValues += child(0)->getGroupAttr()->getCharacteristicOutputs();
 
       // For a TSJ the joinPred() is a predicate between the inputs
       // and the first child that could not be pushed down to the first
       // child because it is either a left join or an anti-semi-join
+
+      // if beforeJoinPredOnOuterOnly is true, then we have an outer join
+      // and an other_join_predicate that has values from the outer side alone
+      // We do not need the inner row to evaluate the other_join_predicate 
+      // in this case.
 
       // Rebuild the join predicate tree now
       joinPred().replaceVEGExpressions
@@ -2565,8 +2570,9 @@ RelExpr * Join::preCodeGen(Generator * generator,
   // children. Use these values for rewriting the VEG expressions.
   getInputValuesFromParentAndChildren(availableValues);
 
-  // Rebuild the join predicate tree
-  if (! isTSJ())
+  // Rebuild the join predicate tree, for the general case where both inner
+  // and outer row is needed to evaluate the predicate.
+  if (! (isTSJ() || beforeJoinPredOnOuterOnly()))
     joinPred().replaceVEGExpressions
                   (availableValues,
 		   getGroupAttr()->getCharacteristicInputs(),
