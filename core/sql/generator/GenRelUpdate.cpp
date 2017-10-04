@@ -301,22 +301,21 @@ static short genUpdConstraintExpr(Generator * generator,
 {
   ExpGenerator * expGen = generator->getExpGenerator();
 
-  // The Attributes for the table columns refer to the old values of the column.
-  // The constraints must operate on the new values, though. So we must do a
-  // switcheroo on the Attributes for the update expression. The target value IDs
-  // come from targetRecExprArray.
+  // The ValueIds in the constrTree refer to the source values of the columns.
+  // Construct a ValueIdMap so we can rewrite the constrTree to refer to the
+  // target value of the columns.
 
-  ValueIdList savedSourceVIDlist;
-  NAList<Attributes*> savedSourceAttrsList(generator->wHeap());
-
+  ValueIdMap sourceToTarget;  // top values will be source, bottom will be target
+ 
   for (ValueId sourceValId = constraintColumns.init();
        constraintColumns.next(sourceValId);
        constraintColumns.advance(sourceValId))
     {
+      GenAssert(sourceValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN,
+      		"unexpected type of constraint expression column");
       NAColumn * sourceCol = ((IndexColumn*)sourceValId.getItemExpr())->getNAColumn();
       ValueId targetValId;
-      NABoolean found = FALSE;
-      for (CollIndex ni = 0; (!found) && (ni < targetRecExprArray.entries()); ni++)
+      for (CollIndex ni = 0; (ni < targetRecExprArray.entries()); ni++)
         {
           const ItemExpr *assignExpr = targetRecExprArray[ni].getItemExpr();
           targetValId = assignExpr->child(0)->castToItemExpr()->getValueId();
@@ -325,50 +324,62 @@ static short genUpdConstraintExpr(Generator * generator,
             targetCol = ((BaseColumn*)targetValId.getItemExpr())->getNAColumn();
           else if (targetValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
             targetCol = ((IndexColumn*)targetValId.getItemExpr())->getNAColumn();
-                
-          if ((targetCol) &&
-              (targetCol->getColName() == sourceCol->getColName()) &&
-              (targetCol->getHbaseColFam() == sourceCol->getHbaseColFam()) &&
-              (targetCol->getHbaseColQual() == sourceCol->getHbaseColQual()) &&
-              (targetCol->getNATable()->getTableName().getQualifiedNameAsAnsiString() ==
-               sourceCol->getNATable()->getTableName().getQualifiedNameAsAnsiString()))
+
+          if (targetCol && sourceCol->getPosition() == targetCol->getPosition())
             {
-              found = TRUE;
-              break;
+              GenAssert(sourceCol->getNATable() == targetCol->getNATable(),
+                        "expecting same NATable for constraint source and target");             
+
+              // We found the target column matching the source column in the
+              // targetRecExprArray. Now, an optimization: If the assignment
+              // merely moves the old column value to the new, there is no need
+              // to map it.
+
+              ValueId rhsValId = assignExpr->child(1)->castToItemExpr()->getValueId();
+              NAColumn *rhsCol = NULL;
+              if (rhsValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+                rhsCol = ((BaseColumn*)rhsValId.getItemExpr())->getNAColumn();
+              else if (rhsValId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
+                rhsCol = ((IndexColumn*)rhsValId.getItemExpr())->getNAColumn();
+
+              if (rhsCol && rhsCol->getPosition() == targetCol->getPosition())
+                {
+                  // assignment copies old column value to target without change;
+                  // no need to map
+                  GenAssert(rhsCol->getNATable() == targetCol->getNATable(),
+                            "expecting same NATable for assignment source and target");
+                }
+              else
+                {
+                  // the column value is changing (or maybe this is an insert),
+                  // so map it
+                  sourceToTarget.addMapEntry(sourceValId, targetValId);
+                }
+              ni = targetRecExprArray.entries();  // found it, no need to search further
             }
         }
+    } 
 
-      if (found)
-	{
-          Attributes * sourceValAttr = (generator->addMapInfo(sourceValId, 0))->getAttr();
-          Attributes * targetValAttr = (generator->getMapInfo(targetValId, 0))->getAttr();
+  // If there is anything to map, rewrite the constraint expression
+  // and generate it. If there is nothing to map, that means none of
+  // the constraint expression columns is changed (which implies this
+  // is an update expr and not an insert, by the way). In that case, we
+  // don't need to generate the constraint expression as the constraint
+  // should already be satisfied by the old values.
 
-          // Save original location attributes so we can change them back after
-          // generating the update constraint expression
-
-          Attributes * savedValAttr = new(generator->wHeap()) Attributes();
-          savedValAttr->copyLocationAttrs(sourceValAttr);
-          savedSourceAttrsList.insert(savedValAttr);
-          savedSourceVIDlist.insert(sourceValId);
-
-          sourceValAttr->copyLocationAttrs(targetValAttr);
-        }
-
-    }
-
-  // Now that we have remapped the Attributes for the columns to their values
-  // in the new record, we can generate the update constraint expression.
-
-  expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-                       targetExpr);
-
-  // Now put the Attributes back the way they were.
-
-  for (Lng32 i = 0; i < savedSourceVIDlist.entries(); i++)
+  if (sourceToTarget.entries() > 0)
     {
-      ValueId sourceValId = savedSourceVIDlist[i];
-      Attributes * sourceValAttr = (generator->getMapInfo(sourceValId, 0))->getAttr();
-      sourceValAttr->copyLocationAttrs(savedSourceAttrsList[i]);
+      // map the ValueIds in the constraint tree to target values
+      ValueId mappedConstrTree;
+      sourceToTarget.rewriteValueIdDown(constrTree->getValueId(),mappedConstrTree /* out */);
+
+      // generate the expression
+      expGen->generateExpr(mappedConstrTree, ex_expr::exp_SCAN_PRED,
+                           targetExpr);
+    }
+  else
+    {
+      targetExpr = NULL;
     }
 
   return 0;
