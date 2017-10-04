@@ -8482,7 +8482,8 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
       schemaName = "SEABASE";
     if (!schemaName.isNull())
       {
-        NAString queryStr = "SELECT count(*) FROM \"_MD_\".OBJECTS WHERE SCHEMA_NAME='" + schemaName + 
+        NAString queryStr = "SELECT count(*) FROM TRAFODION.\"_MD_\".OBJECTS WHERE SCHEMA_NAME='" +
+                            schemaName + 
                             "' AND OBJECT_NAME='SB_HISTOGRAMS' AND OBJECT_TYPE='BT';";
         HSCursor cursor;
         retcode = cursor.prepareQuery(queryStr.data(), 0, 1);
