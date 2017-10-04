@@ -40,6 +40,29 @@ class TEST001_Sessionize extends UDR
     public TEST001_Sessionize()
     {}
 
+    boolean generatedColumnsAreUsed(UDRInvocationInfo info)
+    {
+        boolean result = false;
+
+        try {
+            if (info.out().getColumn("SESSION_ID").getUsage() ==
+                ColumnInfo.ColumnUseCode.USED)
+                result = true;
+        }
+        catch (UDRException e) {
+        }
+
+        try {
+            if (info.out().getColumn("SEQUENCE_NO").getUsage() ==
+                ColumnInfo.ColumnUseCode.USED)
+                result = true;
+        }
+        catch (UDRException e) {
+        }
+
+        return result;
+    }
+
     // determine output columns dynamically at compile time
     @Override
     public void describeParamsAndColumns(UDRInvocationInfo info)
@@ -160,24 +183,31 @@ class TEST001_Sessionize extends UDR
         // column as unused, however. So, make sure these two
         // columns are definitely included.
 
-        // first, recompute the id and timestamp column numbers
-        InternalColumns state = new TEST001_Sessionize.InternalColumns(
-            info.in().getColNum(info.par().getString(0)),
-            info.in().getColNum(info.par().getString(1)));
+        boolean genColsAreUsed = generatedColumnsAreUsed(info);
 
-        // then include the columns
-        info.setChildColumnUsage(0, state.getIdColumn(), ColumnInfo.ColumnUseCode.USED);
-        info.setChildColumnUsage(0, state.getTsColumn(), ColumnInfo.ColumnUseCode.USED);
+        if (genColsAreUsed)
+            {
+                // first, recompute the id and timestamp column numbers
+                InternalColumns state = new TEST001_Sessionize.InternalColumns(
+                    info.in().getColNum(info.par().getString(0)),
+                    info.in().getColNum(info.par().getString(1)));
 
-        boolean generatedColsAreUsed =
-            (info.out().getColumn(0).getUsage() == ColumnInfo.ColumnUseCode.USED ||
-             info.out().getColumn(1).getUsage() == ColumnInfo.ColumnUseCode.USED);
+                // second, include the id/timestamp columns
+                info.setChildColumnUsage(0, state.getIdColumn(), ColumnInfo.ColumnUseCode.USED);
+                info.setChildColumnUsage(0, state.getTsColumn(), ColumnInfo.ColumnUseCode.USED);
+
+                // third, if any of the generated columns is needed, then produce them all,
+                // this "all or none" approach just makes our life a bit easier
+                for (int i=0; i<2; i++)
+                  if (info.out().getColumn(i).getUsage() == ColumnInfo.ColumnUseCode.NOT_PRODUCED)
+                    info.out().getColumn(i).setUsage(ColumnInfo.ColumnUseCode.NOT_USED);
+            }
 
         // Walk through predicates and find additional ones to push down
         // or to evaluate locally
         for (int p=0; p<info.getNumPredicates(); p++)
           {
-            if (!generatedColsAreUsed)
+            if (!genColsAreUsed)
               {
                   // If session_id/sequence_no are not used in the query, then
                   // we can push all predicates to the children.
@@ -207,15 +237,19 @@ class TEST001_Sessionize extends UDR
         // its input tables to the result.
         info.propagateConstraintsFor1To1UDFs(false);
 
-        // The id column, together with session id and sequence_no, form a unique key.
-        // Generate a uniqueness constraint for that.
+        if (generatedColumnsAreUsed(info))
+          {
+            // The id column, together with session id and
+            // sequence_no, form a unique key.  Generate a
+            // uniqueness constraint for that.
 
-        UniqueConstraintInfo uc = new UniqueConstraintInfo();
+            UniqueConstraintInfo uc = new UniqueConstraintInfo();
 
-        uc.addColumn(info.out().getColNum(info.par().getString(0)));
-        uc.addColumn(0); // the session id is alway column #0
-        uc.addColumn(1); // the sequence number alway column #1
-        info.out().addUniquenessConstraint(uc);
+            uc.addColumn(info.out().getColNum(info.par().getString(0)));
+            uc.addColumn(0); // the session id is always column #0
+            uc.addColumn(1); // the sequence number is always column #1
+            info.out().addUniquenessConstraint(uc);
+          }
     }
 
     // estimate result cardinality
@@ -258,10 +292,20 @@ class TEST001_Sessionize extends UDR
                             UDRPlanInfo plan)
         throws UDRException
     {
+        boolean genColsAreUsed = generatedColumnsAreUsed(info);
+
         // read the three parameters and convert the first two into column numbers
-        int userIdColNum    = info.in(0).getColNum(info.par().getString(0));
-        int timeStampColNum = info.in(0).getColNum(info.par().getString(1));
-        long timeout        = info.par().getLong(2);
+        int userIdColNum    = -1;
+        int timeStampColNum = -1;
+        long timeout        = -1;
+
+        if (genColsAreUsed)
+          {
+            // read the three parameters and convert the first two into column numbers
+            userIdColNum    = info.in(0).getColNum(info.par().getString(0));
+            timeStampColNum = info.in(0).getColNum(info.par().getString(1));
+            timeout         = info.par().getLong(2);
+          }
 
         // variables needed for computing the session id
         long lastTimeStamp = 0;
@@ -281,39 +325,45 @@ class TEST001_Sessionize extends UDR
         // loop over input rows
         while (getNextRow(info))
           {
-            long timeStamp = info.in(0).getLong(timeStampColNum);
-            String userId = info.in(0).getString(userIdColNum);
-
-            if (lastUserId.compareTo(userId) != 0)
+            if (genColsAreUsed)
               {
-                // reset timestamp check and start over with session id 0
-                lastTimeStamp = 0;
-                currSessionId = 1;
-                currSequenceNo = 1;
-                lastUserId = userId;
-              }
+                long timeStamp = info.in(0).getLong(timeStampColNum);
+                String userId = info.in(0).getString(userIdColNum);
 
-            long tsDiff = timeStamp - lastTimeStamp;
+                if (lastUserId.compareTo(userId) != 0)
+                  {
+                      // reset timestamp check and start over with session id 0
+                      lastTimeStamp = 0;
+                      currSessionId = 1;
+                      currSequenceNo = 1;
+                      lastUserId = userId;
+                  }
 
-            if (tsDiff > timeout && lastTimeStamp > 0)
-              {
-                currSessionId++;
-                currSequenceNo = 1;
-              }
-            else if (tsDiff < 0)
-                throw new UDRException(
+                long tsDiff = timeStamp - lastTimeStamp;
+
+                if (tsDiff > timeout && lastTimeStamp > 0)
+                  {
+                    currSessionId++;
+                    currSequenceNo = 1;
+                  }
+                else if (tsDiff < 0)
+                  throw new UDRException(
                     38001,
                     "Got negative or descending timestamps %ld, %ld",
                     lastTimeStamp, timeStamp);
 
-            lastTimeStamp = timeStamp;
+                lastTimeStamp = timeStamp;
+              }
 
             // this evaluates the SQL predicate on SESSION_ID
             if (currSessionId < maxSessionId)
               {
-                // produce session_id and sequence_no output columns
-                info.out().setLong(0, currSessionId);
-                info.out().setLong(1, currSequenceNo);
+                if (genColsAreUsed)
+                  {
+                    // produce session_id and sequence_no output columns
+                    info.out().setLong(0, currSessionId);
+                    info.out().setLong(1, currSequenceNo);
+                  }
 
                 // produce the remaining columns and emit the row
                 info.copyPassThruData();

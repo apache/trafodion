@@ -3750,6 +3750,12 @@ short ExpGenerator::generateInputExpr(const ValueIdList &val_id_list,
       ioExpr->setRestrictedSkipTypeCheck(TRUE);
     }
 
+  if (CmpCommon::getDefault(SUPPRESS_CHAR_LIMIT_CHECK) == DF_ON)
+    // suppress the fix for TRAFODION-2719, use this only
+    // if the new behavior causes a regression in an existing
+    // application that cannot be fixed easily
+    ioExpr->setSuppressCharLimitCheck(TRUE);
+
   if ( CmpCommon::getDefault(MARIAQUEST_PROCESS) == DF_ON ) 
     {
       ioExpr->setNoDatetimeValidation(TRUE);

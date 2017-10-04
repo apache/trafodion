@@ -331,6 +331,15 @@ create procedure t100_invalidstyle(in int, in int, out int)
 external name 't100.divide' language java parameter style sql no sql
 library T100;
 
+-- negative test case, method does not exist
+create procedure t100_nosuchmethod(in int, in int, out int)
+external name 't100.nosuchname' language java parameter style java no sql
+library T100;
+
+-- negative test case, signature does not exist
+create procedure t100_nosuchsig(in date)
+external name 't100.divide' language java parameter style java no sql
+library T100;
 
 -- Create a table for SUBQUERY operations
 create table  t100sq (A int);

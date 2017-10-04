@@ -3894,6 +3894,8 @@ enum DefaultConstants
   EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,
   MEMORY_LIMIT_ROWSET_IN_MB,
 
+  SUPPRESS_CHAR_LIMIT_CHECK,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

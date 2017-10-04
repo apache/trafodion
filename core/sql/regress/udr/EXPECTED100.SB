@@ -283,6 +283,27 @@
 
 --- SQL operation failed with errors.
 >>
+>>-- negative test case, method does not exist
+>>create procedure t100_nosuchmethod(in int, in int, out int)
++>external name 't100.nosuchname' language java parameter style java no sql
++>library T100;
+
+*** ERROR[11234] The Java method 'nosuchname(II[I)V' was not found in Java class 't100'.
+
+*** ERROR[1231] User-defined routine TRAFODION.SCH.T100_NOSUCHMETHOD could not be created.
+
+--- SQL operation failed with errors.
+>>
+>>-- negative test case, signature does not exist
+>>create procedure t100_nosuchsig(in date)
++>external name 't100.divide' language java parameter style java no sql
++>library T100;
+
+*** ERROR[11234] The Java method 'divide(Ljava/sql/Date;)V' was not found in Java class 't100'.
+
+*** ERROR[1231] User-defined routine TRAFODION.SCH.T100_NOSUCHSIG could not be created.
+
+--- SQL operation failed with errors.
 >>
 >>-- Create a table for SUBQUERY operations
 >>create table  t100sq (A int);

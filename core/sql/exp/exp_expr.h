@@ -979,7 +979,14 @@ class InputOutputExpr : public ex_expr {
 
     // invalid date/time/timestamps are allowed.
     // currently used for queries coming in from mariaquest.
-    NO_DATETIME_VALIDATION = 0x0008
+    NO_DATETIME_VALIDATION = 0x0008,
+
+    // for compatibility with older versions (Trafodion 2.2.0 or
+    // earlier), suppress errors for a target assignment and
+    // warnings for a retrieval assignment where we need to
+    // check whether a UTF-8 string has more characters than
+    // the target data types allows
+    SUPPRESS_CHAR_LENGTH_LIMIT_CHECKS = 0x0010
 
   };
 
@@ -1084,6 +1091,13 @@ public:
 
   void setRestrictedSkipTypeCheck(NABoolean v)      
   { (v ? flags_ |= RESTRICTED_SKIP_TYPE_CHECK : flags_ &= ~RESTRICTED_SKIP_TYPE_CHECK); }
+
+  NABoolean suppressCharLimitCheck()
+  { return (flags_ & SUPPRESS_CHAR_LENGTH_LIMIT_CHECKS); }
+
+  void setSuppressCharLimitCheck(NABoolean v)
+  { (v ? flags_ |= SUPPRESS_CHAR_LENGTH_LIMIT_CHECKS
+       : flags_ &= ~SUPPRESS_CHAR_LENGTH_LIMIT_CHECKS); }
 
   NABoolean isDBTR(UInt32 flags) 
   { return (flags & IS_DBTR_) != 0; };

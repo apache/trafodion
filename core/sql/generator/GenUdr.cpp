@@ -555,8 +555,7 @@ static short udr_codegen(Generator *generator,
 
       childInfo = op->getChildInfo(0);
       numChildInputCols = childInfo->getOutputs().entries();
-      if (numChildInputCols > 0)
-        childInput_exprs = new(space)ex_expr*[1];
+      childInput_exprs = new(space)ex_expr*[1];
     }
   }
   
