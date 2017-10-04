@@ -1808,13 +1808,11 @@ short HbaseUpdate::codeGen(Generator * generator)
     {
       // Generate the update and insert constraint check expressions
 
-      // The attributes for the columns referenced in the constraint expressions
-      // refer to the source values of the columns. We want to evaluate the
-      // constraints aganst the target values, though. So, there is some
-      // Attributes gymnastics that has to happen to generate them.
-
-      // Obtain the ValueIds of base table columns referenced in the
-      // constraints
+      // The constraint expressions at this time refer to the source values 
+      // of the columns. We want to evaluate the constraints aganst the target 
+      // values, though. So, we collect the source column ValueIds here so
+      // we can map them to the appropriate target, which is dependent on
+      // which constraint expression we are generating.
 
       ValueId constraintId;
       ValueIdSet constraintColumns;
@@ -1835,8 +1833,7 @@ short HbaseUpdate::codeGen(Generator * generator)
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
         constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
-      // Generate the update constraint expression, substituting Attributes for
-      // the new update record
+      // Generate the update constraint expression
 
       genUpdConstraintExpr(generator,
                            constrTree,
@@ -1846,8 +1843,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 
       if ((isMerge()) && (mergeInsertRecExprArray().entries() > 0))
         {
-          // Generate the insert constraint expression, substituting Attributes for
-          // the new insert record
+          // Generate the insert constraint expression
 
           genUpdConstraintExpr(generator,
                                constrTree,
