@@ -245,31 +245,22 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     // allow select * to return system added columns
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS 'ON'");
     HSExitIfError(retcode);
-    // the next 2 defaults are used to enable nullable primary and store by
-    // keys. If these are enabled, send these 2 cqds to the second mxcmp so
-    // the sample table could be created with nullable keys.
-    if (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_ON)
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON'");
-	HSExitIfError(retcode);
-      }
-    else
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'OFF'");
-	HSExitIfError(retcode);
-      }
+    
+    // The next 2 defaults are used to enable nullable primary and store by
+    // keys. We enable them even though the CQDs might be 'OFF' by default, 
+    // because the user might have created the table when they were 'ON'.
+    // They would only be needed if we choose to create a sample table; the
+    // sample table would have to be created using the same CQDs. In the future,
+    // perhaps CQDs should be captured at DDL time so that UPDATE STATISTICS
+    // can make use of them when creating sample tables.
+    
+    // Allow nullable primary key on a sample table
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON'");
+    HSExitIfError(retcode);
 
     // OFF enables no error on nullable storeby
-    if (CmpCommon::getDefault(CAT_ERROR_ON_NOTNULL_STOREBY) == DF_OFF)
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'OFF'");
-	HSExitIfError(retcode);
-      }
-    else
-      {
-	retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'ON'");
-	HSExitIfError(retcode);
-      }
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'OFF'");
+    HSExitIfError(retcode);
 
      if (CmpCommon::getDefault(WMS_CHILD_QUERY_MONITORING) == DF_OFF)
        {
