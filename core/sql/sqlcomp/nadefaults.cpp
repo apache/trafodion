@@ -2196,6 +2196,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // of the key predicates)
   DDflt0_(MDAM_CPUCOST_NET_PER_PRED,		".5"),
 
+  // Added by JIRA TRAFODION-2765: Allows consideration of MDAM
+  // in more general circumstances.
+  XDDkwd__(MDAM_FSO_SIMPLE_RULE,		"ON"),
+
   // controls the max. number of seek positions under which MDAM will be
   // allowed. Set it to 0 turns off the feature.
   XDDui___(MDAM_NO_STATS_POSITIONS_THRESHOLD,       "10"),

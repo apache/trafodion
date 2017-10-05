@@ -1659,6 +1659,8 @@ enum DefaultConstants
 
   MDAM_SUBSET_FACTOR,
 
+  MDAM_FSO_SIMPLE_RULE,
+
   // -------------------------------------------------------------------------
   // Makes NO ACTION referential action behave like RESTRICT.
   // -------------------------------------------------------------------------
