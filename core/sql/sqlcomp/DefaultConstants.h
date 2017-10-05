@@ -3354,8 +3354,6 @@ enum DefaultConstants
   HBASE_MAX_NUM_SEARCH_KEYS,
   CALL_EMBEDDED_ARKCMP,
 
-  HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,
-
   // ON, if blocks should be cached for this scan. This includes subset scans used by Update and Delete 
   HBASE_CACHE_BLOCKS,
 

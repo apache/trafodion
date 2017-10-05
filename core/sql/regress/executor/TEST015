@@ -49,6 +49,8 @@ drop table odt cascade;
 drop table de cascade ;
 drop table dec1 cascade;
 drop table t015t16 cascade;
+drop table t015tc1;
+drop table t015tc2;
 
 --control query default POS 'OFF';
 
@@ -163,6 +165,14 @@ create table t015t13 (a largeint generated always as identity, b int not null, c
 
 create table t015t14 (a int not null primary key, b int not null unique);
 create table t015t15 (a int not null primary key, constraint cons1 foreign key (a) references t015t14(b)) ;
+
+-- a table with check constraints on non-key columns
+create table t015tc1 (a char(4) not null not droppable primary key, b char(4) not null, c char(4) not null, 
+                      check (b > 'BASE'), check (c > 'FUNK'));
+
+-- a table with check constraints on key and non-key columns
+create table t015tc2 (a char(4) not null not droppable primary key, b char(4) not null, c char(4) not null, 
+                      check (a <> 'NUMB'), check (b > 'BASE'), check (c > 'FUNK'));
 
 set session default ESP_RELEASE_WORK_TIMEOUT '-2';
 log log015 clear;
@@ -949,5 +959,57 @@ execute xx2;
 select a,b from t015t16 order by a;
 
 cqd traf_upsert_to_eff_tree reset;
+
+-- merge tests (and insert and update tests) on tables with check constraints
+insert into t015tc1 values ('ACID','FOUR','GUNK'), ('FIVE','FIVE','HIVE'),('TENT','TEXT','TEST');
+select * From t015tc1;
+
+insert into t015tc2 values ('ACID','FOUR','GUNK'), ('FIVE','FIVE','HIVE'),('TENT','TEXT','TEST');
+select * From t015tc2;
+
+-- should fail, constraint violation
+merge into t015tc1 on a='FIVE' when matched then update set c= 'BALD';
+
+-- should fail, constraint violation
+merge into t015tc1 on a = 'TENT' when matched then update set b = 'ACID';
+
+select * From t015tc1; 
+
+-- no constraint violation
+merge into t015tc1 on a='FIVE' when matched then update set c= 'GLAD';
+
+-- should fail because 'BOMB' < 'FUNK'
+merge into t015tc1 on a = 'NOSH' when matched then update set b = 'GOOD'
+  when not matched then insert values ('GOOD','GOOD','BOMB');
+
+-- the row GOOD, GOOD, NICE should successfully be added
+merge into t015tc1 on a = 'NOSH' when matched then update set b = 'GOOD'
+  when not matched then insert values ('GOOD','GOOD','NICE');
+
+select * from t015tc1;
+
+-- should fail because of constraint on C
+insert into t015tc1 values ('ACID','TEST','ACID');
+
+-- should fail because of constraint on B
+insert into t015tc1 values ('ACID','ACID','TEST');
+
+-- should fail because of constraint on B
+update t015tc1 set a = 'COOL', b = 'ACID' where a = 'TENT';
+
+select * from t015tc1;
+
+-- should fail because of constraint on A
+insert into t015tc2 values ('NUMB','NUMB','NUMB');
+
+-- should fail because of constraint on A
+update t015tc2 set a = 'NUMB', b = 'OKAY' where a = 'TENT';
+
+-- should fail because of constraint on B
+merge into t015tc1 on a = 'NOSH' when matched then update set b = 'ACID';
+
+select * from t015tc2;
+
+
 log;
 

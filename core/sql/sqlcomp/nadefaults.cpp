@@ -1782,7 +1782,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_SMALL_SCANNER,      "OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
-  DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
 
   // If set to 'OFF' we get a stub cost of 1 for update operations.
   // We can remove this once the delete costing code has broader

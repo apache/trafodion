@@ -11522,35 +11522,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-  // To be removed when TRAFODION-1610 is implemented.
-  NABoolean xnsfrmHbaseUpdate = FALSE;
-  if ((hbaseOper()) && (NOT isMerge()))
-    {      
-      if (CmpCommon::getDefault(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT) == DF_ON)
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
-      else if (getCheckConstraints().entries())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-      else if (getTableDesc()->getNATable()->isHbaseMapTable())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-     }  
-  
-  if (xnsfrmHbaseUpdate)
-    {
-      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
-      boundExpr = transformHbaseUpdate(bindWA);
-
-      Assign_SqlParser_Flags (savedParserFlags);
-    }
-  else 
-  // till here and remove the function transformHbaseUpdate also
   if ((transformUpdateKey) && (NOT isMerge()))
     {
       boundExpr = transformUpdatePrimaryKey(bindWA);
