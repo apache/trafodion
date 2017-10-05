@@ -10622,6 +10622,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     //4486--Constraints not supported with bulk load. Disable the constraints and try again.
     *CmpCommon::diags() << DgSqlCode(-4486)
                         <<  DgString0("bulk load") ;
+    bindWA->setErrStatus();
+    return boundExpr;
   }
   if (getIsTrafLoadPrep())
   {
@@ -10633,10 +10635,34 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       {
         partns = np->getNumEntries();
         if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-          *CmpCommon::diags() << DgSqlCode(-4490);
+	  {
+	    // 4490 - BULK LOAD into a salted table is not supported if 
+	    // ESP parallelism is turned off
+	    *CmpCommon::diags() << DgSqlCode(-4490);
+	     bindWA->setErrStatus();
+	     return boundExpr;
+	  }
       }
-  }
+
+    const NATable* naTable = getTableDesc()->getNATable();
+    if (naTable->hasLobColumn())
+      {
+	NAColumn *nac;
+	for (CollIndex c = 0; c < naTable->getColumnCount(); c++) 
+	  {
+	    nac = naTable->getNAColumnArray()[c];
+	    if (nac->getType()->isLob())
+	      break;
+	  }
+	*CmpCommon::diags() << DgSqlCode(-4494)
+			    << DgTableName(naTable->getTableName().
+					   getQualifiedNameAsAnsiString()) 
+			    << DgColumnName(nac->getColName());
+	bindWA->setErrStatus();
+	return boundExpr;
+      } // has Lob column
+  } // isLoadPrep
+
   NABoolean toMerge = FALSE;
   if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
     if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
@@ -17590,6 +17616,22 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
           }
         }
     }
+  else 
+    {
+      NABoolean hasLob = FALSE;
+      CollIndex i = 0;
+      for (i = 0; (i < vidList.entries() && !hasLob); i++)
+	hasLob = vidList[i].getType().isLob();
+      if (hasLob) {
+	*CmpCommon::diags() << DgSqlCode(-4495) 
+			    << DgColumnName(childRETDesc->getColRefNameObj(i).
+					    getColRefAsAnsiString());
+	bindWA->setErrStatus();
+	return NULL;
+      }
+      
+    }
+    
 
   setSelectList(vidList);
 
