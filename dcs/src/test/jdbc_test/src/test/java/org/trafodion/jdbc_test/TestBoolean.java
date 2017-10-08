@@ -21,8 +21,7 @@
  * @@@ END COPYRIGHT @@
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -37,15 +36,17 @@ public class TestBoolean {
 
     @Test
     public void JDBCBoolean() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "insert into boolean_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
+        try (
+        		Connection conn = Utils.getUserConnection();
+        		Statement stmt = conn.createStatement();
+        		PreparedStatement prepStmt = conn.prepareStatement(sql);
+        		)
+        {
+            
             conn.createStatement().executeUpdate("cqd traf_boolean_io 'ON'");
-            stmt = conn.createStatement();
+            
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists boolean_tbl (c0 int not null, c1 boolean)");
             stmt.executeUpdate("delete from boolean_tbl");
@@ -74,10 +75,7 @@ public class TestBoolean {
         } catch (SQLException e) {
             e.printStackTrace();
             assertNull(e.getMessage());
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            fail("exception in test JDBCBoolean in TestBoolean .." + e.getMessage());
         }
 
     }

@@ -768,6 +768,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch1.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -903,6 +904,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch2.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -1055,6 +1057,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch3.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -1163,6 +1166,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch4.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -1321,6 +1325,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch5.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	if (pass)
@@ -1468,6 +1473,7 @@ public class TestBigCol
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBCBigColBatch6.." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	if (pass)

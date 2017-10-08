@@ -51,17 +51,18 @@ public class TestBigColumnSize {
     public void test$200KColSizeWithUTF8() {
         int iRet = 0;
         String sql = "";
-        Connection conn = null;
-        Statement stmt = null;
         ResultSet rs = null;
         ResultSetMetaData rsMD = null;
         String type = "";
 
-        try {
-            conn = Utils.getUserConnection();
+        try (
+        		Connection conn =  Utils.getUserConnection();
+        		Statement stmt = conn.createStatement();
+        		)
+        {
             assertNotNull(conn);
-            stmt = conn.createStatement();
             assertNotNull(stmt);
+            
             iRet = stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             assertEquals(0, iRet);
             sql = "drop table if exists tblcolumnsize200kWithUTF8";
@@ -115,13 +116,12 @@ public class TestBigColumnSize {
 
             rs.close();
 
-            stmt.close();
-            conn.close();
             System.out.println("200KColSizeWithUTF8 : Pass");
         } catch (Exception e) {
             System.out.println(e.toString());
             System.out.println(e.getMessage());
             e.printStackTrace();
+            fail("exception in test test$200KColSizeWithUTF8 in TestBigCollumnSize .." + e.getMessage());
         }
     }
 
@@ -129,18 +129,19 @@ public class TestBigColumnSize {
     public void test$32KColSizeWithUTF8() {
         int iRet = 0;
         String sql = "";
-        Connection conn = null;
-        Statement stmt = null;
         ResultSet rs = null;
         ResultSetMetaData rsMD = null;
         String type = "";
 
-        try {
+        try (
+        		Connection conn =  Utils.getUserConnection();
+        		Statement stmt = conn.createStatement();
+        		)
+        {
             System.out.println("---");
-            conn = Utils.getUserConnection();
             assertNotNull(conn);
-            stmt = conn.createStatement();
             assertNotNull(stmt);
+            
             iRet = stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             assertEquals(0, iRet);
             sql = "drop table if exists tblcolumnsize32kWithUTF8";
@@ -195,13 +196,12 @@ public class TestBigColumnSize {
 
             rs.close();
 
-            stmt.close();
-            conn.close();
             System.out.println("32KColSizeWithUTF8 : Pass");
         } catch (Exception e) {
             System.out.println(e.toString());
             System.out.println(e.getMessage());
             e.printStackTrace();
+            fail("exception in test test$32KColSizeWithUTF8 in TestBigCollumnSize .." + e.getMessage());
         }
     }
 

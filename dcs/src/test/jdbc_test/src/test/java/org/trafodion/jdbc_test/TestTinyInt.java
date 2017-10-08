@@ -21,8 +21,7 @@
  * @@@ END COPYRIGHT @@
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -37,21 +36,19 @@ public class TestTinyInt {
 
     @Test
     public void JDBCTinyIntSigned() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "insert into tinyint_signed_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
+        try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+        		)
+        {
             conn.createStatement().executeUpdate("cqd traf_tinyint_return_values 'ON'");//
             conn.createStatement().executeUpdate("cqd traf_tinyint_input_params 'ON'");//
-            stmt = conn.createStatement();
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists tinyint_signed_tbl (c0 int not null, c1 tinyint signed)");
             stmt.executeUpdate("delete from tinyint_signed_tbl");
-
-            prepStmt = conn.prepareStatement(sql);
 
             prepStmt.setInt(1, 1);
             prepStmt.setObject(2, -128);
@@ -76,28 +73,23 @@ public class TestTinyInt {
         } catch (SQLException e) {
             e.printStackTrace();
             assertNull(e.getMessage());
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            fail("exception in test JDBCTinyIntSigned" + e.getMessage());
         }
     }
 
     @Test
     public void JDBCTinyIntUnsigned() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "insert into tinyint_unsigned_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
-            stmt = conn.createStatement();
+        try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+        		)
+        {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists tinyint_unsigned_tbl (c0 int not null, c1 tinyint unsigned)");
             stmt.executeUpdate("delete from tinyint_unsigned_tbl");
-
-            prepStmt = conn.prepareStatement(sql);
 
             prepStmt.setInt(1, 1);
             prepStmt.setObject(2, 0);
@@ -122,10 +114,7 @@ public class TestTinyInt {
         } catch (SQLException e) {
             e.printStackTrace();
             assertNull(e.getMessage());
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            fail("exception in test JDBCTinyIntUnsigned" + e.getMessage());
         }
     }
 }

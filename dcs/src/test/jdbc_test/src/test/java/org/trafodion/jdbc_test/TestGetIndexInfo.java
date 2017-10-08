@@ -58,7 +58,7 @@ public class TestGetIndexInfo {
             stmt.execute(strCreateTableQuery);
         }
         catch (Exception e) {
-            fail("failed to create the table : " + e.getMessage());
+            fail("failed to create the table in doTestSuiteSetup in TestGetIndexInfo .." + e.getMessage());
         }
         try (
     		Statement stmt = _conn.createStatement();
@@ -87,6 +87,7 @@ public class TestGetIndexInfo {
     	}
     	catch (Exception e) {
     		System.out.println(e.getMessage());
+    		fail("exception in doTestSuiteSetup in TestGetIndexInfo .." + e.getMessage());
     		e.printStackTrace();
     	} finally {
     	}
@@ -112,6 +113,7 @@ public class TestGetIndexInfo {
 			assertEquals(rowNum, 3);
 		} catch(Exception e) {
 			System.out.println(e.getMessage());
+			fail("exception in testGetNoneUniqueIndexInfo in TestGetIndexInfo .." + e.getMessage());
 			e.printStackTrace();
 		}
     }
@@ -121,13 +123,13 @@ public class TestGetIndexInfo {
     	try ( Statement stmt = _conn.createStatement() ) {
     		stmt.execute(strDropTableQuery);
     	} catch(Exception e) {
-    		// do nothing
+    		fail("exception in cleanTable in TestGetIndexInfo .." + e.getMessage());
     	}
     	
     	try {
     		_conn.close();
     	} catch(Exception e) {
-    		
+    		fail("failed to close connection in cleanTable in TestGetIndexInfo .." + e.getMessage());
     	}
     }
 	
@@ -200,6 +202,7 @@ public class TestGetIndexInfo {
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbFilterCondition ", indexInfo.dbFilterCondition, rs.getString("FILTER_CONDITION"));
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			fail("exception in compareInfoWithExp in TestGetIndexInfo .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}

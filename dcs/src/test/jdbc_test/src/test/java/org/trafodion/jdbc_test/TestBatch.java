@@ -50,7 +50,6 @@ public class TestBatch
 	{
 		System.out.println("JDBC batch test 1..");
 
-        Statement stmt = null;
         ResultSet rs = null;
         String DEPT = null;
         String insert = null;
@@ -72,6 +71,7 @@ public class TestBatch
 		try
 		(
 			Connection conn = Utils.getUserConnection();
+			Statement stmt = conn.createStatement();
 		)
 		{
 	        Utils.dropTable(conn, IN1);
@@ -153,6 +153,7 @@ public class TestBatch
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch1 : ERROR: Exception in insert batch mode.....");
+        		fail("exception in test JDBCBatch1 in TestBatch -insert batch mode .." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -173,7 +174,6 @@ public class TestBatch
         	}
 
         	// Verify the inserted rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	if (rs != null) {
@@ -189,11 +189,11 @@ public class TestBatch
         	}
         	pStmt.close();
         	pStmt = null;
-        	stmt.close();
         }// end of try
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch1 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -229,7 +229,6 @@ public class TestBatch
 	{
 		System.out.println("JDBC batch test 2..");
 
-        Statement stmt = null;
         ResultSet rs = null;
         String DEPT = null;
         String insert = null;
@@ -251,6 +250,7 @@ public class TestBatch
 		try
 		(
 			Connection conn = Utils.getUserConnection();
+			Statement stmt = conn.createStatement();
 		)
 		{
 	        Utils.dropTable(conn, IN1);
@@ -333,6 +333,7 @@ public class TestBatch
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch2 : ERROR: Exception in insert batch mode.....");
+        		fail("exception in test JDBCBatch2 in TestBatch -insert batch mode .." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -351,7 +352,6 @@ public class TestBatch
         		pass = false;
         	}
 
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	if (rs != null) {
@@ -384,6 +384,7 @@ public class TestBatch
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch2 : ERROR: Exception in update batch mode.....");
+        		fail("exception in test JDBCBatch2 in TestBatch -update batch mode .." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -406,11 +407,11 @@ public class TestBatch
         		rs.close();
         	}
         	pStmt.close();
-        	stmt.close();
         }// end of try
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch2 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	if (pass)
@@ -428,7 +429,6 @@ public class TestBatch
 	{
 		System.out.println("JDBC batch test 3..");
 
-		Statement stmt = null;
         ResultSet rs = null;
         String DEPT = null;
         String insert = null;
@@ -449,6 +449,7 @@ public class TestBatch
 		try
 		(
 			Connection conn = Utils.getUserConnection();
+			Statement stmt = conn.createStatement();
 		)
 		{
            	stmt = conn.createStatement();
@@ -489,6 +490,7 @@ public class TestBatch
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch3 : ERROR: Exception in insert batch mode.....");
             	bue.printStackTrace();
+            	fail("exception in test JDBCBatch3 in TestBatch -insert batch mode .." + bue.getMessage());
             	System.out.println(bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
@@ -534,6 +536,7 @@ public class TestBatch
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch3 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/
@@ -572,11 +575,11 @@ public class TestBatch
 
 		System.out.println("JDBC batch test 4..");
 
-        try
+        try (
+        		Connection conn = Utils.getUserConnection();
+    			Statement stmt = conn.createStatement();
+        		)
         {
-			Connection conn = Utils.getUserConnection();
-	        Statement stmt = conn.createStatement();            
-
 	        stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
            	stmt.executeUpdate("drop table if exists " + ISTBL + " cascade");
 	        stmt.executeUpdate("create table " + ISTBL + "(a int not null, b varchar(2000), c int, d varchar(400), primary key(a))");
@@ -671,12 +674,11 @@ public class TestBatch
     		rs.close();
         	pStmt.close();
         	pStmt = null;
-        	stmt.close();
-        	conn.close();
         }// end of try
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch4 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	if (pass)
@@ -710,11 +712,11 @@ public class TestBatch
 
 		System.out.println("JDBC batch test 5..");
 
-        try
+        try (
+    			Connection conn = Utils.getUserConnection();
+    			Statement stmt = conn.createStatement();
+    		)
         {
-			Connection conn = Utils.getUserConnection();
-	        Statement stmt = conn.createStatement();            
-
 	        stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
            	stmt.executeUpdate("drop table if exists " + ISTBL + " cascade");
 	        stmt.executeUpdate("create table " + ISTBL + "(a int not null, b varchar(2000), c int, d varchar(400), primary key(a))");
@@ -812,12 +814,11 @@ public class TestBatch
     		rs.close();
         	pStmt.close();
         	pStmt = null;
-        	stmt.close();
-        	conn.close();
         }// end of try
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch5 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	if (pass)
@@ -834,7 +835,6 @@ public class TestBatch
 	{
 		System.out.println("JDBC batch test 6..");
 
-		Statement stmt = null;
         ResultSet rs = null;
         String DEPT = null;
         String insert = null;
@@ -855,9 +855,9 @@ public class TestBatch
 		try
 		(
 			Connection conn = Utils.getUserConnection();
+			Statement stmt = conn.createStatement();
 		)
 		{
-           	stmt = conn.createStatement();
            	stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
 	        stmt.executeUpdate("drop table if exists " + IN1 + " cascade");
            	
@@ -955,6 +955,7 @@ public class TestBatch
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch6 : ERROR: Exception in insert batch mode.....");
             	bue.printStackTrace();
+            	fail("exception in test JDBCBatch6 in TestBatch - insert batch mode .." + bue.getMessage());
             	System.out.println(bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
@@ -1000,6 +1001,7 @@ public class TestBatch
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("exception in test JDBCBatch6 in TestBatch .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/

@@ -46,11 +46,11 @@ public class TestClobBatch {
 	private static Connection _conn = null;
 
 	private boolean assertResult() throws Exception {
-		Statement stmt = null;
 		ResultSet rs = null;
-		try {
-			stmt = _conn.createStatement();
-
+		try (
+				Statement stmt = _conn.createStatement();
+				)
+		{
 			rs = stmt.executeQuery("select c1, c2, c3 from " + Utils.schema + "." + tableName + " order by c1");
 
 			assertTrue(rs.next());
@@ -66,8 +66,8 @@ public class TestClobBatch {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in assertResult in TestClobBatch .." + e.getMessage());
 		} finally {
-			stmt.close();
 			rs.close();
 		}
 		return false;
@@ -102,7 +102,7 @@ public class TestClobBatch {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-
+			fail("exception in testSetClob in TestClobBatch .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -138,7 +138,7 @@ public class TestClobBatch {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-
+			fail("exception in testUpdateWithSetClob in TestClobBatch .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -166,6 +166,7 @@ public class TestClobBatch {
 			assertResult();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in testSetString in TestClobBatch .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -195,6 +196,7 @@ public class TestClobBatch {
 			assertResult();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in testSetBinaryStream in TestClobBatch .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -224,6 +226,7 @@ public class TestClobBatch {
 			stmt.execute(strDropTable);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			 fail("failed to drop table in TestClobBatch .." + e.getMessage());
 			e.printStackTrace();
 		}
 
@@ -231,6 +234,7 @@ public class TestClobBatch {
 			_conn.close();
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			fail("failed to close connection in TestClobBatch .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}

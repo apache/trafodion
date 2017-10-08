@@ -49,16 +49,15 @@ public class TestMisc
 	public void JDBCMisc1() throws InterruptedException, SQLException
 	{
 		//GETMAXROWS
-		Connection conn = null;
-		Statement stmt = null;
 		ResultSet rs = null;
 		String sql = null;
 		int maxRows = 10, rowSel = 0, i = 0;
 
-		try 
+		try  (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+        		)
 		{
-			conn = Utils.getUserConnection();
-			stmt = conn.createStatement();
 			assertEquals("getMaxRows should return 0", 0, stmt.getMaxRows());
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists maxrowstab (c0 int not null, c1 char(20), c2 smallint, c3 integer, primary key(c0))");
@@ -108,12 +107,8 @@ public class TestMisc
 		{
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
+			fail("exception in test JDBCMisc1 .." + e.getMessage());
 			return;
-		}
-		finally
-		{
-			stmt.close();
-			conn.close();
 		}
 	}
 
@@ -122,12 +117,13 @@ public class TestMisc
 	public void JDBCMisc2() throws InterruptedException, SQLException
 	{
 		//EXPLAIN PLAN
-		Connection conn = null;
-		Statement stmt = null;
 		ResultSet rs = null;
 		String sql = null;
 
-		try 
+		try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+        		)
 		{
 			conn = Utils.getUserConnection();
 			stmt = conn.createStatement();
@@ -149,12 +145,8 @@ public class TestMisc
 		{
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
+			fail("exception in test JDBCMisc2 .." + e.getMessage());
 			return;
-		}
-		finally
-		{
-			stmt.close();
-			conn.close();
 		}
 	}
 
@@ -163,15 +155,16 @@ public class TestMisc
 	public void JDBCMisc3() throws InterruptedException, SQLException
 	{
 		//ESP query
-		Connection conn = null;
-		Statement stmt = null;
 		ResultSet rs = null;
 		long rowSel = 0;
 		String sql = "select count(\"_REPOS_\".metric_query_table.session_id) from "
 				+ "\"_REPOS_\".metric_query_table, \"_REPOS_\".metric_query_aggr_table where "
 				+ "\"_REPOS_\".metric_query_table.session_id = \"_REPOS_\".metric_query_aggr_table.session_id";
 
-		try 
+		try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+        		)
 		{
 			conn = Utils.getUserConnection();
 			stmt = conn.createStatement();
@@ -185,12 +178,8 @@ public class TestMisc
 		{
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
+			fail("exception in test JDBCMisc3 .." + e.getMessage());
 			return;
-		}
-		finally
-		{
-			stmt.close();
-			conn.close();
 		}
 	}
 }

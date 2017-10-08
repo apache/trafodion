@@ -21,7 +21,7 @@
  * @@@ END COPYRIGHT @@
  */
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -36,19 +36,18 @@ public class TestNumeric {
 
     @Test
     public void JDBCNumeric() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "upsert using load into numeric_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
-            stmt = conn.createStatement();
+        try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+        		)
+        {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists numeric_tbl (c0 int not null, c1 numeric(20,0))");
             stmt.executeUpdate("delete from numeric_tbl");
 
-            prepStmt = conn.prepareStatement(sql);
             for (int i = 0; i < 1000; i++) {
                 prepStmt.setInt(1, i);
                 prepStmt.setBigDecimal(2, new BigDecimal(-1));
@@ -65,28 +64,24 @@ public class TestNumeric {
             assertEquals("Rows returned count should be 1000", 1000, result);
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
-        }
-
+            fail("exception in test JDBCNumeric .." + e.getMessage());
+        } 
     }
+    
     @Test
     public void JDBCNumeric2() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "upsert using load into numeric_tbl2 values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
-            stmt = conn.createStatement();
+        try (
+        		Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+        		)
+        {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists numeric_tbl2 (c0 int not null, c1 numeric(10,2))");
             stmt.executeUpdate("delete from numeric_tbl2");
 
-            prepStmt = conn.prepareStatement(sql);
             for (int i = 0; i < 1000; i++) {
                 prepStmt.setInt(1, i);
                 prepStmt.setBigDecimal(2, new BigDecimal(-1));
@@ -103,12 +98,8 @@ public class TestNumeric {
             assertEquals("Rows returned count should be 1000", 1000, result);
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            fail("exception in test JDBCNumeric2 .." + e.getMessage());
         }
-
     }
 }
 

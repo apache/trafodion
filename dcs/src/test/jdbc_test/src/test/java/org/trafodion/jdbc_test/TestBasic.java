@@ -279,7 +279,10 @@ public class TestBasic
 	       	   	assertEquals("Column 2 data", 200, rs.getInt(2));
 	       	   	assertEquals("Column 3 data", 300, rs.getInt(3));
 	       	   	assertEquals("Column 4 data", 400, rs.getInt(4));
-       	   	}
+       	   	} catch (Exception ex) {
+                ex.printStackTrace();
+    			fail("Exception in resultset JDBC TestBasic5 .." + ex.getMessage());
+    		}
 	        stmt.executeUpdate("drop table if exists " + tableName + " cascade");
    	   		//conn.close();
    	   		System.out.println("JDBC TestBasic5 - Delim : Passed");
@@ -332,7 +335,10 @@ public class TestBasic
 	         	exp = 34;
 	         	assertEquals("Column 2 data", (Short)exp, (Short)rs.getShort(2));
 	         	assertEquals("Column 3 data", (Integer)444, (Integer)rs.getObject(3));
-            }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+    			fail("Exception in resultset JDBC TestBasic6 .." + ex.getMessage());
+    		}
             rowsUpdated = stmt.executeUpdate("update " + tableName + " set c2 = 8787 where c3 > 300");
          	assertEquals("Rows Updated", 4, rowsUpdated);
 	        rowsDeleted = stmt.executeUpdate("delete from " + tableName + " where c2 < 200");
@@ -398,7 +404,10 @@ public class TestBasic
 	        	exp = 54;
 	        	assertEquals("Column 3 data", (Short)exp, (Short)rs.getShort(3));
 	        	assertEquals("Column 4 data", (Integer)212, (Integer)rs.getObject(4));
-           	}
+           	} catch (Exception ex) {
+                ex.printStackTrace();
+    			fail("Exception in resultset JDBC TestBasic7 .." + ex.getMessage());
+    		}
         	
 	        stmt.executeUpdate("drop table if exists " + tableName2 + " cascade");
             stmt.executeUpdate("create table " + tableName2 + " (c0 int not null, c1 char(20), c2 smallint, c3 integer, primary key(c0))");
@@ -459,7 +468,6 @@ public class TestBasic
 	@Test
 	public void JDBCBasic19() throws InterruptedException, SQLException 
 	{
-        Statement stmt = null;
         ResultSet rs = null;
         String DEPT = null;
         String insert = null;
@@ -478,9 +486,9 @@ public class TestBasic
 		try
 		(
 			Connection conn = Utils.getUserConnection();
+			Statement stmt = conn.createStatement();
 		)
 		{
-           	stmt = conn.createStatement();
            	stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
 	        stmt.executeUpdate("drop table if exists " + IN1 + " cascade");
            	
@@ -578,14 +586,11 @@ public class TestBasic
         	}
         	pStmt.close();
         	pStmt = null;
-
-        	stmt.close();
-        	conn.close();
-
         }// end of try
         catch (Exception e) {
         	pass = false;
         	e.printStackTrace();
+        	fail("Exception in JDBC TestBasic19 .." + e.getMessage());
         	System.out.println(e.getMessage());
         } finally {
         	/**/

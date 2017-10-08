@@ -77,7 +77,7 @@ public class TestForeignKey {
         try {
             _conn = Utils.getUserConnection();
         } catch (Exception e) {
-            fail("failed to create connection" + e.getMessage());
+            fail("failed to create connection in doTestSuiteSetup in TestForeignKey .." + e.getMessage());
         }
 
         try (Statement stmt = _conn.createStatement();) {
@@ -87,7 +87,7 @@ public class TestForeignKey {
             stmt.execute(strCreateFKTABLE2Query);
         }
 		catch (Exception e) {
-            fail("failed to create table: " + e.getMessage());
+            fail("failed to create table in doTestSuiteSetup in TestForeignKey .. " + e.getMessage());
 		}
 	}
 	
@@ -111,11 +111,12 @@ public class TestForeignKey {
                 }
             }
             catch (Exception e) {
-                fail(e.getMessage());
+                fail("failed to getImportedKeys in testGetImportedKeys in TestForeignKey .." + e.getMessage());
             }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in testGetImportedKeys in TestForeignKey .." + e.getMessage());
 		}
 	}
 	
@@ -138,9 +139,13 @@ public class TestForeignKey {
 			    	rowNum += 1;
 			    }
             }
+            catch (Exception e) {
+            	fail("failed to getExportedKeys in testGetExportedKeys in TestForeignKey .." + e.getMessage());
+            }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in testGetExportedKeys in TestForeignKey .." + e.getMessage());
 		}		
 	}
 	
@@ -162,9 +167,13 @@ public class TestForeignKey {
 			    	rowNum += 1;
 			    }
             }
+            catch (Exception e) {
+            	fail("failed to getCrossReference in testGetCrossReference in TestForeignKey .." + e.getMessage());
+            }
 			assertEquals(rowNum, 1);
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in testGetCrossReference in TestForeignKey .." + e.getMessage());
 		}		
 	}
 
@@ -178,6 +187,7 @@ public class TestForeignKey {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
+			fail("failed to drop table in cleanTable in TestForeignKey .." + e.getMessage());
 		}
 		
 		try {
@@ -185,6 +195,7 @@ public class TestForeignKey {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
+			fail("failed to close connection in cleanTable in TestForeignKey .." + e.getMessage());
 		}
 	}
 	
@@ -238,6 +249,7 @@ public class TestForeignKey {
 			// Skip PK_NAME and FK_NAME
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in compareForeignkeyWithExp in TestForeignKey .." + e.getMessage());
 		}
 	}
 }
