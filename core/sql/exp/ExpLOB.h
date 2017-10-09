@@ -44,6 +44,9 @@
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 
+class ContextCli;
+class ExLobGlobals;
+
 
 class ExLobInMemoryDescChunksEntry;
 ////////////////////////////////
@@ -128,7 +131,7 @@ class LOBglobals : public NABasicObject {
 	lobLoadInfo_ = new(heap) LobLoadInfo(heap);
       };
   ~LOBglobals() { NADELETE(lobLoadInfo_,LobLoadInfo,heap_); lobLoadInfo_=NULL;}
-  void* &lobAccessGlobals() { return lobAccessGlobals_; };
+  ExLobGlobals* &lobAccessGlobals() { return lobAccessGlobals_; };
   LobLoadInfo * lobLoadInfo() { return lobLoadInfo_; }
 
   Int64 &xnId() { return xnId_; };
@@ -150,7 +153,7 @@ class LOBglobals : public NABasicObject {
   NABoolean getCurrLobOperInProgress() { return currLobOperInProgress_; }
  private:
   CollHeap * heap_;
-  void * lobAccessGlobals_;
+  ExLobGlobals * lobAccessGlobals_;
   LobLoadInfo * lobLoadInfo_;
 
   // transaction id of the current transaction in progress.
@@ -233,23 +236,23 @@ public:
 				Int64 uid,  
 				char * outBuf, Lng32 outBufLen);
   static void calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries);
-  static Lng32 compactLobDataFile(void *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, void *lobHeap,void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
-  static Int32 restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, void *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
-  static Int32 purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, void *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
+  static Lng32 compactLobDataFile(ExLobGlobals *lobGlob, ExLobInMemoryDescChunksEntry *dcArray, Int32 numEntries, char *tgtLobName, Int64 lobMaxChunkSize, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation);
+  static Int32 restoreLobDataFile(ExLobGlobals *lobGlob, char *lobName, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
+  static Int32 purgeBackupLobDataFile(ExLobGlobals *lobGlob,char *lobName, NAHeap *lobHeap, ContextCli *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
 
-  static Lng32 createLOB(void * lobGlob, void *currContext,void * lobHeap,
+  static Lng32 createLOB(ExLobGlobals * lobGlob, ContextCli *currContext,NAHeap * lobHeap,
 			 char * lobLoc, Int32 hdfsPort, char *hdfsServer,
 			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
-  static Lng32 dropLOB(void * lobGlob, void *currContext,void * lobHeap, 
+  static Lng32 dropLOB(ExLobGlobals * lobGlob, NAHeap *lobHeap, ContextCli *currContext, 
 		       char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 		       Int64 uid, Lng32 lobNum);
 
-  static Lng32 purgedataLOB(void * lobGlob, 
+  static Lng32 purgedataLOB(ExLobGlobals * lobGlob, 
 			    char * lobLob,
 			    Int64 uid, Lng32 lobNum);
 
-  static Lng32 initLOBglobal(void *& lobGlob, void * heap, void *currContext,char *server, Int32 port );
+  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port );
 
   // Extracts values from the LOB handle stored at ptr
   static Lng32 extractFromLOBhandle(Int16 *flags,

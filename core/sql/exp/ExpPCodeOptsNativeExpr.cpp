@@ -5808,7 +5808,7 @@ void PCodeCfg::layoutNativeCode()
   }
 #endif // NExprDbgLvl >= VV_I0
 
-  Int32 opc;
+  Int32 opc = PCIT::Op_END;
   CollIndex i, j, PCBlkIndex;
 
   Int32 skipInst = 0;
@@ -9281,7 +9281,7 @@ void PCodeCfg::layoutNativeCode()
 
 #if 1 /* Use #if 0 to generate/compile, but NOT actually execute generated code */
   // Store offset into evalPtr_
-  expr_->setEvalPtr((ex_expr::evalPtrType)(*offPtr));
+  expr_->setEvalPtr((ex_expr::evalPtrType)((long)*offPtr));
 
   // Mark this expression appropriately so that the native function gets called
   expr_->setPCodeMoveFastpath(TRUE);

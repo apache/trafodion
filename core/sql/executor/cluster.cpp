@@ -1149,7 +1149,7 @@ Cluster::Cluster(ClusterState state,
     ,afterLastBufferToRead_(NULL)
     ,numLoops_(0)
     ,startTimePhase3_(0)
-    ,keepRecentBuffer_(FALSE)
+    ,keepRecentBuffer_(NULL)
     ,flushMe_(FALSE)
     ,defragBuffer_(NULL)
 {

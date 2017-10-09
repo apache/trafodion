@@ -1267,8 +1267,7 @@ ItemExpr * getRangePartitionBoundaryValues
                         (const char * keyValueBuffer,
 			 const Lng32   keyValueBufferSize,
 			 NAMemory* heap,
-                          CharInfo::CharSet strCharSet = CharInfo::UTF8
-                         )
+                         CharInfo::CharSet strCharSet = CharInfo::UTF8)
 {
   char * keyValue;             // the string for the key value
   ItemExpr * partKeyValue;     // -> dynamically allocated expression
@@ -5009,7 +5008,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
    // Do a metadata read, if table descriptor has not been passed in
    //
-   TrafDesc * table_desc;
+  TrafDesc * table_desc = NULL;
    Int32 *maxIndexLevelsPtr = new (STMTHEAP) Int32;
    if (!inTableDesc)
      {

@@ -711,7 +711,7 @@ short ExExeUtilTcb::executeQuery(char * task,
 		
 		char * outBuf = new(getHeap()) char[errorBufLen+400];
 		getStatusString(task, "Error", NULL, outBuf,
-				NULL, NULL,
+				FALSE, NULL,
 				errorBuf);
 		
 		NADELETEBASIC(errorBuf, getHeap());

@@ -2245,7 +2245,7 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
   // Scale factor for approximate (floating-point) constant values.
   double dblScaleFactor = pow(10, rangeColumnScale);
   Int64 i64val = 0;
-  Float64 flt64val;
+  Float64 flt64val = 0;
 
   if (constValNumType->isDecimal())
     {

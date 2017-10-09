@@ -270,7 +270,7 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
 ComTdbRoot::~ComTdbRoot()
 {
-  childTdb = NULL;
+  childTdb = (ComTdbPtr)NULL;
   
   rtFlags1_ = 0;
 };

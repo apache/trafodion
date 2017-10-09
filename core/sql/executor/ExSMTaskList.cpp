@@ -72,7 +72,7 @@ ExSMTaskList::~ExSMTaskList()
 {
   delete [] buckets_;
   EXSM_TRACE(EXSM_TRACE_INIT,
-             "TASK LIST DTOR %p inserts %"PRId64" collisions %"PRId64,
+             "TASK LIST DTOR %p inserts %ld collisions %ld",
              this, numInserts_, numCollisions_);
 
   int rc = pthread_mutex_destroy(&taskListMutex_);

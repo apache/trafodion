@@ -123,7 +123,7 @@ class CmpSeabaseDDLauth
     // metadata access methods
     void deleteRow      (const NAString &authName);
     void insertRow      (void);
-    void updateRow      (const NAString & setClause);
+    void updateRow      (NAString & setClause);
     AuthStatus selectExactRow (const NAString &cmd); 
     Int64      selectCount    (const NAString & whereClause);
     Int32      selectMaxAuthID(const NAString &whereClause);

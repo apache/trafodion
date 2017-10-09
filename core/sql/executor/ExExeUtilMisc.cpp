@@ -2270,7 +2270,7 @@ void ExExeUtilHiveTruncateTcb::freeResources()
       hiveClient->executeHiveSQL(hiveDropDDL);
     }
   if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    ExpLOBinterfaceCleanup(lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap());
     lobGlob_ = NULL;
   }
 }
@@ -2280,7 +2280,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),
+    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),
      getGlobals()->castToExExeStmtGlobals()->getContext(),FALSE, 
      htTdb().getHdfsHost(),
      htTdb().getHdfsPort());

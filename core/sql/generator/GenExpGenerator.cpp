@@ -246,7 +246,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
   // classes contain methods used to perform operations on this type.
   // ----------------------------------------------------------------
 
-  Attributes   *result;
+  Attributes   *result = NULL;
   const NAType *naType = &naType_x;
 
   Int32 rsSize = 0;

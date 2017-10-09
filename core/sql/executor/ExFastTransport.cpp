@@ -465,7 +465,7 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
   if (lobGlob_) {
-    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    ExpLOBinterfaceCleanup(lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap());
     lobGlob_ = NULL;
   }
 
@@ -485,7 +485,7 @@ Int32 ExHdfsFastExtractTcb::fixup()
   strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
   hdfsPort_ = myTdb().getHdfsPortNum();
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
+    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
   
   modTS_ = myTdb().getModTSforDir();
 

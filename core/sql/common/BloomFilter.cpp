@@ -322,7 +322,7 @@ CountingBloomFilter::CountingBloomFilter(NAHeap* heap) :
   bucketNums_(heap),
   filename_(NULL)
 {
-  paramBuf[0] = NULL;
+  paramBuf[0] = '\0';
 }
 
 void CountingBloomFilter::clear()

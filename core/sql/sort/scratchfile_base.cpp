@@ -239,8 +239,8 @@ RESULT ScratchFile::processAsynchronousReadCompletion(Int32 index)
         char msg[100];
         str_sprintf(msg, "ScratchFile::processAReadCompn, volume %s",fileName_);         
         sortError_->setErrorInfo(EWrongLengthRead, // sort error
-                          NULL,         // syserr: the actual FS error
-                          NULL,         // syserrdetail
+                          0,         // syserr: the actual FS error
+                          0,         // syserrdetail
                           msg);
         completedAB->retval_ = OTHER_ERROR;
         rc = OTHER_ERROR;

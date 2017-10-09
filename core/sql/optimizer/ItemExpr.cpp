@@ -15132,7 +15132,7 @@ ConstValue* ItemExpr::evaluate(CollHeap* heap)
 
 ItemExpr * ItmLagOlapFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
-    ItemExpr *result;
+    ItemExpr *result = NULL;
 
     if (derivedNode == NULL)
     {

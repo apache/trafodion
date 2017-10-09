@@ -380,9 +380,9 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		}
 	      else
 		{
-		  *opdata = (char*)((*op)->getOffset());
-		  *nulldata = (char*)((*op)->getNullIndOffset());
-		  *vardata = (char*)((*op)->getVCLenIndOffset());
+		  *opdata = (char*)((long)((*op)->getOffset()));
+		  *nulldata = (char*)((long)((*op)->getNullIndOffset()));
+		  *vardata = (char*)((long)((*op)->getVCLenIndOffset()));
 		}
 	    }
 	  else
@@ -2417,7 +2417,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
           // If the operand is NULL, leave 0 on the stack, otherwise a non-zero.
           NABoolean valueNull = ExpAlignedFormat::isNullValue((char *)src,
                                                               (Int16)pCode[2]);
-          opData[pCode[3]] = (char *)(valueNull ? 0 : 1);
+          opData[pCode[3]] = (char *)((long)(valueNull ? 0 : 1));
           pCodeOpc = pCode[4];
           pCode += 5;
         }

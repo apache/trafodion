@@ -185,23 +185,8 @@ template <class T> void NACollection<T>::allocate(CollIndex initLen)
 	}
       else
 	{	
-	  // The method for dynamic allocation should match the one in 
-	  // deallocate. When the compiler supports the feature to overload
-	  // new[] and delete[], the following two lines should be used
-	  // instead.
-	  // arr_ = new(heap_) T[maxLength_];
-	  // usages_ = new(heap_) CollIndex[maxLength_];
-	  arr_ = (T *)heap_->allocateMemory(sizeof(T) * ((size_t) maxLength_));
-	  usages_ = (CollIndex *) heap_->allocateMemory(
-               sizeof(CollIndex) * ((size_t) maxLength_));
-
-          // To finish up, we copy uninitialized objects of type T into
-          // the newly-alloc'd space, so vtbl-pointers get set properly.
-          // (This is not always necessary, but it's a good idea in
-          // general!)
-          T temp; 
-          for ( CollIndex i = 0 ; i < maxLength_ ; i++ )
-            memcpy ((void*)&arr_[i], (void*)&temp, sizeof(T)) ;
+	  arr_ = new(heap_) T[maxLength_];
+	  usages_ = new(heap_) CollIndex[maxLength_];
         }
     }
   else

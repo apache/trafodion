@@ -243,7 +243,7 @@ void CmpSeabaseDDL::createSeabaseSchema(
    ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
    NAString schName = schNameAsComAnsi.getInternalName();
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
    CmpCommon::context()->sqlSession()->getParentQid());
    ComSchemaClass schemaClass;
    Int32 objectOwner = NA_UserIdDefault;
@@ -486,7 +486,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    NAString schName = schNameAsComAnsi.getInternalName();
    ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                 CmpCommon::context()->sqlSession()->getParentQid());
    Int32 objectOwnerID = 0;
    Int32 schemaOwnerID = 0;
@@ -561,7 +561,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                      "object_type <> 'PK' "
                      "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -918,12 +918,12 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    str_sprintf(query,"SELECT COUNT(*) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"'" 
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"'" 
                      "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
                
-   cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,NULL);
+   cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,FALSE);
   
    if (cliRC < 0)
    {
@@ -938,7 +938,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        str_sprintf(query,"SELECT TRIM(object_name) "
                    "FROM %s.\"%s\".%s "
                    "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                    "object_type <> 'PK' "
                    "FOR READ COMMITTED ACCESS",
                    getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -976,7 +976,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    dirtiedMetadata = TRUE;
    str_sprintf(buf,"DELETE FROM %s.\"%s\".%s "
                    "WHERE CATALOG_NAME = '%s' AND SCHEMA_NAME = '%s' AND " 
-                   "OBJECT_NAME = '"SEABASE_SCHEMA_OBJECTNAME"'",
+                   "OBJECT_NAME = '" SEABASE_SCHEMA_OBJECTNAME"'",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
    cliRC = cliInterface.executeImmediate(buf);
@@ -1035,7 +1035,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
    NAString schName = schNameAsComAnsi.getInternalName();
    ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+   ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                 CmpCommon::context()->sqlSession()->getParentQid());
    Int32 objectOwnerID = 0;
    Int32 schemaOwnerID = 0;
@@ -1130,7 +1130,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
    str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type), object_uid "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                      "(object_type = 'BT' OR "
                      " object_type = 'VI') "
                      "FOR READ COMMITTED ACCESS",
@@ -1285,7 +1285,7 @@ NAString schemaName = giveSchemaNode->getSchemaName();
    if (catalogName.isNull())
       catalogName = currentCatalogName;  
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
 CmpCommon::context()->sqlSession()->getParentQid());
 Int32 objectOwnerID = 0;
 Int32 schemaOwnerID = 0;
@@ -1427,7 +1427,7 @@ char buf[4000];
    str_sprintf(buf,"SELECT COUNT(*) "
                    "FROM %s.\"%s\".%s "
                    "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_name <> '" SEABASE_SCHEMA_OBJECTNAME"' AND "
                    "object_owner <> %d " 
                    "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
@@ -1436,7 +1436,7 @@ char buf[4000];
 int32_t length = 0;
 Int64 rowCount = 0;
 
-   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
+   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,FALSE);
   
    if (cliRC < 0)
    {

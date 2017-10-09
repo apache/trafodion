@@ -6782,7 +6782,8 @@ const NAType *LOBupdate::synthesizeType()
   // Return blob type
 
   ValueId vid1,vid2 ;
-  const NAType *typ1,*typ2 = NULL;
+  const NAType *typ1 = NULL;
+  const NAType *typ2 = NULL;
 
   if(child(0))
     {

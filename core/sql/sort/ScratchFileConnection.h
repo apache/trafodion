@@ -51,7 +51,7 @@ public :
         ExSubtask *eventHandler,
         IpcEnvironment *env,
         ex_tcb *tcb,
-        char *eye = eye_SCRATCH_FILE_CONNECTION);
+        char *eye = (char *)eye_SCRATCH_FILE_CONNECTION);
     ~ScratchFileConnection();
     void ioStarted();
     void ioStopped();

@@ -904,7 +904,7 @@ Lng32 SQLCLI_LOBcliInterface
 Lng32 SQLCLI_LOB_GC_Interface
 (
  /*IN*/     CliGlobals *cliGlobals,
- /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     ExLobGlobals *lobGlobals, // can be passed or NULL
  /*IN*/     char * handle,
  /*IN*/     Lng32  handleLen,
  /*IN*/     char*  hdfsServer,

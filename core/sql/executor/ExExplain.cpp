@@ -125,7 +125,7 @@ ExExplainTcb::ExExplainTcb(const ExExplainTdb &explainTdb, ex_globals *glob)
   explainPlan_(NULL),
   explainPlanLen_(0),
   explainFrag_(NULL),
-  explainFragLen_(NULL),
+  explainFragLen_(0),
   diagsArea_(NULL),
   retryAttempts_(0),
   stmtName_(NULL)

@@ -2020,7 +2020,7 @@ Statement * Statement::getCurrentOfCursorStatement(char * cursorName)
 }
 
 RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
-                                       void * lobGlob,
+                                       ExLobGlobals * lobGlob,
                                        NABoolean &simCheckFailed,
                                        ComDiagsArea &diagsArea)
 {
@@ -2093,7 +2093,7 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
       (qsi->siList()->numEntries() == 0))
     return SUCCESS;
 
-  void * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
+  ExLobGlobals * lobGlob = NULL; //getRootTcb()->getGlobals()->getExLobGlobal();
   NABoolean lobGlobInitialized = FALSE;
   qsi->siList()->position();
   for (Lng32 i = 0; i < qsi->siList()->numEntries(); i++)
@@ -2973,7 +2973,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                         Descriptor::getCharDataFromCharHostVar
                           (diagsArea,
 			   heap_,
-                           (char *)cursor_name, 
+                           (char *)((long)cursor_name), 
                            string_length,
 			   "CURSOR NAME", 
                            input_desc,
@@ -2988,7 +2988,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		    if (currentOfCursorStatement_ == NULL)
 		      {
 			diagsArea << DgSqlCode(- CLI_NON_UPDATABLE_SELECT_CURSOR)
-				  << DgString0((char *)cursor_name);
+				  << DgString0((char *)((long)cursor_name));
 			state_ = ERROR_;
 			break;
 		      }

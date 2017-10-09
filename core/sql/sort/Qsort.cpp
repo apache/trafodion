@@ -570,8 +570,8 @@ NABoolean Qsort::iterativeQuickSort(RecKeyBuffer keysToSort[], Int64 left, Int64
   if (stack == NULL)
   {
   sortError_->setErrorInfo( EScrNoMemory   //sort error
-                    ,NULL          //syserr: the actual FS error
-                    ,NULL          //syserrdetail
+                    ,0          //syserr: the actual FS error
+                    ,0          //syserrdetail
                     ,"Qsort::iterativeQuicksort"     //methodname
                     );
     return SORT_FAILURE;

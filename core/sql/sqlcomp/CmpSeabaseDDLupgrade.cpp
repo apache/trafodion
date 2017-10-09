@@ -315,7 +315,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
   CmpSeabaseUpgradeRepository upgradeRepository;
   CmpSeabaseUpgradePrivMgr upgradePrivMgr;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   ExpHbaseInterface * ehi = NULL;
 
@@ -2102,7 +2102,7 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
       
     case 2:
       {
-        str_sprintf(buf, "update %s.\"%s\".%s set sql_data_type = cast( case when fs_data_type = 130 then '"COM_SMALLINT_SIGNED_SDT_LIT"' when fs_data_type = 131 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 132 then '"COM_INTEGER_SIGNED_SDT_LIT"' when fs_data_type = 133 then '"COM_INTEGER_UNSIGNED_SDT_LIT"' when fs_data_type = 134 then '"COM_LARGEINT_SIGNED_SDT_LIT"' when fs_data_type = 135 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 140 then '"COM_REAL_SDT_LIT"' when fs_data_type = 141 then '"COM_DOUBLE_SDT_LIT"' when fs_data_type = 150 then '"COM_DECIMAL_UNSIGNED_SDT_LIT"' when fs_data_type = 151 then '"COM_DECIMAL_SIGNED_SDT_LIT"' when fs_data_type = 155 then '"COM_NUMERIC_UNSIGNED_SDT_LIT"' when fs_data_type = 156 then '"COM_NUMERIC_SIGNED_SDT_LIT"' when fs_data_type = 0     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 2     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 70    then '"COM_LONG_VARCHAR_SDT_LIT"' when fs_data_type = 64    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 66    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 100   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 101   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 192 then '"COM_DATETIME_SDT_LIT"' when fs_data_type >= 196 and fs_data_type <= 207 then '"COM_INTERVAL_SDT_LIT"' else '' end as char(24))    ",
+        str_sprintf(buf, "update %s.\"%s\".%s set sql_data_type = cast( case when fs_data_type = 130 then '" COM_SMALLINT_SIGNED_SDT_LIT"' when fs_data_type = 131 then '" COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 132 then '" COM_INTEGER_SIGNED_SDT_LIT"' when fs_data_type = 133 then '" COM_INTEGER_UNSIGNED_SDT_LIT"' when fs_data_type = 134 then '" COM_LARGEINT_SIGNED_SDT_LIT"' when fs_data_type = 135 then '" COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 140 then '" COM_REAL_SDT_LIT"' when fs_data_type = 141 then '" COM_DOUBLE_SDT_LIT"' when fs_data_type = 150 then '" COM_DECIMAL_UNSIGNED_SDT_LIT"' when fs_data_type = 151 then '" COM_DECIMAL_SIGNED_SDT_LIT"' when fs_data_type = 155 then '" COM_NUMERIC_UNSIGNED_SDT_LIT"' when fs_data_type = 156 then '" COM_NUMERIC_SIGNED_SDT_LIT"' when fs_data_type = 0     then '" COM_CHARACTER_SDT_LIT"' when fs_data_type = 2     then '" COM_CHARACTER_SDT_LIT"' when fs_data_type = 70    then '" COM_LONG_VARCHAR_SDT_LIT"' when fs_data_type = 64    then '" COM_VARCHAR_SDT_LIT"' when fs_data_type = 66    then '" COM_VARCHAR_SDT_LIT"' when fs_data_type = 100   then '" COM_VARCHAR_SDT_LIT"' when fs_data_type = 101   then '" COM_VARCHAR_SDT_LIT"' when fs_data_type = 192 then '" COM_DATETIME_SDT_LIT"' when fs_data_type >= 196 and fs_data_type <= 207 then '" COM_INTERVAL_SDT_LIT"' else '' end as char(24))    ",
                        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
         cliRC = cliInterface.executeImmediate(buf);
         

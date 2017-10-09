@@ -244,6 +244,7 @@ endif
 
 # -short-wchar: Have the compiler treat wchar_t as a 2-byte character. 
 SYS_CXXFLAGS += -fshort-wchar -std=c++0x
+SYS_CXXFLAGS += -Wno-conversion-null
 SYS_CXXFLAGS += -fcheck-new
 CFLAGS += -fshort-wchar
 

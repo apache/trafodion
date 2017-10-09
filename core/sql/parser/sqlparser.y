@@ -6015,7 +6015,7 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
       new (PARSERHEAP ()) ExeUtilLobExtract
       (handle, 
        ExeUtilLobExtract::TO_STRING_,
-       NULL, NULL, 0, 0);
+       0, 0, 0, 0);
 
     $$ = lle;
   }
@@ -7200,7 +7200,7 @@ joined_table :  '(' joined_table ')'   { $$ = $2; }
 
 full_outer : TOK_FULL 
              { 
-                $$ = NULL;
+                $$ = 0;
              }
              | TOK_FULL TOK_OUTER
              {
@@ -15883,7 +15883,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' 
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
-		    returnLengthAddr, NULL, 0, 0);
+		    returnLengthAddr, 0, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -15896,7 +15896,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
-		    -1, NULL, 0, 0);
+		    -1, 0, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -15913,7 +15913,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, 0);
+		    0, 0, rowSize, 0);
 
 		 $$ = lle;
 		 */
@@ -15950,7 +15950,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 
+		    0, 0, 
 		    0, 
 		    0,
 		    (char*)$7->data());
@@ -15968,7 +15968,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 
+		    0, 0, 
 		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
 		    ExeUtilLobExtract::TRUNCATE_EXISTING,
 		    (char*)$7->data());
@@ -15986,7 +15986,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 
+		    0, 0, 
 		    0, 
 		    ExeUtilLobExtract::TRUNCATE_EXISTING ,
 		    (char*)$7->data());
@@ -16004,7 +16004,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 
+		    0, 0, 
 		    0,
 		    ExeUtilLobExtract::APPEND_OR_CREATE,
 		    (char*)$7->data());
@@ -16023,7 +16023,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 
+		    0, 0, 
 		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
 		    0,
 		    (char*)$7->data(),FALSE);
@@ -16044,7 +16044,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, //(char*)$5->data(), 
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, bufSize); 
+		    0, 0, rowSize, bufSize); 
                     $$ = lle;
                  */
 	       }
@@ -16059,7 +16059,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, 0,
+		    0, 0, rowSize, 0,
 		    (char*)$4->data());
 
 		 $$ = lle;
@@ -16076,7 +16076,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, 0,
+		    0, 0, rowSize, 0,
 		    (char*)$4->data(), (char*)$6->data());
 
 		 $$ = lle; 
@@ -16094,7 +16094,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, bufSize,
+		    0, 0, rowSize, bufSize,
 		    (char*)$4->data(), (char*)$6->data());
 
 		 $$ = lle;
@@ -16111,7 +16111,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_STRING_,
-		    NULL, NULL, rowSize, 0,
+		    0, 0, rowSize, 0,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 $$ = lle;
@@ -16128,7 +16128,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_,
-		    NULL, NULL, offset, 0,
+		    0, 0, offset, 0,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 $$ = lle;
@@ -16145,7 +16145,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_,
-		    NULL, NULL, offset, 0,
+		    0, 0, offset, 0,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 lle->withCreate() = TRUE;
@@ -16164,7 +16164,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
-		    NULL, NULL, offset, 0,
+		    0, 0, offset, 0,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 $$ = lle;
@@ -16181,7 +16181,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
-		    NULL, NULL, offset, 0,
+		    0, 0, offset, 0,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 lle->withCreate() = TRUE;
@@ -16200,7 +16200,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
-		    NULL, NULL, offset, bufSize,
+		    0, 0, offset, bufSize,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 $$ = lle;
@@ -16218,7 +16218,7 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (NULL,
 		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
-		    NULL, NULL, offset, bufSize,
+		    0, 0, offset, bufSize,
 		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
 
 		 lle->withCreate() = TRUE;
@@ -22842,35 +22842,35 @@ optional_showddl_action_name_clause : empty
            $$ = $2; // CorrName * actual_routine_action_name
          }
 
-group_list : id_group_list                               { $$ = NULL; }
-           | TOK_EVERY TOK_KEY                           { $$ = NULL; }
-           | TOK_EVERY TOK_COLUMN                        { $$ = NULL; }
-           | TOK_EXISTING TOK_COLUMN                     { $$ = NULL; } 
-           | TOK_EXISTING TOK_COLUMNS                    { $$ = NULL; } 
-           | TOK_NECESSARY TOK_COLUMN                    { $$ = NULL; } 
-           | TOK_NECESSARY TOK_COLUMNS                   { $$ = NULL; } 
-           | TOK_EVERY TOK_KEY ',' id_group_list         { $$ = NULL; }
-           | TOK_EVERY TOK_COLUMN ',' id_group_list      { $$ = NULL; }
-           | TOK_EXISTING TOK_COLUMN ',' id_group_list   { $$ = NULL; }
-           | TOK_EXISTING TOK_COLUMNS ',' id_group_list  { $$ = NULL; }
-           | TOK_NECESSARY TOK_COLUMN ',' id_group_list  { $$ = NULL; }
-           | TOK_NECESSARY TOK_COLUMNS ',' id_group_list { $$ = NULL; }
+group_list : id_group_list                               { $$ = 0; }
+           | TOK_EVERY TOK_KEY                           { $$ = 0; }
+           | TOK_EVERY TOK_COLUMN                        { $$ = 0; }
+           | TOK_EXISTING TOK_COLUMN                     { $$ = 0; } 
+           | TOK_EXISTING TOK_COLUMNS                    { $$ = 0; } 
+           | TOK_NECESSARY TOK_COLUMN                    { $$ = 0; } 
+           | TOK_NECESSARY TOK_COLUMNS                   { $$ = 0; } 
+           | TOK_EVERY TOK_KEY ',' id_group_list         { $$ = 0; }
+           | TOK_EVERY TOK_COLUMN ',' id_group_list      { $$ = 0; }
+           | TOK_EXISTING TOK_COLUMN ',' id_group_list   { $$ = 0; }
+           | TOK_EXISTING TOK_COLUMNS ',' id_group_list  { $$ = 0; }
+           | TOK_NECESSARY TOK_COLUMN ',' id_group_list  { $$ = 0; }
+           | TOK_NECESSARY TOK_COLUMNS ',' id_group_list { $$ = 0; }
 
-id_group_list : id_group                    { $$ = NULL; }
-              | id_group ',' id_group_list  { $$ = NULL; }
+id_group_list : id_group                    { $$ = 0; }
+              | id_group ',' id_group_list  { $$ = 0; }
 
-id_group : identifier                                  { $$ = NULL; }
-         | '(' id_list ')'                             { $$ = NULL; }
-         | identifier TOK_TO identifier                { $$ = NULL; }
-         | '(' identifier ')' TOK_TO identifier        { $$ = NULL; }
-         | identifier TOK_TO '(' identifier ')'        { $$ = NULL; }
-         | '(' identifier ')' TOK_TO '('identifier ')' { $$ = NULL; }
+id_group : identifier                                  { $$ = 0; }
+         | '(' id_list ')'                             { $$ = 0; }
+         | identifier TOK_TO identifier                { $$ = 0; }
+         | '(' identifier ')' TOK_TO identifier        { $$ = 0; }
+         | identifier TOK_TO '(' identifier ')'        { $$ = 0; }
+         | '(' identifier ')' TOK_TO '('identifier ')' { $$ = 0; }
 
-id_list : identifier              { $$ = NULL; }
-        | identifier ',' id_list  { $$ = NULL; }
+id_list : identifier              { $$ = 0; }
+        | identifier ',' id_list  { $$ = 0; }
 
-showstats_opts : empty       { $$ = NULL; }
-               | TOK_DETAIL  { $$ = NULL; }
+showstats_opts : empty       { $$ = 0; }
+               | TOK_DETAIL  { $$ = 0; }
 
 /* type showcontrolEnum */
 optional_comma_match_clause : empty	  { $$ = Describe::MATCH_NONE_; }

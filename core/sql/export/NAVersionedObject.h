@@ -207,7 +207,7 @@ public:
                                    { ptr_ = (Type *)ptr; return *this; }
   
     inline NABasicPtrTempl<Type> & operator = (const Int32 ptr)
-                                   { ptr_ = (Type *)ptr; return *this; }
+                                   { ptr_ = (Type *)((long)ptr); return *this; }
   
     inline NABasicPtrTempl<Type> & operator = (const Type * const ptr)
                                    { ptr_ = (Type *)ptr; return *this; }
@@ -230,7 +230,7 @@ public:
                                                { return (ptr_ == ptr); }
   
     inline Int32 operator != (const Int32 ptr) const
-                                       { return (ptr_ != (Type *)ptr); }
+                                       { return (ptr_ != (Type *)((long)ptr)); }
   
     inline Int32 operator != (const NABasicPtrTempl<Type> & other) const
                                         { return (ptr_ != other.ptr_); }
@@ -486,11 +486,11 @@ public:
   
     inline NAOpenObjectPtrTempl<Type> &
       operator = (const Int32 ptr)
-                                   { ptr_ = (Type *)ptr; return *this; }
+                                   { ptr_ = (Type *)((long)ptr); return *this; }
   
     inline
       NAOpenObjectPtrTempl<Type> & operator = (const Type * const ptr)
-                                   { ptr_ = (Type *)ptr; return *this; }
+                                   { ptr_ = (Type *)((long)ptr); return *this; }
   
     inline
       NAOpenObjectPtrTempl<Type> &
@@ -788,7 +788,7 @@ public:
   
     inline NAVersionedObjectPtrTempl<Type> &
       operator = (const Int32 ptr)
-                                   { ptr_ = (Type *)ptr; return *this; }
+                                   { ptr_ = (Type *)((long)ptr); return *this; }
   
     inline
       NAVersionedObjectPtrTempl<Type> &
@@ -1149,7 +1149,7 @@ public:
   
     inline NAVersionedObjectPtrArrayTempl<PtrType> &
       operator = (const Int32 ptr)
-                                { ptr_ = (PtrType *)ptr; return *this; }
+                                { ptr_ = (PtrType *)((long)ptr); return *this; }
   
     inline
       NAVersionedObjectPtrArrayTempl<PtrType> &

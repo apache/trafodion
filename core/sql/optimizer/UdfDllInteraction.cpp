@@ -222,7 +222,7 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
       const ValueIdList &childCols = childInfo->getOutputs();
       const tmudr::PartitionInfo &childPartInfo = invocationInfo->in(c).getQueryPartitioning();
       const tmudr::OrderInfo &childOrderInfo = invocationInfo->in(c).getQueryOrdering();
-      TMUDFInputPartReq childPartType;
+      TMUDFInputPartReq childPartType = NO_PARTITIONING; 
       ValueIdSet childPartKey;
       ValueIdList childOrderBy;
 
@@ -1520,7 +1520,7 @@ NABoolean TMUDFInternalSetup::setPredicateInfoFromValueIdSet(
 
             if (val != NULL && columnNum != NULL_COLL_INDEX)
               {
-                tmudr::PredicateInfo::PredOperator predOp;
+                tmudr::PredicateInfo::PredOperator predOp = tmudr::PredicateInfo::UNKNOWN_OP;
 
                 pi = new tmudr::ComparisonPredicateInfo;
 

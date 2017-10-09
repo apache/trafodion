@@ -200,7 +200,7 @@ Lng32 atp_struct::unpack(Lng32 base)
   if (criDesc_)
   {
     criDesc_ = (ex_cri_desc *)CONVERT_TO_PTR(criDesc_, base);
-    if (criDesc_->driveUnpack((void *)base,&obj,NULL) == NULL) return -1;
+    if (criDesc_->driveUnpack((void *)((long)base),&obj,NULL) == NULL) return -1;
     for (Int32 i = 0; i < criDesc_->noTuples(); i++)
     {
       tuppArray_[i].unpack(base);

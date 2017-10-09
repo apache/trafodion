@@ -415,7 +415,7 @@ protected:
     return strlen(myTdb().getNullString()) == 0;
   }
 
-  void * lobGlob_;
+  ExLobGlobals * lobGlob_;
 
   char hdfsHost_[500];
   int  hdfsPort_;

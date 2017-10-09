@@ -6940,7 +6940,7 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *stats,
   ExOperStats *stat;
   ExOperStats::StatType statType;
   NABoolean retcode = FALSE;
-  NABoolean retcode1;
+  NABoolean retcode1 = FALSE;
 
   stats->position();
   while ((stat = stats->getNext()) != NULL) {

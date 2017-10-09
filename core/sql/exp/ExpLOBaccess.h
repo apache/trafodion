@@ -171,7 +171,7 @@ Ex_Lob_Error ExLobsOper (
     LobsOper    operation,         // LOB operation
     LobsSubOper subOperation,      // LOB sub operation
     Int64       waited,            // waited or nowaited
-    void        *&globPtr,         // ptr to the Lob objects. 
+    ExLobGlobals *&globPtr,         // ptr to the Lob objects. 
     Int64       transId,
     void        *blackBox,         // black box to be sent to cli
     Int32       blackBoxLen,        // length of black box

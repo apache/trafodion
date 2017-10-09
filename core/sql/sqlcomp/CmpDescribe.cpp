@@ -3166,7 +3166,7 @@ short CmpDescribeSeabaseTable (
   NABoolean forceStoreBy = FALSE;
   NABoolean isSalted = FALSE;
   NABoolean isDivisioned = FALSE;
-  ItemExpr *saltExpr;
+  ItemExpr *saltExpr = NULL;
   LIST(NAString) divisioningExprs(heap);
   LIST(NABoolean) divisioningExprAscOrders(heap);
 
