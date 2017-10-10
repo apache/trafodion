@@ -2130,7 +2130,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
     }
 
     tbls->position();
-    for (int idx = 0; idx < tbls->numEntries(); idx++)
+    for (int ii = 0; ii < tbls->numEntries(); ii++)
     {
       OutputInfo * idx = (OutputInfo*) tbls->getNext();
       snapshotStruct * snap = new (getMyHeap()) snapshotStruct();
@@ -2715,14 +2715,14 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
   lobHandleLen_ = 2050;
-  lobHandle_ = {0};
+  lobHandle_[0] = '\0';
 
-  lobInputHandleBuf_={0};
+  lobInputHandleBuf_[0] = '\0';
 
-  lobNameBuf_= {0};
+  lobNameBuf_[0] = '\0';
   lobNameLen_ =1024;
   lobName_ = NULL;
-  statusString_ = {0};
+  statusString_[0] = '\0';
   lobType_ = 0;
 
   lobData_= NULL;
@@ -2737,7 +2737,7 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   numChildRows_ = 0;
 
   requestTag_ = -1;
-  lobLoc_ = {0};
+  lobLoc_[0] = '\0';
  
   lobGlobals_ = 
     new(currContext->exHeap()) LOBglobals(currContext->exHeap());
@@ -3483,7 +3483,7 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
   lobHandleLen_ = 2050;
-  lobHandle_ = {0};
+  lobHandle_[0] = '\0';
   lobGlobals_ = 
     new(currContext->exHeap()) LOBglobals(currContext->exHeap());
   ExpLOBoper::initLOBglobal

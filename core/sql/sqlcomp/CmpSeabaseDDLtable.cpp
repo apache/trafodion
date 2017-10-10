@@ -10637,10 +10637,10 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
         }
       
       // save the current parserflags setting
-      ULng32 savedCliParserFlags;
+      ULng32 savedCliParserFlags = 0;;
       SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags_);
       SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
-      
+
       usedObjUID = naTable->objectUid().get_value();
       str_sprintf(query, "delete from %s.\"%s\".%s where using_view_uid = %ld and used_object_uid = %ld",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,

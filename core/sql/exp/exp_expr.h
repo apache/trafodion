@@ -919,7 +919,7 @@ public:
 				ComSpace * space = 0,
 				CollHeap * exHeap = 0,
 				NABoolean computeSpaceOnly = FALSE,
-				ex_globals * glob = FALSE);
+				ex_globals * glob = NULL);
   virtual void displayContents(ComSpace * space, short mode, const char * displayStr,
                                ULng32 flag);
 

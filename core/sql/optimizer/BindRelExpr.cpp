@@ -10647,7 +10647,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     const NATable* naTable = getTableDesc()->getNATable();
     if (naTable->hasLobColumn())
       {
-	NAColumn *nac;
+	NAColumn *nac = NULL;
 	for (CollIndex c = 0; c < naTable->getColumnCount(); c++) 
 	  {
 	    nac = naTable->getNAColumnArray()[c];

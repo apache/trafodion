@@ -1953,7 +1953,7 @@ public:
   NABoolean operator ==(const NAList<T> &other) const;
 
   // insert a new entry
-  inline void insert(const T &elem) { insertAt(this->entries(),elem); }
+  inline void insert(const T &elem) { this->insertAt(this->entries(),elem); }
 
   // insert a set, array, or list
   // void insert(const SET(T) &other);
@@ -2341,7 +2341,7 @@ public:
   
   void append( T newItem)
   {
-    insertAt( entries(), newItem);
+    this->insertAt( entries(), newItem);
   }
   
   CollIndex entries() const
@@ -2907,7 +2907,7 @@ public:
 
   inline V* get(const K* kk) const                      // retrieve a tuple
   {
-    return getFirstValue(kk);
+    return this->getFirstValue(kk);
   }
        		
   inline void insert(const V* vv)			// insert a tuple

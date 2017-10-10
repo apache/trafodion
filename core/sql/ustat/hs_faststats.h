@@ -112,7 +112,11 @@ public:
   // @ZXbl -- temporary value used for sample rate (needed to estimate uec/rc).
   //          This needs to be changed to come from the sample rate used when
   //          the sample table is created during bulk load.
+#if __GNUC_MINOR__ == 8
+  static constexpr double SAMPLE_RATE = .01;
+#else
   static const double SAMPLE_RATE = .01;
+#endif
 
   void addRowset(Lng32 numRows);
   void actuate(Lng32 numIntervals);
@@ -173,7 +177,7 @@ public:
 
   void append(KeyFreqPair<T>& x)
   {
-    insertAt(this->entries(), x);
+    this->insertAt(this->entries(), x);
     freqCount_ += x.freq;
   }
 
