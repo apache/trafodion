@@ -749,15 +749,19 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           hdfsPort_ = myTdb().getHdfsPortNum();
           memset (fileName_, '\0', sizeof(fileName_));
           memset (targetLocation_, '\0', sizeof(targetLocation_));
-
-          time_t t;
-          time(&t);
-          char pt[30];
-          struct tm * curgmtime = gmtime(&t);
-          strftime(pt, 30, "%Y%m%d%H%M%S", curgmtime);
-          srand(getpid());
           snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
-
+         	 
+          char pt[80]="";	
+          char usec_buf[6]="";  	
+          struct timeval tmnow;
+          struct tm *currgmtime;
+          gettimeofday(&tmnow, NULL);
+          currgmtime = gmtime(&tmnow.tv_sec);
+          strftime(pt, sizeof(pt), "%Y%m%d%H%M%S", currgmtime);
+          sprintf(usec_buf,"%d",(int)tmnow.tv_usec);
+          strcat(pt,usec_buf);
+          srand(getpid());
+          	                 
           if (myTdb().getIsHiveInsert())
             snprintf(fileName_,999, "%s%d-%s-%d", myTdb().getHiveTableName(), fileNum, pt,rand() % 1000);
           else
