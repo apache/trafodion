@@ -117,7 +117,7 @@ If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`inste
  +
 - one thread to read from the input file and +
 - as many threads as the parallel argument to write via ODBC. This option is database independent.
-| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error.
+| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error stream.
 | `commit=auto\|end\|#rows\|x#rs` | Defines how odb commits the inserts. You have the following choices: +
  +
 - `auto` (default): Commit every single insert (see also rows load operator). +
@@ -948,8 +948,8 @@ using eight parallel streams to a single, gzipped, file having the same name as 
 `src=trafodion.mauro.mforders:tgt=%t.gz:gzip:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]&#8230;` +
  +
 You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
-| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
-| `uncommitted` | Adds FOR READ UNCOMMITTED ACCESS to the select(s) command(s)
+| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error stream.
+| `uncommitted` | Adds FOR READ UNCOMMITTED ACCESS to the select(s) command(s).
 | `rtrim` | RTRIM() CHAR columns on the server. From a functional point of view this is equivalent to `trim=C` but `rtrim` is executed on the server so
 it saves both client CPU cycles and network bandwidth.
 | `cast` | Performs a (server side) cast to VARCHAR for all non-text columns. Main scope of this operator is to _move_ CPU cycles from the client to
@@ -1090,7 +1090,7 @@ The number of the threads is equal to *parallel argument* * *number of loaders*.
 
 *Example* 
 
-If you specify parallel argument = 4 and the source table is made of 32 partitions, then odb start: +
+If you specify parallel argument = 4 and the source table has 32 partitions, then odb start: +
 
 &#8226; 4 threads (4 ODBC connections) to read from the source table.
 
@@ -1148,7 +1148,7 @@ You can enclose the where condition between square brackets to avoid a misinterp
 | `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store
 inserted rows _directly_ into the Read-Only Storage (ROS). See Vertica’s documentation.
 | `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of
-error messages printed to the standard error.
+error messages printed to the standard error stream.
 | `uncommitted` | Adds `FOR READ UNCOMMITTED ACCESS` to the `select(s) command(s)`.
 | `splitby=<column>` | Lets you to use parallel copy from any database.
 *<column> has to be a SINGLE, numeric column*. odb calculates min()/max() value for `<column>` and assigns to each
