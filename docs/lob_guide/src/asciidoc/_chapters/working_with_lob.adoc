@@ -781,7 +781,7 @@ For more information, see <<drop_table_statement,DROP TABLE Statement>> in http:
 == Garbage Collection
 
 When a lob datafile for a column has reached a certain limit, defined by a CQD `LOB_GC_LIMIT_SIZE`, then a compaction is triggered automatically. +
-The default GC Limit is 10GB and can be changed if needed. 
+The default Garbage Collection (GC) Limit is 10GB and can be changed if needed. 
 
 The need for GC arises because when a delete operation or an update operation is performed, the old data black in the hdfs file will be left as unused. +
 In the case of update, the old data will be left as unused and the new data will be written into a new section, so all these “holes” in the LOB data file are needlessly occupying space. 
@@ -1037,57 +1037,37 @@ CREATE TABLE TRAFODION.SCH."LOBDescChunks__04474425229029907479_0003"
 --- SQL operation complete.
 ```
 
-[#get statement for lob tables]
-== Get Statement for LOB Tables
+[#get lob statistics for a lob table ]
+== Get Lob Statistics for a LOB Table 
+	
+There are two ways to get lob statistics for a lob table:
 
-The GET Statement for lob tables gives column specific information on any lob columns in a table. 
+* Get Statement: the lob information is formatted for human readability.
+* Select Statement: the lob information is formatted for machine readability.
+
+
+[#get statment]
+=== Get Statement
 
 [#syntax]
-=== Syntax
+==== Syntax
 
 ```
 GET LOB STATS FOR TABLE table-name;
-SELECT * FROM TABLE(LOB STATS table-name);
 ```
 
 [#examples]
-=== Examples
+==== Examples
 
-Suppose the following tables have been created:
+* This Get Statement displays statistics for the table tlob130gt2.
+
++
 
 ```
->>CREATE TABLE tlob130gt (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB, PRIMARY KEY (c1));
-
---- SQL operation complete.
-
 >>CREATE TABLE tlob130gt2 (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', PRIMARY KEY (c1));
 
 --- SQL operation complete.
-```
 
-* This Get Statement displays statistics for the table tlob130gt, the lob information is formatted for machine readability.
-
-+
-
-```
->>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) , 20), left(trim(column_name),5), left(trim(lob_location),5) , left(trim(lob_data_file),20),LOB_DATA_FILE_SIZE_EOD,LOB_DATA_FILE_SIZE_USED from table(lob stats(tlob130gt));
-
-(EXPR)      (EXPR)     (EXPR)     (EXPR)     LOB_DATA_FILE_SIZE_EOD    LOB_DATA_FILE_SIZE_USED
-------      ------     ------     ------     ----------------------    ----------------------
-
-TRAFODION.SCH.TLOB13   C2   /user/trafodion/lobs   LOBP_044744252290302   15   10
-TRAFODION.SCH.TLOB13   C3   /user/trafodion/lobs   LOBP_044744252290302   15   10
-TRAFODION.SCH.TLOB13   C4   /user/trafodion/lobs   LOBP_044744252290302   45   30
-
---- 3 row(s) selected.
-```
-
-
-* This Get Statement displays statistics for the table tlob130gt2, the lob information is formatted for human readability.
-
-+
-
-```
 >>GET LOB STATS FOR TABLE tlob130gt2;
 
 Lob Information for table: "TRAFODION".LOB130.TLOB130GT2
@@ -1108,16 +1088,65 @@ Lob Location:  External HDFS Location
 LOB Data File:  External HDFS File
 LOB EOD:  0
 LOB Used Len:  0
-
 --- SQL operation complete.
 ```
 
-* This Get Statement displays statistics for the table tlob130gt2, the lob information is formatted for machine readability.
+[#select statment]
+=== Select Statement
+
+[#syntax]
+==== Syntax
+
+```
+SELECT * FROM TABLE(LOB STATS table-name);
+```
+
+[#examples]
+==== Examples
+
+* This Select Statement displays statistics for the table tlob130gt.
 
 +
 
 ```
->>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), 20), left(trim(column_name),5), left(trim(lob_location),15), left(trim(lob_data_file),20),LOB_DATA_FILE_SIZE_EOD,LOB_DATA_FILE_SIZE_USED from table(lob stats(tlob130gt2));
+>>CREATE TABLE tlob130gt (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB, PRIMARY KEY (c1));
+
+--- SQL operation complete.
+
+>>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) , 20), 
+left(trim(column_name),5), 
+left(trim(lob_location),5), 
+left(trim(lob_data_file),20),
+LOB_DATA_FILE_SIZE_EOD,
+LOB_DATA_FILE_SIZE_USED 
+FROM TABLE(lob stats(tlob130gt));
+
+(EXPR)      (EXPR)     (EXPR)     (EXPR)     LOB_DATA_FILE_SIZE_EOD    LOB_DATA_FILE_SIZE_USED
+------      ------     ------     ------     ----------------------    ----------------------
+
+TRAFODION.SCH.TLOB13   C2   /user/trafodion/lobs   LOBP_044744252290302   15   10
+TRAFODION.SCH.TLOB13   C3   /user/trafodion/lobs   LOBP_044744252290302   15   10
+TRAFODION.SCH.TLOB13   C4   /user/trafodion/lobs   LOBP_044744252290302   45   30
+
+--- 3 row(s) selected.
+```
+
+* This Select Statement displays statistics for the table tlob130gt2.
+
++
+
+```
+>>CREATE TABLE tlob130gt2 (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', PRIMARY KEY (c1));
+
+--- SQL operation complete.
+
+>>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), 20), 
+left(trim(column_name),5), 
+left(trim(lob_location),15), 
+left(trim(lob_data_file),20),
+LOB_DATA_FILE_SIZE_EOD,
+LOB_DATA_FILE_SIZE_USED 
+FROM TABLE(lob stats(tlob130gt2));
 
 (EXPR)      (EXPR)     (EXPR)     (EXPR)     LOB_DATA_FILE_SIZE_EOD    LOB_DATA_FILE_SIZE_USED
 ------      ------     ------     ------     ----------------------    ----------------------
