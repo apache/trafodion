@@ -26,6 +26,7 @@ Trafodion Control Query Default (CQD) Reference Guide | [Web Book](docs/cqd_refe
 Trafodion Database Connectivity Services Guide        | [Web Book](docs/dcs_reference/index.html),      [API](docs/dcs_reference/apidocs/index.html)
 Trafodion JDBC Type 4 Programmer Reference Guide      | [Web Book](docs/jdbct4ref_guide/index.html),    [PDF](docs/jdbct4ref_guide/Trafodion_JDBCT4_Reference_Guide.pdf)
 Trafodion Load and Transform Guide                    | [Web Book](docs/load_transform/index.html),     [PDF](docs/load_transform/Trafodion_Load_Transform_Guide.pdf)
+Trafodion SQL Large Objects Guide                     | [Web Book](docs/lob_guide/index.html),          [PDF](docs/lob_guide/Trafodion_SQL_Large_Objects_Guide.pdf)
 Trafodion Messages Guide                              | [Web Book](docs/messages_guide/index.html),     [PDF](docs/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion Manageability                               | [wiki](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability)
 Trafodion odb User Guide                              | [Web Book](docs/odb/index.html),                [PDF](docs/odb/Trafodion_odb_User_Guide.pdf)

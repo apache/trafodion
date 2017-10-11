@@ -143,6 +143,7 @@
     <module>docs/odb_user</module>
     <module>docs/spj_guide</module>
     <module>docs/sql_reference</module>
+    <module>docs/lob_guide</module>
     <module>docs/jdbct4ref_guide</module>
   </modules>
 
