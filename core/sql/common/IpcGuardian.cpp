@@ -52,8 +52,6 @@
 #include "PortProcessCalls.h"
 #include "logmxevent.h"
 
-#if (defined(NA_GUARDIAN_IPC))
-// all of these files are OK in the executor environment (PRIV, no globals)
 #include "MXTraceDef.h"
 #include "seabed/fs.h"
 #include "seabed/ms.h"
@@ -70,7 +68,6 @@ extern "C" {
 #include "zsysc.h"
 }
 #include "fs/feerrors.h"
-#endif
 
 // Uncomment the next line to debug IPC problems (log of client's I/O)
 // #define LOG_IPC

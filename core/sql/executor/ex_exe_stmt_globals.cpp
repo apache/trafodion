@@ -1340,7 +1340,6 @@ void ExEspStmtGlobals::setReplyTag(Int64 transid, short replyTag)
 
 NABoolean ExEspStmtGlobals::restoreTransaction()
 {
-#if (defined(NA_GUARDIAN_IPC))
   if (replyTag_ != GuaInvalidReplyTag)
     {
       // we do have a transaction work request, switch to its transaction
@@ -1358,13 +1357,6 @@ NABoolean ExEspStmtGlobals::restoreTransaction()
       return NOT espFragInstanceDir_->
 	getFragment(myHandle_)->getNeedsTransaction();
     }
-#else
-  // without TMF, just wing it and return TRUE, if browse access
-  ex_assert(NOT espFragInstanceDir_->
-	    getFragment(myHandle_)->getNeedsTransaction(),
-	    "Unix does not support ESPs that need a transaction");
-  return TRUE;
-#endif
 }
 
 CollIndex ExEspStmtGlobals::registerSendTopTcb(ex_send_top_tcb *st)
