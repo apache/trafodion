@@ -5721,16 +5721,28 @@ Lng32 HSGlobalsClass::CollectStatistics()
         else
           {
               if (useSampling && !externalSampleTable)
+              {
+                // free column memory, to allow sample table load to use it
+                deallocatePendingMemory();
+                
+                // create and populate the sample table
                 retcode = sampleTable.make(currentRowCountIsEstimate_,
                                            *hssample_table,
                                            actualRowCount, sampleRowCount);
-               // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                
+                HSHandleError(retcode);
+
+                // reallocate column memory
+                numColsToProcess = getColsToProcess(maxRowsToRead,
+                                              internalSortWhenBetter,
+                                              trySampleTableBypassForIS);
+              }
               else if (!externalSampleTable)
               {
                 *hssample_table = getTableName(user_table->data(), nameSpace);
                 sampleRowCount = actualRowCount;
-              }
-              HSHandleError(retcode);
+              }          
           }
 
         while (numColsToProcess > 0)
@@ -11237,6 +11249,22 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
     }
 
   return numColsToProcess;
+}
+
+// If we decide to create and load a sample table, deallocate column memory
+// and reset PENDING group states back to UNPROCESSED before creating and
+// loading the sample table. We'll call getColsToProcess to reallocate it
+// again afterwards.
+void HSGlobalsClass::deallocatePendingMemory(void)
+{
+  for (HSColGroupStruct *group = singleGroup; group; group = group->next)
+    {
+      if (group->state == PENDING)
+        {
+          group->freeISMemory(TRUE,TRUE);
+          group->state = UNPROCESSED;
+        }
+    }
 }
 
 // Select a set of columns for internal sort based on the amount of memory req'd, type,
