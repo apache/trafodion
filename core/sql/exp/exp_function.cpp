@@ -6506,10 +6506,14 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
 
     char *rltStr = NULL;
     char *jsonStr = new(heap) char[len1+1];
-    memset(jsonStr, 0, len1+1);
-    strncpy(jsonStr, op_data[1], len1);
     char *jsonAttr = new(heap) char[len2+1];
+    if (jsonStr == NULL || jsonAttr == NULL)
+    {
+        return ex_expr::EXPR_ERROR;
+    }
+    memset(jsonStr, 0, len1+1);
     memset(jsonAttr, 0, len2+1);
+    strncpy(jsonStr, op_data[1], len1);
     strncpy(jsonAttr, op_data[2], len2);
     JsonReturnType ret = json_extract_path_text(&rltStr, jsonStr, 1, jsonAttr);
     if (ret != JSON_OK)
