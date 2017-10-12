@@ -21,8 +21,7 @@
  * @@@ END COPYRIGHT @@
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -37,19 +36,17 @@ public class TestLargeInt {
 
     @Test
     public void JDBCLargeIntSigned() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "insert into largeint_signed_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
-            stmt = conn.createStatement();
+        try (
+                Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+                )
+        {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists largeint_signed_tbl (c0 int not null, c1 largeint signed)");
             stmt.executeUpdate("delete from largeint_signed_tbl");
-
-            prepStmt = conn.prepareStatement(sql);
 
             prepStmt.setInt(1, 1);
             prepStmt.setObject(2, Long.MIN_VALUE);
@@ -73,29 +70,24 @@ public class TestLargeInt {
             assertEquals("Rows two returned 9223372036854775807", 9223372036854775807l, result[1]);
         } catch (SQLException e) {
             e.printStackTrace();
+            fail("exception in test JDBCLargeIntSigned .. " + e.getMessage());
             assertNull(e.getMessage());
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
         }
     }
 
     @Test
     public void JDBCLargeIntUnsigned() throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        PreparedStatement prepStmt = null;
         ResultSet rs = null;
         String sql = "insert into largeint_unsigned_tbl values (?,?);";
-        try {
-            conn = Utils.getUserConnection();
-            stmt = conn.createStatement();
+        try (
+                Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+                )
+        {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists largeint_unsigned_tbl (c0 int not null, c1 largeint unsigned)");
             stmt.executeUpdate("delete from largeint_unsigned_tbl");
-
-            prepStmt = conn.prepareStatement(sql);
 
             prepStmt.setInt(1, 1);
             prepStmt.setObject(2, 0);
@@ -121,11 +113,8 @@ public class TestLargeInt {
             assertEquals("Rows two returned 18446744073709551615", maxbd.toString(), result[1].toString());
         } catch (SQLException e) {
             e.printStackTrace();
+            fail("exception in test JDBCLargeIntSigned .. " + e.getMessage());
             assertNull(e.getMessage());
-        } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
         }
     }
 }

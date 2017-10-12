@@ -68,6 +68,7 @@ public class TestBlobBatch {
             result = true;
         }catch (Exception e) {
             e.printStackTrace();
+            fail("exception in assertResult in TsetBlobBatch .." + e.getMessage());
         }
         finally {
             stmt.close();
@@ -103,7 +104,7 @@ public class TestBlobBatch {
             
         } catch (Exception e) {
             e.printStackTrace();
-            
+            fail("exception in testSetBlob in TsetBlobBatch .." + e.getMessage());
             assertTrue(false);
         }
     }
@@ -130,6 +131,7 @@ public class TestBlobBatch {
             assertResult();  
         } catch (Exception e) {
             e.printStackTrace();
+            fail("exception in testSetBytes in TsetBlobBatch .." + e.getMessage());
             assertTrue(false);
         }
     }
@@ -160,6 +162,7 @@ public class TestBlobBatch {
             assertResult();
         } catch (Exception e) {
             e.printStackTrace();
+            fail("exception in testSetBinaryStream in TsetBlobBatch .." + e.getMessage());
             assertTrue(false);
         }
     }

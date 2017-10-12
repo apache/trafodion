@@ -470,6 +470,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Trx Batch1 : ERROR: Exception in insert batch mode.....");
+        		fail("Exception in test JDBCTrxBatch1 - insert batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -526,6 +527,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Trx Batch1 : ERROR: Exception in update batch mode.....");
+        		fail("Exception in test JDBCTrxBatch1 - update batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -556,6 +558,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch1 .." + e.getMessage());
         } finally {
         	/**/
 /* @@@ START COPYRIGHT @@@
@@ -693,6 +696,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Trx Batch2 : ERROR: Exception in insert batch mode.....");
+        		fail("Exception in test JDBCTrxBatch2 - insert batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
         	conn.commit();
@@ -745,6 +749,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Trx Batch2 : ERROR: Exception in update batch mode.....");
+        		fail("Exception in test JDBCTrxBatch2 - update batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -774,6 +779,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch2 .." + e.getMessage());
         } finally {
         	if (pass)
         		System.out.println("JDBCTrxBatch2 :  Passed");
@@ -852,6 +858,7 @@ public class TestTrx
         		System.out.println("Trx Batch3 : ERROR: Exception in insert batch mode.....");
             	bue.printStackTrace();
             	System.out.println(bue.getMessage());
+            	fail("Exception in test JDBCTrxBatch3 - insert batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
         	conn.commit();
@@ -899,6 +906,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch3 .." + e.getMessage());
         } finally {
         	/**/
         	if (pass)
@@ -1046,6 +1054,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch4 .." + e.getMessage());
         } finally {
         	if (pass)
         		System.out.println("JDBC Trx Batch4 :  Passed");
@@ -1188,6 +1197,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch5 .." + e.getMessage());
         } finally {
         	if (pass)
         		System.out.println("JDBC Trx Batch5 :  Passed");
@@ -1323,6 +1333,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("JDBC Trx Batch6 : ERROR: Exception in insert batch mode.....");
+        		fail("BatchUpdateException in test Batch6 - insert batch mode .." + bue.getMessage());
             	bue.printStackTrace();
             	System.out.println(bue.getMessage());
         		handleBatchUpdateException(bue);
@@ -1372,6 +1383,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCTrxBatch6 .." + e.getMessage());
         } finally {
         	/**/
         	if (pass)
@@ -1687,6 +1699,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("RollBack Trx Batch1 : ERROR: Exception in insert batch mode.....");
+        		fail("BatchUpdateException in test JDBCRollBackTrxBatch1 - insert batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -1740,6 +1753,7 @@ public class TestTrx
         		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("RollBack Trx Batch1 : ERROR: Exception in update batch mode.....");
+        		fail("BatchUpdateException in test JDBCRollBackTrxBatch1 - update batch mode.." + bue.getMessage());
         		handleBatchUpdateException(bue);
         	}
 
@@ -1771,6 +1785,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCRollBackTrxBatch1 .." + e.getMessage());
         } finally {
         	/**/
         	if (pass)
@@ -1911,6 +1926,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCRollBackTrxBatch4 .." + e.getMessage());
         } finally {
         	if (pass)
         		System.out.println("JDBC RollBack Trx Batch4 :  Passed");
@@ -2053,6 +2069,7 @@ public class TestTrx
         	pass = false;
         	e.printStackTrace();
         	System.out.println(e.getMessage());
+        	fail("Exception in test JDBCRollBackTrxBatch5 .." + e.getMessage());
         } finally {
         	if (pass)
         		System.out.println("JDBC RollBack Trx Batch5 :  Passed");

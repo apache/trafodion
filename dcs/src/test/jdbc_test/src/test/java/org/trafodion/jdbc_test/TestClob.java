@@ -94,6 +94,7 @@ public class TestClob {
 			assertEquals("Row count read from server", 1, rowNum);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			fail("exception in test readCLOBData in TestClob .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -115,6 +116,7 @@ public class TestClob {
 			assertFalse(rs.next());
 			rs.close();
 		} catch (Exception e) {
+			fail("exception in test testGetString in TestClob .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -145,7 +147,7 @@ public class TestClob {
 			reader.close();
 			rs.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			fail("exception in test testGetCharacterStream in TestClob .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -170,6 +172,7 @@ public class TestClob {
 			assertFalse(rs.next());
 			rs.close();
 		} catch (Exception e) {
+			fail("exception in test testGetAsciiStream in TestClob .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -199,7 +202,7 @@ public class TestClob {
 			assertFalse(rs.next());
 			rs.close();
 		} catch (Exception e) {
-
+			fail("exception in test testSetCharacterStream in TestClob .." + e.getMessage());
 		}
 	}
 
@@ -226,6 +229,7 @@ public class TestClob {
 			rs.close();
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			fail("exception in test testSetString in TestClob .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -253,6 +257,7 @@ public class TestClob {
 			rs.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testSetStringWithLength in TestClob .." + e.getMessage());
 		}
 	}
 
@@ -280,6 +285,7 @@ public class TestClob {
 			assertEquals("The length of CLOB ", lenLeft, clob.length());
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testTruncate in TestClob .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -301,6 +307,7 @@ public class TestClob {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testReadtoString in TestClob .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -326,6 +333,7 @@ public class TestClob {
 			rs.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testGetCharacterStreamFromRS in TestClob .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -347,6 +355,7 @@ public class TestClob {
 			rs.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testPosition in TestClob .." + e.getMessage());
 			assertTrue(false);
 		}
 	}
@@ -374,6 +383,7 @@ public class TestClob {
 			assertTrue(lob_freed_excption);
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail("exception in test testFree in TestClob .." + e.getMessage());
 			assertTrue(false);
 		}
 	}

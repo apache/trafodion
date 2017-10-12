@@ -79,7 +79,7 @@ public class TestBlob {
             assertFalse(rs.next());
             rs.close();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            fail("exception in test testGetBytes in TestBlob .. " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -111,7 +111,7 @@ public class TestBlob {
             rs.close();
         }
         catch (Exception e) {
-           
+            fail("exception in test testGetBinaryStream in TestBlob .. " + e.getMessage());
             e.printStackTrace();
             assertTrue(false);
         }
@@ -141,7 +141,7 @@ public class TestBlob {
         }
         catch (Exception e)
         {
-            
+            fail("exception in test testSetBytes in TestBlob .. " + e.getMessage());
             e.printStackTrace();
             assertTrue(false);
         }
@@ -171,7 +171,7 @@ public class TestBlob {
         }
         catch (Exception e )
         {
-            
+            fail("exception in test testSetBytesWithLen in TestBlob .. " + e.getMessage());
             e.printStackTrace();
             assertTrue(false);
         }
@@ -204,7 +204,7 @@ public class TestBlob {
             rs.close();
             
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            fail("exception in test testSetBinaryStream in TestBlob .. " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -223,6 +223,7 @@ public class TestBlob {
             rs.close();
             
         } catch (Exception e) {
+            fail("exception in test testGetBytesFromRS in TestBlob .. " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -245,7 +246,7 @@ public class TestBlob {
             is.close();
         }
         catch (Exception e) {
-           
+            fail("exception in test testGetBinaryStreamfromRS in TestBlob .. " + e.getMessage());
             e.printStackTrace();
             assertTrue(false);
         }
@@ -272,6 +273,7 @@ public class TestBlob {
             
             assertTrue(lob_freed_excption);
         } catch (Exception e) {
+            fail("exception in test testFree in TestBlob .. " + e.getMessage());
             e.printStackTrace();
             assertTrue(false);
         }
