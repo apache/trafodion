@@ -10566,23 +10566,15 @@ trim_operands : value_expression
         }
      | TOK_FROM value_expression
         { 
-          #ifdef NA_WIDE_CHARACTER
-            $$ = new (PARSERHEAP()) Trim(Trim::BOTH,
-		 new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $2); 
-          #else
-            $$ = new (PARSERHEAP()) Trim(Trim::BOTH,
-                 new (PARSERHEAP()) SystemLiteral(" ", CharInfo::UnknownCharSet), $2); 
-          #endif // NA_WIDE_CHARACTER
+          $$ = new (PARSERHEAP()) Trim(
+               Trim::BOTH,
+               new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $2); 
         }
      | trim_spec TOK_FROM value_expression
         { 
-          #ifdef NA_WIDE_CHARACTER
-            $$ = new (PARSERHEAP()) Trim($1,
-	         new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $3); 
-          #else
-            $$ = new (PARSERHEAP()) Trim($1,
-                 new (PARSERHEAP()) SystemLiteral(" ", CharInfo::UnknownCharSet), $3); 
-          #endif // NA_WIDE_CHARACTER
+          $$ = new (PARSERHEAP()) Trim(
+               $1,
+               new (PARSERHEAP()) ConstValue(" ", WIDE_(" ")), $3); 
         }
      | value_expression TOK_FROM value_expression
         { $$ = new (PARSERHEAP()) Trim(Trim::BOTH, $1, $3); }

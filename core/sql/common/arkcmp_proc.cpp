@@ -37,9 +37,6 @@
  */
 
 
-#undef  NA_COMPILE_INSTANTIATE
-#define NA_COMPILE_INSTANTIATE
-
 #include "Platform.h"
 #include "NewDel.h"
 #include <fstream>

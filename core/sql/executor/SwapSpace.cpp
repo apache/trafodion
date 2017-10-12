@@ -109,11 +109,7 @@ namespace ExOverflow
 
     if (sortError_.getSortError())
     {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
       error = static_cast<Int16>(sortError_.getSysError());
-#else
-      error = (Int16) sortError_.getSysError();
-#endif
     }
 
     return error;
@@ -288,11 +284,7 @@ namespace ExOverflow
     readingFirstBuffer_ = false;
 
     // ScratchSapce blockNums are 1..N
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     Int32 blockNum = static_cast<Int32>(swapRead_ / swapBufferSize_) + 1;
-#else
-    Int32 blockNum = ((Int32) (swapRead_ / swapBufferSize_)) + 1;
-#endif
     status = mapStatus(store_->readThru(readBuffer_, blockNum, 
                                         swapBufferSize_));
     // status is OK if read was successfully initiated
@@ -306,11 +298,7 @@ namespace ExOverflow
     ex_assert((!store_), "temporary storage already initialized");
 
     readBuffer_ = memory_.getBuffer(true);
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     Lng32 bufSize = static_cast<Lng32>(swapBufferSize_);
-#else
-    Lng32 bufSize = (Lng32) swapBufferSize_;
-#endif
     NAMemory* heap = memory_.getHeap();
     store_ = new(heap) ScratchSpace(heap, &sortError_,bufSize, 1, -1, //explain node
                                     false);   // logInfoEvent = false

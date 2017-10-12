@@ -120,11 +120,7 @@ ex_mj_tcb::ex_mj_tcb(const ex_mj_tdb & mj_tdb,
   {
     pool_ = NULL;
     Int32 nBuffers = mj_tdb.numBuffers_;
-#if defined(NA_HAS_ANSI_CPP_CASTS)
     Lng32 bufSize = static_cast<Lng32>(mj_tdb.bufferSize_);
-#else
-    Lng32 bufSize = (Lng32) mj_tdb.bufferSize_;
-#endif
 
     if (isLeftJoin() && ljExpr())
     {
@@ -188,17 +184,11 @@ ex_mj_tcb::ex_mj_tcb(const ex_mj_tdb & mj_tdb,
     {
       Float32 estRows = mj_tdb.getEstRowsUsed();
       Int32 recLen = mj_tdb.rightDupRecLen_;
-#if defined(NA_HAS_ANSI_CPP_CASTS)
       UInt32 assumedMaxMB
         = static_cast<UInt32>(
           (recLen * estRows) / (4 * ExOverflow::ONE_MEGABYTE));
       UInt32 pctBasedQuotaMB
         = static_cast<UInt32>(quotaMB * (mj_tdb.getQuotaPct()/100.0));
-#else
-      UInt32 assumedMaxMB
-        = (UInt32) (recLen * estRows) / (4 * ExOverflow::ONE_MEGABYTE);
-      UInt32 pctBasedQuotaMB = (UInt32) quotaMB * (mj_tdb.getQuotaPct()/100.0);
-#endif
       if (pctBasedQuotaMB && (pctBasedQuotaMB < assumedMaxMB))
       {
         assumedMaxMB = pctBasedQuotaMB;
@@ -457,11 +447,7 @@ bool ex_mj_tcb::reacquireResources(void)
       if (mjTdb().getLogDiagnostics())
         {
           char msg[128];
-#if defined(NA_HAS_ANSI_CPP_CASTS)
           UInt32 memorySize = static_cast<UInt32>(tspace_->getMemory());
-#else
-          UInt32 memorySize = (UInt32) tspace_->getMemory();
-#endif
           str_sprintf(msg, "Merge join initial TupleSpace memory is %d bytes",
                       memorySize);
           SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg,
@@ -571,11 +557,7 @@ short ex_mj_tcb::stop(ex_mj_private_state& pstate)
         if (mjTdb().getLogDiagnostics())
         {
           char msg[64];
-#if defined(NA_HAS_ANSI_CPP_CASTS)
           UInt32 maxMemory = static_cast<UInt32>(tspace_->getMaxMemory());
-#else
-          UInt32 maxMemory = (UInt32) tspace_->getMaxMemory();
-#endif
           str_sprintf(msg, "Merge join released resources, max memory %d",
                       maxMemory);
           SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg,
@@ -800,13 +782,8 @@ ex_mj_tcb::returnRow(atp_struct* leftAtp,
       if (!isSemiJoin())
       {
         // Return right row portion of join.
-#if defined(NA_HAS_ANSI_CPP_CASTS)
         short nLeftTuples = static_cast<short>(leftAtp->numTuples());
         short lastSrcAtpIndex = static_cast<short>(rightAtp->numTuples() - 1);
-#else
-        short nLeftTuples = (short) leftAtp->numTuples();
-        short lastSrcAtpIndex = (short) (rightAtp->numTuples() - 1);
-#endif
         if (!isUniqueMj)
         {
           // Join flattened (contiguous) saved duplicate right row
@@ -836,19 +813,11 @@ ex_mj_tcb::returnRow(atp_struct* leftAtp,
                                   mjTdb().ljRecLen_))
         {
           // Couldn't allocate; try to add a new buffer.
-#if defined(NA_HAS_ANSI_CPP_CASTS)
           Lng32 bufSize = static_cast<Lng32>(mjTdb().bufferSize_);
-#else
-          Lng32 bufSize = (Lng32) mjTdb().bufferSize_;
-#endif
 
           if (!pool_->addBuffer(bufSize, false))
           {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
             createDiags(static_cast<Int16>(EXE_NO_MEM_TO_EXEC));
-#else
-            createDiags((Int16) EXE_NO_MEM_TO_EXEC);
-#endif
             retCode = ex_expr::EXPR_ERROR;
           }
           else if (pool_->get_free_tuple(parentAtp->getTupp(pentry->numTuples()-1),
@@ -2108,11 +2077,7 @@ ex_mj_private_state::currentState(void) const
 const char*
 ex_mj_private_state::stateName(ex_mj_tcb::mj_step mjStep)
 {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
   Int32 i = static_cast<Int32>(mjStep);
-#else
-  Int32 i = (Int32) mjStep;
-#endif
 
   return stateNames[i];
 }

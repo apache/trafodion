@@ -42,9 +42,6 @@ typedef long Int64;
 typedef long long int Int64;
 #endif
 
-#undef SQLCLI_LIB_FUNC
-#define SQLCLI_LIB_FUNC
-
 #ifdef __cplusplus
 extern "C"
 {

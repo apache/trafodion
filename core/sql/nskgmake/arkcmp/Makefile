@@ -21,8 +21,7 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := arkcmp.cpp \
-	Sqlci_templ.cpp
+CPPSRC := arkcmp.cpp
 
 EARLY_DLLS:= -ljsig
 

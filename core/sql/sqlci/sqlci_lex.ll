@@ -115,19 +115,11 @@ void SqlciUnput(char c)
 
 // handle EOF in the input stream and let lex continue
 // with the next input file
-
-#if defined(NA_EXTERN_C_LINKAGE)
 extern "C"   
   int yywrap(void)
     {
       return 0;
     }
-#else
-int yywrap(void)
-{
-  return 0;
-}
-#endif
 
 %}
 
