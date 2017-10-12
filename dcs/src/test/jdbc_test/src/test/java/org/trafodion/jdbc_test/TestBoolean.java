@@ -51,7 +51,6 @@ public class TestBoolean {
             stmt.executeUpdate("create table if not exists boolean_tbl (c0 int not null, c1 boolean)");
             stmt.executeUpdate("delete from boolean_tbl");
 
-            prepStmt = conn.prepareStatement(sql);
             prepStmt.setInt(1, 1);
             prepStmt.setBoolean(2, true);
             prepStmt.addBatch();

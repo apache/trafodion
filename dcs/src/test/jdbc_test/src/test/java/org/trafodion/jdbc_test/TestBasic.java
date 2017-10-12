@@ -567,7 +567,6 @@ public class TestBasic
         	}
 
         	// Verify the inserted rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	if (rs != null) {

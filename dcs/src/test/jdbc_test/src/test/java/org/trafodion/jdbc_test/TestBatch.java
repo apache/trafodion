@@ -452,7 +452,6 @@ public class TestBatch
 			Statement stmt = conn.createStatement();
 		)
 		{
-           	stmt = conn.createStatement();
            	stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
 	        stmt.executeUpdate("drop table if exists " + IN1 + " cascade");
            	
@@ -512,7 +511,6 @@ public class TestBatch
         	}
 
         	// Verify the inserted rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	if (rs != null) {
@@ -662,7 +660,6 @@ public class TestBatch
         	}
 
         	// Verify the deleted rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	int rowNo = 0;
@@ -802,7 +799,6 @@ public class TestBatch
         	}
 
         	// Verify the updated rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	int rowNo = 0;
@@ -977,7 +973,6 @@ public class TestBatch
         	}
 
         	// Verify the inserted rows
-        	stmt = conn.createStatement();
         	int totalI = 0;
         	rs = stmt.executeQuery("select * from " + IN1);
         	if (rs != null) {
