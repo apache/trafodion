@@ -123,13 +123,12 @@ public class TestGetIndexInfo {
     	try ( Statement stmt = _conn.createStatement() ) {
     		stmt.execute(strDropTableQuery);
     	} catch(Exception e) {
-    		fail("exception in cleanTable in TestGetIndexInfo .." + e.getMessage());
+    	    // do nothing
     	}
     	
     	try {
     		_conn.close();
     	} catch(Exception e) {
-    		fail("failed to close connection in cleanTable in TestGetIndexInfo .." + e.getMessage());
     	}
     }
 	

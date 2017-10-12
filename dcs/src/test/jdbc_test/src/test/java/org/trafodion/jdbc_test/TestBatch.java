@@ -576,9 +576,9 @@ public class TestBatch
 		System.out.println("JDBC batch test 4..");
 
         try (
-        		Connection conn = Utils.getUserConnection();
-    			Statement stmt = conn.createStatement();
-        		)
+                Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                )
         {
 	        stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
            	stmt.executeUpdate("drop table if exists " + ISTBL + " cascade");
@@ -713,9 +713,9 @@ public class TestBatch
 		System.out.println("JDBC batch test 5..");
 
         try (
-    			Connection conn = Utils.getUserConnection();
-    			Statement stmt = conn.createStatement();
-    		)
+                Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                )
         {
 	        stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
            	stmt.executeUpdate("drop table if exists " + ISTBL + " cascade");

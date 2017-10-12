@@ -39,10 +39,10 @@ public class TestBoolean {
         ResultSet rs = null;
         String sql = "insert into boolean_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
-        		Statement stmt = conn.createStatement();
-        		PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                Connection conn = Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                PreparedStatement prepStmt = conn.prepareStatement(sql);
+                )
         {
             
             conn.createStatement().executeUpdate("cqd traf_boolean_io 'ON'");

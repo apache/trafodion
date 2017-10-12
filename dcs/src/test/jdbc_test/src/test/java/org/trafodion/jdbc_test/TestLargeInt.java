@@ -39,10 +39,10 @@ public class TestLargeInt {
         ResultSet rs = null;
         String sql = "insert into largeint_signed_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists largeint_signed_tbl (c0 int not null, c1 largeint signed)");
@@ -80,10 +80,10 @@ public class TestLargeInt {
         ResultSet rs = null;
         String sql = "insert into largeint_unsigned_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists largeint_unsigned_tbl (c0 int not null, c1 largeint unsigned)");

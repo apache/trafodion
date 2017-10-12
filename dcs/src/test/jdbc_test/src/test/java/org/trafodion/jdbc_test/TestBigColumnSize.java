@@ -56,9 +56,9 @@ public class TestBigColumnSize {
         String type = "";
 
         try (
-        		Connection conn =  Utils.getUserConnection();
-        		Statement stmt = conn.createStatement();
-        		)
+                Connection conn =  Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                )
         {
             assertNotNull(conn);
             assertNotNull(stmt);
@@ -134,9 +134,9 @@ public class TestBigColumnSize {
         String type = "";
 
         try (
-        		Connection conn =  Utils.getUserConnection();
-        		Statement stmt = conn.createStatement();
-        		)
+                Connection conn =  Utils.getUserConnection();
+                Statement stmt = conn.createStatement();
+                )
         {
             System.out.println("---");
             assertNotNull(conn);

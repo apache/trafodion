@@ -1589,7 +1589,7 @@ public class TestTrx
         } 
 		System.out.println("JDBCRollBackTrx6 - Insert : Done");
 	}
-	
+
 	@Test
 	public void JDBCRollBackTrxBatch1() throws InterruptedException, SQLException 
 	{

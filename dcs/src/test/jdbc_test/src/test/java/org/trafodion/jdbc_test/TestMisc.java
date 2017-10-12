@@ -54,7 +54,7 @@ public class TestMisc
 		int maxRows = 10, rowSel = 0, i = 0;
 
 		try  (
-        		Connection conn = Utils.getUserConnection();
+		        Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
         		)
 		{
@@ -121,12 +121,10 @@ public class TestMisc
 		String sql = null;
 
 		try (
-        		Connection conn = Utils.getUserConnection();
+		        Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
-        		)
+		        )
 		{
-			conn = Utils.getUserConnection();
-			stmt = conn.createStatement();
 			sql = "explain options 'f' select count(\"_REPOS_\".metric_query_table.session_id) from "
 					+ "\"_REPOS_\".metric_query_table <<+ cardinality 10e5 >>, \"_REPOS_\".metric_query_aggr_table <<+ cardinality 10e4 >> "
 			        + "where \"_REPOS_\".metric_query_table.session_id = \"_REPOS_\".metric_query_aggr_table.session_id";
@@ -166,8 +164,6 @@ public class TestMisc
                 Statement stmt = conn.createStatement();
         		)
 		{
-			conn = Utils.getUserConnection();
-			stmt = conn.createStatement();
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             rs = stmt.executeQuery(sql);
             rs.next();

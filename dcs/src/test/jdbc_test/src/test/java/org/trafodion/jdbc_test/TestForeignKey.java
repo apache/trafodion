@@ -140,7 +140,7 @@ public class TestForeignKey {
 			    }
             }
             catch (Exception e) {
-            	fail("failed to getExportedKeys in testGetExportedKeys in TestForeignKey .." + e.getMessage());
+                fail("failed to getExportedKeys in testGetExportedKeys in TestForeignKey .." + e.getMessage());
             }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
@@ -168,7 +168,7 @@ public class TestForeignKey {
 			    }
             }
             catch (Exception e) {
-            	fail("failed to getCrossReference in testGetCrossReference in TestForeignKey .." + e.getMessage());
+                fail("failed to getCrossReference in testGetCrossReference in TestForeignKey .." + e.getMessage());
             }
 			assertEquals(rowNum, 1);
 		} catch (Exception e) {
@@ -187,7 +187,6 @@ public class TestForeignKey {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-			fail("failed to drop table in cleanTable in TestForeignKey .." + e.getMessage());
 		}
 		
 		try {
@@ -195,7 +194,6 @@ public class TestForeignKey {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-			fail("failed to close connection in cleanTable in TestForeignKey .." + e.getMessage());
 		}
 	}
 	

@@ -39,10 +39,10 @@ public class TestTinyInt {
         ResultSet rs = null;
         String sql = "insert into tinyint_signed_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             conn.createStatement().executeUpdate("cqd traf_tinyint_return_values 'ON'");//
             conn.createStatement().executeUpdate("cqd traf_tinyint_input_params 'ON'");//
@@ -82,10 +82,10 @@ public class TestTinyInt {
         ResultSet rs = null;
         String sql = "insert into tinyint_unsigned_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists tinyint_unsigned_tbl (c0 int not null, c1 tinyint unsigned)");

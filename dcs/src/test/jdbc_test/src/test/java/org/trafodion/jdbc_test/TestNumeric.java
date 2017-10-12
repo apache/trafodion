@@ -39,10 +39,10 @@ public class TestNumeric {
         ResultSet rs = null;
         String sql = "upsert using load into numeric_tbl values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists numeric_tbl (c0 int not null, c1 numeric(20,0))");
@@ -73,10 +73,10 @@ public class TestNumeric {
         ResultSet rs = null;
         String sql = "upsert using load into numeric_tbl2 values (?,?);";
         try (
-        		Connection conn = Utils.getUserConnection();
+                Connection conn = Utils.getUserConnection();
                 Statement stmt = conn.createStatement();
                 PreparedStatement prepStmt = conn.prepareStatement(sql);
-        		)
+                )
         {
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists numeric_tbl2 (c0 int not null, c1 numeric(10,2))");

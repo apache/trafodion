@@ -48,8 +48,8 @@ public class TestClobBatch {
 	private boolean assertResult() throws Exception {
 		ResultSet rs = null;
 		try (
-				Statement stmt = _conn.createStatement();
-				)
+		        Statement stmt = _conn.createStatement();
+		        )
 		{
 			rs = stmt.executeQuery("select c1, c2, c3 from " + Utils.schema + "." + tableName + " order by c1");
 
@@ -234,7 +234,6 @@ public class TestClobBatch {
 			_conn.close();
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			fail("failed to close connection in TestClobBatch .." + e.getMessage());
 			e.printStackTrace();
 		}
 	}

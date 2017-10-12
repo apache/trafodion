@@ -280,8 +280,8 @@ public class TestBasic
 	       	   	assertEquals("Column 3 data", 300, rs.getInt(3));
 	       	   	assertEquals("Column 4 data", 400, rs.getInt(4));
        	   	} catch (Exception ex) {
-                ex.printStackTrace();
-    			fail("Exception in resultset JDBC TestBasic5 .." + ex.getMessage());
+       	   	    ex.printStackTrace();
+       	   	    fail("Exception in resultset JDBC TestBasic5 .." + ex.getMessage());
     		}
 	        stmt.executeUpdate("drop table if exists " + tableName + " cascade");
    	   		//conn.close();
@@ -337,7 +337,7 @@ public class TestBasic
 	         	assertEquals("Column 3 data", (Integer)444, (Integer)rs.getObject(3));
             } catch (Exception ex) {
                 ex.printStackTrace();
-    			fail("Exception in resultset JDBC TestBasic6 .." + ex.getMessage());
+                fail("Exception in resultset JDBC TestBasic6 .." + ex.getMessage());
     		}
             rowsUpdated = stmt.executeUpdate("update " + tableName + " set c2 = 8787 where c3 > 300");
          	assertEquals("Rows Updated", 4, rowsUpdated);
@@ -406,7 +406,7 @@ public class TestBasic
 	        	assertEquals("Column 4 data", (Integer)212, (Integer)rs.getObject(4));
            	} catch (Exception ex) {
                 ex.printStackTrace();
-    			fail("Exception in resultset JDBC TestBasic7 .." + ex.getMessage());
+                fail("Exception in resultset JDBC TestBasic7 .." + ex.getMessage());
     		}
         	
 	        stmt.executeUpdate("drop table if exists " + tableName2 + " cascade");

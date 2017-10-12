@@ -68,7 +68,7 @@ public class PropTest
             System.out.println("testDefaultPropertiesConnection : PASS");
         }
         catch (Exception e) {
-        	fail("exception in testDefaultPropertiesConnection in PropTest" + e.getMessage());
+            fail("exception in testDefaultPropertiesConnection in PropTest.." + e.getMessage());
         }
     }
 }
