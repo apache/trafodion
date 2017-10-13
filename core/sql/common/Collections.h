@@ -442,10 +442,16 @@ public:
     }
     else
     {
-      if (!arr_) 
-         NADELETE(arr_, T, heap_);
-      if (!usages_) 
-         delete [] usages_;
+      // user-specified delete operator
+      // Note : this won't call the destructor of each arr_ element. 
+      // after the compiler supports delete[] operator to be supprted,
+      // it should be changed to
+      //if (arr_) delete [] arr_;
+      //if (usages_) delete [] usages_;
+
+      if (arr_ != NULL) heap_->deallocateMemory(arr_);
+      if (usages_ != NULL) heap_->deallocateMemory(usages_);
+
     }
     arr_ = NULL;
     usages_ = NULL;

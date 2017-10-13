@@ -157,11 +157,14 @@ CollIndex NACollection<T>::resize(CollIndex newSize)
 #ifdef __GNUC__
 #  if __GNUC__ * 100 + __GNUC_MINOR__ >= 404
      // push_options added in 4.4
-#    pragma GCC push_options
+#pragma GCC push_options
      // GCC prior to 4.4 did not complain about this
      // need to ignore uninitialized for this statement:
      //   T temp;
 #    pragma GCC diagnostic ignored "-Wuninitialized"
+#  if __GNUC__ * 100 + __GNUC_MINOR__ >= 408
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
 #  endif
 #endif
 template <class T> void NACollection<T>::allocate(CollIndex initLen)
@@ -185,8 +188,24 @@ template <class T> void NACollection<T>::allocate(CollIndex initLen)
 	}
       else
 	{	
-	  arr_ = new(heap_) T[maxLength_];
-	  usages_ = new(heap_) CollIndex[maxLength_];
+	  // The method for dynamic allocation should match the one in 
+	  // deallocate. When the compiler supports the feature to overload
+	  // new[] and delete[], the following two lines should be used
+	  // instead.
+	  //arr_ = new(heap_) T[maxLength_];
+	  //usages_ = new(heap_) CollIndex[maxLength_];
+
+	  arr_ = (T *)heap_->allocateMemory(sizeof(T) * ((size_t) maxLength_));
+	  usages_ = (CollIndex *) heap_->allocateMemory(
+               sizeof(CollIndex) * ((size_t) maxLength_));
+
+          // To finish up, we copy uninitialized objects of type T into
+          // the newly-alloc'd space, so vtbl-pointers get set properly.
+          // (This is not always necessary, but it's a good idea in
+          // general!)
+          T temp; 
+          for ( CollIndex i = 0 ; i < maxLength_ ; i++ )
+            memcpy ((void*)&arr_[i], (void*)&temp, sizeof(T)) ;
         }
     }
   else
