@@ -61,15 +61,8 @@ using namespace std;
 // CHARSET stuff
 //****************************************************************************
 
-
-
-#ifdef NA_WIDE_CHARACTER
-  #define IF_WIDE TRUE
-#else
-  #define IF_WIDE FALSE
-#endif
-
-  #define IF_NSK FALSE
+#define IF_WIDE TRUE
+#define IF_NSK FALSE
 
 struct mapCS {
   CharInfo::CharSet cs;

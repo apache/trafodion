@@ -54,10 +54,7 @@
 #include "ExStats.h"
 #include "ComDistribution.h"
 #include "sql_buffer_size.h"
-// #include "MXVersion.h"
-#if (defined(NA_GUARDIAN_IPC))
 #include "ExCextdecs.h"
-#endif
 
 
 #include "seabed/ms.h"

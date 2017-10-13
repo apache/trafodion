@@ -1938,7 +1938,7 @@ const char *DebugSqlWhatDescStr(long what_desc)
 
 #endif /* _DEBUG */
 
-SQLCLI_LIB_FUNC long CliDebug_SetStmtAttr(SQLSTMT_ID *statement_id, long attrName,
+long CliDebug_SetStmtAttr(SQLSTMT_ID *statement_id, long attrName,
 										  long numeric_value, char *string_value,
 										  const char *filename, unsigned long line)
 {
@@ -1953,7 +1953,7 @@ SQLCLI_LIB_FUNC long CliDebug_SetStmtAttr(SQLSTMT_ID *statement_id, long attrNam
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_SetDescItem(SQLDESC_ID *sql_descriptor, long entry,
+long CliDebug_SetDescItem(SQLDESC_ID *sql_descriptor, long entry,
 										  long what_to_set, long numeric_value, char * string_value,
 										  const char *filename, unsigned long line)
 {
@@ -1969,7 +1969,7 @@ SQLCLI_LIB_FUNC long CliDebug_SetDescItem(SQLDESC_ID *sql_descriptor, long entry
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_SETROWSETDESCPOINTERS(SQLDESC_ID * desc_id, long rowset_size, int *rowset_status_ptr,
+long CliDebug_SETROWSETDESCPOINTERS(SQLDESC_ID * desc_id, long rowset_size, int *rowset_status_ptr,
 													long starting_entry, long num_quadruple_fields,
 													struct SQLCLI_QUAD_FIELDS quad_fields[],
 													const char *filename, unsigned long line)
@@ -1987,7 +1987,7 @@ SQLCLI_LIB_FUNC long CliDebug_SETROWSETDESCPOINTERS(SQLDESC_ID * desc_id, long r
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDescItems2(SQLDESC_ID * sql_descriptor,
+long CliDebug_GetDescItems2(SQLDESC_ID * sql_descriptor,
 											long no_of_desc_items, SQLDESC_ITEM desc_items[],
 											const char *filename, unsigned long line)
 {
@@ -2001,7 +2001,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItems2(SQLDESC_ID * sql_descriptor,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_SetCursorName(SQLSTMT_ID * statement_id, SQLSTMT_ID * cursor_name,
+long CliDebug_SetCursorName(SQLSTMT_ID * statement_id, SQLSTMT_ID * cursor_name,
 											const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetCursorName",("statement_id=0x%08x, cursor_name=0x%08x)",
@@ -2013,7 +2013,7 @@ SQLCLI_LIB_FUNC long CliDebug_SetCursorName(SQLSTMT_ID * statement_id, SQLSTMT_I
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_ExecFetch(SQLSTMT_ID * statement_id,
+long CliDebug_ExecFetch(SQLSTMT_ID * statement_id,
 										SQLDESC_ID * input_descriptor, long num_ptr_pairs,
 										const char *filename, unsigned long line)
 {
@@ -2027,7 +2027,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecFetch(SQLSTMT_ID * statement_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_CloseStmt(SQLSTMT_ID *statement_id,
+long CliDebug_CloseStmt(SQLSTMT_ID *statement_id,
 										const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CloseStmt",("statement_id=0x%08x",
@@ -2038,7 +2038,7 @@ SQLCLI_LIB_FUNC long CliDebug_CloseStmt(SQLSTMT_ID *statement_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long conditionNum,
+long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long conditionNum,
 													  int *numeric_value, char * string_value,
 													  long max_string_len, int *len_of_item,
 													  const char *filename, unsigned long line)
@@ -2063,7 +2063,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long con
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX_HANDLE * prev_context_handle,
+long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX_HANDLE * prev_context_handle,
 										    const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SwitchContext",("context_handle=%ld, prev_context_handle=0x%08x",
@@ -2079,7 +2079,7 @@ SQLCLI_LIB_FUNC long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_DeleteContext(SQLCTX_HANDLE contextHandle,
+long CliDebug_DeleteContext(SQLCTX_HANDLE contextHandle,
 										    const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeleteContext",("contextHandle=%ld",
@@ -2090,7 +2090,7 @@ SQLCLI_LIB_FUNC long CliDebug_DeleteContext(SQLCTX_HANDLE contextHandle,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_CreateContext(SQLCTX_HANDLE *context_handle,
+long CliDebug_CreateContext(SQLCTX_HANDLE *context_handle,
 											char* sqlAuthId, long suppressAutoXactStart,
 										    const char *filename, unsigned long line)
 {
@@ -2106,7 +2106,7 @@ SQLCLI_LIB_FUNC long CliDebug_CreateContext(SQLCTX_HANDLE *context_handle,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle,
+long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle,
 						const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CurrentContext",("contextHandle=0x%08x",
@@ -2117,7 +2117,7 @@ SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id,
+long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id,
 											    const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ClearDiagnostics",("statement_id=0x%08x",
@@ -2128,7 +2128,7 @@ SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, void *numeric_value, char *string_value,
+long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, void *numeric_value, char *string_value,
 													  long max_string_len, int *len_of_item,
 													  const char *filename, unsigned long line)
 {
@@ -2149,7 +2149,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, 
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id,
+long CliDebug_DeallocDesc(SQLDESC_ID *desc_id,
 										  const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocDesc",("desc_id=0x%08x",
@@ -2160,7 +2160,7 @@ SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_DeallocStmt(SQLSTMT_ID *statement_id,
+long CliDebug_DeallocStmt(SQLSTMT_ID *statement_id,
 										  const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocStmt",("statement_id=0x%08x",
@@ -2170,7 +2170,7 @@ SQLCLI_LIB_FUNC long CliDebug_DeallocStmt(SQLSTMT_ID *statement_id,
 	long rc = SQL_EXEC_DeallocStmt(statement_id);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
-SQLCLI_LIB_FUNC long CliDebug_ExecDirect(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_source,
+long CliDebug_ExecDirect(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_source,
 										 SQLDESC_ID *input_descriptor, long num_ptr_pairs,
 										 const char *filename, unsigned long line)
 {
@@ -2185,7 +2185,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecDirect(SQLSTMT_ID *statement_id, SQLDESC_ID *s
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_Exec(SQLSTMT_ID *statement_id, SQLDESC_ID *input_descriptor,long num_ptr_pairs,
+long CliDebug_Exec(SQLSTMT_ID *statement_id, SQLDESC_ID *input_descriptor,long num_ptr_pairs,
 								   const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Exec",("statement_id=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%ld",
@@ -2199,7 +2199,7 @@ SQLCLI_LIB_FUNC long CliDebug_Exec(SQLSTMT_ID *statement_id, SQLDESC_ID *input_d
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_Prepare(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_source,
+long CliDebug_Prepare(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_source,
 									  const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Prepare",("statement_id=0x%08x,sql_source=0x%08x",
@@ -2211,7 +2211,7 @@ SQLCLI_LIB_FUNC long CliDebug_Prepare(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_DescribeStmt(SQLSTMT_ID *statement_id,
+long CliDebug_DescribeStmt(SQLSTMT_ID *statement_id,
 										   SQLDESC_ID *input_descriptor, SQLDESC_ID *output_descriptor,
 										   const char *filename, unsigned long line)
 {
@@ -2225,7 +2225,7 @@ SQLCLI_LIB_FUNC long CliDebug_DescribeStmt(SQLSTMT_ID *statement_id,
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDescEntryCount(SQLDESC_ID *sql_descriptor, int *num_entries,
+long CliDebug_GetDescEntryCount(SQLDESC_ID *sql_descriptor, int *num_entries,
 												const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescEntryCount",("sql_descriptor=0x%08x, num_entries=0x%08x",
@@ -2239,7 +2239,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescEntryCount(SQLDESC_ID *sql_descriptor, int 
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_Fetch(SQLSTMT_ID *statement_id, SQLDESC_ID *output_descriptor, long num_ptr_pairs,
+long CliDebug_Fetch(SQLSTMT_ID *statement_id, SQLDESC_ID *output_descriptor, long num_ptr_pairs,
 									const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Fetch",("statement_id=0x%08x, output_descriptor=0x%08x, num_ptr_pairs=%ld",
@@ -2257,7 +2257,7 @@ SQLCLI_LIB_FUNC long CliDebug_Fetch(SQLSTMT_ID *statement_id, SQLDESC_ID *output
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetDescItem(SQLDESC_ID *sql_descriptor, long entry,
+long CliDebug_GetDescItem(SQLDESC_ID *sql_descriptor, long entry,
 										  long what_to_get, int *numeric_value, char *string_value, long max_string_len,
 										  int *len_of_item, long start_from_offset,
 										  const char *filename, unsigned long line)
@@ -2283,7 +2283,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItem(SQLDESC_ID *sql_descriptor, long entry
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_Cancel(SQLSTMT_ID *statement_id,
+long CliDebug_Cancel(SQLSTMT_ID *statement_id,
 									 const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Cancel",("statement_id=0x%08x",
@@ -2293,7 +2293,7 @@ SQLCLI_LIB_FUNC long CliDebug_Cancel(SQLSTMT_ID *statement_id,
 	long rc = SQL_EXEC_Cancel(statement_id);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
-SQLCLI_LIB_FUNC long CliDebug_AllocStmt(SQLSTMT_ID * new_statement_id, SQLSTMT_ID *cloned_statement,
+long CliDebug_AllocStmt(SQLSTMT_ID * new_statement_id, SQLSTMT_ID *cloned_statement,
 										const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocStmt",("new_statement_id=0x%08x, cloned_statement=0x%08x",
@@ -2305,7 +2305,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocStmt(SQLSTMT_ID * new_statement_id, SQLSTMT_I
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_ResDescName(SQLDESC_ID *statement_id, SQLSTMT_ID *from_statement, long what_desc,
+long CliDebug_ResDescName(SQLDESC_ID *statement_id, SQLSTMT_ID *from_statement, long what_desc,
 										  const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ResDescName",("statement_id=0x%08x, from_statement=0x%08x, what_desc=%s",
@@ -2318,7 +2318,7 @@ SQLCLI_LIB_FUNC long CliDebug_ResDescName(SQLDESC_ID *statement_id, SQLSTMT_ID *
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_AllocDesc(SQLDESC_ID *desc_id, SQLDESC_ID *input_descriptor,
+long CliDebug_AllocDesc(SQLDESC_ID *desc_id, SQLDESC_ID *input_descriptor,
 										const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocDesc",("desc_id=0x%08x, input_descriptor=0x%08x",
@@ -2330,7 +2330,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocDesc(SQLDESC_ID *desc_id, SQLDESC_ID *input_d
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_AllocStmtForRS (SQLSTMT_ID *callStmtId, long resultSetIndex, 
+long CliDebug_AllocStmtForRS (SQLSTMT_ID *callStmtId, long resultSetIndex, 
 											  SQLSTMT_ID *resultSetStmtId, const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelStmt,"SQL_EXEC_AllocStmtForRS",
@@ -2348,7 +2348,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocStmtForRS (SQLSTMT_ID *callStmtId, long resul
 
 }
 
-SQLCLI_LIB_FUNC long CliDebug_AssocFileNumber(SQLSTMT_ID *statement_id, short file_number,
+long CliDebug_AssocFileNumber(SQLSTMT_ID *statement_id, short file_number,
 											  const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AssocFileNumber",("statement_id=0x%08x, file_number=%d",
@@ -2360,7 +2360,7 @@ SQLCLI_LIB_FUNC long CliDebug_AssocFileNumber(SQLSTMT_ID *statement_id, short fi
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_CLI_VERSION(const char *filename, unsigned long line)
+long CliDebug_CLI_VERSION(const char *filename, unsigned long line)
 {
 	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CLI_VERSION",(NULL),
 		filename, line);
@@ -2369,7 +2369,7 @@ SQLCLI_LIB_FUNC long CliDebug_CLI_VERSION(const char *filename, unsigned long li
 	FUNCTION_RETURN_NUMERIC_LOC(rc,(NULL),filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_ClearExecFetchClose(SQLSTMT_ID *statement_id, SQLDESC_ID *input_descriptor,
+long CliDebug_ClearExecFetchClose(SQLSTMT_ID *statement_id, SQLDESC_ID *input_descriptor,
 												  SQLDESC_ID* output_descriptor, long num_input_ptr_pairs,
 												  long num_output_ptr_pairs, long num_total_ptr_pairs,
 												  const char *filename, unsigned long line)
@@ -2393,7 +2393,7 @@ SQLCLI_LIB_FUNC long CliDebug_ClearExecFetchClose(SQLSTMT_ID *statement_id, SQLD
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
-SQLCLI_LIB_FUNC long CliDebug_GetStmtAttr(SQLSTMT_ID *statement_id, long attrName,
+long CliDebug_GetStmtAttr(SQLSTMT_ID *statement_id, long attrName,
 										  int *numeric_value, char *string_value,
 										  long max_string_len, int *len_of_item,
 										  const char *filename, unsigned long line)

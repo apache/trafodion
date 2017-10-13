@@ -179,7 +179,6 @@ public:
   // IpcNodeName(const IpcProcessId &proc);
   // make a node name from an Internet address or from a phandle
   IpcNodeName(const SockIPAddress &iPNode);
-#if (defined(NA_GUARDIAN_IPC))
   IpcNodeName(const GuaProcessHandle &phandle);
   // Return the Guardian node name as a character string, without trailing spaces.
   inline void getNodeNameAsString (char * nodeName) const
@@ -191,7 +190,6 @@ public:
       else
         nodeName[i+1] = 0;
   };
-#endif
   IpcNodeName & operator = (const IpcNodeName &other);
   NABoolean operator == (const IpcNodeName &other);
 
@@ -269,11 +267,9 @@ struct GuaProcessHandle
   SB_Phandle_Type phandle_;
 
   NABoolean operator == (const GuaProcessHandle &other) const;
-#if (defined(NA_GUARDIAN_IPC))
   NABoolean compare(const GuaProcessHandle &other) const;
   NABoolean fromAscii(const char *ascii);
   Int32 toAscii(char *ascii, Int32 asciiLen) const;
-#endif
   Lng32 decompose(Int32 &cpu, Int32 &pin, Int32 &nodeNumber
                   , SB_Int64_Type &seqNum
                   ) const;
@@ -285,14 +281,12 @@ struct GuaProcessHandle
   void dumpAndStop(bool doDump, bool doStop) const;
 };
 
-#if (defined(NA_GUARDIAN_IPC))
 class MyGuaProcessHandle : public GuaProcessHandle
 {
 public:
   // default constructor initializes object with my own process handle
   MyGuaProcessHandle();
 };
-#endif
 
 struct SockProcessId
 {
@@ -467,9 +461,7 @@ private:
 
   // private methods
 
-#if (defined(NA_GUARDIAN_IPC))
   IpcCpuNum getCpuNumFromPhandle() const;
-#endif
 };
 
 typedef enum WaitReturnStatusEnum
@@ -1058,7 +1050,6 @@ private:
   SockIPAddress  ipAddr_;
 };
 
-#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // A Guardian connection on the client side that connects to a server
 // by opening its process file
@@ -1383,8 +1374,6 @@ private:
 
 };
 
-#endif /* NA_GUARDIAN_IPC */
-
 // -----------------------------------------------------------------------
 // The connection through which a server gets controlled by its owner.
 // Exactly one object of this type exists in every server. This is
@@ -1499,7 +1488,6 @@ private:
   SockListnerPort *listnerPort_;
 };
 
-#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // A control connection for a Guardian server using $RECEIVE
 // -----------------------------------------------------------------------
@@ -1702,7 +1690,6 @@ public:
                              GuaProcessHandle *clientPhandle)  {return FALSE; }
  
 };
-#endif
 
 // -----------------------------------------------------------------------
 // A message buffer (the container in which the message travels)
@@ -2727,7 +2714,6 @@ protected:
   virtual void stop();
 };
 
-#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // Specialization for a Guardian server process
 // -----------------------------------------------------------------------
@@ -2886,7 +2872,6 @@ private:
 
  NABoolean unhooked_;
 };
-#endif /* NA_GUARDIAN_IPC */
 
 // -----------------------------------------------------------------------
 // Max. length of a server class name (see below)
