@@ -606,7 +606,6 @@ Lng32 ExpLOBInterfaceInsertSelect(ExLobGlobals * exLobGlob,
 		   exLobGlob,
 		   xnId, 
 		   blackBox, blackBoxLen,
-                   NULL, // compression
 		   lobMaxSize,
 		   lobMaxChunkMemSize,
                    lobGCLimit,
