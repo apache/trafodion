@@ -2639,7 +2639,7 @@ IpcMessageStream & IpcMessageStream::operator << (IpcMessageObj & toAppend)
       bufObj->setMyVPtr(NULL);
       bufObj->s_.refCount_ = 1;
       bufObj->s_.next_ = NULL;
-      tail_->s_.next_ = (IpcMessageObj *) startOffset;
+      tail_->s_.next_ = (IpcMessageObj *) ((long)startOffset);
       tail_ = bufObj;
     }
   return *this;

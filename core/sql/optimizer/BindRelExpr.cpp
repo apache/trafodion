@@ -5456,7 +5456,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	      ExeUtilLobExtract * le =
 		new (PARSERHEAP()) ExeUtilLobExtract
 		(lef, ExeUtilLobExtract::TO_STRING_,
-		 NULL, NULL, lef->getTgtSize(), 0,
+		 0, 0, lef->getTgtSize(), 0,
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
@@ -10647,7 +10647,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     const NATable* naTable = getTableDesc()->getNATable();
     if (naTable->hasLobColumn())
       {
-	NAColumn *nac;
+	NAColumn *nac = NULL;
 	for (CollIndex c = 0; c < naTable->getColumnCount(); c++) 
 	  {
 	    nac = naTable->getNAColumnArray()[c];
@@ -11037,7 +11037,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   ValueIdSet sequenceFunction ;		
  
   //Retrieve all the system and user columns of the left join output
-  ValueIdList  ljOutCols = NULL;
+  ValueIdList  ljOutCols = 0;
   boundLJ->getRETDesc()->getValueIdList(ljOutCols);
   //Retrieve the null instantiated part of the LJ output
   ValueIdList ljNullInstColumns = lj->nullInstantiatedOutput();

@@ -85,12 +85,15 @@ ex_globals::ex_globals(short num_temps,
   lobGlobals_ = new(heap_) LOBglobals(heap_);
 }
 
-void *& ex_globals::getExLobGlobal() { return lobGlobals()->lobAccessGlobals(); }
+ExLobGlobals *&ex_globals::getExLobGlobal() 
+{ 
+   return lobGlobals()->lobAccessGlobals(); 
+}
 
-void ex_globals::initLOBglobal(void *context)
+void ex_globals::initLOBglobal(ContextCli *context)
 {
   // initialize lob interface
-  ExpLOBoper::initLOBglobal(getExLobGlobal(), heap_, context,(char *)"default",0);
+  ExpLOBoper::initLOBglobal(getExLobGlobal(), (NAHeap *)heap_, context, (char *)"default", (Int32)0);
 
 }
 

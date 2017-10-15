@@ -673,8 +673,8 @@ CompilerTrackingInfo::logIntervalInPrivateTable()
 
   ExeCliInterface cliInterface(
        CmpCommon::statementHeap(),
-       NULL,
-       NULL, 
+       0,
+       0, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   if( cliInterface.beginWork() >= 0 )

@@ -134,7 +134,7 @@ ExSPInputOutput::ExSPInputOutput() : NAVersionedObject(-1)
 {
   str_cpy_all(eyeCatcher_, "SPIO", 4);
   totalLen_ = 0;
-  tupleDesc_ = NULL;
+  tupleDesc_ = (ExpTupleDescPtr)NULL;
   caseIndexArray_ = (Int16Ptr) NULL;
   flags_ = 0;
 }

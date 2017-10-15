@@ -171,7 +171,7 @@ ExRangePartInputData::ExRangePartInputData(
 
 	  // just to be safe, initialize the array with NULLs
 	  for (Lng32 i = 0; i < (numPartitions + 1); i++)
-	    partRangeExpressions_[i] = NULL;
+	    partRangeExpressions_[i] = (ExExprPtrPtr)NULL;
 	}
       else
 	{

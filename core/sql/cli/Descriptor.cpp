@@ -1207,7 +1207,7 @@ RETCODE Descriptor::getDescItemMainVarInfo(Lng32 entry,
   if (descItem.var_data)
     {
       *var_ptr        = (void *)descItem.var_data;
-      *ind_ptr        = (void *)descItem.ind_data;
+      *ind_ptr        = (void *)((long)descItem.ind_data);
     }
   else
     {

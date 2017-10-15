@@ -408,7 +408,7 @@ ClusteredBitmap::findEqualOrGreaterBitmapMap(UInt32 sigBits) const
   Int32 low = 0;
   Int32 high = numBitmaps_ - 1;
   Int32 middle;
-  bitsToBitmap *map;
+  bitsToBitmap *map = NULL;
 
   while (low <= high)
   {

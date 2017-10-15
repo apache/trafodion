@@ -692,7 +692,7 @@ literal:
                //res = (*ccfn)(buf);
 				if (flags & POINTER)
 					*va_arg(ap, void **) =
-					    (void *)(Lng32)res;
+					    (void *)(long)res;
 				else if (flags & QUAD)
 					*va_arg(ap, quad_t *) = res;
 				else if (flags & LONG)

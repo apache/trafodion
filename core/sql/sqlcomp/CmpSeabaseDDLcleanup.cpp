@@ -989,9 +989,10 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
   if (NOT cannotDropSchema)
     {
       // delete schema object row from objects table
-      str_sprintf(query, "delete from  %s.\"%s\".%s where catalog_name = '%s' and schema_name  = '%s' and object_name = '"SEABASE_SCHEMA_OBJECTNAME" ' ",
+      str_sprintf(query, "delete from  %s.\"%s\".%s where catalog_name = '%s' and schema_name  = '%s' and object_name = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                  (char*)catName_.data(),(char*)schName_.data());
+                  (char*)catName_.data(),(char*)schName_.data(),
+                  SEABASE_SCHEMA_OBJECTNAME);
       cliRC = cliInterface->executeImmediate(query);
       if (cliRC < 0)
         {

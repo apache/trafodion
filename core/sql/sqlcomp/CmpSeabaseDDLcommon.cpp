@@ -3413,7 +3413,7 @@ short CmpSeabaseDDL::existsInSeabaseMDTable(
     
   Lng32 len = 0;
   Int64 rowCount = 0;
-  cliRC = cliInterface->executeImmediate(buf, (char*)&rowCount, &len, NULL);
+  cliRC = cliInterface->executeImmediate(buf, (char*)&rowCount, &len, FALSE);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -4747,7 +4747,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Lng32 entry = 0;
   Int64 rowsAffected = 0;
 
-  ExeCliInterface rwrsCliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface rwrsCliInterface(STMTHEAP, 0, NULL, 
                                    CmpCommon::context()->sqlSession()->getParentQid());
   if (useRWRS)
     {
@@ -6937,7 +6937,7 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
   NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
    CmpCommon::context()->sqlSession()->getParentQid() );
 
   if (dropFromMD)
@@ -7087,7 +7087,7 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
   Lng32 len = 0;
   char sampleTableName[1000];
 
-  cliRC = cliInterface->executeImmediate(buf, (char*)&sampleTableName, &len, NULL);
+  cliRC = cliInterface->executeImmediate(buf, (char*)&sampleTableName, &len, FALSE);
   if (cliRC == -4082)  // if persistent_samples table does not exist
     cliRC = 0;         // then there isn't a persistent sample table
   else if (cliRC < 0)
@@ -7206,7 +7206,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   if (ehi == NULL)
     return;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
@@ -7482,7 +7482,7 @@ void CmpSeabaseDDL::createSeabaseMDviews()
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -7511,7 +7511,7 @@ void CmpSeabaseDDL::dropSeabaseMDviews()
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -7539,7 +7539,7 @@ void CmpSeabaseDDL::createSeabaseSchemaObjects()
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -7725,7 +7725,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
 
   ElemDDLSGOptions * sgo = createSequenceNode->getSGoptions();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   
 
@@ -7870,7 +7870,7 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
 
   ElemDDLSGOptions * sgo = alterSequenceNode->getSGoptions();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   
   retcode = existsInSeabaseMDTable(&cliInterface, 
@@ -8018,7 +8018,7 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
   NAString objectNamePart = seqName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extSeqName = seqName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
@@ -8562,7 +8562,7 @@ void CmpSeabaseDDL::updateVersion()
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -8659,7 +8659,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -8862,7 +8862,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                                        CmpDDLwithStatusInfo *dws)
 {
   Lng32 cliRC = 0;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 
   // error accessing hbase. Return.
@@ -9622,7 +9622,7 @@ int32_t toOwnerID = -1;
       return;
    
 char buf[4000];
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
 Lng32 cliRC = 0;
 
@@ -9649,7 +9649,7 @@ Lng32 cliRC = 0;
 int32_t length = 0;
 Int64 rowCount = 0;
 
-   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
+   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,FALSE);
   
    if (cliRC < 0)
    {

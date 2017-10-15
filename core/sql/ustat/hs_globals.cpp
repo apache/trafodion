@@ -6909,7 +6909,7 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
   if (LM->LogNeeded())
     {
       LM->StopTimer();
-      sprintf(LM->msg, "the size of data set I is "PF64" rows", xRows);
+      sprintf(LM->msg, "the size of data set I is " PF64" rows", xRows);
       LM->Log(LM->msg);
     }
 
@@ -7589,11 +7589,11 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
               sprintf(LM->msg, "Not enough memory for %s: memLeft=" PF64 " totMemNeeded=", group->colNames->data(), memLeft);
               formatFixedNumeric((Int64)totMemNeeded, 0, LM->msg+strlen(LM->msg));
               LM->Log(LM->msg);
-              sprintf(LM->msg, "group->memNeeded="PF64"", group->memNeeded); 
+              sprintf(LM->msg, "group->memNeeded=" PF64"", group->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "delGroup->memNeeded="PF64"", delGroup->memNeeded); 
+              sprintf(LM->msg, "delGroup->memNeeded=" PF64"", delGroup->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "insGroup->memNeeded="PF64"", insGroup->memNeeded); 
+              sprintf(LM->msg, "insGroup->memNeeded=" PF64"", insGroup->memNeeded); 
               LM->Log(LM->msg);
               sprintf(LM->msg, "memForCBF=");
               formatFixedNumeric((Int64)memForCBF, 0, LM->msg+strlen(LM->msg));
@@ -7605,7 +7605,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
           // Ignore the group if there is no stats for it!
 
           if (LM->LogNeeded()) {
-              sprintf(LM->msg, "No stats: histTableName=%s, tableUid="PF64", colnum=%d", 
+              sprintf(LM->msg, "No stats: histTableName=%s, tableUid=" PF64", colnum=%d", 
                                (char*)hstogram_table->data(),
                                tableUID,
                                group->colSet[0].colnum);
@@ -7650,7 +7650,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
         {
           if (group->state == PENDING)
             {
-              sprintf(LM->msg, "    %s ("PF64" bytes)",
+              sprintf(LM->msg, "    %s (" PF64" bytes)",
                                group->colSet[0].colname->data(),
                                group->memNeeded);
               LM->Log(LM->msg);
@@ -13593,8 +13593,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
       // Use the oldUec if estimatedUec is nan.  This is to work around 
       // the nan value produced by lwcUecEstimate() above.
-
+     
+#if __GNUC_MINOR__ == 8
+      if ( std::isnan(estIntvlUEC) )
+#else
       if ( isnan(estIntvlUEC) )
+#endif
         estIntvlUEC = oldUec;
 
       // cap the new UEC with the RC

@@ -233,13 +233,12 @@ void DatetimeType::datetimeToLong(void *bufPtr,
   char *str = (char *)bufPtr;
   short sw;
   Lng32 size;
-
   Int32 start = getStartField();
   Int32 end = getExtendedEndField(getEndField(), getFractionPrecision());
+  ULng32 val = 0;
 
   for (Int32 i = start; i <= end; i++)
     {
-      ULng32 val;
       size = storageLen[i - 1];
       switch (size) {
       case sizeof(char):
@@ -1850,7 +1849,7 @@ NAString DatetimeValue::getValueAsString(const DatetimeType& dt) const
 
   char cbuf[DatetimeType::MAX_FRACTION_PRECISION + 1];	// +1 for sprintf '\0'
   Int32  clen;
-  ULng32  ulbuf;
+  ULng32  ulbuf = 0;
   unsigned short usbuf;
   unsigned char  ucbuf;
   const unsigned char *value = getValue();

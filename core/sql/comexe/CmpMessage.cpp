@@ -318,14 +318,14 @@ void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
   if (sqltext_ && (sqlTextLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], sqltext_, sqlTextLen_);
-      ci->sqltext_ = (char *)nextOffset;
+      ci->sqltext_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(sqlTextLen_);
     }
   
   if (schemaName_ && (schemaNameLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], (char *)schemaName_, schemaNameLen_);
-      ci->schemaName_ = (char *)nextOffset;
+      ci->schemaName_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(schemaNameLen_);
     }
 }
@@ -466,7 +466,7 @@ void CmpDDLwithStatusInfo::pack(char * buffer)
   if (blackBox_ && (blackBoxLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], blackBox_, blackBoxLen_);
-      ci->blackBox_ = (char *)nextOffset;
+      ci->blackBox_ = (char *)((long)nextOffset);
       nextOffset += ROUND8(blackBoxLen_);
     }
 

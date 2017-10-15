@@ -169,7 +169,7 @@ ex_clause::ex_clause(clause_type type,
   operType_    = oper_type;
   numOperands_ = num_operands;
   pciLink_     = NULL;
-  nextClause_  = NULL;
+  nextClause_  = (ExClausePtr)NULL;
   flags_       = 0;
   //  instruction_   = -1;
   instrArrayIndex_ = -1;

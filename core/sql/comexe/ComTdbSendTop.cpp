@@ -134,7 +134,7 @@ const ComTdb * ComTdbSendTop::getChildForGUI(
 {
   ExFragDir * fragDir = (ExFragDir *)frag_dir;
   
-  return (ComTdb *)(base +
+  return (ComTdb *)((long)base +
        fragDir->getGlobalOffset(childFragId_) +
        fragDir->getTopNodeOffset(childFragId_));
 }

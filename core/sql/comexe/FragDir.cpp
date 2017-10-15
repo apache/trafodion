@@ -48,7 +48,7 @@ ExFragDir::ExFragDir(Lng32 entries, Space *space,
   : NAVersionedObject(-1)
 {
   numEntries_ = entries;
-  scratchFileOptions_ = NULL;
+  scratchFileOptions_ = (ExScratchFileOptionsPtr)NULL;
   nodeMask_ = 0;
   planVersion_ = ComVersion_GetCurrentPlanVersion();
 

@@ -5181,9 +5181,9 @@ Scan::synthLogProp(NormWA * normWAPtr)
     setBaseCardinality (MIN_ONE (getTableDesc()->getNATable()->getEstRowCount())) ;
 
   if ((CURRSTMT_OPTDEFAULTS->histDefaultSampleSize() > 0) &&
-      (RelExpr *)this->getRETDesc() &&
-      (RelExpr *)this->getRETDesc()->getBindWA() &&
-      (RelExpr *)this->getRETDesc()->getBindWA()->inDDL())
+      this->getRETDesc() &&
+      this->getRETDesc()->getBindWA() &&
+      this->getRETDesc()->getBindWA()->inDDL())
   {
     CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);
   }

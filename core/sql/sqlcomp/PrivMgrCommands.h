@@ -456,7 +456,7 @@ public:
                            std::vector<std::string> & outlines);
     
    bool describePrivileges(
-      const PrivMgrObjectInfo &objectInfo,
+      PrivMgrObjectInfo &objectInfo,
       std::string &privilegeText);
 
    PrivStatus dropAuthorizationMetadata(bool doCleanup);

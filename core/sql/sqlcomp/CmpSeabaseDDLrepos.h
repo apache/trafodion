@@ -45,7 +45,7 @@
 //----------------------------------------------------------------
 static const QString createMetricQueryTable[] =
 {
-{" create table %s.\"%s\"."REPOS_METRIC_QUERY_TABLE" "},
+{" create table %s.\"%s\"." REPOS_METRIC_QUERY_TABLE" "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -59,8 +59,8 @@ static const QString createMetricQueryTable[] =
  {" sequence_number                        integer unsigned default null serialized, "},             
  {" process_name                           char(32) character set iso88591 casespecific default null serialized, "},
  {" exec_start_utc_ts                      timestamp(6) no default not null not droppable not serialized, "}, 
- {" query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
- {" query_signature_id                     char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific default null serialized, "},
+ {" query_id                               char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+ {" query_signature_id                     char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific default null serialized, "},
  {" user_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
  {" role_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
  {" start_priority                         integer unsigned default null serialized, "},
@@ -68,7 +68,7 @@ static const QString createMetricQueryTable[] =
  {" session_id                             char(108) character set iso88591 casespecific      default null serialized, "},
  {" client_name                            varchar(1024) character set iso88591 casespecific  default null serialized, "},
  {" application_name                       char(130) character set iso88591 casespecific      default null serialized, "},
- {" statement_id                           char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" statement_id                           char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
  {" statement_type                         char(36) character set iso88591 casespecific       default null serialized, "},
  {" statement_subtype                      char(36) character set iso88591 casespecific       default null serialized, "},
  {" submit_utc_ts				   timestamp(6) default null not serialized, "},
@@ -137,7 +137,7 @@ static const QString createMetricQueryTable[] =
  {" num_reply_msg_bytes                    largeint                          default null serialized, "},
  {" first_result_return_utc_ts             timestamp(6)                      default null not serialized, "},
  {" rows_returned_to_master                largeint                          default null serialized, "},
- {" parent_query_id                        char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" parent_query_id                        char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
  {" parent_system_name                     char(128) character set iso88591 casespecific      default null serialized, "},
  {" exec_end_utc_ts                        timestamp(6)                      default null not serialized, "},
  {" master_execution_time                  largeint                          default null serialized, "},
@@ -148,7 +148,7 @@ static const QString createMetricQueryTable[] =
  {" sql_error_code                         integer                           default null serialized, "},
  {" error_text                             varchar(2000) character set utf8 casespecific default null serialized, "},
  {" query_text                             varchar(50000) character set utf8 casespecific default null serialized, "},
- {" explain_plan                           varchar("REPOS_MAX_EXPLAIN_PLAN_LEN_STR") character set iso88591 casespecific default null serialized, "},
+ {" explain_plan                           varchar(" REPOS_MAX_EXPLAIN_PLAN_LEN_STR") character set iso88591 casespecific default null serialized, "},
  {" last_error_before_aqr                  integer                           default null serialized, "},
  {" delay_time_before_aqr_sec              largeint                          default null serialized, "},
  {" total_num_aqr_retries                  largeint                          default null serialized, "},
@@ -187,7 +187,7 @@ static const QString createMetricQueryTable[] =
 // ----------------------------------------------------------------
 static const QString createMetricSessionTable[] =
 {
- {" create table %s.\"%s\"."REPOS_METRIC_SESSION_TABLE"  "},
+ {" create table %s.\"%s\"." REPOS_METRIC_SESSION_TABLE"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -245,7 +245,7 @@ static const QString createMetricSessionTable[] =
  //----------------------------------------------------------------
 static const QString createMetricQueryAggrTable[] =
 {
- {" create table %s.\"%s\"."REPOS_METRIC_QUERY_AGGR_TABLE"  "},
+ {" create table %s.\"%s\"." REPOS_METRIC_QUERY_AGGR_TABLE"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -323,9 +323,9 @@ static const QString createMetricQueryAggrTable[] =
 //----------------------------------------------------------------
 static const QString createMetricTextTable[] =
   {
-    {" create table %s.\"%s\"."REPOS_METRIC_TEXT_TABLE" "},
+    {" create table %s.\"%s\"." REPOS_METRIC_TEXT_TABLE" "},
     {" ( "},
-    {"  query_id     char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+    {"  query_id     char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
     {"   text_type int not null serialized, "},
     {"   sub_id int not null serialized, "},
     {"   seq_num int not null serialized, "},
@@ -367,7 +367,7 @@ static const QString createMetricTextTable[] =
 //----------------------------------------------------------------
 static const QString createOldTrafv11MetricQueryTable[] =
 {
-{" create table %s.\"%s\"."TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
+{" create table %s.\"%s\"." TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -381,7 +381,7 @@ static const QString createOldTrafv11MetricQueryTable[] =
  {" sequence_number                        integer unsigned default null serialized, "},             
  {" process_name                           char(32) character set iso88591 casespecific default null serialized, "},
  {" exec_start_utc_ts                      timestamp(6) no default not null not droppable not serialized, "}, 
- {" query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+ {" query_id                               char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
  {" user_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
  {" role_name                              char(256 bytes) character set utf8 casespecific default null serialized, "},
  {" start_priority                         integer unsigned default null serialized, "},
@@ -389,7 +389,7 @@ static const QString createOldTrafv11MetricQueryTable[] =
  {" session_id                             char(108) character set iso88591 casespecific      default null serialized, "},
  {" client_name                            varchar(1024) character set iso88591 casespecific  default null serialized, "},
  {" application_name                       char(130) character set iso88591 casespecific      default null serialized, "},
- {" statement_id                           char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" statement_id                           char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
  {" statement_type                         char(36) character set iso88591 casespecific       default null serialized, "},
  {" statement_subtype                      char(36) character set iso88591 casespecific       default null serialized, "},
  {" submit_utc_ts				   timestamp(6) default null not serialized, "},
@@ -458,7 +458,7 @@ static const QString createOldTrafv11MetricQueryTable[] =
  {" num_reply_msg_bytes                    largeint                          default null serialized, "},
  {" first_result_return_utc_ts             timestamp(6)                      default null not serialized, "},
  {" rows_returned_to_master                largeint                          default null serialized, "},
- {" parent_query_id                        char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
+ {" parent_query_id                        char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null serialized, "},
  {" parent_system_name                     char(128) character set iso88591 casespecific      default null serialized, "},
  {" exec_end_utc_ts                        timestamp(6)                      default null not serialized, "},
  {" master_execution_time                  largeint                          default null serialized, "},
@@ -506,7 +506,7 @@ static const QString createOldTrafv11MetricQueryTable[] =
 // ----------------------------------------------------------------
 static const QString createOldTrafv11MetricSessionTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
+ {" create table %s.\"%s\"." TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -561,7 +561,7 @@ static const QString createOldTrafv11MetricSessionTable[] =
  //----------------------------------------------------------------
 static const QString createOldTrafv11MetricQueryAggrTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
+ {" create table %s.\"%s\"." TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -645,9 +645,9 @@ static const QString createOldTrafv11MetricQueryAggrTable[] =
 //----------------------------------------------------------------
 static const QString createOldTrafv11MetricTextTable[] =
   {
-    {" create table %s.\"%s\"."REPOS_METRIC_TEXT_TABLE" "},  // table didn't change when moving from 1.1 to 2.1
+    {" create table %s.\"%s\"." REPOS_METRIC_TEXT_TABLE" "},  // table didn't change when moving from 1.1 to 2.1
     {" ( "},
-    {"  query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
+    {"  query_id                               char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable serialized, "},
     {"   text_type int not null serialized, "},
     {"   sub_id int not null serialized, "},
     {"   seq_num int not null serialized, "},
@@ -664,7 +664,7 @@ static const QString createOldTrafv11MetricTextTable[] =
 
 static const QString createOldv23ReposMetricQueryTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
+ {" create table %s.\"%s\"." TRAF_METRIC_QUERY_TABLE_OLD_REPOS" "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable not serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable not serialized, "},
@@ -678,7 +678,7 @@ static const QString createOldv23ReposMetricQueryTable[] =
  {" sequence_number                        integer unsigned default null not serialized, "},                 
  {" process_name                           char(32) character set iso88591 casespecific default null not serialized, "},
  {" exec_start_utc_ts                      timestamp(6) no default not null not droppable not serialized, "}, 
- {" query_id                               char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable not serialized, "},
+ {" query_id                               char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific no default not null not droppable not serialized, "},
  {" user_name                              char(256 bytes) character set utf8 casespecific default null not serialized, "},
  {" role_name                              char(256 bytes) character set utf8 casespecific default null not serialized, "},
  {" start_priority                         integer unsigned default null not serialized, "},
@@ -686,7 +686,7 @@ static const QString createOldv23ReposMetricQueryTable[] =
  {" session_id                             char(108) character set iso88591 casespecific      default null not serialized, "},
  {" client_name                            varchar(1024) character set iso88591 casespecific  default null not serialized, "},
  {" application_name                       char(130) character set iso88591 casespecific      default null not serialized, "},
- {" statement_id                           char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null not serialized, "},
+ {" statement_id                           char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null not serialized, "},
  {" statement_type                         char(36) character set iso88591 casespecific       default null not serialized, "},
  {" statement_subtype                      char(36) character set iso88591 casespecific       default null not serialized, "},
  {" submit_utc_ts				   timestamp(6) default null not serialized, "},
@@ -755,7 +755,7 @@ static const QString createOldv23ReposMetricQueryTable[] =
  {" num_reply_msg_bytes                    largeint                          default null not serialized, "},
  {" first_result_return_utc_ts             timestamp(6)                      default null not serialized, "},
  {" rows_returned_to_master                largeint                          default null not serialized, "},
- {" parent_query_id                        char("MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null not serialized, "},
+ {" parent_query_id                        char(" MAX_QUERY_ID_LEN_STR") character set iso88591 casespecific      default null not serialized, "},
  {" parent_system_name                     char(128) character set iso88591 casespecific      default null not serialized, "},
  {" exec_end_utc_ts                        timestamp(6)                      default null not serialized, "},
  {" master_execution_time                  largeint                          default null not serialized, "},
@@ -797,7 +797,7 @@ static const QString createOldv23ReposMetricQueryTable[] =
 
 static const QString createOldv23ReposMetricSessionTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
+ {" create table %s.\"%s\"." TRAF_METRIC_SESSION_TABLE_OLD_REPOS"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable not serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable not serialized, "},
@@ -851,7 +851,7 @@ static const QString createOldv23ReposMetricSessionTable[] =
  //----------------------------------------------------------------
 static const QString createOldv23ReposMetricQueryAggrTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
+ {" create table %s.\"%s\"." TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable not serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable not serialized, "},

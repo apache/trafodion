@@ -339,7 +339,7 @@ LmResultSetJava::initType2ResultSet(Int32 paramPos,
   }
 
   setCtxHandle( (SQLCTX_HANDLE)ia[1] );
-  setStmtID( (SQLSTMT_ID *)ia[2] );
+  setStmtID( (SQLSTMT_ID *)((long)ia[2]) );
 
   firstBufferedRow_		= ia[3];
   lastBufferedRow_		= ia[4];

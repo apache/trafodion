@@ -7684,7 +7684,7 @@ short ExExeUtilLobInfoTableTcb::work()
     if (espGlobals && espGlobals->getStmtStats())
       parentQid = espGlobals->getStmtStats()->getQueryId();
   }
-  ExeCliInterface cliInterface(getHeap(), NULL, NULL, parentQid);
+  ExeCliInterface cliInterface(getHeap(), 0, NULL, parentQid);
   while (1)
     {
       switch (step_)

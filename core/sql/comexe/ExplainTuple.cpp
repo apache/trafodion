@@ -240,7 +240,7 @@ ExplainTupleMaster::init(Space *space, NABoolean doExplainSpaceOpt)
   descCursor_ = 0;
   
   explainTupleStr_ = NULL;
-  explainTupleData_ = NULL;
+  explainTupleData_ = (NABasicPtr)NULL;
 
   // if space opt is to be done, start by allocating max length.
   // this will be trimmed and reset in ExplainTuple::genExplainData at end.

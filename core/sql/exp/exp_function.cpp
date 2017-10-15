@@ -5155,11 +5155,11 @@ ex_expr::exp_return_type ExFunctionSVariance::eval(char *op_data[],
 						   ComDiagsArea **diagsArea)
 {
   
-  double sumOfValSquared;
-  double sumOfVal;
-  double countOfVal;
+  double sumOfValSquared = 0;
+  double sumOfVal = 0;
+  double countOfVal = 1;
   double avgOfVal;
-  double result;
+  double result = 0;
 
   if(getDoubleValue(&sumOfValSquared, op_data[1], getOperand(1),
                     heap, diagsArea)) {
@@ -5199,11 +5199,11 @@ ex_expr::exp_return_type ExFunctionSStddev::eval(char *op_data[],
 						 ComDiagsArea **diagsArea)
 {
   
-  double sumOfValSquared;
-  double sumOfVal;
-  double countOfVal;
+  double sumOfValSquared = 0;
+  double sumOfVal = 0;
+  double countOfVal = 1;
   double avgOfVal;
-  double result;
+  double result = 0;
 
   if(getDoubleValue(&sumOfValSquared, op_data[1], getOperand(1),
                     heap, diagsArea)) {

@@ -3487,7 +3487,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
   Step step_;
 
   int   numExistingFiles_;
-  void * lobGlob_;
+  ExLobGlobals * lobGlob_;
 };
 
 class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state

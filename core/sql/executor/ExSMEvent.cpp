@@ -116,10 +116,10 @@ struct ExSMEventTrace
 
       printf("[%d] %d.%09ld %s ", (int) index,
              (int) e.ts_.tv_sec, (long int) e.ts_.tv_nsec, e.fn_);
-      printf("%d:%d:%" PRId64 ":%d:0x%c ", (int) t.node, (int) t.pid, t.id,
+      printf("%d:%d:%ld :%d:0x%c ", (int) t.node, (int) t.pid, t.id,
              (int) ExSMTag_GetTagWithoutQualifier(t.tag),
              (char) ExSMTag_GetQualifierDisplay(t.tag));
-      printf("%"PRId64" %"PRId64" %"PRId64" %"PRId64" %"PRId64"\n",
+      printf("%ld %ld %ld %ld %ld\n",
              opt[0], opt[1], opt[2], opt[3], opt[4]);
     }
 

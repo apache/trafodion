@@ -412,7 +412,7 @@ bool PrivMgrCommands::describeComponents(
 // returns true if successful
 // The Trafodion diags area contains any errors that were encountered
 // ----------------------------------------------------------------------------
-bool PrivMgrCommands::describePrivileges (const PrivMgrObjectInfo &objectInfo,
+bool PrivMgrCommands::describePrivileges (PrivMgrObjectInfo &objectInfo,
                                           std::string &privilegeText)
 {
   PrivMgrPrivileges objectPrivs (objectInfo, metadataLocation_, pDiags_);

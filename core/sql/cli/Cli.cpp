@@ -1641,9 +1641,9 @@ Lng32 SQLCLI_SetRowsetDescPointers(CliGlobals * cliGlobals,
             ind_ptr    = va_arg(ap, char *);
           }
           else {
-            var_layout = (char *)quad_fields[i].var_layout;
+            var_layout = (char *)((long)quad_fields[i].var_layout);
             var_ptr = (char *)quad_fields[i].var_ptr;
-            ind_layout = (char *)quad_fields[i].ind_layout;
+            ind_layout = (char *)((long)quad_fields[i].ind_layout);
             ind_ptr = quad_fields[i].ind_ptr == (void *)-1 ? 0 : (char *)quad_fields[i].ind_ptr;
           }
           // setDescItems requires setting the rowset size and layout size items
@@ -8566,7 +8566,7 @@ Lng32 SQLCLI_LOBcliInterface
 	Int64 descSyskey = 0;
 	Lng32 len = 0;
 	cliRC = cliInterface->executeImmediate(query,
-					       (char*)&descSyskey, &len, NULL);
+					       (char*)&descSyskey, &len, FALSE);
 
 	currContext.resetSqlParserFlags(0x1);
 
@@ -9248,7 +9248,7 @@ Lng32 SQLCLI_LOBcliInterface
 Lng32 SQLCLI_LOB_GC_Interface
 (
      /*IN*/     CliGlobals *cliGlobals,
-     /*IN*/     void *lobGlobals, // can be passed or NULL
+     /*IN*/     ExLobGlobals *lobGlobals, // can be passed or NULL
      /*IN*/     char * handle,
      /*IN*/     Lng32  handleLen,
      /*IN*/     char*  hdfsServer,
@@ -9465,7 +9465,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   // Compact into new temp file
        
         
-  rc = ExpLOBoper::compactLobDataFile(lobGlobals,dcInMemoryArray,numEntries,tgtLobName,lobMaxMemChunkLen, (void *)currContext.exHeap(), (void *)&currContext,hdfsServer, hdfsPort,lobLocation);
+  rc = ExpLOBoper::compactLobDataFile(lobGlobals,dcInMemoryArray,numEntries,tgtLobName,lobMaxMemChunkLen, currContext.exHeap(), &currContext,hdfsServer, hdfsPort,lobLocation);
                
   if (rc )
     {
@@ -9483,7 +9483,7 @@ Lng32 SQLCLI_LOB_GC_Interface
       // For now, return error for the IUD operation
 
       // Restore original data file.
-      Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, (void *)currContext.exHeap(),(void *)&currContext,hdfsServer,hdfsPort,lobLocation);
+      Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, currContext.exHeap(),&currContext,hdfsServer,hdfsPort,lobLocation);
       if (rc2)
         {
           lobDebugInfo("restoreLobDataFile Failed",0,__LINE__,lobTrace);
@@ -9494,7 +9494,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   else
     {
       //TBD :commit all updates and remove the saved copy of datafile
-      ExpLOBoper::purgeBackupLobDataFile(lobGlobals, tgtLobName,(void *)currContext.exHeap(),(void *)&currContext,hdfsServer,hdfsPort,lobLocation);
+      ExpLOBoper::purgeBackupLobDataFile(lobGlobals, tgtLobName,currContext.exHeap(),&currContext,hdfsServer,hdfsPort,lobLocation);
       lobDebugInfo("purgedLobDataFile ",0,__LINE__,lobTrace);
     }
   }
@@ -9611,7 +9611,7 @@ Lng32 SQLCLI_LOBddlInterface
 	  {
 	    // create lob data tables
 	    Lng32 rc = ExpLOBoper::createLOB
-	      (NULL, (void *)&currContext,currContext.exHeap(),
+	      (NULL, &currContext,currContext.exHeap(),
 	       lobLocList[i],  hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i],lobMaxSize);
 	    
@@ -9724,7 +9724,7 @@ Lng32 SQLCLI_LOBddlInterface
         for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),(void *)&currContext,
+	      (NULL, currContext.exHeap(),&currContext,
 	       lobLocList[i],hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i]);
             // Ignore 'not found' error from hdfs file deletes until this is made transactional just like Hbase tables are.
@@ -9765,7 +9765,7 @@ Lng32 SQLCLI_LOBddlInterface
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),(void *)&currContext,
+	      (NULL, currContext.exHeap(),&currContext,
 	       lobLocList[i],hdfsPort, hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
@@ -10337,7 +10337,7 @@ static Lng32 SeqGenCliInterfacePrepQry(
 
       cliRC = cliInterface->executeImmediatePrepare(query, 
 						    NULL, 0, 
-						    &rowsAffected, NULL,
+						    &rowsAffected, FALSE,
 						    stmtName);
       if (cliRC < 0)
 	{

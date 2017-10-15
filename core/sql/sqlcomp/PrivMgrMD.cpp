@@ -310,7 +310,7 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
   }
 
   Int32 cliRC = 0;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                           CmpCommon::context()->sqlSession()->getParentQid());
   
   // See what tables exist
@@ -515,7 +515,7 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (
      return STATUS_ERROR;
    }
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, CmpCommon::context()->sqlSession()->getParentQid());
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, CmpCommon::context()->sqlSession()->getParentQid());
   Int32 cliRC = 0;
   if (doCleanup)
     cleanupMetadata(cliInterface);
@@ -646,7 +646,7 @@ PrivStatus PrivMgrMDAdmin::getColumnReferences (ObjectReference *objectRef)
   selectStmt += UIDToString(objectRef->objectUID);
   selectStmt += " order by column_number";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
@@ -708,7 +708,7 @@ PrivStatus PrivMgrMDAdmin::getViewColUsages (ViewUsage &viewUsage)
   selectStmt += "and t.text_type = 8";
   selectStmt += " order by seq_num";
   
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
   
@@ -797,7 +797,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
 
   selectStmt += ")) order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
@@ -900,7 +900,7 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   selectStmt += " and u.used_object_uid = o.object_uid ";
   selectStmt += " order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
@@ -991,7 +991,7 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
   selectStmt += UIDToString(objectUsage.granteeID);
   selectStmt += ")) order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
@@ -1149,7 +1149,7 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
   selectStmt += " and r.unique_constraint_uid = c.object_uid ";
   selectStmt += " order by o.object_owner, o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
@@ -1324,7 +1324,7 @@ bool PrivMgrMDAdmin::getConstraintName(
   selectStmt += ") and k.column_number = " + UIDToString(columnNumber);
   selectStmt += " and unique_constraint_uid = k.object_uid) ";
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 

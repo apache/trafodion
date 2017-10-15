@@ -1456,7 +1456,7 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(
 
    int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
                                                  (char*)&expectedRows,
-                                                 &length,NULL);
+                                                 &length,FALSE);
 
    if (cliRC < 0)
    {

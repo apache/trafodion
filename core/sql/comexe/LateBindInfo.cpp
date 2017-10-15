@@ -886,7 +886,7 @@ TrafSimilarityTableInfo::TrafSimilarityTableInfo()
        hdfsRootDir_(NULL),
        modTS_(-1), numPartnLevels_(-1),
        hdfsDirsToCheck_(NULL),
-       hdfsHostName_(NULL), hdfsPort_(NULL),
+       hdfsHostName_(NULL), hdfsPort_(0),
        flags_(0)
 {
 }

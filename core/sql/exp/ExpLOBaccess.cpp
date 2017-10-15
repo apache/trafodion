@@ -1152,7 +1152,9 @@ Ex_Lob_Error ExLob::insertSelect(ExLob *srcLobPtr,
   Int32 cliRC;
   Int16 flags;
   Lng32  lobNum;
-  Int64 descNumOut,descNumIn,descSyskey = 0;
+  Int64 descNumOut = 0;
+  Int64 descNumIn = 0;
+  Int64 descSyskey = 0;
   Int32 lobType = 0;
   Int64 uid, inDescSyskey, descPartnKey;
   short schNameLen;
@@ -2513,7 +2515,7 @@ Ex_Lob_Error ExLobsOper (
 			 LobsOper    operation,         // LOB operation
 			 LobsSubOper subOperation,      // LOB sub operation
 			 Int64       waited,            // waited or nowaited
-			 void        *&globPtr,         // ptr to the Lob objects. 
+			 ExLobGlobals        *&globPtr,         // ptr to the Lob objects. 
 			 Int64       transId,
 			 void        *blackBox,         // black box to be sent to cli
 			 Int32       blackBoxLen,       // length of black box

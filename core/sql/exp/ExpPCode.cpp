@@ -228,7 +228,7 @@ void PCodeSegment::convAddrToOffsetInPCode(void * space) {
     Int32 addrBuf[6];
     Int32 *addrs = PCode::getEmbeddedAddresses(pcode[0], addrBuf);
     for(Int32 i = 0; addrs[i] > 0; i++) {
-      if ( (char*)pcode[addrs[i]] != NULL )
+      if ( (char*)((long)pcode[addrs[i]]) != NULL )
         *(Long*)&(pcode[addrs[i]]) =
                 ((Space*)space)->convertToOffset((char*)*(Long*)&(pcode[addrs[i]]));
     }

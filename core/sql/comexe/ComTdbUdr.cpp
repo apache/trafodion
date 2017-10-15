@@ -160,7 +160,7 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
     (space->allocateAlignedSpace(numParams_ * sizeof(UdrFormalParamInfoPtr)));
   for (UInt32 i = 0; i < numParams_; i++)
   {
-    paramInfo_[i] = NULL;
+    paramInfo_[i] = (UdrFormalParamInfoPtrPtr)NULL;
   }
 
   //
@@ -170,7 +170,7 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
     (space->allocateAlignedSpace(numChildInputs * sizeof(UdrTableDescInfoPtr)));
   for (UInt32 i = 0; i < numChildInputs; i++)
   {
-    udrChildTableDescInfo_[i] = NULL;
+    udrChildTableDescInfo_[i] = (UdrFormalParamInfoPtrPtr)NULL;
   }
 }
 

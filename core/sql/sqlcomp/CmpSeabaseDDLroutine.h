@@ -54,7 +54,7 @@
 // Create procedure text for system procedures
 static const QString seabaseProcAddlibDDL[] =
 {
-  {"  CREATE PROCEDURE IF NOT EXISTS %s.\"%s\"."SYSTEM_PROC_ADDLIB" "},
+  {"  CREATE PROCEDURE IF NOT EXISTS %s.\"%s\"." SYSTEM_PROC_ADDLIB" "},
   {" ( "},
   {"  IN LIBNAME VARCHAR(1024) CHARACTER SET UTF8, "},
   {"  IN FILENAME VARCHAR(1024) CHARACTER SET UTF8, "},

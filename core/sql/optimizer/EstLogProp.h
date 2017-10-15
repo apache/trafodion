@@ -65,6 +65,7 @@ class EstLogProp : public NABasicObject
 public:
   INTRUSIVE_SHARED_PTR(EstLogProp);
 
+
   // ---------------------------------------------------------------------
   // In order to handle ANTI_SEMI_JOINS, we need the inputForSemiTSJ flag
   // to be an enum, not just an NABoolean

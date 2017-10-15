@@ -54,7 +54,7 @@ ex_cri_desc::ex_cri_desc(const unsigned short numTuples, void * space_) :
   unsigned short i;
   for (i=0; i< numTuples; i++)
     {
-      tupleDesc_[i] = NULL;
+      tupleDesc_[i] = (ExpTupleDescPtrPtr)NULL;
     };
 
   flags_ = 0;
