@@ -2991,7 +2991,7 @@ void CmpSeabaseDDL::createSeabaseTable(
                                        Int64 *retObjUID)
 {
   NABoolean xnWasStartedHere = FALSE;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   ComObjectName tableName(createTableNode->getTableName());
@@ -3065,7 +3065,7 @@ void CmpSeabaseDDL::addConstraints(
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extTableName = tableName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   char buf[5000];
@@ -3332,7 +3332,7 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   ComObjectName tableName(createTableNode->getTableName());
@@ -4503,7 +4503,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                      NAString &currCatName, NAString &currSchName)
 {
   NABoolean xnWasStartedHere = FALSE;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
@@ -4562,7 +4562,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
   Lng32 idPos = 0;
   NAColumn *col = NULL;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = renameTableNode->getTableName();
@@ -4869,8 +4869,8 @@ void CmpSeabaseDDL::alterSeabaseTableStoredDesc(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
   
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -5050,7 +5050,7 @@ void CmpSeabaseDDL::alterSeabaseTableHBaseOptions(
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = hbaseOptionsNode->getTableName();
@@ -5193,7 +5193,7 @@ short CmpSeabaseDDL::createSeabaseTableLike2(
   // send any user CQDs down 
   Lng32 retCode = sendAllControls(FALSE, FALSE, TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   Lng32 cliRC = 0;
@@ -5347,7 +5347,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterAddColNode->getTableName();
@@ -5952,7 +5952,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
      return -1; 
   
   ExeCliInterface cliInterface
-    (STMTHEAP, NULL, NULL, 
+    (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
 
   Int64 tableUID = naTable->objectUid().castToInt64();
@@ -6155,7 +6155,7 @@ short CmpSeabaseDDL::hbaseFormatTableDropColumn(
      (catalogNamePart + "." + schemaNamePart + "." + objectNamePart));
 
   ExeCliInterface cliInterface(
-       STMTHEAP, NULL, NULL, 
+       STMTHEAP, 0, NULL, 
        CmpCommon::context()->sqlSession()->getParentQid());
 
   Lng32 colNumber = nacol->getPosition();
@@ -6267,7 +6267,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterDropColNode->getTableName();
@@ -6482,7 +6482,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterIdentityColNode->getTableName();
@@ -6833,7 +6833,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
   if (ehi == NULL)
      return -1;
   ExeCliInterface cliInterface
-    (STMTHEAP, NULL, NULL, 
+    (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
 
   Int64 tableUID = naTable->objectUid().castToInt64();
@@ -7013,7 +7013,7 @@ short CmpSeabaseDDL::mdOnlyAlterColumnAttr(
   Lng32 cliRC = 0;
 
   ExeCliInterface cliInterface
-    (STMTHEAP, NULL, NULL, 
+    (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
   
   Int64 objUID = naTable->objectUid().castToInt64();
@@ -7088,7 +7088,7 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
      StmtDDLAlterTableAlterColumnDatatype * alterColNode)
 {
   ExeCliInterface cliInterface
-    (STMTHEAP, NULL, NULL, 
+    (STMTHEAP, 0, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart,catalogNamePart);
@@ -7251,7 +7251,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterColNode->getTableName();
@@ -7540,7 +7540,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((isSeabaseReservedSchema(tableName)) &&
@@ -7849,7 +7849,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -7938,7 +7938,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       char query[2000];
       str_sprintf(query, "select [any 1] cast(1 as int not null) from \"%s\".\"%s\".\"%s\" for read committed access",
                   catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
-      cliRC = cliInterface.executeImmediate(query, (char*)&rowCount, &len, NULL);
+      cliRC = cliInterface.executeImmediate(query, (char*)&rowCount, &len, FALSE);
       if (cliRC < 0)
         {
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -8098,7 +8098,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -8301,7 +8301,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       return;
     }
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -8725,7 +8725,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
       Lng32 len = 0;
       Int64 rowCount = 0;
-      cliRC = cliInterface.executeImmediate(validQry, (char*)&rowCount, &len, NULL);
+      cliRC = cliInterface.executeImmediate(validQry, (char*)&rowCount, &len, FALSE);
       if (cliRC < 0)
         {
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -9091,7 +9091,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
- ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+ ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterAddConstraint->getTableName();
@@ -9173,7 +9173,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
       
       Lng32 len = 0;
       Int64 rowCount = 0;
-      cliRC = cliInterface.executeImmediate(validQry, (char*)&rowCount, &len, NULL);
+      cliRC = cliInterface.executeImmediate(validQry, (char*)&rowCount, &len, FALSE);
       if (cliRC < 0)
         {
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -9244,7 +9244,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString tabName = alterDropConstraint->getTableName();
@@ -9280,7 +9280,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   Int64 constrUID = getObjectUID(&cliInterface,
                                  constrCatName.data(), constrSchName.data(), constrObjName.data(),
                                  NULL,
-                                 "object_type = '"COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_UNIQUE_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_CHECK_CONSTRAINT_OBJECT_LIT"' ",
+                                 "object_type = '" COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT"' or object_type = '" COM_UNIQUE_CONSTRAINT_OBJECT_LIT"' or object_type = '" COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT"' or object_type = '" COM_CHECK_CONSTRAINT_OBJECT_LIT"' ",
                                  outObjType);
   if (constrUID < 0)
     {
@@ -9441,7 +9441,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
                   constrUID);
       
       Queue * indexQueue = NULL;
-      ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+      ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
       cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
@@ -9602,7 +9602,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 
   ComObjectName origTableName(origTabName, COM_TABLE_NAME);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
@@ -9841,7 +9841,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   // structure
   if (objectUID == 0)
     {
-      ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+      ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                    CmpCommon::context()->sqlSession()->getParentQid());
       objectUID = getObjectInfo(&cliInterface,
                                catalogNamePart.data(), schemaNamePart.data(),
@@ -10004,7 +10004,7 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   if (isSeabaseReservedSchema(tableName))
@@ -10640,10 +10640,10 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
         }
       
       // save the current parserflags setting
-      ULng32 savedCliParserFlags;
+      ULng32 savedCliParserFlags = 0;;
       SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags_);
       SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
-      
+
       usedObjUID = naTable->objectUid().get_value();
       str_sprintf(query, "delete from %s.\"%s\".%s where using_view_uid = %ld and used_object_uid = %ld",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
@@ -10672,7 +10672,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   Lng32 retcode = 0;
 
   char errReason[400];
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   NAString catalogNamePart = regOrUnregObject->getObjNameAsQualifiedName().
@@ -11430,7 +11430,7 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo(
   ComObjectName coName(catName, schNameL, seqNameL);
   extSeqName = coName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   objectOwner = NA_UserIdDefault;
@@ -11554,7 +11554,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseLibraryDesc(
   char query[4000];
   char buf[4000];
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
    if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
@@ -11737,7 +11737,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   Lng32 cliRC = 0;
 
   char query[4000];
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   
   TrafDesc * tableDesc = NULL;
@@ -12755,7 +12755,7 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
   char query[4000];
   char buf[4000];
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   Int64 objectUID = 0;

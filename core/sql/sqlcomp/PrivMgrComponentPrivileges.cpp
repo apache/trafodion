@@ -715,7 +715,7 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
       }
       
       std::string operationCode;
-      bool isSystemOperation;
+      bool isSystemOperation = FALSE;
       std::string operationDescription;
       
       componentOperations.fetchByName(componentUIDString,
@@ -1025,7 +1025,7 @@ PrivMgrComponentOperations componentOperations(metadataLocation_,pDiags_);
    }
    
 std::string operationCode;
-bool isSystemOperation;
+bool isSystemOperation = FALSE;
 std::string operationDescription;
    
    componentOperations.fetchByName(componentUIDString,
@@ -1621,7 +1621,7 @@ std::vector<std::string> operationCodes;
       }
       
       std::string operationCode;
-      bool isSystemOperation;
+      bool isSystemOperation = FALSE;
       std::string operationDescription;
       
       componentOperations.fetchByName(componentUIDString,

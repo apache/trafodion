@@ -937,7 +937,7 @@ Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
                         /*IN OPTIONAL*/ SQLDESC_ID * input_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -985,7 +985,7 @@ Lng32 SQL_EXEC_AllocDescBasic(/*INOUT*/       SQLDESC_ID * desc_id,
                              /*IN OPTIONAL*/       Lng32   max_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1022,7 +1022,7 @@ Lng32 SQL_EXEC_AllocStmt(/*INOUT*/       SQLSTMT_ID * new_statement_id,
                         /*IN OPTIONAL*/ SQLSTMT_ID * cloned_statement)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1073,7 +1073,7 @@ Lng32 SQL_EXEC_AllocStmtForRS(/*IN*/ SQLSTMT_ID *callStmtId,
                              /*INOUT*/ SQLSTMT_ID *resultSetStmtId)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1120,7 +1120,7 @@ Lng32 SQL_EXEC_AssocFileNumber(/*IN*/ SQLSTMT_ID * statement_id,
 			      /*IN*/ short        file_number)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1161,7 +1161,7 @@ Lng32 SQL_EXEC_ASSOCFILENUMBER (/*IN*/ SQLSTMT_ID * statement_id,
 Lng32 SQL_EXEC_ClearDiagnostics(/*IN*/ SQLSTMT_ID *statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1209,7 +1209,7 @@ Lng32 SQL_EXEC_CLI_VERSION()
 Lng32 SQL_EXEC_CloseStmt(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1354,7 +1354,7 @@ Lng32 SQL_EXEC_DELETECONTEXT(/*IN*/ SQLCTX_HANDLE contextHandle){
 Lng32 SQL_EXEC_DropModule(/*IN*/ SQLMODULE_ID * module_name)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
       
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1422,7 +1422,7 @@ Lng32 SQL_EXEC_RESETCONTEXT(/*IN*/ SQLCTX_HANDLE contextHandle, /*IN*/ void *con
 Lng32 SQL_EXEC_GetUdrErrorFlags_Internal(/*OUT*/ Lng32 *udrErrorFlags)
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
   CLI_NONPRIV_PROLOGUE(retcode);
@@ -1457,7 +1457,7 @@ Lng32 SQL_EXEC_SetUdrAttributes_Internal(/*IN*/ Lng32 sqlAccessMode,
 					/*IN*/ Lng32 forFutureUse)
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
   CLI_NONPRIV_PROLOGUE(retcode);
@@ -1494,7 +1494,7 @@ Lng32 SQL_EXEC_SetUdrAttributes_Internal(/*IN*/ Lng32 sqlAccessMode,
 Lng32 SQL_EXEC_ResetUdrErrorFlags_Internal()
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
   CLI_NONPRIV_PROLOGUE(retcode);
@@ -1532,7 +1532,7 @@ Lng32 SQL_EXEC_SetUdrRuntimeOptions_Internal(/*IN*/ const char *options,
                                             /*IN*/ ULng32 delimsLen)
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
   CLI_NONPRIV_PROLOGUE(retcode);
@@ -1569,7 +1569,7 @@ Lng32 SQL_EXEC_SetUdrRuntimeOptions_Internal(/*IN*/ const char *options,
 Lng32 SQL_EXEC_DeallocDesc(/*IN*/ SQLDESC_ID * desc_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1603,7 +1603,7 @@ Lng32 SQL_EXEC_DEALLOCDESC (
 Lng32 SQL_EXEC_DeallocStmt(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1655,7 +1655,7 @@ Lng32 SQL_EXEC_DefineDesc(/*IN*/ SQLSTMT_ID * statement_id,
                          /*IN*/ SQLDESC_ID * sql_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1698,7 +1698,7 @@ Lng32 SQL_EXEC_DescribeStmt(/*IN*/          SQLSTMT_ID * statement_id,
                            /*IN OPTIONAL*/ SQLDESC_ID * output_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1750,7 +1750,7 @@ Lng32 SQL_EXEC_DESCRIBESTMT (
 Lng32 SQL_EXEC_DisassocFileNumber(/*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1825,7 +1825,7 @@ Lng32 SQL_EXEC_Exec(/*IN*/          SQLSTMT_ID * statement_id,
                                                 ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1882,7 +1882,7 @@ Lng32 SQL_EXEC_EXEC (
 		/*IN*/ SQLCLI_PTR_PAIRS ptr_pairs[])
  {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -1924,7 +1924,7 @@ Lng32 SQL_EXEC_ExecClose(/*IN*/          SQLSTMT_ID * statement_id,
                                                      ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -1973,7 +1973,7 @@ Lng32 SQL_EXEC_EXECCLOSE (
 		/*IN*/ Lng32 num_ptr_pairs,
 		/*IN*/ SQLCLI_PTR_PAIRS ptr_pairs[]) {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2018,7 +2018,7 @@ Lng32 SQL_EXEC_ExecDirect(/*IN*/          SQLSTMT_ID * statement_id,
                                                       ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2068,7 +2068,7 @@ Lng32 SQL_EXEC_ExecDirect2(/*IN*/          SQLSTMT_ID * statement_id,
                                                       ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2118,7 +2118,7 @@ Lng32 SQL_EXEC_EXECDIRECT (
 		/*IN*/ Lng32 num_ptr_pairs,
 		/*IN*/ SQLCLI_PTR_PAIRS ptr_pairs[]) {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2162,7 +2162,7 @@ Lng32 SQL_EXEC_ExecDirectDealloc(/*IN*/          SQLSTMT_ID * statement_id,
                                                       ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2211,7 +2211,7 @@ Lng32 SQL_EXEC_EXECDIRECTDEALLOC(/*IN*/          SQLSTMT_ID * statement_id,
                                 /*IN*/    SQLCLI_PTR_PAIRS   ptr_pairs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2256,7 +2256,7 @@ Lng32 SQL_EXEC_ExecFetch(/*IN*/          SQLSTMT_ID * statement_id,
                                                      ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2311,7 +2311,7 @@ Lng32 SQL_EXEC_EXECFETCH(/*IN*/          SQLSTMT_ID * statement_id,
                         /*IN*/    SQLCLI_PTR_PAIRS   ptr_pairs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2356,7 +2356,7 @@ Lng32 SQL_EXEC_ClearExecFetchClose(/*IN*/          SQLSTMT_ID * statement_id,
 				  ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2419,7 +2419,7 @@ Lng32 SQL_EXEC_CLEAREXECFETCHCLOSE(/*IN*/ SQLSTMT_ID * statement_id,
 				  /*IN*/ SQLCLI_PTR_PAIRS   output_ptr_pairs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2466,7 +2466,7 @@ Lng32 SQL_EXEC_Fetch(/*IN*/          SQLSTMT_ID * statement_id,
                                                  ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2520,7 +2520,7 @@ Lng32 SQL_EXEC_FETCH(/*IN*/          SQLSTMT_ID * statement_id,
                     /*IN*/    SQLCLI_PTR_PAIRS   ptr_pairs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2565,7 +2565,7 @@ Lng32 SQL_EXEC_FetchClose(/*IN*/          SQLSTMT_ID * statement_id,
                                                       ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2611,7 +2611,7 @@ Lng32 SQL_EXEC_FETCHCLOSE(/*IN*/          SQLSTMT_ID * statement_id,
                          /*IN*/    SQLCLI_PTR_PAIRS   ptr_pairs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2657,7 +2657,7 @@ Lng32 SQL_EXEC_FetchMultiple(/*IN*/           SQLSTMT_ID * statement_id,
                                                       ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2709,7 +2709,7 @@ Lng32 SQL_EXEC_FETCHMULTIPLE(/*IN*/           SQLSTMT_ID * statement_id,
                             /*IN*/   SQLCLI_QUAD_FIELDS   quad_fields[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2756,7 +2756,7 @@ Lng32 SQL_EXEC_FETCHMULTIPLE(/*IN*/           SQLSTMT_ID * statement_id,
 Lng32 SQL_EXEC_Cancel(/*IN OPTIONAL*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2793,7 +2793,7 @@ Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/ SQLDESC_ID * output_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2836,7 +2836,7 @@ Lng32 SQL_EXEC_GetDescEntryCountBasic(/*IN*/  SQLDESC_ID * sql_descriptor,
                                      /*OUT*/       Lng32 * num_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -2877,7 +2877,7 @@ Lng32 SQL_EXEC_GetDescItem(/*IN*/     SQLDESC_ID * sql_descriptor,
                           /*IN OPTIONAL*/  Lng32   start_from_offset)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2942,7 +2942,7 @@ Lng32 SQL_EXEC_GetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
                            /*IN*/   SQLDESC_ID * output_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -2992,7 +2992,7 @@ Lng32 SQL_EXEC_GetDescItems2(/*IN*/   SQLDESC_ID * sql_descriptor,
 			    /*IN*/ SQLDESC_ITEM   desc_items[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -3036,7 +3036,7 @@ Lng32 SQL_EXEC_GetDiagnosticsStmtInfo(/*IN*/       Lng32 * stmt_info_items,
                                      /*IN*/ SQLDESC_ID * output_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -3078,7 +3078,7 @@ Lng32 SQL_EXEC_GetDiagnosticsStmtInfo2(
      /*OUT OPTIONAL*/ Lng32 * len_of_item)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -3189,7 +3189,7 @@ static Lng32 GetAutoSizedCondInfo(Lng32                   * retcode,
 
   // Can't this be refactored to a simple if-statment, rather than a loop? -KBC
  
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   while (*retcode == 0 && resize)
     {
@@ -3268,7 +3268,7 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo(
                 /*IN*/             SQLDESC_ID * output_descriptor)
 {
   Lng32 retcode = 0;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
 
   
@@ -3528,7 +3528,7 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
      /*OUT OPTIONAL*/ Lng32 * len_of_item)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    
@@ -3671,7 +3671,7 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
   NAWchar* p = NULL;
   NABoolean msgInLocaleLenIsAvailable = FALSE;
   Lng32 msgInLocaleLen = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -3712,7 +3712,7 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo3(
      message_obj_size = message_obj_size_needed;
 
      SQLMXLoggingArea::ExperienceLevel emsEventEL = SQLMXLoggingArea::eAdvancedEL;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
      try
@@ -4014,7 +4014,7 @@ Lng32 SQL_EXEC_GETCOBOLSQLSTATE(
 Lng32 SQL_EXEC_GetSQLSTATE(/*OUT*/ char * SQLSTATE /* assumed to be char[6] */)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    Lng32 sqlcode;
 
@@ -4063,7 +4063,7 @@ Lng32 SQL_EXEC_GetSessionAttr(
 			  /*OUT OPTIONAL*/      Lng32 * len_of_item)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4106,7 +4106,7 @@ Lng32 SQL_EXEC_GetAuthID(
 {
 
 Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4149,7 +4149,7 @@ Lng32 SQL_EXEC_GetAuthName_Internal(
 {
 
 Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4191,7 +4191,7 @@ Lng32 SQL_EXEC_GetDatabaseUserName_Internal (
     /*OUT OPTIONAL*/  Lng32  *len_of_item)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4230,7 +4230,7 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
                                            /*OUT*/  Lng32  *numeric_value)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4272,7 +4272,7 @@ Int32 SQL_EXEC_GetAuthState(
 {
 
    Int32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4314,7 +4314,7 @@ Lng32 SQL_EXEC_SetSessionAttr_Internal(
     /*IN OPTIONAL*/            char  *string_value)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4356,7 +4356,7 @@ Lng32 SQL_EXEC_GetRoleList(
 {
 
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4393,7 +4393,7 @@ Lng32 SQL_EXEC_GetRoleList(
 Lng32 SQL_EXEC_ResetRoleList_Internal()
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4433,7 +4433,7 @@ Lng32 SQL_EXEC_GetUniqueQueryIdAttrs(
 		/*INOUT*/ UNIQUEQUERYID_ATTR unique_queryid_attrs[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
 
@@ -4475,7 +4475,7 @@ Lng32 SQL_EXEC_GetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
 			  /*OUT OPTIONAL*/      Lng32 * len_of_item)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
 
@@ -4527,7 +4527,7 @@ Lng32 SQL_EXEC_GetStmtAttrs(/*IN*/ SQLSTMT_ID * statement_id,
                            /*OUT OPTIONAL*/ Lng32 * num_returned)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
 
@@ -4592,7 +4592,7 @@ Lng32 SQL_EXEC_Prepare(/*IN*/ SQLSTMT_ID * statement_id,
                       /*IN*/ SQLDESC_ID * sql_source)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4638,7 +4638,7 @@ Lng32 SQL_EXEC_Prepare2(/*IN*/ SQLSTMT_ID * statement_id,
 		       /*IN*/ ULng32 flags)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4703,7 +4703,7 @@ Int32 SQL_EXEC_GetExplainData(
                                               /*INOUT*/ Int32 * ret_explain_len)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4747,7 +4747,7 @@ Int32 SQL_EXEC_StoreExplainData(
                                                 /*IN*/    Int32 explain_len)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4789,7 +4789,7 @@ Lng32 SQL_EXEC_ResDescName(/*INOUT*/       SQLDESC_ID * statement_id,
          /* (SQLWHAT_DESC) *IN OPTIONAL*/       Lng32   what_desc)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4834,7 +4834,7 @@ Lng32 SQL_EXEC_RESDESCNAME(
 Lng32 SQL_EXEC_ResStmtName(/*INOUT*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4876,7 +4876,7 @@ Lng32 SQL_EXEC_SetCursorName(/*IN*/ SQLSTMT_ID * statement_id,
                             /*IN*/ SQLSTMT_ID * cursor_name)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4921,7 +4921,7 @@ Lng32 SQL_EXEC_SetStmtAttr(/*IN*/ SQLSTMT_ID * statement_id,
                           /*IN OPTIONAL*/       char * string_value)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -4971,7 +4971,7 @@ Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/ SQLDESC_ID * input_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5015,7 +5015,7 @@ Lng32 SQL_EXEC_SetDescEntryCountBasic(/*IN*/ SQLDESC_ID * sql_descriptor,
                                      /*IN*/       Lng32   num_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5055,7 +5055,7 @@ Lng32 SQL_EXEC_SetDescItem(/*IN*/          SQLDESC_ID * sql_descriptor,
                           /*IN OPTIONAL*/       char * string_value)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5105,7 +5105,7 @@ Lng32 SQL_EXEC_SetDescItems(/*IN*/   SQLDESC_ID * sql_descriptor,
                            /*IN*/   SQLDESC_ID * input_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5156,7 +5156,7 @@ Lng32 SQL_EXEC_SetDescItems2(
 		/*IN*/ SQLDESC_ITEM desc_items[])
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    try
@@ -5202,7 +5202,7 @@ Lng32 SQL_EXEC_SetDescPointers(/*IN*/ SQLDESC_ID * sql_descriptor,
                               ...)
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5248,7 +5248,7 @@ Lng32 SQL_EXEC_SETDESCPOINTERS(/*IN*/       SQLDESC_ID * sql_descriptor,
                               /*IN*/       SQLCLI_PTR_PAIRS   ptr_pairs[])
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5292,7 +5292,7 @@ Lng32 SQL_EXEC_SetRowsetDescPointers(SQLDESC_ID * sql_descriptor,
                                            ...)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5342,7 +5342,7 @@ Lng32 SQL_EXEC_SETROWSETDESCPOINTERS(SQLDESC_ID * sql_descriptor,
                              SQLCLI_QUAD_FIELDS    quad_fields[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5418,7 +5418,7 @@ Lng32 SQL_EXEC_Xact(/*IN* (SQLTRANS_COMMAND) */       Lng32   command,
                    /*OUT OPTIONAL*/            SQLDESC_ID * transid_descriptor)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5468,7 +5468,7 @@ Lng32 SQL_EXEC_SetAuthID(
 {
 
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5512,7 +5512,7 @@ Lng32 SQL_EXEC_AllocDesc(/*INOUT*/       SQLDESC_ID * desc_id,
                         /*IN OPTIONAL*/       Lng32   max_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5549,7 +5549,7 @@ Lng32 SQL_EXEC_GetDescEntryCount(/*IN*/  SQLDESC_ID * sql_descriptor,
                                 /*OUT*/       Lng32 * num_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5586,7 +5586,7 @@ Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
                                 /*IN*/       Lng32   num_entries)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5625,7 +5625,7 @@ Lng32 SQL_EXEC_SetDescEntryCount(/*IN*/ SQLDESC_ID * sql_descriptor,
 Lng32 SQL_EXEC_MergeDiagnostics_Internal (/*INOUT*/ ComDiagsArea & newDiags)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5667,7 +5667,7 @@ Lng32 SQL_EXEC_GetPackedDiagnostics_Internal(
       /*OUT*/            Lng32 * message_obj_version)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5713,7 +5713,7 @@ void SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 Lng32 SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5747,7 +5747,7 @@ Lng32 SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 Lng32 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5781,7 +5781,7 @@ Lng32 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 Lng32 SQL_EXEC_GetParserFlagsForExSqlComp_Internal(ULng32 &flagbits)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5823,7 +5823,7 @@ void SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 Lng32 SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5871,7 +5871,7 @@ Lng32 SQL_EXEC_GetCollectStatsType_Internal (
      /*IN*/ SQLSTMT_ID * statement_id)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5903,7 +5903,7 @@ Lng32 SQL_EXEC_SPBreakReceived_Internal (
 Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
   try
@@ -5953,7 +5953,7 @@ Lng32 SQL_EXEC_LocaleToUTF8 (
                /*OUT*/Int32   * num_translated_char)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -5982,7 +5982,7 @@ Lng32 SQL_EXEC_UTF8ToLocale(
                /*IN*/void     * substitution_char_addr)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -6011,7 +6011,7 @@ Lng32 SQL_EXEC_LocaleToUTF16 (
                /*OUT*/Int32   * num_translated_char)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -6042,7 +6042,7 @@ Lng32 SQL_EXEC_UTF16ToLocale(
                /*IN*/void     * substitution_char_addr)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -6064,7 +6064,7 @@ Lng32 SQL_EXEC_SetErrorCodeInRTS(
     /*IN*/ Lng32     sqlErrorCode)
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 try 
   {   
@@ -6096,7 +6096,7 @@ Lng32 SQL_EXEC_SetSecInvalidKeys(
            /* IN */    SQL_QIKEY siKeys[])
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
    try
@@ -6135,7 +6135,7 @@ Lng32 SQL_EXEC_GetSecInvalidKeys(
             /* IN/OUT */  Int64 *maxTimestamp)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
    try
@@ -6182,7 +6182,7 @@ Lng32 SQL_EXEC_GetStatistics2(
 	    /* OUT */	Lng32 *no_returned_stats_desc)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
    try
@@ -6228,7 +6228,7 @@ Lng32 SQL_EXEC_GetStatisticsItems(
 	    /* IN/OUT */   SQLSTATS_ITEM sqlstats_items[])
 {
      Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
    try
@@ -6273,7 +6273,7 @@ Lng32 SQL_EXEC_RegisterQuery(SQLQUERY_ID *queryId,
                             Lng32 tdbNameLen)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
 try 
@@ -6308,7 +6308,7 @@ Lng32 SQL_EXEC_DeregisterQuery(SQLQUERY_ID *queryId,
                             Lng32 fragId)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
 try 
@@ -6351,7 +6351,7 @@ Lng32 SQL_EXEC_GetStatisticsArea_Internal
  /*INOUT*/   const ExStatisticsArea* &exStatsArea)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
@@ -6397,7 +6397,7 @@ Lng32 SQL_EXEC_GetChildQueryInfo(
      /*INOUT*/ SQL_QUERY_COMPILER_STATS_INFO *comp_stats_info)
 {
    Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
    CLI_NONPRIV_PROLOGUE(retcode);
    try
@@ -6452,7 +6452,7 @@ Lng32 SQL_EXEC_LOBcliInterface
  )
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6506,7 +6506,7 @@ Lng32 SQL_EXEC_LOB_GC_Interface
  )
 {
   Lng32 retcode;
- CLISemaphore *tmpSemaphore;
+ CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6515,7 +6515,7 @@ Lng32 SQL_EXEC_LOB_GC_Interface
       tmpSemaphore->get();
       threadContext->incrNumOfCliCalls();
       retcode = SQLCLI_LOB_GC_Interface(GetCliGlobals(),
-                                        lobGlobals,
+                                        (ExLobGlobals *)lobGlobals, // Need a way to validate this object
                                         handle,
                                         handleLen,
                                         hdfsServer,
@@ -6558,7 +6558,7 @@ Lng32 SQL_EXEC_LOBddlInterface
  )
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6605,7 +6605,7 @@ Int32 SQL_EXEC_SWITCH_TO_COMPILER_TYPE
 )
 {
   Int32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6640,7 +6640,7 @@ Int32 SQL_EXEC_SWITCH_TO_COMPILER
 )
 {
   Int32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6674,7 +6674,7 @@ Int32 SQL_EXEC_SWITCH_BACK_COMPILER
 )
 {
   Int32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6719,7 +6719,7 @@ Lng32 SQL_EXEC_SEcliInterface
  )
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6763,7 +6763,7 @@ Lng32 SQL_EXEC_SeqGenCliInterface
   )
 {
   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
+   CLISemaphore *tmpSemaphore = NULL;
    ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6809,7 +6809,7 @@ Lng32 SQL_EXEC_GetRoutine
  )
 {
   Lng32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6867,7 +6867,7 @@ Int32 SQL_EXEC_InvokeRoutine
  )
 {
   Lng32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6922,7 +6922,7 @@ Int32 SQL_EXEC_GetRoutineInvocationInfo
  )
 {
   Lng32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try
@@ -6965,7 +6965,7 @@ Lng32 SQL_EXEC_PutRoutine
  )
 {
   Lng32 retcode;
-  CLISemaphore *tmpSemaphore;
+  CLISemaphore *tmpSemaphore = NULL;
   ContextCli   *threadContext;
   CLI_NONPRIV_PROLOGUE(retcode);
   try

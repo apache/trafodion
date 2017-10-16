@@ -119,7 +119,7 @@ HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout)
                    ,isConnected_(FALSE)
 {
   for (int i=0; i<NUM_HBASE_WORKER_THREADS; i++) {
-    threadID_[i] = NULL;
+    threadID_[i] = 0;
   }
 }
 
@@ -1104,7 +1104,7 @@ Int32 HBaseClient_JNI::getRegionStatsEntries()
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStatsEntries() called.");
 
   if (initJNIEnv() != JOI_OK)
-     return NULL;
+     return 0;
 
   tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS_ENTRIES].jm_full_name;
   jint numEntries = 
@@ -1116,7 +1116,7 @@ Int32 HBaseClient_JNI::getRegionStatsEntries()
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStatsEntries()", getLastError());
     jenv_->PopLocalFrame(NULL);
-    return NULL;
+    return 0;
   }
 
   jenv_->PopLocalFrame(NULL);

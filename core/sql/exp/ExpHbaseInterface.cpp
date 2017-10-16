@@ -123,7 +123,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
 
   int numReqRows = 100;
   retcode = htc_->startScan(transID, "", "", columns, -1, FALSE, FALSE, numReqRows, FALSE,
-       NULL, NULL, NULL, NULL);
+       NULL, NULL, NULL);
   if (retcode != HTC_OK)
     return retcode;
 
@@ -205,7 +205,7 @@ Lng32  ExpHbaseInterface::fetchAllRows(
   }
 
   retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, FALSE, 100, TRUE, NULL,
-       NULL, NULL, NULL);
+       NULL, NULL);
   if (retcode != HBASE_ACCESS_SUCCESS)
     return retcode;
   while (retcode == HBASE_ACCESS_SUCCESS)
@@ -1171,7 +1171,7 @@ Lng32 ExpHbaseInterface_JNI::isEmpty(
   LIST(HbaseStr) columns(heap_);
 
   retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, FALSE, 100, TRUE, NULL,
-       NULL, NULL, NULL);
+       NULL, NULL);
   if (retcode != HBASE_ACCESS_SUCCESS)
     return -HBASE_OPEN_ERROR;
 

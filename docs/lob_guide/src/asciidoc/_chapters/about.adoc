@@ -61,7 +61,7 @@ This is a new guide.
 &#8226; 2.9  <<garbage collection,Garbage Collection>> +
 &#8226; 2.10 <<cleanup of a sql table containing lob columns,Cleanup of a SQL Table Containing LOB Columns>> +
 &#8226; 2.11 <<showddl for lobs,SHOWDDL for LOBs>> +
-&#8226; 2.12 <<getting command for lob tables,Getting Command for LOB Tables>>
+&#8226; 2.12 <<getting statement for lob tables,Getting Statement for LOB Tables>>
 |===
 
 == Notation Conventions

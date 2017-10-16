@@ -599,7 +599,7 @@ void OptimizerSimulator::dumpHistograms()
         debugMessage("Dumping histograms for %s\n", name->getQualifiedNameAsAnsiString().data());
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query +=  "'"UNLOAD_HDFS_DIR"/";
+        query +=  "'" UNLOAD_HDFS_DIR"/";
         query +=  ComUser::getCurrentUsername();
         query +=  "/";
         query +=  std::to_string((long long unsigned int)(getpid())).c_str();
@@ -669,7 +669,7 @@ void OptimizerSimulator::dumpHistograms()
         }
         
         query =  "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query += "'"UNLOAD_HDFS_DIR"/";
+        query += "'" UNLOAD_HDFS_DIR"/";
         query += ComUser::getCurrentUsername();
         query += "/";
         query += std::to_string((long long unsigned int)(getpid())).c_str();
@@ -767,7 +767,7 @@ void OptimizerSimulator::dumpHiveHistograms()
         
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query +=  "'"UNLOAD_HDFS_DIR"/";
+        query +=  "'" UNLOAD_HDFS_DIR"/";
         query +=  ComUser::getCurrentUsername();
         query +=  "/";
         query +=  std::to_string((long long unsigned int)(getpid())).c_str();
@@ -826,7 +826,7 @@ void OptimizerSimulator::dumpHiveHistograms()
         }
         
         query =  "UNLOAD WITH NULL_STRING '\\N' INTO ";
-        query += "'"UNLOAD_HDFS_DIR"/";
+        query += "'" UNLOAD_HDFS_DIR"/";
         query += ComUser::getCurrentUsername();
         query += "/";
         query += std::to_string((long long unsigned int)(getpid())).c_str();
@@ -1603,7 +1603,7 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
                           "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                           "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                           "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-                          "  , constraint "HBASE_HIST_PK" primary key"
+                          "  , constraint " HBASE_HIST_PK" primary key"
                           "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
                           " )";
     retcode = executeFromMetaContext(cmd.data());
@@ -1688,7 +1688,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
                        "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                        "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                        "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-                       "  , constraint "HBASE_HISTINT_PK" primary key"
+                       "  , constraint " HBASE_HISTINT_PK" primary key"
                        "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
                        " )";
 

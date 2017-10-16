@@ -2840,7 +2840,7 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
   char *colVal;
   char *str;
   NABoolean prependNullVal;
-  char nullValChar;
+  char nullValChar = 0;
   Attributes * attr;
   int numCols = 0;
   short *numColsPtr;
@@ -3344,7 +3344,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
   short rc = 0;
   Queue * indexList = NULL; // this list includes the base table too.
   char * indexName ;
-  NABoolean cleanupAfterComplete;
+  NABoolean cleanupAfterComplete = FALSE;
   Text tabName;
 
   // if no parent request, return

@@ -448,6 +448,8 @@ public:
   const SET(IndexDesc *)& deriveIndexOnlyIndexDesc();
   const SET(IndexDesc *)& deriveIndexJoinIndexDesc();
   const SET(IndexDesc *)& getIndexJoinIndexDesc(){ return indexJoinScans_; }
+  inline void setComputedPredicates(const ValueIdSet &ccPreds)
+                                             { generatedCCPreds_ = ccPreds; }
 
   const LIST(ScanIndexInfo *) &getIndexInfo()
                                            { return possibleIndexJoins_; }
@@ -660,9 +662,6 @@ protected:
   CostScalar computeCpuResourceForIndexJoin(CANodeId tableId, IndexDesc* iDesc,
                                             const ValueIdList& ikeys,
                                             CostScalar& rowsToScan);
-
-  inline void setComputedPredicates(const ValueIdSet &ccPreds)
-                                             { generatedCCPreds_ = ccPreds; }
 
 private:
 

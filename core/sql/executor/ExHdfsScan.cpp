@@ -280,7 +280,7 @@ void ExHdfsScanTcb::freeResources()
   }
   deallocateRuntimeRanges();
   if (lobGlob_) { 
-     ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+     ExpLOBinterfaceCleanup(lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap());
      lobGlob_ = NULL;
   }
 }
@@ -340,7 +340,7 @@ Int32 ExHdfsScanTcb::fixup()
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, hdfsScanTdb().hostName_,hdfsScanTdb().port_);
+    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, hdfsScanTdb().hostName_,hdfsScanTdb().port_);
   
   return 0;
 }

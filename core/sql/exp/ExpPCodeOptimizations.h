@@ -1723,7 +1723,7 @@ public:
 
     NExDbgInfoPtr_ = expr->getNExDbgInfoPtr() ;
     if ( NExDbgInfoPtr_ &&
-         ( NExDbgInfoPtr_ > (NExDbgInfo *)(expr->getConstsLength()) )
+         ( NExDbgInfoPtr_ > (NExDbgInfo *)((long)(expr->getConstsLength())) )
        )
        NExprDbgLvl_    = NExDbgInfoPtr_->getNExDbgLvl() ;
     else

@@ -657,7 +657,7 @@ Lng32 ex_expr::unpack(void *base, void * reallocator)
      currClausePtr = nextClause;
   }
   else
-     currClausePtr = NULL;
+     currClausePtr = (ExClausePtr)NULL;
 
   while (currClausePtr != (ExClausePtr)NULL)
   {

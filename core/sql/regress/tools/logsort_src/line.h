@@ -33,6 +33,7 @@ char *line_strip(char *line);
 int line_isblank(char *line);
 int line_is0rows(char *line);
 int line_iserror(char *line);
+int line_iswarning(char *line);
 int line_isheading(char *line);
 int line_isunderline(char *line);
 int line_isnnrows(char *line);

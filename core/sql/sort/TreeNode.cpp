@@ -108,8 +108,8 @@ void TreeNode::initialize(ULng32 nodenum,
     if (sortMergeNode_ == NULL)
       {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-        ,NULL          //syserr: the actual FS error
-        ,NULL          //syserrdetail
+        ,0          //syserr: the actual FS error
+        ,0          //syserrdetail
         ,"Treenode::initialize"     //methodname
         );
       return;

@@ -69,8 +69,6 @@ enum {FS_SMS_VERSION_MAY94 = 1};
 #include <fcntl.h>
 #include "logmxevent.h"
 
-#if (defined(NA_GUARDIAN_IPC))
-// all of these files are OK in the executor environment (PRIV, no globals)
 extern "C" {
 //#include <cextdecs.h>
 #include "cextdecs.h(PROCESSHANDLE_TO_FILENAME_,PROCESSHANDLE_DECOMPOSE_,FILE_OPEN_,SETMODE,FILE_GETINFO_,FILE_CLOSE_, AWAITIOX,PROCESS_DELAY_)"
@@ -78,7 +76,6 @@ extern "C" {
 // should be #include <zsysc.h>
 #include "zsysc.h"
 }
-#endif
 
 //Function used to get a pointer to the pfs
 _callable void fs2_get_pfsaddr(Long *);

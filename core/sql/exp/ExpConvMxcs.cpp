@@ -1608,7 +1608,7 @@ static short convIntervalToAsciiMxcs(char *source,
     }
 
   Int64 factor = 1;
-  Int64 fieldVal;
+  Int64 fieldVal = 0;
   if (fractionPrecision)
   {
     //    realTargetLen += fractionPrecision + 1; // 1 for '.'

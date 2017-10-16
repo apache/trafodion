@@ -50,4 +50,4 @@ include::../../shared/revisions.txt[]
 
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
-include::asciidoc/_chapters/work_with_lob.adoc[]
+include::asciidoc/_chapters/working_with_lob.adoc[]

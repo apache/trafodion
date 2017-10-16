@@ -56,7 +56,6 @@ public:
     scratchFreeSpaceThreshold_ = 0; 
     sortType_ = ITER_QUICK;
     dontOverflow_ = FALSE;
-    sortNRows_ = FALSE;
     flags_ = 0;
     memoryQuotaMB_ = 0;
     bmoMaxMemThresholdMB_ =0;
@@ -84,7 +83,6 @@ public:
   UInt16 &scratchFreeSpaceThresholdPct() {return scratchFreeSpaceThreshold_;}
   Int16 &sortType(){return sortType_;};
   Int32 &dontOverflow(){return dontOverflow_;};  
-  Int32 &sortNRows(){return sortNRows_;};
   Int16 &memoryQuotaMB(){return memoryQuotaMB_;};
   UInt16 &bmoMaxMemThresholdMB(){return bmoMaxMemThresholdMB_;};
   Int16 &pressureThreshold(){return pressureThreshold_;}
@@ -137,16 +135,15 @@ protected:
   Int16 sortMaxHeapSizeMB_;          // 04-05
   UInt16 scratchFreeSpaceThreshold_; // 06-07
   Int32 dontOverflow_;              // 08-11
-  Int32 sortNRows_;                 // 12-15
-  Int16 sortType_;                  // 16-17
-  UInt16 flags_;                    // 18-19
-  Int16 memoryQuotaMB_;             // 20-21
-  Int16 pressureThreshold_;         // 22-23
-  Int16 mergeBufferUnit_;          // 24-25
-  Int16 scratchIOVectorSize_;      // 26-27
-  Int32 scratchIOBlockSize_;       // 28-31
-  UInt16 bmoMaxMemThresholdMB_;    // 32-33
-  char fillersSortOptions_[22];    // 34-55
+  Int16 sortType_;                  // 12-13
+  UInt16 flags_;                    // 14-15
+  Int16 memoryQuotaMB_;             // 16-17
+  Int16 pressureThreshold_;         // 18-19
+  Int16 mergeBufferUnit_;          // 20-21
+  Int16 scratchIOVectorSize_;      // 22-23
+  Int32 scratchIOBlockSize_;       // 24-27
+  UInt16 bmoMaxMemThresholdMB_;    // 28-29
+  char fillersSortOptions_[26];    // 30-55
 
 };
 

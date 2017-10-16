@@ -438,4 +438,3 @@ Int32 ComUser::getRoleList (char * roleList,
   roleList[strlen(pRoles)] = 0; // null terminate string
   return FEOK;
 }
-

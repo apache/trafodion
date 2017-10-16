@@ -4557,7 +4557,7 @@ Int32 ContextCli::switchToCmpContext(Int32 cmpCntxtType)
 
   // find CmpContext_ with the same type to use
   CmpContextInfo *cmpCntxtInfo;
-  CmpContext *cmpCntxt;
+  CmpContext *cmpCntxt = NULL;
   short i;
   for (i = 0; i < cmpContextInfo_.entries(); i++)
     {
@@ -4819,6 +4819,11 @@ void ContextCli::putTrustedRoutine(CollIndex ix)
 // gets cleaned up when the thread exits.
 hdfsFS ContextCli::getHdfsServerConnection(char * hdfs_server, Int32 port)
 {
+  if (hdfs_server == NULL) // guard against NULL and use default value.
+    {
+      hdfs_server = (char *)"default";
+      port = 0;
+    }
   if (hdfsHandleList_)
     {
       // Look for the entry on the list

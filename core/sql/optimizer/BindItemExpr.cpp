@@ -6069,7 +6069,8 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   }
 #endif  
 
-  ItemExpr *boundExpr, *boundExpr_0, *boundExpr_1 ;
+  ItemExpr *boundExpr = NULL;
+  ItemExpr *boundExpr_0, *boundExpr_1 ;
 
   boundExpr_0 = child(0)->bindNode(bindWA);
   if (bindWA->errStatus())
@@ -9472,7 +9473,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
 
     // IS req 6: Check ROUTINE_TYPE column of ROUTINES table.
     // Emit error if invalid type.
-    ComRoutineType udrType;
+    ComRoutineType udrType = COM_UNKNOWN_ROUTINE_TYPE;
     if (CmpCommon::getDefault(COMP_BOOL_191) == DF_OFF)
       {
         udrType = udfMetadata->routineDesc()->UDRType ;
@@ -12671,7 +12672,6 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     return getValueId().getItemExpr();
 
   ItemExpr * boundExpr = NULL;
-
   short numEntries = hccol_->entries();
   colValMaxLen_ = 0;
   NAType * firstType = NULL;
@@ -12681,7 +12681,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
   for (short i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
-      HbaseColumnCreate::HbaseColumnCreateOptions::ConvType co;
+      HbaseColumnCreate::HbaseColumnCreateOptions::ConvType co = HbaseColumnCreate::HbaseColumnCreateOptions::NONE;
 
       ItemExpr * colName = hcco->colName();
       colName = colName->bindNode(bindWA);

@@ -1078,7 +1078,33 @@ void RelExpr::pushDownGenericUpdateRootOutputs( const ValueIdSet &outputs)
 //QSTUFF
 
 void RelExpr::needSortedNRows(NABoolean val)
-{
+{ 
+  // The operators listed below can create OR propogate a GET_N
+  // request. Other operatots will turn a GET_N request into GET_ALL
+  // There are a few exceptions like right side of NJ for semi join etc.
+  // but these are not relevant for FirstN sort
+  // This method should only in the generator since we are using 
+  // physical node types.
+  OperatorTypeEnum operatorType = getOperatorType();
+  if ((operatorType != REL_FIRST_N) &&
+      (operatorType != REL_EXCHANGE) &&
+      (operatorType != REL_MERGE_UNION) &&
+      (operatorType != REL_PROBE_CACHE) &&
+      (operatorType != REL_ROOT) && 
+      (operatorType != REL_LEFT_NESTED_JOIN) &&
+      (operatorType != REL_LEFT_TSJ) &&
+      (operatorType != REL_MAP_VALUEIDS))
+    return ;
+      
+  if ((operatorType == REL_LEFT_NESTED_JOIN) || 
+      (operatorType == REL_LEFT_TSJ)) {
+    // left side of left tsj propagates a GET_N request if afterPred is empty.
+    if (getSelectionPred().isEmpty())
+      child(0)->castToRelExpr()->needSortedNRows(val);
+
+    return ;
+  }
+ 
   for (Int32 i=0; i < getArity(); i++) {
     if (child(i))
       child(i)->castToRelExpr()->needSortedNRows(val);
@@ -3444,8 +3470,8 @@ void Sort::addLocalExpr(LIST(ExprNode *) &xlist,
 void Sort::needSortedNRows(NABoolean val)
 {
   sortNRows_ = val;
-
-  RelExpr::needSortedNRows(val);
+  // Sort changes a GET_N to GET_ALL, so it does not propagate a 
+  // Get_N request. It can simply act on one.
 }
 
 // -----------------------------------------------------------------------

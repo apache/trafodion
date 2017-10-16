@@ -752,3 +752,408 @@ CQD `LOB_MAX_SIZE` (default 10G expressed in M [10000M]).
 * Extract Target Locations
 +
 The file to extract to can be a local linux file or a local HDFS file.
+
+[#deleting column from a sql table containing lob columns]
+== Deleting Column from a SQL Table Containing LOB columns
+
+[#syntax]
+=== Syntax
+
+```
+DELETE lob-column-name FROM table-name [WHERE CLAUSE]
+```
+
+[#considerations]
+=== Considerations
+
+When one or more rows containing LOB columns are deleted from LOB table, only the metadata information is dropped and the hdfs data remains as it is. The references to the lob data are removed from the lob descriptor file. 
+
+This mechanism has not been implemented yet as a separate utility but it is triggered as a part of insert, update and append operations. For more information, see <<garbage collection,Garbage Collection>>.
+
+[#dropping a sql table containing lob columns ]
+== Dropping a SQL Table Containing LOB Columns 
+
+Drop works like any other drop table. All dependent tables are deleted. All files in hdfs (data and descriptor) files are also deleted.
+
+For more information, see <<drop_table_statement,DROP TABLE Statement>> in http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+
+[#garbage collection]
+== Garbage Collection
+
+When a lob datafile for a column has reached a certain limit, defined by a CQD `LOB_GC_LIMIT_SIZE`, then a compaction is triggered automatically. +
+The default Garbage Collection (GC) Limit is 10GB and can be changed if needed. 
+
+The need for GC arises because when a delete operation or an update operation is performed, the old data black in the hdfs file will be left as unused. +
+In the case of update, the old data will be left as unused and the new data will be written into a new section, so all these “holes” in the LOB data file are needlessly occupying space. 
+
+The LOB descriptor chunks file is looked at to see which ranges and offsets are actually used. The LOB datafile is temporarily saved. The compaction is done into a new tempfile. When the sections have all been copied into the tempfile, Trafodion will delete the existing lob data file and rename the tempfile. 
+
+Finally, the saved copy of the LOB datafile is dropped. The saved copy is there just in case you need to fall back to it in case of an error. Since this operation is triggered as part of an IUD operation, a definite slowdown will occur for that insert/update operation compared to subsequent inserts/updates. 
+
+Also, each lob column of a table can be compacted separately as needed. GC does not have to be done to all columns of the LOB table all at once. 
+
+NOTE: Currently the GC is done in the same transaction as the transaction being used for the insert or update operation. If any part of the GC fails, then the entire transaction is aborted. 
+
+When Trafodion has support for local transactions, Trafodion will do the GC in a separate transaction or in a separate process, so you can fail the GC with a warning and allow the insert to go through. 
+
+Setting the CQD `LOB_GC_LIMIT_SIZE` to 0 would prevent GC from occurring.
+
+[#cleanup of a sql table containing lob columns]
+== Cleanup of a SQL Table Containing LOB Columns
+
+Cleanup works like cleanup of any other table. The command ensures all dependent SQL LOB tables and hdfs files are dropped ignoring errors if any.
+
+For more information, see <<cleanup_statement,CLEANUP Statement>> in http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+
+[#showddl for lob]
+== SHOWDDL for LOB
+
+SHOWDDL for LOB with a special option will show all the dependent objects, names and details about the table.
+
+[#syntax]
+=== Syntax
+
+```
+SHOWDDL table-name, LOB DETAILS
+```
+
+[#examples]
+=== Examples
+
+* This example displays the details of the table t1ob1.
+
++
+
+```
+>>SHOWDDL tlob1, LOB DETAILS;
+CREATE TABLE TRAFODION.SEABASE.TLOB1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , C2                               BLOB DEFAULT NULL NOT SERIALIZED
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+LOB Metadata
+============
+
+CREATE TABLE TRAFODION.SEABASE.LOBMD_04239091936503896833
+  (
+    LOBNUM                           SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , STORAGETYPE                      SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOCATION                         VARCHAR(4096) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , PRIMARY KEY (LOBNUM ASC)
+  )
+;
+
+************************************************
+LobNum: 1
+
+Data Storage
+============
+
+Location: /user/trafodion/lobs
+DataFile: LOBP_04239091936503896833_0001
+
+LOB Descriptor Handle
+=====================
+
+CREATE TABLE TRAFODION.SEABASE."LOBDescHandle_04239091936503896833_0001"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , NUMCHUNKS                        INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOBLEN                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  )
+  STORE BY (DESCPARTNKEY ASC)
+  SALT USING 8 PARTITIONS
+;
+
+LOB Descriptor Chunks
+=====================
+
+CREATE TABLE TRAFODION.SEABASE."LOBDescChunks_04239091936503896833_0001"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DESCSYSKEY                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKNUM                         INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKLEN                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , INTPARAM                         LARGEINT DEFAULT NULL SERIALIZED
+  , STRINGPARAM                      VARCHAR(400) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL SERIALIZED
+  , PRIMARY KEY (DESCPARTNKEY ASC, DESCSYSKEY ASC, CHUNKNUM ASC)
+  )
+  SALT USING 8 PARTITIONS
+;
+
+--- SQL operation complete.
+```
+
+* This example displays the details of the table tlob130ext.
+
++
+
+```
+>>CREATE TABLE tlob130ext (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', primary key (c1));
+
+--- SQL operation complete.
+
+>>SHOWDDL tlob130ext, LOB DETAILS;
+
+CREATE TABLE TRAFODION.SCH.TLOB130EXT
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , C2                               BLOB DEFAULT NULL NOT SERIALIZED
+  , C3                               CLOB DEFAULT NULL NOT SERIALIZED
+  , C4                               BLOB DEFAULT NULL NOT SERIALIZED
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+LOB Metadata
+============
+
+CREATE TABLE TRAFODION.SCH.LOBMD__04474425229029907479
+  (
+    LOBNUM                           SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , STORAGETYPE                      SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOCATION                         VARCHAR(4096) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , PRIMARY KEY (LOBNUM ASC)
+  )
+;
+
+************************************************
+LobNum: 1
+
+Data Storage
+============
+
+Location: /user/trafodion/lobs
+DataFile: LOBP_04474425229029907479_0001
+
+LOB Descriptor Handle
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescHandle__04474425229029907479_0001"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , NUMCHUNKS                        INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOBLEN                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  )
+  STORE BY (DESCPARTNKEY ASC)
+  SALT USING 8 PARTITIONS
+;
+
+LOB Descriptor Chunks
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescChunks__04474425229029907479_0001"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DESCSYSKEY                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKNUM                         INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKLEN                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DATAOFFSET                       LARGEINT DEFAULT NULL SERIALIZED
+  , STRINGPARAM                      VARCHAR(400) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL SERIALIZED
+  , PRIMARY KEY (DESCPARTNKEY ASC, DESCSYSKEY ASC, CHUNKNUM ASC)
+  )
+  SALT USING 8 PARTITIONS
+;
+
+************************************************
+LobNum: 2
+
+Data Storage
+============
+
+Location: /user/trafodion/lobs
+DataFile: LOBP_04474425229029907479_0002
+
+LOB Descriptor Handle
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescHandle__04474425229029907479_0002"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , NUMCHUNKS                        INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOBLEN                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  )
+  STORE BY (DESCPARTNKEY ASC)
+  SALT USING 8 PARTITIONS
+;
+
+LOB Descriptor Chunks
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescChunks__04474425229029907479_0002"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DESCSYSKEY                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKNUM                         INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKLEN                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DATAOFFSET                       LARGEINT DEFAULT NULL SERIALIZED
+  , STRINGPARAM                      VARCHAR(400) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL SERIALIZED
+  , PRIMARY KEY (DESCPARTNKEY ASC, DESCSYSKEY ASC, CHUNKNUM ASC)
+  )
+  SALT USING 8 PARTITIONS
+;
+
+************************************************
+LobNum: 3
+
+Data Storage
+============
+
+<External HDFS location>
+<External HDFS file>
+
+LOB Descriptor Handle
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescHandle__04474425229029907479_0003"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , NUMCHUNKS                        INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , LOBLEN                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  )
+  STORE BY (DESCPARTNKEY ASC)
+  SALT USING 8 PARTITIONS
+;
+
+LOB Descriptor Chunks
+=====================
+
+CREATE TABLE TRAFODION.SCH."LOBDescChunks__04474425229029907479_0003"
+  (
+    DESCPARTNKEY                     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DESCSYSKEY                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKNUM                         INT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , CHUNKLEN                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE SERIALIZED
+  , DATAOFFSET                       LARGEINT DEFAULT NULL SERIALIZED
+  , STRINGPARAM                      VARCHAR(400) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL SERIALIZED
+  , PRIMARY KEY (DESCPARTNKEY ASC, DESCSYSKEY ASC, CHUNKNUM ASC)
+  )
+  SALT USING 8 PARTITIONS
+;
+
+--- SQL operation complete.
+```
+
+[#get lob statistics for a lob table ]
+== Get Lob Statistics for a LOB Table 
+	
+There are two ways to get lob statistics for a lob table:
+
+* Get Statement: the lob information is formatted for human readability.
+* Select Statement: the lob information is formatted for machine readability.
+
+
+[#get statment]
+=== Get Statement
+
+[#syntax]
+==== Syntax
+
+```
+GET LOB STATS FOR TABLE table-name;
+```
+
+[#examples]
+==== Examples
+
+* This Get Statement displays statistics for the table tlob130gt2.
+
++
+
+```
+>>CREATE TABLE tlob130gt2 (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', PRIMARY KEY (c1));
+
+--- SQL operation complete.
+
+>>GET LOB STATS FOR TABLE tlob130gt2;
+
+Lob Information for table: "TRAFODION".LOB130.TLOB130GT2
+=========================
+
+ColumnName:  C2
+Lob Location:  /user/trafodion/lobs
+LOB Data File:  LOBP_07468755986685501835_0001
+LOB EOD:  0
+LOB Used Len:  0
+ColumnName:  C3
+Lob Location:  /user/trafodion/lobs
+LOB Data File:  LOBP_07468755986685501835_0002
+LOB EOD:  0
+LOB UsedLen:  0
+ColumnName:  C4
+Lob Location:  External HDFS Location
+LOB Data File:  External HDFS File
+LOB EOD:  0
+LOB Used Len:  0
+--- SQL operation complete.
+```
+
+[#select statment]
+=== Select Statement
+
+[#syntax]
+==== Syntax
+
+```
+SELECT * FROM TABLE(LOB STATS table-name);
+```
+
+[#examples]
+==== Examples
+
+* This Select Statement displays statistics for the table tlob130gt.
+
++
+
+```
+>>CREATE TABLE tlob130gt (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB, PRIMARY KEY (c1));
+
+--- SQL operation complete.
+
+>>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) , 20), 
+left(trim(column_name),5), 
+left(trim(lob_location),5), 
+left(trim(lob_data_file),20),
+LOB_DATA_FILE_SIZE_EOD,
+LOB_DATA_FILE_SIZE_USED 
+FROM TABLE(lob stats(tlob130gt));
+
+(EXPR)      (EXPR)     (EXPR)     (EXPR)     LOB_DATA_FILE_SIZE_EOD    LOB_DATA_FILE_SIZE_USED
+------      ------     ------     ------     ----------------------    ----------------------
+
+TRAFODION.SCH.TLOB13   C2   /user/trafodion/lobs   LOBP_044744252290302   15   10
+TRAFODION.SCH.TLOB13   C3   /user/trafodion/lobs   LOBP_044744252290302   15   10
+TRAFODION.SCH.TLOB13   C4   /user/trafodion/lobs   LOBP_044744252290302   45   30
+
+--- 3 row(s) selected.
+```
+
+* This Select Statement displays statistics for the table tlob130gt2.
+
++
+
+```
+>>CREATE TABLE tlob130gt2 (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', PRIMARY KEY (c1));
+
+--- SQL operation complete.
+
+>>SELECT left(trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), 20), 
+left(trim(column_name),5), 
+left(trim(lob_location),15), 
+left(trim(lob_data_file),20),
+LOB_DATA_FILE_SIZE_EOD,
+LOB_DATA_FILE_SIZE_USED 
+FROM TABLE(lob stats(tlob130gt2));
+
+(EXPR)      (EXPR)     (EXPR)     (EXPR)     LOB_DATA_FILE_SIZE_EOD    LOB_DATA_FILE_SIZE_USED
+------      ------     ------     ------     ----------------------    ----------------------
+
+TRAFODION.SCH.TLOB13   C2   /user/trafodion/lobs   LOBP_044744252290300   0   0
+TRAFODION.SCH.TLOB13   C3   /user/trafodion/lobs   LOBP_044744252290300   0   0
+TRAFODION.SCH.TLOB13   C4   External HDFS Location External HDFS File     0   0
+
+--- 3 row(s) selected.
+```

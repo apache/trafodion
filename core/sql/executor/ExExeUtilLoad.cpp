@@ -783,7 +783,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
           dummyArg[i] = i;
   #endif
         cliRC = cliInterface()->executeImmediate(
-                                    query_, dummyArg, &len, NULL);
+                                    query_, dummyArg, &len, FALSE);
 
   #ifdef VERIFY_CLI_UTIL
         ex_assert (len == 0, "lock table returned data");
@@ -816,7 +816,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
         Int64 rowCount = 0;
         cliRC = cliInterface()->executeImmediate(query_,
                                   (char*)&rowCount,
-                                  &len, NULL);
+                                  &len, FALSE);
         NADELETEBASIC(query_, getMyHeap());
         if (cliRC < 0)
         {
@@ -951,7 +951,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
         Lng32 len = 0;
         char dummyArg[128];
         cliRC = cliInterface()->executeImmediate(
-                                    query_, dummyArg, &len, NULL);
+                                    query_, dummyArg, &len, FALSE);
 
         NADELETEBASIC(query_, getMyHeap());
 
@@ -2130,7 +2130,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
     }
 
     tbls->position();
-    for (int idx = 0; idx < tbls->numEntries(); idx++)
+    for (int ii = 0; ii < tbls->numEntries(); ii++)
     {
       OutputInfo * idx = (OutputInfo*) tbls->getNext();
       snapshotStruct * snap = new (getMyHeap()) snapshotStruct();
@@ -2715,14 +2715,14 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
   lobHandleLen_ = 2050;
-  lobHandle_ = {0};
+  lobHandle_[0] = '\0';
 
-  lobInputHandleBuf_={0};
+  lobInputHandleBuf_[0] = '\0';
 
-  lobNameBuf_= {0};
+  lobNameBuf_[0] = '\0';
   lobNameLen_ =1024;
   lobName_ = NULL;
-  statusString_ = {0};
+  statusString_[0] = '\0';
   lobType_ = 0;
 
   lobData_= NULL;
@@ -2737,7 +2737,7 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   numChildRows_ = 0;
 
   requestTag_ = -1;
-  lobLoc_ = {0};
+  lobLoc_[0] = '\0';
  
   lobGlobals_ = 
     new(currContext->exHeap()) LOBglobals(currContext->exHeap());
@@ -2753,7 +2753,7 @@ void ExExeUtilLobExtractTcb::freeResources()
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
   ContextCli *currContext =
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
@@ -2795,7 +2795,7 @@ short ExExeUtilLobExtractTcb::work()
   Lng32 retcode = 0;
   Int64 lobDataOutputLen = 0;
   Int64 requestTag = -1;
-  LobsSubOper so;
+  LobsSubOper so = Lob_None;
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -2812,7 +2812,7 @@ short ExExeUtilLobExtractTcb::work()
 
   
 
-  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   ex_queue_entry * centry = NULL;
   
@@ -3449,7 +3449,7 @@ ExExeUtilFileExtractTcb::ExExeUtilFileExtractTcb
 ///////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilLobUpdateTdb::build(ex_globals * glob)
 {
-  ExExeUtilLobUpdateTcb * exe_util_lobupdate_tcb;
+  ExExeUtilLobUpdateTcb * exe_util_lobupdate_tcb = NULL;
 
   ex_tcb * childTcb = NULL;
   if (child_)
@@ -3484,7 +3484,7 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
   lobHandleLen_ = 2050;
-  lobHandle_ = {0};
+  lobHandle_[0] = '\0';
   lobGlobals_ = 
     new(currContext->exHeap()) LOBglobals(currContext->exHeap());
   ExpLOBoper::initLOBglobal
@@ -3536,7 +3536,7 @@ short ExExeUtilLobUpdateTcb::work()
   Int64 lobLen = lobTdb().updateSize();
   char * data = (char *)(lobTdb().getBufAddr());
  
-  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
     {
@@ -3982,7 +3982,7 @@ short ExExeUtilFileExtractTcb::work()
 
   
 
-  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
     {
@@ -4235,7 +4235,7 @@ short ExExeUtilFileLoadTcb::work()
 
   
 
-  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
     {

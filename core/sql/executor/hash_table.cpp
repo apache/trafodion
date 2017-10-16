@@ -125,7 +125,7 @@ void HashTable::init() {
   // memset is about six times faster than this loop
   //     for (unsigned long i = 0; i < headerCount_; i++)
   //        header_[i].init();
-  memset( header_ , NULL, headerCount_ * sizeof(HashTableHeader) );
+  memset( header_ , 0, headerCount_ * sizeof(HashTableHeader) );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -255,7 +255,7 @@ ULng32 HashTable::resize(NABoolean enoughMemory) {
   }
 
   // initialize new HT
-  memset( newHeader , NULL, newSize * sizeof(HashTableHeader) );
+  memset( newHeader , 0, newSize * sizeof(HashTableHeader) );
 
   // insert entries from the old HT into the new HT
   for ( ULng32 oldind = 0; oldind < headerCount_; oldind++ ) {

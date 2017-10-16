@@ -182,7 +182,7 @@ PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled(
   sprintf(buf, "get tables in schema %s.%s, no header",
               catName.c_str(), schName.c_str());
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * schemaQueue = NULL;
 

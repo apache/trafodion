@@ -56,7 +56,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  recSize_                    = 132L;
  keySize_                    = 10L;
  runSize_                    = 200;
- mergeOrder_                 = NULL;
+ mergeOrder_                 = 0;
  heapAddr_                   = heap;
  minMem_                     = 150000L;
  maxMem_                     = 10000000L; //arbitrarily chosen 10MB max memory

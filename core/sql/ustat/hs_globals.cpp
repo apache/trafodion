@@ -5721,16 +5721,28 @@ Lng32 HSGlobalsClass::CollectStatistics()
         else
           {
               if (useSampling && !externalSampleTable)
+              {
+                // free column memory, to allow sample table load to use it
+                deallocatePendingMemory();
+                
+                // create and populate the sample table
                 retcode = sampleTable.make(currentRowCountIsEstimate_,
                                            *hssample_table,
                                            actualRowCount, sampleRowCount);
-               // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                // hssample_table assigned, actualRowCount and sampleRowCount may get adjusted.
+                
+                HSHandleError(retcode);
+
+                // reallocate column memory
+                numColsToProcess = getColsToProcess(maxRowsToRead,
+                                              internalSortWhenBetter,
+                                              trySampleTableBypassForIS);
+              }
               else if (!externalSampleTable)
               {
                 *hssample_table = getTableName(user_table->data(), nameSpace);
                 sampleRowCount = actualRowCount;
-              }
-              HSHandleError(retcode);
+              }          
           }
 
         while (numColsToProcess > 0)
@@ -6897,7 +6909,7 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
   if (LM->LogNeeded())
     {
       LM->StopTimer();
-      sprintf(LM->msg, "the size of data set I is "PF64" rows", xRows);
+      sprintf(LM->msg, "the size of data set I is " PF64" rows", xRows);
       LM->Log(LM->msg);
     }
 
@@ -7577,11 +7589,11 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
               sprintf(LM->msg, "Not enough memory for %s: memLeft=" PF64 " totMemNeeded=", group->colNames->data(), memLeft);
               formatFixedNumeric((Int64)totMemNeeded, 0, LM->msg+strlen(LM->msg));
               LM->Log(LM->msg);
-              sprintf(LM->msg, "group->memNeeded="PF64"", group->memNeeded); 
+              sprintf(LM->msg, "group->memNeeded=" PF64"", group->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "delGroup->memNeeded="PF64"", delGroup->memNeeded); 
+              sprintf(LM->msg, "delGroup->memNeeded=" PF64"", delGroup->memNeeded); 
               LM->Log(LM->msg);
-              sprintf(LM->msg, "insGroup->memNeeded="PF64"", insGroup->memNeeded); 
+              sprintf(LM->msg, "insGroup->memNeeded=" PF64"", insGroup->memNeeded); 
               LM->Log(LM->msg);
               sprintf(LM->msg, "memForCBF=");
               formatFixedNumeric((Int64)memForCBF, 0, LM->msg+strlen(LM->msg));
@@ -7593,7 +7605,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
           // Ignore the group if there is no stats for it!
 
           if (LM->LogNeeded()) {
-              sprintf(LM->msg, "No stats: histTableName=%s, tableUid="PF64", colnum=%d", 
+              sprintf(LM->msg, "No stats: histTableName=%s, tableUid=" PF64", colnum=%d", 
                                (char*)hstogram_table->data(),
                                tableUID,
                                group->colSet[0].colnum);
@@ -7638,7 +7650,7 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
         {
           if (group->state == PENDING)
             {
-              sprintf(LM->msg, "    %s ("PF64" bytes)",
+              sprintf(LM->msg, "    %s (" PF64" bytes)",
                                group->colSet[0].colname->data(),
                                group->memNeeded);
               LM->Log(LM->msg);
@@ -8470,6 +8482,35 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 
     // Initialize the pointer to the group list we will build.
     groupList = NULL;
+    
+    // if showstats for a native hbase table,hive table or table under seabase schema, 
+    // need to check if the table SB_HISTOGRAMS exist
+    NAString schemaName;
+    if (strcmp(hstogram_table->data(), "TRAFODION.\"_HBASESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HBASESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.\"_HIVESTATS_\".SB_HISTOGRAMS") == 0)
+      schemaName = "_HIVESTATS_";
+    else if (strcmp(hstogram_table->data(), "TRAFODION.SEABASE.SB_HISTOGRAMS") == 0)
+      schemaName = "SEABASE";
+    if (!schemaName.isNull())
+      {
+        NAString queryStr = "SELECT count(*) FROM TRAFODION.\"_MD_\".OBJECTS WHERE SCHEMA_NAME='" +
+                            schemaName + 
+                            "' AND OBJECT_NAME='SB_HISTOGRAMS' AND OBJECT_TYPE='BT';";
+        HSCursor cursor;
+        retcode = cursor.prepareQuery(queryStr.data(), 0, 1);
+        HSHandleError(retcode);
+        retcode = cursor.open();
+        HSHandleError(retcode);
+        ULng32 cnt;
+        retcode = cursor.fetch (1, (void *)&cnt);
+        HSHandleError(retcode);
+        if (cnt == 0)
+          {
+            LM->StopTimer();
+            return 0;
+          }
+      }
 
 #ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
     HSCliStatement::statementIndex stmt;
@@ -11210,6 +11251,22 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
   return numColsToProcess;
 }
 
+// If we decide to create and load a sample table, deallocate column memory
+// and reset PENDING group states back to UNPROCESSED before creating and
+// loading the sample table. We'll call getColsToProcess to reallocate it
+// again afterwards.
+void HSGlobalsClass::deallocatePendingMemory(void)
+{
+  for (HSColGroupStruct *group = singleGroup; group; group = group->next)
+    {
+      if (group->state == PENDING)
+        {
+          group->freeISMemory(TRUE,TRUE);
+          group->state = UNPROCESSED;
+        }
+    }
+}
+
 // Select a set of columns for internal sort based on the amount of memory req'd, type,
 // and whether the column has already been processed. If ISonlyWhenBetter is true,
 // data from the existing histogram is consulted to see if the column is expected
@@ -13536,8 +13593,12 @@ Int32 HSGlobalsClass::estimateAndTestIUSStats(HSColGroupStruct* group,
 
       // Use the oldUec if estimatedUec is nan.  This is to work around 
       // the nan value produced by lwcUecEstimate() above.
-
+     
+#if __GNUC_MINOR__ == 8
+      if ( std::isnan(estIntvlUEC) )
+#else
       if ( isnan(estIntvlUEC) )
+#endif
         estIntvlUEC = oldUec;
 
       // cap the new UEC with the RC

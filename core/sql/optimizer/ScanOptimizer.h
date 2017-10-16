@@ -470,6 +470,11 @@ protected:
 
   // Accesors:
 
+  const CostScalar & getSingleSubsetSize() const
+  {
+    return singleSubsetSize_;
+  }
+
   const CostScalar getResultSetCardinality() const
   {
     return resultSetCardinality_;
@@ -490,6 +495,11 @@ protected:
   }
 
   // Mutators:
+
+  void setSingleSubsetSize(const CostScalar & singleSubsetSize)
+  {
+    singleSubsetSize_ = singleSubsetSize;
+  }
 
   void setInOrderProbesFlag(NABoolean probesAreInOrder) 
     { inOrderProbes_ = probesAreInOrder; }
@@ -572,6 +582,14 @@ protected:
 #endif
 
 protected:
+  // For scans where we cost both single subset and MDAM scans,
+  // this is the number of rows in a single subset scan (before
+  // executor predicates are applied).
+  //
+  // TODO: Figure out generalizations for MultiProbe Scans
+  //
+  CostScalar singleSubsetSize_;
+
   // This is the total number of probes for all active partitions.
   // The value is cached in categorizeMultiProbes().
   //
@@ -654,10 +672,14 @@ private:
 // -----------------------------------------------------------------------
 class MDAMCostWA;
 class MDAMOptimalDisjunctPrefixWA;
+class NewMDAMCostWA;
+class NewMDAMOptimalDisjunctPrefixWA;
 class FileScanOptimizer : public ScanOptimizer
 {
   friend class MDAMCostWA;
   friend class MDAMOptimalDisjunctPrefixWA;
+  friend class NewMDAMCostWA;
+  friend class NewMDAMOptimalDisjunctPrefixWA;
   friend class MdamTrace;
 public:
 
@@ -819,6 +841,15 @@ private:
     MdamKey *&sharedMdamKeyPtr );
   
   Cost* scmComputeCostForSingleSubset();
+
+  Cost* scmRewrittenComputeCostForMultipleSubset
+    ( MdamKey* mdamKeyPtr,
+    const Cost * costBoundPtr,
+    NABoolean mdamForced,
+    CostScalar & numKBytes,
+    ValueIdSet exePreds,
+    NABoolean checkExePreds,
+    MdamKey *&sharedMdamKeyPtr );
 
   Cost* scmComputeCostForMultipleSubset
     ( MdamKey* mdamKeyPtr,

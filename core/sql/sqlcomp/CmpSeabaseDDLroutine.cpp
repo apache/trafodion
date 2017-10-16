@@ -291,7 +291,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
 
   // Check to see if user has the authority to create the library
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
     CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
@@ -445,7 +445,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
     getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibraryName = libraryName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -584,7 +584,7 @@ void  CmpSeabaseDDL::alterSeabaseLibrary(StmtDDLAlterLibrary  *alterLibraryNode,
   NAString libNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibName = libName.getExternalName(TRUE);
   
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
 			       CmpCommon::context()->sqlSession()->getParentQid());
   
   retcode = existsInSeabaseMDTable(&cliInterface, 
@@ -722,7 +722,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   NABoolean isJava              = (language == COM_LANGUAGE_JAVA);
 
   // Check to see if user has the authority to create the routine
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
@@ -1322,7 +1322,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   const NAString extRoutineName = routineName.getExternalName(TRUE);
   
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
     CmpCommon::context()->sqlSession()->getParentQid());
 
   ehi = allocEHI();
@@ -1527,8 +1527,6 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
   cliInterface->getPtrAndLen(2, ptr, len);
   errCode = *(Int32 *)ptr;
 
-  // in code below methodName may need to be added to the signature that is printed 
-  // out in some error messages.
   // Check for errors returned from VALIDATEROUTINE
   switch (errCode)
   {
@@ -1560,25 +1558,25 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
     case 11231://Method found but not public
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11232://Method found but not static
       if(signature[0] NEQ '\0')
         *CmpCommon::diags() << DgSqlCode(-errCode)
-                            << DgString0(signature)
+                            << DgString0(NAString(methodName) + signature)
                             << DgString1(className);
       break;
     case 11233://Method found but not void
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     case 11234://Method not found
         if(signature[0] NEQ '\0')
           *CmpCommon::diags() << DgSqlCode(-errCode)
-                              << DgString0(signature)
+                              << DgString0(NAString(methodName) + signature)
                               << DgString1(className);
         break;
     default://Unknown error code

@@ -186,8 +186,8 @@ ScratchFile* ScratchFileMap::createNewScrFile(
   if((numScratchFiles_ + 1) >= maxScratchFiles_)
   {
     sortError_->setErrorInfo( EThresholdReached   //sort error
-                     ,NULL          //syserr: the actual FS error
-                     ,NULL          //syserrdetail
+                     ,0          //syserr: the actual FS error
+                     ,0          //syserrdetail
                      ,"ScratchFileMap::createNewScrFile"    
                      );
     return NULL; 
@@ -214,8 +214,8 @@ ScratchFile* ScratchFileMap::createNewScrFile(
   if (tempFileMap->scrFile_ == NULL)
   {
       sortError_->setErrorInfo( EScrNoMemory   //sort error
-			       ,NULL          //syserr: the actual FS error
-			       ,NULL          //syserrdetail
+			       ,0          //syserr: the actual FS error
+			       ,0          //syserrdetail
 			       ,"ScratchFileMap::createNewScratchFile"     //methodname
 			       );
       return NULL;

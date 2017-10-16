@@ -538,12 +538,12 @@ NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID,
   std::size_t foundB ;
   if (!findAToken(md, tblStr, pos, "serdeInfo:",
                   "populateSerDeParams::serdeInfo:###"))
-    return NULL;
+    return FALSE;
 
   std::size_t foundE = pos ;
   if (!findAToken(md, tblStr, foundE, "}),",
                   "populateSerDeParams::serDeInfo:)},###"))
-    return NULL;
+    return FALSE;
   
   const char * nullStr = "serialization.null.format=";
   const char * fieldStr = "field.delim" ;

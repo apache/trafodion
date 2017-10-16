@@ -1782,7 +1782,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_SMALL_SCANNER,      "OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
-  DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
 
   // If set to 'OFF' we get a stub cost of 1 for update operations.
   // We can remove this once the delete costing code has broader
@@ -2180,6 +2179,15 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // very good plans, because they prevent us from considering MDAM plans
   // that probe prefix columns before a column with high UEC, for example).
   DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "0"),
+
+  // MDAM_COSTING_REWRITE: If ON, then the simple cost model costing
+  // for MDAM will use the rewritten code. If OFF, it will use the
+  // older code (which was current in September 2017, at the time
+  // the rewrite commenced). This only has an effect if SIMPLE_COST_MODEL
+  // is ON (which is the current default).
+  XDDkwd__(MDAM_COSTING_REWRITE,		"OFF"),
+
+
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2187,6 +2195,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // (we assume that the cost to build the mdam network is a linear function
   // of the key predicates)
   DDflt0_(MDAM_CPUCOST_NET_PER_PRED,		".5"),
+
+  // Added by JIRA TRAFODION-2765: Allows consideration of MDAM
+  // in more general circumstances.
+  XDDkwd__(MDAM_FSO_SIMPLE_RULE,		"ON"),
 
   // controls the max. number of seek positions under which MDAM will be
   // allowed. Set it to 0 turns off the feature.
@@ -2202,6 +2214,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
   DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+
+  // Overhead charge for a subset in the rewritten MDAM costing code
+  DDflt0_(MDAM_SUBSET_FACTOR,                   "8.0"),
 
   DDflt0_(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD, "10000"),
   DDflt0_(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,	 "0.2"),
@@ -2234,6 +2249,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDui___(MEMORY_LIMIT_HISTCACHE_UPPER_KB,     "0"),
   DDui___(MEMORY_LIMIT_NATABLECACHE_UPPER_KB,  "0"),
   DDui___(MEMORY_LIMIT_QCACHE_UPPER_KB,        "0"),
+  // Checked at compile time. Set to -1 to disable check.
+  // Value should be >= EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB
+  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "500"),
 
   // SQL/MX Compiler/Optimzer Memory Monitor.
   DDkwd__(MEMORY_MONITOR,			"OFF"),
@@ -3242,6 +3260,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  DDkwd__(SUBQUERY_UNNESTING_P2,			"ON"),
  DDkwd__(SUBSTRING_TRANSFORMATION,		"OFF"),
 
+  DDkwd__(SUPPRESS_CHAR_LIMIT_CHECK,            "OFF"),
   DDui___(SYNCDEPTH,				"1"),
  XDDkwd__(TABLELOCK,				"SYSTEM"),
 
@@ -4127,7 +4146,7 @@ NADefaults::NADefaults(NAMemory * h)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
-  , catSchSetToUserID_(NULL)
+  , catSchSetToUserID_(0)
   , heap_(h)
   , resetAll_(FALSE)
   , defFlags_(0)

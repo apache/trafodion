@@ -452,8 +452,9 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
   Int32 i;
   for (i=0; i<numChildren(); i++)
     {
-      udrTdb.getChildInputExpr(i)->fixup(0,getExpressionMode(),this,
-				  globSpace, globHeap, FALSE, glob);
+      if (udrTdb.getChildInputExpr(i))
+        udrTdb.getChildInputExpr(i)->fixup(0,getExpressionMode(),this,
+                                           globSpace, globHeap, FALSE, glob);
     }
   if (udrTdb.getPredicate())
     udrTdb.getPredicate()->fixup(0, getExpressionMode(), this,

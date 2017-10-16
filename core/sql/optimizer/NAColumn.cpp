@@ -741,19 +741,6 @@ NAColumn * NAColumnArray::getColumnByPos(Lng32 position) const
   return NULL;
 }
 
-// removes the column that has the same position
-void NAColumnArray::removeByPosition(Lng32 position)
-{
-  for(CollIndex i=0;i < entries();i++)
-  {
-    NAColumn * column = (*this)[i];
-    if(column->getPosition() == position)
-    {
-      this->removeAt(i);
-      break;
-    }
-  }
-}
 Lng32 NAColumnArray::getOffset(Lng32 position) const
 {
   Lng32 result = 0;
@@ -788,7 +775,6 @@ ULng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
     }
   return maxVal;
 }
-
 
 //method to reset an NAColumn object after a statement
 //In the ideal world NAColumn objects should not be having any state

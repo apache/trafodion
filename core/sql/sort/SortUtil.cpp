@@ -126,8 +126,8 @@ NABoolean SortUtil::scratchInitialize(void)
     if (scratch_ == NULL)
       {
         sortError_.setErrorInfo( EScrNoMemory   //sort error
-                                 ,NULL          //syserr: the actual FS error
-                                 ,NULL          //syserrdetail
+                                 ,0          //syserr: the actual FS error
+                                 ,0          //syserrdetail
                                  ,"SortUtil::scratchInitialize"  //methodname
                                 );
         return SORT_FAILURE;
@@ -214,8 +214,8 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
   if (sortAlgo_ == NULL)
   {
     sortError_.setErrorInfo(EScrNoMemory   //sort error
-                            ,NULL          //syserr: the actual FS error
-                            ,NULL          //syserrdetail
+                            ,0          //syserr: the actual FS error
+                            ,0          //syserrdetail
                             ,"SortUtil::sortInitialize"     //methodname
                             );
     return SORT_FAILURE;
@@ -465,8 +465,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
       //Also return error if merge order is least value of 2.
       //This is a really tight situation where memory is scarce.
       sortError_.setErrorInfo( EScrNoMemory   //sort error
-		              ,NULL          //syserr: the actual FS error
-		              ,NULL          //syserrdetail
+		              ,0          //syserr: the actual FS error
+		              ,0          //syserrdetail
 		              ,"SortUtil::sortSendEndProcessing1"     //methodname
 		              );
       return SORT_FAILURE;
@@ -490,8 +490,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
       if(result != SCRATCH_SUCCESS)
       {
         sortError_.setErrorInfo( EScrNoMemory   //sort error
-		              ,NULL          //syserr: the actual FS error
-		              ,NULL          //syserrdetail
+		              ,0          //syserr: the actual FS error
+		              ,0          //syserrdetail
 		              ,"SortUtil::sortSendEndProcessing2" //methodname
 		              );
         return SORT_FAILURE;
@@ -578,8 +578,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
           if(tempScratch->cleanupScratchFiles(runnum-1) != SCRATCH_SUCCESS)
           {
             sortError_.setErrorInfo( EInterRuns   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndprocessing4"     //methodname
                                 );
             return SORT_FAILURE;
@@ -610,8 +610,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
         if (sortAlgo_ == NULL)
         {
           sortError_.setErrorInfo( EScrNoMemory   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndProcessing5"     //methodname
                                  );
           return SORT_FAILURE;
@@ -646,8 +646,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
           if(tempScratch->cleanupScratchFiles(runnum-1) != SCRATCH_SUCCESS)
           {
             sortError_.setErrorInfo( EInterRuns   //sort error
-                                  ,NULL          //syserr: the actual FS error
-                                  ,NULL          //syserrdetail
+                                  ,0          //syserr: the actual FS error
+                                  ,0          //syserrdetail
                                   ,"SortUtil::sortSendEndprocessing7"     //methodname
                                 );
             return SORT_FAILURE;
@@ -709,8 +709,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
   if (sortAlgo_ == NULL)
   {
     sortError_.setErrorInfo( EScrNoMemory   //sort error
-                            ,NULL          //syserr: the actual FS error
-                            ,NULL          //syserrdetail
+                            ,0          //syserr: the actual FS error
+                            ,0          //syserrdetail
                             ,"SortUtil::sortSendEndprocessing8"     //methodname
                            );
     return SORT_FAILURE;

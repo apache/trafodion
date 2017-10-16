@@ -640,7 +640,6 @@ public:
   NAColumn * getColumn(Lng32 index) const;	// same as nacolarray[position]
   NAColumn * getColumn(const char* colName) const;
   NAColumn * getColumnByPos(Lng32 position) const;
-  void removeByPosition(Lng32 position);
 
   // return 
   //    i (i>=0) if the column is found in the array via NAColumn::operator==

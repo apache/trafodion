@@ -802,7 +802,7 @@ std::string selectStmt("SELECT CATALOG_NAME, SCHEMA_NAME, OBJECT_NAME,"
    selectStmt += " ";
    selectStmt += whereClause;
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
   CmpCommon::context()->sqlSession()->getParentQid());
 
 PrivStatus privStatus = CLIFetch(cliInterface,selectStmt);   

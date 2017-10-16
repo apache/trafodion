@@ -529,7 +529,7 @@ void CmpSeabaseDDLauth::insertRow()
 }
 
 // update a row in AUTHS table based on the passed in setClause
-void CmpSeabaseDDLauth::updateRow(const NAString &setClause)
+void CmpSeabaseDDLauth::updateRow(NAString &setClause)
 {
   char buf[1000];
   ExeCliInterface cliInterface(STMTHEAP);
@@ -667,7 +667,7 @@ Int64 CmpSeabaseDDLauth::selectCount(const NAString & whereClause)
   Lng32 len = 0;
   Int64 rowCount = 0;
   ExeCliInterface cliInterface(STMTHEAP);
-  Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, NULL);
+  Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, FALSE);
 
   // If unexpected error occurred, return an exception
   if (cliRC < 0)
@@ -1040,7 +1040,7 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
     Int32 len = 0;
     Int64 rowCount = 0;
     ExeCliInterface cliInterface(STMTHEAP);
-    Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, NULL);
+    Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, FALSE);
     if (cliRC != 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -1738,8 +1738,6 @@ bool CmpSeabaseDDLrole::describe(
 }
 //------------------------------ End of describe -------------------------------
 
-
-
 // ----------------------------------------------------------------------------
 // Public method: dropRole
 //
@@ -2016,5 +2014,6 @@ void CmpSeabaseDDLrole::verifyAuthority()
    UserException excp (NULL, 0);
    throw excp;
 
+  Int32 rc;
 }
 

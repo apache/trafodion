@@ -28,12 +28,8 @@
 
 ExDupSqlBuffer::ExDupSqlBuffer(UInt32 nTuples, UInt32 tupleSize,
                                UInt32 nReserve, NAMemory* heap)
-#if defined(NA_HAS_ANSI_CPP_CASTS)
   : ExSimpleSQLBuffer(static_cast<Int32>(nTuples),
                       static_cast<Int32>(tupleSize), heap),
-#else
-  : ExSimpleSQLBuffer((Int32) nTuples, (Int32) tupleSize, heap),
-#endif
     dupCurrent_(NULL), dupHead_(NULL), dupTail_(NULL),
     maxDups_(0), nDups_(0)
 {
@@ -46,22 +42,13 @@ ExDupSqlBuffer::ExDupSqlBuffer(UInt32 nTuples, UInt32 tupleSize,
 ExDupSqlBuffer::ExDupSqlBuffer(UInt32 nBuffers, UInt32 bufferSize, 
                                UInt32 nReserve, UInt32 tupleSize,
                                NAMemory* heap)
-#if defined(NA_HAS_ANSI_CPP_CASTS)
   : ExSimpleSQLBuffer(static_cast<Int32>(nBuffers),
                       static_cast<Int32>(bufferSize),
                       static_cast<Int32>(tupleSize), heap),
-#else
-  : ExSimpleSQLBuffer((Int32) nBuffers, (Int32) bufferSize, 
-                      (Int32) tupleSize, heap),
-#endif
     dupCurrent_(NULL), dupHead_(NULL), dupTail_(NULL),
     maxDups_(0), nDups_(0)
 {
-#if defined(NA_HAS_ANSI_CPP_CASTS)
   UInt32 nTuples = static_cast<UInt32>(getNumTuples());
-#else
-  UInt32 nTuples = (UInt32) getNumTuples();
-#endif
   if (nTuples > nReserve)
   {
     maxDups_ = nTuples - nReserve;

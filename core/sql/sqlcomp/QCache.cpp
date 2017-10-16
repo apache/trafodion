@@ -70,7 +70,6 @@ void logmsg(char* msg, ULong u)
 }
 #endif
 
-
 ULng32 getDefaultInK(const Int32& key)
 {
   return (ULng32)1024 * ActiveSchemaDB()->getDefaults().getAsLong(key);
@@ -3154,7 +3153,7 @@ void QueryCache::resizeCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz
   //do the same for Hybrid Query Cache
   // set HQC HashTable to have same bucket number as CacheKey HashTable
 
-  Lng32 numBuckets = cache_->getNumBuckets();
+  ULng32 numBuckets = cache_->getNumBuckets();
   if (hqc_ != NULL) {
       hqc_ = hqc_->resizeCache(numBuckets);
   }
@@ -3292,7 +3291,7 @@ void HQCParseKey::bindConstant2SQC(BaseColumn* base, ConstantParameter* cParamet
         (base->getTableDesc()->tableColStats()).
                getColStatsPtrForColumn(base->getValueId());
 
-    if (cStatsPtr == NULL)
+    if (cStatsPtr == 0)
       return;
 
     // if the stats for this column is fake or the number of intervals is 1, there

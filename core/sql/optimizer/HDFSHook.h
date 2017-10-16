@@ -52,6 +52,7 @@ class HivePartitionAndBucketKey;
 class HHDFSTableStats;
 class OsimHHDFSStatsBase;
 class OptimizerSimulator;
+class ExLobGlobals;
 
 typedef CollIndex HostId;
 typedef Int64 BucketNum;

@@ -58,7 +58,6 @@ Int32 isUpper8859_1(NAWchar c)
   if ((c >= 'A') && (c <= 'Z'))
     return TRUE;
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xc0) && (c <= 0xde))  // between cap A with grave accent
   {                                // and cap icelandic letter thorn
     if (c == 0xd7)     // but not multiplication symbol
@@ -66,7 +65,7 @@ Int32 isUpper8859_1(NAWchar c)
     else
        return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
@@ -76,7 +75,6 @@ Int32 isLower8859_1(NAWchar c)
   if ((c >= 'a') && (c <= 'z'))
     return TRUE;
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xdf) && (c <= 0xff))  // between lower german sharp S
   {                                // and lower y with diaeresis
     if (c == 0xf7)     // but not division symbol
@@ -84,7 +82,7 @@ Int32 isLower8859_1(NAWchar c)
     else
        return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
@@ -97,7 +95,6 @@ Int32 isAlpha8859_1(NAWchar c)
     return TRUE;
   }
 
-#ifdef NA_WIDE_CHARACTER
   if ((c >= 0xc0) && (c <= 0xff))   // possible european letter
   {
     if ((c == 0xd7) || (c == 0xf7))  // multiple or divide sign
@@ -105,7 +102,7 @@ Int32 isAlpha8859_1(NAWchar c)
     else
       return TRUE;
   }
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 
@@ -138,10 +135,9 @@ Int32 isDigit8859_1(NAWchar c) // ISO 8859-1 char set safe isdigit routine
 Int32 isCaseInsensitive8859_1(NAWchar c) // ISO 8859-1 char for which there is no
                                // upcase equivalent.  hex values 0xDF & 0xFF
 {
-#ifdef NA_WIDE_CHARACTER
   if ((c==0xDF) || (c==0xFF))
     return TRUE;
-#endif // NA_WIDE_CHARACTER
+
   return FALSE;
 }
 

@@ -697,7 +697,7 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::stop()
 ExUdrServer::ExUdrServerStatus ExUdrServer::kill(ComDiagsArea *diags)
 {
   UdrDebug1("[BEGIN ExUdrServer::kill()] %p", this);
-  short result;
+  short result = 0;
 
   char asciiPhandle[300];
   serverProcessId_.toAscii(asciiPhandle, 300);

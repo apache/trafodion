@@ -1899,7 +1899,7 @@ NABoolean PicStream::skipCount (UInt32*result, const char pattern, NABoolean isC
             char len_unit_array[11]; // len("CHARACTERS") = 10
             len_unit_array[0] = ch;  // store 'c'
             Int32 n = sgetn(len_unit_array+1, 9); // get the rest of "haracters"
-            len_unit_array[10] = NULL;
+            len_unit_array[10] = 0;
             assert(n == 9 && strcasecmp(len_unit_array, "CHARACTERS") == 0);
 
             skipWhite();

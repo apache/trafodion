@@ -1533,6 +1533,8 @@ public:
   NABoolean operator != (const ValueIdMap &other) const
                                          { return NOT operator==(other); }
 
+  CollIndex entries() { return topValues_.entries(); }
+
   // accessor functions
   const ValueIdList & getTopValues() const    { return topValues_; }
   const ValueIdList & getBottomValues() const { return bottomValues_; }

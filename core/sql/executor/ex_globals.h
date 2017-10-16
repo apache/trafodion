@@ -59,6 +59,8 @@ class StatsGlobals;
 class sql_buffer_pool;
 class LOBglobals;
 class SequenceValueGenerator;
+class ExLobGlobals;
+class ContextCli;
 
 /////////////////////////////////////////////////////////////
 // class ex_globals
@@ -185,10 +187,10 @@ public:
   inline sql_buffer_pool *getSharedPool() { return sharedPool_; }
   inline void setSharedPool(sql_buffer_pool *p) { sharedPool_ = p; }
 
-  void *& getExLobGlobal();
+  ExLobGlobals *&getExLobGlobal();
   LOBglobals * lobGlobals() { return lobGlobals_; }
   
-  void initLOBglobal(void *context);
+  void initLOBglobal(ContextCli *context);
   
   SequenceValueGenerator * seqGen();
   

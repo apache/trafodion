@@ -1462,7 +1462,7 @@ HSHistogrmCursor::HSHistogrmCursor
    colSecs_(0),
    samplePercent_(0),
    cv_(0),
-   reason_(NULL),
+   reason_(HS_REASON_EMPTY),
    v1_(0),
    avgVarCharCount_(0),
    // v3_(0),v4_(0),v5_(&buf3_[1]), v6_(&buf4_[1])
@@ -2435,13 +2435,13 @@ void HSColStats::addHistogram
           totalUec = totalRowCount ;
         }
     }
-  ComUID id(uint32ToInt64(histid));
+  ComUID id((long)histid);
   colStats_ = ColStatsSharedPtr( CMPNEW ColStats(id,
                               totalUec, /* possibly changed by the uniqueness determination above*/
                               (CostScalar) totalRowCount,
         // baseRowCount=totalRowCount initially. Added 12/01 RV
                               (CostScalar) totalRowCount,
-                              isUnique, FALSE, NULL, FALSE,
+                              isUnique, FALSE, 0, FALSE,
                               1.0, 1.0,
                               (csZero <= vCharSize) ? UInt32(vCharSize) : 0,
                               heap_));

@@ -5736,7 +5736,7 @@ PrivStatus ObjectPrivsMDTable::selectWhere(
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, (char *)selectStmt.c_str(), 0, false, false, true);
@@ -5895,7 +5895,7 @@ PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
               privilegesBitmapLong,
               grantableBitmapLong);
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(insertStmt);
 
@@ -5964,7 +5964,7 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
   int32_t cliRC = cliInterface.executeImmediate(deleteStmt.c_str());
@@ -6050,7 +6050,7 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());
   if (cliRC < 0)
@@ -6130,9 +6130,9 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf(buf, "select count(*) from %s", tableName_.c_str());
   Int64 rowsSelected = 0;
   Lng32 theLen = 0;
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, 0, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
-  int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, NULL);
+  int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, FALSE);
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -6222,7 +6222,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
               " and object_owner > 0",
               objectsLocation.c_str());
   Lng32 len = 0;
-  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, NULL);
+  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, FALSE);
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());

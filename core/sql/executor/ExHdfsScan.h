@@ -252,7 +252,7 @@ protected:
                                       // with only the required columns. 
   hdfsFile hdfsFp_;
 
-  void * lobGlob_;
+  ExLobGlobals *lobGlob_;
 
   Int64 requestTag_;
   Int64 hdfsScanBufMaxSize_;

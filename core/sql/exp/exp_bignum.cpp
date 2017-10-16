@@ -54,7 +54,7 @@ BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)
     precision_(precision),
     scale_(scale),
     unSigned_(unSigned),
-    tempSpacePtr_(NULL)
+    tempSpacePtr_(0)
 {
   setClassID(BigNumID);  
 }

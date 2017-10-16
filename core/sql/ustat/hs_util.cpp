@@ -959,7 +959,7 @@ Int64 hs_getBaseTime()
         if (baseTs != HS_EPOCH_TIMESTAMP)
           {
             sprintf(LM->msg,
-                    "INTERNAL ERROR: wrong baseTS in getEpochTime(): "PF64", HS_EPOCH_TIMESTAMP="PF64"",
+                    "INTERNAL ERROR: wrong baseTS in getEpochTime(): " PF64", HS_EPOCH_TIMESTAMP=" PF64"",
                     baseTs, HS_EPOCH_TIMESTAMP);
             error = 1;
           }

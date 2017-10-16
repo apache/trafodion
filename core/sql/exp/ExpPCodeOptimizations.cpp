@@ -2211,7 +2211,7 @@ void PCodeCfg::optimize()
                 ( cachedNewConstsLen < cachedNEConstsLen ) )
            {
               // Store offset into evalPtr_
-              expr_->setEvalPtr((ex_expr::evalPtrType)( cachedNewConstsLen ));
+              expr_->setEvalPtr((ex_expr::evalPtrType)((long)cachedNewConstsLen));
 
               // Mark this expression appropriately so that the native function gets called
               expr_->setPCodeMoveFastpath(TRUE);

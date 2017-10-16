@@ -73,7 +73,6 @@ DEFINE_DOVERS(tdm_arkesp)
 #include "Context.h"
 #include "StmtCompilationMode.h"
 
-#if (defined(NA_GUARDIAN_IPC))
 // -----------------------------------------------------------------------
 // ESP control connection, handle system messages
 // -----------------------------------------------------------------------
@@ -124,7 +123,6 @@ private:
   // we only need these members in non-WINNT builds.
 
 };
-#endif // NA_GUARDIAN_IPC
 
 class EspSockControlConnection : public SockControlConnection
 {
@@ -459,7 +457,6 @@ void DoEspStartup(Int32 argc,
   // create control connection (open $RECEIVE in Tandemese)
   switch (allocMethod)
     {
-#if (defined(NA_GUARDIAN_IPC))
     case IPC_LAUNCH_GUARDIAN_PROCESS:
     case IPC_SPAWN_OSS_PROCESS:
       {
@@ -479,7 +476,6 @@ void DoEspStartup(Int32 argc,
       env.setIdleTimestamp();
       }
      break;
-#endif //NA_GUARDIAN_IPC
       
     case IPC_INETD:
     case IPC_POSIX_FORK_EXEC:
@@ -517,7 +513,6 @@ void DoEspStartup(Int32 argc,
     }
 }
 
-#if (defined(NA_GUARDIAN_IPC))
 void EspGuaControlConnection::actOnSystemMessage(
        short                  messageNum,
        IpcMessageBufferPtr    sysMsg,
@@ -626,8 +621,6 @@ void EspGuaControlConnection::actOnSystemMessage(
       initialized_ = TRUE;
     }
 }
-
-#endif /* NSK code for handling incoming requests on the control connection */
 
 /////////////////////////////////////////////////////////////////////////////
 //

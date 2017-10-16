@@ -152,7 +152,7 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
 	}
     }
   lobExtractLen = 0;
-  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE %ld) ", lobHandle, (unsigned long)lobDataBuf, (unsigned long)inputOutputAddr);
+  sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %lu, SIZE %lu) ", lobHandle, (unsigned long)lobDataBuf, (unsigned long)inputOutputAddr);
   retcode = cliInterface.executeImmediatePrepare(query);
   cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
 

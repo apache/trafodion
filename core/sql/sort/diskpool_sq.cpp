@@ -96,8 +96,8 @@ NABoolean SQDisk::returnBestDisk(char** diskname,
    {
       *diskname = NULL;
       sortError_->setErrorInfo( EScrNoDisks       //sort error
-        ,NULL             //syserr: the actual FS error
-        ,NULL             //syserrdetail
+        ,0             //syserr: the actual FS error
+        ,0             //syserrdetail
         ,"SQDisk::returnBestDisk"     //methodname
      );
       return SORT_FAILURE;

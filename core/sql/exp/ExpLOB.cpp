@@ -56,7 +56,7 @@
 #include "ex_god.h"
 
 
-Lng32 ExpLOBoper::initLOBglobal(void *& exLobGlobals, void * lobHeap, void *currContext, char *hdfsServer ,Int32 port)
+Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *lobHeap, ContextCli *currContext, char *hdfsServer ,Int32 port)
 {
   // call ExeLOBinterface to initialize lob globals
   ExpLOBinterfaceInit(exLobGlobals, lobHeap,currContext,FALSE, hdfsServer,  port);
@@ -151,7 +151,7 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 
   return outBuf;
 }
-Lng32 ExpLOBoper::createLOB(void * exLobGlob, void *currContext, void * lobHeap, 
+Lng32 ExpLOBoper::createLOB(ExLobGlobals * exLobGlob, ContextCli *currContext, NAHeap * lobHeap, 
 			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
 			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
@@ -166,16 +166,16 @@ Lng32 ExpLOBoper::createLOB(void * exLobGlob, void *currContext, void * lobHeap,
   // Call ExeLOBinterface to create the LOB
   if (exLobGlob == NULL)
     {
-      rc = initLOBglobal(exLobGlobL, lobHeap,currContext,hdfsServer,hdfsPort);
+      rc = initLOBglobal(exLobGlob, lobHeap,currContext,hdfsServer,hdfsPort);
       if (rc)
 	return rc;
     }
   else
     exLobGlobL = exLobGlob;
 
-  rc = ExpLOBinterfaceCreate(exLobGlobL, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
+  rc = ExpLOBinterfaceCreate(exLobGlob, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
   if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+     ExpLOBinterfaceCleanup(exLobGlob, lobHeap);
   return rc;
 }
 void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries)
@@ -215,10 +215,10 @@ void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng3
   return ;
 }
 
-Lng32 ExpLOBoper::compactLobDataFile(void *exLobGlob,ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries,char *tgtLobName,Int64 lobMaxChunkMemSize, void *lobHeap, void *currContext,char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+Lng32 ExpLOBoper::compactLobDataFile(ExLobGlobals *exLobGlob,ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries,char *tgtLobName,Int64 lobMaxChunkMemSize, NAHeap *lobHeap,  ContextCli *currContext,char *hdfsServer, Int32 hdfsPort, char *lobLoc)
 {
   Int32 rc = 0;
-  void * exLobGlobL = NULL;
+  ExLobGlobals * exLobGlobL = NULL;
   // Call ExeLOBinterface to create the LOB
   if (exLobGlob == NULL)
     {
@@ -237,10 +237,10 @@ Lng32 ExpLOBoper::compactLobDataFile(void *exLobGlob,ExLobInMemoryDescChunksEntr
   return rc;
 }
 
-Int32 ExpLOBoper::restoreLobDataFile(void *exLobGlob, char *lobName, void *lobHeap, void *currContext,char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+Int32 ExpLOBoper::restoreLobDataFile(ExLobGlobals *exLobGlob, char *lobName, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort, char *lobLoc)
 {
   Int32 rc = 0;
-  void * exLobGlobL = NULL;
+  ExLobGlobals * exLobGlobL = NULL;
    if (exLobGlob == NULL)
     {
       rc = initLOBglobal(exLobGlobL, lobHeap,currContext, hdfsServer,hdfsPort);
@@ -256,10 +256,10 @@ Int32 ExpLOBoper::restoreLobDataFile(void *exLobGlob, char *lobName, void *lobHe
 
 }
 
-Int32 ExpLOBoper::purgeBackupLobDataFile(void *exLobGlob,char *lobName, void *currContext,void *lobHeap, char * hdfsServer, Int32 hdfsPort, char *lobLoc)
+Int32 ExpLOBoper::purgeBackupLobDataFile(ExLobGlobals *exLobGlob,char *lobName, NAHeap *lobHeap, ContextCli *currContext, char * hdfsServer, Int32 hdfsPort, char *lobLoc)
 {
   Int32 rc = 0;
-  void * exLobGlobL = NULL;
+  ExLobGlobals * exLobGlobL = NULL;
   if (exLobGlob == NULL)
     {
       rc = initLOBglobal(exLobGlobL, lobHeap,currContext,hdfsServer,hdfsPort);
@@ -275,7 +275,7 @@ Int32 ExpLOBoper::purgeBackupLobDataFile(void *exLobGlob,char *lobName, void *cu
 }
 
 
-Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
+Lng32 ExpLOBoper::dropLOB(ExLobGlobals * exLobGlob, NAHeap * lobHeap, ContextCli *currContext,
 			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
@@ -286,7 +286,7 @@ Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
     return -1;
 
   Lng32 rc = 0;
-  void * exLobGlobL = NULL;
+  ExLobGlobals * exLobGlobL = NULL;
   // Call ExeLOBinterface to create the LOB
   if (exLobGlob == NULL)
     {
@@ -303,7 +303,7 @@ Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
   return rc;
 }
 
-Lng32 ExpLOBoper::purgedataLOB(void * exLobGlob, char * lobLoc, 
+Lng32 ExpLOBoper::purgedataLOB(ExLobGlobals * exLobGlob, char * lobLoc, 
                                
 			       Int64 uid, Lng32 num)
 {

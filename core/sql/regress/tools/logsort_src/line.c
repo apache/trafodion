@@ -184,7 +184,7 @@ int line_iserror(char *line)
 int rc;
 char *next;
 
-if (strncmp(line,"***",2) == 0) rc = TRUE;  /*  a line beginning w/ ***  */
+if (strncmp(line,"*** ERROR[",10) == 0) rc = TRUE;  /*  a line beginning w/ ***  */
 else
    {
    /*  look for lines of the form
@@ -200,6 +200,30 @@ else
    else if (strncmp(next,"...",3) == 0) rc = TRUE;
    else rc = FALSE;
    }
+
+return rc;
+}
+
+
+
+/*
+
+    line_iswarning
+
+    This function determines if a line is part of SQLCI warning text
+    line.
+
+    entry parameters:  line - the line to analyze
+
+    exit parameters:  returns TRUE if so, FALSE if not.
+
+                                                                          */
+
+
+int line_iswarning(char *line)
+
+{
+int rc = (strncmp(line,"*** WARNING[",12) == 0);
 
 return rc;
 }

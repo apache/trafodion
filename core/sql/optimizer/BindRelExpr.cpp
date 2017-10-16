@@ -5456,7 +5456,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	      ExeUtilLobExtract * le =
 		new (PARSERHEAP()) ExeUtilLobExtract
 		(lef, ExeUtilLobExtract::TO_STRING_,
-		 NULL, NULL, lef->getTgtSize(), 0,
+		 0, 0, lef->getTgtSize(), 0,
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
@@ -10622,6 +10622,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     //4486--Constraints not supported with bulk load. Disable the constraints and try again.
     *CmpCommon::diags() << DgSqlCode(-4486)
                         <<  DgString0("bulk load") ;
+    bindWA->setErrStatus();
+    return boundExpr;
   }
   if (getIsTrafLoadPrep())
   {
@@ -10633,10 +10635,34 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       {
         partns = np->getNumEntries();
         if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-          *CmpCommon::diags() << DgSqlCode(-4490);
+	  {
+	    // 4490 - BULK LOAD into a salted table is not supported if 
+	    // ESP parallelism is turned off
+	    *CmpCommon::diags() << DgSqlCode(-4490);
+	     bindWA->setErrStatus();
+	     return boundExpr;
+	  }
       }
-  }
+
+    const NATable* naTable = getTableDesc()->getNATable();
+    if (naTable->hasLobColumn())
+      {
+	NAColumn *nac = NULL;
+	for (CollIndex c = 0; c < naTable->getColumnCount(); c++) 
+	  {
+	    nac = naTable->getNAColumnArray()[c];
+	    if (nac->getType()->isLob())
+	      break;
+	  }
+	*CmpCommon::diags() << DgSqlCode(-4494)
+			    << DgTableName(naTable->getTableName().
+					   getQualifiedNameAsAnsiString()) 
+			    << DgColumnName(nac->getColName());
+	bindWA->setErrStatus();
+	return boundExpr;
+      } // has Lob column
+  } // isLoadPrep
+
   NABoolean toMerge = FALSE;
   if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
     if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
@@ -11011,7 +11037,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   ValueIdSet sequenceFunction ;		
  
   //Retrieve all the system and user columns of the left join output
-  ValueIdList  ljOutCols = NULL;
+  ValueIdList  ljOutCols = 0;
   boundLJ->getRETDesc()->getValueIdList(ljOutCols);
   //Retrieve the null instantiated part of the LJ output
   ValueIdList ljNullInstColumns = lj->nullInstantiatedOutput();
@@ -11522,35 +11548,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-  // To be removed when TRAFODION-1610 is implemented.
-  NABoolean xnsfrmHbaseUpdate = FALSE;
-  if ((hbaseOper()) && (NOT isMerge()))
-    {      
-      if (CmpCommon::getDefault(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT) == DF_ON)
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
-      else if (getCheckConstraints().entries())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-      else if (getTableDesc()->getNATable()->isHbaseMapTable())
-       {
-         xnsfrmHbaseUpdate = TRUE;
-       }
-     }  
-  
-  if (xnsfrmHbaseUpdate)
-    {
-      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
-      boundExpr = transformHbaseUpdate(bindWA);
-
-      Assign_SqlParser_Flags (savedParserFlags);
-    }
-  else 
-  // till here and remove the function transformHbaseUpdate also
   if ((transformUpdateKey) && (NOT isMerge()))
     {
       boundExpr = transformUpdatePrimaryKey(bindWA);
@@ -17618,6 +17616,22 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
           }
         }
     }
+  else 
+    {
+      NABoolean hasLob = FALSE;
+      CollIndex i = 0;
+      for (i = 0; (i < vidList.entries() && !hasLob); i++)
+	hasLob = vidList[i].getType().isLob();
+      if (hasLob) {
+	*CmpCommon::diags() << DgSqlCode(-4495) 
+			    << DgColumnName(childRETDesc->getColRefNameObj(i).
+					    getColRefAsAnsiString());
+	bindWA->setErrStatus();
+	return NULL;
+      }
+      
+    }
+    
 
   setSelectList(vidList);
 

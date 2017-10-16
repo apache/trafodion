@@ -54,7 +54,7 @@ public:
 			const IpcProcessId &procId,
 			NABoolean usesTransactions,
 			unsigned short nowaitDepth,
-                        char *eye = eye_GUA_MSG_CONNECTION_TO_SERVER);
+                        char *eye = (char *)eye_GUA_MSG_CONNECTION_TO_SERVER);
 
   virtual ~GuaMsgConnectionToServer();
 

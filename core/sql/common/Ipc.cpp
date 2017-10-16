@@ -158,13 +158,8 @@ SockIPAddress IpcNodeName::getIPAddress() const
 
 NABoolean GuaProcessHandle::operator == (const GuaProcessHandle &other) const
 {
-#if (defined(NA_GUARDIAN_IPC))
-  // on NSK, do the right thing and call a system procedure to compare
+  // call a system procedure to compare
   return compare(other);
-#else
-  // on other platforms, a byte compare will have to suffice
-  return (str_cmp((char *) phandle_, (char *) other.phandle_, 20) == 0);
-#endif
 }
 
 void GuaProcessHandle::dumpAndStop(bool doDump, bool doStop) const
@@ -213,11 +208,9 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 {
   domain_ = IPC_DOM_INVALID;
 
-#if (defined(NA_GUARDIAN_IPC))
   // On NSK, try to interpret the string as a PHANDLE first
   if (phandle_.fromAscii(asciiRepresentation))
     domain_ = IPC_DOM_GUA_PHANDLE;
-#endif
 
   if (domain_ == IPC_DOM_INVALID)
     {
@@ -345,12 +338,10 @@ IpcNodeName IpcProcessId::getNodeName() const
     {
       return IpcNodeName(SockIPAddress(pid_.ipAddress_));
     }
-#if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       return IpcNodeName(phandle_);
     }
-#endif
   else 
     ABORT("Can't get node name of an invalid process id");
 
@@ -364,14 +355,12 @@ IpcNodeName IpcProcessId::getNodeName() const
 
 IpcCpuNum IpcProcessId::getCpuNum() const
 {
-#if (defined(NA_GUARDIAN_IPC))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       // ask Guardian to get the CPU number out of the phandle
       return getCpuNumFromPhandle();
     }
   else
-#endif
     {
       // for the internet we don't have control over the assignment of CPU
       // numbers, return a don't care value
@@ -385,12 +374,10 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
   char outb[300] = "";	  // Initialize in case this is called
   Int32 outLen = 0;
 
-#if (defined(NA_GUARDIAN_IPC))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       outLen = phandle_.toAscii(outb,300);
     }
-#endif
 
   if (domain_ == IPC_DOM_INTERNET)
     {
@@ -456,7 +443,6 @@ IpcConnection * IpcProcessId::createConnectionToServer(
       usesTransactions = usesTransactions; // make compiler happy
       return new(env->getHeap()) SockConnection(env,*this,FALSE);
     }
-#if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
 	return new(env->getHeap()) GuaConnectionToServer(env,
@@ -470,7 +456,6 @@ IpcConnection * IpcProcessId::createConnectionToServer(
                                               dataConnectionToEsp
                                               );
     }
-#endif //defined(NA_GUARDIAN_IPC)
   else
     {
       return NULL;
@@ -2654,7 +2639,7 @@ IpcMessageStream & IpcMessageStream::operator << (IpcMessageObj & toAppend)
       bufObj->setMyVPtr(NULL);
       bufObj->s_.refCount_ = 1;
       bufObj->s_.next_ = NULL;
-      tail_->s_.next_ = (IpcMessageObj *) startOffset;
+      tail_->s_.next_ = (IpcMessageObj *) ((long)startOffset);
       tail_ = bufObj;
     }
   return *this;
@@ -4580,44 +4565,21 @@ IpcServerClass::IpcServerClass(IpcEnvironment *env,
   }
   if (allocationMethod_ == IPC_ALLOC_DONT_CARE)
     {
-#if (defined(NA_GUARDIAN_IPC))
-	  // NA_WINNT is set and NA_GUARDIAN_IPC is set
-	  // The standard method on NT is to create a Guardian process
-	  // in order to run in an NT only or simulated environment we can set an environment
-	  // variable to override that mechanism.
-	  if (getenv("SQL_NO_NSK_LITE") == NULL)
-	  {
-	   allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
-	  }
-	  else 
-	  {
-	   allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
+      // NA_WINNT is set and NA_GUARDIAN_IPC is set
+      // The standard method on NT is to create a Guardian process
+      // in order to run in an NT only or simulated environment we can set an environment
+      // variable to override that mechanism.
+      if (getenv("SQL_NO_NSK_LITE") == NULL)
+        {
+          allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
+        }
+      else 
+        {
+          allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
           time_t tp;
           time(&tp);
 	  nextPort_ = IPC_SQLESP_PORTNUMBER + tp % 10000; // arbitrary
-	  };
-
-#else // NA_GUARDIAN_IPC
-
-	  // NA_WINNT is set and NA_GUARDIAN_IPC is NOT set
-	  // The standard method on NT is to create an NT process
-	  // We use socket based communication but launch the process ourself rather
-	  // than using INETD.
-	  // Eventually we will use nsk lite to create new processes and to
-	  // communicate via the message system.
-	  // in order to run in an NT only or simulated environment we can set an environment
-	  // variable to override that mechanism.
-	  if (getenv("SQL_NO_NSK_LITE") == NULL)
-	  {allocationMethod_ = IPC_LAUNCH_GUARDIAN_PROCESS;
-	  }
-	  else 
-	  {
-	  allocationMethod_ = IPC_LAUNCH_NT_PROCESS;
-          time_t tp;
-          time(&tp);
-	  nextPort_ = IPC_SQLESP_PORTNUMBER + tp % 10000; // arbitrary
-	  };
-#endif // NA_GUARDIAN_IPC
+        };
     }
 }
 
@@ -4862,7 +4824,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
   switch (allocationMethod_)
     {
 
-#if (defined(NA_GUARDIAN_IPC))
     case IPC_LAUNCH_GUARDIAN_PROCESS:
     case IPC_SPAWN_OSS_PROCESS:
     case IPC_USE_PROCESS:
@@ -4901,7 +4862,6 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
           }
       }
       break;
-#endif
 
     case IPC_INETD:
       {
@@ -5310,12 +5270,8 @@ IpcProcessId IpcEnvironment::getMyOwnProcessId(IpcNetworkDomain dom)
     }
   else if (dom == IPC_DOM_GUA_PHANDLE)
     {
-#if (defined(NA_GUARDIAN_IPC))
       // for Guardian, just get the phandle from the operating system
       return IpcProcessId(MyGuaProcessHandle());
-#else
-      ABORT("Can't get Guardian phandle on this platform");
-#endif
     }
   else
     {
