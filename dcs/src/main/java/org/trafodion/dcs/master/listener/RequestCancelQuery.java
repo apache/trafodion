@@ -189,15 +189,19 @@ public class RequestCancelQuery {
             clientData.hdr = hdr;
         } catch (UnsupportedEncodingException ue){
             if(LOG.isErrorEnabled())
-                LOG.error("RequestCancelQuery.UnsupportedEncodingException: " + s.getRemoteSocketAddress() + ": " + ue.getMessage() );
+                LOG.error("RequestCancelQuery.UnsupportedEncodingException: " + s.getRemoteSocketAddress() + ": " + ue.getMessage(), ue);
             cancelConnection = true;
         } catch (KeeperException ke){
             if(LOG.isErrorEnabled())
-                LOG.error("RequestCancelQuery.KeeperException: " + s.getRemoteSocketAddress() + ": " + ke.getMessage() );
+                LOG.error("RequestCancelQuery.KeeperException: " + s.getRemoteSocketAddress() + ": " + ke.getMessage(), ke);
             cancelConnection = true;
         } catch (InterruptedException ie){
             if(LOG.isErrorEnabled())
-                LOG.error("RequestCancelQuery.InterruptedException: " + s.getRemoteSocketAddress() + ": " + ie.getMessage() );
+                LOG.error("RequestCancelQuery.InterruptedException: " + s.getRemoteSocketAddress() + ": " + ie.getMessage(), ie);
+            cancelConnection = true;
+        } catch (BufferUnderflowException e){
+            if(LOG.isErrorEnabled())
+                LOG.error("RequestCancelQuery.BufferUnderflowException: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         header = null;
