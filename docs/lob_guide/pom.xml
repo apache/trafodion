@@ -244,15 +244,15 @@
                   - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
                 --> 
                 <!-- Copy the PDF file to its target directories -->
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/sql_reference/Trafodion_SQL_Large_Objects_Guide.pdf" />
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/sql_reference/Trafodion_SQL_Large_Objects_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/lob_guide/Trafodion_SQL_Large_Objects_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/lob_guide/Trafodion_SQL_Large_Objects_Guide.pdf" />
                 <!-- Copy the Web Book files to their target directories -->
-                <copy todir="${basedir}/../target/docs/sql_reference">
+                <copy todir="${basedir}/../target/docs/lob_guide">
                   <fileset dir="${basedir}/target/site">
                     <include name="**/*.*"/>  <!--All sub-directories, too-->
                   </fileset>
                 </copy>
-                <copy todir="${basedir}/../target/docs/${project.version}/sql_reference">
+                <copy todir="${basedir}/../target/docs/${project.version}/lob_guide">
                   <fileset dir="${basedir}/target/site">
                     <include name="**/*.*"/>  <!--All sub-directories, too-->
                   </fileset>
