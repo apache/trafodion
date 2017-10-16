@@ -122,6 +122,7 @@ public class ListenerWorker extends Thread {
                 server.send(new PendingRequest(key, requestReply));
             } catch (Exception e){
                 LOG.error("Unexpected Exception", e);
+                System.exit(-1);
             }
         }
     }

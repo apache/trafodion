@@ -199,9 +199,9 @@ public class RequestCancelQuery {
             if(LOG.isErrorEnabled())
                 LOG.error("RequestCancelQuery.InterruptedException: " + s.getRemoteSocketAddress() + ": " + ie.getMessage(), ie);
             cancelConnection = true;
-        } catch (Exception e){
+        } catch (BufferUnderflowException e){
             if(LOG.isErrorEnabled())
-                LOG.error("RequestCancelQuery.Exception: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
+                LOG.error("RequestCancelQuery.BufferUnderflowException: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         header = null;

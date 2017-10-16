@@ -78,9 +78,9 @@ public class RequestUnknown {
             if(LOG.isErrorEnabled())
                 LOG.error("UnsupportedEncodingException in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + ue.getMessage(), ue);
             cancelConnection = true;
-        } catch (Exception e){
+        } catch (BufferUnderflowException e){
             if(LOG.isErrorEnabled())
-                LOG.error("Exception in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
+                LOG.error("BufferUnderflowException in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         header = null;

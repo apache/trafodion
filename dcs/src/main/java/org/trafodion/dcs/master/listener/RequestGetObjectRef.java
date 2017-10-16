@@ -63,9 +63,9 @@ public class RequestGetObjectRef {
             if(LOG.isErrorEnabled())
                 LOG.error("IOException in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + io.getMessage(), io);
             cancelConnection = true;
-        } catch (Exception e){
+        } catch (BufferUnderflowException e){
             if(LOG.isErrorEnabled())
-                LOG.error("Exception in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
+                LOG.error("BufferUnderflowException in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         // Return to sender
