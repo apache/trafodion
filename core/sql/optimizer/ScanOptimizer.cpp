@@ -3001,6 +3001,48 @@ ScanOptimizer::useSimpleFileScanOptimizer(const FileScan& associatedFileScan
                        ,indexDesc
                        );
 
+    if (CmpCommon::getDefault(MDAM_FSO_SIMPLE_RULE) == DF_ON)
+      {
+        // Quickly-computed special cases
+
+        if (searchKey.isUnique())
+          return TRUE;   // unique access, don't need to consider MDAM
+
+        if (exePreds.entries() == 0)  // if searchKey consumed all executor preds
+          return TRUE;   // then MDAM can't do better; don't consider
+
+        if (searchKey.getKeyPredicates().entries() == 0)
+          return FALSE;  // single subset is a full table scan, so try MDAM
+
+        // General case: If the search key prefix consumes all of
+        // the executor predicates, then we don't need to consider MDAM.
+        // But if there are predicates on key columns that SearchKey
+        // did not pick, then MDAM may have opportunities for reduced
+        // access, and so should be considered.
+
+        ValueIdSet baseColumns;
+        for (ValueId p = exePreds.init(); exePreds.next(p); exePreds.advance(p))
+          {
+            p.getItemExpr()->findAll(ITM_BASECOLUMN,baseColumns,TRUE,TRUE);
+          }
+
+        const ValueIdList & keyColumns = indexDesc->getIndexKey();
+        ValueId baseVid;
+        for (CollIndex i=0; i < keyColumns.entries(); i++ ) 
+          {
+            if (keyColumns[i].getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN)
+              baseVid = ((IndexColumn*)(keyColumns[i].getItemExpr()))->getDefinition();
+            else
+              baseVid = keyColumns[i];
+
+            if (baseColumns.contains(baseVid))
+              return FALSE;  // key column occurs in exePreds; so consider MDAM
+          }
+
+        return TRUE;  // SearchKey already handles all key preds; don't consider MDAM 
+      }
+
+    // The (old) code below is executed only if CQD MDAM_FSO_SIMPLE_RULE is 'OFF'
     if ((! searchKey.isUnique()) &&
 	(searchKey.getKeyPredicates().entries() > 0))
     {
