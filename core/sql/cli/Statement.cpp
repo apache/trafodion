@@ -2051,11 +2051,22 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
-
-      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+      if (intParam1 == LOB_DATA_READ_ERROR)
         {
-          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                    << DgString0(si->tableName());
+          if ((failedLocBufLen > 0) && (strlen(failedLocBuf) > 0))
+            {
+              char errBuf[strlen(si->tableName()) + 100 + failedLocBufLen];
+              str_sprintf(errBuf, "%s (fileLoc: %s)",
+                          si->tableName(), failedLocBuf);
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(errBuf);              
+            }
+          else
+            {
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(si->tableName());
+            }
+          simCheckFailed = TRUE;
         }
 
       return ERROR;

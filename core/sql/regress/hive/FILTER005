@@ -31,4 +31,6 @@ sed "
 s/Logging Location: \/user\/trafodion\/bulkload\/logs\/ERR.*/Logging Location:@loggingLocation@/
 s/Logging Location: \/user\/trafodion\/bulkload\/logs\/TEST005\/ERR.*/Logging Location:@TEST005LoggingLocation@/
 s/Time:.*/Time:@time@/
+s/^\*\*\* WARNING\[8436\].*/Warning 8436 or 8577 removed/g
+s/^\*\*\* WARNING\[8577\].*/Warning 8436 or 8577 removed/g
 " $fil

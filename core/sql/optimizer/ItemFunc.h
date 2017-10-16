@@ -2921,7 +2921,7 @@ public:
   short lobNum_;
   LobsStorage lobStorageType_;
   NAString lobStorageLocation_;
-  Int32 lobMaxSize_; // In MB units
+  Int64 lobMaxSize_; // In byte units
   Int32 lobMaxChunkMemSize_; //In MB Units
   Int32 lobGCLimit_ ;//In MB Units
   Int32 hdfsPort_;

@@ -824,7 +824,7 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   AQREntry(   8575,      0,      1,     0,      1,   0, "",    0,     0), 
 
   // table not found
-  AQREntry(   8577,      0,      1,     0,      1,   0, "",    0,     0), 
+  AQREntry(   8577,      0,      1,     0,      1,   2, "04:05",    0,  0), 
 
   // sim check failure
   AQREntry(   8579,      0,      1,     0,      1,   0, "",    0,     0),

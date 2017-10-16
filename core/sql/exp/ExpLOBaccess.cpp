@@ -451,8 +451,25 @@ Ex_Lob_Error ExLob::dataModCheck(
   // find mod time of root dir
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
-    {
-      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+    {       
+      Lng32 failedFileLen = strlen(dirPath);
+      Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
+                       ? (*failedLocBufLen-1) : failedFileLen);
+      Int32 hdfserror = errno;
+      char hdfsErrStr[20];
+      sprintf(hdfsErrStr,"(errno %d)",errno);
+      str_cpy_and_null(failedLocBuf, dirPath, copyLen,
+                       '\0', ' ', TRUE);
+      str_cat_c(failedLocBuf,hdfsErrStr);
+      *failedLocBufLen = copyLen;
+      if (errno)
+        {
+          // Allow for hdfs error. AQR will find the new hive mapped files
+          // if the hive table has been remapped to new data files
+          return LOB_DATA_FILE_NOT_FOUND_ERROR;
+        }
+      else
+        return LOB_DATA_READ_ERROR;
     }
     
   Int64 currModTS = fileInfos[0].mLastMod;
