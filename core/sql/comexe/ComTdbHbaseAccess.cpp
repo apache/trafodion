@@ -198,6 +198,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
+  colIndexOfPK1_(0),
   hbaseAccessOptions_(hbaseAccessOptions),
 
   pkeyColName_(pkeyColName)
@@ -311,6 +312,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
+  colIndexOfPK1_(0),
   hbaseAccessOptions_(NULL),
 
   pkeyColName_(NULL)

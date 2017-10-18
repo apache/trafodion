@@ -541,7 +541,8 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
                                               hbaseAccessTdb().useHbaseXn(),
                                               hbaseAccessTdb().useRegionXn(),
                                               insColTSval_,
-                                              asyncOperation_);
+                                              asyncOperation_,
+					      hbaseAccessTdb().getColIndexOfPK1());
 
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
@@ -2272,7 +2273,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
                                                      tcb_->hbaseAccessTdb().useRegionXn(),
 						     -1, // colTS
-                                                     tcb_->asyncOperation_); 
+                                                     tcb_->asyncOperation_,
+						     tcb_->hbaseAccessTdb().getColIndexOfPK1()); 
 
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {

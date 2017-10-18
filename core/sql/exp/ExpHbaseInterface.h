@@ -311,7 +311,8 @@ class ExpHbaseInterface : public NABasicObject
                                   NABoolean useHbaseXn,
                                   NABoolean useRegionXn,
 				  const int64_t timestamp,
-                                  NABoolean asyncOperation) = 0;
+                                  NABoolean asyncOperation,
+				  Int16 colIndexToCheck) = 0;
 
   
   virtual Lng32 checkAndUpdateRow(
@@ -624,7 +625,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                   NABoolean useHbaseXn,
                                   NABoolean useRegionXn,
 				  const int64_t timestamp,
-                  		  NABoolean asyncOperation);
+                  		  NABoolean asyncOperation,
+				  Int16 colIndexToCheck);
 
 
 

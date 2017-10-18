@@ -277,7 +277,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_REGN_NODES].jm_name      = "getRegionsNodeName";
     JavaMethods_[JM_GET_REGN_NODES].jm_signature = "(Ljava/lang/String;[Ljava/lang/String;)Z";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_name      = "insertRow";
-    JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;JZZZ)Z";
+    JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_signature = "(JLjava/lang/String;ZJ[BLjava/lang/Object;JZSZZ)Z";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].jm_name      = "insertRows";
     JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].jm_signature = "(JLjava/lang/String;ZJSLjava/lang/Object;Ljava/lang/Object;JZ)Z";
     JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_name      = "checkAndUpdateRow";
@@ -2460,7 +2460,7 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
 HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
       HbaseStr row, Int64 timestamp, bool checkAndPut, bool asyncOperation,
-      bool useRegionXn, HTableClient_JNI **outHtc)
+      bool useRegionXn, short colIndexToCheck, HTableClient_JNI **outHtc)
 {
   
   HTableClient_JNI *htc = NULL;
@@ -2513,13 +2513,14 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
   jboolean j_checkAndPut = checkAndPut;
   jboolean j_asyncOperation = asyncOperation;
   jboolean j_useRegionXn = useRegionXn;
+  jshort j_colIndexToCheck = colIndexToCheck;
 
   if (hbs)
     hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_full_name;
   jboolean jresult = 
     jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].methodID, 
-                             j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow, j_ts, j_checkAndPut, j_asyncOperation, j_useRegionXn);
+                             j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow, j_ts, j_checkAndPut, j_colIndexToCheck, j_asyncOperation, j_useRegionXn);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)

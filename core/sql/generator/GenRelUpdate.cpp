@@ -2379,6 +2379,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
+  Int16 colIndexOfPK1 = -1;
 
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
   {
@@ -2403,6 +2404,12 @@ short HbaseInsert::codeGen(Generator *generator)
           char * colNameInList = 
              space->AllocateAndCopyToAlignedSpace(cnInList, 0);
           listOfOmittedColNames->insert(colNameInList);
+      }
+      else
+      {
+	if (col->isClusteringKey() && !isAlignedFormat && colIndexOfPK1 == -1)
+	  colIndexOfPK1 = (listOfOmittedColNames == NULL) ?  ii : 
+	    ii - listOfOmittedColNames->entries();
       }
       colArray.insert( col );
 
@@ -3007,6 +3014,9 @@ short HbaseInsert::codeGen(Generator *generator)
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
+
+      if (colIndexOfPK1 >=0 && t ==  ComTdbHbaseAccess::INSERT_)
+	hbasescan_tdb->setColIndexOfPK1(colIndexOfPK1);
     }
   else
     {

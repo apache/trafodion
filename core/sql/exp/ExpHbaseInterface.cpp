@@ -842,7 +842,9 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
     transID = getTransactionIDFromContext();
   retCode_ = client_->insertRow((NAHeap *)heap_, tblName.val, hbs_,
                                 useTRex_, transID, rowID, row, timestamp, 
-                                checkAndPut, asyncOperation, useRegionXn, &htc);
+                                checkAndPut, asyncOperation, useRegionXn, 
+				0, // checkAndPut is false, so colIndexToCheck is not used
+				&htc);
   if (retCode_ != HBC_OK) {
     return -HBASE_ACCESS_ERROR;
   }
@@ -1194,7 +1196,8 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 	  NABoolean useHbaseXn,
           NABoolean useRegionXn,
 	  const int64_t timestamp,
-          NABoolean asyncOperation)
+          NABoolean asyncOperation,
+	  Int16 colIndexToCheck)
 {
   HTableClient_JNI *htc = NULL;
   Int64 transID; 
@@ -1207,7 +1210,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
   retCode_ = client_->insertRow((NAHeap *)heap_, tblName.val, hbs_,
                                 useTRex_, transID, rowID, row, timestamp, 
                                 checkAndPut, asyncOperation, useRegionXn,
-                                &htc);
+                                colIndexToCheck, &htc);
 
   if (retCode_ == HBC_ERROR_INSERTROW_DUP_ROWID) {
      return HBASE_DUP_ROW_ERROR;

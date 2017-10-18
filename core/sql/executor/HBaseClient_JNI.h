@@ -496,6 +496,7 @@ public:
                         HbaseStr rowID,
                         HbaseStr row, Int64 timestamp,bool checkAndPut, 
                         bool asyncOperation, bool useRegionXn, 
+			short colIndexToCheck,
                         HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
