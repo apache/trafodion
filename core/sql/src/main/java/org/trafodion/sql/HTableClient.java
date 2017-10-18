@@ -1509,7 +1509,8 @@ public class HTableClient {
     
 	public boolean putRow(final long transID, final byte[] rowID, Object row,
                               byte[] columnToCheck, final byte[] colValToCheck,
-                              final boolean checkAndPut, boolean asyncOperation,
+                              final short colIndexToCheck, 
+			      final boolean checkAndPut, boolean asyncOperation,
                               final boolean useRegionXn) throws IOException, InterruptedException, 
                           ExecutionException 
 	{
@@ -1539,7 +1540,7 @@ public class HTableClient {
 			colValue = new byte[colValueLen];
 			bb.get(colValue, 0, colValueLen);
 			put.add(getFamily(colName), getName(colName), colValue); 
-			if (checkAndPut && colIndex == 0) {
+			if (checkAndPut && colIndex == colIndexToCheck) {
 				family = getFamily(colName);
 				qualifier = getName(colName);
 			} 
@@ -1618,13 +1619,13 @@ public class HTableClient {
 		}	
 	}
     
-        public boolean insertRow(long transID, byte[] rowID, 
+    /* public boolean insertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
-		return putRow(transID, rowID, row, null, null, 
-                              false, asyncOperation, false);
-	}
+	    return putRow(transID, rowID, row, null, null, 0, 
+			  false, asyncOperation, false);
+			  } */
 
 	public boolean putRows(final long transID, short rowIDLen, Object rowIDs, 
                        Object rows,
@@ -1713,21 +1714,22 @@ public class HTableClient {
 		return true;
 	}
 
-	public boolean checkAndInsertRow(long transID, byte[] rowID, 
+    /* public boolean checkAndInsertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException  {
-		return putRow(transID, rowID, row, null, null, 
+	    return putRow(transID, rowID, row, null, null, 0, 
                               true, asyncOperation, false);
-	}
+			      } */
 
 	public boolean checkAndUpdateRow(long transID, byte[] rowID, 
              Object columns, byte[] columnToCheck, byte[] colValToCheck,
              long timestamp, boolean asyncOperation) throws IOException, InterruptedException, 
                                     ExecutionException, Throwable  {
-		return putRow(transID, rowID, columns, columnToCheck, 
-                              colValToCheck, 
-                              true, asyncOperation, false);
+	    short colIndexToCheck = 0; // overridden by columnToCheck
+	    return putRow(transID, rowID, columns, columnToCheck, 
+			  colValToCheck, colIndexToCheck,
+			  true, asyncOperation, false);
 	}
 
         public byte[] coProcAggr(long transID, int aggrType, 

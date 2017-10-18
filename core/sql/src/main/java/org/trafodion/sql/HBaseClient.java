@@ -1923,11 +1923,12 @@ public class HBaseClient {
                            Object row,
                            long timestamp,
                            boolean checkAndPut,
+			   short colIndexToCheck,
                            boolean asyncOperation,
                            boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
 
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.putRow(transID, rowID, row, null, null,
+      boolean ret = htc.putRow(transID, rowID, row, null, null, colIndexToCheck,
                                checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
@@ -1943,8 +1944,10 @@ public class HBaseClient {
                                    boolean asyncOperation,
                                    boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
       boolean checkAndPut = true;
+      short colIndexToCheck = 0; // is overridden by columnToCheck
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
+      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, 
+			       columnToCheck, columnValToCheck, colIndexToCheck,
                                checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
