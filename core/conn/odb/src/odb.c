@@ -39,7 +39,7 @@ char *odbauth = "Trafodion Dev <trafodion-development@lists.launchpad.net>";
 #define TD_CHUNK    32          /* Granularity of td[] memory allocation */
 #define MAX_ARGS    11          /* Max arguments for interactive mode */
 #define ARG_LENGTH  128         /* Max argument length in interactive mode */
-#define LINE_CHUNK  512         /* size of memory chunks allocated to store lines */
+#define LINE_CHUNK  51200       /* size of memory chunks allocated to store lines */
 #define MAX_VNLEN   32          /* Max variable name length */
 #define MAX_PK_COLS 16          /* Max number of PK elements */
 #define MAXCOL_LEN  128         /* Max table column name length */
@@ -6196,11 +6196,11 @@ static void Oload(int eid)
                                     0100 = escape flag          0200 = embed file read  */
                   ccl = 0,      /* Continue cleaning to RS in the next buffer */
                   pstats = 0,   /* Error flag: 0 = print stats, 1 = don't print stats */
-                  lfs = etab[eid].fs,   /* local field separator */
-                  lrs = etab[eid].rs,   /* local record separator */
-                  lsq = etab[eid].sq,   /* local string qualifier */
-                  lem = etab[eid].em,   /* local embed character */
-                  lec = etab[eid].ec;   /* local escape character */
+                  lfs = etab[eid].fs,                                 /* local field separator */
+                  lrs = etab[eid].rs,                                 /* local record separator */
+                  lsq = etab[eid].sq ? etab[eid].sq : '"',            /* local string qualifier, deafult is '"' */
+                  lem = etab[eid].em,                                 /* local embed character */
+                  lec = etab[eid].ec;                                 /* local escape character */
     int *ldrs=0,                /* pointer to array containing loaders EIDs */
         *rmap=0;                /* Input File Fields Map (reverse map):
                                     >=0 maps the correspoding Table Column Number
@@ -6778,10 +6778,14 @@ static void Oload(int eid)
                     map[j].max = (int) strtol ( bp, NULL, 10);
                 } else {
                     fg |= 0010; /* delimited format flag */
-                    map[j].idx = (int)strtol( bp, NULL, 10);
+                    map[j].idx = (int)strtol( bp, NULL, 10) - 1;
+                    if (map[j].idx < 0) {
+                        fprintf(stderr, "odb [Oload(%d)] - Error: Field index should should start from 1\n", __LINE__);
+                        goto oload_exit;
+                    }
                 }
                 while ( *bp && *bp++ != ':' );
-                if ( bp ) {
+                if ( *bp ) {
                     if ( !strmicmp ( "substr", bp, 6 ) ) {
                         map[j].op = 1;
                         while ( *bp && *bp++ != ':' );
@@ -7301,13 +7305,13 @@ static void Oload(int eid)
         }
         nb += len;                                              /* update bytes read from file */
         p = 0;                                                  /* reset buffer index */
-        while ( lts ) {                                         /* skip initial lines */
-            if ( buff[p++] == lrs ) {
-                lts-- ;
+        while (lts && p < len) {                                /* skip initial lines */
+            if (buff[p++] == lrs) {
+                --lts;
             }
         }
         if ( ccl ) {                                            /* continue cleaning rest of line */
-            while ( p < etab[eid].buffsz && buff[p] != lrs )    /* ... skip the rest of the line */
+            while ( p < len && buff[p] != lrs )                 /* ... skip the rest of the line */
                 p++;
             if ( buff[p] == lrs ) {                             /* if a record separator has been found */
                 ccl = 0;                                        /* switch the continue cleaning flag off */
@@ -7947,8 +7951,6 @@ static void Oload2(int eid)
                  j=0,           /* loop variable */
                  lts = etab[eid].k ,    /* lines to skip */
                  isgz=0;        /* input file is gzipped: 0=no , 1=yes */
-    int lfs = etab[eid].fs,     /* local field separator */
-        lrs = etab[eid].rs;     /* local record separator */
     int *ldrs=0;                /* pointer to array containing loaders EIDs */
     FILE *fl=0;                 /* data to load file pointer */
 #ifdef HDFS
@@ -7957,14 +7959,21 @@ static void Oload2(int eid)
     char *buff = 0,             /* IO buffer */
          *buff_save = 0,        /* save original IO buffer pointer */
          *gzbuff = 0,           /* GZIP IO buffer */
-         *bc = 0,               /* current field buffer size pointer */
-         *bn = 0;               /* next field buffer size pointer */
+         *str = 0,              /* field buffer */
+         *bc = 0;               /* current field buffer size pointer */
     char num[32];               /* Formatted Number String */
     char tim[15];               /* Formatted Time String */
     struct timeval tve;         /* timeval struct to define elapesd/timelines */
     SQLCHAR *Odp = 0;           /* rowset buffer data pointer */
     double seconds = 0;         /* seconds used for timings */
     z_stream gzstream = { 0 } ; /* zlib structure for gziped files */
+    unsigned char fg = 0,       /* Oload flags:
+                                0001 = in a quoted string   0020 = field ready
+                                0010 = delimited fields     0040 = record ready
+                                0100 = escape flag */
+        lfs = etab[eid].fs,                                 /* local field separator */
+        lrs = etab[eid].rs,                                 /* local record separator */
+        lsq = etab[eid].sq ? etab[eid].sq : '"';            /* local string qualifier, deafult is '"' */
                                 
     /* Check if we have to use another ODBC connection */
     if ( thps[tid].cr > 0 ) {
@@ -8119,6 +8128,13 @@ static void Oload2(int eid)
                 etab[eid].td[j].pad = WORDSZ - etab[eid].td[j].Osize % WORDSZ ;
         #endif
         etab[eid].s += ( etab[eid].td[j].Osize + etab[eid].td[j].pad + sizeof(SQLLEN) );    /* space for length indicator */
+    }
+
+    /* Allocate field buffer */
+    if ((str = calloc(1, etab[eid].buffsz + 1)) == (void *)NULL) {
+        fprintf(stderr, "odb [Oload2(%d)] - Error allocating field buffer: [%d] %s\n",
+            __LINE__, errno, strerror(errno));
+        goto oload2_exit;
     }
 
     /* Truncate target table */
@@ -8404,23 +8420,44 @@ static void Oload2(int eid)
             }
         }
         nb += len;                                              /* update bytes read from file */
-        while ( lts ) {                                         /* skip initial lines */
+        while ( lts && len ) {                                         /* skip initial lines */
             if ( *buff++ == lrs ) {
                 lts-- ;
             }
             len-- ;
         }
         bc = buff ;                                             /* Initialize current field position */
-        while ( 1 ) {
-            if ( k < l - 1 ) {
-                bn = memchr ( bc , lfs , len ) ;                /* identify next field sep */
-            } else {
-                bn = memchr ( bc , lrs , len ) ;                /* identofy next record sep */
+        size_t i = 0;
+        while (i < len) {
+            ifl = 0;
+            for (; i < len; ++i) {
+                if ((fg & 0001) && (fg & 0100) && (bc[i] == lfs || bc[i] == lrs)) { /* treat string qualifier before as end quote */
+                    fg &= ~0101;
+                }
+                if (bc[i] == lfs && !(fg & 0001)) {             /* if field sep... */
+                    fg |= 0020;                                 /* set field complete flag on */
+                    ++i;
+                    break;
+                }
+                else if (bc[i] == lrs && !(fg & 0001)) {        /* if record sep... */
+                    fg |= 0040;                                 /* set record complete flag on */
+                    ++i;
+                    break;
+                }
+                else if ((bc[i] == lsq) && (fg & 0001) && !(fg & 0100)) {  /* if string qualifier char and in string qualifier */
+                    fg |= 0100;
+                }
+                else if ((bc[i] == lsq) && !(fg & 0100)) {
+                    fg ^= 0001;                                 /* flip quoted string flag */
+                }
+                else {                                          /* add new character to field buffer */
+                    str[ifl++] = bc[i];
+                    fg &= ~0100;                                /* set escape flag off */
+                }
             }
-            if ( bn ) {                                         /* field complete */                            
-                ifl = bn - bc ;                                 /* determine field length */
+            if ( fg & 0060 ) {                                  /* field complete */
                 if ( ifl ) {
-                    MEMCPY(Odp, bc, ifl);
+                    MEMCPY(Odp, str, ifl);
                     Odp += etab[eid].td[k].Osize + etab[eid].td[k].pad - rl ;
                     *((SQLLEN *)(Odp)) = (SQLLEN)(ifl+rl) ;
                 } else if ( rl ) {
@@ -8431,8 +8468,6 @@ static void Oload2(int eid)
                     *((SQLLEN *)(Odp)) = (SQLLEN)SQL_NULL_DATA ;
                 }
                 rl = 0 ;
-                len -= ( ifl + 1 );
-                bc = bn + 1 ;
                 Odp += sizeof(SQLLEN) ;
                 if ( ++k == l ) {                               /* row completed */
                     k = 0 ;
@@ -8440,10 +8475,10 @@ static void Oload2(int eid)
                     nrf++ ;
                 }
             } else {                                            /* field incomplete */
-                rl = ifl = len ;
+                rl = ifl;
                 if ( ifl )
-                    MEMCPY(Odp, bc, ifl);
-                len = 0 ;
+                    MEMCPY(Odp, str, ifl);
+                memset(str, '\0', ifl);
                 Odp += ifl ;
                 break;
             }
@@ -8490,8 +8525,6 @@ static void Oload2(int eid)
                 k = 0;
                 Odp = etab[eid].Orowsetl ;
             }
-            if ( len == 0 )
-                break;
         }
     }
     oload2_exit:
@@ -8585,6 +8618,9 @@ static void Oload2(int eid)
         for ( i = 0; i < l ; i++)
             free ( etab[eid].td[i].Oname );
         free(etab[eid].td);
+    }
+    if (str) {
+        free(str);
     }
 
     /* Close bad file */
