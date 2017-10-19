@@ -1589,8 +1589,7 @@ void MdamKey::preCodeGen(ValueIdSet& executorPredicates,
 
   // If the curDisjuncts have more than one disjunct and the chosen plan
   // only has 1 disjunct then the mdam common predicates case has occurred
-  if (getDisjuncts().entries() == 1  AND  curDisjuncts->entries() > 1 AND
-      !partKeyPredsAdded)
+  if (getDisjuncts().entries() == 1  AND  curDisjuncts->entries() > 1)
     {
       ValueIdSet commonPreds = curDisjuncts->getCommonPredicates();
       CMPASSERT(NOT commonPreds.isEmpty());
