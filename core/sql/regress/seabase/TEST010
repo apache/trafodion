@@ -22,6 +22,21 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+-- Notes: The section "testsWithForces" was added because of
+-- JIRA TRAFODION 2777. Formerly, tables without statistics
+-- would often get MDAM plans via a heuristic. If the table
+-- was large, the plan could be very bad. The JIRA turned
+-- that heuristic off. But that had side effects on this test.
+-- This test seems to intentionally test the run-time MDAM
+-- code. Since CQD MDAM_SCAN_METHOD 'ON' is no longer sufficient
+-- to cause MDAM plans to be picked on these queries, we have
+-- to resort to CONTROL QUERY SHAPE statements instead. And
+-- those have to be done per statement. So, section "tests"
+-- has been copied to create a new section "testsWithForces",
+-- and CONTROL QUERY SHAPE statements added to that section.
+-- Apart from these CQS statements, it's intended that those
+-- two sections should be identical.
+
 obey TEST010(clean_up);
 cleanup obsolete volatile tables;
 
@@ -36,7 +51,7 @@ cqd traf_aligned_row_format 'OFF';
 cqd query_cache '1024';
 cqd mdam_scan_method 'ON';
 obey TEST010(clean_up);
-obey TEST010(tests);
+obey TEST010(testsWithForces);
 
 -- query_cache off, mdam_scan_method off
 cqd query_cache '0';
@@ -54,7 +69,7 @@ obey TEST010(tests);
 cqd query_cache '0';
 cqd mdam_scan_method 'ON';
 obey TEST010(clean_up);
-obey TEST010(tests);
+obey TEST010(testsWithForces);
 
 -- run with hbase_serialization ON
 obey TEST010(clean_up);
@@ -66,13 +81,13 @@ cqd traf_aligned_row_format 'ON';
 cqd query_cache '1024';
 cqd mdam_scan_method 'ON';
 obey TEST010(clean_up);
-obey TEST010(tests);
+obey TEST010(testsWithForces);
 
 -- query_cache off, mdam_scan_method on
 cqd query_cache '0';
 cqd mdam_scan_method 'ON';
 obey TEST010(clean_up);
-obey TEST010(tests);
+obey TEST010(testsWithForces);
 
 -- other mdam queries
 cqd mdam_scan_method 'ON';
@@ -225,6 +240,214 @@ prepare y4 from
 delete from t010t2 where a in (2,4,6) and b='a' and c in (1,3);
 execute y4;
 -- expect 2 rows deleted, 2a1 and 4a1
+execute y3;
+-- expect 1a1, 1a3
+
+insert into t010t2 values
+(2, 'a', 1, '2a1'),
+(4, 'a', 1, '4a1');
+
+prepare y5 from 
+update t010t2 set d='uuu' where a=4 and b in ('a', 'b') and c < 2;
+execute y5;
+-- execute 2 rows updated, 4a1 and 4b1
+select * from t010t2;
+
+cqd HBASE_MAX_NUM_SEARCH_KEYS reset;
+
+explain x1;
+explain x2;
+explain x3;
+explain x4;
+explain x5;
+explain y1;
+explain y2;
+explain y3;
+explain y4;
+explain y5;
+
+select "_SALT_", * from t010t3 order by a,b,c;
+select "_SALT_", * from t010t3 where a=1 and b='c';
+
+update t010t3 set d='2axu' where a=2 and b='a';
+-- 2 rows updated
+update t010t3 set d='4b1u' where a=4 and b='b' and c <= 1;
+-- 1 row updated
+update t010t3 set a=3 where a=2;
+-- 3 rows updated
+delete from t010t3 where a=3 and b='c' and c=3;
+-- 1 row deleted
+delete from t010t3 where d like '2%u %';
+-- 2 rows deleted
+select "_SALT_", * from t010t3;
+-- 7 rows
+merge into t010t3
+  using (select * from t010t2) as src
+  on ((src.a, src.b, src.c) = (a,b,c))
+when matched
+  then update set d = src.d
+when not matched
+  then insert values (src.a, src.b, src.c, src.d)
+;
+-- 10 rows updated
+select "_SALT_", * from t010t2 natural join t010t3 order by a,b,c;
+-- expect 10 rows, same as each individual table
+
+select "_SALT_", * from table(table t010t3, partition number 4);
+select "_SALT_", * from table(table t010t3, partition number from 1 to 3);
+-- 2 statements above must return 10 rows total
+
+?section testsWithForces
+--------------------------------------------------------------------------
+
+create table if not exists t010t1 (a int not null, b char(10), primary key(a)); 
+create table if not exists t010t2 (a int not null, b char(10) not null, c int not null, d char(10), primary key(a,b,c));
+create table if not exists t010t3 (a int not null, b char(10) not null, c int not null, d char(10), primary key(a,b,c))
+  salt using 4 partitions on (a,b);
+
+invoke t010t1;
+invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
+invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
+
+insert into t010t1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+select * from t010t1;
+
+select * from t010t1 where a = 2;
+
+select * from t010t1 where a = 2 or a = 3;
+
+delete from t010t1 where a = 4;
+
+select * from t010t1;
+
+delete from t010t1 where a = 2;
+
+select * from t010t1;
+
+-------------------
+-- check query plan
+-------------------
+
+-- no sort operator should present when order by on primary key column
+prepare xx from select * from t010t1 order by a;
+explain options 'f' xx;
+
+-- should see a sort when order by on non key column
+prepare xx from select * from t010t1 order by b;
+explain options 'f' xx;
+
+-- should see no sort operator when selecting from one salt bucket
+prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+explain options 'f' xx;
+
+-- selectPred should present due to the 2nd disjunct b='1'
+prepare xx from select * from t010t1 where a=1 or b='1';
+explain xx;
+
+-- Optimization: with only one disjunct, the selectPred should be empty
+-- and the executor predicate should contain the non-key predicate
+prepare xx from select * from t010t1 where a=1 and b='1';
+explain xx;
+
+-- should see a full hbase SCAN
+prepare xx from select * from t010t1 where b='1';
+explain xx;
+
+-- should see a unique hbase GET 
+prepare xx from select * from t010t1 where a=1;
+explain xx;
+
+insert into t010t2 values
+(1, 'a', 1, '1a1'),
+(1, 'a', 3, '1a3'),
+(1, 'a', 5, '1a5'),
+(1, 'c', 1, '1c1'),
+(2, 'a', 1, '2a1'),
+(2, 'a', 2, '2a2'),
+(2, 'c', 3, '2c3'),
+(4, 'a', 1, '4a1'),
+(4, 'b', 1, '4b1'),
+(4, 'b', 2, '4b2');
+
+insert into t010t3 select * from t010t2;
+
+control query shape scan(table 'T010T2', mdam forced);
+
+prepare x1 from
+select * from t010t2 where a in (1,4) and b='a' and c = 1;
+
+execute x1;
+-- expect 1a1, 4a1
+
+prepare x2 from
+select * from t010t2 where a in (1,2,4) and b='a' and (c in (1,3) or c>=5);
+execute x2;
+-- expect 1a1, 1a3, 1a5, 2a1, 4a1
+
+prepare x3 from
+select * from t010t2 where a in (1,2,4) and b='a' and c in (1,3);
+execute x3;
+-- expect 1a1, 1a3, 2a1, 4a1
+
+control query shape off;
+
+control query shape nested_join(scan(path 'TRAFODION.SCH.T010T2', forward
+, blocks_per_access 1 , mdam forced, mdam_columns all(sparse, sparse
+, sparse)),anything);
+
+prepare x4 from
+delete from t010t2 where a in (2,4,6) and b='a' and c in (1,3);
+execute x4;
+-- expect 2 rows deleted, 2a1 and 4a1
+
+control query shape off;
+
+execute x3;
+-- expect 1a1, 1a3
+
+insert into t010t2 values
+(2, 'a', 1, '2a1'),
+(4, 'a', 1, '4a1');
+
+prepare x5 from 
+update t010t2 set d='upd' where a=4 and b in ('a', 'b') and c < 2;
+execute x5;
+-- execute 2 rows updated, 4a1 and 4b1
+select * from t010t2;
+
+cqd HBASE_MAX_NUM_SEARCH_KEYS '1';
+
+control query shape scan(table 'T010T2', mdam forced);
+
+prepare y1 from
+select * from t010t2 where a in (1,4) and b='a' and c = 1;
+execute y1;
+-- expect 1a1, 4a1
+
+prepare y2 from
+select * from t010t2 where a in (1,2,4) and b='a' and (c in (1,3) or c>=5);
+execute y2;
+-- expect 1a1, 1a3, 1a5, 2a1, 4a1
+
+prepare y3 from
+select * from t010t2 where a in (1,2,4) and b='a' and c in (1,3);
+execute y3;
+-- expect 1a1, 1a3, 2a1, 4a1
+
+control query shape off;
+
+control query shape nested_join(scan(path 'TRAFODION.SCH.T010T2', forward
+, blocks_per_access 1 , mdam forced, mdam_columns all(sparse, sparse
+, sparse)),anything);
+
+prepare y4 from
+delete from t010t2 where a in (2,4,6) and b='a' and c in (1,3);
+execute y4;
+-- expect 2 rows deleted, 2a1 and 4a1
+
+control query shape off;
+
 execute y3;
 -- expect 1a1, 1a3
 
