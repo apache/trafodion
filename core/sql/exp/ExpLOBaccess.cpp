@@ -457,7 +457,7 @@ Ex_Lob_Error ExLob::dataModCheck(
                        ? (*failedLocBufLen-1) : failedFileLen);
       Int32 hdfserror = errno;
       char hdfsErrStr[20];
-      sprintf(hdfsErrStr,"(errno %d)",errno);
+      snprintf(hdfsErrStr,sizeof(hdfsErrStr),"(errno %d)",errno);
       str_cpy_and_null(failedLocBuf, dirPath, copyLen,
                        '\0', ' ', TRUE);
       str_cat_c(failedLocBuf,hdfsErrStr);

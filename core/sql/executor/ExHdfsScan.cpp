@@ -622,8 +622,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                       {
                         char errBuf[strlen(hdfsScanTdb().tableName()) + 
                                     strlen(hdfsFileName_) + 100];
-                        str_sprintf(errBuf, "%s (fileLoc: %s)",
-                                    hdfsScanTdb().tableName(), hdfsFileName_);
+                        snprintf(errBuf, sizeof(errBuf),"%s (fileLoc: %s)",
+                                 hdfsScanTdb().tableName(), hdfsFileName_);
                         ExRaiseSqlError(getHeap(), &diagsArea, 
                                       (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
                                       NULL, NULL, NULL,
