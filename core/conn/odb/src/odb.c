@@ -4156,18 +4156,17 @@ static void sigcatch(int sig)
     exit ( EX_SIGNAL );
 #else 
     if ( tn == 1 ) { /* single threaded */
-        tclean( 0 );
         gclean();
-        exit( EX_SIGNAL );
     } else {
         for ( i = 0 ; i < tn ; i++ ) {
-            if ( !pthread_kill(thid[i], 0) ) {  /* If this thread is alive... */
+            if ( pthread_kill(thid[i], 0) ) {  /* If this thread is alive... */
                 if ( pthread_cancel(thid[i]) )  /* ... cancel it */
                     fprintf(stderr, "odb [sigcatch(%d)] - Error canceling thread %d: [%d] %s\n",
                                     __LINE__, i, errno, strerror(errno) );
             }
         }
     }
+    exit(EX_SIGNAL);
 #endif
 }
 
