@@ -466,7 +466,7 @@ Ex_Lob_Error ExLob::dataModCheck(
         {
           // Allow for hdfs error. AQR will find the new hive mapped files
           // if the hive table has been remapped to new data files
-          return LOB_DATA_FILE_NOT_FOUND_ERROR;
+          return LOB_DATA_MOD_CHECK_ERROR;
         }
       else
         return LOB_DATA_READ_ERROR;

@@ -48,7 +48,7 @@ CREATE TABLE THIVE1
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE1;
-/* ObjectUID = 7486236896221741445 */
+/* ObjectUID = 7080927501909560103 */
 
 --- SQL operation complete.
 >>
@@ -80,7 +80,7 @@ REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE1;
 >>invoke trafodion.sch007.vhivehbase;
 
 -- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
--- Definition current  Wed May  3 05:10:02 2017
+-- Definition current  Wed Oct 18 21:01:16 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -258,7 +258,7 @@ CREATE TABLE THIVE2
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE2;
-/* ObjectUID = 7486236896221741067 */
+/* ObjectUID = 1928809434068290686 */
 
 --- SQL operation complete.
 >>showddl trafodion.sch007.vhive3;
@@ -411,7 +411,7 @@ A            B
 >>invoke hive.hivesch007.vhive1;
 
 -- Definition of native Hive view VHIVE1
--- Definition current  Wed May  3 05:11:22 2017
+-- Definition current  Wed Oct 18 21:03:26 2017
 
   (
     A                                INT
@@ -453,7 +453,7 @@ A
 >>invoke hive.hivesch007.vhive11;
 
 -- Definition of native Hive view VHIVE11
--- Definition current  Wed May  3 05:11:24 2017
+-- Definition current  Wed Oct 18 21:03:30 2017
 
   (
     A                                INT
@@ -669,7 +669,7 @@ CREATE VIEW vhive11 AS
   select vhive1.a from hivesch007.vhive1 where vhive1.a > 0 ;
 
 REGISTER HIVE VIEW HIVE.HIVESCH007.VHIVE11;
-/* ObjectUID = 7463718898080907566 */
+/* ObjectUID = 6918234965366828184 */
 
 --- SQL operation complete.
 >>get tables in view hive.hivesch007.vhive11;
@@ -952,7 +952,7 @@ create database hivesch0078;
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8577] Table, index, or view HIVE.HIVESCH007.THIVE1 was not found.
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1508360788, failedModTS = -1, failedLoc = hdfs://localhost:25600/user/hive/warehouse/hivesch007.db/thive1
 
 --- 0 row(s) selected.
 >>
@@ -1015,11 +1015,11 @@ S------    HIVE.HIVESCH007.THIVE9
 >>showstats for table hive.hivesch007.thive9 on every column;
 
 Histogram data for Table HIVE.HIVESCH007.THIVE9
-Table ID: 7463718898080914461
+Table ID: 6918234965366838662
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 770517434      6           6           6 A
+ 332052322      6           6           6 A
 
 
 --- SQL operation complete.
@@ -1058,7 +1058,7 @@ CREATE TABLE THIVE9
 ;
 
 REGISTER HIVE TABLE HIVE.HIVESCH007.THIVE9;
-/* ObjectUID = 7463718898080914461 */
+/* ObjectUID = 6918234965366838662 */
 
 /* Trafodion DDL */
 
@@ -1070,11 +1070,11 @@ CREATE EXTERNAL TABLE THIVE9
 >>showstats for table hive.hivesch007.thive9 on every column;
 
 Histogram data for Table HIVE.HIVESCH007.THIVE9
-Table ID: 7463718898080914461
+Table ID: 6918234965366838662
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 770517434      6           6           6 A
+ 332052322      6           6           6 A
 
 
 --- SQL operation complete.
@@ -1101,11 +1101,11 @@ CREATE EXTERNAL TABLE THIVE9
 >>showstats for table hive.hivesch007.thive9 on every column;
 
 Histogram data for Table HIVE.HIVESCH007.THIVE9
-Table ID: 7463718898080914461
+Table ID: 6918234965366838662
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 770517434      6           6           6 A
+ 332052322      6           6           6 A
 
 
 --- SQL operation complete.
