@@ -5702,6 +5702,63 @@ FileScanOptimizer::runMdamTests
 }
 #endif
 
+
+// The following method is now dead code and will soon be replaced functionally.
+// This method attempts to decide whether MDAM should be used on a table that
+// lack statistics. It does so by analyzing the key predicates, considering
+// the upper bounds on UECs implied by them and the number of ranges they
+// define.
+//
+// The calling method, FileScanOptimizer::computeCostForMultipleSubset, forces
+// MDAM when this method returns TRUE. There is one problem though: The costing
+// logic is bypassed so there is no computation of what stop columns to use.
+// So, we use the default settings which are to traverse *EVERY* key column.
+// This can be very bad from a performance perspective.
+//
+// Apart from this design flaw, there are some other specific bugs in this
+// method and the methods it calls. I'm documenting them here in case someone
+// after me feels they need to use this code after all. (Note that JIRA
+// TRAFODION-2645 intends to ultimately replace this code.) Good luck! Here's
+// the (probably not exhaustive) list:
+//
+// 1. Int32 totalUec should be an Int64, because that's what 
+// RangeSpec::getTotalDistinctValues returns. (The implied cast of Int64 down
+// to Int32 essentially does a mod 2^32 operation, resulting in a garbage value.)
+//
+// 2. Similarly, ARRAY(Int32) uecsByKeyColumns should be ARRAY(Int64).
+//
+// 3. In the Subrange object (qmscommon/Range.h), the "end" member is uninitialized
+// for predicates of the form A < 10. So you get a random value back from
+// RangeSpec::getTotalDistinctValues. Similarly, the "start" member is
+// uninitialized for predicates of the form A > 10.
+//
+// 4. Fixing the uninitialized member problem above is tricky. The value to use
+// for "start" and "end" depends on the data type of the key column it is 
+// compared to. Because of VEG effects, this can vary. For example, if we have
+// predicates of the form A < 10 AND A = B, and A happens to be an INTEGER
+// while B happens to be a SMALLINT UNSIGNED, the "end" member value used should
+// be -2^32 for A, but 0 for B. So, the NAType of the key column needs to be
+// passed in to RangeSpec::getTotalDistinctValues.
+//
+// 5. Subrange::getStartScalarValElem and Subrange::getEndScalarValElem need
+// to return NULL if startIsMin_ or endIsMax_ are set respectively. (These
+// are the cases where "start" and "end" are uninitialized. And as mentioned
+// in point 4, they can't be initialized until we pick the key column out of
+// any VEG.)
+//
+// 6. SubrangeBase::getTotalDistinctValues needs to treat a NULL return from
+// Subrange::getStartScalarValElem or Subrange::getEndScalarValElem as a 
+// minimum or maximum value respectively by the data type of the key column.
+// SubrangeBase::getExactNumericMinMax can be used to obtain those values.
+//
+// It is not obvious to me why these issues were not noticed sooner. In my
+// case I found them when investigating a non-deterministic failure in test
+// compGeneral/TEST006, where an index access query was (sometimes!) flipping
+// over to MDAM. This was unmasked by the change I made in JIRA TRAFODION-2765;
+// formerly *another* set of heuristcs prevented us from reaching this code.
+// However, that is no guarantee that this code was never reached before.
+
+
 NABoolean FileScanOptimizer::isMDAMFeasibleForHBase(const IndexDesc* idesc, ValueIdSet& preds)
 {
    Lng32 threshold = (Lng32)(ActiveSchemaDB()->getDefaults()).
@@ -5804,11 +5861,41 @@ FileScanOptimizer::computeCostForMultipleSubset
   ValueIdSet exePreds;
   ValueIdSet selPreds = getRelExpr().getSelectionPred();
 
+  /*
+     Commenting this code out pending a rewrite of the MDAM costing code.
+
+     What the code below tries to do is if the table has no statistics,
+     it looks at the predicates of any RangeSpec and tries to determine
+     if they imply an MDAM plan of just a few positionings. And if so,
+     the code returns a zero Cost object, which in effect forces the
+     caller to use MDAM.
+
+     What is wrong-headed about this approach is that the MdamKey object
+     passed in is set to use all key column predicates as MDAM predicates
+     and has the stop columns set to their maximums. That is, by returning
+     here we have bypassed the costing logic that figures out the optimal
+     stop column setting. This can result in *TREMENDOUSLY* inefficient 
+     plans.
+  
+     Fixing this requires essentially rewriting the costing code. And since
+     I am already doing that elsewhere using a different approach (see
+     JIRA TRAFODION-2645), there is no point in doing it yet another time
+     here.
+
+     However if someone comes along after me and insists on fixing this
+     particular code, I've documented some additional issues in the method
+     FileScanOptimizer::isMDAMFeasibleForHBase.
+
+     The effect of commenting this code out is that tables without statistics
+     will tend to get single subset plans. This is probably OK for the moment
+     as most such tables are small. Often they are metadata tables.        
+    
   const IndexDesc *indexDesc = getFileScan().getIndexDesc();
   NABoolean isHbaseTable = indexDesc->getPrimaryTableDesc()->getNATable()->isHbaseTable();
   if ( isHbaseTable && isMDAMFeasibleForHBase(indexDesc, selPreds) ) {
      return new (HEAP) Cost();
   }
+  */
 
   if ((CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
       (selPreds.entries()))
