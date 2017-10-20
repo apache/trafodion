@@ -318,7 +318,8 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
    ssize_t countRead;
    CTCPIPSystemSrvr* pnode=NULL;
    fd_set temp_read_fds, temp_error_fds;
-
+   struct timeval timeout;
+   struct timeval *pTimeout;
    msg_enable_open_cleanup();
    file_enable_open_cleanup();
 
@@ -341,26 +342,74 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
       // Wait for ready-to-read on any of the tcpip ports
       memcpy(&temp_read_fds, &listener->read_fds_, sizeof(temp_read_fds));
       memcpy(&temp_error_fds, &listener->error_fds_, sizeof(temp_error_fds));
-
-      numReadyFds = select(listener->max_read_fd_+1, &temp_read_fds, NULL,&temp_error_fds,NULL);
-
-      srvrGlobal->mutex->lock();
-
-      if (numReadyFds == -1)
+      
+      long connIdleTimeout = SRVR::getConnIdleTimeout();
+      long srvrIdleTimeout = SRVR::getSrvrIdleTimeout();
+      bool connIdleTimer = false;
+      bool srvrIdleTimer = false;
+      if (srvrGlobal->srvrState == SRVR_CONNECTED)
       {
-//LCOV_EXCL_START
-         /*
-		  *  Unexpected error from select - fdset cannot be relied on in this case
-          */
-		  srvrGlobal->mutex->unlock();
-		  continue;
-//LCOV_EXCL_STOP
-
+         if (connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
+         {
+            timeout.tv_sec = connIdleTimeout;
+            timeout.tv_usec = 0; 
+            connIdleTimer = true;
+            pTimeout = &timeout;
+         }
+         else 
+         {
+             timeout.tv_sec = 0;
+             timeout.tv_usec = 0;
+             pTimeout = NULL;
+         }
       }
       else
       {
-         if (numReadyFds > 0)
+         if (srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
          {
+            timeout.tv_sec = srvrIdleTimeout;
+            timeout.tv_usec = 0; 
+            srvrIdleTimer = true;
+            pTimeout = &timeout;
+         }
+         else 
+         {
+             timeout.tv_sec = 0;
+             timeout.tv_usec = 0;
+             pTimeout = NULL;
+         }
+      }
+
+      numReadyFds = select(listener->max_read_fd_+1, &temp_read_fds, NULL,&temp_error_fds, pTimeout);
+      srvrGlobal->mutex->lock();
+      if (numReadyFds == -1)
+      {
+         if (errno == EINTR)
+         {
+            srvrGlobal->mutex->unlock();
+	    continue;
+         }
+         else 
+         {
+            SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, E_SERVER,"tcpip_listener", O_SELECT, F_SELECT,errno,numReadyFds);
+            abort();
+         }
+      }
+
+      if (numReadyFds == 0)  //Timeout expired
+      {
+         if (connIdleTimer)
+            SRVR::BreakDialogue(NULL);
+         else if (srvrIdleTimer)
+            SRVR::srvrIdleTimerExpired(NULL);
+         else
+         {
+            SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, E_SERVER,"tcpip_listener", O_SELECT, F_SELECT,errno,numReadyFds);
+            abort();
+         }
+      }
+      else
+      {
             // Handle all ready-to-read file descriptors
             handledFds = 0;
 
@@ -422,9 +471,7 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
                SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, E_SERVER,"tcpip_listener", O_SELECT, F_FD_ISSET,SRVR_ERR_UNKNOWN_REQUEST,0);
                listener->TCP_TRACE_OUTPUT_R0();
             }
-
-	} // numReadyFds > 0
-      } // else of if numReadFds == -1
+      } 
 
       srvrGlobal->mutex->unlock();
 

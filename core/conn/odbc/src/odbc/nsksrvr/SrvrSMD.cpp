@@ -190,9 +190,6 @@ odbc_SQLSrvr_GetSQLCatalogs_ame_(
 	}
 //LCOV_EXCL_STOP
 		
-	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED && srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
-		destroyConnIdleTimer();
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -230,8 +227,5 @@ odbc_SQLSrvr_GetSQLCatalogs_ame_(
 								 outputDesc, sqlWarning);
 	}
 	
-	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED && srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
-		startConnIdleTimer();
-
 } // odbc_SQLSrvr_GetSQLCatalogs_ame_
 

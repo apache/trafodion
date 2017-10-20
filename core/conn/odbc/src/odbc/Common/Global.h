@@ -969,8 +969,6 @@ typedef struct _SRVR_GLOBAL_Def
 	CEE_handle_def		ASSvc_MonitorProxy;
 	CEE_handle_def		ASSvc_ifch;
 	SRVR_CONTEXT_def	srvrContext;
-	CEE_handle_def		connIdleTimerHandle;
-	CEE_handle_def		srvrIdleTimerHandle;
 	IDL_long		javaConnIdleTimeout;		//timeout in seconds, -1 from datasource, 0 no timeout
 
 	long			odbcConnIdleTimeout;		//For ODBC Client timeout value
