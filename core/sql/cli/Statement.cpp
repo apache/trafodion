@@ -2051,11 +2051,21 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
-
-      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+      if (intParam1 == LOB_DATA_READ_ERROR)
         {
-          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
-                    << DgString0(si->tableName());
+          if ((failedLocBufLen > 0) && (strlen(failedLocBuf) > 0))
+            {
+              char errBuf[strlen(si->tableName()) + 100 + failedLocBufLen];
+              snprintf(errBuf,sizeof(errBuf), "%s (fileLoc: %s)", si->tableName(), failedLocBuf);
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(errBuf);              
+            }
+          else
+            {
+              diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                        << DgString0(si->tableName());
+            }
+          simCheckFailed = TRUE;
         }
 
       return ERROR;
@@ -2064,9 +2074,13 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
   if (retcode == 1) // check failed
     {
       char errStr[2000];
-      str_sprintf(errStr, "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
+      /* str_sprintf(errStr, "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
                   si->modTS(), failedModTS, 
-                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
+                  (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));*/
+      snprintf(errStr,sizeof(errStr), 
+               "compiledModTS = %ld, failedModTS = %ld, failedLoc = %s", 
+               si->modTS(), failedModTS, 
+               (failedLocBufLen > 0 ? failedLocBuf : si->hdfsRootDir()));
       
       diagsArea << DgSqlCode(-EXE_HIVE_DATA_MOD_CHECK_ERROR)
                 << DgString0(errStr);

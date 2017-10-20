@@ -2758,7 +2758,8 @@ void ExExeUtilLobExtractTcb::freeResources()
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
   //close any open cursors.
-   retcode = ExpLOBInterfaceSelectCursor
+  if (lobHandle_ and lobName_)
+    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
 	       lobName_, 
 	       lobLoc_,

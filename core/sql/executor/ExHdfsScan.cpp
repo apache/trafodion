@@ -619,10 +619,16 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                   {
                     ComDiagsArea * diagsArea = NULL;
                     if (hdfsErrorDetail == ENOENT)
-                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                      {
+                        char errBuf[strlen(hdfsScanTdb().tableName()) + 
+                                    strlen(hdfsFileName_) + 100];
+                        snprintf(errBuf, sizeof(errBuf),"%s (fileLoc: %s)",
+                                 hdfsScanTdb().tableName(), hdfsFileName_);
+                        ExRaiseSqlError(getHeap(), &diagsArea, 
                                       (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
                                       NULL, NULL, NULL,
-                                      hdfsScanTdb().tableName());
+                                      errBuf);
+                      }
                     else
                       ExRaiseSqlError(getHeap(), &diagsArea, 
                                       (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
