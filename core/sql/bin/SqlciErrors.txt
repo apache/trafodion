@@ -5,7 +5,7 @@
 1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName does not exist.
 1004 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist or object type is invalid for the current operation.
 1005 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~ConstraintName does not exist.
-1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN Skipping authorization ID $0~Int0.
 1007 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The WITH GRANT OPTION is not supported.
 1008 ZZZZZ 99999 BEGINNER MINOR DBADMIN Authorization identifier $0~String0 does not exist.
 1009 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName does not exist in the specified table.

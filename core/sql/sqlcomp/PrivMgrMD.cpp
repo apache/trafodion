@@ -559,16 +559,16 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (
 
   CmpSeabaseDDLrole role;
   std::vector<std::string> rolesCreated;
-  int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+  int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemAuthsStruct);
   for (int32_t i = 0; i < numberRoles; i++)
   {
-    const SystemRolesStruct &roleDefinition = systemRoles[i];
+    const SystemAuthsStruct &roleDefinition = systemRoles[i];
 
     // special Auth includes roles that are not registered in the metadata
     if (roleDefinition.isSpecialAuth)
       continue;
 
-    role.dropStandardRole(roleDefinition.roleName);
+    role.dropStandardRole(roleDefinition.authName);
   }
 
   int32_t actualSize = 0;
@@ -1630,18 +1630,18 @@ PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
    // operation, than all system roles are created.
    CmpSeabaseDDLrole role;
    std::vector<std::string> rolesCreated;
-   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemAuthsStruct);
    for (int32_t i = 0; i < numberRoles; i++)
    {
-     const SystemRolesStruct &roleDefinition = systemRoles[i];
+     const SystemAuthsStruct &roleDefinition = systemRoles[i];
 
      // special Auth includes roles that are not registered in the metadata
      if (roleDefinition.isSpecialAuth)
        continue;
 
      // returns true is role was created, false if it already existed
-     if (role.createStandardRole(roleDefinition.roleName, roleDefinition.roleID))
-       rolesCreated.push_back(roleDefinition.roleName);
+     if (role.createStandardRole(roleDefinition.authName, roleDefinition.authID))
+       rolesCreated.push_back(roleDefinition.authName);
    }
 
    // Report the number roles created

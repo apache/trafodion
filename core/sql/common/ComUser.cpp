@@ -408,7 +408,7 @@ Int32 ComUser::getRoleList (char * roleList,
                             const char separator,
                             const bool includeSpecialAuths)
 {
-  Int32 numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+  Int32 numberRoles = sizeof(systemRoles)/sizeof(SystemAuthsStruct);
   Int32 roleListLen = (MAX_AUTHNAME_LEN*numberRoles)+(numberRoles * 4); // 4 = 2 del + 2 sep
   char generatedRoleList[roleListLen];
   char *pRoles = generatedRoleList;
@@ -416,13 +416,13 @@ Int32 ComUser::getRoleList (char * roleList,
   char currentSeparator = ' ';
   for (Int32 i = 0; i < numberRoles; i++)
   {
-    const SystemRolesStruct &roleDefinition = systemRoles[i];
+    const SystemAuthsStruct &roleDefinition = systemRoles[i];
     if (!includeSpecialAuths && roleDefinition.isSpecialAuth)
       continue;
 
     // str_sprintf does not support the %c format
     sprintf(roleName, "%c%c%s%c",
-                currentSeparator, delimiter, roleDefinition.roleName, delimiter);
+                currentSeparator, delimiter, roleDefinition.authName, delimiter);
     str_cpy_all(pRoles, roleName, sizeof(roleName)-1); // don't copy null terminator 
     currentSeparator = separator;
     pRoles = pRoles + strlen(roleName);

@@ -61,7 +61,8 @@ public:
     MODE_TYPE, QUERYID_TYPE,
     SET_ISO_MAPPING_TYPE,
     SET_DEFAULT_CHARSET_TYPE,
-    SET_INFER_CHARSET_TYPE
+    SET_INFER_CHARSET_TYPE, 
+    USER_TYPE
   };
 
 private:
@@ -282,6 +283,12 @@ public:
 class Env : public SqlciCmd {
 public:
   Env(char *, Lng32 arglen_);
+  short process(SqlciEnv * sqlci_env);
+};
+
+class ChangeUser : public SqlciCmd {
+public:
+  ChangeUser(char *, Lng32 argLen_);
   short process(SqlciEnv * sqlci_env);
 };
 
