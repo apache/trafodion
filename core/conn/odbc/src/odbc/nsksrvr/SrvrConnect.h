@@ -108,7 +108,6 @@ BOOL checkIfASSvcLives( void );
 void __cdecl SrvrSessionCleanup(void);
 bool __cdecl CompilerCacheReset(char *errorMsg);
 void __cdecl BreakDialogue(CEE_tag_def monitor_tag);
-void __cdecl connIdleTimerExpired(CEE_tag_def timer_tag);
 
 extern void __cdecl srvrIdleTimerExpired(CEE_tag_def timer_tag);
 extern void exitServerProcess();
@@ -121,6 +120,8 @@ extern void UPDATE_SERVER_CONTEXT(const SRVR_CONTEXT_def *srvrContext);
 extern void UPDATE_SERVER_WAITED(IDL_long TraceType, IDL_long StatisticsType, IDL_long ContextType,const SRVR_CONTEXT_def *srvrContext);
 extern BOOL updateSrvrState(_SRVR_STATE srvrState);
 extern void RegisterSrvr(char* IpAddress, char* HostName);
+extern long getConnIdleTimeout();
+extern long getSrvrIdleTimeout();
 
 extern "C" void
 odbc_SQLSvc_Prepare2_ame_(

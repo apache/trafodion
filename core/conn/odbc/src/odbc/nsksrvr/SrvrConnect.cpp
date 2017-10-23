@@ -219,20 +219,6 @@ Int32 SQL_EXEC_GetAuthState(
 
 #define MAX_EVAR_VALUE_LENGTH 3900 + 1
 
-#define START_CONN_IDLE_TIMER \
-	if (srvrGlobal != NULL && \
-		srvrGlobal->srvrState == SRVR_CONNECTED && \
-		((srvrGlobal->javaConnIdleTimeout > JDBC_INFINITE_CONN_IDLE_TIMEOUT) || \
-		 (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT))) \
-			startConnIdleTimer();
-
-#define DESTROY_CONN_IDLE_TIMER \
-	if (srvrGlobal != NULL && \
-		srvrGlobal->srvrState == SRVR_CONNECTED && \
-		((srvrGlobal->javaConnIdleTimeout > JDBC_INFINITE_CONN_IDLE_TIMEOUT) || \
-		 (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT))) \
-			destroyConnIdleTimer();
-
 #define CHECK_QUERYTYPE(y) \
 		(( y == SQL_SELECT_NON_UNIQUE || y == SQL_INSERT_NON_UNIQUE || \
 		y == SQL_UPDATE_NON_UNIQUE || y == SQL_DELETE_NON_UNIQUE || y == 10000) ? TRUE : FALSE)
@@ -1190,9 +1176,7 @@ ImplInit (
    srvrGlobal->receiveThrId = getpid();
    timer_register();
 
-	CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-	CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-	CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
+   CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
 
 	srvrGlobal->srvrVersion.componentId = 0; // Unknown
 	if (srvrGlobal->srvrVersion.componentId == 0)
@@ -3603,8 +3587,6 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && ((long) (inContext->idleTimeoutSec) > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		srvrGlobal->javaConnIdleTimeout = inContext->idleTimeoutSec;
 
-	START_CONN_IDLE_TIMER
-
 	// collect information for resource statistics
 	char nodename[100];
 	short error;
@@ -4250,67 +4232,6 @@ void __cdecl SRVR::BreakDialogue(CEE_tag_def monitor_tag)
 	SRVRTRACE_EXIT(FILE_AME+7);
 }
 
-// Timer Expiration routine, when connIdleTimeout expires
-
-void __cdecl SRVR::connIdleTimerExpired(CEE_tag_def timer_tag)
-{
-	SRVRTRACE_ENTER(FILE_AME+8);
-
-    if(srvrGlobal->mutex->locked())
-	   // a tcp/ip request was received just in time, ignore this timeout
-	   return;
-
-    srvrGlobal->mutex->lock();
-
-	char tmpStringEnv[1024];
-	sprintf(tmpStringEnv,
-		   "Idle Connection Timer Expired. Client %s Disconnecting: Data Source: %s, Application: %s, Server Reference: %s",
-		    srvrGlobal->ClientComputerName,
-		    srvrGlobal->DSName,
-		    srvrGlobal->ApplicationName,
-		    srvrGlobal->srvrObjRef);
-
-	if (srvrGlobal->traceLogger != NULL)
-	{
-//LCOV_EXCL_START
-		SendEventMsg(MSG_SERVER_TRACE_INFO
-						, EVENTLOG_INFORMATION_TYPE
-						, srvrGlobal->nskProcessInfo.processId
-						, ODBCMX_SERVER
-						, srvrGlobal->srvrObjRef
-						, 4
-						, srvrGlobal->sessionId
-						, "connIdleTimerExpired"
-						, "0"
-						, tmpStringEnv);
-//LCOV_EXCL_STOP
-	}
-
-	releaseCachedObject(FALSE, NDCS_CONN_IDLE);
-
-        SRVR::SrvrSessionCleanup();
-        srvrGlobal->dialogueId = -1;
-
-	if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
-		updateSrvrState(SRVR_STOP_WHEN_DISCONNECTED);
-	else
-		updateSrvrState(SRVR_DISCONNECTED);
-	if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
-	{
-        srvrGlobal->mutex->unlock();
-		exitServerProcess();
-	}
-	else
-	{
-		GTransport.m_TCPIPSystemSrvr_list->cleanup();
-		GTransport.m_FSystemSrvr_list->cleanup();
-	}
-
-    srvrGlobal->mutex->unlock();
-	SRVRTRACE_EXIT(FILE_AME+8);
-	return;
-}
-
 // Timer Expiration routine, when srvrIdleTimeout expires
 void __cdecl SRVR::srvrIdleTimerExpired(CEE_tag_def timer_tag)
 {
@@ -4418,65 +4339,16 @@ odbcas_ASSvc_WouldLikeToLive_ccf_(
 		exitServerProcess();
 //LCOV_EXCL_STOP
 	}
-	if (createTimer)
-	{
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-			{
-				CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-			}
-
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
-	}
 	delete asCallContext;
 	SRVRTRACE_EXIT(FILE_AME+10);
 }
 
-void SRVR::destroyConnIdleTimer()
+long SRVR::getConnIdleTimeout()
 {
-	SRVRTRACE_ENTER(FILE_AME+11);
-	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED)
-	{
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-		}
-	}
-	SRVRTRACE_EXIT(FILE_AME+11);
-}
-
-void SRVR::startConnIdleTimer()
-{
-	SRVRTRACE_ENTER(FILE_AME+12);
-	CEE_status sts;
 	long connIdleTimeout = INFINITE_CONN_IDLE_TIMEOUT;
 
 	if (srvrGlobal != NULL && srvrGlobal->srvrState == SRVR_CONNECTED)
 	{
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-		}
 		if ((srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT) && (srvrGlobal->javaConnIdleTimeout > JDBC_DATASOURCE_CONN_IDLE_TIMEOUT))
 		{
 			if (srvrGlobal->javaConnIdleTimeout != JDBC_INFINITE_CONN_IDLE_TIMEOUT)
@@ -4485,31 +4357,17 @@ void SRVR::startConnIdleTimer()
 		else if (srvrGlobal->srvrContext.connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
 		{
 			connIdleTimeout = (long)srvrGlobal->srvrContext.connIdleTimeout * 60;
-		}
-
-		if (connIdleTimeout != INFINITE_CONN_IDLE_TIMEOUT)
-		{
-			sts = CEE_TIMER_CREATE2((long)connIdleTimeout, 0,
-				connIdleTimerExpired, NULL, &srvrGlobal->connIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				char tmpString[32];
-
-				CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
+       		}
 	}
-	SRVRTRACE_EXIT(FILE_AME+12);
+        return connIdleTimeout;
+}
+
+long SRVR::getSrvrIdleTimeout()
+{
+   long srvrIdleTimeout = INFINITE_SRVR_IDLE_TIMEOUT;
+   if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
+      srvrIdleTimeout = (long)srvrGlobal->srvrContext.srvrIdleTimeout * 60;
+   return srvrIdleTimeout;
 }
 
 BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
@@ -4563,14 +4421,6 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		if( !result )
 			exitServerProcess();
 
-		// May be this TimerHandle is OLD Timer, Destroy it
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-//LCOV_EXCL_START
-			CEE_TIMER_DESTROY(&srvrGlobal->connIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
-//LCOV_EXCL_STOP
-		}
 		// The server need to die, when disconnected, hence don't start any timer
 		if (srvrGlobal->stopTypeFlag == STOP_WHEN_DISCONNECTED)
 			break;
@@ -4586,35 +4436,6 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		srvrGlobal->bSkipASTimer = false;
 
 		CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
-
-		// Create SrvrIdleTimeout timer
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-			{
-				CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-			}
-
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-
-			}
-		}
-
 		break;
 	case SRVR_CONNECTED:
 		srvrGlobal->srvrState = srvrState;
@@ -4623,14 +4444,8 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 		{
 			srvrGlobal->bSkipASTimer = true;
 		}
-		// Destory the srvrIdleTimeout timer
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-		}
-	if( !updateZKState(CONNECTING, CONNECTED) )
-		exitServerProcess();
+		if( !updateZKState(CONNECTING, CONNECTED) )
+		      exitServerProcess();
 		break;
 	case SRVR_STOP_WHEN_DISCONNECTED:
 		if (srvrGlobal->cleanupByTime > 0)
@@ -4904,8 +4719,6 @@ odbc_SQLSrvr_Close_ame_(
 		srvrGlobal->traceLogger->TraceCloseEnter(dialogueId, stmtLabel, freeResourceOpt);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -4981,7 +4794,6 @@ odbc_SQLSrvr_Close_ame_(
 	}
 //LCOV_EXCL_STOP
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+18);
 
 	return;
@@ -5421,38 +5233,8 @@ odbc_SQLSvc_UpdateServerContext_ame_(
 	else if (srvrGlobal->srvrState == SRVR_AVAILABLE)
 	{
 		UPDATE_SERVER_CONTEXT(srvrContext);
-
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->srvrIdleTimerHandle) == IDL_FALSE)
-		{
-			CEE_TIMER_DESTROY(&srvrGlobal->srvrIdleTimerHandle);
-			CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-		}
-
-		if (srvrGlobal->srvrContext.srvrIdleTimeout != INFINITE_SRVR_IDLE_TIMEOUT)
-		{
-			sts = CEE_TIMER_CREATE2((long)srvrGlobal->srvrContext.srvrIdleTimeout * 60, 0, srvrIdleTimerExpired, NULL,
-				&srvrGlobal->srvrIdleTimerHandle,srvrGlobal->receiveThrId);
-
-			if (sts != CEE_SUCCESS)
-			{
-//LCOV_EXCL_START
-				char tmpString[30];
-				CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
-				sprintf(tmpString, "%ld", sts);
-				SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-				srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					2, tmpString, FORMAT_LAST_ERROR());
-				SendEventMsg(MSG_SRVR_IDLE_TIMEOUT_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-					0);
-//LCOV_EXCL_STOP
-			}
-		}
-		if (CEE_HANDLE_IS_NIL(&srvrGlobal->connIdleTimerHandle) == IDL_FALSE)
-		{
-			destroyConnIdleTimer();
-		}
 	}
+
 	else
 		exception.exception_nr = odbc_SQLSvc_UpdateServerContext_SQLError_exn_;
 
@@ -7255,9 +7037,6 @@ odbc_SQLSrvr_Prepare_ame_(
 			sqlString, sqlStringCharset, setStmtOptionsLength, setStmtOptions, txnID, holdableCursor);
 	}
 
-
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -7441,7 +7220,6 @@ odbc_SQLSrvr_Prepare_ame_(
 		outputDescLength, outputDesc);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+19);
 
 #ifdef PERF_TEST
@@ -7490,8 +7268,6 @@ odbc_SQLSrvr_Fetch_ame_(
                                                   , maxRowLen
 												  , (long)srvrGlobal->fetchAhead);
 	}
-
-	DESTROY_CONN_IDLE_TIMER
 
 	bool firstFetch = false;
 	SRVR_STMT_HDL *pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
@@ -7769,7 +7545,6 @@ FETCH_EXIT:
 							    outValues);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+37);
 	return;
 
@@ -7850,7 +7625,6 @@ odbc_SQLSrvr_ExecDirect_ame_(
 							      sqlString, sqlAsyncEnable, queryTimeout);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -8133,8 +7907,6 @@ cfgerrexit:
 							     rowsAffected, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
-
 	SRVRTRACE_EXIT(FILE_AME+23);
 
 #ifdef PERF_TEST
@@ -8209,9 +7981,6 @@ odbc_SQLSrvr_Execute2_ame_(
 	   returnCode = SQL_ERROR;
 	   GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Statement Handle.", &sqlWarningOrErrorLength, sqlWarningOrError);
 	}
-
-   DESTROY_CONN_IDLE_TIMER
-
 
 	if (pSrvrStmt != NULL) {
 	   paramCount = pSrvrStmt->paramCount;
@@ -8408,7 +8177,6 @@ odbc_SQLSrvr_Execute2_ame_(
 		rowsAffected, outValuesLength, outValues);
 	}
 
-    START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+19);
 
 #ifdef PERF_TEST
@@ -8442,8 +8210,6 @@ odbc_SQLSrvr_SetConnectionOption_ame_(
 								 optionValueNum, optionValueStr);
 	}
 
-	DESTROY_CONN_IDLE_TIMER
-
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
 		if (srvrGlobal->srvrState == SRVR_CONNECTED)
@@ -8469,7 +8235,6 @@ odbc_SQLSrvr_SetConnectionOption_ame_(
 		srvrGlobal->traceLogger->TraceConnectOptionExit(exception_, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+21);
 
 } // odbc_SQLSrvr_SetConnectionOption_ame_()
@@ -8491,8 +8256,6 @@ odbc_SQLSrvr_EndTransaction_ame_(
 	{
 		srvrGlobal->traceLogger->TraceEndTransactEnter(dialogueId, transactionOpt);
 	}
-
-	DESTROY_CONN_IDLE_TIMER
 
 	if (srvrGlobal != NULL && srvrGlobal->srvrType == CORE_SRVR)
 	{
@@ -8518,7 +8281,6 @@ odbc_SQLSrvr_EndTransaction_ame_(
 		srvrGlobal->traceLogger->TraceEndTransactExit(exception_, sqlWarning);
 	}
 
-	START_CONN_IDLE_TIMER
 	SRVRTRACE_EXIT(FILE_AME+20);
 	return;
 

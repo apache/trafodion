@@ -161,8 +161,6 @@ extern short execDirectSQLQuery(SRVR_STMT_HDL *pSrvrStmt, char *pSqlStr,
 // in one of their module.
 // This is done to minimize the compilcations in project settings and also it is felt that
 // each DLL may have different implementation for these functions
-extern void destroyConnIdleTimer();
-extern void startConnIdleTimer();
 
 extern short executeSQLQuery( CEE_tag_def objtag_
 				  , const CEE_handle_def *call_id_
