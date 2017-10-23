@@ -1176,6 +1176,8 @@ ImplInit (
    srvrGlobal->receiveThrId = getpid();
    timer_register();
 
+   CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
+
 	srvrGlobal->srvrVersion.componentId = 0; // Unknown
 	if (srvrGlobal->srvrVersion.componentId == 0)
 	{
