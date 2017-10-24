@@ -602,7 +602,7 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     NAString userLocation;
     ComObjectName *sampleName;
-    NAString tableOptions;
+    NAString tableOptions = " WITHOUT LOB COLUMNS";
     HSTranMan *TM = HSTranMan::Instance();
 
     if (objDef->getObjectFormat() == SQLMX)
@@ -611,7 +611,7 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
         // Do not emit the WITH PARTITIONS clause for native table. 
         // Rather, the SALT USING clause will be used. 
         if ( !isNativeTable ) 
-           tableOptions = " WITH PARTITIONS";
+           tableOptions += " WITH PARTITIONS";
         if (hs_globals->hasOversizedColumns)
           {
             // We will be truncating some columns when populating the sample table,

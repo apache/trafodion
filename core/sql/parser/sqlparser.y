@@ -26285,6 +26285,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeOptWithoutRowFormat();
                                 }
+                      | TOK_WITHOUT TOK_LOB TOK_COLUMNS
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeOptWithoutLobColumns();
+                                }
 
 /* type pElemDDL */
 optional_create_table_attribute_list : create_table_as_attr_list_start

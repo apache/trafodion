@@ -115,6 +115,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithoutDivisionSpec_ = likeOptions.isLikeOptWithoutDivisionSpec_;
   isLikeOptLimitColumnLengthSpec_ = likeOptions.isLikeOptLimitColumnLengthSpec_;
   isLikeOptWithoutRowFormatSpec_  = likeOptions.isLikeOptWithoutRowFormatSpec_;
+  isLikeOptWithoutLobColumnsSpec_  = likeOptions.isLikeOptWithoutLobColumnsSpec_;
 
   isLikeOptWithComments_        = likeOptions.isLikeOptWithComments_;
   isLikeOptWithoutConstraints_  = likeOptions.isLikeOptWithoutConstraints_;
@@ -125,6 +126,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithoutDivision_     = likeOptions.isLikeOptWithoutDivision_;
   isLikeOptColumnLengthLimit_   = likeOptions.isLikeOptColumnLengthLimit_;
   isLikeOptWithoutRowFormat_    = likeOptions.isLikeOptWithoutRowFormat_;
+  isLikeOptWithoutLobColumns_    = likeOptions.isLikeOptWithoutLobColumns_;
 
   if (this != &likeOptions)  // make sure not assigning to self
     {
@@ -161,6 +163,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithoutDivisionSpec_ = FALSE;
   isLikeOptLimitColumnLengthSpec_ = FALSE;
   isLikeOptWithoutRowFormatSpec_  = FALSE;
+  isLikeOptWithoutLobColumnsSpec_  = FALSE;
 
   isLikeOptWithComments_        = FALSE;
   isLikeOptWithoutConstraints_  = FALSE;
@@ -172,6 +175,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithoutDivision_     = FALSE;
   isLikeOptColumnLengthLimit_   = UINT_MAX;
   isLikeOptWithoutRowFormat_    = FALSE;
+  isLikeOptWithoutLobColumns_    = FALSE;
 }
 
 void
@@ -295,6 +299,18 @@ ParDDLLikeOptsCreateTable::setLikeOption(ElemDDLLikeOpt * pLikeOption)
     ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutRowFormat() != NULL);
     isLikeOptWithoutRowFormat_ = TRUE;
     isLikeOptWithoutRowFormatSpec_ = TRUE;
+    break;
+
+  case ELM_LIKE_OPT_WITHOUT_LOB_COLUMNS :
+    if (isLikeOptWithoutLobColumnsSpec_)
+    {
+      // ERROR[3152] Duplicate WITHOUT LOB COLUMNS phrases were specified
+      //             in LIKE clause in CREATE TABLE statement.
+      *SqlParser_Diags << DgSqlCode(-3152) << DgString0("LOB COLUMNS");
+    }
+    ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutLobColumns() != NULL);
+    isLikeOptWithoutLobColumns_ = TRUE;
+    isLikeOptWithoutLobColumnsSpec_ = TRUE;
     break;
 
   default :
