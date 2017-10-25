@@ -201,6 +201,7 @@ short CmpDescribeSeabaseTable (
      NABoolean withoutSalt = FALSE,
      NABoolean withoutDivisioning = FALSE,
      NABoolean withoutRowFormat = FALSE,
+     NABoolean withoutLobColumns = FALSE,
      UInt32 columnLengthLimit = UINT_MAX,
      NABoolean noTrailingSemi = FALSE,
      
@@ -2472,6 +2473,7 @@ short CmpDescribeHiveTable (
                                          dummyBuf, dummyLen, heap, 
                                          NULL, 
                                          TRUE, FALSE, FALSE, FALSE, 
+                                         FALSE,
                                          UINT_MAX, TRUE,
                                          NULL, 0, NULL, NULL, &space);
 
@@ -2747,6 +2749,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         Lng32 &identityColPos,
                         NABoolean isExternalTable,
                         NABoolean isAlignedRowFormat,
+                        NABoolean omitLobColumns = FALSE,
                         char * inColName = NULL,
                         short ada = 0, // 0,add. 1,drop. 2,alter
                         const NAColumn * nacol = NULL,
@@ -2763,6 +2766,12 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
 
       if ((NOT displaySystemCols) &&
           (nac->isSystemColumn()))
+        {
+          continue;
+        }
+
+      if (omitLobColumns &&
+          (nac->getType()->isLob()))
         {
           continue;
         }
@@ -2894,6 +2903,7 @@ short CmpDescribeSeabaseTable (
                                NABoolean withoutSalt,
                                NABoolean withoutDivisioning,
                                NABoolean withoutRowFormat,
+                               NABoolean withoutLobColumns,
                                UInt32 columnLengthLimit,
                                NABoolean noTrailingSemi,
                                char * colName,
@@ -3155,6 +3165,7 @@ short CmpDescribeSeabaseTable (
                         identityColPos,
                         (isExternalTable && (NOT isHbaseMapTable)),
                         naTable->isSQLMXAlignedTable(),
+                        withoutLobColumns,
                         colName, ada, nacol, natype,
                         columnLengthLimit,
                         &truncatedColumnList);
@@ -3557,7 +3568,8 @@ short CmpDescribeSeabaseTable (
 				(type == 2),
                                 dummy,
                                 isExternalTable,
-                                isAligned);
+                                isAligned,
+                                withoutLobColumns);
 	      outputShortLine(*space, "  )");
 	      
 	      sprintf(buf,  "  PRIMARY KEY ");

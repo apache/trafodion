@@ -1357,7 +1357,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
 //          column references or a SUBSTRING
 //          on column references which truncates the
 //          column to the maximum length allowed in
-//          UPDATE STATISTICS.
+//          UPDATE STATISTICS. Also skips LOB columns.
 //
 // INPUT:   'qry' - the SQL query string to append the 
 //          select list to.
@@ -1367,6 +1367,9 @@ void HSTableDef::addTruncatedSelectList(NAString & qry)
     bool first = true;
     for (Lng32 i = 0; i < getNumCols(); i++)
       {
+        if (DFS2REC::isLOB(getColInfo(i).datatype)) // skip LOB columns
+          continue;
+
         if (!ComTrafReservedColName(*getColInfo(i).colname))
           {
             if (!first)

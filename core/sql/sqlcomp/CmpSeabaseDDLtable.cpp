@@ -69,6 +69,7 @@ extern short CmpDescribeSeabaseTable (
      NABoolean withoutSalt = FALSE,
      NABoolean withoutDivisioning = FALSE,
      NABoolean withoutRowFormat = FALSE,
+     NABoolean withoutLobColumns = FALSE,
      UInt32 columnLengthLimit = UINT_MAX,
      NABoolean noTrailingSemi = FALSE,
      
@@ -386,6 +387,7 @@ void CmpSeabaseDDL::createSeabaseTableLike(ExeCliInterface * cliInterface,
                                       likeOptions.getIsWithoutSalt(),
                                       likeOptions.getIsWithoutDivision(),
                                       likeOptions.getIsWithoutRowFormat(),
+                                      likeOptions.getIsWithoutLobColumns(),
                                       likeOptions.getIsLikeOptColumnLengthLimit(),
                                       TRUE);
   if (retcode)
@@ -5164,6 +5166,7 @@ short CmpSeabaseDDL::createSeabaseTableLike2(
                                     NULL,
                                     withPartns, withoutSalt, withoutDivision,
                                     withoutRowFormat,
+                                    FALSE, // include LOB columns (if any)
                                     UINT_MAX,
                                     TRUE);
   if (retcode)

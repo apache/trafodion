@@ -4276,15 +4276,10 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     dml  = insertType;
     dml += sampleTable;
     dml += " SELECT ";
-    if (hs_globals->hasOversizedColumns)
-      {
-        // The source table has an oversized column. We have to generate
-        // SUBSTRING calls on such columns to fit them into the sample
-        // table.
-        objDef->addTruncatedSelectList(dml);
-      }      
-    else
-      dml += "*";
+
+    // Generate the select list. Truncate any over-long char/varchar columns
+    // by using SUBSTRING calls. Omit any LOB columns.
+    objDef->addTruncatedSelectList(dml);
 
     dml += " FROM ";
 
@@ -12636,15 +12631,11 @@ void HSGlobalsClass::generateIUSSelectInsertQuery(const NAString& smplTable,
   queryText.append("UPSERT USING LOAD INTO "); // for algorithm 1
   queryText.append(smplTable.data());
   queryText.append(" (SELECT ");
-  if (hasOversizedColumns)
-    {
-      // The source table has an oversized column. We have to generate
-      // SUBSTRING calls on such columns to fit them into the sample
-      // table.
-      objDef->addTruncatedSelectList(queryText);
-    }      
-  else
-    queryText.append("*");
+  
+  // Generate the select list. Truncate any over-long char/varchar columns
+  // by using SUBSTRING calls. Omit any LOB columns.
+  objDef->addTruncatedSelectList(queryText);
+
   queryText.append(" FROM ");
 
   if (CmpCommon::getDefault(USTAT_INCREMENTAL_UPDATE_STATISTICS) == DF_ON)
@@ -16354,15 +16345,11 @@ HSInMemoryTable::generateInsertSelectIQuery(NAString& targetTable,
   queryText.append(targetTable.data());
 
   queryText.append(" (SELECT ");
-  if (hasOversizedColumns)
-    {
-      // The source table has an oversized column. We have to generate
-      // SUBSTRING calls on such columns to fit them into the sample
-      // table.
-      objDef->addTruncatedSelectList(queryText);
-    }      
-  else
-    queryText.append("*");
+
+  // Generate the select list. Truncate any over-long char/varchar columns
+  // by using SUBSTRING calls. Omit any LOB columns.
+  objDef->addTruncatedSelectList(queryText);
+
   queryText.append(" FROM ");
 
   queryText.append(sourceTable.data());

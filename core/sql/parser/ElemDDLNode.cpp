@@ -578,6 +578,11 @@ ElemDDLLikeOptWithoutRowFormat * ElemDDLNode::castToElemDDLLikeOptWithoutRowForm
   return NULL;
 }
 
+ElemDDLLikeOptWithoutLobColumns * ElemDDLNode::castToElemDDLLikeOptWithoutLobColumns()
+{
+  return NULL;
+}
+
 ElemDDLList *
 ElemDDLNode::castToElemDDLList()
 {
