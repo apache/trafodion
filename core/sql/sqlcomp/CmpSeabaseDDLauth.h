@@ -92,6 +92,11 @@ class CmpSeabaseDDLauth
      bool  isPublic() const        { return authID_ == PUBLIC_USER; }
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
      bool  isUser()   const        { return authType_ == COM_USER_CLASS; }
+     bool  isSystemAuth(
+       const ComIdClass authType,
+       const NAString &authName,
+       bool &specialAuth);
+
      static bool isRoleID(Int32 authID); 
      static bool isUserID(Int32 authID); 
 
@@ -100,7 +105,7 @@ class CmpSeabaseDDLauth
     bool isAuthNameReserved (const NAString &authName);
     bool isAuthNameValid    (const NAString &authName);
 
-    virtual Int32 getUniqueID (void);
+    Int32 getUniqueAuthID (const Int32 minValue, const Int32 maxValue);
 
     // mutators
     void setAuthCreator      (const Int32 authCreator)
@@ -119,6 +124,10 @@ class CmpSeabaseDDLauth
        {authType_ = authType;}
      void setAuthValid       (bool isValid)
        {authValid_ = isValid;}
+
+     bool createStandardAuth (
+        const std::string authName,
+        const int32_t authID);
 
     // metadata access methods
     void deleteRow      (const NAString &authName);
@@ -165,7 +174,10 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
      void alterUser(StmtDDLAlterUser * pNode);
      void registerUser(StmtDDLRegisterUser * pNode);
      void unregisterUser(StmtDDLRegisterUser * pNode);
-     
+     void registerStandardUser(
+       const std::string userName,
+       const int32_t userID);
+
      CmpSeabaseDDLauth::AuthStatus getUserDetails(const char *pUserName, 
                                                   bool isExternal = false);
      CmpSeabaseDDLauth::AuthStatus getUserDetails(Int32 userID);
@@ -174,7 +186,6 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
 
    protected:
 
-     Int32 getUniqueID (void);
      void verifyAuthority(bool isRemapUser = false);
 };
 
@@ -216,7 +227,6 @@ class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
 
    protected:
 
-     Int32 getUniqueID (void);
      void verifyAuthority    (void);
 };
 

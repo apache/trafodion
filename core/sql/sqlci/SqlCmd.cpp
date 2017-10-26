@@ -2826,6 +2826,7 @@ short SqlCmd::deallocate(SqlciEnv * sqlci_env, PrepStmt * prep_stmt)
   
   if (prep_stmt)
     delete prep_stmt;
+  prep_stmt = NULL;
 
   return retcode;
 }

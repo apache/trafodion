@@ -74,6 +74,8 @@ public:
       const std::string & componentUID,
       const std::string & operationCode);
   
+   bool dropAllForGrantee(const int32_t granteeID);
+
    bool findByNames(
       const std::string & componentName,
       const std::string & operationName);

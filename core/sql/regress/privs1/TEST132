@@ -36,8 +36,8 @@
 --   <operation>_<type> - runs tests for an operation by a user
 -- ============================================================================
 
-cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 obey TEST132(clean_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 obey TEST132(set_up);
 log LOG132 clear;
 obey TEST132(test_libraries);
@@ -77,23 +77,31 @@ get libraries;
 get privileges on component sql_operations for "PUBLIC";
 
 -- succeed: DB__ROOT can create a library
-sh sqlci -i "TEST132(manage_library)";
+obey TEST132(manage_library);
 
 -- fail: sql_user1 cannot create a library
-sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+changeuser sql_user1;
+obey TEST132(manage_library);
+changeuser db__root;
 
 -- succeed: grant DB__ROOTROLE to sql_user1
 grant role DB__ROOTROLE to sql_user1;
-sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+changeuser sql_user1;
+obey TEST132(manage_library);
+changeuser DB__ROOT;
 
 -- fail: just grant the create privilege
 grant component privilege CREATE_LIBRARY on sql_operations to sql_user2;
-sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+changeuser sql_user2;
+obey TEST132(manage_library);
+changeuser DB__ROOT;
 
 -- succeed: now grant the manage_library privilege
 grant component privilege MANAGE_LIBRARY on sql_operations to sql_user2;
 get privileges on component sql_operation for sql_user2;
-sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+changeuser sql_user2;
+obey TEST132(manage_library);
+changeuser DB__ROOT;
 
 -- reset 
 revoke role DB__ROOTROLE from sql_user1;
@@ -104,7 +112,6 @@ get privileges on component sql_operations for "PUBLIC";
 ?section manage_library
 
 set schema t132sch;
-log LOG132;
 get libraries in schema t132sch;
 create library t132_l1 file 'etest132.dll';
 get libraries in schema t132sch;
@@ -121,43 +128,42 @@ get libraries in schema t132sch;
 -- =================================================================
 
 set schema t132sch;
-set parserflags 1;
-set parserflags 131072;
-cqd DDL_TRANSACTIONS 'ON';
+--set parserflags 131072;
+--cqd DDL_TRANSACTIONS 'ON';
 
-get tables;
+get tables, match '%T132%';
 
 create table t132t1 (c1 int not null primary key, c2 int);
 create index t132t1_ndx1 on t132t1 (c2) no populate;
 create table t132t2 (c1 int not null primary key, c2 int)
   attribute by sql_user1;
 create index t132t2_ndx1 on t132t2(c2) no populate;
-create table t132t3 (c1 int not null primary key, c2 int)
-  attribute by sql_user1;
-create index t132t3_ndx1 on t132t3(c2) no populate;
 
 insert into t132t1 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 insert into t132t2 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
-insert into t132t3 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 
-get tables;
+get tables, match '%T132%';
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 showddl t132t1;
 showddl t132t2;
-showddl t132t3;
 
 -- DB__ROOT can populate indexes
-sh sqlci -i "TEST132(populate_index)";
+obey TEST132(populate_index);
 obey TEST132(popindex_check_reset);
 
 -- object owner can populate
--- sql_user1 owns t132t2 and t132t3 but not t132t1
+-- sql_user1 owns t132t2 but not t132t1
 --  popindex fails for t132t1 but works for the rest
-sh sqlci -i "TEST132(populate_index)" -u sql_user1;
+changeuser sql_user1;
+obey TEST132(populate_index);
+changeuser db__root;
 obey TEST132(popindex_check_reset);
 
 -- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
 grant role DB__ROOTROLE to sql_user2;
-sh sqlci -i "TEST132(populate_index)" -u sql_user2;
+changeuser sql_user2;
+obey TEST132(populate_index);
+changeuser db__root;
 obey TEST132(popindex_check_reset);
 revoke role DB__ROOTROLE from sql_user2;
 
@@ -165,38 +171,33 @@ revoke role DB__ROOTROLE from sql_user2;
 -- only t132t2 has granted both privileges
 grant SELECT on t132t1 to sql_user3;
 grant SELECT, INSERT on t132t2 to sql_user3 by sql_user1;
-grant INSERT on t132t3 to sql_user3 by sql_user1;
-sh sqlci -i "TEST132(populate_index)" -u sql_user3;
+changeuser sql_user3;
+obey TEST132(populate_index);
+changeuser db__root;
 obey TEST132(popindex_check_reset);
 
 -- reset
 drop table t132t1 cascade;
 drop table t132t2 cascade;
-drop table t132t3 cascade;
-get tables;
+get tables, match 'T132%';
 
 ?section populate_index
 set schema t132sch;
-log LOG132;
 
 populate index t132t1_ndx1 on t132t1;;
 populate index t132t2_ndx1 on t132t2;
-populate index t132t3_ndx1 on t132t3;
 
 ?section popindex_check_reset
 set schema t132sch;
-log LOG132;
+set parserflags 1;
 
 select count(*) from table (index_table t132t1_ndx1);
 select count(*) from table (index_table t132t2_ndx1);
-select count(*) from table (index_table t132t3_ndx1);
 
-drop index t132t1_ndx1;
+cleanup index t132t1_ndx1;
 create index t132t1_ndx1 on t132t1 (c2) no populate;
 drop index t132t2_ndx1;
 create index t132t2_ndx1 on t132t2 (c2) no populate;
-drop index t132t3_ndx1;
-create index t132t3_ndx1 on t132t3 (c2) no populate;
 
 ?section test_show
 -- =================================================================
@@ -275,29 +276,40 @@ get privileges on component sql_operations for "PUBLIC";
 obey TEST132(show_objects);
 
 -- sql_user1 owns some of the objects but not all
-sh sqlci -i "TEST132(show_objects)" -u sql_user1;
+changeuser sql_user1;
+obey TEST132(show_objects);
 
 -- sql_user2 get privileges through DB__ROOTROLE role SHOW privilege
 -- first illustrate that sql_user2 has no privileges
-sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+changeuser sql_user2;
+obey TEST132(show_objects);
+changeuser db__root;
 grant role DB__ROOTROLE to sql_user2;
 
 -- now sql_user2 has privileges with the grant
-sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+changeuser sql_user2;
+obey TEST132(show_objects);
+changeuser db__root;
 revoke role DB__ROOTROLE from sql_user2;
 
 -- sql_user3 gets some privileges through SELECT grant
+set schema t132sch;
 grant SELECT on t132_teams to sql_user3;
-sh sqlci -i "TEST132(show_objects)" -u sql_user3;
+changeuser sql_user3;
+obey TEST132(show_objects);
+changeuser db__root;
+set schema t132sch;
+revoke select on t132_teams from sql_user3;
  
 -- regrant the show privs - everyone has privs
 get privileges on component sql_operations for "PUBLIC";
 grant component privilege "SHOW" on sql_operations to "PUBLIC";
 get privileges on component sql_operations for "PUBLIC";
-sh sqlci -i "TEST132(show_objects)" -u sql_user1;
-sh sqlci -i "TEST132(show_objects)" -u sql_user2;
-sh sqlci -i "TEST132(show_objects)" -u sql_user3;
+changeuser sql_user1;
+obey TEST132(show_objects);
 
+changeuser db__root;
+set schema t132sch;
 drop table t132_teams cascade;
 drop table t132_games cascade;
 drop sequence t132_team_number_sequence;
@@ -305,7 +317,6 @@ drop sequence t132_team_number_sequence;
 ?section show_objects
 
 set schema t132sch;
-log LOG132;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 showddl t132_games;
@@ -330,33 +341,38 @@ invoke t132_home_teams_games;
 -- =================================================================
 
 set schema t132sch;
-get tables;
+get tables, match '%T132%';
 
 create table t132t1 (c1 int, c2 int);
 create table t132t2 (c1 int, c2 int) attribute by sql_user1;
 insert into t132t1 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 insert into t132t2 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
 
-get tables;
+get tables, match '%T132%';
 select count(*) from t132t1;
 select count(*) from t132t2;
 
 -- update statistics as DB__ROOT
-sh sqlci -i "TEST132(update_stats)";
+obey TEST132(update_stats);
 
--- run as DB__ROOTROLE
 -- DB__ROOTROLE is granted MANAGE_STATISTICS privilege by default
 -- first show that sql_user2 cannot perform operations
-sh sqlci -i "TEST132(update_stats)" -u sql_user2;
-grant role DB__ROOTROLE to sql_user2;
+changeuser sql_user2;
+obey TEST132(update_stats);
+changeuser db__root;
 
 -- now show privileges after being granted DB__ROOTROLE role
-sh sqlci -i "TEST132(update_stats)" -u sql_user2;
+grant role DB__ROOTROLE to sql_user2;
+changeuser sql_user2;
+obey TEST132(update_stats);
+changeuser DB__ROOT;
 revoke role DB__ROOTROLE from sql_user2;
 
 -- run as table owner, sql_user1 owns one table
 -- update stats only works for t132t2, showstats works on both tables
-sh sqlci -i "TEST132(show_update_stats)" -u sql_user1;
+changeuser sql_user1;
+obey TEST132(show_update_stats);
+changeuser DB__ROOT;
 
 -- revoke SHOW privilege from public for the next set of tests
 get privileges on component sql_operations for "PUBLIC";
@@ -366,23 +382,33 @@ get privileges on component sql_operations for "PUBLIC";
 -- Run with MANAGE_STATISTICS and no SHOW
 -- first illustrate that sql_user3 has no privs
 get privileges on component sql_operations for sql_user3;
-sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
-grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
+changeuser sql_user3;
+obey TEST132(show_update_stats);
+changeuser db__root;
 
 -- now show privileges after being granted MANAGE_STATISTICS
+grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
 get privileges on component sql_operations for sql_user3;
-sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
+changeuser sql_user3;
+obey TEST132(show_update_stats);
+changeuser db__root;
 revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
 get privileges on component sql_operations for sql_user3;
 
 -- test showstats
 -- showstats should no longer work
-sh sqlci -i "TEST132(show_stats)" -u sql_user3;
+changeuser sql_user3;
+obey TEST132(show_stats);
+changeuser db__root;
 
 -- grant select to allow showstats to work
+set schema t132sch;
 grant SELECT on t132t1 to sql_user4;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 showddl t132t1;
-sh sqlci -i "TEST132(show_stats)" -u sql_user4;
+changeuser sql_user4;
+obey TEST132(show_stats);
+changeuser db__root;
 
 -- testcase for trafodion-2188 fix
 create schema t132sch_private;
@@ -410,10 +436,12 @@ select count(*) from t132t3;
 
 grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
 get privileges on component sql_operations for sql_user3;
-sh sqlci -i "TEST132(update_stats1)" -u sql_user3;
+changeuser sql_user3;
+obey TEST132(update_stats1);
+changeuser db__root;
+set schema t132sch_private; 
 revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
-drop table t132t3 cascade;
-drop schema t132sch_private cascade;
+cleanup schema t132sch_private;
 set schema t132sch;
 
 -- reset
@@ -424,25 +452,24 @@ get privileges on component sql_operations for "PUBLIC";
 drop table t132t1;
 drop table t132t2;
 
+get tables, match 'T132%';
+
 ?section show_update_stats
 obey TEST132(update_stats);
 obey TEST132(show_stats);
 
 ?section update_stats
 set schema t132sch;
-log LOG132;
 
 update statistics for table t132t1 on every column;
 update statistics for table t132t2 on every column;
 
 ?section update_stats1
 set schema t132sch_private;
-log LOG132;
 update statistics for table t132t3 create sample random 10 percent;
 
 ?section show_stats
 set schema t132sch;
-log LOG132;
 
 showstats for table t132t1 on every column;
 showstats for table t132t2 on every column;

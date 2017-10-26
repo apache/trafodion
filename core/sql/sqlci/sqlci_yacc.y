@@ -483,6 +483,7 @@ static char * FCString (const char *idString, int isFC)
 %token UNLOCK
 %token UPD_STATS
 %token UPD_HIST_STATS
+%token USERtoken
 %token USING
 %token TABLE
 %token VALUES
@@ -676,6 +677,16 @@ sqlci_cmd :	MODE SQL
 		  { 
 			$$ = new Env(0,0);
 		  }
+                |   USERtoken IDENTIFIER
+                  {
+                    char userName[strlen($2)+1];
+                    for (size_t i=0; i < strlen($2); i++)
+                      {
+                        userName[i] = toupper($2[i]);
+                      }
+                    userName[strlen($2)] = 0;
+                    $$ = new ChangeUser(userName, strlen(userName));
+                  }
 		|	REPEAT
           	  {
 		    // "!" command, a la SQL/MP aRepeat (0,0);

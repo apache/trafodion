@@ -7167,15 +7167,12 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 
   Int64 initTime = NA_JulianTimestamp();
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, 'DB__ROOT', 'TRAFODION', 'U', %d, 'Y', %ld,%ld, 0) ",
-              sysCat, SEABASE_MD_SCHEMA, SEABASE_AUTHS,
-              SUPER_USER, SUPER_USER, initTime, initTime);
-  cliRC = cliInterface->executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
-    }
+  NAString mdLocation;
+  CONCAT_CATSCH(mdLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  CmpSeabaseDDLuser authOperation(sysCat, mdLocation.data());
+  authOperation.registerStandardUser(DB__ROOT, ROOT_USER_ID);
+  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
+    return -1;
 
   return 0;
 }

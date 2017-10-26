@@ -1222,6 +1222,21 @@ short Env::process(SqlciEnv *sqlci_env)
   return 0;  
 }
 
+////////////////////////////////////////
+// Processing of the ChangeUser command.
+////////////////////////////////////////
+
+ChangeUser::ChangeUser(char * argument_, Lng32 argLen_)
+                 : SqlciCmd(SqlciCmd::USER_TYPE, argument_, argLen_)
+{}
+
+short ChangeUser::process (SqlciEnv * sqlci_env)
+{
+  sqlci_env->setUserNameFromCommandLine(get_argument());
+  sqlci_env->setUserIdentityInCLI();
+  return 0;
+}
+
 void SqlciEnv::getDefaultCatAndSch (ComAnsiNamePart & defaultCat, ComAnsiNamePart & defaultSch)
 {
   defaultCatAndSch_ = new ComSchemaName;
@@ -1355,15 +1370,30 @@ void SqlciEnv::setUserIdentityInCLI()
     specialError_ = 0;
 
     HandleCLIErrorInit();
+    Lng32 sqlcode = 0;
 
-    Lng32 sqlcode =
-      SQL_EXEC_SetSessionAttr_Internal(SESSION_DATABASE_USER_NAME,
-                                       0,
-                                       (char *) userNameFromCommandLine_.data());
+    // get the authID (same as sessionID)
+    NAString externalName("DB__ROOT");
+    NAString databaseName("DB__ROOT");
+    Int32 userID(33333);
+    Int32 sessionID(33333);
+    SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
+    sqlcode = SQL_EXEC_GetAuthID(userNameFromCommandLine_.data(), userID);
+    SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(0x20000);
     HandleCLIError(sqlcode, this);
-
+    sessionID = userID;
     if (sqlcode >= 0)
-      printf("\nDatabase user: %s\n\n", userNameFromCommandLine_.data());
+    {
+      printf("\nDatabase user: %s\n", userNameFromCommandLine_.data());
+      externalName = userNameFromCommandLine_;
+      databaseName = userNameFromCommandLine_;
+    }
+
+    SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
+    sqlcode = SQL_EXEC_SetAuthID(externalName.data(), databaseName.data(), 
+                                 NULL, 0, userID, sessionID);
+    SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(0x20000);
+    HandleCLIError(sqlcode, this);
 
     if (sqlcode != 0)
       SQL_EXEC_ClearDiagnostics(NULL);
@@ -1372,11 +1402,6 @@ void SqlciEnv::setUserIdentityInCLI()
   }
   else
   {
-    // Call CLI to retrieve the current user identity. This is only
-    // done to see if CLI generates errors or warnings that we should
-    // display. For example, CLI was not able to establish a default
-    // user identity, perhaps metadata is corrupt, we should display
-    // that information.
     Int32 uid = 0;
     getDatabaseUserID(uid);
   }

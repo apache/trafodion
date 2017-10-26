@@ -1371,7 +1371,7 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(
 
    MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct) - 
+   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemAuthsStruct) - 
                          NUMBER_SPECIAL_SYSTEM_ROLES;
 
    // Calculate the number of roles that have already been created
