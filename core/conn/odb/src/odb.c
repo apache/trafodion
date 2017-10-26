@@ -4161,9 +4161,7 @@ static void sigcatch(int sig)
     exit ( EX_SIGNAL );
 #else 
     if ( tn == 1 ) { /* single threaded */
-        tclean( 0 );
         gclean();
-        exit( EX_SIGNAL );
     } else {
         for ( i = 0 ; i < tn ; i++ ) {
             if ( !pthread_kill(thid[i], 0) ) {  /* If this thread is alive... */
@@ -4173,6 +4171,7 @@ static void sigcatch(int sig)
             }
         }
     }
+    exit(EX_SIGNAL);
 #endif
 }
 
