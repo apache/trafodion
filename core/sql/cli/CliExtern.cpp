@@ -92,6 +92,7 @@ CLISemaphore globalSemaphore ;
 #include <unistd.h>
 #include "QRLogger.h"
 
+void initStaticVariables();
 extern char ** environ;
 
 // this is set to true after the first CLI call.
@@ -870,7 +871,8 @@ short sqInit()
       exit(1);
     }
 
-
+    // Initialize static variables
+    initStaticVariables();
     // Initialize an Instruction Info array's offset index
     ex_conv_clause::populateInstrOffsetIndex();
 
@@ -6998,5 +7000,7 @@ Lng32 SQL_EXEC_PutRoutine
 }
 #endif
 
-
-
+void initStaticVariables()
+{
+   CharInfo::initBuiltinCollationDB();
+}

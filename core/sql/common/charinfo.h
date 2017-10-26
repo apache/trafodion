@@ -50,6 +50,7 @@
 #include "NAWinNT.h"
 #include "ComCharSetDefs.h"
 #include "sql_charset_strings.h"
+#include "charinfo.h"
 
 // Forward references
 class ComMPLoc;
@@ -260,11 +261,14 @@ public:
                                          Int32   sourceLenInBytes,
                                          CharSet targetCS);
 
+  static void initBuiltinCollationDB();
+ 
+
 private:
 friend class CollationDB;			// needs to access builtinCDB_
 
    static const char*	const localeCharSet_;
-   static const CollationDB   builtinCollationDB_;
+   static const CollationDB   *builtinCollationDB_;
 
 }; // CharInfo
 

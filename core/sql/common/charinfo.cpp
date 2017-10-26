@@ -103,7 +103,7 @@ static const struct mapCS mapCSArray[] = {
   { /*18*/ CharInfo::GBK,            SQLCHARSETSTRING_GBK,         3, TRUE,    FALSE,  1,    2, "?" },
 };
 
-static const size_t SIZEOF_CS = sizeof(mapCSArray)/sizeof(mapCS);
+#define SIZEOF_CS  (sizeof(mapCSArray)/sizeof(mapCS))
 
 const char* CharInfo::getCharSetName(CharSet cs, NABoolean retUnknownAsBlank)
 {
@@ -363,7 +363,7 @@ void CollationInfo::display() const
 CollationDB::CollationDB(CollHeap *h)
   : CollationDBSupertype(h), heap_(h), refreshNeeded_(TRUE)
 {
-    if (this == &CharInfo::builtinCollationDB_) return;
+    if (this == CharInfo::builtinCollationDB_) return;
     cmpCurrentContext->getCollationDBList()->insert(this);
 }
 
@@ -371,13 +371,14 @@ CollationDB::CollationDB(CollHeap *h, const CollationInfo *co, size_t count)
   : CollationDBSupertype(h), heap_(h), refreshNeeded_(!!count)
 { 
    while (count--) CollationDBSupertype::insert(co++);
-   if (this == &CharInfo::builtinCollationDB_) return;
-   cmpCurrentContext->getCollationDBList()->insert(this);
+   if (this == CharInfo::builtinCollationDB_) return;
+   if (cmpCurrentContext != NULL)
+      cmpCurrentContext->getCollationDBList()->insert(this);
 }
 
 CollationDB::~CollationDB()
 { 
-   if (this == &CharInfo::builtinCollationDB_) return;
+   if (this == CharInfo::builtinCollationDB_) return;
    clearAndReset();
    cmpCurrentContext->getCollationDBList()->remove(this);
 }
@@ -529,8 +530,10 @@ static const CollationInfo mapCOArray[] = {
   CollationInfo(NULL, CharInfo::UNKNOWN_COLLATION,  SQLCOLLATIONSTRING_UNKNOWN,
   			STATIC_NEG)
 };
-static const size_t SIZEOF_CO = sizeof(mapCOArray)/sizeof(CollationInfo);
-const CollationDB CharInfo::builtinCollationDB_(NULL, mapCOArray, SIZEOF_CO);
+
+#define SIZEOF_CO (sizeof(mapCOArray)/sizeof(CollationInfo))
+
+const CollationDB *CharInfo::builtinCollationDB_;
 
 CharInfo::Collation CharInfo::getCollationEnum(const char* name,
 					       NABoolean formatNSK,
@@ -550,18 +553,18 @@ CharInfo::Collation CharInfo::getCollationEnum(const char* name,
     return CharInfo::UNKNOWN_COLLATION;
 
   // Collapse any nonzero formatNSK to single bit, for XOR
-  return builtinCollationDB_.getCollationEnum(name, !!formatNSK, namlen);
+  return builtinCollationDB_->getCollationEnum(name, !!formatNSK, namlen);
 }
 
 const char* CharInfo::getCollationName(Collation co,
 				       NABoolean retUnknownAsBlank)
 {
-  return builtinCollationDB_.getCollationName(co, retUnknownAsBlank);
+  return builtinCollationDB_->getCollationName(co, retUnknownAsBlank);
 }
 
 Int32 CharInfo::getCollationFlags(Collation co)
 {
-  return builtinCollationDB_.getCollationFlags(co);
+  return builtinCollationDB_->getCollationFlags(co);
 }
 
 //****************************************************************************
@@ -693,3 +696,9 @@ Int32 CharInfo::getMaxConvertedLenInBytes(CharSet sourceCS,
   return ((sourceLenInBytes/minBytesPerChar(sourceCS)) *
           maxBytesPerChar(targetCS));
 }
+
+void CharInfo::initBuiltinCollationDB()
+{
+   builtinCollationDB_ = new CollationDB(NULL, mapCOArray, SIZEOF_CO);
+}
+
