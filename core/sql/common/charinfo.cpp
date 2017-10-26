@@ -54,6 +54,7 @@
 #include "CmpConnection.h"
 #include "CmpContext.h"
 #include "CmpCommon.h"
+#include "CliSemaphore.h"
 
 using namespace std;
 
@@ -364,7 +365,8 @@ CollationDB::CollationDB(CollHeap *h)
   : CollationDBSupertype(h), heap_(h), refreshNeeded_(TRUE)
 {
     if (this == CharInfo::builtinCollationDB_) return;
-    cmpCurrentContext->getCollationDBList()->insert(this);
+    if (cmpCurrentContext != NULL)
+       cmpCurrentContext->getCollationDBList()->insert(this);
 }
 
 CollationDB::CollationDB(CollHeap *h, const CollationInfo *co, size_t count)
@@ -430,7 +432,8 @@ CollationDB * CollationDB::nextCDB() const
 
 const CollationInfo* CollationDB::getCollationInfo(CharInfo::Collation co) const
 {
-  CollIndex i, n = entries();
+  CollIndex i, n;
+  n = entries();
   for (i = 0; i < n; i++)
     if (co == at(i)->co_)
       return at(i);
@@ -533,7 +536,7 @@ static const CollationInfo mapCOArray[] = {
 
 #define SIZEOF_CO (sizeof(mapCOArray)/sizeof(CollationInfo))
 
-const CollationDB *CharInfo::builtinCollationDB_;
+const CollationDB *CharInfo::builtinCollationDB_ = NULL;
 
 CharInfo::Collation CharInfo::getCollationEnum(const char* name,
 					       NABoolean formatNSK,
@@ -553,18 +556,18 @@ CharInfo::Collation CharInfo::getCollationEnum(const char* name,
     return CharInfo::UNKNOWN_COLLATION;
 
   // Collapse any nonzero formatNSK to single bit, for XOR
-  return builtinCollationDB_->getCollationEnum(name, !!formatNSK, namlen);
+  return builtinCollationDB()->getCollationEnum(name, !!formatNSK, namlen);
 }
 
 const char* CharInfo::getCollationName(Collation co,
 				       NABoolean retUnknownAsBlank)
 {
-  return builtinCollationDB_->getCollationName(co, retUnknownAsBlank);
+  return builtinCollationDB()->getCollationName(co, retUnknownAsBlank);
 }
 
 Int32 CharInfo::getCollationFlags(Collation co)
 {
-  return builtinCollationDB_->getCollationFlags(co);
+  return builtinCollationDB()->getCollationFlags(co);
 }
 
 //****************************************************************************
@@ -697,8 +700,18 @@ Int32 CharInfo::getMaxConvertedLenInBytes(CharSet sourceCS,
           maxBytesPerChar(targetCS));
 }
 
-void CharInfo::initBuiltinCollationDB()
+const CollationDB *CharInfo::builtinCollationDB()
 {
-   builtinCollationDB_ = new CollationDB(NULL, mapCOArray, SIZEOF_CO);
+   if (CharInfo::builtinCollationDB_ != NULL)
+      return CharInfo::builtinCollationDB_;
+   globalSemaphore.get(); 
+   if (CharInfo::builtinCollationDB_ != NULL) 
+   {
+      globalSemaphore.release();
+      return CharInfo::builtinCollationDB_;
+   }
+   CharInfo::builtinCollationDB_ = new CollationDB(NULL, mapCOArray, SIZEOF_CO);
+   globalSemaphore.release();
+   return CharInfo::builtinCollationDB_;
 }
 

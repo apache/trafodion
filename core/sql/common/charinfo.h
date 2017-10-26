@@ -260,7 +260,7 @@ public:
                                          Int32   sourceLenInBytes,
                                          CharSet targetCS);
 
-  static void initBuiltinCollationDB();
+  static const CollationDB *builtinCollationDB();
  
 
 private:

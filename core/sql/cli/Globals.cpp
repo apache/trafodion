@@ -66,15 +66,9 @@
 
 
 #include "ExCextdecs.h"
-#ifndef NA_NO_GLOBAL_EXE_VARS
-// if global variables are allowed in the CLI, and if there isn't
-// a cheat define set, then simply define the CLI globals here
-#ifndef CLI_GLOBALS_DEF_
 CliGlobals * cli_globals = NULL;
-#endif
-// On NSK we store the cli globals in a flat segment with a fixed
-// segment id.
-#endif
+
+CLISemaphore globalSemaphore ;
 
 #include "CmpContext.h"
 

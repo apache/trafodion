@@ -83,5 +83,6 @@ inline CLISemaphore::~CLISemaphore()
    DeleteCriticalSection(&cs);
 }
 
+extern CLISemaphore globalSemaphore;
 
 #endif
