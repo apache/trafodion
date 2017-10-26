@@ -50,7 +50,6 @@
 #include "NAWinNT.h"
 #include "ComCharSetDefs.h"
 #include "sql_charset_strings.h"
-#include "charinfo.h"
 
 // Forward references
 class ComMPLoc;
