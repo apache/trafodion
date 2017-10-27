@@ -77,10 +77,6 @@
 #include "dfs2rec.h"
 #include "Statement.h"
 #include "ComSqlId.h"
-
-CLISemaphore globalSemaphore ;
-
-
 #include "seabed/ms.h"
 #include "seabed/fs.h"
 #include "seabed/fserr.h"
@@ -869,7 +865,6 @@ short sqInit()
       cerr << "Error while initializing messaging system. Exiting..." << endl;
       exit(1);
     }
-
 
     // Initialize an Instruction Info array's offset index
     ex_conv_clause::populateInstrOffsetIndex();
@@ -6997,6 +6992,3 @@ Lng32 SQL_EXEC_PutRoutine
 #ifdef __cplusplus
 }
 #endif
-
-
-

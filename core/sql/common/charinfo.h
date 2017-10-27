@@ -260,11 +260,14 @@ public:
                                          Int32   sourceLenInBytes,
                                          CharSet targetCS);
 
+  static const CollationDB *builtinCollationDB();
+ 
+
 private:
 friend class CollationDB;			// needs to access builtinCDB_
 
    static const char*	const localeCharSet_;
-   static const CollationDB   builtinCollationDB_;
+   static const CollationDB   *builtinCollationDB_;
 
 }; // CharInfo
 
