@@ -608,17 +608,20 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
 
 char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
 {
-  //clear out buffer first
-  memset(out,0,outLen);
 
-  outLen = (outLen / 2) -1 ;
+  Int32 hexLen = (outLen / 2) -1 ;
+  if (hexLen < 0)
+     hexLen = 0;
+  else
+     out[0] = '\0';
 
-  if(inLen < outLen) outLen = inLen;
+  if (inLen < hexLen) 
+     hexLen = inLen;
 
   char hex[3];
-  for(int i = 0; i < outLen; i++)
+  for(int i = 0; i < hexLen; i++)
   {
-    sprintf(hex, "%02x", in[i]);
+    snprintf(hex, sizeof(hex), "%02x", (char)in[i]);
     strcat(out,hex);
   }
   return out;
