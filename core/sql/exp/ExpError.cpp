@@ -613,11 +613,11 @@ char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
   if (hexLen < 0)
      hexLen = 0;
   else
+  {
+     if (inLen < hexLen) 
+        hexLen = inLen;
      out[0] = '\0';
-
-  if (inLen < hexLen) 
-     hexLen = inLen;
-
+  }
   char hex[3];
   for(int i = 0; i < hexLen; i++)
   {
