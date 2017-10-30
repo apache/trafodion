@@ -1972,7 +1972,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2025,7 +2025,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2488,7 +2488,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2541,7 +2541,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2595,7 +2595,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2902,7 +2902,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -2958,7 +2958,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.033737 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  9                  0                  4 1821
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                 40                  2                  4
@@ -3377,7 +3377,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.019772 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  6                  0                  4 303
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                  5                  2                  4
@@ -3497,7 +3497,7 @@ Max. Execute Time        0.033737 secs
 Avg. Execute Time        0.018444 secs
 Stats Collection Type    OPERATOR_STATS
 
-   LC   RC   Id PaId ExId Frag TDB Name                   DOP   Dispatches      Oper CPU Time  Est. Records Used  Act. Records Used    Details
+   LC   RC   Id PaId ExId Frag TDBName                    DOP   Dispatches        OperCPUTime        EstRowsUsed        ActRowsUsed Details
 
    10    .   11    .    5    0 EX_ROOT                      1            5                  6                  0                  4 332
     9    .   10   11    4    0 EX_SPLIT_TOP                 1            5                  5                  2                  4

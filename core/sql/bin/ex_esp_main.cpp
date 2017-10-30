@@ -363,7 +363,6 @@ Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
 
   ExEspFragInstanceDir espFragInstanceDir(cliGlobals,
                                           espExecutorHeap,
-                                          espExecutorHeap,
                                           (StatsGlobals *)statsGlobals);
 
   ExEspControlMessage espIpcControlMessage(&espFragInstanceDir,

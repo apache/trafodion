@@ -75,13 +75,11 @@
 // -----------------------------------------------------------------------
 
 ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
-					   CollHeap *heap,
-					   CollHeap *exHeap,
+					   NAHeap *heap,
                                            StatsGlobals *statsGlobals)
   : instances_(heap),
     cliGlobals_(cliGlobals),
     heap_(heap),
-    exHeap_(exHeap),
     statsGlobals_(statsGlobals),
     userIDEstablished_(FALSE),
     localStatsHeap_(NULL)
@@ -108,8 +106,8 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
       statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_))
   {
     statsGlobals_ = NULL;
-    statsHeap_ = new (exHeap_) 
-        NAHeap("Process Stats Heap", (NAHeap *)exHeap_,
+    statsHeap_ = new (heap_) 
+        NAHeap("Process Stats Heap", (NAHeap *)heap_,
         8192,
         0);
     semId_ = -1;
@@ -121,7 +119,7 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
     if (error != 0)
     {
         statsGlobals_ = NULL;
-        statsHeap_ = (NAHeap *)exHeap_;
+        statsHeap_ = (NAHeap *)heap_;
     }
     else
     {
@@ -227,19 +225,19 @@ ExFragInstanceHandle ExEspFragInstanceDir::addEntry(ExMsgFragment *msgFragment,
 
   if (msgFragment->getFragType() == ExFragDir::ESP)
     {
-      Space * stmtSpace = new(exHeap_) Space(Space::EXECUTOR_SPACE);
-      NAHeap *stmtHeap = new(exHeap_) NAHeap("Statement Heap",
-					   (NAHeap *) exHeap_,32768);
-      stmtSpace->setParent(exHeap_);
+      NAHeap *fragHeap = new(heap_) NAHeap("ESP Fragment Heap",
+					   (NAHeap *) heap_,32768);
+      Space * fragSpace = new(fragHeap) Space(Space::EXECUTOR_SPACE);
+      fragSpace->setParent(fragHeap);
 
       // allocate the globals in their own heap, like the master
       // executor does it
-      inst->globals_ = new(stmtHeap) ExEspStmtGlobals(
+      inst->globals_ = new(fragHeap) ExEspStmtGlobals(
 	   (short) msgFragment->getNumTemps(),
 	   cliGlobals_,
 	   msgFragment->getDisplayInGui(),
-	   stmtSpace,
-	   stmtHeap,
+	   fragSpace,
+	   fragHeap,
 	   this,
 	   inst->handle_,
 	   msgFragment->getInjectErrorAtExpr(),
@@ -860,8 +858,8 @@ void ExEspFragInstanceDir::destroyEntry(ExFragInstanceHandle handle)
 
       entry->globals_->deleteMe(FALSE);
       entry->globals_ = NULL;
-      delete sp;
-      delete hp;
+      NADELETE(sp, Space, hp);
+      NADELETE(hp, NAHeap, heap_);
     }
 
   entry->msgFragment_->decrRefCount();
@@ -946,14 +944,11 @@ void ExEspFragInstanceDir::traceIdleMemoryUsage()
     success = fseek(traceFile, 0, SEEK_END); // append to end of file
     fprintf(traceFile, "%d:%02d:%02d,%d,%d,", localTime->tm_hour,
             localTime->tm_min, localTime->tm_sec, myPid, count);
-    fprintf(traceFile, PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ "," PFSZ ",%ld,%ld\n",
-            exHeap_->getAllocSize(),
-            exHeap_->getAllocCnt(),
-            exHeap_->getTotalSize(),
-            exHeap_->getHighWaterMark(),
+    fprintf(traceFile, PFSZ "," PFSZ "," PFSZ "," PFSZ ",%ld,%ld\n",
             heap_->getAllocSize(),
             heap_->getAllocCnt(),
-            contextHeap->getAllocSize(),
+            heap_->getTotalSize(),
+            heap_->getHighWaterMark(),
             (Long)memSize * 1024,
             (Long)memPeak * 1024);
     fflush(traceFile);
@@ -976,8 +971,8 @@ NAHeap *ExEspFragInstanceDir::getLocalStatsHeap()
       if (statsGlobals_ == NULL)
         localStatsHeap_ = statsHeap_;
       else
-          localStatsHeap_ = new (exHeap_) 
-            NAHeap("Process Local Stats Heap", (NAHeap *)exHeap_,
+          localStatsHeap_ = new (heap_) 
+            NAHeap("Process Local Stats Heap", (NAHeap *)heap_,
             8192, 0);
     }
   return localStatsHeap_;

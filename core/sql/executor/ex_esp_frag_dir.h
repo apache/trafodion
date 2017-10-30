@@ -144,8 +144,7 @@ public:
     };
 
   ExEspFragInstanceDir(CliGlobals *cliGlobals,
-		       CollHeap *heap,
-		       CollHeap *exHeap,
+		       NAHeap *heap,
                        StatsGlobals *statsGlobals);
   ~ExEspFragInstanceDir();
 
@@ -294,9 +293,7 @@ private:
 
   CliGlobals                 *cliGlobals_;
 
-  CollHeap                   *heap_;
-
-  CollHeap                   *exHeap_;
+  NAHeap                     *heap_;
 
   StatsGlobals               *statsGlobals_;
   NAHeap                     *statsHeap_;

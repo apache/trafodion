@@ -1644,9 +1644,9 @@ void ExExeUtilGetRTSStatisticsTcb::formatOperStats(SQLSTATS_ITEM* operStatsItems
   {
     moveRowToUpQueue("");
     isHeadingDisplayed_ = TRUE;
-    sprintf(statsBuf_, "%5s%5s%5s%5s%5s%5s %-25s%5s%13s%19s%19s%19s %10s", 
-      "LC","RC","Id","PaId", "ExId","Frag","TDB Name","DOP", "Dispatches","Oper CPU Time","Est. Records Used", 
-      "Act. Records Used","Details");
+    sprintf(statsBuf_, "%5s%5s%5s%5s%5s%5s %-25s%5s%13s%19s%19s%19s %s", 
+      "LC","RC","Id","PaId", "ExId","Frag","TDBName","DOP", "Dispatches","OperCPUTime","EstRowsUsed", 
+      "ActRowsUsed","Details");
     moveRowToUpQueue(statsBuf_);
     moveRowToUpQueue("");
   } 
