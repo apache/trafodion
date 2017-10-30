@@ -27,6 +27,8 @@
 --
 -- Added in response to JIRA 1100
 --
+-- Oct 27 - only run some tests to improve performance of privs1 tests suite
+--
 -- Expected files: EXPECTED141
 -- ============================================================================
 
@@ -34,10 +36,10 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 obey TEST141(clean_up);
 log LOG141 clear ;
 obey TEST141(set_up);
-obey TEST141(test_private_user);
+--obey TEST141(test_private_user);
 obey TEST141(test_private_role);
 obey TEST141(test_shared_user);
-obey TEST141(test_shared_role);
+--obey TEST141(test_shared_role);
 log;
 obey TEST141(clean_up);
 exit;
@@ -46,20 +48,26 @@ exit;
 ?section clean_up
 -- ============================================================================
 -- Cleaning up test environment
-drop schema if exists t141_udr cascade;
 drop schema if exists t141_user1 cascade;
 drop schema if exists t141_user2 cascade;
 drop schema if exists t141_user3 cascade;
 
 revoke component privilege "CREATE" on sql_operations from sql_user2;
-revoke component privilege "CREATE" on sql_operations from user2_role;
+revoke component privilege "CREATE" on sql_operations from t141_role2;
+revoke component privilege "DML_SELECT_METADATA" on sql_operations from "PUBLIC";
 
-revoke role user1_role from sql_user1;
-revoke role user2_role from sql_user2;
-revoke role user3_role from sql_user3;
-drop role user1_role;
-drop role user2_role;
-drop role user3_role;
+revoke role t141_role1 from sql_user1;
+revoke role t141_role2 from sql_user2;
+revoke role t141_role3 from sql_user3;
+drop role t141_role1;
+drop role t141_role2;
+drop role t141_role3;
+
+revoke select on "_PRIVMGR_MD_".object_Privileges from t141_role_md;
+revoke select on "_PRIVMGR_MD_".column_Privileges from t141_role_md;
+revoke select on "_MD_".objects from t141_role_md;
+revoke role t141_role_md from sql_user1, sql_user2, sql_user3;
+drop role t141_role_md;
 
 
 -- ============================================================================
@@ -75,24 +83,41 @@ sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
 set pattern $$DLL$$ etest141.dll;
 set pattern $$QUOTE$$ '''';
 
-create schema t141_udr;
-set schema t141_udr;
-create library t141_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
-create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
-language c parameter style sql external name 'translateBitmap'
-library t141_l1
-deterministic no sql final call allow any parallelism state area size 1024 ;
-grant execute on function t141_udr.translateBitmap to "PUBLIC";
-
 -- query to read privs from metadata
 prepare get_obj_privs from
 select distinct
-   substring (object_name,1,40) as object_name,
-   object_type as type,
-   substring(authname(grantor_id),1,10) as grantor,
-   substring(authname(grantee_id),1,10) as grantee,
-   t141_udr.translateBitmap(privileges_bitmap) as granted_privs,
-   t141_udr.translateBitmap(grantable_bitmap) as grantable_privs
+  cast (substring (object_name,11,35) as char(35) character set iso88591) as object_name,
+  object_type as type,
+  substring(authname(grantor_id),1,10) as grantor,
+  substring(authname(grantee_id),1,10) as grantee,
+  case when bitextract(privileges_bitmap,63,1) = 1 then 'S'
+       else '-' end ||
+  case when bitextract(privileges_bitmap,62,1) = 1 then 'I'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,61,1) = 1 then 'D'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,60,1) = 1 then 'U'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,59,1) = 1 then 'G'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,58,1) = 1 then 'R'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,57,1) = 1 then 'E'
+        else '-' end as granted_privs,
+  case when bitextract(grantable_bitmap,63,1) = 1 then 'S'
+       else '-' end ||
+  case when bitextract(grantable_bitmap,62,1) = 1 then 'I'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,61,1) = 1 then 'D'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,60,1) = 1 then 'U'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,59,1) = 1 then 'G'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,58,1) = 1 then 'R'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,57,1) = 1 then 'E'
+        else '-' end as grantable_privs
 from "_PRIVMGR_MD_".object_privileges
 where object_uid in
      (select object_uid
@@ -103,12 +128,38 @@ where object_uid in
 
 prepare get_col_privs from
 select distinct
-   substring (object_name,1,40) as object_name,
+   cast(substring (object_name,11,20) as char (20) character set iso88591) as object_name,
    column_number,
    substring(authname(grantor_id),1,10) as grantor,
    substring(authname(grantee_id),1,10) as grantee,
-   t141_udr.translateBitmap(privileges_bitmap) as granted_privs,
-   t141_udr.translateBitmap(grantable_bitmap) as grantable_privs
+  case when bitextract(privileges_bitmap,63,1) = 1 then 'S'
+       else '-' end ||
+  case when bitextract(privileges_bitmap,62,1) = 1 then 'I'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,61,1) = 1 then 'D'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,60,1) = 1 then 'U'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,59,1) = 1 then 'G'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,58,1) = 1 then 'R'
+        else '-' end ||
+  case when bitextract(privileges_bitmap,57,1) = 1 then 'E'
+        else '-' end as granted_privs,
+  case when bitextract(grantable_bitmap,63,1) = 1 then 'S'
+       else '-' end ||
+  case when bitextract(grantable_bitmap,62,1) = 1 then 'I'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,61,1) = 1 then 'D'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,60,1) = 1 then 'U'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,59,1) = 1 then 'G'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,58,1) = 1 then 'R'
+        else '-' end ||
+  case when bitextract(grantable_bitmap,57,1) = 1 then 'E'
+        else '-' end as grantable_privs
 from "_PRIVMGR_MD_".column_privileges
 where object_uid in
      (select object_uid
@@ -118,16 +169,22 @@ where object_uid in
 ;
 
 -- set up role infrastructure
-create role user1_role;
-create role user2_role;
-create role user3_role;
-grant role user1_role to sql_user1;
-grant role user2_role to sql_user2;
-grant role user3_role to sql_user3;
+create role t141_role1;
+create role t141_role2;
+create role t141_role3;
+grant role t141_role1 to sql_user1;
+grant role t141_role2 to sql_user2;
+grant role t141_role3 to sql_user3;
+
+create role t141_role_md;
+grant select on "_PRIVMGR_MD_".object_Privileges to t141_role_md;
+grant select on "_PRIVMGR_MD_".column_Privileges to t141_role_md;
+grant select on "_MD_".objects to t141_role_md;
+grant role t141_role_md to sql_user1, sql_user2, sql_user3;
 
 -- set up component privilege infrastructure
 grant component privilege "CREATE" on sql_operations to sql_user2;
-grant component privilege "CREATE" on sql_operations to user2_role;
+grant component privilege "CREATE" on sql_operations to t141_role2;
 
 -- ============================================================================
 ?section create_objects
@@ -141,19 +198,19 @@ create table u1t3 (c1 int not null primary key, c2 int, c3 int);
 insert into u1t3 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
 create table u1t4 (c1 int not null primary key, c2 int, c3 int);
 insert into u1t4 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
-get tables;
+get tables, match 'U1T%';
 
 set schema t141_user2;
 create table u2t1 (c1 int not null primary key, c2 int, c3 int);
 insert into u2t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
 create table u2t2 (c1 int not null primary key, c2 int, c3 int);
 insert into u2t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
-get tables;
+get tables, match 'U2T%';
 
 set schema t141_user3;
 create table u3t1 (c1 int not null primary key, c2 int, c3 int);
 insert into u3t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
-get tables;
+get tables, match 'U3T%';
 
 
 -- ============================================================================
@@ -263,21 +320,22 @@ values (user);
 
 -- setup database with private schemas owned by roles
 drop schema if exists t141_user1 cascade;
-create schema t141_user1 authorization user1_role;
+create schema t141_user1 authorization t141_role1;
 drop schema if exists t141_user2 cascade;
-create schema t141_user2 authorization user2_role;
+create schema t141_user2 authorization t141_role2;
 drop schema if exists t141_user3 cascade;
-create schema t141_user3 authorization user3_role;
+create schema t141_user3 authorization t141_role3;
 showddl schema t141_user1;
 showddl schema t141_user2;
+showddl schema t141_user3;
 
 obey TEST141(create_objects);
 set schema t141_user1;
 execute get_obj_privs;
 execute get_col_privs;
 
--- user2_role has create privilege on all schemas.
--- have sql_user2 who belongs to  user2_role create some tables in 
+-- t141_role2 has create privilege on all schemas.
+-- have sql_user2 who belongs to  t141_role2 create some tables in 
 -- t141_user1's schema, also have sql_user2 create some views
 sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
 execute get_obj_privs;
@@ -290,15 +348,15 @@ execute get_obj_privs;
 -- has appropriate privileges.
 
 values (user);
-revoke component privilege "CREATE" on sql_operations from user2_role;
+revoke component privilege "CREATE" on sql_operations from t141_role2;
 
 -- setup database with shared schemas owned by role
 drop schema if exists t141_user1 cascade;
-create shared schema t141_user1 authorization user1_role;
+create shared schema t141_user1 authorization t141_role1;
 drop schema if exists t141_user2 cascade;
-create shared schema t141_user2 authorization user2_role;
+create shared schema t141_user2 authorization t141_role2;
 drop schema if exists t141_user3 cascade;
-create shared schema t141_user3 authorization user3_role;
+create shared schema t141_user3 authorization t141_role3;
 showddl schema t141_user1;
 showddl schema t141_user2;
 
@@ -309,7 +367,7 @@ set schema t141_user1;
 execute get_obj_privs;
 execute get_col_privs;
 
--- have sql_user2 create some tables in user2_role's schema
+-- have sql_user2 create some tables in t141_role2's schema
 -- have sql_user2 create some views, views that reference user1's objects fail
 sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
 execute get_obj_privs;
@@ -345,7 +403,7 @@ set schema t141_user1;
 create table u2t1 (c1 int not null primary key, c2 int, c3 int);
 create table u2t2 (c1 int not null primary key, c2 int, c3 int);
 
-get tables;
+get tables, match 'U2T%';
 
 -- create a view on user1's table
 create view u2v1 as select c1, c2 from u2t1;
@@ -394,7 +452,7 @@ create view u3v4 as select c1, c3 from t141_user1.u1t4;
 
 -- following fail
 create view u3v5 as select c1, c3 from t141_user1.u1t3;
-get tables;
+get tables, match 'U3T%';
 get views;
 
 -- ============================================================================

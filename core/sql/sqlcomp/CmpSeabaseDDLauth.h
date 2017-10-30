@@ -36,6 +36,7 @@
 // *****************************************************************************
 
 #include "ComSmallDefs.h"
+#include "PrivMgrDefs.h"
 #include "NAUserId.h"
 #include <vector>
 
@@ -136,6 +137,7 @@ class CmpSeabaseDDLauth
     AuthStatus selectExactRow (const NAString &cmd); 
     Int64      selectCount    (const NAString & whereClause);
     Int32      selectMaxAuthID(const NAString &whereClause);
+    bool       verifyAuthority(const SQLOperation operation);
     
   NAString systemCatalog_;
   NAString MDSchema_; /* Qualified metadata schema */
@@ -186,7 +188,6 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
 
    protected:
 
-     void verifyAuthority(bool isRemapUser = false);
 };
 
 
@@ -227,7 +228,6 @@ class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
 
    protected:
 
-     void verifyAuthority    (void);
 };
 
 #endif // _CMP_SEABASE_DDL_AUTH_H_

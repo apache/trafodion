@@ -666,11 +666,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL USER, go get description and return
   if (d->getIsUser())
     {
-      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_USERS))
-        {
-          rc = -1;
-          goto finally;
-        }
       NAString userText;
       CmpSeabaseDDLuser userInfo;
       if (!userInfo.describe(d->getAuthIDName(), userText))
@@ -690,11 +685,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL ROLE, go get description and return
   if (d->getIsRole())
   {
-      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_ROLES))
-        {
-          rc = -1;
-          goto finally;
-        }
       NAString roleText;
       CmpSeabaseDDLrole roleInfo(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
       if (!roleInfo.describe(d->getAuthIDName(),roleText))
