@@ -1881,26 +1881,22 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		return false;
 	}
 
-	public void setClientInfo(String name, String value)
-			throws SQLClientInfoException {
-		// TODO Auto-generated method stub
-		
+	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+		ic_.setClientInfo(name, value);
 	}
 
-	public void setClientInfo(Properties properties)
-			throws SQLClientInfoException {
-		// TODO Auto-generated method stub
-		
+	public void setClientInfo(Properties properties) throws SQLClientInfoException {
+		ic_.setClientInfoProperties( properties);
 	}
 
 	public String getClientInfo(String name) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		validateConnection();
+		return ic_.getClientInfoProperties().getProperty(name);
 	}
 
 	public Properties getClientInfo() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		validateConnection();
+		return ic_.getClientInfoProperties();
 	}
 
 	public Array createArrayOf(String typeName, Object[] elements)
