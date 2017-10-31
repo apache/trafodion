@@ -468,12 +468,12 @@ C5BF
 >>-- Invalid UTF-16 surrogate pairs
 >>select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
 
-*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 34ffffffd84100 .
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 34ff4100 .
 
 --- 0 row(s) selected.
 >>select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
 
-*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 1effffffdd4100 .
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 1eff4100 .
 
 --- 0 row(s) selected.
 >>cqd TRANSLATE_ERROR_UNICODE_TO_UNICODE 'off';
