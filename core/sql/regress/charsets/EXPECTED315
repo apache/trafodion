@@ -661,7 +661,7 @@ GOOD
 --- 0 row(s) selected.
 >>select converttohex(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toISO88591)) from (values(0))x;
 
-*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UTF8 , Target charset ISO88591. Error data in HEX: 6162636465666768ffffffe0ffffffa0ffffffa0 .
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UTF8 , Target charset ISO88591. Error data in HEX: 6162636465666768e0a0a0 .
 
 --- 0 row(s) selected.
 >>
