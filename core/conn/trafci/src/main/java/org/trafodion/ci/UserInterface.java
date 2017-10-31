@@ -92,7 +92,7 @@ public class UserInterface {
 
 		banner();
         
-		System.out.println("using jline: "+ isJline);
+		System.out.println("JLine support is: "+ isJline);
 		// parse the arguments
 		ParseArguments paObj = new ParseArguments(crObj, cwObj);
 
