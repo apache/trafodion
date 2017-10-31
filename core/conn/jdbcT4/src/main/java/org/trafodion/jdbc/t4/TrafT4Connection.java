@@ -1965,7 +1965,10 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public void abort(Executor executor) throws SQLException {
-		// TODO Auto-generated method stub
+		if (ic_.getT4Connection().getInputOutput() != null) {
+			ic_.getT4Connection().getInputOutput().CloseIO(null);
+		}
+		ic_.setIsClosed(true);
 		
 	}
 
