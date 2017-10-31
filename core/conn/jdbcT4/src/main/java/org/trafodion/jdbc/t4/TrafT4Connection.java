@@ -1971,13 +1971,14 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 	public void setNetworkTimeout(Executor executor, int milliseconds)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+            validateConnection();
+            props_.setNetworkTimeout(milliseconds);
 	}
+	
 
 	public int getNetworkTimeout() throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+		validateConnection();
+		return props_.getNetworkTimeout();
 	}
 
 	/*
