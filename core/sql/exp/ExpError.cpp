@@ -619,7 +619,7 @@ char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen)
   char hex[3];
   for(int i = 0; i < hexLen; i++)
   {
-    snprintf(hex, sizeof(hex), "%02x", (char)in[i]);
+    snprintf(hex, sizeof(hex), "%02x", (unsigned char)in[i]);
     strcat(out,hex);
   }
   return out;
