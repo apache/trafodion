@@ -68,6 +68,7 @@ import javax.sql.PooledConnection;
  */
 public class TrafT4Connection extends PreparedStatementManager implements java.sql.Connection {
 
+	private T4DatabaseMetaData metaData_;
 	/**
 	 * Validates the connection by clearing warnings and verifying that the
 	 * Connection is still open.
@@ -306,7 +307,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		validateConnection();
 
-		return new T4DatabaseMetaData(this);
+		return this.metaData_;
 	}
 
 	public int getTransactionIsolation() throws SQLException {
@@ -1644,6 +1645,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		if (props_.getSPJEnv()) {
 			ic_.enableProxySyntax(this);
 		}
+		this.metaData_ = new T4DatabaseMetaData(this);
 	}
 	
 	private ArrayList<String> createAddressList(T4Properties t4props) {
@@ -1859,11 +1861,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public Clob createClob() throws SQLException {
-        return new TrafT4Clob(this, null, null);
+		return new TrafT4Clob(this, null, null);
 	}
 
 	public Blob createBlob() throws SQLException {
-        return new TrafT4Blob(this, null, null);
+		return new TrafT4Blob(this, null, null);
 	}
 
 	public NClob createNClob() throws SQLException {
