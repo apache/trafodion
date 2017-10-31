@@ -185,7 +185,7 @@ fi
 # For now, don't run these tests                      --
 # Add list of tests to script in "skipTheseTests"     --
 #-------------------------------------------------------
-skipTheseTests=""
+skipTheseTests="TEST133"
 
 testfiles="$prettyfiles"
 prettyfiles=

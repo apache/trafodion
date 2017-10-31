@@ -882,6 +882,48 @@ Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
   return static_cast<Int32>(maxValue);
 }
 
+// ----------------------------------------------------------------------------
+// method: verifyAuthority
+//
+// makes sure user has privilege to perform the operation
+//
+// Input: none
+//
+// Output:  
+//   true - authority granted
+//   false - no authority or unexpected error
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLauth::verifyAuthority(const SQLOperation operation)
+{
+
+   // If authorization is not enabled, just return with no error
+   if (!CmpCommon::context()->isAuthorizationEnabled())
+     return true;
+
+   int32_t currentUser = ComUser::getCurrentUser();
+
+   // Root user has authority to manage users.
+   if (currentUser == ComUser::getRootUserID())
+      return true;
+
+   NAString systemCatalog = CmpSeabaseDDL::getSystemCatalogStatic();
+   std::string privMDLoc(systemCatalog.data());
+
+   privMDLoc += std::string(".\"") +
+                std::string(SEABASE_PRIVMGR_SCHEMA) +
+                std::string("\"");
+
+   PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+
+   // See if non-root user has authority to manage users.       
+   if (componentPrivileges.hasSQLPriv(currentUser, operation, true))
+   {
+      return true;
+   }
+
+   return false;
+}
+
 // ****************************************************************************
 // Class CmpSeabaseDDLuser methods
 // ****************************************************************************
@@ -975,7 +1017,12 @@ void CmpSeabaseDDLuser::registerUser(StmtDDLRegisterUser * pNode)
   try
   {
     // Verify user is authorized to perform REGISTER USER requests
-    verifyAuthority();
+    if (!verifyAuthority(SQLOperation::MANAGE_USERS))
+    {
+      // No authority.  We're outta here.
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return;
+    }
 
     // Verify that the specified user name is not reserved
     setAuthDbName(pNode->getDbUserName());
@@ -1113,8 +1160,6 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
 {
   try
   {
-    verifyAuthority();
-
     // CASCADE option not yet supported
     if (pNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
     {
@@ -1139,6 +1184,13 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
                           << DgString0(dbUserName.data());
+      return;
+    }
+
+    if (ComUser::getCurrentUser() != getAuthCreator() && 
+        !verifyAuthority(SQLOperation::MANAGE_USERS))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return;
     }
 
@@ -1249,9 +1301,6 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
 {
   try
   {
-    StmtDDLAlterUser::AlterUserCmdSubType cmdSubType = pNode->getAlterUserCmdSubType();
-    verifyAuthority(cmdSubType == StmtDDLAlterUser::SET_EXTERNAL_NAME);
-
     // read user details from the AUTHS table
     const NAString dbUserName(pNode->getDatabaseUsername());
     CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(dbUserName);
@@ -1264,9 +1313,17 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
       return;
     }
 
+    if ((ComUser::getCurrentUser() != getAuthCreator()) && 
+         !verifyAuthority(SQLOperation::MANAGE_USERS))
+    {
+       // No authority.  We're outta here.
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
     // Process the requested operation
     NAString setClause("set ");
-    switch (cmdSubType)
+    switch (pNode->getAlterUserCmdSubType())
     {
       case StmtDDLAlterUser::SET_EXTERNAL_NAME:
       {
@@ -1435,105 +1492,48 @@ DBUserAuth::CheckUserResult chkUserRslt = DBUserAuth::UserDoesNotExist;
 //-----------------------------------------------------------------------------
 bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
 {
-  try
+  // If current user matches authName, allow request
+  NAString currentUserName (ComUser::getCurrentUsername());
+  if ((currentUserName != authName) && !verifyAuthority(SQLOperation::SHOW))
   {
-    CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(authName.data());
-    
-    // If the user was not found, set up an error
-    if (retcode == STATUS_NOTFOUND)
-    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
-                          << DgString0(authName.data());
-      return false;
-    }
-
-    // If an error was detected, throw an exception so the catch handler will 
-    // put a value in ComDiags area in case no message exists
-    if (retcode == STATUS_ERROR)
-    {
-      UserException excp (NULL, 0);
-      throw excp;
-    }
-  
-    // Generate output text
-    authText = "REGISTER USER \"";
-    authText += getAuthExtName();
-    if (getAuthExtName() != getAuthDbName())
-    {
-      authText += "\" AS \"";
-      authText += getAuthDbName();
-    }
-    authText += "\";\n";
-
-    if (!isAuthValid())
-    {
-      authText += "ALTER USER \"";
-      authText += getAuthDbName();
-      authText += "\" SET OFFLINE;\n";
-    }
-  }
-
-  catch (...)
-  {
-   // At this time, an error should be in the diags area.
-   // If there is no error, set up an internal error
-   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::describe");
+    // No authority.  We're outta here.
+    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
     return false;
   }
 
+  CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(authName.data());
+  // If the user was not found, set up an error
+  if (retcode == STATUS_NOTFOUND)
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
+                        << DgString0(authName.data());
+    return false;
+  }
+
+  // If an error was detected, return
+  if (retcode == STATUS_ERROR)
+    return false;
+
+  // Generate output text
+  authText = "REGISTER USER \"";
+  authText += getAuthExtName();
+  if (getAuthExtName() != getAuthDbName())
+  {
+    authText += "\" AS \"";
+    authText += getAuthDbName();
+  }
+  authText += "\";\n";
+
+  if (!isAuthValid())
+  {
+    authText += "ALTER USER \"";
+    authText += getAuthDbName();
+    authText += "\" SET OFFLINE;\n";
+  }
   return true;
 }
 //------------------------------ End of describe -------------------------------
 
-// ----------------------------------------------------------------------------
-// method: verifyAuthority
-//
-// makes sure user has privilege to perform user operation
-//
-// Input: none
-//
-// Output:  an exception is generated if user does not have authority
-// ----------------------------------------------------------------------------
-void CmpSeabaseDDLuser::verifyAuthority(bool isRemapUser)
-
-{
-
-   // If authorization is not enabled, just return with no error
-   if (!CmpCommon::context()->isAuthorizationEnabled())
-     return;
-
-   int32_t currentUser = ComUser::getCurrentUser();
-
-   // Root user has authority to manage users.
-   if (currentUser == ComUser::getRootUserID())
-      return;
-      
-   // Verify authorization is enabled.  If not, no restrictions.
-   NAString systemCatalog = CmpSeabaseDDL::getSystemCatalogStatic();
-   std::string privMDLoc(systemCatalog.data());
-  
-   privMDLoc += std::string(".\"") +
-                std::string(SEABASE_PRIVMGR_SCHEMA) +
-                std::string("\"");
-                
-   PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
-
-   // See if non-root user has authority to manage users.       
-   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_USERS,true))
-   {
-      if (!isRemapUser)
-         return; 
-      if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::REMAP_USER,true))
-         return;
-   }   
-           
-   // No authority.  We're outta here.
-   *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-   UserException excp (NULL, 0);
-   throw excp;
-
-}
 
 // ****************************************************************************
 // Class CmpSeabaseDDLrole methods
@@ -1582,11 +1582,16 @@ void CmpSeabaseDDLrole::createRole(StmtDDLCreateRole * pNode)
      return;
    }
 
-// Set up a global try/catch loop to catch unexpected errors
+   // Verify user is authorized to perform CREATE ROLE requests
+   if (!verifyAuthority(SQLOperation::MANAGE_ROLES))
+   {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     return;
+   }
+
+   // Set up a global try/catch loop to catch unexpected errors
    try
    {
-      // Verify user is authorized to perform CREATE ROLE requests
-      verifyAuthority();
 
       // Verify that the specified role name is not reserved
       setAuthDbName(pNode->getRoleName());
@@ -1736,6 +1741,18 @@ bool CmpSeabaseDDLrole::describe(
 
    try
    {
+      // Can current user perform request
+      Int32 roleID = NA_UserIdDefault;
+      if (ComUser::getAuthIDFromAuthName(roleName.data(), roleID) != 0)
+        roleID = NA_UserIdDefault;
+
+      if (!ComUser::currentUserHasRole(roleID) && !verifyAuthority(SQLOperation::SHOW))
+      {
+         // No authority.  We're outta here.
+         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         return false;
+      }
+
       CmpSeabaseDDLauth::AuthStatus retcode = getRoleDetails(roleName.data());
       
       // If the role was not found, set up an error
@@ -1749,11 +1766,8 @@ bool CmpSeabaseDDLrole::describe(
       // If an error was detected, throw an exception so the catch handler will 
       // put a value in ComDiags area in case no message exists
       if (retcode == STATUS_ERROR)
-      {
-        UserException excp (NULL, 0);
-        throw excp;
-      }
-    
+        return false;
+ 
       // Generate output text
       roleText = "CREATE ROLE \"";
       roleText += getAuthDbName();
@@ -1910,10 +1924,19 @@ void CmpSeabaseDDLrole::dropRole(StmtDDLCreateRole * pNode)
          return;
       }
       
-      // Verify user is authorized to perform DROP ROLE requests
       if (ComUser::getCurrentUser() != getAuthCreator())
-         verifyAuthority();
-      
+      {
+         // If the user does not have privilege, allow the drop if 
+         //   the user has been granted an admin role and
+         //   the role being dropped is not an admin role and
+         //   the authCreator of the role being dropped matches the admin role
+         if (verifyAuthority(SQLOperation::MANAGE_ROLES) == false)
+         {
+           *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+           return;
+         }
+      }
+
       NAString privMgrMDLoc;
 
       CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
@@ -2069,50 +2092,5 @@ CmpSeabaseDDLauth::AuthStatus authStatus = getAuthDetails(roleName,false);
     roleID = getAuthID();
     return true;
     
-}
-
-
-// ----------------------------------------------------------------------------
-// method: verifyAuthority
-//
-// makes sure user has privilege to perform role operation
-//
-// Input: none
-//
-// Output:  an exception is generated if user does not have authority
-// ----------------------------------------------------------------------------
-void CmpSeabaseDDLrole::verifyAuthority()
-
-{
-
-  // If authorization is not enabled then role has privilege, just return
-  if (!CmpCommon::context()->isAuthorizationEnabled())
-    return;
-
-   int32_t currentUser = ComUser::getCurrentUser();
-
-   // Root user has authority to manage roles.
-   if (currentUser == ComUser::getRootUserID())
-      return;
-      
-   NAString systemCatalog = CmpSeabaseDDL::getSystemCatalogStatic();
-   std::string privMDLoc(systemCatalog.data());
-  
-   privMDLoc += std::string(".\"") +
-                std::string(SEABASE_PRIVMGR_SCHEMA) +
-                std::string("\"");
-                
-   PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
-
-   // Authorization enabled.  See if non-root user has authority to manage roles.       
-   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_ROLES,true))
-      return;   
-       
-   // No authority.  We're outta here.
-   *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-   UserException excp (NULL, 0);
-   throw excp;
-
-  Int32 rc;
 }
 
