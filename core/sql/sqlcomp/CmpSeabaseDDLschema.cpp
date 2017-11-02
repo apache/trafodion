@@ -445,7 +445,15 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += catalogName.data();
    output += "\".\"";
    output += schemaName.data();
-// Disaply Comment of schema
+
+// AUTHORIZATION clause is rarely used, but include it for replay.
+   output += "\" AUTHORIZATION \"";
+   output += username;
+   output += "\";";
+   
+   outlines.push_back(output.data());
+   
+   // Disaply Comment of schema
     {
       ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
       cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo);
@@ -467,13 +475,6 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
         }
 
     }
-
-// AUTHORIZATION clause is rarely used, but include it for replay.
-   output += "\" AUTHORIZATION \"";
-   output += username;
-   output += "\";";
-   
-   outlines.push_back(output.data());
 
    cmpSBD.switchBackCompiler();
    return true;
