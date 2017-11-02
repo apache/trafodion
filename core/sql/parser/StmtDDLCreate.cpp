@@ -78,6 +78,7 @@
 #include "StmtDDLCreateSynonym.h"
 #include "ElemDDLMVFileAttrClause.h"
 #include "StmtDDLCreateExceptionTable.h"
+#include "StmtDDLCommentOn.h"
 #include "MVInfo.h"
 
 #include "NumericType.h"
@@ -7160,6 +7161,50 @@ ViewUsages::insertUsedTableName(const QualifiedName &tableName)
 }
 
 *****************************************************/
+
+
+
+
+// -----------------------------------------------------------------------
+// Methods for class StmtDDLCommentOn
+// -----------------------------------------------------------------------
+
+//
+// Constructor
+//
+
+
+StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName & objName, const NAString & commentStr, CollHeap * heap)
+  : StmtDDLNode(DDL_COMMENT_ON),
+    type_(objType),
+    objectName_(objName, heap),
+    comment_(commentStr),
+    colRef_(NULL)
+{
+      
+}
+
+
+StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName & objName, const NAString & commentStr, ColReference  * colRef, CollHeap * heap)
+  : StmtDDLNode(DDL_COMMENT_ON),
+    type_(objType),
+    objectName_(objName, heap),
+    colRef_(colRef),
+    comment_(commentStr)
+{
+      
+}
+
+
+StmtDDLCommentOn::~StmtDDLCommentOn()
+{
+
+}
+
+StmtDDLCommentOn  * StmtDDLCommentOn::castToStmtDDLCommentOn()
+{
+  return this;
+}
 
 //
 // End of File

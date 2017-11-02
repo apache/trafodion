@@ -1543,6 +1543,14 @@ ElemDDLNode::castToStmtDDLCreateLibrary()
   return NULL;
 }
 
+StmtDDLCommentOn *
+ElemDDLNode::castToStmtDDLCommentOn()
+{
+  return NULL;
+}
+
+
+
 StmtDDLCreateRoutine *
 ElemDDLNode::castToStmtDDLCreateRoutine()
 {

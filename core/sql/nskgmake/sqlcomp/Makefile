@@ -33,6 +33,7 @@ CPPSRC := CmpDescribe.cpp \
 	CmpSeabaseDDLtable.cpp \
 	CmpSeabaseDDLupgrade.cpp \
 	CmpSeabaseDDLview.cpp \
+	CmpSeabaseDDLcommentOn.cpp \
 	PrivMgr.cpp \
         PrivMgrCommands.cpp \
         PrivMgrDesc.cpp \

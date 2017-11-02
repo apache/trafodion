@@ -1676,6 +1676,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   ComMvsAllowed			mvsAllowedType;
   ComMvAuditType		mvAuditType;
   MvInitializationType          mvInitType;
+  enum StmtDDLCommentOn::COMMENT_ON_TYPES  commentOnEnum;
 	
   // internal refresh OZ_REFRESH 
 
@@ -2391,6 +2392,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                with_check_option
 %type <levelEnum>               optional_levels_clause
 %type <levelEnum>               levels_clause
+%type <pStmtDDL>                comment_on_statement
+%type <commentOnEnum>           comment_on_object_types
 
 %type <stringval>               optional_component_detail_clause
 %type <int64>                   optional_lob_unit
@@ -14320,6 +14323,9 @@ sql_schema_definition_statement :
                                 {
                                 }
               | unregister_hbase_statement
+                                {
+                                }
+              | comment_on_statement
                                 {
                                 }
 
@@ -33150,7 +33156,7 @@ reset_clause : /* empty */
                   { $$ = 0; }
              |  TOK_RESET
                   { $$ = 2; } /* same as RMS_INIT_STATS Positive value because we can't return negative */ 
-                
+
 
 qid_internal_stats_merge_clause : /* empty */
                                  { $$ = 0; } /* use the session default view type */
@@ -33167,7 +33173,102 @@ stats_merge_clause : /*empty */
                { $$ = SQLCLI_PROGRESS_STATS; }
              | TOK_DEFAULT
                { $$ = SQLCLI_SAME_STATS; }  
-                   
+
+
+/* type pStmtDDL */
+comment_on_statement : TOK_COMMENT TOK_ON comment_on_object_types ddl_qualified_name TOK_IS QUOTED_STRING
+               {
+                 StmtDDLCommentOn *pNode = 
+                   new(PARSERHEAP()) StmtDDLCommentOn(
+                     $3,
+                     *$4,
+                     *$6,
+                     PARSERHEAP()
+                   );
+
+                 $$ = pNode;
+               }
+             | TOK_COMMENT TOK_ON TOK_SCHEMA schema_name TOK_IS QUOTED_STRING
+               {
+                 // EJF L4J - CQD dynamic are not allowed in Compound Statements
+                 if (beginsWith(SQLTEXT(),"BEGIN"))  {
+                   *SqlParser_Diags << DgSqlCode(-3175);
+                   YYERROR;
+                 }
+                 else  { // business as usual
+                   NAString tmpSchema($4->getSchemaNameAsAnsiString());
+
+                   if (! validateVolatileSchemaName(tmpSchema))
+                   {
+                     YYERROR;
+                   }
+
+                   StmtDDLCommentOn *pNode = new(PARSERHEAP()) StmtDDLCommentOn(
+                                                 StmtDDLCommentOn::COMMENT_ON_TYPE_SCHEMA,
+                                                 QualifiedName(SEABASE_SCHEMA_OBJECTNAME, $4->getSchemaName(), $4->getCatalogName(), PARSERHEAP()),
+                                                 *$6,
+                                                 PARSERHEAP());
+
+                   $$ = pNode;
+                 }
+               }
+             | TOK_COMMENT TOK_ON TOK_COLUMN qualified_name TOK_IS QUOTED_STRING
+               {
+                 ShortStringSequence *seq = (ShortStringSequence *) $4;
+                 UInt32 numParts = seq->numParts();
+
+                 if (numParts < 2)
+                   YYABORT;
+
+                 NAString strEmpty("", PARSERHEAP());
+
+                 NAString *columnName = seq->extract(numParts - 1);
+                 NAString *tableName  = seq->extract(numParts - 2);
+                 NAString *schemaName = numParts > 2 ? seq->extract(numParts - 3) : &strEmpty;
+                 NAString *catalogName = numParts > 3 ? seq->extract(numParts - 4) : &strEmpty;
+
+                 QualifiedName tblName(*tableName, *schemaName, *catalogName, PARSERHEAP());
+                 ColRefName *colRefName = new(PARSERHEAP()) ColRefName(*columnName, CorrName(tblName, PARSERHEAP()));
+                 StmtDDLCommentOn *pNode = 
+                           new(PARSERHEAP()) StmtDDLCommentOn(
+                                  StmtDDLCommentOn::COMMENT_ON_TYPE_COLUMN,
+                                  tblName,
+                                  *$6,
+                                  new(PARSERHEAP()) ColReference(colRefName),
+                                  PARSERHEAP()
+                           );
+
+                 $$ = pNode;
+               }
+
+
+comment_on_object_types : TOK_TABLE
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_TABLE;
+               }
+             | TOK_INDEX
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_INDEX;
+               }
+             | TOK_VIEW
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_VIEW;
+               }
+             | TOK_LIBRARY
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_LIBRARY;
+               }
+             | TOK_PROCEDURE
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_PROCEDURE;
+               }
+             | TOK_FUNCTION
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_FUNCTION;
+               }
+               
+               
+
 /* type tokval */
 //
 //   As many tokens as possible should be ADDED to this list, and REMOVED

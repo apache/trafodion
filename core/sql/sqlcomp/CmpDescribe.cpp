@@ -3049,6 +3049,8 @@ short CmpDescribeSeabaseTable (
           return -1;
       }
     }
+  
+  Int64 objectUID = (Int64) naTable->objectUid().get_value();
 
   if ((type == 2) && (isView))
     {
@@ -3058,6 +3060,36 @@ short CmpDescribeSeabaseTable (
       viewtext += " ;";
 
       outputLongLine(*space, viewtext, 0);
+
+      //display comment for VIEW
+      if (objectUID > 0/* && COMMENT_CQD*/)
+        {
+          if (cmpSBD.switchCompiler())
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+              return -1;
+            }
+
+            ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
+            cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo);
+
+          if (objCommentInfo != NULL)
+            {
+              //new line
+              outputLine(*space, "", 0);
+
+              //display VIEW COMMENT statements
+              if (objCommentInfo->objectComment != NULL)
+              {
+                sprintf(buf, "COMMENT ON VIEW %s IS '%s' ;",
+                             tableName.data(),
+                             objCommentInfo->objectComment);
+                outputLine(*space, buf, 0);
+              }
+            }
+
+          cmpSBD.switchBackCompiler();
+        }
 
       // Display grant statements
       if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
@@ -3746,7 +3778,6 @@ short CmpDescribeSeabaseTable (
         } // showddl
     }
 
-  Int64 objectUID = (Int64)naTable->objectUid().get_value();
   if ((type == 2) &&
       (naTable->isHbaseCellTable() || naTable->isHbaseRowTable()) &&
       (NOT isView))
@@ -3763,7 +3794,7 @@ short CmpDescribeSeabaseTable (
       if (naTable->isRegistered())
         {
           outputShortLine(*space, " ");
-          
+
           sprintf(buf,  "REGISTER%sHBASE %s %s;",
                   (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
                   "TABLE",
@@ -3775,6 +3806,65 @@ short CmpDescribeSeabaseTable (
           str_sprintf(buf, "/* ObjectUID = %ld */", objectUID);
           outputShortLine(*space, buf);
         }
+    }
+
+  //display comments
+  if (type == 2 && objectUID > 0)
+    {
+      enum ComObjectType objType = COM_BASE_TABLE_OBJECT;
+
+      if (isView)
+        {
+          objType = COM_VIEW_OBJECT;
+        }
+
+      if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
+      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
+      cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo);
+ 
+      if (objCommentInfo != NULL)
+        {
+          //new line
+          outputLine(*space, "", 0);
+
+          //display Table COMMENT statements
+          if (objCommentInfo->objectComment != NULL)
+            {
+               sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
+                       objType == COM_BASE_TABLE_OBJECT? "TABLE" : "VIEW",
+                       tableName.data(),
+                       objCommentInfo->objectComment);
+               outputLine(*space, buf, 0);
+            }
+ 
+          //display Column COMMENT statements
+          outputLine(*space, "", 0);
+          for (int idx = 0; idx < objCommentInfo->numColumnComment; idx++)
+            {
+              sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
+                       tableName.data(),
+                       objCommentInfo->columnCommentArray[idx].columnName,
+                       objCommentInfo->columnCommentArray[idx].columnComment);
+               outputLine(*space, buf, 0);
+            }
+
+          //display Index COMMENT statements
+          outputLine(*space, "", 0);
+          for (int idx = 0; idx < objCommentInfo->numIndexComment; idx++)
+            {
+              sprintf(buf,  "COMMENT ON INDEX %s IS '%s' ;",
+                       objCommentInfo->indexCommentArray[idx].indexFullName,
+                       objCommentInfo->indexCommentArray[idx].indexComment);
+               outputLine(*space, buf, 0);
+            }
+        }
+
+      cmpSBD.switchBackCompiler();
     }
 
   // If SHOWDDL and authorization is enabled, display GRANTS
@@ -4129,6 +4219,33 @@ char buf[1000];
        ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM)
            && getenv("SQLMX_REGRESS"))) ? FALSE : TRUE;
 
+//display library comment
+   if (libraryUID > 0)
+   {
+     if (cmpSBD.switchCompiler())
+       {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return -1;
+       }
+
+     ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
+     cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo);
+
+     if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+       {
+         //new line
+         outputLine(*space, "", 0);
+
+         sprintf(buf,  "COMMENT ON LIBRARY %s IS '%s' ;",
+                       cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                       objCommentInfo->objectComment);
+         outputLine(*space, buf, 0);
+
+       }
+
+     cmpSBD.switchBackCompiler();
+   }
+
 // If authorization is enabled, display grant statements for library
    if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
    {
@@ -4181,7 +4298,7 @@ short CmpDescribeRoutine (const CorrName   & cn,
 {
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  NARoutine *routine = bindWA.getNARoutine(cn.getQualifiedNameObj()); 
+  NARoutine *routine = bindWA.getNARoutine(cn.getQualifiedNameObj());
   const NAString& rName =
     cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
   if (routine == NULL || bindWA.errStatus())
@@ -4634,11 +4751,43 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
   outputShortLine (*space, "  ;");
 
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
   char * sqlmxRegr = getenv("SQLMX_REGRESS");
   NABoolean displayPrivilegeGrants = TRUE;
   if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
        (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
     displayPrivilegeGrants = FALSE;
+
+  //display comment of routine
+  Int64 routineUID = routine->getRoutineID();
+  if ( routineUID > 0)
+    {
+      if (cmpSBD.switchCompiler())
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return -1;
+      }
+
+      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
+      cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo);
+     
+      if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+        {
+          //new line
+          outputLine(*space, "", 0);
+     
+          sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
+                        routine->getRoutineType() == COM_PROCEDURE_TYPE ? "PROCEDURE" : "FUNCTION",
+                        cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                        objCommentInfo->objectComment);
+          outputLine(*space, buf, 0);
+        }
+     
+      cmpSBD.switchBackCompiler();
+
+    }
+
 
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
@@ -4661,8 +4810,6 @@ short CmpDescribeRoutine (const CorrName   & cn,
       (int32_t)routine->getSchemaOwner(),
       COM_USER_DEFINED_ROUTINE_OBJECT);
 
-
-    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
     if (cmpSBD.switchCompiler())
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
@@ -4677,8 +4824,6 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
     cmpSBD.switchBackCompiler();
   }
-
-
 
   outbuflen = space->getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];

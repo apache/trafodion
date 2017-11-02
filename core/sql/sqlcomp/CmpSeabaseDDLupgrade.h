@@ -226,7 +226,14 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
    seabaseColumnsDDL, sizeof(seabaseColumnsDDL),
    NULL, 0,
    NULL, 0,
-   FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   TRUE, 
+   "object_uid,column_name,column_number,column_class,fs_data_type,sql_data_type,column_size,column_precision,"
+   "column_scale,datetime_start_field,datetime_end_field,is_upshifted,column_flags,nullable,character_set,"
+   "default_class,default_value,column_heading,hbase_col_family,hbase_col_qualifier,direction,is_optional,flags,comment" , 
+   "object_uid,column_name,column_number,column_class,fs_data_type,sql_data_type,column_size,column_precision,"
+   "column_scale,datetime_start_field,datetime_end_field,is_upshifted,column_flags,nullable,character_set,"
+   "default_class,default_value,column_heading,hbase_col_family,hbase_col_qualifier,direction,is_optional,flags,''" , 
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
    seabaseDefaultsDDL, sizeof(seabaseDefaultsDDL),
@@ -279,13 +286,13 @@ static const MDUpgradeInfo allMDupgradeInfo[] = {
    "object_name,"
    "object_type,object_uid,"
    "create_time,redef_time,valid_def,droppable,object_owner,schema_owner,"
-   "flags",
+   "flags,comment",
    "catalog_name,schema_name,"
    "case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end,"
    "object_type,object_uid,"
    "create_time,redef_time,valid_def,droppable,object_owner,schema_owner,"
-   "flags",
-   NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+   "flags,''",
+   NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,
    seabaseObjectsUniqIdxDDL, sizeof(seabaseObjectsUniqIdxDDL),
@@ -403,8 +410,8 @@ static const MDUpgradeInfo allMDv23tov30TablesInfo[] = {
    seabaseOldMDv23ColumnsDDL, sizeof(seabaseOldMDv23ColumnsDDL),
    NULL, 0,
    TRUE,
-   "object_uid, column_name, column_number, column_class, fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, hbase_col_family, hbase_col_qualifier, direction, is_optional, flags",
-   "object_uid, column_name, column_number, column_class, fs_data_type, '', column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, hbase_col_family, hbase_col_qualifier, direction, is_optional, 0",
+   "object_uid, column_name, column_number, column_class, fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, hbase_col_family, hbase_col_qualifier, direction, is_optional, flags, comment",
+   "object_uid, column_name, column_number, column_class, fs_data_type, '', column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, hbase_col_family, hbase_col_qualifier, direction, is_optional, 0, '' ",
    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
@@ -448,8 +455,8 @@ static const MDUpgradeInfo allMDv23tov30TablesInfo[] = {
    seabaseOldMDv23ObjectsDDL, sizeof(seabaseOldMDv23ObjectsDDL),
    NULL, 0,
    TRUE,
-   "catalog_name, schema_name, object_name, object_type, object_uid, create_time, redef_time, valid_def, droppable, object_owner, schema_owner, flags",
-   "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, 'N', object_owner, " SUPER_USER_LIT", 0 ",
+   "catalog_name, schema_name, object_name, object_type, object_uid, create_time, redef_time, valid_def, droppable, object_owner, schema_owner, flags, comment",
+   "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, 'N', object_owner, " SUPER_USER_LIT", 0, ''",
    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,

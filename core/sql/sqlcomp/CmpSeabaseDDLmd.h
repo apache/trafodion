@@ -115,7 +115,8 @@ static const QString seabaseColumnsDDL[] =
   {"   hbase_col_qualifier varchar(40) character set iso88591 not null not serialized, "},
   {"   direction char(2) character set iso88591 not null not serialized, "},
   {"   is_optional char(2) character set iso88591 not null not serialized, "},
-  {"   flags largeint not null not serialized "},
+  {"   flags largeint not null not serialized, "},
+  {"   comment VARCHAR(1000) CHARACTER SET UTF8 NOT NULL  NOT SERIALIZED "},
   {" ) "},
   {" primary key (object_uid, column_name) "},
   {" attribute hbase format "},
@@ -220,7 +221,8 @@ static const QString seabaseObjectsDDL[] =
   {"   droppable char(2) character set iso88591 not null not serialized, "},
   {"   object_owner int not null not serialized, "},
   {"   schema_owner int not null not serialized, "},
-  {"   flags largeint not null not serialized "},
+  {"   flags largeint not null not serialized, "},
+  {"   comment VARCHAR(1000) CHARACTER SET UTF8 NOT NULL  NOT SERIALIZED "},
   {" ) "},
   {" primary key (catalog_name, schema_name, object_name, object_type) "},
   {" attribute hbase format "},
@@ -1544,6 +1546,9 @@ static const QString seabaseOldMDv11ViewsDDL[] =
 #define TRAF_SEQUENCES_VIEW "SEQUENCES_VIEW"
 #define TRAF_TABLES_VIEW "TABLES_VIEW"
 #define TRAF_VIEWS_VIEW "VIEWS_VIEW"
+#define TRAF_OBJECT_COMMENT_VIEW "OBJECT_COMMENT_VIEW"
+#define TRAF_COLUMN_COMMENT_VIEW "COLUMN_COMMENT_VIEW"
+
 
 static const QString createTrafColumnsViewQuery[] =
 {
@@ -1693,6 +1698,24 @@ static const QString createTrafViewsViewQuery[] =
   {"  ; "}
 };
 
+static const QString createTrafObjectCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"."TRAF_OBJECT_COMMENT_VIEW" as "},
+  {" select catalog_name, schema_name, object_name, comment "},
+  {"   from %s.\"%s\".\"%s\" "},
+  {"   where COMMENT <> '' "},
+  {" ; "}
+};
+
+static const QString createTrafColumnCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"."TRAF_COLUMN_COMMENT_VIEW" as "},
+  {" select O.CATALOG_NAME, O.SCHEMA_NAME, O.OBJECT_NAME, C.COLUMN_NAME, C.COMMENT "},
+  {"  from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as C "},
+  {"  where O.OBJECT_UID = C.OBJECT_UID and C.COMMENT <> '' "},
+  {" ; "}
+};
+
 struct MDViewInfo
 {
   const char * viewName;
@@ -1747,7 +1770,18 @@ static const MDViewInfo allMDviewsInfo[] = {
     sizeof(createTrafViewsViewQuery),
     FALSE
   },
-
+  {
+    TRAF_OBJECT_COMMENT_VIEW,
+    createTrafObjectCommentViewQuery,
+    sizeof(createTrafObjectCommentViewQuery),
+    FALSE
+  },
+  {
+    TRAF_COLUMN_COMMENT_VIEW,
+    createTrafColumnCommentViewQuery,
+    sizeof(createTrafColumnCommentViewQuery),
+    FALSE
+  },
 };
 
 #endif

@@ -909,7 +909,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT,
@@ -1315,7 +1315,7 @@ short CmpSeabaseDDL::updateConstraintMD(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               ((ct == COM_UNIQUE_CONSTRAINT) ? COM_UNIQUE_CONSTRAINT_OBJECT_LIT :
@@ -5646,7 +5646,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
         }
     }
 
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%u', '%s', '%s', %ld )",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%u', '%s', '%s', %ld, '' )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
               col_name,
@@ -7171,8 +7171,8 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       goto label_error1;
     }
-  
-  str_sprintf(buf, "insert into %s.\"%s\".%s select object_uid, '%s', %d, '%s', fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, '%s', '%s', direction, is_optional, flags from %s.\"%s\".%s where object_uid = %ld and column_number = (select column_number from %s.\"%s\".%s where object_uid = %ld and column_name = '%s')",
+
+  str_sprintf(buf, "insert into %s.\"%s\".%s select object_uid, '%s', %d, '%s', fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, '%s', '%s', direction, is_optional, flags, comment from %s.\"%s\".%s where object_uid = %ld and column_number = (select column_number from %s.\"%s\".%s where object_uid = %ld and column_name = '%s')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naCol->getColName().data(),              
               altColNum,
@@ -12940,6 +12940,142 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
 }
 
 
+short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid, 
+                                                    enum ComObjectType object_type, 
+                                                    ComTdbVirtObjCommentInfo * & comment_info)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char query[4000];
+
+  comment_info = NULL;
+
+
+  ExeCliInterface cliInterface(STMTHEAP, 
+                               NULL, NULL, 
+                               CmpCommon::context()->sqlSession()->getParentQid());
+
+  //get object comment
+  str_sprintf(query, "select comment from %s.\"%s\".%s where object_uid = %ld and object_type = '%s' and comment <> '' ;",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              object_uid, comObjectTypeLit(object_type));
+
+  Queue * objQueue = NULL;
+  cliRC = cliInterface.fetchAllRows(objQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      processReturn();
+      return -1;
+    }
+
+  if (objQueue->numEntries() == 1)
+    {
+      objQueue->position();
+      
+      OutputInfo * vi = (OutputInfo*)objQueue->getNext(); 
+
+      comment_info = new(STMTHEAP) ComTdbVirtObjCommentInfo[1];
+      comment_info->objectUid = object_uid;
+      comment_info->numColumnComment = 0;
+      comment_info->columnCommentArray = NULL;
+      comment_info->numIndexComment = 0;
+      comment_info->indexCommentArray = NULL;
+      comment_info->objectComment = (char*)vi->get(0);
+    }
+  else
+    {
+      return -1;
+    }
+
+  if (COM_BASE_TABLE_OBJECT == object_type)
+    {
+      //get index comment of table
+      str_sprintf(query, "select CATALOG_NAME||'.'||SCHEMA_NAME||'.'||OBJECT_NAME, COMMENT "
+                         "from %s.\"%s\".%s as O, %s.\"%s\".%s as I  "
+                         "where I.BASE_TABLE_UID = %ld and O.OBJECT_UID = I.INDEX_UID and O.comment <> '' ;",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+                  object_uid);
+
+      Queue * indexQueue = NULL;
+      cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return -1;
+        }
+
+      if (indexQueue->numEntries() > 0)
+        {
+          if (NULL == comment_info)
+            {
+              comment_info = new(STMTHEAP) ComTdbVirtObjCommentInfo[1];
+              comment_info->objectUid = object_uid;
+              comment_info->objectComment = NULL;
+              comment_info->numColumnComment = 0;
+              comment_info->columnCommentArray = NULL;
+            }
+
+          comment_info->numIndexComment = indexQueue->numEntries();
+          comment_info->indexCommentArray = new(STMTHEAP) ComTdbVirtIndexCommentInfo[comment_info->numIndexComment];
+
+          indexQueue->position();
+          for (Lng32 idx = 0; idx < comment_info->numIndexComment; idx++)
+          {
+            OutputInfo * oi = (OutputInfo*)indexQueue->getNext(); 
+            ComTdbVirtIndexCommentInfo &indexComment = comment_info->indexCommentArray[idx];
+
+            // get the index full name
+            indexComment.indexFullName = (char*) oi->get(0);
+            indexComment.indexComment = (char*) oi->get(1);
+          }
+       }
+
+      //get column comment of table
+      str_sprintf(query, "select COLUMN_NAME, COMMENT from %s.\"%s\".%s where OBJECT_UID = %ld and comment <> '' order by COLUMN_NUMBER ;",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS, object_uid);
+
+      Queue * colQueue = NULL;
+      cliRC = cliInterface.fetchAllRows(colQueue, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return -1;
+        }
+
+      if (colQueue->numEntries() > 0)
+        {
+          if (NULL == comment_info)
+            {
+              comment_info = new(STMTHEAP) ComTdbVirtObjCommentInfo[1];
+              comment_info->objectUid = object_uid;
+              comment_info->objectComment = NULL;
+              comment_info->numIndexComment = 0;
+              comment_info->indexCommentArray = NULL;
+            }
+
+          comment_info->numColumnComment = colQueue->numEntries();
+          comment_info->columnCommentArray = new(STMTHEAP) ComTdbVirtColumnCommentInfo[comment_info->numColumnComment];
+
+          colQueue->position();
+          for (Lng32 idx = 0; idx < comment_info->numColumnComment; idx++)
+          {
+            OutputInfo * oi = (OutputInfo*)colQueue->getNext(); 
+            ComTdbVirtColumnCommentInfo &colComment = comment_info->columnCommentArray[idx];
+
+            // get the column name
+            colComment.columnName = (char*) oi->get(0);
+            colComment.columnComment = (char*) oi->get(1);
+          }
+       }
+    }
+
+  return 0;
+}
 
 
 // *****************************************************************************

@@ -4563,7 +4563,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, %ld )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, %ld, '')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit,
@@ -4754,7 +4754,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       ExeCliInterface cqdCliInterface;
       cliRC = cqdCliInterface.holdAndSetCQD("ODBC_PROCESS", "ON");
 
-      str_sprintf(buf, "upsert using rowset (max rowset size %d, input rowset size ?, input row max length ?, rowset buffer ?) into %s.\"%s\".%s values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      str_sprintf(buf, "upsert using rowset (max rowset size %d, input rowset size ?, input row max length ?, rowset buffer ?) into %s.\"%s\".%s values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                   numCols,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
       cliRC = rwrsCliInterface.rwrsPrepare(buf, numCols);
@@ -4887,6 +4887,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           AssignColEntry(&rwrsCliInterface, entry++, inputRow, colInfo->paramDirection, firstColOffset);
           AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->isOptional ? COM_YES_LIT : COM_NO_LIT), firstColOffset);
           AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->colFlags, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)"", firstColOffset);
 
           cliRC = rwrsCliInterface.rwrsExec(inputRow, inputRowLen, &rowsAffected);
           if (cliRC < 0)
@@ -4898,7 +4899,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
       else
         {
-          str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %ld)",
+          str_sprintf(buf, "insert into %s.\"%s\".%s values (%ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %ld, '')",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                       objUID,
                       colInfo->colName, 
@@ -5121,7 +5122,7 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
   NAString quotedLibObjName;
   ToQuotedString(quotedLibObjName, NAString(libName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedLibObjName.data(),
               COM_LIBRARY_OBJECT_LIT,
@@ -7783,7 +7784,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
   ToQuotedString(quotedSeqObjName, seqNamePart, FALSE);
 
   Int32 objOwner = ComUser::getCurrentUser();
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedSeqObjName.data(),
               COM_SEQUENCE_GENERATOR_OBJECT_LIT,
@@ -9505,6 +9506,13 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            CmpSeabaseMDcleanup cmpSBDC(STMTHEAP);
 
            cmpSBDC.cleanupObjects(co, currCatName, currSchName, dws);
+        }
+      else if (ddlNode->getOperatorType() ==  DDL_COMMENT_ON)
+        {
+           StmtDDLCommentOn * comment = 
+             ddlNode->castToStmtDDLNode()->castToStmtDDLCommentOn();
+
+           doSeabaseCommentOn(comment, currCatName, currSchName);
         }
       else
         {

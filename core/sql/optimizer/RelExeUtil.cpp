@@ -83,6 +83,7 @@
 #include "StmtDDLCleanupObjects.h"
 #include "StmtDDLAlterLibrary.h"
 #include "StmtDDLRegOrUnregHive.h"
+#include "StmtDDLCommentOn.h"
 
 #include <cextdecs/cextdecs.h>
 #include "wstr.h"
@@ -4083,6 +4084,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean externalTable = FALSE;
   NABoolean isVolatile = FALSE;
   NABoolean isRegister = FALSE;
+  NABoolean isCommentOn = FALSE;
 
   returnStatus_ = FALSE;
 
@@ -4550,6 +4552,13 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       qualObjName_ = getExprNode()->castToStmtDDLNode()->
         castToStmtDDLRegOrUnregObject()->getObjNameAsQualifiedName();
     }
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCommentOn())
+    {
+      isCommentOn = TRUE;
+
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
+        castToStmtDDLCommentOn()->getObjectNameAsQualifiedName();
+    }
 
     if (isCleanup_)
       {
@@ -4557,7 +4566,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           hbaseDDLNoUserXn_ = TRUE;
       }
 
-    if ((isCreateSchema || isDropSchema || isAlterSchema) || isRegister ||
+    if ((isCreateSchema || isDropSchema || isAlterSchema) || isRegister || isCommentOn ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedata() || 
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 

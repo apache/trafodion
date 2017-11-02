@@ -1128,6 +1128,61 @@ class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase
   Int32       schema_owner_id;
 };
 
+
+class ComTdbVirtIndexCommentInfo : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtIndexCommentInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtIndexCommentInfo);}
+
+  const char *indexFullName;
+  const char *indexComment;
+};
+
+
+class ComTdbVirtColumnCommentInfo : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtColumnCommentInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtColumnCommentInfo);}
+
+  const char *columnName;
+  const char *columnComment;
+};
+
+class ComTdbVirtObjCommentInfo : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtObjCommentInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtObjCommentInfo);}
+
+  Int64                         objectUid;
+  const char                   *objectComment;
+
+  Int32                         numColumnComment;
+  ComTdbVirtColumnCommentInfo * columnCommentArray;
+
+  Int32                         numIndexComment;
+  ComTdbVirtIndexCommentInfo  * indexCommentArray;
+};
+
+
+
 #endif /* COMTDB_H */
 
 

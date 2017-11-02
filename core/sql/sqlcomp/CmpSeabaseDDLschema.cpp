@@ -187,8 +187,8 @@ char schemaObjectLit[3] = {0};
          break;
       } 
    }
-   
-   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
+
+   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                catalogName.data(), quotedSchName.data(), quotedObjName.data(),
                schemaObjectLit,
@@ -445,7 +445,29 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += catalogName.data();
    output += "\".\"";
    output += schemaName.data();
-   
+// Disaply Comment of schema
+    {
+      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
+      cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo);
+
+      if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+        {
+          outlines.push_back(" ");
+
+          output = "COMMENT ON SCHEMA ";
+          output += catalogName.data();
+          output += ".";
+          output += schemaName.data();
+          output += " IS '";
+          output += objCommentInfo->objectComment;
+          output += "' ;";
+ 
+          outlines.push_back(output.data());
+
+        }
+
+    }
+
 // AUTHORIZATION clause is rarely used, but include it for replay.
    output += "\" AUTHORIZATION \"";
    output += username;

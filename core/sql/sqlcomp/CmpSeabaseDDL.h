@@ -253,6 +253,10 @@ class CmpSeabaseDDL
 				    const ComObjectType objType,
 				    NABoolean includeInvalidDefs = FALSE);
 
+  short getSeabaseObjectComment(Int64 object_uid, 
+	                            enum ComObjectType object_type, 
+	                            ComTdbVirtObjCommentInfo * & comment_info);
+
   short getObjectOwner(ExeCliInterface *cliInterface,
                         const char * catName,
                         const char * schName,
@@ -1404,6 +1408,10 @@ protected:
 
   void dropSeabaseAuthorization(ExeCliInterface *cliInterface, 
                                 NABoolean doCleanup = FALSE);
+
+  void doSeabaseCommentOn(StmtDDLCommentOn *commentOnNode,
+					 NAString &currCatName, 
+					 NAString &currSchName);
 
   NABoolean insertPrivMgrInfo(const Int64 objUID,
                               const NAString &objName,

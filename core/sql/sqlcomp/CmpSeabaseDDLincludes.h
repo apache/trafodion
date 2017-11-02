@@ -69,6 +69,7 @@
 #include "StmtDDLRegisterComponent.h"
 #include "StmtDDLCleanupObjects.h"
 #include "StmtDDLRegOrUnregHive.h"
+#include "StmtDDLCommentOn.h"
 
 #include "ElemDDLHbaseOptions.h"
 #include "ElemDDLParamDefArray.h"
