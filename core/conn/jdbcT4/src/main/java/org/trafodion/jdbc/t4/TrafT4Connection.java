@@ -1851,13 +1851,19 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 
 	public Object unwrap(Class iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return iface.cast(this);
+		} catch (ClassCastException cce) {
+			throw TrafT4Messages.createSQLException(props_, this.getLocale(), "unable_unwrap", iface.toString());
+		}
 	}
 
 	public boolean isWrapperFor(Class iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+		if (_isClosed() == true) {
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
+		} else {
+			return iface.isInstance(this);
+		}
 	}
 
 	public Clob createClob() throws SQLException {
