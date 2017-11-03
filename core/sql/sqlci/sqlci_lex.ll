@@ -161,6 +161,7 @@ B			[ \t\n]+
 [Cc][Oo][Mm][Mm][Aa][Nn][Dd]           return_IDENT_or_TOKEN(COMMANDStoken,0);
 [Cc][Oo][Mm][Mm][Aa][Nn][Dd][Ss]       return_IDENT_or_TOKEN(COMMANDStoken,0);
 [Cc][Oo][Mm][Mm][Ii][Tt]               return_IDENT_or_TOKEN(COMMIT, 0);
+[Cc][Oo][Mm][Mm][Ee][Nn][Tt]       return_IDENT_or_TOKEN(COMMENTtoken, 0);
 [Cc][Oo][Nn][Tt][Rr][Oo][Ll]	       return_IDENT_or_TOKEN(CONTROL, 0);
 [Cc][Oo][Nn][Tt][Rr][Oo][Ll][Ss]       return_IDENT_or_TOKEN(CONTROL, 0);
 [Cc][Qq][Dd]	                       return_IDENT_or_TOKEN(CONTROL, 0);
