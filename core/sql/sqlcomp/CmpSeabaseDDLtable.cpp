@@ -12948,12 +12948,9 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
   Lng32 cliRC = 0;
 
   char query[4000];
-
   comment_info = NULL;
 
-
-  ExeCliInterface cliInterface(STMTHEAP, 
-                               NULL, NULL, 
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   //get object comment
@@ -12973,7 +12970,7 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
   if (objQueue->numEntries() == 1)
     {
       objQueue->position();
-      
+
       OutputInfo * vi = (OutputInfo*)objQueue->getNext(); 
 
       comment_info = new(STMTHEAP) ComTdbVirtObjCommentInfo[1];
@@ -13033,7 +13030,10 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
             indexComment.indexComment = (char*) oi->get(1);
           }
        }
+    }
 
+  if (COM_BASE_TABLE_OBJECT == object_type || COM_VIEW_OBJECT == object_type)
+    {
       //get column comment of table
       str_sprintf(query, "select COLUMN_NAME, COMMENT from %s.\"%s\".%s where OBJECT_UID = %ld and comment <> '' order by COLUMN_NUMBER ;",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS, object_uid);

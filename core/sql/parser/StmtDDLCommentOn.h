@@ -65,6 +65,7 @@ public:
     COMMENT_ON_TYPE_LIBRARY,
     COMMENT_ON_TYPE_PROCEDURE,
     COMMENT_ON_TYPE_FUNCTION,
+    COMMENT_ON_TYPE_SEQUENCE,
     COMMENT_ON_TYPE_UNKNOWN
   };
 
@@ -100,6 +101,7 @@ public:
   inline const NAString getObjectName() const;
   inline const NAString &getComment() const { return comment_; }
   inline const NAString &getColName() const { return colRef_->getColRefNameObj().getColName(); }
+  inline NABoolean getIsViewCol() { return isViewCol_; }
 
 
   inline Int32 getVersion() {return 1;}
@@ -116,7 +118,8 @@ private:
 
   enum COMMENT_ON_TYPES  type_;
   QualifiedName          objectName_;
-  ColReference        * colRef_;
+  ColReference         * colRef_;
+  NABoolean              isViewCol_;
 
   const NAString       & comment_;
 

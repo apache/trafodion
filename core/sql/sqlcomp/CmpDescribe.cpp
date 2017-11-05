@@ -3062,7 +3062,7 @@ short CmpDescribeSeabaseTable (
       outputLongLine(*space, viewtext, 0);
 
       //display comment for VIEW
-      if (objectUID > 0/* && COMMENT_CQD*/)
+      if (objectUID > 0)
         {
           if (cmpSBD.switchCompiler())
             {
@@ -3086,6 +3086,17 @@ short CmpDescribeSeabaseTable (
                              objCommentInfo->objectComment);
                 outputLine(*space, buf, 0);
               }
+
+              //display Column COMMENT statements
+              outputLine(*space, "", 0);
+              for (int idx = 0; idx < objCommentInfo->numColumnComment; idx++)
+                {
+                  sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
+                           tableName.data(),
+                           objCommentInfo->columnCommentArray[idx].columnName,
+                           objCommentInfo->columnCommentArray[idx].columnComment);
+                   outputLine(*space, buf, 0);
+                }
             }
 
           cmpSBD.switchBackCompiler();

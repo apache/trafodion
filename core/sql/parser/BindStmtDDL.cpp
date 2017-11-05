@@ -2577,7 +2577,7 @@ StmtDDLAlterUser::bindNode(BindWA * pBindWA)
 }
 
 // -----------------------------------------------------------------------
-// definition of method bindNode() for class StmtDDLCreateLibrary
+// definition of method bindNode() for class StmtDDLCommentOn
 // -----------------------------------------------------------------------
 
 ExprNode *
@@ -2610,6 +2610,8 @@ StmtDDLCommentOn::bindNode(BindWA * pBindWA)
 
               return this;
             }
+
+          isViewCol_ = (naTable->getViewText() ? TRUE : FALSE);
 
           const NAColumnArray &nacolArr = naTable->getNAColumnArray();
           const NAColumn * nacol = nacolArr.getColumn(getColName());

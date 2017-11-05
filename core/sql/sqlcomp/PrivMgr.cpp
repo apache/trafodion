@@ -483,7 +483,7 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::SHOW: return "SW";
       case SQLOperation::UNREGISTER_HIVE_OBJECT: return "UH";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
-	  case SQLOperation::COMMENT: return "CO";
+      case SQLOperation::COMMENT: return "CO";
       default:
          return "  ";   
    }

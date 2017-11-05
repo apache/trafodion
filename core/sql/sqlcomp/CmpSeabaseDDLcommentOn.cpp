@@ -74,7 +74,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   Lng32 retcode;
 
   enum ComObjectType enMDObjType = COM_UNKNOWN_OBJECT;
-  
+
   ComObjectName objectName(commentOnNode->getObjectName());
   ComAnsiNamePart currCatAnsiName(currCatName);
   ComAnsiNamePart currSchAnsiName(currSchName);
@@ -87,9 +87,16 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
         case StmtDDLCommentOn::COMMENT_ON_TYPE_TABLE:
             enMDObjType = COM_BASE_TABLE_OBJECT;
             break;
-    
+
         case StmtDDLCommentOn::COMMENT_ON_TYPE_COLUMN:
-            enMDObjType = COM_BASE_TABLE_OBJECT;
+            if (TRUE == commentOnNode->getIsViewCol())
+              {
+                enMDObjType = COM_VIEW_OBJECT;
+              }
+            else
+              {
+                enMDObjType = COM_BASE_TABLE_OBJECT;
+              }
             break;
 
         case StmtDDLCommentOn::COMMENT_ON_TYPE_INDEX:
@@ -113,6 +120,9 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
             enMDObjType = COM_USER_DEFINED_ROUTINE_OBJECT;
             break;
 
+        case StmtDDLCommentOn::COMMENT_ON_TYPE_SEQUENCE:
+            enMDObjType = COM_SEQUENCE_GENERATOR_OBJECT;
+
         default:
             break;
 
@@ -127,25 +137,9 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
                                        CmpCommon::context()->sqlSession()->getParentQid());
   Int64 objUID = 0;
-  Int32 objectOwnerID = SUPER_USER;
-  Int32 schemaOwnerID = SUPER_USER;
+  Int32 objectOwnerID = ROOT_USER_ID;
+  Int32 schemaOwnerID = ROOT_USER_ID;
   Int64 objectFlags = 0;
-
-  // Verify that the requester has COMMENT privilege.
-  if (isAuthorizationEnabled() && !ComUser::isRootUserID())
-    {
-      NAString privMgrMDLoc;
-      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
-
-      PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()), CmpCommon::diags());
-
-      if (!componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(), SQLOperation::COMMENT, true))
-      {
-         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         processReturn ();
-         return;
-      }
-    }
 
   //get UID of object
   objUID = getObjectInfo(&cliInterface,
@@ -162,6 +156,16 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       processReturn();
       return;
     }
+
+  // Verify that the requester has COMMENT privilege.
+  if (!isDDLOperationAuthorized(SQLOperation::COMMENT, schemaOwnerID, schemaOwnerID))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      processReturn ();
+      return;
+    }
+
+  //check for overflow, but how i can get type size of COMMENT column?
 
   // add, remove, change comment of object/column
   const NAString & comment = commentOnNode->getComment();
@@ -186,7 +190,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
                   comObjectTypeLit(enMDObjType));
       cliRC = cliInterface.executeImmediate(query);
     }
-
 
   NADELETEBASIC(query, STMTHEAP);
   if (cliRC < 0)

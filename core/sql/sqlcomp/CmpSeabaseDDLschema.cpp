@@ -453,7 +453,7 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    
    outlines.push_back(output.data());
    
-   // Disaply Comment of schema
+   // Display Comment of schema
     {
       ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
       cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo);

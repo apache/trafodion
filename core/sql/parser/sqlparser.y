@@ -33266,6 +33266,10 @@ comment_on_object_types : TOK_TABLE
                {
                  $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_FUNCTION;
                }
+             | TOK_SEQUENCE
+               {
+                 $$ = StmtDDLCommentOn::COMMENT_ON_TYPE_SEQUENCE;
+               }
                
                
 
