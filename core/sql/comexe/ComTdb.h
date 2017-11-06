@@ -1167,6 +1167,13 @@ class ComTdbVirtObjCommentInfo : public ComTdbVirtTableBase
     : ComTdbVirtTableBase()
     {
       init();
+
+	  objectUid = 0;
+	  objectComment = NULL;
+	  numColumnComment = 0;
+	  columnCommentArray = NULL;
+	  numIndexComment = 0;
+	  indexCommentArray = NULL;
     }
 
   virtual Int32 size() { return sizeof(ComTdbVirtObjCommentInfo);}

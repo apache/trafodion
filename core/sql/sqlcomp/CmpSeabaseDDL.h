@@ -255,7 +255,8 @@ class CmpSeabaseDDL
 
   short getSeabaseObjectComment(Int64 object_uid, 
 	                            enum ComObjectType object_type, 
-	                            ComTdbVirtObjCommentInfo * & comment_info);
+	                            ComTdbVirtObjCommentInfo & comment_info,
+	                            CollHeap * heap);
 
   short getObjectOwner(ExeCliInterface *cliInterface,
                         const char * catName,

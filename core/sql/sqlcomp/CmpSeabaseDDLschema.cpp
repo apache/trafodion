@@ -452,13 +452,13 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += "\";";
    
    outlines.push_back(output.data());
-   
+
    // Display Comment of schema
     {
-      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
-      cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo);
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP);
 
-      if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+      if (objCommentInfo.objectComment != NULL)
         {
           outlines.push_back(" ");
 
@@ -467,13 +467,11 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
           output += ".";
           output += schemaName.data();
           output += " IS '";
-          output += objCommentInfo->objectComment;
+          output += objCommentInfo.objectComment;
           output += "' ;";
- 
+
           outlines.push_back(output.data());
-
         }
-
     }
 
    cmpSBD.switchBackCompiler();

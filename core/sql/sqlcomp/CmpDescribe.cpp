@@ -3070,33 +3070,39 @@ short CmpDescribeSeabaseTable (
               return -1;
             }
 
-            ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
-            cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo);
+          ComTdbVirtObjCommentInfo objCommentInfo;
+          cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo, heap);
 
-          if (objCommentInfo != NULL)
+          //display VIEW COMMENT statements
+          if (objCommentInfo.objectComment != NULL)
             {
               //new line
               outputLine(*space, "", 0);
 
-              //display VIEW COMMENT statements
-              if (objCommentInfo->objectComment != NULL)
-              {
-                sprintf(buf, "COMMENT ON VIEW %s IS '%s' ;",
-                             tableName.data(),
-                             objCommentInfo->objectComment);
-                outputLine(*space, buf, 0);
-              }
+              sprintf(buf, "COMMENT ON VIEW %s IS '%s' ;",
+                           tableName.data(),
+                           objCommentInfo.objectComment);
+              outputLine(*space, buf, 0);
+            }
 
+          if (objCommentInfo.numColumnComment > 0 && objCommentInfo.columnCommentArray != NULL)
+            {
               //display Column COMMENT statements
               outputLine(*space, "", 0);
-              for (int idx = 0; idx < objCommentInfo->numColumnComment; idx++)
+              for (int idx = 0; idx < objCommentInfo.numColumnComment; idx++)
                 {
                   sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
                            tableName.data(),
-                           objCommentInfo->columnCommentArray[idx].columnName,
-                           objCommentInfo->columnCommentArray[idx].columnComment);
+                           objCommentInfo.columnCommentArray[idx].columnName,
+                           objCommentInfo.columnCommentArray[idx].columnComment);
                    outputLine(*space, buf, 0);
                 }
+            }
+
+          //do a comment info memory clean
+          if (objCommentInfo.columnCommentArray != NULL)
+            {
+              NADELETEBASIC(objCommentInfo.columnCommentArray, heap);
             }
 
           cmpSBD.switchBackCompiler();
@@ -3835,44 +3841,57 @@ short CmpDescribeSeabaseTable (
           return -1;
         }
  
-      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
-      cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo);
- 
-      if (objCommentInfo != NULL)
-        {
-          //new line
-          outputLine(*space, "", 0);
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap);
 
-          //display Table COMMENT statements
-          if (objCommentInfo->objectComment != NULL)
-            {
-               sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
-                       objType == COM_BASE_TABLE_OBJECT? "TABLE" : "VIEW",
-                       tableName.data(),
-                       objCommentInfo->objectComment);
-               outputLine(*space, buf, 0);
-            }
- 
-          //display Column COMMENT statements
+      //display Table COMMENT statements
+      if (objCommentInfo.objectComment != NULL)
+        {
+           //new line
+           outputLine(*space, "", 0);
+
+           sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
+                   objType == COM_BASE_TABLE_OBJECT? "TABLE" : "VIEW",
+                   tableName.data(),
+                   objCommentInfo.objectComment);
+           outputLine(*space, buf, 0);
+        }
+
+      //display Column COMMENT statements
+      if (objCommentInfo.numColumnComment > 0 && objCommentInfo.columnCommentArray != NULL)
+        {
           outputLine(*space, "", 0);
-          for (int idx = 0; idx < objCommentInfo->numColumnComment; idx++)
+          for (int idx = 0; idx < objCommentInfo.numColumnComment; idx++)
             {
               sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
                        tableName.data(),
-                       objCommentInfo->columnCommentArray[idx].columnName,
-                       objCommentInfo->columnCommentArray[idx].columnComment);
+                       objCommentInfo.columnCommentArray[idx].columnName,
+                       objCommentInfo.columnCommentArray[idx].columnComment);
                outputLine(*space, buf, 0);
             }
+        }
 
-          //display Index COMMENT statements
+      //display Index COMMENT statements
+      if (objCommentInfo.numIndexComment > 0 && objCommentInfo.indexCommentArray != NULL)
+        {
           outputLine(*space, "", 0);
-          for (int idx = 0; idx < objCommentInfo->numIndexComment; idx++)
+          for (int idx = 0; idx < objCommentInfo.numIndexComment; idx++)
             {
               sprintf(buf,  "COMMENT ON INDEX %s IS '%s' ;",
-                       objCommentInfo->indexCommentArray[idx].indexFullName,
-                       objCommentInfo->indexCommentArray[idx].indexComment);
+                       objCommentInfo.indexCommentArray[idx].indexFullName,
+                       objCommentInfo.indexCommentArray[idx].indexComment);
                outputLine(*space, buf, 0);
             }
+        }
+
+      //do a comment info memory clean
+      if (objCommentInfo.columnCommentArray != NULL)
+        {
+          NADELETEBASIC(objCommentInfo.columnCommentArray, heap);
+        }
+      if (objCommentInfo.indexCommentArray != NULL)
+        {
+          NADELETEBASIC(objCommentInfo.indexCommentArray, heap);
         }
 
       cmpSBD.switchBackCompiler();
@@ -4239,17 +4258,17 @@ char buf[1000];
          return -1;
        }
 
-     ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
-     cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo);
+     ComTdbVirtObjCommentInfo objCommentInfo;
+     cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo, heap);
 
-     if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+     if (objCommentInfo.objectComment != NULL)
        {
          //new line
          outputLine(*space, "", 0);
 
          sprintf(buf,  "COMMENT ON LIBRARY %s IS '%s' ;",
                        cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
-                       objCommentInfo->objectComment);
+                       objCommentInfo.objectComment);
          outputLine(*space, buf, 0);
 
        }
@@ -4780,10 +4799,10 @@ short CmpDescribeRoutine (const CorrName   & cn,
          return -1;
       }
 
-      ComTdbVirtObjCommentInfo * objCommentInfo = NULL;
-      cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo);
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo, heap);
      
-      if (objCommentInfo != NULL && objCommentInfo->objectComment != NULL)
+      if (objCommentInfo.objectComment != NULL)
         {
           //new line
           outputLine(*space, "", 0);
@@ -4791,7 +4810,7 @@ short CmpDescribeRoutine (const CorrName   & cn,
           sprintf(buf,  "COMMENT ON %s %s IS '%s' ;",
                         routine->getRoutineType() == COM_PROCEDURE_TYPE ? "PROCEDURE" : "FUNCTION",
                         cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
-                        objCommentInfo->objectComment);
+                        objCommentInfo.objectComment);
           outputLine(*space, buf, 0);
         }
      
