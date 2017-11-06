@@ -456,7 +456,11 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    // Display Comment of schema
     {
       ComTdbVirtObjCommentInfo objCommentInfo;
-      cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP);
+      if (cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
 
       if (objCommentInfo.objectComment != NULL)
         {

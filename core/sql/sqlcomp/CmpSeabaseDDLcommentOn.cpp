@@ -66,6 +66,122 @@
 #include "ComUser.h"
 
 
+short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid, 
+                                                    enum ComObjectType object_type, 
+                                                    ComTdbVirtObjCommentInfo & comment_info,
+                                                    CollHeap * heap)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char query[4000];
+
+  comment_info.objectUid = object_uid;
+  comment_info.objectComment = NULL;
+  comment_info.numColumnComment = 0;
+  comment_info.columnCommentArray = NULL;
+  comment_info.numIndexComment = 0;
+  comment_info.indexCommentArray = NULL;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                               CmpCommon::context()->sqlSession()->getParentQid());
+
+  //get object comment
+  sprintf(query, "select comment from %s.\"%s\".%s where object_uid = %ld and object_type = '%s' and comment <> '' ;",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              object_uid, comObjectTypeLit(object_type));
+
+  Queue * objQueue = NULL;
+  cliRC = cliInterface.fetchAllRows(objQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      processReturn();
+      return -1;
+    }
+
+  //We should have only 1 comment for object
+  if (objQueue->numEntries() > 0)
+    {
+      objQueue->position();
+      OutputInfo * vi = (OutputInfo*)objQueue->getNext();
+      comment_info.objectComment = (char*)vi->get(0);
+    }
+
+  //get index comments of table
+  if (COM_BASE_TABLE_OBJECT == object_type)
+    {
+      sprintf(query, "select CATALOG_NAME||'.'||SCHEMA_NAME||'.'||OBJECT_NAME, COMMENT "
+                         "from %s.\"%s\".%s as O, %s.\"%s\".%s as I "
+                         "where I.BASE_TABLE_UID = %ld and O.OBJECT_UID = I.INDEX_UID and O.comment <> '' ;",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+                  object_uid);
+
+      Queue * indexQueue = NULL;
+      cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return -1;
+        }
+
+      if (indexQueue->numEntries() > 0)
+        {
+          comment_info.numIndexComment = indexQueue->numEntries();
+          comment_info.indexCommentArray = new(heap) ComTdbVirtIndexCommentInfo[comment_info.numIndexComment];
+
+          indexQueue->position();
+          for (Lng32 idx = 0; idx < comment_info.numIndexComment; idx++)
+          {
+            OutputInfo * oi = (OutputInfo*)indexQueue->getNext(); 
+            ComTdbVirtIndexCommentInfo &indexComment = comment_info.indexCommentArray[idx];
+
+            // get the index full name
+            indexComment.indexFullName = (char*) oi->get(0);
+            indexComment.indexComment = (char*) oi->get(1);
+          }
+       }
+    }
+
+  //get column comments of table and view
+  if (COM_BASE_TABLE_OBJECT == object_type || COM_VIEW_OBJECT == object_type)
+    {
+      sprintf(query, "select COLUMN_NAME, COMMENT from %s.\"%s\".%s where OBJECT_UID = %ld and comment <> '' order by COLUMN_NUMBER ;",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS, object_uid);
+
+      Queue * colQueue = NULL;
+      cliRC = cliInterface.fetchAllRows(colQueue, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return -1;
+        }
+
+      if (colQueue->numEntries() > 0)
+        {
+          comment_info.numColumnComment = colQueue->numEntries();
+          comment_info.columnCommentArray = new(heap) ComTdbVirtColumnCommentInfo[comment_info.numColumnComment];
+
+          colQueue->position();
+          for (Lng32 idx = 0; idx < comment_info.numColumnComment; idx++)
+            {
+              OutputInfo * oi = (OutputInfo*)colQueue->getNext(); 
+              ComTdbVirtColumnCommentInfo &colComment = comment_info.columnCommentArray[idx];
+
+              // get the column name
+              colComment.columnName = (char*) oi->get(0);
+              colComment.columnComment = (char*) oi->get(1);
+            }
+       }
+    }
+
+  return 0;
+}
+
+
 void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
                                                 NAString &currCatName, 
                                                 NAString &currSchName)
@@ -173,7 +289,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
   if (StmtDDLCommentOn::COMMENT_ON_TYPE_COLUMN == commentObjectType)
     {
-      str_sprintf(query, "update %s.\"%s\".%s set comment = '%s' where object_uid = %ld and column_name = '%s' ",
+      sprintf(query, "update %s.\"%s\".%s set comment = '%s' where object_uid = %ld and column_name = '%s' ",
                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                      comment.data(),
                      objUID,
@@ -183,7 +299,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
     }
   else
     {
-      str_sprintf(query, "update %s.\"%s\".%s set comment = '%s' where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+      sprintf(query, "update %s.\"%s\".%s set comment = '%s' where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                   comment.data(),
                   catalogNamePart.data(), schemaNamePart.data(), objNamePart.data(),

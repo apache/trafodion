@@ -3066,12 +3066,16 @@ short CmpDescribeSeabaseTable (
         {
           if (cmpSBD.switchCompiler())
             {
-              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
               return -1;
             }
 
           ComTdbVirtObjCommentInfo objCommentInfo;
-          cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo, heap);
+          if (cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo, heap))
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              return -1;
+            }
 
           //display VIEW COMMENT statements
           if (objCommentInfo.objectComment != NULL)
@@ -3100,10 +3104,7 @@ short CmpDescribeSeabaseTable (
             }
 
           //do a comment info memory clean
-          if (objCommentInfo.columnCommentArray != NULL)
-            {
-              NADELETEBASIC(objCommentInfo.columnCommentArray, heap);
-            }
+          NADELETEARRAY(objCommentInfo.columnCommentArray, objCommentInfo.numColumnComment, ComTdbVirtColumnCommentInfo, heap);
 
           cmpSBD.switchBackCompiler();
         }
@@ -3837,12 +3838,16 @@ short CmpDescribeSeabaseTable (
 
       if (cmpSBD.switchCompiler())
         {
-          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
           return -1;
         }
  
       ComTdbVirtObjCommentInfo objCommentInfo;
-      cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap);
+      if (cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
 
       //display Table COMMENT statements
       if (objCommentInfo.objectComment != NULL)
@@ -3885,14 +3890,8 @@ short CmpDescribeSeabaseTable (
         }
 
       //do a comment info memory clean
-      if (objCommentInfo.columnCommentArray != NULL)
-        {
-          NADELETEBASIC(objCommentInfo.columnCommentArray, heap);
-        }
-      if (objCommentInfo.indexCommentArray != NULL)
-        {
-          NADELETEBASIC(objCommentInfo.indexCommentArray, heap);
-        }
+      NADELETEARRAY(objCommentInfo.columnCommentArray, objCommentInfo.numColumnComment, ComTdbVirtColumnCommentInfo, heap);
+      NADELETEARRAY(objCommentInfo.indexCommentArray, objCommentInfo.numIndexComment, ComTdbVirtIndexCommentInfo, heap);
 
       cmpSBD.switchBackCompiler();
     }
@@ -4014,11 +4013,44 @@ short CmpDescribeSequence(
       (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
     displayPrivilegeGrants = FALSE;
 
+  int64_t objectUID = (int64_t)naTable->objectUid().get_value();
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
+  //display comment
+  if (objectUID > 0)
+    {
+      if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
+ 
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(objectUID, COM_SEQUENCE_GENERATOR_OBJECT, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
+ 
+      if (objCommentInfo.objectComment != NULL)
+        {
+          //new line
+          outputLine(*space, "", 0);
+ 
+          sprintf(buf,  "COMMENT ON SEQUENCE %s IS '%s' ;",
+                        cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE).data(),
+                        objCommentInfo.objectComment);
+          outputLine(*space, buf, 0);
+        }
+ 
+      cmpSBD.switchBackCompiler();
+    }
+
+
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
   {
     // now get the grant stmts
-    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
     NAString privMDLoc;
     CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
     NAString privMgrMDLoc;
@@ -4029,7 +4061,6 @@ short CmpDescribeSequence(
 
     std::string privilegeText;
     PrivMgrObjectInfo objectInfo(naTable); 
-    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
     if (cmpSBD.switchCompiler())
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
@@ -4259,7 +4290,11 @@ char buf[1000];
        }
 
      ComTdbVirtObjCommentInfo objCommentInfo;
-     cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo, heap);
+     if (cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo, heap))
+       {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+         return -1;
+       }
 
      if (objCommentInfo.objectComment != NULL)
        {
@@ -4800,7 +4835,12 @@ short CmpDescribeRoutine (const CorrName   & cn,
       }
 
       ComTdbVirtObjCommentInfo objCommentInfo;
-      cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo, heap);
+      if (cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo, heap))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          return -1;
+        }
+
      
       if (objCommentInfo.objectComment != NULL)
         {
