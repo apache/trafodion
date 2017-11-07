@@ -73,14 +73,14 @@ DATATYPE_TABLE gSQLDatatypeMap[] =
 	{SQL_LONGVARCHAR,				SQL_LONGVARCHAR,	0,							SQL_DESC_LENGTH,	0,					SQL_DESC_LENGTH,	SQL_DESC_LENGTH,				SQL_C_CHAR,				"LONG VARCHAR"},
 	{SQL_DECIMAL,					SQL_DECIMAL,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		SQL_DESC_PRECISION, SQL_DESC_PRECISION,				SQL_C_CHAR,				"DECIMAL"},
 	{SQL_NUMERIC,					SQL_NUMERIC,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		SQL_DESC_PRECISION, SQL_DESC_PRECISION,				SQL_C_CHAR,				"NUMERIC"},
+	{SQL_TINYINT,					SQL_TINYINT,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		4,					sizeof(CHAR),					SQL_C_TINYINT,			"TINYINT"},
 	{SQL_SMALLINT,					SQL_SMALLINT,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		6,					sizeof(SHORT),					SQL_C_SHORT,			"SMALLINT"},
 	{SQL_INTEGER,					SQL_INTEGER,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		11,					sizeof(INT),					SQL_C_LONG,				"INTEGER"},
+	{SQL_BIGINT,					SQL_BIGINT,			0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		20,					sizeof(__int64),				SQL_C_SBIGINT,			"BIGINT"},
 	{SQL_REAL,						SQL_REAL,			0,							SQL_DESC_PRECISION,	0,					13,					sizeof(FLOAT),					SQL_C_FLOAT,			"REAL"},
 	{SQL_FLOAT,						SQL_FLOAT,			0,							SQL_DESC_PRECISION,	0,					22,					sizeof(DOUBLE),					SQL_C_DOUBLE,			"FLOAT"},
 	{SQL_DOUBLE,					SQL_DOUBLE,			0,							SQL_DESC_PRECISION,	0,					22,					sizeof(DOUBLE),					SQL_C_DOUBLE,			"DOUBLE PRECISION"},
 	{SQL_BIT,						SQL_BIT,			0,							SQL_DESC_LENGTH,	0,					1,					sizeof(SCHAR),					SQL_C_BIT,				"BIT"},
-	{SQL_TINYINT,					SQL_TINYINT,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		4,					sizeof(CHAR),					SQL_C_TINYINT,			"TINYINT"},
-	{SQL_BIGINT,					SQL_BIGINT,			0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		20,					20,								SQL_C_SBIGINT,			"BIGINT"},
 	{SQL_BINARY,					SQL_BINARY,			0,							SQL_DESC_LENGTH,	0,					-1,					SQL_DESC_LENGTH,				SQL_C_BINARY,			"BINARY"},
 	{SQL_VARBINARY,					SQL_VARBINARY,		0,							SQL_DESC_LENGTH,	0,					-1,					SQL_DESC_LENGTH,				SQL_C_BINARY,			"VARBINARY"},
 	{SQL_LONGVARBINARY,				SQL_LONGVARBINARY,	0,							SQL_DESC_LENGTH,	0,					-1,					SQL_DESC_LENGTH,				SQL_C_BINARY,			"LONG VARBINARY"},
@@ -1055,6 +1055,106 @@ bool ctoi64(char* string, __int64& out, bool* truncation)
 	}
 
 	out = _atoi64(buff);
+	free (buff);
+	return true;
+}
+unsigned __int64 _atoui64( const char *s )
+{
+	unsigned __int64 n = 0;
+	char* t = (char*)s;
+	char c;
+
+	while(*t != 0)
+	{
+		c = *t++;
+		if (c < '0' || c > '9') continue;
+		n = n * 10 +c - '0';
+	}
+	return n;
+}
+
+
+bool ctoui64(char* string,unsigned  __int64& out, bool* truncation)
+{
+	int len;
+	out = 0;
+	char* buff;
+	double dTmp;
+	char *errorCharPtr = NULL;
+	*truncation = false; // initialize anyway
+
+	buff = (char*)malloc(100 + 1);
+	if (buff == NULL ) return false;
+	memset(buff,0,100 + 1);
+	strncpy( buff, string, 100);
+
+	trim(buff);
+	len = strlen(buff);
+	if (len != (int)strspn(buff, "+1234567890"))
+	{
+		if (len != (int)strspn(buff, "+1234567890.eE"))
+		{
+			free (buff);
+			return false;
+		}
+		else
+		{
+			dTmp = strtod(buff, &errorCharPtr);
+			if (errno == ERANGE || (strlen(errorCharPtr) > 0))
+			{
+				free (buff);
+				return false;
+			}
+			sprintf(buff,"%lf",dTmp);
+			rSup( buff );
+			char* cptr = strchr(buff,'.');
+			if (cptr != NULL) // data truncation: JoyJ
+			{
+		           *cptr = 0;
+			   if ((++cptr != NULL) && (_atoi64(cptr) > 0)) //No truncation if '0's after '.' are truncated.
+				*truncation = true;
+			}
+			len = strlen(buff);
+		}
+	}
+
+	if (buff[0] == '+')
+	{
+		if (len - 1 > 20 )
+		{
+			free (buff);
+			return false;
+		}
+		if (len - 1 == 20)
+		{
+			if (strcmp( buff, "+18446744073709551615") > 0 )
+			{
+				free (buff);
+				return false;
+			}
+		}
+	}
+	else
+	{
+	//now there should't be any "+.eE" in "buff"(other than the first byte): JoyJ
+	    if ((len-1) != (int)strspn(buff+1, "1234567890"))
+			return false;
+		if (len > 20 )
+		{
+			free (buff);
+			return false;
+		}
+		if (len == 20)
+		{
+			if (strcmp( buff, "18446744073709551615") > 0 )
+			{
+				free (buff);
+				return false;
+			}
+		}
+	}
+
+	out = _atoui64(buff);
 	free (buff);
 	return true;
 }
