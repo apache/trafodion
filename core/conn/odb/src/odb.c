@@ -8426,31 +8426,31 @@ static void Oload2(int eid)
             len-- ;
         }
         bc = buff ;                                             /* Initialize current field position */
-        size_t i = 0;
-        while (i < len) {
+        size_t currentFiledPos = 0;
+        while (currentFiledPos < len) {
             ifl = 0;
-            for (; i < len; ++i) {
-                if ((fg & 0001) && (fg & 0100) && (bc[i] == lfs || bc[i] == lrs)) { /* treat string qualifier before as end quote */
+            for (; currentFiledPos < len; ++currentFiledPos) {
+                if ((fg & 0001) && (fg & 0100) && (bc[currentFiledPos] == lfs || bc[currentFiledPos] == lrs)) { /* treat string qualifier before as end quote */
                     fg &= ~0101;
                 }
-                if (bc[i] == lfs && !(fg & 0001)) {             /* if field sep... */
+                if (bc[currentFiledPos] == lfs && !(fg & 0001)) {             /* if field sep... */
                     fg |= 0020;                                 /* set field complete flag on */
-                    ++i;
+                    ++currentFiledPos;
                     break;
                 }
-                else if (bc[i] == lrs && !(fg & 0001)) {        /* if record sep... */
+                else if (bc[currentFiledPos] == lrs && !(fg & 0001)) {        /* if record sep... */
                     fg |= 0040;                                 /* set record complete flag on */
-                    ++i;
+                    ++currentFiledPos;
                     break;
                 }
-                else if ((bc[i] == lsq) && (fg & 0001) && !(fg & 0100)) {  /* if string qualifier char and in string qualifier */
+                else if ((bc[currentFiledPos] == lsq) && (fg & 0001) && !(fg & 0100)) {  /* if string qualifier char and in string qualifier */
                     fg |= 0100;
                 }
-                else if ((bc[i] == lsq) && !(fg & 0100)) {
+                else if ((bc[currentFiledPos] == lsq) && !(fg & 0100)) {
                     fg ^= 0001;                                 /* flip quoted string flag */
                 }
                 else {                                          /* add new character to field buffer */
-                    str[ifl++] = bc[i];
+                    str[ifl++] = bc[currentFiledPos];
                     fg &= ~0100;                                /* set escape flag off */
                 }
             }
