@@ -8425,9 +8425,9 @@ static void Oload2(int eid)
             }
             len-- ;
         }
-        bc = buff ;                                             /* Initialize current field position */
-        size_t currentFiledPos = 0;
-        while (currentFiledPos < len) {
+        bc = buff ;
+
+        for (size_t currentFiledPos = 0; currentFiledPos < len;) {
             ifl = 0;
             for (; currentFiledPos < len; ++currentFiledPos) {
                 if ((fg & 0001) && (fg & 0100) && (bc[currentFiledPos] == lfs || bc[currentFiledPos] == lrs)) { /* treat string qualifier before as end quote */
