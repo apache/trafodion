@@ -151,7 +151,7 @@ EOF
 		echo "Creating file $hdrFileJ3"
 		cp -f $TMPFILEJ3 $hdrFileJ3
 	fi
-	rm -f $TMPFILE $TMPFILEJ $TMPFILEJ2 TMPFILEJ3
+	rm -f $TMPFILE $TMPFILEJ $TMPFILEJ2 $TMPFILEJ3
 }
 
 
