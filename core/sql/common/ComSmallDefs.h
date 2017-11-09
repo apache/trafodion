@@ -591,6 +591,8 @@ enum ComClusteringScheme { COM_UNKNOWN_CLUSTERING
 #define COM_MAXIMUM_NUMBER_OF_COLUMNS       20000
 #define COM_DIV_EXPR_BASE_TEXT_SUBID        20000
 
+#define COM_MAXIMUM_LENGTH_OF_COMMENT       1000
+
 enum ComColumnClass { COM_UNKNOWN_CLASS
                     , COM_SYSTEM_COLUMN
                     , COM_USER_COLUMN
@@ -660,7 +662,9 @@ enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_HBASE_COL_FAMILY_TEXT = 5,
                   COM_HBASE_SPLIT_TEXT = 6,
                   COM_STORED_DESC_TEXT = 7,
-                  COM_VIEW_REF_COLS_TEXT = 8
+                  COM_VIEW_REF_COLS_TEXT = 8,
+                  COM_OBJET_COMMENT_TEXT = COM_TABLE_COMMENT_TEXT,
+                  COM_COLUMN_COMMENT_TEXT = 9
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION

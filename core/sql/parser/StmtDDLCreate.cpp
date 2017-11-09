@@ -7180,7 +7180,8 @@ StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName
     objectName_(objName, heap),
     comment_(commentStr),
     colRef_(NULL),
-    isViewCol_(FALSE)
+    isViewCol_(FALSE),
+    colNum_(0)
 {
       
 }
@@ -7192,7 +7193,8 @@ StmtDDLCommentOn::StmtDDLCommentOn(COMMENT_ON_TYPES objType, const QualifiedName
     objectName_(objName, heap),
     colRef_(colRef),
     comment_(commentStr),
-    isViewCol_(FALSE)
+    isViewCol_(FALSE),
+    colNum_(0)
 {
       
 }

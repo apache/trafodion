@@ -2611,8 +2611,6 @@ StmtDDLCommentOn::bindNode(BindWA * pBindWA)
               return this;
             }
 
-          isViewCol_ = (naTable->getViewText() ? TRUE : FALSE);
-
           const NAColumnArray &nacolArr = naTable->getNAColumnArray();
           const NAColumn * nacol = nacolArr.getColumn(getColName());
           if (! nacol)
@@ -2624,6 +2622,8 @@ StmtDDLCommentOn::bindNode(BindWA * pBindWA)
               return this;
             }
 
+          isViewCol_ = (naTable->getViewText() ? TRUE : FALSE);
+          colNum_ = nacol->getPosition();
         }
     }
 

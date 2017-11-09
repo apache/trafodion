@@ -4599,7 +4599,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	    return NULL;
 	  }
 
-        if (isRegister)
+        if (isRegister || isCommentOn)
           {
             isHbase_ = TRUE;
           }

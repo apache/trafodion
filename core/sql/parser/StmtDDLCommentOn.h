@@ -102,6 +102,7 @@ public:
   inline const NAString &getComment() const { return comment_; }
   inline const NAString &getColName() const { return colRef_->getColRefNameObj().getColName(); }
   inline NABoolean getIsViewCol() { return isViewCol_; }
+  inline Lng32 getColNum() { return colNum_; }
 
 
   inline Int32 getVersion() {return 1;}
@@ -120,6 +121,7 @@ private:
   QualifiedName          objectName_;
   ColReference         * colRef_;
   NABoolean              isViewCol_;
+  Lng32                  colNum_;
 
   const NAString       & comment_;
 

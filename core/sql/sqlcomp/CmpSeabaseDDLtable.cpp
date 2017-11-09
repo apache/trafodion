@@ -5840,11 +5840,25 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
-  
-  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %ld and text_type = %d and sub_id > %d",
+
+  //delete comment in TEXT table for column
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld and text_type = %d and sub_id = %d ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID,
+              COM_COLUMN_COMMENT_TEXT,
+              dropColNum);
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %ld and ( text_type = %d or text_type = %d ) and sub_id > %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID,
               COM_COMPUTED_COL_TEXT,
+              COM_COLUMN_COMMENT_TEXT,
               dropColNum);
   
   cliRC = cliInterface.executeImmediate(buf);

@@ -87,9 +87,9 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
                                CmpCommon::context()->sqlSession()->getParentQid());
 
   //get object comment
-  sprintf(query, "select comment from %s.\"%s\".%s where object_uid = %ld and object_type = '%s' and comment <> '' ;",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-              object_uid, comObjectTypeLit(object_type));
+  sprintf(query, "select TEXT from %s.\"%s\".%s where TEXT_UID = %ld and TEXT_TYPE = %d and SUB_ID = %d ; ",
+                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                 object_uid, COM_OBJET_COMMENT_TEXT, 0);
 
   Queue * objQueue = NULL;
   cliRC = cliInterface.fetchAllRows(objQueue, query, 0, FALSE, FALSE, TRUE);
@@ -111,12 +111,15 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
   //get index comments of table
   if (COM_BASE_TABLE_OBJECT == object_type)
     {
-      sprintf(query, "select CATALOG_NAME||'.'||SCHEMA_NAME||'.'||OBJECT_NAME, COMMENT "
-                         "from %s.\"%s\".%s as O, %s.\"%s\".%s as I "
-                         "where I.BASE_TABLE_UID = %ld and O.OBJECT_UID = I.INDEX_UID and O.comment <> '' ;",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-                  object_uid);
+      sprintf(query, "select O.CATALOG_NAME||'.'||O.SCHEMA_NAME||'.'||O.OBJECT_NAME as INDEX_QUAL, T.TEXT "
+                        "from %s.\"%s\".%s as O, %s.\"%s\".%s as T, %s.\"%s\".%s as I "
+                        "where I.BASE_TABLE_UID = %ld and O.OBJECT_UID = I.INDEX_UID and T.TEXT_UID = O.OBJECT_UID "
+                        "  and T.TEXT_TYPE = %d and SUB_ID = %d "
+                        "order by INDEX_QUAL ; ",
+                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+                     object_uid, COM_OBJET_COMMENT_TEXT, 0);
 
       Queue * indexQueue = NULL;
       cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
@@ -148,8 +151,12 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
   //get column comments of table and view
   if (COM_BASE_TABLE_OBJECT == object_type || COM_VIEW_OBJECT == object_type)
     {
-      sprintf(query, "select COLUMN_NAME, COMMENT from %s.\"%s\".%s where OBJECT_UID = %ld and comment <> '' order by COLUMN_NUMBER ;",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS, object_uid);
+      sprintf(query, "select C.COLUMN_NAME, T.TEXT from %s.\"%s\".%s as C, %s.\"%s\".%s as T "
+                     "where C.OBJECT_UID = %ld and T.TEXT_UID = C.OBJECT_UID and T.TEXT_TYPE = %d and C.COLUMN_NUMBER = T.SUB_ID "
+                     "order by C.COLUMN_NUMBER ; ",
+                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                     object_uid, COM_COLUMN_COMMENT_TEXT);
 
       Queue * colQueue = NULL;
       cliRC = cliInterface.fetchAllRows(colQueue, query, 0, FALSE, FALSE, TRUE);
@@ -281,38 +288,59 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       return;
     }
 
-  //check for overflow, but how i can get type size of COMMENT column?
+
+  //check for overflow
+  NAString & comment = (NAString &) commentOnNode->getComment();
+  if (comment.length() > COM_MAXIMUM_LENGTH_OF_COMMENT)
+    {
+      *CmpCommon::diags() << DgSqlCode(-8402);
+      processReturn ();
+      return;
+    }
 
   // add, remove, change comment of object/column
-  const NAString & comment = commentOnNode->getComment();
-  char * query = new(STMTHEAP) char[comment.length()+1024];
+  enum ComTextType textType = COM_OBJET_COMMENT_TEXT;
+  Lng32 subID = 0;
 
   if (StmtDDLCommentOn::COMMENT_ON_TYPE_COLUMN == commentObjectType)
     {
-      sprintf(query, "update %s.\"%s\".%s set comment = '%s' where object_uid = %ld and column_name = '%s' ",
-                     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-                     comment.data(),
-                     objUID,
-                     commentOnNode->getColName().data()
-                     );
-      cliRC = cliInterface.executeImmediate(query);
-    }
-  else
-    {
-      sprintf(query, "update %s.\"%s\".%s set comment = '%s' where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                  comment.data(),
-                  catalogNamePart.data(), schemaNamePart.data(), objNamePart.data(),
-                  comObjectTypeLit(enMDObjType));
-      cliRC = cliInterface.executeImmediate(query);
+      textType = COM_COLUMN_COMMENT_TEXT;
+      subID = commentOnNode->getColNum();
     }
 
-  NADELETEBASIC(query, STMTHEAP);
+  /* Not using function updateTextTable(), because can not insert Chinese properly by function updateTextTable().
+     * For storing COMMENT in TEXT table is a temp solution, so updating TEXT table directly here.
+     * Will change this implementation until next upgrade of MD.
+     */
+  //like function updateTextTable(), delete entry first
+  cliRC = deleteFromTextTable(&cliInterface, objUID, textType, subID);
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       processReturn();
       return;
+    }
+
+  if (comment.length() > 0)
+    {
+      //add or modify comment
+      char query[2048];
+
+      str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, '%s') ; ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID, 
+              textType, 
+              subID, 
+              0,
+              comment.data());
+      cliRC = cliInterface.executeImmediate(query);
+      
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return;
+        }
     }
 
   processReturn();

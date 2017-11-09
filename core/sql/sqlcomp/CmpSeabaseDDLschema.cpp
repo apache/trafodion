@@ -1015,7 +1015,18 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
                           << DgString0(reason);
       goto label_error;
    }
-  
+
+   //Drop comment in TEXT table for schema
+   str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_TEXT,
+               schemaUID);
+   cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+     {
+       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+       goto label_error;
+     }
+
   // Everything succeeded, return
   return;
     

@@ -5277,6 +5277,19 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           return -1;
         }
+
+      // delete comment from TEXT table for library
+      str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                  objUID);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+        
+          return -1;
+        }
+
       return 0; // nothing else to do for libraries
     }
   
