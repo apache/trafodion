@@ -188,7 +188,7 @@ char schemaObjectLit[3] = {0};
       } 
    }
 
-   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0, '')",
+   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                catalogName.data(), quotedSchName.data(), quotedObjName.data(),
                schemaObjectLit,
