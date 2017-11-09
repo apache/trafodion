@@ -129,6 +129,8 @@ public class HTableClient {
 	byte[][] kvBuffer = null;
 	byte[][] rowIDs = null;
 	int[] kvsPerRow = null;
+        byte[][] kvFamArray = null;
+        byte[][] kvQualArray = null;
         static ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
@@ -1242,6 +1244,8 @@ public class HTableClient {
 			kvFamOffset = new int[numTotalCells];
 			kvTimestamp = new long[numTotalCells];
 			kvBuffer = new byte[numTotalCells][];
+                        kvFamArray = new byte[numTotalCells][];
+                        kvQualArray = new byte[numTotalCells][];
 		}
                
 		if (rowIDs == null || (rowIDs != null &&
@@ -1271,6 +1275,8 @@ public class HTableClient {
 				kvFamOffset[cellNum] = kv.getFamilyOffset();
 				kvTimestamp[cellNum] = kv.getTimestamp();
 				kvBuffer[cellNum] = kv.getValueArray();
+                                kvFamArray[cellNum] = kv.getFamilyArray();
+                                kvQualArray[cellNum] = kv.getQualifierArray();
 				colFound = true;
 			}
 		}
@@ -1282,11 +1288,11 @@ public class HTableClient {
 		if (cellsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
+				null, null, null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		else 
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
+				kvTimestamp, kvBuffer, kvFamArray, kvQualArray, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -1294,6 +1300,7 @@ public class HTableClient {
 			throws IOException {
 		int rowsReturned = 1;
 		int numTotalCells;
+
 		if (numColsInScan == 0)
 			numTotalCells = result.size();
 		else
@@ -1316,6 +1323,8 @@ public class HTableClient {
 			kvFamOffset = new int[numTotalCells];
 			kvTimestamp = new long[numTotalCells];
 			kvBuffer = new byte[numTotalCells][];
+                        kvFamArray = new byte[numTotalCells][];
+                        kvQualArray = new byte[numTotalCells][];
 		}
 		if (rowIDs == null)
 		{
@@ -1342,15 +1351,17 @@ public class HTableClient {
 			kvFamOffset[colNum] = kv.getFamilyOffset();
 			kvTimestamp[colNum] = kv.getTimestamp();
 			kvBuffer[colNum] = kv.getValueArray();
+                        kvFamArray[colNum] = kv.getFamilyArray();
+                        kvQualArray[colNum] = kv.getQualifierArray();
 		}
 		if (numColsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
+				null, null, null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		else
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
+				kvTimestamp, kvBuffer, kvFamArray, kvQualArray, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -1876,7 +1887,10 @@ public class HTableClient {
 				int[] kvQualLen, int[] kvQualOffset,
 				int[] kvFamLen, int[] kvFamOffset,
   				long[] timestamp, 
-				byte[][] kvBuffer, byte[][] rowIDs,
+				byte[][] kvBuffer, 
+                                byte[][] kvFamArray,
+                                byte[][] kvQualArray,
+                                byte[][] rowIDs,
 				int[] kvsPerRow, int numCellsReturned,
 				int rowsReturned);
 

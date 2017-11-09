@@ -3239,6 +3239,7 @@ static const char* const htcErrorEnumStr[] =
  ,"Async Hbase Operation not yet complete."
  ,"Java exception in setWriteToWal()."
  ,"Java exception in setWriteBufferSize()."
+ ,"Java exception in prepareForNextCell()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4312,7 +4313,8 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HTableClient_setResultInfo
         jintArray jKvQualLen, jintArray jKvQualOffset,
         jintArray jKvFamLen, jintArray jKvFamOffset, 
         jlongArray jTimestamp, 
-        jobjectArray jKvBuffer, jobjectArray jRowIDs,
+        jobjectArray jKvBuffer, 
+        jobjectArray jKvFamArray, jobjectArray jkvQualArray, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned)
 {
    HTableClient_JNI *htc = (HTableClient_JNI *)jniObject;
@@ -4321,7 +4323,8 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HTableClient_setResultInfo
       htc->setJavaObject(jobj);
    htc->setResultInfo(jKvValLen, jKvValOffset,
                 jKvQualLen, jKvQualOffset, jKvFamLen, jKvFamOffset,
-                jTimestamp, jKvBuffer, jRowIDs, jKvsPerRow, numCellsReturned, numRowsReturned);  
+                jTimestamp, jKvBuffer, jKvFamArray, jkvQualArray,
+                jRowIDs, jKvsPerRow, numCellsReturned, numRowsReturned);  
    return 0;
 }
 
@@ -4348,7 +4351,8 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
         jintArray jKvQualLen, jintArray jKvQualOffset,
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
-        jobjectArray jKvBuffer, jobjectArray jRowIDs,
+        jobjectArray jKvBuffer, 
+        jobjectArray jKvFamArray, jobjectArray jKvQualArray, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned)
 {
    if (numRowsReturned_ > 0)
@@ -4390,6 +4394,16 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
       }
       if (! exceptionFound) {
          jKvBuffer_ = (jobjectArray)jenv_->NewGlobalRef(jKvBuffer);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvFamArray_ = (jobjectArray)jenv_->NewGlobalRef(jKvFamArray);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvQualArray_ = (jobjectArray)jenv_->NewGlobalRef(jKvQualArray);
          if (jenv_->ExceptionCheck())
             exceptionFound = TRUE;
       }
@@ -4449,6 +4463,14 @@ void HTableClient_JNI::cleanupResultInfo()
       jenv_->DeleteGlobalRef(jKvBuffer_);
       jKvBuffer_ = NULL;
    }
+   if (jKvFamArray_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvFamArray_);
+      jKvFamArray_ = NULL;
+   }
+   if (jKvQualArray_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvQualArray_);
+      jKvQualArray_ = NULL;
+   }
    if (jRowIDs_ != NULL) {
       jenv_->DeleteGlobalRef(jRowIDs_);
       jRowIDs_ = NULL;
@@ -4457,6 +4479,16 @@ void HTableClient_JNI::cleanupResultInfo()
    {
       jenv_->DeleteGlobalRef(jba_kvBuffer_);
       jba_kvBuffer_ = NULL;
+   }
+   if (jba_kvFamArray_ != NULL)
+   {
+      jenv_->DeleteGlobalRef(jba_kvFamArray_);
+      jba_kvFamArray_ = NULL;
+   }
+   if (jba_kvQualArray_ != NULL)
+   {
+      jenv_->DeleteGlobalRef(jba_kvQualArray_);
+      jba_kvQualArray_ = NULL;
    }
    if (p_rowID_ != NULL)
    {
@@ -4473,6 +4505,7 @@ void HTableClient_JNI::cleanupResultInfo()
    cleanupDone_ = TRUE;
    return;
 }
+
 
 HTC_RetCode HTableClient_JNI::nextRow()
 {
@@ -4598,11 +4631,89 @@ void HTableClient_JNI::getResultInfo()
     prevRowCellNum_ = 0;
 }
 
+HTC_RetCode HTableClient_JNI::prepareForNextCell(int idx)
+{
+    jobject kvBufferObj;
+
+    if (jba_kvFamArray_ != NULL)
+    {
+       jenv_->DeleteGlobalRef(jba_kvFamArray_);
+       jba_kvFamArray_ = NULL;
+    }
+    kvBufferObj = jenv_->GetObjectArrayElement(jKvFamArray_, idx);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jba_kvFamArray_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jenv_->DeleteLocalRef(kvBufferObj);
+
+    if (jba_kvQualArray_ != NULL)
+    {
+       jenv_->DeleteGlobalRef(jba_kvQualArray_);
+       jba_kvQualArray_ = NULL;
+    }
+    kvBufferObj = jenv_->GetObjectArrayElement(jKvQualArray_, idx);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jba_kvQualArray_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jenv_->DeleteLocalRef(kvBufferObj);
+
+    if (jba_kvBuffer_ != NULL)
+    {
+       jenv_->DeleteGlobalRef(jba_kvBuffer_);
+       jba_kvBuffer_ = NULL;
+    }
+    kvBufferObj = jenv_->GetObjectArrayElement(jKvBuffer_, idx);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jba_kvBuffer_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
+    if (jenv_->ExceptionCheck())
+    {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
+    }
+    jenv_->DeleteLocalRef(kvBufferObj);
+
+    return HTC_OK;
+}
+
 HTC_RetCode HTableClient_JNI::getColName(int colNo,
               char **outColName, 
               short &colNameLen,
               Int64 &timestamp)
 {
+    HTC_RetCode retcode;
+
     jint kvsPerRow = p_kvsPerRow_[currentRowNum_];
     if (kvsPerRow == 0 || colNo >= kvsPerRow)
     {
@@ -4617,33 +4728,9 @@ HTC_RetCode HTableClient_JNI::getColName(int colNo,
     jint kvFamLen = p_kvFamLen_[idx];
     jint kvFamOffset = p_kvFamOffset_[idx];
 
-    // clean the kvBuffer of the previous column
-    // And get the kvBuffer for the current column
-    if (jba_kvBuffer_ != NULL)
-    {
-       jenv_->DeleteGlobalRef(jba_kvBuffer_);
-       jba_kvBuffer_ = NULL;
-    }
-    jobject kvBufferObj;
-    kvBufferObj = jenv_->GetObjectArrayElement(jKvBuffer_, idx);
-    if (jenv_->ExceptionCheck())
-    {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::getColName()", getLastError());
-      return HTC_GET_COLNAME_EXCEPTION;
-    }
-
-    jba_kvBuffer_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
-    if (jenv_->ExceptionCheck())
-    {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::getColName()", getLastError());
-      return HTC_GET_COLNAME_EXCEPTION;
-    }
-    jenv_->DeleteLocalRef(kvBufferObj);
-
+    if ((retcode = prepareForNextCell(idx)) != HTC_OK)
+       return retcode;
+   
     colNameLen = kvQualLen + kvFamLen + 1; // 1 for ':'
     char * colName;
     if (colNameAllocLen_ == 0  && colNameLen <= INLINE_COLNAME_LEN)
@@ -4659,11 +4746,11 @@ HTC_RetCode HTableClient_JNI::getColName(int colNo,
         }
         colName = colName_; 
     }
-    jenv_->GetByteArrayRegion(jba_kvBuffer_, kvFamOffset, kvFamLen, 
+    jenv_->GetByteArrayRegion(jba_kvFamArray_, kvFamOffset, kvFamLen, 
             (jbyte *)colName);
     colName[kvFamLen] = ':';
     char *temp = colName+ kvFamLen+1;
-    jenv_->GetByteArrayRegion(jba_kvBuffer_, kvQualOffset, kvQualLen, 
+    jenv_->GetByteArrayRegion(jba_kvQualArray_, kvQualOffset, kvQualLen, 
             (jbyte *)temp);
     timestamp = p_timestamp_[idx];
     *outColName = colName;
@@ -4873,33 +4960,8 @@ HTC_RetCode HTableClient_JNI::nextCell(
    jint kvFamLen = p_kvFamLen_[idx];
    jint kvFamOffset = p_kvFamOffset_[idx];
 
-   // clean the kvBuffer of the previous column
-   // And get the kvBuffer for the current column
-
-  if (jba_kvBuffer_ != NULL)
-   {
-       jenv_->DeleteGlobalRef(jba_kvBuffer_);
-       jba_kvBuffer_ = NULL;
-   }
-   jobject kvBufferObj;
-   kvBufferObj = jenv_->GetObjectArrayElement(jKvBuffer_, idx);
-   if (jenv_->ExceptionCheck())
-   {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::nextCell()", getLastError());
-      return HTC_NEXTCELL_EXCEPTION;
-   }
-
-   jba_kvBuffer_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
-   if (jenv_->ExceptionCheck())
-   {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::nextCell()", getLastError());
-      return HTC_NEXTCELL_EXCEPTION;
-   }
-   jenv_->DeleteLocalRef(kvBufferObj);
+   if ((retcode = prepareForNextCell(idx)) != HTC_OK)
+       return retcode;
 
    int colNameLen = kvQualLen + kvFamLen + 1; // 1 for ':'
    char * colName;
@@ -4916,13 +4978,13 @@ HTC_RetCode HTableClient_JNI::nextCell(
       }
       colName = colName_;
    }
-   jenv_->GetByteArrayRegion(jba_kvBuffer_, kvFamOffset, kvFamLen,
+   jenv_->GetByteArrayRegion(jba_kvFamArray_, kvFamOffset, kvFamLen,
             (jbyte *)colName);
    colName[kvFamLen] = ':';
    colFamName.val = colName;
    colFamName.len = kvFamLen; 
    char *temp = colName+ kvFamLen+1;
-   jenv_->GetByteArrayRegion(jba_kvBuffer_, kvQualOffset, kvQualLen,
+   jenv_->GetByteArrayRegion(jba_kvQualArray_, kvQualOffset, kvQualLen,
             (jbyte *)temp);
    colQualName.val = temp;
    colQualName.len = kvQualLen;
