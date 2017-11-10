@@ -115,6 +115,7 @@ typedef enum {
  ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
  ,HTC_ERROR_WRITETOWAL_EXCEPTION
  ,HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION
+ ,HTC_PREPARE_FOR_NEXTCELL_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -141,6 +142,8 @@ public:
      jKvFamOffset_ = NULL;
      jTimestamp_ = NULL;
      jKvBuffer_ = NULL;
+     jKvFamArray_ = NULL;
+     jKvQualArray_ = NULL;
      jRowIDs_ = NULL;
      jKvsPerRow_ = NULL;
      currentRowNum_ = -1;
@@ -162,6 +165,8 @@ public:
      p_kvQualOffset_ = NULL;
      p_timestamp_ = NULL;
      jba_kvBuffer_ = NULL;
+     jba_kvFamArray_ = NULL;
+     jba_kvQualArray_ = NULL;
      jba_rowID_ = NULL;
      fetchMode_ = UNKNOWN;
      p_rowID_ = NULL;
@@ -205,7 +210,8 @@ public:
         jintArray jKvQualLen, jintArray jKvQualOffset,
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
-        jobjectArray jKvBuffer, jobjectArray jRowIDs,
+        jobjectArray jKvBuffer, 
+        jobjectArray jKvFamArray, jobjectArray jKvQualArray, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned);
   void getResultInfo();
   void cleanupResultInfo();
@@ -232,6 +238,7 @@ public:
                  HbaseStr &colVal,
                  Int64 &timestamp);
   HTC_RetCode completeAsyncOperation(int timeout, NABoolean *resultArray, short resultArrayLen);
+  HTC_RetCode prepareForNextCell(int idx);
 
   //  HTC_RetCode codeProcAggrGetResult();
 
@@ -299,6 +306,8 @@ private:
   jintArray jKvFamOffset_;
   jlongArray jTimestamp_;
   jobjectArray jKvBuffer_;
+  jobjectArray jKvFamArray_;
+  jobjectArray jKvQualArray_;
   jobjectArray jRowIDs_;
   jintArray jKvsPerRow_;
   jint *p_kvValLen_;
@@ -309,6 +318,8 @@ private:
   jint *p_kvFamOffset_;
   jlong *p_timestamp_;
   jbyteArray jba_kvBuffer_;
+  jbyteArray jba_kvFamArray_;
+  jbyteArray jba_kvQualArray_;
   jbyteArray jba_rowID_;
   jbyte *p_rowID_;
   jint *p_kvsPerRow_;
