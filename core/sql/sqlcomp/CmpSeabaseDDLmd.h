@@ -1712,7 +1712,7 @@ static const QString createTrafColumnCommentViewQuery[] =
   {" create view %s.\"%s\"."TRAF_COLUMN_COMMENT_VIEW" as "},
   {" select O.CATALOG_NAME, O.SCHEMA_NAME, O.OBJECT_NAME, C.COLUMN_NAME, T.TEXT as COMMENT "},
   {"   from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as C, %s.\"%s\".\"%s\" as T "},
-  {"  where O.OBJECT_UID = C.OBJECT_UID and T.TEXT_UID = O.OBJECT_UID and T.TEXT_TYPE = %s "},
+  {"  where O.OBJECT_UID = C.OBJECT_UID and T.TEXT_UID = O.OBJECT_UID and T.TEXT_TYPE = %s and T.SUB_ID = C.COLUMN_NUMBER "},
   {"  order by O.OBJECT_UID, C.COLUMN_NUMBER "},
   {" ; "}
 };
