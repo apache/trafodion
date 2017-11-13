@@ -1,7 +1,7 @@
 5618c5618,5621
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
@@ -44,14 +44,14 @@
 5721c5724,5727
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
 5725c5731,5734
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
@@ -130,7 +130,7 @@
 5878c5887,5890
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
@@ -185,14 +185,14 @@
 5981c5993,5996
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
 5985c6000,6003
 < --- SQL operation complete.
 ---
-> *** ERROR[4222] The DDL feature is not supported in this software version.
+> *** ERROR[4222] The DDL feature is not supported in this software version or edition.
 > 
 > *** ERROR[8822] The statement was not prepared.
 > 
