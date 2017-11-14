@@ -24940,7 +24940,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   ctas_insert_columns
 		   create_table_as_token 
 		   optional_locking_stmt_list 
-                   query_expression
+                   query_expression 
+                   optional_limit_spec
 		   {
 		     QualifiedName * qn;
 
@@ -24959,6 +24960,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 YYABORT;
 
 		     RelRoot *top = finalize($10);
+                   //limit clause
+                   if ($11)
+                   {
+                     if (top->getFirstNRows() >= 0)
+                       {
+                         // cannot specify LIMIT and FIRST N clauses together.
+                         YYERROR;
+                       }
+                     else
+                       {
+                         NABoolean negate;
+                         if ($11->castToConstValue(negate))
+                           {
+                             ConstValue * limit = (ConstValue*)$11;
+                             Lng32 scale = 0;
+                             top->setFirstNRows(limit->getExactNumericValue(scale));
+                             top->setFirstNRowsParam(NULL);
+                           }
+                         else
+                           {
+                             top->setFirstNRowsParam($11);
+                             top->setFirstNRows(-1);
+                           }
+                       }
+                   }
+
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
@@ -24997,7 +25024,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   ctas_insert_columns
 		   create_table_as_token 
 		   optional_locking_stmt_list 
-                   query_expression
+                   query_expression 
+                   optional_limit_spec
 		   {
 		     QualifiedName * qn;
 
@@ -25016,6 +25044,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
                        YYABORT;
 
 		     RelRoot *top = finalize($9);
+                   //limit clause
+                   if ($10)
+                   {
+                     if (top->getFirstNRows() >= 0)
+                       {
+                         // cannot specify LIMIT and FIRST N clauses together.
+                         YYERROR;
+                       }
+                     else
+                       {
+                         NABoolean negate;
+                         if ($10->castToConstValue(negate))
+                           {
+                             ConstValue * limit = (ConstValue*)$10;
+                             Lng32 scale = 0;
+                             top->setFirstNRows(limit->getExactNumericValue(scale));
+                             top->setFirstNRowsParam(NULL);
+                           }
+                         else
+                           {
+                             top->setFirstNRowsParam($10);
+                             top->setFirstNRows(-1);
+                           }
+                       }
+                   }
+		     
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
