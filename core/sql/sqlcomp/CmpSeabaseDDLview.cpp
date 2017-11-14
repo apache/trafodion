@@ -1502,7 +1502,7 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
       param_[5] = getSystemCatalog();
       param_[6] = SEABASE_MD_SCHEMA;
       param_[7] = SEABASE_TEXT;
-      param_[8] = "3";//COM_OBJET_COMMENT_TEXT
+      param_[8] = "3";//COM_OBJECT_COMMENT_TEXT
     }
       else if (strcmp(mdi.viewName, TRAF_COLUMN_COMMENT_VIEW) == 0)
     {

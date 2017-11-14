@@ -459,6 +459,7 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
       if (cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
           return -1;
         }
 

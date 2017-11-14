@@ -3074,6 +3074,7 @@ short CmpDescribeSeabaseTable (
           if (cmpSBD.getSeabaseObjectComment(objectUID, COM_VIEW_OBJECT, objCommentInfo, heap))
             {
               *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              cmpSBD.switchBackCompiler();
               return -1;
             }
 
@@ -3846,6 +3847,7 @@ short CmpDescribeSeabaseTable (
       if (cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
           return -1;
         }
 
@@ -4029,6 +4031,7 @@ short CmpDescribeSequence(
       if (cmpSBD.getSeabaseObjectComment(objectUID, COM_SEQUENCE_GENERATOR_OBJECT, objCommentInfo, heap))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
           return -1;
         }
  
@@ -4293,6 +4296,7 @@ char buf[1000];
      if (cmpSBD.getSeabaseObjectComment(libraryUID, COM_LIBRARY_OBJECT, objCommentInfo, heap))
        {
          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+         cmpSBD.switchBackCompiler();
          return -1;
        }
 
@@ -4838,6 +4842,7 @@ short CmpDescribeRoutine (const CorrName   & cn,
       if (cmpSBD.getSeabaseObjectComment(routineUID, COM_USER_DEFINED_ROUTINE_OBJECT, objCommentInfo, heap))
         {
           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
           return -1;
         }
 

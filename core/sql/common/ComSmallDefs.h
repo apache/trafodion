@@ -663,7 +663,7 @@ enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_HBASE_SPLIT_TEXT = 6,
                   COM_STORED_DESC_TEXT = 7,
                   COM_VIEW_REF_COLS_TEXT = 8,
-                  COM_OBJET_COMMENT_TEXT = COM_TABLE_COMMENT_TEXT,
+                  COM_OBJECT_COMMENT_TEXT = COM_TABLE_COMMENT_TEXT,
                   COM_COLUMN_COMMENT_TEXT = 9
 };
 

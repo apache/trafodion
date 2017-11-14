@@ -33190,12 +33190,6 @@ comment_on_statement : TOK_COMMENT TOK_ON comment_on_object_types ddl_qualified_
                }
              | TOK_COMMENT TOK_ON TOK_SCHEMA schema_name TOK_IS QUOTED_STRING
                {
-                 // EJF L4J - CQD dynamic are not allowed in Compound Statements
-                 if (beginsWith(SQLTEXT(),"BEGIN"))  {
-                   *SqlParser_Diags << DgSqlCode(-3175);
-                   YYERROR;
-                 }
-                 else  { // business as usual
                    NAString tmpSchema($4->getSchemaNameAsAnsiString());
 
                    if (! validateVolatileSchemaName(tmpSchema))
@@ -33210,7 +33204,6 @@ comment_on_statement : TOK_COMMENT TOK_ON comment_on_object_types ddl_qualified_
                                                  PARSERHEAP());
 
                    $$ = pNode;
-                 }
                }
              | TOK_COMMENT TOK_ON TOK_COLUMN qualified_name TOK_IS QUOTED_STRING
                {

@@ -89,7 +89,7 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
   //get object comment
   sprintf(query, "select TEXT from %s.\"%s\".%s where TEXT_UID = %ld and TEXT_TYPE = %d and SUB_ID = %d ; ",
                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                 object_uid, COM_OBJET_COMMENT_TEXT, 0);
+                 object_uid, COM_OBJECT_COMMENT_TEXT, 0);
 
   Queue * objQueue = NULL;
   cliRC = cliInterface.fetchAllRows(objQueue, query, 0, FALSE, FALSE, TRUE);
@@ -119,7 +119,7 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-                     object_uid, COM_OBJET_COMMENT_TEXT, 0);
+                     object_uid, COM_OBJECT_COMMENT_TEXT, 0);
 
       Queue * indexQueue = NULL;
       cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
@@ -299,7 +299,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
     }
 
   // add, remove, change comment of object/column
-  enum ComTextType textType = COM_OBJET_COMMENT_TEXT;
+  enum ComTextType textType = COM_OBJECT_COMMENT_TEXT;
   Lng32 subID = 0;
 
   if (StmtDDLCommentOn::COMMENT_ON_TYPE_COLUMN == commentObjectType)
