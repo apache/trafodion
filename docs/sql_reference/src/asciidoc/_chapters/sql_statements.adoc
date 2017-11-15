@@ -2822,7 +2822,7 @@ specifies a select query which is used to populate the created table. A select q
 is a list of expressions that can only refer to primary key or STORE BY columns.
 
 +
-The followings are allowed expressions in the DIVISON BY clause, they are monotonically increasing expressions:
+The following are allowed expressions in the DIVISON BY clause, they are monotonically increasing expressions:
 
 +
 ** cast((exact_numeric_column[ + const1 ]) / const2 as numeric_data_type)
@@ -3343,7 +3343,7 @@ SELECT * FROM T WHERE b = 'A';
 SELECT * FROM T WHERE b = 'A' (not casespecific);
 ```
 
-* This is the 1^st^ example of DIVISION BY usage.
+* This is the first example of DIVISION BY usage.
 +
 ```
 CREATE TABLE call_home_data
@@ -3355,7 +3355,7 @@ SALT USING 16 PARTITIONS ON (id)
 DIVISION BY (date_trunc('day', ts));
 ```
 
-* This is the 2^nd^ example of DIVISION BY usage.
+* This is the second example of DIVISION BY usage.
 +
 ```
 CREATE TABLE sales1
@@ -3367,7 +3367,7 @@ PRIMARY KEY (store_id, item_id, sale_date))
 DIVISION BY (DATEDIFF(YEAR, '2017-11-02', sale_date));
 ```
 
-* This is the 3^rd^ example of DIVISION BY usage.
+* This is the third example of DIVISION BY usage.
 +
 ```
 CREATE TABLE sales2
