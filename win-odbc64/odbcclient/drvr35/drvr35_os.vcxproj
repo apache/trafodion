@@ -1,9 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
@@ -13,13 +21,22 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4B7C62D7-1C63-4319-9818-98BFBB322CED}</ProjectGuid>
     <RootNamespace>Drvr35</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
@@ -31,7 +48,16 @@
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
     <Import Project="openssl.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
+    <Import Project="openssl.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="openssl.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="openssl.props" />
   </ImportGroup>
@@ -39,15 +65,23 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)PlatformSDK\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)PlatformSDK\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)PlatformSDK\lib\amd64;$(VSInstallDir)SDK\v2.0\lib\amd64;$(LibraryPath);</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)PlatformSDK\lib\amd64;$(VSInstallDir)SDK\v2.0\lib\amd64;$(LibraryPath);</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)PlatformSDK\include;$(IncludePath);</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)PlatformSDK\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)PlatformSDK\lib\amd64;$(VSInstallDir)SDK\v2.0\lib\amd64;$(LibraryPath);</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)PlatformSDK\lib;$(VSInstallDir)SDK\v2.0\lib;$(LibraryPath);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -70,6 +104,50 @@
       <ImportLibrary>..\..\..\..\lib\x64\Release/trfodbc1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <AllowIsolation>true</AllowIsolation>
+    </Link>
+    <Bscmake>
+      <OutputFile>.\x64\Release/drvr35.bsc</OutputFile>
+    </Bscmake>
+    <PreBuildEvent>
+      <Command>@echo off
+if exist version_drvr.cpp goto do_nothing
+if not exist version_drvr.cpp goto updt_vproc
+:updt_vproc
+set cppfile=version_drvr.cpp
+set vDrvr=HPODBC_DRVR
+set vRevision=DEBUG
+for /f "skip=5 tokens=2" %%i in (..\..\BuildOdbcDrvr\buildinfo) do set %%i
+echo // %vDrvr% Version File generate %vDate%, svn revision %vRevision% &gt; %cppfile%
+echo extern char* VprocString="%vDrvr% Version %MAJOR_VER%.%MINOR_VER%.%BUG_VER% Release %REL_MAJ_VER%.%REL_MIN_VER%.%REL_SP_VER% (Build release [%vRevision%])"; &gt;&gt; %cppfile%
+echo extern "C" void %vDrvr%_Version_%MAJOR_VER%_%MINOR_VER%_%BUG_VER%_Release_%REL_MAJ_VER%_%REL_MIN_VER%_%REL_SP_VER%_Build_release_%vRevision% () &gt;&gt; %cppfile%
+echo { } &gt;&gt; %cppfile%
+exit
+
+:do_nothing
+pause</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenSSLIncludeDir);..\..\sql\cli;..\..\sql\common;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(ZlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32;_CRT_SECURE_NO_DEPRECATE;NDEBUG;_WINDOWS;NA_WINNT;TRACE_COMPRESSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>..\..\..\lib\x86\Release/trfodbc1.dll</OutputFile>
+      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);$(ZlibLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>.\drvr35.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>..\..\..\..\lib\x86\Release/trfodbc1.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>..\..\..\..\lib\x32\Release/trfodbc1.lib</ImportLibrary>
+      <AllowIsolation>true</AllowIsolation>
+      <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
       <OutputFile>.\x64\Release/drvr35.bsc</OutputFile>
@@ -125,6 +203,60 @@ pause</Command>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>..\..\..\..\lib\x64\Debug/trfodbc1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <Bscmake>
+      <OutputFile>.\x64\Debug/drvr35.bsc</OutputFile>
+    </Bscmake>
+    <PreBuildEvent>
+      <Command>@echo off
+if exist version_drvr.cpp goto do_nothing
+if not exist version_drvr.cpp goto updt_vproc
+:updt_vproc
+set cppfile=version_drvr.cpp
+set vDrvr=HPODBC_DRVR
+set vRevision=DEBUG
+for /f "skip=5 tokens=2" %%i in (..\..\BuildOdbcDrvr\buildinfo) do set %%i
+echo // %vDrvr% Version File generate, svn revision %vRevision% &gt; %cppfile%
+echo extern char* VprocString="%vDrvr% Version %MAJOR_VER%.%MINOR_VER%.%BUG_VER% Release %REL_MAJ_VER%.%REL_MIN_VER%.%REL_SP_VER% (Build release [%vRevision%])"; &gt;&gt; %cppfile%
+echo extern "C" void %vDrvr%_Version_%MAJOR_VER%_%MINOR_VER%_%BUG_VER%_Release_%REL_MAJ_VER%_%REL_MIN_VER%_%REL_SP_VER%_Build_release_%vRevision% () &gt;&gt; %cppfile%
+echo { } &gt;&gt; %cppfile%
+exit
+
+:do_nothing
+pause</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\sql\cli;..\..\sql\common;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(ZlibIncludeDir);$(OpenSSLIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32;_CRT_SECURE_NO_DEPRECATE;_DEBUG;_WINDOWS;hp;NA_WINNT;TRACE_COMPRESSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>.\x64\Debug/drvr35.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\x64\Debug/</AssemblerListingLocation>
+      <ObjectFileName>.\x64\Debug/</ObjectFileName>
+      <ProgramDataBaseFileName>.\x64\Debug/</ProgramDataBaseFileName>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>..\..\..\lib\x64\Debug/trfodbc1.dll</OutputFile>
+      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);$(ZlibLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>.\drvr35.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AssemblyDebug>
+      </AssemblyDebug>
+      <GenerateMapFile>false</GenerateMapFile>
+      <MapExports>false</MapExports>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>..\..\..\..\lib\x64\Debug/trfodbc1.lib</ImportLibrary>
     </Link>
     <Bscmake>
       <OutputFile>.\x64\Debug/drvr35.bsc</OutputFile>
