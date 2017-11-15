@@ -2629,6 +2629,7 @@ CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
     [HBASE_OPTIONS (hbase-options-list)]
     [LOAD IF EXISTS | NO LOAD]
     [AS select-query]
+    [DIVISION BY (division-expr-list)]
 
 CREATE [VOLATILE] TABLE [IF NOT EXISTS] table
     like-spec
@@ -2815,6 +2816,38 @@ Considerations for LOAD IF EXISTS and NO LOAD options of CREATE TABLE AS>>.
 * `AS _select-query_`
 +
 specifies a select query which is used to populate the created table. A select query can be any SQL select statement.
+
+* `_division-expr-list_`
++
+is a list of expressions that can only refer to primary key or STORE BY columns.
+
++
+The following are allowed expressions in the DIVISON BY clause, they are monotonically increasing expressions:
+
++
+** cast((exact_numeric_column[ + const1 ]) / const2 as numeric_data_type)
+** DATE_PART('YEAR', date_part_arg )
+** DATE_PART('YEARQUARTER', date_part_arg )
+** DATE_PART('YEARMONTH', date_part_arg )
+** DATE_PART('YEARWEEK', date_part_arg )
+
+*** date_part_arg is one of the following:
+
+**** datetime_col
+**** datetime_col + const
+**** datetime_col - const
+**** ADD_MONTHS(datetime_col, const [, 0])
+**** DATE_ADD(datetime_col, const)
+**** DATE_SUB(datetime_col, const)
+
+** DATE_TRUNC(const, datetime_col)
+** DATEDIFF(YEAR, const, datetime_col)
+** DATEDIFF(QUARTER, const, datetime_col)
+** DATEDIFF(MONTH, const, datetime_col)
+** DATEDIFF(WEEK, const, datetime_col)
+** LEFT(character_col, const)
+** SUBSTR[ING](character_col, 1, const)
+** SUBSTR[ING](character_col FROM 1 FOR const)
 
 <<<
 * `_column data-type_`
@@ -3261,6 +3294,8 @@ statement are ASCENDING, DESCENDING, and PARTITION clauses. CREATE TABLE LIKE is
 [[create_table_examples]]
 === Examples of CREATE TABLE
 
+==== Examples of CREATE TABLE 
+
 * This example creates a table. The clustering key is the primary key.
 +
 ```
@@ -3306,6 +3341,43 @@ SELECT * FROM T WHERE b = 'A';
 +
 ```
 SELECT * FROM T WHERE b = 'A' (not casespecific);
+```
+
+* This is the first example of DIVISION BY usage.
++
+```
+CREATE TABLE call_home_data
+(id LARGEINT NOT NULL,
+ts TIMESTAMP(6) NOT NULL,
+device_status VARCHAR(200),
+PRIMARY KEY (id, ts))
+SALT USING 16 PARTITIONS ON (id)
+DIVISION BY (date_trunc('day', ts));
+```
+
+* This is the second example of DIVISION BY usage.
++
+```
+CREATE TABLE sales1
+(store_id INT NOT NULL,
+item_id  INT NOT NULL,
+sale_date DATE DEFAULT DATE '2000-01-01' NOT NULL,
+sale_amt NUMERIC(10,2),
+PRIMARY KEY (store_id, item_id, sale_date))
+DIVISION BY (DATEDIFF(YEAR, '2017-11-02', sale_date));
+```
+
+* This is the third example of DIVISION BY usage.
++
+```
+CREATE TABLE sales2
+(store_id INT NOT NULL,
+item_id  INT NOT NULL,
+sale_date DATE DEFAULT DATE '2000-01-01' NOT NULL,
+sale_amt NUMERIC(10,2),
+chcol CHAR(20) NOT NULL,
+PRIMARY KEY (store_id, item_id, sale_date, chcol))
+DIVISION BY (SUBSTR(chcol, 1, 5)); 
 ```
 
 <<<
@@ -3384,9 +3456,9 @@ create table t(a int, b) as select c,d from t1
 +
 An error is returned.
 
-In the following example, table t1 is created. Table t2 is created using the CREATE TABLE AS syntax without table attributes:
+* In the following example, table t1 is created. Table t2 is created using the CREATE TABLE AS syntax without table attributes:
 
-
++
 ```
 CREATE TABLE t1 (c1 int not null primary key, c2 char(50));
 
