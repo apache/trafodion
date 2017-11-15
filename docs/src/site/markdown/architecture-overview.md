@@ -61,9 +61,9 @@ DCS is a collection of components:
 
 Trafodion supports distributed ACID transaction semantics using the Multi-Version Concurrency Control (MVCC) model. The transaction management is built on top of a fork of the *HBase-trx* project implementing the following changes:
 
-* Upgraded it to work on HBase version 0.98.1 (for CDH 5.1) or 0.98.0 (for HDP 2.1).
+* Upgraded it to use the HBase coprocessor mechanism.
 * Added support for parallel worker processes doing work on behalf of the same transaction.
-* Added support for global transactions, that is, transactions that can encompass resources (regions/HTables) across an HBase cluster.
+* Added support for global transactions, that is, transactions that can encompass resources (regions/Tables) across an HBase cluster.
 * Added transaction recovery after server failure.
 
 There is on Distributed Transaction Manager (DTM) process per node in a cluster running Trafodion. The DTM process owns and keeps track of all transactions that were started on that node. (In HBase-trx, transactions were tracked in the library code of each client, which meant that after a server failure, there was no way to restart the transaction manager for in-doubt transactions.)
