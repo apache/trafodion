@@ -1544,6 +1544,9 @@ static const QString seabaseOldMDv11ViewsDDL[] =
 #define TRAF_SEQUENCES_VIEW "SEQUENCES_VIEW"
 #define TRAF_TABLES_VIEW "TABLES_VIEW"
 #define TRAF_VIEWS_VIEW "VIEWS_VIEW"
+#define TRAF_OBJECT_COMMENT_VIEW "OBJECT_COMMENT_VIEW"
+#define TRAF_COLUMN_COMMENT_VIEW "COLUMN_COMMENT_VIEW"
+
 
 static const QString createTrafColumnsViewQuery[] =
 {
@@ -1693,6 +1696,28 @@ static const QString createTrafViewsViewQuery[] =
   {"  ; "}
 };
 
+
+static const QString createTrafObjectCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"."TRAF_OBJECT_COMMENT_VIEW" as "},
+  {" select O.catalog_name, O.schema_name, O.object_name, T.text as comment "},
+  {"   from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as T "},
+  {"  where O.object_uid = T.text_uid and T.text_type = %s "},
+  {"  order by O.OBJECT_UID "},
+  {" ; "}
+};
+
+static const QString createTrafColumnCommentViewQuery[] =
+{
+  {" create view %s.\"%s\"."TRAF_COLUMN_COMMENT_VIEW" as "},
+  {" select O.CATALOG_NAME, O.SCHEMA_NAME, O.OBJECT_NAME, C.COLUMN_NAME, T.TEXT as COMMENT "},
+  {"   from %s.\"%s\".\"%s\" as O, %s.\"%s\".\"%s\" as C, %s.\"%s\".\"%s\" as T "},
+  {"  where O.OBJECT_UID = C.OBJECT_UID and T.TEXT_UID = O.OBJECT_UID and T.TEXT_TYPE = %s and T.SUB_ID = C.COLUMN_NUMBER "},
+  {"  order by O.OBJECT_UID, C.COLUMN_NUMBER "},
+  {" ; "}
+};
+
+
 struct MDViewInfo
 {
   const char * viewName;
@@ -1747,7 +1772,18 @@ static const MDViewInfo allMDviewsInfo[] = {
     sizeof(createTrafViewsViewQuery),
     FALSE
   },
-
+  {
+    TRAF_OBJECT_COMMENT_VIEW,
+    createTrafObjectCommentViewQuery,
+    sizeof(createTrafObjectCommentViewQuery),
+    FALSE
+  },
+  {
+    TRAF_COLUMN_COMMENT_VIEW,
+    createTrafColumnCommentViewQuery,
+    sizeof(createTrafColumnCommentViewQuery),
+    FALSE
+  },
 };
 
 #endif

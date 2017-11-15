@@ -54,6 +54,7 @@
 #include "StmtDDLCreateSynonym.h"
 #include "StmtDDLCreateExceptionTable.h"
 #include "StmtDDLPopulateIndex.h"
+#include "StmtDDLCommentOn.h"
 
 //
 // End of File

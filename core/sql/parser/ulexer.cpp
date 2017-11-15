@@ -118,6 +118,7 @@ class IntegerList;
 #include "SqlParserAux.h"
 #include "StmtDDLCreateMV.h"
 #include "ElemDDLHbaseOptions.h"
+#include "StmtDDLCommentOn.h"
 
 // Need the definition of the Parsers Union.  If this is not defined,
 // sqlparser.h will only define the Tokens.

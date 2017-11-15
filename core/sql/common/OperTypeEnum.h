@@ -963,6 +963,7 @@ enum OperatorTypeEnum {
                         DDL_CLEANUP_OBJECTS,
                         DDL_LAST_STMT_OP,
                         DDL_INITIALIZE_SECURITY,
+                        DDL_COMMENT_ON,
 
                         //
                         // Elements in DDL statements

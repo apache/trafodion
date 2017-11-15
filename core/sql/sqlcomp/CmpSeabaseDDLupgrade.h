@@ -449,7 +449,7 @@ static const MDUpgradeInfo allMDv23tov30TablesInfo[] = {
    NULL, 0,
    TRUE,
    "catalog_name, schema_name, object_name, object_type, object_uid, create_time, redef_time, valid_def, droppable, object_owner, schema_owner, flags",
-   "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, 'N', object_owner, " SUPER_USER_LIT", 0 ",
+   "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, 'N', object_owner, " SUPER_USER_LIT", 0",
    NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,

@@ -525,6 +525,7 @@ static char * FCString (const char *idString, int isFC)
 %token UNLOAD   
 
 %token CALLToken
+%token COMMENTtoken
 
 %union {
 	 enum ComRoutineSQLAccess sql_access_mode_type;
@@ -1950,6 +1951,7 @@ dml_type :
         |	EXPLAIN		        {$$ = DML_DESCRIBE_TYPE;}
         |       GETtoken                {$$ = DML_DESCRIBE_TYPE;}
  	|       PROCESStoken            {$$ = DML_DDL_TYPE;}
+ 	|     COMMENTtoken       {$$ = DML_DDL_TYPE;}
 ;
 
 dml_simple_table_type :

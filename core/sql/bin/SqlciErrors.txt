@@ -32,7 +32,7 @@
 1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  
 1031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped.
 1032 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DISPLAY command completes and the query is not executed.
-1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to obtain comments.
 1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges.
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
 1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.

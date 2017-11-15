@@ -387,6 +387,7 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::SHOW: return "SHOW";
       case SQLOperation::UNREGISTER_HIVE_OBJECT: return "UNREGISTER_HIVE_OBJECT";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "USE_ALTERNATE_SCHEMA";
+	  case SQLOperation::COMMENT: return "COMMENT";
       default:
          return "UNKNOWN";   
    }
@@ -482,6 +483,7 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::SHOW: return "SW";
       case SQLOperation::UNREGISTER_HIVE_OBJECT: return "UH";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
+      case SQLOperation::COMMENT: return "CO";
       default:
          return "  ";   
    }
@@ -580,6 +582,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::SHOW: return "Allow grantee to view metadata information about objects";
       case SQLOperation::UNREGISTER_HIVE_OBJECT: return "Allow grantee to unregister hive object from traf metadata";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "Allow grantee to use non-default schemas";
+	  case SQLOperation::COMMENT: return "Allow grantee to comment on objects and columns";
       default:
          return "";   
    }

@@ -187,7 +187,7 @@ char schemaObjectLit[3] = {0};
          break;
       } 
    }
-   
+
    str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                catalogName.data(), quotedSchName.data(), quotedObjName.data(),
@@ -445,13 +445,39 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += catalogName.data();
    output += "\".\"";
    output += schemaName.data();
-   
+
 // AUTHORIZATION clause is rarely used, but include it for replay.
    output += "\" AUTHORIZATION \"";
    output += username;
    output += "\";";
    
    outlines.push_back(output.data());
+
+   // Display Comment of schema
+    {
+      ComTdbVirtObjCommentInfo objCommentInfo;
+      if (cmpSBD.getSeabaseObjectComment(schemaUID, objectType, objCommentInfo, STMTHEAP))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+          cmpSBD.switchBackCompiler();
+          return -1;
+        }
+
+      if (objCommentInfo.objectComment != NULL)
+        {
+          outlines.push_back(" ");
+
+          output = "COMMENT ON SCHEMA ";
+          output += catalogName.data();
+          output += ".";
+          output += schemaName.data();
+          output += " IS '";
+          output += objCommentInfo.objectComment;
+          output += "' ;";
+
+          outlines.push_back(output.data());
+        }
+    }
 
    cmpSBD.switchBackCompiler();
    return true;
@@ -990,7 +1016,18 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
                           << DgString0(reason);
       goto label_error;
    }
-  
+
+   //Drop comment in TEXT table for schema
+   str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_TEXT,
+               schemaUID);
+   cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+     {
+       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+       goto label_error;
+     }
+
   // Everything succeeded, return
   return;
     

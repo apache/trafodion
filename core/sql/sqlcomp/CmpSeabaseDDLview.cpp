@@ -1492,6 +1492,33 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 	  param_[9] = SEABASE_MD_SCHEMA;
 	  param_[10] = COM_VIEW_OBJECT_LIT;
 	}
+      else if (strcmp(mdi.viewName, TRAF_OBJECT_COMMENT_VIEW) == 0)
+    {
+      param_[0] = getSystemCatalog();
+      param_[1] = SEABASE_MD_SCHEMA;
+      param_[2] = getSystemCatalog();
+      param_[3] = SEABASE_MD_SCHEMA;
+      param_[4] = SEABASE_OBJECTS;
+      param_[5] = getSystemCatalog();
+      param_[6] = SEABASE_MD_SCHEMA;
+      param_[7] = SEABASE_TEXT;
+      param_[8] = "3";//COM_OBJECT_COMMENT_TEXT
+    }
+      else if (strcmp(mdi.viewName, TRAF_COLUMN_COMMENT_VIEW) == 0)
+    {
+      param_[0] = getSystemCatalog();
+      param_[1] = SEABASE_MD_SCHEMA;
+      param_[2] = getSystemCatalog();
+      param_[3] = SEABASE_MD_SCHEMA;
+      param_[4] = SEABASE_OBJECTS;
+      param_[5] = getSystemCatalog();
+      param_[6] = SEABASE_MD_SCHEMA;
+      param_[7] = SEABASE_COLUMNS;
+      param_[8] = getSystemCatalog();
+      param_[9] = SEABASE_MD_SCHEMA;
+      param_[10] = SEABASE_TEXT;
+      param_[11] = "9";//COM_COLUMN_COMMENT_TEXT
+    }
       else
 	{
           NADELETEBASICARRAY(gluedQuery, STMTHEAP);

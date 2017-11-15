@@ -2576,6 +2576,62 @@ StmtDDLAlterUser::bindNode(BindWA * pBindWA)
 
 }
 
+// -----------------------------------------------------------------------
+// definition of method bindNode() for class StmtDDLCommentOn
+// -----------------------------------------------------------------------
+
+ExprNode *
+StmtDDLCommentOn::bindNode(BindWA * pBindWA)
+{
+  ComASSERT(pBindWA);
+
+  objectName_.applyDefaults(pBindWA->getDefaultSchema());
+  if (pBindWA->violateAccessDefaultSchemaOnly(objectName_))
+    return this;
+
+  if (this->type_ == COMMENT_ON_TYPE_COLUMN)
+    {
+      if (NULL == colRef_)
+        {
+          ComASSERT(pBindWA);
+        }
+      else
+        {
+          ActiveSchemaDB()->getNATableDB()->useCache();
+
+          CorrName cn(objectName_, STMTHEAP);
+
+          NATable *naTable = pBindWA->getNATable(cn);
+          if (naTable == NULL || pBindWA->errStatus())
+            {
+              *CmpCommon::diags()
+                << DgSqlCode(-4082)
+                << DgTableName(cn.getExposedNameAsAnsiString());
+
+              return this;
+            }
+
+          const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+          const NAColumn * nacol = nacolArr.getColumn(getColName());
+          if (! nacol)
+            {
+              // column doesnt exist. Error.
+              *CmpCommon::diags() << DgSqlCode(-1009)
+                                  << DgColumnName(getColName());
+
+              return this;
+            }
+
+          isViewCol_ = (naTable->getViewText() ? TRUE : FALSE);
+          colNum_ = nacol->getPosition();
+        }
+    }
+
+  markAsBound();
+  return this;
+}
+
+
 //
 // End of File
 //

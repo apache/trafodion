@@ -909,7 +909,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT,
@@ -1315,7 +1315,7 @@ short CmpSeabaseDDL::updateConstraintMD(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0 )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', '%s', %d, %d, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
               ((ct == COM_UNIQUE_CONSTRAINT) ? COM_UNIQUE_CONSTRAINT_OBJECT_LIT :
@@ -5840,11 +5840,25 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
-  
-  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %ld and text_type = %d and sub_id > %d",
+
+  //delete comment in TEXT table for column
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %ld and text_type = %d and sub_id = %d ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID,
+              COM_COLUMN_COMMENT_TEXT,
+              dropColNum);
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  str_sprintf(buf, "update %s.\"%s\".%s set sub_id = sub_id - 1 where text_uid = %ld and ( text_type = %d or text_type = %d ) and sub_id > %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID,
               COM_COMPUTED_COL_TEXT,
+              COM_COLUMN_COMMENT_TEXT,
               dropColNum);
   
   cliRC = cliInterface.executeImmediate(buf);
@@ -7171,7 +7185,7 @@ short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       goto label_error1;
     }
-  
+
   str_sprintf(buf, "insert into %s.\"%s\".%s select object_uid, '%s', %d, '%s', fs_data_type, sql_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, '%s', '%s', direction, is_optional, flags from %s.\"%s\".%s where object_uid = %ld and column_number = (select column_number from %s.\"%s\".%s where object_uid = %ld and column_name = '%s')",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naCol->getColName().data(),              
@@ -12938,8 +12952,6 @@ TrafDesc *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
      processReturn();
   return routine_desc;
 }
-
-
 
 
 // *****************************************************************************
