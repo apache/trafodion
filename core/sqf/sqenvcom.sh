@@ -286,6 +286,17 @@ else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
 
+# cache hbase classpath to a file to avoid running hbase command
+# every time when login as trafodion
+CACHED_HBASE_CP_FILE="$TRAF_VAR/hbase_classpath"
+if [[ ! -f $CACHED_HBASE_CP_FILE ]]; then
+  #hbase classpath captures all the right set of jars hbase is using.
+  #this also includes the trx jar that gets installed as part of install.
+  #Additional testing needed.Including it here for future validation.
+  hbase classpath > $CACHED_HBASE_CP_FILE 2>/dev/null
+fi
+lv_hbase_cp=`cat $CACHED_HBASE_CP_FILE`
+
 if [[ -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
   # we are on a development system where install_local_hadoop has been
   # executed
@@ -337,8 +348,6 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
-  lv_hbase_cp=`/opt/cloudera/parcels/CDH/bin/hbase classpath`
-
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
@@ -368,8 +377,6 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
-
-  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
@@ -401,8 +408,6 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
-
-  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
@@ -572,11 +577,6 @@ EOF
                             $APACHE_HADOOP_HOME/share/hadoop/hdfs"
     export HADOOP_JAR_FILES=
     export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
-
-    #hbase classpath captures all the right set of jars hbase is using.
-    #this also includes the trx jar that gets installed as part of install.
-    #Additional testing needed.Including it here for future validation.
-    lv_hbase_cp=`hbase classpath`
 
     # end of code for Apache Hadoop/HBase installation w/o distro
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
