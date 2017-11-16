@@ -1517,7 +1517,7 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
       param_[8] = getSystemCatalog();
       param_[9] = SEABASE_MD_SCHEMA;
       param_[10] = SEABASE_TEXT;
-      param_[11] = "9";//COM_COLUMN_COMMENT_TEXT
+      param_[11] = "12";//COM_COLUMN_COMMENT_TEXT
     }
       else
 	{
