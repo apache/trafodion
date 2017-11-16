@@ -43,7 +43,7 @@ The first step in the installation process is to unpack the {project-name} Insta
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
+$ tar -zxf apache-trafodion_pyinstaller-x.x.x-incubating.tar.gz -C $HOME/trafodion-installer
 $
 ```
 
@@ -74,8 +74,8 @@ Confirm Enter HDP/CDH web manager user password:
 TASK: Environment Discover ***************************************************************
 
 Time Cost: 0 hour(s) 0 minute(s) 4 second(s)
-Enter full path to Trafodion tar file [/data/python-installer/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz]:
-Enter directory name to install trafodion to [apache-trafodion-2.1.0]:
+Enter full path to Trafodion tar file [/data/python-installer/apache-trafodion_server-x.x.x-RH-x86_64-incubating.tar.gz]:
+Enter directory name to install trafodion to [apache-trafodion-x.x.x]:
 Enter trafodion user password:
 Confirm Enter trafodion user password:
 Enter number of DCS client connections per node [4]:
@@ -102,8 +102,8 @@ Enable DCS High Avalability (Y/N)  [N]:
 | mgr_user         | admin                                                                             |
 | node_list        | node-1,node-2                                                                     |
 | scratch_locs     | $TRAF_VAR                                                                         |
-| traf_dirname     | apache-trafodion-2.1.0                                                            |
-| traf_package     | /data/python-installer/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz  |
+| traf_dirname     | apache-trafodion-x.x.x                                                            |
+| traf_package     | /data/python-installer/apache-trafodion_server-x.x.x-RH-x86_64-incubating.tar.gz  |
 | traf_start       | Y                                                                                 |
 | traf_user        | trafodion                                                                         |
 +------------------+-----------------------------------------------------------------------------------+
