@@ -92,7 +92,7 @@ public final class Constants {
     public static final String DCS_SERVER_USER_PROGRAM_COMMAND = "dcs.server.user.program.command";
 
     /** Default value for DCS server user program command */
-    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS";
+    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. ./sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS";
 
     /** Configuration key for DCS server user program connecting timeout */
     public static final String DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT = "dcs.server.user.program.connecting.timeout";
