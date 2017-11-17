@@ -664,7 +664,7 @@ enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_STORED_DESC_TEXT = 7,
                   COM_VIEW_REF_COLS_TEXT = 8,
                   COM_OBJECT_COMMENT_TEXT = COM_TABLE_COMMENT_TEXT,
-                  COM_COLUMN_COMMENT_TEXT = 9
+                  COM_COLUMN_COMMENT_TEXT = 12
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION
