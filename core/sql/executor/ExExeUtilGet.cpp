@@ -1757,9 +1757,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
             char hiveGetType[10];
             char hiveSysCat[10];
 
-	    cliInterface()->getCQDval("SEABASE_CATALOG", cat);
-
-	    //	    strcpy(cat, TRAFODION_SYSCAT_LIT);
+	    if(cliInterface()->getCQDval("SEABASE_CATALOG", cat) < 0)
+	        strcpy(cat, TRAFODION_SYSCAT_LIT);
 	    strcpy(sch, SEABASE_MD_SCHEMA);
 	    strcpy(pmsch, SEABASE_PRIVMGR_SCHEMA);
 	    strcpy(tab, SEABASE_OBJECTS);
