@@ -802,10 +802,30 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
 
     const IndexDesc * index = getIndexDesc();
     const IndexDesc * otherIndex = ixProp->getIndexDesc();
-    if ( ((IndexColumn *)(index->getIndexKey()[0]).getItemExpr())->getDefinition() != 
-         ((IndexColumn *)(otherIndex->getIndexKey()[0]).getItemExpr())->getDefinition() )
-
-      return INCOMPATIBLE;
+    
+    // If the two indexes have differing leading columns, consider them incompatible.
+    // For this check, we ignore the "_SALT_" column if both are salted.
+    CollIndex columnToCheck = 0;
+    NABoolean done = FALSE;
+    while (!done)
+      {
+        if (columnToCheck >= index->getIndexKey().entries())
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" (seems unlikely actually)
+        else if (columnToCheck >= otherIndex->getIndexKey().entries())
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" (seems unlikely actually)
+        else
+          {
+            IndexColumn * indexCol = (IndexColumn *)(index->getIndexKey()[columnToCheck]).getItemExpr();
+            IndexColumn * otherIndexCol = (IndexColumn *)(otherIndex->getIndexKey()[columnToCheck]).getItemExpr();
+            if ( indexCol->getNAColumn()->isSaltColumn() &&
+                 otherIndexCol->getNAColumn()->isSaltColumn() )
+              columnToCheck++;
+            else if ( indexCol->getDefinition() != otherIndexCol->getDefinition() )
+              return INCOMPATIBLE;
+            else
+              done = TRUE;  // leading column (ignoring "_SALT_" if both have "_SALT_") is different
+          }
+      }
 
      CostScalar myKbForLPred = index->getKbForLocalPred();
      CostScalar othKbForLPred = otherIndex->getKbForLocalPred();
