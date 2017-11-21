@@ -503,7 +503,13 @@ ConstValue* OptRangeSpec::getConstOperand(ItemExpr* predExpr, Lng32 constInx)
   // currently support. Predicates involving types not yet supported will be
   // treated as residual predicates.
   if (QRDescGenerator::typeSupported(static_cast<ConstValue*>(right)->getType()))
+  {
+    /* add constvalue ‘not casespecific’ to type_*/
+      ((CharType*)getType())->setCaseinsensitive(
+              ((CharType *)(((ConstValue*)(right))->getType()))->isCaseinsensitive());
+
     return static_cast<ConstValue*>(right);
+  }
   else
     return NULL;
 } // getConstOperand()
@@ -1712,10 +1718,13 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
                              (Subrange<RangeWString>*)subrange;
               if (parentOfStart)
                 parentOfStart->child(1) =
-                            new(mvqrHeap_) ConstValue(wcharSubrange->start);
+                    new(mvqrHeap_) ConstValue(wcharSubrange->start,
+                                              ((CharType *)type)->isCaseinsensitive());
+
               if (parentOfEnd)
                 parentOfEnd->child(1) =
-                            new(mvqrHeap_) ConstValue(wcharSubrange->end);
+                    new(mvqrHeap_) ConstValue(wcharSubrange->end,
+                                              ((CharType *)type)->isCaseinsensitive());
             }
           else
             {
@@ -1724,10 +1733,15 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
                       = (Subrange<RangeString>*)subrange;
               if (parentOfStart)
                 parentOfStart->child(1) =
-                            new(mvqrHeap_) ConstValue(charSubrange->start, ((CharType *)type)->getCharSet() );
+                    new(mvqrHeap_) ConstValue(charSubrange->start,
+                                              ((CharType *)type)->isCaseinsensitive(),
+                                              ((CharType *)type)->getCharSet() );
+
               if (parentOfEnd)
                 parentOfEnd->child(1) =
-                            new(mvqrHeap_) ConstValue(charSubrange->end, ((CharType *)type)->getCharSet() );
+                    new(mvqrHeap_) ConstValue(charSubrange->end,
+                                              ((CharType *)type)->isCaseinsensitive(),
+                                              ((CharType *)type)->getCharSet() );
             }
         }
         break;

@@ -9971,6 +9971,22 @@ ConstValue::ConstValue(const NAString & strval,
     ((char*)strval.data(), strval.length(), outHeap);
 }
 
+ConstValue::ConstValue(const NAString & strval,
+             NABoolean isCaseInSensitive,
+             enum CharInfo::CharSet charSet,
+             enum CharInfo::Collation collation,
+             enum CharInfo::Coercibility coercibility,
+             NAMemory * outHeap)
+: ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL),
+  textIsValidatedSQLLiteralInUTF8_(FALSE), isStrLitWithCharSetPrefix_(FALSE),
+  isSystemSupplied_(FALSE), locale_wstrval(0), rebindNeeded_(FALSE)
+{
+   initCharConstValue(strval, charSet, collation, coercibility, isCaseInSensitive, outHeap);
+   locale_strval = new (outHeap) NAString
+    ((char*)strval.data(), strval.length(), outHeap);
+}
+
+
 void ConstValue::initCharConstValue
 (
      const NAString & strval,
@@ -10064,6 +10080,30 @@ ConstValue::ConstValue(const NAWString& wstrval,
    rebindNeeded_(FALSE)
 {
    initCharConstValue(wstrval, charSet, collation, coercibility, FALSE, outHeap,
+                      strLitPrefixCharSet);
+
+   locale_wstrval = new (CmpCommon::statementHeap()) NAWString
+      (wstrval.data(), wstrval.length(), CmpCommon::statementHeap());
+}
+
+ConstValue::ConstValue(const NAWString& wstrval,
+             NABoolean isCaseInSensitive,
+             enum CharInfo::CharSet charSet,
+             enum CharInfo::Collation collation,
+             enum CharInfo::Coercibility coercibility,
+             NAMemory * outHeap,
+             enum CharInfo::CharSet strLitPrefixCharSet
+)
+ : ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL),
+   isSystemSupplied_(FALSE),
+   value_(0),
+   text_(0),
+   locale_strval(0),
+   locale_wstrval(0),
+   isStrLitWithCharSetPrefix_(FALSE),
+   rebindNeeded_(FALSE)
+{
+   initCharConstValue(wstrval, charSet, collation, coercibility, isCaseInSensitive, outHeap,
                       strLitPrefixCharSet);
 
    locale_wstrval = new (CmpCommon::statementHeap()) NAWString
