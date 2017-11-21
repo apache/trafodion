@@ -823,7 +823,7 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
             else if ( indexCol->getDefinition() != otherIndexCol->getDefinition() )
               return INCOMPATIBLE;
             else
-              done = TRUE;  // leading column (ignoring "_SALT_" if both have "_SALT_") is different
+              done = TRUE;  // leading column (ignoring "_SALT_" if both have "_SALT_") is the same; do Kb checks
           }
       }
 
