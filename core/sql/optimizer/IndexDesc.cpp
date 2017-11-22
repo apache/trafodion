@@ -810,9 +810,9 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
     while (!done)
       {
         if (columnToCheck >= index->getIndexKey().entries())
-          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" (seems unlikely actually)
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" or "_DIVISION_1_" (seems unlikely actually)
         else if (columnToCheck >= otherIndex->getIndexKey().entries())
-          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" (seems unlikely actually)
+          return INCOMPATIBLE;  // must be one of the indexes is just "_SALT_" or "_DIVISION_1_" (seems unlikely actually)
         else
           {
             IndexColumn * indexCol = (IndexColumn *)(index->getIndexKey()[columnToCheck]).getItemExpr();
@@ -820,10 +820,13 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
             if ( indexCol->getNAColumn()->isSaltColumn() &&
                  otherIndexCol->getNAColumn()->isSaltColumn() )
               columnToCheck++;
+            else if ( indexCol->getNAColumn()->isDivisioningColumn() &&
+                      otherIndexCol->getNAColumn()->isDivisioningColumn() )
+              columnToCheck++;
             else if ( indexCol->getDefinition() != otherIndexCol->getDefinition() )
               return INCOMPATIBLE;
             else
-              done = TRUE;  // leading column (ignoring "_SALT_" if both have "_SALT_") is the same; do Kb checks
+              done = TRUE;  // leading column (ignoring salt, divisioning if both have it) is the same; do Kb checks
           }
       }
 
