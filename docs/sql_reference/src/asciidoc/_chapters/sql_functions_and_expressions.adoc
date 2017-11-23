@@ -2312,7 +2312,7 @@ DATEDIFF (datepart, startdate, enddate)
 * `datepart`
 +
 is YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, QUARTER, WEEK, or one of the
-following abbreviations, should be enclosed in quotation marks:
+following abbreviations:
 +
 [cols="15%,85%"]
 |===
@@ -2354,7 +2354,7 @@ For example:
 However, the DATEDIFF difference is 1 minute, 1 hour, 1 day, 0 week^1^, 1 month, 1 quarter or 1 month depending on the specified _datepart_.
 
 +
-^1^ NOTE: 2017-12-31 (_startdate_) falls on Sunday which cannot be counted. For more information, see <<the_first_day_of_week,The first day of week>>.
+^1^ NOTE: 2017-12-31 (_startdate_) falls on a Sunday, which is in the same week as 2018-01-01. For more information, see <<the_first_day_of_week,The first day of week>>.
 
 * Likewise, the difference between 2017-01-01 and 2018-12-31 is almost two years.
 
@@ -2364,9 +2364,9 @@ However, the DATEDIFF difference is 1 year if the specified _datepart_ is YEAR.
 [[the_first_day_of_week]]
 ==== The first day of week
 
-* This value cannot be specified, the default value is Sunday.
+* The first day of the week is Sunday. Changing the first day of the week is not supported.
 
-* The DATEDIFF function returns the number of Sundays between _startdate_ and _enddate_. This function counts _enddate_ if it falls on Sunday, but doesn't count _startdate_ even if it does fall on a Sunday.
+* The DATEDIFF function returns the number of Sundays between _startdate_ and _enddate_. This function counts _enddate_ if it falls on a Sunday, but doesn't count _startdate_ even if it does fall on a Sunday.
 
 +
 For example,
@@ -2378,7 +2378,7 @@ For example,
 [[the_first_week_of_year]]
 ==== The first week of year
 
-This value cannot be specified, the default value is the week in which Jan 1 occurs.  
+The first week of the year is the week in which January 1 occurs. Changing the first week of the year is not supported.  
 
 [[negative_or_zero]]
 ==== Negative or zero
@@ -2392,7 +2392,7 @@ If _enddate_ precedes _startdate_, the return value is negative or zero.
 
 ** For seconds, the maximum number is equivalent to approximately 68 years. 
 
-** For weeks, if a difference in weeks is requested, one of the two dates cannot precede 0001-01-07.
+** For weeks, the dates must be later than 0001-01-07.
 
 <<<
 [[examples_of_datediff]]
@@ -2412,7 +2412,7 @@ SELECT DATEDIFF( SECOND
 FROM DUAL;
 ```
 
-* This function returns the value 1 because a one-second boundary is
+* This function returns the value of 1 because a one-second boundary is
 crossed even though the two timestamps differ by only one microsecond.
 +
 ```
@@ -2426,7 +2426,7 @@ FROM DUAL;
 [[date_difference_in_minute]]
 ==== Date Difference in MINUTE
 
-* This function returns the value of 2 because a two-minute boundary is crossed.
+* This function returns the value of 2 because two minute boundaries are crossed.
 +
 ```
 SELECT DATEDIFF( MINUTE
@@ -2449,7 +2449,7 @@ SELECT DATEDIFF( DAY
 FROM DUAL;
 ```
 
-* This statement calculates how long do buyers have to wait. 
+* This statement calculates how long buyers have to wait. 
 +
 ```
 SELECT id, DATEDIFF( DAY, order_date, delivery_date ), price 
@@ -2496,7 +2496,7 @@ FROM DUAL;
 [[date_difference_in_quarter]]
 ==== Date Difference in QUARTER
 
-* This function returns the value of 3 because a three-quarter boundary is crossed.
+* This function returns the value of 3 because three quarter boundaries are crossed.
 +
 ```
 SELECT DATEDIFF( QUARTER
