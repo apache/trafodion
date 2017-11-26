@@ -2297,14 +2297,17 @@ DATEADD(DAY, 7, timestamp'2008-02-29 00:00:00')
 == DATEDIFF Function
 
 The DATEDIFF function returns the integer value for the number of
-_datepart_ units of time between _startdate_ and _enddate_. If
-_enddate_ precedes _startdate_, the return value is negative or zero.
+_datepart_ units of time between _startdate_ and _enddate_. 
 
 DATEDIFF is a {project-name} SQL extension.
 
 ```
 DATEDIFF (datepart, startdate, enddate)
 ```
+
+<<<
+[[syntax_description_of_datediff]]
+=== Syntax Description of DATEDIFF 
 
 * `datepart`
 +
@@ -2325,82 +2328,206 @@ following abbreviations:
 
 * `startdate`
 +
-may be of type DATE or TIMESTAMP.
+may be of type DATE or TIMESTAMP, should be enclosed in quotation marks.
 See <<datetime_value_expressions,Datetime Value Expressions>>.
 
 * `enddate`
 +
-may be of type DATE or TIMESTAMP.
+may be of type DATE or TIMESTAMP, should be enclosed in quotation marks.
 See <<datetime_value_expressions,Datetime Value Expressions>>.
 
-The method of counting crossed boundaries such as days, minutes, and
-seconds makes the result given by DATEDIFF consistent across all data
-types. The result is a signed integer value equal to the number of
-datepart boundaries crossed between the first and second date.
+[[considerations_for_datediff]]
+=== Considerations for DATEDIFF 
 
-For example, the number of weeks between Sunday, January 4, and Sunday,
-January 1 , is 1. The number of months between March 31 and April 1
-would be 1 because the month boundary is crossed from March to April.
-The DATEDIFF function generates an error if the result is out of range
-for integer values. For seconds, the maximum number is equivalent to
-approximately 68 years. The DATEDIFF function generates an error if a
-difference in weeks is requested and one of the two dates precedes
-January 7 of the year 0001.
+[[boundary]]
+==== Boundary
+
+The method of counting crossed boundaries such as days, minutes, and seconds makes the result given by DATEDIFF consistent across all data types. 
+
+The result is a signed integer value equal to the number of _datepart_ boundaries crossed between _startdate_ and _enddate_, because the DATEDIFF function does not calculate the full _datepart_, it counts the difference between _startdate_  and _enddate_.
+
+For example:  
+
+* The difference between 2017-12-31 23:59:59 and 2018-01-01 00:00:00 is only a single second. 
+
++
+However, the DATEDIFF difference is 1 minute, 1 hour, 1 day, 0 week^1^, 1 month, 1 quarter or 1 month depending on the specified _datepart_.
+
++
+^1^ NOTE: 2017-12-31 (_startdate_) falls on a Sunday, which is in the same week as 2018-01-01. For more information, see <<the_first_day_of_week,The first day of week>>.
+
+* Likewise, the difference between 2017-01-01 and 2018-12-31 is almost two years.
+
++
+However, the DATEDIFF difference is 1 year if the specified _datepart_ is YEAR.
+
+[[the_first_day_of_week]]
+==== The first day of week
+
+* The first day of the week is Sunday. Changing the first day of the week is not supported.
+
+* The DATEDIFF function returns the number of Sundays between _startdate_ and _enddate_. This function counts _enddate_ if it falls on a Sunday, but doesn't count _startdate_ even if it does fall on a Sunday.
+
++
+For example,
+
+** The DATEDIFF difference is 1 between 2017-11-19 and 2017-11-26 if the specified _datepart_ is WEEK.
+
+** The DATEDIFF difference is 0 between 2017-11-19 and 2017-11-25 if the specified _datepart_ is WEEK.
+
+[[the_first_week_of_year]]
+==== The first week of year
+
+The first week of the year is the week in which January 1 occurs. Changing the first week of the year is not supported.  
+
+[[negative_or_zero]]
+==== Negative or zero
+
+If _enddate_ precedes _startdate_, the return value is negative or zero.
+
+[[error]]
+==== Error
+
+* The DATEDIFF function generates an error if the result is out of range for integer values. 
+
+** For seconds, the maximum number is equivalent to approximately 68 years. 
+
+** For weeks, the dates must be later than 0001-01-07.
 
 <<<
 [[examples_of_datediff]]
 === Examples of DATEDIFF
 
-* This function returns the value of 0 because no one-second boundaries
-are crossed.
+[[date_difference_in_second]]
+==== Date Difference in SECOND
+
+* This function returns the value of 0 because no one-second boundary
+is crossed.
 +
 ```
-DATEDIFF( SECOND
-        , TIMESTAMP '2006-09-12 11:59:58.999998'
-        , TIMESTAMP '2006-09-12 11:59:58.999999'
-        )
+SELECT DATEDIFF( SECOND
+                 , TIMESTAMP '2006-09-12 11:59:58.999998'
+                 , TIMESTAMP '2006-09-12 11:59:58.999999'
+               )
+FROM DUAL;
 ```
 
-* This function returns the value 1 because a one-second boundary is
+* This function returns the value of 1 because a one-second boundary is
 crossed even though the two timestamps differ by only one microsecond.
 +
 ```
-DATEDIFF( SECOND
-        , TIMESTAMP '2006-09-12 11:59:58.999999'
-        , TIMESTAMP '2006-09-12 11:59:59.000000'
-        )
+SELECT DATEDIFF( SECOND
+                 , TIMESTAMP '2006-09-12 11:59:58.999999'
+                 , TIMESTAMP '2006-09-12 11:59:59.000000'
+               )
+FROM DUAL;
 ```
+
+[[date_difference_in_minute]]
+==== Date Difference in MINUTE
+
+* This function returns the value of 2 because two minute boundaries are crossed.
++
+```
+SELECT DATEDIFF( MINUTE
+                 , TIMESTAMP '2011-12-30 08:54:55'
+                 , TIMESTAMP '2011-12-30 08:56:01'
+               ) 
+FROM DUAL;
+```
+
+[[date_difference_in_day]]
+==== Date Difference in DAY
+
+* This function returns the value of -29.
++
+```
+SELECT DATEDIFF( DAY
+                 , DATE '2008-03-01'
+                 , DATE '2008-02-01'
+               ) 
+FROM DUAL;
+```
+
+* This statement calculates how long buyers have to wait. 
++
+```
+SELECT id, DATEDIFF( DAY, order_date, delivery_date ), price 
+FROM orders 
+ORDER BY price DESC;
+```
+
++
+```
+ID           (EXPR)       PRICE 
+-----------  -----------  ------
+
+     700300          145     926
+     312203          147     621
+     800660           23     568
+     100350          160     543
+     500450          148     324
+     700510          141     229
+     100210            3     228
+     600480          151     197
+     300380          154     183
+     200490          227     123
+     200320          153      91
+     400410          158      65
+     600250          143      32
+
+--- 13 row(s) selected.
+```
+
+[[date_difference_in_week]]
+==== Date Difference in WEEK
+
+* This function returns the value of 1 because only a one-week boundary is
+crossed.
++
+```
+SELECT DATEDIFF( WEEK
+                 , DATE '2006-01-01'
+                 , DATE '2006-01-09'
+               )
+FROM DUAL;
+```
+
+[[date_difference_in_quarter]]
+==== Date Difference in QUARTER
+
+* This function returns the value of 3 because three quarter boundaries are crossed.
++
+```
+SELECT DATEDIFF( QUARTER
+                 , DATE '2017-03-05'
+                 , DATE '2017-11-17'
+               ) 
+FROM DUAL;
+```
+
+[[date_difference_in_year]]
+=== Date Difference in YEAR
 
 * This function returns the value of 0.
 +
 ```
-DATEDIFF( YEAR
-        , TIMESTAMP '2006-12-31 23:59:59.999998'
-        , TIMESTAMP '2006-12-31 23:59:59.999999'
-        )
+SELECT DATEDIFF( YEAR
+                 , TIMESTAMP '2006-12-31 23:59:59.999998'
+                 , TIMESTAMP '2006-12-31 23:59:59.999999'
+               )
+FROM DUAL;
 ```
 
 * This function returns the value of 1 because a year boundary is
 crossed.
 +
 ```
-DATEDIFF( YEAR
-        , TIMESTAMP '2006-12-31 23:59:59.999999'
-        , TIMESTAMP '2007-01-01 00:00:00.000000'
-        )
-```
-
-* This function returns the value of 2 because two WEEK boundaries are
-crossed.
-+
-```
-DATEDIFF(WEEK, DATE '2006-01-01', DATE '2006-01-09')
-```
-
-* This function returns the value of -29.
-+
-```
-DATEDIFF(DAY, DATE '2008-03-01', DATE '2008-02-01')
+SELECT DATEDIFF( YEAR
+                 , TIMESTAMP '2006-12-31 23:59:59.999999'
+                 , TIMESTAMP '2007-01-01 00:00:00.000000'
+               )
+FROM DUAL;
 ```
 
 <<<
