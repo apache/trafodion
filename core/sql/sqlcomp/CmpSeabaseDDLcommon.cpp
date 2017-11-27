@@ -572,6 +572,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            TRUE, // this is a metadata, histogram or repository object
                             &colArray, colInfoArray, FALSE, FALSE, NULL, NULL, NULL, NULL, 
                             CTXTHEAP))
         {
@@ -3013,6 +3014,7 @@ short CmpSeabaseDDL::getNAColumnFromColDef
   LobsStorage lobStorage;
   NABoolean alignedFormat = FALSE;
   if (getColInfo(colNode,
+                 FALSE,
                  colFamily,
                  colName,
                  alignedFormat,
@@ -3058,6 +3060,7 @@ short CmpSeabaseDDL::getNAColumnFromColDef
 }
 
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
+                                NABoolean isMetadataHistOrReposColumn,
                                 NAString &colFamily,
                                 NAString &colName,
                                 NABoolean alignedFormat,
@@ -3126,7 +3129,8 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
       return rc;
     }
 
-  if ((naType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+  if ((!isMetadataHistOrReposColumn) &&
+      (naType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
       (naType->getNominalSize() > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH)))
     {
       *CmpCommon::diags() << DgSqlCode(-4247)
@@ -5982,6 +5986,7 @@ short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
 
 short CmpSeabaseDDL::buildColInfoArray(
                                        ComObjectType objType,
+                                       NABoolean isMetadataHistOrReposObject,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
@@ -6016,6 +6021,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
+                     isMetadataHistOrReposObject,
                      colFamily,
                      colName,
                      alignedFormat,
@@ -6161,6 +6167,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
+                     FALSE,
                      colFamily,
                      colName,
                      FALSE,
