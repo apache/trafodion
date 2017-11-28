@@ -42,6 +42,7 @@ typedef enum {
  ,OFR_ERROR_ISEOF_EXCEPTION     // Java exception in isEOF()
  ,OFR_ERROR_FETCHROW_EXCEPTION  // Java exception in fetchNextRow()
  ,OFR_ERROR_CLOSE_EXCEPTION     // Java exception in close()
+ ,OFR_ERROR_GETNUMROWS_EXCEPTION
  ,OFR_LAST
 } OFR_RetCode;
 
@@ -115,6 +116,9 @@ private:
  
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 
