@@ -187,8 +187,6 @@ SFR_RetCode SequenceFileReader::open(const char* path)
   tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path);
 
-  jenv_->DeleteLocalRef(js_path);  
-
   if (jresult != NULL)
   {
     logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::open()", jresult);
@@ -271,29 +269,6 @@ SFR_RetCode SequenceFileReader::isEOF(bool& isEOF)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-//char** SequenceFileReader::fetchArrayOfColumns()
-//{
-//  // java.lang.String[] fetchArrayOfColumns();
-//  jobjectArray jresult = (jobjectArray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHCOLS].methodID);
-//  if (jenv_->ExceptionCheck()) 
-//  {
-//    jenv_->ExceptionDescribe();
-//    jenv_->ExceptionClear();
-//    jenv_->DeleteLocalRef(jresult);
-//    return NULL;
-//  }
-//
-//  if (jresult == NULL)
-//  {
-//    return NULL;
-//  }
-//	
-//  return SequenceFileReader::JStringArray2CharsArray(jresult);
-//}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
 {
   if (initJNIEnv() != JOI_OK)
@@ -357,57 +332,6 @@ jstring SequenceFileReader::getLastError()
 
   return jresult;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-//char** SequenceFileReader::JStringArray2CharsArray(jobjectArray jarray)
-//{
-//  char **chars_array;
-//  int len;
-//  int i;
-//  const char *ret_val;
-//  jstring jst_ret;
-//
-//  len = jenv_->GetArrayLength(jarray);
-//
-//  chars_array = (char **)malloc(sizeof(char*) * (len + 1));
-//  if (chars_array == NULL) 
-//  {
-//    //TRACE(stderr, "<%s:%d> malloc() failed\n", __FILE__, __LINE__);
-//    return NULL;
-//  }
-//
-//  for (i = 0; i < len; i++) 
-//  {
-//    ret_val = "";
-//
-//    jst_ret = (jstring)jenv_->GetObjectArrayElement(jarray, i);
-//    if (jst_ret != NULL) 
-//    {
-//      ret_val = jenv_->GetStringUTFChars(jst_ret, 0);
-//    }
-//
-//    //TRACE(stderr, "<%s:%d> %d) => %s\n", __FILE__, __LINE__, i, ret_val);
-//
-//    chars_array[i] = strdup(ret_val);
-//    if (chars_array[i] == NULL) 
-//    {
-//      // TODO: Add error handling
-//      return NULL;
-//    }
-//
-//    if (jst_ret != NULL) 
-//    {
-//      jenv_->ReleaseStringUTFChars(jst_ret, ret_val);
-//      jenv_->DeleteLocalRef(jst_ret);  
-//    }
-//  }
-//  chars_array[i] = NULL;
-//  jenv_->DeleteLocalRef(jarray);  
-//
-//  return chars_array;
-//}
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -598,8 +522,6 @@ SFW_RetCode SequenceFileWriter::write(const char* data)
   // String write(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_WRITE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_WRITE].methodID, js_data);
-
-  jenv_->DeleteLocalRef(js_data);  
 
   if (jresult != NULL)
   {

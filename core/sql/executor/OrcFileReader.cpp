@@ -285,9 +285,10 @@ OFR_RetCode OrcFileReader::isEOF(bool& isEOF)
 //OFR_RetCode OrcFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
 OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long& rowNumber, int& num_columns)
 {
-/*
+
   if (initJNIEnv() != JOI_OK)
      return OFR_ERROR_FETCHROW_EXCEPTION;
+/*
   // java.lang.String fetchNextRow(long stopOffset);
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID, stopOffset);
   if (jresult==NULL && getLastError()) 
@@ -376,7 +377,6 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
         }
 
 	jenv_->GetByteArrayRegion(jrow, 0, row_length, (jbyte*)buffer);
- 	jenv_->DeleteLocalRef(jrow);  
 
   jenv_->PopLocalFrame(NULL);
   return (OFR_OK);
@@ -494,5 +494,5 @@ Removed until implemented
   QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "  =>Returning %d, read %ld bytes in %d rows.", retCode, bytesRead, rowsRead);
   return retCode;
 */
-  return OFR_OK;
+  return (OFR_NOMORE);
 }
