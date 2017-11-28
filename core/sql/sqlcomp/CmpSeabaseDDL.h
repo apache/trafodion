@@ -342,6 +342,7 @@ class CmpSeabaseDDL
 
   short buildColInfoArray(
                           ComObjectType objType,
+                          NABoolean isMetadataHistOrReposObject,
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
@@ -596,6 +597,7 @@ protected:
 		    ULng32 &colFlags);
 
   short getColInfo(ElemDDLColDef * colNode, 
+                   NABoolean isMetadataHistOrReposColumn,
                    NAString &colFamily,
 		   NAString &colName,
                    NABoolean alignedFormat,

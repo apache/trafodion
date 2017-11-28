@@ -2330,6 +2330,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       keyInfoArray = new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            FALSE, // not a metadata, histogram or repository object
                             &colArray, colInfoArray, implicitPK,
                             alignedFormat, &identityColPos,
                             (hbaseMapFormat ? NULL : &userColFamVec), 
@@ -5472,6 +5473,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
     }
 
   retcode = getColInfo(pColDef,
+                       FALSE, // not a metadata, histogram or repository column 
                        colFamily,
                        colName, 
                        naTable->isSQLMXAlignedTable(),
@@ -6895,6 +6897,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
     goto label_restore;
 
   if (getColInfo(pColDef,
+                 FALSE, // not a metadata, histogram or repository column
                  colFamily,
                  colName, 
                  naTable->isSQLMXAlignedTable(),
