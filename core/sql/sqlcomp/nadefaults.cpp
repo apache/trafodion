@@ -342,7 +342,6 @@ SDDint__(AFFINITY_VALUE,                        "-2"),
 // controls the ESP allocation per core. 
  DDkwd__(AGGRESSIVE_ESP_ALLOCATION_PER_CORE,        "OFF"),
 
-SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
  // this should be used for testing only. DML should not be executed on
  // non-audited tables
@@ -502,10 +501,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
  DDkwd__(CAT_ALLOW_NEW_FEATUREX, "OFF"),
 
-// Control whether authorization caches immutable users
-  DDkwd__(CAT_AUTHORIZATION_CACHE_IMMUTABLE_USERS, "ON"),
 
- DDkwd__(CAT_CREATE_SCHEMA_LABELS_ON_ALL_SEGMENTS, "ON"),
 
  DDkwd__(CAT_DEFAULT_COMPRESSION, "NONE"),
  // Metadata table distribution schemes
@@ -521,22 +517,7 @@ SDDkwd__(CAT_DISTRIBUTE_METADATA,             "ON"),
 SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 
- // Throw an error if a column is part of the store by clause and
- // is not defined as NOT NULL return an error
- DDkwd__(CAT_ERROR_ON_NOTNULL_STOREBY, "ON"),
 
- DDui1__(CAT_FS_TIMEOUT,                       "9000"),
-
- // Used to make ignore "already exists" error in Create and
- // "does not exist" error in Drop.
- DDkwd__(CAT_IGNORE_ALREADY_EXISTS_ERROR, "OFF"),
- DDkwd__(CAT_IGNORE_DOES_NOT_EXIST_ERROR, "OFF"),
-
- // Used to make catman test134 predictable
- DDkwd__(CAT_IGNORE_EMPTY_CATALOGS, "OFF"),
-
- // Catalog Manager internal support for REPLICATE AUTHORIZATION
- DDkwd__(CAT_IGNORE_REPL_AUTHIDS_ERROR, "OFF"),
 
 // This enables the DB Limits functionality.  If set to OFF, then blocksize
 // is restricted to 4096 and clustering key size is limited to 255 bytes.
@@ -544,43 +525,17 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 // large blocks or keys.
   DDkwd__(CAT_LARGE_BLOCKS_LARGE_KEYS, "ON"),
 
-// If DB Limits is enabled, then increase the default blocksize to 32K
-// on NSK if the object's clustering key length is larger than this value.
-
-  DDui1__(CAT_LARGE_BLOCKS_MAX_KEYSIZE,   "1"),
-
-// If DB Limits is enabled, then increase the default blocksize to 32K
-// on NSK if the object's row size is larger than this value.
-
-  DDui1__(CAT_LARGE_BLOCKS_MAX_ROWSIZE,   "1"),
-
 // Controls how pathnames for routines/procedures/SPJs are interpreted
   DDkwd__(CAT_LIBRARY_PATH_RELATIVE, "OFF"),
 
-  DDkwd__(CAT_MORE_SCHEMA_PRIVS, "ON"),
-
-  DDkwd__(CAT_OVERRIDE_CREATE_DISABLE, "OFF"),
 
 
-// This forces an rcb to be created with a different version number
-// A "0" means to take the current mxv version
-  DDui___(CAT_RCB_VERSION,     "0"),
 
-// Controls creation of column privileges for object-level privileges
-  DDkwd__(CAT_REDUNDANT_COLUMN_PRIVS, "ON"),
 
-// If schema owner is object owner is ON, then the default owner for objects is the
-//  schema owner.
-  DDkwd__(CAT_SCHEMA_OWNER_IS_OBJECT_OWNER, "OFF"),
-
-  DDkwd__(CAT_TEST_BOOL, "OFF"),
-  DDint__(CAT_TEST_POINT, "0"),
-  DD_____(CAT_TEST_STRING, "NONE"),
 
   // CMP_ERR_LOG_FILE indicates where to save a log for certain errors.
   DD_____(CMP_ERR_LOG_FILE,    "tdm_arkcmp_errors.log"),
 
-  DDkwd__(COLLECT_REORG_STATS,                                  "ON"),
 
   DDint__(COMPILER_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
 
@@ -592,10 +547,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMPILE_TIME_MONITOR,			"OFF"),
   DD_____(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY, "OFF"),
   DD_____(COMPILE_TIME_MONITOR_OUTPUT_FILE,	"NONE"),
-
-  // complexity threshold beyond which a
-  // MultiJoin query is considered too complex
-  DDflt0_(COMPLEX_MJ_QUERY_THRESHOLD, "1000000"),
 
 
   // Switch between new aligned internal format and exploded format
@@ -615,24 +566,20 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
   // These are switches and variables to use for compiler debugging
   DDkwd__(COMP_BOOL_1,      "OFF"),
-  DDkwd__(COMP_BOOL_10,     "OFF"),
   DDkwd__(COMP_BOOL_100,      "OFF"),
   DDkwd__(COMP_BOOL_101,      "OFF"),
   DDkwd__(COMP_BOOL_102,      "OFF"),
   DDkwd__(COMP_BOOL_103,      "OFF"),
   DDkwd__(COMP_BOOL_104,      "OFF"),
-  DDkwd__(COMP_BOOL_105,      "OFF"),
   DDkwd__(COMP_BOOL_106,      "OFF"),
   DDkwd__(COMP_BOOL_107,      "ON"), // Being used for testing default predicate synthesis in cardinality estimation
   DDkwd__(COMP_BOOL_108,      "ON"), // Being used for testing default predicate synthesis in cardinality estimation
-  DDkwd__(COMP_BOOL_109,      "OFF"),
 
   DDkwd__(COMP_BOOL_11,     "OFF"),
   DDkwd__(COMP_BOOL_110,      "OFF"),
   DDkwd__(COMP_BOOL_111,      "OFF"),
   DDkwd__(COMP_BOOL_112,      "OFF"),
   DDkwd__(COMP_BOOL_113,      "OFF"),
-  DDkwd__(COMP_BOOL_114,      "OFF"),
   DDkwd__(COMP_BOOL_115,      "OFF"),
   DDkwd__(COMP_BOOL_116,      "OFF"),
   DDkwd__(COMP_BOOL_117,      "OFF"),
@@ -641,7 +588,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
   DDkwd__(COMP_BOOL_12,     "OFF"),
   DDkwd__(COMP_BOOL_120,      "OFF"),
-  DDkwd__(COMP_BOOL_121,      "OFF"),
   DDkwd__(COMP_BOOL_122,      "ON"), // Solution 10-081203-7708 fix
   DDkwd__(COMP_BOOL_123,      "OFF"),
   DDkwd__(COMP_BOOL_124,      "OFF"),
@@ -666,16 +612,12 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_14,     "ON"),
   DDkwd__(COMP_BOOL_140,      "ON"),
   DDkwd__(COMP_BOOL_141,      "ON"),  // Used for testing MC UEC adjustment for uplifting join cardinality
-  DDkwd__(COMP_BOOL_142,      "ON"),  // Used for turning on Compile Time Statistics caching
-  DDkwd__(COMP_BOOL_143,      "OFF"),
   DDkwd__(COMP_BOOL_144,      "OFF"), // only Key columns usage as a part of materialization of disjuncts is controlled by the CQD
   DDkwd__(COMP_BOOL_145,      "ON"), // Used for selectivity adjustment for MC Joins
-  DDkwd__(COMP_BOOL_146,      "OFF"),
   DDkwd__(COMP_BOOL_147,      "OFF"),
   DDkwd__(COMP_BOOL_148,      "ON"), // Used for GroupBy Cardinality Enhancement for complex expressions
   DDkwd__(COMP_BOOL_149,      "ON"), // Used for testing multi-col uniqueness cardinality enhancement
 
-  DDkwd__(COMP_BOOL_15,     "OFF"),
   DDkwd__(COMP_BOOL_150,      "OFF"),
   DDkwd__(COMP_BOOL_151,      "OFF"),
   DDkwd__(COMP_BOOL_152,      "OFF"),
@@ -683,11 +625,9 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_154,      "OFF"),
   DDkwd__(COMP_BOOL_155,      "OFF"),
   DDkwd__(COMP_BOOL_156,      "ON"),  // Used by RTS to turn on RTS Stats collection for ROOT operators
-  DDkwd__(COMP_BOOL_157,      "OFF"),
   DDkwd__(COMP_BOOL_158,      "OFF"),
   DDkwd__(COMP_BOOL_159,      "OFF"),
 
-  DDkwd__(COMP_BOOL_16,     "OFF"),
   DDkwd__(COMP_BOOL_160,      "OFF"),
   DDkwd__(COMP_BOOL_161,      "OFF"),
   DDkwd__(COMP_BOOL_162,      "ON"),  // transform NOT EXISTS subquery using anti_semijoin instead of Join-Agg
@@ -699,8 +639,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_168,      "ON"),
   DDkwd__(COMP_BOOL_169,      "OFF"),
 
-  DDkwd__(COMP_BOOL_17,     "ON"),
-  DDkwd__(COMP_BOOL_170,      "ON"),
   DDkwd__(COMP_BOOL_171,      "OFF"),
   DDkwd__(COMP_BOOL_172,      "OFF"),
   DDkwd__(COMP_BOOL_173,      "OFF"), //  fix: make odbc params nullable
@@ -709,12 +647,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_176,      "OFF"),
   DDkwd__(COMP_BOOL_177,      "OFF"),
   DDkwd__(COMP_BOOL_178,      "OFF"),
-  DDkwd__(COMP_BOOL_179,      "OFF"),
 
   DDkwd__(COMP_BOOL_18,     "OFF"),
-  DDkwd__(COMP_BOOL_180,      "OFF"),
-  DDkwd__(COMP_BOOL_181,      "OFF"),
-  DDkwd__(COMP_BOOL_182,      "OFF"), // internal usage
   DDkwd__(COMP_BOOL_183,      "OFF"),
   DDkwd__(COMP_BOOL_184,      "ON"), // ON => use min probe size for mdam. Using min probe size of 1 or 2 currently has a bug so this is not the default. OFF => use default probe size of 100
   DDkwd__(COMP_BOOL_185,      "ON"), //Fix, allows extract(year from current_date) to be treated as a userinput
@@ -728,8 +662,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_191,      "OFF"), // Temp for UDF metadata switch
   DDkwd__(COMP_BOOL_192,      "OFF"),
   DDkwd__(COMP_BOOL_193,      "OFF"),
-  DDkwd__(COMP_BOOL_194,      "OFF"),
-  DDkwd__(COMP_BOOL_195,      "OFF"), // used to enable unexternalized get statistics options.
   DDkwd__(COMP_BOOL_196,      "OFF"),
   DDkwd__(COMP_BOOL_197,      "OFF"),
   DDkwd__(COMP_BOOL_198,      "OFF"),
@@ -746,32 +678,22 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
                                                //   OFF: do include.
                                                // Change to ON in M5
   DDkwd__(COMP_BOOL_203,		"OFF"),
-  DDkwd__(COMP_BOOL_205,		"OFF"), // enable reorg on metadata
   DDkwd__(COMP_BOOL_206,		"OFF"), // Internal Usage
   DDkwd__(COMP_BOOL_207,		"OFF"), // Internal Usage
-  DDkwd__(COMP_BOOL_208,		"OFF"), // Internal Usage
-  DDkwd__(COMP_BOOL_209,		"OFF"), // Internal Usage
   DDkwd__(COMP_BOOL_21,			"OFF"),
   DDkwd__(COMP_BOOL_210,		"ON"),
   DDkwd__(COMP_BOOL_211,		"ON"), // controls removing constants from group expression
-  DDkwd__(COMP_BOOL_215,                "OFF"),
   DDkwd__(COMP_BOOL_217,                "OFF"),
   DDkwd__(COMP_BOOL_219,                "OFF"), // for InMem obj defn
   DDkwd__(COMP_BOOL_22,			"ON"),
-  DDkwd__(COMP_BOOL_220,		"OFF"), // UserLoad fastpath opt
   DDkwd__(COMP_BOOL_221,		"OFF"), // unnests a subquery even when there is no explicit correlation
-  DDkwd__(COMP_BOOL_222,		"ON"), // R2.5 BR features enabled
-  DDkwd__(COMP_BOOL_223,		"OFF"), // enable undocumented options
                                                 // bulk replicate features
-  DDkwd__(COMP_BOOL_224,		"OFF"), // enable undocumented
                                                 // bulk replicate features
-  DDkwd__(COMP_BOOL_225,		"ON"),  // enable optimized esps allocation
   DDkwd__(COMP_BOOL_226,                "OFF"),  // ON enables UNLOAD feature
                                                 // for disk label stats.
   DDkwd__(COMP_BOOL_23,			"ON"),
   DDkwd__(COMP_BOOL_24,			"OFF"), // AS enhancement to adjust maxDoP
   DDkwd__(COMP_BOOL_25,			"OFF"), // Being used in Cardinality Estimation
-  DDkwd__(COMP_BOOL_26,			"OFF"),
   DDkwd__(COMP_BOOL_27,			"OFF"),
   DDkwd__(COMP_BOOL_28,			"OFF"),
   DDkwd__(COMP_BOOL_29,			"OFF"),
@@ -792,7 +714,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_40,			"ON"),
   DDkwd__(COMP_BOOL_41,			"OFF"),
   DDkwd__(COMP_BOOL_42,			"ON"),
-  DDkwd__(COMP_BOOL_43,			"OFF"), 
   DDkwd__(COMP_BOOL_44,			"OFF"),
   DDkwd__(COMP_BOOL_45,			"ON"),
   DDkwd__(COMP_BOOL_46,			"OFF"),
@@ -801,7 +722,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_49,			"OFF"),
 
   DDkwd__(COMP_BOOL_5,			"ON"),
-  DDkwd__(COMP_BOOL_50,			"OFF"),
   DDkwd__(COMP_BOOL_51,			"OFF"),
   DDkwd__(COMP_BOOL_52,			"OFF"),
   DDkwd__(COMP_BOOL_53,			"ON"), //Turned "ON" for OCB Cost
@@ -809,10 +729,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_55,			"OFF"),
   DDkwd__(COMP_BOOL_56,			"OFF"),
   DDkwd__(COMP_BOOL_57,			"ON"),
-  DDkwd__(COMP_BOOL_58,                 "OFF"),
   DDkwd__(COMP_BOOL_59,			"OFF"),
 
-  DDkwd__(COMP_BOOL_6,			"OFF"),
   // comp_bool_60 is used in costing of an exchange operator. This is
   // used in deciding to use  Nodemap decoupling and other exchange
   // costing logic.
@@ -849,7 +767,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_86,			"OFF"),
   DDkwd__(COMP_BOOL_87,			"OFF"),
   DDkwd__(COMP_BOOL_88,			"OFF"),
-  DDkwd__(COMP_BOOL_89,			"OFF"),
 
   DDkwd__(COMP_BOOL_9,			"OFF"),
   DDkwd__(COMP_BOOL_90,			"ON"),
@@ -878,11 +795,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDflt__(COMP_FLOAT_9,	        "1002.0"),
 
   DDint__(COMP_INT_0,         "5000"),
-  DDint__(COMP_INT_1,         "0"),
   DDint__(COMP_INT_10,         "3"),
   DDint__(COMP_INT_11,         "-1"),
-  DDint__(COMP_INT_12,         "0"),
-  DDint__(COMP_INT_13,         "0"),
   DDint__(COMP_INT_14,         "0"),
   DDint__(COMP_INT_15,         "7"),
   DDint__(COMP_INT_16,         "1000000"),
@@ -897,27 +811,19 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   // this cqd has been retained as a fallback in case OR_PRED has bugs.
   DDint__(COMP_INT_23,         "22"),
   DDint__(COMP_INT_24,         "1000000000"),
-  DDint__(COMP_INT_25,         "0"),
   DDint__(COMP_INT_26,         "1"),
-  DDint__(COMP_INT_27,         "0"),
-  DDint__(COMP_INT_28,         "0"),
-  DDint__(COMP_INT_29,         "0"),
   DDint__(COMP_INT_3,          "5"),
   DDint__(COMP_INT_30,         "5"),
   DDint__(COMP_INT_31,         "5"),
   DDint__(COMP_INT_32,         "100"),
-  DDint__(COMP_INT_33,         "0"),
   DDint__(COMP_INT_34,         "10000"), // lower bound: 10000
   DDint__(COMP_INT_35,         "500000"), // upper bound: 200000
   DDint__(COMP_INT_36,         "128"),   // Bounds for producer for OCB
-  DDint__(COMP_INT_37,         "0"),
   DDint__(COMP_INT_38,         "0"),    // test master's abend
   DDint__(COMP_INT_39,         "0"),    // test esp's abend
   DDint__(COMP_INT_4,         "400"),
   DDint__(COMP_INT_40,         "10"),   // this defines the percentage of selectivity after applying equality predicates on single column histograms
                                         // beyond which the optimizer should use MC stats
-  DDint__(COMP_INT_41,         "0"),
-  DDint__(COMP_INT_42,         "0"),
   DDint__(COMP_INT_43,         "3"), // this is only for testing purposes. Once HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  is set to ON by default, the value of this CQD should be adjusted
   DDint__(COMP_INT_44,         "1000000"), // frequency threshold above which
                                            // a boundary value will be inclded
@@ -927,20 +833,11 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDint__(COMP_INT_47,         "0"),
   DDint__(COMP_INT_48,         "32"),  // # trips thru scheduler task list before eval of CPU time limit.
 
-  DDint__(COMP_INT_49,         "0"),
 
   DDint__(COMP_INT_5,         "0"),
   DDint__(COMP_INT_50,         "0"),
   DDint__(COMP_INT_51,         "0"),
-  DDint__(COMP_INT_52,         "0"),
-  DDint__(COMP_INT_53,         "0"),
   DDint__(COMP_INT_54,         "0"),
-  DDint__(COMP_INT_55,         "0"),
-  DDint__(COMP_INT_56,         "0"),
-  DDint__(COMP_INT_57,         "0"),
-  DDint__(COMP_INT_58,         "0"),
-  DDint__(COMP_INT_59,         "0"),
-  DDint__(COMP_INT_6,         "400"),
   // comp_int_60 is used in costing of an exchnage operator. It is
   // used to indicate buffer size of a DP2 exchange when sending
   // messages down.
@@ -949,75 +846,39 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   // Exchange operator default value
   DDint__(COMP_INT_62,         "10000"),
   DDint__(COMP_INT_63,         "10000"), // SG Insert issue
-  DDint__(COMP_INT_64,         "0"),
-  DDint__(COMP_INT_65,         "0"),
   DDint__(COMP_INT_66,         "0"), // to change #buffers per flushed cluster
   DDint__(COMP_INT_67,         "8"), // to test #outer-buffers per a batch
-  DDint__(COMP_INT_68,         "0"),
-  DDint__(COMP_INT_69,         "0"),
   DDint__(COMP_INT_7,         "10000000"),
   DDint__(COMP_INT_70,         "1000000"),
   DDint__(COMP_INT_71,         "0"),
-  DDint__(COMP_INT_72,         "0"),
   // if set to 1, allows keyPredicate to be inserted without passing key col.
   DDint__(COMP_INT_73,         "1"),
   // if set to 1, disables cursor_delete plan if there are no alternate indexes.
   DDint__(COMP_INT_74,         "0"),
-  DDint__(COMP_INT_75,         "0"),
-  DDint__(COMP_INT_76,         "0"),
   DDint__(COMP_INT_77,         "0"),
-  DDint__(COMP_INT_78,         "0"),
   DDint__(COMP_INT_79,         "0"),
   // this is used temporaraly as value for parallel threshold
   // in case ATTEMPT_ESP_PARALLELISM is set to MAXIMUM
   DDint__(COMP_INT_8,         "20"),
   DDint__(COMP_INT_80,         "3"),
-  DDint__(COMP_INT_81,         "0"),
-  DDint__(COMP_INT_82,         "0"),
 
-  DDint__(COMP_INT_83,         "0"),
 
-  // max num of retries after parl purgedata open/control call errs.Default 25.
-  DDint__(COMP_INT_84,         "25"),
-  // delay between each paral pd error retry. Default is 2 seconds.
-  DDint__(COMP_INT_85,         "2"),
-
-  DDint__(COMP_INT_86,         "0"),
-  DDint__(COMP_INT_87,         "0"),
-  DDint__(COMP_INT_88,         "0"),
   DDint__(COMP_INT_89,         "2"),
   DDint__(COMP_INT_9,         "0"),
   DDint__(COMP_INT_90,         "0"),
-  DDint__(COMP_INT_91,         "0"),
-  DDint__(COMP_INT_92,         "0"),
-  DDint__(COMP_INT_93,         "0"),
-  DDint__(COMP_INT_94,         "0"),
   DDint__(COMP_INT_95,         "0"),
-  DDint__(COMP_INT_96,         "0"),
-  DDint__(COMP_INT_97,         "0"),
   DDint__(COMP_INT_98,         "512"),
   DDint__(COMP_INT_99,         "10"),
 
   DD_____(COMP_STRING_1,	    "NONE"),
   DD_____(COMP_STRING_2,	    ""),
-  DD_____(COMP_STRING_3,	    ""),
-  DD_____(COMP_STRING_4,	    ""),
   DD_____(COMP_STRING_5,	    ""),
-  DD_____(COMP_STRING_6,	    ""),
 
-  // Configured_memory_for defaults are all measured in KB
-  DDui___(CONFIGURED_MEMORY_FOR_BASE,          "16384"),
-  DDui___(CONFIGURED_MEMORY_FOR_DAM,           "20480"),
-  DDui___(CONFIGURED_MEMORY_FOR_MINIMUM_HASH,  "20480"),
-  DDui___(CONFIGURED_MEMORY_FOR_MXESP,          "8192"),
 
   DDkwd__(CONSTANT_FOLDING,                     "OFF"),
 
   DDkwd__(COSTING_SHORTCUT_GROUPBY_FIX,                "ON"),
   DDflt0_(COST_PROBE_DENSITY_THRESHOLD, ".25"),
-  // As of 3/23/98 the tupp desc. length is 12 bytes. Change when executor
-  // changes.
-  DDflt0_(COST_TUPP_DESC_LENGTH_IN_KB,		"0.01171875"),
 
   DDflt0_(CPUCOST_COMPARE_COMPLEX_DATA_TYPE_OVERHEAD,	"10."),
   DDflt0_(CPUCOST_COMPARE_COMPLEX_DATA_TYPE_PER_BYTE,	".1"),
@@ -1034,8 +895,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDflt0_(CPUCOST_COPY_SIMPLE_DATA_TYPE,	".005"),
   // This is a per data request overhead cost paid by the cpu
   DDflt0_(CPUCOST_DATARQST_OVHD,		".01"),
-  DDflt0_(CPUCOST_DM_GET,			".001"),
-  DDflt0_(CPUCOST_DM_UPDATE,			".001"),
   DDflt0_(CPUCOST_ENCODE_PER_BYTE,		".002"),
   DDflt0_(CPUCOST_ESP_INITIALIZATION,		"10"),
 
@@ -1054,12 +913,9 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDflt0_(CPUCOST_EVAL_ARITH_OP,		".0305"),
 
   DDflt0_(CPUCOST_EVAL_FUNC_DEFAULT,		"10."),
-  DDflt0_(CPUCOST_EVAL_LOGICAL_OP,		"1."),
   DDflt0_(CPUCOST_EVAL_SIMPLE_PREDICATE,	"1."),
   DDflt0_(CPUCOST_EXCHANGE_COST_PER_BYTE,             ".002"),
-  DDflt0_(CPUCOST_EXCHANGE_COST_PER_ROW,		".002"),
   DDflt0_(CPUCOST_EXCHANGE_INTERNODE_COST_PER_BYTE,   ".008"),
-  DDflt0_(CPUCOST_EXCHANGE_MAPPING_FUNCTION,		".01"),
   // was 0.1, but now 0.011
   // XDDflt0_(CPUCOST_EXCHANGE_REMOTENODE_COST_PER_BYTE,    ".011"),
   
@@ -1067,7 +923,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   // remote node to be the same as for inter node, 0.01
   // Also change it to be internalized
   DDflt0_(CPUCOST_EXCHANGE_REMOTENODE_COST_PER_BYTE,    ".01"),
-  DDflt0_(CPUCOST_EXCHANGE_SPLIT_FUNCTION,		".01"),
   // Assume
   // CPUCOST_HASH_PER_KEY = 4 * CPUCOST_HASH_PER_BYTE
   // History:
@@ -1140,14 +995,9 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   // cost, nothing can overlap with it.
   DDflt0_(CPUCOST_SUBSET_OPEN,			"7000"),
   DDflt0_(CPUCOST_SUBSET_OPEN_AFTER_FIRST,	"1250"),
-  DDflt0_(CPUCOST_TUPLE_REFERENCE,		".001"),
 
-  DDui___(CREATE_DEFINITION_SCHEMA_VERSION,     "0"),
 
- DDkwd__(CREATE_EXTERNAL_USER_NAME_INDEX,      "OFF"),
- DDkwd__(CREATE_FOR_NO_RDF_REPLICATE,	        "OFF"),
 
- DDkwd__(CREATE_METADATA_TABLE,                "OFF"),
  DDkwd__(CREATE_OBJECTS_IN_METADATA_ONLY,      "OFF"),
 
  DDkwd__(CROSS_PRODUCT_CONTROL,	               "ON"),
@@ -1181,14 +1031,10 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   // if it's "OFF" then the defaults of the two heuristics will be used
   DDkwd__(DATA_FLOW_OPTIMIZATION,		"ON"),
 
-  // DDL Default location support
- DD_____(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
   DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
-    // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
-  DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
 
  SDDkwd__(DEFAULT_CHARSET,           (char *)SQLCHARSETSTRING_ISO88591),
  XDDui1__(DEFAULT_DEGREE_OF_PARALLELISM,    "2"),
@@ -1228,34 +1074,14 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DD_____(DISPLAY_DATA_FLOW_GRAPH,		"OFF"),
  XDDkwd__(DISPLAY_DIVISION_BY_COLUMNS,          "OFF"),
 
- // opens are distributed among all partitions instead of just root.
- // 0: no distribution, only use root.
- // -1: max distribution, all partitions
- // <number>: num of partitions per segment
-  DDint__(DISTRIBUTE_OPENS,                     "-1"),
 
   // temp. disable dop reduction logic
   DDflt0_(DOP_REDUCTION_ROWCOUNT_THRESHOLD,	"0.0"),
 
-  DDkwd__(DO_MINIMAL_RENAME,                    "OFF"),
 
 
-  // if set, then space needed for executor structures at runtime is
-  // optimized such that the allocation starts with a low number and then
-  // is allocated on a need basis. This means that we may have to allocate
-  // more smaller chunks if much space is needed. But it helps in the case
-  // where many plans are being used and each one only takes a small amount
-  // of space. This optimization especially helps in case of Dp2 fragments
-  // as there is only a finite amount of space available there. Once that
-  // limit is reached, and a new plan is shipped, it means that an existing
-  // eid plan from dp2 memory need to be swapped out and then refixed up.
-  // By reducing space utilization, we end up with more eid sessions in
-  // use inside of dp2.
-  DDkwd__(DO_RUNTIME_EID_SPACE_COMPUTATION,	"OFF"),
-  DDkwd__(DO_RUNTIME_SPACE_OPTIMIZATION,	"OFF"),
 
 
-  DDui2__(DP2_BLOCK_HEADER_SIZE,		"96"),
   // DP2 Cache defaults as of 06/08/98.
   DDui1__(DP2_CACHE_1024_BLOCKS,		"152"),
   DDui1__(DP2_CACHE_16K_BLOCKS,                 "1024"),
@@ -1264,15 +1090,12 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDui1__(DP2_CACHE_4096_BLOCKS,              "4096"),
   DDui1__(DP2_CACHE_512_BLOCKS,			"152"),
   DDui1__(DP2_CACHE_8K_BLOCKS,                  "2048"),
-  // The cache size is about 2000 pages @ 4k each page
-  DDui1__(DP2_CACHE_SIZE_IN_KB,			"8000"),
   // Exchange Costing
   // 6/12/98.
   // End of buffer header is 32 bytes or .0313 KB.
   // Each Exchange->DP2 request is 48 bytes or .0469 KB.
   DDflte_(DP2_END_OF_BUFFER_HEADER_SIZE,	".0313"),
   DDflte_(DP2_EXCHANGE_REQUEST_SIZE,		".0469"),
-  DDpct__(DP2_FRACTION_SEEK_FROM_RANDOM_TO_INORDER, "25"),
   DDui2__(DP2_MAX_READ_PER_ACCESS_IN_KB,        "256"),
   // The buffer size, as of 10/07/97 is 32K
   DDui2__(DP2_MESSAGE_BUFFER_SIZE,            "56"),
@@ -1283,8 +1106,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDui2__(DP2_MESSAGE_HEADER_SIZE_BYTES,	"18"),
   DDui1__(DP2_MINIMUM_FILE_SIZE_FOR_SEEK_IN_BLOCKS,  "256"),
 
- DDint__(DP2_PRIORITY,	                                "-1001"),
- DDint__(DP2_PRIORITY_DELTA,	                        "-1001"),
 
   DDui1__(DP2_SEQ_READS_WITHOUT_SEEKS,               "100"),
   DDkwd__(DYNAMIC_HISTOGRAM_COMPRESSION,              "ON"),
@@ -1297,12 +1118,8 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
   DDkwd__(EID_SPACE_USAGE_OPT,			"OFF"),
 
- // For both of these CQDs see executor/ExDp2Trace.h for values.
-  DDint__(EID_TRACE_STATES,                     "0"),
-  DDtp___(EID_TRACE_STR,                         ""),
   DDkwd__(ELIMINATE_REDUNDANT_JOINS,             "ON"),
 
-  DDkwd__(ENABLE_DP2_XNS,                       "OFF"),
 
   DDSint__(ESP_ASSIGN_DEPTH,                    "0"),
 
@@ -1350,7 +1167,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXE_PARALLEL_DDL,                     "ON"),
 
-  DDui___(EXE_PA_DP2_STATIC_AFFINITY,           "1"),
 
   DDkwd__(EXE_SINGLE_BMO_QUOTA,                 "ON"),
 
@@ -1369,7 +1185,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_DISPLAY_FORMAT,		"EXTERNAL"),
 
-  DDkwd__(EXPLAIN_IN_RMS, 		        "ON"),
+  DDkwd__(EXPLAIN_IN_RMS, 		        "OFF"),
 
   DDkwd__(EXPLAIN_OPTION_C,                     "OFF"),
 
@@ -1383,7 +1199,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_STRATEGIZER_PARAMETERS,  "OFF"),
 
-  DDflte_(EX_OP_ALLOCATE_ATP,                   ".02"),
 
   // Calibration
   // 01/23/98: 50.
@@ -1398,29 +1213,23 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // 08/13/98: 1.0
   // 01/08/98: 0.02
   DDflte_(EX_OP_COPY_ATP,			"1.1335"),
-  DDflte_(EX_OP_DEQUEUE,			".02"),
-  DDflte_(EX_OP_ENQUEUE,			".02"),
 
   DDkwd__(FAKE_VOLUME_ASSIGNMENTS,		"OFF"),
   DDui1__(FAKE_VOLUME_NUM_VOLUMES,              "24"),
 
   DDkwd__(FAST_DELETE,                          "OFF"),
 
-  DDkwd__(FAST_DP2_SUBSET_OPT,			"ON"),
  // upper and lower limit (2,10) must be in sync with error values in 
  //ExFastTransport.cpp
   DDkwd__(FAST_EXTRACT_DIAGS,			"OFF"),
   DDui2_10(FAST_EXTRACT_IO_BUFFERS,             "6"),
   DDui___(FAST_EXTRACT_IO_TIMEOUT_SEC,          "60"),
-  DDkwd__(FAST_REPLYDATA_MOVE,			"ON"),
- SDDkwd__(FFDC_DIALOUTS_FOR_MXCMP,		"OFF"),
   DDkwd__(FIND_COMMON_SUBEXPRS_IN_OR,		"ON"),
 
   DDui___(FLOAT_ESP_RANDOM_NUM_SEED,    "0"),
 
   DDkwd__(FORCE_BUSHY_CQS,			"ON"),
 
-  DDkwd__(FORCE_PARALLEL_CREATE_INDEX,          "OFF"),
   DDkwd__(FORCE_PARALLEL_INSERT_SELECT,         "OFF"),
   DDkwd__(FORCE_PASS_ONE,		"OFF"),
   DDkwd__(FORCE_PASS_TWO,		"ON"),
@@ -1453,11 +1262,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // NADefaults::initCurrentDefaultsWithDefaultDefaults. The default value
  // is ON for static compiles and OFF for dynamic queries.
   DDkwd__(GENERATE_EXPLAIN,			"ON"),
-  DDipcBu(GEN_ALIGNED_PA_DP2_BUFFER_SIZE,	"31000"),
-  DDui1__(GEN_CBUF_BUFFER_SIZE,			"30000"),
-  DDui1__(GEN_CBUF_NUM_BUFFERS,			"4"),
-  DDui1__(GEN_CBUF_SIZE_DOWN,			"8"),
-  DDui1__(GEN_CBUF_SIZE_UP,			"8"),
   DDui___(GEN_CS_BUFFER_SIZE,			"0"),
   DDui___(GEN_CS_NUM_BUFFERS,			"0"),
   DDui___(GEN_CS_SIZE_DOWN,	                "4"),
@@ -1467,10 +1271,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_DDL_NUM_BUFFERS,			"4"),
   DDui1__(GEN_DDL_SIZE_DOWN,			"2"),
   DDui1__(GEN_DDL_SIZE_UP,			"32"),
-  DDui1__(GEN_DEL_BUFFER_SIZE,			"512"),
-  DDui1__(GEN_DEL_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_DEL_SIZE_DOWN,			"2"),
-  DDui1__(GEN_DEL_SIZE_UP,			"2"),
   DDui1__(GEN_DESC_BUFFER_SIZE,			"10240"),
   DDui1__(GEN_DESC_NUM_BUFFERS,			"4"),
   DDui1__(GEN_DESC_SIZE_DOWN,			"2"),
@@ -1479,32 +1279,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_DP2I_NUM_BUFFERS,			"2"),
   DDui1__(GEN_DP2I_SIZE_DOWN,			"32"),
   DDui1__(GEN_DP2I_SIZE_UP,			"64"),
-  DDui1__(GEN_DPDU_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_DPDU_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_DPDU_SIZE_DOWN,			"2"),
-  DDui1__(GEN_DPDU_SIZE_UP,			"2"),
-  DDui1__(GEN_DPRO_BUFFER_SIZE,			"10240"),
-  DDui1__(GEN_DPRO_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_DPRO_SIZE_DOWN,			"16"),
-  DDui1__(GEN_DPRO_SIZE_UP,			"16"),
   DDui1__(GEN_DPSO_BUFFER_SIZE,			"10240"),
-  DDui1__(GEN_DPSO_NUM_BUFFERS,			"4"),
   DDui1__(GEN_DPSO_SIZE_DOWN,			"2048"),
   DDui1__(GEN_DPSO_SIZE_UP,			"2048"),
-  DDui1__(GEN_DPUO_BUFFER_SIZE,			"10000"),
   DDui1__(GEN_DPUO_NUM_BUFFERS,			"4"),
-  DDui1__(GEN_DPUO_SIZE_DOWN,			"2048"),
-  DDui1__(GEN_DPUO_SIZE_UP,			"2048"),
-  DDui1__(GEN_DPVI_BUFFER_SIZE,			"10000"),
-  DDui1__(GEN_DPVI_NUM_BUFFERS,			"2"),
-  DDui1__(GEN_DPVI_SIZE_DOWN,			"32"),
-  DDui1__(GEN_DPVI_SIZE_UP,			"64"),
-  DDui___(GEN_EIDR_BROKEN_TREE_CHECK_INTERVAL,  "128"),
-  DDipcBu(GEN_EIDR_BUFFER_SIZE,			"31000"),
-  DDui1__(GEN_EIDR_NUM_BUFFERS,			"3"),
-  DDui1__(GEN_EIDR_SIZE_DOWN,			"2"),
-  DDui1__(GEN_EIDR_SIZE_UP,			"2"),
-  DDui___(GEN_EIDR_STATS_REPLY_INTERVAL,        "3000"),
   DDint__(GEN_EXCHANGE_MAX_MEM_IN_KB,           "4000"),
   DDint__(GEN_EXCHANGE_MSG_COUNT,               "80"),
 
@@ -1514,10 +1292,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_FE_SIZE_DOWN,                    "4"),
   DDui1__(GEN_FE_SIZE_UP,                      "4"),
 
-  DDui1__(GEN_FSRT_BUFFER_SIZE,			"5120"),
-  DDui1__(GEN_FSRT_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_FSRT_SIZE_DOWN,			"2"),
-  DDui1__(GEN_FSRT_SIZE_UP,			"8"),
 
 
   // Do not alter the buffer size; it must be 56K for SCRATCH_MGMT_OPTION == 5
@@ -1535,26 +1309,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_HSHJ_NUM_BUFFERS,			"1"),
   DDui1__(GEN_HSHJ_SIZE_DOWN,			"2048"),
   DDui1__(GEN_HSHJ_SIZE_UP,			"2048"),
-  DDui1__(GEN_IMDT_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_IMDT_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_IMDT_SIZE_DOWN,			"2"),
-  DDui1__(GEN_IMDT_SIZE_UP,			"2"),
-  DDui1__(GEN_INS_BUFFER_SIZE,			"10240"),
-  DDui1__(GEN_INS_NUM_BUFFERS,			"3"),
-  DDui1__(GEN_INS_SIZE_DOWN,			"4"),
-  DDui1__(GEN_INS_SIZE_UP,			"128"),
 
   // Controls LeanEr Expression generation
   DDkwd__(GEN_LEANER_EXPRESSIONS,               "ON"),
 
-  DDui1__(GEN_LOCK_BUFFER_SIZE,			"1024"),
-  DDui1__(GEN_LOCK_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_LOCK_SIZE_DOWN,			"4"),
-  DDui1__(GEN_LOCK_SIZE_UP,			"4"),
-  DDui1__(GEN_MATR_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_MATR_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_MATR_SIZE_DOWN,			"2"),
-  DDui1__(GEN_MATR_SIZE_UP,			"8"),
   DDui1__(GEN_MEM_PRESSURE_THRESHOLD,		"10000"),
   DDui1__(GEN_MJ_BUFFER_SIZE,			"32768"),
   DDui1__(GEN_MJ_NUM_BUFFERS,			"1"),
@@ -1570,51 +1328,24 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(GEN_ONLJ_SET_QUEUE_RIGHT,             "ON"),
   DDui1__(GEN_ONLJ_SIZE_DOWN,			"2048"),
   DDui1__(GEN_ONLJ_SIZE_UP,			"2048"),
-  DDui1__(GEN_PAR_LAB_OP_BUFFER_SIZE,           "1024"),
-  DDui1__(GEN_PAR_LAB_OP_NUM_BUFFERS,           "1"),
-  DDui1__(GEN_PAR_LAB_OP_SIZE_DOWN,             "2"),
-  DDui1__(GEN_PAR_LAB_OP_SIZE_UP,               "4"),
   DDipcBu(GEN_PA_BUFFER_SIZE,			"31000"),
   DDui1__(GEN_PA_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_PA_SIZE_DOWN,			"2048"),
-  DDui1__(GEN_PA_SIZE_UP,			"2048"),
   DDui1__(GEN_PROBE_CACHE_NUM_ENTRIES,          "16384"),// number of entries
   DDui___(GEN_PROBE_CACHE_NUM_INNER,            "0"), //0 means compiler decides  
   DDui1__(GEN_PROBE_CACHE_SIZE_DOWN,            "2048"),
   DDui1__(GEN_PROBE_CACHE_SIZE_UP,              "2048"),
-  DDui1__(GEN_RCRS_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_RCRS_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_RCRS_SIZE_DOWN,			"8"),
-  DDui1__(GEN_RCRS_SIZE_UP,			"16"),
-  DDkwd__(GEN_RESET_ACCESS_COUNTER,              "OFF"),
-  DDui1__(GEN_ROOT_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_ROOT_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_ROOT_SIZE_DOWN,			"2"),
-  DDui1__(GEN_ROOT_SIZE_UP,			"2"),
-  DDui1__(GEN_SAMPLE_BUFFER_SIZE,		"5120"),
-  DDui1__(GEN_SAMPLE_NUM_BUFFERS,		"5"),
   DDui1__(GEN_SAMPLE_SIZE_DOWN,			"16"),
   DDui1__(GEN_SAMPLE_SIZE_UP,			"16"),
-  DDui1__(GEN_SCAN_BUFFER_SIZE,			"10240"),
-  DDui1__(GEN_SCAN_NUM_BUFFERS,			"10"),
-  DDui1__(GEN_SCAN_SIZE_DOWN,			"16"),
-  DDui1__(GEN_SCAN_SIZE_UP,			"32"),
   DDui1__(GEN_SEQFUNC_BUFFER_SIZE,		"5120"),
   DDui1__(GEN_SEQFUNC_NUM_BUFFERS,		"5"),
   DDui1__(GEN_SEQFUNC_SIZE_DOWN,		"16"),
   DDui1__(GEN_SEQFUNC_SIZE_UP,			"16"),
-  DDkwd__(GEN_SEQFUNC_UNLIMITED_HISTORY,	"OFF"),
-  DDui1__(GEN_SEQ_BUFFER_SIZE,			"512"),
-  DDui1__(GEN_SEQ_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_SEQ_SIZE_DOWN,			"2"),
-  DDui1__(GEN_SEQ_SIZE_UP,			"2"),
   DDui1__(GEN_SGBY_BUFFER_SIZE,			"5120"),
   DDui1__(GEN_SGBY_NUM_BUFFERS,			"5"),
   DDui1__(GEN_SGBY_SIZE_DOWN,			"2048"),
   DDui1__(GEN_SGBY_SIZE_UP,			"2048"),
   DDui1__(GEN_SID_BUFFER_SIZE,			"1024"),
   DDui1__(GEN_SID_NUM_BUFFERS,			"4"),
-  DDui1__(GEN_SNDB_BUFFER_SIZE,			"2"),
   DDui1__(GEN_SNDB_NUM_BUFFERS,			"4"),
   DDui1__(GEN_SNDB_SIZE_DOWN,			"4"),
   DDui1__(GEN_SNDB_SIZE_UP,			"128"),
@@ -1626,24 +1357,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_SNDT_SIZE_UP,			"128"),
   DDui1__(GEN_SORT_MAX_BUFFER_SIZE,		"5242880"),
   DDui1__(GEN_SORT_MAX_NUM_BUFFERS,             "160"),
-  DDui___(GEN_SORT_MIN_BUFFER_SIZE,		"0"),
   DDui1__(GEN_SORT_NUM_BUFFERS,			"2"),
   DDui1__(GEN_SORT_SIZE_DOWN,			"2"),
   DDui1__(GEN_SORT_SIZE_UP,			"1024"),
   DDkwd__(GEN_SORT_TOPN,		        "ON"),
   DDui1__(GEN_SORT_TOPN_THRESHOLD,              "10000"),
-  DDui1__(GEN_SPLB_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_SPLB_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_SPLB_SIZE_DOWN,			"2"),
-  DDui1__(GEN_SPLB_SIZE_UP,			"2"),
-  DDui1__(GEN_SPLT_BUFFER_SIZE,			"2"),
-  DDui1__(GEN_SPLT_NUM_BUFFERS,			"1"),
-  DDui1__(GEN_SPLT_SIZE_DOWN,			"2048"),
   DDui1__(GEN_SPLT_SIZE_UP,			"2048"),
-  DDui1__(GEN_STPR_BUFFER_SIZE,			"1024"),
-  DDui1__(GEN_STPR_NUM_BUFFERS,			"3"),
-  DDui1__(GEN_STPR_SIZE_DOWN,			"2"),
-  DDui1__(GEN_STPR_SIZE_UP,			"2"),
   DDui1__(GEN_TFLO_BUFFER_SIZE,			"5120"),
   DDui1__(GEN_TFLO_NUM_BUFFERS,			"2"),
   DDui1__(GEN_TFLO_SIZE_DOWN,			"8"),
@@ -1680,27 +1399,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_UDR_SIZE_DOWN,                    "4"),
   DDui1__(GEN_UDR_SIZE_UP,                      "4"),
 
-  DDui1__(GEN_UNLJ_BUFFER_SIZE,			"5120"),
-  DDui1__(GEN_UNLJ_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_UNLJ_SIZE_DOWN,			"8"),
-  DDui1__(GEN_UNLJ_SIZE_UP,			"16"),
   DDui1__(GEN_UN_BUFFER_SIZE,			"10240"),
   DDui1__(GEN_UN_NUM_BUFFERS,			"5"),
   DDui1__(GEN_UN_SIZE_DOWN,			"8"),
   DDui1__(GEN_UN_SIZE_UP,			"16"),
-  DDui1__(GEN_UPD_BUFFER_SIZE,			"5120"),
-  DDui1__(GEN_UPD_NUM_BUFFERS,			"5"),
-  DDui1__(GEN_UPD_SIZE_DOWN,			"2"),
-  DDui1__(GEN_UPD_SIZE_UP,			"2"),
 
-  // Used when Compressed_Internal_Format is on to reduce space in the
-  // hash buffers (Hash Join and Hash Groupby) and sort buffers.
-  DDkwd__(GEN_VARIABLE_LENGTH_BUFFERS,          "OFF"),
 
-  DDui1__(GEN_XPLN_BUFFER_SIZE,			"4096"),
-  DDui1__(GEN_XPLN_NUM_BUFFERS,			"3"),
-  DDui1__(GEN_XPLN_SIZE_DOWN,			"8"),
-  DDui1__(GEN_XPLN_SIZE_UP,			"16"),
 
   // When less or equal to this CQD (5000 rows by default), a partial root 
   // will be running in the Master. Set to 0 to disable the feature.
@@ -1711,8 +1415,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   // HASH_JOINS ON means do HASH_JOINS
  XDDkwd__(HASH_JOINS,				"ON"),
-  DDkwd__(HASH_JOINS_TYPE1_PLAN1,		"ON"),
-  DDkwd__(HASH_JOINS_TYPE1_PLAN2,		"ON"),
 
   // HBase defaults
   // Some of the more important ones:
@@ -1742,7 +1444,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_COPROCESSORS,		             "ON"),
 
- DDkwd__(HBASE_CREATE_OLD_MD_FOR_UPGRADE_TESTING,   "OFF"),
 
  DDkwd__(HBASE_DATA_BLOCK_ENCODING_OPTION,		             ""),
 
@@ -1775,7 +1476,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1024"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
-  DD_____(HBASE_SCHEMA,                         "HBASE"),
  DDkwd__(HBASE_SERIALIZATION,		"ON"),
  
   DD_____(HBASE_SERVER,                         ""), 
@@ -1808,9 +1508,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflte_(HGB_GROUPING_FACTOR_FOR_SPILLED_CLUSTERS,	".5"),
   DDflte_(HGB_MAX_TABLE_SIZE_FOR_CLUSTERS,      "4E5"),
   DDflte_(HGB_MEMORY_AVAILABLE_FOR_CLUSTERS,    "10"),
-  DDflte_(HH_OP_ALLOCATE_BUCKET_ARRAY,		".1"),
-  DDflte_(HH_OP_ALLOCATE_CLUSTER,		".1"),
-  DDflte_(HH_OP_ALLOCATE_CLUSTERDB,		".1"),
   DDflte_(HH_OP_ALLOCATE_HASH_TABLE,		".05"),
   DDflt1_(HH_OP_HASHED_ROW_OVERHEAD,		"8."),
 
@@ -1843,8 +1540,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // Before 03/11/98: 1.0959
   // Before 01/05/98: 0.01
   DDflt0_(HH_OP_PROBE_HASH_TABLE,		"0.011"),
-  DDflt0_(HH_OP_READ_HASH_BUFFER,		"0."),
-  DDflt0_(HH_OP_WRITE_HASH_BUFFER,		"0."),
 
   // Added 10/16/02
   DDkwd__(HIDE_INDEXES,                          "NONE"),
@@ -1857,8 +1552,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 //HIST_BASE_REDUCTION and HIST_PREFETCH externalized 08/21/01 CR 10-010713-3895
 
   DDkwd__(HIST_ASSUME_INDEPENDENT_REDUCTION,      "ON"),
- XDDkwd__(HIST_AUTO_GENERATION_OF_SAMPLE,       "OFF"),
-  DDkwd__(HIST_BASE_REDUCTION,              "ON"),
   DDflt0_(HIST_BASE_REDUCTION_FUDGE_FACTOR, "0.1"),
   DDflt0_(HIST_CONSTANT_ALPHA,              "0.5"),
   DDflt_0_1(HIST_DEFAULT_BASE_SEL_FOR_LIKE_WILDCARD,    "0.50"),
@@ -1922,7 +1615,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  XDDkwd__(HIST_REMOVE_TRAILING_BLANKS,          "ON"), // should remove after verifying code is solid
   DDansi_(HIST_ROOT_NODE,                            ""),
  XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
-  DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
   DD_____(HIST_SCRATCH_VOL,                     ""),
   // control the amount of data in each partition of the sample tble.
   DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "10240000"),
@@ -1947,14 +1639,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
   DD_____(HIVE_DEFAULT_SCHEMA,                  "HIVE"),
   DD_____(HIVE_FILE_CHARSET,                    ""),
-  DD_____(HIVE_FILE_NAME,     "/user/trafodion/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
   DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
-  DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDkwd__(HIVE_NO_REGISTER_OBJECTS,             "OFF"),
@@ -1970,13 +1660,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  // -------------------------------------------------------------------------
 
-  DDui2__(HJ_BUFFER_SIZE,			"32"),
   DDflt0_(HJ_CPUCOST_INITIALIZE,		"1."),
   DDui1__(HJ_INITIAL_BUCKETS_PER_CLUSTER,	"4."),
   DDkwd__(HJ_NEW_MCSB_PLAN,			"OFF"),
   DDint__(HJ_SCAN_TO_NJ_PROBE_SPEED_RATIO,        "2000"),
   DDkwd__(HJ_TYPE,				"HYBRID"),
-  DD_____(HP_ROUTINES_SCHEMA,                   "NEO.HP_ROUTINES"), // Must be in form <cat>.<sch>
   DDkwd__(HQC_CONVDOIT_DISABLE_NUMERIC_CHECK, "OFF"),
   DDkwd__(HQC_LOG, "OFF"),
   DD_____(HQC_LOG_FILE,    ""),
@@ -1984,17 +1672,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HYBRID_QUERY_CACHE, "ON"),
   DDkwd__(IF_LOCKED,				"WAIT"),
 
-    // ignore_duplicate_keys is no more valid. It is still
-  // here as dummy for compatibility with existing scripts.
-  DDkwd__(IGNORE_DUPLICATE_KEYS,	        "SYSTEM"),
 
- // in mode_special_1, duplicate rows are ignored if inserting a row in the
- // base table which has a user defined primary key. If this default is set
- // to OFF in mode_special_1, then duplicate rows are not ignored.
- //
- // If not in mode_special_1, and this default is ON, then duplicate rows
- // are ignored.
-  DDkwd__(IGNORE_DUPLICATE_ROWS,	        "SYSTEM"),
 
   DDkwd__(IMPLICIT_DATETIME_INTERVAL_HOSTVAR_CONVERSION,   "FALSE"),
   DDkwd__(IMPLICIT_HOSTVAR_CONVERSION,		"FALSE"),
@@ -2026,7 +1704,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(IN_MEMORY_OBJECT_DEFN,                "OFF"),
 
-  DDflte_(IO_SEEKS_INORDER_FACTOR,		"0.10"),
   // History:
   // 3/11/99 Changed to zero because in large tables the read-ahead
   //         seems negligible (and/or hard to simulate)
@@ -2097,11 +1774,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Set the maintain control table timeout to 5 minutes
   DDint__(MAINTAIN_CONTROL_TABLE_TIMEOUT,       "30000"),
 
-  DDint__(MAINTAIN_REORG_PRIORITY,	        "-1"),
-  DDint__(MAINTAIN_REORG_PRIORITY_DELTA,	"0"),
-  DDint__(MAINTAIN_REORG_RATE,			"40"),
-  DDint__(MAINTAIN_REORG_SLACK,			"0"),
-  DDint__(MAINTAIN_UPD_STATS_SAMPLE,		"-1"),
 
   DDkwd__(MARIAQUEST_PROCESS,                   "OFF"),
 
@@ -2112,8 +1784,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDui1__(MAX_ACCESS_NODES_PER_ESP,	"1024"),
 
- // this is the default length of a param which is typed as a VARCHAR.
-  DDui2__(MAX_CHAR_PARAM_DEFAULT_SIZE,	"32"),
 
   DDint__(MAX_DEPTH_TO_CHECK_FOR_CYCLIC_PLAN,   "1"),
 
@@ -2138,11 +1808,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DD18_128(MAX_NUMERIC_PRECISION_ALLOWED,        "128"),
 
-  // The max number of vertical partitions for optimization to be done under
-  // a VPJoin.
-  DDui___(MAX_NUM_VERT_PARTS_FOR_OPT,		"20"),
 
-  DDui1__(MAX_ROWS_LOCKED_FOR_STABLE_ACCESS,	"1"),
 
   // The max number of skewed values detected - skew buster
   DDui1__(MAX_SKEW_VALUES_DETECTED,             "10000"),
@@ -2282,7 +1948,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MERGE_WITH_UNIQUE_INDEX,   "ON"),
 
  SDDui___(METADATA_CACHE_SIZE,    "20"),
-  DDkwd__(METADATA_STABLE_ACCESS, "OFF"),
   //-------------------------------------------------------------------
   // Minimum ESP parallelism. If the user does not specify this value
   // (default value 0 does not change) then the number of segments
@@ -2298,7 +1963,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDui1__(MIN_LONG_WVARCHAR_DEFAULT_SIZE,	"1"),
   DDkwd__(MIN_MAX_OPTIMIZATION,			"ON"),
   DDpct__(MJ_BMO_QUOTA_PERCENT,			"0"),
-  DDflt0_(MJ_CPUCOST_ALLOCATE_LIST,		".05"),
   DDflt0_(MJ_CPUCOST_CLEAR_LIST,		".01"),
   DDflt0_(MJ_CPUCOST_GET_NEXT_ROW_FROM_LIST,	".01"),
   // calibrated 01/16/98:
@@ -2319,8 +1983,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
 
-  DDflt0_(MSCF_CONCURRENCY_IO,			"0.10"),
-  DDflt0_(MSCF_CONCURRENCY_MSG,			"0.10"),
 
   // Tests suggest that RELEASE is about 2.5 times faster than DEBUG
   // RELEASE is always faster than DEBUG code so this default must be
@@ -2344,9 +2006,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Units of MSCF_ET_LOCAL_MSG_TRANSFER are seconds/Kb
 
   DDflte_(MSCF_ET_LOCAL_MSG_TRANSFER,		"0.000046"),
-  // $$$ This should be removed. It is only used by preliminary costing
-  // for the materialize operator, which should not be using it.
-  DDflte_(MSCF_ET_NM_PAGE_FAULTS,		"1"),	// "?" used?
   // : for calibration on 04/08/2004
   // Seek time will be derived from disk type.
 
@@ -2376,18 +2035,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Assume 50% overlap for now.
   // -------------------------------------------------------------------------
   DDflte_(MSCF_OV_IO,				"0.5"),
-  DDflte_(MSCF_OV_IO_TRANSFER,			"0.5"),
-  DDflte_(MSCF_OV_LOCAL_MSG_TRANSFER,		"0.5"),
   DDflte_(MSCF_OV_MSG,				"0.5"),
-  DDflte_(MSCF_OV_NUM_IO_SEEKS,			"0.5"),
-  DDflte_(MSCF_OV_NUM_LOCAL_MSGS,		"0.5"),
-  DDflte_(MSCF_OV_NUM_REMOTE_MSGS,		"0.5"),
-  DDflte_(MSCF_OV_REMOTE_MSG_TRANSFER,		"0.5"),
 
 
-  DDui___(MSCF_SYS_DISKS,			"16"),	// "?" used?
-  DDui___(MSCF_SYS_MEMORY_PER_CPU,		"1"),	// "?" used?
-  DDui___(MSCF_SYS_TEMP_SPACE_PER_DISK,		"50"),	// "?" used?
 
   DDkwd__(MTD_GENERATE_CC_PREDS,		"ON"),
   DDint__(MTD_MDAM_NJ_UEC_THRESHOLD,		"100"),
@@ -2405,15 +2055,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // outer subtree for NJ into fact table.
   DDflt0_(MULTI_JOIN_PROBE_HASH_TABLE,	       "0.000001"),
 
-  // threshold above which a query is considered complex
-  // this only applies to queries that can be rewritten
-  // as Multi Joins
-  DDint__(MULTI_JOIN_QUERY_COMPLEXITY_THRESHOLD,         "5120"),
-
-  // threshold above which a query is considered to do
-  // a lot of work his only applies to queries that can be
-  // rewritten as Multi Joins
-  DDflt__(MULTI_JOIN_QUERY_WORK_THRESHOLD,         "0"),
 
  SDDint__(MULTI_JOIN_THRESHOLD,			"3"),
 
@@ -2433,14 +2074,11 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 #else
   DDkwd__(MVQR_ENABLE_LOGGING,            "ON"),
 #endif
-  DD_____(MVQR_FILENAME_PREFIX,           "/usr/tandem/sqlmx/log"),
   DDkwd__(MVQR_LOG_QUERY_DESCRIPTORS,     "OFF"),
   DDint__(MVQR_MAX_EXPR_DEPTH,            "20"),
   DDint__(MVQR_MAX_EXPR_SIZE,             "100"),
-  DDint__(MVQR_MAX_MV_JOIN_SIZE,          "10"),
   DDkwd__(MVQR_PARAMETERIZE_EQ_PRED,      "ON"),
   DDkwd__(MVQR_PRIVATE_QMS_INIT,          "SMD"),
-  DDansi_(MVQR_PUBLISH_TABLE_LOCATION,    ""),
   DDkwd__(MVQR_PUBLISH_TO,                "BOTH"),
   DDansi_(MVQR_REWRITE_CANDIDATES,        ""),
  XDDkwd__(MVQR_REWRITE_ENABLED_OPTION,    "OFF"),  // @ZX -- change to ON later
@@ -2453,7 +2091,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
  XDDMVA__(MV_AGE,				"0 MINUTES"),
  XDDkwd__(MV_ALLOW_SELECT_SYSTEM_ADDED_COLUMNS, "OFF"),
   DDkwd__(MV_AS_ROW_TRIGGER,			"OFF"),
-  DDkwd__(MV_AUTOMATIC_LOGGABLE_COLUMN_MAINTENANCE, "ON"),
   DDkwd__(MV_DUMP_DEBUG_INFO, "OFF"),
   DDkwd__(MV_ENABLE_INTERNAL_REFRESH_SHOWPLAN, "OFF"),
 
@@ -2515,7 +2152,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflt0_(NCM_NJ_PROBES_MAXCARD_FACTOR,         "10000"),
   DDkwd__(NCM_NJ_SEQIO_FIX,                     "ON"), // change to ON
   DDint__(NCM_NUM_SORT_RUNS,			"4"),
-  DDflt__(NCM_OLTP_ET_THRESHOLD,                "60.0"),
   DDflt__(NCM_PAR_ADJ_FACTOR,                   "0.10"),
   DDkwd__(NCM_PAR_GRPBY_ADJ,			"ON"),
   DDkwd__(NCM_PRINT_ROWSIZE,			"OFF"),
@@ -2529,7 +2165,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NCM_SORT_OVERFLOW_COSTING,		"ON"),
   DDflt__(NCM_TUPLES_ROWSIZE_FACTOR,		"0.5"),
   DDflt__(NCM_UDR_NANOSEC_FACTOR,               "0.01"),
-  DDkwd__(NCM_USE_HBASE_REGIONS,		"ON"),
 
   // NESTED_JOINS ON means do NESTED_JOINS
  XDDkwd__(NESTED_JOINS,				"ON"),
@@ -2571,27 +2206,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NEW_MDAM,		"ON"),
   DDkwd__(NEW_OPT_DRIVER,		"ON"),
 
-  // Ansi name of the next DEFAULTS table to read in.
-  // Contains blanks, or the name of a DEFAULTS table to read values from next,
-  // after reading all values from this DEFAULTS table.  The name may contain
-  // format strings of '%d' and '%u', which are replaced with the domain name
-  // and user name, respectively, of the current user.  The name may begin with
-  // '$', in which it is replaced by its value as a SYSTEM environment variable.
-  // This value in turn may contain '%d' and '%u' formats.  When these
-  // replacements are complete, the resulting name is qualified by the current
-  // default catalog and schema, if necessary, and the resulting three-part ANSI
-  // table's default values are read in.  This table may contain another
-  // NEXT_DEFAULTS_TABLE value, and different default CATALOG and
-  // SCHEMA values to qualify the resulting table name, and so on, allowing a
-  // chain of tables to be read; combined with the format and environment
-  // variable replacements, this allows per-domain, per-system, and per-user
-  // customization of SQL/MX default values.
-  DDansi_(NEXT_DEFAULTS_TABLE,			""),
 
-  DDui1__(NEXT_VALUE_FOR_BUFFER_SIZE,                  "10240"),
-  DDui1__(NEXT_VALUE_FOR_NUM_BUFFERS,                  "3"),
-  DDui1__(NEXT_VALUE_FOR_SIZE_DOWN,                    "4"),
-  DDui1__(NEXT_VALUE_FOR_SIZE_UP,                      "2048"),
 
   DDflt0_(NJ_CPUCOST_INITIALIZE,		".1"),
 
@@ -2624,7 +2239,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDkwd__(NOT_NULL_CONSTRAINT_DROPPABLE_OPTION, "OFF"),
 
-  DDkwd__(NOWAITED_FIXUP_MESSAGE_TO_DP2,                "OFF"),
 
   // NSK DEBUG defaults
   DDansi_(NSK_DBG,                                      "OFF"),
@@ -2638,7 +2252,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NSK_DBG_PRINT_CONTEXT,                        "OFF"),
   DDkwd__(NSK_DBG_PRINT_CONTEXT_POINTER,                "OFF"),
   DDkwd__(NSK_DBG_PRINT_COST,                           "OFF"),
-  DDkwd__(NSK_DBG_PRINT_COST_LIMIT,                     "OFF"),
   DDkwd__(NSK_DBG_PRINT_INDEX_ELIMINATION,              "OFF"),
   DDkwd__(NSK_DBG_PRINT_ITEM_EXPR,                      "OFF"),
   DDkwd__(NSK_DBG_PRINT_LOG_PROP,                       "OFF"),
@@ -2658,7 +2271,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NSK_DBG_SHOW_TREE_AFTER_PRE_CODEGEN,          "OFF"),
   DDkwd__(NSK_DBG_SHOW_TREE_AFTER_SEMANTIC_QUERY_OPTIMIZATION, "OFF"),
   DDkwd__(NSK_DBG_SHOW_TREE_AFTER_TRANSFORMATION,       "OFF"),
-  DDkwd__(NSK_DBG_STRATEGIZER,                          "OFF"),
 
   DDflt0_(NUMBER_OF_PARTITIONS_DEVIATION,	"0.25"),
   DDui1__(NUMBER_OF_ROWS_PARALLEL_THRESHOLD,	"5000"),
@@ -2670,7 +2282,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflt0_(OCB_COST_ADJSTFCTR, "0.996"),
   DDui___(OCR_FOR_SIDETREE_INSERT,              "1"),
 
-  DDkwd__(ODBC_METADATA_PROCESS,		"FALSE"),
   DDkwd__(ODBC_PROCESS,				"FALSE"),
 
   DDflte_(OHJ_BMO_REUSE_SORTED_BMOFACTOR_LIMIT,	"3.0"),
@@ -2717,9 +2328,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(OPH_USE_ORDERED_MJ_PRED,				"OFF"),
   DDkwd__(OPH_USE_PWS_FLAG_FOR_CONTEXT,				"OFF"),
 
- XDDui___(OPI_ERROR73_RETRIES,                  "10"),
 
-  DDflt__(OPTIMIZATION_BUDGET_FACTOR, "5000"),
   DDkwd__(OPTIMIZATION_GOAL,			"LASTROW"),
  XDDkwd__(OPTIMIZATION_LEVEL,			"3"),
   DDpct__(OPTIMIZATION_LEVEL_1_CONSTANT_1,	"50"),
@@ -2730,7 +2339,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflt__(OPTIMIZATION_LEVEL_1_SAFETY_NET_MULTIPLE,	"3.0"),
   DDui1__(OPTIMIZATION_LEVEL_1_THRESHOLD,		"1000"),
   DDui1__(OPTIMIZATION_TASKS_LIMIT,		"2000000000"),
-  DDui1__(OPTIMIZATION_TASK_CAP,   "30000"),
   // Optimizer Graceful Termination:
   // 1=> randomProbabilistic pruning
   // > 1 pruning based on potential
@@ -2777,10 +2385,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(OR_PRED_TO_SEMIJOIN_TABLE_MIN_SIZE,                 "10000"),
 
 
-  // The Optimizer Simulator (OSIM) CQDs
-  DDkwd__(OSIM_USE_POS,                           "OFF"),
-  DDint__(OSIM_USE_POS_DISK_SIZE_GB,                "0"),
-  DD_____(OSIM_USE_POS_NODE_NAMES,                   ""),
 
   DDui2__(OS_MESSAGE_BUFFER_SIZE,    "32"),
  // if set to "ansi", datetime output is in ansi format. Currently only
@@ -2827,15 +2431,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // optimizer will compute the number of ESPs.
  XDDui1__(PARALLEL_NUM_ESPS,			"SYSTEM"),
 
-  // If PARALLEL_NUM_ESPS is "SYSTEM",
-  // optimizer will compute the number of ESPs to be used for parallel ddl
-  // operations.
-  DDui1__(PARALLEL_NUM_ESPS_DDL,		"SYSTEM"),
-
-  // If PARALLEL_NUM_ESPS is "SYSTEM",
-  // optimizer will compute the number of ESPs to be used for parallel purgedata
-  // operation.
-  DDui1__(PARALLEL_NUM_ESPS_PD,		        "SYSTEM"),
 
   // is partial sort applicable; if so adjust sort cost accordingly
   DDflt0_(PARTIAL_SORT_ADJST_FCTR,        "1"),
@@ -2867,11 +2462,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(PCODE_NE_ENABLED,   "1" ), // Native Expressions Enabled
   DDkwd__(PCODE_NE_IN_SHOWPLAN, "ON"), // Native Expression in Showplan output
 
-  // This PCODE_NE_LOG_PATH cqd is now obsolete. Use PCODE_DEBUG_LOGDIR instead.
-  // Would delete the following line except that would also mean deleting the
-  // corresponding line in DefaultConstants.h which would change the values for
-  // the following definitions in the same enum.
-  DD_____(PCODE_NE_LOG_PATH,  ""  ), // Pathname of log file for Native Expression work - OBSOLETE
 
   DDint__(PCODE_OPT_FLAGS,                      "60"),
  
@@ -2880,40 +2470,16 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(PHY_MEM_CONTINGENCY_MB,     "3072"),
 
   DDkwd__(PLAN_STEALING,			"ON"),
-  DDui50_4194303(PM_OFFLINE_TRANSACTION_GRANULARITY, "5000"),
-  DDui50_4194303(PM_ONLINE_TRANSACTION_GRANULARITY,  "400"),
-  // Not in use anymore. OVERRIDE_SYSKEY is used instead.
-  DDkwd__(PM_REGENERATE_SYSKEY_FOR_INSERT,	     "ON"),
 
   // Partition OVerlay Support (POS) options
   SDDkwd__(POS,                                 "DISK_POOL"),
-  XDDpos__(POS_ABSOLUTE_MAX_TABLE_SIZE,                 ""),
-   DDkwd__(POS_ALLOW_NON_PK_TABLES,             "OFF"),
-   DDui___(POS_CPUS_PER_SEGMENT,                "16"),
-   // default to 300 GB
-   DDui___(POS_DEFAULT_LARGEST_DISK_SIZE_GB,            "300"),
-
-   // default to 72GB 
-   DDui___(POS_DEFAULT_SMALLEST_DISK_SIZE_GB,            "72"),
    DD_____(POS_DISKS_IN_SEGMENT,                 ""),
    DD_____(POS_DISK_POOL,			"0"),
-   DD_____(POS_FILE_OPTIONS,                    ""),
-   DD_____(POS_LOCATIONS,                        ""),
-   DDkwd__(POS_MAP_HASH_TO_HASH2,               "ON"),
-   DDpos__(POS_MAX_EXTENTS,                     ""),
   SDDui___(POS_NUM_DISK_POOLS,                  "0"),
    DDui___(POS_NUM_OF_PARTNS,                   "SYSTEM"),
   SDDint__(POS_NUM_OF_TEMP_TABLE_PARTNS,        "SYSTEM"),
-  SDDpos__(POS_PRI_EXT_SIZE,			"25"),
-   DDkwd__(POS_RAISE_ERROR,                     "OFF"),
-  SDDpos__(POS_SEC_EXT_SIZE,			""),
-  SDDpos__(POS_TABLE_SIZE,			""),
-  SDDpct__(POS_TEMP_TABLE_FREESPACE_THRESHOLD_PERCENT,      "0"),
-  DD_____(POS_TEMP_TABLE_LOCATIONS,            ""),
   SDDpos__(POS_TEMP_TABLE_SIZE,                 ""),
-   DDkwd__(POS_TEST_MODE,      "OFF"),
    DDui___(POS_TEST_NUM_NODES,  "0"),
-   DDui___(POS_TEST_NUM_VOLUMES_PER_NODE,  "0"),
 
   // Use info from right child to require order on left child of NJ
 //PREFERRED_PROBING_ORDER_FOR_NESTED_JOIN made external RV 06/21/01 CR 10-010425-2440
@@ -2926,9 +2492,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(PSHOLD_CLOSE_ON_ROLLBACK,	"OFF"),
   DDkwd__(PSHOLD_UPDATE_BEFORE_FETCH,	"OFF"),
  SDDpsch_(PUBLIC_SCHEMA_NAME, ""),
- XDDrlis_(PUBLISHING_ROLES, ""),
 
-  DDkwd__(PURGEDATA_WITH_OFFLINE_TABLE, "OFF"),
 
  // Query Invalidation - Debug/Regression test CQDs -- DO NOT externalize these
  DD_____(QI_PATH, "" ),  // Specifies cat.sch.object path for object to have cache entries removed
@@ -2970,20 +2534,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  XDDint__(QUERY_LIMIT_SQL_PROCESS_CPU,         "0"),
  // Extra debugging info for QUERY_LIMIT feature.
  DDkwd__(QUERY_LIMIT_SQL_PROCESS_CPU_DEBUG,              "OFF"),
- // How many iterations in scheduler subtask list before evaluating limits.
- DDint__(QUERY_LIMIT_SQL_PROCESS_CPU_DP2_FREQ,  "16"),
   // For X-prod HJ: (# of rows joined * LIMIT) before preempt.
  DDint__(QUERY_LIMIT_SQL_PROCESS_CPU_XPROD,         "10000"),
  // controls various expr optimizations based on bit flags.
  // see enum QueryOptimizationOptions in DefaultConstants.h
  DDint__(QUERY_OPTIMIZATION_OPTIONS,        "3"),
  DDkwd__(QUERY_STRATEGIZER,              "ON"),
- DDflt0_(QUERY_STRATEGIZER_2N_COMPLEXITY_FACTOR,              "1"),
- DDflt0_(QUERY_STRATEGIZER_EXHAUSTIVE_COMPLEXITY_FACTOR,      "1"),
- DDflt0_(QUERY_STRATEGIZER_N2_COMPLEXITY_FACTOR,              "1"),
- DDflt0_(QUERY_STRATEGIZER_N3_COMPLEXITY_FACTOR,              "1"),
- DDflt0_(QUERY_STRATEGIZER_N4_COMPLEXITY_FACTOR,              "1"),
- DDflt0_(QUERY_STRATEGIZER_N_COMPLEXITY_FACTOR,              "1"),
  DDkwd__(QUERY_TEMPLATE_CACHE,              "ON"),
  DDkwd__(QUERY_TEXT_CACHE,                  "SYSTEM"),
 
@@ -3044,37 +2600,22 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // REFERENCE_MSG_REMOTE_TIME units are seconds
   DDflte_(REFERENCE_MSG_REMOTE_TIME,            "0.00125"),
   DDkwd__(REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT,     "SYSTEM"),
-  DDkwd__(REMOTE_ESP_ALLOCATION,                "SYSTEM"),
 
-  DDkwd__(REORG_IF_NEEDED,                      "OFF"),
 
-  DDkwd__(REORG_VERIFY,                         "OFF"),
 
   DDrlis_(REPLICATE_ALLOW_ROLES,                ""),
   // Determines the compression type to be used with DDL when replicating 
   DDkwd__(REPLICATE_COMPRESSION_TYPE,           "SYSTEM"),
   // Determines if DISK POOL setting should be passed with DDL when replicating
   DDkwd__(REPLICATE_DISK_POOL,                  "ON"),
-  // Display a BDR-internally-generated command before executing it
-  DDkwd__(REPLICATE_DISPLAY_INTERNAL_CMD,       "OFF"),
-  // Executing commands generated internally by BDR
-  DDkwd__(REPLICATE_EXEC_INTERNAL_CMD,          "OFF"),
   // VERSION of the message from the source system to maintain compatibility
   // This version should be same as REPL_IO_VERSION_CURR in executor/ExeReplInterface.h
   // Make changes accordingly in validataorReplIoVersion validator
   DDrver_(REPLICATE_IO_VERSION,                 "17"),
 
-  DDansi_(REPLICATE_MANAGEABILITY_CATALOG,	"MANAGEABILITY"),
 
-  // max num of retries after replicate server(mxbdrdrc) returns an error
-  DDui___(REPLICATE_NUM_RETRIES,                "0"),
 
-  DDansi_(REPLICATE_TEST_TARGET_CATALOG,	""),
-  DDansi_(REPLICATE_TEST_TARGET_MANAGEABILITY_CATALOG,	""),
 
-  DDkwd__(REPLICATE_WARNINGS,			"OFF"),
-
-  DDkwd__(RETURN_AVG_STREAM_WAIT,               "OFF"),
   DDkwd__(REUSE_BASIC_COST,			"ON"),
 
   // if set, tables are not closed at the end of a query. This allows
@@ -3129,10 +2670,8 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(ROUTINE_JOINS_SPOIL_JBB,              "OFF"),
   DDkwd__(ROWSET_ROW_COUNT,	                "OFF"),
   DDint__(SAP_KEY_NJ_TABLE_SIZE_THRESHOLD,      "10000000"),
-  DDkwd__(SAP_PA_DP2_AFFINITY_FOR_INSERTS,      "ON"),
   DDkwd__(SAP_PREFER_KEY_NESTED_JOIN,           "OFF"),
   DDint__(SAP_TUPLELIST_SIZE_THRESHOLD,         "5000"),
- XDDkwd__(SAVE_DROPPED_TABLE_DDL,               "OFF"),
  XDDansi_(SCHEMA,                               "SEABASE"), 
  //specify a : separated list of full path names where scratch files
  //should reside. Ensure each specified directoy exisst on each node and 
@@ -3169,7 +2708,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // Disallow/Allow semi and anti-semi joins in MultiJoin framework
   DDkwd__(SEMI_JOINS_SPOIL_JBB,        "OFF"),
 
-  DDkwd__(SEQUENTIAL_BLOCKSPLIT,                "SYSTEM"),
 
   DDansi_(SESSION_ID,                           ""),
 
@@ -3180,7 +2718,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDflt0_(SGB_CPUCOST_INITIALIZE,		".05"),
   DDui___(SGB_INITIAL_BUFFER_COUNT,		"5."),
   DDui1__(SGB_INITIAL_BUFFER_SIZE,		"5."),
-  DDkwd__(SHAREOPENS_ON_REFCOUNT,               "ON"),
   DDkwd__(SHARE_TEMPLATE_CACHED_PLANS,	    "ON"),
   DDui___(SHORT_OPTIMIZATION_PASS_THRESHOLD,		"12"),
 
@@ -3189,9 +2726,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOWDDL_DISPLAY_FORMAT, 		"EXTERNAL"),
   DDkwd__(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS,     "SYSTEM"),
  DDint__(SHOWDDL_FOR_REPLICATE, 		"0"),
-  DDkwd__(SHOWLABEL_LOCKMODE,                   "OFF"),
   DDkwd__(SHOWWARN_OPT,		"ON"),
-  DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
@@ -3202,11 +2737,8 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
                                                            // buster is disabled.
  XDDflt__(SKEW_SENSITIVITY_THRESHOLD,           "0.1"),
 
-  DDkwd__(SKIP_METADATA_VIEWS,			"OFF"),
-  DDkwd__(SKIP_TRANSLATE_SYSCAT_DEFSCH_NAMES,	"ON"),
   DDkwd__(SKIP_UNAVAILABLE_PARTITION,		"OFF"),
 
-  DDkwd__(SKIP_VCC, 				"OFF"),
 
   DDui0_5(SOFT_REQ_HASH_TYPE,                   "2"),
   DDkwd__(SORT_ALGO,                  "QS"),
@@ -3242,9 +2774,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDflte_(SORT_TREE_NODE_SIZE,			".012"),
 
   DDkwd__(SQLMX_REGRESS,                                    "OFF"),
-  DDkwd__(SQLMX_SHOWDDL_SUPPRESS_ROW_FORMAT,	"OFF"),
-  DDansi_(SQLMX_UTIL_EXPLAIN_PLAN,              "OFF"),
- SDDkwd__(SQLMX_UTIL_ONLINE_POPINDEX,           "ON"),
   SDDui___(SSD_BMO_MAX_MEM_THRESHOLD_IN_MB,     "1200"),
 
   // BertBert VV
@@ -3261,7 +2790,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  DDkwd__(SUBSTRING_TRANSFORMATION,		"OFF"),
 
   DDkwd__(SUPPRESS_CHAR_LIMIT_CHECK,            "OFF"),
-  DDui___(SYNCDEPTH,				"1"),
  XDDkwd__(TABLELOCK,				"SYSTEM"),
 
   // This is the code base for the end user calibration cluster.
@@ -3306,7 +2834,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // TARGET_MSG_REMOTE_TIME are seconds
   DDflte_(TARGET_MSG_REMOTE_TIME,		"0.00125"),
 
-  DD_____(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
   DDkwd__(TERMINAL_CHARSET,             (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
@@ -3319,7 +2846,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
  
-  DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
  
   DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
@@ -3375,7 +2901,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
   DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "ON"),
   DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
-  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,            "OFF"),
   DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,      "OFF"),
 
   //need add code to check if folder exists or not. if not issue an error and ask
@@ -3504,7 +3029,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // -------------------------------------------------------------------------
   DDkwd__(USE_CCMPASSERT_AS_CMPASSERT,		"OFF"),
 
-  DDkwd__(USE_DENSE_BUFFERS,			"ON"),
 
  // Use Hive tables as source for traf ustat and popindex
   DDkwd__(USE_HIVE_SOURCE,            ""),
@@ -3525,10 +3049,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),
- XDDflt0_(USTAT_AUTO_CV_SAMPLE_SLOPE,           "0.5"),  // CV multiplier for sampling %.
   DDkwd__(USTAT_AUTO_EMPTYHIST_TWO_TRANS,       "OFF"),  // When ON empty hist insert will be 2 trans.
   DDkwd__(USTAT_AUTO_FOR_VOLATILE_TABLES,       "OFF"),  // Toggle for vol tbl histogram usage
-  DDui___(USTAT_AUTO_MAX_HIST_AGE,              "0"),    // Age of oldest unused histogram - only applies when automation is on.
   DDui1__(USTAT_AUTO_MC_MAX_WIDTH,              "10"),   // The max columns in an MC histogram for automation.
   DDui___(USTAT_AUTO_MISSING_STATS_LEVEL,	"4"),    // Similar to HIST_MISSING_STATS_WARNING_LEVEL, but controls
                                                          // if automation inserts missing stats to HISTOGRAMS table.
@@ -3537,11 +3059,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
                                                          // 2 - insert all single col hists and MC hists for scans,
                                                          // 3 - insert all single col hists and MC stats for scans and joins.
                                                          // 4 - insert all single col hists and MC stats for scans, joins, and groupbys.
- XDDui___(USTAT_AUTO_PRIORITY,                  "150"),  // Priority of ustats under USAS.
   DDui1__(USTAT_AUTO_READTIME_UPDATE_INTERVAL,  "86400"),  // Seconds between updates of READ_COUNT.
                                                  // Should be > CACHE_HISTOGRAMS_REFRESH_INTERVAL.
-  DDkwd__(USTAT_CHECK_HIST_ACCURACY,            "OFF"),
-  DDui1__(USTAT_CLUSTER_SAMPLE_BLOCKS,          "1"),
 
   DDkwd__(USTAT_COLLECT_FILE_STATS,             "ON"), // do we collect file stats
 
@@ -3565,7 +3084,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
                                                              //   least one row per this many when sampling within HBase.
   DDflt0_(USTAT_INCREMENTAL_FALSE_PROBABILITY,   "0.01"),
   DDkwd__(USTAT_INCREMENTAL_UPDATE_STATISTICS,   "ON"),
-  DDkwd__(USTAT_INSERT_TO_NONAUDITED_TABLE,     "OFF"),  // Used internally to overcome problem in which insert
                                                          // to the non-audited sample table must be done on same
                                                          // process it was created on.  This CQD is NOT externalized.
   DDkwd__(USTAT_INTERNAL_SORT,                  "HYBRID"),
@@ -3593,32 +3111,26 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
 
   DDkwd__(USTAT_JIT_LOGGING,                    "OFF"),
-  DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
   DDui___(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,   "256"),  // When computing UECs, char cols are limited to this many bytes
   DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
-  DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.
 
                                                          // internal sort without checking UEC.
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
   DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
  DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
-  DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
   DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
- XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
- XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
   DDkwd__(USTAT_PROCESS_GAPS,                   "ON"),
   DD0_255(USTAT_RETRY_DELAY,                    "100"),
   DD0_255(USTAT_RETRY_LIMIT,                    "3"),
   DD0_255(USTAT_RETRY_NEC_COLS_LIMIT,           "3"),       // by default, use retry for AddNecessaryColumns
-  DDui1__(USTAT_RETRY_SECURITY_COUNT,           "120"),
   DDpct__(USTAT_SAMPLE_PERCENT_DIFF,            "10"),
   DDansi_(USTAT_SAMPLE_TABLE_NAME,              " "),
   DDansi_(USTAT_SAMPLE_TABLE_NAME_CREATE,       " "),
@@ -3630,10 +3142,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
   DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column
-  DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
  XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
@@ -3657,11 +3166,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // to be the clustering key.
   DDkwd__(VOLATILE_TABLE_FIND_SUITABLE_KEY,     "SYSTEM"),
 
-  // if this is set, and there is no user specified primary key or
-  // store by clause, then make the first column of the volatile table
-  // to be the clustering key.
-  // Default is ON.
-  DDkwd__(VOLATILE_TABLE_FIRST_COL_IS_CLUSTERING_KEY, "ON"),
 
   DDkwd__(VSBB_TEST_MODE,			"OFF"),
  XDDkwd__(WMS_CHILD_QUERY_MONITORING,                       "OFF"),
@@ -3854,6 +3358,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
   deleteMe();
 
+
   const size_t numAttrs = numDefaultAttributes();
   if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
     return;
@@ -4032,12 +3537,10 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   if (CmpCommon::context()->GetMode() == STMT_STATIC)
     {
       currentDefaults_[GENERATE_EXPLAIN] = "ON";
-      currentDefaults_[DO_RUNTIME_EID_SPACE_COMPUTATION] = "ON";
     }
   else
     {
       currentDefaults_[GENERATE_EXPLAIN] = "OFF";
-      currentDefaults_[DO_RUNTIME_EID_SPACE_COMPUTATION] = "OFF";
       currentDefaults_[DETAILED_STATISTICS] = "OPERATOR";
     }
 
@@ -4072,8 +3575,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
   if(resetNeoDefaults)
   {
-    // turn on ALL stats during regressions run.
-    currentDefaults_[COMP_BOOL_157] = "ON";
 
     // turn on INTERNAL format for SHOWDDL statements
     currentDefaults_[SHOWDDL_DISPLAY_FORMAT] = "INTERNAL";
@@ -5202,10 +4703,9 @@ NABoolean NADefaults::isNonResetableAttribute(const char* attrName) const
 // these defaults can be set only once by user.
 NABoolean NADefaults::isSetOnceAttribute(Int32 attrEnum) const
 {
-   if ( attrEnum == DEFAULT_SCHEMA_ACCESS_ONLY ||
-        attrEnum == PUBLISHING_ROLES )
-     return TRUE;
-
+  if ( attrEnum == DEFAULT_SCHEMA_ACCESS_ONLY )
+    return TRUE;
+  
    return FALSE;
 }
 
@@ -5275,8 +4775,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
       {
         if (attrEnum == SCHEMA ||
             attrEnum == PUBLIC_SCHEMA_NAME ||
-            attrEnum == DEFAULT_SCHEMA_NAMETYPE ||
-	    attrEnum == PUBLISHING_ROLES)
+            attrEnum == DEFAULT_SCHEMA_NAMETYPE)
         {
           if (!isResetAll())              // no error msg for cqd * reset
     		    *CmpCommon::diags() << DgSqlCode(-30043) << DgString0(attrName);
@@ -5732,7 +5231,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	{
 	  if (value == "ON")
 	    {
-	      insert(COMP_BOOL_157, "ON", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "INTERNAL", errOrWarn);
 	      insert(MODE_SPECIAL_1, "OFF", errOrWarn);
 	      if (getToken(VOLATILE_TABLE_FIND_SUITABLE_KEY) == DF_SYSTEM)
@@ -5748,7 +5246,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    }
 	  else
 	    {
-	      insert(COMP_BOOL_157, "OFF", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "EXTERNAL", errOrWarn);
 
 	      CmpCommon::context()->setSqlmxRegress(0);
@@ -6417,7 +5914,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
-
+    
     if ( attrEnum == NATIONAL_CHARSET ||
          attrEnum == DEFAULT_CHARSET ||
          attrEnum == HIVE_DEFAULT_CHARSET ||
@@ -6458,7 +5955,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	      break;
 	    }
 	  }
-
+        
 	if ( (err_found != 0) && errOrWarn )
 	  *CmpCommon::diags() << DgSqlCode(ERRWARN(3010)) << DgString0(value);
 	else
@@ -6496,59 +5993,58 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         // in the future add DF_HIGH and DF_MAXIMUM when we implement more 
         // pushdown capabilities
       }
-    if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
-         attrEnum == MVQR_REWRITE_CANDIDATES ||
-         attrEnum == MVQR_PUBLISH_TABLE_LOCATION ||
-         attrEnum == MVQR_WORKLOAD_ANALYSIS_MV_NAME ||
-         attrEnum == HIST_SCRATCH_VOL)
-      return DF_SYSTEM;   
+      
+      if   (attrEnum == MVQR_REWRITE_CANDIDATES ||
+            attrEnum == MVQR_WORKLOAD_ANALYSIS_MV_NAME ||
+            attrEnum == HIST_SCRATCH_VOL)
+        return DF_SYSTEM;   
+        
+      const char *k = value.data();
+      char *match = (char*) bsearch(
+           &k, keywords_, DF_lastToken, sizeof(char*), stringCompare);
+      if (match)
+        tok = (DefaultToken) (((const char**) match) - keywords_);
 
-    const char *k = value.data();
-    char *match = (char*) bsearch(
-		   &k, keywords_, DF_lastToken, sizeof(char*), stringCompare);
-    if (match)
-      tok = (DefaultToken) (((const char**) match) - keywords_);
+      else {	// Check for synonyms
 
-    else {	// Check for synonyms
+        const char *c = value;
+        for (; *c == '0'; c++) ;	// all ascii '0' ?
+        if (*c == '\0')					// terminating nul '\0'
+          tok = DF_OFF;
 
-      const char *c = value;
-      for (; *c == '0'; c++) ;	// all ascii '0' ?
-      if (*c == '\0')					// terminating nul '\0'
-	tok = DF_OFF;
+        else if (value.length() <= 2) {
+          if (value == "1" || value == "+1" || value == "-1")
+            tok = DF_ON;
+        }
 
-      else if (value.length() <= 2) {
-	if (value == "1" || value == "+1" || value == "-1")
-	  tok = DF_ON;
-      }
-
-      else {
-	if ((value == "STOP_AT") || (value == "STOP AT"))
-	  tok = DF_STOP;
-        else if (value == "READ COMMITTED")
-          tok = DF_READ_COMMITTED;
-        else if (value == "READ UNCOMMITTED")
-          tok = DF_READ_UNCOMMITTED;
-        else if (value == "REPEATABLE READ")
-          tok = DF_REPEATABLE_READ;
-        else if (value == "BEGINNER")
-          tok = DF_BEGINNER;
-        else if (value == "ADVANCED")
-          tok = DF_ADVANCED;
+        else {
+          if ((value == "STOP_AT") || (value == "STOP AT"))
+            tok = DF_STOP;
+          else if (value == "READ COMMITTED")
+            tok = DF_READ_COMMITTED;
+          else if (value == "READ UNCOMMITTED")
+            tok = DF_READ_UNCOMMITTED;
+          else if (value == "REPEATABLE READ")
+            tok = DF_REPEATABLE_READ;
+          else if (value == "BEGINNER")
+            tok = DF_BEGINNER;
+          else if (value == "ADVANCED")
+            tok = DF_ADVANCED;
 
 
-	#define CONVERT_SYNONYM(from,to)	 \
-	  else if (value == "" # from "") {	 \
-	    CMPASSERT(DF_ ## from == DF_ ## to); \
-	    tok = DF_ ## to;			 \
+#define CONVERT_SYNONYM(from,to)                        \
+	  else if (value == "" # from "") {             \
+	    CMPASSERT(DF_ ## from == DF_ ## to);        \
+	    tok = DF_ ## to;                            \
 	  }
-	CONVERT_SYNONYM(COMPAQ,  TANDEM)
-	CONVERT_SYNONYM(DISABLE, OFF)
-	CONVERT_SYNONYM(ENABLE,  SYSTEM)
-	CONVERT_SYNONYM(FALSE,   OFF)
-	CONVERT_SYNONYM(FULL,    MAXIMUM)
-	CONVERT_SYNONYM(TRUE,    ON)
+          CONVERT_SYNONYM(COMPAQ,  TANDEM)
+            CONVERT_SYNONYM(DISABLE, OFF)
+            CONVERT_SYNONYM(ENABLE,  SYSTEM)
+            CONVERT_SYNONYM(FALSE,   OFF)
+            CONVERT_SYNONYM(FULL,    MAXIMUM)
+            CONVERT_SYNONYM(TRUE,    ON)
+            }
       }
-    }
   }
 
   NABoolean isValid = FALSE;
@@ -7295,5 +6791,3 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
 			<< DgString1("SCHEMA");
   }
 }
-
-

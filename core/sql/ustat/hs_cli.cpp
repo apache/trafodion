@@ -732,8 +732,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
     if (hs_globals && hs_globals->diagsArea.getNumber(DgSqlCode::ERROR_))
       hs_globals->diagsArea.deleteError(0);
 
-    HSFuncExecQuery("CONTROL QUERY DEFAULT CREATE_FOR_NO_RDF_REPLICATE 'ON'");
-
     HSLogMan *LM = HSLogMan::Instance();
     if (LM->LogNeeded()) {
       snprintf(LM->msg, sizeof(LM->msg), "CREATE SAMPLE TABLE ddl text=%s", ddl.data());
@@ -798,8 +796,6 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
       HSFuncExecQuery("CONTROL QUERY DEFAULT IS_DB_TRANSPORTER RESET");
       SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
     }
-
-    HSFuncExecQuery("CONTROL QUERY DEFAULT CREATE_FOR_NO_RDF_REPLICATE RESET");
 
     HSHandleError(retcode);
     return retcode;

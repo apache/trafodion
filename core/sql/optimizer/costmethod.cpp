@@ -7018,8 +7018,8 @@ CostMethodHashGroupBy::computePassCost(NABoolean         isFirstPass,
   if ( CmpCommon::getDefault(COMP_BOOL_52) == DF_OFF)
   {
     CostScalar averageChainLength =  (groupCountPerCluster/
-                               ActiveSchemaDB()->getDefaults().getAsLong(
-                                MAX_HEADER_ENTREIS_PER_HASH_TABLE)).getFloor();
+                                      ActiveSchemaDB()->getDefaults()
+                                      .getAsLong(MAX_HEADER_ENTREIS_PER_HASH_TABLE)).getFloor();
 
     CostScalar costToInsert = calculateCostToInsertIntoChain
                                          (averageChainLength);

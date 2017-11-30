@@ -14545,8 +14545,8 @@ PhysicalProperty * FileScan::synthHiveScanPhysicalProperty(
       // Try to make the # of ESPs a factor, the same or a multiple
       // of the # of SQ nodes to avoid an imbalance. If we use locality,
       // make the # of ESPs a multiple of the # of nodes for now.
-      double allowedDev = 1.0 + ActiveSchemaDB()->getDefaults().getAsDouble(
-                                            HIVE_NUM_ESPS_ROUND_DEVIATION)/100.0;
+      double allowedDev = 1.0 + ActiveSchemaDB()->
+        getDefaults().getAsDouble(HIVE_NUM_ESPS_ROUND_DEVIATION)/100.0;
       Lng32 maxRoundedESPs = MINOF((Lng32) (numESPs * allowedDev), maxESPs);
       Lng32 minRoundedESPs = MAXOF((Lng32) (numESPs / allowedDev), minESPs);
       Lng32 delta = 0;

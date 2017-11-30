@@ -258,10 +258,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON'");
     HSExitIfError(retcode);
 
-    // OFF enables no error on nullable storeby
-    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT CAT_ERROR_ON_NOTNULL_STOREBY 'OFF'");
-    HSExitIfError(retcode);
-
      if (CmpCommon::getDefault(WMS_CHILD_QUERY_MONITORING) == DF_OFF)
        {
 	 retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT WMS_CHILD_QUERY_MONITORING 'OFF'");

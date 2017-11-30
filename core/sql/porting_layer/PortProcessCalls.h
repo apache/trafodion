@@ -41,18 +41,10 @@
 #define PORTPROCESSCALLS_H
 
 #include "Platform.h"
-
 #include "seabed/fs.h"
-//#include "seabed/int/types.h"
 
 #define PhandleSize 64
-
-#ifdef SQ_PHANDLE_VERIFIER
-#define PhandleStringLen (MS_MON_MAX_PROCESS_NAME + 1 + 10 + 1)
-#else
 #define PhandleStringLen (MS_MON_MAX_PROCESS_NAME + 1)
-#endif
-
 #define NodeNameLen 9
 
 //
@@ -61,9 +53,7 @@
 // This class encapsulates the differences between platforms for the 
 // Process Handle.
 //
-//  On NSK, the PHANDLE is a 20 bytes
 //  On LINUX, the PHANDLE is 64 bytes
-//  On Windows, the PHANDLE is 20 bytes ??
 //
 // ------------------------------------------------------------------------
 class NAProcessHandle
@@ -93,7 +83,7 @@ class NAProcessHandle
     // Wrapper for PROCESSHANDLE_NULLIT_
     short nullit( SB_Phandle_Type * phandle);
 
-// Accessors to access various process handle components
+  // Accessors to access various process handle components
     SB_Phandle_Type *getPhandle() { return &phandle_; }
     Int32 getCpu() {return cpu_;}
     Int32 getPin() {return pin_;}

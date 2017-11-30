@@ -1138,24 +1138,6 @@
 >>--cqd PUBLISHING_ROLES 'a.b';
 >>--cqd PUBLISHING_ROLES reset;
 >>
->>
->>cqd EID_TRACE_STR 'abc';
-
---- SQL operation complete.
->>cqd EID_TRACE_STR reset;
-
---- SQL operation complete.
->>
->>cqd POS_ABSOLUTE_MAX_TABLE_SIZE '123,456,789';
-
-*** ERROR[2055] The specified value '123,456,789' for DEFAULTS attribute POS_ABSOLUTE_MAX_TABLE_SIZE is not valid.
-
-*** ERROR[8822] The statement was not prepared.
-
->>cqd POS_ABSOLUTE_MAX_TABLE_SIZE reset;
-
---- SQL operation complete.
->>
 >>cqd DEFAULT_SCHEMA_NAMETYPE 'user';
 
 --- SQL operation complete.

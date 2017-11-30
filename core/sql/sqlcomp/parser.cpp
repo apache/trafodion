@@ -1487,35 +1487,6 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 	}
     }
 
-#ifdef __ignore
-  // Check for "CREATE TANDEM_CAT_REQUEST&" 
-  if (ns.index(CATAPI) == 0)
-    {                 
-      // CATAAPI requests are only allowed to be called directly if
-      // SQLPARSER_FLAGS is set.
-      if (!Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-	{
-	  // call sql/mx parser which will return a syntax error.	  
-	  return FALSE;
-	}
-
-      // CATAPI requests are only allowed by super.super, if issued
-      // directly from mxci or nvci.
-      // They are also allowed if these are coming from master exe
-      // as an INTERNAL_QUERY_FROM_EXEUTIL.
-      if (((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
-	   (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)) &&
-	  (NOT cmpContext()->isSecondaryMxcmp()) &&
-	  (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-	{
-	  // call sql/mx parser which will return a syntax error.	  
-	  return FALSE;
-	}
-
-      specialDDL = TRUE;      
-    }
-#endif
-
   // If a special DDL is found, go ahead and create a DDLExpr node
   if (specialDDL)
     {

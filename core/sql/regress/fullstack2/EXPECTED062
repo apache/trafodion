@@ -440,10 +440,6 @@ Current DEFAULTS
 *** ERROR[8822] The statement was not prepared.
 
 >>	-- 2055
->>control query default CPUCOST_DM_GET '1.5e+12';
-
---- SQL operation complete.
->>	-- valid
 >>showcontrol query default def_chunk;
 
 CONTROL QUERY DEFAULT
@@ -490,13 +486,8 @@ CONTROL QUERY DEFAULT
   SCHEMA                        	AAA.BBB
   CATALOG                       	CCC
   DEF_CHUNK_SIZE                	1000
-  CPUCOST_DM_GET                	1.5E+12
 
 --- SQL operation complete.
->>control query default CPUCOST_DM_GET '';
-
---- SQL operation complete.
->>	-- valid (revert to orig deflt)
 >>set schema $$TEST_SCHEMA$$;
 
 --- SQL operation complete.
@@ -517,7 +508,6 @@ CONTROL QUERY DEFAULT
   TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
-  CPUCOST_DM_GET                	.001
   SCHEMA                        	TRAFODION.SCH
   TIMEOUT                       	144
 
@@ -537,7 +527,6 @@ CONTROL QUERY DEFAULT
   TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
-  CPUCOST_DM_GET                	.001
   SCHEMA                        	TRAFODION.SCH
   TIMEOUT                       	6000
 

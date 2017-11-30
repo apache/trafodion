@@ -4305,12 +4305,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
        SQL_EXEC_SetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
     }
 
-    // Set the insert to nonaudited table CQD so that the forceopen flag will be set
-    // for the executor.  This allows the insert to ignore the fact that the create 
-    // may have occurred on another process.  This is necessary to avoid a file system
-    // error 1054.  On NT this doesn't work (causes a crash).
-    HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_INSERT_TO_NONAUDITED_TABLE 'ON'");
-
     // initialize sourceTableRowCount to -1. The method that sets this parameter
     // will not change this value if there is an error. So if 
     // sourceTableRowCount = -1 after the call, we know something went wrong 
@@ -4377,9 +4371,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
            }
          LM->StopTimer();
        }
-
-
-    HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_INSERT_TO_NONAUDITED_TABLE RESET");
 
     // RESET CQDS:
     //10-040706-7608: a workaround for this solution is to turn cqd        //Workaround: 10-040706-7608
