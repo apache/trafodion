@@ -28,20 +28,14 @@ if [[ $# -gt 0 ]]; then
   exit 1
 fi
 
-if [[ -r $DCS_INSTALL_DIR/bin/dcs-config.sh ]]
-then
-  source $DCS_INSTALL_DIR/bin/dcs-config.sh
-fi
-if [[ -n $DCS_MASTER_FLOATING_IP ]]
-then
-  MASTER_NODE=$DCS_MASTER_FLOATING_IP
-elif [[ -r $DCS_PRIMARY_MASTER ]]
-then
-  MASTER_NODE=$(cat $DCS_PRIMARY_MASTER)
+if [[ -z $TRAF_HOME && -r /etc/trafodion/conf/client_config ]]; then
+  source /etc/trafodion/conf/client_config
 fi
 
-HNAME="${MASTER_NODE:-localhost}:${DCS_MASTER_PORT:-23400}"
-UNAME=zz
-PWORD=zz
-
-$TRAF_HOME/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD
+# If we have client config or server config, no arguments needed
+if [[ -r /etc/trafodion/conf/client_config || -r "$DCS_INSTALL_DIR/conf/dcs-env.sh" ]]; then
+  $TRAF_HOME/trafci/bin/trafci.sh
+else
+  # try localhost
+  $TRAF_HOME/trafci/bin/trafci.sh -h localhost:23400
+fi
