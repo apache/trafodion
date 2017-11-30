@@ -38,8 +38,8 @@ methods for obtaining a JDBC connection to the underlying database.
 
 All JDBC data source classes implement either the `javax.sql.DataSource`
 interface or the `javax.sql.ConnectionPoolDataSource` interface. The Type
-4 driver data source classes are `org.trafodion.jdbc.t4.HPT4DataSource` and
-`org.trafodion.jdbc.t4.HPT4ConnectionPoolDataSource`. (These classes are
+4 driver data source classes are `org.trafodion.jdbc.t4.TrafT4DataSource` and
+`org.trafodion.jdbc.t4.TrafT4ConnectionPoolDataSource`. (These classes are
 defined by the JDBC 3.0 specification.)
 
 Typically, a user or system administrator uses a tool to create a data
@@ -132,37 +132,36 @@ For details about Type 4 driver properties that you can use with the `DataSource
 
 A JDBC application can set `DataSource` properties programmatically and
 register with a DataSource object. To get or set `DataSource` object properties programmatically, use the
-appropriate getter or setter methods on the `HPT4DataSource` object or
-the `HPT4ConnectionPoolDataSource` object.
+appropriate getter or setter methods on the `TrafT4DataSource` object or
+the `TrafT4ConnectionPoolDataSource` object.
 
 *Example*
 
 [source, java]
 ----
-HPT4DataSource temp = new HPT4DataSource() ;
+TrafT4DataSource temp = new TrafT4DataSource() ;
 temp.setCatalog( "TRAFODION" ) ;
 ----
 
 In the following example, the code fragment illustrates the methods that a
 `DataSource` object `ds` needs to include if the object supports the
 `serverDataSource` property `ds.setServerDataSource( "my_server_datasource" )`.
-In this example, the code shows setting properties for the `HPT4DataSource` object
+In this example, the code shows setting properties for the `TrafT4DataSource` object
 to use the Type 4 driver to access a {project-name} database:
 
 [source, java]
 ----
-HPT4DataSource ds = new HPT4DataSource() ;
+TrafT4DataSource ds = new TrafT4DataSource() ;
 
-ds.setUrl( "jdbc:t4jdbc://<primary IP addr or host name>:2300/" );
-ds.setCatalog( "TRAFODION" ) ;
+ds.setUrl( "jdbc:t4jdbc://<primary IP addr or host name>:23400/" );
 ds.setSchema( "myschema" ) ;
 ds.setUser( "gunnar" ) ;
 ds.setPassword( "my_userpassword" ) ;
 
 // Properties relevant for Type 4 connection pooling.
 // Set ds.setMaxPoolSize(-1) for turning OFF connection pooling
-ds.setMaxPoolSize( "10000" ) ;
-ds.setMinPoolSize( "1000" ) ;
+ds.setMaxPoolSize( "100" ) ;
+ds.setMinPoolSize( "10" ) ;
 
 // Properties relevant for Type 4 statement pooling.
 // Set ds.setMaxStatement(0) for turning statement pooling OFF
@@ -178,7 +177,7 @@ see <<creating-and-using-a-properties-file, Creating and Using a Properties File
 === Programmatically Registering the DataSource Object
 
 In the following example, the code shows how to register, programmatically,
-the `HPT4DataSource` object `ds` that was created using the preceding code with JNDI.
+the `TrafT4DataSource` object `ds` that was created using the preceding code with JNDI.
 
 [source, java]
 ----
@@ -265,7 +264,7 @@ When the JDBC application makes the connection, then the application should
 pass the properties file as a command-line parameter:
 
 ```
-java -Dhpt4jdbc.properties=<path of properties file on disk>
+java -Dt4jdbc.properties=<path of properties file on disk>
 ```
 
 [[connection-by-using-the-drivermanager-class]]
@@ -339,7 +338,7 @@ To establish a connection, the JDBC application can use this code:
 ----
 Class.forName( "org.trafodion.jdbc.t4.T4Driver" ) ; //loads the driver
 
-String url = "jdbc:hpt4jdbc://<database primary IP address>:23400/"
+String url = "jdbc:t4jdbc://<database primary IP address>:23400/"
 
 Connection con = DriverManager.getConnection( url, "userID", "Passwd" ) ;
 ----
@@ -521,7 +520,7 @@ are met again.
 In the Type 4 driver, API layer classes are implemented as
 instance-specific objects to ensure thread safety:
 
-* `HPT4DataSource.getConnection()` is implemented as a synchronized method
+* `TrafT4DataSource.getConnection()` is implemented as a synchronized method
 to ensure thread safety in getting a connection.
 
 * Once a connection is made, the `Connection` object is instance-specific.
@@ -638,8 +637,8 @@ Message: INFOSTATS command can only be executed
 ----
 Statement s = conn.createStatement( ) ;
 
-HPT4PreparedStatement p =
-   (HPT4PreparedStatement)conn.prepareStatement(
+TrafT4PreparedStatement p =
+   (TrafT4PreparedStatement)conn.prepareStatement(
       "SELECT * FROM t WHERE i = ?" ) ;
 
 boolean results = s.execute( "INFOSTATS " + p.getStatementLabel() ) ;
@@ -766,7 +765,7 @@ property and issues the `getString()` method.
 
 [source, java]
 ----
-java -Dhpt4jdbc.ISO88591=SJIS test1.java
+java -Dt4jdbc.ISO88591=SJIS test1.java
 
 // The following method invocation returns a String object, which
 // was created using the "SJIS" Java canonical name as the charset

@@ -95,7 +95,7 @@ reduces contention for getting the next value. The default setting is
 large objects (not chunks) before needing a new allocation.
 
 Specify the number of data locators (n) to reserve for your application
-by using the Type 4 driver property `hpt4jdbc.reserveDataLocators`. For
+by using the Type 4 driver property `t4jdbc.reserveDataLocator`. For
 information about specifying this property, see
 <<reserveDataLocators, reserveDataLocators Property>>.
 
