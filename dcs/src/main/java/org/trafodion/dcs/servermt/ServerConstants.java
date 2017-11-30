@@ -176,7 +176,7 @@ public final class ServerConstants {
     public static final short SQL_ATTR_AUTOCOMMIT           = 102;
     public static final short SQL_TXN_ISOLATION             = 108;
 
-// The enum SQLTYPE_CODE from sqlcli.h. HP extenstion are negative values.
+// The enum SQLTYPE_CODE from sqlcli.h. Trafodion extenstion are negative values.
 
     public static final int SQLTYPECODE_CHAR                   = 1;
     public static final int SQLTYPECODE_NUMERIC                = 2;

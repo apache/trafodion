@@ -71,7 +71,7 @@ import java.io.FileOutputStream;
  * <code>DataSource</code> API does not automatically register itself with the
  * <code>DriverManager</code> object.
  *
- * @version HP JDBC/MX
+ * @version Trafodion JDBC/MX
  */
 
 public class SQLMXDataSource extends T2Properties implements

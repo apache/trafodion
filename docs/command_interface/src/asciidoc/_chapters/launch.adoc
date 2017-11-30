@@ -320,7 +320,7 @@ trafci prompts for the user name and password only.
 ```
 SQL> connect user1/xxx@172.16.1.1
 
-com.hp.jdbc.HPT4Exception: **** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:35:15]
+org.trafodion.jdbc.t4.TrafT4Exception: **** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:35:15]
 
 User Name: user1 
 Password: abc  

@@ -23,7 +23,7 @@
 
 #
 #  Classpath required for execution. Specifies the jar files containing
-#  the HP JDBC T4 classes and the Trafodion Command Interface classes.
+#  the Trafodion JDBC T4 classes and the Trafodion Command Interface classes.
 #
 
 TRAFCI_CLASSPATH="##TRAFCI_CLASSPATH##"

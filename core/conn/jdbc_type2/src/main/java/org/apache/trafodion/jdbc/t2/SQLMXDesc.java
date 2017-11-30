@@ -368,7 +368,7 @@ class SQLMXDesc
 		}
 	}
 	
-	// The enum SQLTYPE_CODE from sqlcli.h. HP extenstion are negative values.
+	// The enum SQLTYPE_CODE from sqlcli.h. Trafodion extenstion are negative values.
 
 	public static final int SQLTYPECODE_CHAR                   = 1;
 	public static final int SQLTYPECODE_NUMERIC                = 2;
