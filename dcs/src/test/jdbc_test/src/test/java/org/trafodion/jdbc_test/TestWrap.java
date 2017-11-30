@@ -51,7 +51,11 @@ public class TestWrap {
             conn = Utils.getUserConnection();
             boolean result = conn.isWrapperFor(Connection.class);
             assertTrue("It is wrapper for this interface", result);
+            conn.close();
         } catch (SQLException e) {
+            if (conn !=null) {
+                conn.close();
+            }
             e.printStackTrace();
         }
     }
@@ -64,6 +68,9 @@ public class TestWrap {
             conn = Utils.getUserConnection();
             conn.close();
         } catch (SQLException e) {
+            if (conn !=null) {
+                conn.close();
+            }
             e.printStackTrace();
         }
         conn.isWrapperFor(Connection.class) ;
@@ -79,7 +86,11 @@ public class TestWrap {
             assertTrue("It is unwrape for this interface", result);
             result = conn.unwrap(Connection.class) instanceof TestWrap;
             assertTrue("It is unwrape for this interface", !result);
+            conn.close();
         } catch (SQLException e) {
+            if (conn !=null) {
+                conn.close();
+            }
             e.printStackTrace();
         }
     }
