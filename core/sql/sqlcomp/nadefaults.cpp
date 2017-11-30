@@ -501,7 +501,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
  DDkwd__(CAT_ALLOW_NEW_FEATUREX, "OFF"),
 
-// Control whether authorization caches immutable users
 
 
  DDkwd__(CAT_DEFAULT_COMPRESSION, "NONE"),
@@ -518,16 +517,7 @@ SDDkwd__(CAT_DISTRIBUTE_METADATA,             "ON"),
 SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
 
- // Throw an error if a column is part of the store by clause and
- // is not defined as NOT NULL return an error
 
-
- // Used to make ignore "already exists" error in Create and
- // "does not exist" error in Drop.
-
- // Used to make catman test134 predictable
-
- // Catalog Manager internal support for REPLICATE AUTHORIZATION
 
 // This enables the DB Limits functionality.  If set to OFF, then blocksize
 // is restricted to 4096 and clustering key size is limited to 255 bytes.
@@ -535,27 +525,12 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 // large blocks or keys.
   DDkwd__(CAT_LARGE_BLOCKS_LARGE_KEYS, "ON"),
 
-// If DB Limits is enabled, then increase the default blocksize to 32K
-// on NSK if the object's clustering key length is larger than this value.
-
-
-// If DB Limits is enabled, then increase the default blocksize to 32K
-// on NSK if the object's row size is larger than this value.
-
-
 // Controls how pathnames for routines/procedures/SPJs are interpreted
   DDkwd__(CAT_LIBRARY_PATH_RELATIVE, "OFF"),
 
 
 
 
-// This forces an rcb to be created with a different version number
-// A "0" means to take the current mxv version
-
-// Controls creation of column privileges for object-level privileges
-
-// If schema owner is object owner is ON, then the default owner for objects is the
-//  schema owner.
 
 
   // CMP_ERR_LOG_FILE indicates where to save a log for certain errors.
@@ -572,9 +547,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMPILE_TIME_MONITOR,			"OFF"),
   DD_____(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY, "OFF"),
   DD_____(COMPILE_TIME_MONITOR_OUTPUT_FILE,	"NONE"),
-
-  // complexity threshold beyond which a
-  // MultiJoin query is considered too complex
 
 
   // Switch between new aligned internal format and exploded format
@@ -891,9 +863,6 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDint__(COMP_INT_80,         "3"),
 
 
-  // max num of retries after parl purgedata open/control call errs.Default 25.
-  // delay between each paral pd error retry. Default is 2 seconds.
-
   DDint__(COMP_INT_89,         "2"),
   DDint__(COMP_INT_9,         "0"),
   DDint__(COMP_INT_90,         "0"),
@@ -905,14 +874,11 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DD_____(COMP_STRING_2,	    ""),
   DD_____(COMP_STRING_5,	    ""),
 
-  // Configured_memory_for defaults are all measured in KB
 
   DDkwd__(CONSTANT_FOLDING,                     "OFF"),
 
   DDkwd__(COSTING_SHORTCUT_GROUPBY_FIX,                "ON"),
   DDflt0_(COST_PROBE_DENSITY_THRESHOLD, ".25"),
-  // As of 3/23/98 the tupp desc. length is 12 bytes. Change when executor
-  // changes.
 
   DDflt0_(CPUCOST_COMPARE_COMPLEX_DATA_TYPE_OVERHEAD,	"10."),
   DDflt0_(CPUCOST_COMPARE_COMPLEX_DATA_TYPE_PER_BYTE,	".1"),
@@ -1065,12 +1031,10 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   // if it's "OFF" then the defaults of the two heuristics will be used
   DDkwd__(DATA_FLOW_OPTIMIZATION,		"ON"),
 
-  // DDL Default location support
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
   DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
-    // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
 
  SDDkwd__(DEFAULT_CHARSET,           (char *)SQLCHARSETSTRING_ISO88591),
  XDDui1__(DEFAULT_DEGREE_OF_PARALLELISM,    "2"),
@@ -1110,27 +1074,12 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DD_____(DISPLAY_DATA_FLOW_GRAPH,		"OFF"),
  XDDkwd__(DISPLAY_DIVISION_BY_COLUMNS,          "OFF"),
 
- // opens are distributed among all partitions instead of just root.
- // 0: no distribution, only use root.
- // -1: max distribution, all partitions
- // <number>: num of partitions per segment
 
   // temp. disable dop reduction logic
   DDflt0_(DOP_REDUCTION_ROWCOUNT_THRESHOLD,	"0.0"),
 
 
 
-  // if set, then space needed for executor structures at runtime is
-  // optimized such that the allocation starts with a low number and then
-  // is allocated on a need basis. This means that we may have to allocate
-  // more smaller chunks if much space is needed. But it helps in the case
-  // where many plans are being used and each one only takes a small amount
-  // of space. This optimization especially helps in case of Dp2 fragments
-  // as there is only a finite amount of space available there. Once that
-  // limit is reached, and a new plan is shipped, it means that an existing
-  // eid plan from dp2 memory need to be swapped out and then refixed up.
-  // By reducing space utilization, we end up with more eid sessions in
-  // use inside of dp2.
 
 
   // DP2 Cache defaults as of 06/08/98.
@@ -1141,7 +1090,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDui1__(DP2_CACHE_4096_BLOCKS,              "4096"),
   DDui1__(DP2_CACHE_512_BLOCKS,			"152"),
   DDui1__(DP2_CACHE_8K_BLOCKS,                  "2048"),
-  // The cache size is about 2000 pages @ 4k each page
   // Exchange Costing
   // 6/12/98.
   // End of buffer header is 32 bytes or .0313 KB.
@@ -1170,7 +1118,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
   DDkwd__(EID_SPACE_USAGE_OPT,			"OFF"),
 
- // For both of these CQDs see executor/ExDp2Trace.h for values.
   DDkwd__(ELIMINATE_REDUNDANT_JOINS,             "ON"),
 
 
@@ -1457,8 +1404,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_UN_SIZE_DOWN,			"8"),
   DDui1__(GEN_UN_SIZE_UP,			"16"),
 
-  // Used when Compressed_Internal_Format is on to reduce space in the
-  // hash buffers (Hash Join and Hash Groupby) and sort buffers.
 
 
   // When less or equal to this CQD (5000 rows by default), a partial root 
@@ -1715,7 +1660,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  // -------------------------------------------------------------------------
 
- //  DDui2__(HJ_BUFFER_SIZE,			"32"),
   DDflt0_(HJ_CPUCOST_INITIALIZE,		"1."),
   DDui1__(HJ_INITIAL_BUCKETS_PER_CLUSTER,	"4."),
   DDkwd__(HJ_NEW_MCSB_PLAN,			"OFF"),
@@ -1728,15 +1672,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HYBRID_QUERY_CACHE, "ON"),
   DDkwd__(IF_LOCKED,				"WAIT"),
 
-    // ignore_duplicate_keys is no more valid. It is still
-  // here as dummy for compatibility with existing scripts.
 
- // in mode_special_1, duplicate rows are ignored if inserting a row in the
- // base table which has a user defined primary key. If this default is set
- // to OFF in mode_special_1, then duplicate rows are not ignored.
- //
- // If not in mode_special_1, and this default is ON, then duplicate rows
- // are ignored.
 
   DDkwd__(IMPLICIT_DATETIME_INTERVAL_HOSTVAR_CONVERSION,   "FALSE"),
   DDkwd__(IMPLICIT_HOSTVAR_CONVERSION,		"FALSE"),
@@ -1848,7 +1784,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDui1__(MAX_ACCESS_NODES_PER_ESP,	"1024"),
 
- // this is the default length of a param which is typed as a VARCHAR.
 
   DDint__(MAX_DEPTH_TO_CHECK_FOR_CYCLIC_PLAN,   "1"),
 
@@ -1873,8 +1808,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DD18_128(MAX_NUMERIC_PRECISION_ALLOWED,        "128"),
 
-  // The max number of vertical partitions for optimization to be done under
-  // a VPJoin.
 
 
   // The max number of skewed values detected - skew buster
@@ -2073,8 +2006,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Units of MSCF_ET_LOCAL_MSG_TRANSFER are seconds/Kb
 
   DDflte_(MSCF_ET_LOCAL_MSG_TRANSFER,		"0.000046"),
-  // $$$ This should be removed. It is only used by preliminary costing
-  // for the materialize operator, which should not be using it.
   // : for calibration on 04/08/2004
   // Seek time will be derived from disk type.
 
@@ -2124,13 +2055,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // outer subtree for NJ into fact table.
   DDflt0_(MULTI_JOIN_PROBE_HASH_TABLE,	       "0.000001"),
 
-  // threshold above which a query is considered complex
-  // this only applies to queries that can be rewritten
-  // as Multi Joins
-
-  // threshold above which a query is considered to do
-  // a lot of work his only applies to queries that can be
-  // rewritten as Multi Joins
 
  SDDint__(MULTI_JOIN_THRESHOLD,			"3"),
 
@@ -2282,21 +2206,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NEW_MDAM,		"ON"),
   DDkwd__(NEW_OPT_DRIVER,		"ON"),
 
-  // Ansi name of the next DEFAULTS table to read in.
-  // Contains blanks, or the name of a DEFAULTS table to read values from next,
-  // after reading all values from this DEFAULTS table.  The name may contain
-  // format strings of '%d' and '%u', which are replaced with the domain name
-  // and user name, respectively, of the current user.  The name may begin with
-  // '$', in which it is replaced by its value as a SYSTEM environment variable.
-  // This value in turn may contain '%d' and '%u' formats.  When these
-  // replacements are complete, the resulting name is qualified by the current
-  // default catalog and schema, if necessary, and the resulting three-part ANSI
-  // table's default values are read in.  This table may contain another
-  // NEXT_DEFAULTS_TABLE value, and different default CATALOG and
-  // SCHEMA values to qualify the resulting table name, and so on, allowing a
-  // chain of tables to be read; combined with the format and environment
-  // variable replacements, this allows per-domain, per-system, and per-user
-  // customization of SQL/MX default values.
 
 
   DDflt0_(NJ_CPUCOST_INITIALIZE,		".1"),
@@ -2476,7 +2385,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(OR_PRED_TO_SEMIJOIN_TABLE_MIN_SIZE,                 "10000"),
 
 
-  // The Optimizer Simulator (OSIM) CQDs
 
   DDui2__(OS_MESSAGE_BUFFER_SIZE,    "32"),
  // if set to "ansi", datetime output is in ansi format. Currently only
@@ -2523,13 +2431,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // optimizer will compute the number of ESPs.
  XDDui1__(PARALLEL_NUM_ESPS,			"SYSTEM"),
 
-  // If PARALLEL_NUM_ESPS is "SYSTEM",
-  // optimizer will compute the number of ESPs to be used for parallel ddl
-  // operations.
-
-  // If PARALLEL_NUM_ESPS is "SYSTEM",
-  // optimizer will compute the number of ESPs to be used for parallel purgedata
-  // operation.
 
   // is partial sort applicable; if so adjust sort cost accordingly
   DDflt0_(PARTIAL_SORT_ADJST_FCTR,        "1"),
@@ -2561,10 +2462,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(PCODE_NE_ENABLED,   "1" ), // Native Expressions Enabled
   DDkwd__(PCODE_NE_IN_SHOWPLAN, "ON"), // Native Expression in Showplan output
 
-  // This PCODE_NE_LOG_PATH cqd is now obsolete. Use PCODE_DEBUG_LOGDIR instead.
-  // Would delete the following line except that would also mean deleting the
-  // corresponding line in DefaultConstants.h which would change the values for
-  // the following definitions in the same enum.
 
   DDint__(PCODE_OPT_FLAGS,                      "60"),
  
@@ -2573,13 +2470,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(PHY_MEM_CONTINGENCY_MB,     "3072"),
 
   DDkwd__(PLAN_STEALING,			"ON"),
-  // Not in use anymore. OVERRIDE_SYSKEY is used instead.
 
   // Partition OVerlay Support (POS) options
   SDDkwd__(POS,                                 "DISK_POOL"),
-   // default to 300 GB
-
-   // default to 72GB 
    DD_____(POS_DISKS_IN_SEGMENT,                 ""),
    DD_____(POS_DISK_POOL,			"0"),
   SDDui___(POS_NUM_DISK_POOLS,                  "0"),
@@ -2641,7 +2534,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  XDDint__(QUERY_LIMIT_SQL_PROCESS_CPU,         "0"),
  // Extra debugging info for QUERY_LIMIT feature.
  DDkwd__(QUERY_LIMIT_SQL_PROCESS_CPU_DEBUG,              "OFF"),
- // How many iterations in scheduler subtask list before evaluating limits.
   // For X-prod HJ: (# of rows joined * LIMIT) before preempt.
  DDint__(QUERY_LIMIT_SQL_PROCESS_CPU_XPROD,         "10000"),
  // controls various expr optimizations based on bit flags.
@@ -2716,15 +2608,11 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(REPLICATE_COMPRESSION_TYPE,           "SYSTEM"),
   // Determines if DISK POOL setting should be passed with DDL when replicating
   DDkwd__(REPLICATE_DISK_POOL,                  "ON"),
-  // Display a BDR-internally-generated command before executing it
-  // Executing commands generated internally by BDR
   // VERSION of the message from the source system to maintain compatibility
   // This version should be same as REPL_IO_VERSION_CURR in executor/ExeReplInterface.h
   // Make changes accordingly in validataorReplIoVersion validator
   DDrver_(REPLICATE_IO_VERSION,                 "17"),
 
-
-  // max num of retries after replicate server(mxbdrdrc) returns an error
 
 
 
@@ -3278,10 +3166,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // to be the clustering key.
   DDkwd__(VOLATILE_TABLE_FIND_SUITABLE_KEY,     "SYSTEM"),
 
-  // if this is set, and there is no user specified primary key or
-  // store by clause, then make the first column of the volatile table
-  // to be the clustering key.
-  // Default is ON.
 
   DDkwd__(VSBB_TEST_MODE,			"OFF"),
  XDDkwd__(WMS_CHILD_QUERY_MONITORING,                       "OFF"),
@@ -3474,11 +3358,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
   deleteMe();
 
-  Lng32 ij = 0;
-  while (ij)
-    {
-      ij = 2 - ij;
-    }
 
   const size_t numAttrs = numDefaultAttributes();
   if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
@@ -3696,8 +3575,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
   if(resetNeoDefaults)
   {
-    // turn on ALL stats during regressions run.
-    //    currentDefaults_[COMP_BOOL_157] = "ON";a
 
     // turn on INTERNAL format for SHOWDDL statements
     currentDefaults_[SHOWDDL_DISPLAY_FORMAT] = "INTERNAL";
@@ -4827,7 +4704,6 @@ NABoolean NADefaults::isNonResetableAttribute(const char* attrName) const
 NABoolean NADefaults::isSetOnceAttribute(Int32 attrEnum) const
 {
   if ( attrEnum == DEFAULT_SCHEMA_ACCESS_ONLY )
-    //        attrEnum == PUBLISHING_ROLES )
     return TRUE;
   
    return FALSE;

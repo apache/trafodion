@@ -164,7 +164,7 @@ enum DefaultConstants
   DP2_CACHE_2048_BLOCKS,
   DP2_CACHE_4096_BLOCKS,
 
-  // The size of the DP2 cache in KB:
+
 
   // Constants needed to estimate the cost of communication
   // between DP2 and exeInDp2:
@@ -175,17 +175,6 @@ enum DefaultConstants
   CPUCOST_SCAN_DSK_TO_DP2_PER_KB,
   CPUCOST_SCAN_DSK_TO_DP2_PER_SEEK,
 
-  // Configured_memory_for defaults are all measured in KB
-  //  Configured_memory values are for calculating the memory
-  //  limit for large memory operations.
-  //  ARKESP is the minimum size without hash tables
-  //  BASE is the memory used by tmf, nsk-l and NT
-  //  DAM is the memory used by each DP2
-  //  MINIMUM_HASH is the least amount of memory we will use
-
-  // This is an executor constant used in costing,
-  // as of 3/23/98 it is 12 bytes. Change when executor
-  // changes.
 
   // Used in estimating blocks to read per scan access:
   COST_PROBE_DENSITY_THRESHOLD,
@@ -205,15 +194,6 @@ enum DefaultConstants
   // in a particular single subset access.
   // This number must be between 0 and 1.
   IO_TRANSFER_COST_PREFETCH_MISSES_FRACTION,
-
-  // When blocks are being read in order
-  // (i.e. they are not read more than once) the seeks are
-  // less expensive. Take this into account using the
-  // the IO_SEEKS_INORDER_FACTOR, a number greater
-  // than zero and less than or equal to 1:
-
-
-  // Used in sqlcomp/NADefaults.cpp
 
   DEF_CHUNK_SIZE,
   DEF_CPU_ARCHITECTURE,
@@ -257,7 +237,6 @@ enum DefaultConstants
   EX_OP_ALLOCATE_TUPLE,
   EX_OP_COPY_ATP,
 
-  // optimization of data movement in DP2
 
   FIND_COMMON_SUBEXPRS_IN_OR,
 
@@ -273,13 +252,11 @@ enum DefaultConstants
   // Operator defaults used by the Generator:
   // buffer size, number of buffers, and queue sizes (down, up).
   // --------------------------------------------------------------------------
-  // Create buf.
   // DDL.
   GEN_DDL_BUFFER_SIZE,
   GEN_DDL_NUM_BUFFERS,
   GEN_DDL_SIZE_DOWN,
   GEN_DDL_SIZE_UP,
-  // Delete.
   // Describe.
   GEN_DESC_BUFFER_SIZE,
   GEN_DESC_NUM_BUFFERS,
@@ -290,17 +267,12 @@ enum DefaultConstants
   GEN_DP2I_NUM_BUFFERS,
   GEN_DP2I_SIZE_DOWN,
   GEN_DP2I_SIZE_UP,
-  // DP2 Delete Unique.
-  // DP2 Range Operator.
   // DP2 Subset Operator.
   GEN_DPSO_BUFFER_SIZE,
   GEN_DPSO_SIZE_DOWN,
   GEN_DPSO_SIZE_UP,
   // DP2 Unique Operator.
   GEN_DPUO_NUM_BUFFERS,
-  // DP2 VSBB Insert.
-  // Executor in DP2.
-  // Fast Sort.
   // Hash GroupBy.
   GEN_HGBY_BUFFER_SIZE,
   GEN_HGBY_NUM_BUFFERS,
@@ -311,10 +283,6 @@ enum DefaultConstants
   GEN_HSHJ_NUM_BUFFERS,
   GEN_HSHJ_SIZE_DOWN,
   GEN_HSHJ_SIZE_UP,
-  // Index Maintenance.
-  // Insert.
-  // Lock.
-  // Materialize.
   // Memory pressure Threshold
   GEN_MEM_PRESSURE_THRESHOLD,
   // Merge Join.
@@ -330,8 +298,6 @@ enum DefaultConstants
   // Partition Access.
   GEN_PA_BUFFER_SIZE,
   GEN_PA_NUM_BUFFERS,
-  // Recurse.
-  // Root.
    // Sample node
   GEN_SAMPLE_SIZE_DOWN,
   GEN_SAMPLE_SIZE_UP,
@@ -341,7 +307,6 @@ enum DefaultConstants
   GEN_SEQFUNC_NUM_BUFFERS,
   GEN_SEQFUNC_SIZE_DOWN,
   GEN_SEQFUNC_SIZE_UP,
-  // Sequence.
   // Sort GroupBy.
   GEN_SGBY_BUFFER_SIZE,
   GEN_SGBY_NUM_BUFFERS,
@@ -366,7 +331,6 @@ enum DefaultConstants
   // Split Bottom.
   // Split Top.
   GEN_SPLT_SIZE_UP,
-  // Stored Procedure.
   // Tuple Flow.
   GEN_TFLO_BUFFER_SIZE,
   GEN_TFLO_NUM_BUFFERS,
@@ -395,14 +359,11 @@ enum DefaultConstants
   GEN_TUPL_NUM_BUFFERS,
   GEN_TUPL_SIZE_DOWN,
   GEN_TUPL_SIZE_UP,
-  // Unordered NLJ.
   // Union.
   GEN_UN_BUFFER_SIZE,
   GEN_UN_NUM_BUFFERS,
   GEN_UN_SIZE_DOWN,
   GEN_UN_SIZE_UP,
-  // Update.
-  // Explain.
   // Compound Stmt.
   GEN_CS_BUFFER_SIZE,
   GEN_CS_NUM_BUFFERS,
@@ -589,7 +550,6 @@ enum DefaultConstants
   // For HashJoin.
   // -------------------------------------------------------------------------
   HJ_CPUCOST_INITIALIZE,
-  //  HJ_BUFFER_SIZE,
   HJ_INITIAL_BUCKETS_PER_CLUSTER,
   HJ_SCAN_TO_NJ_PROBE_SPEED_RATIO,
   HJ_TYPE,
@@ -696,27 +656,6 @@ enum DefaultConstants
   MSCF_OV_IO,
   MSCF_OV_MSG,
 
-  // -------------------------------------------------------------------------
-  // Factors used in determining how much concurrency occurs between
-  // similar simultaneous activities.  E.g., within the same process
-  // how much the I/O of one operator is overlappable with the I/O of
-  // another (whether parent, child, or sibling) operator that is
-  // executing concurrently.
-  // -------------------------------------------------------------------------
-
-  // -------------------------------------------------------------------------
-  // Factors that describe the current hardware/system platform.  To
-  // be used Only Until we've interfaced with the resource governor.
-  // Note: primitives like MSCF_SYSTEM_CPUS, and MSCF_STREAMS_PER_CPU,
-  // are not needed since PhysicalProperty::getCountOfCPUs(), and
-  // PhysicalProperty::getCountOfPlanFragmentsPerCPU(), already exist
-  // and can be used to derive that information.
-  //
-  // Note: ReqdPhysicalProperty::getCountOfAvailableCPUs() and
-  // ReqdPhysicalProperty::getCountOfPlanFragmentsPerCPU() also exist.
-  // Do you have Any opinion regarding Which class should be used to
-  // provide the needed information??
-  // -------------------------------------------------------------------------
 
   // -----------------------------------------------------------------------
   // Big memory usage
@@ -883,14 +822,6 @@ enum DefaultConstants
   MULTI_JOIN_PROBE_HASH_TABLE,
 
   //------------------------------------------------------------------------
-  // MultiJoin complexity threshold
-  //------------------------------------------------------------------------
-
-  //------------------------------------------------------------------------
-  // MultiJoin work threshold
-  //------------------------------------------------------------------------
-
-  //------------------------------------------------------------------------
   // Specifies if ASM cache should be available.
   //------------------------------------------------------------------------
   ASM_ALLOWED,
@@ -1033,11 +964,6 @@ enum DefaultConstants
   // -----------------------------------------------------------------------
   PCODE_OPT_LEVEL,
 
-  // -----------------------------------------------------------------------
-  // Partition Management.
-  // Number of rows processed per transaction.
-  // -----------------------------------------------------------------------
-
   //--------------------------------------------------------------------------
   // The group by reduction for pushing a partial group by past the
   //  right side of the TSJ must be at least this much.  If 0.0, then
@@ -1105,10 +1031,6 @@ enum DefaultConstants
   // ------------------------------------------------------------------------
   READONLY_CURSOR,
 
-  // -------------------------------------------------------------------------
-  // Pass an indicator of stream's idleness in a diagnostics area.
-  // -------------------------------------------------------------------------
-
   // multiplicative factor used to inflate cost of risky operators.
   RISK_PREMIUM_MJ,
   RISK_PREMIUM_NJ,
@@ -1117,10 +1039,6 @@ enum DefaultConstants
   ROBUST_HJ_TO_NJ_FUDGE_FACTOR,
   ROBUST_QUERY_OPTIMIZATION,
   ROBUST_SORTGROUPBY,
-
-  //  ------------------------------------------------------------------------
-  //  For Drop Table
-  // -------------------------------------------------------------------------
 
   // -------------------------------------------------------------------------
   // For Scratch files
@@ -1145,10 +1063,6 @@ enum DefaultConstants
   SORT_IO_BUFFER_SIZE,            // I/O buffer size.
   SORT_EX_BUFFER_SIZE,            // Executor buffer size.
   SORT_TREE_NODE_SIZE,            // Internal node size of Tournament Tree.
-  // -------------------------------------------------------------------------
-  // For Triggers Temporary Table's LOCATION and PARTITIONS   
-  // -------------------------------------------------------------------------
-
   // -------------------------------------------------------------------------
   // For Node Maps
   // -------------------------------------------------------------------------
@@ -1199,11 +1113,6 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   NOT_NULL_CONSTRAINT_DROPPABLE_OPTION,
   PRIMARY_KEY_CONSTRAINT_DROPPABLE_OPTION,
-
-  // -------------------------------------------------------------------------
-  // To decide whether we should optimize a VP Join during optimization or
-  // just expand it during pre code generation.
-  // -------------------------------------------------------------------------
 
   CATALOG,
   SCHEMA,
@@ -1267,10 +1176,6 @@ enum DefaultConstants
   NATIONAL_CHARSET,
   TERMINAL_CHARSET,
 
-  // to use dense sql buffers for communication between
-  // FS and EID. Default is ON.
-  // If turned off, sparse sql_buffers are used.
-
 
   //--------------------------------------------------------------------------
   // Enable character set inference for ODBC 2.X.
@@ -1308,10 +1213,6 @@ enum DefaultConstants
   NSK_DBG_PRINT_TASK,
   NSK_DBG_PRINT_TASK_STACK,
 
-  // --------------------------------------------------------------------------
-  // Index creation defaults.
-  // --------------------------------------------------------------------------
-
   // -----------------------------------------------------------------------
   // for IUD operations, this default, if set, indicates that the Xn needs
   // to be rolled back on error.
@@ -1330,10 +1231,6 @@ enum DefaultConstants
   // -------------------------------------------------------------------
   UPD_SAVEPOINT_ON_ERROR,
 
-  // ----------------------------------------------------------------------
-  // this default indicates the max number of rows which will be locked
-  // when stable access is being used. Default is 32.
-  // ----------------------------------------------------------------------
 
   // ----------------------------------------------------------------------
   // User-defined routines
@@ -1489,12 +1386,7 @@ enum DefaultConstants
   GEN_SORT_TOPN,
 
   SORT_ALGO,            // Sort algorithm choice
-  // Not used anymore. OVERRIDE_SYSKEY takes its place.
 
-  // ----------------------------------------------------------------------
-  // If enabled (ON), indicates that it is OK to compile IUD queries
-  // against ODBC metadata tables.
-  // ----------------------------------------------------------------------
 
   // -------------------------------------------------------------------------
   // Specifies what percentage of smaller table in join, should be used as
@@ -1511,7 +1403,6 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   USE_CCMPASSERT_AS_CMPASSERT,
 
-  // share opens if reference count of table is greater than 5.
 
   NEW_OPT_DRIVER,
   FORCE_PASS_ONE,
@@ -1575,9 +1466,6 @@ enum DefaultConstants
   INTERACTIVE_ACCESS,
   //10-040621-7139-end
 
-
-  // Specifies locations for CREATE statements that don't have a
-  // LOCATION clause
   
   //Support transactions for DDL operations.
   DDL_TRANSACTIONS,
@@ -1650,9 +1538,6 @@ enum DefaultConstants
   HIST_DEFAULT_SAMPLE_MAX,
   HIST_DEFAULT_SAMPLE_RATIO,
 
-  // if set to ON, then dp2 splits blocks as if inserts are sequential.
-  // if set to ENABLE, then blocks are split depending on whether
-  // sequential inserts are detected.
 
   // EMS events
   USER_EXPERIENCE_LEVEL,
@@ -1661,9 +1546,6 @@ enum DefaultConstants
   // Starting size of Partition Access's parent queues.
   DYN_PA_QUEUE_RESIZE_INIT_DOWN,
   DYN_PA_QUEUE_RESIZE_INIT_UP,
-
-  // if set, DDL allows users to make tables audited or unaudited.
-  // Used to enable user issued sidetree inserts.
 
   // if this default is set to ON, then the max precision of a numeric
   // expression(arithmetic, aggregate) is limited to MAX_NUMERIC_PRECISION
@@ -1691,8 +1573,6 @@ enum DefaultConstants
 
   MERGE_JOIN_WITH_POSSIBLE_DEADLOCK,
 
-  // priority and delta of msgs sent by fs to dp2.
-
   ALLOW_RANGE_PARTITIONING,
 
 
@@ -1704,8 +1584,6 @@ enum DefaultConstants
 
   MVGROUP_AUTOMATIC_CREATION,
 
-  // If this CQD is set to TRUE, POS will create HASH2 tables when hash1
-  // syntax is used.
 
   // Allow RequireApproximatelyNPartitions::realize() to use one of three
   // hash partitioning schemes: 0 - HashPartitioningFunction,
@@ -1875,7 +1753,6 @@ enum DefaultConstants
   GEN_HGBY_PARTIAL_GROUP_FLUSH_THRESHOLD,
   GEN_HGBY_PARTIAL_GROUP_ROWS_PER_CLUSTER,
 
-  // Controls for utility testware support (query plan logging and testpoints)
 
   ALLOW_DP2_ROW_SAMPLING,
 
@@ -1885,12 +1762,6 @@ enum DefaultConstants
 
 
   USE_PARALLEL_FOR_NUM_PARTITIONS,
-
-  // create table with filecode indicating it is a "temp" table so RDF
-  // ignore it on the backup system
-
-  // Force creation of definition schemas to be different than the current
-  // schema version, e.g. version 1200 instead of version 2000
 
   EXE_DIAGNOSTIC_EVENTS,    // Sends various executor diagnostics to EMS
 
@@ -1922,15 +1793,6 @@ enum DefaultConstants
 
   HIST_DEFAULT_NUMBER_OF_INTERVALS,
 
-  // ignore_duplicate_keys is no more valid. It is still
-  // here as dummy for compatibility with existing scripts.
-
-  // in mode_special1, duplicate rows are ignored if inserting a row in the
-  // base table which has a user defined primary key. If this default is set
-  // to OFF in mode_special_1, then duplicate rows are not ignored.
-  //
-  // If not in mode_special_1, and this default is ON, then duplicate rows
-  // are ignored.
 
  SESSION_USERNAME,
 
@@ -1958,17 +1820,12 @@ enum DefaultConstants
 
   ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS,
 
-  // For OPI, this is the minimum number of seconds it will retry error 73
-  // that occurs in the commit phase; default is 120 seconds.
-
   EXE_MEMORY_AVAILABLE_IN_MB, // Mem size (MB) in ESP available for BMOs
 
   EXE_MEMORY_FOR_PARTIALHGB_IN_MB, // Mem size (MB) in ESP available
                                    // for partial hash groupby.
   SSD_BMO_MAX_MEM_THRESHOLD_IN_MB,
 
-  // The following were added as part of the Wal*Mart changes to improve concurrency
-  // when DDL and DML operations are run concurrently
   NAR_DEPOBJ_ENABLE ,
 
   // For Adaptive Segmentation (aka Virtual Segmentation, Adaptive
@@ -1984,10 +1841,6 @@ enum DefaultConstants
   WORK_UNIT_ESP_DATA_COPY_COST,
 
 
-  // opens are distributed among all partitions instead of just root.
-  // 0: no distribution, only use root.
-  // -1: max distribution, all partitions
-  // <number>: num of partitions per segment
 
 
   MV_REFRESH_MDELTA_MAX_DELTAS_THRESHOLD,
@@ -2112,8 +1965,6 @@ enum DefaultConstants
   USTAT_FETCHCOUNT_ACTIVE,
 
   SEMIJOIN_TO_INNERJOIN_TRANSFORMATION,
-
-  // Enables or disables sending the plan fragment to DP2 nowaited.
   POS_NUM_DISK_POOLS,
   POS_DISKS_IN_SEGMENT,
 
@@ -2127,9 +1978,6 @@ enum DefaultConstants
   // Compress plan fragments downloaded to ESPs (ESP and DP2 frags)
   FRAG_COMPRESSION_THRESHOLD,
 
-  // During the creation of Schema Security this specifies if a schema label
-  // (surrogate file) is created on all segments of a registered catalog.
-  // CQD CAT_ENABLE_SCHEMA_SECURITY must be set to "ON" for this to take effect.
 
   // Display only externalized information in SHOWDDL if set to EXTERNAL
   SHOWDDL_DISPLAY_FORMAT,
@@ -2138,7 +1986,6 @@ enum DefaultConstants
   GEN_LEANER_EXPRESSIONS,
 
 
-  // see executor/ExDp2Trace.h for usage notes
 
   POS_DISK_POOL,
 
@@ -2170,8 +2017,6 @@ enum DefaultConstants
   // (including cases of a single BMO in a fragment, and BMOs in the master).
   // Units are in MegaBytes; zero (default) means that this CQD is OFF !!
   EXE_MEM_LIMIT_PER_BMO_IN_MB,
-
-  // Control how many times update statistics will retry the SECURITY checks.
 
   // Disables use of ProbeCache
   NESTED_JOIN_CACHE,
@@ -2248,9 +2093,6 @@ enum DefaultConstants
   // to be the clustering key.
   VOLATILE_TABLE_FIND_SUITABLE_KEY,
 
-  // if this is set, and there is no user specified primary key or
-  // store by clause, then make the first column of the volatile table
-  // to be the clustering key.
 
 // Allows pcodes for varchars
   VARCHAR_PCODE,
@@ -2324,18 +2166,8 @@ enum DefaultConstants
   ROUTINE_JOINS_SPOIL_JBB,
   
 
-  // Specifies whether sample tables should be created for fetch count
 
 
-  // The following 3 CQDs are used when using POS in OSIM mode
-
-  // Allow the use of POS with OSIM
-
-  // Specify the disk size
-
-  // Specify the names of the nodes in the cluster
-
-  // Priority of update stats when run by USAS (for automation).
 
   // Specify the node
   UNIQUE_HASH_JOINS,
@@ -2354,8 +2186,6 @@ enum DefaultConstants
  // Specify the file that logs certain MXCMP errors.
   CMP_ERR_LOG_FILE,
 
-  // an MJ query with a greater query
-  // complexity will be considered complex
 
   // override the source schema with the target schema
   // SOURCE_SCHEMA:TARGET_SCHEMA
@@ -2381,8 +2211,6 @@ enum DefaultConstants
 
 
   DISABLE_READ_ONLY,
-
-  // Allow drop and alter schema level privileges when ON
 
   // perform substring transformation (ICBC PoC)
   SUBSTRING_TRANSFORMATION,
@@ -2430,12 +2258,7 @@ enum DefaultConstants
   // If set to OFF, place all metadata tables on the same volume.
   CAT_DISTRIBUTE_METADATA,
 
-  // Skip version compatibility check in catman to allow ddl on lower version
-  // schema. This is to allow problems to be fixed after UPGRADE failed
-  // due to metadata corruption.
 
-  // By default (ON), online populate index is performed.
-  // OFF then means offline populate index
 
   // Pubsub holdable cursor is not closed on rollback by default
   // But, ANSI standard expects the holdable cursor to be closed on rollback 
@@ -2445,18 +2268,11 @@ enum DefaultConstants
   // condition by default
   PSHOLD_UPDATE_BEFORE_FETCH,
 
-  // This will allow create operations on a catalog if set to 'ON'
-
-  // This will make schema owner the default object owner if set to 'ON'
-
-  // Added to test lazy update issues
 
 
   // Update statistics automation CQDs to allow for automation settings.
   USTAT_AUTO_READTIME_UPDATE_INTERVAL,
   USTAT_AUTO_FOR_VOLATILE_TABLES,
-  // This allows us to skip metadata views creation during regression run
-  // and avoid any possible delay due to views creation for every new catalog
 
   // Use a compressed data format internally rather than current
   // SQLARK_EXPLODED_FORMAT
@@ -2467,7 +2283,6 @@ enum DefaultConstants
   // and variable length column values.
   BULK_MOVE_NULL_VARCHAR,
 
-  // use variable sized rows in hash buffers
 
   // display detailed MV information. Default is OFF
   MV_DUMP_DEBUG_INFO,
@@ -2601,9 +2416,7 @@ enum DefaultConstants
   // for schema access control
   DEFAULT_SCHEMA_ACCESS_ONLY,
 
-  // PUBLISH/UNPUBLISH command
 
-  // default used to test catman features
 
   // To control ESP exchange memory usage
   GEN_EXCHANGE_MAX_MEM_IN_KB,
@@ -2628,9 +2441,6 @@ enum DefaultConstants
   // QUERY STRATEGIZER RELATED
   QUERY_STRATEGIZER,
   EXPLAIN_STRATEGIZER_PARAMETERS,
-// The system-wide schema containing the universal functions
-  // SAS_PUT and SAS_SCORE and other functions set up for
-  // system-wide use.
 
   CASCADED_GROUPBY_TRANSFORMATION,
 
@@ -2761,14 +2571,11 @@ enum DefaultConstants
   COMPRESSED_INTERNAL_FORMAT_BMO_AFFINITY,
   COMPRESSED_INTERNAL_FORMAT_EXPLAIN,
   COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO,
-  // access counter reset
 
-  // Control whether authorization caches immutable users
 
   // Enable the query invalidation processing in catman
   CAT_ENABLE_QUERY_INVALIDATION,
   
-  // Control creation of column privileges for object-level privileges
   
   MC_SKEW_SENSITIVITY_THRESHOLD, // multi-column skew threshold value
 
@@ -2809,14 +2616,6 @@ enum DefaultConstants
 
   MERGE_JOIN_ACCEPT_MULTIPLE_NJ_PROBES, // merge join accepts multiple NJ probes
 
-
-  // number of esps used to perform parallel ddl operation.
-  // If set to SYSTEM (the default), compiler will choose a value.
-
-  // number of esps used to perform parallel purgedata operation.
-  // If set to SYSTEM (the default), compiler will choose a value.
-
-  // enable dp2 transactions for unique requests
 
   // queries coming in from mariaDB interface
   MARIAQUEST_PROCESS,
@@ -2912,11 +2711,6 @@ enum DefaultConstants
   USTAT_USE_GROUPING_FOR_SAMPLING,
 
   USTAT_IUS_NO_BLOCK,
-
-  // Collect reorg stats. Default is ON and stats are collected. 
-  // This cqd is added in case
-  // one need to go back to the old behavior of no reorg stats, or if a problem
-  // need to be debugged.
   
   HIVE_MAX_STRING_LENGTH_IN_BYTES,
   HIVE_USE_FAKE_TABLE_DESC,
@@ -3026,14 +2820,12 @@ enum DefaultConstants
   // all DDL statements.
   HBASE_SERIALIZATION,
 
-  // for testing only. Creates metadata with old structures. Used to test upgrade.
 
   SQLMX_REGRESS,
 
   // For PCODE - Native Expressions work
   PCODE_NE_DBG_LEVEL,
    
-  // To set Reorg verify command for REORG CHECK command
 
   HBASE_ZOOKEEPER_PORT,
 
@@ -3080,9 +2872,6 @@ enum DefaultConstants
   HBASE_MAX_ESPS,
 
 
-  // Default is ON. If ON will use JNI and the Java API provided
-  // by Hive to access metadata for Hive which could be in any 
-  // DB that supports JDBC
 
   // for testing setjmp/longjmp compiler logic
   MEMORY_LIMIT_CMPCTXT_UPPER_KB,
