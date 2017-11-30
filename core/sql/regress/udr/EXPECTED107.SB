@@ -905,9 +905,6 @@ NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 >>-----------------------------------------------------------------------------
 >>-- COLLATION
 >>-----------------------------------------------------------------------------
->>control query default COMP_BOOL_215 'ON';
-
---- SQL operation complete.
 >>control query default ROUTINE_CACHE_SIZE '0';
 
 --- SQL operation complete.
@@ -978,9 +975,6 @@ DEFAULT
 
 >>
 >>cqd query_cache 'reset';
-
---- SQL operation complete.
->>control query default COMP_BOOL_215 reset;
 
 --- SQL operation complete.
 >>control query default ROUTINE_CACHE_SIZE reset;

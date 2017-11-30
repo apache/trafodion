@@ -999,8 +999,7 @@ public:
       memoryLimitInDP2_(
 	CostPrimitives::getBasicCostFactor(HGB_DP2_MEMORY_LIMIT)),
       groupingFactorForSpilledClusters_(
-	CostPrimitives::getBasicCostFactor(
-	  HGB_GROUPING_FACTOR_FOR_SPILLED_CLUSTERS))
+	CostPrimitives::getBasicCostFactor(HGB_GROUPING_FACTOR_FOR_SPILLED_CLUSTERS))
   {
     cpuCostPerProbeInit_ = 
       CostPrimitives::getBasicCostFactor(HGB_CPUCOST_INITIALIZE);
@@ -1324,8 +1323,7 @@ public:
       hashedRowOverhead_(
 	(Lng32)CostPrimitives::getBasicCostFactor(HH_OP_HASHED_ROW_OVERHEAD)),
       initialBucketCountPerCluster_(
-	(Lng32)CostPrimitives::getBasicCostFactor(
-	  HJ_INITIAL_BUCKETS_PER_CLUSTER)),
+	(Lng32)CostPrimitives::getBasicCostFactor(HJ_INITIAL_BUCKETS_PER_CLUSTER)),
       cpuCostAllocateHashTable_(
 	CostPrimitives::getBasicCostFactor(HH_OP_ALLOCATE_HASH_TABLE)),
       cpuCostInsertRowToChain_(

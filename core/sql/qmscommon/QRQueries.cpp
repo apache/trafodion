@@ -3262,7 +3262,7 @@ SQL_EXEC_ExecFetch(&__SQL_id0,(long)0,0)) != 0);}
 *********************************************************/
 Lng32 QRQueries::reDescribeMV(const NAString& mvName, NABoolean rePublish)
 {
-#ifdef __ignore
+#if 0
   /* EXEC SQL BEGIN DECLARE SECTION; */
     /* char  */ char catRequestText[MAX_UTF8_CMD_LEN_IN_BYTES_PLUS_1];
   /* EXEC SQL END DECLARE SECTION; */  
