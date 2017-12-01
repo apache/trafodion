@@ -1283,8 +1283,8 @@ $1~String1 --------------------------------
 4219 ZZZZZ 99999 BEGINNER MAJOR DBADMIN This command is not supported on the specified object or an incorrect object type was specified.$0~String0
 4220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The THIS function can be used only inside a ROWS SINCE function.
 4221 42000 99999 BEGINNER MAJOR DBADMIN The operand of function $0~String0 must be $1~String1.
-4222 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 feature is not supported in this software version.
-4223 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 not supported in this software version.
+4222 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 feature is not supported in this software version or edition.
+4223 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 not supported in this software version or edition.
 4224 42000 99999 BEGINNER MAJOR DBADMIN The directory $0~String0 is not a valid Hive location.
 4225 42000 99999 BEGINNER MAJOR DBADMIN Number of column families cannot exceed 32.
 4226 42000 99999 BEGINNER MAJOR DBADMIN Table $0~TableName has a maximum record length of $0~Int0 which is greater than the HDFS_IO_BUFFERSIZE default. Increase buffer size setting, or reduce the HIVE_MAX_STRING_LENGTH default.
