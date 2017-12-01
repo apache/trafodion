@@ -179,9 +179,10 @@ SFR_RetCode SequenceFileReader::open(const char* path)
   if (initJNIEnv() != JOI_OK)
      return SFR_ERROR_OPEN_PARAM;
   jstring js_path = jenv_->NewStringUTF(path);
-  if (js_path == NULL) 
+  if (js_path == NULL) {
      jenv_->PopLocalFrame(NULL);
      return SFR_ERROR_OPEN_PARAM;
+  }
 
   // String open(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
