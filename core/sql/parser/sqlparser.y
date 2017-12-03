@@ -17934,11 +17934,33 @@ aqr_option : TOK_SQLCODE '=' NUMERIC_LITERAL_EXACT_NO_SCALE
 
 /* type relx */
 //HBASE LOAD 
-load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression
+load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression optional_limit_spec
                   {
                     //disabled by default in 0.8.0 release 
                     if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                       YYERROR; 
+
+                    //limit clause
+                    if ($7)
+                    {
+                      RelExpr *query = $6;
+          
+                      if (query->getFirstNRows() >= 0)
+                        {
+                          // cannot specify LIMIT and FIRST N clauses together.
+                          YYERROR;
+                        }
+                      else
+                        {
+                          NABoolean negate;
+                          if ($7->castToConstValue(negate))
+                            {
+                              ConstValue * limit = (ConstValue*)$7;
+                              Lng32 scale = 0;
+                              query->setFirstNRows(limit->getExactNumericValue(scale));
+                            }
+                        }
+                    }
 
                     $$ = new (PARSERHEAP())
                           HBaseBulkLoadPrep(CorrName(*$5, PARSERHEAP()),
@@ -17949,7 +17971,7 @@ load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name q
                                             //NULL
                                             );  
                     }
-                   | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression
+                   | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression optional_limit_spec
                     {
                       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
                       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
@@ -17966,6 +17988,26 @@ load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name q
                           stmt->index(" into ", 0, NAString::ignoreCase);
                        
                       RelRoot *top = finalize($5);
+                      //limit clause
+                      if ($6)
+                      {
+                        if (top->getFirstNRows() >= 0)
+                          {
+                            // cannot specify LIMIT and FIRST N clauses together.
+                            YYERROR;
+                          }
+                        else
+                          {
+                            NABoolean negate;
+                            if ($6->castToConstValue(negate))
+                              {
+                                ConstValue * limit = (ConstValue*)$6;
+                                Lng32 scale = 0;
+                                top->setFirstNRows(limit->getExactNumericValue(scale));
+                                top->setFirstNRowsParam(NULL);
+                              }
+                          }
+                      }
 
                       ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
                                         ExeUtilHBaseBulkLoad(CorrName(*$4, PARSERHEAP()),
