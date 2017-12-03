@@ -455,7 +455,7 @@ public class LmT2Driver implements java.sql.Driver
       {
         msg = "The SQL/MX language manager encountered an unexpected"
   		      + " error trying to invoke joinUDRTransaction method" 
-		      + " in the JDBC/MX driver HPT4Connection class: " + ite.toString()
+		      + " in the JDBC/MX driver TrafT4Connection class: " + ite.toString()
 	              + " :" + ite.getCause();	      
         throw new SQLException( msg );
       } 
@@ -463,7 +463,7 @@ public class LmT2Driver implements java.sql.Driver
       {
         msg = "The SQL/MX language manager encountered an unexpected"
   		      + " error trying to invoke joinUDRTransaction method" 
-		      + " in the JDBC/MX driver HPT4Connection class: " + e.toString();
+		      + " in the JDBC/MX driver TrafT4Connection class: " + e.toString();
         throw new SQLException( msg );
       }
 */

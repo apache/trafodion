@@ -2095,7 +2095,7 @@ SQLRETURN CConnect::SetConnectAttr(SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQ
 			m_FetchBufferSize = 0;
 		m_FetchBufferSize *= 1024;
 		break;
-	// HP Extension to set the Session Name part of Unique Query ID
+	// Trafodion Extension to set the Session Name part of Unique Query ID
 	case SQL_ATTR_SESSIONNAME:
 		{
 			if (StringLength == SQL_NTS)
