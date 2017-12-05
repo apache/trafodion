@@ -3287,12 +3287,8 @@ void processCmdMode(String zipfile)
 
       StringBuffer path = new StringBuffer();
       for (String jarFile : jarFiles) {
-         if (isTrafHome) {
-            path.append(INSTALL_DIR_STR);
-         } else {
             path.append(outputDir.getAbsolutePath());
-         }
-         path.append(File.separator).append(jarFile).append(File.pathSeparator);
+	    path.append(File.separator).append(jarFile).append(File.pathSeparator);
       }
       String replaceStr = path.substring(0, path.length() - File.pathSeparator.length());
 
@@ -3318,7 +3314,19 @@ void processCmdMode(String zipfile)
       replacePythonLib=replacePythonLib.replaceAll("\\$","\\\\\\$");
            
       batchfile=batchfile.replaceAll(classVarToReplace,replace).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
+      String[] split = replacePython.split(File.pathSeparator);
+		List list = new ArrayList<String>();
+		for (String str : split) {
+			list.add("\""+str+"\"");
+		}
+      replacePython = list.toString();
       batchfile=batchfile.replaceAll(pythonClassVarToReplace,replacePython).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
+     /* String[] split = batchfile.split(File.pathSeparator);
+		List list = new ArrayList<String>();
+		for (String str : split) {
+			list.add(str);
+		}
+      batchfile = list.toString(); */
       batchfile=batchfile.replaceAll(perlClassVarToReplace,replacePerl).replaceAll("#####PATH#####",File.separator+File.separator+File.separator+File.separator);
       batchfile =batchfile.replaceAll(perlLibPathToReplace, replacePerlLib).replaceAll("#####PATH#####", File.separator + File.separator + File.separator + File.separator);
       batchfile =batchfile.replaceAll(pythonLibPathToReplace, replacePythonLib).replaceAll("#####PATH#####", File.separator + File.separator + File.separator + File.separator);

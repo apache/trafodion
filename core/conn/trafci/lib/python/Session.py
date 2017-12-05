@@ -1,3 +1,4 @@
+#!/usr/bin/jython
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,6 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 import sys
+sys.path += ##TRAFCI_PYTHON_CLASSPATH##
 from org.trafodion.ci import ScriptsInterface
 from java.lang import System
 from java.io import PrintStream
