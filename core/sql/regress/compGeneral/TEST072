@@ -1,0 +1,261 @@
+-- Test: TEST072 (CompGeneral)
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: COMMENT-ON statement
+-- Expected file: EXPECTED072
+-- Filter file: FILTER072
+-- Tables created: t072t1
+-- Limitations: 
+-- Revision history:
+--     (12/5/17) - Created for new syntax COMMENT-ON
+
+
+set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
+
+log LOG072 clear;
+
+obey TEST072(clnup);
+obey TEST072(compile_libs);
+obey TEST072(ddl);
+
+obey TEST072(comment01);
+obey TEST072(showcomment);
+obey TEST072(showddl1);
+
+obey TEST072(comment02);
+obey TEST072(showcomment);
+obey TEST072(showddl1);
+
+obey TEST072(comment03);
+obey TEST072(showcomment);
+obey TEST072(showddl2);
+
+obey TEST072(comment04);
+obey TEST072(showcomment);
+obey TEST072(showddl2);
+
+obey TEST072(comment05);
+obey TEST072(showcomment);
+obey TEST072(showddl2);
+
+obey TEST072(clnup);
+obey TEST072(showcomment);
+
+exit;
+
+
+?section compile_libs
+--------------------------------------------------------------------------
+log;
+
+--DLL
+sh rm -f ./TEST072.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST072.cpp
+  2>&1 | tee -a LOG072-SECONDARY;
+set pattern $$DLL$$ TEST072.dll;
+
+--SPJ jar
+sh sh $$scriptsdir$$/tools/java-compile.ksh TEST072.java 2>> LOG072-SECONDARY | tee -a LOG072;
+sh sh $$scriptsdir$$/tools/java-archive.ksh TEST072.jar TEST072.class 2>> LOG072-SECONDARY | tee -a LOG072;
+set pattern $$SPJJAR$$ TEST072.jar;
+
+log LOG072;
+
+
+?section ddl
+--------------------------------------------------------------------------
+
+create schema t072sch_comment;
+
+create table t072sch_comment.t072t1 ( col1 int not null, col2 DECIMAL(10, 4) not null, col3 VARCHAR(50) not null, primary key (col1) );
+
+create index t072idx1 on t072sch_comment.t072t1 (col1, col3);
+
+create view  t072sch_comment.t072view1 as select * from t072sch_comment.t072t1;
+
+create library t072sch_comment.t072ddl file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
+
+create library t072sch_comment.t072jar file $$QUOTE$$ $$REGRRUNDIR$$/$$SPJJAR$$ $$QUOTE$$;
+
+
+create function t072sch_comment.t072func(int,int) returns (add2 int)
+    external name 'add2' library t072sch_comment.t072ddl
+    deterministic no sql no transaction required
+;
+
+create procedure t072sch_comment.t072spj()
+    external name 'TEST072.testMoreResultSet'
+    library t072sch_comment.t072jar
+    language  java 
+    DYNAMIC RESULT SETS 5
+    READS SQL DATA
+; 
+
+CREATE SEQUENCE   t072sch_comment.t072seq
+    START WITH        1
+    INCREMENT BY      1
+    MAXVALUE          10000
+    NO CYCLE
+    CACHE             20
+    --UNSIGNED INTEGER
+;
+
+
+?section comment01
+--------------------------------------------------------------------------
+
+--CREATE COMMENTS
+comment on schema     t072sch_comment                           is 'This is a new comment of SCHEMA.这是一个schema的注释。' ;
+comment on table      t072sch_comment.t072t1                    is 'This is a new comment of TABLE.这个是一个中文的table的注释。》》、……' ;
+comment on index      TRAFODION.t072sch_comment.t072idx1        is 'This is a new comment of INDEX.' ;
+comment on view       TRAFODION.t072sch_comment.t072view1       is 'This is a new comment of VIEW.' ;        
+comment on library    TRAFODION.t072sch_comment.t072ddl         is 'This is a new comment of C UDF library.' ;
+comment on library    t072sch_comment.t072jar                   is 'This is a new comment of Java SPJ library.' ;
+comment on function   t072sch_comment.t072func                  is 'This is a new comment of SCALAR UDF.' ;
+comment on procedure  t072sch_comment.t072spj                   is 'This is a new comment of SPJ.' ;
+comment on sequence   t072sch_comment.t072seq                   is 'This is a new comment of SEQUENCE.' ;
+
+comment on column     t072sch_comment.t072t1.col1               is 'This is a T01 column new comment of table.' ;
+comment on column     t072sch_comment.t072t1.col2               is 'This is a T02 column new comment of table.' ;
+comment on column     t072sch_comment.t072t1.col3               is 'This is a T03 column new comment of table.' ;
+comment on column     t072sch_comment.t072view1.col1            is 'This is a V01 column new comment of view.' ;
+comment on column     t072sch_comment.t072view1.col2            is 'This is a V02 column new comment of view.' ;
+comment on column     t072sch_comment.t072view1.col3            is 'This is a V03 column new comment of view.大家好。' ;
+
+
+?section comment02
+--------------------------------------------------------------------------
+
+--MODIFY COMMENTS
+comment on schema     t072sch_comment                           is 'This is a Modified comment: This is a comment of SCHEMA.这是一个schema的注释。' ;
+comment on table      t072sch_comment.t072t1                    is 'This is a Modified comment: This is a comment of TABLE.这个是一个中文的table的注释。》》、……' ;
+comment on index      t072sch_comment.t072idx1                  is '这个是修改过后的索引注释' ;
+comment on view       t072sch_comment.t072view1                 is 'This is a Modified time 01: This is a comment of VIEW.你好' ;
+comment on view       t072sch_comment.t072view1                 is 'This is a Modified time 02: This is a comment of VIEW.你好' ;
+comment on view       t072sch_comment.t072view1                 is 'This is a Modified time 03: This is a comment of VIEW.你好' ;
+comment on view       t072sch_comment.t072view1                 is 'This is a Modified time 04: This is a comment of VIEW.你好' ;
+comment on library    t072sch_comment.t072ddl                   is 'This is a Modified comment: This is a comment of C UDF library.' ;
+comment on library    t072sch_comment.t072jar                   is 'This is a Modified comment: This is a comment of Java SPJ library.' ;
+--max comment length
+comment on function   t072sch_comment.t072func                  is 'This is a Modified big comment: nullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnul' ;
+comment on procedure  t072sch_comment.t072spj                   is 'This is a Modified comment: This is a comment of SPJ.' ;
+comment on sequence   t072sch_comment.t072seq                   is 'This is a Modified comment: This is a comment of SEQUENCE.' ;
+
+comment on column     t072sch_comment.t072t1.col3               is 'This is a Modified time 01: This is a T03 column comment of table.' ;
+comment on column     t072sch_comment.t072t1.col3               is 'This is a Modified time 02: This is a T03 column comment of table.' ;
+comment on column     t072sch_comment.t072t1.col1               is 'This is a Modified comment: This is a T01 column comment of table.' ;
+comment on column     TRAFODION.t072sch_comment.t072t1.col2     is 'This is a Modified comment: This is a T02 column comment of table.' ;
+comment on column     TRAFODION.t072sch_comment.t072t1.col3     is 'This is a Modified time 03: This is a T03 column comment of table.' ;
+comment on column     t072sch_comment.t072t1.col3               is 'This is a Modified time 04: This is a T03 column comment of table.' ;
+comment on column     t072sch_comment.t072t1.col3               is 'This is a Modified time 05: This is a T03 column comment of table.' ;
+
+comment on column     t072sch_comment.t072view1.col1         is 'This is a Modified comment: This is a V01 column comment of view.' ;
+comment on column     t072sch_comment.t072view1.col2         is 'This is a Modified comment: This is a V02 column comment of view.' ;
+comment on column     t072sch_comment.t072view1.col3         is 'This is a Modified big comment: nullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnullnul' ;
+
+
+
+?section comment03
+--------------------------------------------------------------------------
+
+--COMMENTS MAINTAIN WITH COLUMN ALTERED
+alter table t072sch_comment.t072t1  add column col4 int ;
+alter table t072sch_comment.t072t1  add column col5 int ;
+
+drop view t072sch_comment.t072view1;
+comment on column    t072sch_comment.t072t1.col5        is 'This is a new column added by alter cmd' ;
+
+alter table t072sch_comment.t072t1  drop column col2 ;
+
+
+
+?section comment04
+--------------------------------------------------------------------------
+
+--DROP COMMENTS
+comment on table      t072sch_comment.t072t1                    is '' ;
+comment on index      t072sch_comment.t072idx1                  is '' ;
+comment on library    t072sch_comment.t072jar                   is '' ;
+comment on function   t072sch_comment.t072func                  is '' ;
+comment on procedure  t072sch_comment.t072spj                   is '' ;
+
+comment on column     t072sch_comment.t072t1.col1               is '' ;
+
+
+
+?section comment05
+--------------------------------------------------------------------------
+
+--COMMENT FAILURES
+comment on schema non_existing is            'TEST' ;
+comment on table  non_existing is            'TEST' ;
+comment on index  non_existing is            'TEST' ;
+comment on view   non_existing is            'TEST' ;
+comment on library non_existing is           'TEST' ;
+comment on function non_existing is          'TEST' ;
+comment on sequence non_exsiting is          'TEST' ;
+comment on column non_existing.col is        'TEST' ;
+comment on column t072sch_comment.t072t1.non_existing is 'TEST' ;
+
+comment on table  t072sch_comment.t072t1 is           'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' ;  --length 1001
+
+
+
+?section showcomment
+--------------------------------------------------------------------------
+
+select * from "_MD_".OBJECT_COMMENT_VIEW where schema_name = UPPER('t072sch_comment');
+
+select * from "_MD_".COLUMN_COMMENT_VIEW where schema_name = UPPER('t072sch_comment');
+
+
+?section showddl1
+--------------------------------------------------------------------------
+
+showddl schema       t072sch_comment;
+showddl table        t072sch_comment.t072t1;
+showddl table        t072sch_comment.t072view1;
+showddl library      t072sch_comment.t072ddl;
+showddl library      t072sch_comment.t072jar;
+showddl function     t072sch_comment.t072func;
+showddl procedure    t072sch_comment.t072spj;
+showddl sequence     t072sch_comment.t072seq;
+
+
+?section showddl2
+--------------------------------------------------------------------------
+
+showddl schema       t072sch_comment;
+showddl table        t072sch_comment.t072t1;
+showddl library      t072sch_comment.t072ddl;
+showddl library      t072sch_comment.t072jar;
+showddl function     t072sch_comment.t072func;
+showddl procedure    t072sch_comment.t072spj;
+showddl sequence     t072sch_comment.t072seq;
+
+
+?section clnup
+--------------------------------------------------------------------------
+
+-- CLEANUP database
+drop schema IF EXISTS t072sch_comment cascade;
+
