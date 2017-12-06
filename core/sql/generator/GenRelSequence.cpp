@@ -778,10 +778,10 @@ RelExpr * PhysSequence::preCodeGen(Generator * generator,
     
     if ((ActiveSchemaDB()->getDefaults()).
 	getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
   }
   else
-    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
   markAsPreCodeGenned();
 
@@ -1074,7 +1074,7 @@ PhysSequence::codeGen(Generator *generator)
   // update the estimated value of HistoryRowLength with actual value
   //setEstHistoryRowLength(historyIds.getRowLength());
 
-  double sequenceMemEst = getEstimatedRunTimeMemoryUsage(sequenceTdb);
+  double sequenceMemEst = generator->getEstMemPerInst(getKey());
   generator->addToTotalEstimatedMemory(sequenceMemEst);
 
   if(!generator->explainDisabled()) {
@@ -1104,7 +1104,7 @@ PhysSequence::codeGen(Generator *generator)
   UInt16 mmu = (UInt16)(defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB));
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
   Lng32 numStreams;
-  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey(), numStreams);
   double memQuota = 0;
   double memQuotaRatio;
   if (mmu != 0)
@@ -1282,22 +1282,28 @@ void PhysSequence::computeHistoryParams(Lng32 histRecLength,
 }
 
 
-CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   // input param is not used as this operator does not participate in the
   // quota system.
 
   ValueIdSet outputFromChild = child(0).getGroupAttr()->getCharacteristicOutputs();
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = child(0).getGroupAttr()->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
+  const CostScalar rowCount = numHistoryRows();
 
   //ValueIdSet historyIds;
   //getHistoryAttributes(sequenceFunctions(),outputFromChild, historyIds);
   //historyIds += sequenceFunctions();
   const Lng32 historyBufferWidthInBytes = getEstHistoryRowLength(); //historyIds.getRowLength();
-  const double historyBufferSizeInBytes = numHistoryRows() * 
+  const double historyBufferSizeInBytes = rowCount.value() * 
                                             historyBufferWidthInBytes;
 
   // totalMemory is per CPU at this point of time.
   double totalMemory = historyBufferSizeInBytes;
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
 
   const PhysicalProperty* const phyProp = getPhysicalProperty();
   Lng32 numOfStreams = 1;
@@ -1312,19 +1318,15 @@ CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if (perNode) 
-     totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerNode = totalMemory /= MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst = totalMemory /= numOfStreams;
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams,         
+                                                  estMemPerNode, estMemPerInst, rowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
   else
-     totalMemory /= numOfStreams;
-  return totalMemory;
-}
-
-double PhysSequence::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  Lng32 numOfStreams = 1;
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
-  totalMemory = totalMemory * numOfStreams ;
-  return totalMemory.value();
+     return estMemPerInst; 
 }
 
 ExplainTuple*

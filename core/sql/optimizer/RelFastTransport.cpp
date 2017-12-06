@@ -457,7 +457,7 @@ PhysicalProperty* PhysicalFastExtract::synthPhysicalProperty(const Context* myCo
   return sppForMe ;
 };
 
-double PhysicalFastExtract::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) 
+double PhysicalFastExtract::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb) 
 {
 
 // The executor attempts to get buffers, each of size 1 MB. This memory

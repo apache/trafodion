@@ -2912,7 +2912,7 @@ short RelRoot::codeGen(Generator * generator)
   compilerStatsInfo->collectStatsType() = generator->collectStatsType();
   compilerStatsInfo->udr() = noOfUdrs;
   compilerStatsInfo->ofMode() = generator->getOverflowMode();
-  compilerStatsInfo->ofSize() = generator->getTotalOverflowMemory();
+  compilerStatsInfo->ofSize() = 0;
   compilerStatsInfo->bmo() = generator->getTotalNumBMOs();
   compilerStatsInfo->queryType() = (Int16)root_tdb->getQueryType();
   compilerStatsInfo->subqueryType() = (Int16)root_tdb->getSubqueryType();
@@ -3061,7 +3061,7 @@ short Sort::generateTdb(Generator * generator,
   short memoryQuotaMB = 0;
   double memoryQuotaRatio;
   Lng32 numStreams;
-  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey(), numStreams);
 
   if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF)
   {
@@ -3172,12 +3172,9 @@ short Sort::generateTdb(Generator * generator,
 
   generator->initTdbFields(sort_tdb);
 
-  double sortMemEst = getEstimatedRunTimeMemoryUsage(sort_tdb);
+  double sortMemEst = generator->getEstMemPerInst(getKey());
   sort_tdb->setEstimatedMemoryUsage(sortMemEst / 1024);
   generator->addToTotalEstimatedMemory(sortMemEst);
-
-  generator->addToTotalOverflowMemory(
-         getEstimatedRunTimeOverflowSize(memoryQuotaMB));
 
   if (sortPrefixKeyLen > 0)
     ((ComTdbSort *)sort_tdb)->setPartialSort(TRUE);  // do partial sort
@@ -3853,35 +3850,7 @@ short SortFromTop::codeGen(Generator * generator)
   return rc;
 }
 
-double Sort::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
-{
-   if ( memoryQuotaMB > 0 ) {
-     CostScalar memoryUsage = getEstimatedRunTimeMemoryUsage(TRUE /*per CPU*/);
-
-     double delta = memoryUsage.getValue() - memoryQuotaMB * COM_ONE_MEG ;
-
-     if ( delta > 0 )  {
-
-        const PhysicalProperty* const phyProp = getPhysicalProperty();
-        Lng32 pipelines = 1;
-   
-        if (phyProp != NULL)
-        {
-          PartitioningFunction * partFunc = 
-                 phyProp -> getPartitioningFunction() ;
-   
-          if ( partFunc )
-             pipelines = partFunc->getCountOfPartitions();
-        }
-   
-        return delta * pipelines;
-     }
-  }
-     
-  return 0;
-}
-
-CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar Sort::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   Lng32 childRecordSize = 
@@ -3893,6 +3862,12 @@ CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStr
   else
      rowsUsed = getEstRowsUsed();
   CostScalar totalMemory = rowsUsed * childRecordSize;
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
+ 
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = childGroupAttr->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
 
   Lng32 numOfStreams = 1;
   const PhysicalProperty* const phyProp = getPhysicalProperty();
@@ -3905,21 +3880,16 @@ CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStr
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if (perNode) 
-      totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerNode = totalMemory / MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst = totalMemory / numOfStreams;
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams,
+                                                  estMemPerNode, estMemPerInst, rowsUsed, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
   else
-      totalMemory /= numOfStreams;
-  return totalMemory;
+     return estMemPerInst; 
 }
-
-double Sort::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  Lng32 numOfStreams = 1;
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
-  totalMemory = totalMemory * numOfStreams ;
-  return totalMemory.value();
-}
-
 
 /////////////////////////////////////////////////////////
 //

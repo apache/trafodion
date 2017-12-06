@@ -188,10 +188,7 @@ public:
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
-
-  virtual double getEstimatedRunTimeOverflowSize(double memoryQuotaMB);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL);
 
   virtual PlanPriority computeOperatorPriority
     (const Context* context,
@@ -585,8 +582,8 @@ public:
   inline void setBMOsMemoryUsage(CostScalar x) { BMOsMemoryUsage_ = x; }
   inline CostScalar getBMOsMemoryUsage() { return BMOsMemoryUsage_ ; }
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL);
+  virtual double getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb);
 
   void setExtractProducerFlag() { isExtractProducer_ = TRUE; }
   NABoolean getExtractProducerFlag() { return isExtractProducer_; }

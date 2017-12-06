@@ -201,7 +201,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -349,7 +348,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -497,7 +495,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -645,7 +642,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -793,7 +789,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -941,7 +936,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1089,7 +1083,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinal  1,000,000,000
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0

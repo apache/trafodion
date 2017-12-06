@@ -457,14 +457,14 @@ RelExpr::addExplainInfo(ComTdb * tdb,
      if ( reportMemoryEst == TRUE ) {
         if (nodeType == ComTdb::ex_HASH_GRBY || nodeType == ComTdb::ex_HASHJ
                || nodeType == ComTdb::ex_SORT) {
-           double memUsage = getEstimatedRunTimeMemoryUsage(FALSE).value()/1024;
+           double memUsage = tdb->getEstimatedMemoryUsage();
            if ( memUsage > 0 ) {
               sprintf(buf, "est_memory_per_instance: %.3f KB ", memUsage);
               explainTuple->setDescription(buf);
            }
         }
         else {
-           double memUsage = getEstimatedRunTimeMemoryUsage(TRUE).value()/1024;
+           double memUsage = getEstimatedRunTimeMemoryUsage(generator, TRUE).value()/1024;
            if ( memUsage > 0 ) {
               sprintf(buf, "est_memory_per_node: %.3f KB ", memUsage);
               explainTuple->setDescription(buf);
@@ -1441,14 +1441,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   sprintf(maxMaxCard, "%.0lf", CURRSTMT_OPTDEFAULTS->maxMaxCardinality());
   statement += maxMaxCard;
   statement += " ";
-
-  double total_overflow_size = generator->getTotalOverflowMemory();
-  statement += "total_overflow_size: ";
-
-  char ovSizeVal[1024];
-  sprintf(ovSizeVal, "%.2lf", total_overflow_size/1024);
-  statement += ovSizeVal;
-  statement += " KB ";
 
   FragmentDir *fragDir = generator->getFragmentDir();
   for (CollIndex i = 0; i < fragDir->entries(); i++) {

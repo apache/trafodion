@@ -3895,7 +3895,8 @@ enum DefaultConstants
   MEMORY_LIMIT_ROWSET_IN_MB,
 
   SUPPRESS_CHAR_LIMIT_CHECK,
-
+ 
+  BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

@@ -1186,7 +1186,7 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
 // -----------------------------------------------------------------------
 // methods for class PhysicalTableMappingUDF
 // -----------------------------------------------------------------------
-double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
+double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb) {return 0;}
 
 RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
                                                CollHeap* outHeap)

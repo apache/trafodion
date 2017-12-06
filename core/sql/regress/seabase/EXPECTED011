@@ -163,7 +163,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled

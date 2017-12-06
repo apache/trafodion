@@ -795,7 +795,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinal  1,440,202
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -912,7 +911,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1274,7 +1272,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality  1,698
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1418,7 +1415,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinal  2,880,404
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1808,7 +1804,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality    271
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2057,7 +2052,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality    271
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2352,7 +2346,6 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinal  2,880,404
-  total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only

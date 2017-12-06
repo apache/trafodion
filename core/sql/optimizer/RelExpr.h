@@ -1291,13 +1291,9 @@ public:
   // ---------------------------------------------------------------------
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
-/*
-  virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perNode) 
-      { return getEstimatedRunTimeMemoryUsage(perNode) / (1024*1024); }
-*/
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL) {return 0;}
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL) {return 0;}
+  virtual double getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb) {return 0;}
 
   inline NABoolean isinBlockStmt() const
                           { return isinBlockStmt_; }
@@ -1598,6 +1594,8 @@ private:
   // remember the original here, e.g. to find VEG regions
   RelExpr *originalExpr_;
 
+  NAString operKey_;
+
 public:
 
   // begin: accessors & mutators for relexpr tracking info
@@ -1640,7 +1638,7 @@ public:
 
   CostScalar getChild0Cardinality(const Context*);
 
-
+  NAString *getKey();
 }; // class RelExpr
 
 // -----------------------------------------------------------------------

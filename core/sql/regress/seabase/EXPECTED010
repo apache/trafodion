@@ -241,7 +241,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -325,7 +324,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -407,7 +405,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -491,7 +488,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -838,7 +834,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -918,7 +913,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -998,7 +992,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1077,7 +1070,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1186,7 +1178,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1259,7 +1250,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1340,7 +1330,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1421,7 +1410,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1501,7 +1489,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1611,7 +1598,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1995,7 +1981,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2079,7 +2064,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2160,7 +2144,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2243,7 +2226,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2550,7 +2532,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2630,7 +2611,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2722,7 +2702,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2804,7 +2783,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -2918,7 +2896,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -2993,7 +2970,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3075,7 +3051,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3157,7 +3132,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3238,7 +3212,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -3350,7 +3323,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -3734,7 +3706,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3818,7 +3789,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3900,7 +3870,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -3984,7 +3953,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4292,7 +4260,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4373,7 +4340,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4454,7 +4420,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4534,7 +4499,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -4645,7 +4609,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -4717,7 +4680,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4799,7 +4761,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4881,7 +4842,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -4962,7 +4922,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -5074,7 +5033,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -5458,7 +5416,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -5542,7 +5499,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -5623,7 +5579,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -5706,7 +5661,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6052,7 +6006,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6131,7 +6084,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6210,7 +6162,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6288,7 +6239,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -6396,7 +6346,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -6472,7 +6421,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6552,7 +6500,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6632,7 +6579,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -6711,7 +6657,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -6820,7 +6765,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -7227,7 +7171,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7311,7 +7254,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7393,7 +7335,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7477,7 +7418,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7824,7 +7764,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7904,7 +7843,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -7984,7 +7922,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -8063,7 +8000,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -8172,7 +8108,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -8245,7 +8180,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -8326,7 +8260,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -8407,7 +8340,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -8487,7 +8419,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -8597,7 +8528,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -8981,7 +8911,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 11
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9065,7 +8994,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9146,7 +9074,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality ... 10
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9229,7 +9156,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9575,7 +9501,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9654,7 +9579,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9733,7 +9657,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -9811,7 +9734,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -9919,7 +9841,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -9995,7 +9916,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -10075,7 +9995,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 5
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -10155,7 +10074,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -10234,7 +10152,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 4
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -10343,7 +10260,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ......... 0
   max_max_cardinality .... 2
-  total_overflow_size .... 0.00 KB
   upd_action_on_error .... xn_rollback
   xn_access_mode ......... read_only
   xn_autoabort_interval    0

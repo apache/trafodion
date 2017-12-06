@@ -72,6 +72,7 @@ class ComTdb;
 class Attributes;
 class DP2Insert;
 class TrafSimilarityTableInfo;
+class OperBMOQuota;
 
 // this define is used to raise assertion in generator.
 // Calls GeneratorAbort which does a longjmp out of the calling scope.
@@ -85,6 +86,15 @@ struct CifAvgVarCharSizeCache
     ValueId vid;
     double avgSize;
   };
+
+
+class XBMOQuotaMap : public NAKeyLookup<NAString, OperBMOQuota>
+{
+public:
+   XBMOQuotaMap(CollHeap *heap)
+    : NAKeyLookup<NAString, OperBMOQuota>(10, NAKeyLookupEnums::KEY_INSIDE_VALUE, heap)
+   {}
+};
 
 //////////////////////////////////////////////////////////////////////////
 // class Generator
@@ -425,9 +435,7 @@ class Generator : public NABasicObject
 
   // temporary value holder (during pre code gen) for #BMOs in this fragment
   unsigned short numBMOs_;
-  unsigned short totalNumBMOsPerNode_; // accumulated # of BMO, per Node
 
-  CostScalar BMOsMemoryPerFrag_; // accumulated BMO memory, per fragment 
   CostScalar totalBMOsMemoryPerNode_; // accumulated BMO memory, per Node
 
   CostScalar nBMOsMemoryPerNode_; // accumulated nBMO memory, per Node
@@ -555,9 +563,6 @@ private:
   // total estimated memory used by BMOs and certain other operators in bytes
   double totalEstimatedMemory_ ;
 
-   // total overflowed memory used by Sort, HashGroupBy and HashJoin in bytes
-  double totalOverflowMemory_ ;
-
   // estimated memory for an individual operator. Used by Explain
   // set to 0 after Explain has been called so that next operator
   // can used this field. In KB and on a per Node basis.
@@ -628,6 +633,7 @@ private:
     return FALSE;
   };
 
+  XBMOQuotaMap bmoQuotaMap_;
 public:
   enum cri_desc_type {
     UP, DOWN
@@ -1460,25 +1466,13 @@ public:
 			      ItemExpr * childNode0, ItemExpr * childNode1,
 			      ComDiagsArea * diagsArea);
 
-  inline CostScalar getBMOsMemory() { return BMOsMemoryPerFrag_; }
-
   inline void incrBMOsMemory(CostScalar x) 
-     { incrBMOsMemoryPerFrag(x); totalBMOsMemoryPerNode_ += x; }
+     { totalBMOsMemoryPerNode_ += x; }
 
-  inline void incrBMOsMemoryPerFrag(CostScalar x) 
-     { BMOsMemoryPerFrag_ += x;  }
-
-  inline CostScalar replaceBMOsMemoryUsage(CostScalar newVal)
-  {
-    CostScalar retVal = BMOsMemoryPerFrag_;
-    BMOsMemoryPerFrag_ = newVal;
-    return retVal;
-  }
   inline CostScalar getTotalBMOsMemoryPerNode() 
-                 { return totalBMOsMemoryPerNode_; }
-
+           { return totalBMOsMemoryPerNode_; }
   inline void incrNumBMOs() 
-     {  incrNumBMOsPerFrag(1);  totalNumBMOsPerNode_++; totalNumBMOs_++;}
+     {  incrNumBMOsPerFrag(1);  totalNumBMOs_++;}
 
   inline void incrNumBMOsPerFrag(UInt32 x) { numBMOs_ += x; }
 
@@ -1488,11 +1482,10 @@ public:
     numBMOs_ = newVal;
     return retVal;
   }
-  inline unsigned short getTotalNumBMOsPerNode() { return totalNumBMOsPerNode_; }
-  
+ 
   inline CostScalar getTotalNBMOsMemoryPerNode() { return nBMOsMemoryPerNode_; }
   inline void incrNBMOsMemoryPerNode(CostScalar x) { nBMOsMemoryPerNode_ += x; }
-
+ 
   inline void setBMOsMemoryLimitPerNode(CostScalar x) 
             { BMOsMemoryLimitPerNode_ = x; }
 
@@ -1605,10 +1598,6 @@ public:
   inline short getMaxCpuUsage(){return maxCpuUsage_;}
   inline void setMaxCpuUsage(short val){maxCpuUsage_ = val;}
 
-  inline double getTotalOverflowMemory(){return totalOverflowMemory_;}
-  inline void addToTotalOverflowMemory(double val)
-        {totalOverflowMemory_ += val;}
-
   inline ComTdb::OverflowModeType getOverflowMode() {return overflowMode_; }
 
   // Each of these two mutators return the old value
@@ -1692,7 +1681,11 @@ public:
   inline void setTopNRows(ULng32 topNRows) 
      { topNRows_ = topNRows; }
   inline ULng32 getTopNRows() { return topNRows_; }
-        
+  inline XBMOQuotaMap *getBMOQuotaMap() { return &bmoQuotaMap_; }      
+  double getEstMemPerNode(NAString *key, Lng32 &numStreams);
+  double getEstMemForTdb(NAString *key);
+  double getEstMemPerInst(NAString *key);
+  void finetuneBMOEstimates();
 }; // class Generator
 
 class GenOperSimilarityInfo : public NABasicObject
@@ -1729,6 +1722,46 @@ private:
   NABoolean constraintsTrigPresent_;
 
   UInt32 flags_;
+};
+
+
+class OperBMOQuota : public NABasicObject
+{
+public: 
+   OperBMOQuota(NAString *operAddr, Int32 numStreams, CostScalar estMemPerNode, CostScalar estMemPerInst,
+                CostScalar estRowsUsed, CostScalar maxCard) :
+     operAddr_(operAddr) 
+   , numStreams_(numStreams)
+   , estMemPerNode_(estMemPerNode)
+   , estMemPerInst_(estMemPerInst)
+   , estRowsUsed_(estRowsUsed)
+   , maxCard_(maxCard) 
+   , ignoreEstimate_(FALSE)
+   , origEstMemPerNode_(estMemPerNode)
+   { 
+     //weight_ = (estRowsUsed_ / maxCard_).value();
+     weight_ = 0;
+   }
+   const NAString *getKey() const {return operAddr_; }
+   inline Int32 getNumStreams() { return numStreams_; }
+   inline double getEstMemPerNode() { return estMemPerNode_.value(); }
+   inline double getEstMemPerInst() { return estMemPerInst_.value(); }
+   inline double getEstMemForTdb() { return estMemPerInst_.value() * numStreams_; }
+   inline void setIgnoreEstimate() { ignoreEstimate_ = TRUE; } 
+   NABoolean operator==(const OperBMOQuota &other) const
+                                        { return this == &other; }
+   inline void setEstMemPerNode(double estMemPerNode) { estMemPerNode_ = estMemPerNode; }
+
+private:
+   const NAString *operAddr_;
+   Int32 numStreams_;
+   CostScalar estMemPerNode_; 
+   CostScalar estMemPerInst_;
+   CostScalar estRowsUsed_;
+   CostScalar maxCard_;
+   CostScalar origEstMemPerNode_;
+   double weight_;
+   NABoolean ignoreEstimate_; 
 };
 
 // Get table and index filename
@@ -1783,6 +1816,7 @@ Generator::getExplainTuple()
 {
   return explainTuple_;
 }
+
 
 #endif
 

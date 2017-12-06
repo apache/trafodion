@@ -1631,10 +1631,7 @@ public:
   virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
-  virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
-
-  virtual double getEstimatedRunTimeOverflowSize(double memoryQuotaMB);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams = NULL);
 
   inline ValueIdSet & checkInputValues() { return checkInputValues_;}
   inline ValueIdSet & moveInputValues()  { return moveInputValues_;}

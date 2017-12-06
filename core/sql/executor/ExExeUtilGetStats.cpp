@@ -3161,6 +3161,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
     case FORMAT_AND_RETURN_BMO_STATS_:
       {
         const char *ofMode;
+        Int32 dop = 1;
         for (; currStatsItemEntry_ < maxBMOStatsItems_; currStatsItemEntry_++)
         {
           i = (short)currStatsItemEntry_;
@@ -3186,6 +3187,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
                sprintf(&statsBuf_[strlen(statsBuf_)], "%20s", ofMode);
             break;
           case SQLSTATS_DOP:
+            dop = (Int32)bmoStatsItems_[i].int64_value;
             sprintf(&statsBuf_[strlen(statsBuf_)], "%10ld", bmoStatsItems_[i].int64_value);
             break;
           case SQLSTATS_TOPN:
@@ -3234,7 +3236,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             sprintf(&statsBuf_[strlen(statsBuf_)], "%20s", Int64Val);
             break;
           case SQLSTATS_BMO_EST_MEMORY:
-            sprintf(formattedFloatVal, "%0.2lf",  bmoStatsItems_[i].double_value);
+            sprintf(formattedFloatVal, "%.6g",  bmoStatsItems_[i].double_value * dop);
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", formattedFloatVal);
             break;
           case SQLSTATS_BMO_SPACE_BUFFER_SIZE:
