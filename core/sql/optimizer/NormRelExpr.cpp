@@ -6995,11 +6995,6 @@ NABoolean RelRoot::isUpdatableBasic(NABoolean isView,
   // QSTUFF
 
     {
-      // if child is a FirstN node, skip it.
-      if ((child(0)->castToRelExpr()->getOperatorType() == REL_FIRST_N) &&
-	  (child(0)->child(0)))
-	scan = (Scan *)child(0)->child(0)->castToRelExpr();
-      else
 	scan = (Scan *)child(0)->castToRelExpr();
     }
 
