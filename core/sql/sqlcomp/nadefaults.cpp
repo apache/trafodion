@@ -1483,11 +1483,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
 
-  // If set to 'OFF' we get a stub cost of 1 for update operations.
-  // We can remove this once the delete costing code has broader
-  // exposure. This is 'OFF' at the moment because the update code
-  // is only partially written.
-  DDkwd__(HBASE_UPDATE_COSTING,		             "OFF"),
+  // If set to 'OFF' we get a stub cost of 0 for update operations.
+  DDkwd__(HBASE_UPDATE_COSTING,		             "ON"),
 
   DDkwd__(HBASE_UPDEL_CURSOR_OPT,		"ON"),
   DDui___(HBASE_USE_FAKED_REGIONS,		"0"),

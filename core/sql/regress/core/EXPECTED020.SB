@@ -369,6 +369,8 @@ MODULE_NAME                                                   STATEMENT_NAME
 ?                                                             S6                                                          
 ?                                                             S7                                                          
 ?                                                             S7                                                          
+?                                                             S7                                                          
+?                                                             S7                                                          
 ?                                                             S8                                                          
 ?                                                             S8                                                          
 ?                                                             S8                                                          
@@ -378,7 +380,7 @@ MODULE_NAME                                                   STATEMENT_NAME
 ?                                                             S9                                                          
 ?                                                             S9                                                          
 
---- 34 row(s) selected.
+--- 36 row(s) selected.
 >>
 >>--QUERY 7 - Wildcarding is used in the explain parameters.
 >>select 
@@ -399,8 +401,9 @@ HYBRID_HASH_SEMI_JOIN
 HYBRID_HASH_SEMI_JOIN         
 NESTED_JOIN                   
 TUPLE_FLOW                    
+TUPLE_FLOW                    
 
---- 7 row(s) selected.
+--- 8 row(s) selected.
 >>
 >>-- QUERY 8
 >>
@@ -426,9 +429,8 @@ SEQ_NUM      LEFT_CHILD_SEQ_NUM  OPERATOR                        RIGHT_CHILD_SEQ
           1                   ?  TRAFODION_SCAN                                    ?
           1                   ?  TRAFODION_SCAN                                    ?
           1                   ?  TRAFODION_SCAN                                    ?
-          1                   ?  TRAFODION_UPDATE                                  ?
+          1                   ?  TRAFODION_SCAN                                    ?
           1                   ?  TUPLELIST                                         ?
-          2                   1  ROOT                                              ?
           2                   1  ROOT                                              ?
           2                   1  SORT                                              ?
           2                   ?  TRAFODION_INSERT                                  ?
@@ -437,6 +439,8 @@ SEQ_NUM      LEFT_CHILD_SEQ_NUM  OPERATOR                        RIGHT_CHILD_SEQ
           2                   ?  TRAFODION_SCAN                                    ?
           2                   ?  TRAFODION_SCAN                                    ?
           2                   ?  TRAFODION_SCAN                                    ?
+          2                   ?  TRAFODION_UPDATE                                  ?
+          3                   1  TUPLE_FLOW                                        2
           3                   1  TUPLE_FLOW                                        2
           3                   2  HYBRID_HASH_JOIN                                  1
           3                   2  HYBRID_HASH_JOIN                                  1
@@ -451,10 +455,11 @@ SEQ_NUM      LEFT_CHILD_SEQ_NUM  OPERATOR                        RIGHT_CHILD_SEQ
           4                   3  ROOT                                              ?
           4                   3  ROOT                                              ?
           4                   3  ROOT                                              ?
+          4                   3  ROOT                                              ?
           5                   4  SORT_GROUPBY                                      ?
           6                   5  ROOT                                              ?
 
---- 34 row(s) selected.
+--- 36 row(s) selected.
 >>
 >>--QUERY 9
 >>select 
@@ -576,9 +581,11 @@ OPERATOR
 ------------------------------
 
 ROOT                          
+TRAFODION_SCAN                
 TRAFODION_UPDATE              
+TUPLE_FLOW                    
 
---- 2 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>--QUERY 16
 >>select
