@@ -88,6 +88,10 @@ prepare s from insert into t130lob2 values (1, ?);
 execute s using 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
 select lobtostring(c2,50) from t130lob2;
 
+--negative test for values tuple list
+prepare s from insert into t130lob2 values (1,'gg'),(2,'hh');
+prepare s from insert into t130lob2 values (1,stringtolob('hh')),(2,stringtolob('gg'));
+
 --test update with param 
 prepare s from update t130lob2 set c2=? where c1 =1;
 execute s using 'xyxyxyxyxyxyx';

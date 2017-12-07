@@ -708,6 +708,15 @@ NABoolean QualifiedName::isHbaseCellOrRow() const
     return FALSE;
 }
 
+NABoolean QualifiedName::isLOBDesc() const
+{
+  NAString ansiNameString = getQualifiedNameAsString() ;
+  if (ansiNameString.contains(LOB_DESC_HANDLE_PREFIX))
+    return TRUE;
+  else
+    return FALSE;
+  
+}
 // -----------------------------------------------------------------------
 // Methods for class CorrName
 // -----------------------------------------------------------------------

@@ -332,7 +332,7 @@ public:
 
   NABoolean isHistograms() const;
   NABoolean isHistogramIntervals() const;
-
+  NABoolean isLOBDesc() const;
   void setObjectName(const NAString &objName)   { objectName_ = objName; }
   void setObjectNameSpace(ComAnsiNameSpace objNameSpace)   { objectNameSpace_ = objNameSpace; }
 
@@ -566,12 +566,14 @@ public:
 
   //can this type of object be put in the NATable cache
   NABoolean isCacheable() const
-  { return    (type_ == NORMAL_TABLE)
+  { 
+    return    (type_ == NORMAL_TABLE)
            || (type_ == TRIGTEMP_TABLE)
            || (type_ == EXCEPTION_TABLE)
            //|| (type_ == IUD_LOG_TABLE)
            //|| (type_ == RANGE_LOG_TABLE)
-           || (type_ == INDEX_TABLE)
+      || (type_ == INDEX_TABLE)  
+      || ((type_ == GHOST_TABLE)&& qualName_.isLOBDesc())
   ; }
   
   NABoolean hasPartnClause() const {return NOT partnClause_.isEmpty();}
@@ -869,6 +871,7 @@ public:
   NABoolean isHbaseCell() const;
   NABoolean isHbaseRow() const;
   NABoolean isHbaseMap() const;
+ 
 
   NABoolean isExternal() const { return (flagbits_ & IS_EXTERNAL) != 0; }
   void setIsExternal(NABoolean v) 

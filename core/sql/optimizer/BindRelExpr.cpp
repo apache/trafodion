@@ -9723,54 +9723,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setInsertSelectQuery(TRUE);
     }
 
-  // if table has a lob column, then fix up any reference to LOBinsert
-  // function in the source values list.
-  //
-  if ((getOperatorType() == REL_UNARY_INSERT) &&
-      (getTableDesc()->getNATable()->hasLobColumn()) &&
-      (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
-       child(0)->getOperatorType() == REL_TUPLE_LIST)) // VALUES (1,'b'),(2,'Y')
-    {
-      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
-	{
-	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
-	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
-	    {
-	      ValueIdList tup;
-	      if (!tl->getTuple(bindWA, tup, x)) 
-		{
-		  bindWA->setErrStatus();
 
-		  return boundExpr; // something went wrong
-		}
-	      
-	      for (CollIndex n = 0; n < tup.entries(); n++)
-		{
-		  ItemExpr * ie = tup[n].getItemExpr();
-		  if (ie->getOperatorType() == ITM_LOBINSERT)
-		    {
-		      // cannot have this function in a values list with multiple
-		      // tuples. Use a single tuple.
-		      *CmpCommon::diags() << DgSqlCode(-4483);
-		      bindWA->setErrStatus();
-		      
-		      return boundExpr; 
-   
-		      LOBinsert * li = (LOBinsert*)ie;
-		      li->insertedTableObjectUID() = 
-			getTableDesc()->getNATable()->objectUid().castToInt64();
-		      li->lobNum() = n;
-
-		      li->insertedTableSchemaName() = 
-			getTableDesc()->getNATable()->
-			getTableName().getSchemaName();
-		    }
-		} // for
-	    } // for
-	} // if tuplelist
-
-    } // if
- 
 
   // Prepare for any IDENTITY column checking later on
   NAString identityColumnName;
@@ -10196,6 +10149,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       if(bindWA->errStatus())
 	return NULL;
 
+
+
       if (stoiInList && !getUpdateCKorUniqueIndexKey())
       {
         if(!getBoundView())
@@ -10549,6 +10504,65 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       indexes[i]->getPartitioningFunction()->setAssignPartition(TRUE);
     }
   }
+
+ if ((getOperatorType() == REL_UNARY_INSERT) &&
+     (getTableDesc()->getNATable()->hasLobColumn()) &&
+     child(0)->getOperatorType() == REL_TUPLE_LIST) // VALUES (1,'b'),(2,'Y')
+    {
+      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
+	{
+	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
+	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
+	    {
+	      ValueIdList tup;
+	      if (!tl->getTuple(bindWA, tup, x)) 
+		{
+		  bindWA->setErrStatus();
+
+		  return boundExpr; // something went wrong
+		}
+	      
+	      for (CollIndex n = 0; n < tup.entries(); n++)
+		{
+		  ItemExpr * ie = tup[n].getItemExpr();
+                  
+		  if (ie->getOperatorType() == ITM_LOBINSERT)
+		    {                                                          
+                      // cannot have this function in a values list with
+                      // multiple tuples. Use a single tuple.
+                          *CmpCommon::diags() << DgSqlCode(-4483);
+                          bindWA->setErrStatus();		      
+                          return boundExpr; 
+                        
+                    }
+               
+                  else
+                    {
+                      Assign * assign = (Assign*)newRecExprArray()[n].getItemExpr();
+                      ItemExpr *assign_child = NULL;
+                      if (assign)
+                        {
+                           assign_child = assign->child(1);
+                        }
+                      if ( assign_child && assign_child->getOperatorType() == ITM_CAST )
+                        {
+                          const NAType& type = assign_child->getValueId().getType();
+                          if ( type.getTypeQualifier() == NA_LOB_TYPE )
+                            {
+                              // cannot have this function in a values list with multiple
+                              // tuples. Use a single tuple.
+                              *CmpCommon::diags() << DgSqlCode(-4483);
+                              bindWA->setErrStatus();		      
+                              return boundExpr; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 
   // It is a system generated identity value if
   // identityColumn() != NULL_VALUE_ID. The identityColumn()
