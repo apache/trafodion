@@ -1,3 +1,5 @@
 # git files
 .gitignore export-ignore
 .gitattributes export-ignore
+# project description file
+doap.rdf export-ignore
