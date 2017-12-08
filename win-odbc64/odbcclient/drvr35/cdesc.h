@@ -89,7 +89,8 @@ public:
 		}
 	};
 	void setTranslateOption(SQLSMALLINT CDataType);
-private:
+//private:
+public:
 	SQLSMALLINT	m_DescType;
 	SQLSMALLINT	m_DescConciseType;
 	SQLSMALLINT	m_DescDatetimeIntervalCode;

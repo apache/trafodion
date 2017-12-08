@@ -33,6 +33,7 @@
 #include "DiagFunctions.h"
 #include "csconvert.h" 
 #include <errno.h>
+#include <string.h>
 
 #define MAXCHARLEN 32768 //32K
 
@@ -154,108 +155,42 @@ unsigned long ODBC::BigNum_To_Ascii_Helper(char * source,
 // *totalReturnedLength = Offset in Input
 // srcLength includes NULL for SQL_CHAR Type, hence srcLength is srcLength-1 for SQL_CHAR fields
 unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
-							DWORD		DataLangId,
-							SQLSMALLINT	SQLDataType,
-							SQLSMALLINT	ODBCDataType,
-							SQLSMALLINT SQLDatetimeCode,
-							SQLPOINTER	srcDataPtr,
-							SQLINTEGER	srcLength,
-							SQLSMALLINT	srcPrecision,
-							SQLSMALLINT	srcScale,
-							SQLSMALLINT srcUnsigned,
-							SQLINTEGER	srcCharSet,
-							SQLINTEGER	srcMaxLength,
-							SQLSMALLINT	CDataType,
-							SQLPOINTER	targetDataPtr,
-							SQLINTEGER	targetLength,
-							SQLLEN		*targetStrLenPtr,
-							BOOL		byteSwap,
-							CHAR		*&translatedDataPtr,
-							SQLINTEGER	*totalReturnedLength,
-							DWORD		translateOption,
-							UCHAR		*errorMsg,
-							SWORD		errorMsgMax,
-							SQLINTEGER	EnvironmentType,
-							BOOL		ColumnwiseData,
-							CHAR		*replacementChar)
+								DWORD		DataLangId,
+								CDescRec*	srcDescPtr,
+								SQLPOINTER	srcDataPtr,
+								SQLINTEGER	srcLength,
+								SQLSMALLINT	CDataType,
+								SQLPOINTER	targetDataPtr,
+								SQLINTEGER	targetLength,
+								SQLLEN		*targetStrLenPtr,
+								BOOL		byteSwap,
+								CHAR		*&translatedDataPtr,
+								SQLINTEGER	*totalReturnedLength,
+								DWORD		translateOption,
+								UCHAR		*errorMsg,
+								SWORD		errorMsgMax,
+								SQLINTEGER	EnvironmentType,
+								BOOL		ColumnwiseData,
+								CHAR		*replacementChar)
 {
-	unsigned long retCode = SQL_SUCCESS;
-	SQLPOINTER		DataPtr;
-	SQLINTEGER		DataLen;
-	SQLINTEGER		TranslatedDataLen = 0;
-	SQLINTEGER		DataLen1;
-	SQLINTEGER		Offset;
-	SQLINTEGER		translateLengthMax;
-	SQLINTEGER		translateLength;
-	SQLINTEGER		DataLenTruncated = 0;
-
-	char		*stopStr;
-	short		i;
-	char		*tempPtr;
-	double		dTmp;
-	SSHORT		sTmp;
-	USHORT		usTmp;
-	SLONG		lTmp;
-	ULONG		ulTmp;
-	CHAR		cTmpBuf[MAX_DOUBLE_TO_CHAR_LEN];
-	CHAR		cTmpBuf1[30];
-	__int64		tempVal64;
-	__int64		power;
-	__int64		tempValFrac;
-	unsigned __int64 utempVal64;
-	unsigned __int64 utempValFrac;
-	SQLINTEGER	DecimalPoint;
-	SQLINTEGER	Sign;
-	float		fltTmp;
-	SCHAR		tTmp;
-	UCHAR		utTmp;
-	BOOL		NullTerminate = FALSE;
-	BOOL		NullTerminateW = FALSE;
-	BOOL		LocalizeNumericString = FALSE;
-	WORD		LangId;
-	unsigned long ulFraction;
-	char sFraction[10] = {'\0'};
-	BOOL		useDouble = TRUE;
-	short sourceType= 0;
-	short retcode = -1;
-	bool WCharData = false;
-
-	DATE_STRUCT			dateTmp;
-	TIME_STRUCT			timeTmp;
-	TIMESTAMP_STRUCT	timestampTmp;
-	SQL_INTERVAL_STRUCT	intervalTmp;
-	DATE_TYPES			*SQLDate;
-	TIME_TYPES			*SQLTime;
-	TIMESTAMP_TYPES		*SQLTimestamp;
-	SQL_NUMERIC_STRUCT	numericTmp;
-
-	DATE_TYPES			SQLDateTmp;
-	TIME_TYPES			SQLTimeTmp;
-	TIMESTAMP_TYPES		SQLTimestampTmp;
-	SQLSMALLINT			tODBCDataType;
-	BOOL				signedInteger = FALSE;
-	BOOL				unsignedInteger = FALSE;
-	char Dest[MAXCHARLEN];
-	short srcSz;
-	int rc;
-	bool DefaultCharRequired;
-	LPBOOL PtrDefaultCharRequired = (LPBOOL)&DefaultCharRequired;
-	bool isshort;
-	int short_len;
-	int int_len;
-	int charlength=0;
+	unsigned long	retCode = SQL_SUCCESS;
+	WORD			LangId;
+	char			*cTmpBuf = NULL;
+	double			dTmp = 0;
+	SQLINTEGER		DataLen = 0;
+	SQLSMALLINT		ODBCDataType = srcDescPtr->m_ODBCDataType;
 
 	if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable){
 		TraceOut(TR_ODBC_API,"ConvertSQLToC(%d, %d, %d, %d, %#x, %d, %d, %d, %d, %d, %#x, %d, %#x, %d, %#x, %#x, %#x, %d, %d)",
 							ODBCAppVersion,
-							SQLDataType,
-							ODBCDataType,
-							SQLDatetimeCode,
+							srcDescPtr->m_SQLDataType,
+							srcDescPtr->m_ODBCDataType,
+							srcDescPtr->m_SQLDatetimeCode,
 							srcDataPtr,
 							srcLength,
-							srcPrecision,
-							srcScale,
-							srcUnsigned,
+							srcDescPtr->m_ODBCPrecision,
+							srcDescPtr->m_ODBCScale,
+							srcDescPtr->m_DescUnsigned,
 							CDataType,
 							targetDataPtr,
 							targetLength,
@@ -271,101 +206,76 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	else
 		RESET_TRACE();
 
-
-/* 
-1. Because MS programs do not support BIGINT type, the server has to convert it to NUMERIC:
-				ODBCDataType = SQL_NUMERIC;
-				ODBCPrecision = 19;
-				SignType = TRUE;
-	Before conversion we have to change it back to:
-				ODBCDataType = SQL_BIGINT;
-
-2. Because ODBC does not support unsigned types for SMALLINT and INTEGER,
-	the server has to convert it to:
-	a)SQLTYPECODE_SMALLINT_UNSIGNED:
-				ODBCPrecision = 10;
-				ODBCDataType = SQL_INTEGER;
-				SignType = TRUE;
-	b)SQLTYPECODE_INTEGER_UNSIGNED:
-				ODBCPrecision = 19;
-				ODBCDataType = SQL_NUMERIC;
-				SignType = TRUE;
-
-	Before conversion we have to change it back to datatype, precision and sign described by SQL:
-	a)
-				ODBCPrecision = 5;
-				ODBCDataType = SQL_SMALLINT;
-				SignType = FALSE;
-	b)
-				ODBCPrecision = 10;
-				ODBCDataType = SQL_INTEGER;
-				SignType = FALSE;
-*/
-	isshort=srcMaxLength<=32767;
-
-	tODBCDataType = ODBCDataType;
-	if (ODBCDataType == SQL_NUMERIC && SQLDataType == SQLTYPECODE_LARGEINT &&
-					srcPrecision == 19 && srcScale==0)
+	if (ODBCAppVersion == SQL_OV_ODBC2)
 	{
+		/*
+		1. Because MS programs do not support BIGINT type, the server has to convert it to NUMERIC:
+		ODBCDataType = SQL_NUMERIC;
+		ODBCPrecision = 19;
+		SignType = TRUE;
+		Before conversion we have to change it back to:
 		ODBCDataType = SQL_BIGINT;
-	}
 
-	if (ODBCDataType == SQL_INTEGER && SQLDataType == SQLTYPECODE_SMALLINT_UNSIGNED &&
-				srcPrecision == 10 && srcScale==0)
-	{
-		srcPrecision = 5;
+		2. Because ODBC does not support unsigned types for SMALLINT and INTEGER,
+		the server has to convert it to:
+		a)SQLTYPECODE_SMALLINT_UNSIGNED:
+		ODBCPrecision = 10;
+		ODBCDataType = SQL_INTEGER;
+		SignType = TRUE;
+		b)SQLTYPECODE_INTEGER_UNSIGNED:
+		ODBCPrecision = 19;
+		ODBCDataType = SQL_NUMERIC;
+		SignType = TRUE;
+
+		Before conversion we have to change it back to datatype, precision and sign described by SQL:
+		a)
+		ODBCPrecision = 5;
 		ODBCDataType = SQL_SMALLINT;
-		srcUnsigned = true;
-	}
-
-	if (ODBCDataType == SQL_NUMERIC && SQLDataType == SQLTYPECODE_INTEGER_UNSIGNED &&
-				srcPrecision == 19 && srcScale==0)
-	{
-		srcPrecision = 10;
+		SignType = FALSE;
+		b)
+		ODBCPrecision = 10;
 		ODBCDataType = SQL_INTEGER;
-		srcUnsigned = true;
-	}
+		SignType = FALSE;
+		*/
 
-	if (ODBCDataType == SQL_BIGINT && SQLDataType == SQLTYPECODE_INTEGER_UNSIGNED &&
-				srcPrecision == 19 && srcScale==0)
-	{
-		srcPrecision = 10;
-		ODBCDataType = SQL_INTEGER;
-		srcUnsigned = true;
-	}
-
-	if (ODBCDataType == SQL_BIGINT && SQLDataType == SQLTYPECODE_LARGEINT_UNSIGNED &&
-				srcPrecision == 19 && srcScale == 0)
-	{
-		srcUnsigned = true;
-	}
-
-	if (CDataType == SQL_C_DEFAULT)
-	{
-		getCDefault(tODBCDataType, ODBCAppVersion, CDataType);
-		if (ODBCAppVersion >= 3 && srcUnsigned)
+		if (ODBCDataType == SQL_NUMERIC && srcDescPtr->m_SQLDataType == SQLTYPECODE_LARGEINT &&
+			srcDescPtr->m_ODBCPrecision == 19 && srcDescPtr->m_ODBCScale == 0)
 		{
-			switch(CDataType)
-			{
-				case SQL_C_SHORT:
-				case SQL_C_SSHORT:
-					CDataType = SQL_C_USHORT;
-					break;
-				case SQL_C_TINYINT:
-				case SQL_C_STINYINT:
-					CDataType = SQL_C_UTINYINT;
-					break;
-				case SQL_C_LONG:
-				case SQL_C_SLONG:
-					CDataType = SQL_C_ULONG;
-					break;
-			}
+			srcDescPtr->m_ODBCDataType = SQL_BIGINT;
+		}
+
+		if (ODBCDataType == SQL_INTEGER && srcDescPtr->m_SQLDataType == SQLTYPECODE_SMALLINT_UNSIGNED &&
+			srcDescPtr->m_ODBCPrecision == 10 && srcDescPtr->m_ODBCScale == 0)
+		{
+			srcDescPtr->m_ODBCDataType = SQL_SMALLINT;
+		}
+
+		if (ODBCDataType == SQL_NUMERIC && srcDescPtr->m_SQLDataType == SQLTYPECODE_INTEGER_UNSIGNED &&
+			srcDescPtr->m_ODBCPrecision == 19 && srcDescPtr->m_ODBCScale == 0)
+		{
+			srcDescPtr->m_ODBCDataType = SQL_INTEGER;
+		}
+
+		if (ODBCDataType == SQL_BIGINT && srcDescPtr->m_SQLDataType == SQLTYPECODE_INTEGER_UNSIGNED &&
+			srcDescPtr->m_ODBCPrecision == 19 && srcDescPtr->m_ODBCScale == 0)
+		{
+			srcDescPtr->m_ODBCDataType = SQL_INTEGER;
 		}
 	}
 
+	ODBCDataType = srcDescPtr->m_ODBCDataType;
+
+	if (CDataType == SQL_C_DEFAULT)
+	{
+		retCode = getCDefault(ODBCDataType, ODBCAppVersion, CDataType);
+	}
+
+	if (retCode != SQL_SUCCESS)
+	{
+		return retCode;
+	}
 
 //--------------------------------------------------------------------------------------
-
 
 	if (errorMsg != NULL)
 		*errorMsg = '\0';
@@ -373,123 +283,19 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	if (srcDataPtr == NULL)
 		return IDS_HY_000;
 
-	
-//	if(charsetSupport)
-		LangId = LANG_NEUTRAL;
-//	else
-//		LangId = LANGIDFROMLCID(DataLangId);
-
-	if (totalReturnedLength != NULL)
-	{
-		Offset = *totalReturnedLength;
-		*totalReturnedLength = -1;
-	}
-	else
-		Offset = 0;
+	LangId = LANG_NEUTRAL;
 
 	switch (CDataType)
 	{
 	case SQL_C_CHAR:
+	case SQL_C_WCHAR:
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
-			if (SQLDataType == SQLTYPECODE_BOOLEAN)
-			{
-				tTmp = *((SCHAR *)srcDataPtr);
-				_ltoa(tTmp, cTmpBuf, 10);
-				DataLen = strlen(cTmpBuf);
-				if (DataLen > targetLength)
-					return IDS_22_003;
-				DataPtr = cTmpBuf;
-				break;
-			}
 		case SQL_WCHAR:
-			charlength = srcLength-1;
-			if (charlength == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				if (targetLength > 0)
-					((char*)targetDataPtr)[0] = '\0';
-				return retCode;
-			}
-			if (translatedDataPtr == NULL)
-			{
-				DataLen = charlength - Offset;		
-				if (DataLen == 0)
-					return SQL_NO_DATA;
-				DataPtr = (char *)srcDataPtr + Offset;
-				if ((translateOption == 0) && DataLen >= targetLength && srcCharSet != SQLCHARSETCODE_UCS2)
-				{
-					if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-						TraceOut(TR_ODBC_API, "ConvertSQLToC: \"Data truncated\" OBCDataType %d, srcCharSet %d, DataLen %d, targetLength %d",
-								 ODBCDataType, srcCharSet, DataLen, targetLength);
-					retCode = IDS_01_004;
-					DataLenTruncated = DataLen;
-					if (targetLength > 0) 
-						DataLen = targetLength-1;
-					else
-						DataLen = 0;
-				}
-			}
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			break;
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-			if(isshort){
-				short_len=*(USHORT *)srcDataPtr;
-				charlength=short_len;
-				if (short_len == 0)
-				{	
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					if (targetLength > 0)
-						((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-			}
-			else{
-				int_len=*(int *)srcDataPtr;
-				charlength=int_len;
-				if (int_len == 0)
-				{	
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					if (targetLength > 0)
-						((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-			}
-			if (translatedDataPtr == NULL)
-			{
-				if(isshort){
-					DataLen = short_len - Offset;
-					DataPtr = (char *)srcDataPtr + 2 + Offset;
-				}
-				else{
-					DataLen = int_len - Offset;
-					DataPtr = (char *)srcDataPtr + 4 + Offset;
-				}
-				if (DataLen == 0)
-					return SQL_NO_DATA;	
-				if ((translateOption == 0) && DataLen >= targetLength && srcCharSet != SQLCHARSETCODE_UCS2)
-				{
-					if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-						TraceOut(TR_ODBC_API, "ConvertSQLToC: \"Data truncated\" OBCDataType %d, srcCharSet %d, DataLen %d, targetLength %d",
-								 ODBCDataType, srcCharSet, DataLen, targetLength);
-					retCode = IDS_01_004;
-					DataLenTruncated = DataLen;
-					if (targetLength > 0) 
-						DataLen = targetLength-1;
-					else
-						DataLen = 0;
-				}
-			}
-//			if (totalReturnedLength != NULL )
-//				*totalReturnedLength = DataLen + Offset;
-			break;
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_YEAR:
 		case SQL_INTERVAL_YEAR_TO_MONTH:
@@ -503,1921 +309,47 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			DataPtr = (char *)srcDataPtr + Offset;
-//
-// SQL does not return null terminating character - we have to use octet length
-//
-//			DataLen = strlen((char*)DataPtr);
-			DataLen = srcLength;
-			if (DataLen >= targetLength)
-			{
-				retCode = IDS_01_004;
-				DataLenTruncated = srcLength - Offset;
-				if (targetLength > 0)
-					DataLen = targetLength - 1;
-				else
-					DataLen = 0;
-			}
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
+			retCode = ConvSQLCharToChar(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr, translateOption, translatedDataPtr, totalReturnedLength, errorMsg, errorMsgMax, replacementChar);
 			break;
+
 		case SQL_TINYINT:
-			if (srcUnsigned)
-			{
-				utTmp = *((UCHAR *) srcDataPtr);
-				_ultoa(utTmp, cTmpBuf, 10);
-			}
-			else
-			{
-				tTmp = *((SCHAR *) srcDataPtr);
-				_ltoa(tTmp, cTmpBuf, 10);
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
 		case SQL_SMALLINT:
-			if (srcUnsigned)
-				lTmp = *((USHORT *) srcDataPtr);
-			else
-				lTmp = *((SSHORT *) srcDataPtr);
-			_ltoa(lTmp, cTmpBuf, 10);
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
 		case SQL_INTEGER: 
-			if (srcUnsigned)
-			{
-				ulTmp = *((ULONG *)srcDataPtr);
-				_ultoa(ulTmp, cTmpBuf, 10);
-			}
-			else
-			{
-				lTmp = *((SLONG *) srcDataPtr);
-				_ltoa(lTmp, cTmpBuf, 10);
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
 		case SQL_BIGINT:
-			if (srcUnsigned)
-				sprintf(cTmpBuf, "%I64u", *((unsigned __int64 *)srcDataPtr));
-			else
-				sprintf(cTmpBuf, "%I64d", *((__int64 *)srcDataPtr));
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_NUMERIC:
-			if( ((SQLDataType == SQLTYPECODE_NUMERIC) && (srcPrecision > 18)) || 
-				((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (srcPrecision > 9))) //for bignum support
-			{
-				retCode = BigNum_To_Ascii_Helper((char*)srcDataPtr,srcLength,srcPrecision,srcScale,cTmpBuf,SQLDataType);
-				if(retCode != SQL_SUCCESS)
-					return retCode;
-			} else {
-				if ((ConvertNumericToChar(SQLDataType, srcDataPtr, srcScale, cTmpBuf, DecimalPoint)) != SQL_SUCCESS)
-					return IDS_07_006;
-				if (DecimalPoint > targetLength)
-					return IDS_22_003;
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen  > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;			
-			break;
-		case SQL_DECIMAL:
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			DataLen = strlen(cTmpBuf);
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength - 1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
 		case SQL_REAL:
 		case SQL_DOUBLE:
-			if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
-				(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
-			{
-				if (ConvertSoftDecimalToDouble(SQLDataType, srcDataPtr, srcLength, srcScale, 
-							dTmp)  != SQL_SUCCESS)
-					return IDS_07_006;
-//				_gcvt(dTmp, DBL_DIG, cTmpBuf);
-				if (!double_to_char (dTmp, DBL_DIG, cTmpBuf, sizeof(cTmpBuf)))
-					return IDS_22_001;
-			
-			}
-			else
-			{
-				if (ODBCDataType == SQL_REAL) {
-					dTmp = (double)(*(float *)srcDataPtr);
-//					_gcvt(dTmp, FLT_DIG + 1, cTmpBuf);
-					if (!double_to_char (dTmp, FLT_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
-						return IDS_22_001;
-				}
-				else {
-					dTmp = *(double *)srcDataPtr;
-//					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-					if (!double_to_char (dTmp, DBL_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
-						return IDS_22_001;
-				}
-			}
-			DataLen = strlen(cTmpBuf);
-			if ((tempPtr = strchr(cTmpBuf, '.')) != NULL)
-				DecimalPoint = tempPtr - cTmpBuf;
-			else
-				DecimalPoint = 0;
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
+			retCode = ConvSQLNumberToChar(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
 			break;
+
 		case SQL_DATE:
 		case SQL_TYPE_DATE:
-			if (!ColumnwiseData) //RowwiseRowSet
-			{
-				SQLDate = &SQLDateTmp;
-				memset(SQLDate,0,sizeof(DATE_TYPES));
-				DataPtr = cTmpBuf;
-				SQLDate = (DATE_TYPES *)srcDataPtr;
-				DataLen = sprintf((char*)cTmpBuf, "%04d-%02d-%02d", SQLDate->year, SQLDate->month, SQLDate->day);
-			       	break;
-				if (targetLength <= DataLen )
-					return IDS_22_003;
-			}
+			retCode = ConvSQLDateToChar(srcDataPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+			break;
+
 		case SQL_TIME:
 		case SQL_TYPE_TIME:
-			if (!ColumnwiseData) //RowwiseRowSet
-			{
-				SQLTime = &SQLTimeTmp;
-				memset(SQLTime,0,sizeof(TIME_TYPES));
-				DataPtr = cTmpBuf;
-				SQLTime = (TIME_TYPES *)srcDataPtr;
-				if (srcPrecision > 0 )
-				{
-					ulFraction = 0;	
-					ulFraction = *(UDWORD*)SQLTime->fraction;
-					sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
-					DataLen = sprintf((char*)cTmpBuf, "%02d:%02d:%02d.%s", 
-						SQLTime->hour, SQLTime->minute, SQLTime->second, sFraction);
-				}
-				else
-					DataLen = sprintf((char*)cTmpBuf, "%02d:%02d:%02d", 
-				SQLTime->hour, SQLTime->minute, SQLTime->second);
-				break;
-				if( targetLength <= DataLen )
-					return IDS_22_003;
-			}
+			retCode = ConvSQLTimeToChar(srcDataPtr, srcDescPtr->m_ODBCPrecision, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+			break;
 		case SQL_TIMESTAMP:
 		case SQL_TYPE_TIMESTAMP:
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				DataLen = srcLength;
-				DataPtr = srcDataPtr;
-			}
-			else
-			{
-				ulFraction = 0;
-				DataPtr = cTmpBuf;
-				SQLTimestamp = &SQLTimestampTmp;
-				memset (SQLTimestamp, 0, sizeof(TIMESTAMP_TYPES));
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-				if (srcPrecision > 0 )
-				{
-					ulFraction = *(UDWORD*)SQLTimestamp->fraction;
-					sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
-					ulFraction = atol(sFraction);
-					DataLen = sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u.%s",
-							SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
-							SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second,
-							sFraction);
-				}
-         		else
-					DataLen = sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u",
-							SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
-							SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second);
-				
-			}
-			if (targetLength > DataLen)
-				DataLen = DataLen;
-			else if (targetLength >= 20)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_S07;
-			}
-			else
-				return IDS_22_003;
-				
+			retCode = ConvSQLTimestampToChar(srcDataPtr, srcDescPtr->m_ODBCPrecision, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
 			break;
+
 		default:
 			return IDS_07_006;
 		}
-		NullTerminate = TRUE;
 		break; // End of SQL_C_CHAR
-	case SQL_C_WCHAR :
-		{ //JJ
-		switch (ODBCDataType)
-		{
-		 case SQL_CHAR:
-			 if (SQLDataType == SQLTYPECODE_BOOLEAN)
-			 {
-				 tTmp = *((SCHAR *)srcDataPtr);
-				 _ltoa(tTmp, cTmpBuf, 10);
-				 DataLen = strlen(cTmpBuf);
-				 if (DataLen > targetLength)
-					 return IDS_22_003;
-				 DataPtr = cTmpBuf;
-				 break;
-			 }
-		 case SQL_WCHAR:
-			charlength = srcLength-1;
-			if (charlength == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				if (targetLength > 0)
-					((char*)targetDataPtr)[0] = '\0';
-				return retCode;
-			}
-			if (translatedDataPtr == NULL)
-			{
-				DataLen = charlength - Offset;		
-				if (DataLen == 0)
-					return SQL_NO_DATA;
-				if (srcCharSet == SQLCHARSETCODE_UCS2)
-				{
-					if (targetLength > 0 && DataLen > targetLength-2)
-					{
-						if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-							TraceOut(TR_ODBC_API, "ConvertSQLToC: \"Data truncated\" OBCDataType %d, srcCharSet %d, DataLen %d, targetLength %d",
-							 ODBCDataType, srcCharSet, DataLen, targetLength);
-						retCode = IDS_01_004;
-						DataLenTruncated = DataLen;
-						DataLen = (targetLength%2)? targetLength - 3 : targetLength - 2 ;
-					}
-					WCharData = true; // no translation needed
-				}
-				DataPtr = (char *)srcDataPtr + Offset;
-			}
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			break;
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WVARCHAR:
-			if(isshort){
-				short_len=*(USHORT *)srcDataPtr;
-				charlength=short_len;
-				if (short_len == 0)
-				{	
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					if (targetLength > 0)
-						((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-			}
-			else{
-				int_len=*(int *)srcDataPtr;
-				charlength=int_len;
-				if (int_len == 0)
-				{
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					if (targetLength > 0)
-						((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-			}
-
-			if (translatedDataPtr == NULL)
-			{
-				if(isshort)
-					DataLen = short_len - Offset;			
-				else
-					DataLen = int_len - Offset;			
-				if (DataLen == 0)
-					return SQL_NO_DATA;
-				if (srcCharSet == SQLCHARSETCODE_UCS2)
-				{
-					if (targetLength > 0 && DataLen > targetLength-2)
-					{
-						if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-							TraceOut(TR_ODBC_API, "ConvertSQLToC: \"Data truncated\" OBCDataType %d, srcCharSet %d, DataLen %d, targetLength %d",
-									 ODBCDataType, srcCharSet, DataLen, targetLength);
-						retCode = IDS_01_004;
-						DataLenTruncated = DataLen;
-						DataLen = (targetLength%2)? targetLength - 3 : targetLength - 2 ;
-					}
-					WCharData = true; // No translation needed
-				}
-				if(isshort)
-					DataPtr = (char *)srcDataPtr + 2 + Offset;
-				else
-					DataPtr = (char *)srcDataPtr + 4 + Offset;
-			}
-//			if (totalReturnedLength != NULL )
-//				*totalReturnedLength = DataLen + Offset;
-			break;
-		case SQL_INTERVAL_MONTH:
-		case SQL_INTERVAL_YEAR:
-		case SQL_INTERVAL_YEAR_TO_MONTH:
-		case SQL_INTERVAL_DAY:
-		case SQL_INTERVAL_HOUR:
-		case SQL_INTERVAL_MINUTE:
-		case SQL_INTERVAL_SECOND:
-		case SQL_INTERVAL_DAY_TO_HOUR:
-		case SQL_INTERVAL_DAY_TO_MINUTE:
-		case SQL_INTERVAL_DAY_TO_SECOND:
-		case SQL_INTERVAL_HOUR_TO_MINUTE:
-		case SQL_INTERVAL_HOUR_TO_SECOND:
-		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			DataPtr = (char *)srcDataPtr + Offset;
-//
-// SQL does not return null terminating character - we have to use octet length
-//
-//			DataLen = strlen((char*)DataPtr);
-			DataLen = srcLength;
-			if (targetLength > 0 && DataLen >= targetLength)
-			{
-				retCode = IDS_01_004;
-				DataLenTruncated = srcLength - Offset;
-				if (targetLength > 0)
-					DataLen = targetLength - 1;
-				else
-					DataLen = 0;
-			}
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			break;
-		case SQL_TINYINT:
-			if (srcUnsigned)
-			{
-				utTmp = *((UCHAR *) srcDataPtr);
-				_ultoa(utTmp, cTmpBuf, 10);
-			}
-			else
-			{
-				tTmp = *((SCHAR *) srcDataPtr);
-				_ltoa(tTmp, cTmpBuf, 10);
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_SMALLINT:
-			if (srcUnsigned)
-				lTmp = *((USHORT *) srcDataPtr);
-			else
-				lTmp = *((SSHORT *) srcDataPtr);
-			_ltoa(lTmp, cTmpBuf, 10);
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_INTEGER: 
-			if (srcUnsigned)
-			{
-				ulTmp = *((ULONG *)srcDataPtr);
-				_ultoa(ulTmp, cTmpBuf, 10);
-			}
-			else
-			{
-				lTmp = *((SLONG *) srcDataPtr);
-				_ltoa(lTmp, cTmpBuf, 10);
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_BIGINT:
-			sprintf( cTmpBuf, "%I64d", *((__int64 *)srcDataPtr));
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_NUMERIC:
-			if( ((SQLDataType == SQLTYPECODE_NUMERIC) && (srcPrecision > 18)) || 
-				((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (srcPrecision > 9))) //for bignum support
-			{
-				retCode = BigNum_To_Ascii_Helper((char*)srcDataPtr,srcLength,srcPrecision,srcScale,cTmpBuf,SQLDataType);
-				if(retCode != SQL_SUCCESS)
-					return retCode;
-			} else {
-				if ((ConvertNumericToChar(SQLDataType, srcDataPtr, srcScale, cTmpBuf, DecimalPoint)) != SQL_SUCCESS)
-					return IDS_07_006;
-				if (DecimalPoint > targetLength)
-					return IDS_22_003;
-			}
-			DataLen = strlen(cTmpBuf);
-			if (DataLen  > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;			
-			break;
-		case SQL_DECIMAL:
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			DataLen = strlen(cTmpBuf);
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength - 1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_REAL:
-		case SQL_DOUBLE:
-			if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
-				(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
-			{
-				if (ConvertSoftDecimalToDouble(SQLDataType, srcDataPtr, srcLength, srcScale, 
-							dTmp)  != SQL_SUCCESS)
-					return IDS_07_006;
-//				_gcvt(dTmp, DBL_DIG, cTmpBuf);
-				if (!double_to_char (dTmp, DBL_DIG, cTmpBuf, sizeof(cTmpBuf)))
-					return IDS_22_001;
-			
-			}
-			else
-			{
-				if (ODBCDataType == SQL_REAL) {
-					dTmp = (double)(*(float *)srcDataPtr);
-//					_gcvt(dTmp, FLT_DIG + 1, cTmpBuf);
-                    if (!double_to_char(dTmp, FLT_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
-						return IDS_22_001;
-				}
-				else {
-					dTmp = *(double *)srcDataPtr;
-//					_gcvt(dTmp, DBL_DIG, cTmpBuf);
-                    if (!double_to_char(dTmp, DBL_DIG + 1, cTmpBuf, sizeof(cTmpBuf)))
-						return IDS_22_001;
-				}
-			}
-			DataLen = strlen(cTmpBuf);
-			if ((tempPtr = strchr(cTmpBuf, '.')) != NULL)
-				DecimalPoint = tempPtr - cTmpBuf;
-			else
-				DecimalPoint = 0;
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			LocalizeNumericString = TRUE;
-			break;
-		case SQL_DATE:
-		case SQL_TYPE_DATE:
-			if (!ColumnwiseData) //RowwiseRowSet
-			{
-				SQLDate = &SQLDateTmp;
-				memset(SQLDate,0,sizeof(DATE_TYPES));
-				DataPtr = cTmpBuf;
-				SQLDate = (DATE_TYPES *)srcDataPtr;
-				DataLen = sprintf((char*)cTmpBuf, "%04d-%02d-%02d", SQLDate->year, SQLDate->month, SQLDate->day);
-			       	break;
-				if (targetLength <= DataLen )
-					return IDS_22_003;
-			}
-		case SQL_TIME:
-		case SQL_TYPE_TIME:
-			if (!ColumnwiseData) //RowwiseRowSet
-			{
-				SQLTime = &SQLTimeTmp;
-				memset(SQLTime,0,sizeof(TIME_TYPES));
-				DataPtr = cTmpBuf;
-				SQLTime = (TIME_TYPES *)srcDataPtr;
-				if (srcPrecision > 0 )
-				{
-					ulFraction = 0;	
-					ulFraction = *(UDWORD*)SQLTime->fraction;
-					sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
-					DataLen = sprintf((char*)cTmpBuf, "%02d:%02d:%02d.%s", 
-						SQLTime->hour, SQLTime->minute, SQLTime->second, sFraction);
-				}
-				else
-					DataLen = sprintf((char*)cTmpBuf, "%02d:%02d:%02d", 
-				SQLTime->hour, SQLTime->minute, SQLTime->second);
-				break;
-				if( targetLength <= DataLen )
-					return IDS_22_003;
-			}
-		case SQL_TIMESTAMP:
-		case SQL_TYPE_TIMESTAMP:
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				DataLen = srcLength;
-				DataPtr = srcDataPtr;
-			}
-			else
-			{
-				ulFraction = 0;
-				DataPtr = cTmpBuf;
-				SQLTimestamp = &SQLTimestampTmp;
-				memset (SQLTimestamp, 0, sizeof(TIMESTAMP_TYPES));
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-				if (srcPrecision > 0 )
-				{
-					ulFraction = *(UDWORD*)SQLTimestamp->fraction;
-					sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
-					ulFraction = atol(sFraction);
-					DataLen = sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u.%s",
-							SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
-							SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second,
-							sFraction);
-				}
-         		else
-					DataLen = sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u",
-							SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
-							SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second);
-				
-			}
-			if (targetLength > DataLen)
-				DataLen = DataLen;
-			else if (targetLength >= 20)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_S07;
-			}
-			else
-				return IDS_22_003;
-				
-			break;
-		default:
-			return IDS_07_006;
-		}
-		NullTerminateW = TRUE;
-		break; // End of SQL_C_WCHAR
-		}//JJ
-	case SQL_C_SHORT:
-	case SQL_C_SSHORT:
-	case SQL_C_DOUBLE:
-	case SQL_C_FLOAT:
-	case SQL_C_USHORT:
-	case SQL_C_TINYINT:
-	case SQL_C_STINYINT:
-	case SQL_C_UTINYINT:
-	case SQL_C_LONG:
-	case SQL_C_SLONG:
-	case SQL_C_ULONG:
-	case SQL_C_SBIGINT:
-	case SQL_C_BIT:
-		switch (ODBCDataType)
-		{
-		case SQL_CHAR:
-			if (SQLDataType == SQLTYPECODE_BOOLEAN)
-			{
-				dTmp = *((SCHAR *)srcDataPtr);
-				break;
-			}
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WCHAR:
-		case SQL_WVARCHAR:
-		case SQL_WLONGVARCHAR:
-			{
-				int TransStringLength = 0;
-				char error[64];
-				if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
-				{
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-					{
-						wchar_t* spaceStart = wcschr((wchar_t*)srcDataPtr, L' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (wchar_t*)srcDataPtr) + 1;
-						if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-							sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-						{
-							//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
-							return IDS_22_003;
-						}
-						//srcLength = TransStringLength + 1;
-						srcLength = strlen(cTmpBuf) + 1;
-					}
-					else
-					{
-						//remove spaces if any
-						char* spaceStart = strchr((char*)srcDataPtr, ' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (char*)srcDataPtr) + 1;
-						if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-						{
-							strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-							cTmpBuf[srcLength - 1] = 0;
-						}
-						else
-							return IDS_22_003;
-					}
-
-					if (!ctoi64(cTmpBuf, tempVal64 ))
-						return IDS_22_003;
-				}
-				else //SQL_LONG_VARCHAR
-				{
-					if (isshort)
-					{
-						DataLen = *(USHORT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-
-						if (!ctoi64(cTmpBuf, tempVal64))
-							return IDS_22_003;
-					}
-					else
-					{
-						DataLen = *(UINT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-
-						if (!ctoi64(cTmpBuf, tempVal64))
-							return IDS_22_003;
-					}
-				}
-				if ((retCode = ConvertSQLCharToNumeric(cTmpBuf, srcLength, ODBCDataType, dTmp)) != SQL_SUCCESS)
-					return retCode;
-			}
-			break;
-		case SQL_INTERVAL_MONTH:
-		case SQL_INTERVAL_YEAR:
-		case SQL_INTERVAL_YEAR_TO_MONTH:
-		case SQL_INTERVAL_DAY:
-		case SQL_INTERVAL_HOUR:
-		case SQL_INTERVAL_MINUTE:
-		case SQL_INTERVAL_SECOND:
-		case SQL_INTERVAL_DAY_TO_HOUR:
-		case SQL_INTERVAL_DAY_TO_MINUTE:
-		case SQL_INTERVAL_DAY_TO_SECOND:
-		case SQL_INTERVAL_HOUR_TO_MINUTE:
-		case SQL_INTERVAL_HOUR_TO_SECOND:
-		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			if ((retCode = ConvertSQLCharToNumeric(srcDataPtr, srcLength, ODBCDataType, dTmp)) != SQL_SUCCESS)
-				return retCode;
-			break;
-		case SQL_TINYINT:
-			if (srcUnsigned)
-			{
-				dTmp = *((UCHAR *) srcDataPtr);
-				unsignedInteger = TRUE;
-			}
-			else
-			{
-				dTmp = *((SCHAR *) srcDataPtr);
-				signedInteger = TRUE;
-			}
-			break;
-		case SQL_SMALLINT:
-			if (srcUnsigned)
-			{
-				dTmp = *(USHORT *)srcDataPtr;
-				unsignedInteger = TRUE;
-			}
-			else
-			{
-				dTmp = *(SSHORT *)srcDataPtr;
-				signedInteger = TRUE;
-			}
-			break;
-		case SQL_INTEGER:
-			if (srcUnsigned)
-			{
-				dTmp = *(ULONG *)srcDataPtr;
-				unsignedInteger = TRUE;
-			}
-			else
-			{
-				dTmp = *(SLONG *)srcDataPtr;
-				signedInteger = TRUE;
-			}
-			break;
-		case SQL_REAL:
-			dTmp = *(SFLOAT *)srcDataPtr;  
-			break;
-		case SQL_DOUBLE:
-			if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
-				(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
-			{
-				if (ConvertSoftDecimalToDouble(SQLDataType, srcDataPtr, srcLength, srcScale, 
-							dTmp)  != SQL_SUCCESS)
-					return IDS_07_006;
-			}
-			else
-				dTmp =  *(SDOUBLE *)srcDataPtr;
-			break;
-		case SQL_BIGINT:
-			tempVal64 = *((__int64 *)srcDataPtr);
-			if (tempVal64 < -DBL_MAX || tempVal64 > DBL_MAX)
-				return IDS_22_003;
-			dTmp = tempVal64;
-			if (srcUnsigned)
-				unsignedInteger = TRUE;
-			else
-				signedInteger = TRUE;
-			break;
-		case SQL_NUMERIC:
-			switch (SQLDataType)
-			{
-			case SQLTYPECODE_SMALLINT:
-				dTmp = *((SHORT *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_SMALLINT_UNSIGNED:
-				dTmp = *((USHORT *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_INTEGER:
-				dTmp = *((LONG *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_INTEGER_UNSIGNED:
-				dTmp = *((ULONG *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_LARGEINT:
-				tempVal64 = *((__int64 *)srcDataPtr);
-				for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-				tempValFrac = tempVal64 % power;
-	    		tempVal64 = tempVal64 / power;
-				dTmp = ((double)tempValFrac/(double)power);
-				dTmp = dTmp + tempVal64;
-				break;
-
-			case SQLTYPECODE_NUMERIC:
-			case SQLTYPECODE_NUMERIC_UNSIGNED:
-				if( ((SQLDataType == SQLTYPECODE_NUMERIC) && (srcPrecision > 18)) || 
-					((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (srcPrecision > 9))) //for bignum support
-				{
-					retCode = BigNum_To_Ascii_Helper((char*)srcDataPtr,srcLength,srcPrecision,srcScale,cTmpBuf,SQLDataType);
-					if(retCode != SQL_SUCCESS)
-						return retCode;
-
-				} else 
-					return IDS_07_006;
-
-				dTmp = strtod(cTmpBuf, &stopStr);
-				if(errno == ERANGE)
-					return IDS_22_003;
-
-				break;
-
-			default:
-				return IDS_HY_000;
-			}
-			break;
-		case SQL_DECIMAL: 
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			if (!ctoi64((char*)cTmpBuf, tempVal64 ))
-				return IDS_22_003;
-			dTmp = strtod(cTmpBuf, &stopStr);
-			break;
-		default:
-			return IDS_07_006;
-		}
-		switch (CDataType)
-		{
-		case SQL_C_SHORT:
-		case SQL_C_SSHORT:
-			if (unsignedInteger)
-			{
-				if (dTmp > SHRT_MAX)
-					return IDS_22_003;
-				sTmp = (SHORT)dTmp;
-			}
-			else
-			{
-				if (dTmp < SHRT_MIN || dTmp > SHRT_MAX)
-					return IDS_22_003;
-				sTmp = (SHORT)dTmp;
-				if  (dTmp != sTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &sTmp;
-			DataLen = sizeof(sTmp);
-			break;
-		case SQL_C_USHORT:
-			if (signedInteger)
-			{
-				if (dTmp < SHRT_MIN || dTmp > SHRT_MAX)
-					return IDS_22_003;
-				usTmp = (USHORT)dTmp;
-			}
-			else
-			{
-				if (dTmp < 0 || dTmp > USHRT_MAX)
-					return IDS_22_003;
-				usTmp = (USHORT)dTmp;
-				if  (dTmp != usTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &usTmp;
-			DataLen = sizeof(usTmp);
-			break;
-		case SQL_C_TINYINT:
-		case SQL_C_STINYINT:
-			if (unsignedInteger)
-			{
-				if (dTmp > SCHAR_MAX)
-					return IDS_22_003;
-				tTmp = (SCHAR)dTmp;
-			}
-			else
-			{
-				if (dTmp < SCHAR_MIN || dTmp > SCHAR_MAX)
-					return IDS_22_003;
-				tTmp = (SCHAR)dTmp;
-				if  (dTmp != tTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &tTmp;
-			DataLen = sizeof(tTmp);
-			break;
-		case SQL_C_UTINYINT:
-			if (signedInteger)
-			{
-				if (dTmp < SCHAR_MIN || dTmp > SCHAR_MAX)
-					return IDS_22_003;
-				utTmp = (UCHAR)dTmp;
-			}
-			else
-			{
-				if (dTmp < 0 || dTmp > UCHAR_MAX)
-					return IDS_22_003;
-				utTmp = (UCHAR)dTmp;
-				if  (dTmp != utTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &utTmp;
-			DataLen = sizeof(utTmp);
-			break;
-		case SQL_C_LONG:
-		case SQL_C_SLONG:
-			if (unsignedInteger)
-			{
-				if (dTmp > LONG_MAX)
-					return IDS_22_003;
-				lTmp = (SLONG)dTmp;
-			}
-			else
-			{
-				if (dTmp < LONG_MIN || dTmp > LONG_MAX)
-					return IDS_22_003;
-				lTmp = (SLONG)dTmp;
-				if  (dTmp != lTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &lTmp;
-			DataLen = sizeof(lTmp);
-			break;
-		case SQL_C_ULONG:
-			if (signedInteger)
-			{
-				if (dTmp < LONG_MIN || dTmp > LONG_MAX)
-					return IDS_22_003;
-				ulTmp = (ULONG)dTmp;
-			}
-			else
-			{
-				if( dTmp < 0 || dTmp > ULONG_MAX )
-					return IDS_22_003;
-				ulTmp = (ULONG)dTmp;
-				if (dTmp != ulTmp)
-					retCode = IDS_01_S07;
-			}
-			DataPtr = &ulTmp;
-			DataLen = sizeof(ulTmp);
-			break;
-		case SQL_C_SBIGINT:
-			if (ODBCDataType != SQL_BIGINT && 
-				ODBCDataType != SQL_DECIMAL &&
-				ODBCDataType != SQL_CHAR &&
-				ODBCDataType != SQL_VARCHAR &&
-				ODBCDataType != SQL_LONGVARCHAR && 
-				ODBCDataType != SQL_WCHAR &&
-				ODBCDataType != SQL_WVARCHAR &&
-				ODBCDataType != SQL_WLONGVARCHAR ||
-				SQLDataType == SQLTYPECODE_BOOLEAN)
-				tempVal64 = dTmp;
-			DataPtr = &tempVal64;
-			DataLen = sizeof(tempVal64);
-			break;
-		case SQL_C_BIT:
-			if(dTmp == 0 || dTmp == 1)
-				utTmp = (UCHAR)dTmp;
-			else
-			if (dTmp > 0 && dTmp < 2)
-			{
-				utTmp = (UCHAR)dTmp;
-				retCode = IDS_01_S07;
-			}
-			else
-				retCode = IDS_22_003;
-			DataPtr = &utTmp;
-			DataLen = sizeof(utTmp);
-			break;
-		case SQL_C_DOUBLE:
-			DataPtr = &dTmp;
-			DataLen = sizeof(dTmp);
-			break;
-		case SQL_C_FLOAT:
-			if (dTmp < -FLT_MAX || dTmp > FLT_MAX)
-				return IDS_22_003;
-			fltTmp = (FLOAT)dTmp;
-			DataPtr = &fltTmp;
-			DataLen = sizeof(fltTmp);
-			break;
-		default:
-			return IDS_07_006;
-		}
-		break; 
-	case SQL_C_DATE:
-	case SQL_C_TYPE_DATE:
-		DataPtr = &dateTmp;
-		DataLen = sizeof(DATE_STRUCT);
-		switch (ODBCDataType)
-		{
-		case SQL_CHAR:
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WCHAR:
-		case SQL_WVARCHAR:
-			{
-				int TransStringLength = 0;
-				char error[64];
-				if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
-				{
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-					{
-						wchar_t* spaceStart = wcschr((wchar_t*)srcDataPtr, L' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (wchar_t*)srcDataPtr) + 1;
-						if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-							sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-						{
-						//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
-							return IDS_22_003;
-						}
-						//srcLength = TransStringLength + 1;
-						srcLength = strlen(cTmpBuf) + 1;
-					}
-					else
-					{
-						//remove spaces if any
-						char* spaceStart = strchr((char*)srcDataPtr, ' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (char*)srcDataPtr) + 1;
-						if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-						{
-							strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-							cTmpBuf[srcLength - 1] = 0;
-						}
-						else
-							return IDS_22_003;
-					}
-				}
-				else //SQL_LONG_VARCHAR
-				{
-					if (isshort){
-						DataLen = *(USHORT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(DATE_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 2, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					else{
-						DataLen = *(UINT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(DATE_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 4, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					DataLen = sizeof(DATE_STRUCT);
-				}
-			}
-			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_DATE, 
-					(SQLPOINTER)&dateTmp)) != 0)
-				return retCode;
-			break;
-		case SQL_DATE:
-		case SQL_TYPE_DATE:
-			SQLDate = &SQLDateTmp;
-			if (ColumnwiseData) // !RowwiseRowSet
-			{
-				SQLDate->year = 01;
-				SQLDate->month = 01;
-				SQLDate->day = 01;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_YEAR:
-					SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_YEAR_TO_MONTH:
-					SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					break;
-				case SQLDTCODE_MONTH:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MONTH_TO_DAY:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY:
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					break;
-				}
-			}
-			else
-			{
-				SQLDate = (DATE_TYPES *)srcDataPtr;
-			}
-			dateTmp.year = SQLDate->year;
-			dateTmp.month = SQLDate->month;
-			dateTmp.day = SQLDate->day;
-			break;
-		case SQL_TIMESTAMP:
-		case SQL_TYPE_TIMESTAMP:
-			SQLTimestamp = &SQLTimestampTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLTimestamp->year = 01;
-				SQLTimestamp->month = 01;
-				SQLTimestamp->day = 01;
-				SQLTimestamp->hour = 0;
-				SQLTimestamp->minute = 0;
-				SQLTimestamp->second = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_TIME:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 9, srcPrecision);
-					break;
-				case SQLDTCODE_YEAR_TO_HOUR:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					break;
-				case SQLDTCODE_YEAR_TO_MINUTE:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					break;
-				case SQLDTCODE_MONTH_TO_HOUR:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_MONTH_TO_MINUTE:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_MONTH_TO_SECOND:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 12);
-					break;
-				case SQLDTCODE_DAY_TO_HOUR:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY_TO_MINUTE:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_DAY_TO_SECOND:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 17);
-					break;
-				}
-			}
-			else
-			{
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-			}
-			if (SQLTimestamp->hour != 0 || SQLTimestamp->minute != 0 || SQLTimestamp->second != 0)
-				retCode = IDS_01_S07;
-			dateTmp.year = SQLTimestamp->year;
-			dateTmp.month = SQLTimestamp->month;
-			dateTmp.day = SQLTimestamp->day;
-			break;
-		default:
-			return IDS_07_006;
-		}
-		break; // End of switch for SQL_C_DATE
-	case SQL_C_TIME:
-	case SQL_C_TYPE_TIME:
-		DataPtr = &timeTmp;
-		DataLen = sizeof(TIME_STRUCT);
-		switch (ODBCDataType)
-		{
-		case SQL_CHAR:
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WCHAR:
-		case SQL_WVARCHAR:
-			{
-				int TransStringLength = 0;
-				char error[64];
-				if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
-				{
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-					{
-						wchar_t* spaceStart = wcschr((wchar_t*)srcDataPtr, L' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (wchar_t*)srcDataPtr) + 1;
-						if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-							sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-						{
-						//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
-							return IDS_22_003;
-						}
-						//srcLength = TransStringLength + 1;
-						srcLength = strlen((char*)cTmpBuf) + 1;
-					}
-					else
-					{
-					//remove spaces if any
-						char* spaceStart = strchr((char*)srcDataPtr, ' ');
-						if (spaceStart != NULL)
-							srcLength = (spaceStart - (char*)srcDataPtr) + 1;
-						if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-						{
-							strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-							cTmpBuf[srcLength - 1] = 0;
-						}
-						else
-							return IDS_22_003;
-					}
-				}
-				else //SQL_LONG_VARCHAR
-				{
-					if (isshort)
-					{
-						DataLen = *(USHORT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(TIME_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 2, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					else
-					{
-						DataLen = *(UINT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(TIME_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 4, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					DataLen = sizeof(TIME_STRUCT);
-				}
-			}
-			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIME, 
-					(SQLPOINTER)&timeTmp)) != 0)
-				return retCode;
-			break;
-		case SQL_TIME:
-		case SQL_TYPE_TIME:
-			SQLTime = &SQLTimeTmp;
-			if (ColumnwiseData) //!RowwiseRowSet 
-			{
-				SQLTime->hour = 0;
-				SQLTime->minute = 0;
-				SQLTime->second = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_HOUR:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_HOUR_TO_MINUTE:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_MINUTE:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-				}
-			}
-			else
-			{
-				SQLTime = (TIME_TYPES *)srcDataPtr;
-			}
-			timeTmp.hour = SQLTime->hour;
-			timeTmp.minute = SQLTime->minute;
-			timeTmp.second = SQLTime->second;
-			break;
-		case SQL_TIMESTAMP:
-		case SQL_TYPE_TIMESTAMP:
-			SQLTimestamp = &SQLTimestampTmp;
-			if (ColumnwiseData)//!RowwiseRowSet
-			{
-				SQLTimestamp->year = 01;
-				SQLTimestamp->month = 01;
-				SQLTimestamp->day = 01;
-				SQLTimestamp->hour = 0;
-				SQLTimestamp->minute = 0;
-				SQLTimestamp->second = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_YEAR_TO_HOUR:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					break;
-				case SQLDTCODE_YEAR_TO_MINUTE:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					break;
-				case SQLDTCODE_MONTH_TO_HOUR:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_MONTH_TO_MINUTE:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_MONTH_TO_SECOND:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 12);
-					break;
-				case SQLDTCODE_DAY_TO_HOUR:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY_TO_MINUTE:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_DAY_TO_SECOND:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_TIME:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 17);
-					break;
-				}
-			}
-			else
-			{
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-			}
-			timeTmp.hour = SQLTimestamp->hour;
-			timeTmp.minute = SQLTimestamp->minute;
-			timeTmp.second = SQLTimestamp->second;
-			break;
-		default:
-			return IDS_07_006;
-		}
-		break; // End of switch for SQL_C_TIME
-	case SQL_C_TIMESTAMP:
-	case SQL_C_TYPE_TIMESTAMP:
-		DataPtr = &timestampTmp;
-		DataLen = sizeof(TIMESTAMP_STRUCT);
-		switch (ODBCDataType)
-		{
-		case SQL_CHAR:
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WCHAR:
-		case SQL_WVARCHAR:
-			{
-				int TransStringLength = 0;
-				char error[64];
-				if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
-				{
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-					{
-						if (sizeof(cTmpBuf) < srcLength/2) //Avoid a seg-violation
-							return IDS_22_003;
-						if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-							sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-						{
-							// This should never happen!
-							return IDS_22_003;
-						}
-						srcLength = strlen(cTmpBuf) + 1 ; //TransStringLength + 1;
-					}
-					else
-					{
-						if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-						{
-							strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-							cTmpBuf[srcLength - 1] = 0;
-						}
-						else
-							return IDS_22_003;
-					}
-				}
-				else //SQL_LONG_VARCHAR
-				{
-					if (isshort)
-					{
-						DataLen = *(USHORT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								// We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								// But this should never happen!
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(TIMESTAMP_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 2, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					else
-					{
-						DataLen = *(UINT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								// We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								// But this should never happen!
-								return IDS_22_003;
-							}
-							srcLength = TransStringLength + 1;
-                            DataLen = sizeof(TIMESTAMP_STRUCT);
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 4, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					DataLen = sizeof(TIMESTAMP_STRUCT);
-				}
-			}
-			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIMESTAMP, 
-					(SQLPOINTER)&timestampTmp)) != 0)
-				return retCode;
-			break;
-		case SQL_DATE:
-		case SQL_TYPE_DATE:
-			SQLDate = &SQLDateTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLDate->year = 01;
-				SQLDate->month = 01;
-				SQLDate->day = 01;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_YEAR:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					break;
-				case SQLDTCODE_YEAR_TO_MONTH:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					break;
-				case SQLDTCODE_MONTH:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MONTH_TO_DAY:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY:
-					SQLDate->day = GetDayFromStr((UCHAR *)srcDataPtr);
-					break;
-				default:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					break;
-				}
-			}
-			else
-			{
-				SQLDate = (DATE_TYPES *)srcDataPtr;
-			}
-			timestampTmp.year = SQLDate->year;
-			timestampTmp.month = SQLDate->month;
-			timestampTmp.day = SQLDate->day;
-			timestampTmp.hour = 0;
-			timestampTmp.minute = 0;
-			timestampTmp.second = 0;
-			timestampTmp.fraction = 0;
-			break;
-		case SQL_TIME:
-		case SQL_TYPE_TIME:
-			struct tm *newtime;
-			time_t long_time;
-			SQLTime = &SQLTimeTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLTime->hour = 0;
-				SQLTime->minute = 0;
-				SQLTime->second = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_HOUR:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_HOUR_TO_MINUTE:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_MINUTE:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-				}
-			}
-			else
-			{
-				SQLTime = (TIME_TYPES *)srcDataPtr;
-			}
-			time( &long_time );					/* Get time as long integer. */
-			newtime = localtime( &long_time );	/* Convert to local time. */
-			timestampTmp.year = (short)(newtime->tm_year+1900);
-			timestampTmp.month =(unsigned short)(newtime->tm_mon+1);
-			timestampTmp.day = (unsigned short)newtime->tm_mday;
-			timestampTmp.hour = SQLTime->hour;
-			timestampTmp.minute = SQLTime->minute;
-			timestampTmp.second = SQLTime->second;
-			timestampTmp.fraction = 0;
-			
-			break;
-		case SQL_TIMESTAMP:
-		case SQL_TYPE_TIMESTAMP:
-			SQLTimestamp = &SQLTimestampTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLTimestamp->year = 01;
-				SQLTimestamp->month = 01;
-				SQLTimestamp->day = 01;
-				SQLTimestamp->hour = 0;
-				SQLTimestamp->minute = 0;
-				SQLTimestamp->second = 0;
-				ulFraction = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_TIME:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 9, srcPrecision);
-					break;
-				case SQLDTCODE_YEAR_TO_HOUR:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					break;
-				case SQLDTCODE_YEAR_TO_MINUTE:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					break;
-				case SQLDTCODE_MONTH_TO_HOUR:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);;
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);;
-					break;
-				case SQLDTCODE_MONTH_TO_MINUTE:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_MONTH_TO_SECOND:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 12);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 15, srcPrecision);
-					break;
-				case SQLDTCODE_DAY_TO_HOUR:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY_TO_MINUTE:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_DAY_TO_SECOND:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 9);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 12, srcPrecision);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 6, srcPrecision);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 3, srcPrecision);
-					break;
-				default:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 17);
-					if (srcPrecision > 6)
-					{
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 20, srcPrecision);
-						sprintf(sFraction , "%0*lu000000000", 6 , ulFraction );
-						sFraction[9] = 0;
-						ulFraction = atol(sFraction);
-					}
-					else
-					{
-						if (srcPrecision > 0)
-							ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 20, srcPrecision);
-					}
-					break;
-				}
-			}
-			else
-			{
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-				if (srcPrecision > 0)
-				{
-					// SQL returns fraction of a second which has to be converted to nano seconds
-					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision,&retCode);
-					if (retCode == IDS_22_003)
-						return retCode;
-					ulFraction = dTmp;
-				}
-				else
-					ulFraction = 0; 
-
-			}
-			timestampTmp.year = SQLTimestamp->year;
-			timestampTmp.month = SQLTimestamp->month;
-			timestampTmp.day = SQLTimestamp->day;
-			timestampTmp.hour = SQLTimestamp->hour;
-			timestampTmp.minute = SQLTimestamp->minute;
-			timestampTmp.second = SQLTimestamp->second;
-			if (srcPrecision > 0)
-			{
-				timestampTmp.fraction = ulFraction;
-			}
-			else
-				timestampTmp.fraction = 0;
-			break;
-		default:
-			return IDS_07_006;
-		}
-		break; // End of switch for SQL_C_TIMESTAMP
 
 	case SQL_C_BINARY:
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
 		case SQL_WCHAR:
-			if (srcLength-1 == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				((char*)targetDataPtr)[0] = '\0';
-				return retCode;
-			}
-			DataLen = srcLength -1 - Offset;
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			if (DataLen > targetLength)
-			{
-				retCode = IDS_01_004;
-				DataLenTruncated = srcLength - Offset-1;
-				DataLen = targetLength-1;
-			}
-			DataPtr = (char *)srcDataPtr + Offset;
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			break;
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-		{
-			if (isshort){
-				short_len = *(USHORT *)srcDataPtr;
-				charlength = short_len;
-				if (short_len == 0){
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-				DataLen = short_len - Offset;
-			}
-			else{
-				int_len = *(int *)srcDataPtr;
-				charlength = int_len;
-				if (int_len == 0){
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-				DataLen = int_len - Offset;
-			}
-
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			if (DataLen > targetLength)
-			{
-				retCode = IDS_01_004;
-				if (isshort)
-					DataLenTruncated = short_len - Offset;
-				else
-					DataLenTruncated = int_len - Offset;
-				DataLen = targetLength - 1;
-			}
-			if (isshort)
-				DataPtr = (char *)srcDataPtr + 2 + Offset;
-			else
-				DataPtr = (char *)srcDataPtr + 4 + Offset;
-
-			//			if (totalReturnedLength != NULL)
-			//				*totalReturnedLength = DataLen + Offset;
-		}
-			break;
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_YEAR:
 		case SQL_INTERVAL_YEAR_TO_MONTH:
@@ -2431,125 +363,57 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			DataPtr = (char *)srcDataPtr + Offset;
-			DataLen = strlen((char*)DataPtr);
-			if (DataLen >= targetLength)
-			{
-				retCode = IDS_01_004;
-				DataLenTruncated = srcLength-Offset;
-				if (targetLength > 0)
-					DataLen = targetLength-1;
-				else
-					DataLen = 0;
-			}
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
+			retCode = ConvSQLCharToChar(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr, translateOption, translatedDataPtr, totalReturnedLength, errorMsg, errorMsgMax, replacementChar);
 			break;
+
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_REAL:
-		case SQL_FLOAT:
-		case SQL_NUMERIC:
-		case SQL_DECIMAL:
 		case SQL_DOUBLE:
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_DATE:
 		case SQL_TYPE_DATE:
 		case SQL_TIME:
 		case SQL_TYPE_TIME:
 		case SQL_TIMESTAMP:
 		case SQL_TYPE_TIMESTAMP:
-			DataPtr = srcDataPtr;
-			DataLen = srcLength;
-			if (DataLen > targetLength)
+			if (srcLength > targetLength)
 				return IDS_22_003;
+			memcpy(targetDataPtr, srcDataPtr, srcLength);
+			if (targetStrLenPtr)
+				*targetStrLenPtr = srcLength;
 			break;
+
 		default:
 			return IDS_07_006;
 		}
-		NullTerminate = TRUE;
-		break; // End of switch for SQL_C_BINARY 
-	case SQL_C_DEFAULT:
+		break;
+
+	case SQL_C_TINYINT:
+	case SQL_C_STINYINT:
+	case SQL_C_BIT:
+	case SQL_C_UTINYINT:
+	case SQL_C_SHORT:
+	case SQL_C_SSHORT:
+	case SQL_C_USHORT:
+	case SQL_C_LONG:
+	case SQL_C_SLONG:
+	case SQL_C_ULONG:
+	case SQL_C_SBIGINT:
+	case SQL_C_UBIGINT:
+	case SQL_C_FLOAT:
+	case SQL_C_DOUBLE:
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
-			if (SQLDataType == SQLTYPECODE_BOOLEAN)
-			{
-				tTmp = *((SCHAR *)srcDataPtr);
-				DataPtr = &tTmp;
-				DataLen = sizeof(SCHAR);
-				break;
-			}
-		case SQL_WCHAR:
-			charlength = srcLength-1;
-			if (charlength == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				((char*)targetDataPtr)[0] = '\0';
-				return retCode;
-			}
-			DataLen = charlength - Offset;
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			if (DataLen >= targetLength)
-			{
-				retCode = IDS_01_004;
-				DataLenTruncated = charlength - Offset;
-				DataLen = targetLength-1;
-			}
-			DataPtr = (char *)srcDataPtr + Offset;
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			NullTerminate = TRUE;
-			break;
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
 		case SQL_WVARCHAR:
-			if(isshort){
-				short_len=*(USHORT *)srcDataPtr;
-				charlength=short_len;
-				if (short_len == 0)
-				{	
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-				DataLen = short_len - Offset;
-			}
-			else{
-				int_len=*(int *)srcDataPtr;
-				charlength=int_len;
-				if (int_len == 0)
-				{
-					if (targetStrLenPtr != NULL)
-						*targetStrLenPtr = 0;
-					((char*)targetDataPtr)[0] = '\0';
-					return retCode;
-				}
-				DataLen = int_len - Offset;
-			}
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			if (DataLen >= targetLength)
-			{
-				retCode = IDS_01_004;
-				if(isshort)
-					DataLenTruncated = short_len - Offset;
-				else
-					DataLenTruncated = int_len - Offset;
-				DataLen = targetLength-1;
-			}
-			if(isshort)
-				DataPtr = (char *)srcDataPtr + 2 + Offset;
-			else
-				DataPtr = (char *)srcDataPtr + 4 + Offset;
-//			if (totalReturnedLength != NULL)
-//				*totalReturnedLength = DataLen + Offset;
-			NullTerminate = TRUE;
-			break;
+		case SQL_WLONGVARCHAR:
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_YEAR:
 		case SQL_INTERVAL_YEAR_TO_MONTH:
@@ -2563,410 +427,117 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			if ((retCode = ConvertSQLCharToInterval(ODBCDataType, srcDataPtr, srcLength, CDataType, 
-					(SQLPOINTER)&intervalTmp)) != 0)
-				if (retCode != IDS_01_S07)
-					return retCode;
-			DataPtr = &intervalTmp;
-			DataLen = sizeof(SQL_INTERVAL_STRUCT);
+			retCode = ConvSQLCharToNumber(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
 			break;
 		case SQL_TINYINT:
-			if (srcUnsigned)
-			{
-				utTmp = *((UCHAR *) srcDataPtr);
-				DataPtr = &utTmp;
-				DataLen = sizeof(UCHAR);
-			}
-			else
-			{
-				tTmp = *(SCHAR *) srcDataPtr;
-				DataPtr = &tTmp;
-				DataLen = sizeof(SCHAR);
-			}
-			break;
 		case SQL_SMALLINT:
-			if (srcUnsigned)
-			{
-				usTmp = *((USHORT *)srcDataPtr);
-				DataPtr = &usTmp;
-				DataLen = sizeof(USHORT);
-			}
-			else
-			{
-				sTmp = *(SHORT *)srcDataPtr;
-				DataPtr = &sTmp;
-				DataLen = sizeof(SSHORT);
-			}
-			break;
 		case SQL_INTEGER:
-			if (srcUnsigned)
-			{
-				ulTmp = *(ULONG *)srcDataPtr;
-				DataPtr = &ulTmp;
-				DataLen = sizeof(ULONG);
-			}
-			else
-			{
-				lTmp = *(SLONG *)srcDataPtr;
-				DataPtr = &lTmp;
-				DataLen = sizeof(SLONG);
-			}
+		case SQL_REAL:
+		case SQL_DOUBLE:
+		case SQL_DECIMAL:
+			retCode = ConvSQLNumberToNumber(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
 			break;
 		case SQL_BIGINT:
+			retCode = ConvSQLBigintToNumber(srcDataPtr, srcDescPtr->m_DescUnsigned, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+			break;
 		case SQL_NUMERIC:
-			if ((ConvertNumericToChar(SQLDataType, srcDataPtr, srcScale, cTmpBuf, DecimalPoint)) != SQL_SUCCESS)
-				return IDS_07_006;
-			DataLen = strlen(cTmpBuf);
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			NullTerminate = TRUE;
+			retCode = ConvSQLNumericToNumber(srcDataPtr, srcDescPtr, srcLength, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
 			break;
-		case SQL_DECIMAL:
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			DataLen = strlen(cTmpBuf);
-			if (DecimalPoint > targetLength)
-				return IDS_22_003;
-			if (DataLen > targetLength)
-			{
-				DataLen = targetLength-1;
-				retCode = IDS_01_004;
-			}
-			DataPtr = cTmpBuf;
-			NullTerminate = TRUE;
-			break;
-		case SQL_REAL:
-			fltTmp = *(SFLOAT *)srcDataPtr;
-			DataPtr = &fltTmp;
-			DataLen = sizeof(SFLOAT);
-			break;
-		case SQL_DOUBLE:
-			if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
-				(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
-			{
-				if (ConvertSoftDecimalToDouble(SQLDataType, srcDataPtr, srcLength, srcScale, 
-							dTmp)  != SQL_SUCCESS)
-					return IDS_07_006;
-			}
-			else
-				dTmp = *((SDOUBLE FAR *) srcDataPtr);
-			DataPtr = &dTmp;
-			DataLen = sizeof(DOUBLE);
+
+		default:
+			return IDS_07_006;
+		}
+		break; 
+	case SQL_C_DATE:
+	case SQL_C_TYPE_DATE:
+		switch (ODBCDataType)
+		{
+		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+			retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, &DataLen);
+			if (retCode == SQL_SUCCESS)
+				retCode = ConvertSQLCharToDateTime(ODBCDataType, cTmpBuf, DataLen, SQL_C_DATE, targetDataPtr);
 			break;
 		case SQL_DATE:
 		case SQL_TYPE_DATE:
-			SQLDate = &SQLDateTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLDate->year = 01;
-				SQLDate->month = 01;
-				SQLDate->day = 01;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_YEAR:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					break;
-				case SQLDTCODE_YEAR_TO_MONTH:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					break;
-				case SQLDTCODE_MONTH:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MONTH_TO_DAY:
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY:
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
-					SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					break;
-				}
-			}
-			else
-			{
-				SQLDate = (DATE_TYPES *)srcDataPtr;
-			}
-			dateTmp.year = SQLDate->year;
-			dateTmp.month = SQLDate->month;
-			dateTmp.day = SQLDate->day;
-			DataPtr = &dateTmp;
-			DataLen = sizeof(DATE_STRUCT);
-			break;
-		case SQL_TIME:
-		case SQL_TYPE_TIME:
-			SQLTime = &SQLTimeTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLTime->hour = 0;
-				SQLTime->minute = 0;
-				SQLTime->second = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_HOUR:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_HOUR_TO_MINUTE:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_MINUTE:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTime->second = *((UCHAR*)srcDataPtr);
-					break;
-				default:
-					SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-				}
-			}
-			else
-			{
-				SQLTime = (TIME_TYPES *)srcDataPtr;
-			}
-			timeTmp.hour = SQLTime->hour;
-			timeTmp.minute = SQLTime->minute;
-			timeTmp.second = SQLTime->second;
-			DataPtr = &timeTmp;
-			DataLen = sizeof(TIME_STRUCT);
+			retCode = ConvSQLDateToDate(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, ColumnwiseData, targetDataPtr);
 			break;
 		case SQL_TIMESTAMP:
 		case SQL_TYPE_TIMESTAMP:
-			SQLTimestamp = &SQLTimestampTmp;
-			if (ColumnwiseData) //!RowwiseRowSet
-			{
-				SQLTimestamp->year = 01;
-				SQLTimestamp->month = 01;
-				SQLTimestamp->day = 01;
-				SQLTimestamp->hour = 0;
-				SQLTimestamp->minute = 0;
-				SQLTimestamp->second = 0;
-				ulFraction = 0;
-				switch (SQLDatetimeCode)
-				{
-				case SQLDTCODE_TIME:
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 9, srcPrecision);
-					break;
-				case SQLDTCODE_YEAR_TO_HOUR:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					break;
-				case SQLDTCODE_YEAR_TO_MINUTE:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					break;
-				case SQLDTCODE_MONTH_TO_HOUR:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_MONTH_TO_MINUTE:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					break;
-				case SQLDTCODE_MONTH_TO_SECOND:
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 12);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 15, srcPrecision);
-					break;
-				case SQLDTCODE_DAY_TO_HOUR:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					break;
-				case SQLDTCODE_DAY_TO_MINUTE:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					break;
-				case SQLDTCODE_DAY_TO_SECOND:
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 9);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 12, srcPrecision);
-					break;
-				case SQLDTCODE_MINUTE_TO_SECOND:
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 6, srcPrecision);
-					break;
-				case SQLDTCODE_SECOND:
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 3, srcPrecision);
-					break;
-				default:
-					SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
-					SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
-					SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
-					SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
-					SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
-					SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 17);
-					if (srcPrecision > 0)
-						ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 20, srcPrecision);
-					break;
-				}
-			}
-			else
-			{
-				SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
-				if (srcPrecision > 0)
-				{
-					// SQL returns fraction of a second which has to be converted to nano seconds
-					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision,&retCode);
-					if (retCode == IDS_22_003)
-						return retCode;
-					ulFraction = dTmp;
-
-				}
-				else
-					ulFraction = 0;
-			}
-			timestampTmp.year = SQLTimestamp->year;
-			timestampTmp.month = SQLTimestamp->month;
-			timestampTmp.day = SQLTimestamp->day;
-			timestampTmp.hour = SQLTimestamp->hour;
-			timestampTmp.minute = SQLTimestamp->minute;
-			timestampTmp.second = SQLTimestamp->second;
-			timestampTmp.fraction = ulFraction;
-
-			DataPtr = &timestampTmp;
-			DataLen = sizeof(TIMESTAMP_STRUCT);
+			retCode = ConvSQLTimestampToDateTime(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, 0, ColumnwiseData, CDataType, targetDataPtr);
 			break;
 		default:
 			return IDS_07_006;
 		}
-		break;  // End of switch for SQL_C_DEFAULT
+		break; // End of switch for SQL_C_DATE
+
+	case SQL_C_TIME:
+	case SQL_C_TYPE_TIME:
+		switch (ODBCDataType)
+		{
+		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+			retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, &DataLen);
+			if (retCode == SQL_SUCCESS)
+				retCode = ConvertSQLCharToDateTime(ODBCDataType, cTmpBuf, DataLen, SQL_C_TIME, targetDataPtr);
+			break;
+		case SQL_TIME:
+		case SQL_TYPE_TIME:
+			retCode = ConvSQLTimeToTime(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, ColumnwiseData, targetDataPtr);
+			break;
+		case SQL_TIMESTAMP:
+		case SQL_TYPE_TIMESTAMP:
+			retCode = ConvSQLTimestampToDateTime(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, 0, ColumnwiseData, CDataType, targetDataPtr);
+			break;
+		default:
+			return IDS_07_006;
+		}
+		break; // End of switch for SQL_C_TIME
+
+	case SQL_C_TIMESTAMP:
+	case SQL_C_TYPE_TIMESTAMP:
+		switch (ODBCDataType)
+		{
+		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+			retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, &DataLen, false);
+			if (retCode == SQL_SUCCESS)
+				retCode = ConvertSQLCharToDateTime(ODBCDataType, cTmpBuf, DataLen, SQL_C_TIMESTAMP, targetDataPtr);
+			break;
+		case SQL_DATE:
+		case SQL_TYPE_DATE:
+			retCode = ConvSQLDateToTimestamp(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, ColumnwiseData, targetDataPtr);
+			break;
+		case SQL_TIME:
+		case SQL_TYPE_TIME:
+			retCode = ConvSQLTimeToTimestamp(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, ColumnwiseData, targetDataPtr);
+			break;
+		case SQL_TIMESTAMP:
+		case SQL_TYPE_TIMESTAMP:
+			retCode = ConvSQLTimestampToDateTime(srcDataPtr, srcDescPtr->m_SQLDatetimeCode, srcDescPtr->m_ODBCPrecision, ColumnwiseData, CDataType, targetDataPtr);
+			break;
+		default:
+			return IDS_07_006;
+		}
+		break; // End of switch for SQL_C_TIMESTAMP
 
 	case SQL_C_NUMERIC:
-		memset(cTmpBuf,0,sizeof(cTmpBuf));
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
 		case SQL_WCHAR:
-			DataLen = srcLength - 1;
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			char error[64];
-			if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-			{
-				int TransStringLength = 0;
-				wchar_t* spaceStart = wcschr((wchar_t*)srcDataPtr, L' ');
-				if (spaceStart != NULL)
-					srcLength = (spaceStart - (wchar_t*)srcDataPtr) + 1;
-				if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-					sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-				{
-				//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
-					return IDS_07_003;
-				}
-				srcLength = strlen((char*)cTmpBuf) + 1;
-			}
-			else
-			{
-			//remove spaces if any
-				char* spaceStart = strchr((char*)srcDataPtr, ' ');
-				if (spaceStart != NULL)
-					srcLength = (spaceStart - (char*)srcDataPtr) + 1;
-				if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-				{
-					strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-					cTmpBuf[srcLength - 1] = 0;
-				}
-				else
-					return IDS_07_003;
-			}
-			useDouble = FALSE;
-			break;
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-			if (isshort)
-			{
-				DataLen = *(USHORT *)srcDataPtr;
-				if (DataLen == 0)
-					return SQL_NO_DATA;
-				DataPtr = (char *)srcDataPtr + sizeof(USHORT);
-				if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-				{
-					int TransStringLength = 0;
-					if (WCharToUTF8((wchar_t*)DataPtr, DataLen / 2, (char*)cTmpBuf,
-						sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-					{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-						//Add more trace
-						return IDS_07_003;
-					}
-				}
-				else
-				{
-					if (sizeof(cTmpBuf) < DataLen+1)
-						return IDS_07_003;
-					memcpy(cTmpBuf, DataPtr, DataLen);
-					cTmpBuf[DataLen] = 0;
-				}
-			}
-			else
-			{
-				DataLen = *(UINT *)srcDataPtr;
-				if (DataLen == 0)
-					return SQL_NO_DATA;
-				DataPtr = (char *)srcDataPtr + sizeof(UINT);
-				if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-				{
-					int TransStringLength = 0;
-					if (WCharToUTF8((wchar_t*)DataPtr, DataLen / 2, (char*)cTmpBuf,
-						sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-					{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-						//Add more trace
-						return IDS_07_003;
-					}
-				}
-				else
-				{
-					if (sizeof(cTmpBuf) < DataLen+1)
-						return IDS_07_003;
-					memcpy(cTmpBuf, DataPtr, DataLen);
-					cTmpBuf[DataLen] = 0;
-				}
-			}
-			useDouble = FALSE;
-			break;
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_YEAR:
 		case SQL_INTERVAL_YEAR_TO_MONTH:
@@ -2980,205 +551,29 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			tempPtr = trimInterval((char*)srcDataPtr);
-			DataLen = strlen(tempPtr);
-			if (sizeof(cTmpBuf) < DataLen )
-				return IDS_07_003;
-			strncpy( cTmpBuf, tempPtr, DataLen );
-			useDouble = FALSE;
+			retCode = ConvSQLCharToNumeric(srcDataPtr, srcDescPtr, srcLength, targetDataPtr);
 			break;
 		case SQL_TINYINT:
-			if (srcUnsigned)
-			{
-				utTmp = *(UCHAR *)srcDataPtr;
-				_ultoa(utTmp, cTmpBuf, 10);
-			}
-			else
-			{
-				lTmp = *(SCHAR *)srcDataPtr;
-				_ltoa(tTmp, cTmpBuf, 10);
-			}
-			useDouble = FALSE;
-			break;
 		case SQL_SMALLINT:
-			if (srcUnsigned)
-			{
-				ulTmp = *(USHORT *)srcDataPtr;
-				_ultoa( ulTmp, cTmpBuf, 10 );
-			}
-			else
-			{
-				lTmp = *(SSHORT *)srcDataPtr;
-				_ltoa( lTmp, cTmpBuf, 10 );
-			}
-			useDouble = FALSE;
-			break;
 		case SQL_INTEGER:
-			if (srcUnsigned)
-			{
-				ulTmp = *(ULONG *)srcDataPtr;
-				_ultoa( ulTmp, cTmpBuf, 10 );
-			}
-			else
-			{
-				lTmp = *(SLONG *)srcDataPtr;
-				_ltoa( lTmp, cTmpBuf, 10 );
-			}
-			useDouble = FALSE;
-			break;
 		case SQL_REAL:
-			dTmp = *(SFLOAT *)srcDataPtr;  
-			break;
 		case SQL_DOUBLE:
-			if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
-				(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
-			{
-				int j;
-				cTmpBuf[0] = ((unsigned char* )srcDataPtr)[0];
-			// Make it as a display string
-				for (j = 1, i = 1; i < srcLength ; i++, j++)
-				{
-					if( srcLength - i == srcScale )
-						cTmpBuf[j] = '.';
-					cTmpBuf[j] = '0' + ((unsigned char* )srcDataPtr)[i];
-				}
-				cTmpBuf[j] =  '\0';
-				useDouble = FALSE;
-			}
-			else
-				dTmp =  *(SDOUBLE *)srcDataPtr;
-			break;
 		case SQL_BIGINT:
-			tempVal64 = *((__int64 *)srcDataPtr);
-			if (tempVal64 < -DBL_MAX || tempVal64 > DBL_MAX)
-				return IDS_22_003;
-			_i64toa( tempVal64, cTmpBuf, 10);
-			useDouble = FALSE;
-			break;
+		case SQL_DECIMAL:
 		case SQL_NUMERIC:
-			switch (SQLDataType)
-			{
-			case SQLTYPECODE_SMALLINT:
-				tempVal64 = *(SHORT *)srcDataPtr;
-
-				if (srcScale > 0)
-				{
-					for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-					tempValFrac = tempVal64 % power;
-	    			tempVal64 = tempVal64 / power;
-					if (tempVal64 == 0 && tempValFrac < 0)
-						sprintf(cTmpBuf, "-%I64d.%0*I64d", tempVal64, srcScale, -tempValFrac);
-					else
-					{
-						if (tempValFrac < 0)
-							tempValFrac = -tempValFrac;
-						sprintf(cTmpBuf, "%I64d.%0*I64d", tempVal64, srcScale, tempValFrac);
-					}
-				}
-				else
-					_i64toa( tempVal64, cTmpBuf, 10);
-				break;
-			case SQLTYPECODE_SMALLINT_UNSIGNED:
-				utempVal64 = *(USHORT *)srcDataPtr;
-
-				if (srcScale > 0)
-				{
-					for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-					utempValFrac = utempVal64 % power;
-	    			utempVal64 = utempVal64 / power;
-					sprintf(cTmpBuf, "%uI64d.%0*uI64d", utempVal64, srcScale, utempValFrac);
-				}
-				else
-					_ui64toa( utempVal64, cTmpBuf, 10);
-				break;
-			case SQLTYPECODE_INTEGER:
-				tempVal64 = *(LONG *)srcDataPtr;
-
-				if (srcScale > 0)
-				{
-					for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-					tempValFrac = tempVal64 % power;
-	    			tempVal64 = tempVal64 / power;
-					if (tempVal64 == 0 && tempValFrac < 0)
-						sprintf(cTmpBuf, "-%I64d.%0*I64d", tempVal64, srcScale, -tempValFrac);
-					else
-					{
-						if (tempValFrac < 0)
-							tempValFrac = -tempValFrac;
-						sprintf(cTmpBuf, "%I64d.%0*I64d", tempVal64, srcScale, tempValFrac);
-					}
-				}
-				else
-					_i64toa( tempVal64, cTmpBuf, 10);
-				break;
-			case SQLTYPECODE_INTEGER_UNSIGNED:
-				utempVal64 = *(ULONG *)srcDataPtr;
-
-				if (srcScale > 0)
-				{
-					for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-					utempValFrac = utempVal64 % power;
-	    			utempVal64 = utempVal64 / power;
-					sprintf(cTmpBuf, "%uI64d.%0*uI64d", utempVal64, srcScale, utempValFrac);
-				}
-				else
-					_ui64toa( utempVal64, cTmpBuf, 10);
-				break;
-			case SQLTYPECODE_LARGEINT:
-				tempVal64 = *((__int64 *)srcDataPtr);
-
-				if (srcScale > 0)
-				{
-					for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-					tempValFrac = tempVal64 % power;
-	    			tempVal64 = tempVal64 / power;
-					if (tempVal64 == 0 && tempValFrac < 0)
-						sprintf(cTmpBuf, "-%I64d.%0*I64d", tempVal64, srcScale, -tempValFrac);
-					else
-					{
-						if (tempValFrac < 0)
-							tempValFrac = -tempValFrac;
-						sprintf(cTmpBuf, "%I64d.%0*I64d", tempVal64, srcScale, tempValFrac);
-					}
-				}
-				else
-					_i64toa( tempVal64, cTmpBuf, 10);
-				break;
-			default:
-				return IDS_HY_000;
-			}
-			useDouble = FALSE;
-			break;
-		case SQL_DECIMAL: 
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			useDouble = FALSE;
+			cTmpBuf = (char *)malloc(NUM_LEN_MAX);
+			memset(cTmpBuf, 0, NUM_LEN_MAX);
+			retCode = ConvSQLNumberToChar(srcDataPtr, srcDescPtr, srcLength, CDataType, cTmpBuf, NUM_LEN_MAX, NULL);
+			if (retCode == SQL_SUCCESS)
+				retCode = ConvertCharToCNumeric(*((SQL_NUMERIC_STRUCT *)srcDataPtr), cTmpBuf);
+			*targetStrLenPtr = sizeof(SQL_NUMERIC_STRUCT);
 			break;
 		default:
 			return IDS_07_006;
 		}
 
-		if(useDouble)
-		{
-			tempPtr = _fcvt( dTmp, srcScale, (int*)&DecimalPoint, (int*)&Sign);
-			if(strlen(tempPtr) > sizeof(cTmpBuf) - 3 || DecimalPoint + srcScale > ENDIAN_PRECISION_MAX)
-				return IDS_22_003;
-			memset(cTmpBuf, 0, sizeof(cTmpBuf));
-			stopStr = cTmpBuf;
-			*stopStr++ = (Sign == 0)?'+':'-';
-			strncpy(stopStr, tempPtr, strlen(tempPtr) - srcScale);
-			strcat(stopStr,".");
-			strcat(stopStr, tempPtr + strlen(tempPtr) - srcScale);
-		}
-
-		if ((retCode = ConvertCharToCNumeric( numericTmp, cTmpBuf)) != SQL_SUCCESS)
-			return retCode;
-
-		DataPtr = &numericTmp;
-		DataLen = sizeof(SQL_NUMERIC_STRUCT);
-
 		break; // end of SQL_C_NUMERIC
+
 	case SQL_C_INTERVAL_MONTH:
 	case SQL_C_INTERVAL_YEAR:
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
@@ -3192,7 +587,8 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-		intervalTmp.interval_sign = 0;
+	{
+		bool useDouble = true;
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
@@ -3200,100 +596,11 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_LONGVARCHAR:
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
-			{
-				int TransStringLength = 0;
-				char error[64];
-				if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
-				{
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to locale
-					{
-						if (sizeof (cTmpBuf) <= srcLength/2) //Avoid a seg-violation
-							return IDS_07_003;
-						if(WCharToUTF8((wchar_t*)srcDataPtr, srcLength-1, (char*)cTmpBuf,
-							sizeof(cTmpBuf), &TransStringLength, error) != SQL_SUCCESS)
-						{
-						//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
-							return IDS_07_003;
-						}
-						srcLength = strlen(cTmpBuf) + 1;//TransStringLength + 1;
-					}
-					else
-					{
-						if (srcLength <= sizeof (cTmpBuf)) //Avoid a seg-violation
-						{
-							strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
-							cTmpBuf[srcLength - 1] = 0;
-						}
-						else
-							return IDS_07_003;
-					}
-				}
-				else //SQL_LONG_VARCHAR
-				{
-					if (isshort)
-					{
-						DataLen = *(USHORT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (sizeof(cTmpBuf) <= DataLen / 2) //Avoid a seg-violation
-								return IDS_07_003;
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_07_003;
-							}
-							srcLength = TransStringLength + 1;
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 2, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-					else
-					{
-						DataLen = *(UINT *)srcDataPtr;
-						if (DataLen == 0)
-							return SQL_NO_DATA;
-						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
-						{
-							if (sizeof(cTmpBuf) <= DataLen / 2) //Avoid a seg-violation
-								return IDS_07_003;
-							if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
-								(sizeof(cTmpBuf)), &TransStringLength, error) != SQL_SUCCESS)
-							{
-								//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-								return IDS_07_003;
-							}
-							srcLength = TransStringLength + 1;
-						}
-						else
-						{
-							if ((DataLen + 1) <= sizeof(cTmpBuf))
-							{
-								memcpy(cTmpBuf, (char*)srcDataPtr + 4, DataLen);
-								srcLength = DataLen + 1;
-								cTmpBuf[DataLen] = 0;
-							}
-							else
-								return IDS_22_003;
-						}
-					}
-				}
-				if ((retCode = ConvertSQLCharToInterval(ODBCDataType, cTmpBuf, srcLength, CDataType, 
-					(SQLPOINTER)&intervalTmp)) != 0)
-				if (retCode != IDS_01_S07)
-					return retCode;
-			}
+			retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, &DataLen, false);
+			if (retCode != SQL_SUCCESS)
+				break;
+			retCode = ConvertSQLCharToInterval(ODBCDataType, cTmpBuf, DataLen, CDataType, targetDataPtr);
+			useDouble = false;
 			break;
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_YEAR:
@@ -3308,405 +615,39 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			if ((retCode = ConvertSQLCharToInterval(ODBCDataType, srcDataPtr, srcLength, CDataType, 
-					(SQLPOINTER)&intervalTmp)) != 0)
-				if (retCode != IDS_01_S07)
-					return retCode;
+			retCode = ConvertSQLCharToInterval(ODBCDataType, srcDataPtr, srcLength, CDataType, targetDataPtr);
+			useDouble = false;
 			break;
 		case SQL_TINYINT:
-			if (srcUnsigned)
-				dTmp = *(UCHAR *)srcDataPtr;
-			else
-				dTmp = *(SCHAR *)srcDataPtr;
-			break;
 		case SQL_SMALLINT:
-			if (srcUnsigned)
-				dTmp = *(USHORT *)srcDataPtr;
-			else
-				dTmp = *(SSHORT *)srcDataPtr;
-			break;
 		case SQL_INTEGER:
-			if (srcUnsigned)
-				dTmp = *(ULONG *)srcDataPtr;
-			else
-				dTmp = *(SLONG *)srcDataPtr;
+		case SQL_DECIMAL:
+			retCode = ConvSQLNumberToNumber(srcDataPtr, srcDescPtr, srcLength, SQL_C_DOUBLE, &dTmp, targetLength, targetStrLenPtr);
 			break;
 		case SQL_BIGINT:
-			tempVal64 = *((__int64 *)srcDataPtr);
-			if (tempVal64 < -DBL_MAX || tempVal64 > DBL_MAX)
-				return IDS_22_003;
-			dTmp = tempVal64;
+			retCode = ConvSQLBigintToNumber(srcDataPtr, srcDescPtr->m_DescUnsigned, SQL_C_DOUBLE, &dTmp, targetLength, targetStrLenPtr);
 			break;
 		case SQL_NUMERIC:
-			switch (SQLDataType)
-			{
-			case SQLTYPECODE_SMALLINT:
-				dTmp = *((SHORT *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_SMALLINT_UNSIGNED:
-				dTmp = *((USHORT *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_INTEGER:
-				dTmp = *((LONG *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_INTEGER_UNSIGNED:
-				dTmp = *((ULONG *)srcDataPtr);
-				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
-				if (retCode == IDS_22_003)
-					return retCode;
-				break;
-			case SQLTYPECODE_LARGEINT:
-				tempVal64 = *((__int64 *)srcDataPtr);
-				for (i = 0, power = 1 ; i < srcScale ; power *= 10, i++);   
-				tempValFrac = tempVal64 % power;
-	    		tempVal64 = tempVal64 / power;
-				dTmp = ((double)tempValFrac/(double)power);
-				dTmp = dTmp + tempVal64;
-				break;
-			default:
-				return IDS_HY_000;
-			}
-			break;
-		case SQL_DECIMAL: 
-			if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale, 
-						cTmpBuf, DecimalPoint) != SQL_SUCCESS)
-				return IDS_07_006;
-			dTmp = strtod(cTmpBuf, &stopStr);
+			retCode = ConvSQLNumericToNumber(srcDataPtr, srcDescPtr, srcLength, SQL_C_DOUBLE, &dTmp, targetLength, targetStrLenPtr);
 			break;
 		default:
 			return IDS_07_006;
 		}
-		if((ODBCDataType == SQL_SMALLINT) || (ODBCDataType == SQL_INTEGER) || (ODBCDataType == SQL_BIGINT) || (ODBCDataType == SQL_NUMERIC) || (ODBCDataType == SQL_DECIMAL))
-		{
-			if (dTmp < 0)
-				intervalTmp.interval_sign = 1;
-			ulTmp = (ULONG)dTmp;
-			if (dTmp != ulTmp)
-				retCode = IDS_01_S07;
-			switch (CDataType)
-			{
-			case SQL_C_INTERVAL_MONTH:
-				intervalTmp.interval_type = SQL_IS_MONTH;
-				intervalTmp.intval.year_month.month = ulTmp;
-				intervalTmp.intval.year_month.year = 0;
-				break;
-			case SQL_C_INTERVAL_YEAR:
-				intervalTmp.interval_type = SQL_IS_YEAR;
-				intervalTmp.intval.year_month.month = 0;
-				intervalTmp.intval.year_month.year = ulTmp;
-				break;
-			case SQL_C_INTERVAL_DAY:
-				intervalTmp.interval_type = SQL_IS_DAY;
-				intervalTmp.intval.day_second.day = ulTmp;
-				intervalTmp.intval.day_second.hour = 0;
-				intervalTmp.intval.day_second.minute = 0;
-				intervalTmp.intval.day_second.second = 0;
-				intervalTmp.intval.day_second.fraction = 0;
-				break;
-			case SQL_C_INTERVAL_HOUR:
-				intervalTmp.interval_type = SQL_IS_HOUR;
-				intervalTmp.intval.day_second.day = 0;
-				intervalTmp.intval.day_second.hour = ulTmp;
-				intervalTmp.intval.day_second.minute = 0;
-				intervalTmp.intval.day_second.second = 0;
-				intervalTmp.intval.day_second.fraction = 0;
-				break;
-			case SQL_C_INTERVAL_MINUTE:
-				intervalTmp.interval_type = SQL_IS_MINUTE;
-				intervalTmp.intval.day_second.day = 0;
-				intervalTmp.intval.day_second.hour = 0;
-				intervalTmp.intval.day_second.minute = ulTmp;
-				intervalTmp.intval.day_second.second = 0;
-				intervalTmp.intval.day_second.fraction = 0;
-				break;
-			case SQL_C_INTERVAL_SECOND:
-				intervalTmp.interval_type = SQL_IS_SECOND;
-				intervalTmp.intval.day_second.day = 0;
-				intervalTmp.intval.day_second.hour = 0;
-				intervalTmp.intval.day_second.minute = 0;
-				intervalTmp.intval.day_second.second = ulTmp;
-				intervalTmp.intval.day_second.fraction = 0;
-				break;
-			default:
-				return IDS_07_006;
-			}
-		}
-		DataPtr = &intervalTmp;
-		DataLen = sizeof(SQL_INTERVAL_STRUCT);
+		if (useDouble)
+			retCode = ConvDoubleToInterval(dTmp, CDataType, targetDataPtr);
+		*targetStrLenPtr = sizeof(SQL_INTERVAL_STRUCT);
+	}
 		break; // End of SQL_C_INTERVAL
 	default:
 		return IDS_07_006;
 	}
 
-	if (LangId != LANG_NEUTRAL)
+	if (cTmpBuf != NULL)
 	{
-		if (LocalizeNumericString)
-		{
-			// If there is any error, the original buffer is used
-			if ((DataLen1 = GetNumberFormat(DataLangId,	// locale for which string is to be formatted
-							0,							// bit flag that controls the function's operation
-							(const char *)DataPtr,					// pointer to input number string
-							NULL,						// pointer to a formatting information structure
-							cTmpBuf1,					// pointer to output buffer
-							sizeof(cTmpBuf1))) != 0)	// size of output buffer
-			{	
-				DataLen = DataLen1-1;					// Returned DataLen includes NULL terminator
-				DataPtr = cTmpBuf1;						
-			}											
-		}
+		free(cTmpBuf);
+		cTmpBuf = NULL;
 	}
 
-	if (targetDataPtr != NULL && ((DataPtr != NULL && DataLen > 0) || translatedDataPtr != NULL) && gDrvrGlobal.fpSQLDataSourceToDriver)
-	{
-		if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-			TraceOut(TR_ODBC_API, "ODBC::ConvertSQLToC DataPtr \"%s\", DataLen %d, translateOption 0x%08x", 
-			 DataPtr, DataLen, translateOption);
-
-		if (translatedDataPtr != NULL && totalReturnedLength != NULL && Offset != 0)
-		{ 
-			// data has already translated
-			if (CDataType == SQL_C_WCHAR)
-			{
-				DataLen = charlength*2-Offset;
-				if (DataLen > targetLength-2)
-				{
-					DataLenTruncated = DataLen;
-					DataLen = targetLength-2;
-					if (DataLen % 2 == 1) DataLen--;
-					retCode = IDS_01_004;
-					if (totalReturnedLength != NULL)
-						*totalReturnedLength = DataLen + Offset;
-				}
-				else
-				{
-					DataLenTruncated = 0;
-					retCode = SQL_SUCCESS;
-				}
-			}
-			else
-			{
-				if (srcCharSet == SQLCHARSETCODE_UCS2)
-					DataLen = charlength / 2 - Offset;
-				else
-					DataLen = charlength - Offset;
-				if (DataLen >= targetLength)
-				{
-					DataLenTruncated = DataLen;
-					DataLen = targetLength-1;
-					if (totalReturnedLength != NULL)
-						*totalReturnedLength = DataLen+Offset;
-					retCode = IDS_01_004;
-				}
-				else
-				{
-					DataLenTruncated = 0;
-					retCode = SQL_SUCCESS;
-				}
-			}
-			memcpy(targetDataPtr, translatedDataPtr+Offset, DataLen);
-		}
-		else if ((CDataType == SQL_C_CHAR) && (CDataType != SQL_C_BINARY))
-		{
-			if (srcCharSet == SQLCHARSETCODE_UCS2)
-			{
-				memset((LPSTR)targetDataPtr,'\0',targetLength - 1);
-				unsigned int transLen = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)DataPtr, DataLen/2, 
-					(LPSTR)targetDataPtr, targetLength - 1, (LPCSTR)replacementChar, PtrDefaultCharRequired);
-				if (transLen != 0)
-				{
-					DataLen = transLen;
-					DataLenTruncated = 0;
-				}
-				else
-				{
-					switch (GetLastError())
-					{
-						case ERROR_INSUFFICIENT_BUFFER:
-						{
-							// buffer overflow - need to allocate temporary buffer
-							translateLengthMax = DataLen*4+1;
-							if (translatedDataPtr != NULL) delete[] translatedDataPtr;
-							translatedDataPtr = new char[translateLengthMax];
-							memset((LPSTR)translatedDataPtr,'\0',translateLengthMax);
-							transLen = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)DataPtr, DataLen/2, 
-										(LPSTR)translatedDataPtr, translateLengthMax-1, (LPCSTR)replacementChar, PtrDefaultCharRequired);
-							if (transLen == 0) return IDS_190_DSTODRV_ERROR;
-							DataLenTruncated = transLen;
-							DataLen = targetLength-1;
-							memcpy(targetDataPtr, translatedDataPtr, DataLen);
-							retCode = IDS_01_004;
-							if (totalReturnedLength != NULL)
-								*totalReturnedLength = DataLen + Offset;
-						}
-						break;
-						default: //Error
-						{
-							if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
-								TraceOut(TR_ODBC_API, "ODBC::ConvertSQLToC: WideCharToMultiByte: Error: DataPtr \"%s\",	DataLen %d, targetLength %d", DataPtr, DataLen, targetLength);
-							return IDS_190_DSTODRV_ERROR;
-							break;
-						}
-					}
-				}
-			}
-			else if (translateOption != 0 && // translate from SQLCharSet to DriverLocale - JC function 
-				    ((ODBCDataType ==  SQL_CHAR) || (ODBCDataType == SQL_VARCHAR) || (ODBCDataType == SQL_LONGVARCHAR))) 
-			{
-				translateLengthMax = targetLength;
-				if (! (gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption, 
-					ODBCDataType,
-					DataPtr,
-					DataLen,
-					targetDataPtr,
-					translateLengthMax, 
-					&translateLength,
-					errorMsg,
-					errorMsgMax,
-					NULL,
-					replacementChar))
-					{
-						if (translateLength == translateLengthMax || (errorMsg != NULL && strstr((const char*)errorMsg, "overflow") != NULL))
-						{
-							// buffer overflow - need to allocate big temp buffer
-							translateLengthMax = DataLen*4+1;
-							if (translatedDataPtr != NULL) delete[] translatedDataPtr;
-							translatedDataPtr = new char[translateLengthMax];
-							if (! (gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption, 
-									ODBCDataType,
-									DataPtr,
-									DataLen,
-									translatedDataPtr,
-									translateLengthMax, 
-									&translateLength,
-									errorMsg,
-									errorMsgMax,
-									NULL,
-									replacementChar))
-									return IDS_190_DSTODRV_ERROR;
-
-							DataLenTruncated = translateLength;
-							DataLen = targetLength-1;
-							memcpy(targetDataPtr, translatedDataPtr, DataLen);
-							if (errorMsg) errorMsg[0] = '\0'; // reset errorMsg in case of buffer overflow
-							retCode = IDS_01_004;
-							if (totalReturnedLength != NULL)
-								*totalReturnedLength = DataLen + Offset;
-						}
-						else 
-						{
-							return IDS_190_DSTODRV_ERROR;
-						}
-					}
-				else
-				{
-					DataLenTruncated = 0;
-					DataLen = translateLength;
-				}
-			}
-			else
-			{
-				memcpy(targetDataPtr, DataPtr, DataLen);
-				if (totalReturnedLength != NULL && retCode == IDS_01_004)
-					*totalReturnedLength = DataLen + Offset;
-			}
-		} //SQL_C_CHAR end
-		else
-		if ( CDataType == SQL_C_WCHAR && CDataType != SQL_C_BINARY && translateOption != 0 && ! WCharData )
-		{
-			translateLengthMax = targetLength;
-			if (translateLengthMax % 2 == 1) translateLengthMax--;
-			if (! (gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption, 
-				ODBCDataType,
-				DataPtr,
-				DataLen,
-				targetDataPtr,
-				translateLengthMax, 
-				&translateLength,
-				errorMsg,
-				errorMsgMax,
-				NULL,
-				replacementChar))
-				{
-					if (translateLength == translateLengthMax || (errorMsg != NULL && strstr((const char*)errorMsg, "overflow") != NULL))
-					{
-						// buffer overflow - need to allocate big temp buffer
-						translateLengthMax = DataLen*4+1;
-						if (translatedDataPtr != NULL) delete[] translatedDataPtr;
-						translatedDataPtr = new char[translateLengthMax];
-						if (! (gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption, 
-								ODBCDataType,
-								DataPtr,
-								DataLen,
-								translatedDataPtr,
-								translateLengthMax, 
-								&translateLength,
-								errorMsg,
-								errorMsgMax,
-								NULL,
-								replacementChar))
-								return IDS_190_DSTODRV_ERROR;
-
-						DataLenTruncated = translateLength;
-						DataLen = targetLength-2;
-						if (DataLen % 2 == 1) DataLen--;
-						memcpy(targetDataPtr, translatedDataPtr, DataLen);
-						if (errorMsg) errorMsg[0] = '\0'; // reset errorMsg in case of buffer overflow
-						retCode = IDS_01_004;
-						if (totalReturnedLength != NULL)
-							*totalReturnedLength = DataLen + Offset;
-					}
-					else 
-					{
-						return IDS_190_DSTODRV_ERROR;
-					}
-				}
-			else
-			{
-				DataLenTruncated = 0;
-				DataLen = translateLength;
-				if (DataLen % 2 == 1) DataLen--;
-			}
-		}
-		else
-		{
-			memcpy(targetDataPtr, DataPtr, DataLen);
-			if (totalReturnedLength != NULL && retCode == IDS_01_004)
-				*totalReturnedLength = DataLen + Offset;
-		}
-
-		if (NullTerminate && DataLen > 0)
-			*(char *)((const char *)targetDataPtr + DataLen) = '\0';
-		if (NullTerminateW && DataLen > 0)
-			*((wchar_t *)((const wchar_t *)targetDataPtr + DataLen/2)) = L'\0';
-	}
-	else
-	{
-		if(WCharData)
-			((wchar_t*)targetDataPtr)[0] = L'\0';
-		else
-			((char*)targetDataPtr)[0] = '\0';
-
-	}
-	if (targetStrLenPtr != NULL)
-	{
-		if (DataLenTruncated != 0) 
-			*targetStrLenPtr = DataLenTruncated;
-		else
-			*targetStrLenPtr = DataLen;
-	}
 	return retCode;
 }
 
@@ -3714,7 +655,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLSMALLINT srcScale, 
 			char *cTmpBuf, SQLINTEGER &DecimalPoint)
 {
-	unsigned long retCode = SQL_SUCCESS;
+	
 	long lTmp;
 	ldiv_t lDiv;
 	__int64 i64Tmp;
@@ -3725,9 +666,7 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((short *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
-				if (retCode == IDS_22_003)
-					return retCode;
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 				{
 					if (lDiv.rem < 0)
@@ -3750,9 +689,8 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((unsigned short *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
-				if (retCode == IDS_22_003)
-					return retCode;
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 					sprintf(cTmpBuf, ".%0*ld", srcScale, abs(lDiv.rem));
 				else
@@ -3765,9 +703,7 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((long *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
-				if (retCode == IDS_22_003)
-					return retCode;
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 				{
 					if (lDiv.rem < 0)
@@ -3837,13 +773,13 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 				sprintf(cTmpBuf, "%I64d", i64Tmp);
 			break;
 		default:
-			retCode = IDS_07_006;
+			return SQL_ERROR;
 	}
 	if ((tmpPtr = strchr(cTmpBuf, '.')) != NULL)
 		DecimalPoint = tmpPtr - cTmpBuf;
 	else
 		DecimalPoint = 0;
-	return retCode;
+	return SQL_SUCCESS;
 }
 
 SQLRETURN ODBC::ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
@@ -3956,7 +892,6 @@ SQLRETURN ODBC::ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
 								SQLSMALLINT srcScale, double &dTmp)
 {
-	unsigned long retCode = SQL_SUCCESS;
 	char *stopStr;
 	char cTmpBuf[256];
 	double dTmp1;
@@ -3970,9 +905,7 @@ SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER s
 			for (i = 1; i < srcLength ; cTmpBuf[i++] += '0');
 			cTmpBuf[srcLength] =  '\0';
 			dTmp = strtod(cTmpBuf,&stopStr);
-			dTmp1 = pow(10, srcScale, &retCode);
-			if (retCode == IDS_22_003)
-				return retCode;
+			dTmp1 = pow(10, srcScale);
 			dTmp = dTmp / dTmp1;
 			break;
 		case SQLTYPECODE_DECIMAL_LARGE_UNSIGNED:
@@ -3981,18 +914,16 @@ SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER s
 			for (i = 0; i < srcLength ; cTmpBuf[i++] += '0');
 			cTmpBuf[srcLength] =  '\0';
 			dTmp = strtod(cTmpBuf,&stopStr);
-			dTmp1 = pow(10, srcScale, &retCode);
-			if (retCode == IDS_22_003)
-				return retCode;
+			dTmp1 = pow(10, srcScale);
 			dTmp = dTmp / dTmp1;
 			break;
 		default:
-			retCode = IDS_07_006;
+			return SQL_ERROR;
 	}
-	return retCode;
+	return SQL_SUCCESS;
 }
 
-unsigned long ODBC::ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER srcLength,
+unsigned long ODBC::ConvertSQLCharToDouble(SQLPOINTER srcDataPtr, SQLINTEGER srcLength,
 									SQLSMALLINT ODBCDataType, double &dTmp)
 {
 	SQLINTEGER	tempLen;
@@ -4045,13 +976,12 @@ unsigned long ODBC::ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER sr
 	return SQL_SUCCESS;
 }
 
-unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType, 
+unsigned long ODBC::ConvertSQLCharToDateTime(SQLSMALLINT ODBCDataType, 
 						SQLPOINTER srcDataPtr,
 						SQLINTEGER	srcLength,
 						SQLSMALLINT CDataType,
 						SQLPOINTER outValue)
-{
-	unsigned long retCode = SQL_SUCCESS;
+{						  
     char    in_value[50];
     short   datetime_parts[8];
     char    *token;
@@ -4122,9 +1052,7 @@ unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType,
 	if (token != NULL)
     {
 		int exponent = 9 - strlen(token);
-		fraction_part = (exponent >= 0)? atol(token) * pow((double)10,exponent,&retCode):atol(token) / pow((double)10,-exponent,&retCode);
-		if (retCode == IDS_22_003)
-			return retCode;
+		fraction_part = (exponent >= 0)? atol(token) * pow((double)10,exponent):atol(token) / pow((double)10,-exponent) ;
 		datetime_parts[6] = (short)(fraction_part / 1000);
 		datetime_parts[7] = (short)(fraction_part % 1000);
     }
@@ -4300,7 +1228,6 @@ unsigned long ODBC::ConvertSQLCharToInterval(SQLSMALLINT ODBCDataType,
 		return IDS_07_006;
 	}
 
-
 	if (len >= sizeof(in_value))
 		len = sizeof(in_value)-1;
 	strncpy(in_value, strPtr, len);
@@ -4322,7 +1249,6 @@ unsigned long ODBC::ConvertSQLCharToInterval(SQLSMALLINT ODBCDataType,
 	strcpy(temp_value,in_value);
 	trim(temp_value);
 
-	
    	if (temp_value[0] == '-')
 	{
 		((SQL_INTERVAL_STRUCT *)outValue)->interval_sign = 1;
@@ -5131,3 +2057,1810 @@ UDWORD ODBC::GetFractionFromStr(UCHAR* ptr, short precision)
 	return atol(buf);
 }
 
+unsigned long ODBC::ConvSQLCharToChar(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr,
+								DWORD translateOption, CHAR *&translatedDataPtr, SQLINTEGER* totalReturnedLength,
+								UCHAR *errorMsg, SWORD errorMsgMax, CHAR *replacementChar)
+{
+	unsigned long	retCode = SQL_SUCCESS;
+	SQLINTEGER		Offset = 0;
+	int				charlength = 0;
+	SQLINTEGER		DataLen = 0;
+	SQLINTEGER      DataLenTruncated = 0;
+	SQLINTEGER		translateLengthMax = 0;
+	SQLINTEGER		translateLength = 0;
+	SQLPOINTER		DataPtr = srcDataPtr;
+	SQLSMALLINT     ODBCDataType = srcDescPtr->m_ODBCDataType;
+	SQLINTEGER      srcCharSet = srcDescPtr->m_SQLCharset;
+
+	bool DefaultCharRequired;
+	LPBOOL PtrDefaultCharRequired = (LPBOOL)&DefaultCharRequired;
+
+	if (totalReturnedLength != NULL)
+	{
+		Offset = *totalReturnedLength;
+		*totalReturnedLength = -1;
+	}
+	else
+		Offset = 0;
+
+	switch (ODBCDataType)
+	{
+	case SQL_CHAR:
+	case SQL_WCHAR:
+		charlength = srcLength - 1;
+		if (charlength == 0)
+		{
+			if (targetStrLenPtr != NULL)
+				*targetStrLenPtr = 0;
+			if (targetLength > 0)
+				((char*)targetDataPtr)[0] = '\0';
+			return retCode;
+		}
+		DataLen = charlength - Offset;
+		break;
+	case SQL_VARCHAR:
+	case SQL_WVARCHAR:
+	case SQL_LONGVARCHAR:
+		if (srcDescPtr->m_SQLMaxLength <= MAXCHARLEN){
+			charlength = *(USHORT *)srcDataPtr;
+			DataPtr = (char *)srcDataPtr + 2 + Offset;
+		}
+		else{
+			charlength = *(int *)srcDataPtr;
+			DataPtr = (char *)srcDataPtr + 4 + Offset;
+		}
+		if (charlength == 0)
+		{
+			if (targetStrLenPtr != NULL)
+				*targetStrLenPtr = 0;
+			if (targetLength > 0)
+				((char*)targetDataPtr)[0] = '\0';
+			return retCode;
+		}
+		DataLen = charlength - Offset;
+		break;
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		DataPtr = (char *)srcDataPtr + Offset;
+		DataLen = srcLength;
+		if (DataLen >= targetLength)
+		{
+			DataLenTruncated = srcLength - Offset;
+			if (targetLength > 0)
+				DataLen = targetLength - 1;
+			else
+				DataLen = 0;
+			return IDS_01_004;
+		}
+
+		break;
+	}
+
+	if (translatedDataPtr == NULL)
+	{
+		if (DataLen == 0)
+			return SQL_NO_DATA;
+		if ((translateOption == 0) && DataLen >= targetLength && srcCharSet != SQLCHARSETCODE_UCS2)
+		{
+			if (pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
+				TraceOut(TR_ODBC_API, "ConvertSQLToC: \"Data truncated\" OBCDataType %d, srcCharSet %d, DataLen %d, targetLength %d",
+				ODBCDataType, srcCharSet, DataLen, targetLength);
+			retCode = IDS_01_004;
+			DataLenTruncated = DataLen;
+			if (targetLength = 1)
+				DataLen = targetLength;
+			else if (targetLength > 0)
+				DataLen = targetLength - 1;
+			else
+				DataLen = 0;
+		}
+	}
+
+	if (targetDataPtr != NULL && ((DataPtr != NULL && DataLen > 0) || translatedDataPtr != NULL) && gDrvrGlobal.fpSQLDataSourceToDriver)
+	{
+		if (pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
+			TraceOut(TR_ODBC_API, "ODBC::ConvertSQLToC DataPtr \"%s\", DataLen %d, translateOption 0x%08x",
+			DataPtr, DataLen, translateOption);
+
+		if (translatedDataPtr != NULL && totalReturnedLength != NULL && Offset != 0)
+		{
+			// data has already translated
+			if (CDataType == SQL_C_WCHAR)
+			{
+				DataLen = charlength * 2 - Offset;
+				if (DataLen > targetLength - 2)
+				{
+					DataLenTruncated = DataLen;
+					DataLen = targetLength - 2;
+					if (DataLen % 2 == 1) DataLen--;
+					retCode = IDS_01_004;
+					if (totalReturnedLength != NULL)
+						*totalReturnedLength = DataLen + Offset;
+				}
+				else
+				{
+					DataLenTruncated = 0;
+					retCode = SQL_SUCCESS;
+				}
+			}
+			else
+			{
+				if (srcCharSet == SQLCHARSETCODE_UCS2)
+					DataLen = charlength / 2 - Offset;
+				else
+					DataLen = charlength - Offset;
+				if (DataLen >= targetLength)
+				{
+					DataLenTruncated = DataLen;
+					DataLen = targetLength - 1;
+					if (totalReturnedLength != NULL)
+						*totalReturnedLength = DataLen + Offset;
+					retCode = IDS_01_004;
+				}
+				else
+				{
+					DataLenTruncated = 0;
+					retCode = SQL_SUCCESS;
+				}
+			}
+			memcpy(targetDataPtr, translatedDataPtr + Offset, DataLen);
+		}
+		else if (CDataType == SQL_C_CHAR)
+		{
+			if (srcCharSet == SQLCHARSETCODE_UCS2)
+			{
+				memset((LPSTR)targetDataPtr, '\0', targetLength - 1);
+				unsigned int transLen = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)DataPtr, DataLen / 2,
+					(LPSTR)targetDataPtr, targetLength - 1, (LPCSTR)replacementChar, PtrDefaultCharRequired);
+				if (transLen != 0)
+				{
+					DataLen = transLen;
+					DataLenTruncated = 0;
+				}
+				else
+				{
+					switch (GetLastError())
+					{
+					case ERROR_INSUFFICIENT_BUFFER:
+					{
+						// buffer overflow - need to allocate temporary buffer
+						translateLengthMax = DataLen * 4 + 1;
+						if (translatedDataPtr != NULL) delete[] translatedDataPtr;
+						translatedDataPtr = new char[translateLengthMax];
+						memset((LPSTR)translatedDataPtr, '\0', translateLengthMax);
+						transLen = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)DataPtr, DataLen / 2,
+							(LPSTR)translatedDataPtr, translateLengthMax - 1, (LPCSTR)replacementChar, PtrDefaultCharRequired);
+						if (transLen == 0) return IDS_190_DSTODRV_ERROR;
+						DataLenTruncated = transLen;
+						DataLen = targetLength - 1;
+						memcpy(targetDataPtr, translatedDataPtr, DataLen);
+						retCode = IDS_01_004;
+						if (totalReturnedLength != NULL)
+							*totalReturnedLength = DataLen + Offset;
+					}
+					break;
+					default: //Error
+					{
+						if (pdwGlobalTraceVariable && *pdwGlobalTraceVariable)
+							TraceOut(TR_ODBC_API, "ODBC::ConvertSQLToC: WideCharToMultiByte: Error: DataPtr \"%s\",	DataLen %d, targetLength %d", DataPtr, DataLen, targetLength);
+						return IDS_190_DSTODRV_ERROR;
+						break;
+					}
+					}
+				}
+			}
+			else if (translateOption != 0 && // translate from SQLCharSet to DriverLocale - JC function 
+				((ODBCDataType == SQL_CHAR) || (ODBCDataType == SQL_VARCHAR) || (ODBCDataType == SQL_LONGVARCHAR)))
+			{
+				translateLengthMax = targetLength;
+				if (!(gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption,
+					ODBCDataType,
+					DataPtr,
+					DataLen,
+					targetDataPtr,
+					translateLengthMax,
+					&translateLength,
+					errorMsg,
+					errorMsgMax,
+					NULL,
+					replacementChar))
+				{
+					if (translateLength == translateLengthMax || (errorMsg != NULL && strstr((const char*)errorMsg, "overflow") != NULL))
+					{
+						// buffer overflow - need to allocate big temp buffer
+						translateLengthMax = DataLen * 4 + 1;
+						if (translatedDataPtr != NULL) delete[] translatedDataPtr;
+						translatedDataPtr = new char[translateLengthMax];
+						if (!(gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption,
+							ODBCDataType,
+							DataPtr,
+							DataLen,
+							translatedDataPtr,
+							translateLengthMax,
+							&translateLength,
+							errorMsg,
+							errorMsgMax,
+							NULL,
+							replacementChar))
+							return IDS_190_DSTODRV_ERROR;
+
+						DataLenTruncated = translateLength;
+						DataLen = targetLength - 1;
+						memcpy(targetDataPtr, translatedDataPtr, DataLen);
+						if (errorMsg) errorMsg[0] = '\0'; // reset errorMsg in case of buffer overflow
+						retCode = IDS_01_004;
+						if (totalReturnedLength != NULL)
+							*totalReturnedLength = DataLen + Offset;
+					}
+					else
+					{
+						return IDS_190_DSTODRV_ERROR;
+					}
+				}
+				else
+				{
+					DataLenTruncated = 0;
+					DataLen = translateLength;
+				}
+			}
+			else
+			{
+				memcpy(targetDataPtr, DataPtr, DataLen);
+				if (totalReturnedLength != NULL && retCode == IDS_01_004)
+					*totalReturnedLength = DataLen + Offset;
+			}
+		} //SQL_C_CHAR end
+		else if (CDataType == SQL_C_WCHAR && translateOption != 0 && srcCharSet == SQLCHARSETCODE_UCS2)
+		{
+			translateLengthMax = targetLength;
+			if (translateLengthMax % 2 == 1) translateLengthMax--;
+			if (!(gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption,
+				ODBCDataType,
+				DataPtr,
+				DataLen,
+				targetDataPtr,
+				translateLengthMax,
+				&translateLength,
+				errorMsg,
+				errorMsgMax,
+				NULL,
+				replacementChar))
+			{
+				if (translateLength == translateLengthMax || (errorMsg != NULL && strstr((const char*)errorMsg, "overflow") != NULL))
+				{
+					// buffer overflow - need to allocate big temp buffer
+					translateLengthMax = DataLen * 4 + 1;
+					if (translatedDataPtr != NULL) delete[] translatedDataPtr;
+					translatedDataPtr = new char[translateLengthMax];
+					if (!(gDrvrGlobal.fpSQLDataSourceToDriver) (translateOption,
+						ODBCDataType,
+						DataPtr,
+						DataLen,
+						translatedDataPtr,
+						translateLengthMax,
+						&translateLength,
+						errorMsg,
+						errorMsgMax,
+						NULL,
+						replacementChar))
+						return IDS_190_DSTODRV_ERROR;
+
+					DataLenTruncated = translateLength;
+					DataLen = targetLength - 2;
+					if (DataLen % 2 == 1) DataLen--;
+					memcpy(targetDataPtr, translatedDataPtr, DataLen);
+					if (errorMsg) errorMsg[0] = '\0'; // reset errorMsg in case of buffer overflow
+					retCode = IDS_01_004;
+					if (totalReturnedLength != NULL)
+						*totalReturnedLength = DataLen + Offset;
+				}
+				else
+				{
+					return IDS_190_DSTODRV_ERROR;
+				}
+			}
+			else
+			{
+				DataLenTruncated = 0;
+				DataLen = translateLength;
+				if (DataLen % 2 == 1) DataLen--;
+			}
+		}
+		else
+		{
+			memcpy(targetDataPtr, DataPtr, DataLen);
+			if (totalReturnedLength != NULL && retCode == IDS_01_004)
+				*totalReturnedLength = DataLen + Offset;
+		}
+
+		if (CDataType == SQL_C_CHAR && DataLen > 0)
+			*(char *)((const char *)targetDataPtr + DataLen) = '\0';
+		if (CDataType == SQL_C_WCHAR && DataLen > 0)
+			*((wchar_t *)((const wchar_t *)targetDataPtr + DataLen / 2)) = L'\0';
+	}
+	else
+	{
+		if (srcCharSet == SQLCHARSETCODE_UCS2)
+			((wchar_t*)targetDataPtr)[0] = L'\0';
+		else
+			((char*)targetDataPtr)[0] = '\0';
+	}
+
+	if (targetStrLenPtr != NULL)
+	{
+		if (DataLenTruncated != 0)
+			*targetStrLenPtr = DataLenTruncated;
+		else
+			*targetStrLenPtr = DataLen;
+	}
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLNumberToChar(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long		retCode	= SQL_SUCCESS;
+	__int64				lTmp	= 0;
+	unsigned __int64	ulTmp	= 0;
+	double				dTmp	= 0;
+	SQLINTEGER			DataLen = 0;
+	SQLINTEGER			DecimalPoint = 0;
+	char				cTmpBuf[NUM_LEN_MAX] = { 0 };
+	char				*tempPtr = NULL;
+
+	switch (srcDescPtr->m_ODBCDataType)
+	{
+	case SQL_TINYINT:
+		if (srcDescPtr->m_DescUnsigned)
+		{
+			ulTmp = *((UCHAR *)srcDataPtr);
+			_ultoa(ulTmp, cTmpBuf, 10);
+		}
+		else
+		{
+			lTmp = *((SCHAR *)srcDataPtr);
+			_ltoa(lTmp, cTmpBuf, 10);
+		}
+		DataLen = strlen(cTmpBuf);
+		if (DataLen > targetLength)
+			return IDS_22_003;
+		break;
+	case SQL_SMALLINT:
+		if (srcDescPtr->m_DescUnsigned)
+		{
+			ulTmp = *((USHORT *)srcDataPtr);
+			_ultoa(ulTmp, cTmpBuf, 10);
+		}
+		else
+		{
+			lTmp = *((SSHORT *)srcDataPtr);
+			_ltoa(lTmp, cTmpBuf, 10);
+		}
+		DataLen = strlen(cTmpBuf);
+		if (DataLen > targetLength)
+			return IDS_22_003;
+		break;
+	case SQL_INTEGER:
+		if (srcDescPtr->m_DescUnsigned)
+		{
+			ulTmp = *((ULONG *)srcDataPtr);
+			_ultoa(ulTmp, cTmpBuf, 10);
+		}
+		else
+		{
+			lTmp = *((SLONG *)srcDataPtr);
+			_ltoa(lTmp, cTmpBuf, 10);
+		}
+		DataLen = strlen(cTmpBuf);
+		if (DataLen > targetLength)
+			return IDS_22_003;
+		break;
+	case SQL_BIGINT:
+		if (srcDescPtr->m_DescUnsigned)
+			sprintf(cTmpBuf, "%I64u", *((unsigned __int64 *)srcDataPtr));
+		else
+			sprintf(cTmpBuf, "%I64d", *((__int64 *)srcDataPtr));
+		DataLen = strlen(cTmpBuf);
+		if (DataLen > targetLength)
+			return IDS_22_003;
+		break;
+	case SQL_REAL:
+	case SQL_DOUBLE:
+		if ((srcDescPtr->m_SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
+			(srcDescPtr->m_SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
+		{
+			if (ConvertSoftDecimalToDouble(srcDescPtr->m_SQLDataType, srcDataPtr, srcLength, srcDescPtr->m_ODBCScale,
+				dTmp) != SQL_SUCCESS)
+				return IDS_07_006;
+			if (!double_to_char(dTmp, DBL_DIG, cTmpBuf, targetLength))
+				return IDS_22_001;
+		}
+		else
+		{
+			if (srcDescPtr->m_ODBCDataType == SQL_REAL) {
+				dTmp = (double)(*(float *)srcDataPtr);
+				if (!double_to_char(dTmp, FLT_DIG + 1, cTmpBuf, targetLength))
+					return IDS_22_001;
+			}
+			else {
+				dTmp = *(double *)srcDataPtr;
+				if (!double_to_char(dTmp, DBL_DIG + 1, cTmpBuf, targetLength))
+					return IDS_22_001;
+			}
+		}
+		DataLen = strlen(cTmpBuf);
+		if ((tempPtr = strchr(cTmpBuf, '.')) != NULL)
+			DecimalPoint = tempPtr - cTmpBuf;
+		else
+			DecimalPoint = 0;
+		if (DecimalPoint > targetLength)
+			return IDS_22_003;
+		if (DataLen > targetLength)
+		{
+			DataLen = targetLength - 1;
+			retCode = IDS_01_004;
+		}
+		break;
+	case SQL_DECIMAL:
+		if (ConvertDecimalToChar(srcDescPtr->m_SQLDataType, srcDataPtr, srcLength, srcDescPtr->m_ODBCScale,
+			cTmpBuf, DecimalPoint) != SQL_SUCCESS)
+			return IDS_07_006;
+		DataLen = strlen(cTmpBuf);
+		if (DecimalPoint > targetLength)
+			return IDS_22_003;
+		if (DataLen > targetLength)
+		{
+			DataLen = targetLength - 1;
+			retCode = IDS_01_004;
+		}
+		break;
+	case SQL_NUMERIC:
+		if ((srcDescPtr->m_SQLDataType == SQLTYPECODE_NUMERIC) ||
+			(srcDescPtr->m_SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED)) //for bignum support
+		{
+			retCode = BigNum_To_Ascii_Helper((char*)srcDataPtr, srcLength, srcDescPtr->m_ODBCPrecision, srcDescPtr->m_ODBCScale, cTmpBuf, srcDescPtr->m_SQLDataType);
+			if (retCode != SQL_SUCCESS)
+				return retCode;
+		}
+		else {
+			if ((ConvertNumericToChar(srcDescPtr->m_SQLDataType, srcDataPtr, srcDescPtr->m_ODBCScale, cTmpBuf, DecimalPoint)) != SQL_SUCCESS)
+				return IDS_07_006;
+			if (DecimalPoint > targetLength)
+				return IDS_22_003;
+		}
+		DataLen = strlen(cTmpBuf);
+		if (DataLen  > targetLength)
+		{
+			DataLen = targetLength - 1;
+			retCode = IDS_01_004;
+		}
+		break;
+	}
+
+	if (CDataType == SQL_C_WCHAR)
+		swprintf((wchar_t *)targetDataPtr, DataLen, L"%s", cTmpBuf);
+	else
+		sprintf((char *)targetDataPtr, "%s", cTmpBuf);
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLDateToChar(SQLPOINTER srcDataPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	DATE_TYPES *SQLDate = (DATE_TYPES *)srcDataPtr;
+	if (targetLength < SQL_DATE_LEN + 1)
+		return IDS_22_003;
+	if (CDataType == SQL_C_CHAR)
+		sprintf((char *)targetDataPtr, "%04d-%02d-%02d", SQLDate->year, SQLDate->month, SQLDate->day);
+	else
+		swprintf((wchar_t *)targetDataPtr, L"%04d-%02d-%02d", SQLDate->year, SQLDate->month, SQLDate->day);
+
+	if (targetStrLenPtr)
+		*targetStrLenPtr = SQL_DATE_LEN;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLTimeToChar(SQLPOINTER srcDataPtr, SQLINTEGER srcPrecision, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	SQLINTEGER		DataLen;
+	unsigned long	ulFraction = 0;
+	char sFraction[10] = { 0 };
+	char cTmpBuf[SQL_TIME_LEN + 11] = { 0 };
+	TIME_TYPES *SQLTime = (TIME_TYPES *)srcDataPtr;
+
+	DataLen = SQL_TIME_LEN + (srcPrecision ? srcPrecision + 1 : 0);
+	if (targetLength <= DataLen)
+		return IDS_22_003;
+
+	if (srcPrecision > 0)
+	{
+		ulFraction = 0;
+		ulFraction = *(UDWORD*)SQLTime->fraction;
+		sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
+		sprintf(cTmpBuf, "%02d:%02d:%02d.%s",
+				SQLTime->hour, SQLTime->minute, SQLTime->second, sFraction);
+	}
+	else
+	{
+		sprintf(cTmpBuf, "%02d:%02d:%02d",
+				SQLTime->hour, SQLTime->minute, SQLTime->second);
+	}
+
+	if (CDataType == SQL_C_WCHAR)
+		swprintf((wchar_t *)targetDataPtr, L"%s", cTmpBuf);
+	else
+		sprintf((char *)targetDataPtr, "%s", cTmpBuf);
+
+	if (targetStrLenPtr)
+		*targetStrLenPtr = DataLen;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLTimestampToChar(SQLPOINTER srcDataPtr, SQLINTEGER srcPrecision, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	SQLINTEGER		DataLen;
+	unsigned long	ulFraction = 0;
+	char sFraction[10] = { 0 };
+	char cTmpBuf[SQL_TIMESTAMP_LEN + 11] = { 0 };
+	TIMESTAMP_TYPES* SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
+
+	DataLen = SQL_TIMESTAMP_LEN + (srcPrecision ? srcPrecision + 1 : 0);
+	if (targetLength <= DataLen)
+		return IDS_22_003;
+
+	if (srcPrecision > 0)
+	{
+		ulFraction = *(UDWORD*)SQLTimestamp->fraction;
+		sprintf(sFraction, "%0*lu", srcPrecision, ulFraction);
+		ulFraction = atol(sFraction);
+		sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u.%s",
+			SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
+			SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second, sFraction);
+	}
+	else
+	{
+		sprintf(cTmpBuf, "%04d-%02u-%02u %02u:%02u:%02u",
+			SQLTimestamp->year, SQLTimestamp->month, SQLTimestamp->day,
+			SQLTimestamp->hour, SQLTimestamp->minute, SQLTimestamp->second);
+	}
+
+	if (CDataType == SQL_C_WCHAR)
+		swprintf((wchar_t *)targetDataPtr, L"%s", cTmpBuf);
+	else
+		sprintf((char *)targetDataPtr, "%s", cTmpBuf);
+
+	if (targetStrLenPtr)
+		*targetStrLenPtr = DataLen;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLCharToNumber(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long	retCode		= SQL_SUCCESS;
+	__int64			tempVal64	= 0;
+	double			dTmp = 0;
+	SQLINTEGER		DataLen		= 0;
+	int TransStringLength = 0;
+
+	char error[64];
+	char			*cTmpBuf	= NULL;
+	SQLSMALLINT     ODBCDataType = srcDescPtr->m_ODBCDataType;
+	SQLINTEGER      srcCharSet	= srcDescPtr->m_SQLCharset;
+
+	retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, &DataLen);
+
+	if (retCode == SQL_SUCCESS)
+		retCode = ConvertSQLCharToDouble(cTmpBuf, DataLen, ODBCDataType, dTmp);
+
+	if (retCode == SQL_SUCCESS)
+		retCode = ConvertDoubleToNumber(dTmp, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+
+	if (cTmpBuf != NULL)
+	{
+		free(cTmpBuf);
+		cTmpBuf = NULL;
+	}
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvertDoubleToNumber(double dTmp, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	CHAR	tTmp	= 0;
+	UCHAR	utTmp	= 0;
+	SHORT	sTmp	= 0;
+	USHORT	usTmp	= 0;
+	SLONG	lTmp	= 0;
+	ULONG	ulTmp	= 0;
+	__int64	tempVal64 = 0;
+	unsigned __int64 utempVal64 = 0;
+	FLOAT	fltTmp	= 0;
+
+	SQLPOINTER DataPtr = NULL;
+	SQLLEN	DataLen = 0;
+
+	switch (CDataType)
+	{
+	case SQL_C_BIT:
+		if (dTmp == 0 || dTmp == 1)
+			utTmp = (UCHAR)dTmp;
+		else if (dTmp > 0 && dTmp < 2)
+		{
+			utTmp = (UCHAR)dTmp;
+			retCode = IDS_01_S07;
+		}
+		else
+			retCode = IDS_22_003;
+		DataPtr = &utTmp;
+		DataLen = sizeof(UCHAR);
+		break;
+
+	case SQL_C_TINYINT:
+	case SQL_C_STINYINT:
+		if (dTmp < SCHAR_MIN || dTmp > SCHAR_MAX)
+			return IDS_22_003;
+		tTmp = (SCHAR)dTmp;
+		if (dTmp != tTmp)
+			retCode = IDS_01_S07;
+		DataPtr = &tTmp;
+		DataLen = sizeof(SCHAR);
+		break;
+	case SQL_C_UTINYINT:
+			if (dTmp < 0 || dTmp > UCHAR_MAX)
+				return IDS_22_003;
+			utTmp = (UCHAR)dTmp;
+			if (dTmp != utTmp)
+				retCode = IDS_01_S07;
+		DataPtr = &utTmp;
+		DataLen = sizeof(UCHAR);
+		break;
+
+	case SQL_C_SHORT:
+	case SQL_C_SSHORT:
+		if (dTmp < SHRT_MIN || dTmp > SHRT_MAX)
+			return IDS_22_003;
+		sTmp = (SHORT)dTmp;
+		if (dTmp != sTmp)
+			return IDS_01_S07;
+		DataPtr = &sTmp;
+		DataLen = sizeof(SHORT);
+		break;
+	case SQL_C_USHORT:
+		if (dTmp < 0 || dTmp > USHRT_MAX)
+			return IDS_22_003;
+		usTmp = (USHORT)dTmp;
+		if (dTmp != usTmp)
+			return IDS_01_S07;
+		DataPtr = &usTmp;
+		DataLen = sizeof(USHORT);
+		break;
+
+	case SQL_C_LONG:
+	case SQL_C_SLONG:
+		if (dTmp < LONG_MIN || dTmp > LONG_MAX)
+			return IDS_22_003;
+		lTmp = (SLONG)dTmp;
+		if (dTmp != lTmp)
+			retCode = IDS_01_S07;
+		DataPtr = &lTmp;
+		DataLen = sizeof(SLONG);
+		break;
+	case SQL_C_ULONG:
+		if (dTmp < 0 || dTmp > ULONG_MAX)
+			return IDS_22_003;
+		ulTmp = (ULONG)dTmp;
+		if (dTmp != ulTmp)
+			retCode = IDS_01_S07;
+		DataPtr = &ulTmp;
+		DataLen = sizeof(ULONG);
+		break;
+
+	case SQL_C_SBIGINT:
+		if (dTmp < LLONG_MIN || dTmp > LLONG_MAX)
+			return IDS_22_003;
+		tempVal64 = dTmp;
+		DataPtr = &tempVal64;
+		DataLen = sizeof(__int64);
+		break;
+	case SQL_C_UBIGINT:
+		if (dTmp < 0 || dTmp > ULLONG_MAX)
+			return IDS_22_003;
+		utempVal64 = dTmp;
+		DataPtr = &utempVal64;
+		DataLen = sizeof(unsigned __int64);
+		break;
+
+	case SQL_C_FLOAT:
+		if (dTmp < -FLT_MAX || dTmp > FLT_MAX)
+			return IDS_22_003;
+		fltTmp = (FLOAT)dTmp;
+		DataPtr = &fltTmp;
+		DataLen = sizeof(FLOAT);
+		break;
+	case SQL_C_DOUBLE:
+		DataPtr = &dTmp;
+		DataLen = sizeof(DOUBLE);
+		break;
+
+	default:
+		return IDS_07_006;
+	}
+
+	memcpy(targetDataPtr, DataPtr, DataLen);
+
+	if (targetStrLenPtr)
+		*targetStrLenPtr = DataLen;
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLNumberToNumber(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	double	dTmp = 0;
+	char cTmpBuf[NUM_LEN_MAX] = { 0 };
+	SQLINTEGER	DecimalPoint = 0;
+	__int64		tempVal64 = 0;
+	char		*stopStr = NULL;
+
+	SQLSMALLINT srcUnsigned = srcDescPtr->m_DescUnsigned;
+	SQLSMALLINT SQLDataType = srcDescPtr->m_SQLDataType;
+	SQLSMALLINT srcScale	= srcDescPtr->m_ODBCScale;
+
+	switch (srcDescPtr->m_ODBCDataType)
+	{
+	case SQL_TINYINT:
+		if (srcUnsigned)
+		{
+			dTmp = *((UCHAR *)srcDataPtr);
+		}
+		else
+		{
+			dTmp = *((SCHAR *)srcDataPtr);
+		}
+		break;
+	case SQL_SMALLINT:
+		if (srcUnsigned)
+		{
+			dTmp = *(USHORT *)srcDataPtr;
+		}
+		else
+		{
+			dTmp = *(SSHORT *)srcDataPtr;
+		}
+		break;
+	case SQL_INTEGER:
+		if (srcUnsigned)
+		{
+			dTmp = *(ULONG *)srcDataPtr;
+		}
+		else
+		{
+			dTmp = *(SLONG *)srcDataPtr;
+		}
+		break;
+	case SQL_REAL:
+		dTmp = *(SFLOAT *)srcDataPtr;
+		break;
+	case SQL_DOUBLE:
+		if ((SQLDataType == SQLTYPECODE_DECIMAL_LARGE_UNSIGNED) ||
+			(SQLDataType == SQLTYPECODE_DECIMAL_LARGE))
+		{
+			if (ConvertSoftDecimalToDouble(SQLDataType, srcDataPtr, srcLength, srcScale,
+				dTmp) != SQL_SUCCESS)
+				return IDS_07_006;
+		}
+		else
+			dTmp = *(SDOUBLE *)srcDataPtr;
+		break;
+	case SQL_DECIMAL:
+		if (ConvertDecimalToChar(SQLDataType, srcDataPtr, srcLength, srcScale,
+			cTmpBuf, DecimalPoint) != SQL_SUCCESS)
+			return IDS_07_006;
+		if (!ctoi64((char*)cTmpBuf, tempVal64))
+			return IDS_22_003;
+		dTmp = strtod(cTmpBuf, &stopStr);
+		break;
+	}
+
+	retCode = ConvertDoubleToNumber(dTmp, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLBigintToNumber(SQLPOINTER srcDataPtr, SQLSMALLINT srcUnsigned, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	CHAR	tTmp	= 0;
+	UCHAR	utTmp	= 0;
+	SHORT	sTmp	= 0;
+	USHORT	usTmp	= 0;
+	SLONG	lTmp	= 0;
+	ULONG	ulTmp	= 0;
+	__int64	tempVal64 = 0;
+	unsigned __int64 utempVal64 = 0;
+	FLOAT	fltTmp	= 0;
+	DOUBLE	dTmp	= 0;
+
+	SQLPOINTER DataPtr = NULL;
+	SQLLEN	DataLen = 0;
+
+	if (srcUnsigned)
+	{
+		utempVal64 = *(unsigned __int64 *)srcDataPtr;
+		switch (CDataType)
+		{
+		case SQL_C_BIT:
+			if (utempVal64 == 0 || utempVal64 == 1)
+				utTmp = (UCHAR)utempVal64;
+			else if (utempVal64 > 0 && utempVal64 < 2)
+			{
+				utTmp = (UCHAR)utempVal64;
+				retCode = IDS_01_S07;
+			}
+			else
+				retCode = IDS_22_003;
+			DataPtr = &utTmp;
+			DataLen = sizeof(UCHAR);
+			break;
+
+		case SQL_C_TINYINT:
+		case SQL_C_STINYINT:
+			if (utempVal64 > SCHAR_MAX)
+				return IDS_22_003;
+			tTmp = (SCHAR)utempVal64;
+			if (utempVal64 != tTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &tTmp;
+			DataLen = sizeof(SCHAR);
+			break;
+		case SQL_C_UTINYINT:
+			if (utempVal64 > UCHAR_MAX)
+				return IDS_22_003;
+			utTmp = (UCHAR)utempVal64;
+			if (utempVal64 != utTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &utTmp;
+			DataLen = sizeof(UCHAR);
+			break;
+
+		case SQL_C_SHORT:
+		case SQL_C_SSHORT:
+			if (utempVal64 > SHRT_MAX)
+				return IDS_22_003;
+			sTmp = (SHORT)utempVal64;
+			if (utempVal64 != sTmp)
+				return IDS_01_S07;
+			DataPtr = &sTmp;
+			DataLen = sizeof(SHORT);
+			break;
+		case SQL_C_USHORT:
+			if (utempVal64 > USHRT_MAX)
+				return IDS_22_003;
+			usTmp = (USHORT)utempVal64;
+			if (utempVal64 != usTmp)
+				return IDS_01_S07;
+			DataPtr = &usTmp;
+			DataLen = sizeof(USHORT);
+			break;
+
+		case SQL_C_LONG:
+		case SQL_C_SLONG:
+			if (utempVal64 > LONG_MAX)
+				return IDS_22_003;
+			lTmp = (SLONG)utempVal64;
+			if (utempVal64 != lTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &lTmp;
+			DataLen = sizeof(SLONG);
+			break;
+		case SQL_C_ULONG:
+			if (utempVal64 > ULONG_MAX)
+				return IDS_22_003;
+			ulTmp = (ULONG)utempVal64;
+			if (utempVal64 != ulTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &ulTmp;
+			DataLen = sizeof(ULONG);
+			break;
+
+		case SQL_C_SBIGINT:
+			if (utempVal64 > LLONG_MAX)
+				return IDS_22_003;
+			tempVal64 = (__int64)utempVal64;
+			DataPtr = &tempVal64;
+			DataLen = sizeof(__int64);
+			break;
+		case SQL_C_UBIGINT:
+			DataPtr = &utempVal64;
+			DataLen = sizeof(unsigned __int64);
+			break;
+
+		case SQL_C_FLOAT:
+			fltTmp = (FLOAT)utempVal64;
+			if (utempVal64 != fltTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &fltTmp;
+			DataLen = sizeof(FLOAT);
+			break;
+		case SQL_C_DOUBLE:
+			dTmp = (DOUBLE)utempVal64;
+			if (utempVal64 != dTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &dTmp;
+			DataLen = sizeof(DOUBLE);
+			break;
+
+		default:
+			return IDS_07_006;
+		}
+	}
+	else
+	{
+		tempVal64 = *(__int64 *)srcDataPtr;
+		switch (CDataType)
+		{
+		case SQL_C_BIT:
+			if (tempVal64 == 0 || tempVal64 == 1)
+				utTmp = (UCHAR)tempVal64;
+			else if (tempVal64 > 0 && tempVal64 < 2)
+			{
+				utTmp = (UCHAR)tempVal64;
+				retCode = IDS_01_S07;
+			}
+			else
+				retCode = IDS_22_003;
+			DataPtr = &utTmp;
+			DataLen = sizeof(UCHAR);
+			break;
+
+		case SQL_C_TINYINT:
+		case SQL_C_STINYINT:
+			if (tempVal64 < SCHAR_MIN || tempVal64 > SCHAR_MAX)
+				return IDS_22_003;
+			tTmp = (SCHAR)tempVal64;
+			if (tempVal64 != tTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &tTmp;
+			DataLen = sizeof(SCHAR);
+			break;
+		case SQL_C_UTINYINT:
+			if (tempVal64 < 0 || tempVal64 > UCHAR_MAX)
+				return IDS_22_003;
+			utTmp = (UCHAR)tempVal64;
+			if (tempVal64 != utTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &utTmp;
+			DataLen = sizeof(UCHAR);
+			break;
+
+		case SQL_C_SHORT:
+		case SQL_C_SSHORT:
+			if (tempVal64 < SHRT_MIN || tempVal64 > SHRT_MAX)
+				return IDS_22_003;
+			sTmp = (SHORT)tempVal64;
+			if (tempVal64 != sTmp)
+				return IDS_01_S07;
+			DataPtr = &sTmp;
+			DataLen = sizeof(SHORT);
+			break;
+		case SQL_C_USHORT:
+			if (tempVal64 < 0 || tempVal64 > USHRT_MAX)
+				return IDS_22_003;
+			usTmp = (USHORT)tempVal64;
+			if (tempVal64 != usTmp)
+				return IDS_01_S07;
+			DataPtr = &usTmp;
+			DataLen = sizeof(USHORT);
+			break;
+
+		case SQL_C_LONG:
+		case SQL_C_SLONG:
+			if (tempVal64 < LONG_MIN || tempVal64 > LONG_MAX)
+				return IDS_22_003;
+			lTmp = (SLONG)tempVal64;
+			if (tempVal64 != lTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &lTmp;
+			DataLen = sizeof(SLONG);
+			break;
+		case SQL_C_ULONG:
+			if (tempVal64 < 0 || tempVal64 > ULONG_MAX)
+				return IDS_22_003;
+			ulTmp = (ULONG)tempVal64;
+			if (tempVal64 != ulTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &ulTmp;
+			DataLen = sizeof(ULONG);
+			break;
+
+		case SQL_C_SBIGINT:
+			DataPtr = &tempVal64;
+			DataLen = sizeof(__int64);
+			break;
+		case SQL_C_UBIGINT:
+			if (tempVal64 < 0 )
+				return IDS_22_003;
+			utempVal64 = (unsigned __int64)tempVal64;
+			DataPtr = &utempVal64;
+			DataLen = sizeof(unsigned __int64);
+			break;
+
+		case SQL_C_FLOAT:
+			fltTmp = (FLOAT)tempVal64;
+			if (tempVal64 != fltTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &fltTmp;
+			DataLen = sizeof(FLOAT);
+			break;
+		case SQL_C_DOUBLE:
+			dTmp = (DOUBLE)tempVal64;
+			if (tempVal64 != dTmp)
+				retCode = IDS_01_S07;
+			DataPtr = &dTmp;
+			DataLen = sizeof(DOUBLE);
+			break;
+
+		default:
+			return IDS_07_006;
+		}
+	}
+
+	memcpy(targetDataPtr, DataPtr, DataLen);
+
+	if (targetStrLenPtr)
+		*targetStrLenPtr = DataLen;
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLNumericToNumber(SQLPOINTER srcDataPtr, CDescRec *srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	DOUBLE	dTmp = 0;
+	__int64 tempVal64 = 0;
+	unsigned __int64 utempVal64 = 0;
+	char *stopStr = NULL;
+
+	int i = 0;
+	__int64 power = 0;
+	__int64 tempValFrac = 0;
+	unsigned __int64 utempValFrac = 0;
+	char cTmpBuf[NUM_LEN_MAX] = { 0 };
+
+	SQLSMALLINT SQLDataType		= srcDescPtr->m_SQLDataType;
+	SQLSMALLINT srcPrecision	= srcDescPtr->m_ODBCPrecision;
+	SQLSMALLINT	srcScale		= srcDescPtr->m_ODBCScale;
+
+	switch (SQLDataType)
+	{
+	case SQLTYPECODE_TINYINT:
+		dTmp = *((SCHAR *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+	case SQLTYPECODE_TINYINT_UNSIGNED:
+		dTmp = *((UCHAR *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+
+	case SQLTYPECODE_SMALLINT:
+		dTmp = *((SHORT *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+	case SQLTYPECODE_SMALLINT_UNSIGNED:
+		dTmp = *((USHORT *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+
+	case SQLTYPECODE_INTEGER:
+		dTmp = *((LONG *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+	case SQLTYPECODE_INTEGER_UNSIGNED:
+		dTmp = *((ULONG *)srcDataPtr);
+		if (srcScale > 0)
+			dTmp = dTmp / (long)pow(10, srcScale);
+		break;
+
+	case SQLTYPECODE_LARGEINT:
+		tempVal64 = *((__int64 *)srcDataPtr);
+		for (i = 0, power = 1; i < srcScale; power *= 10, i++);
+		tempValFrac = tempVal64 % power;
+		tempVal64 = tempVal64 / power;
+		dTmp = ((double)tempValFrac / (double)power);
+		dTmp = dTmp + tempVal64;
+		break;
+	case SQLTYPECODE_LARGEINT_UNSIGNED:
+		utempVal64 = *((unsigned __int64 *)srcDataPtr);
+		for (i = 0, power = 1; i < srcScale; power *= 10, i++);
+		utempValFrac = utempVal64 % power;
+		utempVal64 = utempVal64 / power;
+		dTmp = ((double)utempValFrac / (double)power);
+		dTmp = dTmp + utempVal64;
+		break;
+
+	case SQLTYPECODE_NUMERIC:
+	case SQLTYPECODE_NUMERIC_UNSIGNED:
+		if (((SQLDataType == SQLTYPECODE_NUMERIC) && (srcPrecision > 18)) ||
+			((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (srcPrecision > 9))) //for bignum support
+		{
+			retCode = BigNum_To_Ascii_Helper((char*)srcDataPtr, srcLength, srcPrecision, srcScale, cTmpBuf, SQLDataType);
+			if (retCode != SQL_SUCCESS)
+				return retCode;
+
+		}
+		else
+			return IDS_07_006;
+
+		dTmp = strtod(cTmpBuf, &stopStr);
+		if (errno == ERANGE)
+			return IDS_22_003;
+
+		break;
+
+	default:
+		return IDS_HY_000;
+	}
+	
+	retCode = ConvertDoubleToNumber(dTmp, CDataType, targetDataPtr, targetLength, targetStrLenPtr);
+
+	return retCode;
+}
+
+unsigned long ODBC::GetCTmpBufFromSQLChar(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, bool isShort, char *&cTmpBuf, SQLINTEGER *tmpLen, bool RemoveSpace)
+{
+	int TransStringLength = 0;
+	char error[64] = {0};
+	SQLLEN DataLen = 0;
+
+	SQLSMALLINT ODBCDataType = srcDescPtr->m_ODBCDataType;
+	SQLSMALLINT srcCharSet = srcDescPtr->m_SQLCharset;
+
+	if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_WCHAR)
+	{
+		if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+		{
+			wchar_t* spaceStart = wcschr((wchar_t*)srcDataPtr, L' ');
+			if (spaceStart != NULL && RemoveSpace)
+				srcLength = (spaceStart - (wchar_t*)srcDataPtr) + 1;
+			cTmpBuf = (char *)malloc(srcLength * 2);
+			memset(cTmpBuf, 0, srcLength * 2);
+			if (cTmpBuf == NULL) //Avoid a seg-violation
+				return IDS_07_003;
+			if (WCharToUTF8((wchar_t*)srcDataPtr, srcLength - 1, (char*)cTmpBuf,
+				srcLength * 2, &TransStringLength, error) != SQL_SUCCESS)
+			{
+				//	((CHandle*)ConnectionHandle)->setWcharConvError(error); 
+				return IDS_22_003;
+			}
+			//srcLength = TransStringLength + 1;
+			srcLength = strlen(cTmpBuf) + 1;
+		}
+		else
+		{
+			//remove spaces if any
+			char* spaceStart = strchr((char*)srcDataPtr, ' ');
+			if (spaceStart != NULL && RemoveSpace)
+				srcLength = (spaceStart - (char*)srcDataPtr) + 1;
+			cTmpBuf = (char *)malloc(srcLength);
+			memset(cTmpBuf, 0, srcLength);
+			if (cTmpBuf == NULL) //Avoid a seg-violation
+				return IDS_07_003;
+			strncpy(cTmpBuf, (char*)srcDataPtr, srcLength - 1);
+			cTmpBuf[srcLength - 1] = 0;
+		}
+	}
+	else //SQL_LONG_VARCHAR
+	{
+		if (isShort)
+		{
+			DataLen = *(USHORT *)srcDataPtr;
+			if (DataLen == 0)
+				return SQL_NO_DATA;
+
+			if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+			{
+				cTmpBuf = (char *)malloc(DataLen * 2 + 1);
+				memset(cTmpBuf, 0, DataLen * 2 + 1);
+				if (cTmpBuf == NULL) //Avoid a seg-violation
+					return IDS_07_003;
+				if (WCharToUTF8((wchar_t*)srcDataPtr + 1, DataLen / 2, (char*)cTmpBuf,
+					DataLen * 2 + 1, &TransStringLength, error) != SQL_SUCCESS)
+				{
+					//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+					return IDS_22_003;
+				}
+				srcLength = TransStringLength + 1;
+			}
+			else
+			{
+				cTmpBuf = (char *)malloc(DataLen + 1);
+				memset(cTmpBuf, 0, DataLen + 1);
+				if (cTmpBuf == NULL) //Avoid a seg-violation
+					return IDS_07_003;
+				memcpy(cTmpBuf, (char*)srcDataPtr + 2, DataLen);
+				srcLength = DataLen + 1;
+				cTmpBuf[DataLen] = 0;
+			}
+		}
+		else
+		{
+			DataLen = *(UINT *)srcDataPtr;
+			if (DataLen == 0)
+				return SQL_NO_DATA;
+
+			if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+			{
+				cTmpBuf = (char *)malloc(DataLen * 2 + 1);
+				memset(cTmpBuf, 0, DataLen * 2 + 1);
+				if (cTmpBuf == NULL) //Avoid a seg-violation
+					return IDS_07_003;
+				if (WCharToUTF8((wchar_t*)srcDataPtr + 2, DataLen / 2, (char*)cTmpBuf,
+					DataLen * 2 + 1, &TransStringLength, error) != SQL_SUCCESS)
+				{
+					//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+					return IDS_22_003;
+				}
+				srcLength = TransStringLength + 1;
+			}
+			else
+			{
+				cTmpBuf = (char *)malloc(DataLen + 1);
+				memset(cTmpBuf, 0, DataLen + 1);
+				if (cTmpBuf == NULL) //Avoid a seg-violation
+					return IDS_07_003;
+				memcpy(cTmpBuf, (char*)srcDataPtr + 4, DataLen);
+				srcLength = DataLen + 1;
+				cTmpBuf[DataLen] = 0;
+			}
+		}
+	}
+
+	if (tmpLen)
+		*tmpLen = srcLength;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvDoubleToInterval(DOUBLE dTmp, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	SQL_INTERVAL_STRUCT intervalTmp;
+	memset(&intervalTmp, 0, sizeof(SQL_INTERVAL_STRUCT));
+	ULONG ulTmp = 0;
+
+	if (dTmp < 0)
+		intervalTmp.interval_sign = 1;
+	ulTmp = (ULONG)dTmp;
+	if (dTmp != ulTmp)
+		retCode = IDS_01_S07;
+	switch (CDataType)
+	{
+	case SQL_C_INTERVAL_MONTH:
+		intervalTmp.interval_type = SQL_IS_MONTH;
+		intervalTmp.intval.year_month.month = ulTmp;
+		intervalTmp.intval.year_month.year = 0;
+		break;
+	case SQL_C_INTERVAL_YEAR:
+		intervalTmp.interval_type = SQL_IS_YEAR;
+		intervalTmp.intval.year_month.month = 0;
+		intervalTmp.intval.year_month.year = ulTmp;
+		break;
+	case SQL_C_INTERVAL_DAY:
+		intervalTmp.interval_type = SQL_IS_DAY;
+		intervalTmp.intval.day_second.day = ulTmp;
+		intervalTmp.intval.day_second.hour = 0;
+		intervalTmp.intval.day_second.minute = 0;
+		intervalTmp.intval.day_second.second = 0;
+		intervalTmp.intval.day_second.fraction = 0;
+		break;
+	case SQL_C_INTERVAL_HOUR:
+		intervalTmp.interval_type = SQL_IS_HOUR;
+		intervalTmp.intval.day_second.day = 0;
+		intervalTmp.intval.day_second.hour = ulTmp;
+		intervalTmp.intval.day_second.minute = 0;
+		intervalTmp.intval.day_second.second = 0;
+		intervalTmp.intval.day_second.fraction = 0;
+		break;
+	case SQL_C_INTERVAL_MINUTE:
+		intervalTmp.interval_type = SQL_IS_MINUTE;
+		intervalTmp.intval.day_second.day = 0;
+		intervalTmp.intval.day_second.hour = 0;
+		intervalTmp.intval.day_second.minute = ulTmp;
+		intervalTmp.intval.day_second.second = 0;
+		intervalTmp.intval.day_second.fraction = 0;
+		break;
+	case SQL_C_INTERVAL_SECOND:
+		intervalTmp.interval_type = SQL_IS_SECOND;
+		intervalTmp.intval.day_second.day = 0;
+		intervalTmp.intval.day_second.hour = 0;
+		intervalTmp.intval.day_second.minute = 0;
+		intervalTmp.intval.day_second.second = ulTmp;
+		intervalTmp.intval.day_second.fraction = 0;
+		break;
+	default:
+		return IDS_07_006;
+	}
+
+	memcpy(targetDataPtr, &intervalTmp, sizeof(SQL_INTERVAL_STRUCT));
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLDateToDate(SQLPOINTER srcDataPtr, SQLSMALLINT SQLDatetimeCode, BOOL ColumnwiseData, SQLPOINTER targetDataPtr)
+{
+	DATE_TYPES DateTmp = { 0, 0, 0 };
+	DATE_TYPES *SQLDate = NULL;
+	SQL_DATE_STRUCT *datePtr = (SQL_DATE_STRUCT *)targetDataPtr;
+
+	if (ColumnwiseData) // !RowwiseRowSet
+	{
+		SQLDate = &DateTmp;
+		SQLDate->year = 01;
+		SQLDate->month = 01;
+		SQLDate->day = 01;
+		switch (SQLDatetimeCode)
+		{
+		case SQLDTCODE_YEAR:
+			SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_YEAR_TO_MONTH:
+			SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			break;
+		case SQLDTCODE_MONTH:
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_MONTH_TO_DAY:
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_DAY:
+			SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr);
+			break;
+		default:
+			SQLDate->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
+			break;
+		}
+	}
+	else
+	{
+		SQLDate = (DATE_TYPES *)srcDataPtr;
+	}
+
+	datePtr->year = SQLDate->year;
+	datePtr->month = SQLDate->month;
+	datePtr->day = SQLDate->day;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLTimeToTime(SQLPOINTER srcDataPtr, SQLSMALLINT SQLDatetimeCode, BOOL ColumnwiseData, SQLPOINTER targetDataPtr)
+{
+	TIME_TYPES TimeTmp = {0, 0, 0, 0};
+	TIME_TYPES *SQLTime = NULL;
+	SQL_TIME_STRUCT *timePtr = (SQL_TIME_STRUCT *)targetDataPtr;
+
+	if (ColumnwiseData) //!RowwiseRowSet 
+	{
+		SQLTime = &TimeTmp;
+		SQLTime->hour = 0;
+		SQLTime->minute = 0;
+		SQLTime->second = 0;
+		switch (SQLDatetimeCode)
+		{
+		case SQLDTCODE_HOUR:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_HOUR_TO_MINUTE:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_MINUTE:
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_MINUTE_TO_SECOND:
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_SECOND:
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr);
+			break;
+		default:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
+		}
+	}
+	else
+	{
+		SQLTime = (TIME_TYPES *)srcDataPtr;
+	}
+
+	timePtr->hour = SQLTime->hour;
+	timePtr->minute = SQLTime->minute;
+	timePtr->second = SQLTime->second;
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLDateToTimestamp(SQLPOINTER srcDataPtr, SQLSMALLINT SQLDatetimeCode, BOOL ColumnwiseData, SQLPOINTER targetDataPtr)
+{
+	DATE_TYPES *SQLDate = NULL;
+	DATE_TYPES SQLDateTmp = { 0, 0, 0 };
+	SQL_TIMESTAMP_STRUCT timestampTmp;
+
+	if (ColumnwiseData) //!RowwiseRowSet
+	{
+		SQLDate = &SQLDateTmp;
+		SQLDate->year = 01;
+		SQLDate->month = 01;
+		SQLDate->day = 01;
+		switch (SQLDatetimeCode)
+		{
+		case SQLDTCODE_YEAR:
+			SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
+			break;
+		case SQLDTCODE_YEAR_TO_MONTH:
+			SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			break;
+		case SQLDTCODE_MONTH:
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_MONTH_TO_DAY:
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_DAY:
+			SQLDate->day = GetDayFromStr((UCHAR *)srcDataPtr);
+			break;
+		default:
+			SQLDate->year = GetYearFromStr((UCHAR *)srcDataPtr);
+			SQLDate->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			SQLDate->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
+			break;
+		}
+	}
+	else
+	{
+		SQLDate = (DATE_TYPES *)srcDataPtr;
+	}
+
+	timestampTmp.year = SQLDate->year;
+	timestampTmp.month = SQLDate->month;
+	timestampTmp.day = SQLDate->day;
+	timestampTmp.hour = 0;
+	timestampTmp.minute = 0;
+	timestampTmp.second = 0;
+	timestampTmp.fraction = 0;
+	
+	memcpy(targetDataPtr, &timestampTmp, sizeof(SQL_TIMESTAMP_STRUCT));
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLTimeToTimestamp(SQLPOINTER srcDataPtr, SQLSMALLINT SQLDatetimeCode, BOOL ColumnwiseData, SQLPOINTER targetDataPtr)
+{
+	TIME_TYPES *SQLTime = NULL;
+	TIME_TYPES SQLTimeTmp = { 0, 0, 0, 0};
+	SQL_TIMESTAMP_STRUCT timestampTmp;
+
+	struct tm *newtime;
+	time_t long_time;
+
+	if (ColumnwiseData) //!RowwiseRowSet
+	{
+		SQLTime = &SQLTimeTmp;
+		SQLTime->hour = 0;
+		SQLTime->minute = 0;
+		SQLTime->second = 0;
+		switch (SQLDatetimeCode)
+		{
+		case SQLDTCODE_HOUR:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_HOUR_TO_MINUTE:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_MINUTE:
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
+			break;
+		case SQLDTCODE_MINUTE_TO_SECOND:
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_SECOND:
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr);
+			break;
+		default:
+			SQLTime->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			SQLTime->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTime->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
+		}
+	}
+	else
+	{
+		SQLTime = (TIME_TYPES *)srcDataPtr;
+	}
+
+	time(&long_time);					/* Get time as long integer. */
+	newtime = localtime(&long_time);	/* Convert to local time. */
+	timestampTmp.year = (short)(newtime->tm_year + 1900);
+	timestampTmp.month = (unsigned short)(newtime->tm_mon + 1);
+	timestampTmp.day = (unsigned short)newtime->tm_mday;
+	timestampTmp.hour = SQLTime->hour;
+	timestampTmp.minute = SQLTime->minute;
+	timestampTmp.second = SQLTime->second;
+	timestampTmp.fraction = 0;
+
+	memcpy(targetDataPtr, &timestampTmp, sizeof(SQL_TIMESTAMP_STRUCT));
+
+	return SQL_SUCCESS;
+}
+
+unsigned long ODBC::ConvSQLTimestampToDateTime(SQLPOINTER srcDataPtr, SQLSMALLINT SQLDatetimeCode, SQLSMALLINT srcPrecision, BOOL ColumnwiseData, SQLSMALLINT CDataType, SQLPOINTER targetDataPtr)
+{
+	unsigned long retCode	= SQL_SUCCESS;
+
+	TIMESTAMP_TYPES SQLTimestampTmp;
+	memset(&SQLTimestampTmp, 0, sizeof(TIMESTAMP_TYPES));
+	TIMESTAMP_TYPES *SQLTimestamp = &SQLTimestampTmp;
+	ULONG	ulFraction		= 0;
+	char	sFraction[16]	= { 0 };
+	DOUBLE  dTmp			= 0;
+
+	SQL_DATE_STRUCT dateTmp = {0, 0, 0};
+	SQL_TIME_STRUCT timeTmp = {0, 0, 0};
+	SQL_TIMESTAMP_STRUCT timestampTmp = {0, 0, 0, 0, 0, 0, 0};
+	SQLPOINTER DataPtr = NULL;
+	SQLINTEGER DataLen = 0;
+
+	if (ColumnwiseData) //!RowwiseRowSet
+	{
+		SQLTimestamp->year = 0;
+		SQLTimestamp->month = 0;
+		SQLTimestamp->day = 0;
+		SQLTimestamp->hour = 0;
+		SQLTimestamp->minute = 0;
+		SQLTimestamp->second = 0;
+		switch (SQLDatetimeCode)
+		{
+		case SQLDTCODE_TIME:
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 6);
+			if (srcPrecision > 0)
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 9, srcPrecision);
+			break;
+		case SQLDTCODE_YEAR_TO_HOUR:
+			SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
+			break;
+		case SQLDTCODE_YEAR_TO_MINUTE:
+			SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
+			break;
+		case SQLDTCODE_MONTH_TO_HOUR:
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);;
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);;
+			break;
+		case SQLDTCODE_MONTH_TO_MINUTE:
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
+			break;
+		case SQLDTCODE_MONTH_TO_SECOND:
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 6);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 9);
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 12);
+			if (srcPrecision > 0)
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 15, srcPrecision);
+			break;
+		case SQLDTCODE_DAY_TO_HOUR:
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
+			break;
+		case SQLDTCODE_DAY_TO_MINUTE:
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
+			break;
+		case SQLDTCODE_DAY_TO_SECOND:
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 3);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 6);
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 9);
+			if (srcPrecision > 0)
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 12, srcPrecision);
+			break;
+		case SQLDTCODE_MINUTE_TO_SECOND:
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 3);
+			if (srcPrecision > 0)
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 6, srcPrecision);
+			break;
+		case SQLDTCODE_SECOND:
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr);
+			if (srcPrecision > 0)
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 3, srcPrecision);
+			break;
+		default:
+			SQLTimestamp->year = GetYearFromStr((UCHAR*)srcDataPtr);
+			SQLTimestamp->month = GetMonthFromStr((UCHAR*)srcDataPtr + 5);
+			SQLTimestamp->day = GetDayFromStr((UCHAR*)srcDataPtr + 8);
+			SQLTimestamp->hour = GetHourFromStr((UCHAR*)srcDataPtr + 11);
+			SQLTimestamp->minute = GetMinuteFromStr((UCHAR*)srcDataPtr + 14);
+			SQLTimestamp->second = GetSecondFromStr((UCHAR*)srcDataPtr + 17);
+			if (srcPrecision > 6)
+			{
+				ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 20, srcPrecision);
+				sprintf(sFraction, "%0*lu000000000", 6, ulFraction);
+				sFraction[9] = 0;
+				ulFraction = atol(sFraction);
+			}
+			else
+			{
+				if (srcPrecision > 0)
+					ulFraction = GetFractionFromStr((UCHAR*)srcDataPtr + 20, srcPrecision);
+			}
+			break;
+		}
+	}
+	else
+	{
+		SQLTimestamp = (TIMESTAMP_TYPES *)srcDataPtr;
+		if (srcPrecision > 0)
+		{
+			// SQL returns fraction of a second which has to be converted to nano seconds
+			dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10, srcPrecision);
+			ulFraction = dTmp;
+		}
+		else
+			ulFraction = 0;
+	}
+
+	switch (CDataType)
+	{
+	case SQL_C_DATE:
+	case SQL_C_TYPE_DATE:
+		if (SQLTimestamp->hour != 0 || SQLTimestamp->minute != 0 || SQLTimestamp->second != 0 || ulFraction != 0)
+			retCode = IDS_01_S07;
+		dateTmp.year = SQLTimestamp->year;
+		dateTmp.month = SQLTimestamp->month;
+		dateTmp.day = SQLTimestamp->day;
+		DataPtr = &dateTmp;
+		DataLen = sizeof(SQL_DATE_STRUCT);
+		break;
+	case SQL_C_TIME:
+	case SQL_C_TYPE_TIME:
+		if (SQLTimestamp->year != 0 || SQLTimestamp->month != 0 || SQLTimestamp->day != 0)
+			retCode = IDS_01_S07;
+		timeTmp.hour = SQLTimestamp->hour;
+		timeTmp.minute = SQLTimestamp->minute;
+		timeTmp.second = SQLTimestamp->second;
+		DataPtr = &timeTmp;
+		DataLen = sizeof(SQL_TIME_STRUCT);
+		break;
+	case SQL_C_TIMESTAMP:
+	case SQL_C_TYPE_TIMESTAMP:
+		timestampTmp.year = SQLTimestamp->year;
+		timestampTmp.month = SQLTimestamp->month;
+		timestampTmp.day = SQLTimestamp->day;
+		timestampTmp.hour = SQLTimestamp->hour;
+		timestampTmp.minute = SQLTimestamp->minute;
+		timestampTmp.second = SQLTimestamp->second;
+		if (srcPrecision > 0)
+		{
+			timestampTmp.fraction = ulFraction;
+		}
+		else
+			timestampTmp.fraction = 0;
+		DataPtr = &timestampTmp;
+		DataLen = sizeof(SQL_TIMESTAMP_STRUCT);
+		break;
+	}
+
+	memcpy(targetDataPtr, DataPtr, DataLen);
+
+	return retCode;
+}
+
+unsigned long ODBC::ConvSQLCharToNumeric(SQLPOINTER srcDataPtr, CDescRec *srcDescPtr, SQLINTEGER srcLength, SQLPOINTER targetDataPtr)
+{
+	unsigned long retCode = SQL_SUCCESS;
+
+	char		*cTmpBuf = NULL;
+
+	char*		DataPtr	= NULL;
+	SQLLEN		DataLen	= 0;
+
+	SQL_NUMERIC_STRUCT numericTmp;
+
+	SQLSMALLINT ODBCDataType = srcDescPtr->m_ODBCDataType;
+
+	switch (ODBCDataType)
+	{
+	case SQL_CHAR:
+	case SQL_WCHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WVARCHAR:
+		retCode = GetCTmpBufFromSQLChar(srcDataPtr, srcDescPtr, srcLength, srcDescPtr->m_SQLMaxLength <= 32767, cTmpBuf, NULL);
+		break;
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+	{
+		cTmpBuf = (char *)malloc(NUM_LEN_MAX);
+		trimInterval((char*)srcDataPtr);
+		DataLen = strlen(DataPtr);
+		if (sizeof(cTmpBuf) < DataLen)
+			return IDS_07_003;
+		strncpy(cTmpBuf, DataPtr, DataLen);
+		DataPtr = cTmpBuf;
+	}
+		break;
+	}
+
+	if (retCode != SQL_SUCCESS)
+		retCode = ConvertCharToCNumeric(numericTmp, cTmpBuf);
+
+	if (cTmpBuf != NULL)
+	{
+		free(cTmpBuf);
+		cTmpBuf = NULL;
+	}
+
+	memcpy(targetDataPtr, &numericTmp, sizeof(SQL_NUMERIC_STRUCT));
+
+	return retCode;
+}

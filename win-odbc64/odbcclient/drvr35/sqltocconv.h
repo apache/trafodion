@@ -28,23 +28,18 @@
 #include <sqlExt.h>
 #include "DrvrGlobal.h"
 #include "charsetconv.h"
+#include <cdesc.h>
 
 #define ENDIAN_PRECISION_MAX	39
+#define	NUM_LEN_MAX				128 + 2
 
 namespace ODBC {
 
 unsigned long ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 							DWORD		DataLangId,
-							SQLSMALLINT	SQLDataType,
-							SQLSMALLINT	ODBCDataType,
-							SQLSMALLINT SQLDatetimeCode,
+							CDescRec*	srcDescPtr,
 							SQLPOINTER	srcDataPtr,
 							SQLINTEGER	srcLength,
-							SQLSMALLINT	srcPrecision,
-							SQLSMALLINT	srcScale,
-							SQLSMALLINT srcUnsigned,
-							SQLINTEGER	srcCharSet,
-							SQLINTEGER	srcMaxLength,
 							SQLSMALLINT	CDataType,
 							SQLPOINTER	targetDataPtr,
 							SQLINTEGER	targetLength,
@@ -59,8 +54,134 @@ unsigned long ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 							BOOL		ColumnwiseData = FALSE,
 							CHAR		*replacementChar = NULL);
 
-SQLRETURN ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLSMALLINT srcScale, 
-							   char *cTmpBuf, SQLINTEGER &DecimalPoint);
+unsigned long ConvSQLCharToChar(SQLPOINTER srcDataPtr, CDescRec* srcDescPtr, SQLINTEGER srcLength, SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr, SQLINTEGER targetLength, SQLLEN *targetStrLenPtr,
+								DWORD translateOption, CHAR *&translatedDataPtr, SQLINTEGER* totalReturnedLength,
+								UCHAR *errorMsg, SWORD errorMsgMax, CHAR *replacementChar);
+
+unsigned long ConvSQLNumberToChar(SQLPOINTER srcDataPtr,
+								CDescRec* srcDescPtr,
+								SQLINTEGER srcLength,
+								SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr,
+								SQLINTEGER targetLength,
+								SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLDateToChar(SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr,
+								SQLINTEGER targetLength,
+								SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLTimeToChar(SQLPOINTER srcDataPtr,
+								SQLINTEGER srcPrecision,
+								SQLINTEGER srcLength,
+								SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr,
+								SQLINTEGER targetLength,
+								SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLTimestampToChar(SQLPOINTER srcDataPtr,
+									SQLINTEGER srcPrecision,
+									SQLINTEGER srcLength,
+									SQLSMALLINT CDataType,
+									SQLPOINTER targetDataPtr,
+									SQLINTEGER targetLength,
+									SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLCharToNumber(SQLPOINTER srcDataPtr,
+								CDescRec* srcDescPtr,
+								SQLINTEGER srcLength,
+								SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr,
+								SQLINTEGER targetLength,
+								SQLLEN *targetStrLenPtr);
+
+unsigned long ConvertDoubleToNumber(double dTmp,
+									SQLSMALLINT CDataType,
+									SQLPOINTER targetDataPtr,
+									SQLINTEGER targetLength,
+									SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLNumberToNumber(SQLPOINTER srcDataPtr,
+									CDescRec* srcDescPtr,
+									SQLINTEGER srcLength,
+									SQLSMALLINT CDataType,
+									SQLPOINTER targetDataPtr,
+									SQLINTEGER targetLength,
+									SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLBigintToNumber(SQLPOINTER srcDataPtr,
+									SQLSMALLINT srcUnsigned,
+									SQLSMALLINT CDataType,
+									SQLPOINTER targetDataPtr,
+									SQLINTEGER targetLength,
+									SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLNumericToNumber(SQLPOINTER srcDataPtr,
+									CDescRec *srcDescPtr,
+									SQLINTEGER srcLength,
+									SQLSMALLINT CDataType,
+									SQLPOINTER targetDataPtr,
+									SQLINTEGER targetLength,
+									SQLLEN *targetStrLenPtr);
+
+unsigned long ConvSQLCharToDate(SQLPOINTER srcDataPtr,
+								CDescRec *srcDescPtr,
+								SQLINTEGER srcLength,
+								SQLPOINTER targetDataPtr,
+								SQLLEN *targetStrLenPtr);
+
+unsigned long ConvDoubleToInterval(DOUBLE dTmp,
+								SQLSMALLINT CDataType,
+								SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLDateToDate(SQLPOINTER srcDataPtr,
+								SQLSMALLINT SQLDatetimeCode,
+								BOOL ColumnwiseData,
+								SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLTimeToTime(SQLPOINTER srcDataPtr,
+								SQLSMALLINT SQLDatetimeCode,
+								BOOL ColumnwiseData,
+								SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLTimestampToDateTime(SQLPOINTER srcDataPtr,
+										SQLSMALLINT SQLDatetimeCode,
+										SQLSMALLINT srcPrecision,
+										BOOL ColumnwiseData,
+										SQLSMALLINT CDataType,
+										SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLDateToTimestamp(SQLPOINTER srcDataPtr,
+									SQLSMALLINT SQLDatetimeCode,
+									BOOL ColumnwiseData,
+									SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLTimeToTimestamp(SQLPOINTER srcDataPtr,
+									SQLSMALLINT SQLDatetimeCode,
+									BOOL ColumnwiseData,
+									SQLPOINTER targetDataPtr);
+
+unsigned long ConvSQLCharToNumeric(SQLPOINTER srcDataPtr,
+								CDescRec *srcDescPtr,
+								SQLINTEGER srcLength,
+								SQLPOINTER targetDataPtr);
+
+unsigned long GetCTmpBufFromSQLChar(SQLPOINTER srcDataPtr,
+								CDescRec* srcDescPtr,
+								SQLINTEGER srcLength,
+								bool isShort,
+								char *&cTmpBuf,
+								SQLINTEGER *tmpLen,
+								bool RemoveSpace = true);
+
+SQLRETURN ConvertNumericToChar(SQLSMALLINT SQLDataType,
+							SQLPOINTER srcDataPtr,
+							SQLSMALLINT srcScale,
+							char *cTmpBuf,
+							SQLINTEGER &DecimalPoint);
 
 SQLRETURN ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
 								SQLSMALLINT srcScale, char *cTmpBuf, SQLINTEGER &DecimalPoint);
@@ -68,10 +189,10 @@ SQLRETURN ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, S
 SQLRETURN ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
 								SQLSMALLINT srcScale, double &dTmp);
 
-unsigned long ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER srcLength,
+unsigned long ConvertSQLCharToDouble(SQLPOINTER srcDataPtr, SQLINTEGER srcLength,
 									SQLSMALLINT ODBCDataType, double &dTmp);
 
-unsigned long ConvertSQLCharToDate(SQLSMALLINT ODBCDataType, 
+unsigned long ConvertSQLCharToDateTime(SQLSMALLINT ODBCDataType, 
 						SQLPOINTER srcDataPtr,
 						SQLINTEGER	srcLength,
 						SQLSMALLINT CDataType,

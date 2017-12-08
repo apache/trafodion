@@ -32,6 +32,10 @@
 #include <sqlExt.h>
 #include "DrvrGlobal.h"
 #include "charsetconv.h"
+#include "cdesc.h"
+
+#define TMPLEN                  256
+#define CHARTMPLEN              311
 
 namespace ODBC {
 
@@ -39,20 +43,162 @@ unsigned long ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 							SQLSMALLINT	CDataType,
 							SQLPOINTER	srcDataPtr,
 							SQLINTEGER	srcLength,
-							SQLSMALLINT	ODBCDataType,
-							SQLSMALLINT	SQLDataType,
-							SQLSMALLINT	SQLDatetimeCode,
 							SQLPOINTER	targetDataPtr,
-							SQLINTEGER	targetLength,
-							SQLINTEGER	targetPrecision,
-							SQLSMALLINT	targetScale,
-							SQLSMALLINT targetUnsigned,
-							SQLINTEGER	targetCharSet,
+							CDescRec    *targetDescPtr,
 							BOOL		byteSwap,
-							DWORD		translateOption=0,
+#ifdef unixcli
+							ICUConverter* iconv,
+#else
+							DWORD		translateOption = 0,
+#endif
 							UCHAR		*errorMsg = NULL,
 							SWORD		errorMsgMax = 0,
 							SQLINTEGER	EnvironmentType = NSK_BUILD_1);
+
+unsigned long ConvToSQLBool(SQLPOINTER srcDataPtr,
+							SQLINTEGER srcLength,
+							SQLSMALLINT CDataType,
+							SQLPOINTER targetDataPtr);
+
+unsigned long ConvertToCharTypes(SQLINTEGER ODBCAppVersion,
+								SQLSMALLINT CDataType,
+								SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								CDescRec* targetDescPtr,
+								BOOL byteSwap,
+#ifdef unixcli
+								ICUConverter* iconv,
+#else
+								DWORD translateOption,
+#endif
+								SQLPOINTER targetDataPtr,
+								UCHAR *errorMsg,
+								SWORD errorMsgMax);
+
+unsigned long ConvertCharset(SQLPOINTER DataPtr,
+							SQLINTEGER& DataLen,
+							CDescRec* targetDescPtr,
+							SQLSMALLINT CDataType,
+#ifdef unixcli
+							ICUConverter* iconv,
+#else
+							DWORD translateOption,
+#endif
+							SQLPOINTER targetDataPtr,
+							SQLPOINTER& outDataPtr,
+							SQLINTEGER OutLen,
+							short Offset,
+							UCHAR* errorMsg,
+							SWORD errorMsgMax);
+
+unsigned long  ConvertToNumberSimple(SQLSMALLINT CDataType,
+									SQLPOINTER srcDataPtr,
+									SQLINTEGER srcLength,
+									CDescRec* targetDescPtr,
+#ifdef unixcli
+									ICUConverter* iconv,
+#else
+									DWORD translateOption,
+#endif
+									SQLPOINTER targetDataPtr,
+									UCHAR* errorMsg);
+
+unsigned long  ConvertToBigint(SQLINTEGER ODBCAppVersion,
+								SQLSMALLINT CDataType,
+								SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								CDescRec* targetDescPtr,
+#ifdef unixcli
+								ICUConverter* iconv,
+#else
+								DWORD translateOption,
+#endif
+								SQLPOINTER targetDataPtr,
+								UCHAR* errorMsg);
+
+unsigned long  ConvertToNumeric(SQLINTEGER ODBCAppVersion,
+								SQLSMALLINT CDataType,
+								SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								CDescRec* targetDescPtr,
+								BOOL byteSwap,
+#ifdef unixcli
+								ICUConverter* iconv,
+#else
+								DWORD translateOption,
+#endif
+								SQLPOINTER targetDataPtr,
+								UCHAR* errorMsg);
+
+unsigned long MemcpyToNumeric(SQLPOINTER DataPtr,
+							SQLINTEGER& DataLen,
+							CDescRec* targetDescPtr,
+							SQLSMALLINT CDataType,
+							BOOL useDouble,
+							double dTmp,
+							BOOL negative,
+							unsigned __int64 decimalPart,
+							unsigned __int64 integralPart,
+							long leadZeros,
+#ifdef unixcli
+							ICUConverter* iconv,
+#else
+							DWORD translateOption,
+#endif
+							SQLPOINTER& outDataPtr,
+							unsigned long retTmp);
+
+unsigned long ConvertToDateType(SQLINTEGER ODBCAppVersion,
+								SQLSMALLINT CDataType,
+								SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								CDescRec* targetDescPtr,
+#ifdef unixcli
+								ICUConverter* iconv,
+#else
+								DWORD translateOption,
+#endif
+								SQLPOINTER targetDataPtr,
+								UCHAR *errorMsg);
+
+unsigned long ConvertToTimeType(SQLINTEGER ODBCAppVersion,
+								SQLSMALLINT CDataType,
+								SQLPOINTER srcDataPtr,
+								SQLINTEGER srcLength,
+								CDescRec* targetDescPtr,
+#ifdef unixcli
+								ICUConverter* iconv,
+#else
+								DWORD translateOption,
+#endif
+								SQLPOINTER targetDataPtr,
+								UCHAR *errorMsg);
+
+unsigned long ConvertToTimeStampType(SQLINTEGER	ODBCAppVersion,
+									SQLSMALLINT CDataType,
+									SQLPOINTER srcDataPtr,
+									SQLINTEGER srcLength,
+									CDescRec* targetDescPtr,
+#ifdef unixcli
+									ICUConverter* iconv,
+#else
+									DWORD translateOption,
+#endif
+									SQLPOINTER targetDataPtr,
+									UCHAR *errorMsg);
+
+unsigned long  ConvertToTimeIntervalType(SQLINTEGER ODBCAppVersion,
+										SQLSMALLINT	CDataType,
+										SQLPOINTER srcDataPtr,
+										SQLINTEGER srcLength,
+										CDescRec* targetDescPtr,
+#ifdef unixcli
+										ICUConverter* iconv,
+#else
+										DWORD translateOption,
+#endif
+										SQLPOINTER targetDataPtr,
+										UCHAR *errorMsg);
 
 unsigned long ConvertCharToNumeric(SQLPOINTER srcDataPtr, 
 								   SQLINTEGER srcLength, 
@@ -62,9 +208,13 @@ unsigned long ConvertCharToInt64(SQLPOINTER srcDataPtr,
 								   SQLINTEGER srcLength, 
 								   __int64 &tempVal64);
 
+unsigned long ConvertCharToUnsignedInt64(SQLPOINTER srcDataPtr,
+									SQLINTEGER srcLength,
+									unsigned __int64 &utempVal64);
+
 short ConvertCharToInt64Num(const char *srcDataPtr, 
-						   __int64 &integralPart,
-						   __int64 &decimalPart,
+						   unsigned __int64 &integralPart,
+						   unsigned __int64 &decimalPart,
 						   BOOL	&negative,
 						   long &decimalLength);
 
