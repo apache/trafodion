@@ -37,10 +37,12 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.Connection;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
@@ -1416,5 +1418,21 @@ class InterfaceConnection {
 
 	public String getApplicationName() {
 		return this.t4props_.getApplicationName();
+	}
+	
+	void setClientInfoProperties(Properties prop) {
+		this.t4props_.setClientInfoProperties(prop);
+	}
+
+	Properties getClientInfoProperties() {
+		return this.t4props_.getClientInfoProperties();
+	}
+
+	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+		this.t4props_.getClientInfoProperties().setProperty(name, value);
+	}
+
+	String getClientInfo(String name) {
+		return this.t4props_.getClientInfoProperties().getProperty(name);
 	}
 }
