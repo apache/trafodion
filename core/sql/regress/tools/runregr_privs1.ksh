@@ -286,8 +286,10 @@ for ix in $testfiles; do
     efile=$REGRTSTDIR/$exp
   fi
 
-  sqlci -i $scriptsdir/tools/reg_users.sql;
-  echo "Authorization has been enabled"
+  if [ $diffsonly -eq 0 ]; then
+    sqlci -i $scriptsdir/tools/reg_users.sql;
+    echo "Authorization has been enabled"
+  fi
 
   #--------------------------------------------------
   # Run test if the -diff option not specified     --

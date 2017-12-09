@@ -994,6 +994,9 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
                                     RETDesc *rd,
                                     ValueIdList &compExpr)
 {
+  if (! rd)
+    return;
+
   const ColumnDescList &cols = *rd->getColumnList();
   CollIndex i = cols.entries();
   CMPASSERT(i == compExpr.entries());
@@ -2168,7 +2171,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   // or ignore any accessOpts from the view, for a consistent access model.
 
   if ((CmpCommon::getDefault(ALLOW_ISOLATION_LEVEL_IN_CREATE_VIEW) == DF_OFF) ||
-      (viewRoot->accessOptions().accessType() == ACCESS_TYPE_NOT_SPECIFIED_))
+      (viewRoot->accessOptions().accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_))
     {
       // if cqd is set and view options were explicitely specified,
       // then do not overwrite it with accessOptions.
@@ -2549,7 +2552,7 @@ RETDesc *RelExpr::getRETDesc() const
 {
   if (RETDesc_)
     return RETDesc_;
-  if (getArity() == 1)
+  if ((getArity() == 1) && (child(0)))
     return child(0)->getRETDesc();
   else
     return NULL;
@@ -5802,7 +5805,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (isTrueRoot()) {
 
-    if (child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    if (child(0) && child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
       // Olt optimization is now supported for embedded updates/deletes (pub/sub
       // thingy) for now.
       oltOptInfo().setOltOpt(TRUE);
@@ -5901,8 +5904,10 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     if (isEmptySelectList())
       setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
     else {
-      setRETDesc(child(0)->getRETDesc());
-      getRETDesc()->getValueIdList(compExpr());
+      if (child(0)) {
+        setRETDesc(child(0)->getRETDesc());
+        getRETDesc()->getValueIdList(compExpr());
+      }
     }
   }
   else {
@@ -6011,6 +6016,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   // # columns, we make that check in the CallSP::bindNode, so ignore it
   // for now.
   if (isTrueRoot() &&
+      (child(0)) &&
       (child(0)->getOperatorType() != REL_CALLSP &&
       (child(0)->getOperatorType() != REL_COMPOUND_STMT &&
       (child(0)->getOperatorType() != REL_TUPLE &&
@@ -6686,9 +6692,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (bindWA->getHoldableType() == SQLCLIDEV_ANSI_HOLDABLE)
   {
-    if (accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_)
+    if (accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
     {
-      if (accessOptions().accessType() == REPEATABLE_)
+      if (accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -6698,7 +6704,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     else
     {
       TransMode::IsolationLevel il=CmpCommon::transMode()->getIsolationLevel();
-      if (CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ )
+      if (CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -8220,18 +8226,18 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
   // See Halloween handling code in GenericUpdate::bindNode
   if (accessOptions().userSpecified()) {
-    if ( accessOptions().accessType() == REPEATABLE_ ||
-         accessOptions().accessType() == STABLE_     ||
-         accessOptions().accessType() == BROWSE_
+    if ( accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_ ||
+         accessOptions().accessType() == TransMode::READ_COMMITTED_ACCESS_  ||
+         accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_
       ) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
   else {
     TransMode::IsolationLevel il = CmpCommon::transMode()->getIsolationLevel();
-    if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) {
+    if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_  ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
@@ -13534,9 +13540,9 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
         // Now check the transaction isolation level, which can override
         // the access mode.  Note that il was initialized above for the
         // check for an updatable trans, i.e., errors 3140 and 3141.
-        if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) 
+        if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_     ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) 
            cannotUseDP2Locks = TRUE;
 
         // Save the result with this GenericUpdate object.  It will be 
@@ -13749,7 +13755,7 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
     return TRUE;
   }
   
-  if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
+  if ((accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
   {

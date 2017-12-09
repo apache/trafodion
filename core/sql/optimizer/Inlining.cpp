@@ -2576,7 +2576,7 @@ RelExpr* GenericUpdate::createRISubtree(BindWA *bindWA,
   ItemExpr *newScanPredicate = parser.getItemExprTree 
     ((char *)scanPredicateTxt.data());
   newScan->addSelPredTree(newScanPredicate);
-  ((Scan *)newScan)->accessOptions().accessType() = REPEATABLE_;
+  ((Scan *)newScan)->accessOptions().accessType() = TransMode::REPEATABLE_READ_ACCESS_;
   // Do not collect STOI info for security checks.
   newScan->getInliningInfo().setFlags(II_AvoidSecurityChecks);
 
@@ -2670,7 +2670,7 @@ RelExpr* GenericUpdate::createRISubtree(BindWA *bindWA,
   // Create the Root Node.
   RelExpr *newRoot = new (heap) 
     RelRoot(newGrby,
-	    REPEATABLE_,
+	    TransMode::REPEATABLE_READ_ACCESS_,
 	    SHARE_);
 
   ((RelRoot *)newRoot)->setEmptySelectList();
@@ -2711,7 +2711,7 @@ RelExpr* GenericUpdate::inlineRI (BindWA *bindWA,
   if (riSubtree->getOperatorType() != REL_ROOT) {
     riSubtree = new (heap) 
       RelRoot(riSubtree,
-              REPEATABLE_,
+              TransMode::REPEATABLE_READ_ACCESS_,
               SHARE_);
     ((RelRoot *)riSubtree)->setEmptySelectList();
   }

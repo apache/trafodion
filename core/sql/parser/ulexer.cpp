@@ -2911,28 +2911,22 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                           // retract to end of kwd1.
                           retractToMark(end1);
                           return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
-                        case TOK_BROWSE:
 			case TOK_MAXRUNTIME:
                         case TOK_REPEATABLE:
                         case TOK_SERIALIZABLE:
-                        case TOK_STABLE:
                         case TOK_SKIP:				// QSTUFF
                           // un-null-terminate 1st kwd
                           *end1 = holdChar1;
                           doBeforeAction();
                           // FOR <kwd2> is a compound kwd
                           return aCompoundKeyword
-                            (keyWordEntry2->getTokenCode() == TOK_BROWSE
-                             ? TOK_FOR_BROWSE 
-                             : (keyWordEntry2->getTokenCode() == TOK_REPEATABLE
-                                ? TOK_FOR_REPEATABLE
-                                : (keyWordEntry2->getTokenCode() == TOK_STABLE
-                                   ? TOK_FOR_STABLE
-                                   : (keyWordEntry2->getTokenCode() == TOK_SKIP
-                                      ? TOK_FOR_SKIP             // QSTUFF
-                                      : (keyWordEntry2->getTokenCode() == TOK_SERIALIZABLE
-					 ? TOK_FOR_SERIALIZABLE : TOK_FOR_MAXRUNTIME)))), lvalp);
-
+                            (keyWordEntry2->getTokenCode() == TOK_REPEATABLE
+                             ? TOK_FOR_REPEATABLE
+                             : (keyWordEntry2->getTokenCode() == TOK_SKIP
+                                ? TOK_FOR_SKIP             // QSTUFF
+                                : (keyWordEntry2->getTokenCode() == TOK_SERIALIZABLE
+                                   ? TOK_FOR_SERIALIZABLE : TOK_FOR_MAXRUNTIME)), lvalp);
+                      
                         case TOK_READ:
                           // un-null-terminate 1st kwd
                           *end1 = holdChar1;
@@ -2975,13 +2969,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                             return aCompoundKeyword(TOK_FOR_READ_ONLY, lvalp);
                           }
 			}
-                      break;
-                    case TOK_BROWSE:
-                      return eitherCompoundOrSimpleKeyword
-                        (keyWordEntry2->getTokenCode() == TOK_ACCESS,
-                         TOK_BROWSE_ACCESS,
-                         keyWordEntry1->getTokenCode(),
-                         end1, holdChar1, lvalp);
                       break;
                     case TOK_INITIALIZE:
 		      if (keyWordEntry2->getTokenCode() == TOK_MAINTAIN)
@@ -3103,13 +3090,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                       return eitherCompoundOrSimpleKeyword
                         (keyWordEntry2->getTokenCode() == TOK_ACCESS,
                          TOK_SERIALIZABLE_ACCESS,
-                         keyWordEntry1->getTokenCode(),
-                         end1, holdChar1, lvalp);
-                      break;
-                    case TOK_STABLE:
-                      return eitherCompoundOrSimpleKeyword
-                        (keyWordEntry2->getTokenCode() == TOK_ACCESS,
-                         TOK_STABLE_ACCESS,
                          keyWordEntry1->getTokenCode(),
                          end1, holdChar1, lvalp);
                       break;

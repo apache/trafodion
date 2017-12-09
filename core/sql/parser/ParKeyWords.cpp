@@ -143,7 +143,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("BOTH",               TOK_BOTH,        ANS_|RESWORD_|MPWORD_),
   ParKeyWord("BREADTH",            IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("BRIEF",              TOK_BRIEF,       NONRESTOKEN_),
-  ParKeyWord("BROWSE",             TOK_BROWSE,      FIRST_|SECOND_|NONRESTOKEN_),
   ParKeyWord("BT",                 TOK_BT,          NONRESTOKEN_),
   ParKeyWord("BUFFER",             TOK_BUFFER,      NONRESTOKEN_),
   ParKeyWord("BUFFERED",           TOK_BUFFERED,    NONRESTOKEN_),
@@ -1043,7 +1042,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SQL_VARCHAR",        TOK_VARCHAR,     COMPAQ_|RESWORD_),
   ParKeyWord("SQL_WARNING",        TOK_SQL_WARNING, NONRESTOKEN_),
   ParKeyWord("SQRT",               TOK_SQRT,        NONRESTOKEN_),
-  ParKeyWord("STABLE",             TOK_STABLE,      FIRST_|SECOND_|NONRESTOKEN_),
   ParKeyWord("START",              TOK_START,       COMPAQ_|NONRESWORD_),
 // used in nist618 test
   ParKeyWord("STATE",              TOK_STATE,       COMPAQ_|NONRESWORD_),

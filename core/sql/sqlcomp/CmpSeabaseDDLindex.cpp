@@ -1138,7 +1138,7 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   else
     query += tableName.getExternalName(TRUE);
 
-  query += " for read uncommitted access; ";
+  query += " ; ";
 
   UInt32 savedCliParserFlags = 0;
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags);

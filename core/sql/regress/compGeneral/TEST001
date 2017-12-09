@@ -162,12 +162,12 @@ group by dno,dname;
 -- modify the statistics such that the pushed down groupby wins
 select dno,dname,sum(salary)
 from t01emp rows10000 natural join t01dept rows1000
-group by dno,dname for browse access;
+group by dno,dname;
 
 -- set showshape off;
 
 -- exchange join and groupby and add count(*) > 0 clause to the groupby
-select distinct t01dept.* from t01emp,t01dept for browse access;
+select distinct t01dept.* from t01emp,t01dept;
 
 -- won't push down, aggregate function references both tables
 -- (later, add a rewrite rule for groupby that eliminates max(region))
@@ -176,7 +176,7 @@ select distinct t01dept.* from t01emp,t01dept for browse access;
 
 select dno,dname,sum(salary), max(dregion)
 from t01emp rows10000 natural join t01dept rows1000
-group by dno,dname for browse access;
+group by dno,dname;
 
 
 -- can't push down, groupby column "eno + dregion" references both tables
@@ -186,13 +186,13 @@ select "eno + dregion",dno,dname,sum(salary) as sal
 from (select eno + dregion, dno, dname, salary
       from t01emp rows10000 natural join t01dept rows1000)
 			 as t("eno + dregion",dno,dname,salary)
-group by "eno + dregion",dno,dname for browse access;
+group by "eno + dregion",dno,dname;
 
 -- can't push down, groupby columns don't cover t01dept.key
 
 select dname,sum(salary), max(dregion)
 from t01emp rows10000 natural join t01dept rows1000
-group by dname for browse access;
+group by dname;
 
 -- set showshape off;
 
@@ -225,7 +225,7 @@ from t01emp t1 join t01emp rows12e4 on t1.eno <> rows12e4.eno
             join t01emp rows15e4 on rows14e4.eno = rows15e4.eno
             join t01emp rows16e4 on rows15e4.eno = rows16e4.eno
 group by rows12e4.eno,rows13e4.eno,rows14e4.eno,rows15e4.eno,rows16e4.eno
-for browse access;
+;
 
 -- set showshape off;
 

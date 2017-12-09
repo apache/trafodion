@@ -556,12 +556,12 @@ void ForUpdateSpec::finalizeUpdatability(RelExpr *top)
 
 
 NABoolean finalizeAccessOptions(RelExpr *top,
-                                AccessType at,
+                                TransMode::AccessType at,
                                 LockMode   lm)
 {
   if (top->getOperatorType() == REL_TUPLE ||
       top->getOperatorType() == REL_TUPLE_LIST) {
-    return (at == ACCESS_TYPE_NOT_SPECIFIED_ && lm == LOCK_MODE_NOT_SPECIFIED_);
+    return (at == TransMode::ACCESS_TYPE_NOT_SPECIFIED_ && lm == LockMode::LOCK_MODE_NOT_SPECIFIED_);
   }
 
   // In case of an INSERT VALUES statement, this is a Tuple node.
@@ -571,8 +571,8 @@ NABoolean finalizeAccessOptions(RelExpr *top,
 
   RelRoot *treeTop = (RelRoot *)top;
 
-  if (at != ACCESS_TYPE_NOT_SPECIFIED_) {
-    if (treeTop->accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_) {
+  if (at != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
+    if (treeTop->accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
       *SqlParser_Diags << DgSqlCode(-3196);
       // Access type cannot be specified more than once.
       return FALSE;	// error
@@ -580,8 +580,8 @@ NABoolean finalizeAccessOptions(RelExpr *top,
     treeTop->accessOptions().accessType() = at;
   }
 
-  if (lm != LOCK_MODE_NOT_SPECIFIED_) {
-    if (treeTop->accessOptions().lockMode() != LOCK_MODE_NOT_SPECIFIED_) {
+  if (lm != LockMode::LOCK_MODE_NOT_SPECIFIED_) {
+    if (treeTop->accessOptions().lockMode() != LockMode::LOCK_MODE_NOT_SPECIFIED_) {
       *SqlParser_Diags << DgSqlCode(-3197);
       // Lock mode cannot be specified more than once.
       return FALSE;	// error
@@ -2685,8 +2685,8 @@ RelExpr * processReturningClause(RelExpr * re, UInt32 returningType)
   
   RelRoot * root = new (PARSERHEAP())
     RelRoot(insert, 
-	    ACCESS_TYPE_NOT_SPECIFIED_, 
-	    LOCK_MODE_NOT_SPECIFIED_, 
+	    TransMode::ACCESS_TYPE_NOT_SPECIFIED_, 
+	    LockMode::LOCK_MODE_NOT_SPECIFIED_, 
 	    REL_ROOT, cr);
   
   if ((insert->child(0)) &&

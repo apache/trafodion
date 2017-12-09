@@ -487,8 +487,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_BLOB
 %token <tokval> TOK_BLOCKS
 %token <tokval> TOK_BOTH
-%token <tokval> TOK_BROWSE       	/* Tandem extension */
-%token <tokval> TOK_BROWSE_ACCESS      	/* Tandem extension */
 %token <tokval> TOK_BOOLEAN
 %token <tokval> TOK_BY
 %token <tokval> TOK_BYTEINT             /* TD extension that HP wants to ignore */
@@ -1077,8 +1075,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SORT                /* Tandem extension non-reserved word */
 %token <tokval> TOK_SORT_KEY
 %token <tokval> TOK_SP_RESULT_SET
-%token <tokval> TOK_STABLE              /* Tandem extension */
-%token <tokval> TOK_STABLE_ACCESS	/* Tandem extension */
 %token <tokval> TOK_STATUS
 %token <tokval> TOK_STDDEV              /* Tandem extension */
 %token <tokval> TOK_STOP                /* Tandem extension */
@@ -1589,7 +1585,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   StringvalWithCharSet		stringval_with_charset;
 
   action               		*actn_ptr;
-  AccessType                    accesstype;
+  TransMode::AccessType         accesstype;
   ComAnsiNameSpace              nameSpaceEnum;
   ComColumnOrdering 	     	columnOrderingEnum;
   ComCreateViewBehavior		createViewBehaviorEnum;
@@ -6485,7 +6481,7 @@ table_reference : table_name_and_hint
 
                  RelRoot * root = new (PARSERHEAP())
                    RelRoot($3, 
-                           ACCESS_TYPE_NOT_SPECIFIED_, 
+                           TransMode::ACCESS_TYPE_NOT_SPECIFIED_, 
                            LOCK_MODE_NOT_SPECIFIED_, 
                            REL_ROOT);
 
@@ -6520,7 +6516,7 @@ table_reference : table_name_and_hint
 		 
 		 RelRoot * root = new (PARSERHEAP())
 		   RelRoot($3, 
-			   ACCESS_TYPE_NOT_SPECIFIED_, 
+			   TransMode::ACCESS_TYPE_NOT_SPECIFIED_, 
 			   LOCK_MODE_NOT_SPECIFIED_, 
 			   REL_ROOT);
                  $$ = new (PARSERHEAP())
@@ -6635,7 +6631,7 @@ table_reference : table_name_and_hint
                 NAString id("x");
                 RelRoot * root = new (PARSERHEAP())
                   RelRoot(t, 
-                          ACCESS_TYPE_NOT_SPECIFIED_, 
+                          TransMode::ACCESS_TYPE_NOT_SPECIFIED_, 
                           LOCK_MODE_NOT_SPECIFIED_, 
                           REL_ROOT);
                 
@@ -6711,7 +6707,7 @@ upd_stmt_w_acc_type_and_as_clause : '(' update_statement_searched access_type ')
 					     new(PARSERHEAP()) 
 					     RelRoot($2,REL_ROOT,colRef);
 					   
-					   if ($3  != ACCESS_TYPE_NOT_SPECIFIED_)
+					   if ($3  != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 					     update->accessOptions().accessType() = $3;
 					   
 					   $2->child(0)->getGroupAttr()->setEmbeddedIUD(REL_UNARY_UPDATE);
@@ -6745,7 +6741,7 @@ upd_stmt_w_acc_type_and_as_clause_col_list : '(' update_statement_searched acces
 					     new(PARSERHEAP())
 					     RelRoot($2,REL_ROOT,colRef);
 					
-					   if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+					   if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 					     update->accessOptions().accessType() = $3;
 
 					   $2->child(0)->getGroupAttr()->setEmbeddedIUD(REL_UNARY_UPDATE);
@@ -6775,7 +6771,7 @@ upd_stmt_w_acc_type_rtn_list_and_as_clause : '(' update_statement_searched acces
 				      new(PARSERHEAP()) 
 				      RelRoot($2,REL_ROOT,$4);
 				    
-				    if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+				    if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 				      update->accessOptions().accessType() = $3;
 				    
 				    $2->child(0)->getGroupAttr()->setEmbeddedIUD(REL_UNARY_UPDATE);
@@ -6803,7 +6799,7 @@ upd_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  update_statement_sear
 				   RelRoot *update =
 				     new(PARSERHEAP()) RelRoot($2,REL_ROOT,$4);
 				   
-				   if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+				   if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 				     update->accessOptions().accessType() = $3;
 				   
 				   $2->child(0)->getGroupAttr()->setEmbeddedIUD(REL_UNARY_UPDATE);
@@ -6841,7 +6837,7 @@ del_stmt_w_acc_type_and_as_clause : '(' delete_statement access_type ')' as_clau
 				   RelRoot *update = 
 				     new(PARSERHEAP()) RelRoot($2,REL_ROOT);
 				   
-				   if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+				   if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 				     update->accessOptions().accessType() = $3;
 				   
 				   // If firstN rows flag is set, then this statement is considered an MTS delete 
@@ -6881,7 +6877,7 @@ del_stmt_w_acc_type_and_as_clause_col_list : '('  delete_statement access_type '
 		      RelRoot *update = 
 			new(PARSERHEAP()) RelRoot($2,REL_ROOT);
 		      
-		      if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+		      if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 			update->accessOptions().accessType() = $3;
 		      
 		      // If firstN rows flag is set, then this statement is considered an MTS delete 
@@ -6922,7 +6918,7 @@ del_stmt_w_acc_type_rtn_list_and_as_clause : '(' delete_statement access_type re
 		      RelRoot *update = 
 			new(PARSERHEAP()) RelRoot($2,REL_ROOT,$4);
 		      
-		      if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+		      if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 			update->accessOptions().accessType() = $3;
 		      
 		      // If firstN rows flag is set, then this statement is considered an MTS delete 
@@ -6963,7 +6959,7 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
 		  RelRoot *update =
 		    new(PARSERHEAP()) RelRoot($2,REL_ROOT, $4);
 		  
-		  if ($3 != ACCESS_TYPE_NOT_SPECIFIED_)
+		  if ($3 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 		    update->accessOptions().accessType() = $3;
 		  
 		  // If firstN rows flag is set, then this statement is considered an MTS delete 
@@ -8212,7 +8208,7 @@ primary :     '(' value_expression ')'
 
 		RelExpr * root_child = getTableExpressionRelExpr(from_clause, where_clause, NULL, NULL, NULL, NULL, NULL);
 		RelRoot *root =  new (PARSERHEAP())
-					    RelRoot(root_child, ACCESS_TYPE_NOT_SPECIFIED_, LOCK_MODE_NOT_SPECIFIED_, REL_ROOT, select_list);
+					    RelRoot(root_child, TransMode::ACCESS_TYPE_NOT_SPECIFIED_, LOCK_MODE_NOT_SPECIFIED_, REL_ROOT, select_list);
 		RelRoot * root1 = finalize(root);
 		$$ = new (PARSERHEAP()) RowSubquery(root1);
 	      }
@@ -13726,46 +13722,68 @@ query_select_list : select_list
 
 
 /* type accesstype */
-//   "[FOR] BROWSE ACCESS" and "[FOR] STABLE ACCESS" are supported for
-//    compatibility with SQL/MP.
-//   "[FOR] CLEAN ACCESS" was removed from here because it was never
-//    part of SQL/MP, and "CLEAN" is not an Ansi keyword.
-access_type :  	TOK_BROWSE_ACCESS			{$$ = BROWSE_;}
-	      | TOK_STABLE_ACCESS			
+access_type:
+	        TOK_REPEATABLE_READ TOK_ACCESS		
                 {
-		  $$ = STABLE_;
-#ifdef _DEBUG
-		  if (getenv("NO_TEST_STABLE"))
-		    $$ = CLEAN_;
-#endif
-		}
-	      | TOK_REPEATABLE_ACCESS			{$$ = REPEATABLE_;}
-	      | TOK_REPEATABLE_READ TOK_ACCESS		{$$ = REPEATABLE_;}
-	      | TOK_SERIALIZABLE_ACCESS			{$$ = REPEATABLE_;}
-
-	      | TOK_FOR_BROWSE TOK_ACCESS		{$$ = BROWSE_;}
-	      | TOK_FOR_STABLE TOK_ACCESS		
+                  *SqlParser_Diags << DgSqlCode(-1719)
+                                   << DgString0("REPEATABLE READ");
+                  YYERROR;
+                  
+                  $$ = TransMode::REPEATABLE_READ_ACCESS_;
+                }
+	      | TOK_SERIALIZABLE_ACCESS			
                 {
-		  $$ = STABLE_;
-#ifdef _DEBUG
-		  if (getenv("NO_TEST_STABLE"))
-		    $$ = CLEAN_;
-#endif
-		}
-	      | TOK_FOR_REPEATABLE TOK_ACCESS		{$$ = REPEATABLE_;}
-	      | TOK_FOR_REPEATABLE TOK_READ TOK_ACCESS	{$$ = REPEATABLE_;}
-	      | TOK_FOR_SERIALIZABLE TOK_ACCESS		{$$ = REPEATABLE_;}
+                  *SqlParser_Diags << DgSqlCode(-1719)
+                                   << DgString0("SERIALIZABLE");
+                  YYERROR;
 
-	      | TOK_READ TOK_UNCOMMITTED TOK_ACCESS	{$$ = BROWSE_;}
-	      | TOK_READ TOK_COMMITTED TOK_ACCESS	{$$ = CLEAN_;}
-	      | TOK_FOR_READ TOK_UNCOMMITTED TOK_ACCESS	{$$ = BROWSE_;}
-	      | TOK_FOR_READ TOK_COMMITTED TOK_ACCESS	{$$ = CLEAN_;}
+                  $$ = TransMode::REPEATABLE_READ_ACCESS_;
+                }
+	      | TOK_FOR_REPEATABLE TOK_READ TOK_ACCESS	
+                {
+                  *SqlParser_Diags << DgSqlCode(-1719)
+                                   << DgString0("REPEATABLE READ");
+                  YYERROR;
 
-	      | TOK_FOR_SKIP TOK_CONFLICT TOK_ACCESS 	{$$ = SKIP_CONFLICT_;}
-	      | TOK_SKIP_CONFLICT_ACCESS             	{$$ = SKIP_CONFLICT_;}
+                  $$ = TransMode::REPEATABLE_READ_ACCESS_;
+                }
+	      | TOK_FOR_SERIALIZABLE TOK_ACCESS		
+                {
+                  *SqlParser_Diags << DgSqlCode(-1719)
+                                   << DgString0("SERIALIZABLE");
+                  YYERROR;
+
+                  $$ = TransMode::REPEATABLE_READ_ACCESS_;
+                }
+              | TOK_READ TOK_UNCOMMITTED TOK_ACCESS	
+                {
+                  $$ = TransMode::READ_COMMITTED_ACCESS_;
+                }
+	      | TOK_READ TOK_COMMITTED TOK_ACCESS	
+                {
+                  $$ = TransMode::READ_COMMITTED_ACCESS_;
+                }
+	      | TOK_FOR_READ TOK_UNCOMMITTED TOK_ACCESS	
+                {
+                  $$ = TransMode::READ_COMMITTED_ACCESS_;
+                }
+	      | TOK_FOR_READ TOK_COMMITTED TOK_ACCESS	
+                {
+                  $$ = TransMode::READ_COMMITTED_ACCESS_;
+                }
+	      | TOK_FOR_SKIP TOK_CONFLICT TOK_ACCESS 	
+                {
+                  $$ = TransMode::SKIP_CONFLICT_ACCESS_;
+                }
+	      | TOK_SKIP_CONFLICT_ACCESS             	
+                {
+                  $$ = TransMode::SKIP_CONFLICT_ACCESS_;
+                }
 
 	      | /* empty */
-					    {$$ = ACCESS_TYPE_NOT_SPECIFIED_;}
+		{
+                  $$ = TransMode::ACCESS_TYPE_NOT_SPECIFIED_;
+                }
 
 
 /* The following production is an "okay"  way to do things
@@ -14135,8 +14153,22 @@ isolation_level :    TOK_ISOLATION TOK_LEVEL isolation_level_enum
 
 isolation_level_enum : TOK_READ TOK_UNCOMMITTED { $$ = TransMode::READ_UNCOMMITTED_; }
                      | TOK_READ TOK_COMMITTED	{ $$ = TransMode::READ_COMMITTED_; }
-                     | TOK_REPEATABLE_READ	{ $$ = TransMode::REPEATABLE_READ_; }
-                     | TOK_SERIALIZABLE		{ $$ = TransMode::SERIALIZABLE_; }
+                     | TOK_REPEATABLE_READ	
+                     { 
+                       *SqlParser_Diags << DgSqlCode(-1720)
+                                        << DgString0("REPEATABLE READ");
+                       YYERROR;
+                       
+                       $$ = TransMode::REPEATABLE_READ_; 
+                     }
+                     | TOK_SERIALIZABLE		
+                     { 
+                       *SqlParser_Diags << DgSqlCode(-1720)
+                                        << DgString0("SERIALIZABLE");
+                       YYERROR;
+
+                       $$ = TransMode::SERIALIZABLE_; 
+                     }
 
 transaction_access_mode : transaction_access
                           {
@@ -14797,7 +14829,7 @@ dml_query : query_expression order_by_clause access_type
 #ifndef NDEBUG	// To test packing.
                 char* env = getenv("PACKING_FACTOR");
                 if ($2 == NULL && // no ORDER BY specified
-                    $3 == ACCESS_TYPE_NOT_SPECIFIED_ &&
+                    $3 == TransMode::ACCESS_TYPE_NOT_SPECIFIED_ &&
                     $4 == LOCK_MODE_NOT_SPECIFIED_ &&
                     env && atol(env) > 0)
                 {
@@ -28776,14 +28808,14 @@ triggered_after_action: empty   // Empty or any option not listed below
 		{
 		  $$ = finalize($1, FALSE);
 		  RelRoot * treeTopPtr = (RelRoot *)$$;
-		  if ($2 != ACCESS_TYPE_NOT_SPECIFIED_)
+		  if ($2 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 		    treeTopPtr->accessOptions().accessType() = $2;
 		}
 	      | delete_statement  access_type
 		{
 		  $$ = finalize($1, FALSE);
 		  RelRoot * treeTopPtr = (RelRoot *)$$;
-		  if ($2 != ACCESS_TYPE_NOT_SPECIFIED_)
+		  if ($2 != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
 		    treeTopPtr->accessOptions().accessType() = $2;
 		}
               | signal_statement 
@@ -33299,9 +33331,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_AREA
 		      | TOK_AUTOABORT
                       | TOK_AUTOMATIC // MV
-                      | TOK_BROWSE
                       | TOK_REPEATABLE
-                      | TOK_STABLE
                       | TOK_SERIALIZABLE
 	        //          | TOK_ANSIVARCHAR  //->nonreserved_datatype   
                       | TOK_ALL_DDL

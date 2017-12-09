@@ -30,7 +30,7 @@ LOG aqatdml05 Clear;
 --       A2: select SYSKEY
 --       A3: select *
 --       A4: select expressions of columns
---       A5: use of for browse access,for stable access,for repeatable access
+--       A5: use of for read committed access,for read committed access,for read committed access
 --       A6: select aggregate functions
 
 -- All testcases are documented further below.
@@ -524,13 +524,13 @@ LOG aqatdml05 Clear;
 
 --    <detail>
 --       select joins simple test case - this tests the use
---       of the for browse access,for stable access,
---       for repeatable access clauses. No actual
+--       of the for read committed access,for read committed access,
+--       for read committed access clauses. No actual
 --       tests of the functionality of these clauses is done -- this is
 --       a test of syntax only.  Each of these clauses is checked for
 --       the following combinations:
 --            audited base table / audited base table
---            audited base table / non-audited base table (browse access only)
+--            audited base table / non-audited base table (read committed access only)
 --            bt/bt
 --            bt/pv
 --            bt/sv
@@ -550,143 +550,143 @@ LOG aqatdml05 Clear;
 --    <ufi-input>
       select pic_x_1, pic_x_7
       from btsel02,btsel03
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select pic_x_1, pic_x_7
       from btsel02,btsel03
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select pic_x_1, pic_x_7
       from btsel02,btsel03
-      for repeatable access;
+      for read committed access;
 
 --   <comment> ****   audited table, non-audited table  ****
---   <comment> ****   must specify for browse access for this test ****
+--   <comment> ****   must specify for read committed access for this test ****
 --    <ufi-input>
       select pic_x_7, pic_x_a
       from btsel03,btsel05
-      for browse access;
+      for read committed access;
 
 --    <ufi-input>
       select binary_32_u , binary_signed
       from btsel03,pvsel01
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select binary_32_u , binary_signed
       from btsel03,pvsel01
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select binary_32_u , binary_signed
       from btsel03,pvsel01
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1, medium_int
       from btsel03,svsel13
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1, medium_int
       from btsel03,svsel13
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1, medium_int
       from btsel03,svsel13
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select binary_signed, new_name_1
       from pvsel01,pvsel03
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select binary_signed, new_name_1
       from pvsel01,pvsel03
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select binary_signed, new_name_1
       from pvsel01,pvsel03
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select pic_comp_1
       from pvsel01,svsel13
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select pic_comp_1
       from pvsel01,svsel13
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select pic_comp_1
       from pvsel01,svsel13
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select var_char, col_2
       from svsel13,svsel11
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select var_char, col_2
       from svsel13,svsel11
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select var_char, col_2
       from svsel13,svsel11
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.small_int, secondd.small_int
       from btsel01 firstt,btsel01 secondd
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select firstt.small_int, secondd.small_int
       from btsel01 firstt,btsel01 secondd
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.small_int, secondd.small_int
       from btsel01 firstt,btsel01 secondd
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_2
       from pvsel03 firstt,pvsel03 secondd
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_2
       from pvsel03 firstt,pvsel03 secondd
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_2
       from pvsel03 firstt,pvsel03 secondd
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_1, secondd.medium_int
       from svsel13 firstt,svsel13 secondd
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_1, secondd.medium_int
       from svsel13 firstt,svsel13 secondd
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.new_name_1, secondd.medium_int
       from svsel13 firstt,svsel13 secondd
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.col_1, secondd.col_10
       from btsel05 firstt,btsel05 secondd
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select firstt.col_1, secondd.col_10
       from btsel05 firstt,btsel05 secondd
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select firstt.col_1, secondd.col_10
       from btsel05 firstt,btsel05 secondd
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select char_1, btsel02.pic_x_1, pic_9_7
       from btsel01,btsel02,btsel03
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select char_1, btsel02.pic_x_1, pic_9_7
       from btsel01,btsel02,btsel03
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select char_1, btsel02.pic_x_1, pic_9_7
       from btsel01,btsel02,btsel03
-      for repeatable access;
+      for read committed access;
 --    <end-input>
 
 

@@ -221,7 +221,7 @@ private:
 
 
 NABoolean finalizeAccessOptions(RelExpr *top,
-                                AccessType at = ACCESS_TYPE_NOT_SPECIFIED_,
+                                TransMode::AccessType at = TransMode::ACCESS_TYPE_NOT_SPECIFIED_,
                                 LockMode   lm = LOCK_MODE_NOT_SPECIFIED_);
 
 // The purpose of this function is to return a pointer to a HostVar object.

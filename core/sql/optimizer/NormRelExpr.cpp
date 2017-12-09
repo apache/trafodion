@@ -7001,7 +7001,7 @@ NABoolean RelRoot::isUpdatableBasic(NABoolean isView,
   if (scan->getOperatorType() != REL_SCAN)
     return FALSE;
 
-  if (scan->accessOptions().accessType() == BROWSE_)    // "read-only table"
+  if (scan->accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_)    // "read-only table"
     return FALSE;
 
   TransMode::IsolationLevel il;
@@ -7013,7 +7013,7 @@ NABoolean RelRoot::isUpdatableBasic(NABoolean isView,
     ActiveSchemaDB()->getDefaults().getIsolationLevel
       (il,
        CmpCommon::getDefault(ISOLATION_LEVEL_FOR_UPDATES));
-  if (scan->accessOptions().accessType() == ACCESS_TYPE_NOT_SPECIFIED_ &&
+  if (scan->accessOptions().accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_ &&
       il == TransMode::READ_UNCOMMITTED_)
     return FALSE;
 
