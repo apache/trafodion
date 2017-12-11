@@ -52,7 +52,15 @@ public class TestClientInfo {
             Properties clientInfo = conn.getClientInfo();
             assertTrue("this is not set clientInfo Properties", clientInfo.equals(new Properties()));
             System.out.println(clientInfo);
+            conn.close();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
     }
@@ -70,7 +78,15 @@ public class TestClientInfo {
             Properties prop1 = conn.getClientInfo();
             assertTrue("this is set and get  ClientInfoProperties", prop1.equals(prop));
             System.out.println(prop1.equals(prop));
+            conn.close();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
     }
@@ -84,7 +100,15 @@ public class TestClientInfo {
             String user1 = conn.getClientInfo("user1");
             System.out.println(user1);
             assertTrue("this is set clientInfo by Name ", user1.equals("user1"));
+            conn.close();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
     }
@@ -107,7 +131,15 @@ public class TestClientInfo {
            // assertTrue("this is get clientInfo by Name", user1.equals("user1"));
            // assertTrue("this is get clientInfo by Name", user2.equals("user2"));
             assertTrue("this is get clientInfo by Name", user3==(null));
+            conn.close();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
     }
