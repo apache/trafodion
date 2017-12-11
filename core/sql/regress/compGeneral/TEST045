@@ -534,9 +534,9 @@ insert NOMVLOG into sub_limit_02 (a, b) select a, b from sub_limit_01 order by a
 
 load into sub_limit_03 select * from sub_limit_01 limit 16;
 
-select * from sub_limit_02 order by a,b,c ;
+select count(*) from sub_limit_02;
 
-select * from sub_limit_03 order by a,b,c ;
+select count(*) from sub_limit_03;
 
 
 

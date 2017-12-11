@@ -560,52 +560,23 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:
 
 --- 16 row(s) loaded.
 >>
->>select * from sub_limit_02 order by a,b,c ;
+>>select count(*) from sub_limit_02;
 
-A            B                               C         
------------  ------------------------------  ----------
+(EXPR)              
+--------------------
 
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                             ?
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                             ?
+                  13
 
---- 13 row(s) selected.
+--- 1 row(s) selected.
 >>
->>select * from sub_limit_03 order by a,b,c ;
+>>select count(*) from sub_limit_03;
 
-A            B                               C         
------------  ------------------------------  ----------
+(EXPR)              
+--------------------
 
-          1  Limit_str_01                         11.23
-          1  Limit_str_01                         11.23
-          2  Limit_str_02                         12.23
-          2  Limit_str_02                         12.23
-          3  Limit_str_03                         13.23
-          4  Limit_str_04                         14.23
-          5  Limit_str_05                         15.23
-          6  Limit_str_06                         16.23
-          7  Limit_str_07                         17.23
-          8  Limit_str_08                         18.23
-          9  Limit_str_09                         19.23
-         10  Limit_str_10                         20.23
-         11  Limit_str_11                         21.23
-         12  Limit_str_12                         22.23
-         13  Limit_str_13                         23.23
-         14  Limit_str_14                         24.23
-         15  Limit_str_15                         25.23
-         16  Limit_str_16                         26.23
+                  18
 
---- 18 row(s) selected.
+--- 1 row(s) selected.
 >>
 >>
 >>
