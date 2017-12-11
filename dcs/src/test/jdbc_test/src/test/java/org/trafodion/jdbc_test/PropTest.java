@@ -65,7 +65,11 @@ public class PropTest
         }
         catch (Exception e) {
             if (conn != null) {
-                conn.close();
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
     }
