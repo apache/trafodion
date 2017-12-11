@@ -28,7 +28,8 @@ obey TEST045(clnup);
 log LOG045 clear;
 obey TEST045(setup);
 obey TEST045(ddl);
-obey TEST045(queries);
+obey TEST045(common_subexpr);
+obey TEST045(with_queries);
 obey TEST045(clnup);
 log;
 exit;
@@ -75,6 +76,19 @@ cqd cse_debug_warnings 'off';
 --------------------------------------------------------------------
 ?section ddl
 --------------------------------------------------------------------
+
+create table sub_limit_01 ( a int, b char(30), c decimal(8,2) ) ;
+
+insert into sub_limit_01 values
+(1, 'Limit_str_01', 11.23),(2, 'Limit_str_02', 12.23),(3, 'Limit_str_03', 13.23),
+(4, 'Limit_str_04', 14.23),(5, 'Limit_str_05', 15.23),(6, 'Limit_str_06', 16.23),
+(7, 'Limit_str_07', 17.23),(8, 'Limit_str_08', 18.23),(9, 'Limit_str_09', 19.23),
+(10, 'Limit_str_10', 20.23),(11, 'Limit_str_11', 21.23),(12, 'Limit_str_12', 22.23),
+(13, 'Limit_str_13', 23.23),(14, 'Limit_str_14', 24.23),(15, 'Limit_str_15', 25.23),
+(16, 'Limit_str_16', 26.23),(17, 'Limit_str_17', 27.23),(18, 'Limit_str_18', 28.23),
+(19, 'Limit_str_19', 29.23),(20, 'Limit_str_20', 30.23),(21, 'Limit_str_21', 31.23);
+
+
 
 create table store_sales
 (
@@ -498,8 +512,36 @@ update statistics for table date_dim on every column;
 update statistics for table date_dim on (d_qoy, d_year);
 update statistics for table store_sales on every column;
 
+
+
 --------------------------------------------------------------------
-?section queries
+?section common_subexpr
+--------------------------------------------------------------------
+
+--------------------------------------------------------------------
+-- test sub-expressions with limit clause
+--------------------------------------------------------------------
+
+create table sub_limit_02 as select * from sub_limit_01 limit 1;
+create table sub_limit_03 (a int , b char(30), c decimal(8,2)) as select * from sub_limit_01 limit 2;
+
+insert into sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+insert no check into sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+insert with no rollback into table sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+insert overwrite table sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+insert with no rollback into sub_limit_02 (*) select * from sub_limit_01 order by a,c limit 2;
+insert NOMVLOG into sub_limit_02 (a, b) select a, b from sub_limit_01 order by a,b limit 2;
+
+load into sub_limit_03 select * from sub_limit_01 limit 16;
+
+select * from sub_limit_02 order by a,b,c ;
+
+select * from sub_limit_03 order by a,b,c ;
+
+
+
+--------------------------------------------------------------------
+?section with_queries
 --------------------------------------------------------------------
 
 obey TEST045(enable_cses);

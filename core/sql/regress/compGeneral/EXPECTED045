@@ -34,6 +34,23 @@
 >>obey TEST045(ddl);
 >>--------------------------------------------------------------------
 >>
+>>create table sub_limit_01 ( a int, b char(30), c decimal(8,2) ) ;
+
+--- SQL operation complete.
+>>
+>>insert into sub_limit_01 values
++>(1, 'Limit_str_01', 11.23),(2, 'Limit_str_02', 12.23),(3, 'Limit_str_03', 13.23),
++>(4, 'Limit_str_04', 14.23),(5, 'Limit_str_05', 15.23),(6, 'Limit_str_06', 16.23),
++>(7, 'Limit_str_07', 17.23),(8, 'Limit_str_08', 18.23),(9, 'Limit_str_09', 19.23),
++>(10, 'Limit_str_10', 20.23),(11, 'Limit_str_11', 21.23),(12, 'Limit_str_12', 22.23),
++>(13, 'Limit_str_13', 23.23),(14, 'Limit_str_14', 24.23),(15, 'Limit_str_15', 25.23),
++>(16, 'Limit_str_16', 26.23),(17, 'Limit_str_17', 27.23),(18, 'Limit_str_18', 28.23),
++>(19, 'Limit_str_19', 29.23),(20, 'Limit_str_20', 30.23),(21, 'Limit_str_21', 31.23);
+
+--- 21 row(s) inserted.
+>>
+>>
+>>
 >>create table store_sales
 +>(
 +>    ss_sold_date_sk           int,
@@ -490,8 +507,110 @@
 
 --- SQL operation complete.
 >>
+>>
+>>
 >>--------------------------------------------------------------------
->>obey TEST045(queries);
+>>obey TEST045(common_subexpr);
+>>--------------------------------------------------------------------
+>>
+>>--------------------------------------------------------------------
+>>-- test sub-expressions with limit clause
+>>--------------------------------------------------------------------
+>>
+>>create table sub_limit_02 as select * from sub_limit_01 limit 1;
+
+--- 1 row(s) inserted.
+>>create table sub_limit_03 (a int , b char(30), c decimal(8,2)) as select * from sub_limit_01 limit 2;
+
+--- 2 row(s) inserted.
+>>
+>>insert into sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+
+--- 2 row(s) inserted.
+>>insert no check into sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+
+--- 2 row(s) inserted.
+>>insert with no rollback into table sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+
+--- 2 row(s) inserted.
+>>insert overwrite table sub_limit_02 select * from sub_limit_01 order by a,c limit 2;
+
+--- 2 row(s) inserted.
+>>insert with no rollback into sub_limit_02 (*) select * from sub_limit_01 order by a,c limit 2;
+
+--- 2 row(s) inserted.
+>>insert NOMVLOG into sub_limit_02 (a, b) select a, b from sub_limit_01 order by a,b limit 2;
+
+--- 2 row(s) inserted.
+>>
+>>load into sub_limit_03 select * from sub_limit_01 limit 16;
+Task:  LOAD            Status: Started    Object: TRAFODION.T045_CSES.SUB_LIMIT_03
+Task:  CLEANUP         Status: Started    Time:
+Task:  CLEANUP         Status: Ended      Time:
+Task:  CLEANUP         Status: Ended      Elapsed Time:
+Task:  LOADING DATA    Status: Started    Time:
+       Rows Processed: 16 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time:
+Task:  LOADING DATA    Status: Ended      Elapsed Time:
+Task:  COMPLETION      Status: Started    Time:
+       Rows Loaded:    16 
+Task:  COMPLETION      Status: Ended      Time:
+Task:  COMPLETION      Status: Ended      Elapsed Time:
+
+--- 16 row(s) loaded.
+>>
+>>select * from sub_limit_02 order by a,b,c ;
+
+A            B                               C         
+-----------  ------------------------------  ----------
+
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                             ?
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                             ?
+
+--- 13 row(s) selected.
+>>
+>>select * from sub_limit_03 order by a,b,c ;
+
+A            B                               C         
+-----------  ------------------------------  ----------
+
+          1  Limit_str_01                         11.23
+          1  Limit_str_01                         11.23
+          2  Limit_str_02                         12.23
+          2  Limit_str_02                         12.23
+          3  Limit_str_03                         13.23
+          4  Limit_str_04                         14.23
+          5  Limit_str_05                         15.23
+          6  Limit_str_06                         16.23
+          7  Limit_str_07                         17.23
+          8  Limit_str_08                         18.23
+          9  Limit_str_09                         19.23
+         10  Limit_str_10                         20.23
+         11  Limit_str_11                         21.23
+         12  Limit_str_12                         22.23
+         13  Limit_str_13                         23.23
+         14  Limit_str_14                         24.23
+         15  Limit_str_15                         25.23
+         16  Limit_str_16                         26.23
+
+--- 18 row(s) selected.
+>>
+>>
+>>
+>>--------------------------------------------------------------------
+>>obey TEST045(with_queries);
 >>--------------------------------------------------------------------
 >>
 >>obey TEST045(enable_cses);

@@ -379,6 +379,9 @@ cp $scriptsdir/tools/runmxci.ksh $REGRRUNDIR 2>$NULL
 echo "copying FILTER042 to $REGRRUNDIR"
 cp $REGRTSTDIR/FILTER042 $REGRRUNDIR 2>$NULL
 
+echo "copying FILTER045 to $REGRRUNDIR"
+cp $REGRTSTDIR/FILTER045 $REGRRUNDIR 2>$NULL
+
 if [ $diffOnly -eq 0 ]; then
    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
       echo "copying FILTER_TIME.AWK to $REGRRUNDIR"
