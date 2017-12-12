@@ -17934,11 +17934,33 @@ aqr_option : TOK_SQLCODE '=' NUMERIC_LITERAL_EXACT_NO_SCALE
 
 /* type relx */
 //HBASE LOAD 
-load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression
+load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression optional_limit_spec
                   {
                     //disabled by default in 0.8.0 release 
                     if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                       YYERROR; 
+
+                    //limit clause
+                    if ($7)
+                    {
+                      RelExpr *query = $6;
+          
+                      if (query->getFirstNRows() >= 0)
+                        {
+                          // cannot specify LIMIT and FIRST N clauses together.
+                          YYERROR;
+                        }
+                      else
+                        {
+                          NABoolean negate;
+                          if ($7->castToConstValue(negate))
+                            {
+                              ConstValue * limit = (ConstValue*)$7;
+                              Lng32 scale = 0;
+                              query->setFirstNRows(limit->getExactNumericValue(scale));
+                            }
+                        }
+                    }
 
                     $$ = new (PARSERHEAP())
                           HBaseBulkLoadPrep(CorrName(*$5, PARSERHEAP()),
@@ -17949,7 +17971,7 @@ load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name q
                                             //NULL
                                             );  
                     }
-                   | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression
+                   | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression optional_limit_spec
                     {
                       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
                       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
@@ -17966,6 +17988,26 @@ load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name q
                           stmt->index(" into ", 0, NAString::ignoreCase);
                        
                       RelRoot *top = finalize($5);
+                      //limit clause
+                      if ($6)
+                      {
+                        if (top->getFirstNRows() >= 0)
+                          {
+                            // cannot specify LIMIT and FIRST N clauses together.
+                            YYERROR;
+                          }
+                        else
+                          {
+                            NABoolean negate;
+                            if ($6->castToConstValue(negate))
+                              {
+                                ConstValue * limit = (ConstValue*)$6;
+                                Lng32 scale = 0;
+                                top->setFirstNRows(limit->getExactNumericValue(scale));
+                                top->setFirstNRowsParam(NULL);
+                              }
+                          }
+                      }
 
                       ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
                                         ExeUtilHBaseBulkLoad(CorrName(*$4, PARSERHEAP()),
@@ -19239,9 +19281,31 @@ boolean_primary : predicate
               } 
 
 /* type relx */
-Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_expression order_by_clause access_type
+Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_expression order_by_clause access_type optional_limit_spec
         {
           if (!finalizeAccessOptions($5, $7)) YYERROR;
+
+          //limit clause
+          if ($8)
+          {
+	     RelExpr *query = $5;
+
+            if (query->getFirstNRows() >= 0)
+              {
+                // cannot specify LIMIT and FIRST N clauses together.
+                YYERROR;
+              }
+            else
+              {
+                NABoolean negate;
+                if ($8->castToConstValue(negate))
+                  {
+                    ConstValue * limit = (ConstValue*)$8;
+                    Lng32 scale = 0;
+                    query->setFirstNRows(limit->getExactNumericValue(scale));
+                  }
+              }
+          }
 		  
           // insert into all columns
           $$ = new (PARSERHEAP())
@@ -19272,10 +19336,32 @@ Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_ex
 	   
         }
         |
-     no_check_log no_rollback TOK_INTO TOK_TABLE table_name query_expression order_by_clause access_type
+     no_check_log no_rollback TOK_INTO TOK_TABLE table_name query_expression order_by_clause access_type optional_limit_spec
         {
           if (!finalizeAccessOptions($6, $8)) YYERROR;
-		  
+
+          //limit clause
+          if ($9)
+          {
+	     RelExpr *query = $6;
+
+            if (query->getFirstNRows() >= 0)
+              {
+                // cannot specify LIMIT and FIRST N clauses together.
+                YYERROR;
+              }
+            else
+              {
+                NABoolean negate;
+                if ($9->castToConstValue(negate))
+                  {
+                    ConstValue * limit = (ConstValue*)$9;
+                    Lng32 scale = 0;
+                    query->setFirstNRows(limit->getExactNumericValue(scale));
+                  }
+              }
+          }
+  
           // insert into all columns
           $$ = new (PARSERHEAP())
             Insert(CorrName(*$5, PARSERHEAP()),
@@ -19302,10 +19388,32 @@ Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_ex
 	   delete $5;
         }
         |
-        TOK_OVERWRITE TOK_TABLE table_name query_expression order_by_clause access_type
+        TOK_OVERWRITE TOK_TABLE table_name query_expression order_by_clause access_type optional_limit_spec
         {
           if (!finalizeAccessOptions($4, $6)) YYERROR;
-		  
+
+          //limit clause
+          if ($7)
+          {
+	     RelExpr *query = $4;
+
+            if (query->getFirstNRows() >= 0)
+              {
+                // cannot specify LIMIT and FIRST N clauses together.
+                YYERROR;
+              }
+            else
+              {
+                NABoolean negate;
+                if ($7->castToConstValue(negate))
+                  {
+                    ConstValue * limit = (ConstValue*)$7;
+                    Lng32 scale = 0;
+                    query->setFirstNRows(limit->getExactNumericValue(scale));
+                  }
+              }
+          }
+
           // insert into all columns
           $$ = new (PARSERHEAP())
             Insert(CorrName(*$3, PARSERHEAP()),
@@ -19320,9 +19428,31 @@ Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_ex
           delete $3;
         }  
             
-          | no_check_log no_rollback TOK_INTO  table_name '(' '*' ')' query_expression order_by_clause access_type
+          | no_check_log no_rollback TOK_INTO  table_name '(' '*' ')' query_expression order_by_clause access_type optional_limit_spec
         {
           if (!finalizeAccessOptions($8, $10)) YYERROR;
+
+          //limit clause
+          if ($11)
+          {
+	     RelExpr *query = $8;
+
+            if (query->getFirstNRows() >= 0)
+              {
+                // cannot specify LIMIT and FIRST N clauses together.
+                YYERROR;
+              }
+            else
+              {
+                NABoolean negate;
+                if ($11->castToConstValue(negate))
+                  {
+                    ConstValue * limit = (ConstValue*)$11;
+                    Lng32 scale = 0;
+                    query->setFirstNRows(limit->getExactNumericValue(scale));
+                  }
+              }
+          }
 
           // insert into all columns --
           // Tandem extension to INSERT statement;
@@ -19406,8 +19536,29 @@ Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_ex
 		  
                   delete $4;
                 }
-          | no_check_log no_rollback TOK_INTO table_name '(' column_list ')' query_expression order_by_clause
+          | no_check_log no_rollback TOK_INTO table_name '(' column_list ')' query_expression order_by_clause optional_limit_spec
                 {
+                  //limit clause
+                  if ($10)
+                    {
+          	        RelExpr *query = $8;
+                      if (query->getFirstNRows() >= 0)
+                        {
+                          // cannot specify LIMIT and FIRST N clauses together.
+                          YYERROR;
+                        }
+                      else
+                        {
+                          NABoolean negate;
+                          if ($10->castToConstValue(negate))
+                            {
+                              ConstValue * limit = (ConstValue*)$10;
+                              Lng32 scale = 0;
+                              query->setFirstNRows(limit->getExactNumericValue(scale));
+                            }
+                        }
+                    }
+                
                   // insert into specified columns
                   $$ = new (PARSERHEAP())
                     Insert(CorrName(*$4, PARSERHEAP()),
@@ -24940,7 +25091,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   ctas_insert_columns
 		   create_table_as_token 
 		   optional_locking_stmt_list 
-                   query_expression
+                   query_expression 
+                   optional_limit_spec
 		   {
 		     QualifiedName * qn;
 
@@ -24959,6 +25111,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 YYABORT;
 
 		     RelRoot *top = finalize($10);
+                   //limit clause
+                   if ($11)
+                   {
+                     if (top->getFirstNRows() >= 0)
+                       {
+                         // cannot specify LIMIT and FIRST N clauses together.
+                         YYERROR;
+                       }
+                     else
+                       {
+                         NABoolean negate;
+                         if ($11->castToConstValue(negate))
+                           {
+                             ConstValue * limit = (ConstValue*)$11;
+                             Lng32 scale = 0;
+                             top->setFirstNRows(limit->getExactNumericValue(scale));
+                             top->setFirstNRowsParam(NULL);
+                           }
+                         else
+                           {
+                             top->setFirstNRowsParam($11);
+                             top->setFirstNRows(-1);
+                           }
+                       }
+                   }
+
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
@@ -24997,7 +25175,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   ctas_insert_columns
 		   create_table_as_token 
 		   optional_locking_stmt_list 
-                   query_expression
+                   query_expression 
+                   optional_limit_spec
 		   {
 		     QualifiedName * qn;
 
@@ -25016,6 +25195,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
                        YYABORT;
 
 		     RelRoot *top = finalize($9);
+                   //limit clause
+                   if ($10)
+                   {
+                     if (top->getFirstNRows() >= 0)
+                       {
+                         // cannot specify LIMIT and FIRST N clauses together.
+                         YYERROR;
+                       }
+                     else
+                       {
+                         NABoolean negate;
+                         if ($10->castToConstValue(negate))
+                           {
+                             ConstValue * limit = (ConstValue*)$10;
+                             Lng32 scale = 0;
+                             top->setFirstNRows(limit->getExactNumericValue(scale));
+                             top->setFirstNRowsParam(NULL);
+                           }
+                         else
+                           {
+                             top->setFirstNRowsParam($10);
+                             top->setFirstNRows(-1);
+                           }
+                       }
+                   }
+		     
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
