@@ -44,7 +44,7 @@
 #include "seabed/fs.h"
 
 #define PhandleSize 64
-#define PhandleStringLen (MS_MON_MAX_PROCESS_NAME + 1)
+#define PhandleStringLen (MS_MON_MAX_PROCESS_NAME + 1 + 20 + 1)
 #define NodeNameLen 9
 
 //

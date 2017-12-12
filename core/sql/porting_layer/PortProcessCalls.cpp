@@ -117,10 +117,9 @@ short NAProcessHandle::decompose()
                                    ,(SB_Int64_Type *)&this->seqNum_
                                   );
   processName[processNameLen] = '\0';
-  this->phandleStringLen_ = strlen(processName);
-  strcpy(this->phandleString_, processName);
-  this->phandleString_[this->phandleStringLen_] = '\0';
 
+  this->phandleStringLen_ = sprintf(this->phandleString_, "%s:%ld",		
+                                    processName, this->seqNum_);
   return err;
 }
 
