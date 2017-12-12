@@ -323,10 +323,11 @@ The following table summarizes the {project-name} SQL data types:
 [cols="14%,14%,24%,24%,24%",options="header"]
 |===
 | Category | Type | SQL Designation | Description | Size or Range^1^
-.7+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
+.8+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
 | NCHAR                | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
 | NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
-.4+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+.5+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+| VARCHAR2                     | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
 | CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
 | NCHAR VARYING                | Variable-length ASCII character string | 1 to 200000 bytes^4^ ^7^ ^9^
 | NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 200000 characters^4^ ^7^ ^8^
@@ -607,6 +608,7 @@ numeric, datetime, or interval data.
 CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | CHAR[ACTER] VARYING(length [unit]) [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | VARCHAR(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| VARCHAR2(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 | NCHAR [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
 | NCHAR VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
 | NATIONAL CHAR[ACTER] [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
@@ -614,8 +616,10 @@ CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
 ```
 
 +
-CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
-VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
+CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. 
+
++
+CHAR VARYING, VARCHAR, VARCHAR2, NCHAR VARYING and NATIONAL CHAR VARYING are
 varying-length character types.
 
 * `_length_`
@@ -668,6 +672,14 @@ an equivalent column that is not VARYING.
 +
 specifies a column with varying-length character data. VARCHAR is
 equivalent to data type CHAR[ACTER] VARYING.
+
+* `VARCHAR2 (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with varying-length character data. VARCHAR2 is
+equivalent to data type CHAR[ACTER] VARYING.
+
+NOTE: Trafodion supports VARCHAR2 as a synonym for VARCHAR. This improves portability from some popular databases. 
+VARCHAR2 in Trafodion, however, has the standard semantics of VARCHAR. That is, an empty string is a non-null value.
 
 * `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
