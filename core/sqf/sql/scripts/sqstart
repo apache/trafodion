@@ -418,8 +418,12 @@ rm -f $MPI_TMPDIR/monitor.port.*
 
 setup_sqpdsh
 
+# Clean HBase classpath cache file
+echo "Clean up HBase classpath cache file: $TRAF_VAR/hbase_classpath"
+$SQPDSHA "rm -rf $TRAF_VAR/hbase_classpath"
+
 # Clear unique strings
-$SQPDSHA 'cd $TRAF_HOME/sql/scripts; utilConfigDb -u'
+$SQPDSHA "cd $TRAF_HOME/sql/scripts; utilConfigDb -u"
 
 echoLog "Executing sqipcrm (output to sqipcrm.out)"
 sqipcrm > sqipcrm.out

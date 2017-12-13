@@ -171,9 +171,16 @@ mkdir -p $MPI_TMPDIR
 # mkdir a dir for CBF data used by SQL IUS feature
 mkdir -p $HOME/cbfs
 
+# Clean HBase classpath cache file
+echo "Clean up HBase classpath cache file: $TRAF_VAR/hbase_classpath"
+rm -rf $TRAF_VAR/hbase_classpath
+
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
     echo
     echo "Creating directories on cluster nodes"
+
+    # Clean HBase classpath cache file on all nodes
+    $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD rm -rf $TRAF_VAR/hbase_classpath
 
     echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQETC_DIR "
     $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQETC_DIR
