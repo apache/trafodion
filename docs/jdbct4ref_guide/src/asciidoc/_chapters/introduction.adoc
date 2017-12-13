@@ -29,7 +29,7 @@ platform with JDBC access to {project-name} SQL databases on the
 {project-name}.
 
 *Supported Java Releases:* The Type 4 driver requires Java enabled
-platforms that support JDK 1.4.1 or higher.
+platforms that support JDK 1.7 or higher.
 
 
 [[type-4-driver-api-package]]
