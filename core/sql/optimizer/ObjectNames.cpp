@@ -710,9 +710,9 @@ NABoolean QualifiedName::isHbaseCellOrRow() const
 
 NABoolean QualifiedName::isLOBDesc() const
 {
-  NAString ansiNameString = getQualifiedNameAsString() ;
-  if (ansiNameString.contains(LOB_DESC_HANDLE_PREFIX))
+  if (getObjectName().index(LOB_DESC_HANDLE_PREFIX) == 0)
     return TRUE;
+      
   else
     return FALSE;
   
