@@ -640,7 +640,7 @@ TRAFODION_SCAN
 >>-- work.  
 >>#ifMX
 >>explain options 'f' select * from TAB1 where col1 < 15
-+> for serializable access;
++> for read committed access;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------

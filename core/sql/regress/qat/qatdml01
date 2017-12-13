@@ -48,26 +48,26 @@ LOG aqatdml01 Clear;
 ---------------------------------------------------------------------
 -- SELECT data base - checking the SHORTHAND VIEWs.
 ---------------------------------------------------------------------
-  SELECT * FROM svsel01  BROWSE ACCESS ;
-  SELECT * FROM svsel02  BROWSE ACCESS ;
-  SELECT * FROM svsel03  BROWSE ACCESS ;
-  SELECT * FROM svsel04   BROWSE ACCESS ;
-  SELECT new_name_ks_s, new_name_ks_x, new_name_es_x FROM svsel05   BROWSE ACCESS ;
-  SELECT * FROM svsel06   BROWSE ACCESS ;
-  SELECT * FROM svsel07  BROWSE ACCESS ;
-  SELECT * FROM svsel08  BROWSE ACCESS ;
-  SELECT * FROM svsel09  BROWSE ACCESS ;
-  SELECT * FROM svsel10  BROWSE ACCESS ;
-  SELECT * FROM svsel11  BROWSE ACCESS ;
-  SELECT * FROM svsel12  BROWSE ACCESS ;
-  SELECT * FROM svsel13  BROWSE ACCESS ;
+  SELECT * FROM svsel01  read committed access ;
+  SELECT * FROM svsel02  read committed access ;
+  SELECT * FROM svsel03  read committed access ;
+  SELECT * FROM svsel04   read committed access ;
+  SELECT new_name_ks_s, new_name_ks_x, new_name_es_x FROM svsel05   read committed access ;
+  SELECT * FROM svsel06   read committed access ;
+  SELECT * FROM svsel07  read committed access ;
+  SELECT * FROM svsel08  read committed access ;
+  SELECT * FROM svsel09  read committed access ;
+  SELECT * FROM svsel10  read committed access ;
+  SELECT * FROM svsel11  read committed access ;
+  SELECT * FROM svsel12  read committed access ;
+  SELECT * FROM svsel13  read committed access ;
 
-  SELECT * FROM svsel14  BROWSE ACCESS ;
-  SELECT * FROM svsel15  BROWSE ACCESS ;
+  SELECT * FROM svsel14  read committed access ;
+  SELECT * FROM svsel15  read committed access ;
 
 control query default optimization_level '0';
-SELECT * FROM svsel16  BROWSE ACCESS ;
-SELECT * FROM svsel17  BROWSE ACCESS ;
+SELECT * FROM svsel16  read committed access ;
+SELECT * FROM svsel17  read committed access ;
 control query default optimization_level '3';
 
 ---------------------------------------------------------------------

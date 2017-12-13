@@ -30,8 +30,8 @@ LOG aqatdml06 Clear;
 --             expression list
 --         A3: SELECT WHERE <predicate>, where <predicate> contains
 --             AND, OR, NOT
---         A4: use of SELECT WHERE ... for browse access,for stable access
---            , for repeatable access
+--         A4: use of SELECT WHERE ... for read committed access,for read committed access
+--            , for read committed access
 --         A5: SELECT aggregate functions with WHERE predicate
 
 -- All testcases are documented further below.
@@ -317,7 +317,7 @@ LOG aqatdml06 Clear;
 
 -- <detail>
 --    select joins where clause test case - this tests the use
---    of the for browse access, for stable access , and for repeatable access
+--    of the for read committed access, for read committed access , and for read committed access
 --    clauses.  Only syntax is checked here.
 
 -- <templates>
@@ -327,177 +327,177 @@ LOG aqatdml06 Clear;
       select *
       from btsel02,btsel03
       where pic_x_1 = 'c'
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel02,btsel03
       where pic_x_1 = 'c'
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel02,btsel03
       where pic_x_1 = 'c'
-      for repeatable access;
+      for read committed access;
 
 -- <comment> **** audited table, non-audited table ****
--- <comment> **** must specify for browse access for this test ****
+-- <comment> **** must specify for read committed access for this test ****
 -- <ufi-input>
       select *
       from btsel03,btsel05
       where pic_x4_a = pic_x_a
-      for browse access;
+      for read committed access;
 
 -- <ufi-input>
       select *
       from btsel03,pvsel01
       where  pvsel01.small_int =  btsel03.binary_64_s
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03,pvsel01
       where  pvsel01.small_int =  btsel03.binary_64_s
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03,pvsel01
       where  pvsel01.small_int =  btsel03.binary_64_s
-      for repeatable access;
+      for read committed access;
 
 -- <ufi-input>
       select *
       from btsel03,svsel13
       where binary_64_s = medium_int
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03,svsel13
       where binary_64_s = medium_int
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03,svsel13
       where binary_64_s = medium_int
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03,pvsel04
       where new_name_3 = pic_x_7
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03,pvsel04
       where new_name_3 = pic_x_7
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03,pvsel04
       where new_name_3 = pic_x_7
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel01,svsel13
       where  pvsel01.small_int =  svsel13.medium_int
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel01,svsel13
       where  pvsel01.small_int =  svsel13.medium_int
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel01,svsel13
       where  pvsel01.small_int =  svsel13.medium_int
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13,svsel11
       where new_name_1 = col_7
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13,svsel11
       where new_name_1 = col_7
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13,svsel11
       where new_name_1 = col_7
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03 firstt,btsel03 secondd
       where firstt.binary_64_s = secondd.binary_64_s
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03 firstt,btsel03 secondd
       where firstt.binary_64_s = secondd.binary_64_s
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel03 firstt,btsel03 secondd
       where firstt.binary_64_s = secondd.binary_64_s
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03 firstt,pvsel03 secondd
       where firstt.new_name_1 = secondd.new_name_1
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03 firstt,pvsel03 secondd
       where firstt.new_name_1 = secondd.new_name_1
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from pvsel03 firstt,pvsel03 secondd
       where firstt.new_name_1 = secondd.new_name_1
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13 firstt,svsel13 secondd
       where firstt.pic_comp_1 = secondd.pic_comp_1
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13 firstt,svsel13 secondd
       where firstt.pic_comp_1 = secondd.pic_comp_1
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13 firstt,svsel13 secondd
       where firstt.pic_comp_1 = secondd.pic_comp_1
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel05 firstt,btsel05 secondd
       where firstt.col_1 = secondd.col_1
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel05 firstt,btsel05 secondd
       where firstt.col_1 = secondd.col_1
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel05 firstt,btsel05 secondd
       where firstt.col_1 = secondd.col_1
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel02,btsel03,btsel04
       where pic_x_1 =  btsel04.pic_x_7
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel02,btsel03,btsel04
       where pic_x_1 =  btsel04.pic_x_7
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel02,btsel03,btsel04
       where pic_x_1 =  btsel04.pic_x_7
-      for repeatable access;
+      for read committed access;
 -- <end-input>
 
 

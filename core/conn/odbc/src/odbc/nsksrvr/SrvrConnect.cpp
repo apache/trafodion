@@ -5621,7 +5621,7 @@ bool InsertControls(char* sqlString, odbc_SQLSvc_ExecDirect_exc_ *exception_)
 		else if (strnicmp(ControlType,"PLANINSCQS",10) == 0)
 		{
 			ControlQuery[0] = '\0';
-			sprintf(ControlQuery,"SELECT STATEMENT_NAME FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS WHERE STATEMENT_NAME = UPSHIFT('%s') AND CONTROL_TYPE = 2 FOR BROWSE ACCESS", StatementName);
+			sprintf(ControlQuery,"SELECT STATEMENT_NAME FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS WHERE STATEMENT_NAME = UPSHIFT('%s') AND CONTROL_TYPE = 2 FOR READ UNCOMMITTED ACCESS", StatementName);
 			iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 			if (iqqcode == SQL_ERROR)
 			{
@@ -5840,7 +5840,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 		ResetControls(ResetQuery);
 
 		ControlQuery[0] = '\0';
-		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 1 FOR BROWSE ACCESS", StatementName);
+		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 1 FOR READ UNCOMMITTED ACCESS", StatementName);
 		iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 		if (iqqcode != SQL_SUCCESS)
 		{
@@ -5939,7 +5939,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 		}
 
 		ControlQuery[0] = '\0';
-		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 2 ORDER BY CONTROL_SEQUENCE FOR BROWSE ACCESS", StatementName);
+		sprintf(ControlQuery,"SELECT CONTROL_TEXT FROM NEO.PUBLIC_ACCESS_SCHEMA.MXCS_STATEMENT_CONTROLS where STATEMENT_NAME = UPSHIFT('%s') and CONTROL_TYPE = 2 ORDER BY CONTROL_SEQUENCE FOR READ UNCOMMITTED ACCESS", StatementName);
 		iqqcode = QryControlSrvrStmt->ExecDirect(NULL, ControlQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
 		if (iqqcode != SQL_SUCCESS)
 		{
@@ -6833,25 +6833,25 @@ bool ChkWSvcCommands(char* wsname, int& retcode, long type)
 	switch (type)
 	{
 	case CHECK_SERVICE:
-		sprintf(ControlQuery,"select service_id from NEO.NWMS_SCHEMA.SERVICES where service_name = \'%s\' for browse access", wsname);
+		sprintf(ControlQuery,"select service_id from NEO.NWMS_SCHEMA.SERVICES where service_name = \'%s\' for read uncommitted access", wsname);
 		break;
 	case CHECK_SERVICEMAX:
-		sprintf(ControlQuery,"select MAX(service_id) from NEO.NWMS_SCHEMA.SERVICES for browse access");
+		sprintf(ControlQuery,"select MAX(service_id) from NEO.NWMS_SCHEMA.SERVICES for read uncommitted access");
 		break;
 	case CHECK_SERVICEPRTY:
-		sprintf(ControlQuery,"select service_priority from NEO.NWMS_SCHEMA.SERVICES  where service_name = \'%s\' for browse access", wsname);
+		sprintf(ControlQuery,"select service_priority from NEO.NWMS_SCHEMA.SERVICES  where service_name = \'%s\' for read uncommitted access", wsname);
 		break;
 //	case CHECK_MAXQUERIES_TOTAL:
-//		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) for browse access");
+//		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) for read uncommitted access");
 //		break;
 	case CHECK_MAXQUERIES_OTHERS:
-		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) and service_id <> %s for browse access", service_id);
+		sprintf(ControlQuery,"select cast(sum(cast(limit_value as integer)) as integer) from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type in (0,1) and service_id <> %s for read uncommitted access", service_id);
 		break;
 	case CHECK_QUERIES_WAITING:
-		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 1 and service_id = %s for browse access", service_id);
+		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 1 and service_id = %s for read uncommitted access", service_id);
 		break;
 	case CHECK_QUERIES_EXECUTING:
-		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 0 and service_id = %s for browse access", service_id);
+		sprintf(ControlQuery,"select limit_value from NEO.NWMS_SCHEMA.THRESHOLDS where threshold_type = 0 and service_id = %s for read uncommitted access", service_id);
 		break;
 	default:
 		return false;

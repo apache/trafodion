@@ -19,7 +19,7 @@ LOG aqatdml04 Clear;
 --       testcase A1: HAVING
 --       testcase A2: ORDER BY
 --       testcase A3: complex queries - combinations of all features
---       testcase A4: use of locking clauses (for stable access, for browse access, keep
+--       testcase A4: use of locking clauses (for read committed access, for read committed access, keep
 --                    lock) with above clauses
 --       testcase A5: variation of ordering of WHERE,GROUP BY,HAVING,
 --                    ORDER ,locking clauses
@@ -313,7 +313,7 @@ LOG aqatdml04 Clear;
       group by char_1,decimal_1
       having decimal_1 between 2 and 8
       order by decimal_1   DESC
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select distinct var_char,binary_64_s, pic_comp_1
       from btsel01
@@ -324,7 +324,7 @@ LOG aqatdml04 Clear;
       group by binary_64_s,pic_comp_1, var_char
       having binary_64_s > pic_comp_1
       order by binary_64_s, binary_64_s DESC
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select (new_name_1 * new_name_1),new_name_3
       from pvsel03
@@ -335,7 +335,7 @@ LOG aqatdml04 Clear;
       group by new_name_1,new_name_3
       having new_name_1 = 80
       order by new_name_3 ASC
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1,new_name_4
       from svsel13
@@ -345,7 +345,7 @@ LOG aqatdml04 Clear;
       group by new_name_1,new_name_4
       having new_name_1 = 80
       order by new_name_1
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select medium_int,SYSKEY
       from btsel04
@@ -383,8 +383,8 @@ LOG aqatdml04 Clear;
 -- <testcase A4>
 
 --    <detail>
---     select normal test case - this tests the use of the for browse access,
---     for stable access, and for repeatable access clauses with GROUP BY
+--     select normal test case - this tests the use of the for read committed access,
+--     for read committed access, and for read committed access clauses with GROUP BY
 --     HAVING, and ORDER BY clauses. This is a test for syntax only - no actual
 --     checking of the locks obtained is done.
 
@@ -395,59 +395,59 @@ LOG aqatdml04 Clear;
 --    <ufi-input>
       select large_int from btsel08
       group by large_int
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select pic_x_5 from btsel09
       group by pic_x_5
       having pic_x_5 > 4
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select * from btsel10
       order by pic_9_7
-      for repeatable access;
+      for read committed access;
 
 --    <comment>  *****  non-audited tables *****
 --    <ufi-input>
       select pic_x_b from btsel05
       group by pic_x_b
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select pic_x_b from btsel05
       group by pic_x_b
       having (pic_x_b = 'D') or (pic_x_b = 'B')
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select * from btsel05
       order by pic_x_b
-      for browse access;
+      for read committed access;
 
 --    <comment>    **** views *****
 --    <ufi-input>
       select new_name_1 from pvsel03
       group by new_name_1
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1 from svsel13
       group by new_name_1
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1 from pvsel03
       group by new_name_1
       having new_name_1 = 80
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1 from svsel13
       group by new_name_1
       having new_name_1 = 80
-      for browse access;
+      for read committed access;
 --    <ufi-input>
       select * from pvsel03
       order by new_name_1
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select * from svsel13
       order by new_name_1
-      for stable access;
+      for read committed access;
 --    <end-input>
 
 
@@ -462,7 +462,7 @@ LOG aqatdml04 Clear;
 --    All other clauses may appear in any order after that. The following
 --    tests will have the order of these clauses randomly varied from
 --    the standard order of SELECT-FROM-WHERE-GROUP BY-HAVING-ORDER BY-
---    for browse access or for stable access or for repeatable access.
+--    for read committed access or for read committed access or for read committed access.
 
 
 --    <templates>
@@ -478,7 +478,7 @@ LOG aqatdml04 Clear;
       group by char_1,decimal_1
       having decimal_1 between 2 and 8
       order by decimal_1   DESC
-      for repeatable access;
+      for read committed access;
 
 
 
@@ -492,7 +492,7 @@ LOG aqatdml04 Clear;
       group by binary_64_s,pic_comp_1, var_char
       having binary_64_s > pic_comp_1
       order by binary_64_s, binary_64_s DESC
-      for stable access;
+      for read committed access;
 
 
 
@@ -617,7 +617,7 @@ LOG aqatdml04 Clear;
        by
         decimal_1
           DESC
-      repeatable
+      read committed
        access
        ;
 --    <ufi-input>
@@ -642,7 +642,7 @@ LOG aqatdml04 Clear;
 
       order by binary_64_s, 2 DESC
 
-      for repeatable access
+      for read committed access
 
 
       ;
@@ -657,7 +657,7 @@ group                                                                     by
             new_name_1,new_name_3
       having new_name_1=80
       order by new_name_3 ASC
-      stable                                                        access;
+      for read committed access;
 --    <ufi-input>
       SELECT new_name_1,new_name_4
       FROM svsel13
@@ -672,7 +672,7 @@ group                                                                     by
       FOR
 
 
-                              broWSE
+                              read committed
 
 
 
@@ -987,7 +987,7 @@ order by decimal_10;
       group by pic_comp_1
       having sum(binary_signed) > 5000
       order by pic_comp_1, 2
-      for repeatable access;
+      for read committed access;
 --    <ufi-input>
       select new_name_1, count(distinct var_char)
       from svsel13
@@ -995,7 +995,7 @@ order by decimal_10;
       group by new_name_1
       having avg(new_name_2) in (5,6)
       order by 1, 2 ASC
-      for stable access;
+      for read committed access;
 --    <ufi-input>
       select pic_comp_1, avg(ALL binary_32_u + pic_comp_1)
       from btsel01
@@ -1017,7 +1017,7 @@ order by decimal_10;
       group by medium_int
       having max(pic_x_1) <> 'E'
       order by medium_int
-      for browse access;
+      for read committed access;
 
 --    <comment> select having aggregate(SYSKEY)
 --    <ufi-input>

@@ -411,7 +411,7 @@ operator
 -- work.  
 #ifMX
 explain options 'f' select * from TAB1 where col1 < 15
- for serializable access;
+ for read committed access;
 #ifMX
 
 --QUERY 20

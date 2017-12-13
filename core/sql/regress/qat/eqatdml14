@@ -36,8 +36,8 @@
 >>--               NOT EXISTS
 >>--  testcase A3: multiple nesting,multiple subqueries connected with
 >>--               and/or,mixed correlated/uncorrelated nested subqueries
->>--  testcase A4: use of for browse access,
->>--               for stable access,for repeatable access
+>>--  testcase A4: use of for read committed access,
+>>--               for read committed access,for read committed access
 >>--  testcase A5: SELECT aggregate functions with aggregates in
 >>--               subquery
 >>
@@ -80,9 +80,9 @@
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -99,9 +99,9 @@ SUPPNUM
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -118,10 +118,10 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
       3
      10
+      1
 
 --- 4 row(s) selected.
 >>
@@ -138,10 +138,10 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
       3
      10
+      1
 
 --- 4 row(s) selected.
 >>
@@ -375,14 +375,14 @@ PARTNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -400,14 +400,14 @@ SALESMAN  ORDERNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -428,14 +428,14 @@ SALESMAN  ORDERNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -738,16 +738,16 @@ JACK RAYMOND
 CUSTNUM
 -------
 
-   3210
     123
-     21
-   1234
-   3333
-    543
+   3210
     926
    7654
-    143
    5635
+     21
+    543
+   1234
+   3333
+    143
 
 --- 10 row(s) selected.
 >>
@@ -767,16 +767,16 @@ CUSTNUM
 CUSTNUM
 -------
 
-   3210
     123
-     21
-   1234
-   3333
-    543
+   3210
     926
    7654
-    143
    5635
+     21
+    543
+   1234
+   3333
+    143
 
 --- 10 row(s) selected.
 >>
@@ -836,12 +836,12 @@ COL_1
 ------------------
 
 DECIMAL ARITH     
-DISC CONT SINGLE  
-MAG TAPE CONT 8/16
-DISC 10MB         
 MAG TAPE DR 8/16  
-TERM CRT CHAR     
 TERM CRT PAGE     
+DISC CONT SINGLE  
+DISC 10MB         
+TERM CRT CHAR     
+MAG TAPE CONT 8/16
 
 --- 7 row(s) selected.
 >>
@@ -967,9 +967,9 @@ SUPPNUM  PARTNUM
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -986,9 +986,9 @@ SUPPNUM
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -1005,13 +1005,13 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
+     15
       3
       6
       8
      10
-     15
+      1
 
 --- 7 row(s) selected.
 >>
@@ -1028,13 +1028,13 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
+     15
       3
       6
       8
      10
-     15
+      1
 
 --- 7 row(s) selected.
 >>
@@ -1268,14 +1268,14 @@ PARTNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -1294,14 +1294,14 @@ SALESMAN  ORDERNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -1322,14 +1322,14 @@ SALESMAN  ORDERNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>-- <comment> same as first, except order by ordernum
@@ -1566,18 +1566,18 @@ DAVE CLARK
 CUSTNUM
 -------
 
-     21
+   3210
     123
-    143
-    324
+     21
+   1234
+   3333
     543
     926
-   1234
-   3210
-   3333
-   5635
    7654
+    324
    7777
+    143
+   5635
 
 --- 12 row(s) selected.
 >>
@@ -1610,9 +1610,9 @@ CUSTNUM
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -1631,9 +1631,9 @@ SUPPNUM
 SUPPNUM
 -------
 
+     15
       6
       8
-     15
 
 --- 3 row(s) selected.
 >>
@@ -1703,14 +1703,14 @@ PARTNUM
 SALESMAN  ORDERNUM
 --------  --------
 
-     222        30
      204        32
-     218        38
+     205        66
      207        41
      212        45
-     225        48
-     205        66
+     218        38
      221       122
+     222        30
+     225        48
 
 --- 8 row(s) selected.
 >>
@@ -2055,10 +2055,10 @@ SUPPNUM
 SUPPNUM
 -------
 
-      2
-     15
-      6
       8
+      2
+      6
+     15
 
 --- 4 row(s) selected.
 >>
@@ -2082,8 +2082,8 @@ SUPPNUM
 -------
 
       2
-     15
       6
+     15
       8
 
 --- 4 row(s) selected.
@@ -2108,9 +2108,9 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       3
      10
+      1
 
 --- 3 row(s) selected.
 >>
@@ -2135,10 +2135,10 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
       3
      10
+      1
 
 --- 4 row(s) selected.
 >>
@@ -2192,11 +2192,11 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
+     15
       3
       6
-     15
+      1
 
 --- 5 row(s) selected.
 >>
@@ -2220,11 +2220,11 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
       2
+     15
       3
       6
-     15
+      1
 
 --- 5 row(s) selected.
 >>
@@ -2248,11 +2248,11 @@ SUPPNUM
 SUPPNAME          
 ------------------
 
-TANDEM COMPUTERS  
 DATA TERMINAL CO  
+DATADRIVE         
 DISPLAY INC       
 INFOMATION STORAGE
-DATADRIVE         
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -2278,8 +2278,8 @@ SUPPNUM
 -------
 
       2
-      6
      15
+      6
 
 --- 3 row(s) selected.
 >>
@@ -2303,8 +2303,8 @@ SUPPNUM
 -------
 
       2
-      6
      15
+      6
 
 --- 3 row(s) selected.
 >>
@@ -2328,8 +2328,8 @@ SUPPNAME
 ------------------
 
 DATA TERMINAL CO  
-INFOMATION STORAGE
 DATADRIVE         
+INFOMATION STORAGE
 
 --- 3 row(s) selected.
 >>
@@ -2684,11 +2684,11 @@ PARTNUM
 SALESMAN  ORDERNUM
 --------  --------
 
+     205        66
      207        41
      212        45
-     225        48
-     205        66
      221       122
+     225        48
 
 --- 5 row(s) selected.
 >>
@@ -2700,8 +2700,8 @@ SALESMAN  ORDERNUM
 >>
 >>-- <detail>
 >>--    correlated subquery in having clause test - this tests the use of
->>--    for browse access, for stable access,
->>--    and for repeatable access inside of subqueries.
+>>--    for read committed access, for read committed access,
+>>--    and for read committed access inside of subqueries.
 >>
 >>-- <templates>
 >>--     US00
@@ -2715,9 +2715,9 @@ SALESMAN  ORDERNUM
 +>         (select distinct Y.partnum
 +>          from fromsup Y
 +>          where Y.suppnum <> X.suppnum
-+>          for browse access
++>          for read committed access
 +>         )
-+>      for stable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -2742,9 +2742,9 @@ PARTNUM
 +>         (select distinct Y.partnum
 +>          from fromsup Y
 +>          where Y.suppnum <> X.suppnum
-+>          for stable access
++>          for read committed access
 +>         )
-+>      for repeatable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -2769,9 +2769,9 @@ PARTNUM
 +>         (select distinct Y.partnum
 +>          from fromsup Y
 +>          where Y.suppnum <> X.suppnum
-+>          for repeatable access
++>          for read committed access
 +>         )
-+>      for repeatable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -2798,7 +2798,7 @@ PARTNUM
 +>       (select partcost
 +>        from expfroms
 +>        where  parts.partnum =  expfroms.partnum
-+>        for repeatable access
++>        for read committed access
 +>       );
 
 PARTNUM
@@ -2822,7 +2822,7 @@ PARTNUM
 +>         from fromsup
 +>         where  parts.partnum =  fromsup.partnum
 +>         group by partcost
-+>         for browse access
++>         for read committed access
 +>        );
 
 PARTNUM
@@ -2862,20 +2862,20 @@ PARTNUM
 +>        (select Y.col_3
 +>         from partsfor Y
 +>         where X.col_1 <> Y.col_1
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 COL_1             
 ------------------
 
 DECIMAL ARITH     
-DISC CONT SINGLE  
-MAG TAPE CONT 8/16
-DISC 10MB         
 MAG TAPE DR 8/16  
-TERM CRT CHAR     
 TERM CRT PAGE     
+DISC CONT SINGLE  
+DISC 10MB         
+TERM CRT CHAR     
+MAG TAPE CONT 8/16
 
 --- 7 row(s) selected.
 >>
@@ -2889,20 +2889,20 @@ TERM CRT PAGE
 +>        (select Y.col_3
 +>         from partsfor Y
 +>         where X.col_1 <> Y.col_1
-+>         for stable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 COL_1             
 ------------------
 
 DECIMAL ARITH     
-DISC CONT SINGLE  
-MAG TAPE CONT 8/16
-DISC 10MB         
 MAG TAPE DR 8/16  
-TERM CRT CHAR     
 TERM CRT PAGE     
+DISC CONT SINGLE  
+DISC 10MB         
+TERM CRT CHAR     
+MAG TAPE CONT 8/16
 
 --- 7 row(s) selected.
 >>
@@ -2916,20 +2916,20 @@ TERM CRT PAGE
 +>        (select Y.col_3
 +>         from partsfor Y
 +>         where X.col_1 <> Y.col_1
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 COL_1             
 ------------------
 
 DECIMAL ARITH     
-DISC CONT SINGLE  
-MAG TAPE CONT 8/16
-DISC 10MB         
 MAG TAPE DR 8/16  
-TERM CRT CHAR     
 TERM CRT PAGE     
+DISC CONT SINGLE  
+DISC 10MB         
+TERM CRT CHAR     
+MAG TAPE CONT 8/16
 
 --- 7 row(s) selected.
 >>
@@ -2944,7 +2944,7 @@ TERM CRT PAGE
 +>         from fromsup Y
 +>         where Y.suppnum <> X.suppnum
 +>         and X.partnum = Y.partnum
-+>         for repeatable access
++>         for read committed access
 +>        );
 
 PARTNUM
@@ -2972,13 +2972,13 @@ PARTNUM
 +>        (select partnum
 +>         from fromsup
 +>         where  fromsup.suppnum =  supplier.suppnum
-+>         for repeatable access
++>         for read committed access
 +>        )
 +>      and 5504 =ANY
 +>        (select partnum
 +>         from fromsup
 +>         where  fromsup.suppnum =  supplier.suppnum
-+>         for stable access
++>         for read committed access
 +>        );
 
 SUPPNUM
@@ -2999,14 +2999,14 @@ SUPPNUM
 +>        (select partnum
 +>         from fromsup
 +>         where  fromsup.suppnum =  supplier.suppnum
-+>         for repeatable access
++>         for read committed access
 +>        )
 +>      group by suppnum
 +>      having 5504 =ANY
 +>        (select partnum
 +>         from fromsup
 +>         where  fromsup.suppnum =  supplier.suppnum
-+>         for browse access
++>         for read committed access
 +>        );
 
 SUPPNUM
@@ -3034,11 +3034,11 @@ SUPPNUM
 +>           (select location
 +>            from region
 +>            where  region.regnum =  employee.regnum
-+>            for browse access
++>            for read committed access
 +>           )
-+>         for stable access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 EMPNAME           
 ------------------
@@ -3081,11 +3081,11 @@ DAVE CLARK
 +>           (select location
 +>            from region
 +>            where  region.regnum =  employee.regnum
-+>            for repeatable access
++>            for read committed access
 +>           )
-+>         for stable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 EMPNAME           
 ------------------
@@ -3129,11 +3129,11 @@ DAVE CLARK
 +>            from fromsup Z
 +>            where Z.suppnum <> Y.suppnum
 +>            and Z.suppnum <> X.suppnum
-+>            for stable access
++>            for read committed access
 +>           )
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -3159,11 +3159,11 @@ PARTNUM
 +>            from fsdetail Z
 +>            where Z.col_2 <> Y.col_2
 +>            and Z.col_2 <> X.col_2
-+>            for browse access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 COL_1
 -----
@@ -3188,11 +3188,11 @@ COL_1
 +>            from fsdetail Z
 +>            where Z.col_2 <> Y.col_2
 +>            and Z.col_2 <>  fromsup.suppnum
-+>            for repeatable access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -3309,8 +3309,8 @@ REGNUM  BRANCHNUM  (EXPR)
 REGNUM  BRANCHNUM
 ------  ---------
 
-     2          1
      3          1
+     2          1
      3          3
      3          2
 
@@ -3336,8 +3336,8 @@ REGNUM  BRANCHNUM
 ------  ---------
 
      2          1
-     3          1
      3          3
+     3          1
      3          2
 
 --- 4 row(s) selected.
@@ -3361,18 +3361,18 @@ REGNUM  BRANCHNUM
 REGNUM  BRANCHNUM
 ------  ---------
 
-     1          1
      5          3
      5          2
-     5          1
      6          1
-     3          1
+     1          1
      3          3
      4          2
      2          2
      2          3
      1          2
      4          1
+     5          1
+     3          1
      3          2
 
 --- 13 row(s) selected.

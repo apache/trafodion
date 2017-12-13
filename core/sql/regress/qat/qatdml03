@@ -24,8 +24,8 @@ LOG aqatdml03 Clear;
 --       testcase A4: SELECT WHERE column is LIKE a constant
 --       testcase A5: SELECT WHERE column is LIKE a constant,
 --                    using an ESCAPE character
---       testcase A6: use of for browse access, for stable access
---         and for repeatable access
+--       testcase A6: use of for read committed access, for read committed access
+--         and for read committed access
 --       testcase A7: SELECT aggregate functions with where predicate
 
 -- All testcases are documented further below.
@@ -661,7 +661,7 @@ LOG aqatdml03 Clear;
 
 --    <detail>
 --     select normal test case with where clause - this tests the use
---     of the for browse access, for stable access, and for repeatable access
+--     of the for read committed access, for read committed access, and for read committed access
 --     clauses. Only syntax is checked here.
 
 --    <switches>
@@ -675,52 +675,52 @@ LOG aqatdml03 Clear;
 --    <ufi-input>
        select * from btsel06
        where col_7 = 100
-       for stable access;
+       for read committed access;
 --    <ufi-input>
        select * from btsel04
        where medium_int <= 1000
-       for browse access;
+       for read committed access;
 --    <ufi-input>
        select * from btsel07
        where pic_x_b < 'Q'
-       for repeatable access;
+       for read committed access;
 
 --    <comment> **** check for locking on non-audited tables ****
 --    <ufi-input>
        select * from btsel05
        where pic_x_a > 'abe'
-       for browse access;
+       for read committed access;
 --    <ufi-input>
        select * from btsel05
        where pic_x_a > 'abe'
-       for stable access;
+       for read committed access;
 --    <ufi-input>
        select * from btsel05
        where pic_x_a > 'abe'
-       for repeatable access;
+       for read committed access;
 
 --    <comment> **** check for locking on views ****
 --    <ufi-input>
        select * from pvsel04
        where pic_comp_1 in (200,300)
-       for browse access;
+       for read committed access;
 
 --    <ufi-input>
        select * from pvsel01
        where binary_signed > 50
-       for stable access;
+       for read committed access;
 --    <ufi-input>
        select * from svsel11
        where col_1 > 50
-       for stable access;
+       for read committed access;
 --    <ufi-input>
        select * from pvsel02
        where pic_x_1 = 'B'
-       for repeatable access;
+       for read committed access;
 --    <ufi-input>
        select * from svsel13
        where medium_int = 1000
-       for repeatable access;
+       for read committed access;
 --    <end-input>
 
 

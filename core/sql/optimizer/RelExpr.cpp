@@ -10800,13 +10800,13 @@ RelRoot::RelRoot(RelExpr *input,
     firstNRowsParam_(NULL),
     flags_(0)
 {
-  accessOptions().accessType() = ACCESS_TYPE_NOT_SPECIFIED_;
+  accessOptions().accessType() = TransMode::ACCESS_TYPE_NOT_SPECIFIED_;
   accessOptions().lockMode() = LOCK_MODE_NOT_SPECIFIED_;
   isCIFOn_ = FALSE;
 }
 
 RelRoot::RelRoot(RelExpr *input,
-		 AccessType at,
+		 TransMode::AccessType at,
 		 LockMode lm,
 		 OperatorTypeEnum otype,
 		 ItemExpr *compExpr,

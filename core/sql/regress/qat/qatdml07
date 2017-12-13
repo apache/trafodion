@@ -29,8 +29,8 @@ LOG aqatdml07 Clear;
 --       A1: HAVING
 --       A2: ORDER BY
 --       A3: complex queries - combinations of all features
---       A4: use of locking clauses (for stable access, for browse access,
---           for repeatable access) with above clauses
+--       A4: use of locking clauses (for read committed access, for read committed access,
+--           for read committed access) with above clauses
 --       A5: SELECT aggregate functions with GROUP BY
 --       A6: SELECT aggregate functions with aggregates in HAVING clause
 --           and complex queries with aggregates
@@ -293,7 +293,7 @@ LOG aqatdml07 Clear;
       group by pic_9_7,medium_int
       having (pic_9_7 * 2) <> medium_int
       order by pic_9_7,2 DESC
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select pic_x_1,pic_9_7,medium_int
       from btsel02,btsel03,btsel04
@@ -304,7 +304,7 @@ LOG aqatdml07 Clear;
       group by pic_x_1,pic_9_7,medium_int
       having pic_x_1 like 'Q'
       order by pic_x_1,pic_9_7,medium_int ASC
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select decimal_1,new_name_1
       from btsel01,pvsel03
@@ -313,7 +313,7 @@ LOG aqatdml07 Clear;
       group by decimal_1,new_name_1
       having new_name_1 in (80,100)
       order by decimal_1,new_name_1 DESC
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select decimal_1,new_name_1
       from btsel01,svsel13
@@ -356,8 +356,8 @@ LOG aqatdml07 Clear;
 -- <testcase A4>
 
 -- <detail>
---    select join test case - this tests the use of the for browse access,
---    for stable access, and for repeatable access clauses with GROUP BY,
+--    select join test case - this tests the use of the for read committed access,
+--    for read committed access, and for read committed access clauses with GROUP BY,
 --    HAVING, and ORDER BY clauses. This is a test of syntax only - no actual
 --    checking of the locks obtained is done.
 
@@ -368,55 +368,55 @@ LOG aqatdml07 Clear;
       select pic_9_7
       from btsel03,btsel04
       group by pic_9_7
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select decimal_1,new_name_1
       from btsel01,pvsel03
       group by decimal_1,new_name_1
       having new_name_1 in (80,100)
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from btsel01,svsel13
       order by decimal_1,new_name_1
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select pic_x_1,pic_9_7,medium_int
       from btsel02,btsel03,btsel04
       group by pic_x_1,pic_9_7,medium_int
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select  pvsel01.medium_int
       from pvsel01,svsel13
       group by  pvsel01.medium_int
       having  pvsel01.medium_int between 2000 and 10000
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13,svsel11
       order by new_name_3,col_3
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select  pvsel01.medium_int, pvsel04.medium_int
       from pvsel01,pvsel04
       group by  pvsel01.medium_int, pvsel04.medium_int
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select secondd.medium_int
       from pvsel01 firstt,pvsel01 secondd
       group by secondd.medium_int
       having secondd.medium_int <> 5000
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select *
       from svsel13 firstt,svsel13 secondd
       order by firstt.new_name_1,firstt.new_name_3
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select secondd.char_1,firstt.medium_int
       from btsel01 firstt, btsel01 secondd
       group by secondd.char_1,firstt.medium_int
-      for repeatable access;
+      for read committed access;
 -- <end-input>
 
 
@@ -653,7 +653,7 @@ LOG aqatdml07 Clear;
       having sum( btsel01.small_int) >
              sum(decimal_2_signed * 100)
       order by large_int
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select  svsel13.pic_comp_1, avg(decimal_1)
       from  svsel13, btsel01
@@ -661,7 +661,7 @@ LOG aqatdml07 Clear;
       group by  svsel13.pic_comp_1
       having min(ALL pic_decimal_3) < 5
       order by 1 DESC  ,2 DESC
-      for stable access;
+      for read committed access;
 -- <ufi-input>
       select  pvsel01.medium_int,
              avg(distinct  pvsel04.medium_int)
@@ -670,7 +670,7 @@ LOG aqatdml07 Clear;
       group by  pvsel01.medium_int
       having avg(pic_decimal_3 *  pvsel04.medium_int) < 7500
       order by 2
-      for browse access;
+      for read committed access;
 -- <ufi-input>
       select pic_9_7, sum(binary_32_u + pic_comp_1)
       from btsel03, btsel04
@@ -678,7 +678,7 @@ LOG aqatdml07 Clear;
       group by pic_9_7
       having sum(distinct binary_32_u) <> 5
       order by pic_9_7 ASC
-      for repeatable access;
+      for read committed access;
 -- <ufi-input>
       select pic_comp_1, avg(col_7) * sum(pic_comp_1)
       from svsel13, svsel11

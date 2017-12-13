@@ -8528,7 +8528,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
     sprintf(sbuf, PF64, objID);
     qry.append(sbuf);
     qry.append(    " ORDER BY TABLE_UID, HISTOGRAM_ID, COL_POSITION ");
-    qry.append(    " FOR SERIALIZABLE ACCESS");
+    qry.append(    " FOR READ COMMITTED ACCESS");
 
     HSCursor cursor103;
     retcode = cursor103.prepareQuery(qry.data(), 0, 6);

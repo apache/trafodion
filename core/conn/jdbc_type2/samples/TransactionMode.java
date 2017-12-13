@@ -227,7 +227,7 @@ public class TransactionMode
 						// Perform the query within an internally managed jdbcMx transaction
 						// or no transaction when in 'external' transactionMode
 					case 0:
-						query ="select * from " + table + " for browse access";
+						query ="select * from " + table + " for read uncommitted access";
 						System.out.println(PROLOG + "Executing - '" + query + "'");
 						rs = stmt.executeQuery(query);
 						break;

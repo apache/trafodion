@@ -75,7 +75,7 @@
 >>invoke table_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.TABLE_NAME
--- Definition current  Tue Jul 19 01:27:42 2016
+-- Definition current  Thu Dec  7 05:50:27 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -224,7 +224,7 @@
 >>invoke system_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.SYSTEM_NAME
--- Definition current  Tue Jul 19 01:27:44 2016
+-- Definition current  Thu Dec  7 05:50:32 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2860,7 +2860,7 @@ SELECT TRAILING TRAILING from (values(0)) TRAILING(TRAILING);
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT UNIQUE UNIQUE from (values(0)) UNIQUE(UNIQUE);
-            ^ (13 characters from start of SQL statement)
+                   ^ (20 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -2870,7 +2870,7 @@ SELECT UNIQUE UNIQUE from (values(0)) UNIQUE(UNIQUE);
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT UPDATE UPDATE from (values(0)) UPDATE(UPDATE);
-            ^ (13 characters from start of SQL statement)
+                   ^ (20 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -4383,12 +4383,7 @@ SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 >>-- Expect SYNTAX error - A matching pair
 >>prepare s1 from SELECT BROWSE ACCESS from (values(0)) ACCESS(BROWSE);
 
-*** ERROR[15001] A syntax error occurred at or before: 
-SELECT BROWSE ACCESS from (values(0)) ACCESS(BROWSE);
-                   ^ (20 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Expect success
 >>prepare s1 from SELECT BROWSE BROWSE from (values(0)) BROWSE(BROWSE);
@@ -4763,12 +4758,7 @@ SELECT SKIP CONFLICT from (values(0)) CONFLICT(SKIP);
 >>-- Expect SYNTAX error - A matching pair
 >>prepare s1 from SELECT STABLE ACCESS from (values(0)) ACCESS(STABLE);
 
-*** ERROR[15001] A syntax error occurred at or before: 
-SELECT STABLE ACCESS from (values(0)) ACCESS(STABLE);
-                   ^ (20 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Expect success
 >>prepare s1 from SELECT STABLE BROWSE from (values(0)) BROWSE(STABLE);

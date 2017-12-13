@@ -36,8 +36,8 @@
 >>--                    connected with AND,OR, and SELECTs with subqueries
 >>--                    (uncorrelated) in both the WHERE clause and HAVING
 >>--                    clause
->>--       testcase A4: subqueries with for browse access,
->>--                    for stable access, for repeatable access
+>>--       testcase A4: subqueries with for read committed access,
+>>--                    for read committed access, for read committed access
 >>--       testcase A5: SELECT aggregate functions with aggregates in
 >>--                    subquery
 >>
@@ -1905,10 +1905,10 @@ SUPPNUM
 SUPPNUM
 -------
 
-      1
+     15
       3
       6
-     15
+      1
 
 --- 4 row(s) selected.
 >>
@@ -1950,8 +1950,8 @@ AGE
 >>
 >>-- <detail>
 >>--    uncorrelated subquery in having clause test - this tests the use of
->>--    for browse access, for stable access,
->>--    and for repeatable access in uncorrelated subqueries.
+>>--    for read committed access, for read committed access,
+>>--    and for read committed access in uncorrelated subqueries.
 >>
 >>
 >>-- <templates>
@@ -1968,9 +1968,9 @@ AGE
 +>        (select partnum
 +>         from fromsup
 +>         where suppnum = 15
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 PARTNUM
 -------
@@ -1996,7 +1996,7 @@ PARTNUM
 +>         from odetail,parts
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000
-+>         for repeatable access
++>         for read committed access
 +>        );
 
 SALESMAN  ORDERNUM
@@ -2026,9 +2026,9 @@ SALESMAN  ORDERNUM
 +>        (select Y.state
 +>         from supplier Y
 +>         where suppnum = 1
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 SUPPNUM
 -------
@@ -2050,7 +2050,7 @@ SUPPNUM
 +>        (select col_12
 +>         from partsfor
 +>         where col_2 = 'V67'
-+>         for browse access
++>         for read committed access
 +>        );
 
 CUSTNUM
@@ -2081,7 +2081,7 @@ CUSTNUM
 +>         where ( orders.ordernum =  odetail.ordernum) and
 +>               ( odetail.partnum =  parts.partnum) and
 +>               (location = 'V67')
-+>                for repeatable access
++>                for read committed access
 +>        );
 
 CUSTNUM
@@ -2111,13 +2111,13 @@ CUSTNUM
 +>        (select suppnum
 +>         from fromsup
 +>         where partnum = 4102
-+>         for browse access)
++>         for read committed access)
 +>        )
 +>      and (suppnum =ANY
 +>        (select suppnum
 +>         from fromsup
 +>         where partnum = 5504
-+>         for stable access)
++>         for read committed access)
 +>        );
 
 SUPPNUM
@@ -2143,11 +2143,11 @@ SUPPNUM
 +>           (select partnum
 +>            from parts
 +>            where inventory < 0
-+>            for browse access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 SUPPNUM
 -------
@@ -2173,11 +2173,11 @@ SUPPNUM
 +>         having Y.age <= ALL
 +>           (select Z.age
 +>            from employee Z
-+>            for repeatable access
++>            for read committed access
 +>           )
-+>         for stable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 AGE
 ---
@@ -2207,11 +2207,11 @@ AGE
 +>          (select distinct price
 +>           from parts
 +>           where price = 8000
-+>           for browse access
++>           for read committed access
 +>          )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 SALESMAN
 --------
@@ -2242,11 +2242,11 @@ SALESMAN
 +>           (select regnum
 +>            from region
 +>            where regname = 'CENTRAL'
-+>            for stable access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 EMPNAME           
 ------------------

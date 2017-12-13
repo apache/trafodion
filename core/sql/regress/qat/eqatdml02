@@ -20,8 +20,8 @@
 >>--       testcase A2: select syskey
 >>--       testcase A3: select *
 >>--       testcase A4: select an expression of a column
->>--       testcase A5: use of browse access,
->>--         stable access and repeatable access
+>>--       testcase A5: use of read committed access,
+>>--         read committed access and repeatable access
 >>--       testcase A6: select aggregate functions
 >>
 >>-- All testcases are documented further below.
@@ -62,14 +62,14 @@
 CHAR_1
 ------
 
-D     
-A     
 A     
 D     
+A     
+D     
+D     
+C     
 E     
 C     
-C     
-D     
 
 --- 8 row(s) selected.
 >>
@@ -110,14 +110,14 @@ B        9
 PIC_X_7  PIC_X_7
 -------  -------
 
-michael  michael
 walter   walter 
 bobby    bobby  
+9        9      
 7        7      
 sue      sue    
+michael  michael
 jimmy    jimmy  
 johnny   johnny 
-9        9      
 
 --- 8 row(s) selected.
 >>
@@ -175,14 +175,14 @@ thomas
 BINARY_SIGNED
 -------------
 
+         4000
+         3000
+        -5000
+           50
            60
          8000
-           50
          1000
-        -5000
-         3000
          2000
-         4000
 
 --- 8 row(s) selected.
 >>
@@ -223,14 +223,14 @@ BINARY_64_S
 PIC_COMP_1          
 --------------------
 
-                 500
-                  50
                   60
                  500
-                3000
-                 500
                   50
                  500
+                 500
+                 500
+                3000
+                  50
 
 --- 8 row(s) selected.
 >>
@@ -271,14 +271,14 @@ PIC_COMP_3
 SMALL_INT
 ---------
 
-       90
        10
      1000
+       90
        80
      2000
+       90
      9000
      8000
-       90
 
 --- 8 row(s) selected.
 >>
@@ -289,12 +289,12 @@ MEDIUM_INT
 
       8000
      10000
-      8000
+     10000
       9000
       8000
       1000
+      8000
       5000
-     10000
 
 --- 8 row(s) selected.
 >>
@@ -903,12 +903,12 @@ MEDIUM_INT
 
       8000
      10000
-      8000
+     10000
       9000
       8000
       1000
+      8000
       5000
-     10000
 
 --- 8 row(s) selected.
 >>
@@ -945,12 +945,12 @@ NEW_NAME_2
 PIC_COMP_1          
 --------------------
 
-                 200
-                 300
                  500
+                 300
                 1000
-                2000
                 3000
+                 200
+                2000
 
 --- 6 row(s) selected.
 >>
@@ -977,9 +977,9 @@ COL_4
 NEW_NAME_3
 ----------
 
+7         
+7         
 A         
-7         
-7         
 B         
 
 --- 4 row(s) selected.
@@ -989,8 +989,8 @@ B
 NEW_NAME_3
 ----------
 
-7         
 A         
+7         
 B         
 
 --- 3 row(s) selected.
@@ -1013,10 +1013,10 @@ B
 CHAR_1
 ------
 
-D     
 A     
-E     
+D     
 C     
+E     
 
 --- 4 row(s) selected.
 >>
@@ -1025,14 +1025,14 @@ C
 CHAR_1
 ------
 
-D     
-A     
 A     
 D     
+A     
+D     
+D     
+C     
 E     
 C     
-C     
-D     
 
 --- 8 row(s) selected.
 >>
@@ -1056,12 +1056,12 @@ MEDIUM_INT
 
       8000
      10000
-      8000
+     10000
       9000
       8000
       1000
+      8000
       5000
-     10000
 
 --- 8 row(s) selected.
 >>
@@ -1445,12 +1445,12 @@ MEDIUM_INT
 
       8000
      10000
-      8000
+     10000
       9000
       8000
       1000
+      8000
       5000
-     10000
 
 --- 8 row(s) selected.
 >>
@@ -1575,9 +1575,9 @@ PIC_COMP_1
 PIC_COMP_1          
 --------------------
 
+                 200
+                 200
                  300
-                 200
-                 200
                  500
 
 --- 4 row(s) selected.
@@ -1587,8 +1587,8 @@ PIC_COMP_1
 NEW_NAME_1
 ----------
 
-        80
         90
+        80
 
 --- 2 row(s) selected.
 >>
@@ -1597,8 +1597,8 @@ NEW_NAME_1
 NEW_NAME_1
 ----------
 
-        80
         90
+        80
         80
 
 --- 3 row(s) selected.
@@ -1619,14 +1619,14 @@ NEW_NAME_1
 SYSKEY              
 --------------------
 
-  216172782170180609
-  216172782170180610
-  216172782170180611
-  216172782170180612
-  216172782170180613
-  216172782170180614
-  216172782170180615
-  216172782170180616
+ 3348008712604706359
+ 3348008712604739091
+ 3348008712604749657
+ 3348008712604756642
+ 3348008712604760802
+ 3348008712604766001
+ 3348008712604772309
+ 3348008712604779571
 
 --- 8 row(s) selected.
 >>
@@ -1635,14 +1635,14 @@ SYSKEY
 PIC_X_1  SYSKEY              
 -------  --------------------
 
-B          216172782170180609
-C          216172782170180610
-B          216172782170180611
-Q          216172782170180612
-B          216172782170180613
-C          216172782170180614
-Q          216172782170180615
-Q          216172782170180616
+B         3348008712604706359
+C         3348008712604739091
+B         3348008712604749657
+Q         3348008712604756642
+B         3348008712604760802
+C         3348008712604766001
+Q         3348008712604772309
+Q         3348008712604779571
 
 --- 8 row(s) selected.
 >>
@@ -1651,14 +1651,14 @@ Q          216172782170180616
 SYSKEY              
 --------------------
 
-  216172782159534337
-  216172782159534338
-  216172782159534339
-  216172782159534340
-  216172782159534341
-  216172782159534342
-  216172782159534343
-  216172782159534344
+ 3348008712604909660
+ 3348008712604933890
+ 3348008712604944398
+ 3348008712604960677
+ 3348008712604966498
+ 3348008712604972182
+ 3348008712604978694
+ 3348008712604984276
 
 --- 8 row(s) selected.
 >>
@@ -1667,14 +1667,14 @@ SYSKEY
 PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S            SYSKEY
 -------  -----------  --------  -------  ---------------------  --------------------
 
-A               5.00  make           90                 200.00    216172782159534337
-7               6.00  joe            80                1200.00    216172782159534338
-8               6.00  joe            80                1200.00    216172782159534339
-5            1000.00  5             100                1000.00    216172782159534340
-michael        50.00  dave           50                1500.00    216172782159534341
-7               6.00  john           80                2000.00    216172782159534342
-B               6.00  mark           80                3000.00    216172782159534343
-michael        70.00  joan           50                4000.00    216172782159534344
+A               5.00  make           90                 200.00   3348008712604909660
+7               6.00  joe            80                1200.00   3348008712604933890
+8               6.00  joe            80                1200.00   3348008712604944398
+5            1000.00  5             100                1000.00   3348008712604960677
+michael        50.00  dave           50                1500.00   3348008712604966498
+7               6.00  john           80                2000.00   3348008712604972182
+B               6.00  mark           80                3000.00   3348008712604978694
+michael        70.00  joan           50                4000.00   3348008712604984276
 
 --- 8 row(s) selected.
 >>
@@ -1683,14 +1683,14 @@ michael        70.00  joan           50                4000.00    21617278215953
 SYSKEY              
 --------------------
 
-  216172782152933121
-  216172782152933122
-  216172782152933125
-  216172782152933127
-  216172782152933128
-  216172782152933123
-  216172782152933124
-  216172782152933126
+ 3348008712607180201
+ 3348008712607260739
+ 3348008712607352949
+ 3348008712607424153
+ 3348008712607462000
+ 3348008712607291728
+ 3348008712607326460
+ 3348008712607403214
 
 --- 8 row(s) selected.
 >>
@@ -1699,14 +1699,14 @@ SYSKEY
 VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1            SYSKEY
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------  --------------------
 
-tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782152933121
-bob                                                                                                                                                                                                                                                                  999  A                         300    216172782152933122
-sue                                                                                                                                                                                                                                                                  200  sue                       100    216172782152933123
-bobby                                                                                                                                                                                                                                                                200  sue                       100    216172782152933124
-bill                                                                                                                                                                                                                                                                2000  B                         500    216172782152933125
-christopher                                                                                                                                                                                                                                                         1000  white                    1000    216172782152933126
-william                                                                                                                                                                                                                                                             1000  black                    2000    216172782152933127
-marilyn                                                                                                                                                                                                                                                             2000  green                    3000    216172782152933128
+tom                                                                                                                                                                                                                                                                 1000  7                         200   3348008712607180201
+bob                                                                                                                                                                                                                                                                  999  A                         300   3348008712607260739
+sue                                                                                                                                                                                                                                                                  200  sue                       100   3348008712607291728
+bobby                                                                                                                                                                                                                                                                200  sue                       100   3348008712607326460
+bill                                                                                                                                                                                                                                                                2000  B                         500   3348008712607352949
+christopher                                                                                                                                                                                                                                                         1000  white                    1000   3348008712607403214
+william                                                                                                                                                                                                                                                             1000  black                    2000   3348008712607424153
+marilyn                                                                                                                                                                                                                                                             2000  green                    3000   3348008712607462000
 
 --- 8 row(s) selected.
 >>
@@ -1716,14 +1716,14 @@ marilyn                                                                         
 SYSKEY                (EXPR)                   
 --------------------  -------------------------
 
-  216172782167689985  anchor literal for SYSKEY
-  216172782167689988  anchor literal for SYSKEY
-  216172782167689990  anchor literal for SYSKEY
-  216172782167689986  anchor literal for SYSKEY
-  216172782167689987  anchor literal for SYSKEY
-  216172782167689992  anchor literal for SYSKEY
-  216172782167689991  anchor literal for SYSKEY
-  216172782167689989  anchor literal for SYSKEY
+ 3348008712608804334  anchor literal for SYSKEY
+ 3348008712608903859  anchor literal for SYSKEY
+ 3348008712608942394  anchor literal for SYSKEY
+ 3348008712608849564  anchor literal for SYSKEY
+ 3348008712608876862  anchor literal for SYSKEY
+ 3348008712608988150  anchor literal for SYSKEY
+ 3348008712608964264  anchor literal for SYSKEY
+ 3348008712608922768  anchor literal for SYSKEY
 
 --- 8 row(s) selected.
 >>
@@ -1733,14 +1733,14 @@ SYSKEY                (EXPR)
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10  SYSKEY                (EXPR)
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------  --------------------  -------------------------
 
-joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy     216172782167689985  anchor literal for SYSKEY
-sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge     216172782167689986  anchor literal for SYSKEY
-deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk      216172782167689987  anchor literal for SYSKEY
-can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk      216172782167689988  anchor literal for SYSKEY
-box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk      216172782167689989  anchor literal for SYSKEY
-red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk      216172782167689990  anchor literal for SYSKEY
-why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk      216172782167689991  anchor literal for SYSKEY
-not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk      216172782167689992  anchor literal for SYSKEY
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy    3348008712608804334  anchor literal for SYSKEY
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge    3348008712608849564  anchor literal for SYSKEY
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk     3348008712608876862  anchor literal for SYSKEY
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk     3348008712608903859  anchor literal for SYSKEY
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk     3348008712608922768  anchor literal for SYSKEY
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk     3348008712608942394  anchor literal for SYSKEY
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk     3348008712608964264  anchor literal for SYSKEY
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk     3348008712608988150  anchor literal for SYSKEY
 
 --- 8 row(s) selected.
 >>
@@ -1749,10 +1749,10 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 NEW_NAME_4          
 --------------------
 
-  216172782159534337
-  216172782159534338
-  216172782159534342
-  216172782159534343
+ 3348008712604909660
+ 3348008712604933890
+ 3348008712604972182
+ 3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1761,10 +1761,10 @@ NEW_NAME_4
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            NEW_NAME_4
 ----------  -----------  ----------  --------------------  --------------------
 
-        90         5.00  A             216172782159534337    216172782159534337
-        80         6.00  7             216172782159534338    216172782159534338
-        80         6.00  7             216172782159534342    216172782159534342
-        80         6.00  B             216172782159534343    216172782159534343
+        90         5.00  A            3348008712604909660   3348008712604909660
+        80         6.00  7            3348008712604933890   3348008712604933890
+        80         6.00  7            3348008712604972182   3348008712604972182
+        80         6.00  B            3348008712604978694   3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1773,10 +1773,10 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            NEW_NAME_4
 NEW_NAME_4          
 --------------------
 
-  216172782159534337
-  216172782159534338
-  216172782159534342
-  216172782159534343
+ 3348008712604909660
+ 3348008712604933890
+ 3348008712604972182
+ 3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1785,10 +1785,10 @@ NEW_NAME_4
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1            NEW_NAME_4
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------  --------------------
 
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300    216172782159534337
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782159534338
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782159534342
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500    216172782159534343
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300   3348008712604909660
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200   3348008712604933890
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200   3348008712604972182
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500   3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1797,10 +1797,10 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 NEW_NAME_1  NEW_NAME_4          
 ----------  --------------------
 
-        90    216172782159534337
-        80    216172782159534338
-        80    216172782159534342
-        80    216172782159534343
+        90   3348008712604909660
+        80   3348008712604933890
+        80   3348008712604972182
+        80   3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1809,10 +1809,10 @@ NEW_NAME_1  NEW_NAME_4
 NEW_NAME_1  NEW_NAME_4          
 ----------  --------------------
 
-        90    216172782159534337
-        80    216172782159534338
-        80    216172782159534342
-        80    216172782159534343
+        90   3348008712604909660
+        80   3348008712604933890
+        80   3348008712604972182
+        80   3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -1821,10 +1821,10 @@ NEW_NAME_1  NEW_NAME_4
 NEW_NAME_1  (EXPR)              
 ----------  --------------------
 
-        90    216172782159534437
-        80    216172782159534438
-        80    216172782159534442
-        80    216172782159534443
+        90   3348008712604909760
+        80   3348008712604933990
+        80   3348008712604972282
+        80   3348008712604978794
 
 --- 4 row(s) selected.
 >>--  <end-input>
@@ -2059,10 +2059,10 @@ Q
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
 ----------  -----------  ----------  --------------------
 
-        90         5.00  A             216172782159534337
-        80         6.00  7             216172782159534338
-        80         6.00  7             216172782159534342
-        80         6.00  B             216172782159534343
+        90         5.00  A            3348008712604909660
+        80         6.00  7            3348008712604933890
+        80         6.00  7            3348008712604972182
+        80         6.00  B            3348008712604978694
 
 --- 4 row(s) selected.
 >>
@@ -2112,10 +2112,10 @@ COL_1                 COL_3                 COL_4  COL_5
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500
 
 --- 4 row(s) selected.
 >>
@@ -2124,8 +2124,8 @@ NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR             
 NEW_NAME_1  NEW_NAME_3
 ----------  ----------
 
-        80  7         
         90  A         
+        80  7         
         80  B         
 
 --- 3 row(s) selected.
@@ -2144,31 +2144,31 @@ NEW_NAME_1  NEW_NAME_3
 >>      select distinct (medium_int * medium_int)
 +>      from btsel01;
 
-(EXPR)              
---------------------
+(EXPR)               
+---------------------
 
-            64000000
-           100000000
-            81000000
-             1000000
-            25000000
+             64000000
+            100000000
+             81000000
+              1000000
+             25000000
 
 --- 5 row(s) selected.
 >>
 >>      select all (medium_int * medium_int)
 +>      from btsel01;
 
-(EXPR)              
---------------------
+(EXPR)               
+---------------------
 
-            64000000
-           100000000
-            64000000
-            81000000
-            64000000
-             1000000
-            25000000
-           100000000
+             64000000
+            100000000
+            100000000
+             81000000
+             64000000
+              1000000
+             64000000
+             25000000
 
 --- 8 row(s) selected.
 >>
@@ -2290,18 +2290,18 @@ LARGE_INT
 (EXPR)   PIC_X_6
 -------  -------
 
-    3.5       15
-    1.5       10
-    2.5       15
-    3.5       20
-    3.5       90
-    2.0       10
-    3.5       77
+     .0        0
+     .0        0
+     .0        0
+     .0        0
     2.5       11
-     .0        0
-     .0        0
-     .0        0
-     .0        0
+    3.5       77
+    2.0       10
+    3.5       90
+    3.5       20
+    2.5       15
+    1.5       10
+    3.5       15
 
 --- 12 row(s) selected.
 >>
@@ -2388,14 +2388,14 @@ large_int =                   1000
 MEDIUM_INT  (EXPR)     CHAR_1
 ----------  ---------  ------
 
-      8000  char_1 =   D     
-     10000  char_1 =   A     
       8000  char_1 =   A     
-      9000  char_1 =   D     
-      8000  char_1 =   E     
-      1000  char_1 =   C     
-      5000  char_1 =   C     
      10000  char_1 =   D     
+     10000  char_1 =   A     
+      9000  char_1 =   D     
+      8000  char_1 =   D     
+      1000  char_1 =   C     
+      8000  char_1 =   E     
+      5000  char_1 =   C     
 
 --- 8 row(s) selected.
 >>
@@ -2405,14 +2405,14 @@ MEDIUM_INT  (EXPR)     CHAR_1
 (EXPR)  (EXPR)  (EXPR)       SMALL_INT
 ------  ------  -----------  ---------
 
-100 =      100  small_int =         90
 100 =      100  small_int =         10
 100 =      100  small_int =       1000
+100 =      100  small_int =         90
 100 =      100  small_int =         80
 100 =      100  small_int =       2000
+100 =      100  small_int =         90
 100 =      100  small_int =       9000
 100 =      100  small_int =       8000
-100 =      100  small_int =         90
 
 --- 8 row(s) selected.
 >>
@@ -2422,14 +2422,14 @@ MEDIUM_INT  (EXPR)     CHAR_1
 (EXPR)      (EXPR)       (EXPR)       SMALL_INT
 ----------  -----------  -----------  ---------
 
-100 * 10 =         1000  small_int =         90
 100 * 10 =         1000  small_int =         10
 100 * 10 =         1000  small_int =       1000
+100 * 10 =         1000  small_int =         90
 100 * 10 =         1000  small_int =         80
 100 * 10 =         1000  small_int =       2000
+100 * 10 =         1000  small_int =         90
 100 * 10 =         1000  small_int =       9000
 100 * 10 =         1000  small_int =       8000
-100 * 10 =         1000  small_int =         90
 
 --- 8 row(s) selected.
 >>
@@ -2476,8 +2476,8 @@ test of single quote (')
 >>
 >>--    <detail>
 >>--       select normal simple test case - this tests the use of
->>--       the for browse access, for stable access,
->>--       and for repeatable access clauses. No actual
+>>--       the for read committed access, for read committed access,
+>>--       and for read committed access clauses. No actual
 >>--       tests of the functionality of these clauses is done - this
 >>--       is a test of syntax only. Each of these clauses is checked
 >>--       for audited tables, non-audited tables, protection views,
@@ -2489,7 +2489,7 @@ test of single quote (')
 >>--    <comment> *** audited tables ***
 >>
 >>      select * from btsel01
-+>         for browse access;
++>         for read committed access;
 
 CHAR_1  CHAR_10     PIC_X_1  PIC_X_7  PIC_X_LONG                                                                                                                                                                                                VAR_CHAR                                                                                                                                                                                                                                                       BINARY_SIGNED  BINARY_32_U  BINARY_64_S            PIC_COMP_1            PIC_COMP_2  PIC_COMP_3    SMALL_INT  MEDIUM_INT  LARGE_INT             DECIMAL_1  DECIMAL_2_SIGNED  DECIMAL_3_UNSIGNED  PIC_DECIMAL_1  PIC_DECIMAL_2  PIC_DECIMAL_3
 ------  ----------  -------  -------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------  -----------  ---------------------  --------------------  ----------  ------------  ---------  ----------  --------------------  ---------  ----------------  ------------------  -------------  -------------  -------------
@@ -2506,7 +2506,7 @@ D       steven      B        9        bat                                       
 --- 8 row(s) selected.
 >>
 >>      select * from btsel02
-+>         for stable access;
++>         for read committed access;
 
 PIC_X_1
 -------
@@ -2523,7 +2523,7 @@ Q
 --- 8 row(s) selected.
 >>
 >>      select * from btsel03
-+>         for repeatable access;
++>         for read committed access;
 
 PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S          
 -------  -----------  --------  -------  ---------------------
@@ -2543,7 +2543,7 @@ michael        70.00  joan           50                4000.00
 >>
 >>
 >>      select * from btsel05
-+>         for browse access;
++>         for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2560,7 +2560,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 --- 8 row(s) selected.
 >>
 >>      select * from btsel05
-+>         for stable access;
++>         for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2577,7 +2577,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 --- 8 row(s) selected.
 >>
 >>      select * from btsel05
-+>         for repeatable access;
++>         for read committed access;
 
 PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
 -------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
@@ -2597,7 +2597,7 @@ not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk
 >>
 >>
 >>      select * from pvsel01
-+>         for browse access;
++>         for read committed access;
 
 BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
 -------------  --------------------  ----------  -------------  -------  -------  ---------
@@ -2614,7 +2614,7 @@ BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7
 --- 8 row(s) selected.
 >>
 >>      select * from pvsel01
-+>         for stable access;
++>         for read committed access;
 
 BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
 -------------  --------------------  ----------  -------------  -------  -------  ---------
@@ -2631,7 +2631,7 @@ BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7
 --- 8 row(s) selected.
 >>
 >>      select * from pvsel01
-+>         for repeatable access;
++>         for read committed access;
 
 BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
 -------------  --------------------  ----------  -------------  -------  -------  ---------
@@ -2647,45 +2647,45 @@ BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7
 
 --- 8 row(s) selected.
 >>
->>-- <comment> svsel15 must be accessed for browse access (mixed view)
+>>-- <comment> svsel15 must be accessed for read committed access (mixed view)
 >>
 >>      select * from svsel15
-+>         for browse access;
++>         for read committed access;
 
 MIXED_1  MIXED_2  MIXED_3  MIXED_4  MIXED_5  MIXED_11  MIXED_12  MIXED_13  MIXED_21  MIXED_22  MIXED_23
 -------  -------  -------  -------  -------  --------  --------  --------  --------  --------  --------
 
 joe      A        al       pablo    david    joe       A         jo        B         A         ed      
-joe      A        al       pablo    david    joe       C         go        jo        C         ek      
-sue      A        in       peggy    diane    sue       C         by        jo        C         ek      
 sue      A        in       peggy    diane    sue       D         so        JO        D         em      
 sue      A        in       peggy    diane    sue       Q         on        al        Q         al      
+joe      A        al       pablo    david    joe       C         go        jo        C         ek      
+sue      A        in       peggy    diane    sue       C         by        jo        C         ek      
 joe      A        al       pablo    david    joe       Z         in        jo        Z         jo      
 
 --- 6 row(s) selected.
 >>
 >>      select * from svsel14
-+>      for browse access;
++>      for read committed access;
 
 NEW_NAME_1  NEW_NAME_3
 ----------  ----------
 
-        80  7         
         90  A         
+        80  7         
         80  B         
 
 --- 3 row(s) selected.
 >>
 >>      select * from svsel13
-+>      for browse access;
++>      for read committed access;
 
 NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
 ----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
 
-        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
-        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
-        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
+        90         5.00  A            3348008712604909660  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7            3348008712604933890  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7            3348008712604972182  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B            3348008712604978694  bill                                                                                                                                                                                                                                                                2000  B                         500
 
 --- 4 row(s) selected.
 >>
