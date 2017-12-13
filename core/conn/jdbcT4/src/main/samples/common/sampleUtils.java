@@ -265,4 +265,22 @@ public class sampleUtils
                throw e;
            }
        }
+
+	public static void initialTable(Connection conn, String table) throws SQLException {
+		Statement stmt = null;
+		try {
+			stmt = conn.createStatement();
+			stmt.executeUpdate("create table " + table + " (c1 int, c2 char(20), c3 int)");
+			stmt.close();
+
+		} catch (SQLException e) {
+			Logger.global.log(Level.FINE, "InitialData failed = " + e);
+			Logger.global.log(Level.FINE, "==============\n\n");
+			try {
+				stmt.close();
+			} catch (Exception ex) {
+			}
+			throw e;
+		}
+	}
 }
