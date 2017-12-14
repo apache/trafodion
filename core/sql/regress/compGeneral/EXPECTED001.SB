@@ -131,7 +131,7 @@ DNO          ENO          ENAME                 SALARY        DNAME             
 +> intersect
 +>select eno, ename, dno from t022;
 
-ENO          ENAME                 DNO
+ENO          ENAME                 DNO        
 -----------  --------------------  -----------
 
           2  Jones                          33
@@ -153,7 +153,7 @@ ENO          ENAME                 DNO
 +> intersect
 +>select eno, ename, dno from t022 where dno <50;
 
-ENO          ENAME                 DNO
+ENO          ENAME                 DNO        
 -----------  --------------------  -----------
 
           2  Jones                          33
@@ -161,7 +161,7 @@ ENO          ENAME                 DNO
 
 --- 2 row(s) selected.
 >>
->>select * from  t021
+>>select * from  t021 
 +> intersect
 +>select * from  t022;
 
@@ -170,14 +170,14 @@ ENO          ENAME                 DNO
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>select * from
+>>select * from 
 +>(
 +>select eno, ename, dno from t021
 +> intersect
 +>select eno, ename, dno from t022
 +>) ;
 
-ENO          ENAME                 DNO
+ENO          ENAME                 DNO        
 -----------  --------------------  -----------
 
           2  Jones                          33
@@ -187,7 +187,7 @@ ENO          ENAME                 DNO
 --- 3 row(s) selected.
 >>select eno, ename, dno from t021 except select * from t022;
 
-ENO          ENAME                 DNO
+ENO          ENAME                 DNO        
 -----------  --------------------  -----------
 
           1  Smith                          33
@@ -211,30 +211,30 @@ ENO          ENAME                 DNO
 DNO          DNAME                 (EXPR)               
 -----------  --------------------  ---------------------
 
-         55  Production                          1000.00
          33  Sales                               5000.00
          44  Marketing                           4000.00
+         55  Production                          1000.00
 
 --- 3 row(s) selected.
 >>
 >>-- modify the statistics such that the pushed down groupby wins
 >>select dno,dname,sum(salary)
 +>from t01emp rows10000 natural join t01dept rows1000
-+>group by dno,dname for browse access;
++>group by dno,dname;
 
 DNO          DNAME                 (EXPR)               
 -----------  --------------------  ---------------------
 
-         55  Production                          1000.00
          33  Sales                               5000.00
          44  Marketing                           4000.00
+         55  Production                          1000.00
 
 --- 3 row(s) selected.
 >>
 >>-- set showshape off;
 >>
 >>-- exchange join and groupby and add count(*) > 0 clause to the groupby
->>select distinct t01dept.* from t01emp,t01dept for browse access;
+>>select distinct t01dept.* from t01emp,t01dept;
 
 DNO          DNAME                 DREGION    
 -----------  --------------------  -----------
@@ -252,7 +252,7 @@ DNO          DNAME                 DREGION
 >>
 >>select dno,dname,sum(salary), max(dregion)
 +>from t01emp rows10000 natural join t01dept rows1000
-+>group by dno,dname for browse access;
++>group by dno,dname;
 
 DNO          DNAME                 (EXPR)                 (EXPR)     
 -----------  --------------------  ---------------------  -----------
@@ -271,7 +271,7 @@ DNO          DNAME                 (EXPR)                 (EXPR)
 +>from (select eno + dregion, dno, dname, salary
 +>      from t01emp rows10000 natural join t01dept rows1000)
 +>			 as t("eno + dregion",dno,dname,salary)
-+>group by "eno + dregion",dno,dname for browse access;
++>group by "eno + dregion",dno,dname;
 
 eno + dregion         DNO          DNAME                 SAL
 --------------------  -----------  --------------------  ---------------------
@@ -287,7 +287,7 @@ eno + dregion         DNO          DNAME                 SAL
 >>
 >>select dname,sum(salary), max(dregion)
 +>from t01emp rows10000 natural join t01dept rows1000
-+>group by dname for browse access;
++>group by dname;
 
 DNAME                 (EXPR)                 (EXPR)     
 --------------------  ---------------------  -----------
@@ -4435,7 +4435,7 @@ Smith                               2000.00
 +>            join t01emp rows15e4 on rows14e4.eno = rows15e4.eno
 +>            join t01emp rows16e4 on rows15e4.eno = rows16e4.eno
 +>group by rows12e4.eno,rows13e4.eno,rows14e4.eno,rows15e4.eno,rows16e4.eno
-+>for browse access;
++>;
 
 (EXPR)                ENO          ENO          ENO          ENO          ENO
 --------------------  -----------  -----------  -----------  -----------  -----------
@@ -4855,7 +4855,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 *** WARNING[6020] Due to query complexity, the query plan generated might be sub-optimal. Consider simplifying the query.
 
-*** WARNING[2053] Optimizer pass two assertion failure (hasEnoughMemory) in file ../optimizer/opt.cpp at line 7063. Attempting to recover and produce a plan.
+*** WARNING[2053] Optimizer pass two assertion failure (hasEnoughMemory) in file ../optimizer/opt.cpp at line 6974. Attempting to recover and produce a plan.
 
 --- SQL command prepared.
 >>

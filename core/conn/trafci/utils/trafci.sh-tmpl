@@ -20,10 +20,15 @@
 #
 # @@@ END COPYRIGHT @@@
 
+if [[ -r /etc/trafodion/conf/client_config ]]; then
+  source /etc/trafodion/conf/client_config
+elif [[ -z $TRAF_HOME ]]; then
+  echo "***Warning***: Missing TRAF_HOME in the environment. "
+fi
 
 #
 #  Classpath required for execution. Specifies the jar files containing
-#  the HP JDBC T4 classes and the Trafodion Command Interface classes.
+#  the Trafodion JDBC T4 classes and the Trafodion Command Interface classes.
 #
 
 TRAFCI_CLASSPATH="##TRAFCI_CLASSPATH##"
@@ -145,6 +150,10 @@ while [ $# -gt 0 ]; do  # {{
          JLINE_ARG=$1
          shift;
          JLINE_VALUE=$1
+      elif [ "ci$OPT_VALUE" = "ci-h"  -o "ci$OPT_VALUE" = "ci-host" ]; then
+         HOST_ARG=$1
+         shift;
+         HOST_VALUE=$1
       else
          UIMAINCLASS_PARAMS="$UIMAINCLASS_PARAMS $1"
             
@@ -165,13 +174,20 @@ fi
 jcmd_opts="-classpath $TRAFCI_CLASSPATH $UIMAINCLASS_NAME $UIMAINCLASS_PARAMS "
 #echo "***DEBUG*** jcmd_opts = java $jcmd_opts $QUERY_OPTION \"$QUERY_ARG\" "
 
-jusercred_opts=""
-if [ ! -z "$USER_OPTION" ]; then
+if [[ -n "$USER_OPTION" ]]; then
    jusercred_opts="$USER_ARG \"$USER_OPTION\""
+elif [[ "$TRAFODION_ENABLE_AUTHENTICATION" == "NO" ]]; then
+   jusercred_opts="-u \"zz\""   # dummy user, since auth not enabled
+else
+   jusercred_opts=""   # none, defaults to linux user ID
 fi
 
-if [ ! -z "$PASSWORD_ARG" ]; then
-   jusercred_opts="$jusercred_opts $PASSWORD_ARG \"$PASSWORD_OPTION\""
+if [[ -n "$PASSWORD_ARG" ]]; then
+   jusercred_opts+=" $PASSWORD_ARG \"$PASSWORD_OPTION\""
+elif [[ "$TRAFODION_ENABLE_AUTHENTICATION" == "NO" ]]; then
+   jusercred_opts+=" -p \"zz\""   # dummy pw, since auth not enabled
+# else 
+#   default is to use encrypted pw file or prompt for password
 fi
 
 extention_opts=""
@@ -180,14 +196,43 @@ if [ ! -z "$JLINE_ARG" ]; then
 else
    extention_opts="-Djline=no"
 fi
+ 
+if [[ -n "$HOST_ARG" ]]; then
+   # explicit command line option
+   host_opts="$HOST_ARG \"$HOST_VALUE\""
+elif [[ -n "$DCS_MASTER_FLOATING_IP" ]]; then
+   # client config DCS HA
+   host_opts="-h ${DCS_MASTER_FLOATING_IP}:${DCS_MASTER_PORT:-23400}"
+elif [[ -n "$DCS_MASTER_QUORUM" ]]; then
+   # client config DCS non-HA
+   host_opts="-h ${DCS_MASTER_QUORUM}"
+elif [[ -r "$DCS_INSTALL_DIR/conf/dcs-env.sh" ]]; then
+   # no client config, check for DCS server config
+   source "$DCS_INSTALL_DIR/conf/dcs-env.sh"
+   if [[ -n "$DCS_MASTER_FLOATING_IP" ]]; then
+     host_opts="-h ${DCS_MASTER_FLOATING_IP}:${DCS_MASTER_PORT:-23400}"
+   elif [[ -s "$DCS_PRIMARY_MASTER" ]]; then
+     host_opts="-h $(< $DCS_PRIMARY_MASTER):${DCS_MASTER_PORT:-23400}"
+     if [[ -s "$DCS_BACKUP_MASTERS" ]]; then
+       while read backup_master; do
+         if [[ -n "$backup_master" ]]; then
+           host_opts+=",${backup_master}:${DCS_MASTER_PORT:-23400}"
+         fi
+       done < "$DCS_BACKUP_MASTERS"
+     fi
+   fi
+else
+   host_opts=""  # default is to prompt for host
+fi
 
 #echo "***DEBUG*** jusercred_opts = $jusercred_opts"
 #echo "***DEBUG*** extention_opts = $extention_opts"
+#echo "***DEBUG*** host_opts = $host_opts"
 #echo ""
-#echo "***DEBUG*** running command = java $jcmd_opts $jusercred_opts $QUERY_OPTION \"$QUERY_ARG\"  "
+#echo "***DEBUG*** running command = java $extention_opts $jcmd_opts $host_opts $jusercred_opts $QUERY_OPTION \"$QUERY_ARG\"  "
 
 if [ ! -z "$QUERY_OPTION"  ]; then
-        eval java $extention_opts $jcmd_opts $jusercred_opts $QUERY_OPTION \'"$QUERY_ARG"\'
+        eval java $extention_opts $jcmd_opts $host_opts $jusercred_opts $QUERY_OPTION \'"$QUERY_ARG"\'
 else
-        eval java $extention_opts $jcmd_opts $jusercred_opts
+        eval java $extention_opts $jcmd_opts $host_opts $jusercred_opts
 fi

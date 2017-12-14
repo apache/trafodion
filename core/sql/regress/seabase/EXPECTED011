@@ -347,8 +347,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
@@ -365,8 +367,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = 'z' where a = ?;
@@ -482,8 +486,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
@@ -500,8 +506,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = 'z' where a = ?;
@@ -518,9 +526,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_vsbb_updat            T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -539,9 +549,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_update                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -613,8 +625,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_update                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
@@ -631,8 +645,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_update                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' update t011t1 set b = 'z' where a = ?;
@@ -649,9 +665,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_update                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_update                T011T1                1.00E+000
+.    .    3    trafodion_scan                  T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -670,9 +688,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_update                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_update                T011T1                1.00E+000
+.    .    3    trafodion_scan                  T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -980,9 +1000,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                            x                     1.00E+001
-2    3    4    nested_join                                           1.00E+001
-.    .    3    trafodion_update                T011T1                1.00E+000
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    tuple_flow                                            1.00E+000
+.    .    4    trafodion_update                T011T1                1.00E+000
+.    .    3    trafodion_scan                  T011T1                1.00E+000
 1    .    2    unpack                                                1.00E+001
 .    .    1    values                                                1.00E+000
 
@@ -1059,8 +1081,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-1    .    2    root                  o         x                     2.00E+000
-.    .    1    trafodion_update                T011T1                2.00E+000
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_update                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T1                2.00E+000
 
 --- SQL operation complete.
 >>explain options 'f' insert into t011t1 select a,c from t011t3;

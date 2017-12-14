@@ -38,6 +38,7 @@ drop table T025T010;
 drop table T025T010s;
 
 ?section prep
+cqd TRAF_USE_REGION_XN 'OFF';
 create schema S025;
 set schema S025;
 

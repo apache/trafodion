@@ -398,6 +398,8 @@ data-type is:
          [upshift] [[not] casespecific]
    | varchar (length) [character set char-set-name]
          [upshift] [[not] casespecific]
+   | varchar2 (length) [character set char-set-name]
+         [upshift] [[not] casespecific]         
    | numeric [(precision [,scale])] [signed|unsigned]
    | nchar [(length) [character set char-set-name]
          [upshift] [[not] casespecific]
@@ -1878,6 +1880,7 @@ _sql-datatype_ can be:
 | char[acter] +
 char[acter] varying +
 varchar +
+varchar2 +
 pic[ture] x^1^ +
 nchar +
 nchar varying +
@@ -2660,6 +2663,8 @@ data-type is:
           [upshift] [[not]casespecific]
   | varchar (length) [character set char-set-name]
           [upshift] [[not]casespecific]
+  | varchar2 (length) [character set char-set-name]
+          [upshift] [[not]casespecific]          
   | nchar (length) [characters] [upshift] [[not]casespecific]
   | nchar varying(length [characters]) [upshift] [[not] casespecific]
   | numeric [(precision [,scale])] [signed|unsigned]
@@ -3378,6 +3383,29 @@ sale_amt NUMERIC(10,2),
 chcol CHAR(20) NOT NULL,
 PRIMARY KEY (store_id, item_id, sale_date, chcol))
 DIVISION BY (SUBSTR(chcol, 1, 5)); 
+```
+
+* This example creates a table using varchar2 data type which is same as varchar.
++
+```
+CREATE TABLE testvarchar2(c1 varchar(32), c2 varchar2(32) upshift not casespecific);
+
+--- SQL operation complete.
+
+
+SHOWDDL testvarchar2;
+
+CREATE TABLE TRAFODION.SEABASE.TESTVARCHAR2
+  (
+    C1                               VARCHAR(32) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , C2                               VARCHAR(32) CHARACTER SET ISO88591 COLLATE
+      DEFAULT UPSHIFT DEFAULT NULL NOT SERIALIZED
+  )
+ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
 ```
 
 <<<

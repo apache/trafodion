@@ -3510,6 +3510,13 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			if (OutLen < DataLen)
 				return IDS_22_001;
 			memcpy(outDataPtr, DataPtr, DataLen);
+            if (Offset != 0)    //When Datalen = 0, length was not stored in buffer
+            {
+                if(targetPrecision > SHRT_MAX)
+                    *(unsigned int *)targetDataPtr = DataLen;
+                else
+                    *(unsigned short *)targetDataPtr = DataLen;
+            }
 		}
 		if (byteSwap)
 		{

@@ -58,7 +58,7 @@
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:12:21 2017
+-- Definition current  Wed Dec  6 19:32:34 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -71,7 +71,7 @@
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:12:22 2017
+-- Definition current  Wed Dec  6 19:32:35 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -90,7 +90,7 @@
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:12:23 2017
+-- Definition current  Wed Dec  6 19:32:36 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -221,7 +221,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211145371059
+PLAN_ID .................. 212379348758015068
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -262,7 +262,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333366849
+  ObjectUIDs ............. 4521198292213504056
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -303,7 +303,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211145466061
+PLAN_ID .................. 212379348758110922
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -345,7 +345,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333366849
+  ObjectUIDs ............. 4521198292213504056
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -385,7 +385,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211145557099
+PLAN_ID .................. 212379348758213608
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -426,7 +426,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333366849
+  ObjectUIDs ............. 4521198292213504056
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -467,7 +467,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211144533319
+PLAN_ID .................. 212379348757142617
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -509,7 +509,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333366849
+  ObjectUIDs ............. 4521198292213504056
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -811,7 +811,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211146540988
+PLAN_ID .................. 212379348759127331
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -855,7 +855,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -889,7 +889,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211146661132
+PLAN_ID .................. 212379348759215586
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -934,7 +934,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -969,7 +969,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211146790052
+PLAN_ID .................. 212379348759313359
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -1013,7 +1013,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1048,7 +1048,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211146953887
+PLAN_ID .................. 212379348759473659
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -1092,7 +1092,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   input_variables ........ %('a')
 
 
@@ -1155,22 +1155,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211147208609
+PLAN_ID .................. 212379348759814355
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -1200,26 +1199,64 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   input_variables ........ %('upd'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('upd'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -1227,7 +1264,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211147325266
+PLAN_ID .................. 212379348759940311
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -1272,7 +1309,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -1306,7 +1343,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211147405399
+PLAN_ID .................. 212379348760022181
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -1352,7 +1389,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1387,7 +1424,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211147531882
+PLAN_ID .................. 212379348760123492
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -1432,7 +1469,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1467,7 +1504,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211147688049
+PLAN_ID .................. 212379348760263677
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -1512,7 +1549,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   input_variables ........ %('a')
 
 
@@ -1575,22 +1612,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211147942334
+PLAN_ID .................. 212379348760498788
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -1621,26 +1657,64 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333367240
+  ObjectUIDs ............. 4521198292213504650
   input_variables ........ %('uuu'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('uuu'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>
@@ -1798,7 +1872,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:12:54 2017
+-- Definition current  Wed Dec  6 19:33:19 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1811,7 +1885,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:12:54 2017
+-- Definition current  Wed Dec  6 19:33:19 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1830,7 +1904,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:12:54 2017
+-- Definition current  Wed Dec  6 19:33:19 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1961,7 +2035,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211176420764
+PLAN_ID .................. 212379348801469433
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -2002,7 +2076,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370094
+  ObjectUIDs ............. 4521198292213508833
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -2043,7 +2117,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211176519441
+PLAN_ID .................. 212379348801563832
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -2085,7 +2159,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370094
+  ObjectUIDs ............. 4521198292213508833
   select_list ............ 1, '1'
 
 
@@ -2124,7 +2198,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211176605130
+PLAN_ID .................. 212379348801653115
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -2165,7 +2239,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370094
+  ObjectUIDs ............. 4521198292213508833
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -2205,7 +2279,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211176696337
+PLAN_ID .................. 212379348801748346
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -2247,7 +2321,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370094
+  ObjectUIDs ............. 4521198292213508833
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -2510,7 +2584,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211179079242
+PLAN_ID .................. 212379348804047667
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2553,7 +2627,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2588,7 +2662,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211179132421
+PLAN_ID .................. 212379348804095280
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2632,7 +2706,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2680,7 +2754,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211179174633
+PLAN_ID .................. 212379348804139169
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2723,7 +2797,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2762,7 +2836,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211179219489
+PLAN_ID .................. 212379348804180409
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -2805,7 +2879,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -2873,22 +2947,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211179343865
+PLAN_ID .................. 212379348804296539
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -2918,29 +2991,67 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
+  new_rec_expr ........... (D assign 'upd')
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
   columns ................ all
   begin_keys(incl) ....... 4,a,-2147483648
   end_keys(excl) ......... 4,a,2
   columns ................ all
   begin_keys(incl) ....... 4,b,-2147483648
   end_keys(excl) ......... 4,b,2
-  new_rec_expr ........... (D assign 'upd')
-  predicate .............. (C < 2)
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (A = cast(4))
 
 --- SQL operation complete.
 >>explain y1;
@@ -2948,7 +3059,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211179430092
+PLAN_ID .................. 212379348804397950
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2992,7 +3103,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -3028,7 +3139,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211179477243
+PLAN_ID .................. 212379348804439860
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3073,7 +3184,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3110,7 +3221,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211179524021
+PLAN_ID .................. 212379348804483567
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3154,7 +3265,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3191,7 +3302,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211179568701
+PLAN_ID .................. 212379348804530956
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -3235,7 +3346,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -3300,22 +3411,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211179667464
+PLAN_ID .................. 212379348804641427
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -3346,26 +3456,65 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333370450
+  ObjectUIDs ............. 4521198292213509188
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
+  new_rec_expr ........... (D assign 'uuu')
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
   columns ................ all
   begin_keys(incl) ....... 4,,-2147483648
   end_keys(incl) ......... 4,??????????,2
-  new_rec_expr ........... (D assign 'uuu')
-  predicate .............. ((B = 'a') or (B = 'b')) and (C < 2)
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (A = cast(4)) and ((B = 'a') or (B = 'b')) and (C <
+                             2)
 
 --- SQL operation complete.
 >>
@@ -3523,7 +3672,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:13:32 2017
+-- Definition current  Wed Dec  6 19:33:54 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3536,7 +3685,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:13:32 2017
+-- Definition current  Wed Dec  6 19:33:54 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3555,7 +3704,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:13:32 2017
+-- Definition current  Wed Dec  6 19:33:55 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3686,7 +3835,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211214603886
+PLAN_ID .................. 212379348836829518
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -3727,7 +3876,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333373856
+  ObjectUIDs ............. 4521198292213512245
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -3768,7 +3917,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211214727858
+PLAN_ID .................. 212379348836914056
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -3810,7 +3959,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333373856
+  ObjectUIDs ............. 4521198292213512245
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -3850,7 +3999,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211214827240
+PLAN_ID .................. 212379348837015437
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -3891,7 +4040,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333373856
+  ObjectUIDs ............. 4521198292213512245
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -3932,7 +4081,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211213767413
+PLAN_ID .................. 212379348836007827
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -3974,7 +4123,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333373856
+  ObjectUIDs ............. 4521198292213512245
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -4238,7 +4387,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211217409963
+PLAN_ID .................. 212379348839526111
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4281,7 +4430,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4317,7 +4466,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211217459964
+PLAN_ID .................. 212379348839573995
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4361,7 +4510,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4398,7 +4547,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211217505716
+PLAN_ID .................. 212379348839649101
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4441,7 +4590,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4478,7 +4627,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211217557562
+PLAN_ID .................. 212379348839729420
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4521,7 +4670,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   input_variables ........ %('a')
 
 
@@ -4586,22 +4735,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211217660993
+PLAN_ID .................. 212379348839892863
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -4631,26 +4779,64 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   input_variables ........ %('upd'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('upd'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -4658,7 +4844,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211217753803
+PLAN_ID .................. 212379348840011934
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4702,7 +4888,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4738,7 +4924,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211217802644
+PLAN_ID .................. 212379348840057206
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4783,7 +4969,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4820,7 +5006,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211217854498
+PLAN_ID .................. 212379348840109396
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4864,7 +5050,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4901,7 +5087,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211217910650
+PLAN_ID .................. 212379348840159610
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4945,7 +5131,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   input_variables ........ %('a')
 
 
@@ -5010,22 +5196,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211218041292
+PLAN_ID .................. 212379348840301376
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -5056,26 +5241,64 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333374241
+  ObjectUIDs ............. 4521198292213512695
   input_variables ........ %('uuu'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('uuu'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>
@@ -5233,7 +5456,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:14:04 2017
+-- Definition current  Wed Dec  6 19:34:26 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -5246,7 +5469,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:14:04 2017
+-- Definition current  Wed Dec  6 19:34:26 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5265,7 +5488,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:14:04 2017
+-- Definition current  Wed Dec  6 19:34:26 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5396,7 +5619,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211246332375
+PLAN_ID .................. 212379348868257922
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -5437,7 +5660,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377111
+  ObjectUIDs ............. 4521198292213515531
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -5478,7 +5701,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211246427100
+PLAN_ID .................. 212379348868363894
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -5520,7 +5743,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377111
+  ObjectUIDs ............. 4521198292213515531
   select_list ............ 1, '1'
 
 
@@ -5559,7 +5782,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211246514744
+PLAN_ID .................. 212379348868464952
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -5600,7 +5823,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377111
+  ObjectUIDs ............. 4521198292213515531
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -5640,7 +5863,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211246603784
+PLAN_ID .................. 212379348868560130
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -5682,7 +5905,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377111
+  ObjectUIDs ............. 4521198292213515531
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -5983,7 +6206,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211248914713
+PLAN_ID .................. 212379348870927172
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -6027,7 +6250,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -6060,7 +6283,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211248990476
+PLAN_ID .................. 212379348871007882
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -6105,7 +6328,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6139,7 +6362,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211249093605
+PLAN_ID .................. 212379348871109051
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -6183,7 +6406,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6217,7 +6440,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211249243720
+PLAN_ID .................. 212379348871270890
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -6261,7 +6484,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6323,22 +6546,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211249478019
+PLAN_ID .................. 212379348871511759
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -6368,29 +6590,65 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
-  columns ................ all
-  begin_keys(incl) ....... 4,a,-2147483648
-  end_keys(excl) ......... 4,a,2
-  columns ................ all
-  begin_keys(incl) ....... 4,b,-2147483648
-  end_keys(excl) ......... 4,b,2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign 'upd')
-  predicate .............. (C < 2)
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl) ....... 4,,-2147483648
+  end_keys(incl) ......... 4,??????????,2
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... ((B = 'a') or (B = 'b')) and (C < 2) and (A =
+                             cast(4))
 
 --- SQL operation complete.
 >>explain y1;
@@ -6398,7 +6656,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211249603770
+PLAN_ID .................. 212379348871620240
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -6443,7 +6701,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -6476,7 +6734,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211249685191
+PLAN_ID .................. 212379348871688832
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -6522,7 +6780,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6556,7 +6814,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211249786072
+PLAN_ID .................. 212379348871785317
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -6601,7 +6859,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6635,7 +6893,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211249940535
+PLAN_ID .................. 212379348871935257
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -6680,7 +6938,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6742,22 +7000,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211250156714
+PLAN_ID .................. 212379348872142593
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -6788,26 +7045,65 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333377468
+  ObjectUIDs ............. 4521198292213515889
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_VSBB_UPDATE =====================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  iud_type ............... trafodion_vsbb_update TRAFODION.SCH.T010T2
+  new_rec_expr ........... (D assign 'uuu')
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
   columns ................ all
   begin_keys(incl) ....... 4,,-2147483648
   end_keys(incl) ......... 4,??????????,2
-  new_rec_expr ........... (D assign 'uuu')
-  predicate .............. ((B = 'a') or (B = 'b')) and (C < 2)
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1,#1:2,#1:3
+  key_columns ............ A, B, C
+  executor_predicates .... ((B = 'a') or (B = 'b')) and (C < 2) and (A =
+                             cast(4))
 
 --- SQL operation complete.
 >>
@@ -6988,7 +7284,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:14:41 2017
+-- Definition current  Wed Dec  6 19:35:08 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -7001,7 +7297,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:14:41 2017
+-- Definition current  Wed Dec  6 19:35:08 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -7020,7 +7316,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:14:42 2017
+-- Definition current  Wed Dec  6 19:35:08 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -7151,7 +7447,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211283939586
+PLAN_ID .................. 212379348910114619
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -7192,7 +7488,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380547
+  ObjectUIDs ............. 4521198292213519441
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -7233,7 +7529,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211284071529
+PLAN_ID .................. 212379348910196043
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -7275,7 +7571,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380547
+  ObjectUIDs ............. 4521198292213519441
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -7315,7 +7611,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211284182877
+PLAN_ID .................. 212379348910294783
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -7356,7 +7652,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380547
+  ObjectUIDs ............. 4521198292213519441
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -7397,7 +7693,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211283074993
+PLAN_ID .................. 212379348909321835
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -7439,7 +7735,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380547
+  ObjectUIDs ............. 4521198292213519441
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -7741,7 +8037,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211286758015
+PLAN_ID .................. 212379348912742892
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -7785,7 +8081,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -7819,7 +8115,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211286838992
+PLAN_ID .................. 212379348912824948
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -7864,7 +8160,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7899,7 +8195,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211286932222
+PLAN_ID .................. 212379348912933016
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -7943,7 +8239,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7978,7 +8274,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211287075899
+PLAN_ID .................. 212379348913060022
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -8022,7 +8318,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   input_variables ........ %('a')
 
 
@@ -8085,22 +8381,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211287292325
+PLAN_ID .................. 212379348913273694
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -8130,26 +8425,64 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   input_variables ........ %('upd'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_UPDATE ==========================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
   iud_type ............... trafodion_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('upd'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>explain y1;
@@ -8157,7 +8490,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211287404754
+PLAN_ID .................. 212379348913400087
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -8202,7 +8535,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -8236,7 +8569,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211287492474
+PLAN_ID .................. 212379348913480479
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -8282,7 +8615,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8317,7 +8650,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211287598527
+PLAN_ID .................. 212379348913571313
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -8362,7 +8695,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8397,7 +8730,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211287756111
+PLAN_ID .................. 212379348913717936
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -8442,7 +8775,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   input_variables ........ %('a')
 
 
@@ -8505,22 +8838,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211287956918
+PLAN_ID .................. 212379348913944078
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -8551,26 +8883,64 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333380976
+  ObjectUIDs ............. 4521198292213519805
   input_variables ........ %('uuu'), %(4)
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.06
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_UPDATE ==========================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.06
+EST_TOTAL_COST ........... 0.06
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
   iud_type ............... trafodion_update TRAFODION.SCH.T010T2
   new_rec_expr ........... (D assign %('uuu'))
-  predicate .............. (C < 2) and ((B = 'a') or (B = 'b'))
-  begin_key .............. (A = %(4)) and (B = '<min>') and (C = <min>)
-  end_key ................ (A = %(4)) and (B = '<max>') and (C = 2)
+  begin_key .............. (A = %(4)) and (B = B) and (C = C)
+  end_key ................ (A = %(4)) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1
+  key_columns ............ A, B, C
+  executor_predicates .... (C < 2) and (A = %(4)) and ((B = 'a') or (B = 'b'))
+  begin_key .............. (A = %(4)), (B = '<min>'), (C = <min>)
+  end_key ................ (A = %(4)), (B = '<max>'), (C = 2)
 
 --- SQL operation complete.
 >>
@@ -8728,7 +9098,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Thu Oct 19 22:15:18 2017
+-- Definition current  Wed Dec  6 19:35:43 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -8741,7 +9111,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:15:19 2017
+-- Definition current  Wed Dec  6 19:35:43 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8760,7 +9130,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Thu Oct 19 22:15:19 2017
+-- Definition current  Wed Dec  6 19:35:43 2017
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8891,7 +9261,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211321145962
+PLAN_ID .................. 212379348945336546
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -8932,7 +9302,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384493
+  ObjectUIDs ............. 4521198292213523182
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -8973,7 +9343,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211321237891
+PLAN_ID .................. 212379348945421916
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -9015,7 +9385,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384493
+  ObjectUIDs ............. 4521198292213523182
   select_list ............ 1, '1'
 
 
@@ -9054,7 +9424,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211321325502
+PLAN_ID .................. 212379348945514116
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -9095,7 +9465,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384493
+  ObjectUIDs ............. 4521198292213523182
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -9135,7 +9505,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212375211321414397
+PLAN_ID .................. 212379348945591554
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -9177,7 +9547,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384493
+  ObjectUIDs ............. 4521198292213523182
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -9478,7 +9848,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212375211323839730
+PLAN_ID .................. 212379348947870534
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -9522,7 +9892,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9555,7 +9925,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212375211323940953
+PLAN_ID .................. 212379348947948265
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -9600,7 +9970,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9634,7 +10004,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212375211324050052
+PLAN_ID .................. 212379348948029444
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -9678,7 +10048,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9712,7 +10082,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212375211324188439
+PLAN_ID .................. 212379348948172906
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -9756,7 +10126,7 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -9818,22 +10188,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212375211324441991
+PLAN_ID .................. 212379348948386559
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='upd'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -9863,29 +10232,65 @@ DESCRIPTION
   TRAF_ALIGNED_ROW_FORMAT  ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_UPDATE ==========================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
   iud_type ............... trafodion_update TRAFODION.SCH.T010T2
-  columns ................ all
-  begin_keys(incl) ....... 4,a,-2147483648
-  end_keys(excl) ......... 4,a,2
-  columns ................ all
-  begin_keys(incl) ....... 4,b,-2147483648
-  end_keys(excl) ......... 4,b,2
   new_rec_expr ........... (D assign 'upd')
-  predicate .............. (C < 2)
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl) ....... 4,,-2147483648
+  end_keys(incl) ......... 4,??????????,2
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1
+  key_columns ............ A, B, C
+  executor_predicates .... ((B = 'a') or (B = 'b')) and (C < 2) and (A =
+                             cast(4))
 
 --- SQL operation complete.
 >>explain y1;
@@ -9893,7 +10298,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212375211324552647
+PLAN_ID .................. 212379348948521816
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.08
 STATEMENT ................ select *
@@ -9938,7 +10343,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9971,7 +10376,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212375211324625468
+PLAN_ID .................. 212379348948596762
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -10017,7 +10422,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -10051,7 +10456,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212375211324719379
+PLAN_ID .................. 212379348948692913
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ select *
@@ -10096,7 +10501,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -10130,7 +10535,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212375211324895478
+PLAN_ID .................. 212379348948832605
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.11
 STATEMENT ................ delete from t010t2
@@ -10175,7 +10580,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -10237,22 +10642,21 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212375211325151235
+PLAN_ID .................. 212379348949029754
 ROWS_OUT ................. 2
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 STATEMENT ................ update t010t2
                            set d='uuu'
                            where a=4 and b in ('a', 'b') and c < 2;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
-  olt_optimization ....... used
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2
   fragment_id ............ 0
@@ -10283,26 +10687,65 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 5140439103333384908
+  ObjectUIDs ............. 4521198292213523625
 
 
-TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
-TABLE_NAME ............... TRAFODION.SCH.T010T2
+TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 2
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
 DESCRIPTION
   max_card_est ........... 2
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
+  join_type .............. inner
+  join_method ............ in-order nested
+
+
+TRAFODION_UPDATE ==========================  SEQ_NO 2        NO CHILDREN
+TABLE_NAME ............... TRAFODION.SCH.T010T2
+REQUESTS_IN .............. 2
+ROWS/REQUEST ............. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
   iud_type ............... trafodion_update TRAFODION.SCH.T010T2
+  new_rec_expr ........... (D assign 'uuu')
+  begin_key .............. (A = 4) and (B = B) and (C = C)
+  end_key ................ (A = 4) and (B = B) and (C = C)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T010T2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 2
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  object_type ............ Trafodion
   columns ................ all
   begin_keys(incl) ....... 4,,-2147483648
   end_keys(incl) ......... 4,??????????,2
-  new_rec_expr ........... (D assign 'uuu')
-  predicate .............. ((B = 'a') or (B = 'b')) and (C < 2)
+  cache_size ........... 100
+  cache_blocks ........... ON
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ......... 10
+  column_retrieved ....... #1:1
+  key_columns ............ A, B, C
+  executor_predicates .... ((B = 'a') or (B = 'b')) and (C < 2) and (A =
+                             cast(4))
 
 --- SQL operation complete.
 >>
@@ -10794,12 +11237,12 @@ CREATE TABLE TRAFODION.SCH."delim_tab"
 --- SQL operation complete.
 >>get all volatile schemas;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000255152123752110827043660000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000244152123793487270871880000000002
 
 --- SQL operation complete.
 >>get all volatile tables;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000255152123752110827043660000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000244152123793487270871880000000002
   Table: VTAB1
   Table: VTAB2
 

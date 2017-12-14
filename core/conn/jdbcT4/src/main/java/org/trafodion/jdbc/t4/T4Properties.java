@@ -140,6 +140,10 @@ public class T4Properties {
 
 	// Log file handler for this connection.
 	FileHandler t4LogFileHandler_;
+	
+	//clientInfoProperties
+	private Properties clientInfoProp;
+	
 
 	private boolean SPJEnv_ = false;
 	private boolean keepRawFetchBuffer_ = false;
@@ -292,6 +296,7 @@ public class T4Properties {
 		sqlExceptionMessage_ = null;
 		inprops_ = props;
 		setProperties();
+		clientInfoProp = new Properties();
 	}
 
 	// ---------------------------------------------------------------
@@ -2508,4 +2513,13 @@ public class T4Properties {
 
 	// -------------------------------------------------------------------------
 
+    void setClientInfoProperties(Properties prop) {
+        this.clientInfoProp = prop;
+    }
+
+    Properties getClientInfoProperties() {
+        return this.clientInfoProp;
+    }
+	
+	
 }

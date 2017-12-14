@@ -994,6 +994,9 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
                                     RETDesc *rd,
                                     ValueIdList &compExpr)
 {
+  if (! rd)
+    return;
+
   const ColumnDescList &cols = *rd->getColumnList();
   CollIndex i = cols.entries();
   CMPASSERT(i == compExpr.entries());
@@ -2168,7 +2171,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   // or ignore any accessOpts from the view, for a consistent access model.
 
   if ((CmpCommon::getDefault(ALLOW_ISOLATION_LEVEL_IN_CREATE_VIEW) == DF_OFF) ||
-      (viewRoot->accessOptions().accessType() == ACCESS_TYPE_NOT_SPECIFIED_))
+      (viewRoot->accessOptions().accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_))
     {
       // if cqd is set and view options were explicitely specified,
       // then do not overwrite it with accessOptions.
@@ -2549,7 +2552,7 @@ RETDesc *RelExpr::getRETDesc() const
 {
   if (RETDesc_)
     return RETDesc_;
-  if (getArity() == 1)
+  if ((getArity() == 1) && (child(0)))
     return child(0)->getRETDesc();
   else
     return NULL;
@@ -5802,7 +5805,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (isTrueRoot()) {
 
-    if (child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    if (child(0) && child(0)->getGroupAttr()->isEmbeddedUpdateOrDelete()) {
       // Olt optimization is now supported for embedded updates/deletes (pub/sub
       // thingy) for now.
       oltOptInfo().setOltOpt(TRUE);
@@ -5901,8 +5904,10 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     if (isEmptySelectList())
       setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
     else {
-      setRETDesc(child(0)->getRETDesc());
-      getRETDesc()->getValueIdList(compExpr());
+      if (child(0)) {
+        setRETDesc(child(0)->getRETDesc());
+        getRETDesc()->getValueIdList(compExpr());
+      }
     }
   }
   else {
@@ -6011,6 +6016,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   // # columns, we make that check in the CallSP::bindNode, so ignore it
   // for now.
   if (isTrueRoot() &&
+      (child(0)) &&
       (child(0)->getOperatorType() != REL_CALLSP &&
       (child(0)->getOperatorType() != REL_COMPOUND_STMT &&
       (child(0)->getOperatorType() != REL_TUPLE &&
@@ -6686,9 +6692,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   if (bindWA->getHoldableType() == SQLCLIDEV_ANSI_HOLDABLE)
   {
-    if (accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_)
+    if (accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
     {
-      if (accessOptions().accessType() == REPEATABLE_)
+      if (accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -6698,7 +6704,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     else
     {
       TransMode::IsolationLevel il=CmpCommon::transMode()->getIsolationLevel();
-      if (CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ )
+      if (CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_)
       {
         *CmpCommon::diags() << DgSqlCode(-4381);
         bindWA->setErrStatus();
@@ -8220,18 +8226,18 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
   // See Halloween handling code in GenericUpdate::bindNode
   if (accessOptions().userSpecified()) {
-    if ( accessOptions().accessType() == REPEATABLE_ ||
-         accessOptions().accessType() == STABLE_     ||
-         accessOptions().accessType() == BROWSE_
+    if ( accessOptions().accessType() == TransMode::REPEATABLE_READ_ACCESS_ ||
+         accessOptions().accessType() == TransMode::READ_COMMITTED_ACCESS_  ||
+         accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_
       ) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
   else {
     TransMode::IsolationLevel il = CmpCommon::transMode()->getIsolationLevel();
-    if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-       (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) {
+    if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_  ) ||
+       (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) {
         naTable->setRefsIncompatibleDP2Halloween();
     }
   }
@@ -9723,54 +9729,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setInsertSelectQuery(TRUE);
     }
 
-  // if table has a lob column, then fix up any reference to LOBinsert
-  // function in the source values list.
-  //
-  if ((getOperatorType() == REL_UNARY_INSERT) &&
-      (getTableDesc()->getNATable()->hasLobColumn()) &&
-      (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
-       child(0)->getOperatorType() == REL_TUPLE_LIST)) // VALUES (1,'b'),(2,'Y')
-    {
-      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
-	{
-	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
-	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
-	    {
-	      ValueIdList tup;
-	      if (!tl->getTuple(bindWA, tup, x)) 
-		{
-		  bindWA->setErrStatus();
 
-		  return boundExpr; // something went wrong
-		}
-	      
-	      for (CollIndex n = 0; n < tup.entries(); n++)
-		{
-		  ItemExpr * ie = tup[n].getItemExpr();
-		  if (ie->getOperatorType() == ITM_LOBINSERT)
-		    {
-		      // cannot have this function in a values list with multiple
-		      // tuples. Use a single tuple.
-		      *CmpCommon::diags() << DgSqlCode(-4483);
-		      bindWA->setErrStatus();
-		      
-		      return boundExpr; 
-   
-		      LOBinsert * li = (LOBinsert*)ie;
-		      li->insertedTableObjectUID() = 
-			getTableDesc()->getNATable()->objectUid().castToInt64();
-		      li->lobNum() = n;
-
-		      li->insertedTableSchemaName() = 
-			getTableDesc()->getNATable()->
-			getTableName().getSchemaName();
-		    }
-		} // for
-	    } // for
-	} // if tuplelist
-
-    } // if
- 
 
   // Prepare for any IDENTITY column checking later on
   NAString identityColumnName;
@@ -10196,6 +10155,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       if(bindWA->errStatus())
 	return NULL;
 
+
+
       if (stoiInList && !getUpdateCKorUniqueIndexKey())
       {
         if(!getBoundView())
@@ -10549,6 +10510,65 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       indexes[i]->getPartitioningFunction()->setAssignPartition(TRUE);
     }
   }
+
+ if ((getOperatorType() == REL_UNARY_INSERT) &&
+     (getTableDesc()->getNATable()->hasLobColumn()) &&
+     child(0)->getOperatorType() == REL_TUPLE_LIST) // VALUES (1,'b'),(2,'Y')
+    {
+      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
+	{
+	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
+	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
+	    {
+	      ValueIdList tup;
+	      if (!tl->getTuple(bindWA, tup, x)) 
+		{
+		  bindWA->setErrStatus();
+
+		  return boundExpr; // something went wrong
+		}
+	      
+	      for (CollIndex n = 0; n < tup.entries(); n++)
+		{
+		  ItemExpr * ie = tup[n].getItemExpr();
+                  
+		  if (ie->getOperatorType() == ITM_LOBINSERT)
+		    {                                                          
+                      // cannot have this function in a values list with
+                      // multiple tuples. Use a single tuple.
+                          *CmpCommon::diags() << DgSqlCode(-4483);
+                          bindWA->setErrStatus();		      
+                          return boundExpr; 
+                        
+                    }
+               
+                  else
+                    {
+                      Assign * assign = (Assign*)newRecExprArray()[n].getItemExpr();
+                      ItemExpr *assign_child = NULL;
+                      if (assign)
+                        {
+                           assign_child = assign->child(1);
+                        }
+                      if ( assign_child && assign_child->getOperatorType() == ITM_CAST )
+                        {
+                          const NAType& type = assign_child->getValueId().getType();
+                          if ( type.getTypeQualifier() == NA_LOB_TYPE )
+                            {
+                              // cannot have this function in a values list with multiple
+                              // tuples. Use a single tuple.
+                              *CmpCommon::diags() << DgSqlCode(-4483);
+                              bindWA->setErrStatus();		      
+                              return boundExpr; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 
   // It is a system generated identity value if
   // identityColumn() != NULL_VALUE_ID. The identityColumn()
@@ -13534,9 +13554,9 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
         // Now check the transaction isolation level, which can override
         // the access mode.  Note that il was initialized above for the
         // check for an updatable trans, i.e., errors 3140 and 3141.
-        if((CmpCommon::transMode()->ILtoAT(il) == REPEATABLE_ ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == STABLE_     ) ||
-           (CmpCommon::transMode()->ILtoAT(il) == BROWSE_     )) 
+        if((CmpCommon::transMode()->ILtoAT(il) == TransMode::REPEATABLE_READ_ACCESS_ ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_COMMITTED_ACCESS_     ) ||
+           (CmpCommon::transMode()->ILtoAT(il) == TransMode::READ_UNCOMMITTED_ACCESS_     )) 
            cannotUseDP2Locks = TRUE;
 
         // Save the result with this GenericUpdate object.  It will be 
@@ -13749,7 +13769,7 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
     return TRUE;
   }
   
-  if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
+  if ((accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
   {

@@ -709,11 +709,11 @@ ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr,
                                       const ValueIdSet &underlyingCols)
 {
    CMPASSERT(compColPtr->getOperatorType() == ITM_BASECOLUMN);
-   ValueIdSet eics = ((BaseColumn *)compColPtr)->getEIC();
-   ValueId iCol;
-   ItemExpr *compColIndxPtr;
-   eics.getFirst(iCol);
-   compColIndxPtr = iCol.getItemExpr();
+   BaseColumn *bcol = static_cast<BaseColumn *>(compColPtr);
+   // use the basecolumn Veg, using the basecolumn by itself can cause issues
+   // during codegen downstream
+   ValueId egVid = bcol->getTableDesc()->getColumnVEGList()[bcol->getColNumber()];
+   ItemExpr *compColVEGRefPtr = egVid.getItemExpr();
 
    switch (getOperatorType())
      {
@@ -750,7 +750,7 @@ ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr,
 
               ItemExpr * compPred = new(CmpCommon::statementHeap())
                                       BiRelat(ITM_EQUAL,
-                                              compColIndxPtr,
+                                              compColVEGRefPtr,
                                               (foldedExpr==NULL) ? newCompExpr.getItemExpr() : foldedExpr);
               compPred->synthTypeAndValueId(TRUE);
 
@@ -821,14 +821,14 @@ ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr,
           if (keyColOnLeft == TRUE)
               compPred = new(CmpCommon::statementHeap())
                 BiRelat(((BiRelat *) this)->getRelaxedComparisonOpType(),
-                                   compColIndxPtr,
+                                   compColVEGRefPtr,
                                    mirroredExpr //newCompExpr.getItemExpr()
                         );
           else
               compPred = new(CmpCommon::statementHeap())
                            BiRelat(((BiRelat *) this)->getRelaxedComparisonOpType(),
                                    mirroredExpr, //newCompExpr.getItemExpr(),
-                                   compColIndxPtr);
+                                   compColVEGRefPtr);
           compPred->synthTypeAndValueId(TRUE);
           return compPred;
           break;

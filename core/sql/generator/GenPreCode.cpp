@@ -1854,7 +1854,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 		doMaxOneRowOpt = FALSE;
 
 	      if ((s->getGroupAttr()->isStream()) ||
-		  (s->accessOptions().accessType() == SKIP_CONFLICT_))
+		  (s->accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_))
 		{
 		  //doMaxOneInputRowOpt = FALSE;
 		  //doMaxOneRowOpt = FALSE;
@@ -4234,7 +4234,7 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
       generator->setUpdErrorOnError(FALSE);
     }
 
-  if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
+  if ((accessOptions().accessType() == TransMode::SKIP_CONFLICT_ACCESS_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
     {

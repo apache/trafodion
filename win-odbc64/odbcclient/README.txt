@@ -21,8 +21,8 @@
 
 Prerequisite:
 
-openssl >= 0.9.8
-zlib >= 1.2.8
+openssl version >= 0.9.8 and <=1.0.2, static library.
+zlib >= 1.2.8 and < 1.2.11.
 Microsoft Visual Studio >= 2013
 Visual C++ MFC MBCS Library for Visual Studio 2013
 Inno Setup >= 5
@@ -30,7 +30,7 @@ Inno Setup >= 5
 Build steps
 
 1. In order to make the build script able to find these prerequisites,
-   some variables on the top of build_os.bat need to be set accordingly.
+   some variables on the top of build_os.bat or build_os_32.bat need to be set accordingly.
 
    Set variable OPENSSL_LIB_PATH to point to openssl library files folder, for example:
 	  set OPENSSL_PATH=C:\openssl-1.0.1e\lib
@@ -57,7 +57,10 @@ Build steps
     set the variable VC_REDIST_DIR to the folader where store the vcredist_x64.exe
     set VC_REDIST_DIR=C:\Build\winodbc64\redist
 
-2. To build, open a cmd window, change to win-odbc64\odbcclient and type
+2. To build 64-bit driver, open a cmd window, change to win-odbc64\odbcclient and type
 	build_os.bat
+
+3. To build 32-bit driver, open a cmd window, change to win-odbc64\odbcclient and type
+	build_os_32.bat
 
 The final Win ODBC driver installer package can be found at %PACKDIR%

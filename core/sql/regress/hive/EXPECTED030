@@ -4,7 +4,7 @@
 >>set schema hive.hive;
 
 --- SQL operation complete.
->>cqd HIVE_MAX_STRING_LENGTH '20' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '20' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';
@@ -50,7 +50,7 @@
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
--- Definition current  Thu Mar 16 02:23:43 2017
+-- Definition current  Wed Nov 29 02:19:58 2017
 
   (
     S_STORE_SK                       INT
@@ -247,31 +247,31 @@ Suite 100             College
 MASTER Executor fragment
 ========================
 
-Fragment ID: 0, Length: 12664
+Fragment ID: 0, Length: 58688
 
 Contents of EX_ROOT [2]:
 ------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 568
+Class Version = 1, Class Size = 576
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 0, queueSizeUp = 0, numBuffers = 0, bufferSize = 0
-estimatedRowUsed = 0, estimatedRowsAccessed = 0, expressionMode = 0
-Flag = 0000000100101001
+estimatedRowUsed = 0.000000, estimatedRowsAccessed = 0.000000, expressionMode = 0
+Flag = 0x129
 
 For ComTdbRoot :
 FirstNRows = -1, baseTablenamePosition = -1
 queryType_ = 2, planVersion_ = 2600
-rtFlags1_ = 00100000001100000000101000000000
-rtFlags2_ = 00000000000000000000000000000000
-rtFlags3_ = 0000000000000000
-rtFlags4_ = 00000000000000000010000000000000
-rtFlags5_ = 00000000000000000000000000000000
+rtFlags1_ = 0x20300a00
+rtFlags2_ = 0
+rtFlags3_ = 0
+rtFlags4_ = 0x2000
+rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
-explain_plan_size = 2992
+explain_plan_size = 3088
 
 # of Expressions = 4
 
@@ -279,28 +279,30 @@ Expression: inputExpr_ is NULL
 Expression: outputExpr_ is not NULL
 Expression: pkeyExpr_ is NULL
 Expression: predExpr_ is NULL
-Contents of EX_ORC_SCAN [1]:
-----------------------------
+Contents of EX_EXT_STORAGE_SCAN [1]:
+------------------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 448
+Class Version = 1, Class Size = 464
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 2048, queueSizeUp = 2048, numBuffers = 4, bufferSize = 41032
-estimatedRowUsed = 100, estimatedRowsAccessed = 100, expressionMode = 0
-Flag = 0000000000001001
+estimatedRowUsed = 100.000000, estimatedRowsAccessed = 100.000000, expressionMode = 0
+Flag = 0x9
+criDescDown_->noTuples() = 2, criDescUp_->noTuples() = 3
 
-For ComTdbOrcScan :
+For ComTdbExtStorageScan :
 tableName_ = HIVE.HIVE.STORE_ORC
-hostName_ = localhost, port_ = 27000
+type_ = ORC
+hostName_ = localhost, port_ = 36000
 recordDelimiter_ = 10, columnDelimiter_ = 1
-hdfsBufSize_ = 115, rangeTailIOSize_ = 20970, hdfsSqlMaxRecLen_ = 8
+hdfsBufSize_ = 703, rangeTailIOSize_ = 20970, hdfsSqlMaxRecLen_ = 8
 tuppIndex_ = 2, workAtpIndex_ = 3
-asciiTuppIndex_ = 4, asciiRowLen_ = 8
-moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 16
+asciiTuppIndex_ = 4, asciiRowLen_ = 516
+moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 560
 convertSkipListSize_ = 33, convertSkipList_ = 3
 outputRowLength_ = 16
-Flag = 0000000000001100
+Flag = 0xc
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -344,8 +346,8 @@ ColNumber: 26, ColName: S_ZIP
 ColNumber: 27, ColName: S_COUNTRY
 ColNumber: 28, ColName: S_GMT_OFFSET
 ColNumber: 29, ColName: S_TAX_PRECENTAGE
-hdfsRootDir: hdfs://localhost:27000/user/hive/warehouse/store_orc
-modTSforDir_ = 1473728428, numOfPartCols_ = 0
+hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1511634123, numOfPartCols_ = 0
 
 # of Expressions = 6
 
@@ -354,7 +356,7 @@ Expression: moveExpr_ is not NULL
 Expression: convertExpr_ is NULL
 Expression: moveColsConvertExpr_ is not NULL
 Expression: partElimExpr_ is NULL
-Expression: orcOperExpr_ is NULL
+Expression: extOperExpr_ is NULL
 
 --- SQL operation complete.
 >>select s_store_sk from store_orc;
@@ -383,31 +385,31 @@ S_STORE_SK
 MASTER Executor fragment
 ========================
 
-Fragment ID: 0, Length: 10184
+Fragment ID: 0, Length: 14664
 
 Contents of EX_ROOT [2]:
 ------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 568
+Class Version = 1, Class Size = 576
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 0, queueSizeUp = 0, numBuffers = 0, bufferSize = 0
-estimatedRowUsed = 0, estimatedRowsAccessed = 0, expressionMode = 0
-Flag = 0000000100101001
+estimatedRowUsed = 0.000000, estimatedRowsAccessed = 0.000000, expressionMode = 0
+Flag = 0x129
 
 For ComTdbRoot :
 FirstNRows = -1, baseTablenamePosition = -1
 queryType_ = 2, planVersion_ = 2600
-rtFlags1_ = 00100000001100000000101000000000
-rtFlags2_ = 00000000000000000000000000000000
-rtFlags3_ = 0000000000000000
-rtFlags4_ = 00000000000000000010000000000000
-rtFlags5_ = 00000000000000000000000000000000
+rtFlags1_ = 0x20300a00
+rtFlags2_ = 0
+rtFlags3_ = 0
+rtFlags4_ = 0x2000
+rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
-explain_plan_size = 2984
+explain_plan_size = 3080
 
 # of Expressions = 4
 
@@ -415,20 +417,22 @@ Expression: inputExpr_ is NULL
 Expression: outputExpr_ is not NULL
 Expression: pkeyExpr_ is NULL
 Expression: predExpr_ is NULL
-Contents of EX_ORC_SCAN [1]:
-----------------------------
+Contents of EX_EXT_STORAGE_SCAN [1]:
+------------------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 448
+Class Version = 1, Class Size = 464
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 2048, queueSizeUp = 2048, numBuffers = 4, bufferSize = 41032
-estimatedRowUsed = 100, estimatedRowsAccessed = 100, expressionMode = 0
-Flag = 0000000000001001
+estimatedRowUsed = 100.000000, estimatedRowsAccessed = 100.000000, expressionMode = 0
+Flag = 0x9
+criDescDown_->noTuples() = 2, criDescUp_->noTuples() = 3
 
-For ComTdbOrcScan :
+For ComTdbExtStorageScan :
 tableName_ = HIVE.HIVE.STORE_ORC
-hostName_ = localhost, port_ = 27000
+type_ = ORC
+hostName_ = localhost, port_ = 36000
 recordDelimiter_ = 10, columnDelimiter_ = 1
 hdfsBufSize_ = 115, rangeTailIOSize_ = 20970, hdfsSqlMaxRecLen_ = 8
 tuppIndex_ = 2, workAtpIndex_ = 3
@@ -436,7 +440,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 16
 convertSkipListSize_ = 33, convertSkipList_ = 3
 outputRowLength_ = 16
-Flag = 0000000000001100
+Flag = 0xc
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -452,8 +456,8 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
-hdfsRootDir: hdfs://localhost:27000/user/hive/warehouse/store_orc
-modTSforDir_ = 1473728428, numOfPartCols_ = 0
+hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1511634123, numOfPartCols_ = 0
 
 # of Expressions = 6
 
@@ -462,7 +466,7 @@ Expression: moveExpr_ is not NULL
 Expression: convertExpr_ is NULL
 Expression: moveColsConvertExpr_ is not NULL
 Expression: partElimExpr_ is NULL
-Expression: orcOperExpr_ is NULL
+Expression: extOperExpr_ is NULL
 
 --- SQL operation complete.
 >>select s_store_sk from store_orc;
@@ -537,31 +541,31 @@ S_STORE_SK
 MASTER Executor fragment
 ========================
 
-Fragment ID: 0, Length: 10504
+Fragment ID: 0, Length: 14840
 
 Contents of EX_ROOT [2]:
 ------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 568
+Class Version = 1, Class Size = 576
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 0, queueSizeUp = 0, numBuffers = 0, bufferSize = 0
-estimatedRowUsed = 0, estimatedRowsAccessed = 0, expressionMode = 0
-Flag = 0000000100101001
+estimatedRowUsed = 0.000000, estimatedRowsAccessed = 0.000000, expressionMode = 0
+Flag = 0x129
 
 For ComTdbRoot :
 FirstNRows = -1, baseTablenamePosition = -1
 queryType_ = 2, planVersion_ = 2600
-rtFlags1_ = 00100000001100000000101000000000
-rtFlags2_ = 00000000000000000000000000000000
-rtFlags3_ = 0000000000000000
-rtFlags4_ = 00000000000000000010000000000000
-rtFlags5_ = 00000000000000000000000000000000
+rtFlags1_ = 0x20300a00
+rtFlags2_ = 0
+rtFlags3_ = 0
+rtFlags4_ = 0x2000
+rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
-explain_plan_size = 3088
+explain_plan_size = 3176
 
 # of Expressions = 4
 
@@ -569,20 +573,22 @@ Expression: inputExpr_ is NULL
 Expression: outputExpr_ is not NULL
 Expression: pkeyExpr_ is NULL
 Expression: predExpr_ is NULL
-Contents of EX_ORC_SCAN [1]:
-----------------------------
+Contents of EX_EXT_STORAGE_SCAN [1]:
+------------------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 448
+Class Version = 1, Class Size = 464
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 2048, queueSizeUp = 2048, numBuffers = 4, bufferSize = 32840
-estimatedRowUsed = 100, estimatedRowsAccessed = 100, expressionMode = 0
-Flag = 0000000000001001
+estimatedRowUsed = 100.000000, estimatedRowsAccessed = 100.000000, expressionMode = 0
+Flag = 0x9
+criDescDown_->noTuples() = 3, criDescUp_->noTuples() = 4
 
-For ComTdbOrcScan :
+For ComTdbExtStorageScan :
 tableName_ = HIVE.HIVE.STORE_ORC
-hostName_ = localhost, port_ = 27000
+type_ = ORC
+hostName_ = localhost, port_ = 36000
 recordDelimiter_ = 10, columnDelimiter_ = 1
 hdfsBufSize_ = 115, rangeTailIOSize_ = 20970, hdfsSqlMaxRecLen_ = 16
 tuppIndex_ = 3, workAtpIndex_ = 3
@@ -590,7 +596,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 8
 convertSkipListSize_ = 33, convertSkipList_ = 2
 outputRowLength_ = 8
-Flag = 0000000000001100
+Flag = 0xc
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -606,8 +612,8 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
-hdfsRootDir: hdfs://localhost:27000/user/hive/warehouse/store_orc
-modTSforDir_ = 1473728428, numOfPartCols_ = 0
+hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1511634123, numOfPartCols_ = 0
 
 # of Expressions = 6
 
@@ -616,7 +622,7 @@ Expression: moveExpr_ is NULL
 Expression: convertExpr_ is not NULL
 Expression: moveColsConvertExpr_ is NULL
 Expression: partElimExpr_ is NULL
-Expression: orcOperExpr_ is NULL
+Expression: extOperExpr_ is NULL
 
 --- SQL operation complete.
 >>
@@ -671,31 +677,31 @@ S_STORE_SK
 MASTER Executor fragment
 ========================
 
-Fragment ID: 0, Length: 15648
+Fragment ID: 0, Length: 19144
 
 Contents of EX_ROOT [2]:
 ------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 568
+Class Version = 1, Class Size = 576
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 0, queueSizeUp = 0, numBuffers = 0, bufferSize = 0
-estimatedRowUsed = 0, estimatedRowsAccessed = 0, expressionMode = 0
-Flag = 0000000100101001
+estimatedRowUsed = 0.000000, estimatedRowsAccessed = 0.000000, expressionMode = 0
+Flag = 0x129
 
 For ComTdbRoot :
 FirstNRows = -1, baseTablenamePosition = -1
 queryType_ = 2, planVersion_ = 2600
-rtFlags1_ = 00100000001100000000101000000000
-rtFlags2_ = 00000000000000000000000000000000
-rtFlags3_ = 0000000000000000
-rtFlags4_ = 00000000000000000010000000000000
-rtFlags5_ = 00000000000000000000000000000000
+rtFlags1_ = 0x20300a00
+rtFlags2_ = 0
+rtFlags3_ = 0
+rtFlags4_ = 0x2000
+rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
-explain_plan_size = 3184
+explain_plan_size = 3264
 
 # of Expressions = 4
 
@@ -703,20 +709,22 @@ Expression: inputExpr_ is NULL
 Expression: outputExpr_ is not NULL
 Expression: pkeyExpr_ is NULL
 Expression: predExpr_ is NULL
-Contents of EX_ORC_SCAN [1]:
-----------------------------
+Contents of EX_EXT_STORAGE_SCAN [1]:
+------------------------------------
 
 For ComTdb :
-Class Version = 1, Class Size = 448
+Class Version = 1, Class Size = 464
 InitialQueueSizeDown = 4, InitialQueueSizeUp = 4
 queueResizeLimit = 9, queueResizeFactor = 4
 queueSizeDown = 2048, queueSizeUp = 2048, numBuffers = 4, bufferSize = 32840
-estimatedRowUsed = 100, estimatedRowsAccessed = 100, expressionMode = 0
-Flag = 0000000000001001
+estimatedRowUsed = 100.000000, estimatedRowsAccessed = 100.000000, expressionMode = 0
+Flag = 0x9
+criDescDown_->noTuples() = 3, criDescUp_->noTuples() = 4
 
-For ComTdbOrcScan :
+For ComTdbExtStorageScan :
 tableName_ = HIVE.HIVE.STORE_ORC
-hostName_ = localhost, port_ = 27000
+type_ = ORC
+hostName_ = localhost, port_ = 36000
 recordDelimiter_ = 10, columnDelimiter_ = 1
 hdfsBufSize_ = 115, rangeTailIOSize_ = 20970, hdfsSqlMaxRecLen_ = 16
 tuppIndex_ = 3, workAtpIndex_ = 3
@@ -724,7 +732,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 8
 convertSkipListSize_ = 33, convertSkipList_ = 2
 outputRowLength_ = 8
-Flag = 0000000000001100
+Flag = 0xc
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -740,8 +748,8 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
-hdfsRootDir: hdfs://localhost:27000/user/hive/warehouse/store_orc
-modTSforDir_ = 1473728428, numOfPartCols_ = 0
+hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1511634123, numOfPartCols_ = 0
 
 Number of PPI entries: 3
 PPI: #1
@@ -749,10 +757,10 @@ PPI: #1
 PPI: #2
   type: EQUALS(5)
   operAttrIndex: 0
-  colName_: S_STORE_SK
+  colName_: s_store_sk
 PPI: #3
   type: END(4)
-Num Of orcAllColInfoList entries: 33
+Num Of extAllColInfoList entries: 33
 
 # of Expressions = 6
 
@@ -761,7 +769,7 @@ Expression: moveExpr_ is NULL
 Expression: convertExpr_ is not NULL
 Expression: moveColsConvertExpr_ is NULL
 Expression: partElimExpr_ is NULL
-Expression: orcOperExpr_ is not NULL
+Expression: extOperExpr_ is not NULL
 
 --- SQL operation complete.
 >>
@@ -771,9 +779,9 @@ Expression: orcOperExpr_ is not NULL
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212356391057229402
+PLAN_ID .................. 212378682018129421
 ROWS_OUT ......... 1,440,202
-EST_TOTAL_COST ......... 176.18
+EST_TOTAL_COST ......... 191.55
 STATEMENT ................ select *
                            from store_sales_orc
                            where ss_sold_date_sk = ss_item_sk;
@@ -784,7 +792,7 @@ ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 1,440,202
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 176.18
+EST_TOTAL_COST ......... 191.55
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2.8804e+06
@@ -795,7 +803,7 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinal  1,440,202
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
+  esp_2_node_map ......... (-1(4 times))
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -803,6 +811,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -844,7 +855,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 1,440,202
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 176.18
+EST_TOTAL_COST ......... 191.55
 DESCRIPTION
   max_card_est ........... 2.8804e+06
   fragment_id ............ 2
@@ -862,8 +873,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 1,440,202
-EST_OPER_COST .......... 176.18
-EST_TOTAL_COST ......... 176.18
+EST_OPER_COST .......... 191.55
+EST_TOTAL_COST ......... 191.55
 DESCRIPTION
   max_card_est ........... 2.8804e+06
   fragment_id ............ 2
@@ -889,9 +900,9 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212356391057807027
+PLAN_ID .................. 212378682018429456
 ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.01
+EST_TOTAL_COST ........... 0
 STATEMENT ................ select * from store_sales_orc where 1=2;
 
 
@@ -900,7 +911,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.01
+EST_TOTAL_COST ........... 0
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 0
@@ -918,6 +929,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -959,8 +973,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.01
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
 DESCRIPTION
   max_card_est ........... 0
   fragment_id ............ 0
@@ -974,7 +988,6 @@ DESCRIPTION
   access_mode ............ not specified, defaulted to read committed
   columns_retrieved ..... 23
   probes ................. 1
-  rows_accessed .......... 1
   part_elim_compiled ..... 0.
 
 --- SQL operation complete.
@@ -1208,7 +1221,7 @@ NUM_HITS    NUM_PARAMS
 >>invoke hive.hive.store_sales_orc;
 
 -- Definition of hive table STORE_SALES_ORC
--- Definition current  Thu Mar 16 02:24:38 2017
+-- Definition current  Wed Nov 29 02:20:31 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -1250,9 +1263,9 @@ NUM_HITS    NUM_PARAMS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356391078690910
+PLAN_ID .................. 212378682032138196
 ROWS_OUT ............. 1,698
-EST_TOTAL_COST ......... 176.17
+EST_TOTAL_COST ......... 191.52
 STATEMENT ................ select * from store_sales_orc where ss_item_sk = 1;
 
 
@@ -1261,7 +1274,7 @@ ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ............. 1,698
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 176.17
+EST_TOTAL_COST ......... 191.52
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2.73638e+06
@@ -1272,7 +1285,7 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality  1,698
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
+  esp_2_node_map ......... (-1(4 times))
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1280,6 +1293,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1321,7 +1337,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ............. 1,698
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 176.17
+EST_TOTAL_COST ......... 191.52
 DESCRIPTION
   max_card_est ........... 2.73638e+06
   fragment_id ............ 2
@@ -1339,8 +1355,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ............. 1,698
-EST_OPER_COST .......... 176.17
-EST_TOTAL_COST ......... 176.17
+EST_OPER_COST .......... 191.52
+EST_TOTAL_COST ......... 191.52
 DESCRIPTION
   max_card_est ........... 2.73638e+06
   fragment_id ............ 2
@@ -1356,7 +1372,7 @@ DESCRIPTION
   probes ................. 1
   rows_accessed .......... 2.8804e+06
   orc_pred_pushdown ...... yes
-  orc_search_arguments ... and( HIVE.STORE_SALES_ORC.SS_ITEM_SK = cast(%(1)) )
+  orc_search_arguments ... and( HIVE.STORE_SALES_ORC.SS_ITEM_SK = %(1) )
   executor_predicates .... (HIVE.STORE_SALES_ORC.SS_ITEM_SK = %(1))
 
 --- SQL operation complete.
@@ -1389,9 +1405,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356391080900762
+PLAN_ID .................. 212378682032886873
 ROWS_OUT ......... 2,880,404
-EST_TOTAL_COST ... 9,688,410
+EST_TOTAL_COST    23,225,420
 STATEMENT ................ select *
                            from customer_orc, store_sales_orc
                            where store_sales_orc.ss_item_sk =
@@ -1404,7 +1420,7 @@ ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 2,880,404
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ... 9,688,410
+EST_TOTAL_COST    23,225,420
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 2.8804e+06
@@ -1422,6 +1438,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1481,8 +1500,8 @@ DESCRIPTION
 NESTED_JOIN ===============================  SEQ_NO 3        CHILDREN 1, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 2,880,404
-EST_OPER_COST ............ 0.2
-EST_TOTAL_COST ... 9,688,410
+EST_OPER_COST ............ 0.5
+EST_TOTAL_COST    23,225,420
 DESCRIPTION
   max_card_est ........... 2.8804e+06
   fragment_id ............ 0
@@ -1497,8 +1516,8 @@ ORC_SCAN ==================================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES_ORC
 REQUESTS_IN ........ 100,000
 ROWS/REQUEST ............ 28.8
-EST_OPER_COST .... 9,688,403
-EST_TOTAL_COST ... 9,688,403
+EST_OPER_COST ... 23,225,410
+EST_TOTAL_COST    23,225,410
 DESCRIPTION
   max_card_est ........... 2.8804e+06
   fragment_id ............ 0
@@ -1518,7 +1537,7 @@ DESCRIPTION
   rows_accessed .......... 2.8804e+06
   orc_pred_pushdown ...... yes
   orc_search_arguments ... and( HIVE.STORE_SALES_ORC.SS_ITEM_SK =
-                             cast(HIVE.CUSTOMER_ORC.C_CUSTOMER_SK) )
+                             HIVE.CUSTOMER_ORC.C_CUSTOMER_SK )
   executor_predicates .... (HIVE.STORE_SALES_ORC.SS_ITEM_SK =
                              HIVE.CUSTOMER_ORC.C_CUSTOMER_SK)
 
@@ -1527,8 +1546,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.CUSTOMER_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ........... 100,000
-EST_OPER_COST ............ 6.3
-EST_TOTAL_COST ........... 6.3
+EST_OPER_COST ............ 7.71
+EST_TOTAL_COST ........... 7.71
 DESCRIPTION
   max_card_est ..... 100,000
   fragment_id ............ 0
@@ -1591,7 +1610,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    esp_exchange                    1:4(hash2)            2.88E+006
 3    2    4    hybrid_hash_join                                      2.88E+006
 .    .    3    orc_scan                        STORE_SALES_SORTED_O  2.88E+006
-1    .    2    esp_exchange                    4(rep-b):2(hash2)     2.00E+000
+1    .    2    esp_exchange                    4(rep-b):4(hash2)     2.00E+000
 .    .    1    orc_scan                        DATE_DIM_ORC          2.00E+000
 
 --- SQL operation complete.
@@ -1641,7 +1660,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke hive.hive.date_dim_orc;
 
 -- Definition of hive table DATE_DIM_ORC
--- Definition current  Thu Mar 16 02:24:50 2017
+-- Definition current  Wed Nov 29 02:20:37 2017
 
   (
     D_DATE_SK                        INT
@@ -1726,6 +1745,9 @@ CREATE TABLE DEFAULT.DATE_DIM_ORC
 
 /* Trafodion DDL */
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
+/* ObjectUID = 8954428504972159626 */
+
 CREATE EXTERNAL TABLE DATE_DIM_ORC
   (
     D_DATE_SK                        INT DEFAULT NULL
@@ -1780,9 +1802,9 @@ CREATE EXTERNAL TABLE DATE_DIM_ORC
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356391094205166
+PLAN_ID .................. 212378682040442348
 ROWS_OUT ............... 271
-EST_TOTAL_COST ........... 0.59
+EST_TOTAL_COST ........... 0.66
 STATEMENT ................ select *
                            from hive.hive.date_dim_orc
                            where d_date = date '2016-01-27';
@@ -1793,7 +1815,7 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 271
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.59
+EST_TOTAL_COST ........... 0.66
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ...... 69,397.5
@@ -1811,6 +1833,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1855,8 +1880,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 271
-EST_OPER_COST ............ 0.59
-EST_TOTAL_COST ........... 0.59
+EST_OPER_COST ............ 0.66
+EST_TOTAL_COST ........... 0.66
 DESCRIPTION
   max_card_est ...... 69,397.5
   fragment_id ............ 0
@@ -1872,8 +1897,7 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ..... 73,049
   orc_pred_pushdown ...... yes
-  orc_search_arguments ... and( HIVE.DATE_DIM_ORC.D_DATE = cast(%(2016-01-27))
-                             )
+  orc_search_arguments ... and( HIVE.DATE_DIM_ORC.D_DATE = %(2016-01-27) )
   executor_predicates .... (HIVE.DATE_DIM_ORC.D_DATE = %(2016-01-27))
 
 --- SQL operation complete.
@@ -1889,7 +1913,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim_orc;
 
 -- Definition of hive table DATE_DIM_ORC
--- Definition current  Thu Mar 16 02:25:05 2017
+-- Definition current  Wed Nov 29 02:20:44 2017
 
   (
     D_DATE_SK                        INT
@@ -1974,6 +1998,9 @@ CREATE TABLE DEFAULT.DATE_DIM_ORC
 
 /* Trafodion DDL */
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
+/* ObjectUID = 8954428504972159626 */
+
 CREATE EXTERNAL TABLE DATE_DIM_ORC
   (
     D_DATE_SK                        INT DEFAULT NULL
@@ -2028,9 +2055,9 @@ CREATE EXTERNAL TABLE DATE_DIM_ORC
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356391108806821
+PLAN_ID .................. 212378682040442348
 ROWS_OUT ............... 271
-EST_TOTAL_COST ........... 0.59
+EST_TOTAL_COST ........... 0.66
 STATEMENT ................ select *
                            from hive.hive.date_dim_orc
                            where d_date = date '2016-01-27';
@@ -2041,14 +2068,14 @@ ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 271
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.59
+EST_TOTAL_COST ........... 0.66
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ...... 69,397.5
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  record_length ........ 446
+  record_length ...... 1,477
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinality    271
@@ -2059,6 +2086,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -2103,14 +2133,14 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 271
-EST_OPER_COST ............ 0.59
-EST_TOTAL_COST ........... 0.59
+EST_OPER_COST ............ 0.66
+EST_TOTAL_COST ........... 0.66
 DESCRIPTION
   max_card_est ...... 69,397.5
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  record_length ........ 440
+  record_length ...... 1,471
   scan_type .............. full scan of table HIVE.HIVE.DATE_DIM_ORC
   object_type ............ Hive_Orc
   scan_direction ......... forward
@@ -2120,8 +2150,7 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ..... 73,049
   orc_pred_pushdown ...... yes
-  orc_search_arguments ... and( HIVE.DATE_DIM_ORC.D_DATE = cast(%(2016-01-27))
-                             )
+  orc_search_arguments ... and( HIVE.DATE_DIM_ORC.D_DATE = %(2016-01-27) )
   executor_predicates .... (HIVE.DATE_DIM_ORC.D_DATE = %(2016-01-27))
 
 --- SQL operation complete.
@@ -2263,18 +2292,15 @@ DESCRIPTION
 >>
 >>-- display the push-down predicates, which should include the 
 >>-- min/max expressions from dimension table date_dim and time_dim.
->>select cast(substring(description,
-+>           position('orc_search_arguments' in description),
-+>           position('executor_predicates' in description) -
-+>           position('orc_search_arguments' in description)
-+>                ) as char(400))
-+>         from table (explain(NULL,'XX'))
+>>select cast(tokenstr('orc_search_arguments', description, 'executor_predicates')
++>        as char(400))
++>       from table (explain(NULL,'XX'))
 +>where position('orc_search_arguments' in description)  > 0 ;
 
 (EXPR)
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-orc_search_arguments: and( not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK is null ) not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <cast(\:_sys_MinVal0) ) HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <= cast(\:_sys_MaxVal0) not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <cast(\:_sys_MinVal1) ) HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <= cast(\:_sys_MaxVal1) )                                                             
+and( and( and( and( and( not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK is null ) not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <\:_sys_MinVal0 ) ) HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <= \:_sys_MaxVal0 ) not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <\:_sys_MinVal1 ) ) HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK <= \:_sys_MaxVal1 ) )                                                                               
 
 --- 1 row(s) selected.
 >>
@@ -2320,9 +2346,9 @@ orc_search_arguments: and( not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK is null ) 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212356391253416898
+PLAN_ID .................. 212378682095271698
 ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 6.3
+EST_TOTAL_COST .......... 17.46
 STATEMENT ................ select count(*)
                            from hive.hive.customer_orc,
                              hive.hive.store_sales_sorted_orc
@@ -2335,7 +2361,7 @@ ROOT ======================================  SEQ_NO 8        ONLY CHILD 7
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 6.3
+EST_TOTAL_COST .......... 17.46
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.13(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
@@ -2346,8 +2372,8 @@ DESCRIPTION
   statement_index ........ 0
   affinity_value ......... 0
   max_max_cardinal  2,880,404
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1)
+  esp_2_node_map ......... (-1(4 times))
+  esp_3_node_map ......... (-1(4 times))
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -2355,6 +2381,9 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_USE_REGION_XN ..... ON
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -2379,7 +2408,7 @@ SORT_PARTIAL_AGGR_ROOT ====================  SEQ_NO 7        ONLY CHILD 6
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 6.3
+EST_TOTAL_COST .......... 17.46
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -2393,7 +2422,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 6.3
+EST_TOTAL_COST .......... 17.46
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -2411,7 +2440,7 @@ SORT_PARTIAL_AGGR_LEAF ====================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 6.3
+EST_TOTAL_COST .......... 17.46
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -2424,10 +2453,10 @@ DESCRIPTION
 HYBRID_HASH_JOIN ==========================  SEQ_NO 4        CHILDREN 3, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 2,880,404
-EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 6.29
+EST_OPER_COST ............ 0.02
+EST_TOTAL_COST .......... 17.46
 DESCRIPTION
-  memory_quota_per_instan  1200 MB
+  memory_quota_per_instan  800 MB
   max_card_est ........... 2.8804e+06
   fragment_id ............ 2
   parent_frag ............ 0
@@ -2447,8 +2476,8 @@ ORC_SCAN ==================================  SEQ_NO 3        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES_SORTED_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 2,880,404
-EST_OPER_COST ............ 5.59
-EST_TOTAL_COST ........... 5.59
+EST_OPER_COST ........... 16.74
+EST_TOTAL_COST .......... 16.74
 DESCRIPTION
   max_card_est ........... 2.8804e+06
   fragment_id ............ 2
@@ -2465,11 +2494,11 @@ DESCRIPTION
   rows_accessed .......... 2.8804e+06
   min_max_hashj_cols ..... HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE_SK
   orc_pred_pushdown ...... yes
-  orc_search_arguments ... and( not( HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE_S
-                             K is null ) not( HIVE.STORE_SALES_SORTED_ORC.SS_SO
-                             LD_DATE_SK <cast(\:_sys_MinVal0) )
-                             HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE_SK <=
-                             cast(\:_sys_MaxVal0) )
+  orc_search_arguments ... and( and( and( not( HIVE.STORE_SALES_SORTED_ORC.SS_S
+                             OLD_DATE_SK is null ) not(
+                             HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE_SK
+                             <\:_sys_MinVal0 ) ) HIVE.STORE_SALES_SORTED_ORC.SS
+                             _SOLD_DATE_SK <= \:_sys_MaxVal0 ) )
   executor_predicates .... HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE_SK is not
                              null and (HIVE.STORE_SALES_SORTED_ORC.SS_SOLD_DATE
                              _SK >= \:_sys_MinVal0) and
@@ -2487,13 +2516,13 @@ DESCRIPTION
   fragment_id ............ 3
   parent_frag ............ 2
   fragment_type .......... esp
-  est_memory_per_node .... 128.906 KB
+  est_memory_per_node .... 32.227 KB
   record_length .......... 6
   buffer_size ........ 5,000
   parent_processes ....... 4
-  child_processes ........ 2
+  child_processes ........ 4
   parent_partitioning_fun  broadcast 4 times
-  child_partitioning_func  hash2 partitioned 2 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
 
 
 ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
@@ -2517,9 +2546,9 @@ DESCRIPTION
   probes ................. 1
   rows_accessed .... 100,000
   orc_pred_pushdown ...... yes
-  orc_search_arguments ... and( HIVE.CUSTOMER_ORC.C_FIRST_SALES_DATE_SK =
-                             cast(%(4)) not( HIVE.CUSTOMER_ORC.C_CUSTOMER_SK is
-                             null ) )
+  orc_search_arguments ... and( and( HIVE.CUSTOMER_ORC.C_FIRST_SALES_DATE_SK =
+                             %(4) not( HIVE.CUSTOMER_ORC.C_CUSTOMER_SK is null
+                             ) ) )
   executor_predicates .... (HIVE.CUSTOMER_ORC.C_FIRST_SALES_DATE_SK = %(4)) and
                              HIVE.CUSTOMER_ORC.C_CUSTOMER_SK is not null
 
@@ -2535,7 +2564,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    sort_partial_aggr_le                                  1.00E+000
 3    2    4    hybrid_hash_join                                      2.88E+006
 .    .    3    orc_scan                        STORE_SALES_SORTED_O  2.88E+006
-1    .    2    esp_exchange                    4(rep-b):2(hash2)     3.17E+002
+1    .    2    esp_exchange                    4(rep-b):4(hash2)     3.17E+002
 .    .    1    orc_scan                        CUSTOMER_ORC          3.17E+002
 
 --- SQL operation complete.
@@ -2625,5 +2654,249 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    orc_scan                        STORE2_SALES_ORC      2.88E+006
 
 --- SQL operation complete.
+>>
+>>-- pushdown predicate expressions 
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>process hive statement 'drop table t030hive';
+
+--- SQL operation complete.
+>>process hive statement 'create table t030hive (a int, b string) stored as orc tblproperties ("orc.stripe.size"="20000", "aaaaa"="bb", "orc.bloom.filter.columns"="a,b") ';
+
+--- SQL operation complete.
+>>showddl hive.hive.t030hive;
+
+/* Hive DDL */
+CREATE TABLE DEFAULT.T030HIVE
+  (
+    A                                int
+  , B                                string
+  )
+  stored as orc
+  tblproperties
+  (
+    "orc.bloom.filter.columns"="a,b"
+   ,"orc.stripe.size"="20000"
+  )
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>
+>>insert into hive.hive.t030hive values (1,'a'), (null, null), (5, ''), (10,'abc');
+
+--- 4 row(s) inserted.
+>>cqd hive_max_string_length_in_bytes '10';
+
+--- SQL operation complete.
+>>select * from t030hive;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          ?  ?         
+          5            
+         10  abc       
+
+--- 4 row(s) selected.
+>>select * from t030hive where a is null;
+
+A            B         
+-----------  ----------
+
+          ?  ?         
+
+--- 1 row(s) selected.
+>>select * from t030hive where b is null;
+
+A            B         
+-----------  ----------
+
+          ?  ?         
+
+--- 1 row(s) selected.
+>>
+>>prepare s from select * from hive.hive.t030hive where a = cast(? as int);
+
+--- SQL command prepared.
+>>execute s using 1;
+
+A            B         
+-----------  ----------
+
+          1  a         
+
+--- 1 row(s) selected.
+>>execute s using 2;
+
+--- 0 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>prepare s from select * from hive.hive.t030hive where a < cast(? as int);
+
+--- SQL command prepared.
+>>execute s using 1;
+
+--- 0 row(s) selected.
+>>execute s using 2;
+
+A            B         
+-----------  ----------
+
+          1  a         
+
+--- 1 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>prepare s from select * from hive.hive.t030hive where b = ?;
+
+--- SQL command prepared.
+>>execute s using 'a';
+
+A            B         
+-----------  ----------
+
+          1  a         
+
+--- 1 row(s) selected.
+>>execute s using 'b';
+
+--- 0 row(s) selected.
+>>execute s using '';
+
+A            B         
+-----------  ----------
+
+          5            
+
+--- 1 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>prepare s from select * from hive.hive.t030hive where b < ?;
+
+--- SQL command prepared.
+>>execute s using 'a';
+
+A            B         
+-----------  ----------
+
+          5            
+
+--- 1 row(s) selected.
+>>execute s using 'b';
+
+A            B         
+-----------  ----------
+
+          1  a         
+          5            
+         10  abc       
+
+--- 3 row(s) selected.
+>>execute s using '';
+
+--- 0 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>cqd jdbc_process 'ON';
+
+--- SQL operation complete.
+>>prepare s from select * from t030hive where a = ?;
+
+--- SQL command prepared.
+>>execute s using 0;
+
+--- 0 row(s) selected.
+>>execute s using 5;
+
+A            B         
+-----------  ----------
+
+          5            
+
+--- 1 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>prepare s from select * from t030hive where a < ?;
+
+--- SQL command prepared.
+>>execute s using 0;
+
+--- 0 row(s) selected.
+>>execute s using 6;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          5            
+
+--- 2 row(s) selected.
+>>execute s using NULL;
+
+--- 0 row(s) selected.
+>>
+>>
+>>-- parquet table with tblproperties
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>process hive statement 'drop table t030parq';
+
+--- SQL operation complete.
+>>process hive statement 'create table t030parq (a int, b string) partitioned by (z int) stored as parquet tblproperties ("parquet.block.size"="5000000", "parquet.page.size"="10000", "parquet.compression"="SNAPPY", "parquet.enable.dictionary"="true", "parquet.dictionary.page.size"="5000") ';
+
+--- SQL operation complete.
+>>showddl hive.hive.t030parq;
+
+/* Hive DDL */
+CREATE TABLE DEFAULT.T030PARQ
+  (
+    A                                int
+  , B                                string
+  )
+  PARTITIONED BY (Z int)
+  stored as parquet
+  tblproperties
+  (
+    "parquet.compression"="SNAPPY"
+   ,"parquet.dictionary.page.size"="5000"
+   ,"parquet.block.size"="5000000"
+   ,"parquet.enable.dictionary"="true"
+   ,"parquet.page.size"="10000"
+  )
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+>>insert into t030parq values (1,'a',1), (2,'b', 2);
+
+--- 2 row(s) inserted.
+>>sleep 2;
+>>select * from t030parq order by 1;
+
+A            B           Z          
+-----------  ----------  -----------
+
+          1  a                     1
+          2  b                     2
+
+--- 2 row(s) selected.
+>>
+>>
 >>
 >>log;

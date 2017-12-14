@@ -8394,8 +8394,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
            // 'table' is the NATable for underlying hive table.
            // That table may also have an associated external table.
            // Skip processing the external table defn, if only the 
-           // underlying hive table is needed.
-           if (NOT bindWA->returnHiveTableDefn())
+           // underlying hive table is needed. Skip processing also
+           // if there were errors creating the NATable object 
+           // (which is indicated by a getColumnCount() value of 0).
+           if ((NOT bindWA->returnHiveTableDefn()) &&
+               (table->getColumnCount() > 0) )
              {
                // if this hive/orc table has an associated external table, 
                // get table desc for it.

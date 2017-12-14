@@ -1007,7 +1007,7 @@ void RelRoot::generateCacheKey(CacheWA &cwa) const
   tmode.updateTransMode(CmpCommon::transMode());
 
   StmtLevelAccessOptions &opts = ((RelRoot*)this)->accessOptions();
-  if (opts.accessType() != ACCESS_TYPE_NOT_SPECIFIED_) {
+  if (opts.accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_) {
     tmode.updateAccessModeFromIsolationLevel
       (TransMode::ATtoIL(opts.accessType()));
     tmode.setStmtLevelAccessOptions();

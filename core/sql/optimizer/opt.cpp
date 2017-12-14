@@ -4975,7 +4975,7 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   histMissingStatsWarningLevel_	    = defs_->getAsLong(HIST_MISSING_STATS_WARNING_LEVEL);
   histOptimisticCardOpt_	    = defs_->getAsLong(HIST_OPTIMISTIC_CARD_OPTIMIZATION);
   histAssumeIndependentReduction_    = (CmpCommon::getDefault(HIST_ASSUME_INDEPENDENT_REDUCTION) == DF_ON);
-  histUseSampleForCardEst_              = (CmpCommon::getDefault(HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION ) == DF_ON);
+  histUseSampleForCardEst_              = (CmpCommon::getDefault(HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION) == DF_ON);
 
   maxSkewValuesDetected_             = defs_->getAsULong(MAX_SKEW_VALUES_DETECTED);
   skewSensitivityThreshold_          = defs_->getAsDouble(SKEW_SENSITIVITY_THRESHOLD);

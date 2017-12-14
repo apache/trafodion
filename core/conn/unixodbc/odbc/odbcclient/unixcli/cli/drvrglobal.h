@@ -36,6 +36,7 @@
 #include "transportbase.h"
 #include "hpsqlext.h"
 #include <charsetconv.h>
+#include "float.h"
 
 typedef int (*FPSQLGetPrivateProfileString) (
 	LPCSTR section,
@@ -106,6 +107,8 @@ typedef int (*FPSQLGetPrivateProfileString) (
 
 #define	SQLERRWARN 1
 #define	ESTIMATEDCOSTRGERRWARN	2
+
+#define MAX_DOUBLE_TO_CHAR_LEN (DBL_MANT_DIG - DBL_MIN_EXP + 12)
 
 typedef enum TRANSPORT_TYPE
 {

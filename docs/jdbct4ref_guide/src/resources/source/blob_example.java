@@ -69,12 +69,12 @@ public class TestBLOB
     long end ;
     Connection conn1 = null ;
 
-    // Set hpt4jdbc.blobTableName System Property. This property
+    // Set t4jdbc.blobTableName System Property. This property
     // can also be added to the command line through
-    // "-Dhpt4jdbc.blobTableName=...", or a
+    // "-Dt4jdbc.blobTableName=...", or a
     // java.util.Properties object can be used and passed to
     // getConnection.
-    System.setProperty( "hpt4jdbc.blobTableName", "Seabase.sch.blobdatatbl" );
+    System.setProperty( "t4jdbc.blobTableName", "Seabase.sch.blobdatatbl" );
 
     if ( args.length < 2 )
     {
@@ -107,13 +107,13 @@ public class TestBLOB
 
     try
     {
-      Class.forName( "org.trafodion.t4jdbc.HPT4Driver" ) ;
+      Class.forName( "org.trafodion.jdbc.t4.T4Driver" ) ;
       start = System.currentTimeMillis() ;
 
       // url should be of the form:
-      //   jdbc:hpt4jdbc://ip_address|host_name:37800/:"
+      //   jdbc:t4jdbc://ip_address|host_name:37800/:"
       // where host_name is the database host name
-      String url = "jdbc:hpt4jdbc://host_name:37800/:" ;
+      String url = "jdbc:t4jdbc://host_name:37800/:" ;
       conn1 = DriverManager.getConnection( url ) ;
 
       System.out.println( "Cleaning up test tables..." ) ;

@@ -49,9 +49,9 @@ short DP2LockFlags::transactionNeeded()
   return (getConsistencyLevel() == READ_UNCOMMITTED) ? 0 : -1;
 }
 
-void StmtLevelAccessOptions::updateAccessOptions(AccessType at, LockMode lm)
+void StmtLevelAccessOptions::updateAccessOptions(TransMode::AccessType at, LockMode lm)
 {
-  if (at != ACCESS_TYPE_NOT_SPECIFIED_)
+  if (at != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
     if (accessType_ < at)
       accessType_ = at;
   
@@ -66,12 +66,12 @@ DP2LockFlags StmtLevelAccessOptions::getDP2LockFlags()
 
   switch (accessType_)
     {
-    case BROWSE_:
+    case TransMode::READ_UNCOMMITTED_ACCESS_:
       flags.setConsistencyLevel(DP2LockFlags::READ_UNCOMMITTED);
       break;
       
-    case ACCESS_TYPE_NOT_SPECIFIED_:
-    case CLEAN_:
+    case TransMode::ACCESS_TYPE_NOT_SPECIFIED_:
+    case TransMode::READ_COMMITTED_ACCESS_:
       flags.setConsistencyLevel(DP2LockFlags::READ_COMMITTED);
       // QSTUFF
       // make sure table scans for embedded deletes or updates
@@ -82,11 +82,7 @@ DP2LockFlags StmtLevelAccessOptions::getDP2LockFlags()
 
       break;
       
-    case STABLE_:
-      flags.setConsistencyLevel(DP2LockFlags::STABLE);
-      break;
-
-    case REPEATABLE_:
+    case TransMode::REPEATABLE_READ_ACCESS_:
       flags.setConsistencyLevel(DP2LockFlags::SERIALIZABLE);
       break;
         
@@ -99,7 +95,7 @@ DP2LockFlags StmtLevelAccessOptions::getDP2LockFlags()
     // while this could be argued either way the advantages for 
     // efficient subscriptions outweight any short commings.
 
-   case SKIP_CONFLICT_:
+    case TransMode::SKIP_CONFLICT_ACCESS_:
       flags.setConsistencyLevel(DP2LockFlags::READ_COMMITTED);
       flags.setSkipLockedRows();
       // makes sure scans for embedded updates or deletes cause 
@@ -317,16 +313,16 @@ void verifyUpdatableTrans(StmtLevelAccessOptions * sAxOpt,
 			  TransMode::IsolationLevel isolationLevelForUpdate,
 			  Lng32 &errCodeA, Lng32 &errCodeB)
 {
-  if (sAxOpt && sAxOpt->accessType() == BROWSE_)
+  if (sAxOpt && sAxOpt->accessType() == TransMode::READ_UNCOMMITTED_ACCESS_)
     errCodeA = -3140;
   else if (((! sAxOpt) ||
-	    (sAxOpt->accessType() == ACCESS_TYPE_NOT_SPECIFIED_)) &&
+	    (sAxOpt->accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_)) &&
            (tm->isolationLevel() == TransMode::READ_UNCOMMITTED_) &&
 	   ((isolationLevelForUpdate == TransMode::IL_NOT_SPECIFIED_) ||
 	    (isolationLevelForUpdate == TransMode::READ_UNCOMMITTED_)))
     errCodeA = -3140;
   else if (((! sAxOpt) ||
-	    (sAxOpt->accessType() == ACCESS_TYPE_NOT_SPECIFIED_)) &&
+	    (sAxOpt->accessType() == TransMode::ACCESS_TYPE_NOT_SPECIFIED_)) &&
            (tm->accessMode() != TransMode::READ_WRITE_) &&
      	   ((isolationLevelForUpdate == TransMode::IL_NOT_SPECIFIED_) ||
     	    (isolationLevelForUpdate == TransMode::READ_UNCOMMITTED_) ||

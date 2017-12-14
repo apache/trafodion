@@ -214,6 +214,7 @@ display qid for s1;
 log;
 sh $scriptsdir/tools/run_rts.ksh EXPLAIN;
 log LOGRTS;
+control query default explain_in_rms reset;
 
 -- TEST for index name - Soln 10-090330-0390 
 create index tstati on tstat(d);

@@ -120,7 +120,7 @@ public class IntegrationTestEndurance {
 			// Load JDBC driver
 			//
 			try {
-				Class.forName("org.trafodion.jdbc.HPT4Driver");
+				Class.forName("org.trafodion.jdbc.t4.T4Driver");
 			} catch (ClassNotFoundException e) {
 				fail("Thread number: " + numWorker + ". Could not find the JDBC driver class." + e);
 				return average;

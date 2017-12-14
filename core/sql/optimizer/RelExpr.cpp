@@ -10795,13 +10795,13 @@ RelRoot::RelRoot(RelExpr *input,
     firstNRowsParam_(NULL),
     flags_(0)
 {
-  accessOptions().accessType() = ACCESS_TYPE_NOT_SPECIFIED_;
+  accessOptions().accessType() = TransMode::ACCESS_TYPE_NOT_SPECIFIED_;
   accessOptions().lockMode() = LOCK_MODE_NOT_SPECIFIED_;
   isCIFOn_ = FALSE;
 }
 
 RelRoot::RelRoot(RelExpr *input,
-		 AccessType at,
+		 TransMode::AccessType at,
 		 LockMode lm,
 		 OperatorTypeEnum otype,
 		 ItemExpr *compExpr,
@@ -13530,6 +13530,12 @@ MergeUpdate::MergeUpdate(const CorrName &name,
   setCacheableNode(CmpMain::BIND);
   
   setIsMergeUpdate(TRUE);
+
+  // if there is a WHERE NOT MATCHED INSERT action, then the scan
+  // has to take place in the merge node at run time, so we have
+  // to suppress the TSJ transformation on this node
+  if (insertValues)
+    setNoFlow(TRUE);
 }
 
 MergeUpdate::~MergeUpdate() {}
@@ -13624,6 +13630,12 @@ MergeDelete::MergeDelete(const CorrName &name,
   setCacheableNode(CmpMain::BIND);
   
   setIsMergeDelete(TRUE);
+
+  // if there is a WHERE NOT MATCHED INSERT action, then the scan
+  // has to take place in the merge node at run time, so we have
+  // to suppress the TSJ transformation on this node
+  if (insertValues)
+    setNoFlow(TRUE);
 }
 
 MergeDelete::~MergeDelete() {}

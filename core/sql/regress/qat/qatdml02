@@ -21,8 +21,8 @@ LOG aqatdml02 Clear;
 --       testcase A2: select syskey
 --       testcase A3: select *
 --       testcase A4: select an expression of a column
---       testcase A5: use of browse access,
---         stable access and repeatable access
+--       testcase A5: use of read committed access,
+--         read committed access and repeatable access
 --       testcase A6: select aggregate functions
 
 -- All testcases are documented further below.
@@ -442,8 +442,8 @@ LOG aqatdml02 Clear;
 
 --    <detail>
 --       select normal simple test case - this tests the use of
---       the for browse access, for stable access,
---       and for repeatable access clauses. No actual
+--       the for read committed access, for read committed access,
+--       and for read committed access clauses. No actual
 --       tests of the functionality of these clauses is done - this
 --       is a test of syntax only. Each of these clauses is checked
 --       for audited tables, non-audited tables, protection views,
@@ -455,48 +455,48 @@ LOG aqatdml02 Clear;
 --    <comment> *** audited tables ***
 
       select * from btsel01
-         for browse access;
+         for read committed access;
 
       select * from btsel02
-         for stable access;
+         for read committed access;
 
       select * from btsel03
-         for repeatable access;
+         for read committed access;
 
 -- <comment>  *** non-audited table ***
 
 
       select * from btsel05
-         for browse access;
+         for read committed access;
 
       select * from btsel05
-         for stable access;
+         for read committed access;
 
       select * from btsel05
-         for repeatable access;
+         for read committed access;
 
 -- <comment>  *** views ***
 
 
       select * from pvsel01
-         for browse access;
+         for read committed access;
 
       select * from pvsel01
-         for stable access;
+         for read committed access;
 
       select * from pvsel01
-         for repeatable access;
+         for read committed access;
 
--- <comment> svsel15 must be accessed for browse access (mixed view)
+-- <comment> svsel15 must be accessed for read committed access (mixed view)
 
       select * from svsel15
-         for browse access;
+         for read committed access;
 
       select * from svsel14
-      for browse access;
+      for read committed access;
 
       select * from svsel13
-      for browse access;
+      for read committed access;
 
 -- <end-input>
 

@@ -37,8 +37,8 @@ LOG aqatdml09 Clear;
 --                    connected with AND,OR, and SELECTs with subqueries
 --                    (uncorrelated) in both the WHERE clause and HAVING
 --                    clause
---       testcase A4: subqueries with for browse access,
---                    for stable access, for repeatable access
+--       testcase A4: subqueries with for read committed access,
+--                    for read committed access, for read committed access
 --       testcase A5: SELECT aggregate functions with aggregates in
 --                    subquery
 
@@ -1118,8 +1118,8 @@ LOG aqatdml09 Clear;
 
 -- <detail>
 --    uncorrelated subquery in having clause test - this tests the use of
---    for browse access, for stable access,
---    and for repeatable access in uncorrelated subqueries.
+--    for read committed access, for read committed access,
+--    and for read committed access in uncorrelated subqueries.
 
 
 -- <templates>
@@ -1136,9 +1136,9 @@ LOG aqatdml09 Clear;
         (select partnum
          from fromsup
          where suppnum = 15
-         for browse access
+         for read committed access
         )
-      for repeatable access;
+      for read committed access;
 
 
 -- <comment> get salesman numbers and order numbers for salesman
@@ -1152,7 +1152,7 @@ LOG aqatdml09 Clear;
          from odetail,parts
          where  odetail.partnum =  parts.partnum
          and price > 50000
-         for repeatable access
+         for read committed access
         );
 
 -- <comment> get supplier numbers for suppliers who are in the same state
@@ -1164,9 +1164,9 @@ LOG aqatdml09 Clear;
         (select Y.state
          from supplier Y
          where suppnum = 1
-         for browse access
+         for read committed access
         )
-      for repeatable access;
+      for read committed access;
 
 -- <comment> get customer numbers for customers who have not ordered parts
 -- <comment> stored at location 'V67'
@@ -1178,7 +1178,7 @@ LOG aqatdml09 Clear;
         (select col_12
          from partsfor
          where col_2 = 'V67'
-         for browse access
+         for read committed access
         );
 
 -- <comment> same as above, only use a join instead of the view partsfor
@@ -1192,7 +1192,7 @@ LOG aqatdml09 Clear;
          where ( orders.ordernum =  odetail.ordernum) and
                ( odetail.partnum =  parts.partnum) and
                (location = 'V67')
-                for repeatable access
+                for read committed access
         );
 
 -- <comment> get supplier numbers for suppliers who supply part 4102
@@ -1205,13 +1205,13 @@ LOG aqatdml09 Clear;
         (select suppnum
          from fromsup
          where partnum = 4102
-         for browse access)
+         for read committed access)
         )
       and (suppnum =ANY
         (select suppnum
          from fromsup
          where partnum = 5504
-         for stable access)
+         for read committed access)
         );
 
 
@@ -1229,11 +1229,11 @@ LOG aqatdml09 Clear;
            (select partnum
             from parts
             where inventory < 0
-            for browse access
+            for read committed access
            )
-         for repeatable access
+         for read committed access
         )
-      for stable access;
+      for read committed access;
 
 -- <comment> get age of those employees whose salary is less than or
 -- <comment> equal to the salary of the youngest employee
@@ -1248,11 +1248,11 @@ LOG aqatdml09 Clear;
          having Y.age <= ALL
            (select Z.age
             from employee Z
-            for repeatable access
+            for read committed access
            )
-         for stable access
+         for read committed access
         )
-      for browse access;
+      for read committed access;
 
 -- <comment> get salesman names who have orders for parts priced < 8000
 -- <comment> (eliminate duplicate salesman names,order numbers, and
@@ -1271,11 +1271,11 @@ LOG aqatdml09 Clear;
           (select distinct price
            from parts
            where price = 8000
-           for browse access
+           for read committed access
           )
-         for repeatable access
+         for read committed access
         )
-      for stable access;
+      for read committed access;
 
 -- <comment> get salesman names for salesman who work in the Central region
 -- <ufi-input>
@@ -1290,11 +1290,11 @@ LOG aqatdml09 Clear;
            (select regnum
             from region
             where regname = 'CENTRAL'
-            for stable access
+            for read committed access
            )
-         for repeatable access
+         for read committed access
         )
-      for browse access;
+      for read committed access;
 
 -- <end-input>
 

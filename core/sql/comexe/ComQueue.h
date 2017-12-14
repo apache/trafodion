@@ -324,7 +324,7 @@ public:
 
   void remove(void * entry);
 
-// To remove the last rrturned entry via getNext() in case of global scan
+// To remove the last returned entry via getNext() in case of global scan
 // of hash queue
   void remove();
 

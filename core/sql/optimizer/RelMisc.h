@@ -143,7 +143,7 @@ public:
 	  CollHeap *oHeap = CmpCommon::statementHeap());
 
   RelRoot(RelExpr *child,
-	  AccessType at,
+	  TransMode::AccessType at,
 	  LockMode lm,
 	  OperatorTypeEnum otype = REL_ROOT,
 	  ItemExpr *compExpr = NULL,

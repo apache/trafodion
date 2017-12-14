@@ -35,8 +35,8 @@
 >>--      testcase A2: quantified comparison operators: >=ANY,=ALL,etc.
 >>--      testcase A3: multiple nested subqueries and multiple subqueries
 >>--                   connected with AND,OR
->>--      testcase A4: subqueries with for browse access, for stable access,
->>--                   for repeatable access
+>>--      testcase A4: subqueries with for read committed access, for read committed access,
+>>--                   for read committed access
 >>--      testcase A5: SELECT aggregate functions with aggregates in
 >>--                   subquery
 >>
@@ -1778,8 +1778,8 @@ AGE
 >>
 >>-- <detail>
 >>--    uncorrelated subquery in where clause test - this tests the use of
->>--    for browse access, for stable access, and
->>--    for repeatable access in uncorrelated subqueries.
+>>--    for read committed access, for read committed access, and
+>>--    for read committed access in uncorrelated subqueries.
 >>
 >>-- <templates>
 >>--     US00
@@ -1793,9 +1793,9 @@ AGE
 +>        (select Y.partnum
 +>         from fromsup Y
 +>         where suppnum = 15
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 SUPPNUM
 -------
@@ -1817,7 +1817,7 @@ SUPPNUM
 +>         from odetail,parts
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000
-+>         for repeatable access
++>         for read committed access
 +>        );
 
 SALESMAN  ORDERNUM
@@ -1847,9 +1847,9 @@ SALESMAN  ORDERNUM
 +>        (select Y.state
 +>         from supplier Y
 +>         where suppnum = 1
-+>         for browse access
++>         for read committed access
 +>        )
-+>      for repeatable access;
++>      for read committed access;
 
 SUPPNUM
 -------
@@ -1870,7 +1870,7 @@ SUPPNUM
 +>        (select col_12
 +>         from partsfor
 +>         where col_2 = 'V67'
-+>         for browse access
++>         for read committed access
 +>        );
 
 CUSTNAME          
@@ -1900,7 +1900,7 @@ VEREINIGTE CHEMIE
 +>         where ( orders.ordernum =  odetail.ordernum) and
 +>              ( odetail.partnum =  parts.partnum) and
 +>              (location = 'V67')
-+>         for repeatable access
++>         for read committed access
 +>        );
 
 CUSTNAME          
@@ -1929,13 +1929,13 @@ VEREINIGTE CHEMIE
 +>        (select suppnum
 +>         from fromsup
 +>         where partnum = 4102
-+>         for browse access
++>         for read committed access
 +>        )
 +>      and suppnum =ANY
 +>        (select suppnum
 +>         from fromsup
 +>         where partnum = 5504
-+>         for stable access
++>         for read committed access
 +>        );
 
 SUPPNAME          
@@ -1959,11 +1959,11 @@ DATADRIVE
 +>           (select partnum
 +>            from parts
 +>            where inventory < 0
-+>            for browse access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 SUPPNAME          
 ------------------
@@ -1987,11 +1987,11 @@ TANDEM COMPUTERS
 +>         where Y.age <= ALL
 +>           (select Z.age
 +>            from employee Z
-+>            for repeatable access
++>            for read committed access
 +>           )
-+>         for stable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 AGE
 ---
@@ -2018,11 +2018,11 @@ AGE
 +>          (select distinct price
 +>           from parts
 +>           where price = 8000
-+>           for browse access
++>           for read committed access
 +>          )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for stable access;
++>      for read committed access;
 
 SALESMAN
 --------
@@ -2052,11 +2052,11 @@ SALESMAN
 +>           (select regnum
 +>            from region
 +>            where regname = 'Central'
-+>            for stable access
++>            for read committed access
 +>           )
-+>         for repeatable access
++>         for read committed access
 +>        )
-+>      for browse access;
++>      for read committed access;
 
 --- 0 row(s) selected.
 >>

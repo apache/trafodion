@@ -216,12 +216,14 @@
       <item href="http:divider" name=""/>
       <item href="team-redirect.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
+      <item href="http://www.apache.org/events/current-event.html" name="Events"/>
       <item href="logo.html" name="Logo"/>
       <item href="mail-lists.html" name="Mailing Lists"/>
       <item href="http://im.qq.com" name="QQ (Group ID:176011868)"/>
       <item href="http:divider" name=""/>
       <item href="source-repository.html" name="Source Repository"/>
       <item href="issue-tracking.html" name="Issue Tracking"/>
+      <item href="http://www.apache.org/security/" name="Security"/>
       <item href="license.html" name="License"/>
     </menu>
     <menu name="Features">

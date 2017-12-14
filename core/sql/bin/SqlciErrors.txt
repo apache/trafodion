@@ -514,8 +514,8 @@
 1716 ZZZZZ 99999 BEGINNER MINOR DBADMIN Number of declared formal parameters with SQL parameter style cannot exceed 32.
 1717 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing a routine definition. Pass through input value with BINARY type cannot be empty.
 1718 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing a routine definition. File '$0~string0' is empty. A pass through input value with BINARY type cannot be empty.
-
-
+1719 ZZZZZ 99999 BEGINNER MINOR DBADMIN Access Type '$0~string0' is not supported.
+1720 ZZZZZ 99999 BEGINNER MINOR DBADMIN Isolation Level '$0~string0' is not supported.
 1999 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last Catalog Manager error
 2000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
 2001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Error or warning $0~Int0 occurred while opening or reading from DEFAULTS table $1~TableName.  Using $2~String0 values.
@@ -669,7 +669,7 @@
 2240 ZZZZZ 99999 BEGINNER MAJOR DBADMIN mxCompileUserModule -g moduleLocal is not supported for SQLJ jar or profile ser files.
 2241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 3/8/2012 ---
 2242 ZZZZZ 99999 BEGINNER MINOR LOGONLY Compiler process unable to log its status and health information to the repository.
-2243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Using DISPLAY in hpdci or whiteboard is not supported.
+2243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Using DISPLAY in trafci or DBMgr is not supported.
 2244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ULOG file path invalid : $0~string0.
 2900 ZZZZZ 99999 BEGINNER MAJOR DBADMIN in file $0~string0 at line $1~int0:
 2980 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ? Option -g requires an argument.

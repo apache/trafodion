@@ -553,22 +553,20 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   
   description += "access_mode: ";
     switch(accessOptions().accessType()) {
-      case BROWSE_:     description += "read uncommitted ";
-                        break;
-      case SKIP_CONFLICT_: description += "skip conflict ";
-                        break;
-      case CLEAN_:      description += "read committed ";
-                        break;
-      case STABLE_:     description += "stable ";
-                        break;
-      case REPEATABLE_: description += "serializable ";
-                        break;
-      case SERIALIZABLE_placeholder_: description += "mx serializable ";
-                        break;
-      case ACCESS_TYPE_NOT_SPECIFIED_: description += "not specified, defaulted to read committed ";
-                        break;
-      default:          description += "unknown ";
-                        break;
+    case TransMode::READ_UNCOMMITTED_ACCESS_:     description += "read uncommitted ";
+      break;
+    case TransMode::SKIP_CONFLICT_ACCESS_: description += "skip conflict ";
+      break;
+    case TransMode::READ_COMMITTED_ACCESS_:      description += "read committed ";
+      break;
+    case TransMode::REPEATABLE_READ_ACCESS_: description += "repeatable read ";
+      break;
+    case TransMode::SERIALIZABLE_: description += "serializable ";
+      break;
+    case TransMode::ACCESS_TYPE_NOT_SPECIFIED_: description += "not specified, defaulted to read committed ";
+      break;
+    default:          description += "unknown ";
+      break;
     }; 
 
   // now get columns_retrieved

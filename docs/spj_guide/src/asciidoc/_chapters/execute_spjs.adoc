@@ -621,7 +621,7 @@ while ( ( rc = SQLMoreResults( s ) ) != SQL_NO_DATA )
 == Calling SPJs From a JDBC Client Application
 
 You can execute a CALL statement in a JDBC client application by using
-the JDBC CallableStatement interface. The HP JDBC Type 4 driver requires
+the JDBC CallableStatement interface. The Trafodion JDBC Type 4 driver requires
 that you put the CALL statement in an escape clause:
 
 [source, sql]

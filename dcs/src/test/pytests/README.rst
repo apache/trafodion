@@ -35,12 +35,12 @@ Running Tests
     
 * Secondly, run ``config.sh`` to configure the Python ODBC test.
   If you need help on using this command then type ``./config.sh -h``. 
-  For example, if the unixODBC driver manager is installed in the default location and the HP ODBC driver
+  For example, if the unixODBC driver manager is installed in the default location and the Trafodion ODBC driver
   is not yet installed in the ``odbc_driver`` sub-directory then run the following ::
   
     ./config.sh -d <Fully_Qualified_Domain_Name_Of_Machine_With_Trafodion>:<Port> -t /Absolute_PATH_to/TRAF_ODBC_Linux_Driver_64.tar.gz
 
-  This will configure your test and install the HP ODBC driver in the ``odbc_driver`` sub-directory.
+  This will configure your test and install the Trafodion ODBC driver in the ``odbc_driver`` sub-directory.
 
   .. note:: Do NOT put the TRAF_ODBC_Linux_Driver_64.tar.gz in the ``odbc_driver`` subdirectory. The contents of this sub-directory is 
      removed every time config.sh is run with the -t option!

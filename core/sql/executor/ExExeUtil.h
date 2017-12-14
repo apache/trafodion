@@ -2280,7 +2280,6 @@ private:
   SQLSTATS_ITEM *masterStatsItems_;
   SQLSTATS_ITEM *measStatsItems_;
   SQLSTATS_ITEM* operatorStatsItems_;
-  SQLSTATS_ITEM* dp2OperatorStatsItems_;
   SQLSTATS_ITEM *rootOperStatsItems_;
   SQLSTATS_ITEM* partitionAccessStatsItems_;
   SQLSTATS_ITEM *pertableStatsItems_;
@@ -2295,7 +2294,6 @@ private:
   Lng32 maxMasterStatsItems_;
   Lng32 maxMeasStatsItems_;
   Lng32 maxOperatorStatsItems_;
-  Lng32 maxDp2OperatorStatsItems_;
   Lng32 maxRootOperStatsItems_;
   Lng32 maxPartitionAccessStatsItems_;
   Lng32 maxPertableStatsItems_;

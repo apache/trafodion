@@ -3272,7 +3272,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   if ((accessOptions().userSpecified()) &&
     //      (accessOptions().getDP2LockFlags().getConsistencyLevel() == DP2LockFlags::READ_UNCOMMITTED))
-      (accessOptions().accessType() == BROWSE_))
+      (accessOptions().accessType() == TransMode::READ_UNCOMMITTED_ACCESS_))
     {
       hbasescan_tdb->setReadUncommittedScan(TRUE);
     }

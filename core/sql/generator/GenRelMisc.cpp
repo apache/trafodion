@@ -785,7 +785,7 @@ short RelRoot::codeGen(Generator * generator)
   TransMode * transMode = new(space) TransMode();
   transMode->updateTransMode(generator->getTransMode());
   //
-  if (accessOptions().accessType() != ACCESS_TYPE_NOT_SPECIFIED_)
+  if (accessOptions().accessType() != TransMode::ACCESS_TYPE_NOT_SPECIFIED_)
     {
       // "FOR xxx ACCESS" becomes an IsolationLevel, and both IL and AccessMode
       // are set in the transMode

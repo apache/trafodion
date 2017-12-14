@@ -219,8 +219,6 @@ static const QueryString getStatsAllDefaultViewQuery[] =
 {"            when tdb_name = 'EX_SEND_TOP'  or tdb_name = 'EX_SEND_BOTTOM' "},
 {"                 or tdb_name = 'EX_HASHJ' or tdb_name = 'EX_HASH_GRBY'  "},
 {"                 or tdb_name = 'EX_SORT'  "},
-{"                 or tdb_name = 'EX_DP2_SUBS_OPER'   "},
-{"                 or tdb_name = 'EX_DP2_UNIQUE_OPER'     "},
 {"                 or tdb_name = 'EX_SPLIT_TOP'     "},
 {"                 or tdb_name = 'EX_FAST_EXTRACT'     "},
 {"            then  "},
@@ -585,21 +583,12 @@ short ExExeUtilGetStatisticsTcb::work()
 			FALSE, TRUE);
 	    strcpy(statsBuf_, "Rows                   ReturnedToUser: ");
 	    strcat(statsBuf_, formattedFloatVal);
-	    strcat(statsBuf_, "  AccessedInDp2: ");
-	    FormatFloat(formattedFloatVal, intSize, valSize, 
-			csi.dp2RowsAccessed(), FALSE, TRUE);
-	    strcat(statsBuf_, formattedFloatVal);
-	    strcat(statsBuf_, "  UsedInDp2: ");
-	    FormatFloat(formattedFloatVal, intSize, valSize, 
-			csi.dp2RowsUsed(), FALSE, TRUE);
-	    strcat(statsBuf_, formattedFloatVal);
 	    moveRowToUpQueue(statsBuf_);
 
-	    sprintf(statsBuf_, "Fragment Size(Kb)      Total: %-4d  Master: %-4d  ESP: %-4d  DP2: %-4d",
+	    sprintf(statsBuf_, "Fragment Size(Kb)      Total: %-4d  Master: %-4d  ESP: %-4d  ",
 			csi.totalFragmentSize(),
 			csi.masterFragmentSize(),
-			csi.espFragmentSize(),
-			csi.dp2FragmentSize());
+	        	csi.espFragmentSize());
 	    moveRowToUpQueue(statsBuf_);
 
 	    sprintf(statsBuf_, "Operators              Total: %-3d",
@@ -609,8 +598,8 @@ short ExExeUtilGetStatisticsTcb::work()
             sprintf(statsBuf_, "  Joins                HJ: %-3d  MJ: %-3d  NJ: %-3d   Total: %-3d",
 			csi.hj(), csi.mj(), csi.nj(),  csi.totalJoins());
 	    moveRowToUpQueue(statsBuf_);
-            sprintf(statsBuf_, "  Others               ESPExchange: %-3d  DP2Oper: %-3d  UDR: %-3d  BMO: %-3d",  
-			csi.exchangeOps(), csi.dp2Ops(), csi.udr(), csi.bmo());
+            sprintf(statsBuf_, "  Others               ESPExchange: %-3d  UDR: %-3d  BMO: %-3d",  
+			csi.exchangeOps(), csi.udr(), csi.bmo());
 
 	    moveRowToUpQueue(statsBuf_);
             
@@ -1332,22 +1321,6 @@ short ExExeUtilGetStatisticsTcb::work()
 	    sprintf(statsBuf_, "%-25s%10sKB", "SQL Heap Used", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2SpaceTotal:", sstrbuf);
-	    sprintf(statsBuf_, "%-25s%10sKB", "EID Space Allocated", sstrbuf);
-	    moveRowToUpQueue(statsBuf_);
-	    
-	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2SpaceUsed:", sstrbuf);
-	    sprintf(statsBuf_, "%-25s%10sKB", "EID Space Used", sstrbuf);
-	    moveRowToUpQueue(statsBuf_);
-	    
-	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2HeapTotal:", sstrbuf);
-	    sprintf(statsBuf_, "%-25s%10sKB", "EID Heap Allocated", sstrbuf);
-	    moveRowToUpQueue(statsBuf_);
-	    
-	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2HeapUsed:", sstrbuf);
-	    sprintf(statsBuf_, "%-25s%10sKB", "EID Heap Used", sstrbuf);
-	    moveRowToUpQueue(statsBuf_);
-	    
 	    getSubstrInfo(statsRow_, statsRowlen_, "Opens:", sstrbuf);
 	    sprintf(statsBuf_, "%-25s%10s", "Opens", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
@@ -1471,7 +1444,6 @@ ExExeUtilGetRTSStatisticsTcb::ExExeUtilGetRTSStatisticsTcb(
   masterStatsItems_ = NULL;
   measStatsItems_ = NULL;
   operatorStatsItems_ = NULL;
-  dp2OperatorStatsItems_ = NULL;
   rootOperStatsItems_ = NULL;
   partitionAccessStatsItems_ = NULL;
   pertableStatsItems_ = NULL;
@@ -1490,7 +1462,6 @@ ExExeUtilGetRTSStatisticsTcb::ExExeUtilGetRTSStatisticsTcb(
   maxMasterStatsItems_ = 0;
   maxMeasStatsItems_ = 0;
   maxOperatorStatsItems_ = 0;
-  maxDp2OperatorStatsItems_ = 0;
   maxRootOperStatsItems_ = 0;
   maxPartitionAccessStatsItems_ = 0;
   maxPertableStatsItems_ = 0;
@@ -1518,11 +1489,6 @@ ExExeUtilGetRTSStatisticsTcb::~ExExeUtilGetRTSStatisticsTcb()
   {
     deleteSqlStatItems(measStatsItems_, maxMeasStatsItems_);
     measStatsItems_ = NULL;
-  }
-  if (dp2OperatorStatsItems_ != NULL)
-  {
-    deleteSqlStatItems(dp2OperatorStatsItems_, maxDp2OperatorStatsItems_);
-    dp2OperatorStatsItems_ = NULL;
   }
   if (operatorStatsItems_ != NULL)
   {
@@ -1705,8 +1671,7 @@ void ExExeUtilGetRTSStatisticsTcb::formatOperStats(SQLSTATS_ITEM* operStatsItems
   sprintf(&statsBuf_[strlen(statsBuf_)], "%19s", valString);
   
   // Estimated Rows Used
-  FormatFloat(valString, intSize, valSize, operStatsItems[9].double_value,
-			FALSE, TRUE);
+  sprintf(valString, "%.6g", operStatsItems[9].double_value);
   sprintf(&statsBuf_[strlen(statsBuf_)], "%19s", valString); 
   
   // Actual Rows Used 
@@ -2232,15 +2197,10 @@ short ExExeUtilGetRTSStatisticsTcb::work()
                     ComTdbRoot::getSubqueryTypeText(subqueryType));
             break;
           case SQLSTATS_EST_ROWS_ACCESSED:
-            FormatFloat(formattedFloatVal, intSize, valSize, masterStatsItems_[i].double_value,
-			FALSE, TRUE);
-            sprintf(statsBuf_, "%-25s%s", "Estimated Accessed Rows", 
-                      formattedFloatVal);
+            sprintf(statsBuf_, "%-25s%.6g", "Estimated Accessed Rows", masterStatsItems_[i].double_value);
             break;
           case SQLSTATS_EST_ROWS_USED:
-            FormatFloat(formattedFloatVal, intSize, valSize, masterStatsItems_[i].double_value,
-			FALSE, TRUE);
-            sprintf(statsBuf_, "%-25s%s", "Estimated Used Rows", formattedFloatVal);
+            sprintf(statsBuf_, "%-25s%.6g", "Estimated Used Rows", masterStatsItems_[i].double_value);
             break;
           case SQLSTATS_PARENT_QUERY_ID:
             masterStatsItems_[i].str_value[masterStatsItems_[i].str_ret_len] = '\0';
@@ -2959,13 +2919,15 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             }
             break;
           case SQLSTATS_EST_ROWS_ACCESSED:
+            sprintf(formattedFloatVal, "%.6g", statsItems[i].double_value);
             if (singleLineFormat_)
-               sprintf(&statsBuf_[strlen(statsBuf_)], "%15.0f", statsItems[i].double_value);
+               sprintf(&statsBuf_[strlen(statsBuf_)], "%15s", formattedFloatVal);
             else
                sprintf(statsBuf_, "%15s", formattedFloatVal);
             break;
           case SQLSTATS_EST_ROWS_USED:
-            sprintf(&statsBuf_[strlen(statsBuf_)], "%15.0f", statsItems[i].double_value);
+            sprintf(formattedFloatVal, "%.6g", statsItems[i].double_value);
+            sprintf(&statsBuf_[strlen(statsBuf_)], "%15s", formattedFloatVal);
             break;
           case SQLSTATS_ACT_ROWS_ACCESSED:
             sprintf(Int64Val, "%ld", statsItems[i].int64_value);
