@@ -3081,9 +3081,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDui___(USTAT_HBASE_SAMPLE_RETURN_INTERVAL,   "10000000"), // Avoid scanner timeout by including on average at
                                                              //   least one row per this many when sampling within HBase.
   DDflt0_(USTAT_INCREMENTAL_FALSE_PROBABILITY,   "0.01"),
-  DDkwd__(USTAT_INCREMENTAL_UPDATE_STATISTICS,   "ON"),
-                                                         // to the non-audited sample table must be done on same
-                                                         // process it was created on.  This CQD is NOT externalized.
+  DDkwd__(USTAT_INCREMENTAL_UPDATE_STATISTICS,   "SAMPLE"), // "SAMPLE" ==> don't use Counting Bloom Filters
+
   DDkwd__(USTAT_INTERNAL_SORT,                  "HYBRID"),
 
   DDkwd__(USTAT_IS_IGNORE_UEC_FOR_MC,           "OFF"),   // if MCIS is ON, use IS to compute SC stats

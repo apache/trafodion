@@ -7093,16 +7093,20 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   }
 
   rowsAffected = 0;
+
+  // The most likely error on the DELETE would be due to a bad WHERE clause.
+  // (When CQD USTAT_INCREMENTAL_UPDATE_STATISTICS is set to 'SAMPLE', this is
+  // the first place that we attempt to use the user's WHERE clause.)
   if (transactional)
     {
-      retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_INTERNAL_ERROR,
+      retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_IUS_BAD_WHERE_CLAUSE,
                             &rowsAffected,
                             "IUS delete from PS where",
                             NULL, NULL);
     }
   else
     {
-      retcode = HSFuncExecQuery(deleteQuery, -UERR_INTERNAL_ERROR,
+      retcode = HSFuncExecQuery(deleteQuery, -UERR_IUS_BAD_WHERE_CLAUSE,
                             &rowsAffected,
                             "IUS delete from PS where",
                             NULL, NULL);
