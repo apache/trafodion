@@ -1,0 +1,17 @@
+#! /bin/sh
+
+# Specialized filter for  project to filter out
+# 1. Syskey values
+# 2. "Funny names" for index columns appearing multiple times
+#    (done twice, since it may appear multiple times)
+# 3. refreshed elapsed time
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
+sed "
+s/FILE '.*rundir\(.*\)'/FILE '\$rundir\1'/g
+" $fil
