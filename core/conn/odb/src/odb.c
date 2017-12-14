@@ -5772,8 +5772,14 @@ static void etabadd(char type, char *run, int id)
                         } 
                         if ( etab[no].ps ) { /* Multi-stream table analysis */
                             if ( etab[no].sb ) {    /* split by */
-                                snprintf((char *)Obuf[0], sizeof(Obuf[0]),
-                                    "SELECT MIN(%s), MAX(%s) FROM %s", etab[no].sb, etab[no].sb, etab[no].src);
+                                if (etab[no].map) { /* if we get a pwhere condition, we apply it to improve perfomance */
+                                    snprintf((char *)Obuf[0], sizeof(Obuf[0]),
+                                        "SELECT MIN(%s), MAX(%s) FROM %s WHERE %s", etab[no].sb, etab[no].sb, etab[no].src, etab[no].map);
+                                }
+                                else {
+                                    snprintf((char *)Obuf[0], sizeof(Obuf[0]),
+                                        "SELECT MIN(%s), MAX(%s) FROM %s", etab[no].sb, etab[no].sb, etab[no].src);
+                                }
                                 if (!SQL_SUCCEEDED(Oret=SQLExecDirect (Os1, Obuf[0], SQL_NTS))) {
                                     Oerr(-1, -1, __LINE__, Os1, SQL_HANDLE_STMT);
                                     goto etabadd_exit;
