@@ -428,9 +428,9 @@ short ProbeCache::codeGen(Generator *generator)
                                         probeCacheTdb->getQueueResizeFactor());
   }
 
-  double probeCacheMemEst = getEstimatedRunTimeMemoryUsage(probeCacheTdb);
+  double probeCacheMemEst = getEstimatedRunTimeMemoryUsage(generator, probeCacheTdb);
   generator->addToTotalEstimatedMemory(probeCacheMemEst);
-  Lng32 pcMemEstInKBPerNode = getEstimatedRunTimeMemoryUsage(TRUE).value() / 1024;
+  Lng32 pcMemEstInKBPerNode = getEstimatedRunTimeMemoryUsage(generator, TRUE).value() / 1024;
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(probeCacheTdb, childExplainTuple, 0, generator));
@@ -443,7 +443,7 @@ short ProbeCache::codeGen(Generator *generator)
   return 0;
 }
 
-CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   const Lng32 probeSize = 
       getGroupAttr()->getCharacteristicInputs().getRowLength();
@@ -488,12 +488,12 @@ CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *
   return totalMemory;
 }
 
-double ProbeCache::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
+double ProbeCache::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb)
 {
   // tdb is ignored for ProbeCache because this operator
   // does not participate in the BMO quota system.
   Lng32 numOfStreams = 1;
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(generator, FALSE, &numOfStreams);
   totalMemory = totalMemory * numOfStreams ;
   return totalMemory.value();
 }

@@ -1310,7 +1310,7 @@ ExpTupleDesc::TupleDataFormat Exchange::determineInternalFormat( const ValueIdLi
                                             considerBufferDefrag);
 
 }
-CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar Exchange::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
    //////////////////////////////////////
    // compute the buffer length (for both 
@@ -1384,10 +1384,10 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *nu
   return memoryRequired;
 }
 
-double Exchange::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
+double Exchange::getEstimatedRunTimeMemoryUsage(Generator *generator, ComTdb * tdb)
 {
   Lng32 numOfStreams = 1;
-  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(generator, FALSE, &numOfStreams);
   totalMemory = totalMemory * numOfStreams ;
   return totalMemory.value();
 }

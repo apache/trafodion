@@ -288,6 +288,7 @@ RelExpr::RelExpr(OperatorTypeEnum otype,
   ,cachedResizeCIFRecord_(FALSE)
   ,dopReduced_(FALSE)
   ,originalExpr_(NULL)
+  ,operKey_(outHeap)
 {
 
   child_[0] = leftChild;
@@ -2042,12 +2043,6 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
         variableMemLimit = (1-equalQuotaShareRatio) * exeMem;
      }
      double bmoMemoryRatio = bmoMemoryUsage / totalBMOsMemoryUsage;
-     double capMemoryRatio = 1; 
-     if (totalNumBMOs > 1) {
-        capMemoryRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_RATIO_CAP);
-        if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
-           bmoMemoryRatio = capMemoryRatio;
-     }
      bmoQuotaRatio = bmoMemoryRatio;
      double bmoMemoryQuotaPerNode = constMemQuota + (variableMemLimit * bmoMemoryRatio);
      double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
@@ -16321,3 +16316,14 @@ CostScalar RelExpr::getChild0Cardinality(const Context* context)
    return ch0RowCount;
 }
 
+NAString *RelExpr::getKey()
+{
+
+   if (operKey_.length() == 0)
+   {
+     char keyBuffer[30];
+     snprintf(keyBuffer, sizeof(keyBuffer), "%ld", (Int64)this);
+     operKey_ = keyBuffer;
+   }
+   return &operKey_;
+}

@@ -1784,7 +1784,7 @@ short HashJoin::codeGen(Generator * generator) {
   double memQuota = 0;
   double memQuotaRatio;
   Lng32 numStreams;
-  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey(), numStreams);
   if (mmu != 0) {
     memQuota = mmu;
     hashj_tdb->setMemoryQuotaMB(mmu);
@@ -1825,11 +1825,7 @@ short HashJoin::codeGen(Generator * generator) {
   if (beforeJoinPredOnOuterOnly())
     hashj_tdb->setBeforePredOnOuterOnly();
 
-  generator->addToTotalOverflowMemory(
-                      getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
-
-  double hjMemEst = getEstimatedRunTimeMemoryUsage(hashj_tdb);
+  double hjMemEst = generator->getEstMemPerInst(getKey());
   hashj_tdb->setEstimatedMemoryUsage(hjMemEst / 1024);
   generator->addToTotalEstimatedMemory(hjMemEst);
 
@@ -2059,16 +2055,22 @@ ExpTupleDesc::TupleDataFormat HashJoin::determineInternalFormat( const ValueIdLi
 }
 
 
-CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(1).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
   const CostScalar childRowCount = child(1).getPtr()->getEstRowsUsed();
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = childGroupAttr->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
   // Each record also uses a header (HashRow) in memory (8 bytes for 32bit).
   // Hash tables also take memory -- they are about %50 longer than the 
   // number of entries.
   const ULng32 
     memOverheadPerRecord = sizeof(HashRow) + sizeof(HashTableHeader) * 3 / 2 ;
+
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
 
   CostScalar totalHashTableMemory = 
     childRowCount * (childRecordSize + memOverheadPerRecord);
@@ -2089,57 +2091,15 @@ CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *nu
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if (perNode) 
-     totalHashTableMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerNode = totalHashTableMemory / MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst = totalHashTableMemory / numOfStreams;
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams,         
+                                                  estMemPerNode, estMemPerInst, childRowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
   else
-     totalHashTableMemory /= numOfStreams;
-  return totalHashTableMemory;
-}
-
-double HashJoin::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  Lng32 numOfStreams = 1;
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
-  totalHashTableMemory *= numOfStreams ;
-  return totalHashTableMemory.value();
-}
-
-double HashJoin::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
-{
-  // Setup overflow size for join with formula ov = ((s0-m)/s0)*(s0+s1), where
-  // s0 = size of child0, s1 = size of child1 and m the memory quota for NJ
-  //
-  if ( memoryQuotaMB > 0 ) {
-
-     GroupAttributes * c0 = child(0).getGroupAttr();
-     double c0RLen = c0->getCharacteristicOutputs().getRowLength();
-     double c0Rows = (child(0).getPtr()->getEstRowsUsed()).getValue();
-
-     GroupAttributes * c1 = child(1).getGroupAttr();
-     double c1RLen = c1->getCharacteristicOutputs().getRowLength();
-     double c1Rows = (child(1).getPtr()->getEstRowsUsed()).getValue();
-
-     double s0 = c0RLen * c0Rows;
-     double s1 = c1RLen * c1Rows;
-
-     Lng32 pipelines = 1;
-     const PhysicalProperty* const phyProp = getPhysicalProperty() ;
-     if (phyProp)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-       if ( partFunc )
-          pipelines = partFunc->getCountOfPartitions();
-     }
-
-     double delta = s1 / pipelines - memoryQuotaMB * COM_ONE_MEG ;
-     if ( delta > 0 ) {
-       double ov = ((delta / s1) * (s0 + s1)) * pipelines;
-       return ov;
-     }
-
-  } 
-   
-  return 0;
+     return estMemPerInst; 
 }
 
 // NABoolean HashJoin::canUseUniqueHashJoin()
@@ -3072,7 +3032,7 @@ short MergeJoin::codeGen(Generator * generator)
   UInt16 quotaMB = 0;
   Lng32 numStreams;
   double memQuotaRatio;
-  double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double bmoMemoryUsage = generator->getEstMemPerNode(getKey(), numStreams);
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
   if ( CmpCommon::getDefaultLong(MJ_BMO_QUOTA_PERCENT) != 0) 

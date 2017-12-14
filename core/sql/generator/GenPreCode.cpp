@@ -1910,10 +1910,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       if (generator->getBindWA()->getUdrStoiList().entries () > 0)
         generator->setAqrEnabled(FALSE);
 
-      // Reset the accumulated # of BMOs and memory usages in 
-      // the generator 
+      // Reset the accumulated # of BMOs for the fragment
       prevNumBMOs = generator->replaceNumBMOs(0);
-      prevBMOsMemoryUsage = generator->replaceBMOsMemoryUsage(0);
 
     } // true root
 
@@ -2138,8 +2136,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       // Remember # of BMOs that children's preCodeGen found for my fragment.
       setNumBMOs( generator->replaceNumBMOs(prevNumBMOs) );
 
-      setBMOsMemoryUsage( generator->replaceBMOsMemoryUsage(prevBMOsMemoryUsage) );
-
       // Compute the total available memory quota for BMOs
       NADefaults &defs               = ActiveSchemaDB()->getDefaults();
 
@@ -2233,6 +2229,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
     } // isTrueRoot
   
   setHdfsAccess(generator->hdfsAccess());
+
+  generator->finetuneBMOEstimates();
 
   markAsPreCodeGenned();
 
@@ -3731,7 +3729,7 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
   generator->incrNumBMOs();
 
   if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-    generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
 
   // store the transformed predicates back into the hash join node
@@ -5987,7 +5985,7 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
     generator->incrNumBMOs();
 
   if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+      generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
 
   }
 
@@ -6626,7 +6624,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
         generator->incrNumBMOs();
 
         if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-          generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
+          generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(generator, TRUE));
       }
     }
 
@@ -6722,15 +6720,14 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
                      (availableValues,
 		      getGroupAttr()->getCharacteristicInputs());
 
-  /*
+/*
   TBD - maybe ProbeCache as BMO memory participant??
   if(CmpCommon::getDefault(PROBE_CACHE_MEMORY_QUOTA_SYSTEM) != DF_OFF)
     generator->incrNumBMOs();
-  */
 
   if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
-
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(generator, TRUE));
+*/
   markAsPreCodeGenned();
   return this;
     
@@ -6908,7 +6905,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   NABoolean inputOltMsgOpt = generator->oltOptInfo()->oltMsgOpt();
 
   unsigned short prevNumBMOs = generator->replaceNumBMOs(0);
-  CostScalar prevBMOsMemoryUsage = generator->replaceBMOsMemoryUsage(0);
 
   // These are used to fix solution 10-071204-9253 and for 
   // solution 10-100310-8659.
@@ -7071,7 +7067,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
     generator->setHalloweenESPonLHS(halloweenESPonLHS);
 
   setNumBMOs( generator->replaceNumBMOs(prevNumBMOs) );
-  setBMOsMemoryUsage( generator->replaceBMOsMemoryUsage(prevBMOsMemoryUsage) );
 
   if (! child(0).getPtr())
     return NULL;
@@ -7203,9 +7198,8 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   {
     result = child(0).getPtr();
 
-    // transfer the # of BMOs and their memory usages to generator as
+    // transfer the # of BMOs to generator as
     // this exchange node is to be discarded.
-    generator->incrBMOsMemoryPerFrag(getBMOsMemoryUsage());
     generator->incrNumBMOsPerFrag(getNumBMOs());
   }
 
@@ -7233,8 +7227,7 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
       
     } // isEspExchange() && !eliminateThisExchange
   
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
-    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
+
   
   return result;
   

@@ -1474,7 +1474,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   double memQuota = 0;
   Lng32 numStreams;
   double memQuotaRatio;
-  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double bmoMemoryUsagePerNode = generator->getEstMemPerNode(getKey() ,numStreams);
 
   if(isPartialGroupBy) {
     // The Quota system does not apply to Partial GroupBy
@@ -1536,16 +1536,12 @@ short HashGroupBy::codeGen(Generator * generator) {
 
   }
 
-  generator->addToTotalOverflowMemory(
-           getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
-
   // For debugging overflow only (default is zero == not used).
   hashGrbyTdb->
     setForceOverflowEvery((UInt16)(ActiveSchemaDB()->getDefaults()).
 			  getAsULong(EXE_TEST_HASH_FORCE_OVERFLOW_EVERY));
 
-  double hashGBMemEst = getEstimatedRunTimeMemoryUsage(hashGrbyTdb);
+  double hashGBMemEst = generator->getEstMemPerInst(getKey());
   hashGrbyTdb->setEstimatedMemoryUsage(hashGBMemEst / 1024);
   generator->addToTotalEstimatedMemory(hashGBMemEst);
 
@@ -1620,22 +1616,26 @@ ExpTupleDesc::TupleDataFormat HashGroupBy::determineInternalFormat( const ValueI
 
 }
 
-CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
+CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(Generator *generator, NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
   const CostScalar childRowCount = getEstRowsUsed(); // the number of 
+  //TODO: Line below dumps core at times 
+  //const CostScalar maxCard = childGroupAttr->getResultMaxCardinalityForEmptyInput();
+  const CostScalar maxCard = 0;
+
                                                      // distinct rows groupped
   // Each record also uses a header (HashRow) in memory (8 bytes for 32bit).
   // Hash tables also take memory -- they are about %50 longer than the 
   // number of entries.
   const ULng32 
     memOverheadPerRecord = sizeof(HashRow) + sizeof(HashTableHeader) * 3 / 2 ;
-
+  CostScalar estMemPerNode;
+  CostScalar estMemPerInst;
   // totalHashTableMemory is for all CPUs at this point of time.
   CostScalar totalHashTableMemory = 
     childRowCount * (childRecordSize + memOverheadPerRecord);
-
   Lng32 numOfStreams = 1;
   const PhysicalProperty* const phyProp = getPhysicalProperty();
   if (phyProp)
@@ -1647,51 +1647,22 @@ CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if (perNode) 
-     totalHashTableMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
-  else 
-     totalHashTableMemory /= numOfStreams;
-  return totalHashTableMemory;
-}
-
-double HashGroupBy::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
-{
-  Lng32 numOfStreams = 1;
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
-  totalHashTableMemory *= numOfStreams ;
-  return totalHashTableMemory.value();
-}
-
-double HashGroupBy::getEstimatedRunTimeOverflowSize(double memoryQuotaMB)
-{
-
-  if ( memoryQuotaMB > 0 ) {
-
-     CostScalar memoryUsage =
-        getEstimatedRunTimeMemoryUsage(TRUE /*per CPU*/);
-
-     double delta = memoryUsage.getValue() - memoryQuotaMB * COM_ONE_MEG ;
-
-     if ( delta > 0 ) {
-        const PhysicalProperty* const phyProp = getPhysicalProperty();
-        Lng32 pipelines = 1;
-   
-        if (phyProp)
-        {
-          PartitioningFunction * partFunc = 
-                   phyProp -> getPartitioningFunction() ;
-   
-          if ( partFunc )
-             pipelines = partFunc -> getCountOfPartitions();
-        }
-   
-   
-        return delta * pipelines;
-     } 
-  } 
-
-  return 0;
-
+  estMemPerNode =  totalHashTableMemory / MINOF(MAXOF(gpClusterInfo->getTotalNumberOfCPUs(), 1), numOfStreams);
+  estMemPerInst =  totalHashTableMemory / numOfStreams;
+  NABoolean isPartialGroupBy = (isAPartialGroupByNonLeaf() ||
+                                isAPartialGroupByLeaf());
+  if (isPartialGroupBy)
+  {
+     estMemPerNode = 1024;
+     estMemPerInst = 1024;
+  }
+  OperBMOQuota *operBMOQuota = new (generator->wHeap()) OperBMOQuota(getKey(), numOfStreams, 
+                                                  estMemPerNode, estMemPerInst, childRowCount, maxCard);
+  generator->getBMOQuotaMap()->insert(operBMOQuota);
+  if (perNode)
+     return estMemPerNode;
+  else
+     return estMemPerInst; 
 }
 
 /////////////////////////////////////////////////////////
