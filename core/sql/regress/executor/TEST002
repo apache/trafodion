@@ -65,6 +65,37 @@ create table t002t10 ( col4 int );
 create table t002tab2 (char_1 CHAR(1),
                        numeric_1 NUMERIC(4, 0));
 
+-- added for JIRA TRAFODION-2843
+Create table D03s
+                (
+                pk int not null not droppable primary key
+                , val01 int
+                , val02 int
+                );
+
+Create table F01s
+                (
+                  pk int not null not droppable primary key
+                , fk_d01 int not null
+                , fk_d02 int not null
+                , fk_d03 int not null
+                , fk_d04 int not null
+                , fk_d05 int not null
+                , fk_d06 int not null
+                , fk_d07 int not null
+                , fk_d08 int not null
+                , fk_d09 int not null
+                , fk_d10 int not null
+                , val01 int
+                , val02 int
+                , val01_d01 int
+                , val02_d01 int
+                , val01_d02 int
+                , val02_d02 int
+                , val01_d03 int
+                , val02_d03 int
+                ) salt using 8 partitions;
+
 ?section Genesis_10_970911_6859
 ?ifMX
 create view t002v(w,x) as values(1,11);	-- should work
@@ -1155,6 +1186,66 @@ select * from regexp_test where c1 regexp '(中文测试)';
 select * from regexp_test where c1 regexp '[^\';
 drop table regexp_test;
 ------------------------------------------------------------------------
+-- added for JIRA TRAFODION-2843
+
+insert into D03s
+                select c1+c2*10+c3*100, c1, c1+c2*10
+                from (values(1)) T
+                transpose 0,1 as c1
+                transpose 0,1 as c2
+                transpose 0,1 as c3;
+
+insert with no rollback into F01s
+                select c1+c2*10+c3*100+c4*1000+c5*10000+c6*100000
+                      ,c1
+                      ,c1+c2*10
+                      ,c1+c2*10+c3*100
+                      ,c1
+                      ,c1+c2*10
+                      ,c1+c2*10+c3*100
+                      ,c1
+                      ,c1+c2*10
+                      ,c1+c2*10+c3*100
+                      ,c1
+                      ,c1+c2*10
+                      ,mod(c1+c2*100+c3*100,200)
+                      ,mod(c1,3)
+                      ,mod(c1,6)
+                      ,mod(c1+c2*10,5)
+                      ,c1
+                      ,c1
+                      ,c1+c2*10
+                from (values(1)) T
+                transpose 0,1 as c1
+                transpose 0,1 as c2
+                transpose 0,1 as c3
+                transpose 0,1 as c4
+                transpose 0 as c5
+                transpose 0 as c6
+                ;
+
+prepare x1 from
+                        select F01s.val01, TD03.val01
+                        From F01s 
+                        full outer join
+                          (select D03s.val01,count(D03s.pk)
+                          from D03s
+                          group by D03s.val01) as TD03(val01,pk) 
+                        on (TD03.pk=F01s.fk_d03
+                          AND TD03.pk>0 );
+
+execute x1;
+
+prepare x1v from
+                        select F01s.val01, F01s.fk_d03, TD03.pk, TD03.val01
+                        From F01s 
+                        full outer join
+                          (select D03s.val01,count(D03s.pk)
+                          from D03s
+                          group by D03s.val01) as TD03(val01,pk) 
+                        on (TD03.pk=F01s.fk_d03);
+
+execute x1v;
 
 obey TEST002(BR0198_MULTI);
 obey TEST002(BR0198_EMPTY);
@@ -1211,6 +1302,9 @@ drop table t002_outer_nlj ;
 drop table t002_outer_lower_hj ;
 drop table t002_inner_lower_hj ;
 drop table t002_inner_upper_hj ;
+
+drop table F01s;
+drop table D03s;
 
 ?section clnup_end
 

@@ -2432,12 +2432,14 @@ RelExpr * Join::preCodeGen(Generator * generator,
       if (!(getEquiJoinPredicates().isEmpty() || getJoinPred().isEmpty() || 
 	    isAntiSemiJoin()))
       {
-	ValueIdSet dummy1, dummy2, dummy3, uncoveredPreds ;
+	ValueIdSet coveredPreds, dummy2, dummy3, uncoveredPreds ;
 	child(0)->getGroupAttr()->coverTest(getJoinPred(),
 					    getGroupAttr()->getCharacteristicInputs(),
-					    dummy1, dummy2, NULL,
+					    coveredPreds, dummy2, NULL,
 					    &uncoveredPreds);
-	if (uncoveredPreds.isEmpty())
+	// set the flag only if all the non-equi-join preds are covered
+	if  ((getJoinPred().entries() == coveredPreds.entries()) &&
+	      uncoveredPreds.isEmpty())
 	  setBeforeJoinPredOnOuterOnly();
       }
 
