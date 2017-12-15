@@ -72,7 +72,7 @@ public class TestNetworkTimeout {
 		Connection conn = null;
 		try {
 			System.out.println("Connecting to database...");
-			conn = Utils.getUserConnection();S
+			conn = Utils.getUserConnection();
 			int result = conn.getNetworkTimeout();
 			assertTrue("this is networkTimeout", result == 0);
 			conn.close();
