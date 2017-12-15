@@ -2724,7 +2724,7 @@ hbase-options-list is:
 
 * `VOLATILE`
 +
-specifies a volatile table, which is a table limited to the session that creates the table. After the session ends, the
+specifies a volatile table, which is a table limited to the session that creates the table. After the session ends, the volatile table will be automatically dropped.
 
 * `IF NOT EXISTS`
 +
