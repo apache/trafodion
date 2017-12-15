@@ -3313,13 +3313,6 @@ preceding examples. For example, in the second row of the output of this
 example, 0.0007319 is equal to 21959 divided by 30002620.
 
 <<<
-[[empty_blob() and empty_clob() function]]
-== EMPTY_BLOB() and EMPTY_CLOB() Function
-
-
-
-
-<<<
 [[diff2_function]]
 == DIFF2 Function
 
