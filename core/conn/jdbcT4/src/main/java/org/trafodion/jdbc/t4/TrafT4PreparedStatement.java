@@ -313,7 +313,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (SQLException e) {
 				BatchUpdateException be;
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-						"batch_command_failed", null);
+						"batch_command_failed", e.getMessage());
 				if (batchRowCount_ == null) // we failed before execute
 				{
 					batchRowCount_ = new int[paramRowCount_];

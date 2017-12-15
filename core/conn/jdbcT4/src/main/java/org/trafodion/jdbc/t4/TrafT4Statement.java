@@ -416,7 +416,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				BatchUpdateException be;
 
 				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-						"batch_command_failed", null);
+						"batch_command_failed", e.getMessage());
 				be = new BatchUpdateException(se.getMessage(), se.getSQLState(), batchRowCount_);
 				be.setNextException(e);
 
