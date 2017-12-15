@@ -213,6 +213,24 @@ corresponding week of the year.
 
 See the individual entry for the function.
 
+[[lob_functions]]
+== LOB Functions
+
+Trafodion provides following LOB functions to process LOB data.
+
+[cols="25%,75%"]
+|===
+| <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle with BLOB.
+| <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle with CLOB.
+| <<stringtolob,STRINGTOLOB>>     | Converts a simple string literal into LOB format.
+| <<filetolob,FILETOLOB>>         | Converts data from a local linux/hdfs file into LOB format.
+| <<buffertolob,BUFFERTOLOB>>     | Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB format.
+| <<externaltolob,EXTERNALTOLOB>> | Converts data from an external file into LOB format.
+| LOBTOSTRING                     | Converts LOB data into simple string literal.
+| LOBTOFILE                       | Converts LOB data into a linux/hdfs file.
+| LOBTOBUFFER                     | Converts LOB data into a buffer.
+|===
+
 [[mathematical_functions]]
 == Mathematical Functions
 
@@ -3294,6 +3312,12 @@ The results are equivalent to the quotient of the results from the two
 preceding examples. For example, in the second row of the output of this
 example, 0.0007319 is equal to 21959 divided by 30002620.
 
+<<<
+[[empty_blob() and empty_clob() function]]
+== EMPTY_BLOB() and EMPTY_CLOB() Function
+
+
+
 
 <<<
 [[diff2_function]]
@@ -3403,6 +3427,88 @@ DIFF2_I1TS
               .000191
 
 --- 5 row(s) selected.
+```
+
+<<<
+[[emptyblob_function]]
+== EMPTY_BLOB() Function
+
+[[syntax_descriptions_of_emptyblob_function]]
+=== Syntax Descriptions of EMPTY_BLOB() Function
+
+The EMPTY_BLOB() function creates a dummy LOB handle with BLOB.
+
+This function can be used in INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_BLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+
+```
+EMPTY_BLOB()
+```
+
+[[considerations_for_emptyblob_function]]
+=== Considerations for EMPTY_BLOB() Function
+
+* If EMPTY_BLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate with new LOB data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example, if the LOB column was defined as `‘EXTERNAL’` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyblob_function]]
+=== Examples of EMPTY_BLOB() Function
+
+* This example uses the EMPTY_BLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test1 values (1, empty_blob());
+```
+
+<<<
+[[emptyclob_function]]
+== EMPTY_CLOB() Function
+
+[[syntax_descriptions_of_emptyclob_function]]
+=== Syntax Descriptions of EMPTY_CLOB() Function
+
+The EMPTY_CLOB() function creates a dummy LOB handle with CLOB.
+
+This function can be used in INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_CLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+
+```
+EMPTY_CLOB()
+```
+
+[[considerations_for_emptyclob_function]]
+=== Considerations for EMPTY_CLOB() Function
+
+* If EMPTY_CLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate with new LOB data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example, if the LOB column was defined as `‘EXTERNAL’` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyclob_function]]
+=== Examples of EMPTY_CLOB() Function
+
+* This example uses the EMPTY_CLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test2 values (1, empty_clob());
 ```
 
 <<<
