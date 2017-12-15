@@ -636,7 +636,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ....... ###
   max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval  ###
   auto_query_retry ....... enabled
@@ -1083,7 +1082,6 @@ DESCRIPTION
   fragment_type .......... master
   affinity_value ....... ###
   max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval  ###
   auto_query_retry ....... enabled
