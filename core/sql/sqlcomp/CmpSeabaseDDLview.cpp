@@ -1060,11 +1060,7 @@ void CmpSeabaseDDL::createSeabaseView(
   NADELETEBASIC(query, STMTHEAP);
   if (cliRC < 0)
     {
-      if (cliRC == -8402)
-        // string overflow, view text does not fit into metadata table
-        *CmpCommon::diags() << DgSqlCode(-1198);
-      else
-        cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
       deallocEHI(ehi); 
       processReturn();
