@@ -38,4 +38,8 @@ public class RetryCounterFactory {
     public static RetryCounter create(int maxRetries, int retryIntervalMillis) {
         return new RetryCounter(maxRetries, retryIntervalMillis, TimeUnit.MILLISECONDS);
     }
+
+    public static RetryCounter create(int maxRetries, int retryInterval, TimeUnit timeUnit) {
+        return new RetryCounter(maxRetries, retryInterval, timeUnit);
+    }
 }

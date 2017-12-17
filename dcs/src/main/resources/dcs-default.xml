@@ -372,4 +372,11 @@
         The classname of the DcsServer to start. Used for development of multithreaded server 
     </description>
   </property>
+  <property>
+    <name>dcs.server.user.program.restart.handler.retry.timeout.minutes</name>
+    <value>30</value>
+    <description>
+        Timeout minutes between first and max server restart times.
+    </description>
+  </property>
 </configuration>
