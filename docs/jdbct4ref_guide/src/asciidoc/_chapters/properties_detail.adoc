@@ -79,13 +79,13 @@ properties, see
 <<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
 
 ```
-Data type: int
+Data type: short
 
 Units: seconds
 
 Default: -1 (Use the ConnTimeout value set on the server-side data source.)
 
-Range: -1, 0 to 2147483647
+Range: -1, 0 to 32767
 ```
 
 * Zero (0) specifies infinity as the timeout value.
