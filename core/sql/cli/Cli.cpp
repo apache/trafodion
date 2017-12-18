@@ -9222,8 +9222,10 @@ Lng32 SQLCLI_LOBcliInterface
 	{
 	  diags.mergeAfter(*myDiags);
 	}
-      return cliRC;
     }
+  myDiags->deAllocate();
+  if (cliRC < 0)
+     return cliRC;
   else if (cliRC == 100)
     return 100;
   else
@@ -9510,13 +9512,16 @@ Lng32 SQLCLI_LOB_GC_Interface
 	{
 	  diags.mergeAfter(*myDiags);
 	}
-      return cliRC;
     }
+  myDiags->deAllocate();
+  if (cliRC < 0)
+     return cliRC;
   else if (cliRC == 100)
     return 100;
   else
     return 0;   
 }
+
 Lng32 SQLCLI_LOBddlInterface
 (
 /*IN*/     CliGlobals *cliGlobals,
@@ -9924,8 +9929,10 @@ Lng32 SQLCLI_LOBddlInterface
 	{
 	  diags.mergeAfter(*myDiags);
 	}
-      return cliRC;
     }
+  myDiags->deAllocate();
+  if (cliRC < 0)
+     return cliRC;
   else if (cliRC == 100)
     return 100;
   else
@@ -10034,8 +10041,6 @@ Lng32 SQLCLI_SEcliInterface
 
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
-
-  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
 
   ExeCliInterface *cliInterface = NULL;
   if (inCliInterface && (*inCliInterface))
@@ -10711,8 +10716,10 @@ Lng32 SQLCLI_SeqGenCliInterface
 						currContext.exHeap(),
 						nextValue,
 						endValue);
-  if (cliRC < 0)
-    return cliRC;
+  if (cliRC < 0) {
+     myDiags->deAllocate();     
+     return cliRC;
+  }
   
   if ((sga->getSGCycleOption()) &&
       (nextValue > sga->getSGMaxValue()))
@@ -10727,10 +10734,13 @@ Lng32 SQLCLI_SeqGenCliInterface
 						    currContext.exHeap(),
 						    nextValue,
 						    endValue);
-      if (cliRC < 0)
-	return cliRC;
+      if (cliRC < 0) {
+         myDiags->deAllocate();     
+	 return cliRC;
+      }
     }
 
+  myDiags->deAllocate();     
   sga->setSGNextValue(nextValue);
   sga->setSGEndValue(endValue);
 
