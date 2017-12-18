@@ -407,13 +407,14 @@ LOAD is a {project-name} SQL extension.
 LOAD [WITH option[[,] option]...] INTO target-table SELECT ... FROM source-table
 
 option is:
-    TRUNCATE TABLE
-  | NO RECOVERY
+    CONTINUE ON ERROR
+  | LOG ERROR ROWS [TO error-location-name]
+  | STOP AFTER num ERROR ROWS
+  | TRUNCATE TABLE
   | NO POPULATE INDEXES
   | NO DUPLICATE CHECK
   | NO OUTPUT
   | INDEX TABLE ONLY
-  | UPSERT USING LOAD
 ```
 
 [[load_syntax]]
@@ -440,19 +441,43 @@ source data as a filter.
 is a set of options that you can specify for the load operation. You can
 specify one or more of these options:
 
+** `CONTINUE ON ERROR`
++
+LOAD statement will continue after errors encountered while scanning rows from source table. 
++
+Errors during the load or sort phase will cause the LOAD statement to abort. 
++
+Error rows will be logged by default in HDFS files in the directory `/user/trafodion/bulkload/logs`. The default name of the error files will be of the form `ERR_<three-part-target-table-name>_<date>_<id>`, where `<id>` is a numeric identifier unique to the process where the error was seen.
++
+This option is implied if `LOG ERROR ROWS [TO _error-location-name_]` or `STOP AFTER _num_ ERROR ROWS` is specified and it is not enabled by default.
+
+** `LOG ERROR ROWS [TO _error-location-name_]`
++
+If error rows must be written to a specified location, then specify TO _error-location-name_, otherwise they will be written to the default location.
++
+Error logs are written in separate files by the processes involved in the load command under sub-directory representing the load command in the given location.
+The actual log file location is displayed in the load command output.
+
+*** `_error-location-name_`
++
+must be a HDFS directory name to which trafodion has write access.
+
+** `STOP AFTER _num_ ERROR ROWS`
++
+Use this option to stop the LOAD statement from progressing after num errors have been encountered during this statement. 
++
+Duplicate check errors and errors which we have continued from using previous options are included in the count.
+
+*** _num_
++
+specifies the number of error rows.
+
 ** `TRUNCATE TABLE`
 +
 causes the Bulk Loader to truncate the target table before starting the
 load operation. By default, the Bulk Loader does not truncate the target
 table before loading data.
 
-** `NO RECOVERY`
-+
-specifies that the Bulk Loader not use HBase snapshots for recovery. By
-default, the Bulk Loader handles recovery using the HBase snapshots
-mechanism.
-
-<<<
 ** `NO POPULATE INDEXES`
 +
 specifies that the Bulk Loader not handle index maintenance or populate
@@ -472,15 +497,10 @@ prevents the LOAD statement from displaying status messages. By default,
 the LOAD statement prints status messages listing the steps that the
 Bulk Loader is executing.
 
-* `INDEX TABLE ONLY`
+** `INDEX TABLE ONLY`
 +
 specifies that the target table, which is an index, be populated with
 data from the parent table.
-
-* `UPSERT USING LOAD`
-+
-specifies that the data be inserted into the target table using row set
-inserts without a transaction.
 
 <<<
 [[load_considerations]]
