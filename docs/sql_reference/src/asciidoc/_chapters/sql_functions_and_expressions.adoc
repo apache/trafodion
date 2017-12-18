@@ -222,8 +222,8 @@ Trafodion provides following LOB functions to process LOB data.
 |===
 | <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle with BLOB.
 | <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle with CLOB.
-| <<stringtolob,STRINGTOLOB>>     | Converts a simple string literal into LOB format.
-| <<filetolob,FILETOLOB>>         | Converts data from a local linux/hdfs file into LOB format.
+| <<stringtolob_function,STRINGTOLOB Function>>  | Converts a simple string literal into LOB format.
+| <<filetolob_function,FILETOLOB Function>>      | Converts data from a local linux/hdfs file into LOB format.
 | <<buffertolob,BUFFERTOLOB>>     | Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB format.
 | <<externaltolob,EXTERNALTOLOB>> | Converts data from an external file into LOB format.
 | LOBTOSTRING                     | Converts LOB data into simple string literal.
@@ -3435,7 +3435,7 @@ This function can be used in INSERT or UPDATE statement, to initialize a LOB col
 
 EMPTY_BLOB() function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 EMPTY_BLOB()
@@ -3778,40 +3778,43 @@ EXTRACT (YEAR FROM INTERVAL '01-09' YEAR TO MONTH)
 +
 The result is 1.
 
-
 <<<
-[[hour_function]]
-=== HOUR Function
+[[filetolob_function]]
+== FILETOLOB Function
 
-The HOUR function converts a TIME or TIMESTAMP expression into an
-INTEGER value in the range 0 through 23 that represents the
-corresponding hour of the day.
+[[filetolob_function_syntax]]
+=== Syntax Descriptions of FILETOLOB Function
 
-HOUR is a {project-name} SQL extension.
+The FILETOLOB function converts data from a local linux/hdfs file into LOB format. This function can be used in INSERT or UPDATE statement.          
+
+FILETOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
-HOUR (datetime-expression)
+FILETOLOB('lob source file name')
+```     
+
+lob source file name is:
 ```
-* `_datetime-expression_`
+hdfs:///{local hdfs file name} |  
+{local linux file name}        |
+{file:///linux file name} 
+```
+
+[[filetolob_function_examples]]
+=== Examples of FILETOLOB Function
+
+* This example converts data from a local file into LOB format, and stores all data into HDFS associated with that column/row.
 +
-is an expression that evaluates to a datetime value of type TIME or
-TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+```
+insert into tlob130txt1 values(1,filetolob('lob_input_a1.txt'));
+```
 
-[[examples_of_hour]]
-=== Examples of HOUR
-
-* Return an integer that represents the hour of the day from the
-ship timestamp column in the project table:
+* In the table tlob1 where c1 is 3, this example updates (appends) the c2 to lob_update.txt stored in hdfs:///lobs/.
 +
 ```
-SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
-FROM persnl.project
-WHERE projcode = 1000;
-
-
-Start/Date Time/Shipped               (EXPR)
----------- -------------------------- ------
-2007-04-10 2007-04-21 08:15:00.000000      8
+update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 3;
 ```
 
 <<<
@@ -3853,6 +3856,41 @@ STUDENT_NAME     (EXPR)
 --------------  --------------
 scott            91 90 80 56
 tom              91 77 43
+```
+
+<<<
+[[hour_function]]
+== HOUR Function
+
+The HOUR function converts a TIME or TIMESTAMP expression into an
+INTEGER value in the range 0 through 23 that represents the
+corresponding hour of the day.
+
+HOUR is a {project-name} SQL extension.
+
+```
+HOUR (datetime-expression)
+```
+* `_datetime-expression_`
++
+is an expression that evaluates to a datetime value of type TIME or
+TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+
+[[examples_of_hour]]
+=== Examples of HOUR
+
+* Return an integer that represents the hour of the day from the
+ship timestamp column in the project table:
++
+```
+SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
+FROM persnl.project
+WHERE projcode = 1000;
+
+
+Start/Date Time/Shipped               (EXPR)
+---------- -------------------------- ------
+2007-04-10 2007-04-21 08:15:00.000000      8
 ```
 
 <<<
@@ -7279,6 +7317,40 @@ SELECT STDDEV (price * qty_available) FROM sales.parts;
  7.13899499999999808E+006
 
 --- 1 row(s) selected.
+```
+
+<<<
+[[stringtolob_function]]
+== STRINGTOLOB Function
+
+[[stringtolob_function_syntax]]
+=== Syntax Descriptions of STRINGTOLOB Function
+
+The STRINGTOLOB function converts a simple string literal into LOB format. This function can be used in INSERT or UPDATE statement.
+
+STRINGTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+STRINGTOLOB('string literal expression')  
+```
+
+* STRINGTOLOB   
++
+Converts a simple string literal into LOB format.
+
+** string literal expression
++
+is a series of characters enclosed in single quotes.
+
+[[stringtolob_function_examples]]
+=== Examples of STRINGTOLOB Function
+
+* This example converts a simple string literal into LOB format before inserting.
++
+```
+insert into tlob1 values(1,stringtolob('inserted row'));
 ```
 
 <<<
