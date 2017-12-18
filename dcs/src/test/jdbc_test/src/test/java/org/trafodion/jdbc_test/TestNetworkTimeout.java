@@ -55,7 +55,15 @@ public class TestNetworkTimeout {
 			es.shutdown();
 			int result = conn.getNetworkTimeout();
 			assertTrue("this is networkTimeout", result == 100);
+			conn.close();
 		} catch (SQLException e) {
+		    	if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
 			e.printStackTrace();
 		}
 	}
@@ -67,7 +75,16 @@ public class TestNetworkTimeout {
 			conn = Utils.getUserConnection();
 			int result = conn.getNetworkTimeout();
 			assertTrue("this is networkTimeout", result == 0);
+			conn.close();
 		} catch (SQLException e) {
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
+
 			e.printStackTrace();
 		}
 	}

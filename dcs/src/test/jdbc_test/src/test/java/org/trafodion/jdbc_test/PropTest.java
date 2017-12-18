@@ -61,8 +61,16 @@ public class PropTest
             System.out.println("Catalog : " + conn.getCatalog());
             assertEquals("Catalog should be the same as the properties file defined",Utils.catalog, conn.getCatalog());
             System.out.println("testDefaultPropertiesConnection : PASS");
+            conn.close();
         }
         catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
         }
     }
 }
