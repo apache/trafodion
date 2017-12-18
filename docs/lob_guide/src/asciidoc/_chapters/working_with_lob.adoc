@@ -235,6 +235,8 @@ The source for inserting into a LOB can be any of the following:
 An unnamed parameter can be used to prepare a statement and then during an execution, either a function or a simple string parameter can be passed in which will be converted to LOB data.
 
 * `EMPTY_BLOB()` or `EMPTY_CLOB()` 
++
+NOTE: If you want to insert `EMPTY_BLOB()` or `EMPTY_CLOB()` into a lob column, the CQD `TRAF_CLOB_AS_VARCHAR` which is *ON* by default must be turned *OFF* before creating the table.
 
 ** If `EMPTY_BLOB()` or `EMPTY_CLOB()` is specified, then a dummy lob handle is created. 
 
