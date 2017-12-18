@@ -1479,7 +1479,7 @@ calculations. Change the column definitions and reissue the statement.
 == SQL 1143
 
 ```
-Validation for constraint <constraint-name> failed; incompatible data exists in referencing base table <referencing-table-name> and referenced base table <referenced-table-name>. To display the data violating the constraint, please use the following DML statement: <statement-text>.
+Validation for constraint <constraint-name> failed; incompatible data exists in referencing base table <referencing-table-name> and referenced base table <referenced-table-name>. To display the data that violates the constraint, please use the following DML statement: <statement-text>.
 ```
 
 Where <constraint-name> is the name of a column constraint or table
@@ -1530,22 +1530,17 @@ compatible with the type of column <column-name> and resubmit.
 == SQL 1146
 
 ```
-Object <object-name> could not be altered because it is not a <object-type>.
+Object <object-name> could not be altered because it either does not exist or is not a table.
 ```
 
 Where <object-name> is the name of the object being requested.
 
-Where <object-type> is the type of object required for the DDL statement
-issued.
-
-*Cause:* The type of the object specified in the command is inconsistent
-with the DDL command being used. For example, this occurs if DROP TABLE
-is used, and the object you specify is an INDEX.
+*Cause:* You attempted to rename a column in a table, but the <object-name> specified
+either is not a table, or the table does not exist.
 
 *Effect:* The operation fails.
 
-*Recovery:* Check that the correct object name was specified and execute
-a statement that is consistent with that type of object.
+*Recovery:* Correct the <object-name> and resubmit.
 
 <<<
 [[SQL-1147]]
@@ -1585,78 +1580,6 @@ that is the SYSKEY, which is not supported.
 *Recovery:* Do not use the SYSKEY as part of the referenced key.
 
 <<<
-[[SQL-1150]]
-== SQL 1150
-
-```
-Table <table-name> was not created as Partition Overlay Support could not generate volume names for the partitions to reside on.
-```
-
-Where <table-name> is the name of the table.
-
-*Cause:* When the Partition Overlay Support feature is enabled without
-setting volume names (through CQD POS_LOCATIONS) for table partitions to
-reside on, location names are generated automatically. However, the
-{project-name} database software could not generate the location names
-automatically and, because the CQD POS_RAISE_ERROR is set, the table is
-not created.
-
-*Effect:* The operation fails.
-
-*Recovery:* To correct the error, choose a recovery method:
-
-* Verify that the disk volumes are available on the current node and
-retry the request.
-* Specify the volume names where the partitions need to be created for
-the given CREATE TABLE statement through CONTROL QUERY DEFAULT
-POS_LOCATIONS, and then retry the request.
-* Do not set the CQD POS_RAISE_ERROR, in which case, a simple table
-without partitions is created when the volume names cannot be generated.
-
-<<<
-[[SQL-1151]]
-== SQL 1151
-
-```
-POS (Partition Overlay Support) was not applied as volume names could not be generated for the partitions. So a simple table <table-name> was created without partitions.
-```
-
-Where <table-name> is the name of the table.
-
-*Cause:* When the Partition Overlay Support feature is enabled without
-setting volume names (through CQD POS_LOCATIONS) for table partitions to
-reside on, location names are generated automatically. However, the
-{project-name} database software could not generate the location names
-automatically, and because the CQD POS_RAISE_ERROR is not set, the given
-table is created as a simple table without partitions as it would be if
-the Partition Overlay Support feature was not enabled.
-
-*Effect:* The POS feature was not applied. A simple table without
-partitions was created.
-
-*Recovery:* None if a non-partitioned table is requested. To request a
-partitioned table, delete the table, verify that disk volumes are
-available, and resubmit. You can also specify the volume names where the
-partitions need to be created for the given CREATE TABLE through
-CONTROL QUERY DEFAULT POS_LOCATIONS, and then retry the request.
-
-<<<
-[[SQL-1154]]
-== SQL 1154
-
-```
-Cannot create object <object-name> as the table size is too big to fit on the system.
-```
-
-*Cause:* {project-name} could not create the object
-because the requested table size is bigger than the total amount of disk
-space available on the system.
-
-*Effect:* The SQL operation fails.
-
-*Recovery:* Check that the table size requested is big enough to fit on
-the system and retry the statement.
-
 [[SQL-1155]]
 == SQL 1155
 
@@ -1675,15 +1598,14 @@ Operation cannot be performed because <object-name> is not a synonym.
 == SQL 1156
 
 ```
-Synonym <name> does not exist or object type is invalid for the current operation.
+Object <object-name> does not have columns.
 ```
 
-*Cause:* You specified a create or alter of synonym <name> on an object
-that is not a table or view.
+*Cause:* You attempted to grant or revoke column privileges, but <object-name> is not a table or a view.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax so that the correct <name> is used.
+*Recovery:* Correct the syntax so that the correct <object-name> is used.
 
 [[SQL-1157]]
 == SQL 1157
@@ -1699,184 +1621,59 @@ is the same as its previous mapping.
 
 *Recovery:* None.
 
-<<<
-[[SQL-1158]]
-== SQL 1158
+[[SQL-1174]]
+== SQL 1174
 
 ```
-Synonym <name> already exists.
+An unsupported data type was encountered on this operation.
 ```
 
-*Cause:* You specified a create of synonym <name> on an object, but a
-synonym of that name already exists.
+*Cause:* You performed a DDL-related operation and one of the objects involved
+has a column with a data type that is not supported for this operation. This is
+due to an incomplete implementation of support for a particular column type.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax so that the correct <name> is used.
-
-[[SQL-1159]]
-== SQL 1159
-
-```
-The specified object <name> is not a table or a view. Please verify that the correct object was specified.
-```
-
-*Cause:* You specified an alter or drop of synonym <name>, but a synonym of that name already exists.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the syntax so that the correct <name> is used.
-
-<<<
-[[SQL-1160]]
-== SQL 1160
-
-```
-A mismatch between the NOT DROPPABLE PRIMARY KEY constraint and the STORE BY clause was detected. When both clauses are specified, the STORE BY key column list must be the same as, or a prefix of , the PRIMARY KEY column list. This mismatch is caused by differences between the columns themselves, the order of columns, or the ASC/DESC attribute.
-```
-
-*Cause:* You attempted to create a table that contains both a NOT
-DROPPABLE PRIMARY KEY constraint and a STORE BY clause. The syntax
-specified is not correct. The STORE BY column list must be the same as,
-or a prefix of, the NOT DROPPABLE PRIMARY KEY column list.
-
-*Effect:* The operation fails.
-
-*Recovery:* If you want the STORE BY column list that specifies the
-clustering key to be different than the PRIMARY KEY, specify a DROPPABLE
-PRIMARY KEY. If you want the PRIMARY KEY to be the same as the STORE BY
-key, do not specify a STORE BY clause. Correct the syntax and resubmit.
-
-[[SQL-1161]]
-== SQL 1161
-
-```
-System generated column SYSKEY cannot be specified as part of the PARTITION BY clause.
-```
-
-*Cause:* {project-name} could not create the object
-because system-generated column SYSKEY is not allowed as part of the
-PARTITION BY clause.
-
-*Effect:* The DDL operation fails.
-
-*Recovery:* Remove the system added column SYSKEY from the PARTITION BY
-clause and retry the DDL statement.
+*Recovery:* None. Report this error and the DDL operation to the {project-name} User Distribution List.
 
 <<<
 [[SQL-1180]]
 == SQL 1180
 
 ```
-The required subvolume name for locations in schema <schema-name> is <directory-name>.
+Trying to create an external <kind> table with a different schema or table name (<table-name>) than the source table (<source-table-name>). The external schema and table name must be the same as the source.
 ```
 
-Where <schema-name> is the schema in which the object is being created.
+Where <kind> is the kind of the source table (e.g. HBASE or HIVE).
 
-Where <directory-name> is the designated subvolume name for that schema.
+Where <table-name> is the name of a {project-name} external table that you are trying to create.
 
-*Cause:* One or more LOCATION clauses in the CREATE or MODIFY statement
-contained a {project-name} platform location whose subvolume did not match
-the designated subvolume for the schema in which the object was being
-created.
+Where <source-table-name> is the name of a non-{project-name} table (e.g. an HBase or Hive table).
 
-*Effect:* The object was not created.
+*Cause:* You attempted a CREATE EXTERNAL TABLE statement, but you used a different schema name for the {project-name} external
+table than the original. This might happen because you let the schema name of the external table default, and the default is not the 
+same as the source table schema.
 
-*Recovery:* Either correct the invalid LOCATION clauses or remove them
-and allow the system to generate the {project-name} platform locations.
+*Effect:* The external table was not created.
+
+*Recovery:* Either supply the correct schema name or change the default schema name.
 
 [[SQL-1181]]
 == SQL 1181
 
 ```
-Label <file-name> could not be dropped. (file error <error>).
+Trying to create a schema with name <schema-name> to store the definition of a native HIVE or HBASE table and the name is too long. Maximum length supported is <max-length>.
 ```
 
-Where <file-name> is the name of the table, index, view, or routine
-being dropped.
+Where <schema-name> is the name of the schema you are trying to create.
 
-Where <error> is the returned file system error number.
+Where <max-length> is the maximum length of schema names supported by {project-name}.
 
-*Cause:* The object you attempted to drop resulted in file system error
-<error>.
-
-*Effect:* The DDL DROP operation fails.
-
-*Recovery:* See previous messages in this {project-name} database software
-operation to determine the necessary corrective actions. Also, use the
-file system error <error-number> to analyze the cause. For information
-about file system errors, see <<file_system_errors, File-System Errors>>.
-Fix the error and resubmit.
-
-<<<
-[[SQL-1182]]
-== SQL 1182
-
-```
-Error <error> was returned by the file system on resource fork <file-name>.
-```
-
-Where <error> is the error returned.
-
-Where <file-name> is the name of the file.
-
-*Cause:* File system error.
+*Cause:* You attempted to create an external table for an HBase or Hive table but the schema name is too long.
 
 *Effect:* The operation fails.
 
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
-[[SQL-1183]]
-== SQL 1183
-
-```
-Error <error> was returned by the file system on metadata table <ANSI-name> (file name <file-name>).
-```
-
-Where <error> is the error returned.
-
-Where <ANSI-name> is the metadata table.
-
-Where <file-name> is the name of the file.
-
-*Cause:* File system error.
-
-*Effect:* The operation fails.
-
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
-<<<
-[[SQL-1184]]
-== SQL 1184
-
-```
-You do not have the required privilege(s) on <column-name>.
-```
-
-Where <column-name> is the name of a column specified in the references
-part of a referential integrity constraint.
-
-*Cause:* You attempted to establish a referential integrity constraint
-on a column for which the executing user ID has no REFERENCES
-privileges.
-
-*Effect:* The operation fails.
-
-*Recovery:* Establish correct column privileges and resubmit.
-
-[[SQL-1185]]
-== SQL 1185
-
-```
-The location name is either invalid or missing.
-```
-
-*Cause:* A partition location is either invalid or missing.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify the correct location for all partitions involved in
-the affected command.
+*Recovery:* None.
 
 <<<
 [[SQL-1186]]
@@ -1904,7 +1701,7 @@ default to be compatible types and resubmit.
 == SQL 1187
 
 ```
-The schema name <schema-name> is reserved for {project-name} metadata.
+The schema name <schema-name> is reserved for SQL metadata.
 ```
 
 Where <schema-name> is the name of a {project-name} database schema.
@@ -1940,6 +1737,156 @@ indirectly.
 
 *Recovery:* None. You cannot define a referential constraint that creates a circular dependency.
 
+[[SQL-1190]]
+== SQL 1190
+
+```
+Failed to initialize Hive metadata. Call to <function> returned error <optional-symbol>(<error-number>). Cause: <diagnostics>.
+```
+
+Where <function> is a {project-name} internal method call.
+
+Where <optional-symbol> is an internal symbol representing the error.
+
+Where <error-number> is the error code returned by <function>.
+
+Where <diagnositics> is Java exception information.
+
+*Cause:* You attempted to access a Hive object but {project-name} was unable to access the Hive metadata for that object. A common
+cause of this error is that the Hive metadata server is down.
+
+*Effect:* The operation fails.
+
+*Recovery:* Take corrective action to insure that the Hive subsystem is functioning correctly. Then resubmit.
+
+<<<
+[[SQL-1191]]
+== SQL 1191
+
+```
+SERIALIZE option is not yet supported for <data-type> datatype.
+```
+
+Where <data-type> is the data type of a column that you tried to create.
+
+*Cause:* You attempted to create a column with the SERIALIZED attribute (for example, while submitting a CREATE TABLE statement) 
+but {project-name} does not presently
+support columns of the given data type with the SERIALIZED attribute.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement by either changing the data type or removing the SERIALIZED attribute. Then resubmit.
+
+[[SQL-1192]]
+== SQL 1192
+
+```
+Failed to retrieve data from Hive metastore.  Call to <function> returned error <optional-symbol>(<error-number>). Cause: <diagnostics>.
+```
+
+Where <function> is a {project-name} internal method call.
+
+Where <optional-symbol> is an internal symbol representing the error.
+
+Where <error-number> is the error code returned by <function>.
+
+Where <diagnositics> is Java exception information.
+
+*Cause:* An error occurred when {project-name} attempted to read metadata about a Hive object from the Hive metastore. The <diagnostics>
+contains specific information about the error.
+
+*Effect:* The operation fails.
+
+*Recovery:* The <diagnostics> may suggest appropriate corrective action. If not, report this error and the associated SQL
+operation to the {project-name} User Distribution List.
+
+<<<
+[[SQL-1193]]
+== SQL 1193
+
+```
+The <type-of-string> specified in the <clause-name> clause must be identical to the primary key for a Trafodion table.
+```
+
+Where <type-of-string> indicates some syntactic construct (e.g. "clusering key").
+
+Where <clause-name> is a SQL clause (e.g. "STORE BY").
+
+*Cause:* You specified two syntatic constructs (e.g. "STORE BY" and "PRIMARY KEY") in a DDL statement (e.g. "CREATE TABLE") that
+overlap in meaning. {project-name} requires the former construct to match the latter in this case.
+
+*Effect:* The operation fails.
+
+*Recovery:* Either remove the <clause-name> clause (as it is redundant) or change it to match the primary key. Then resubmit.
+
+[[SQL-1195]]
+== SQL 1195
+
+```
+Column <column-name> is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+```
+
+Where <column-name> is the name of a column specified in a SALT clause.
+
+*Cause:* You specified a column in a SALT clause (e.g. on a CREATE TABLE statement) that is not part of the primary or clustering key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column name then resubmit.
+
+<<<
+[[SQL-1196]]
+== SQL 1196
+
+```
+The number of salt partitions must be between <lower-bound> and <upper-bound> inclusive.
+```
+
+Where <lower-bound> is the smallest allowable number of salt partitions supported.
+
+Where <upper-bound> is the largest allowable number of salt partitions supported.
+
+*Cause:* You specified a SALT clause (e.g. on a CREATE TABLE statement) with a number of partitions outside the range that
+{project-name} supports.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the SALT clause then resubmit.
+
+<<<
+[[SQL-1197]]
+== SQL 1197
+
+```
+The location <location-1> for <stored-procedure-name> does not match with another location <location-2> specified. All location specifications must be identical.
+```
+
+Where <location-1> and <location-2> are execution locations for an internal stored procedure.
+
+Where <stored-procedure-name> is the name of an internal stored procedure.
+
+*Cause:* This is a {project-name} internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Report this error and the associated SQL
+operation to the {project-name} User Distribution List.
+
+<<<
+[[SQL-1199]]
+== SQL 1199
+
+```
+The PARTITION BY clause is not allowed for a Trafodion table.
+```
+
+*Cause:* You specified a PARTITION BY clause when trying to create a {project-name} table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the PARTITION BY clause from the DDL statement and resubmit.
+
+<<<
 [[SQL-1224]]
 == SQL 1224
 
@@ -2045,21 +1992,6 @@ Where <catalog-name> is the name of the {project-name} database catalog.
 
 *Recovery:* Choose a different catalog name and reissue the CREATE
 statement.
-
-[[SQL-1235]]
-== SQL 1235
-
-```
-An invalid combination of EXTENT sizes and MAXEXTENTS was specified
-```
-for table or index <table-name>.
-
-*Cause:* A CREATE or ALTER statement specified an invalid combination of
-EXTENT sizes and MAXEXTENTS.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the error and retry the operation.
 
 <<<
 [[SQL-1236]]
@@ -2188,28 +2120,6 @@ Where <object-name> is the name of the affected object.
 *Recovery:* Specify valid key values and resubmit.
 
 <<<
-[[SQL-1246]]
-== SQL 1246
-
-```
-The supplied partition key value (<key-value>) is inconsistent
-```
-with the data type of column <column-name> of object <object-name>.
-
-Where <key-value> is the specified first key value.
-
-Where <column-name> is the column of <object-name> that corresponds to
-the invalid key value.
-
-Where <object-name> is the name of the affected object.
-
-*Cause:* A utility command specified a key value that is inconsistent
-with the data type of the column that corresponds to the key value.
-
-*Effect:* The operation fails.
-
-*Recovery:* Specify valid key values and resubmit.
-
 [[SQL-1248]]
 == SQL 1248
 
@@ -2226,30 +2136,6 @@ partitions of an object.
 
 *Recovery:* Choose a name that is not the same as any other partition
 name in this object and reissue the CREATE statement.
-
-<<<
-[[SQL-1250]]
-== SQL 1250
-
-```
-DROP cannot be performed on object <object-name> because a utility operation (<operation-type>) associated with DDL_LOCK <lock-name> is currently running.
-```
-
-Where <object-name> is the ANSI name of the object named in the DROP
-command.
-
-Where <operation-type> is the type of utility operation.
-
-Where <lock-name> is the ANSI name of the DDL lock object that is
-associated with the utility operation.
-
-*Cause:* You attempted to drop an object that a utility command is
-using.
-
-*Effect:* The operation fails.
-
-*Recovery:* Wait until the utility operation has finished, and then
-retry the DROP operation.
 
 [[SQL-1251]]
 == SQL 1251

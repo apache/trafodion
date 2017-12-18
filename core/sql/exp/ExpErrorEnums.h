@@ -182,7 +182,7 @@ enum ExeErrorCode
   EXE_NO_MEM_TO_BUILD			= 8570,
   EXE_NO_MEM_TO_EXEC 			= 8571,
   EXE_CANNOT_CONTINUE                   = 8572,
-  EXE_ACCESS_VIOLATION                  = 8573,
+  // unused                             = 8573,
   
   // ------------------------------------------------------------
   // Error 8574, lost open. Could result in reopening the table.
@@ -340,7 +340,7 @@ enum ExeErrorCode
   CLI_USER_ENDED_XN_CLEANUP             = 8844,
   CLI_INTERR_NULL_TCB                   = 8845,
   CLI_EMPTY_SQL_STMT                    = 8846,
-  CLI_SQLMP_RTD_ERROR			= 8847,
+  // unused      			= 8847,
   CLI_CANCEL_REJECTED                   = 8848,
   CLI_NON_CURSOR_UPDEL_TABLE            = 8850,
   CLI_USER_MEMORY_IN_EXECUTOR_SEGMENT   = 8851,
@@ -394,7 +394,7 @@ enum ExeErrorCode
 
   CLI_ARKCMP_INIT_FAILED		= 8890,
   CLI_NOT_ASCII_CHAR_TYPE		= 8891,
-  CLI_RTD_BUFFER_TOO_SMALL		= 8892,
+  // unused				= 8892,
   CLI_STMT_DESC_COUNT_MISMATCH          = 8893,
   CLI_RESERVED_ARGUMENT                 = 8894,
   CLI_INVALID_CHARSET_FOR_DESCRIPTOR    = 8895,

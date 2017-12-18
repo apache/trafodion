@@ -2973,7 +2973,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 
     default:
       {
-        *CmpCommon::diags() << DgSqlCode(-1174);
+        *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_COLUMN_DATATYPE);
         
         return -1; 
       }

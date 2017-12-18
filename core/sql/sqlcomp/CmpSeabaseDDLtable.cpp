@@ -2181,7 +2181,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       if (numSaltPartns <= 1 || numSaltPartns > 1024)
         {
           // number of salt partitions is out of bounds
-          *CmpCommon::diags() << DgSqlCode(-1196) 
+          *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_NUM_OF_SALT_PARTNS) 
                               << DgInt0(2)
                               << DgInt1(1024);
           deallocEHI(ehi); 

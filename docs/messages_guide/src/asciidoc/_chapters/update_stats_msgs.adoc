@@ -62,7 +62,7 @@ contact {project-support}.
 == SQL 9202
 
 ```
-UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing column lists are <column-list>.
+UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are <column-list>.
 ```
 
 *Cause:* UPDATE STATISTICS has located previously generated histograms that are not being regenerated.
@@ -456,7 +456,7 @@ a user transaction.
 == SQL 9245
 
 ```
-Unexpected out-of-order data encountered during histogram construction on column <column-name> this might result in later 6004 warnings.
+Unexpected out-of-order data encountered during histogram construction on column <column-name>; this might result in later 6004 warnings.
 ```
 
 *Cause:* {project-name} detected out-of-order data while generating histograms. This is likely an

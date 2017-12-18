@@ -146,65 +146,65 @@
 1144 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A quoted string was expected in first key clause for column $0~ColumnName on table $1~TableName, but the value detected is ($2~String0).
 1145 3D000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1146 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 could not be altered because it either does not exist or is not a table.
-1147 ZZZZZ 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a unique or primary key constraint definition.
+1147 ZZZZZ 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a unique or primary key constraint.
 1148 23000 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a referential integrity constraint definition.
-1149 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~ColumnName does not exist in table $1~TableName.
-1150 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $0~TableName was not created because Partition Overlay Support could not generate volume names for the partitions to reside on.
-1151 01000 99999 BEGINNER MAJOR DBADMIN POS (Partition Overlay Support) was not applied because volume names could not be generated for the partitions.  So a simple table ~TableName was created without partitions.
-1152 ZZZZZ 99999 BEGINNER CRTCL DBADMIN Unable to access partition $0~string0. Partition is offline.
-1153 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~String0 whose size is not set cannot be part of the primary key.
-1154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot create object $0~TableName because the table size $1~Int0 is too big to fit on the system($2~Int1 partitions).
+1149 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1150 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1151 01000 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1152 ZZZZZ 99999 BEGINNER CRTCL DBADMIN --- unused ---
+1153 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1155 ZZZZZ 99999 BEGINNER MINOR DBADMIN Operation cannot be performed because $0~String0 is not a synonym.
 1156 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not have columns.
 1157 ZZZZZ 99999 BEGINNER MINOR DBADMIN Synonym object $0~String0 is the same as previous mapping.
-1158 ZZZZZ 99999 BEGINNER MINOR LOGONLY Object $0~TableName already exists.
-1159 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~TableName does not exist.
-1160 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A mismatch between the NOT DROPPABLE PRIMARY KEY constraint and the STORE BY clause was detected.  When both clauses are specified, the STORE BY key column list must be the same as, or a prefix of, the PRIMARY KEY column list.  This mismatch is caused by differences between the columns themselves, the order of columns, or the ASC/DESC attribute.
-1161 ZZZZZ 99999 BEGINNER MINOR DBADMIN System generated column $0~String0 cannot be specified as part of the PARTITION BY clause.
-1162 ZZZZZ 99999 BEGINNER INFRM LOGONLY User $0~String0 already owns $1~String1 $2~String2.  Operation ignored.
-1163 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You are not authorized to change the owner of $0~String0 $1~String1 owned by user $2~String2.
-1164 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: unable to send controls while performing $0~String0. Error returned is $1~Int0.
-1165 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Parallel $0~string0 operation failed on $1~TableName, the serial operation for this object will be performed.
-1166 ZZZZZ 99999 BEGINNER MAJOR DBADMIN	Drop of partition $0~string0 for object $1~string1 failed with error $2~NSKCode, continuing.
-1167 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot change ownership of $0~String0 $1~String1 because $2~String2 is not the super ID or the services ID.
-1168 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: unable to find the object associated with UID $0~string0 that belongs to the schema associated with UID $1~string1.  This object is being accessed by $2~string2 using the lock mode of $3~string3.
-1169 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema privileges for schema $0~String0 have not been enabled.
-1170 ZZZZZ 99999 BEGINNER MINOR DBADMIN Invalid number of disk pools $0~Int0 specified either through the default or through the DDL statement.
-1171 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the size of the disk.
-1172 ZZZZZ 99999 BEGINNER MAJOR DBADMIN DDL privileges cannot be specified on $0~string0.  They may only be specified at the schema level.
-1173 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Volatile table $0~TableName was not created as the free space threshold $0~string0 percent was reached on all available disks.
-1174 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid data type was specified for column $0~String0.
-1175 ZZZZZ 99999 BEGINNER INFRM LOGONLY Since table $0~TableName does not contain an IDENTIFIER column, the sequence generator object was not recreated.
-1176 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot create object $0~TableName because max table size $1~Int0 is bigger than absolute max table size $2~Int1.
-1177 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: trying to create an object with a qualified name type of $0~string0. This qualified name type is not supported. 
-1178 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Internal error: unable to find catalog associated with uid $0~string0.  This catalog is being accessed by role $1~string1.
-1179 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: inconsistent object definition for $0~TableName found for object in name space $0~string0. Object owned by $1~string1. Unable to find object details in $2~string2;
+1158 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
+1159 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1160 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1161 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1162 ZZZZZ 99999 BEGINNER INFRM LOGONLY --- unused ---
+1163 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1164 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1165 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1166 ZZZZZ 99999 BEGINNER MAJOR DBADMIN	--- unused ---
+1167 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1168 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1169 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1170 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1171 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1172 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1173 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1174 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An unsupported data type was encountered on this operation.
+1175 ZZZZZ 99999 BEGINNER INFRM LOGONLY --- unused ---
+1176 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1177 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1178 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
+1179 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
 1180 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create an external $0~String0 table with a different schema or table name ($1~TableName) than the source table ($2~String1).  The external schema and table name must be the same as the source. 
 1181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create a schema with name $0~TableName to store the definition of a native HIVE or HBASE table and the name is too long.  Maximum length supported is $0~Int0.
-1182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on resource fork $1~String0.
-1183 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on metadata table $1~TableName (file name $2~String0).
-1184 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You do not have the required privilege(s) on $0~ColumnName.
-1185 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The location name is either invalid or missing.
+1182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1183 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1184 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1185 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1186 42000 99999 BEGINNER MAJOR DBADMIN Column $0~ColumnName is of type $1~String0 which is not compatible with the default value's type, $2~String1.
 1187 3F000 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for SQL metadata.
 1188 23000 99999 BEGINNER MAJOR DBADMIN Referential integrity constraint $0~ConstraintName for table $1~TableName could not be created due to circular dependency: $2~String0.
-1189 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request failed. View $0~string0 is already valid.
+1189 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1190 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to initialize Hive metadata. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 1191 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SERIALIZE option is not yet supported for $0~string0 datatype.
 1192 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to retrieve data from Hive metastore.  Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 1193 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The $0~string0 specified in the $1~string1 clause must be identical to the primary key for a Trafodion table.
-1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Label $0~String0 could not be dropped (file error $1~NSKCode). 
+1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
 1195 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~ColumnName is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
-1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1
+1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1 inclusive.
 1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The location $0~string0 for $1~string1 does not match with another location $2~string2 specified. All location specifications must be identical.
-1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU View text is too long to fit into the metadata.
+1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 1199 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The PARTITION BY clause is not allowed for a Trafodion table.
 1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while reading HDFS file statistics for Hive table $1~TableName. Cause: $0~string0.
 1201 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Salted index $0~string0 cannot be unique.
 1202 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Index $0~string1 cannot be salted like a table since table $0~string0 is not salted.
 1203 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object $0~string0 was not created.
 1204 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unsupported Hive datatype $0~string0.
-1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Hive feature $0~string0 is not supported.
+1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 1206 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU SALT AND SPLIT BY clauses are not allowed together.
 1207 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Text to be inserted into the TEXT metadata table contains too many quotes.
 1208 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause is not supported for indexes.
@@ -230,7 +230,7 @@
 1232 ZZZZZ 99999 BEGINNER MINOR DBADMIN A file error ($0~int0) occurred when saving dropped table DDL for table $1~TableName to $2~String0.
 1233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating schema in SQL system catalog $0~String0 is prohibited.
 1234 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Authorization need to be reinitialized due to missing or corrupted privilege manager metadata. To reinitialize, do 'initialize authorization, drop' followed by 'initialize authorization'. This deletes and recreates privilege manager metadata. Trafodion metadata is not affected. 
-1235 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid combination of EXTENT sizes and MAXEXTENTS was specified for table or index $0~TableName. File system error returned $1~int0.
+1235 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1236 3F000 99999 BEGINNER MAJOR DBADMIN The schema name specified for SQL object $0~String0 is not valid. The schema name must be the same as the schema being created.
 1237 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---
 1238 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set used in TRIGGER text must be ISO88591.
@@ -241,12 +241,12 @@
 1243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The hexadecimal form of string literals is not allowed in this context.
 1244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization initialization failed.
 1245 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The supplied partition key value ($0~String0) for column $1~ColumnName of object $2~TableName is not valid.
-1246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The supplied partition key value ($0~String0) is inconsistent with the data type of column $1~ColumnName of object $2~TableName.   
+1246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1247 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
 1248 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Partition name $0~string0 has already been used. Each partition in an object should have a unique name.
-1249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Insert into $0~string0 log table failed.    
-1250 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Operation cannot be performed on object $0~TableName because a utility operation ($2~string0) associated with DDL_LOCK $3~string1 is currently running.
-1251 01000 99999 BEGINNER MINOR DBADMIN The extra insignificant digits of default value ($0~String0) are truncated to match the scale of the data type of column $1~ColumnName.
+1249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---   
+1250 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1251 01000 99999 BEGINNER MINOR DBADMIN The extra insignificant digits of default value $0~String0 are truncated to match the scale of the data type of column $1~ColumnName.
 1252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The existing index $0~TableName to be used by a unique or primary constraint has not been populated.  Please populate the index and then try to add the constraint again.
 1253 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
 1254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Duplicate unique constraints are not allowed with same set of columns.
@@ -1894,7 +1894,7 @@ drop the default context
 9212 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Cardinality statistics will be more accurate if you use the SET ROWCOUNT option in the SAMPLE clause.
 9213 ZZZZZ 99999 BEGINNER INFRM DBADMIN If you intend to update histogram statistics for columns, you must specify a column list in the statement.
 9214 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Object $0~string0 could not be created.
-9215 ZZZZZ 99999 ADVANCED MAJOR DBADMIN UPDATE STATISTICS encountered an internal error (from $0~String0, with return value=$1~String1).  Details: $2~String2."
+9215 ZZZZZ 99999 ADVANCED MAJOR DBADMIN UPDATE STATISTICS encountered an internal error (from $0~String0, with return value=$1~String1).  Details: $2~String2.
 9216 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS cannot be on EVERY COLUMN for LOG tables. 
 9217 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms are currently maintained for the table.
 9218 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms need to be updated.
