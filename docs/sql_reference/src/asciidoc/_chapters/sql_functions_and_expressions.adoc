@@ -224,8 +224,8 @@ Trafodion provides following LOB functions to process LOB data.
 | <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle with CLOB.
 | <<stringtolob_function,STRINGTOLOB Function>>  | Converts a simple string literal into LOB format.
 | <<filetolob_function,FILETOLOB Function>>      | Converts data from a local linux/hdfs file into LOB format.
-| <<buffertolob,BUFFERTOLOB>>     | Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB format.
-| <<externaltolob,EXTERNALTOLOB>> | Converts data from an external file into LOB format.
+| <<buffertolob_function,BUFFERTOLOB_Function>>     | Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB format.
+| <<externaltolob_function,EXTERNALTOLOB_Function>> | Converts data from an external file into LOB format.
 | LOBTOSTRING                     | Converts LOB data into simple string literal.
 | LOBTOFILE                       | Converts LOB data into a linux/hdfs file.
 | LOBTOBUFFER                     | Converts LOB data into a buffer.
@@ -942,6 +942,45 @@ The following are BITAND restrictions:
              1
 
 --- 1 row(s) selected
+```
+
+<<<
+[[buffertolob_function]]
+== BUFFERTOLOB Function 
+
+[[buffertolob_function_syntax]]
+=== Syntax Descriptions of BUFFERTOLOB Function
+
+The BUFFERTOLOB function takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB. This function can be used in INSERT or UPDATE statement.
+
+BUFFERTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)   
+```
+
+* _lob source buffer address_
++
+The long value of the user buffer address in int64.
+
+* _lob length value_
++
+The length of the user specified lob buffer in int64.
+                 
+[[buffertolob_function_examples]]
+=== Examples of BUFFERTOLOB Function
+* This example takes an int64 value as an input which is an address to a buffer and a size parameter. The buffer contents are converted to LOB format and stored in HDFS.
++
+```
+insert into tlob1 values (1, buffertolob(LOCATION 124647474, SIZE 2048));
+```
+
+* In the table tlob1, this example updates (overwrites) the c2 to the buffer location at 1254674 with 4000-byte length.
++
+```
+update tlob1 set c2=buffertolob(LOCATION 12546474, SIZE 4000);
 ```
 
 <<<
@@ -3736,6 +3775,52 @@ SEQ_NUM     OPERATOR                       OPERATOR_COST
 The example displays only part of the result table of the EXPLAIN
 function. It first uses the EXPLAIN function to generate the table and
 then selects the desired columns.
+
+<<<
+[[externaltolob_function]]
+== EXTERNALTOLOB Function
+
+[[externaltolob_function_syntax]]
+=== Syntax Descriptions of EXTERNALTOLOB Function
+
+The EXTERNALTOLOB function converts data from an external file into LOB format. This function can be used in INSERT or UPDATE statement.          
+
+EXTERNALTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+EXTERNALTOLOB('external lob source file name')              
+```
+
+```
+external lob source file name is: 
+hdfs:///{local hdfs file name}
+```
+
+[[externaltolob_function_considerations]]
+=== Considerations for EXTERNALTOLOB Function
+
+* When an external LOB is specified via `EXTERNALTOLOB('external lob source file name')`, the data associated with the external HDFS file is not transferred into the Trafodion LOB. Instead, Trafodion stores the file path/handle of the external file. 
++
+For example, if you have a directory of pictures, you can specify the full hdfs path to each picture file to this function and the path will get stored in the Trafodion table. Later during retrieval, the file name will be used to go to the actual file to retrieve the data. 
+
+[[externaltolob_function_examples]]
+=== Examples of EXTERNALTOLOB Function
+
+* This example uses different functions to convert strings, files, external lob into LOB data. The EXTERNALTOLOB function takes an external file. 
++
+```
+insert into tlob130ext values(1, stringtolob('first lob'),                                           
+filetolob('hdfs:///lobs/lob_input_a1.txt'), 
+externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+```
+
+* In the table tlob130ext where c1 is 2, this example updates (overwrites) the c4 to lob_input_d1.txt stored in hdfs:///lobs/.
++
+```
+update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') where c1=2;
+```
 
 <<<
 [[extract_function]]
