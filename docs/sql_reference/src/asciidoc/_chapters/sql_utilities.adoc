@@ -443,24 +443,39 @@ specify one or more of these options:
 
 ** `CONTINUE ON ERROR`
 +
-LOAD statement will continue after errors encountered while scanning rows from source table. 
+LOAD statement will continue after ignorable errors while scanning rows from source table or loading into the target table. The ignorable errors are usually data conversion errors.
 +
 Errors during the load or sort phase will cause the LOAD statement to abort. 
 +
-Error rows will be logged by default in HDFS files in the directory `/user/trafodion/bulkload/logs`. The default name of the error files will be of the form `ERR_<three-part-target-table-name>_<date>_<id>`, where `<id>` is a numeric identifier unique to the process where the error was seen.
-+
-This option is implied if `LOG ERROR ROWS [TO _error-location-name_]` or `STOP AFTER _num_ ERROR ROWS` is specified and it is not enabled by default.
+This option is implied if `LOG ERROR ROWS [TO _error-location-name_]` or `STOP AFTER _num_ ERROR ROWS` is specified.
 
 ** `LOG ERROR ROWS [TO _error-location-name_]`
+*** Error rows
 +
 If error rows must be written to a specified location, then specify TO _error-location-name_, otherwise they will be written to the default location.
+`_error-location-name_` must be a HDFS directory name to which trafodion has write access.
++
+Error rows will be logged in HDFS files in the *directory* `/user/trafodion/bulkload/logs` if the error log location is not specified. 
++
+The default name of the *subdirectory* is `_ERR_catalog.schema.target_table_date_id_`, where `_id_` is a numeric identifier timestamp (YYYYMMDD_HHMMSS) unique to the process where the error was seen.
++
+The default name of the *error file* is `_loggingFileNamePrefix_catalog.schema.target_table_instanceID_`, where `_loggingFileNamePrefix_` is hive_scan_err or traf_upsert_err depending on the data source table, and `_instanceID_` is the ID of instance starting from 0, generally there is only one instance.
++
+For example, the full path of the table test_load_log is `/user/trafodion/bulkload/logs/test/ERR_TRAFODION.SEABASE.TEST_LOAD_LOG_20171218_035918/traf_upsert_err_TRAFODION.SEABASE.TEST_LOAD_LOG_0`,
++
+where:
++
+1. `/user/trafodion/bulkload/logs/test` is the default name of *directory*.
++
+2. `ERR_TRAFODION.SEABASE.TEST_LOAD_LOG_20171218_035918` is the default name of *subdirectory*.
++
+3. `traf_upsert_err_TRAFODION.SEABASE.TEST_LOAD_LOG_0` is the default name of *error file*.
+
+*** Error logs
 +
 Error logs are written in separate files by the processes involved in the load command under sub-directory representing the load command in the given location.
-The actual log file location is displayed in the load command output.
-
-*** `_error-location-name_`
 +
-must be a HDFS directory name to which trafodion has write access.
+The actual log file location is displayed in the load command output. It is recommended that use the same location for load as it’s easier to find the error logs.
 
 ** `STOP AFTER _num_ ERROR ROWS`
 +
