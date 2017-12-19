@@ -220,13 +220,13 @@ Trafodion provides following LOB functions to process LOB data.
 
 [cols="25%,75%"]
 |===
-| <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle with BLOB.
-| <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle with CLOB.
+| <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle of type BLOB.
+| <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle of type CLOB.
 | <<stringtolob_function,STRINGTOLOB Function>>  | Converts a simple string literal into LOB format.
 | <<filetolob_function,FILETOLOB Function>>      | Converts data from a local linux/hdfs file into LOB format.
-| <<buffertolob_function,BUFFERTOLOB_Function>>     | Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB format.
+| <<buffertolob_function,BUFFERTOLOB_Function>>     | Takes the address and size of an input buffer, and converts the contents of that buffer into LOB format.
 | <<externaltolob_function,EXTERNALTOLOB_Function>> | Converts data from an external file into LOB format.
-| LOBTOSTRING                     | Converts LOB data into simple string literal.
+| LOBTOSTRING                     | Converts LOB data into a simple string literal.
 | LOBTOFILE                       | Converts LOB data into a linux/hdfs file.
 | LOBTOBUFFER                     | Converts LOB data into a buffer.
 |===
@@ -951,7 +951,7 @@ The following are BITAND restrictions:
 [[buffertolob_function_syntax]]
 === Syntax Descriptions of BUFFERTOLOB Function
 
-The BUFFERTOLOB function takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB. This function can be used in INSERT or UPDATE statement.
+The BUFFERTOLOB function takes the address and size of an input buffer, and converts the contents of that buffer into LOB. This function can be used in an INSERT or UPDATE statement.
 
 BUFFERTOLOB function is a Trafodion SQL extension.
 
@@ -963,11 +963,11 @@ BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)
 
 * _lob source buffer address_
 +
-The long value of the user buffer address in int64.
+The int64 value of the user buffer address.
 
 * _lob length value_
 +
-The length of the user specified lob buffer in int64.
+The int64 value of the user specified lob buffer.
                  
 [[buffertolob_function_examples]]
 === Examples of BUFFERTOLOB Function
@@ -3468,9 +3468,9 @@ DIFF2_I1TS
 [[syntax_descriptions_of_emptyblob_function]]
 === Syntax Descriptions of EMPTY_BLOB() Function
 
-The EMPTY_BLOB() function creates a dummy LOB handle with BLOB.
+The EMPTY_BLOB() function creates a dummy LOB handle of type BLOB.
 
-This function can be used in INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
 
 EMPTY_BLOB() function is a Trafodion SQL extension.
 
@@ -3485,7 +3485,7 @@ EMPTY_BLOB()
 
 * If EMPTY_BLOB() is specified, then a dummy lob handle is created.
 
-** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate with new LOB data. If the LOB had data previously associated with it, it will be erased.
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
 
 ** The dummy LOB handle will get the same datatype as the underlying column.
 +
@@ -3509,9 +3509,9 @@ insert into test1 values (1, empty_blob());
 [[syntax_descriptions_of_emptyclob_function]]
 === Syntax Descriptions of EMPTY_CLOB() Function
 
-The EMPTY_CLOB() function creates a dummy LOB handle with CLOB.
+The EMPTY_CLOB() function creates a dummy LOB handle of type CLOB.
 
-This function can be used in INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
 
 EMPTY_CLOB() function is a Trafodion SQL extension.
 
@@ -3526,7 +3526,7 @@ EMPTY_CLOB()
 
 * If EMPTY_CLOB() is specified, then a dummy lob handle is created.
 
-** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate with new LOB data. If the LOB had data previously associated with it, it will be erased.
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
 
 ** The dummy LOB handle will get the same datatype as the underlying column.
 +
@@ -3783,7 +3783,7 @@ then selects the desired columns.
 [[externaltolob_function_syntax]]
 === Syntax Descriptions of EXTERNALTOLOB Function
 
-The EXTERNALTOLOB function converts data from an external file into LOB format. This function can be used in INSERT or UPDATE statement.          
+The EXTERNALTOLOB function converts data from an external file into LOB format. This function can be used in an INSERT or UPDATE statement.          
 
 EXTERNALTOLOB function is a Trafodion SQL extension.
 
@@ -3870,7 +3870,7 @@ The result is 1.
 [[filetolob_function_syntax]]
 === Syntax Descriptions of FILETOLOB Function
 
-The FILETOLOB function converts data from a local linux/hdfs file into LOB format. This function can be used in INSERT or UPDATE statement.          
+The FILETOLOB function converts data from a local linux/hdfs file into LOB format. This function can be used in an INSERT or UPDATE statement.          
 
 FILETOLOB function is a Trafodion SQL extension.
 
@@ -7411,7 +7411,7 @@ SELECT STDDEV (price * qty_available) FROM sales.parts;
 [[stringtolob_function_syntax]]
 === Syntax Descriptions of STRINGTOLOB Function
 
-The STRINGTOLOB function converts a simple string literal into LOB format. This function can be used in INSERT or UPDATE statement.
+The STRINGTOLOB function converts a simple string literal into LOB format. This function can be used in an INSERT or UPDATE statement.
 
 STRINGTOLOB function is a Trafodion SQL extension.
 

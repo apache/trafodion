@@ -370,7 +370,7 @@ FRACTION(n) 0-999999 +
 in which n is the number of significant digits (default is 6; minimum is 1; maximum is 6); +
 stored in 2, 4, or 8 bytes depending on number of digits^2^
 .2+| LOB Data Types .2+| LOB | BLOB | Binary Large Object .2+| 10G – no limit + 
-Currently it sets to 10G (default) and it’s controlled by the `CQD LOB_MAX_SIZE`, the size can be changed depending on your needs.
+Currently the limit defaults to 10G. This limit can be configured as needed using the CQD `LOB_MAX_SIZE`.
 | CLOB | Character Large Object 
 .10+| Numeric Data Types .5+| Numeric | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
 | 1 to 128 digits; +
