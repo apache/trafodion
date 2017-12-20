@@ -594,7 +594,7 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
-    HADOOP_TAR=hadoop-2.5.2.tar.gz
+    HADOOP_TAR=hadoop-2.6.0.tar.gz
 fi
 
 # Alternative: Use MariaDB (not validated)
