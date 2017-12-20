@@ -2850,7 +2850,7 @@ specified is an unsigned numeric.
 == SQL 3209
 
 ```
-Maximum length of LONGWVARCHAR is <value>.
+The maximum length of LONGWVARCHAR is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname
@@ -2868,7 +2868,7 @@ and resubmit.
 == SQL 3210
 
 ```
-Minimum length of LONGWVARCHAR is <value>.
+The minimum length of LONGWVARCHAR is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname
@@ -2885,7 +2885,7 @@ and resubmit.
 == SQL 3211
 
 ```
-Maximum length of LONG VARBINARY is <value>.
+The maximum length of LONG VARBINARY is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname long
@@ -2902,7 +2902,7 @@ and resubmit.
 == SQL 3212
 
 ```
-Minimum length of LONG VARBINARY is <value>.
+The minimum length of LONG VARBINARY is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname long
@@ -2918,7 +2918,7 @@ and resubmit.
 == SQL 3213
 
 ```
-Maximum length of LONG VARCHAR is <value>.
+The maximum length of LONG VARCHAR is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname long
@@ -2935,7 +2935,7 @@ and resubmit.
 == SQL 3214
 
 ```
-Minimum length of LONG VARCHAR is <value>.
+The minimum length of LONG VARCHAR is <value>.
 ```
 
 *Cause:* You attempted a CREATE TABLE table name (columnname long
@@ -3003,7 +3003,7 @@ functions.
 == SQL 3218
 
 ```
-A table reference cannot contain DELETE or UPDATE in a CREATE VIE statement.
+A table reference cannot contain DELETE or UPDATE in a CREATE VIEW statement.
 ```
 
 *Cause:* A create view statement was issued with a delete or update
@@ -3012,23 +3012,6 @@ operation as a table reference.
 *Effect:* The statement does not compile.
 
 *Recovery:* Do not use delete or update in a CREATE view statement.
-
-[[SQL-3220]]
-== SQL 3220
-
-```
-SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a {project-name} object.
-```
-
-Where <object-name> specifies the ANSI name of a table, view, or ALIAS.
-
-*Cause:* SHOWDDL was given the display option with a {project-name} 
-table given as an argument.
-
-*Effect:* SHOWDDL does not display output.
-
-*Recovery:* Reissue the command without the display option or specify an
-object.
 
 <<<
 [[SQL-3225]]

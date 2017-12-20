@@ -3923,10 +3923,8 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 		// description field.
 		// All other errors are reported.
 		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		if (((getDiagsArea()->contains(-1292)) ||
-		     (getDiagsArea()->contains(-1293))) ||
-		    (exeUtilTdb().loadIfExists() &&
-		     getDiagsArea()->contains(-1055)))
+		if (exeUtilTdb().loadIfExists() &&
+		     getDiagsArea()->contains(-1055))
 		  {
 		    SQL_EXEC_ClearDiagnostics(NULL);
 		  }

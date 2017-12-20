@@ -2011,7 +2011,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
           (ComTrafReservedColName(colArray[i]->getColumnName())))
         {
-          *CmpCommon::diags() << DgSqlCode(-1269)
+          *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_COLUMN_NAME)
                               << DgString0(colArray[i]->getColumnName());
           
           deallocEHI(ehi);
@@ -5491,7 +5491,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
       (ComTrafReservedColName(colName)))
     {
-      *CmpCommon::diags() << DgSqlCode(-1269)
+      *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_COLUMN_NAME)
                           << DgString0(colName);
       
       deallocEHI(ehi);

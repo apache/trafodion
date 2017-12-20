@@ -411,13 +411,13 @@ ROW_ID      (EXPR)
 --- 0 row(s) inserted.
 >>insert into hbase."_ROW_".t022hbt1 values ('2', '100');
 
-*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+*** ERROR[1429] Inserts into _ROW_ format external HBase tables can only use the VALUES clause and must use the column_create function to create values.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>insert into hbase."_ROW_".t022hbt1 select * from hbase."_ROW_".t022hbt2;
 
-*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+*** ERROR[1429] Inserts into _ROW_ format external HBase tables can only use the VALUES clause and must use the column_create function to create values.
 
 *** ERROR[8822] The statement was not prepared.
 
