@@ -3489,7 +3489,11 @@ EMPTY_BLOB()
 
 ** The dummy LOB handle will get the same datatype as the underlying column.
 +
-For example, if the LOB column was defined as `‘EXTERNAL’` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+For example,
++
+*** If the LOB column is defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will get the type `'EXTERNAL'` and can only process external LOB data.
++
+*** If the LOB column is not defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will be considered as a regular LOB dummy handle. If this handle is used to perform an insert or update operation, the LOB data will be maintained within the Trafodion space in the internal location maintained by Trafodion.
 
 * An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
 
