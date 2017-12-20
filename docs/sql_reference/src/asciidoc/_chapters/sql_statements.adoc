@@ -416,6 +416,8 @@ data-type is:
    | time [(time-precision)]
    | timestamp [(timestamp-precision)]
    | interval { start-field to end-field | single-field }
+   | blob [({numeric literal} [unit])] [STORAGE 'storage literal']
+   | clob [({numeric literal} [unit])] [STORAGE 'storage literal']
 
 default is:
      literal

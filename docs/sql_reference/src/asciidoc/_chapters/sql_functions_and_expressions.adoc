@@ -213,6 +213,24 @@ corresponding week of the year.
 
 See the individual entry for the function.
 
+[[lob_functions]]
+== LOB Functions
+
+Trafodion provides following LOB functions to process LOB data.
+
+[cols="25%,75%"]
+|===
+| <<emptyblob_function,EMPTY_BLOB() Function>>   | Creates a dummy LOB handle of type BLOB.
+| <<emptyclob_function,EMPTY_CLOB() Function>>   | Creates a dummy LOB handle of type CLOB.
+| <<stringtolob_function,STRINGTOLOB Function>>  | Converts a simple string literal into LOB format.
+| <<filetolob_function,FILETOLOB Function>>      | Converts data from a local linux/hdfs file into LOB format.
+| <<buffertolob_function,BUFFERTOLOB_Function>>     | Takes the address and size of an input buffer, and converts the contents of that buffer into LOB format.
+| <<externaltolob_function,EXTERNALTOLOB_Function>> | Converts data from an external file into LOB format.
+| LOBTOSTRING                     | Converts LOB data into a simple string literal.
+| LOBTOFILE                       | Converts LOB data into a linux/hdfs file.
+| LOBTOBUFFER                     | Converts LOB data into a buffer.
+|===
+
 [[mathematical_functions]]
 == Mathematical Functions
 
@@ -924,6 +942,45 @@ The following are BITAND restrictions:
              1
 
 --- 1 row(s) selected
+```
+
+<<<
+[[buffertolob_function]]
+== BUFFERTOLOB Function 
+
+[[buffertolob_function_syntax]]
+=== Syntax Descriptions of BUFFERTOLOB Function
+
+The BUFFERTOLOB function takes the address and size of an input buffer, and converts the contents of that buffer into LOB. This function can be used in an INSERT or UPDATE statement.
+
+BUFFERTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)   
+```
+
+* _lob source buffer address_
++
+The int64 value of the user buffer address.
+
+* _lob length value_
++
+The int64 value of the user specified lob buffer.
+                 
+[[buffertolob_function_examples]]
+=== Examples of BUFFERTOLOB Function
+* This example takes an int64 value as an input which is an address to a buffer and a size parameter. The buffer contents are converted to LOB format and stored in HDFS.
++
+```
+insert into tlob1 values (1, buffertolob(LOCATION 124647474, SIZE 2048));
+```
+
+* In the table tlob1, this example updates (overwrites) the c2 to the buffer location at 1254674 with 4000-byte length.
++
+```
+update tlob1 set c2=buffertolob(LOCATION 12546474, SIZE 4000);
 ```
 
 <<<
@@ -3294,7 +3351,6 @@ The results are equivalent to the quotient of the results from the two
 preceding examples. For example, in the second row of the output of this
 example, 0.0007319 is equal to 21959 divided by 30002620.
 
-
 <<<
 [[diff2_function]]
 == DIFF2 Function
@@ -3403,6 +3459,92 @@ DIFF2_I1TS
               .000191
 
 --- 5 row(s) selected.
+```
+
+<<<
+[[emptyblob_function]]
+== EMPTY_BLOB() Function
+
+[[syntax_descriptions_of_emptyblob_function]]
+=== Syntax Descriptions of EMPTY_BLOB() Function
+
+The EMPTY_BLOB() function creates a dummy LOB handle of type BLOB.
+
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_BLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+EMPTY_BLOB()
+```
+
+[[considerations_for_emptyblob_function]]
+=== Considerations for EMPTY_BLOB() Function
+
+* If EMPTY_BLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example,
++
+*** If the LOB column is defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will get the type `'EXTERNAL'` and can only process external LOB data.
++
+*** If the LOB column is not defined as `'EXTERNAL'` during table creation, then the dummy LOB handle will be considered as a regular LOB dummy handle. If this handle is used to perform an insert or update operation, the LOB data will be maintained within the Trafodion space in the internal location maintained by Trafodion.
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyblob_function]]
+=== Examples of EMPTY_BLOB() Function
+
+* This example uses the EMPTY_BLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test1 values (1, empty_blob());
+```
+
+<<<
+[[emptyclob_function]]
+== EMPTY_CLOB() Function
+
+[[syntax_descriptions_of_emptyclob_function]]
+=== Syntax Descriptions of EMPTY_CLOB() Function
+
+The EMPTY_CLOB() function creates a dummy LOB handle of type CLOB.
+
+This function can be used in an INSERT or UPDATE statement, to initialize a LOB column or attribute to EMPTY.
+
+EMPTY_CLOB() function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+
+```
+EMPTY_CLOB()
+```
+
+[[considerations_for_emptyclob_function]]
+=== Considerations for EMPTY_CLOB() Function
+
+* If EMPTY_CLOB() is specified, then a dummy lob handle is created.
+
+** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate the LOB with new data. If the LOB had data previously associated with it, it will be erased.
+
+** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example, if the LOB column was defined as `‘EXTERNAL’` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+
+* An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+[[examples_of_emptyclob_function]]
+=== Examples of EMPTY_CLOB() Function
+
+* This example uses the EMPTY_CLOB to insert an empty LOB and creates a dummy LOB handle. 
++
+```
+insert into test2 values (1, empty_clob());
 ```
 
 <<<
@@ -3639,6 +3781,52 @@ function. It first uses the EXPLAIN function to generate the table and
 then selects the desired columns.
 
 <<<
+[[externaltolob_function]]
+== EXTERNALTOLOB Function
+
+[[externaltolob_function_syntax]]
+=== Syntax Descriptions of EXTERNALTOLOB Function
+
+The EXTERNALTOLOB function converts data from an external file into LOB format. This function can be used in an INSERT or UPDATE statement.          
+
+EXTERNALTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+EXTERNALTOLOB('external lob source file name')              
+```
+
+```
+external lob source file name is: 
+hdfs:///{local hdfs file name}
+```
+
+[[externaltolob_function_considerations]]
+=== Considerations for EXTERNALTOLOB Function
+
+* When an external LOB is specified via `EXTERNALTOLOB('external lob source file name')`, the data associated with the external HDFS file is not transferred into the Trafodion LOB. Instead, Trafodion stores the file path/handle of the external file. 
++
+For example, if you have a directory of pictures, you can specify the full hdfs path to each picture file to this function and the path will get stored in the Trafodion table. Later during retrieval, the file name will be used to go to the actual file to retrieve the data. 
+
+[[externaltolob_function_examples]]
+=== Examples of EXTERNALTOLOB Function
+
+* This example uses different functions to convert strings, files, external lob into LOB data. The EXTERNALTOLOB function takes an external file. 
++
+```
+insert into tlob130ext values(1, stringtolob('first lob'),                                           
+filetolob('hdfs:///lobs/lob_input_a1.txt'), 
+externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+```
+
+* In the table tlob130ext where c1 is 2, this example updates (overwrites) the c4 to lob_input_d1.txt stored in hdfs:///lobs/.
++
+```
+update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') where c1=2;
+```
+
+<<<
 [[extract_function]]
 == EXTRACT Function
 
@@ -3679,40 +3867,43 @@ EXTRACT (YEAR FROM INTERVAL '01-09' YEAR TO MONTH)
 +
 The result is 1.
 
-
 <<<
-[[hour_function]]
-=== HOUR Function
+[[filetolob_function]]
+== FILETOLOB Function
 
-The HOUR function converts a TIME or TIMESTAMP expression into an
-INTEGER value in the range 0 through 23 that represents the
-corresponding hour of the day.
+[[filetolob_function_syntax]]
+=== Syntax Descriptions of FILETOLOB Function
 
-HOUR is a {project-name} SQL extension.
+The FILETOLOB function converts data from a local linux/hdfs file into LOB format. This function can be used in an INSERT or UPDATE statement.          
+
+FILETOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
-HOUR (datetime-expression)
+FILETOLOB('lob source file name')
+```     
+
+lob source file name is:
 ```
-* `_datetime-expression_`
+hdfs:///{local hdfs file name} |  
+{local linux file name}        |
+{file:///linux file name} 
+```
+
+[[filetolob_function_examples]]
+=== Examples of FILETOLOB Function
+
+* This example converts data from a local file into LOB format, and stores all data into HDFS associated with that column/row.
 +
-is an expression that evaluates to a datetime value of type TIME or
-TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+```
+insert into tlob130txt1 values(1,filetolob('lob_input_a1.txt'));
+```
 
-[[examples_of_hour]]
-=== Examples of HOUR
-
-* Return an integer that represents the hour of the day from the
-ship timestamp column in the project table:
+* In the table tlob1 where c1 is 3, this example updates (appends) the c2 to lob_update.txt stored in hdfs:///lobs/.
 +
 ```
-SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
-FROM persnl.project
-WHERE projcode = 1000;
-
-
-Start/Date Time/Shipped               (EXPR)
----------- -------------------------- ------
-2007-04-10 2007-04-21 08:15:00.000000      8
+update tlob1 set c2=filetolob('hdfs:///lobs/lob_update.txt', append) where c1 = 3;
 ```
 
 <<<
@@ -3754,6 +3945,41 @@ STUDENT_NAME     (EXPR)
 --------------  --------------
 scott            91 90 80 56
 tom              91 77 43
+```
+
+<<<
+[[hour_function]]
+== HOUR Function
+
+The HOUR function converts a TIME or TIMESTAMP expression into an
+INTEGER value in the range 0 through 23 that represents the
+corresponding hour of the day.
+
+HOUR is a {project-name} SQL extension.
+
+```
+HOUR (datetime-expression)
+```
+* `_datetime-expression_`
++
+is an expression that evaluates to a datetime value of type TIME or
+TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
+
+[[examples_of_hour]]
+=== Examples of HOUR
+
+* Return an integer that represents the hour of the day from the
+ship timestamp column in the project table:
++
+```
+SELECT start_date, ship_timestamp, HOUR(ship_timestamp)
+FROM persnl.project
+WHERE projcode = 1000;
+
+
+Start/Date Time/Shipped               (EXPR)
+---------- -------------------------- ------
+2007-04-10 2007-04-21 08:15:00.000000      8
 ```
 
 <<<
@@ -7180,6 +7406,40 @@ SELECT STDDEV (price * qty_available) FROM sales.parts;
  7.13899499999999808E+006
 
 --- 1 row(s) selected.
+```
+
+<<<
+[[stringtolob_function]]
+== STRINGTOLOB Function
+
+[[stringtolob_function_syntax]]
+=== Syntax Descriptions of STRINGTOLOB Function
+
+The STRINGTOLOB function converts a simple string literal into LOB format. This function can be used in an INSERT or UPDATE statement.
+
+STRINGTOLOB function is a Trafodion SQL extension.
+
+For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+
+```
+STRINGTOLOB('string literal expression')  
+```
+
+* STRINGTOLOB   
++
+Converts a simple string literal into LOB format.
+
+** string literal expression
++
+is a series of characters enclosed in single quotes.
+
+[[stringtolob_function_examples]]
+=== Examples of STRINGTOLOB Function
+
+* This example converts a simple string literal into LOB format before inserting.
++
+```
+insert into tlob1 values(1,stringtolob('inserted row'));
 ```
 
 <<<
