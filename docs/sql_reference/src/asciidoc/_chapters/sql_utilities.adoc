@@ -459,7 +459,7 @@ Error rows will be logged in HDFS files in the *directory* `/user/trafodion/bulk
 +
 The default name of the *subdirectory* is `_ERR_catalog.schema.target_table_date_id_`, where `_id_` is a numeric identifier timestamp (YYYYMMDD_HHMMSS) unique to the process where the error was seen.
 +
-The default name of the *error file* is `_loggingFileNamePrefix_catalog.schema.target_table_instanceID_`, where `_loggingFileNamePrefix_` is hive_scan_err or traf_upsert_err depending on the data source table, and `_instanceID_` is the ID of instance starting from 0, generally there is only one instance.
+The default name of the *error file* is `_loggingFileNamePrefix_catalog.schema.target_table_instanceID_`, where `_loggingFileNamePrefix_` is hive_scan_err or traf_upsert_err depending on the data source table, and `_instanceID_` is the instance ID starting from 0, generally there is only one instance.
 +
 For example, the full path of the table test_load_log is `/user/trafodion/bulkload/logs/test/ERR_TRAFODION.SEABASE.TEST_LOAD_LOG_20171218_035918/traf_upsert_err_TRAFODION.SEABASE.TEST_LOAD_LOG_0`,
 +
@@ -475,7 +475,7 @@ where:
 +
 Error logs are written in separate files by the processes involved in the load command under sub-directory representing the load command in the given location.
 +
-The actual log file location is displayed in the load command output. It is recommended that use the same location for load as it’s easier to find the error logs.
+The actual log file location is displayed in the load command output. It is recommended that you use the same location for load as it’s easier to find the error logs.
 
 ** `STOP AFTER _num_ ERROR ROWS`
 +
