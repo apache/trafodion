@@ -236,7 +236,7 @@ An unnamed parameter can be used to prepare a statement and then during an execu
 
 * `EMPTY_BLOB()` or `EMPTY_CLOB()` 
 +
-NOTE: If you want to insert `EMPTY_BLOB()` or `EMPTY_CLOB()` into a lob column, the CQD `TRAF_CLOB_AS_VARCHAR` which is *ON* by default must be turned *OFF* before creating the table.
+NOTE: If you want to insert `EMPTY_BLOB()` or `EMPTY_CLOB()` into a lob column, the CQD `TRAF_BLOB_AS_VARCHAR` or `TRAF_CLOB_AS_VARCHAR` which is *ON* by default must be turned *OFF* before creating the table, otherwise an error will be raised and the column definition of the lob column is VARCHAR.
 
 ** If `EMPTY_BLOB()` or `EMPTY_CLOB()` is specified, then a dummy lob handle is created. 
 
@@ -269,6 +269,61 @@ For example, if you have a directory of pictures, you can specify the full hdfs 
 [#examples]
 === Examples
 
+
+* This example uses a parameter.
++
+```
+PREPARE S FROM INSERT INTO t130lob2 VALUES (1, ?);
+EXECUTE S USING 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
+```
+
+* This example does not turn the CQD `TRAF_BLOB_AS_VARCHAR` OFF before creating the table test1, thus it fails to insert `EMPTY_BLOB()` into c2 whose column definition is VARCHAR.
++
+```
+>>CREATE TABLE test1(C1 INT, C2 BLOB);                    
+--- SQL operation complete.
+
+>>CQD TRAF_BLOB_AS_VARCHAR 'OFF';
+--- SQL operation complete.
+
+>>INSERT INTO test1 VALUES(1, EMPTY_BLOB());
+*** ERROR[4035] Type LOB cannot be cast to type VARCHAR(100000).
+*** ERROR[8822] The statement was not prepared.
+
+>>SHOWDDL TABLE test1; 
+CREATE TABLE TRAFODION.SEABASE.TEST1
+  (
+    C1   INT DEFAULT NULL NOT SERIALIZED
+  , C2   VARCHAR(100000) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+--- SQL operation complete.
+```
+
+* This example turns the CQD `TRAF_CLOB_AS_VARCHAR` OFF before creating the table test2 and inserting `EMPTY_CLOB()` into c2 whose column definition is CLOB.
++
+```
+>>CQD TRAF_CLOB_AS_VARCHAR 'OFF';     
+--- SQL operation complete.
+
+>>CREATE TABLE test2 (C1 INT, C2 CLOB);
+--- SQL operation complete.
+
+>>INSERT INTO test2 VALUES(1, EMPTY_CLOB());
+--- 1 row(s) inserted.
+
+>>SHOWDDL TABLE test2;
+CREATE TABLE TRAFODION.SEABASE.TEST2
+  (
+    C1                               INT DEFAULT NULL NOT SERIALIZED
+  , C2                               CLOB DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+--- SQL operation complete.
+```
+
 * This example uses the `STRINGTOLOB` function that converts a simple string literal into LOB format before inserting.
 +
 ```
@@ -293,19 +348,6 @@ INSERT INTO tlob1 VALUES (1, buffertolob(LOCATION 124647474, SIZE 2048));
 INSERT INTO tlob130ext VALUES(1, STRINGTOLOB('first lob'),                                           
 FILETOLOB('hdfs:///lobs/lob_input_a1.txt'), 
 EXTERNALTOLOB('hdfs:///lobs/lob_input_a1.txt'));
-```
-
-* This example uses a parameter.
-+
-```
-PREPARE S FROM INSERT INTO t130lob2 VALUES (1, ?);
-EXECUTE S USING 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
-```
-
-* This example uses the `EMPTY_BLOB` function to insert an empty lob and creates a dummy lob handle. 
-+
-```
-INSERT INTO t130lob2 VALUES (1, empty_blob());
 ```
 
 [#inserting into a sql table containing lob columns using select clause]
