@@ -53,31 +53,31 @@ Download the Trafodion Installer and Server binaries:
 $ mkdir $HOME/trafodion-download
 $ cd $HOME/trafodion-download
 $ # Download the Trafodion Installer binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-2.1.0.incubating/apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz
+$ wget http://apache.cs.utah.edu/trafodion/trafodion-2.2.0/apache-trafodion-pyinstaller-2.2.0.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 68813 (67K) [application/x-gzip]
-Saving to: "apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz"
+Saving to: "apache-trafodion-pyinstaller-2.2.0.tar.gz"
 
 100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
 
-2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz" saved [68813/68813]
+2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-pyinstaller-2.2.0.tar.gz" saved [68813/68813]
 
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-2.1.0.incubating/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz
+$ wget http://apache.cs.utah.edu/trafodion/trafodion-2.2.0/apache-trafodion_server-2.2.0-RH-x86_64.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 214508243 (205M) [application/x-gzip]
-Saving to: "apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz"
+Saving to: "apache-trafodion_server-2.2.0-RH-x86_64.tar.gz"
 
 100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
 
-2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz" saved [214508243/214508243]
+2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion_server-2.2.0-RH-x86_64.tar.gz" saved [214508243/214508243]
 
 $ ls -l
--rw-rw-r--. 1 centos centos     74237 Feb 13 14:53 apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
--rw-rw-r--. 1 centos centos 183114066 Feb 10 22:34 apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz
+-rw-rw-r--. 1 centos centos     74237 Feb 13 14:53 apache-trafodion_pyinstaller-2.2.0.tar.gz
+-rw-rw-r--. 1 centos centos 183114066 Feb 10 22:34 apache-trafodion_server-2.2.0-RH-x86_64.tar.gz
 $
 ```
 
@@ -92,10 +92,10 @@ The first step in the installation process is to unpack the {project-name} Insta
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
-$ cp -f apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz $HOME/trafodion-installer
+$ tar -zxf apache-trafodion-pyinstaller-2.2.0.tar.gz -C $HOME/trafodion-installer
+$ cp -f apache-trafodion_server-2.2.0-RH-x86_64.tar.gz $HOME/trafodion-installer
 $ ls $HOME/trafodion-installer/python-installer
-apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz  db_install.py    DISCLAIMER    LICENSE  prettytable.py  scripts
+apache-trafodion_server-2.2.0-RH-x86_64.tar.gz  db_install.py    DISCLAIMER    LICENSE  prettytable.py  scripts
 configs                                                    db_uninstall.py  discovery.py  NOTICE   README.md
 $
 ```

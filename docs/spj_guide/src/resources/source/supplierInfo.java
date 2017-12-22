@@ -2,7 +2,7 @@
 // supplier's name, street, city, state, and post code to separate output
 // parameters.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#supplierinfo-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#supplierinfo-procedure
 // for more documentation.
 public static void supplierInfo( BigDecimal suppNum
 			       , String[] suppName

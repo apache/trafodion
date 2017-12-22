@@ -34,7 +34,7 @@ Copy and paste the code from this appendix into the recommended files. To build 
 
 === `basicsql.cpp` Source Code
 You can download the `basicsql.cpp` example from
-http://trafodion.incubator.apache.org/docs/client_install/resources/source/basicsql.cpp.
+http://trafodion.apache.org/docs/client_install/resources/source/basicsql.cpp.
 
 Alternatively, copy and paste the following code into a file named `basicsql.cpp`:
 
@@ -52,7 +52,7 @@ see the instructions in <<win_odbc_run_basicsql, Run Sample Program (`basicsql`)
 
 ==== `build.bat` (Build Script)
 You can download the `build.bat` example from
-http://trafodion.incubator.apache.org/docs/client_install/resources/source/build.bat.
+http://trafodion.apache.org/docs/client_install/resources/source/build.bat.
 
 Alternatively, copy and paste the following code into a file named `build.bat`, which is used to build the sample program on Windows:
 
@@ -64,7 +64,7 @@ To build the sample program on Windows, see the instructions in <<win_odbc_run_b
 
 ==== Run `run.bat`
 You can download the `run.bat` example from
-http://trafodion.incubator.apache.org/docs/client_install/resources/source/run.bat.
+http://trafodion.apache.org/docs/client_install/resources/source/run.bat.
 
 Alternatively, copy and paste the following code into a file named `run.bat`, which is used to run the sample program on Windows:
 

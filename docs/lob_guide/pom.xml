@@ -31,7 +31,7 @@
   <name>Trafodion SQL Large Objects Guide</name>
   <description>This guide describes how to use Large Object (LOB) datatypes in Trafodion SQL.
   </description>
-  <url>http://trafodion.incubator.apache.org</url>
+  <url>http://trafodion.apache.org</url>
   <inceptionYear>2015</inceptionYear>
   <parent>
     <groupId>org.apache.trafodion</groupId>
@@ -189,7 +189,7 @@
                 <project-name>Trafodion</project-name>
                 <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
                 <project-support>user@trafodion.incubator.apache.org</project-support>
-                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <docs-url>http://trafodion.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
@@ -211,7 +211,7 @@
                 <project-name>Trafodion</project-name>
                 <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
                 <project-support>user@trafodion.incubator.apache.org</project-support>
-                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <docs-url>http://trafodion.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
                 <pdf-style>trafodion</pdf-style>
@@ -288,9 +288,9 @@
 
   <distributionManagement>
     <site>
-      <id>trafodion.incubator.apache.org</id>
-      <name>Trafodion Website at incubator.apache.org</name>
-      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      <id>trafodion.apache.org</id>
+      <name>Trafodion Website at apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.apache.org, see
       https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
       -->
       <url>file:///tmp</url>

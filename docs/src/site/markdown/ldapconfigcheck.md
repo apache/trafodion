@@ -13,4 +13,4 @@
   License.
 -->
 Redirecting to the Trafodion Provisioning Guide...
-<p><meta http-equiv="refresh" content="0; url=http://trafodion.incubator.apache.org/docs/provisioning_guide/target/site/index.html#enable-security-ldapconfigcheck"></meta></p>
+<p><meta http-equiv="refresh" content="0; url=http://trafodion.apache.org/docs/provisioning_guide/target/site/index.html#enable-security-ldapconfigcheck"></meta></p>

@@ -495,10 +495,10 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     enabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /.../incubator-trafodion/install/installer
+CURRENT DIRECTORY  /.../trafodion/install/installer
 LIST_COUNT         4294967295
 LOG FILE
-MESSAGEFILE        /.../incubator-trafodion/core/sqf/export/ ...
+MESSAGEFILE        /.../trafodion/core/sqf/export/ ...
 MESSAGEFILE LANG   US English
 MESSAGEFILE VRSN   {2016-06-14 22:27 LINUX:host/user} 
 SQL CATALOG        TRAFODION
