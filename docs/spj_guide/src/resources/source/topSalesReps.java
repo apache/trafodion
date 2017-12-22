@@ -4,7 +4,7 @@
 // figures of the top five sales representatives who had the highest sales
 // (unit_price * qty_ordered) that quarter.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#topsalesreps-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#topsalesreps-procedure
 // for more documentation.
 public static void topSalesReps( int whichQuarter
 			       , ResultSet[] topReps

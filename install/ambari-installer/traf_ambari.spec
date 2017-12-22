@@ -29,7 +29,7 @@ Group:		Applications/Databases
 Source0:        ambari_rpm.tar.gz
 BuildArch:	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}
-URL:            http://trafodion.incubator.apache.org
+URL:            http://trafodion.apache.org
 
 Requires: ambari-server
 

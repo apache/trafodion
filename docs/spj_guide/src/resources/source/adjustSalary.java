@@ -3,7 +3,7 @@
 // percentage. This method also returns the updated salary to an output  
 // parameter.    
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#adjustsalary-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#adjustsalary-procedure
 // for more documentation.
 public static void adjustSalary( BigDecimal empNum
 			       , double percent

@@ -40,7 +40,7 @@
   <packaging>pom</packaging>
   <name>Apache Trafodion</name>
   <description>Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop.</description>
-  <url>http://trafodion.incubator.apache.org</url>
+  <url>http://trafodion.apache.org</url>
   <inceptionYear>2015</inceptionYear>
 
   <licenses>
@@ -280,9 +280,9 @@
 
   <distributionManagement>
     <site>
-      <id>trafodion.incubator.apache.org</id>
-      <name>Trafodion Website at incubator.apache.org</name>
-      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      <id>trafodion.apache.org</id>
+      <name>Trafodion Website at apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.apache.org, see
       https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
       -->
       <url>file:///tmp</url>

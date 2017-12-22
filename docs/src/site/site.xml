@@ -35,7 +35,7 @@
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
     <name>
        <![CDATA[
-       <img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383"> <a href="http://incubator.apache.org" target="_blank"><span class="logo-right"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></span></a>
+       <img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383">
        ]]>
     </name>
     <href>index.html</href>
@@ -57,7 +57,7 @@
       <brand>
         <!-- Brand text in top-left part of the site -->
         <name>
-          <![CDATA[<span class="brand-apache">Apache </span><span class="brand-trafodion">Trafodion</span> <span class="brand-apache">(incubating)</span> ]]>
+          <![CDATA[<span class="brand-apache">Apache </span><span class="brand-trafodion">Trafodion</span> <span class="brand-apache"></span> ]]>
         </name>
         <href>index.html</href>
       </brand>
@@ -249,7 +249,6 @@
       <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Metadata+Cleanup" name="Metadata Cleanup Utility"/>
     </menu>
     <menu name="Apache">
-      <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>
       <item href="http://www.apache.org/foundation/how-it-works.html" name="Apache Foundation" target="_blank"/>
       <item href="http://www.apache.org/licenses/" name="Apache License" target="_blank"/>
       <item href="http://www.apache.org/security/" name="Apache Security" target="_blank"/>
@@ -260,11 +259,8 @@
     <footer>
       <hr />
       <div class="row span16">
-        <span>Apache, Apache Maven, Apache Maven Fluido Skin, the Apache feather logo, the Apache Maven project logo and the Apache Incubator project logo 
+        <span>Apache, Apache Maven, Apache Maven Fluido Skin, the Apache feather logo, and the Apache Maven project logo
         are trademarks of the Apache Software Foundation.</span><br /><br />
-        <span>
-          <a href="http://incubator.apache.org" target="_blank"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></a>
-        </span>
       </div>
     </footer>
   </body>

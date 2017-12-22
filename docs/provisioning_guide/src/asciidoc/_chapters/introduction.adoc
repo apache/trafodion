@@ -158,7 +158,7 @@ Next, you unpack the tar file.
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
+$ tar -zxf apache-trafodion-pyinstaller-2.2.0.tar.gz -C $HOME/trafodion-installer
 $
 ```
 
@@ -268,7 +268,7 @@ that matches the security policies of your organization.
 The {project-name} Installer supports a minimum configuration to quick start your installation in two steps.
 1. Copy {project-name} server binary file to your installer directory.
 ```
-cp /path/to/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz python-installer/
+cp /path/to/apache-trafodion_server-2.2.0-RH-x86_64.tar.gz python-installer/
 ```
 2. Modify configuration file `my_config`, add the Hadoop Distribution Manager URL in `mgr_url`.
 ```

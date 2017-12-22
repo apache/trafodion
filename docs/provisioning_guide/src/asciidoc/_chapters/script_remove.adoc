@@ -74,7 +74,7 @@ Issued a 'shutdown normal' request
 Shutdown in progress
 
 # of SQ processes: 0
-SQ Shutdown (normal) from /home/trafodion/apache-trafodion-1.3.0-incubating-bin/sql/scripts Successful
+SQ Shutdown (normal) from /home/trafodion/apache-trafodion-2.2.0-bin/sql/scripts Successful
 Mon Feb 15 07:49:26 UTC 2016
 [trafodion@trafodion-1 scripts]$ exit
 [admin@trafodion-1 ~]$

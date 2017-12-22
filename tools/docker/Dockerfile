@@ -17,7 +17,7 @@
 FROM centos:centos6.6
 MAINTAINER Trafodion Community <dev@trafodion.incubator.apache.org>
 
-LABEL Vendor="Apache Trafodion (incubating)"
+LABEL Vendor="Apache Trafodion"
 LABEL version=unstable
 
 # download and install environment dependencies

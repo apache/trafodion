@@ -1,7 +1,7 @@
 // The MONTHLYORDERS procedure accepts an integer representing the month
 // and returns the number of orders during that month to an output parameter.
 // 
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#monthlyorders-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#monthlyorders-procedure
 // for more documentation.
 public static void numMonthlyOrders( int month
 				   , int[] numOrders

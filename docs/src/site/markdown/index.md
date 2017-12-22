@@ -31,8 +31,8 @@ Running out of room with your current SQL solution? Starting a new operational a
 
 Trafodion provides SQL access to structured, semi-structured, and unstructured data allowing you to run operational, historical, and analytical workloads on a single platform.
 
-[revolution]: http://trafodion.incubator.apache.org
-[scale]: http://trafodion.incubator.apache.org
+[revolution]: http://trafodion.apache.org
+[scale]: http://trafodion.apache.org
 [stack]: index.html
 
 
@@ -45,7 +45,7 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
   <p><h5>We're working on release 2.2!</h5></p> 
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
   <p><h5>Apache Trafodion 2.1.0-incubating was released on May 1, 2017</h5></p> 
-  <p>Check it out on the <a href="http://trafodion.incubator.apache.org/download.html">Download</a> page.</p>
+  <p>Check it out on the <a href="http://trafodion.apache.org/download.html">Download</a> page.</p>
   <p><h5>Want to disucss Trafodion in Chinese? Join the Trafodion discussion on Tencent QQ!</h5></p> 
   <p><a href="http://im.qq.com/">QQ</a> Group ID: 176011868.</p>
 </td></tr></table>
@@ -70,13 +70,11 @@ Are you using Trafodion? We need permission to add your company's logo here.
 
 ## About
 
-Apache Trafodion (incubating) is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Apache Hadoop. 
+Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Apache Hadoop. 
 
 The name &quot;Trafodion&quot; (the Welsh word for transactions, pronounced &quot;Tra-vod-eee-on&quot;) was chosen specifically to emphasize the differentiation that Trafodion provides in closing a critical gap in the Hadoop ecosystem. 
 
 Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Trafodion extends Hadoop to provide guaranteed transactional integrity, enabling new kinds of big data applications to run on Hadoop. 
-
-<em>Disclaimer: Apache Trafodion is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</em>
 
 ---
 

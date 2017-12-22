@@ -1,7 +1,7 @@
 // The DAILYORDERS procedure accepts a date and returns the number of
 //orders on that date to an output parameter.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#dailyorders-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#dailyorders-procedure
 // for additional documenation.
 public static void numDailyOrders( Date date
 				 , int[] numOrders 

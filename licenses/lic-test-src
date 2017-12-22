@@ -2,7 +2,7 @@
 Software used to test Apache Trafodion bundles source with BSD-like licenses:
 
 BSD-3 clause for files in:
-  incubator-trafodion/tests/phx/src/test/java/org/trafodion/phoenix/end2end
+  trafodion/tests/phx/src/test/java/org/trafodion/phoenix/end2end
 
 Apache Trafodion changed these files to work within its test environment
 
@@ -37,7 +37,7 @@ As part of testing large objects (LOBs), the testware needs some object files.
 Two pictures were donated for this purpose by Christophe LeRouzo.  He has
 formally given Apache Trafodion to permission to use these picturs.
 
- incubator-trafodion/core/sql/regress/executor/anoush.jpg
- incubator-trafodion/core/sql/regress/executor/deep.jpg
+ trafodion/core/sql/regress/executor/anoush.jpg
+ trafodion/core/sql/regress/executor/deep.jpg
 
 +++++++++++++++++++++++++++++

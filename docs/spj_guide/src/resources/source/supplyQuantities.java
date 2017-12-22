@@ -2,7 +2,7 @@
 // quantities of available parts in inventory to separate output
 // parameters.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#supplyquantities-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#supplyquantities-procedure
 // for more documentation.
 public static void supplyQuantities( int[] avgQty
 				   , int[] minQty
