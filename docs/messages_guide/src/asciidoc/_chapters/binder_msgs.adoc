@@ -1402,7 +1402,7 @@ other than an outermost SELECT statement.
 
 ```
 If a character literal was intended, you must use the single quote
-delimiter: <literal>. The use of double quotes causes {project-name} to
+delimiter: <literal>. The use of double quotes causes SQL to
 interpret <column-name> as a delimited identifier column name.
 ```
 
@@ -1864,50 +1864,35 @@ incompatible data types.
 
 *Recovery:* Correct the syntax and resubmit.
 
-[[SQL-4128]]
-== SQL 4128
-
-```
-Default volume and subvolume information could not be retrieved from=_DEFAULTS define - DEFINEINFO error <number>.
-```
-
-Where <number> is the error message.
-
-*Cause:* {project-name} was not able to retrieve
-default volume and subvolume information using the =_DEFAULTS define.
-
-*Effect:* The operation fails.
-
-*Recovery:* Check the =_DEFAULTS define and resubmit.
-
 [[SQL-4129]]
 == SQL 4129
 
 ```
-An IF statement should have the same set of output host variables on
-both sides of IF THEN statement list and the ELSE statement list.
+The character-typed result of the function <function-name> is longer than the maximum supported size.
 ```
 
-*Cause:* You specified an IF statement that does not have the same set
-of output host variables on both sides of its IF THEN statement list and
-its ELSE statement list.
+Where <function-name> is the name of a function you specified.
+
+*Cause:* You specified arguments to the given function that cause the result of the function
+to have a data type longer than the maximum supported character data type length.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax and resubmit.
+*Recovery:* Change the arguments to the function and resubmit.
 
 [[SQL-4130]]
 == SQL 4130
 
 ```
-SIGNAL parameter 3 must be of type string
+<attribute-name> is a read-only DEFAULTS attribute and cannot be updated.
 ```
 
-*Cause:* You specified a SIGNAL parameter of an incorrect type.
+*Cause:* You attempted to perform a CONTROL QUERY DEFAULT but {project-name} does not
+allow this particular attribute to be changed.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the syntax and resubmit.
+*Recovery:* If a different attribute was intended, correct the syntax and resubmit.
 
 [[SQL-4133]]
 == SQL 4133

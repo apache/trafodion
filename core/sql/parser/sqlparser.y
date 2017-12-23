@@ -25789,11 +25789,6 @@ column_constraint_definition :  constraint_name_definition
                                 column_constraint
                                 optional_constraint_attributes
                                 {
-//                Commented out to allow non iso88591 constraint text
-//				  if (NonISO88591LiteralEncountered) {
-//				    *SqlParser_Diags << DgSqlCode(-1242);
-//				    YYABORT;
-//				  }
                                   $$ = $2 /*column_constraint*/;
 				  if ($2)
 				    {
@@ -25807,11 +25802,6 @@ column_constraint_definition :  constraint_name_definition
                                 }
                       | column_constraint optional_constraint_attributes
                                 {
-//                Commented out to allow non iso88591 constraint text
-//				  if (NonISO88591LiteralEncountered) {
-//				    *SqlParser_Diags << DgSqlCode(-1242);
-//				    YYABORT;
-//				  }
                                   $$ = $1 /*column_constraint*/;
 				  if ($1)
 				    $1->setConstraintAttributes(
@@ -26257,11 +26247,6 @@ compress_clause : TOK_COMPRESS
 table_constraint_definition : { NonISO88591LiteralEncountered = FALSE; } constraint_name_definition table_constraint
                                 optional_constraint_attributes
                                 {
-//                Commented out to allow non iso88591 constraint text
-//			 	  if (NonISO88591LiteralEncountered) {
-//				    *SqlParser_Diags << DgSqlCode(-1242);
-//				    YYABORT;
-//				  }
                                   $3->setConstraintName(
                                       *$2 /*constraint_name_definition*/);
                                   $3->setConstraintKind(ElemDDLConstraint::
@@ -26274,11 +26259,6 @@ table_constraint_definition : { NonISO88591LiteralEncountered = FALSE; } constra
 
                       | { NonISO88591LiteralEncountered = FALSE; } table_constraint optional_constraint_attributes
                                 {
-//                Commented out to allow non iso88591 constraint text
-//				  if (NonISO88591LiteralEncountered) {
-//				    *SqlParser_Diags << DgSqlCode(-1242);
-//				    YYABORT;
-//				  }
                                   $2->setConstraintKind(ElemDDLConstraint::
                                                         TABLE_CONSTRAINT_DEF);
                                   $2->setConstraintAttributes(
@@ -27710,11 +27690,6 @@ view_definition : create_view_keywords ddl_qualified_name
                                 order_by_clause
                                 optional_with_check_option
                                 {
-				//  if (NonISO88591LiteralEncountered) {
-				//    *SqlParser_Diags << DgSqlCode(-1239);
-				//    YYABORT;
-				//  }
-
 				  RelRoot *top = finalize($8);
 				  if (($9) &&
 				      (CmpCommon::getDefault(ALLOW_ORDER_BY_IN_CREATE_VIEW) == DF_OFF))
@@ -29215,11 +29190,6 @@ trigger_definition: before_trigger_definition
 before_trigger_definition: before_trigger_prefix triggerred_when_clause
                                                     triggered_before_action
             {
-	  //    if (NonISO88591LiteralEncountered) {
-	  //	*SqlParser_Diags << DgSqlCode(-1238);
-	  //	YYABORT;
-	  //    }
-
 	      $$ = $1;  // the CreateTriggerStmt object to return
 
 	      StmtDDLCreateTrigger *triggerObject = $1;
@@ -29256,12 +29226,7 @@ before_trigger_definition: before_trigger_prefix triggerred_when_clause
 // returns pStmtDDL
 after_trigger_definition: after_trigger_prefix triggerred_when_clause
                                               triggered_after_action
-            {
-	  //    if (NonISO88591LiteralEncountered) {
-	  //       *SqlParser_Diags << DgSqlCode(-1238);
-	  //       YYABORT;
-	  //    }
-	    
+            {	    
 	      $$ = $1;   // the CreateTriggerStmt object to return
 
 	      StmtDDLCreateTrigger *triggerObject = $1;
@@ -29325,10 +29290,6 @@ before_trigger_prefix: create_trigger_keywords ddl_qualified_name
 
 		InsideTriggerDefinition = TRUE;
 
-	    //   if (NonISO88591LiteralEncountered) {
-	    //     *SqlParser_Diags << DgSqlCode(-1238);
-	    //     YYABORT;
-	    //   }
 	       // 
                // Initialize names for REFERENCING 
 	       //
@@ -29400,11 +29361,6 @@ after_trigger_prefix: create_trigger_keywords ddl_qualified_name
                YYERROR;
 
 		InsideTriggerDefinition = TRUE;
-
-	     //  if (NonISO88591LiteralEncountered) {
-	     //    *SqlParser_Diags << DgSqlCode(-1238);
-	     //    YYABORT;
-	     //  }
 
 	       // 
                // Initialize names for REFERENCING 

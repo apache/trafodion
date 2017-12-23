@@ -206,7 +206,7 @@
 1204 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unsupported Hive datatype $0~string0.
 1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 1206 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU SALT AND SPLIT BY clauses are not allowed together.
-1207 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Text to be inserted into the TEXT metadata table contains too many quotes.
+1207 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 1208 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause is not supported for indexes.
 1209 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause has more columns than the table has key columns ($0~Int0).
 1210 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~String0 is not allowed at position $1~Int0 in the SPLIT BY clause, because SPLIT BY must specify a prefix of the clustering key columns and the next clustering key column is $2~String1.
@@ -219,35 +219,35 @@
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.
 1223 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Grant to self or DB__ROOT is not allowed.
-1224 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid data type was specified for routine parameter $0~String0.
-1225 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mixing EXECUTE privilege with other privileges is not allowed.
-1226 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No valid combination of privileges was specified.
+1224 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1225 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1226 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User $0~String0 has been granted privileges on $1~String1.
 1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role $0~String0 has been granted privileges on $1~String1.
 1229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 option is not supported.
 1230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object owner must be the schema owner in private schemas.
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.
-1232 ZZZZZ 99999 BEGINNER MINOR DBADMIN A file error ($0~int0) occurred when saving dropped table DDL for table $1~TableName to $2~String0.
-1233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating schema in SQL system catalog $0~String0 is prohibited.
-1234 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Authorization need to be reinitialized due to missing or corrupted privilege manager metadata. To reinitialize, do 'initialize authorization, drop' followed by 'initialize authorization'. This deletes and recreates privilege manager metadata. Trafodion metadata is not affected. 
+1232 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1234 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Authorization needs to be reinitialized due to missing or corrupted privilege manager metadata. To reinitialize, do 'initialize authorization, drop' followed by 'initialize authorization'. This deletes and recreates privilege manager metadata. Trafodion metadata is not affected. 
 1235 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
-1236 3F000 99999 BEGINNER MAJOR DBADMIN The schema name specified for SQL object $0~String0 is not valid. The schema name must be the same as the schema being created.
+1236 3F000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1237 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---
-1238 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set used in TRIGGER text must be ISO88591.
-1239 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set for string literals in VIEW must be ISO88591.
+1238 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1239 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1240 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set for a PARTITION KEY column must be ISO88591.
-1241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set for HEADING must be ISO88591.
-1242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character set for string literals in CONSTRAINT must be ISO88591.
+1241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The hexadecimal form of string literals is not allowed in this context.
-1244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization initialization failed.
-1245 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The supplied partition key value ($0~String0) for column $1~ColumnName of object $2~TableName is not valid.
+1244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1245 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1247 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
-1248 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Partition name $0~string0 has already been used. Each partition in an object should have a unique name.
+1248 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---   
 1250 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1251 01000 99999 BEGINNER MINOR DBADMIN The extra insignificant digits of default value $0~String0 are truncated to match the scale of the data type of column $1~ColumnName.
-1252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The existing index $0~TableName to be used by a unique or primary constraint has not been populated.  Please populate the index and then try to add the constraint again.
+1252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1253 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
 1254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Duplicate unique constraints are not allowed with same set of columns.
 1255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~String0 is the clustering key constraint for table $1~String1 and cannot be dropped.
@@ -256,43 +256,43 @@
 1258 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1260 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Debugging of UDRs is only allowed for the DB__ROOT user. Connect as DB__ROOT, preferably using the sqlci tool, and try again.
-1261 ZZZZZ 99999 BEGINNER MAJOR DIALOUT ADVANCED MAJOR DIALOUT Error $0~int0 was returned by the SQL CLI while processing the UDR_JAVA_OPTIONS setting '$1~string0'.
-1262 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The command cannot be executed because $0~string0 is in progress for $1~string1.
-1263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object names that start with $0~String0 are reserved for SQL metadata.
+1261 ZZZZZ 99999 BEGINNER MAJOR DIALOUT --- unused ---
+1262 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1263 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1264 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate privileges are not allowed in a GRANT or REVOKE statement.
-1265 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate grantees are not allowed in a GRANT or REVOKE statement.
+1265 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1266 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only EXECUTE privilege is supported for a procedure or routine.
 1267 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 privilege is incompatible with this object type.
 1268 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate columns are not allowed in a GRANT or REVOKE statement.
 1269 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column name $0~String0 is reserved for internal system usage. It cannot be specified as a user column.
-1270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE or DEALLOCATE failed for object $0~TableName due to file error $1~Int0 on $2~String0.
-1271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE failed for object $0~TableName because the number of extents to be allocated ($1~Int0) is greater than the MAXEXTENTS for a partition of the object.
-1272 ZZZZZ 99999 BEGINNER CRTCL DIALOUT The system is not licensed for use of SQL format tables.
-1273 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The specified MAXEXTENTS value must be greater than the number of extents allocated.
-1274 01000 99999 BEGINNER MAJOR DBADMIN The specified or default MAXEXTENTS value is not sufficient. The MAXEXTENTS value has been automatically set to the new value of $1~Int0 for the file $0~String0.
-1275 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Constraint $0~String0 cannot be dropped because it is needed by unique constraint $1~String1.   
+1270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1272 ZZZZZ 99999 BEGINNER CRTCL DIALOUT --- unused ---
+1273 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1274 01000 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1275 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1276 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to select partition $0~String0 from table $1~TableName.
-1277 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unrecognized partitioning scheme for object $0~String0.
-1278 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The command cannot be executed because $0~String0 is in progress for all schemas in catalog $1~CatalogName.
+1277 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1278 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1279 42000 99999 BEGINNER MAJOR DBADMIN A volatile DDL statement cannot be used on regular objects.
 1280 42000 99999 BEGINNER MAJOR DBADMIN A regular DDL statement cannot be used on volatile objects.
-1281 ZZZZZ 99999 BEGINNER INFRM LOGONLY
-1282 ZZZZZ 99999 BEGINNER INFRM LOGONLY A LOB column cannot be specified in a volatile table
+1281 ZZZZZ 99999 BEGINNER INFRM LOGONLY --- unused ---
+1282 ZZZZZ 99999 BEGINNER INFRM LOGONLY A LOB column cannot be specified in a volatile table.
 1283 0A000 99999 BEGINNER INFRM LOGONLY The specified constraint or file option is not supported on a volatile table.
-1284 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table $0~TableName cannot be dropped because it was specified to be NOT DROPPABLE.
-1285 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName cannot be dropped because it contains NOT DROPPABLE table $1~TableName.
+1284 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1285 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The NOT DROPPABLE clause is not allowed for volatile tables.
-1287 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only super ID can execute INITIALIZE SECURITY.
-1288 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Security was not able to initialize.
+1287 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1288 ZZZZZ 99999 BEGINNER MAJOR DIALOUT --- unused ---
 1289 ZZZZZ 99999 BEGINNER MINOR DBADMIN The use of ALTER on reserved schemas and metadata schemas is not permitted.
-1290 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Select from table $0~TableName failed during UPGRADE operation.
-1291 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Select from table $0~TableName failed during DOWNGRADE operation.
-1292 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Delete from $0~string0 log table failed.    
-1293 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema version of the object $0~string0 must be 2300.    
-1294 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ISO_MAPPING must be SJIS for this operation.    
-1295 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Target column $0~ColumnName has mismatching default type.    
-1296 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Character data type of target column and literal are different.    
-1297 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 command cannot be executed because volatile schema $1~string1 exists.
+1290 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1291 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1292 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---    
+1293 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---  
+1294 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---     
+1295 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---    
+1296 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---    
+1297 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
 1298 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName could not be altered. $0~String0
 1299 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You cannot specify some columns with just the name and others with name & data attributes.
 1300 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Catman generated unknown Exception for procedure $0~TableName.
@@ -406,10 +406,10 @@
 1423 ZZZZZ 99999 BEGINNER MINOR DBADMIN Insert into metadata table $0~string0 failed.
 1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined or user updatable columns.
 1425 ZZZZZ 99999 BEGINNER MINOR DBADMIN This operation could not be performed on $0~TableName. $0~String0
-1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase column name $0~String0 was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase column name $0~String0 was specified. A valid name must be of the format: <ColumnFamily>:<ColumnName>
 1427 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table cannot be renamed. $0~String0
 1428 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata definitions could not be created and preloaded in global MDdescInfo struct. Make sure that metadata table definition syntax is correct.
-1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external HBase tables can only use the VALUES clause and must use the column_create function to create values.
 1430 3F000 99999 BEGINNER MAJOR DBADMIN A schema name that starts and ends with an "_"(underscore) is reserved for internal usage. It cannot be used to create a user schema.
 1431 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 exists in HBase. This could be due to a concurrent transactional ddl operation in progress on this table.
 1432 ZZZZZ 99999 BEGINNER MINOR DBADMIN Input LOB type $0~Int0 does not match column's storage type: $1~Int1 Column name: $0~String0 .
@@ -1197,7 +1197,7 @@ $1~String1 --------------------------------
 4125 42000 99999 BEGINNER MAJOR DBADMIN The select list of a subquery in a row value constructor must be scalar (degree of one) if the subquery is one of several expressions rather than the only expression in the constructor.
 4126 42000 99999 BEGINNER MAJOR DBADMIN The row value constructors in a VALUES clause must be of equal degree.
 4127 42000 99999 BEGINNER MAJOR DBADMIN Type $0~String0 cannot be assigned to type $1~String1.
-4128 42000 99999 BEGINNER MAJOR DBADMIN Default volume and subvolume information could not be retrieved from =_DEFAULTS define - DEFINEINFO error $0~int0.
+4128 42000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 4129 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character-typed result of the function $0~String0 is longer than the maximum supported size.
 4130 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is a read-only DEFAULTS attribute and cannot be updated.
 4131 42000 99999 BEGINNER MAJOR DBADMIN Current_time, current_date, or current_timestamp is not allowed in a check constraint.
