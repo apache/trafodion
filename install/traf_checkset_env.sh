@@ -25,16 +25,72 @@
 # must configure the yum repo right before execute this script.
 # run this script with normal user, while must has sudo permission.
 
+function usage {
+
+cat <<EOF
+
+Syntax: $0 [ -y ] [ -h | -help | --help | -v | -version | --version ]
+Usage:
+
+    1. You can create building environment with this script 
+    2. You must have sudo privileges before running this script.
+    3. This script will change the following environment:
+        a) Checking and installing basic commands(like as yum lsb_release awk cut uname).
+        b) Checking the os version.
+        c) Installing all libraries which is depended by Trafodion.
+        d) Removing pdsh and qt-dev if had installed.
+        e) Checking and setting the java environment.
+        f) Checking and setting locale(modify the LANG and LC_LANG to en_US.UTF-8)
+        g) Changing $HOME/.bashrc(Add JAVA_HOME, LANG, LC_LANG and TOOLSDIR, modify PATH)
+        h) Calling the script traf_tools_setup.sh to install the depended tools.
+    4. Getting more information from the link:
+        https://cwiki.apache.org/confluence/display/TRAFODION/Create+Build+Environment
+    5. It's best to download all the necessary softwares and set the environment variable "MY_SW_HOME" before running this script.
+    6. You can set optional environment variables as following:
+        a) MY_JVM_PATH: set the specific JVM path
+        b) MY_JAVA_VER: set the specific JDK version name
+        c) MY_SUDO: set the specific sudo command
+        d) MY_YUM: set the command for installing packages 
+        e) MY_LOCAL_SW_DIST:
+    7. This script maybe create the directory "${MY_DOWNLOAD_SW_DIST}" if not exits.
+
+EOF
+}
+
 #default path
 MY_JVM_PATH=${MY_JVM_PATH-"/usr/lib/jvm"}
 MY_JAVA_VER=${MY_JAVA_VER-"java-1.7.0-openjdk"}
 MY_SUDO=${MY_SUDO-"sudo"}
 MY_YUM=${MY_YUM-"${MY_SUDO} yum -y"}
 
-# for setup tools
-MY_LOCAL_SW_DIST=${MY_LOCAL_SW_DIST-${HOME}/local_software_tools}
-MY_INSTALL_SW_DIST=${MY_INSTALL_SW_DIST-${HOME}/installed_software_tools}
-MY_DOWNLOAD_SW_DIST=${MY_DOWNLOAD_SW_DIST-${HOME}/download_software_tools}
+# for setup tools, 
+MY_SW_HOME=${MY_SW_HOME-"/add_your_local_shared_folder_here"}
+MY_LOCAL_SW_DIST=${MY_LOCAL_SW_DIST-${MY_SW_HOME}/local_software_tools}
+MY_INSTALL_SW_DIST=${MY_INSTALL_SW_DIST-${MY_SW_HOME}/installed_software_tools}
+MY_DOWNLOAD_SW_DIST=${MY_DOWNLOAD_SW_DIST-${MY_SW_HOME}/download_software_tools}
+
+MY_IMPLICIT_Y="n"
+while [ $# -gt 0 ];
+do
+  case $1 in
+      -y) MY_IMPLICIT_Y="y"
+	  ;;
+      -h|-help|--help)
+	  usage
+	  exit 0
+	  ;;
+      -v|-version|--version)
+	  echo "version 0.0.0.1"
+	  exit 0
+	  ;;
+      *)  echo "ERROR: Unexpected argument $1"
+	  usage
+	  exit 1
+	  ;;
+  esac
+  shift
+done
+
 
 CHECKLOG=${LOGFILE-$(pwd)/$0.log}
 local_sws=(udis llvm mpich bison icu zookeeper thrift apache-maven protobuf apache-log4cxx hadoop)
@@ -55,19 +111,21 @@ http://archive.apache.org/dist/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz
 # check the local software directory
 if [ ! -d ${MY_LOCAL_SW_DIST} ]; then
     echo "WARNING: Local software tools aren't present. Will download all tools from the internet. This will be very slow. If you do have the local software tools present, set the environment variable MY_LOCAL_SW_DIST to point to them and run this script again. The default local software directory is [${MY_LOCAL_SW_DIST}]. Do you want to continue? Enter y/n (default: n):"
-    read YN
-    case ${YN} in
-	Y|y|Yes|YES)
-	    ;;
-	*)
-	    echo "Downloading the following build tools from the internet:"
-	    for i in `seq ${#local_sws[@]}`
-	    do
-		printf "%2d.%15s: %s\n" ${i} ${local_sws[${i}-1]} ${http_sws[${i}-1]}
-	    done
-	    exit 1
-	    ;;
-    esac
+    if [ "x$MY_IMPLICIT_Y" = "xn" ]; then
+	read YN
+	case ${YN} in
+	    Y|y|Yes|YES)
+		;;
+	    *)
+		echo "Downloading the following build tools from the internet:"
+		for i in `seq ${#local_sws[@]}`
+		do
+		    printf "%2d.%15s: %s\n" ${i} ${local_sws[${i}-1]} ${http_sws[${i}-1]}
+		done
+		exit 1
+		;;
+	esac
+    fi
 else
     # check the local software's source exist or not
     for local_sw in ${local_sws[@]}
@@ -86,7 +144,7 @@ if [ "x$?" != "x0" ]; then
     exit 1
 fi
 
-# check the based command
+# check some basic commands
 basecmds=(yum lsb_release awk cut uname)
 for basecmd in ${basecmds[@]}  
 do
@@ -100,16 +158,16 @@ do
 	    lsb_release)
 		(${MY_YUM} install redhat-lsb) >>${LOGFILE}2>&1
 		if [ "x$?" = "x0" ]; then
-		    echo "ERROR: yum repo server has a error when run command [${MY_YUM} install redhat-lsb]."
+		    echo "ERROR: yum repo server has an error when running command [${MY_YUM} install redhat-lsb]."
 		    exit 1
 		fi
 		;;
 	    *)
-		echo "ERROR: command [${basecmd}] not exist. Make sure you have installed it, and have added it to the command path."
+		echo "ERROR: command [${basecmd}] does not exist. Make sure you have installed it, and have added it to the command path."
 		exit 1
 	esac
     fi
-    echo "INFO: command ${basecmd} exist"
+    echo "INFO: command ${basecmd} exists"
 done
 
 osname=`uname -o`
@@ -172,16 +230,15 @@ done
 echo "INFO: install dependent library finish"
 
 # remove pdsh and qt-dev
-echo "INFO: remove pdsh and qt-dev trafodion scripts get confused."
+echo "INFO: remove pdsh and qt-dev commands to avoid problems with trafodion scripts"
 (${MY_YUM} erase pdsh) >>${LOGFILE}2>&1
 (${MY_YUM} erase qt-dev) >>${LOGFILE}2>&1
 
 # check and set the java
 echo "INFO: check and set java environment"
-javadir=`\ls -L ${MY_JVM_PATH} | grep "${MY_JAVA_VER}-"`
+javadir=`\ls -L ${MY_JVM_PATH} | grep "${MY_JAVA_VER}-" | head -n 1`
 javapath="${MY_JVM_PATH}/${javadir}"
-dirs="ASSEMBLY_EXCEPTION  bin  include  jre  jre-abrt  lib  LICENSE" \
-				     " tapset  THIRD_PARTY_README"
+
 if [ ! -d ${javapath} ]; then
      echo "ERROR: java dir [${javapath}] isn't right"
      exit 1
@@ -189,22 +246,32 @@ fi
 
 javahome=`grep JAVA_HOME ~/.bashrc | wc -l`
 if [ "x${javahome}" = "x0" ]; then
+    echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
     echo -en "export JAVA_HOME=${javapath}\n" >> $HOME/.bashrc
     echo -en "export PATH=\$PATH:\$JAVA_HOME/bin\n" >> $HOME/.bashrc
+else
+    java_version=`${JAVA_HOME}/bin/java -version 2>&1 | awk 'NR==1{ gsub(/"/,""); print $3}'`
+    case ${java_version} in
+	1.7.*)
+	    echo "INFO: java version is [$java_version]"
+	    ;;
+	*)
+	    echo "ERROR: java version is [$java_version]. Only 1.7.x versions are presently supported."
+	    exit 1
+    esac
 fi
 
 # check and set locale
-local_locale=`locale | grep -v "xen_US.UTF-8"`
-if [ "${local_locale}" != "x" ]; then
-    echo "WARN: locale is not right, this script modify the locale to "\
-         "\"en_US.UTF-8\" from "
-    echo "[${local_locale}]"
-    lang_set=`grep LANG ~/.bashrc | wc -l`
-    if [ "x${lang_set}" = "x0" ]; then
+local_locale=`locale | grep -v "en_US.UTF-8" | head -n 1`
+if [ "x${local_locale}" != "x" ]; then
+    lang_set=`grep LANG ~/.bashrc | awk -F= '{ print $2 }'`
+    if [ "x${lang_set}" != "xen_US.UTF-8" ]; then
+	echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
 	echo -en "export LANG=\"en_US.UTF-8\"\n" >> $HOME/.bashrc
     fi
-    lc_all_set=`grep LC_ALL ~/.bashrc | wc -l`
-    if [ "x${lc_all_set}" = "x0" ]; then
+    lc_all_set=`grep LC_TIME ~/.bashrc | awk -F= '{ print $2 }'`
+    if [ "x${lc_all_set}" != "xen_US.UTF-8" ]; then
+	echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
 	echo -en "export LC_ALL=\"en_US.UTF-8\"\n" >> $HOME/.bashrc
     fi
 fi
@@ -224,7 +291,7 @@ if [ ! -e ${MY_DOWNLOAD_SW_DIST} ]; then
     echo "INFO: mkdir [${MY_DOWNLOAD_SW_DIST}]"
     mkdir ${MY_DOWNLOAD_SW_DIST}
 fi
-echo "INFO: install tools with command:"
+echo "INFO: install tools with command:"\
 "    [./traf_tools_setup.sh -d ${MY_DOWNLOAD_SW_DIST} -i ${MY_INSTALL_SW_DIST}]]"
 ./traf_tools_setup.sh -d ${MY_DOWNLOAD_SW_DIST} -i ${MY_INSTALL_SW_DIST}
 if [ "x$?" = "x0" ]; then
@@ -237,6 +304,7 @@ fi
 
 tooldirexist=`grep TOOLSDIR ~/.bashrc | wc -l`
 if [ "x${tooldirexist}" = "x0" ]; then
+    echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
     echo -en "export TOOLSDIR=${MY_INSTALL_SW_DIST}\n" >> $HOME/.bashrc
     echo -en "export PATH=\$PATH:\$TOOLSDIR/apache-maven-3.3.3/bin\n" >> $HOME/.bashrc
 fi
