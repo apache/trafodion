@@ -2058,7 +2058,7 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
       return ex_expr::EXPR_OK;
     }
   /* remove below code according to discussion in github
-   * https://github.com/apache/incubator-trafodion/pull/706
+   * https://github.com/apache/trafodion/pull/706
    * with above validation, below checking is no longer needed
    * comment out
   

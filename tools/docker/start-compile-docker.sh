@@ -42,7 +42,7 @@ ENV HOME /home/${USER_NAME}
 RUN cd /home/${USER_NAME} \
  && mkdir download \
  && mkdir trafodion-build-tools \
- && wget https://raw.githubusercontent.com/apache/incubator-trafodion/master/install/traf_tools_setup.sh \
+ && wget https://raw.githubusercontent.com/apache/trafodion/master/install/traf_tools_setup.sh \
  && chmod +x traf_tools_setup.sh \
  && ./traf_tools_setup.sh -d ~/download -i ~/trafodion-build-tools \
  && rm -fr ./download \
@@ -56,9 +56,9 @@ pushd ${SCRIPT_DIR}/../..
 
 docker run -i -t \
   --rm=true \
-  -w "/home/${USER_NAME}/incubator-trafodion" \
+  -w "/home/${USER_NAME}/trafodion" \
   -u "${USER_NAME}" \
-  -v "$PWD:/home/${USER_NAME}/incubator-trafodion" \
+  -v "$PWD:/home/${USER_NAME}/trafodion" \
   -v "$HOME/.m2:/home/${USER_NAME}/.m2" \
   --name TrafodionEnv \
   ${IMAGE_NAME}-${USER_NAME} \

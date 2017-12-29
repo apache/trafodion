@@ -190,6 +190,6 @@ match-value [NOT] LIKE _pattern
 
 == Comments Encouraged
 We encourage your comments concerning this document. We are committed to providing documentation that meets your
-needs. Send any errors found, suggestions for improvement, or compliments to user@trafodion.incubator.apache.org.
+needs. Send any errors found, suggestions for improvement, or compliments to user@trafodion.apache.org.
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
