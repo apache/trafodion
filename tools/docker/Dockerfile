@@ -15,7 +15,7 @@
 # limitations under the License.
 
 FROM centos:centos6.6
-MAINTAINER Trafodion Community <dev@trafodion.incubator.apache.org>
+MAINTAINER Trafodion Community <dev@trafodion.apache.org>
 
 LABEL Vendor="Apache Trafodion"
 LABEL version=unstable
