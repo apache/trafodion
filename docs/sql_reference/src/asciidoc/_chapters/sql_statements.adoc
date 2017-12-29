@@ -1503,46 +1503,45 @@ underlying table. For ordering (but not for other purposes), nulls are greater t
 +
 a list of HBase options to set for the index. These options are applied independently of any HBase options set for
 the index’s table.
-
-// TODO: The Word document did not list all default values. 
+ 
 ** `_hbase-option_ = '_value_'`
 +
-is one of the these HBase options and its assigned value:
+is one of these HBase options and its assigned value:
 +
-[cols="35%,65%",options="header"]
+[options="header"]
 |===
-| HBase Option           | Accepted Values^1^
-| BLOCKCACHE             | 'true' \| 'false'
-| BLOCKSIZE              | *'65536'( \| '_positive-integer_'
-| BLOOMFILTER            | 'NONE' \| 'ROW' \| 'ROWCOL'
-| CACHE_BLOOMS_ON_WRITE  | 'true' \| 'false'
-| CACHE_DATA_ON_WRITE    | 'true' \| 'false'
-| CACHE_INDEXES_ON_WRITE | 'true' \| 'false'
-| COMPACT                | 'true' \| 'false'
-| COMPACT_COMPRESSION    | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
-| COMPRESSION            | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
-| DATA_BLOCK_ENCODING    | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'
-| DURABILITY             | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'
-| EVICT_BLOCKS_ON_CLOSE  | *'true'* \| 'false'
-| IN_MEMORY              | *'true'* \| 'false'
-| KEEP_DELETED_CELLS     | *'true'* \| 'false'
-| MAX_FILESIZE           | '_positive-integer_'
-| MAX_VERSIONS           | '1' \| '_positive-integer_'
-| MEMSTORE_FLUSH_SIZE    | '_positive-integer_'
-| MIN_VERSIONS           | '0' \| '_positive-integer_'
+| HBase Option           | Accepted Values                                                            | Default Values
+| BLOCKCACHE             | 'true' \| 'false'                                                          | 'true'
+| BLOCKSIZE              | '1024' - '64*1024*1024'                                                    | '64*1024'
+| BLOOMFILTER            | 'NONE' \| 'ROW' \| 'ROWCOL'                                                | 'ROW'
+| CACHE_BLOOMS_ON_WRITE  | 'true' \| 'false'                                                          | 'false'
+| CACHE_DATA_ON_WRITE    | 'true' \| 'false'                                                          | 'false'
+| CACHE_INDEXES_ON_WRITE | 'true' \| 'false'                                                          | 'false'
+| COMPACT                | 'true' \| 'false'                                                          | 'true'
+| COMPACT_COMPRESSION    | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'                               | 'NONE'
+| COMPRESSION            | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'                               | 'NONE'
+| DATA_BLOCK_ENCODING    | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'                                | 'NONE'
+| DURABILITY             | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'    | 'SYNC_WAL'
+| EVICT_BLOCKS_ON_CLOSE  | 'true' \| 'false'                                                          | 'false'
+| IN_MEMORY              | 'true' \| 'false'                                                          | 'false'
+| KEEP_DELETED_CELLS     | 'true' \| 'false'                                                          | 'false'
+| MAX_FILESIZE           | '2*1024*1024' - '2^63^-1'                                                  | '10*1024*1024*1024'
+| MAX_VERSIONS           | '1' \| '_positive-integer_'                                                | '1'
+| MEMSTORE_FLUSH_SIZE    | '1024*1024' - '2^63^-1'                                                    | '128*1024*1024'
+| MIN_VERSIONS           | '0' \| '_positive-integer_'                                                | '0'
 | PREFIX_LENGTH_KEY      | '_positive-integer_', which should be less than maximum length of the key for the table.
-It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.
-| REPLICATION_SCOPE      | '0' \| *'1'*
+It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.                                  | '2'
+| REPLICATION_SCOPE      | '0' \| '1'                                                                 | '1'
 | SPLIT_POLICY           | 'org.apache.hadoop.hbase.regionserver. +
 ConstantSizeRegionSplitPolicy' \| +
 'org.apache.hadoop.hbase.regionserver. +
 IncreasingToUpperBoundRegionSplitPolicy' \| +
 'org.apache.hadoop.hbase.regionserver. +
 KeyPrefixRegionSplitPolicy'
-| TTL                    | '-1' (forever) \| '_positive-integer_'
+|'org.apache.hadoop.hbase.regionserver. +
+IncreasingToUpperBoundRegionSplitPolicy'                                                      
+| TTL                    | '-1' (forever) \| '_positive-integer_'                                     | '-1'
 |===
-+
-^1^ Values in boldface are default values.
 
 * `SALT LIKE TABLE`
 +
@@ -2774,39 +2773,42 @@ a list of HBase options to set for the table.
 
 ** `_hbase-option_ = '_value_'`
 +
-is one of the these HBase options and its assigned value:
+is one of these HBase options and its assigned value:
 +
-[cols="35%,65%",options="header"]
+[options="header"]
 |===
-| HBase Option                                | Accepted Values^1^
-| BLOCKCACHE                                  | 'true' \| 'false'
-| BLOCKSIZE                                   | '65536' \| '_positive-integer_'
-| BLOOMFILTER                                 | 'NONE' \| 'ROW' \| 'ROWCOL'
-| CACHE_BLOOMS_ON_WRITE                       | 'true' \| 'false'
-| CACHE_DATA_ON_WRITE                         | 'true' \| 'false'
-| CACHE_INDEXES_ON_WRITE                      | 'true' \| 'false'
-| COMPACT                                     | 'true' \| 'false'
-| COMPACT_COMPRESSION                         | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
-| COMPRESSION                                 | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
-| DATA_BLOCK_ENCODING                         | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'
-| DURABILITY                                  | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'
-| EVICT_BLOCKS_ON_CLOSE                       | *'true'* \| 'false'
-| IN_MEMORY                                   | *'true'* \| 'false'
-| KEEP_DELETED_CELLS                          | *'true'* \| 'false'
-| MAX_FILESIZE                                | '_positive-integer_'
-| MAX_VERSIONS                                | '1' \| '_positive-integer_'
-| MEMSTORE_FLUSH_SIZE                         | '_positive-integer_'
-| MIN_VERSIONS                                | '0' \| '_positive-integer_'
-| PREFIX_LENGTH_KEY                           | '_positive-integer_', which should be less than maximum length of the
-key for the table. It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.
-| REPLICATION_SCOPE                           | '0' \| '1'
-| SPLIT_POLICY                                | 'org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy' \|
-'org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy' \|
-'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy'
-| TTL                                         | '-1' (forever) \| '_positive-integer_'
+| HBase Option           | Accepted Values                                                            | Default Values
+| BLOCKCACHE             | 'true' \| 'false'                                                          | 'true'
+| BLOCKSIZE              | '1024' - '64*1024*1024'                                                    | '64*1024'
+| BLOOMFILTER            | 'NONE' \| 'ROW' \| 'ROWCOL'                                                | 'ROW'
+| CACHE_BLOOMS_ON_WRITE  | 'true' \| 'false'                                                          | 'false'
+| CACHE_DATA_ON_WRITE    | 'true' \| 'false'                                                          | 'false'
+| CACHE_INDEXES_ON_WRITE | 'true' \| 'false'                                                          | 'false'
+| COMPACT                | 'true' \| 'false'                                                          | 'true'
+| COMPACT_COMPRESSION    | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'                               | 'NONE'
+| COMPRESSION            | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'                               | 'NONE'
+| DATA_BLOCK_ENCODING    | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'                                | 'NONE'
+| DURABILITY             | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'    | 'SYNC_WAL'
+| EVICT_BLOCKS_ON_CLOSE  | 'true' \| 'false'                                                          | 'false'
+| IN_MEMORY              | 'true' \| 'false'                                                          | 'false'
+| KEEP_DELETED_CELLS     | 'true' \| 'false'                                                          | 'false'
+| MAX_FILESIZE           | '2*1024*1024' - '2^63^-1'                                                  | '10*1024*1024*1024'
+| MAX_VERSIONS           | '1' \| '_positive-integer_'                                                | '1'
+| MEMSTORE_FLUSH_SIZE    | '1024*1024' - '2^63^-1'                                                    | '128*1024*1024'
+| MIN_VERSIONS           | '0' \| '_positive-integer_'                                                | '0'
+| PREFIX_LENGTH_KEY      | '_positive-integer_', which should be less than maximum length of the key for the table.
+It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.                                  | '2'
+| REPLICATION_SCOPE      | '0' \| '1'                                                                 | '1'
+| SPLIT_POLICY           | 'org.apache.hadoop.hbase.regionserver. +
+ConstantSizeRegionSplitPolicy' \| +
+'org.apache.hadoop.hbase.regionserver. +
+IncreasingToUpperBoundRegionSplitPolicy' \| +
+'org.apache.hadoop.hbase.regionserver. +
+KeyPrefixRegionSplitPolicy'
+|'org.apache.hadoop.hbase.regionserver. +
+IncreasingToUpperBoundRegionSplitPolicy'                                                      
+| TTL                    | '-1' (forever) \| '_positive-integer_'                                     | '-1'
 |===
-
-1. Values in boldface are default values.
 
 * `LOAD IF EXISTS`
 +
