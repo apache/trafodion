@@ -319,7 +319,7 @@ These settings are configured in the `hadoop-env.sh` file.
 [[requirements-recommended-hbase-configuration-changes]]
 === Recommended HBase Configuration Changes
 
-[cols="30%l,20%,50%a",options="header"]
+[options="header"]
 |===
 | Configuration Property | Recommended Setting | Guidance
 | hbase.rpc.timeout | 10 minutes | This setting depends on the tables' size. Sixty (60) seconds is the default. 
@@ -331,13 +331,38 @@ default. Depending on the size of a user table, we have experienced timeout fail
 from this setting. The underlying issue is the length of the execution of the coprocessor within HBase.
  +
 NOTE: HBase uses the smaller of `hbase.rpc.timeout` and `hbase.client.scanner.timeout.period` to calculate the scanner timeout. 
-| hbase.snapshot.master.timeoutMillis and hbase.snapshot.region.timeout | 10 minutes | HBase's default setting is 60000 milliseconds. 
+| hbase.snapshot.master.timeoutMillis 
+
+and 
+
+hbase.snapshot.region.timeout | 10 minutes | HBase's default setting is 60000 milliseconds. 
 If you experience timeout issues with HBase snapshots when you use the {project-name} Bulk Loader or other statements, 
 you can set the value for these two HBase properties to 10 minutes (600,000 milliseconds).
-| hbase.hregion.max.filesize | 107374182400 bytes | HBase's default setting is 10737418240 (10 GB). We have increased the setting to 
-107374182400 (100 GB), which reduces the number of HStoreFiles per table and appears to reduce disruptions to active transactions from 
+| hbase.hregion.max.filesize | 107374182400 bytes | HBase's default setting is 10737418240 bytes (10 GB). You can increased the setting to 
+107374182400 bytes (100 GB), which reduces the number of HStoreFiles per table and appears to reduce disruptions to active transactions from 
 region splitting.
-| hbase.hstore.blockingStoreFiles | 10 | http://gbif.blogspot.com/2012/07/optimizing-writes-in-hbase.html
-| hbase.regionserver.handler.count | <num> | This setting should match the number of concurrent sessions (mxosrvr). The default is 10.
-|===
+| hbase.hregion.memstore.block.multiplier | 7
 
+When you have enough memory, you can increase this value to 7 so that more data can be temporarily accepted before flushing to disk instead of blocking writes.
+|This property blocks any further writes from clients to memstores if the memstores exceed the value of `multiplier * flush size`.
+
+Default value: 2
+| hbase.hregion.memstore.flush.size | 536870912 bytes | HBase uses memstore to buffer data before writing it to disk. Once the data in memstore has outgrown this size, it is flushed as an HFile to disk.
+
+Default value: 134217728 bytes (128M)
+| hbase.hstore.blockingStoreFiles | 200 | http://gbif.blogspot.com/2012/07/optimizing-writes-in-hbase.html
+
+This property blocks any further writes from memstores to regions after HFile number hitting this limit until compactions are completed.
+
+Default value: 7
+
+| hbase.regionserver.handler.count | <num> | This setting should match the number of concurrent sessions (mxosrvr). The default is 10.
+| hbase.regionserver.region.split.policy | 
+`org.apache.hadoop.hbase.regionserver.
+ConstantSizeRegionSplitPolicy`
+
+Once the regions reach the maximum size configured by `hbase.hregion.max.filesize` property, they are split into halves. 
+| Specify the split policy of HBase.
+
+Default value: `IncreasingToUpperBoundRegionSplitPolicy`
+|===
