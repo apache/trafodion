@@ -13,19 +13,18 @@ To get started using Apache Trafodion:
 
   - documentation for this release can be viewed on the Apache Trafodion 
     wiki page: 
-      http://trafodion.incubator.apache.org/documentation.html
+      http://trafodion.apache.org/documentation.html
 
   - release notes describing changes for particular releases can be viewed:
       http://trafodion.apache.org/release-notes.html
 
-  - the latest Apache Trafodion can be downloaded from Apache incubator
-    distribution site or accessed from git
+  - the latest Apache Trafodion can be downloaded from Apache distribution site or accessed from git
 
     - download site:
-      https://dist.apache.org/repos/dist/release/incubator/trafodion
+      https://dist.apache.org/repos/dist/release/trafodion
 
     - git site:
-      git@github.com:apache/incubator-trafodion  
+      git@github.com:apache/trafodion
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:
