@@ -295,37 +295,37 @@
 1297 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
 1298 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName could not be altered. $0~String0
 1299 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You cannot specify some columns with just the name and others with name & data attributes.
-1300 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Catman generated unknown Exception for procedure $0~TableName.
-1301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN NO ACTION referential action for $0~string0 clause is not yet supported as specified by ANSI SQL99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
-1302 01000 99999 BEGINNER MAJOR DBADMIN NO ACTION referential action for $0~string0 clause behaves like RESTRICT referential action. To alter the behavior, set the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
-1303 ZZZZZ 99999 UUUUU UUUUUUUU UUUUU --- unused as of 5/7/12 --- 
-1304 ZZZZZ 99999 BEGINNER CRTCL DIALOUT SQL could not obtain the location of the system schema tables.
-1305 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The specified schema location $0~string0 is already in use by schema $1~SchemaName.
-1306 ZZZZZ 99999 ADVANCED MAJOR DIALOUT SQL was not able to generate a unique schema location for schema $0~SchemaName.
-1307 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema location $0~string0 is reserved for SQL metadata.
-1308 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----- Msg not currently used -----
-1309 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object type for $0~string0 is not valid for the current operation.
-1310 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The CREATE SCHEMA statement does not support the creation of triggers. 
-1311 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to $0~string0 constraint $1~ConstraintName due to the above errors.
-1312 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to $0~string0 $1~TableName due to the above errors.
+1300 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused --- 
+1301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
+1302 01000 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1303 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused --- 
+1304 ZZZZZ 99999 BEGINNER CRTCL DIALOUT --- unused ---
+1305 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1306 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
+1307 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1308 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+1309 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1310 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
+1311 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1312 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1313 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The referential integrity constraint $0~string0 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
-1314 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The create privilege has been turned off for catalog $0~CatalogName. The $1~string0 cannot be performed for $2~TableName.
-1315 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not have an associated definition schema.  The ALTER operation fails.
-1316 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Specified synonym $0~TableName does not reference a system view for object $1~String0.  
-1317 ZZZZZ 99999 ADVANCED MAJOR DBADMIN No DBA role has been identified.
-1318 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Synonym name $0~TableName which contains $1~int0 bytes is too long.  Synonym name must be less than $2~int1 bytes.
-1319 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Mismatch of privileges specified for PUBLISH or UNPUBLISH on object $0~TableName.  Select column level privileges cannot be specified with table level privileges.
-1320 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Mismatch of privileges specified for PUBLISH or UNPUBLISH on object $0~TableName.  Select column level privileges cannot be specified with either update or references column level privileges.
-1321 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The public schema has not been specified.  Cannot PUBLISH or UNPUBLISH the requested privileges for object $0~TableName.
-1322 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The synonym $0~String0 is referencing view $1~String1 which is not related to object $2~String2.  The referenced view is related to $3~String3.
+1314 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1315 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1316 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1317 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1318 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1319 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1320 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1321 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1322 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
 1323 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to grant privileges while creating $0~Tablename.
-1324 ZZZZZ 99999 ADVANCED MAJOR DBADMIN You are not allowed to exercise trigger $0~String0.
-1325 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The WITH GRANT OPTION privilege has been disabled.  You are not allowed to perform the request.
-1326 42000 99999 BEGINNER MAJOR DBADMIN This operation is not supported on inMemory objects.
-1327 42000 99999 BEGINNER MAJOR DBADMIN An inMemory DDL statement cannot be used on regular objects.
+1324 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1325 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1326 42000 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1327 42000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1328 ZZZZZ 99999 BEGINNER MINOR DBADMIN The $0~String0 privilege(s) cannot be specified for $1~String1 $2~TableName.
-1329 ZZZZZ 99999 ADVANCED MAJOR LOGONLY Cannot create metadata views because of server failure.
-1330 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot revoke role $0~String0 from authorization ID $1~String1.  Role has been granted to another authorization ID. 
+1329 ZZZZZ 99999 ADVANCED MAJOR LOGONLY --- unused ---
+1330 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot revoke role $0~String0 from authorization ID $1~String1. Role has been granted to another authorization ID. 
 1331 ZZZZZ 99999 BEGINNER MINOR DBADMIN User $0~String0 does not exist in the directory service.
 1332 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error while communicating with the directory service.
 1333 ZZZZZ 99999 BEGINNER MINOR DBADMIN User $0~String0 does not exist.
@@ -336,53 +336,53 @@
 1338 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Role $0~string0 is not defined in the database.
 1339 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a grantable role.
 1340 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a user.
-1341 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more catalogs.
-1342 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more schemas.
-1343 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more objects.
-1344 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User is the grantee of one or more schema privileges.
-1345 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User is the grantee of one or more table privileges.
-1346 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User is the grantee of one or more column privileges.
-1347 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more roles.
-1348 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot drop role.  Role is granted to one or more users.
-1349 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User granted one or more roles.
-1350 ZZZZZ 99999 BEGINNER MINOR DBADMIN Role $0~String0 is not granted to $1~String1.
+1341 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1342 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1343 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user. User owns one or more objects.
+1344 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1345 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1346 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1347 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user. User owns one or more roles.
+1348 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot drop role. Role is granted to one or more users.
+1349 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user. User granted one or more roles.
+1350 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1351 ZZZZZ 99999 BEGINNER MINOR DBADMIN Role $1~String0 appears multiple times in list.
 1352 ZZZZZ 99999 BEGINNER MINOR DBADMIN User $1~String0 appears multiple times in list.
-1353 ZZZZZ 99999 BEGINNER MINOR DBADMIN WITH GRANT OPTION is not allowed for roles.
-1354 ZZZZZ 99999 BEGINNER MINOR DBADMIN Granting schema privileges to roles is not allowed.
+1353 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1354 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1355 ZZZZZ 99999 BEGINNER MINOR DBADMIN Granting a role to PUBLIC or _SYSTEM is not allowed.
 1356 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot create the component privilege specified. Component privilege code $0~String0 for the component already exists. 
 1357 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot create the component privilege specified. Component privilege name $0~String0 for the component already exists.
-1358 ZZZZZ 99999 BEGINNER MINOR DBADMIN Component privilege $0~String0 not found. 
+1358 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1359 ZZZZZ 99999 BEGINNER MINOR DBADMIN Specified invalid privilege $0~String0 for GRANT/REVOKE.
-1360 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot $0~String0. Dependent component privileges exist for the user/role. 
+1360 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1361 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Library $0~TableName does not exist.
-1362 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is not a library.
-1363 ZZZZZ 99999 BEGINNER MINOR DBADMIN Library $0~TableName already exists.
+1362 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1363 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1364 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot revoke role $0~String0. Object $1~String1 depends on privileges on object $2~String2. 
-1365 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to obtain necessary lock for user/role number $0~Int0.
-1366 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  One or more dependent procedures exist.
-1367 ZZZZZ 99999 BEGINNER MINOR DBADMIN Procedure uses a library object, EXTERNAL PATH cannot be altered.
-1368 ZZZZZ 99999 BEGINNER MINOR DBADMIN The library must be defined in the same catalog.
-1369 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only UPDATE and USAGE privileges are supported for a library.
+1365 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1366 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed. One or more dependent procedures exist.
+1367 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1368 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1369 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1370 ZZZZZ 99999 BEGINNER MINOR DBADMIN The authorization name "$0~String0" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
-1371 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only INSERT and SELECT privileges are supported for table $0~String0.
-1372 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to alter table $0~String0 because of dependent object $1~String1 with object type $0~String3.
-1373 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Value for column $0~int0 ($1~String0) must be either Y or N.
-1374 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: $0~String0 is an unrecognized or unsupported audit log type.
-1375 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Input strings limited to $0~Int0 characters each.
-1376 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Column numbers must be in the range 1 - $0~Int0.
-1377 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit configuration alter failed due to SQL error $0~Int0.
-1378 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit refresh time must be 0 to $0~Int0 seconds.
-1379 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit aging days must be 0 to $0~Int0.
-1380 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit threshold must be a percentage from 0 to 100.
-1381 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Column/value pair mismatch.
+1371 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1372 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1373 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1374 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1375 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1376 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1377 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1378 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1379 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1380 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1381 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1382 ZZZZZ 99999 BEGINNER MINOR DBADMIN JAR or DLL file $0~String0 not found.
-1383 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User management operations have been disabled. $0~string0 cannot be performed for $1~TableName.
-1384 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to perform 1-to-1 mapping of $0~int0 partitions to $1~int1 disks for $2~TableName.  Since there are more partitions than available disks, $3~int2 partitions have been created on each disk.
-1385 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mapping of disk pools for $0~TableName during CREATE failed. The number of partitions is $1~int0, the expected number of disks is $2~int1 and the actual number of disks is $3~int2.
-1386 ZZZZZ 99999 BEGINNER MINOR DBADMIN	The call to run_script failed. $0~string0.
-1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of blob datatype in a PRIMARY KEY is not allowed.
+1383 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1384 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1385 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1386 ZZZZZ 99999 BEGINNER MINOR DBADMIN	--- unused ---
+1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist in hive metadata.
 1389 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 does not exist in Trafodion.
 1390 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 already exists in Trafodion.
@@ -392,10 +392,10 @@
 1394 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be reinitialized on this system due to missing or corrupted metadata objects. Do 'initialize trafodion, drop' followed by 'initialize trafodion' to reinitialize Trafodion. This will delete all metadata and user objects from the Trafodion database and recreate metadata.
 1395 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be upgraded on this system due to metadata version mismatch. Do 'initialize trafodion, upgrade' to upgrade metadata. Or do 'initialize trafodion, drop' followed by 'initialize trafodion'. Be aware that the second option will delete all metadata and user objects from Trafodion database.
 1396 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be reinitialized on this system due to data format version mismatch.
-1397 ZZZZZ 99999 BEGINNER MINOR DBADMIN Software version of objects being used is different than the version of software running on the system. Make sure that objects being used are built with the same version as that running on the system. Version of Trafodion software is picked from file sqenvcom.sh.
-1398 ZZZZZ 99999 BEGINNER MINOR DBADMIN Error $0~Int0 occured while accessing the hbase subsystem. Fix that error and make sure hbase is up and running. Error Details: $0~String0. 
+1397 ZZZZZ 99999 BEGINNER MINOR DBADMIN Software version of objects being used is different than the version of software running on the system. Make sure that objects being used are built with the same version as that running on the system. Version of Trafodion software is determined by file sqenvcom.sh.
+1398 ZZZZZ 99999 BEGINNER MINOR DBADMIN Error $0~Int0 occured while accessing the HBase subsystem. Fix that error and make sure HBase is up and running. Error Details: $0~String0. 
 1399 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata has already been upgraded. No action is needed.
-1400 ZZZZZ 99999 BEGINNER MINOR LOGONLY The default value of column $0~ColumnName contains characters that cannot be converted to $1~String0.
+1400 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.
 1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
 1403 ZZZZZ 99999 BEGINNER MINOR DBADMIN This ALTER command is not allowed on a reserved system schema object.
