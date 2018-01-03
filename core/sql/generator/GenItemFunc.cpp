@@ -2824,43 +2824,6 @@ short LOBconvert::codeGen(Generator * generator)
   return 0;
 }
 
-short LOBload::codeGen(Generator * generator)
-{
-  Attributes ** attr;
-  
-  Space * space = generator->getSpace();
-  
-  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
-    return 0;
-
-  ExpLOBload * ll =
-    new(generator->getSpace()) ExpLOBload
-    (getOperatorType(), 
-     getArity()+1,
-     attr, 
-     objectUID_,
-     (short)insertedTableSchemaName().length(),
-     (char*)insertedTableSchemaName().data(),
-     space);
-  
-  if (obj_ == LOBoper::STRING_)
-    ll->setFromString(TRUE);
-  else if (obj_ == LOBoper::FILE_)
-    ll->setFromFile(TRUE);
-  else if (obj_ == LOBoper::LOAD_)
-    ll->setFromLoad(TRUE);
-  else if (obj_ == LOBoper::LOB_)
-    ll->setFromLob(TRUE);
-  
-
-  ll->lobNum() = lobNum();
-  ll->setLobStorageType(lobStorageType());
-  ll->setLobStorageLocation((char*)lobStorageLocation().data());
-  
-  generator->getExpGenerator()->linkClause(this, ll);
- return 0;
-}
- 
 
 short SequenceValue::codeGen(Generator * generator)
 {

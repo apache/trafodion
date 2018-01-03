@@ -188,7 +188,6 @@ public:
   inline void setSharedPool(sql_buffer_pool *p) { sharedPool_ = p; }
 
   ExLobGlobals *&getExLobGlobal();
-  LOBglobals * lobGlobals() { return lobGlobals_; }
   
   void initLOBglobal(ContextCli *context);
   
@@ -268,8 +267,7 @@ private:
 
   // pool shared by among PAs under PAPA
   sql_buffer_pool *sharedPool_;
-
-  LOBglobals * lobGlobals_;
+  ExLobGlobals * exLobGlobals_;
 
   // pointer passed to interface methods that store and retrieve lob data
   // from flatfile or hdfs filesystem.

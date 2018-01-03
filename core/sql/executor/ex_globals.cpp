@@ -63,7 +63,8 @@ ex_globals::ex_globals(short num_temps,
        planVersion_(0),
        jmpInScope_(FALSE),
        sharedPool_(NULL),
-       rowNum_(1)
+       rowNum_(1),
+       exLobGlobals_(NULL)
 {
   // Small data items are allocated using space rather than heap so that
   // the allocation of memory for the heap can be avoided in simple queries.
@@ -81,19 +82,17 @@ ex_globals::ex_globals(short num_temps,
 	tempList_[i] = NULL;
     }
 
-  
-  lobGlobals_ = new(heap_) LOBglobals(heap_);
 }
 
 ExLobGlobals *&ex_globals::getExLobGlobal() 
 { 
-   return lobGlobals()->lobAccessGlobals(); 
+  return exLobGlobals_;
 }
 
 void ex_globals::initLOBglobal(ContextCli *context)
 {
   // initialize lob interface
-  ExpLOBoper::initLOBglobal(getExLobGlobal(), (NAHeap *)heap_, context, (char *)"default", (Int32)0);
+  ExpLOBoper::initLOBglobal(exLobGlobals_, (NAHeap *)heap_, context, (char *)"default", (Int32)0);
 
 }
 
@@ -106,8 +105,7 @@ void ex_globals::reAllocate(short create_gui_sched)
   tempList_ = NULL;
   
   tcbList_.allocate(0);
-
-  lobGlobals_ = new(heap_) LOBglobals(heap_);
+  exLobGlobals_ = NULL;
 }
 
 void ex_globals::deleteMe(NABoolean fatalError)
@@ -137,8 +135,6 @@ void ex_globals::deleteMe(NABoolean fatalError)
   statsArea_ = NULL;
   cleanupTcbs();
   tcbList_.deallocate();
-  NADELETE(lobGlobals_,LOBglobals,heap_);
-  lobGlobals_ = NULL;
 }
 
 void ex_globals::deleteMemory(void *mem)

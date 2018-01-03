@@ -2738,13 +2738,12 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
 
   requestTag_ = -1;
   lobLoc_[0] = '\0';
+  exLobGlobals_ = NULL;
  
-  lobGlobals_ = 
-    new(currContext->exHeap()) LOBglobals(currContext->exHeap());
-  ExpLOBoper::initLOBglobal
-    (lobGlobals_->lobAccessGlobals(), 
-     currContext->exHeap(),currContext,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort());
+  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
+                      lobTdb().getLobHdfsServer(),
+                      lobTdb().getLobHdfsPort());
+                                     
     
 
 }
@@ -2753,7 +2752,9 @@ void ExExeUtilLobExtractTcb::freeResources()
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
+
+  ExLobGlobals * lobGlobs = getLobGlobals();
+
   ContextCli *currContext =
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
@@ -2780,8 +2781,10 @@ void ExExeUtilLobExtractTcb::freeResources()
 	       3, // close
                0); // open type not applicable
 
-   NADELETE(lobGlobals_,LOBglobals,currContext->exHeap());
-  lobGlobals_ = NULL;
+    
+  ExpLOBinterfaceCleanup
+    (exLobGlobals_, currContext->exHeap());
+  exLobGlobals_ = NULL;
 }
 
 ExExeUtilLobExtractTcb::~ExExeUtilLobExtractTcb()
@@ -2812,7 +2815,7 @@ short ExExeUtilLobExtractTcb::work()
 
   
 
-  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals();
 
   ex_queue_entry * centry = NULL;
   
@@ -3189,7 +3192,7 @@ short ExExeUtilLobExtractTcb::work()
 						lobHandle_,
 						requestTag,
 						so,
-						((LOBglobals *)lobGlobs)->xnId(),
+						-1,
 						0,0,					       					
 						0, lobDataLen_, lobDataOutputLen, 
 						lobTdb().getFileName(),
@@ -3485,12 +3488,12 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
     getStatement()->getContext();
   lobHandleLen_ = 2050;
   lobHandle_[0] = '\0';
-  lobGlobals_ = 
-    new(currContext->exHeap()) LOBglobals(currContext->exHeap());
-  ExpLOBoper::initLOBglobal
-    (lobGlobals_->lobAccessGlobals(), 
-     currContext->exHeap(),currContext,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort());
+  exLobGlobals_=NULL;
+
+  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
+                      lobTdb().getLobHdfsServer(),
+                      lobTdb().getLobHdfsPort());
+                                     
 }
 ExExeUtilLobUpdateTcb::~ExExeUtilLobUpdateTcb()
 {
@@ -3502,7 +3505,8 @@ void ExExeUtilLobUpdateTcb::freeResources()
  ContextCli *currContext =
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
-   NADELETE(lobGlobals_,LOBglobals,currContext->exHeap());
+ ExpLOBinterfaceCleanup(exLobGlobals_, currContext->exHeap());
+ exLobGlobals_ = NULL;
 }
 
 short ExExeUtilLobUpdateTcb::work()
@@ -3536,7 +3540,7 @@ short ExExeUtilLobUpdateTcb::work()
   Int64 lobLen = lobTdb().updateSize();
   char * data = (char *)(lobTdb().getBufAddr());
  
-  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals();
 
   while (1)
     {
@@ -3660,7 +3664,7 @@ short ExExeUtilLobUpdateTcb::work()
                                             lobHandle_,
                                             &outHandleLen, outLobHandle,
                                             requestTag,
-                                            getLobGlobals()->xnId(),
+                                            -1,
                                             0,
                                             1,
                                             so,
@@ -3756,7 +3760,7 @@ short ExExeUtilLobUpdateTcb::work()
                                             lobHandle_,
                                             &outHandleLen, outLobHandle,
                                             requestTag,
-                                            getLobGlobals()->xnId(),
+                                            -1,
                                             0,
                                             1,
                                             so,
@@ -3854,7 +3858,7 @@ short ExExeUtilLobUpdateTcb::work()
                                             lobHandle_,
                                             &outHandleLen, outLobHandle,
                                             requestTag,
-                                            getLobGlobals()->xnId(),
+                                            -1,
                                             0,
                                             1,
                                             so,
@@ -3982,7 +3986,7 @@ short ExExeUtilFileExtractTcb::work()
 
   
 
-  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals();
 
   while (1)
     {
@@ -4235,7 +4239,7 @@ short ExExeUtilFileLoadTcb::work()
 
   
 
-  ExLobGlobals * lobGlobs = getLobGlobals()->lobAccessGlobals();
+  ExLobGlobals * lobGlobs = getLobGlobals();
 
   while (1)
     {

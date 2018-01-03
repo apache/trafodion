@@ -12828,18 +12828,6 @@ ItemExpr * LOBconvertHandle::copyTopNode(ItemExpr *derivedNode, CollHeap* outHea
   return LOBoper::copyTopNode(result, outHeap);
 }
 
-ItemExpr * LOBload::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
-{
-  ItemExpr *result;
-
-  if (derivedNode == NULL)
-    result = new (outHeap) LOBload(NULL, obj_);
-  else
-    result = derivedNode;
-
-  return LOBinsert::copyTopNode(result, outHeap);
-}
-
 ItemExpr * LOBextract::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
   ItemExpr *result;

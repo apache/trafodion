@@ -2935,7 +2935,7 @@ public:
   {
     return (ExExeUtilLobExtractTdb &) tdb;
   };
-  LOBglobals *getLobGlobals() { return lobGlobals_;}
+  ExLobGlobals *&getLobGlobals() { return exLobGlobals_;}
  protected:
   enum Step
   {
@@ -2985,7 +2985,7 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
-  LOBglobals *lobGlobals_;
+  ExLobGlobals *exLobGlobals_;
 };
 
 
@@ -3041,7 +3041,7 @@ public:
   {
     return (ExExeUtilLobUpdateTdb &) tdb;
   };
-  LOBglobals *getLobGlobals() { return lobGlobals_;}
+  ExLobGlobals *&getLobGlobals() { return exLobGlobals_;}
  protected:
   enum Step
     {
@@ -3071,7 +3071,7 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
-  LOBglobals *lobGlobals_;
+  ExLobGlobals *exLobGlobals_;
 };
 // -----------------------------------------------------------------------
 // ExExeUtilFileUpdateTcb
