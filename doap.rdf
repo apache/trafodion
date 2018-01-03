@@ -25,19 +25,19 @@
     <created>2017-12-07</created>
     <license rdf:resource="http://spdx.org/licenses/Apache-2.0" />
     <name>Apache Trafodion</name>
-    <homepage rdf:resource="http://trafodion.incubator.apache.org" />
-    <asfext:pmc rdf:resource="http://incubator.apache.org" />
+    <homepage rdf:resource="http://trafodion.apache.org" />
+    <asfext:pmc rdf:resource="http://trafodion.apache.org" />
     <shortdesc>Webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Apache Hadoop.</shortdesc>
     <description>Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Trafodion extends Hadoop to provide guaranteed transactional integrity, enabling new kinds of big data applications to run on Hadoop.</description>
     <bug-database rdf:resource="http://issues.apache.org/jira/browse/TRAFODION" />
-    <mailing-list rdf:resource="http://trafodion.incubator.apache.org/mail-lists.html" />
-    <download-page rdf:resource="http://trafodion.incubator.apache.org/download.html" />
+    <mailing-list rdf:resource="http://trafodion.apache.org/mail-lists.html" />
+    <download-page rdf:resource="http://trafodion.apache.org/download.html" />
     <programming-language>C++</programming-language>
     <category rdf:resource="http://projects.apache.org/category/big-data" />
     <repository>
       <GitRepository>
-        <location rdf:resource="http://git-wip-us.apache.org/repos/asf/incubator-trafodion.git"/>
-        <browse rdf:resource="https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git"/>
+        <location rdf:resource="http://git-wip-us.apache.org/repos/asf/trafodion.git"/>
+        <browse rdf:resource="https://git-wip-us.apache.org/repos/asf?p=trafodion.git"/>
       </GitRepository>
     </repository>
     <maintainer>
