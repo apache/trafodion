@@ -352,7 +352,7 @@ Default value: 2
 Default value: 134217728 bytes (128M)
 | hbase.hstore.blockingStoreFiles | 200 | http://gbif.blogspot.com/2012/07/optimizing-writes-in-hbase.html
 
-This property blocks any further writes from memstores to regions after HFile number hitting this limit until compactions are completed.
+This property blocks any further writes from memstores to HFile, after existing HFile number hitting this limit until compactions are completed.
 
 Default value: 7
 
