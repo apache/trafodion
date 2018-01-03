@@ -8,7 +8,7 @@ public class Payroll
    // percentage. This method also returns the updated salary to an output  
    // parameter.    
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#adjustsalary-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#adjustsalary-procedure
    // for more documentation.
    public static void adjustSalary( BigDecimal empNum
                                   , double percent
@@ -48,7 +48,7 @@ public class Payroll
    // The EMPLOYEEJOB procedure accepts an employee number and returns a job
    // code or null value to an output parameter.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#employeejob-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#employeejob-procedure
    // for more documentation.
    public static void employeeJob( int empNum
                                  , java.lang.Integer[] jobCode
@@ -82,7 +82,7 @@ public class Payroll
    // employee number, first name, last name, and location of the employees
    // assigned to that project.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#projectteam-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#projectteam-procedure
    // for more documentation.
    public static void projectTeam( int projectCode
                                  , ResultSet[] members
@@ -110,7 +110,7 @@ public class Payroll
    // figures of the top five sales representatives who had the highest sales
    // (unit_price * qty_ordered) that quarter.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#topsalesreps-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#topsalesreps-procedure
    // for more documentation.
    public static void topSalesReps( int whichQuarter
                                   , ResultSet[] topReps

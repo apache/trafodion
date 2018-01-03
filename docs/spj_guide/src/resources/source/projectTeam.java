@@ -2,7 +2,7 @@
 // employee number, first name, last name, and location of the employees
 // assigned to that project.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#projectteam-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#projectteam-procedure
 // for more documentation.
 public static void projectTeam( int projectCode
 			      , ResultSet[] members

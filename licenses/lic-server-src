@@ -4,8 +4,8 @@ The core component of Apache Trafodion uses several BSD-like, MIT-like and Postg
 +++++++++++++++++++++++++++++
 
 BSD-3 clause for files:
-   incubator-trafodion/core/sql/common/swsprintf.cpp
-   incubator-trafodion/core/sql/common/swscanf.cpp
+   trafodion/core/sql/common/swsprintf.cpp
+   trafodion/core/sql/common/swscanf.cpp
 
 Copyright (c) 1990, 1993
    The Regents of the University of California.  All rights reserved.
@@ -39,7 +39,7 @@ Copyright (c) 1990, 1993
 
 +++++++++++++++++++++++++++++
 
-BSD-3 clause for file incubator-trafodion/core/sql/parser/ulexer.h
+BSD-3 clause for file trafodion/core/sql/parser/ulexer.h
 
  Copyright (c) 1993 The Regents of the University of California.
 
@@ -59,7 +59,7 @@ BSD-3 clause for file incubator-trafodion/core/sql/parser/ulexer.h
 
 +++++++++++++++++++++++++++++
 
-MIT-Expat for files in: incubator-trafodion/core/sql/qmscommon/expat
+MIT-Expat for files in: trafodion/core/sql/qmscommon/expat
 
  Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
                                 and Clark Cooper
@@ -68,7 +68,7 @@ MIT-Expat for files in: incubator-trafodion/core/sql/qmscommon/expat
  Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.
  Copyright 2000, Clark Cooper
 
- For details see incubator-trafodion/core/sql/qmscommon/expat/COPYING
+ For details see trafodion/core/sql/qmscommon/expat/COPYING
 
 +++++++++++++++++++++++++++++
 
@@ -79,18 +79,18 @@ MIT-like licenses:
 +++++++++++++++++++++++++++++
 
 BSD-3 clause for files in:  
-   incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/datatables
+   trafodion/dcs/src/main/resources/dcs-webapps/master/datatables
 
  Copyright 2009 Allan Jardine. All Rights Reserved
  Copyright 2008-2012 Allan Jardine, all rights reserved.
 
 For details see:
-  incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/datatables/license-bsd.txt
+  trafodion/dcs/src/main/resources/dcs-webapps/master/datatables/license-bsd.txt
 
 +++++++++++++++++++++++++++++
 
 MIT-Expat for files in: 
-   incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/js/lib/jit.js
+   trafodion/dcs/src/main/resources/dcs-webapps/master/js/lib/jit.js
 
  Copyright (c) 2011 Sencha Inc. - Author: Nicolas Garcia Belmonte (http://philogb.github.com/)
  Copyright (c) 2006-2010 Valerio Proietti
@@ -116,8 +116,8 @@ MIT-Expat for files in:
 +++++++++++++++++++++++++++++
 
 MIT-Expat for files in:
-   incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/jquery-ui
-   incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/js/lib/jquery-1.11.0.js
+   trafodion/dcs/src/main/resources/dcs-webapps/master/jquery-ui
+   trafodion/dcs/src/main/resources/dcs-webapps/master/js/lib/jquery-1.11.0.js
 
  Copyright 2014 jQuery Foundation and other contributors
  (c) 2005, 2014 jQuery Foundation, Inc.
@@ -142,11 +142,11 @@ MIT-Expat for files in:
 ++++++++++++++++++++++++++++++
 
 The PostgreSQL Licence (PostgreSQL) for files in:
-	incubator-trafodion/core/sql/common/ComJSON.cpp
-	incubator-trafodion/core/sql/common/ComJSON.h
-	incubator-trafodion/core/sql/common/ComJSONFuncs.cpp
-	incubator-trafodion/core/sql/common/ComJSONStringInfo.cpp
-	incubator-trafodion/core/sql/common/ComJSONStringInfo.h
+	trafodion/core/sql/common/ComJSON.cpp
+	trafodion/core/sql/common/ComJSON.h
+	trafodion/core/sql/common/ComJSONFuncs.cpp
+	trafodion/core/sql/common/ComJSONStringInfo.cpp
+	trafodion/core/sql/common/ComJSONStringInfo.h
 	
 PostgreSQL License is a liberal Open Source license, similar to the BSD or MIT licenses.
 

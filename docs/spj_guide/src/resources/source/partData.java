@@ -8,7 +8,7 @@
 // * A result set that contains rows from the PARTSUPP table for suppliers who carry this part.
 // * A result set that contains rows from the EMPLOYEE table for sales reps who have sold this part.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#partdata-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#partdata-procedure
 // for more documentation.
 public static void partData( int partNum
 			   , String[] partDescription

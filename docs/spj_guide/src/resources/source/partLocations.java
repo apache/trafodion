@@ -2,7 +2,7 @@
 // set of location codes that have the exact quantity and a set of location
 // codes that have more than that quantity.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#partlocations-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#partlocations-procedure
 // for more documentation.
 public static void partLocations( int partNum
 				, int quantity

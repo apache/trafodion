@@ -38,7 +38,7 @@ The following table lists JDBC-based clients supported by {project-name}.
 *NOTE:* The {project-name} Command Interface (trafci), DBVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
 workstation.
 | *{project-name} Command Interface (trafci)* | A command-line interface that allows you to connect to a {project-name} database and run SQL statements and other commands interactively or from
-script files. For more information, see the http://trafodion.incubator.apache.org/docs/command_interface/index.html[{project-name} Command Interface Guide].
+script files. For more information, see the http://trafodion.apache.org/docs/command_interface/index.html[{project-name} Command Interface Guide].
 | *DBVisualizer* | A third-party database tool that allows you to connect to a {project-name} database. For more information, see the http://www.dbvis.com/[DbVisualizer website].
 | *SQuirreL SQL Client* | A third-party database tool that allows you to connect to a {project-name} database. For more information, see the 
 http://squirrel-sql.sourceforge.net/[SQuirreL SQL Client website].

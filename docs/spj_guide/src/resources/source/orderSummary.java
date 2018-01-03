@@ -11,7 +11,7 @@
 //   contains fields for the order number, part number, unit price, quantity
 //   ordered, and part description.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#ordersummary-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#ordersummary-procedure
 // for more documentation.
 public static void orderSummary( java.lang.String onOrAfter
 			       , long[] numOrders
