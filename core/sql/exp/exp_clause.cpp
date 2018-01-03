@@ -574,9 +574,6 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LOBCONVERTHANDLE:
 	  setClassID(LOB_CONVERTHANDLE);
 	  break;
-          /*	case ITM_LOBLOAD:
-                setClassID(LOB_LOAD);*/
-	  break;
 	case ITM_SUBSTR:
 	  setClassID(LOB_FUNC_SUBSTR);
 	  break;
