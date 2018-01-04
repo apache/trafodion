@@ -95,7 +95,7 @@ $ cd $HOME/trafodion-downloads
 $ tar -zxf apache-trafodion-pyinstaller-2.2.0.tar.gz -C $HOME/trafodion-installer
 $ cp -f apache-trafodion_server-2.2.0-RH-x86_64.tar.gz $HOME/trafodion-installer
 $ ls $HOME/trafodion-installer/python-installer
-apache-trafodion_server-2.2.0-RH-x86_64.tar.gz  db_install.py    DISCLAIMER    LICENSE  prettytable.py  scripts
+apache-trafodion_server-2.2.0-RH-x86_64.tar.gz  db_install.py    LICENSE  prettytable.py  scripts
 configs                                                    db_uninstall.py  discovery.py  NOTICE   README.md
 $
 ```
