@@ -338,7 +338,7 @@ and
 hbase.snapshot.region.timeout | 10 minutes | HBase's default setting is 60000 milliseconds. 
 If you experience timeout issues with HBase snapshots when you use the {project-name} Bulk Loader or other statements, 
 you can set the value for these two HBase properties to 10 minutes (600,000 milliseconds).
-| hbase.hregion.max.filesize | 107374182400 bytes | HBase's default setting is 10737418240 bytes (10 GB). You can increased the setting to 
+| hbase.hregion.max.filesize | 107374182400 bytes | HBase's default setting is 10737418240 bytes (10 GB). You can increase the setting to 
 107374182400 bytes (100 GB), which reduces the number of HStoreFiles per table and appears to reduce disruptions to active transactions from 
 region splitting.
 | hbase.hregion.memstore.block.multiplier | 7
@@ -352,7 +352,7 @@ Default value: 2
 Default value: 134217728 bytes (128M)
 | hbase.hstore.blockingStoreFiles | 200 | http://gbif.blogspot.com/2012/07/optimizing-writes-in-hbase.html
 
-This property blocks any further writes from memstores to HFile, after existing HFile number hitting this limit until compactions are completed.
+This property blocks any further writes from memstores to HFile, after the number of existing HFile hits this limit, until compactions are completed.
 
 Default value: 7
 
