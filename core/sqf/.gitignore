@@ -68,8 +68,6 @@ Linux-x86_64/
 # derived license
 /LICENSE
 /NOTICE
-/DISCLAIMER
-sqf/DISCLAIMER
 
 # bundled component links
 /dcs-*
