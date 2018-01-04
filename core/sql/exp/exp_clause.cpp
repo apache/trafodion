@@ -574,9 +574,6 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LOBCONVERTHANDLE:
 	  setClassID(LOB_CONVERTHANDLE);
 	  break;
-	case ITM_LOBLOAD:
-	  setClassID(LOB_LOAD);
-	  break;
 	case ITM_SUBSTR:
 	  setClassID(LOB_FUNC_SUBSTR);
 	  break;
@@ -971,9 +968,6 @@ char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::LOB_CONVERTHANDLE:
       GetVTblPtr(vtblPtr, ExpLOBconvertHandle);
-      break;
-    case ex_clause::LOB_LOAD:
-      GetVTblPtr(vtblPtr, ExpLOBload);
       break;
     case ex_clause::LOB_FUNC_SUBSTR:
       GetVTblPtr(vtblPtr, ExpLOBfuncSubstring);
@@ -1405,7 +1399,6 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_LOBUPDATE: return "ITM_LOBUPDATE";
     case ITM_LOBCONVERT: return "ITM_LOBCONVERT";
     case ITM_LOBCONVERTHANDLE: return "ITM_LOBCONVERTHANDLE";
-    case ITM_LOBLOAD: return "ITM_LOBLOAD";
 
     case ITM_UNIQUE_EXECUTE_ID: return "ITM_UNIQUE_EXECUTE_ID";
     case ITM_GET_TRIGGERS_STATUS: return "ITM_GET_TRIGGERS_STATUS";

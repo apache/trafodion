@@ -824,7 +824,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
          tgtLobName, 
          so,
          lobStorageLocation(),lobStorageType(),
-         getExeGlobals()->lobGlobals()->xnId(),
+         -1,
          handleLen, lobHandle,  &outHandleLen_, outLobHandle_,            
          lobData, lobLen, blackBox_, blackBoxLen_,lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit()); 
         
@@ -841,7 +841,7 @@ else
      &outHandleLen_, outLobHandle_,
      blackBoxLen_, blackBox_,
      requestTag_,
-     getExeGlobals()->lobGlobals()->xnId(),
+     -1,
      descSyskey,
      lo,
      &cliError,
@@ -881,12 +881,6 @@ else
   str_cpy_all(result, lobHandle, handleLen);
 
   getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
-
-  if (NOT fromExternal())
-    {
-      getExeGlobals()->lobGlobals()->lobLoadInfo()->
-	setLobHandle(lobNum(), handleLen, lobHandle);
-    }
 
   return ex_expr::EXPR_OK;
 }
@@ -996,7 +990,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 				 blackBoxLen_, blackBox_,
 
 				 requestTag_,
-				 getExeGlobals()->lobGlobals()->xnId(),
+				 -1,
 				 
 				 descSyskey, 
 				 lo,
@@ -1114,7 +1108,7 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
      lobStorageLocation(),
      handleLen, op_data[1],
      requestTag_,
-     getExeGlobals()->lobGlobals()->xnId(),
+     -1,
      descSyskey,
      //     (getExeGlobals()->lobGlobals()->getCurrLobOperInProgress() ? 1 : 0),
      (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
@@ -1354,7 +1348,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 handleLen, lobHandle,
 	 &outHandleLen_, outLobHandle_,
 	 requestTag_,
-	 getExeGlobals()->lobGlobals()->xnId(),
+	 -1,
 	 
 	 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
 	 waitedOp,
@@ -1377,7 +1371,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 handleLen, lobHandle,
 	 &outHandleLen_, outLobHandle_,
 	 requestTag_,
-	 getExeGlobals()->lobGlobals()->xnId(),
+	 -1,
 	 
 	 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
 	 waitedOp,
@@ -1551,7 +1545,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 handleLen, lobHandle,
 				 requestTag_,
                                  so,
-				 getExeGlobals()->lobGlobals()->xnId(),
+				 -1,
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
@@ -1576,7 +1570,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 handleLen, lobHandle,
 				 requestTag_,
                                  so,
-				 getExeGlobals()->lobGlobals()->xnId(),
+				 -1,
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
@@ -1713,62 +1707,6 @@ ex_expr::exp_return_type ExpLOBconvertHandle::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
-////////////////////////////////////////////////////////
-// ExpLOBload
-////////////////////////////////////////////////////////
-ExpLOBload::ExpLOBload(){};
-ExpLOBload::ExpLOBload(OperatorTypeEnum oper_type,
-		       Lng32 numAttrs,
-		       Attributes ** attr, 
-		       Int64 objectUID,
-		       short descSchNameLen,
-		       char * descSchName,
-		       Space * space)
-  : ExpLOBinsert(oper_type, numAttrs,attr, objectUID, 
-		 descSchNameLen, descSchName, space),
-    llFlags_(0)
-{
-};
-
-void ExpLOBload::displayContents(Space * space, const char * displayStr, 
-				 Int32 clauseNum, char * constsArea)
-
-{
-  ExpLOBoper::displayContents(space, "ExpLOBload", clauseNum, constsArea);
-
-}
-
-ex_expr::exp_return_type ExpLOBload::eval(char *op_data[],
-					  CollHeap*h,
-					  ComDiagsArea** diagsArea)
-{
-  ex_expr::exp_return_type err = ex_expr::EXPR_OK;
-
-  char * handle =
-    getExeGlobals()->lobGlobals()->lobLoadInfo()->lobHandle(lobNum());
-  Lng32 handleLen =
-    getExeGlobals()->lobGlobals()->lobLoadInfo()->lobHandleLen(lobNum());
-
-  if (handle == NULL)
-    return ex_expr::EXPR_ERROR;
-  
-  if (fromLoad())
-    {
-      char * clientFile = op_data[1];
-      // call ExLoadApi
-      Lng32 rc = LOBsql2loaderInterface
-	(clientFile, strlen(clientFile),
-	 (char*)"loaderPort", strlen("loaderPort"),
-	 handle, handleLen,
-	 lobStorageLocation(), strlen(lobStorageLocation()));
-    }
-  else
-    {
-      err = insertData(handleLen, handle, op_data, h, diagsArea);
-    }
-
-  return err;
-}
 
 //////////////////////////////////////////////////
 // ExpLOBfunction

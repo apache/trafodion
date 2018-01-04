@@ -3137,23 +3137,6 @@ class LOBconvertHandle : public LOBoper
  private:
 }; // class LOBconvertHandle
 
-class LOBload : public LOBinsert
-{
- public:
-  
- LOBload(ItemExpr *val1Ptr, ObjectType fromObj)
-   : LOBinsert(val1Ptr, NULL, fromObj, FALSE, ITM_LOBLOAD)
-    {};
-  
-  // copyTopNode method
-  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
-				 CollHeap* outHeap = 0);
-  
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
- private:
-}; // class LOBload
 
 class LOBextract : public LOBoper
 {
