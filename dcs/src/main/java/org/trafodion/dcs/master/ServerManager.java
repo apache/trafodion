@@ -176,8 +176,8 @@ public class ServerManager implements Callable {
                 // But, if we are DcsMaster follower that is taking over from
                 // failed one then ignore timestamp issues described above.
                 // See MasterLeaderElection.elect()
-                if ((master.isFollower() == false)
-                        && (serverStartTimestamp > startupTimestamp)) {
+                if ((master.isFollower() == false && serverStartTimestamp > startupTimestamp)
+                        || (master.isFollower() && runningServers.size() < configuredServers.size())) {
                     scriptContext.setHostName(hostName);
                     scriptContext
                             .setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
@@ -240,15 +240,14 @@ public class ServerManager implements Callable {
                         }
                     }
                 } else {
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("No restart for "
-                                + znodePath
-                                + "\nbecause DcsServer start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(serverStartTimestamp))
-                                + "] was before DcsMaster start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(startupTimestamp)) + "]");
+                    LOG.info("No restart for "
+                            + znodePath
+                            + "\nbecause DcsServer start time ["
+                            + DateFormat.getDateTimeInstance().format(
+                                    new Date(serverStartTimestamp))
+                            + "] was before DcsMaster start time ["
+                            + DateFormat.getDateTimeInstance().format(
+                                    new Date(startupTimestamp)) + "]");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
