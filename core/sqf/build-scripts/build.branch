@@ -47,7 +47,7 @@ if [[ "$USE_GIT" == "1" ]];then
   # runs make with a detached HEAD then change the space in "(no branch)"
   # to an underscore so it can be used.
   if [ -z "$ZUUL_BRANCH" ]; then
-    branch=$(git branch | grep '^\* ' | sed 's/(no branch)/no_branch/' | awk '{print $2}')
+    branch=$(git branch --no-color| grep '^\* ' | sed 's/(no branch)/no_branch/' | awk '{print $2}')
   else
     branch=$ZUUL_BRANCH;
   fi
