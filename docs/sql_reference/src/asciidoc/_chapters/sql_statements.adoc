@@ -1540,7 +1540,8 @@ IncreasingToUpperBoundRegionSplitPolicy' \| +
 KeyPrefixRegionSplitPolicy'
 |'org.apache.hadoop.hbase.regionserver. +
 IncreasingToUpperBoundRegionSplitPolicy'                                                      
-| TTL                    | '-1' (forever) \| '_positive-integer_'                                     | '-1'
+| TTL                    | '_positive-integer_', which should be less than equal to 2147483447.
+                      | '2147483647' (forever)
 |===
 
 * `SALT LIKE TABLE`
@@ -2807,7 +2808,8 @@ IncreasingToUpperBoundRegionSplitPolicy' \| +
 KeyPrefixRegionSplitPolicy'
 |'org.apache.hadoop.hbase.regionserver. +
 IncreasingToUpperBoundRegionSplitPolicy'                                                      
-| TTL                    | '-1' (forever) \| '_positive-integer_'                                     | '-1'
+| TTL                    | '_positive-integer_', which should be less than equal to 2147483447.
+                      | '2147483647' (forever)
 |===
 
 * `LOAD IF EXISTS`
