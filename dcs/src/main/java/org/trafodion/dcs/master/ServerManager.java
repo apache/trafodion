@@ -176,8 +176,8 @@ public class ServerManager implements Callable {
                 // But, if we are DcsMaster follower that is taking over from
                 // failed one then ignore timestamp issues described above.
                 // See MasterLeaderElection.elect()
-                if ((master.isFollower() == false)
-                        && (serverStartTimestamp > startupTimestamp)) {
+                if ((master.isFollower() == false && serverStartTimestamp > startupTimestamp)
+                        || (master.isFollower() && runningServers.size() < configuredServers.size())) {
                     scriptContext.setHostName(hostName);
                     scriptContext
                             .setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
@@ -240,15 +240,17 @@ public class ServerManager implements Callable {
                         }
                     }
                 } else {
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("No restart for "
-                                + znodePath
-                                + "\nbecause DcsServer start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(serverStartTimestamp))
-                                + "] was before DcsMaster start time ["
-                                + DateFormat.getDateTimeInstance().format(
-                                        new Date(startupTimestamp)) + "]");
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("No restart for ").append(znodePath).append(System.getProperty("line.separator"));
+                    sb.append("DCS Master isFollower [").append(master.isFollower()).append("], ");
+                    sb.append("DCS Master start time [")
+                            .append(DateFormat.getDateTimeInstance().format(new Date(startupTimestamp))).append("], ");
+                    sb.append("DCS Server start time [")
+                            .append(DateFormat.getDateTimeInstance().format(new Date(serverStartTimestamp))).append("], ");
+                    sb.append("running DCS Server num is [").append(runningServers.size())
+                            .append("], registered DCS Server num is [").append(registeredServers.size()).append("].");
+
+                    LOG.info(sb.toString());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
