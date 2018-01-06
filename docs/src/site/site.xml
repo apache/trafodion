@@ -51,6 +51,7 @@
       <breadcrumbs>false</breadcrumbs>   
       <imgLightbox>false</imgLightbox>
       <markPageHeader>false</markPageHeader>
+      <protocolRelativeURLs>true</protocolRelativeURLs>
       <smoothScroll>true</smoothScroll>
       <!--  Enable code highlighting -->
       <highlightJs>true</highlightJs>
