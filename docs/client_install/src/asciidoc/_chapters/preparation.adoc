@@ -136,7 +136,7 @@ an `apache-trafodion-clients-*.tar` file.
 . Verify content of the `clients` directory:
 +
 ```
-DISCLAIMER JDBCT4.zip LICENSE NOTICE odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
+JDBCT4.zip LICENSE NOTICE odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
 ```
 +
 You use these files to install the different {project-name} clients.
@@ -168,7 +168,7 @@ $ wget <link to package>
 $ tar -xzvf apache-trafodion_clients-*.tar.gz
 $ cd clients
 $ ls
-DISCLAIMER  LICENSE  odb64_linux.tar.gz  TRAF_ODBC_Linux_Driver_64.tar.gz
+LICENSE  odb64_linux.tar.gz  TRAF_ODBC_Linux_Driver_64.tar.gz
 JDBCT4.zip  NOTICE   trafci.zip
 $
 ```

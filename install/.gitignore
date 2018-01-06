@@ -1,7 +1,6 @@
 installer-*.tar.gz
 LICENSE
 NOTICE
-DISCLAIMER
 ambari-installer/RPMROOT
 ambari-installer/traf-mpack.tar.gz
 ambari-installer/mpack-install/repo

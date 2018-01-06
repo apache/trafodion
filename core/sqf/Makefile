@@ -268,7 +268,7 @@ OS_MAJOR ?=  $(shell lsb_release -rs | cut -f1 -d.)
 P_TYPE = $(shell uname -p)
 
 ifeq ($(SQ_BUILD_TYPE),release)
-  PKG_TYPE="server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating"
+  PKG_TYPE="server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}"
 else
   PKG_TYPE="server-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug"
 endif
@@ -287,7 +287,7 @@ PKG_BIN_OBJS += sysinstall
 PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += samples
 PKG_BIN_OBJS += export/limited-support-tools
-PKG_BIN_OBJS += LICENSE NOTICE DISCLAIMER
+PKG_BIN_OBJS += LICENSE NOTICE 
 PKG_BIN_OBJS += rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 
 PKG_BIN_DIRS ?= sql export
@@ -328,12 +328,6 @@ NOTICE: ../../licenses/NOTICE-server
 ../../licenses/NOTICE-server:
 	cd $(@D) && $(MAKE) $(@F)
 
-DISCLAIMER: ../../licenses/DISCLAIMER-server
-	cp -f $? $@
-
-../../licenses/DISCLAIMER-server:
-	cd $(@D) && $(MAKE) $(@F)
-
 rest-${TRAFODION_VER}:
 	ln -s ../rest/target/$@/$@ $@
 
@@ -352,7 +346,7 @@ pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks: LICENSE NOTICE DISCLAIMER rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
+pkglist-symlinks: LICENSE NOTICE rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer
