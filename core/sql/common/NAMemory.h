@@ -52,7 +52,6 @@
 #include "Platform.h"
 #include "NAStringDefGlobals.h"
 #include <stddef.h>
-#include <setjmp.h>
 
 #include "NAError.h"
 #include "HeapID.h"
@@ -339,18 +338,9 @@ public:
   // It is used to deallocate the above arrays.
   void deallocateMemory(void * addr);
 
-  // this method is used to set the upper limit - currently only used for testing
-  // setjmp and longjmp
   void setUpperLimit ( size_t newUpperLimit ) { upperLimit_ = newUpperLimit; };
   
-  // these four methods used to reside in class CollHeap 
-  void setJmpBuf( jmp_buf *newJmpBuf );
-
-  inline jmp_buf * getJmpBuf()                { return heapJumpBuf_; }
-
   inline NABoolean getWasMemoryExhausted()    { return exhaustedMem_; }
-
-  void logAllocateError(short error, SEG_ID segmentId, Lng32 blockSize, short errorDetail);
 
   void handleExhaustedMemory();
 
@@ -473,7 +463,6 @@ private:
 
   // these data members used to be in class CollHeap
 protected:
-  jmp_buf *heapJumpBuf_;      // Setjmp() buffer for handing memory failures
   NABoolean exhaustedMem_;    // Set to true if cannot satisfy memory request
   unsigned short errorsMask_; // SEGMENT_ALLOCATE_ errors that have occurred
   HeapID heapID_;             // For tracking leaks.  (eric)

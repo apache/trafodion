@@ -145,7 +145,6 @@ Int32 main(Int32 argc, char **argv)
 
 void runServer(Int32 argc, char **argv)
 {
-  jmp_buf ssmpJmpBuf;
   Int32 shmId;
   StatsGlobals *statsGlobals = (StatsGlobals *)shareStatsSegment(shmId);
   Int32 r = 0;
@@ -209,9 +208,6 @@ void runServer(Int32 argc, char **argv)
   XPROCESSHANDLE_GETMINE_(statsGlobals->getSsmpProcHandle());
 
   NAHeap *ssmpHeap = cliGlobals->getExecutorMemory();
-  cliGlobals->setJmpBufPtr(&ssmpJmpBuf);
-  if (setjmp(ssmpJmpBuf))
-    NAExit(1); // Abend
 
   IpcEnvironment       *ssmpIpcEnv = new (ssmpHeap) IpcEnvironment(ssmpHeap,
             cliGlobals->getEventConsumed(), FALSE, IPC_SQLSSMP_SERVER,

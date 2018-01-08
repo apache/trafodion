@@ -151,9 +151,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   cmpCurrentContext = this;
   CMPASSERT(heap_ != NULL);
 
-  // For embedded arkcmp, the CmpInternalErrorJmpBuf will be populated
-  // later but the buffer location and pointer are valid
-  heap_->setJmpBuf(CmpInternalErrorJmpBufPtr);
   heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
 
   // Reserve memory that can be used for out-of-memory reporting.
@@ -218,8 +215,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
                                  heap_,
                                  initHeapSize,
                                  memLimit);
-
-    histogramCacheHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
 
     // Setting up the cache for histogram
     histogramCache_ = new(histogramCacheHeap) HistogramCache(histogramCacheHeap, 107);

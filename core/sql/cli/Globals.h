@@ -64,7 +64,6 @@
 
 #include "NAMemory.h"
 #include "sqlcli.h"
-#include "QuasiFileManager.h"
 #include "Ipc.h"
 #include "ComQueue.h"
 #include "logmxevent.h"
@@ -72,14 +71,13 @@
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
 class ContextCli;
-class Statement;  // $$$ possibly a stub for QuasiFileberManager
-class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
+class Statement;  
+class ComDiagsArea; 
 class ExEspManager;
 class ExSsmpManager;
 class ExSqlComp;
 class IpcEnvironment;
 class MemoryMonitor;
-class QuasiFileManager;
 class HashQueue;
 class ExUdrServerManager;
 class ExControlArea;
@@ -159,7 +157,6 @@ public:
   ExUdrServerManager *getUdrServerManager();
   inline MemoryMonitor * getMemoryMonitor()     { return memMonitor_; }
   inline void setMemoryMonitor(MemoryMonitor *memMon) { memMonitor_ = memMon; }
-  inline QuasiFileManager * getQuasiFileManager() { return quasiFileManager_; }
 
   inline NAHeap * getExecutorMemory()      { return &executorMemory_; }
   inline NAHeap * getNoWaitHeap()  { return noWaitSQLHeap_; }
@@ -454,9 +451,6 @@ private:
 
   // heap used by no-wait SQL procedures
   NAHeap * noWaitSQLHeap_;
-
-  // quasi file manager for this process
-  QuasiFileManager * quasiFileManager_;
 
   // Cache of descriptive table information from resource forks. Used
   // in the audit reading CLI procedures called by utilities and by

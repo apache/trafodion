@@ -1354,7 +1354,6 @@ NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
        const Lng32 size = 16 * 1024;  // The initial size
        routineHeap = new CTXTHEAP NAHeap("NARoutine Heap", (NAHeap *)CTXTHEAP, 
                                          size);
-       routineHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
      }
      else 
        routineHeap=CmpCommon::statementHeap(); 

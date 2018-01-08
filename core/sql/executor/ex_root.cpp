@@ -66,10 +66,6 @@
 #include "ExSMGlobals.h"
 #include "ExSMCommon.h"
 #include "ExpHbaseInterface.h"
-// this contains the location where a longjmp is done after
-// an assertion failure in executor. See file ex_ex.h.
-jmp_buf ExeBuf;
-
 
 ////////////////////////////////////////////////////////////////////////
 //  TDB procedures
@@ -97,18 +93,8 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
     }
   }
 
-  Int32 jmpRc;
-
-  
   // set this plan version in the statement globals.
   glob->setPlanVersion(planVersion_);
-
-  jmp_buf *jmpBufPtr;
-  if (setjmp(ExeBuf))
-    {
-      // an error may be stored in the global diags area
-      return NULL;
-    }
 
   // set the fragment directory in glob. This will be passed
   // to the build of all tdb's and used by them, if needed.
@@ -164,22 +150,6 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   {
     return NULL;
   }
-
-  exe_glob->getSpace()->setJmpBuf(exe_glob->getJmpBuf());
-  // TBD -- do the same (as above) for master_glob->getDefaultHeap ????
-
-//#ifndef NA_YOS
-   jmpBufPtr = exe_glob->getJmpBuf();
-   jmpRc =  setjmp(*jmpBufPtr);
-//#endif // NA_YOS
-
-  if (jmpRc)
-    {
-      exe_glob->cleanupTcbs();
-      if (exe_glob->getSpace()->getWasMemoryExhausted())
-        exe_glob->makeMemoryCondition(-EXE_NO_MEM_TO_BUILD); 
-      return NULL;
-    }
 
   if (getQueryUsesSM() && cliGlobals->getEnvironment()->smEnabled())
   {
@@ -673,43 +643,8 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
 {
   Int32 jmpRc = 0;
 
-  // This setjmp is for assertion failure.  It won't work when the 
-  // executor is multi-threaded.
-  jmpRc = setjmp(ExeBuf);
-  if (jmpRc)
-   {
-      fatalError_ = TRUE;
-      if (jmpRc == MEMALLOC_FAILURE)
-      {
-         if (diagsArea == NULL)
-            diagsArea = ComDiagsArea::allocate(getHeap());
-         *diagsArea << DgSqlCode(-EXE_NO_MEM_TO_EXEC);
-         return -EXE_NO_MEM_TO_EXEC; 
-      }
-      else
-         return -1;
-    }
 
   ExMasterStmtGlobals *master_glob = glob->castToExMasterStmtGlobals();
-  master_glob->getSpace()->setJmpBuf(master_glob->getJmpBuf());
-
-//#ifndef NA_YOS
-  jmpRc =  setjmp(*master_glob->getJmpBuf());
-//#endif // NA_YOS
-  if (jmpRc)
-    {
-      fatalError_ = TRUE;
-      if (master_glob->getSpace()->getWasMemoryExhausted())
-      {
-        glob->makeMemoryCondition(-EXE_NO_MEM_TO_EXEC);
-        if (diagsArea == NULL) 
-           diagsArea = ComDiagsArea::allocate(getHeap());
-        *diagsArea << DgSqlCode(-EXE_NO_MEM_TO_EXEC);
-        return -EXE_NO_MEM_TO_EXEC; 
-      }
-      else
-         return -1;
-    }
 
   if (fatalError_)
     {
@@ -1126,19 +1061,6 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
   // processing once the queue becomes empty.
   //
 
-  // Much of the "catastropic error" handling code (especially the 
-  // code that tries to handle longjmps) assumes that the diagsArea 
-  // passed in is NULL.  As of now, all of the Statement's calls 
-  // to this method do send in NULL, but if this ever changes, a 
-  // memory leak will result.  Hence the assertion:
-  // The assertion was removed by Gil Siegel because:
-  // a) fetchMultiple can call with a diagsArea if a warning  occurred
-  // b) longjmp is no longer done in the master executor or mxesp so a leak
-  //    is no longer a possibility
-
-//  ex_assert( diagsArea == NULL, 
-//    "Non-null diagsArea sent to ex_root_tcb::fetch can cause memory leaks.");
-
   // For the GET_NEXT_N protocol, we should only return when a Q_GET_DONE is
   //  received.  In addition, due to the incomplete implementation of the 
   //  GET_NEXT_N protocol, it is possible to receive a Q_GET_DONE without
@@ -1151,50 +1073,8 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
   NABoolean nextIsQNoData         = FALSE;
   if (newOperation)
     time_of_fetch_call_usec_      = NA_JulianTimestamp();
-  Int32 jmpRc = 0;
-
-  // enable executor exception handling
-  // (ExeBuf should be moved to executor globals, except that would 
-  // mean that globals would need to be available to any code that
-  // does an assertion.) $$$$
-  // This is for assertion failure.  It might not work when the executor
-  // is multi-threaded.
-  jmpRc = setjmp(ExeBuf);
-  if (jmpRc)
-    {
-      fatalError_ = TRUE;
-      if (jmpRc == MEMALLOC_FAILURE)
-      {
-         if (diagsArea == NULL)
-            diagsArea = ComDiagsArea::allocate(getHeap());
-         *diagsArea << DgSqlCode(-EXE_NO_MEM_TO_EXEC);
-         return -EXE_NO_MEM_TO_EXEC; 
-      }
-      else
-      return -1;
-    }
 
   ExMasterStmtGlobals *master_glob = glob->castToExMasterStmtGlobals();
-  master_glob->getSpace()->setJmpBuf(master_glob->getJmpBuf());
- 
-//#ifndef NA_YOS 
-  jmpRc =  setjmp(*master_glob->getJmpBuf());
-//#endif // NA_YOS
-
-  if (jmpRc)
-    {
-      fatalError_ = TRUE;
-      if (master_glob->getSpace()->getWasMemoryExhausted())
-      {
-         glob->makeMemoryCondition(-EXE_NO_MEM_TO_EXEC);
-         if (diagsArea == NULL) 
-            diagsArea = ComDiagsArea::allocate(getHeap());
-         *diagsArea << DgSqlCode(-EXE_NO_MEM_TO_EXEC);
-         return -EXE_NO_MEM_TO_EXEC; 
-      }
-      else
-         return -1;
-    }
 
   // start off by calling the scheduler (again)
   ExWorkProcRetcode schedRetcode = WORK_CALL_AGAIN;
@@ -2009,8 +1889,6 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
 			    Descriptor * output_desc,
 			    ComDiagsArea*& diagsArea)
 {
-  // $$TBD: put in code to do setjmp's
-
   ExMasterStmtGlobals *master_glob = getGlobals()->
 	            castToExExeStmtGlobals()->castToExMasterStmtGlobals(); 
 

@@ -9496,7 +9496,6 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       // track the size of this object.  Otherwise we might use the context heap.
       const Lng32 size = 16 * 1024;  // The initial size
       routineHeap = new CTXTHEAP NAHeap("NARoutine Heap", (NAHeap *)CTXTHEAP, size);
-      routineHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
     }
     // If not caching, put NARoutine on statement heap.
     else routineHeap=CmpCommon::statementHeap(); 

@@ -85,7 +85,6 @@ Tree::Tree(ULng32 numruns, ULng32 runsize, ULng32 recsize,
       assert(scratch_ != NULL);
     }
 
-   //Allocation failure will cause longjmp to jmp handler in ex_sort.
    rootNode_ = (TreeNode*)heap_->allocateMemory(numRuns_ * sizeof(TreeNode));
    rootRecord_ = (Record*)heap_->allocateMemory(numRuns_ * sizeof(Record));
    keyOfLastWinner_ = (char*)heap_->allocateMemory(sizeof(char) * keysize);

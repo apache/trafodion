@@ -47,9 +47,6 @@
 #endif
 
 #include <stdlib.h>		// exit(), in NAExit()
-//#include <setjmp.h>
-
-
 
 #include "seabed/fs.h"
 #include "seabed/ms.h"

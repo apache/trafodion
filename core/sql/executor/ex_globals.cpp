@@ -61,7 +61,6 @@ ex_globals::ex_globals(short num_temps,
        injectErrorAtQueueFreq_(0),
        flags_(0),
        planVersion_(0),
-       jmpInScope_(FALSE),
        sharedPool_(NULL),
        rowNum_(1),
        exLobGlobals_(NULL)

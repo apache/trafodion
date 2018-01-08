@@ -1912,7 +1912,6 @@ QCache::QCache(QueryCache & qc, ULng32 maxSize, ULng32 maxVictims, ULng32 avgPla
   nOfCacheHits_[A_PREPARSE] =
   nOfCacheHits_[A_PARSE] =
   nOfCacheHits_[A_BIND] = 0;  
-  heap_->setJmpBuf(CmpInternalErrorJmpBufPtr);
   heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
 
 #ifdef DBG_QCACHE
