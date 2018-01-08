@@ -56,7 +56,6 @@ $(LIBOBJ): $(LIBSRC) $(INCSRC)
 	$(CC) $(CCFLAGS) $(INCLUDES) $*.c $(LDFLAGS) -c
 
 $(LIBSM): $(LIBOBJ)
-	-mkdir -p $(SP_EXPORT_LIB)
 	$(CC) $(LDFLAGS) $(CCFLAGS) -Wall -Werror -shared \
 		-Wl,-soname,libsm.so -o $@ $(LIBOBJ) -lrt
 
