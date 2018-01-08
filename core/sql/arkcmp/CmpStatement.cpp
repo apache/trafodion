@@ -169,8 +169,6 @@ CmpStatement::CmpStatement(CmpContext* context,
                        context_->heap(),
                        (Lng32)32768,
                        memLimit);
-
-    heap_->setJmpBuf(&ExportJmpBuf);
     heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
   }
 

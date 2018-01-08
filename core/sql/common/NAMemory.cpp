@@ -868,7 +868,6 @@ NAMemory::NAMemory(const char * name)
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
-    heapJumpBuf_(0),
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
@@ -920,7 +919,6 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
    memoryList_(NULL),
    lastListEntry_(NULL),
    nextEntry_(NULL),
-   heapJumpBuf_(0),
    exhaustedMem_(FALSE),
    errorsMask_(0),
     crowdedTotalSize_(0ll)
@@ -978,7 +976,6 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
-    heapJumpBuf_(0),
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
@@ -1034,7 +1031,6 @@ NAMemory::NAMemory(const char * name,
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
-    heapJumpBuf_(0),
     exhaustedMem_(FALSE),
     errorsMask_(0),
     crowdedTotalSize_(0ll)
@@ -2413,42 +2409,8 @@ void
 NAMemory::handleExhaustedMemory()
 {
   exhaustedMem_ = TRUE;
-  if (heapJumpBuf_)
-    {
-      ARKCMP_EXCEPTION_EPILOGUE("NAMemory");
-      longjmp(*heapJumpBuf_, MEMALLOC_FAILURE);
-    }
 }
 #endif // MUSE
-
-void
-NAMemory::logAllocateError(short error, SEG_ID segmentId, Lng32 blockSize, short errorDetail)
-{
-  char msg[128], msgErrorDetail[32];
-  if (error != 0 && error != 15)
-  {
-    unsigned short errorMask = 1 << error - 1;
-    if (!(errorsMask_ & errorMask))
-    {
-      errorsMask_ |= errorMask;
-      str_sprintf(msg, "SEGMENT_ALLOCATE_ for segment-id %u, segment-size %u returned error %u",
-                  segmentId, blockSize, error);
-      if (error == 1 || error == 2 || error == 3 || error == 14)
-      {
-        str_sprintf(msgErrorDetail, ", error-detail %u", errorDetail);
-        str_cat_c(msg, msgErrorDetail);
-      }
-      SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
-    }
-  }
-}
-
-void NAMemory::setJmpBuf( jmp_buf *newJmpBuf )
-{ 
-  if (derivedClass_ == NAHEAP_CLASS)
-    assert(((NAHeap*)this)->getThreadSafe() == false);
-  heapJumpBuf_ = newJmpBuf;
-}
 
 
 NABoolean NAMemory::getUsage(size_t * lastBlockSize, size_t * freeSize, size_t * totalSize)
@@ -2769,7 +2731,6 @@ NAHeap::~NAHeap()
 
 void NAHeap::setThreadSafe()
 {
-  assert(((NAMemory*)this)->getJmpBuf() == NULL);
   int rc;
   pthread_mutexattr_t attr;
   rc = pthread_mutexattr_init(&attr);
@@ -3163,11 +3124,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
         (*errCallback_)(this, userSize);
 
       if (failureIsFatal) {
-        // Might never return...
         handleExhaustedMemory();
-        // If we return from this call it means that the caller wanted
-        // a memory allocation failure to be fatal yet did not set the
-        // the jump buffer.  This is not good.
         abort();
       }
 
@@ -4103,7 +4060,6 @@ void * DefaultIpcHeap::allocateIpcHeapMemory(size_t size, NABoolean failureIsFat
   if (rc) return rc;
   if (failureIsFatal) 
     {
-      // Might never return...
       handleExhaustedMemory();
       abort();
     }

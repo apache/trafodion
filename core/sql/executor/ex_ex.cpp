@@ -646,11 +646,3 @@ NABoolean ExExprComputeSpace(ex_tcb * tcb)
 {
   return tcb->getGlobals()->computeSpace();
 }
-
-void ex_log_ems( const char *f, Int32 l, const char * m)
-{
-}
-void assert_botch_longjmp( const char *f, Int32 l, const char * m)
-{
-
-}
