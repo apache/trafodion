@@ -650,7 +650,7 @@ Tables must be created/dropped/altered through Hive itself.
 [[load_examples]]
 === Examples of LOAD
 
-* This example demonstrates the LOAD statement continues loading data from source_table into target_table after ignorable data conversion error.
+* The examples below demonstrate how the LOAD Statement behaves without and with `CONTINUE ON ERROR`, when ignorable data conversion errors occur.
 
 + 
 Suppose that we have two tables (source_table and target_table) like this:
@@ -696,7 +696,7 @@ CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE
 ```
 
 +
-Load data from source_table into target_table when `CONTINUE ON ERROR` is not specified, the operation fails with data conversion error.
+When loading data from source_table into target_table if `CONTINUE ON ERROR` is not specified, the operation fails with a data conversion error.
 
 +
 ```
@@ -713,7 +713,7 @@ Task:  LOADING DATA    Status: Started    Time: 2018-01-03 16:15:53.250909
 ```
 
 +
-Load data from source_table into target_table when `CONTINUE ON ERROR` is specified, the operation succeeds after ignorable data conversion error.
+When loading data from source_table into target_table if `CONTINUE ON ERROR` is specified, the operation succeeds after ignorable data conversion errors.
 
 +
 ```
@@ -753,6 +753,76 @@ A           B
           5 ee  
           6 fff 
 --- 3 row(s) selected.
+```
+
+* Suppose that we have two same tables (source_table and target_table) as shown in the first example.
+
+** This example explains how the LOAD statement loads data and logs error rows to the default directory `user/trafodion/bulkload/logs`.
++
+```
+SQL>LOAD WITH LOG ERROR ROWS INTO target_table SELECT * FROM source_table;
+
+UTIL_OUTPUT
+-------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:23:03.142862                                                      
+Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:23:03.151725
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.009
+Logging Location: /user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_082303
+Task:  LOADING DATA    Status: Started    Time: 2018-01-03 16:23:03.151815
+       Rows Processed: 6 
+       Error Rows:     3 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-03 16:23:03.920270
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.768
+Task:  COMPLETION      Status: Started    Time: 2018-01-03 16:23:03.920313                                                      
+       Rows Loaded:    3 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:23:04.301579
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.381
+
+--- SQL operation complete.
+
+SQL>select * from target_table;  
+A           B   
+----------- ----
+          4 dd  
+          5 ee  
+          6 fff 
+--- 3 row(s) selected.
+
+[root@cent-1 bin]$ hdfs dfs -ls /user/trafodion/bulkload/logs/
+Found 1 items
+drwxr-xr-x   - trafodion trafodion          0 2018-01-13 16:23 
+/user/trafodion/bulkload/logs/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_082303
+```
+
+** This example shows how the LOAD statement loads and logs error rows to the specified directory `user/trafodion/bulkload/error_log`.
++
+```
+SQL>LOAD WITH LOG ERROR ROWS TO '/BULKLOAD/ERROR_LOG' INTO target_table SELECT * FROM source_table;
+
+UTIL_OUTPUT
+-------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  CLEANUP         Status: Started    Time: 2018-01-03 17:19:43.436689                                                      
+Task:  CLEANUP         Status: Ended      Time: 2018-01-03 17:19:43.456761
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.020
+Logging Location: /bulkload/error_log/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_091943
+Task:  LOADING DATA    Status: Started    Time: 2018-01-03 17:19:43.456804
+       Rows Processed: 6 
+       Error Rows:     3 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-03 17:19:43.722825
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.266
+Task:  COMPLETION      Status: Started    Time: 2018-01-03 17:19:43.722868                                                      
+       Rows Loaded:    3 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-03 17:19:44.591544
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.869
+
+--- SQL operation complete.
+
+[root@cent-1 bin]$ hdfs dfs -ls /bulkload/error_log
+Found 1 items
+drwxr-xr-x   - trafodion trafodion          0 2018-01-03 17:19 
+/bulkload/error_log/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_091943
 ```
 
 * For customer demographics data residing in
