@@ -650,6 +650,111 @@ Tables must be created/dropped/altered through Hive itself.
 [[load_examples]]
 === Examples of LOAD
 
+* This example demonstrates the LOAD statement continues loading data from source_table into target_table after ignorable data conversion error.
+
++ 
+Suppose that we have two tables (source_table and target_table) like this:
+
++
+```
+SQL>SELECT * FROM source_table; 
+A            B   
+-----------  ----
+
+          1  aaaa
+          2  bbbb
+          3  cccc
+          4  dd  
+          5  ee  
+          6  fff 
+--- 6 row(s) selected.
+
+SQL>SHOWDDL source_table;
+CREATE TABLE TRAFODION.SEABASE.SOURCE_TABLE
+  ( 
+    A                                INT DEFAULT NULL NOT SERIALIZED
+  , B                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table;
+--- 0 row(s) selected.
+
+SQL>SHOWDDL target_table; 
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE
+  ( 
+    A                                INT DEFAULT NULL NOT SERIALIZED
+  , B                                CHAR(3) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+```
+
++
+Load data from source_table into target_table when `CONTINUE ON ERROR` is not specified, the operation fails with data conversion error.
+
++
+```
+SQL>LOAD INTO target_table SELECT * FROM source_table;
+
+UTIL_OUTPUT
+---------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:15:53.222441                                                      
+Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:15:53.250826
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.028
+Task:  LOADING DATA    Status: Started    Time: 2018-01-03 16:15:53.250909                                                      
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,4 BYTES,ISO88591) Source Value:aaaa to Target Type:CHAR(REC_BYTE_F_ASCII,3 BYTES,ISO88591). [2018-01-03 16:15:54]
+```
+
++
+Load data from source_table into target_table when `CONTINUE ON ERROR` is specified, the operation succeeds after ignorable data conversion error.
+
++
+```
+SQL>LOAD WITH CONTINUE ON ERROR INTO target_table SELECT * FROM source_table;
+
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  CLEANUP         Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  PREPARATION     Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+       Rows Processed: 3 
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.151
+Task:  COMPLETION      Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.137
+--- 3 row(s) loaded.
+
+UTIL_OUTPUT
+---------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:19:43.543405                                                      
+Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:19:43.568828
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.025
+Task:  LOADING DATA    Status: Started    Time: 2018-01-03 16:19:43.568899                                                      
+       Rows Processed: 6 
+       Error Rows:     3 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-03 16:19:44.211150
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.642
+Task:  COMPLETION      Status: Started    Time: 2018-01-03 16:19:44.211192                                                      
+       Rows Loaded:    3 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:19:45.171458
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.960
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table;  
+A           B   
+----------- ----
+          4 dd  
+          5 ee  
+          6 fff 
+--- 3 row(s) selected.
+```
+
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using
 the following Hive SQL:
