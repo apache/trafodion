@@ -825,6 +825,56 @@ drwxr-xr-x   - trafodion trafodion          0 2018-01-03 17:19
 /bulkload/error_log/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_091943
 ```
 
+* The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
++
+Suppose that we have two same tables (source_table and target_table) as shown in the first example.
++
+```
+SQL>LOAD WITH STOP AFTER 2 ERROR ROWS INTO target_table SELECT * FROM source_table;
+
+UTIL_OUTPUT
+---------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  CLEANUP         Status: Started    Time: 2018-01-05 10:53:52.20569                                                       
+Task:  CLEANUP         Status: Ended      Time: 2018-01-05 10:53:52.45689
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.025
+Task:  LOADING DATA    Status: Started    Time: 2018-01-05 10:53:52.45757                                                       
+*** WARNING[8114] The number of error rows is 3 [2018-01-05 10:53:53]
+*** ERROR[8113] The maximum number of error rows is exceeded. [2018-01-05 10:53:53]
+*** WARNING[8114] The number of error rows is 3 [2018-01-05 10:53:53]
+
+SQL>SELECT * FROM target_table;
+--- 0 row(s) selected.
+
+SQL>LOAD WITH STOP AFTER 3 ERROR ROWS INTO target_table SELECT * FROM source_table;
+
+UTIL_OUTPUT
+---------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  CLEANUP         Status: Started    Time: 2018-01-05 15:55:58.975459                                                      
+Task:  CLEANUP         Status: Ended      Time: 2018-01-05 15:55:59.20219
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.045
+Task:  LOADING DATA    Status: Started    Time: 2018-01-05 15:55:59.20322                                                       
+       Rows Processed: 6 
+       Error Rows:     3 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-05 15:55:59.960109
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.940
+Task:  COMPLETION      Status: Started    Time: 2018-01-05 15:55:59.960180                                                      
+       Rows Loaded:    3 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-05 15:56:00.448496
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.488
+
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table;
+A           B   
+----------- ----
+          4 dd  
+          5 ee  
+          6 fff 
+--- 3 row(s) selected.
+```
+
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using
 the following Hive SQL:
