@@ -230,15 +230,15 @@ an interval qualifier.
 == SQL 3014
 
 ```
-Precision of numeric, <value>, cannot exceed 18.
+Precision of numeric, <value>, cannot exceed <limit>.
 ```
 
 *Cause:* You defined a numeric item, <value>, with precision greater
-than 18, which is not supported.
+than the limit, which is not supported.
 
 *Effect:* The operation fails.
 
-*Recovery:* Redefine the item with a precision value of 18 or less.
+*Recovery:* Redefine the item with a lower precision value.
 
 <<<
 [[SQL-3015]]
@@ -677,7 +677,7 @@ The interval <value> is not valid.
 == SQL 3045
 
 ```
-The date <value> is not valid.
+The date '<value>' is not valid.
 ```
 
 *Cause:* You specified an invalid date <value>.
@@ -690,7 +690,7 @@ The date <value> is not valid.
 == SQL 3046
 
 ```
-The time <value> is not valid.
+The time '<value>' is not valid.
 ```
 
 *Cause:* You specified an invalid time <value>.
@@ -704,7 +704,7 @@ The time <value> is not valid.
 == SQL 3047
 
 ```
-The timestamp <value> is not valid.
+The timestamp '<value>' is not valid.
 ```
 
 *Cause:* You specified an invalid timestamp <value>.
