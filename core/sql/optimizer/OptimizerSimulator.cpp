@@ -947,6 +947,18 @@ void OptimizerSimulator::dropObjects()
               CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
               raiseOsimException("drop external table: %d", retcode);
           }
+          //unregister hive table
+          NAString unregisterStmt = "UNREGISTER HIVE TABLE IF EXISTS ";
+          unregisterStmt += name;
+          debugMessage("%s\n", unregisterStmt.data());
+          retcode = executeFromMetaContext(unregisterStmt.data());
+          if(retcode < 0)
+          {
+              //suppress errors for now, even with IF EXISTS this will
+              //give an error if the Hive table does not exist
+              //CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
+              //raiseOsimException("unregister hive table: %d", retcode);
+          }
           //drop hive table
           NAString hiveSchemaName;
           qualName->getHiveSchemaName(hiveSchemaName);
@@ -1048,10 +1060,12 @@ static const char* extractAsComment(const char* header, const NAString & stmt)
     {
         int end = stmt.index('\n', begin);
         if(end > begin)
-        {
-            stmt.extract(begin, end-1, tmp);
-            return tmp.data();
-        }
+          end -= 1;
+        else
+          end = stmt.length()-1;
+
+        stmt.extract(begin, end, tmp);
+        return tmp.data();
     }
     return NULL;
 }
@@ -1156,7 +1170,14 @@ void OptimizerSimulator::loadHiveDDLs()
     while(readHiveStmt(hiveCreateExternalTableSql, statement, comment))
    {
         if(statement.length() > 0) {
-            debugMessage("%s\n", extractAsComment("CREATE EXTERNAL TABLE", statement));
+            // this could be a create external table or just a register table
+            // if this Hive table just has stats but no external table
+            const char *stmtText = extractAsComment("CREATE EXTERNAL TABLE", statement);
+
+            if (!stmtText)
+              stmtText = extractAsComment("REGISTER  HIVE TABLE", statement);
+            debugMessage("%s\n", stmtText);
+
             retcode = executeFromMetaContext(statement.data()); //create hive external table
             if(retcode < 0)
             {
@@ -2943,8 +2964,9 @@ void OptimizerSimulator::dumpHiveTableDDLs()
             for (int i = 0; i < outQueue->numEntries(); i++) {
                 OutputInfo * vi = (OutputInfo*)outQueue->getNext();
                 char * ptr = vi->get(0);
-                //write "CREATE EXTERNAL TABLE" DDL to another file.
-                if(strstr(ptr, "CREATE EXTERNAL TABLE"))
+                //write "CREATE EXTERNAL TABLE" and "REGISTER" DDL to another file.
+                if(strstr(ptr, "CREATE EXTERNAL TABLE") ||
+                   strstr(ptr, "REGISTER /*INTERNAL*/ HIVE TABLE"))
                     inExtDDL = TRUE;
                 if(inExtDDL){
                     (*writeLogStreams_[HIVE_CREATE_EXTERNAL_TABLE]) << ptr << endl;
