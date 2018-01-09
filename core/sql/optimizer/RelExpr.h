@@ -39,6 +39,7 @@
 
 #include "ObjectNames.h"
 #include "CmpContext.h"
+#include "CmpStatement.h"
 #include "RETDesc.h"
 #include "ValueDesc.h"
 #include "Rule.h"
