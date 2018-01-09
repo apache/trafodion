@@ -2299,7 +2299,8 @@ SQLRETURN CDesc::BuildValueList(CStmt *pHandle,  //AMR - changed this pointer ty
 						pHandle->setDiagRec(DRIVER_ERROR, retCode, 0, (char *)errorMsg, NULL, RowNumber, ParamNumber);
 					else
 					{
-						sprintf((char *)errorMsg," Incorrect Format or Data.", RowNumber, ParamNumber);
+						sprintf((char *)errorMsg," Incorrect Format or Data [RowNumber: %d, ParamNumber:%d].",
+                                                        RowNumber, ParamNumber);
 						pHandle->setDiagRec(DRIVER_ERROR, retCode, 0, (char *)errorMsg, NULL,
 								RowNumber, ParamNumber);
 					}

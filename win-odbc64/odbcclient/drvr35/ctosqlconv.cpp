@@ -2170,7 +2170,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 								pSQLTimestamp->hour,pSQLTimestamp->minute,pSQLTimestamp->second,
 								cTmpFraction);
 				else
-					DataLen = sprintf(cTmpBuf,"%02d",
+					DataLen = sprintf(cTmpBuf,"%02d:%02d:%02d",
 								pSQLTimestamp->hour,pSQLTimestamp->minute,pSQLTimestamp->second);
 				break;
 			case SQLDTCODE_YEAR_TO_HOUR:
@@ -2717,7 +2717,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld %ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
@@ -2779,7 +2779,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld %ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
