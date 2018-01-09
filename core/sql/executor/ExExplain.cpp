@@ -768,9 +768,9 @@ short ExExplainTcb::work()
 
 	  // starts with an '/'. It is an oss pathname.
 	  if ((modDir_) &&
-	      (strlen(modDir_) >= 3) &&
-	      (strncmp(modDir_, "/E/", 3) == 0) ||
-	      (strncmp(modDir_, "/G/", 3) == 0))
+	      ((strlen(modDir_) >= 3) &&
+               (strncmp(modDir_, "/E/", 3) == 0) ||
+               (strncmp(modDir_, "/G/", 3) == 0)))
 	    {
 	      // Pathname cannot be an Expand or a Guardian name.
 	      // Return error.

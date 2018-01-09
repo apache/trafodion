@@ -2051,7 +2051,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
     default:
       break;
     }
-    if (cpuStats != NULL || cpuStats->numEntries() > 0)
+    if (cpuStats != NULL && cpuStats->numEntries() > 0)
        *this << *(cpuStats);
     send(FALSE);
     reply->decrRefCount();

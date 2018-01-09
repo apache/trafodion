@@ -564,7 +564,9 @@ Fs_Open_Thread *Fs_Open_Thread::thread_get(const char *pp_filename,
         lp_entry = new Map_Open_Entry_Type;
         lp_entry->ip_thr = lp_thr;
         cv_map.putv(pp_filename, lp_entry);
-        lp_thr->md_list_add(pp_md);
+        // this only want to fix error checked by tools
+        if (NULL != lp_thr)
+            lp_thr->md_list_add(pp_md);
         lv_status = cv_map_mutex.unlock();
         SB_util_assert_ieq(lv_status, 0);
     }
@@ -572,10 +574,10 @@ Fs_Open_Thread *Fs_Open_Thread::thread_get(const char *pp_filename,
     if (gv_fs_trace) {
         if (lv_reuse)
             trace_where_printf(WHERE, "name=%s, reuse thread, filename=%s\n",
-                               lp_thr->get_name(), pp_filename);
+                    (lp_thr == NULL) ? "NULL" : lp_thr->get_name(), pp_filename);
         else
             trace_where_printf(WHERE, "name=%s, got thread, filename=%s\n",
-                               lp_thr->get_name(), pp_filename);
+                    (lp_thr == NULL) ? "NULL" : lp_thr->get_name(), pp_filename);
     }
 
     lv_status = cv_thread_get_mutex.unlock();

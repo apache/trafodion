@@ -89,7 +89,7 @@ void ExSqlComp::clearDiags()
   if (diagArea_)
     diagArea_->clear();
   else
-    diagArea_ = diagArea_->allocate(h_);
+    diagArea_ = ComDiagsArea::allocate(h_);
 }
 
 inline void ExSqlComp::initRequests(Requests& req)

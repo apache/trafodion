@@ -1163,10 +1163,12 @@ ImplInit (
 		srvrGlobal = new SRVR_GLOBAL_Def;
 		if (srvrGlobal == NULL)
 		{
+			IDL_OBJECT_def objRef;
+			memset(&objRef, 0, sizeof(IDL_OBJECT_def));
 //LCOV_EXCL_START
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-					srvrGlobal->srvrObjRef, 1, "srvrGlobal");
+					GetCurrentProcessId(), ODBCMX_SERVER,
+					objRef, 1, "srvrGlobal");
 			exitServerProcess();
 //LCOV_EXCL_STOP
 		}

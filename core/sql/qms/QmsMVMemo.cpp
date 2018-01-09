@@ -475,7 +475,7 @@ void MVMemo::insert(QRJBBPtr jbb, MVDetailsPtr mv)
     if ( subGraph->isSelfJoin() && 
         !isSelfJoinTooBig       && 
         !isDuplicate            &&
-	(!found || map->isFull()) )
+	(!found || (NULL != map && map->isFull())) )
     {
       // Generate all the equivalent hash keys, and insert them all.
       map->prepareForSelfJoinWork();

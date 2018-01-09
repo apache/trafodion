@@ -6081,9 +6081,9 @@ NABoolean NestedJoin::OCBJoinIsFeasible(const Context* myContext) const
   if ( (myContext->requiresOrder() AND
         partReq AND 
         partReq->isRequirementExactlyOne() == FALSE) OR
-       partReq == NULL OR
-       (partReq->isRequirementApproximatelyN() AND
-         NOT partReq->partitioningKeyIsSpecified()
+       (partReq AND
+        partReq->isRequirementApproximatelyN() AND
+        NOT partReq->partitioningKeyIsSpecified()
        )
      )
   {

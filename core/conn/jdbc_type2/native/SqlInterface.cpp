@@ -67,11 +67,13 @@ extern int SPJRS;
 }\
 }
 
-#define THREAD_RETURN(pSrvrStmt, return_code) \
-{ \
-	pSrvrStmt->threadReturnCode = return_code; \
-	if (pSrvrStmt->threadReturnCode!=SQL_SUCCESS) pSrvrStmt->processThreadReturnCode(); \
-	CLI_DEBUG_RETURN_SQL(pSrvrStmt->threadReturnCode); \
+#define THREAD_RETURN(pSrvrStmt, return_code)                           \
+{                                                                       \
+    if (NULL != pSrvrStmt)                                              \
+        pSrvrStmt->threadReturnCode = return_code;                      \
+    if (NULL != pSrvrStmt && pSrvrStmt->threadReturnCode!=SQL_SUCCESS)  \
+        pSrvrStmt->processThreadReturnCode();                           \
+    CLI_DEBUG_RETURN_SQL(return_code);                                  \
 }
 
 #define HANDLE_THREAD_ERROR(error_code, warning_flag, pSrvrStmt) \

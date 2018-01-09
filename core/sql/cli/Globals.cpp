@@ -791,7 +791,7 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 	  if (NOT reset)
 	    newEnvvarsLen += strlen(name) + strlen("=") + strlen(value) + 1;
 	}
-      else
+      else if (NULL != envvars_)
 	newEnvvarsLen += str_len(envvars_[count])+1;
     } 
   
@@ -827,7 +827,7 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 	      tgtCount++;
 	    }
 	}
-      else
+      else if (NULL != envvars_)
 	{
 	  l = str_len(envvars_[count])+1;
 	  str_cpy_all(newEnvvarsValue, envvars_[count], l);
