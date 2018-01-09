@@ -650,17 +650,17 @@ Tables must be created/dropped/altered through Hive itself.
 [[load_examples]]
 === Examples of LOAD
 
-* The examples below demonstrate how the LOAD Statement behaves without and with `CONTINUE ON ERROR`, when ignorable data conversion errors occur.
+[[continue_on_error_examples]]
+==== Examples of `CONTINUE ON ERROR`
+ 
+Suppose that we have following tables:
 
-+ 
-Suppose that we have two tables (source_table and target_table) like this:
+_source_table_:
 
-+
 ```
 SQL>SELECT * FROM source_table; 
 A            B   
 -----------  ----
-
           1  aaaa
           2  bbbb
           3  cccc
@@ -679,12 +679,16 @@ CREATE TABLE TRAFODION.SEABASE.SOURCE_TABLE
  ATTRIBUTES ALIGNED FORMAT 
 ;
 --- SQL operation complete.
+```
 
-SQL>SELECT * FROM target_table;
+_target_table1_:
+
+```
+SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
 
-SQL>SHOWDDL target_table; 
-CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE
+SQL>SHOWDDL target_table1; 
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE1
   ( 
     A                                INT DEFAULT NULL NOT SERIALIZED
   , B                                CHAR(3) CHARACTER SET ISO88591 COLLATE
@@ -694,17 +698,16 @@ CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE
 ;
 --- SQL operation complete.
 ```
+* The examples below demonstrate how the LOAD Statement behaves without and with `CONTINUE ON ERROR`, when ignorable data conversion errors occur.
 
-+
-When loading data from source_table into target_table if `CONTINUE ON ERROR` is not specified, the operation fails with a data conversion error.
-
+** When loading data from _source_table_ into _target_table1_ if `CONTINUE ON ERROR` is not specified, the operation fails with a data conversion error.
 +
 ```
-SQL>LOAD INTO target_table SELECT * FROM source_table;
+SQL>LOAD INTO target_table1 SELECT * FROM source_table;
 
 UTIL_OUTPUT
----------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+-------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                          
 Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:15:53.222441                                                      
 Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:15:53.250826
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.028
@@ -712,26 +715,24 @@ Task:  LOADING DATA    Status: Started    Time: 2018-01-03 16:15:53.250909
 *** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,4 BYTES,ISO88591) Source Value:aaaa to Target Type:CHAR(REC_BYTE_F_ASCII,3 BYTES,ISO88591). [2018-01-03 16:15:54]
 ```
 
-+
-When loading data from source_table into target_table if `CONTINUE ON ERROR` is specified, the operation succeeds after ignorable data conversion errors.
-
+** When loading data from _source_table_ into _target_table1_ if `CONTINUE ON ERROR` is specified, the operation succeeds after ignorable data conversion errors.
 +
 ```
-SQL>LOAD WITH CONTINUE ON ERROR INTO target_table SELECT * FROM source_table;
+SQL>LOAD WITH CONTINUE ON ERROR INTO target_table1 SELECT * FROM source_table;
 
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
-Task:  CLEANUP         Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
-Task:  CLEANUP         Status: Ended      Object: TRAFODION.SEABASE.TARGET_TABLE
-Task:  PREPARATION     Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1
+Task:  CLEANUP         Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.SEABASE.TARGET_TABLE1
+Task:  PREPARATION     Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1
        Rows Processed: 3 
 Task:  PREPARATION     Status: Ended      ET: 00:00:03.151
-Task:  COMPLETION      Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE
+Task:  COMPLETION      Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.137
 --- 3 row(s) loaded.
 
 UTIL_OUTPUT
----------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+-------------------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                          
 Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:19:43.543405                                                      
 Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:19:43.568828
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.025
@@ -746,7 +747,7 @@ Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:19:45.171458
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.960
 --- SQL operation complete.
 
-SQL>SELECT * FROM target_table;  
+SQL>SELECT * FROM target_table1;  
 A           B   
 ----------- ----
           4 dd  
@@ -755,16 +756,19 @@ A           B
 --- 3 row(s) selected.
 ```
 
-* Suppose that we have two same tables (source_table and target_table) as shown in the first example.
+[[log_error_rows_examples]]
+==== Examples of `LOG ERROR ROWS [TO error-location-name]`
+
+Suppose that we have two same tables (_source_table_ and _target_table1_) as shown in the <<continue_on_error_examples,Examples of `CONTINUE ON ERROR`>>.
 
 ** This example explains how the LOAD statement loads data and logs error rows to the default directory `user/trafodion/bulkload/logs`.
 +
 ```
-SQL>LOAD WITH LOG ERROR ROWS INTO target_table SELECT * FROM source_table;
+SQL>LOAD WITH LOG ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
 UTIL_OUTPUT
 -------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                          
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                          
 Task:  CLEANUP         Status: Started    Time: 2018-01-03 16:23:03.142862                                                      
 Task:  CLEANUP         Status: Ended      Time: 2018-01-03 16:23:03.151725
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.009
@@ -778,10 +782,9 @@ Task:  COMPLETION      Status: Started    Time: 2018-01-03 16:23:03.920313
        Rows Loaded:    3 
 Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:23:04.301579
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.381
-
 --- SQL operation complete.
 
-SQL>select * from target_table;  
+SQL>select * from target_table1;  
 A           B   
 ----------- ----
           4 dd  
@@ -798,11 +801,11 @@ drwxr-xr-x   - trafodion trafodion          0 2018-01-13 16:23
 ** This example shows how the LOAD statement loads and logs error rows to the specified directory `user/trafodion/bulkload/error_log`.
 +
 ```
-SQL>LOAD WITH LOG ERROR ROWS TO '/BULKLOAD/ERROR_LOG' INTO target_table SELECT * FROM source_table;
+SQL>LOAD WITH LOG ERROR ROWS TO '/BULKLOAD/ERROR_LOG' INTO target_table1 SELECT * FROM source_table;
 
 UTIL_OUTPUT
 -------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                               
 Task:  CLEANUP         Status: Started    Time: 2018-01-03 17:19:43.436689                                                      
 Task:  CLEANUP         Status: Ended      Time: 2018-01-03 17:19:43.456761
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.020
@@ -816,7 +819,6 @@ Task:  COMPLETION      Status: Started    Time: 2018-01-03 17:19:43.722868
        Rows Loaded:    3 
 Task:  COMPLETION      Status: Ended      Time: 2018-01-03 17:19:44.591544
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.869
-
 --- SQL operation complete.
 
 [root@cent-1 bin]$ hdfs dfs -ls /bulkload/error_log
@@ -825,16 +827,19 @@ drwxr-xr-x   - trafodion trafodion          0 2018-01-03 17:19
 /bulkload/error_log/ERR_TRAFODION.SEABASE.TARGET_TABLE_20180103_091943
 ```
 
+[[stop_after_num_error_rows_examples]]
+==== Examples of `STOP AFTER num ERROR ROWS`
+
+Suppose that we have two same tables (_source_table_ and _target_table1_) as shown in the <<continue_on_error_examples,Examples of `CONTINUE ON ERROR`>>.
+
 * The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
 +
-Suppose that we have two same tables (source_table and target_table) as shown in the first example.
-+
 ```
-SQL>LOAD WITH STOP AFTER 2 ERROR ROWS INTO target_table SELECT * FROM source_table;
+SQL>LOAD WITH STOP AFTER 2 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
 UTIL_OUTPUT
 ---------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                               
 Task:  CLEANUP         Status: Started    Time: 2018-01-05 10:53:52.20569                                                       
 Task:  CLEANUP         Status: Ended      Time: 2018-01-05 10:53:52.45689
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.025
@@ -843,14 +848,16 @@ Task:  LOADING DATA    Status: Started    Time: 2018-01-05 10:53:52.45757
 *** ERROR[8113] The maximum number of error rows is exceeded. [2018-01-05 10:53:53]
 *** WARNING[8114] The number of error rows is 3 [2018-01-05 10:53:53]
 
-SQL>SELECT * FROM target_table;
+SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
-
-SQL>LOAD WITH STOP AFTER 3 ERROR ROWS INTO target_table SELECT * FROM source_table;
+```
++
+```
+SQL>LOAD WITH STOP AFTER 3 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
 UTIL_OUTPUT
 ---------------------------------------------------------------------------------------------
-Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE                                                               
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                               
 Task:  CLEANUP         Status: Started    Time: 2018-01-05 15:55:58.975459                                                      
 Task:  CLEANUP         Status: Ended      Time: 2018-01-05 15:55:59.20219
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.045
@@ -863,16 +870,308 @@ Task:  COMPLETION      Status: Started    Time: 2018-01-05 15:55:59.960180
        Rows Loaded:    3 
 Task:  COMPLETION      Status: Ended      Time: 2018-01-05 15:56:00.448496
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.488
-
 --- SQL operation complete.
 
-SQL>SELECT * FROM target_table;
+SQL>SELECT * FROM target_table1;
 A           B   
 ----------- ----
           4 dd  
           5 ee  
           6 fff 
 --- 3 row(s) selected.
+```
+
+[[index_table_only_examples]]
+==== Examples of `INDEX TABLE ONLY`
+
+Suppose that we have following tables:
+
+_source_table_:
+```
+SQL>SELECT * FROM source_table;   
+A            B   
+-----------  ----
+          1  aaaa
+          2  bbbb
+          3  cccc
+          4  dd  
+          5  ee  
+          6  fff 
+--- 6 row(s) selected.
+
+SQL>SHOWDDL source_table;
+CREATE TABLE TRAFODION.SEABASE.SOURCE_TABLE
+  ( 
+    A                                INT DEFAULT NULL NOT SERIALIZED
+  , B                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+```
+
+_target_table1_:
+```
+SQL>SELECT * FROM target_table1;
+--- 0 row(s) selected.
+
+SQL>SHOWDDL target_table1;
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE1
+  (
+    A                                INT DEFAULT NULL NOT SERIALIZED
+  , B                                CHAR(3) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+--- SQL operation complete.
+```
+
+_target_table2_:
+```
+SQL>select * from target_table2;
+--- 0 row(s) selected.
+
+SQL>showddl target_table2;
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE2
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , B                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+```
+
+_target_table3_:
+```
+SELECT * FROM target_table3;
+--- 0 row(s) selected.
+
+SHOWDDL target_table3;
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE3
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , B                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+```
+
+_target_table4_:
+```
+SELECT * FROM target_table4;
+--- 0 row(s) selected.
+
+CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE4
+  (
+    A                                INT DEFAULT NULL NOT SERIALIZED
+  , B                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+--- SQL operation complete.
+```
+
+* The examples below demonstrate how the index table and target tabel get populated.
+** The index table gets populated, while the target table does not get populated if `NO POPULATE` is specified.
++
+```
+SQL>CREATE INDEX index_target_table1 ON target_table1(b) NO POPULATE;
+--- SQL operation complete.
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table1) SELECT b,a FROM source_table;
+--- SQL operation complete.
+
+SQL>select * from target_table1;
+--- 0 row(s) selected.
+
+select * from table(index_table index_target_table1);  
+B@    A              
+----  --------------------
+aaaa                     1
+bbbb                     2
+cccc                     3
+dd                       4
+ee                       5
+fff                      6
+--- 6 row(s) selected.
+```
+
+** The index table gets populated, and the target table gets populated as well if `NO POPULATE` is not specified.
++
+```
+SQL>CREATE INDEX index_target_table1 ON target_table1(b);
+--- SQL operation complete.
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table1) SELECT b,a FROM source_table;
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table1;
+A            B   
+-----------  ----
+          1  aaaa
+          2  bbbb
+          3  cccc
+          4  dd  
+          5  ee  
+          6  fff 
+--- 6 row(s) selected.
+
+SQL>select * from table(index_table index_target_table1);  
+B@    A              
+----  --------------------
+aaaa                     1
+bbbb                     2
+cccc                     3
+dd                       4
+ee                       5
+fff                      6
+--- 6 row(s) selected.
+```
+
+* The examples below illustrate that how to populate index tables depending on different target tables.
+** The _target_table2_ has columns A (primary key column) and B (index column) defined, in this case, populate the index table with columns B and A from the _source_table_.
++ 
+```
+SQL>CREATE INDEX index_target_table2 ON target_table2(b) NO POPULATE;
+--- SQL operation complete.
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SHOWDDL TABLE(INDEX_TABLE index_target_table2);
+CREATE TABLE TRAFODION.SEABASE.INDEX_TARGET_TABLE2
+  (
+    "B@"                             CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT SERIALIZED
+  , A                                INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , PRIMARY KEY ("B@" ASC, A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table2) SELECT b,a FROM source_table;
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table2;
+--- 0 row(s) selected.
+
+SQL>SELECT * FROM TABLE(INDEX_TABLE index_target_table2);  
+B@    A              
+----  --------------------
+aaaa                     1
+bbbb                     2
+cccc                     3
+dd                       4
+ee                       5
+fff                      6
+--- 6 row(s) selected.
+```
+
+** The _target_table3_ has columns A (primary key column and index column) and B defined, in this case, populate the index table with column A from the _source_table_.
++
+```
+SQL>CREATE INDEX index_target_table3 ON target_table3(a) NO POPULATE;
+--- SQL operation complete.
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SHOWDDL TABLE(INDEX_TABLE index_target_table3);
+CREATE TABLE TRAFODION.SEABASE.INDEX_TARGET_TABLE3
+  (
+    "A@"                             INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , PRIMARY KEY ("A@" ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table3) SELECT a FROM source_table;
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table3;
+--- 0 row(s) selected.
+
+SQL> SELECT * FROM TABLE(INDEX_TABLE index_target_table3);
+A@         
+-----------
+          1
+          2
+          3
+          4
+          5
+          6
+--- 6 row(s) selected.
+```
+
+** The _target_table4_ has columns A (index column) and B defined, in this case, populate the index table with column A and syskey from the _source_table_.
++
+```
+SQL> create index index_target_table4 on target_table4(a) no populate;
+--- SQL operation complete.
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SHOWDDL TABLE(INDEX_TABLE index_target_table4);
+CREATE TABLE TRAFODION.SEABASE.INDEX_TARGET_TABLE4
+  (
+    "A@"                             INT NO DEFAULT NOT SERIALIZED
+  , SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      NOT SERIALIZED
+  , PRIMARY KEY ("A@" ASC, SYSKEY ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+--- SQL operation complete.
+
+SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table4) SELECT a,syskey FROM source_table;
+--- SQL operation complete.
+
+SQL>SELECT * FROM target_table4;
+--- 0 row(s) selected.
+
+SQL>SELECT * FROM TABLE(INDEX_TABLE index_target_table4);
+A@           SYSKEY              
+-----------  --------------------
+          1   4239726128363214004
+          2   4239726128363256924
+          3   4239726128363258834
+          4   4239726128363260240
+          5   4239726128363261628
+          6   4239726128363263088
+--- 6 row(s) selected.
+```
+
+NOTE: At this moment, if you want to drop the index, such as _index_target_table2_, _index_target_table3_ or _index_target_table4_ created above, please populate the index from its parent table before dropping it, see the example below. For more information, see <<populate_index_utility,POPULATE INDEX Utility>>.
+
+```
+SQL> DROP INDEX index_target_table4;
+*** ERROR[4254] Object TRAFODION.SEABASE.INDEX_TARGET_TABLE4 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+SQL> POPULATE INDEX index_target_table4 ON target_table4;
+--- SQL operation complete.
+
+SQL> DROP INDEX index_target_table4;
+--- SQL operation complete.
 ```
 
 * For customer demographics data residing in
