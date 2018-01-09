@@ -3262,11 +3262,327 @@ Where <storage-type-2> is the storage type of the target LOB column.
 Where <column-name> is the name of the target LOB column.
 
 *Cause:* You attempted to store a LOB value into a LOB column, but the storage type of the LOB value and the target column are not
-compatible. For example, you may have attempted 
+compatible. 
 
 *Effect:* The operation fails.
 
 *Recovery:* Consult the Trafodion SQL Large Objects Guide for more information about LOB storage types. Correct the statement
 and resubmit.
+
+<<<
+[[SQL-1510]]
+== SQL 1510
+
+```
+IDENTITY column <column-name> can be of the following data types only: LARGEINT, INTEGER UNSIGNED and SMALLINT UNSIGNED.
+```
+
+Where <column-name> is a column name you specified.
+
+*Cause:* You attempted to define an IDENTITY column but you specified a data type other than LARGEINT, INTEGER UNSIGNED or SMALLINT UNSIGNED.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the data type of the column to LARGEINT, INTEGER UNSIGNED or SMALLINT UNSIGNED and resubmit.
+
+[[SQL-1511]]
+== SQL 1511
+
+```
+There can only be one IDENTITY column for a table.
+```
+
+*Cause:* You attempted to define more than one IDENTITY column in a table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the column definitions so that there is at most one IDENTITY column and resubmit.
+
+<<<
+[[SQL-1514]]
+== SQL 1514
+
+```
+Cannot add an IDENTITY column using ALTER TABLE command.
+```
+
+*Cause:* You attempted to add an IDENTITY column to a table using the ALTER TABLE command. {project-name} does not presently support this.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1540]]
+== SQL 1540
+
+```
+The NO POPULATE clause is not allowed for index <index-name> on volatile table <table-name>.
+```
+
+*Cause:* You attempted to execute a CREATE INDEX statement to create an index on a volatile table, and you specified the NO POPULATE option. That option
+is not allowed for indexes on volatile tables.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the NO POPULATE clause from the statement and resubmit.
+
+<<<
+[[SQL-1541]]
+== SQL 1541
+
+```
+Use of BLOB/CLOB datatype as a key of the base table or an index is not allowed.
+```
+
+*Cause:* You attempted to execute a CREATE TABLE statement with a BLOB or CLOB column in the primary key, or you attempted to execute a CREATE INDEX
+statement that referenced a CLOB or BLOB column. This is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1550]]
+== SQL 1550
+
+```
+Failed to create UDF <udf-name> with <number> parameters. A scalar UDF can have a maximum of 32 parameters.
+```
+
+Where <udf-name> is the name of a user defined function that you specified.
+
+Where <number> is the number of parameters in the function signature that you specified.
+
+*Cause:* You attempted to execute a CREATE FUNCTION statement and you specified more than 32 parameters in the function signature. {project-name}
+only supports up to 32 parameters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reduce the number of parameters in the function and resubmit.
+
+<<<
+[[SQL-1570]]
+== SQL 1570
+
+```
+MAXVALUE must be greater than MINVALUE for <purpose>.
+```
+
+Where <purpose> is either "an IDENTITY column" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing a CREATE SEQUENCE statement, you specified a MAXVALUE that is less than or equal to the MINVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1571]]
+== SQL 1571
+
+```
+<value-name> value cannot be zero for <purpose>.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MINVALUE" or "MAXVALUE".
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value of zero for INCREMENT BY,
+MINVALUE or MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1572]]
+== SQL 1572
+
+```
+<value-name> value cannot be a negative number for <purpose>.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MINVALUE" or "MAXVALUE".
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a negative value for INCREMENT BY,
+MINVALUE or MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1573]]
+== SQL 1573
+
+```
+START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for <purpose>.
+```
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for START WITH that is
+less than the value for MINVALUE or greater than the value for MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1575]]
+== SQL 1575
+
+```
+INCREMENT BY value cannot be greater than the difference between MINVALUE and MAXVALUE for <purpose>.
+```
+
+Where <purpose> is one of "an IDENTITY column", "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for INCREMENT BY that is
+greater than the difference between the values for MINVALUE and MAXVALUE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1576]]
+== SQL 1576
+
+```
+<value-name> value is greater than maximum allowed for this sequence.
+```
+
+Where <value-name> is one of "INCREMENT BY", "MAXVALUE" or "START WITH".
+
+*Cause:* When creating an IDENTITY column or when executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value that is larger than
+permitted for the data type of the column or sequence.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1577]]
+== SQL 1577
+
+```
+CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for <purpose>.
+```
+
+Where <purpose> is "ALTER SEQUENCE" or "CREATE SEQUENCE".
+
+*Cause:* When executing an ALTER SEQUENCE or CREATE SEQUENCE statement, you specified a value for CACHE that is less than one
+or is greater than (maxValue - startValue + 1)/incrementValue.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1579]]
+== SQL 1579
+
+```
+This sequence has reached its max and cannot provide a new value.
+```
+
+*Cause:* When executing a DML statement that uses the SEQNUM to obtain a value from a sequence, or when
+inserting a row into a table having an IDENTITY column, the underlying sequence had already reached its
+maximum value.
+
+*Effect:* The operation fails.
+
+*Recovery:* If desired, use ALTER SEQUENCE to increase the maximum value for the sequence, then resubmit.
+
+<<<
+[[SQL-1582]]
+== SQL 1582
+
+```
+Internal Error: Sequence information does not exist in metadata.
+```
+
+*Cause:* When executing a DML statement that references a sequence, {project-name} could not find
+the sequence definition in the {project-name} metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list. If the DML statement involves an IDENTITY
+column it is likely the existing data is not at risk, however it may not be possible to create new
+rows using the IDENTITY column's underlying sequence. If the DML statement involves getting new
+values from a sequence via the SEQNUM function, it may be possible to create a new sequence with
+a MINVALUE just greater to the last value taken from the sequence, and use the new sequence instead.
+
+[[SQL-1583]]
+== SQL 1583
+
+```
+Sequence metadata could not be updated.
+```
+
+*Cause:* When executing a DML statement that references a sequence, the sequence metadata could
+not be updated.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list.
+
+<<<
+[[SQL-1584]]
+== SQL 1584
+
+```
+Timestamp mismatch detected on Sequence object.
+```
+
+*Cause:* When executing a DML statement that references a sequence, the {project-name} run-time
+engine discovered a mismatch between the expected state of the sequence and the state found
+at run-time.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the {project-name} distribution list. If this is a PREPAREd statement,
+re-PREPARing it may cure the error.
+
+[[SQL-1590]]
+== SQL 1590
+
+```
+Column <column-name> is not an IDENTITY column.
+```
+
+Where <column-name> is the column name you specified.
+
+*Cause:* You attempted to execute an ALTER TABLE ALTER COLUMN statement, setting an IDENTITY-column-related
+value such as INCREMENT BY. However, the column specified is not an IDENTITY column.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the table name or column name in the statement and resubmit.
+
+<<<
+[[SQL-1592]]
+== SQL 1592
+
+```
+<value-name> cannot be specified for <purpose>.
+```
+
+Where <value-name> is "MINVALUE" or "START WITH".
+
+Where <purpose> is "ALTER SEQUENCE".
+
+*Cause:* You attempted to modify the MINVALUE or START WITH values for a sequence in an ALTER SEQUENCE statement but
+this is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+
+
+
+
+
+
 
 
