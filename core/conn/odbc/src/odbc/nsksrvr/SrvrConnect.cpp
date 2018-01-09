@@ -6286,7 +6286,7 @@ bool GetHashInfo(char* sqlString, char* genRequestError, char* HashTableInfo)
 				ControlQueryLen = ControlQueryLen + 4;
 				break;
 			case 6:
-				sprintf(ControlQuery,"select cast(cast((52 * 1024 * 128) / (sum(co.column_size)) as integer) as varchar(10) character set ISO88591) from  %s.SYSTEM_SCHEMA.SCHEMATA sc, NEO.HP_DEFINITION_SCHEMA.OBJECTS ob, NEO.HP_DEFINITION_SCHEMA.COLS co where sc.SCHEMA_NAME = '%s' and ob.OBJECT_NAME = '%s' and sc.SCHEMA_UID = ob.SCHEMA_UID and ob.OBJECT_UID = co.OBJECT_UID and ob.OBJECT_TYPE = 'BT' FOR READ UNCOMMITTED ACCESS", srvrGlobal->SystemCatalog, verBuffer, verBuffer, atol(verBuffer), schemaToken, tableName);
+				sprintf(ControlQuery,"select cast(cast((52 * 1024 * 128) / (sum(co.column_size)) as integer) as varchar(10) character set ISO88591) from  %s.SYSTEM_SCHEMA.SCHEMATA sc, NEO.HP_DEFINITION_SCHEMA.OBJECTS ob, NEO.HP_DEFINITION_SCHEMA.COLS co where sc.SCHEMA_NAME = '%s' and ob.OBJECT_NAME = '%s' and sc.SCHEMA_UID = ob.SCHEMA_UID and ob.OBJECT_UID = co.OBJECT_UID and ob.OBJECT_TYPE = 'BT' FOR READ UNCOMMITTED ACCESS", srvrGlobal->SystemCatalog, schemaToken, tableName);
 				strcpy(HashTableInfo+ControlQueryLen, ";HE="); // HE means Guesstimated rowset size. Change 128 to HP soon.
 				ControlQueryLen = ControlQueryLen + 4;
 				break;
