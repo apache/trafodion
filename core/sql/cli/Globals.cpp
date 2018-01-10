@@ -74,14 +74,8 @@ CLISemaphore globalSemaphore ;
 
 CliGlobals::CliGlobals(NABoolean espProcess)
      : inConstructor_(TRUE),
-       executorMemory_("Global Executor Memory",0,0,
-		       0,0,0, &segGlobals_),
+       executorMemory_((const char *)"Global Executor Memory"),
        contextList_(NULL),
-       defaultVolSeed_(0),
-       listOfVolNames_(NULL),
-       listOfAuditedVols_(NULL),
-       listOfVolNamesCacheTime_(-1),
-       sysVolNameInitialized_(FALSE),
        envvars_(NULL),
        envvarsContext_(0),
        sharedArkcmp_(NULL),
@@ -90,16 +84,10 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        totalCliCalls_(0),
        savedCompilerVersion_ (COM_VERS_COMPILER_VERSION),
        globalSbbCount_(0),
-       //       sessionDefaults_(NULL),
        priorityChanged_(FALSE),
        currRootTcb_(NULL),
        processStats_(NULL),
        savedPriority_(148), // Set it to some valid priority to start with
-       qualifyingVolsPerNode_(NULL),
-       cpuNumbers_(NULL),
-       capacities_(NULL),
-       freespaces_(NULL),
-       largestFragments_(NULL),
        tidList_(NULL),
        cliSemaphore_(NULL),
        defaultContext_(NULL),
@@ -134,7 +122,6 @@ void CliGlobals::init( NABoolean espProcess,
   _sqptr = new (&executorMemory_) char[10];
 
   numCliCalls_ = 0;
-  logEmsEvents_ = TRUE;
   nodeName_[0] = '\0';
 
   breakEnabled_ = FALSE;
@@ -181,10 +168,6 @@ void CliGlobals::init( NABoolean espProcess,
     // Create the process global ARKCMP server.
     sharedArkcmp_ = NULL;
     nextUniqueContextHandle = DEFAULT_CONTEXT_HANDLE;
-
-    arlibHeap_ = new (&executorMemory_) NAHeap("MXARLIB Cache Heap",
-                                               &executorMemory_,
-                                               (Lng32) 32768);
     lastUniqueNumber_ = 0;
     sessionUniqueNumber_ = 0;
     // It is not thread safe to set the globals cli_globals
@@ -243,11 +226,6 @@ void CliGlobals::init( NABoolean espProcess,
     tidList_  = new(&executorMemory_) HashQueue(&executorMemory_);
     SQLCTX_HANDLE ch = defaultContext_->getContextHandle();
     contextList_->insert((char*)&ch, sizeof(SQLCTX_HANDLE), (void*)defaultContext_);
-    qualifyingVolsPerNode_.setHeap(defaultContext_->exCollHeap());
-    cpuNumbers_.setHeap(defaultContext_->exCollHeap());
-    capacities_.setHeap(defaultContext_->exCollHeap());
-    freespaces_.setHeap(defaultContext_->exCollHeap());
-    largestFragments_.setHeap(defaultContext_->exCollHeap());
     if (statsGlobals_ != NULL) 
        memMonitor_ = statsGlobals_->getMemoryMonitor();
     else
@@ -306,11 +284,6 @@ CliGlobals::~CliGlobals()
   {
     delete sharedArkcmp_;
     sharedArkcmp_ = NULL;
-  }
-  if (arlibHeap_)
-  {
-    delete arlibHeap_;
-    arlibHeap_ = NULL;
   }
   if (statsGlobals_ != NULL)
   {
@@ -892,45 +865,6 @@ Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
 {
     theContext->reset(contextMsg);  
     return SUCCESS;
-}
-
-void CliGlobals::clearQualifiedDiskInfo()
-{
-  CollHeap *heap = defaultContext_->exCollHeap();
-
-  nodeName_[0] = '\0';
-
-  while (!qualifyingVolsPerNode_.isEmpty())
-  {
-    char *volume;
-    // getFirst() removes and returns the first element in
-    // the container.
-    qualifyingVolsPerNode_.getFirst(volume);
-    NADELETEBASIC(volume, heap);  // Allocated in addQualifiedDiskInfo()
-  }
-
-  cpuNumbers_.clear();
-  capacities_.clear();
-  freespaces_.clear();
-  largestFragments_.clear();
-}
-
-void CliGlobals::addQualifiedDiskInfo(
-                 const char *volumeName,
-                 Lng32 primaryCpu,
-                 Lng32 capacity,
-                 Lng32 freeSpace,
-                 Lng32 largestFragment)
-{
-  CollHeap *heap = defaultContext_->exCollHeap();
-  char *volName = new(heap) char[9]; // deleted in clearQualifiedDiskInfo()
-  strcpy(volName, volumeName);
-
-  qualifyingVolsPerNode_.insert(volName);
-  cpuNumbers_.insert(primaryCpu);
-  capacities_.insert(capacity);
-  freespaces_.insert(freeSpace);
-  largestFragments_.insert(largestFragment);
 }
 
 NAHeap *CliGlobals::getCurrContextHeap()

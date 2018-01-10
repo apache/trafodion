@@ -165,7 +165,7 @@ CmpStatement::CmpStatement(CmpContext* context,
   {
     // set up statement heap with 32 KB allocation units
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_CMPSTMT_UPPER_KB);
-    heap_ = new (context_->heap()) NAHeap("Cmp Statement Heap",
+    heap_ = new (context_->heap()) NAHeap((const char *)"Cmp Statement Heap",
                        context_->heap(),
                        (Lng32)32768,
                        memLimit);

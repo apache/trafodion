@@ -64,10 +64,7 @@ StatsGlobals::StatsGlobals(void *baseAddr, short envType, Lng32 maxSegSize)
       getStatsSegmentId(),
       baseAddr,
       ((sizeof(StatsGlobals)+16-1)/16)*16,
-      maxSegSize,
-      maxSegSize,
-      &segGlobals_,
-      0), // Zero secondary segments
+      maxSegSize),
       recentSikeys_(NULL),
       newestRevokeTimestamp_(0), // all new compilers are current.
       statsArray_(NULL)

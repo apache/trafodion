@@ -97,18 +97,11 @@ public:
   inline jmp_buf *getJmpBuf()             { return &longJmpTgt_; }
   inline jmp_buf *getJmpBufPtr()         { return longJmpTgtPtr_; }
   inline void setJmpBufPtr(jmp_buf *longJmpTgtPtr) { longJmpTgtPtr_ = longJmpTgtPtr; }
-  inline NABoolean getLogEmsEvents() const { return logEmsEvents_; }
-  inline void setLogEmsEvents(NABoolean logEmsEvents) { logEmsEvents_ = logEmsEvents; }
-  inline void setQfoProcessing() { qfoProcessing_ = TRUE; }
-  inline void clearQfoProcessing() { qfoProcessing_ = FALSE; }
-  inline NABoolean isQfoProcessing() { return qfoProcessing_; }
 protected:
   NABoolean globalsAreInitialized_;
   jmp_buf  *longJmpTgtPtr_;
   jmp_buf  longJmpTgt_;
   long     numCliCalls_;
-  NABoolean logEmsEvents_;
-  NABoolean qfoProcessing_;
 };
 
 NAAssertGlobals * GetNAAssertGlobals(NABoolean *logEmsEvents = NULL);
