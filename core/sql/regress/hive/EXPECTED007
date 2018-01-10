@@ -47,6 +47,8 @@ CREATE TABLE THIVE1
   stored as textfile
 ;
 
+/* Trafodion DDL */
+
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE1;
 /* ObjectUID = 7080927501909560103 */
 
@@ -256,6 +258,8 @@ CREATE TABLE THIVE2
   )
   stored as textfile
 ;
+
+/* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE2;
 /* ObjectUID = 1928809434068290686 */
@@ -1057,10 +1061,10 @@ CREATE TABLE THIVE9
   stored as textfile
 ;
 
+/* Trafodion DDL */
+
 REGISTER HIVE TABLE HIVE.HIVESCH007.THIVE9;
 /* ObjectUID = 6918234965366838662 */
-
-/* Trafodion DDL */
 
 CREATE EXTERNAL TABLE THIVE9
   FOR HIVE.HIVESCH007.THIVE9
@@ -1125,6 +1129,8 @@ CREATE TABLE THIVE9
   )
   stored as textfile
 ;
+
+/* Trafodion DDL */
 
 --- SQL operation complete.
 >>showstats for table hive.hivesch007.thive9 on every column;
