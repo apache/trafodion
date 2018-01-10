@@ -363,6 +363,24 @@ you can reissue the statement specifying CASCADE. For other DROP
 statements, you must first drop each of the dependent objects, then drop
 the object.
 
+[[SQL-1026]]
+== SQL 1026
+
+```
+Specified object name <object-name> is invalid for this command.
+```
+
+Where <object-name> is the name of the object you specified.
+
+*Cause:* You attempted to register or unregister a Hive or HBase table, but the object name
+was not of the appropriate kind. For example, REGISTER HIVE TABLE TRAFODION.SCH.T1 will get this
+error because objects in the TRAFODION catalog are native {project-name} objects.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
 [[SQL-1027]]
 == SQL 1027
 
@@ -380,7 +398,6 @@ on an earlier release of the {project-name} software, before column privileges w
 
 *Recovery:* Drop and recreate the view, then resubmit the grant request.
 
-<<<
 [[SQL-1028]]
 == SQL 1028
 
@@ -399,6 +416,7 @@ objects.
 *Recovery:* Either drop all the objects in <schema-name> and resubmit
 the statement, or resubmit the drop statement using the CASCADE option.
 
+<<<
 [[SQL-1029]]
 == SQL 1029
 
@@ -415,7 +433,6 @@ accompanying error messages to determine the cause.
 
 *Recovery:* Apply the recovery of the accompanying error messages.
 
-<<<
 [[SQL-1030]]
 == SQL 1030
 
@@ -435,6 +452,7 @@ is too long for HBase.
 
 *Recovery:* Use a shorter name and resubmit.
 
+<<<
 [[SQL-1031]]
 == SQL 1031
 
@@ -450,7 +468,6 @@ Where <object-name> is the SQL object.
 
 *Recovery:* Apply the recovery of the accompanying error message.
 
-<<<
 [[SQL-1032]]
 == SQL 1032
 
@@ -466,6 +483,22 @@ the query is not executed.
 
 *Recovery:* If you wish to execute the query, resubmit without
 the DISPLAY command.
+
+<<<
+[[SQL-1033]]
+== SQL 1033
+
+```
+Unable to obtain comments.
+```
+
+*Cause:* You attempted a DDL or SHOWDDL operation but {project-name}
+could not retrieve comment information needed to process the request.
+Additional error messages may give insight to the cause.
+
+*Effect:* The operation is not executed.
+
+*Recovery:* None. Contact the {project-name} Developer Distribution List.
 
 [[SQL-1034]]
 == SQL 1034
@@ -911,6 +944,25 @@ system error <error-number>.
 *Effect:* The operation fails.
 
 *Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+<<<
+[[SQL-1071]]
+== SQL 1071
+
+```
+View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: <hive-tables>
+```
+
+Where <hive-tables> is a list of Hive table names.
+
+*Cause:* You attempted to create a view referencing the listed Hive tables, but the Hive tables do not have external tables defined within {project-name}
+or have not been registered within {project-name}, and automatic registration has been turned off. (CQD HIVE_NO_REGISTER_OBJECTS controls whether automatic
+registration is enabled. If this CQD is 'ON' it has been disabled.)
+
+*Effect:* The operation fails.
+
+*Recovery:* Either register or create external tables within {project-name} for the Hive tables listed, then resubmit. Alternatively, set
+CQD HIVE_NO_REGISTER_OBJECTS 'OFF' and resubmit.
 
 <<<
 [[SQL-1073]]
@@ -2009,6 +2061,20 @@ about that object.
 *Recovery:* Determine the proper recovery action from the <diagnostics> then resubmit.
 
 <<<
+[[SQL-1220]]
+== SQL 1220
+
+```
+Code must contain two non-blank characters.
+```
+
+*Cause:* You attempted to create a component privilege but you specified a component code that is not two non-blank characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
 [[SQL-1222]]
 == SQL 1222
 
@@ -2041,7 +2107,7 @@ Grant to self or DB__ROOT is not allowed.
 == SQL 1227
 
 ```
-Cannot unregister user.  User <user-name> has been granted privileges on <object-name>.
+Cannot unregister user. User <user-name> has been granted privileges on <object-name>.
 ```
 
 Where <user-name> is the name of a user that you are trying to unregister.
@@ -2058,7 +2124,7 @@ Where <object-name> is the name of a {project-name} object.
 == SQL 1228
 
 ```
-Cannot drop role.  Role <role-name> has been granted privileges on <object-name>.
+Cannot drop role. Role <role-name> has been granted privileges on <object-name>.
 ```
 
 Where <role-name> is the name of a role that you are trying to drop.
@@ -3573,6 +3639,37 @@ Where <purpose> is "ALTER SEQUENCE".
 
 *Cause:* You attempted to modify the MINVALUE or START WITH values for a sequence in an ALTER SEQUENCE statement but
 this is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+<<<
+[[SQL-1719]]
+== SQL 1719
+
+```
+Access Type '<access>' is not supported.
+```
+
+Where <access> is an access type you specified in a FOR ACCESS clause.
+
+*Cause:* The access type you specified is not presently supported by {project-name}.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement and resubmit.
+
+[[SQL-1720]]
+== SQL 1720
+
+```
+Isolation Level '<level>' is not supported.
+```
+
+Where <level> is an isolation level you specified in a SET TRANSACTION ISOLATION LEVEL statement.
+
+*Cause:* The isolation level you specified is not presently supported by {project-name}.
 
 *Effect:* The operation fails.
 
