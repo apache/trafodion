@@ -91,6 +91,46 @@ int CCmsh::PopulateClusterState( void )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Function/Method: CCmsh::PopulateNodeState
+//
+// Description: Executes the command string passed in the constructor and
+//              populates the internal node state list with the state of each node
+//              in the cluster. Clients can then inquire about state of each node.
+//              
+// Return:
+//        0 - success
+//       -1 - failure
+//
+///////////////////////////////////////////////////////////////////////////////
+int CCmsh::PopulateNodeState( const char *nodeName )
+{
+    const char method_name[] = "CCmsh::PopulateNodeState";
+    TRACE_ENTRY;
+
+    int rc;
+
+    // The caller should save and close stdin before calling this proc
+    // and restore it when done. This is to prevent ssh from consuming
+    // caller's stdin contents when executing the command. 
+    string commandArgs;
+    {
+        commandArgs = "-n ";
+        commandArgs += nodeName;
+    }
+    rc = ExecuteCommand( commandArgs.c_str(), nodeStateList_ );
+    if ( rc == -1 )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf(la_buf, "[%s] Error: While executing '%s' command\n", method_name, command_.data());
+        mon_log_write(MON_CMSH_GET_CLUSTER_STATE_1, SQ_LOG_ERR, la_buf);
+    }
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Function/Method: CCmsh::GetClusterState
 //
 // Description: Updates the state of the nodes in the physicalNodeMap passed in
@@ -128,31 +168,97 @@ int CCmsh::GetClusterState( PhysicalNodeNameMap_t &physicalNodeMap )
             if (it != physicalNodeMap.end())
             {
                // TEST_POINT and Exclude List : to force state down on node name 
-               const char *downNodeName = getenv( TP001_NODE_DOWN );
-               const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
-	       string downNodeString = " ";
-	       if (downNodeList)
-	       {
-		 downNodeString += downNodeList;
-	         downNodeString += " ";
-	       }
-	       string downNodeToFind = " ";
-	       downNodeToFind += nodeName.c_str();
-	       downNodeToFind += " ";
-               if (((downNodeList != NULL) && 
-		      strstr(downNodeString.c_str(),downNodeToFind.c_str())) ||
-                   ( (downNodeName != NULL) && 
-                     !strcmp( downNodeName, nodeName.c_str()) ))
-              {
-                   nodeState = StateDown;
-              }
-	   
+                const char *downNodeName = getenv( TP001_NODE_DOWN );
+                const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+                string downNodeString = " ";
+                if (downNodeList)
+                {
+                    downNodeString += downNodeList;
+                    downNodeString += " ";
+                }
+                string downNodeToFind = " ";
+                downNodeToFind += nodeName.c_str();
+                downNodeToFind += " ";
+                if (((downNodeList != NULL) && 
+                      strstr(downNodeString.c_str(),downNodeToFind.c_str())) ||
+                    ((downNodeName != NULL) && 
+                     !strcmp(downNodeName, nodeName.c_str())))
+                {
+                    nodeState = StateDown;
+                }
+          
                 // Set physical node state
                 physicalNode = it->second;
                 physicalNode->SetState( nodeState );
             }
         }
-    }	
+    }  
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function/Method: CCmsh::GetNodeState
+//
+// Description: Updates the state of the nodeName in the physicalNode passed in
+//              as a parameter. Caller should ensure that the node names are already
+//              present in the physicalNodeMap. 
+//
+// Return:
+//        0 - success
+//       -1 - failure
+//
+///////////////////////////////////////////////////////////////////////////////
+int CCmsh::GetNodeState( char *name ,CPhysicalNode  *physicalNode )
+{
+    const char method_name[] = "CCmsh::GetNodeState";
+    TRACE_ENTRY;
+
+    int rc;
+
+    rc = PopulateNodeState( name );
+
+    if ( rc != -1 )
+    {
+        // Parse each line extracting name and state
+        string nodeName;
+        NodeState_t nodeState;
+        PhysicalNodeNameMap_t::iterator it;
+        
+        StringList_t::iterator    alit;
+        for ( alit = nodeStateList_.begin(); alit != nodeStateList_.end() ; alit++ )
+        {
+            ParseNodeStatus( *alit, nodeName, nodeState );
+
+            // TEST_POINT and Exclude List : to force state down on node name 
+            const char *downNodeName = getenv( TP001_NODE_DOWN );
+            const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+            string downNodeString = " ";
+            if (downNodeList)
+            {
+                downNodeString += downNodeList;
+                downNodeString += " ";
+            }
+            string downNodeToFind = " ";
+            downNodeToFind += nodeName.c_str();
+            downNodeToFind += " ";
+            if (((downNodeList != NULL) && 
+                  strstr(downNodeString.c_str(),downNodeToFind.c_str())) ||
+                ((downNodeName != NULL) && 
+                 !strcmp(downNodeName, nodeName.c_str())))
+            {
+                nodeState = StateDown;
+            }
+
+            if (!strcmp(name, nodeName.c_str()))
+            {
+                // Set physical node state
+                physicalNode->SetState( nodeState );
+            }
+        }
+    }  
 
     TRACE_EXIT;
     return( rc );

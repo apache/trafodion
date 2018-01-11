@@ -1133,10 +1133,10 @@ void CNode::StartWatchdogProcess( void )
     }
 
     //Displays the startup and keep alive timer values in use for a given run.
-    if (trace_settings & TRACE_INIT)
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - KeepAlive Timer in seconds =%d\n", method_name, __LINE__, (wdtKeepAliveTimerValue_));
 
-    if (trace_settings & TRACE_INIT)
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - Creating Watchdog Process\n", method_name, __LINE__);
 
     strcpy(path,getenv("PATH"));
@@ -1959,7 +1959,7 @@ int CNodeContainer::PackNodeMappings( intBuffPtr_t &buffer )
 
             ++count;
 
-            if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                 trace_printf("%s@%d - Packing node mapping, pnidConfig=%d, pnid=%d \n",
                             method_name, __LINE__, pnidConfig, pnid);
         }
@@ -1982,7 +1982,7 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
         pnidConfig = *buffer++;
         pnid = *buffer++;
 
-        if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             trace_printf("%s@%d - Unpacking node mapping, pnidConfig=%d, pnid=%d \n",
                         method_name, __LINE__, pnidConfig, pnid);
 

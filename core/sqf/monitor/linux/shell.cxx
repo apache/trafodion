@@ -44,6 +44,7 @@ using namespace std;
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string> 
 
 #include "msgdef.h"
 #include "props.h"
@@ -536,6 +537,102 @@ bool update_cluster_state( bool displayState, bool checkSpareColdStandby = true 
             }
             pnodeConfig = pnodeConfig->GetNext();
         }
+    }
+    
+    return( true );
+}
+
+bool update_node_state( char *nodeName, bool checkSpareColdStandby = true )
+{
+    if ( strlen(nodeName) == 0 )
+    {
+        return( false );
+    }
+
+    int rc, rc2;
+    char pnodename[MPI_MAX_PROCESSOR_NAME];
+    CPhysicalNode  *physicalNode;
+    PhysicalNodeNameMap_t::iterator it;
+    CCmsh cmshcmd( "sqnodestatus" );
+
+    strncpy(pnodename, nodeName, MPI_MAX_PROCESSOR_NAME);
+    pnodename[MPI_MAX_PROCESSOR_NAME-1] = '\0';
+
+    // Look up name
+    it = PhysicalNodeMap.find( pnodename );
+
+    if (it != PhysicalNodeMap.end())
+    {
+        physicalNode = it->second;
+    }
+    else
+    {
+        printf( "[%s] Error: Internal error while looking up physical node map, node name does not exist, node name=%s\n", MyName, pnodename );
+        return( false );
+    }
+
+    // save, close and restore stdin when executing ssh command 
+    // because ssh, by design, would consume contents of stdin.
+    int savedStdIn = dup(STDIN_FILENO);
+    if ( savedStdIn == -1 )
+    {
+        fprintf(stderr, "[%s] Error: dup() failed for STDIN_FILENO: %s (%d)\n", MyName, strerror(errno), errno );
+        exit(1);
+    }
+    close(STDIN_FILENO);
+
+    rc = cmshcmd.GetNodeState( nodeName, physicalNode );
+    rc2 = dup2(savedStdIn, STDIN_FILENO);
+    if ( rc2 == -1 )
+    {
+        fprintf(stderr, "[%s] Error: dup2() failed for STDIN_FILENO: %s (%d)\n", MyName, strerror(errno), errno );
+        exit(1);
+    }
+    close(savedStdIn);
+
+    if ( rc == -1 )
+    {
+        return( false );
+    }
+
+    NodeState_t nodeState;
+    CPNodeConfig *pnodeConfig = ClusterConfig.GetPNodeConfig( nodeName );
+    if ( pnodeConfig )
+    {
+        if ( get_pnode_state( PNode[pnodeConfig->GetPNid()], nodeState ) )
+        {
+            if ( nodeState == StateUp )
+            {
+                if ( checkSpareColdStandby && SpareNodeColdStandby )
+                {
+                    if ( pnodeConfig  && pnodeConfig->IsSpareNode() )
+                    {
+                        ++NumDown;
+                        NodeState[pnodeConfig->GetPNid()] = false;
+                        nodeState = StateDown;
+                        set_pnode_state( PNode[pnodeConfig->GetPNid()], nodeState );
+                    }
+                    else
+                    {
+                        NodeState[pnodeConfig->GetPNid()] = true;
+                    }
+                }
+                else
+                {
+                    NodeState[pnodeConfig->GetPNid()] = true;
+                }
+            }
+            else
+            {
+                NodeState[pnodeConfig->GetPNid()] = false;
+                ++NumDown;
+            }
+        }
+    }
+    else
+    {
+        printf( "[%s] Physical node configuration does not exist, node name=%s\n", MyName, nodeName );
+        return( false );
     }
     
     return( true );
@@ -3770,8 +3867,8 @@ int node_up( int nid, char *node_name, bool nowait )
     // If this is a real cluster
     if ( nid == -1 )
     {
-        // Get current physical state of all nodes
-        if ( !update_cluster_state( true, false ) )
+        // Get current physical state of target nodes
+        if ( !update_node_state( node_name, false ) )
         {
             return( rc ) ;
         }

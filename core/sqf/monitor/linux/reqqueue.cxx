@@ -1971,6 +1971,11 @@ CIntDownReq::CIntDownReq( int pnid )
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQIP", 4);
+
+    if ( pnid == MyPNID )
+    {
+        SetReviveFlag(1); // allow this request to be processed during revive
+    }
 }
 
 CIntDownReq::~CIntDownReq()

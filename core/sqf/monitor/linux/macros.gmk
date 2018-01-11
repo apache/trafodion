@@ -53,8 +53,8 @@ endif
 MPI_CC		:= $(CC)
 MPI_CXX		:= $(CXX)
 
-CC		= mpicc
-CXX		= $(MPICH_ROOT)/bin/mpicxx
+CC		= mpicc $(ARCH_SPECIFIC_OPTION)
+CXX		= $(MPICH_ROOT)/bin/mpicxx $(ARCH_SPECIFIC_OPTION)
 
 ifeq ($(SQ_MTYPE),32)
    CC		+= -mpi32

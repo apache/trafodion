@@ -6609,7 +6609,7 @@ void msg_mon_recv_unsol_msg_loc_cbt(Mon_Msg_Type *pp_msg, int) {
     } else {
         if (gv_ms_trace_mon)
             trace_where_printf(WHERE, "no tmsync callback, replying with error\n");
-        lv_handle = -1;
+        lv_handle = pp_msg->u.request.u.unsolicited_tm_sync.handle;
         lv_cbret = 1; // set error
     }
     lv_err = gp_local_mon_io->acquire_msg(&lp_msg);

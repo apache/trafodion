@@ -189,13 +189,17 @@ bool CExtOpenReq::prepare()
     const char method_name[] = "CExtOpenReq::prepare";
     TRACE_ENTRY;
 
+    int target_nid = -1;
+    CLNode *target_lnode = NULL;
+
     if ( prepared_ == true )
     {   // Already did the prepare work earlier.
         return true;
     }
 
-    if ((msg_->u.request.u.open.nid < 0) ||
-        (msg_->u.request.u.open.nid >= Nodes->GetLNodesConfigMax()))
+    target_nid = msg_->u.request.u.open.nid;
+    target_lnode = Nodes->GetLNode( target_nid );
+    if ( target_lnode == NULL )
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "%s, Invalid Node ID (%d)\n", method_name,
