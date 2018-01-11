@@ -2095,7 +2095,7 @@ static Int32 invokeUdrMethod(const char *method,
     if (txRequired && result == LM_OK)
     {
       cliResult = SQL_EXEC_Xact(SQLTRANS_QUIESCE, NULL);
-      if (cliResult != 0)
+      if (cliResult < 0)
       {
         fprintf(f, "%s SQL_EXEC_Xact() returned %d\n",
                 prefix, cliResult);

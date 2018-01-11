@@ -141,7 +141,7 @@ public:
   #define CURRCONTEXT_OPTDEBUG (CmpCommon::context()->getOptDbg())
   #define CURRCONTEXT_HISTCACHE (CmpCommon::context()->getHistogramCache())
   #define CURRCONTEXT_OPTSIMULATOR (CmpCommon::context()->getOptimizerSimulator())
-  #define GLOBAL_EMPTY_INPUT_LOGPROP (CmpCommon::context()->getGEILP())
+  #define GLOBAL_EMPTY_INPUT_LOGPROP (CmpCommon::statement()->getGEILP())
   #define CURRSTMT_OPTDEFAULTS (CmpCommon::context()->getOptDefaults())
 
   // For some routines that do care about the current CmpContext*. 

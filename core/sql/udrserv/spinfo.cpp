@@ -893,7 +893,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   Lng32 retcode = 0;
 
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_ClearDiagnostics")
@@ -915,7 +915,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   stmt->handle = 0;
 
   retcode = SQL_EXEC_AllocStmt(stmt, 0);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_AllocStmt")
@@ -938,7 +938,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   sqlsrc_desc.identifier = 0;
   sqlsrc_desc.handle = 0;
   retcode = SQL_EXEC_AllocDesc(&sqlsrc_desc, 1);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_AllocDesc")
@@ -966,7 +966,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
   desc_items[2].num_val_or_len = (Lng32) strlen(sql_str) + 1;
 
   retcode = SQL_EXEC_SetDescItems2(&sqlsrc_desc, 3, desc_items);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     d << DgSqlCode(-UDR_ERR_INTERNAL_CLI_ERROR)
       << DgString0("SQL_EXEC_SetDescItem2")
@@ -982,7 +982,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
 
   // Prepare the statement; stmt has the prepared plan
   retcode = SQL_EXEC_Prepare(stmt, &sqlsrc_desc);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     SQL_EXEC_MergeDiagnostics_Internal(d);
 
@@ -1000,7 +1000,7 @@ SQLSTMT_ID *SPInfo::executeSqlStmt(const char *sql_str, ComDiagsArea &d)
 
   // Execute the statement
   retcode = SQL_EXEC_ExecClose(stmt, 0, 0, 0);
-  if (retcode != 0)
+  if (retcode < 0)
   {
     SQL_EXEC_MergeDiagnostics_Internal(d);
 
@@ -1285,7 +1285,7 @@ void SPInfo::quiesceExecutor()
                     "Message carried a transaction. About to quiesce.");
       
       Lng32 sqlcode = SQL_EXEC_Xact(SQLTRANS_QUIESCE, NULL);
-      if (sqlcode != 0)
+      if (sqlcode < 0)
       {
         char msg[MAXERRTEXT];
         str_sprintf(msg, "SQL_EXEC_Xact returned error %d", (Int32) sqlcode);

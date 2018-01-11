@@ -449,11 +449,6 @@ public :
   // optimizer cached defaults
   OptDefaults* getOptDefaults() { return optDefaults_; }
 
-  // context global empty input logical property
-  EstLogPropSharedPtr* getGEILP() { return &emptyInLogProp_; }
-  void setGEILP(EstLogPropSharedPtr inLogProp)
-                             { emptyInLogProp_ = inLogProp; }
-    
   MDDescsInfo *getTrafMDDescsInfo() { return trafMDDescsInfo_; }
 
   void setCIClass(CmpContextInfo::CmpContextClassType x) { ciClass_ = x; }
@@ -614,9 +609,6 @@ private:
 
   // query defaults using during a statement compilation
   OptDefaults* optDefaults_;
-
-  // context global empty input logical property
-  EstLogPropSharedPtr emptyInLogProp_;
 
   MDDescsInfo * trafMDDescsInfo_;
 

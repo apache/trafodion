@@ -26,8 +26,8 @@ under the License.
  * Invocation (all arguments are strings):
  *
  * select ... from udf(JDBC(
- *    <name of JDBC driver jar>, // Not really needed if the jar is stored in
- *                               // $TRAF_HOME/udr/public/external_libs
+ *    <name of JDBC driver jar>, // file name of the JDBC driver jar, stored
+ *                               // in $TRAF_HOME/udr/public/external_libs
  *    <name of JDBC driver class in the jar>,
  *    <connection string>,
  *    <user name>,
@@ -98,7 +98,7 @@ class JDBCUDR extends UDR
             Path driverJarPath = Paths.get(driverJar_);
 
             // for security reasons, we sandbox the allowed driver jars
-            // into $TRAF_HOME/export/lib/udr/external_libs
+            // into $TRAF_HOME/udr/public/external_libs
             driverJarPath = driverJarPath.normalize();
             if (driverJarPath.isAbsolute())
               {
@@ -107,7 +107,7 @@ class JDBCUDR extends UDR
                   throw new UDRException(
                     38010,
                     "The jar name of the JDBC driver must be a name relative to %s, got %s",
-                    System.getenv("TRAF_HOME")+"/udr/external_libs",
+                    LmUtility.getSandboxRootForUser(null).toString(),
                     driverJar_);
               }
             else
@@ -141,7 +141,7 @@ class JDBCUDR extends UDR
                 38020,
                 "JDBC driver class %s not found. Please make sure the JDBC driver jar is stored in %s. Message: %s",
                 driverClassName_,
-                System.getenv("TRAF_HOME") + "/udr/public/external_libs",
+                LmUtility.getSandboxRootForUser(null).toString(),
                 cnf.getMessage());
           }
           catch (SQLException se) {

@@ -1002,6 +1002,8 @@ CREATE TABLE THIVE_INSERT_SMALLINT
   stored as textfile
 ;
 
+/* Trafodion DDL */
+
 --- SQL operation complete.
 >>
 >>truncate hive.hive.thive_insert_smallint;
@@ -1110,6 +1112,8 @@ CREATE TABLE THIVE_INSERT_VARCHAR
   )
   stored as textfile
 ;
+
+/* Trafodion DDL */
 
 --- SQL operation complete.
 >>cqd hive_insert_error_mode '1';

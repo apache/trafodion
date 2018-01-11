@@ -299,9 +299,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   // create dynamic metadata descriptors
   CmpSeabaseDDL cmpSeabaseDDL(heap_);
   cmpSeabaseDDL.createMDdescs(trafMDDescsInfo_);
-
-  emptyInLogProp_ = NULL;
-
 }
 
 // MV
