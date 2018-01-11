@@ -222,8 +222,8 @@
 1224 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1225 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1226 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
-1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User $0~String0 has been granted privileges on $1~String1.
-1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role $0~String0 has been granted privileges on $1~String1.
+1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user. User $0~String0 has been granted privileges on $1~String1.
+1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role. Role $0~String0 has been granted privileges on $1~String1.
 1229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 option is not supported.
 1230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object owner must be the schema owner in private schemas.
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.
@@ -494,28 +494,28 @@
 1600 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1601 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 
-1700 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~string0 is not a universal user-defined function.
-1701 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Encountered an error while processing a routine definition. Too many pass through inputs.
-1702 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only a character string literal can appear within the VALUE clause in a pass through input definition.
-1703 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only BINARY option can appear together with a UCS2 character string literal within the VALUE clause in a pass through input definition.
-1704 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only BINARY option can appear within the VALUE FROM FILE clause.
-1705 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Encountered an error while processing a routine definition. Unable to open file '$0~string0' for read.
-1706 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Encountered an error while processing a routine definition. Unable to read contents of file '$0~string0'.
-1707 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Routine action $0~string0 already exists in the list of actions used by universal user-defined function $1~string0
-1708 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The number of items in the NUMBER OF UNIQUE OUTPUT VALUES clause exceeds the number of outputs declared in the RETURNS clause.
-1709 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot drop the universal user-defined function $0~String0 - Associating routine action $1~String1 still exists.
-1710 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing the ALTER PASS THROUGH INPUTS clause. The specified position must start from 1, not 0.
-1711 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing the ALTER PASS THROUGH INPUTS clause. The specified position exceeds the number of existing pass through inputs.
-1712 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing the ALTER PASS THROUGH INPUTS clause. The specified position appears multiple times.
-1713 ZZZZZ 99999 BEGINNER MINOR DBADMIN Missing the required universal user-defined function name clause.
-1714 ZZZZZ 99999 BEGINNER MINOR DBADMIN An error occurred while retrieving metadata from catalog manager. Encountered an invalid routine action name '$0~string0'.
-1715 ZZZZZ 99999 BEGINNER MINOR DBADMIN An error occurred while retrieving metadata from catalog manager. Unable to start transaction.
-1716 ZZZZZ 99999 BEGINNER MINOR DBADMIN Number of declared formal parameters with SQL parameter style cannot exceed 32.
-1717 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing a routine definition. Pass through input value with BINARY type cannot be empty.
-1718 ZZZZZ 99999 BEGINNER MINOR DBADMIN Encountered an error while processing a routine definition. File '$0~string0' is empty. A pass through input value with BINARY type cannot be empty.
+1700 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1701 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1702 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1703 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1704 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1705 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1706 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1707 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1708 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1709 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1710 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1711 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1712 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1713 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1714 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1715 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1716 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1717 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1718 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1719 ZZZZZ 99999 BEGINNER MINOR DBADMIN Access Type '$0~string0' is not supported.
 1720 ZZZZZ 99999 BEGINNER MINOR DBADMIN Isolation Level '$0~string0' is not supported.
-1999 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last Catalog Manager error
+1999 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- Last Catalog Manager error ---
 2000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
 2001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Error or warning $0~Int0 occurred while opening or reading from DEFAULTS table $1~TableName.  Using $2~String0 values.
 2002 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Internal error: cannot create compiler.

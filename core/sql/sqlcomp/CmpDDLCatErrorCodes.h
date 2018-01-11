@@ -434,27 +434,6 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // unused                                       = 1600
                   // unused                                       = 1601
 
-                  // UDF related errors
-                  , CAT_NOT_UUDF_OBJECT                           = 1700
-                  , CAT_TOO_MANY_PASS_THRU_INPUTS                 = 1701
-                  , CAT_ONLY_STRING_LITERAL                       = 1702
-                  , CAT_BINARY_ONLY_OPTION_WITH_UCS2              = 1703
-                  , CAT_BINARY_ONLY_OPTION_WITHIN_VALUE_FROM_FILE_CLAUSE = 1704
-                  , CAT_UNABLE_TO_OPEN_FILE                       = 1705
-                  , CAT_UNABLE_TO_READ_FILE                       = 1706
-                  , CAT_RA_ALREADY_EXISTS_UUDF                    = 1707
-                  , CAT_EXCEEDS_NUMBER_OF_OUTPUT_VALUES           = 1708
-                  , CAT_UNABLE_TO_DROP_UUDF_BEING_USED_BY_RA      = 1709
-                  , CAT_PASS_THRU_INPUT_WRONG_POSITION_SPECIFIED  = 1710
-                  , CAT_POSITION_SPECIFIED_EXCEEDS_NUMBER_OF_PASS_THRU_INPUTS = 1711
-                  , CAT_SPECIFIED_POSITION_APPEARS_MULTIPLE_TIMES = 1712
-                  , CAT_MISSING_UUDF_FUNCTION_NAME_CLAUSE         = 1713
-                  , CAT_INVALID_ROUTINE_ACTION_NAME               = 1714
-                  , CAT_UNABLE_TO_START_TRANSACTION               = 1715
-                  , CAT_SQL_STYLE_PARAMETER_EXCEEDS_LIMIT         = 1716
-                  , CAT_PASS_THRU_BINARY_INPUT_CANNOT_BE_EMPTY    = 1717
-                  , CAT_BINARY_TYPE_FILE_EMPTY                    = 1718
-
                   // Method validation failures
                   , CAT_CLASS_NOT_FOUND                           = 11205
                   , CAT_CLASS_DEFINITION_NOT_FOUND                = 11206
