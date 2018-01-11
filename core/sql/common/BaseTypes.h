@@ -181,7 +181,7 @@ typedef NAUnsigned SimpleHashValue;
 #define BLANK_SPACE " "
 
 #define BUMP_INDENT(X) \
-  char newindent[MAX_INDENT_SIZE]; \
+  char newindent[MAX_INDENT_SIZE + 1]; \
   Int32 indentlen = strlen(X) + MIN_INDENT_SIZE;\
   indentlen = (indentlen < MAX_INDENT_SIZE ? indentlen : MAX_INDENT_SIZE);\
   for (Int32 fli = 0; fli < indentlen; fli++) \

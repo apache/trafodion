@@ -4292,7 +4292,7 @@ unsigned long ODBC::CheckIntervalOverflow(char *intervalValue, SWORD ODBCDataTyp
 	char	*token;
 	short	i = 0;
 	short   j = 0;
-	char	in_value[128];
+	char	in_value[128 + 1];
 	char	delimiters[] = " :.-";
 	char	sep[5]={0,0,0,0,0};
 	SQLINTEGER leadingPrecision;

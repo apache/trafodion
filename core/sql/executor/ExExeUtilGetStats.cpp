@@ -148,14 +148,14 @@ static short getSubstrInfo(char * str,   // IN
   currPos = startPos;
 
   // terminate at space
-  while(str[currPos] != space && currPos < maxLen)
+  while(currPos < maxLen && str[currPos] != space)
   {
     // check for quote
     if(str[currPos] == quote)
     {
       currPos++;
       // find end quote
-      while(str[currPos] != quote && currPos < maxLen)
+      while(currPos < maxLen && str[currPos] != quote)
           currPos++;
       if (currPos < maxLen)
         currPos++;

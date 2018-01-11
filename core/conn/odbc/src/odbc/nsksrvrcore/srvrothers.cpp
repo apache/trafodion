@@ -4121,7 +4121,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
         char                          *tableParam[20];
 
         short                         retCode;
-        char                          RequestError[200];
+        char                          RequestError[200 + 1];
 	char ConvertAPITypeToString[30];
 
 	Int32 curRowNo = 0;
@@ -5153,7 +5153,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                  {
                     ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
                     strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
-                    RequestError[sizeof(RequestError)] = '\0';
+                    RequestError[sizeof(RequestError) - 1] = '\0';
 
                     SendEventMsg(MSG_SQL_ERROR,
                                  EVENTLOG_ERROR_TYPE,
