@@ -25,7 +25,7 @@ To get started using Apache Trafodion:
       https://dist.apache.org/repos/dist/release/trafodion
 
     - git site:
-      git@github.com:apache/trafodion  
+      git@github.com:apache/trafodion
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:
