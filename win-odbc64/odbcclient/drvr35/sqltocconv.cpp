@@ -1633,6 +1633,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(DATE_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_DATE, 
@@ -1883,6 +1884,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(TIME_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIME, 
@@ -2104,6 +2106,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(TIMESTAMP_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIMESTAMP, 
