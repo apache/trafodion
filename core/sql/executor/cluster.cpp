@@ -2395,7 +2395,7 @@ NABoolean Cluster::checkAndSplit(ExeErrorCode * rc)
 				         rc);
   
   if ( !next_ || *rc ) {
-    if ( !(*rc))* rc = EXE_NO_MEM_TO_EXEC;
+    if (EXE_OK == *rc) *rc = EXE_NO_MEM_TO_EXEC;
     return TRUE;
   }
 
