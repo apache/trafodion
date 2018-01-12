@@ -336,9 +336,9 @@ private:
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherSock(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
-    int AllgatherSockReconnect( MPI_Status *stats );
-    int AcceptSockPeer( CNode *node, int peer );
-    int ConnectSockPeer( CNode *node, int peer );
+    int AllgatherSockReconnect( MPI_Status *stats, bool reestablishConnections = false );
+    int AcceptSockPeer( CNode *node, int peer, bool reestablishConnections = false );
+    int ConnectSockPeer( CNode *node, int peer, bool reestablishConnections = false );
 
     void ValidateClusterState( cluster_state_def_t nodestate[],
                                bool haveDivergence );

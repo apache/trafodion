@@ -661,30 +661,40 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
         if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
             trace_printf("%s@%d - Unsolicited TmSync reply, handle=%d\n",
                          method_name, __LINE__, tmsync_req->Handle);
-        tmsync_req->Completed = true;
-        UnsolicitedComplete( msg );
-        if ( msg->u.reply.u.unsolicited_tm_sync.return_code != MPI_SUCCESS )
+        if (msg->u.reply.u.unsolicited_tm_sync.return_code == MPI_SUCCESS)
         {
             TmSyncReplyCode |= msg->u.reply.u.unsolicited_tm_sync.return_code;
-        }
-        if ( TmSyncPNid == MyPNID )
-        {
-            if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
-                trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
-                             "%d\n", method_name, __LINE__,
-                             tmsync_req->Handle);
-            if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+            tmsync_req->Completed = true;
+            UnsolicitedComplete( msg );
+            if ( TmSyncPNid == MyPNID )
             {
-                UpdateTmSyncState( TmSyncReplyCode );
-                UnsolicitedCompleteDone();
+                if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
+                    trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
+                                 "%d\n", method_name, __LINE__,
+                                 tmsync_req->Handle);
+                if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+                {
+                    UpdateTmSyncState( TmSyncReplyCode );
+                    UnsolicitedCompleteDone();
+                }
+            }
+            else
+            {
+                if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
+                {
+                    CommitTmDataBlock(TmSyncReplyCode);
+                }
             }
         }
         else
-        {
-            if ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )
-            {
-                CommitTmDataBlock(TmSyncReplyCode);
-            }
+        { // The Seabed callback has not been registered, try again
+            if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
+                trace_printf("%s@%d - Retrying Local Unsolicited TmSync, handle="
+                             "%d\n", method_name, __LINE__,
+                             tmsync_req->Handle);
+            PendingSlaveTmSyncCount--;
+            tmsync_req->Completed = false;
+            SendUnsolicitedMessages();
         }
     }
     else

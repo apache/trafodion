@@ -96,6 +96,8 @@ void CExtExitReq::populateRequestString( void )
 void CExtExitReq::performRequest()
 {
     bool status = FAILURE;
+    int target_nid = -1;
+    CLNode *target_lnode = NULL;
 
     const char method_name[] = "CExtExitReq::performRequest";
     TRACE_ENTRY;
@@ -115,8 +117,9 @@ void CExtExitReq::performRequest()
                     , msg_->u.request.u.exit.verifier );
     }
 
-    if ((msg_->u.request.u.exit.nid < 0) ||
-        (msg_->u.request.u.exit.nid >= Nodes->GetLNodesConfigMax()))
+    target_nid = msg_->u.request.u.exit.nid;
+    target_lnode = Nodes->GetLNode( target_nid );
+    if ( target_lnode == NULL )
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[CMonitor::ExitProcess], Invalid Node ID!\n");

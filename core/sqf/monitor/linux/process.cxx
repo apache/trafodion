@@ -327,13 +327,19 @@ CProcess::~CProcess (void)
     delete [] userArgv_;
 
     if (fd_stdin_ != -1 && !Clone)
-        Redirector.tryShutdownPipeFd(Pid, fd_stdin_);
+    {
+        Redirector.tryShutdownPipeFd(Pid, fd_stdin_, false);
+    }
 
     if (fd_stdout_ != -1)
-        Redirector.tryShutdownPipeFd(Pid, fd_stdout_);
+    {
+        Redirector.tryShutdownPipeFd(Pid, fd_stdout_, true);
+    }
 
     if (fd_stderr_ != -1)
-        Redirector.tryShutdownPipeFd(Pid, fd_stderr_);
+    {
+        Redirector.tryShutdownPipeFd(Pid, fd_stderr_, false);
+    }
 
     // Remove the fifos associated with this process (if any)
     if (fifo_stdin_.size() != 0)
@@ -911,9 +917,10 @@ bool CProcess::PickStdfile(PickStdFile_t whichStdfile,
         {
             ancestor = node->GetProcessL(nextPid);
             if ( ancestor  &&  
-                 (ancestor->CreationTime.tv_sec  < earlyCreationTime.tv_sec ||
-                 (ancestor->CreationTime.tv_sec == earlyCreationTime.tv_sec  &&
-                  ancestor->CreationTime.tv_nsec < earlyCreationTime.tv_nsec)) )
+                 (( ! MyNode->IsMyNode(ancestor->GetNid())) ||
+                  (ancestor->CreationTime.tv_sec  < earlyCreationTime.tv_sec ||
+                   (ancestor->CreationTime.tv_sec == earlyCreationTime.tv_sec  &&
+                    ancestor->CreationTime.tv_nsec < earlyCreationTime.tv_nsec))) )
             {
                 earlyCreationTime.tv_sec  = ancestor->CreationTime.tv_sec;
                 earlyCreationTime.tv_nsec = ancestor->CreationTime.tv_nsec;
@@ -3853,71 +3860,91 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
             if ( ! MyNode->IsSpareNode() )
             {
                 int nid = MyNode->AssignNid();
-                strId_t progStrId = MyNode->GetStringId( msg->u.request.u.startup.program );
-                strId_t nullStrId = { -1, -1 };
-                process =
-                    new CProcess (NULL, nid, msg->u.request.u.startup.os_pid, ProcessType_Generic, 0, 0, false, true, (char *) "", 
-                                  nullStrId, nullStrId, progStrId, (char *) "", (char *) "");
-                if (process == NULL)
+                if ( (nid == -1) && (MyNode->GetState() != State_Up) )
                 {
-                    //TODO: Log event
-                    abort();
-                }
-                if ( process )
-                {
-                    char user_argv[MAX_ARGS][MAX_ARG_SIZE];
-                    process->userArgs ( 0, user_argv );
-                }
-                if ( msg->u.request.u.startup.process_name[0] == '\0')
-                {   // Create a name for the process and place it in the
-                    // Name member of the process object);
-                    char pname[MAX_KEY_NAME];
-                    MyNode->BuildOurName(nid, process->GetPid(), pname );
-                    process->SetName( pname );
+                    snprintf( la_buf, sizeof(la_buf),
+                            "[%s], Can't attach the pid %d (program: %s) - the monitor is not up yet (curr state: %d).\n",
+                            method_name,
+                            msg->u.request.u.startup.os_pid,
+                            msg->u.request.u.startup.program,
+                            MyNode->GetState() );
+                    mon_log_write( MON_PROCESSCONT_ATTACHPCHECK_4, SQ_LOG_ERR, la_buf );
+
+                    msg->u.reply.type = ReplyType_Generic;
+                    msg->u.reply.u.generic.nid = -1;
+                    msg->u.reply.u.generic.pid = -1;
+                    msg->u.reply.u.generic.verifier = -1;
+                    msg->u.reply.u.generic.process_name[0] = '\0';
+                    msg->u.reply.u.generic.return_code = MPI_ERR_NAME;
                 }
                 else
                 {
-                    process->SetName ( 
-                    MyNode->NormalizeName(msg->u.request.u.startup.process_name) );
+                    strId_t progStrId = MyNode->GetStringId( msg->u.request.u.startup.program );
+                    strId_t nullStrId = { -1, -1 };
+                    process =
+                        new CProcess( NULL, nid, msg->u.request.u.startup.os_pid, ProcessType_Generic, 0, 0, false, true, (char *) "", 
+                        nullStrId, nullStrId, progStrId, (char *) "", (char *) "" );
+                    if ( process == NULL )
+                    {
+                        //TODO: Log event
+                        abort();
+                    }
+                    if ( process )
+                    {
+                        char user_argv[MAX_ARGS][MAX_ARG_SIZE];
+                        process->userArgs( 0, user_argv );
+                    }
+                    if ( msg->u.request.u.startup.process_name[0] == '\0' )
+                    {   // Create a name for the process and place it in the
+                        // Name member of the process object);
+                        char pname[MAX_KEY_NAME];
+                        MyNode->BuildOurName( nid, process->GetPid( ), pname );
+                        process->SetName( pname );
+                    }
+                    else
+                    {
+                        process->SetName( 
+                            MyNode->NormalizeName( msg->u.request.u.startup.process_name ) );
+                    }
+                    process->SetAttached( true );
+                    process->SetupFifo( process->GetNid( ), msg->u.request.u.startup.os_pid );
+                    process->SetCreationTime( msg->u.request.u.startup.os_pid );
+                    process->SetVerifier( );
+                    AddToList( process );
+                    process->CompleteProcessStartup( msg->u.request.u.startup.port_name,
+                                                     msg->u.request.u.startup.os_pid,
+                                                     msg->u.request.u.startup.event_messages,
+                                                     msg->u.request.u.startup.system_messages,
+                                                     false,
+                                                     NULL );
+
+                    msg->u.reply.type = ReplyType_Startup;
+                    msg->u.reply.u.startup_info.nid = process->GetNid( );
+                    msg->u.reply.u.startup_info.pid = process->GetPid( );
+                    msg->u.reply.u.startup_info.verifier = process->GetVerifier( );
+                    strcpy( msg->u.reply.u.startup_info.process_name, process->GetName( ) );
+                    msg->u.reply.u.startup_info.return_code = MPI_SUCCESS;
+                    STRCPY( msg->u.reply.u.startup_info.fifo_stdin,
+                            process->fifo_stdin() );
+                    STRCPY( msg->u.reply.u.startup_info.fifo_stdout,
+                            process->fifo_stdout() );
+                    STRCPY( msg->u.reply.u.startup_info.fifo_stderr,
+                            process->fifo_stderr() );
+
+                    Monitor->writeProcessMapBegin( process->GetName( )
+                                                 , process->GetNid( )
+                                                 , process->GetPid( )
+                                                 , process->GetVerifier( )
+                                                 , -1, -1, -1
+                                                 , msg->u.request.u.startup.program );
                 }
-                process->SetAttached ( true );
-                process->SetupFifo(process->GetNid(), msg->u.request.u.startup.os_pid);
-                process->SetCreationTime(msg->u.request.u.startup.os_pid);
-                process->SetVerifier();
-                AddToList( process );
-                process->CompleteProcessStartup ( msg->u.request.u.startup.port_name,
-                                                  msg->u.request.u.startup.os_pid,
-                                                  msg->u.request.u.startup.event_messages,
-                                                  msg->u.request.u.startup.system_messages,
-                                                  false,
-                                                  NULL );
-
-                msg->u.reply.type = ReplyType_Startup;
-                msg->u.reply.u.startup_info.nid = process->GetNid();
-                msg->u.reply.u.startup_info.pid = process->GetPid();
-                msg->u.reply.u.startup_info.verifier = process->GetVerifier();
-                strcpy (msg->u.reply.u.startup_info.process_name, process->GetName());
-                msg->u.reply.u.startup_info.return_code = MPI_SUCCESS;
-                STRCPY(msg->u.reply.u.startup_info.fifo_stdin,
-                       process->fifo_stdin());
-                STRCPY(msg->u.reply.u.startup_info.fifo_stdout,
-                       process->fifo_stdout());
-                STRCPY(msg->u.reply.u.startup_info.fifo_stderr,
-                       process->fifo_stderr());
-
-                Monitor->writeProcessMapBegin( process->GetName()
-                                             , process->GetNid()
-                                             , process->GetPid()
-                                             , process->GetVerifier()
-                                             , -1, -1, -1
-                                             , msg->u.request.u.startup.program );
             }
             else
             {
-                snprintf(la_buf, sizeof(la_buf),
-                         "[%s], Can't attach, node is a spare node!\n",
-                         method_name);
-                mon_log_write(MON_PROCESSCONT_ATTACHPCHECK_3, SQ_LOG_ERR, la_buf);
+                snprintf( la_buf, sizeof(la_buf),
+                        "[%s], Can't attach, node is a spare node!\n",
+                        method_name );
+                mon_log_write( MON_PROCESSCONT_ATTACHPCHECK_3, SQ_LOG_ERR, la_buf );
 
                 msg->u.reply.type = ReplyType_Startup;
                 msg->u.reply.u.startup_info.nid = -1;
@@ -3930,10 +3957,10 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
         else
         {
             // Find the duplicate process
-            snprintf(la_buf, sizeof(la_buf),
+            snprintf( la_buf, sizeof(la_buf),
                      "[%s], Can't attach duplicate process %s!\n",
-                     method_name, msg->u.request.u.startup.process_name);
-            mon_log_write(MON_PROCESSCONT_ATTACHPCHECK_4, SQ_LOG_ERR, la_buf);
+                     method_name, msg->u.request.u.startup.process_name );
+            mon_log_write( MON_PROCESSCONT_ATTACHPCHECK_4, SQ_LOG_ERR, la_buf );
 
             msg->u.reply.type = ReplyType_Generic;
             msg->u.reply.u.generic.nid = -1;
@@ -3941,7 +3968,7 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
             msg->u.reply.u.generic.verifier = -1;
             msg->u.reply.u.generic.process_name[0] = '\0';
             msg->u.reply.u.generic.return_code = MPI_ERR_NAME;
-        } 
+        }
     }  
     // complete a monitor child process startup
     else

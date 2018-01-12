@@ -41,7 +41,8 @@ public:
     bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
     void processNewComm( MPI_Comm interComm );
     void processNewSock( int sockFd );
-    void setAccepting( bool accepting );
+    void startAccepting( void );
+    void stopAccepting( void );
     void start( void );
     void shutdownWork( void );
 

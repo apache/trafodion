@@ -650,7 +650,7 @@ void CZClient::HandleExpiredZNode( void )
     
         monZnode.assign( znodeQueue_.front() );
 
-        if (trace_settings)
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
             trace_printf("%s@%d" " - znodePath=%s, znodeQueue_.size=%ld\n"
                         , method_name, __LINE__
@@ -659,10 +659,6 @@ void CZClient::HandleExpiredZNode( void )
 
         znodeQueue_.pop_front();
         
-        trace_printf( "%s@%d" " - Checking znode=%s\n"
-                    , method_name, __LINE__
-                    , monZnode.c_str() );
-
         strcpy( pathStr, monZnode.c_str() );
 
         tknStart++; // skip the first '/'

@@ -254,7 +254,7 @@ public:
     void stdinOff(int fd);
     void stdinOn(int fd);
 
-    void tryShutdownPipeFd(int pid, int fd);
+    void tryShutdownPipeFd(int pid, int fd, bool pv_delete_redirect);
 
     void disposeIoData(int fd, int count, char *buffer);
 

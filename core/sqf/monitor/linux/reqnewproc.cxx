@@ -86,6 +86,7 @@ void CExtNewProcReq::performRequest()
     CProcess *process = NULL;
     CNode *node = NULL;
     CLNode *lnode = NULL;
+    CLNode *target_lnode = NULL;
     CLNode *zone_lnode = NULL;
     char la_buf[MON_STRING_BUF_SIZE];
     int result;
@@ -116,10 +117,10 @@ void CExtNewProcReq::performRequest()
     if ( requester )
     {
         target_nid = msg_->u.request.u.new_process.nid;
+        target_lnode = Nodes->GetLNode( target_nid );
         if ( msg_->u.request.u.new_process.type == ProcessType_SSMP ) 
         {
-            if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
+            if ( target_lnode == NULL )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -150,8 +151,7 @@ void CExtNewProcReq::performRequest()
         }
         if ( msg_->u.request.u.new_process.type == ProcessType_DTM )
         {
-            if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
+            if ( target_lnode == NULL )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -189,8 +189,7 @@ void CExtNewProcReq::performRequest()
         }
         if ( msg_->u.request.u.new_process.type == ProcessType_SPX ) 
         {
-            if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
+            if ( target_lnode == NULL )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -350,9 +349,7 @@ void CExtNewProcReq::performRequest()
                 }
             }
         }
-        else if (( msg_->u.request.u.new_process.type == ProcessType_DTM         ) &&
-                 (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )   )
+        else if ( target_lnode == NULL )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
@@ -363,21 +360,6 @@ void CExtNewProcReq::performRequest()
                     target_nid);
             mon_log_write(MON_MONITOR_STARTPROCESS_6, SQ_LOG_ERR, la_buf);
     
-            return;
-        }
-        else if (( msg_->u.request.u.new_process.type != ProcessType_DTM         ) &&
-                 (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )   )
-        {
-            msg_->u.reply.type = ReplyType_NewProcess;
-            msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
-            // Send reply to requester
-            lioreply(msg_, pid_);
-
-            sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
-                    target_nid);
-            mon_log_write(MON_MONITOR_STARTPROCESS_7, SQ_LOG_ERR, la_buf);
-
             return;
         }
         else

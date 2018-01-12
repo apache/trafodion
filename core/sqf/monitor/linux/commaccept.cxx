@@ -942,7 +942,7 @@ void CCommAccept::commAcceptorIB()
         {
             char buf[MON_STRING_BUF_SIZE];
             MPI_Error_class( rc, &errClass );
-            snprintf(buf, sizeof(buf), "[%s], cannot accept new monitor: %s.\n",
+            snprintf(buf, sizeof(buf), "[%s], cannot accept remote monitor: %s.\n",
                      method_name, ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_15, SQ_LOG_ERR, buf);
 
@@ -1101,13 +1101,44 @@ void CCommAccept::start()
     TRACE_EXIT;
 }
 
-void CCommAccept::setAccepting( bool accepting ) 
+void CCommAccept::startAccepting( void ) 
 {
+    const char method_name[] = "CCommAccept::startAccepting";
+    TRACE_ENTRY;
+
     CAutoLock lock( getLocker( ) );
-    accepting_ = accepting;
+    
+    if ( !accepting_ )
+    {
+        accepting_ = true;
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Enabling accepting_=%d\n"
+                        , method_name, __LINE__, accepting_ );
+        }
+        CLock::wakeOne();
+    }
+
+    TRACE_EXIT;
+}
+
+void CCommAccept::stopAccepting( void ) 
+{
+    const char method_name[] = "CCommAccept::stopAccepting";
+    TRACE_ENTRY;
+
+    CAutoLock lock( getLocker( ) );
     
     if ( accepting_ )
     {
+        accepting_ = false;
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Disabling accepting_=%d\n"
+                        , method_name, __LINE__, accepting_ );
+        }
         CLock::wakeOne();
     }
+
+    TRACE_EXIT;
 }
