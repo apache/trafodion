@@ -852,7 +852,7 @@ NAMemory::sysFreeBlock(NABlock *blk)
 #ifndef MUSE
 NAMemory::NAMemory(const char * name)
      : 
-    type_(NO_MEMORY_TYPE),
+    type_(EXECUTOR_MEMORY),
     maximumSize_((size_t)-1),            // no maximum
     parent_(NULL),
     firstBlk_(NULL),
@@ -864,7 +864,6 @@ NAMemory::NAMemory(const char * name)
     totalSize_(0),
     blockCnt_(0),
     thBlockCnt_(DEFAULT_THRESHOLD_BLOCK_COUNT),
-    segGlobals_(0),
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
@@ -879,6 +878,7 @@ NAMemory::NAMemory(const char * name)
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
 {
+  setType(type_, 0);
 #if ( defined(_DEBUG) || defined(NSK_MEMDEBUG) )  
   char * debugLevel = getenv("MEMDEBUG");
   if (debugLevel)
@@ -915,7 +915,6 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
    totalSize_(0),
    blockCnt_(0),
    thBlockCnt_(DEFAULT_THRESHOLD_BLOCK_COUNT),
-   segGlobals_(0),
    memoryList_(NULL),
    lastListEntry_(NULL),
    nextEntry_(NULL),
@@ -972,7 +971,6 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
     totalSize_(0),
     blockCnt_(0),
     thBlockCnt_(DEFAULT_THRESHOLD_BLOCK_COUNT),
-    segGlobals_(0),
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
@@ -1008,13 +1006,10 @@ NAMemory::NAMemory(const char * name, NAMemoryType type, size_t blockSize,
 }
 
 NAMemory::NAMemory(const char * name,
-		   SEG_ID  extFirstSegId,
-		   void  * extFirstSegStart,
-		   off_t    extFirstSegOffset,
-		   size_t   extFirstSegLen,
-		   size_t   extFirstSegMaxLen,
-		   NASegGlobals *segGlobals,
-		   Lng32    extMaxSecSegCount)
+           SEG_ID  segmentId,
+           void  * baseAddr,
+           off_t   heapStartOffset,
+           size_t  maxSize)
      : 
     type_(EXECUTOR_MEMORY),
     parent_(NULL),
@@ -1027,7 +1022,6 @@ NAMemory::NAMemory(const char * name,
     totalSize_(0),
     blockCnt_(0),
     thBlockCnt_(DEFAULT_THRESHOLD_BLOCK_COUNT),
-    segGlobals_(segGlobals),
     memoryList_(NULL),
     lastListEntry_(NULL),
     nextEntry_(NULL),
@@ -1042,13 +1036,6 @@ NAMemory::NAMemory(const char * name,
     , maxVmSize_(0l)
     , sharedMemory_(FALSE)
 {
-  segGlobals_->setFirstSegInfo(extFirstSegId,
-                               extFirstSegStart,
-                               extFirstSegOffset,
-                               extFirstSegLen,
-                               extFirstSegMaxLen);
-  segGlobals_->setMaxSecSegCount(extMaxSecSegCount);
-
   // call setType to initialize the values of all the sizes
   setType(type_, 0);
 
@@ -1068,24 +1055,26 @@ NAMemory::NAMemory(const char * name,
   // space in the segment, then initialize the firstBlk_ within
   // the passed in memory.  The NAHeap constructor will initialize
   // the top NAHeapFragment.
-  if (extFirstSegStart != NULL) {
+  if (baseAddr != NULL) {
     blockCnt_ = 1;
-    size_t tsize = extFirstSegLen - extFirstSegOffset - BLOCK_OVERHEAD;
+    size_t tsize = maxSize - heapStartOffset - BLOCK_OVERHEAD;
     if (tsize > (8 * sizeof(size_t))) {
-      firstBlk_ = (NABlock*)((char*)extFirstSegStart + extFirstSegOffset);
-      firstBlk_->size_ = extFirstSegLen - extFirstSegOffset;
+      firstBlk_ = (NABlock*)((char*)baseAddr + heapStartOffset);
+      firstBlk_->size_ = maxSize - heapStartOffset;
       firstBlk_->sflags_ = NABlock::EXTERN_BIT;
       firstBlk_->next_ = NULL;
-      firstBlk_->segmentId_ = extFirstSegId;
+      firstBlk_->segmentId_ = segmentId;
+      totalSize_ = initialSize_ = maximumSize_ = firstBlk_->size_;
     }
   }
-
+  upperLimit_ = maxSize;
   // need to initialize an NAStringRef object "on top" of the array
   // (don't touch this unless you know what you're doing!)
   NAStringRef * tmp = 
     new ( (void*) (&nullNAStringRep_[3]) ) 
     NAStringRef (NAStringRef::NULL_CTOR, this) ;
 }
+
 
 void NAMemory::reInitialize()
 {
@@ -1131,9 +1120,7 @@ void NAMemory::reInitialize()
         // This code provides mutual exclusion for the runtime stats shared
         // memory segment.
         short semRetcode = 0;
-        if (parent_->getType() == EXECUTOR_MEMORY &&
-            parent_->getSegGlobals() != NULL &&
-            parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()) {
+        if (parent_->getType() == EXECUTOR_MEMORY && getSharedMemory()) {
           semRetcode = getRTSSemaphore();
         }
         while (p) {
@@ -1174,7 +1161,7 @@ void NAMemory::reInitialize()
     firstBlk_ = externSegment;
     firstBlk_->next_ = NULL;
     blockCnt_ = 1;
-    totalSize_ = firstBlk_->size_ - segGlobals_->getFirstSegOffset();
+    totalSize_ = firstBlk_->size_ ;
   }
 
   // If this is an NAHeap, then call reInitializeHeap() to reinitialize
@@ -1207,24 +1194,9 @@ void NAMemory::setType(NAMemoryType type, Lng32 blockSize)
 
   switch(type_) {
   case EXECUTOR_MEMORY:
-    // input parameter blockSize is ignored
-    // this is an NAMemory using flat segments on NSK
-    if (segGlobals_ && segGlobals_->getFirstSegStart())
-    {
-      // take the segment size and max. size from the externally
-      // provided // segment
-      totalSize_ = initialSize_ = segGlobals_->getFirstSegLen() 
-         - segGlobals_->getFirstSegOffset();
-      maximumSize_ = segGlobals_->getFirstSegMaxLen() 
-         - segGlobals_->getFirstSegOffset();
-    }
-    else
-    {
-      initialSize_   = DEFAULT_NT_HEAP_INIT_SIZE ; 
-      maximumSize_   = DEFAULT_NT_HEAP_MAX_SIZE ;           // no maximum
-      incrementSize_ = DEFAULT_NT_HEAP_INCR_SIZE ;
-    }
-
+    initialSize_   = DEFAULT_NT_HEAP_INIT_SIZE ; 
+    maximumSize_   = DEFAULT_NT_HEAP_MAX_SIZE ;           // no maximum
+    incrementSize_ = DEFAULT_NT_HEAP_INCR_SIZE ;
     break;
 	
   case SYSTEM_MEMORY:
@@ -1972,9 +1944,7 @@ NAHeap::deallocateFreeBlock(NAHeapFragment *p)
     HEAPLOG_OFF() // no recursive logging.
     // This code provides mutual exclusion for the runtime stats shared
     // memory segment.
-    if (parent_->getType() == EXECUTOR_MEMORY &&
-        parent_->getSegGlobals() != NULL &&
-        parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()) {
+    if (parent_->getType() == EXECUTOR_MEMORY && getSharedMemory()) {
        short retcode = getRTSSemaphore();
        parent_->deallocateHeapMemory((void*)curr);
        if (retcode == 1)
@@ -2218,7 +2188,7 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
 
     // This could be either Global Executor Memory or Stats Globals
     // Don't add a block if Stats Globals!
-    if (getSegGlobals()->getFirstSegId() == getStatsSegmentId())
+    if (getSharedMemory())
       return NULL;
 
     // Try to allocate the NABlock using mmap(). If it succeeds return the
@@ -2276,9 +2246,7 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
     // semaphore is obtained in allocateHeapMemory or deallocateHeapMemory
     // for both global and process stats heap. But leaving it now
     // since it won't hurt other than extra cpu cycles
-    if (getSharedMemory() || (parent_->getType() == EXECUTOR_MEMORY &&
-        parent_->getSegGlobals() != NULL &&
-        parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId())) {
+    if (getSharedMemory()) {
       short retcode = getRTSSemaphore();
       p = (NABlock*)parent_->allocateHeapMemory(blockSize, FALSE);
 
@@ -2455,146 +2423,6 @@ NABoolean NAMemory::checkSize(size_t size, NABoolean failureIsFatal)
 }
 
 // ---------------------------------------------------------------------------
-// NASegGlobals methods
-// ---------------------------------------------------------------------------
-void NASegGlobals::setFirstSegInfo(SEG_ID firstSegId,
-                                   void * firstSegStart,
-                                   off_t  firstSegOffset,
-                                   size_t firstSegLen,
-                                   size_t firstSegMaxLen)
-{
-  firstSegId_ = firstSegId;
-  firstSegStart_ = firstSegStart;
-  firstSegOffset_ = firstSegOffset;
-  firstSegLen_ = firstSegLen;
-  firstSegMaxLen_ = firstSegMaxLen;
-  addedSegCount_ = 0;
-  lowWaterMark_ = firstSegStart;
-  highWaterMark_ = (void *) ((char *)firstSegStart + firstSegLen);
-  for (Int32 i = 0; i < NA_MAX_SECONDARY_SEGS; i++)
-  {
-    addedSegId_[i] = 0;
-    startAddresses_[i] = 0;
-    lengths_[i] = 0;
-  }
-}
-
-Int32 NASegGlobals::addSegId(short segId, void *start, size_t len)
-{
-  if (addedSegCount_ == NA_MAX_SECONDARY_SEGS)
-    {
-      return 0;
-    }
-  else
-    {
-      Int32 segOffset = (Int32)(segId - firstSegId_ - 1);
-      addedSegId_[segOffset]     = segId;
-      startAddresses_[segOffset] = start;
-      lengths_[segOffset]        = len;
-      addedSegCount_++;
-    }
-  
-  void *end = (void *) ((char *)start + len);
-  if (lowWaterMark_ > start)
-    lowWaterMark_ = start;
-  if (highWaterMark_ < end)
-    highWaterMark_ = end;
-  return 1;
-}
-
-void NASegGlobals::deleteSegId(short segId)
-{
-  Lng32 addedSegCount, i;
-  void *start, *end;
-  Int32 segOffset = (Int32)(segId - firstSegId_ -1);
-  assert (--addedSegCount_ >= 0);
-  addedSegId_[segOffset] = 0;
-  startAddresses_[segOffset] = 0;
-  lengths_[segOffset] = 0;
-  lowWaterMark_ = firstSegStart_;
-  highWaterMark_ = (void *) ((char *)firstSegStart_ + firstSegLen_);
-  for (addedSegCount = 0, i = 0; addedSegCount < addedSegCount_; i++) {
-    if (addedSegId_[i] != 0)
-    {
-      addedSegCount += 1;
-      start = startAddresses_[i];
-      end = (void *) ((char *)start + lengths_[i]);
-      if (lowWaterMark_ > start)
-        lowWaterMark_ = start;
-      if (highWaterMark_ < end)
-        highWaterMark_ = end;
-    }
-  }
-}
-
-void NASegGlobals::resizeSeg(short segId, void *start, size_t newLen)
-{
-  Lng32 addedSegCount, i;
-  void *end = (void *) ((char *)start + newLen);
-  if (lowWaterMark_ > start)
-    lowWaterMark_ = start;
-  if (highWaterMark_ < end)
-    highWaterMark_ = end;
-
-  if (segId == firstSegId_)
-    {
-      firstSegLen_ = newLen;
-    }
-  else
-    {
-      for (addedSegCount = 0, i = 0; addedSegCount < addedSegCount_; i++)
-      {
-        if (addedSegId_[i] != 0)
-        {
-          addedSegCount += 1;
-          if (segId == addedSegId_[i])
-          {
-            lengths_[i] = newLen;
-            return;
-          }
-        }
-      }
-    }
-}
-
-NABoolean NASegGlobals::overlaps(void *start, size_t len) const
-{
-  // check the easy things first, performance of this method is critical
-  // because it is used in boundscheck routines that are frequently called
-  Lng32 addedSegCount, i;
-  void *end = (void *) ((char *)start + len);
-
-  // sanity check, does the provided memory range wrap around the end
-  // of the 32 bit addressing range (refuse to deal with such ranges
-  // and just return an overlap)
-  if (start > end)
-    return TRUE;
-
-  // quick check, using low and high water marks
-  if (end <= lowWaterMark_ || start >= highWaterMark_)
-    return FALSE;
-
-  // quick check won't work, loop over each executor segment separately
-  // in case the memory range lies between two executor segments.
-  for (addedSegCount = 0, i = 0; addedSegCount < addedSegCount_; i++)
-    {
-      if (addedSegId_[i] != 0)
-      {
-        addedSegCount += 1;
-        void *startSeg = startAddresses_[i];
-        void *endSeg = (void *) ((char *)startSeg + lengths_[i]);
-
-        // if the start address of the segment or its last byte lie
-        // in the range then there is an overlap
-        if (start <= startSeg && end > startSeg ||
-            start < endSeg && end >= endSeg)
-          return TRUE;
-      }
-    }
-  return FALSE;
-}
-
-// ---------------------------------------------------------------------------
 // NAHeap methods
 // ---------------------------------------------------------------------------
 #ifndef MUSE
@@ -2623,7 +2451,7 @@ NAHeap::NAHeap()
 NAHeap::NAHeap(const char * name, 
 	       NAHeap * parent, 
 	       Lng32 blockSize, 
-	       Lng32 upperLimit)
+	       size_t upperLimit)
   : NAMemory(name, parent, blockSize, upperLimit),
     smallmap_(0),
     treemap_(0),
@@ -2653,7 +2481,7 @@ NAHeap::NAHeap(const char * name,
 NAHeap::NAHeap(const char * name, 
 	       NAMemoryType type, 
 	       Lng32 blockSize, 
-	       Lng32 upperLimit) 
+	       size_t upperLimit) 
   : NAMemory(name, type, blockSize, upperLimit),
     smallmap_(0),
     treemap_(0),
@@ -2675,17 +2503,51 @@ NAHeap::NAHeap(const char * name,
 #endif // _DEBUG
 }
 
-NAHeap::NAHeap(const char  * name,
-               SEG_ID  extFirstSegId,
-               void  * extFirstSegStart,
-               Lng32    extFirstSegOffset,
-               Lng32    extFirstSegLen,
-               Lng32    extFirstSegMaxLen,
-               NASegGlobals *segGlobals,
-               Lng32    extMaxSecSegCount)
-  : NAMemory(name, extFirstSegId, extFirstSegStart, extFirstSegOffset,
-             extFirstSegLen, extFirstSegMaxLen, segGlobals,
-             extMaxSecSegCount),
+NAHeap::NAHeap(const char  * name)
+  : NAMemory(name),
+    smallmap_(0),
+    treemap_(0),
+    dvsize_(0),
+    topsize_(0),
+    least_addr_(0),
+    dv_(NULL),
+    top_(NULL),
+    errCallback_(NULL)
+{
+  initBins();
+  derivedClass_ = NAHEAP_CLASS;
+
+  if (firstBlk_) {
+    initTop(firstBlk_);
+    least_addr_ = (char*)firstBlk_;
+  }
+
+  if (deallocTraceArray == 0)
+  {
+    char *deallocTraceEnvvar = getenv("EXE_DEALLOC_MEM_TRACE");
+    if (deallocTraceEnvvar != NULL)
+    {
+      deallocTraceArray =
+        (DeallocTraceEntry (*) [deallocTraceEntries])malloc(sizeof(DeallocTraceEntry) * deallocTraceEntries);
+      memset((void *)deallocTraceArray, '\0', sizeof(DeallocTraceEntry) * deallocTraceEntries);
+    }
+  }
+
+  threadSafe_ = false;
+  memset(&mutex_, '\0', sizeof(mutex_));
+
+#ifdef _DEBUG
+  setAllocTrace();
+#endif // _DEBUG
+}
+
+// Constructor that imposes the NAHeap struture on already allocated memory 
+NAHeap::NAHeap(const char * name,
+       SEG_ID  segmentId,
+       void  * baseAddr,
+       off_t   heapStartOffset,
+       size_t  maxSize)
+  : NAMemory(name, segmentId, baseAddr, heapStartOffset, maxSize),
     smallmap_(0),
     treemap_(0),
     dvsize_(0),
@@ -2806,8 +2668,6 @@ void NAHeap::reInitializeHeap()
   // That code frees the NABlocks and will reinitialize the firstBlk_
   // if it was allocated externally.
   if (firstBlk_ != NULL) {
-     assert((char*)firstBlk_ == (char*)segGlobals_->getFirstSegStart()
-                                + segGlobals_->getFirstSegOffset());
      least_addr_ = (char*)firstBlk_;
      initTop(firstBlk_);
   }
@@ -2902,9 +2762,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   // getSharedMemory() check alone is enough since it will return for both
   // global and process stats heap. Leaving the rest of the condition here
   //
-  if (getSharedMemory() || (parent_ && parent_->getType() == EXECUTOR_MEMORY &&
-             parent_->getSegGlobals() != NULL &&
-             parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()))
+  if (getSharedMemory())
   {
     // Check if you are within semaphore
     if (! checkIfRTSSemaphoreLocked())
@@ -2949,10 +2807,7 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   // then allocate a NABlock using mmap(). This prevents any changes
   // to the "top_" fragment and allows the memory used by the request to
   // be returned to the operating system when the user frees it.
-  if (additionalUserSize >= MIN_MMAP_ALLOC_SIZE && parent_ == NULL
-     && (getSegGlobals() == NULL ||
-         getSegGlobals()->getFirstSegId() != getStatsSegmentId())
-     )
+  if (additionalUserSize >= MIN_MMAP_ALLOC_SIZE && parent_ == NULL && (! getSharedMemory()))
   {
 
     nb = PAD_REQUEST(additionalUserSize);
@@ -3231,9 +3086,7 @@ void NAHeap::deallocateHeapMemory(void* addr)
 
   NAMutex mutex(threadSafe_, &mutex_);
  
-  if (getSharedMemory() || (parent_ && parent_->getType() == EXECUTOR_MEMORY &&
-             parent_->getSegGlobals() != NULL &&
-             parent_->getSegGlobals()->getFirstSegId() == getStatsSegmentId()))
+  if (getSharedMemory())
   {
     // Check if you are within semaphore
     if (! checkIfRTSSemaphoreLocked())

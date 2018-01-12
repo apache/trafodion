@@ -73,7 +73,6 @@ typedef uid_t SEG_ID;
 
 // contents of this file:
 class NAMemory;
-class NASegGlobals;
 class NABlock;
 class NAHeap;
 class NAHeapFragment;
@@ -106,84 +105,6 @@ private:
                          // 16 - all objects <= 2 MB
                          // 17 - all objects > 2 MB
 };
-
-////////////////////////////////////////////////////////////////////////////
-// One NASegGlobals object exists in the executor as a member variable
-// of CliGlobals. Information about the first executor flat segment, as well
-// as the address of the NASegGlobals object in which the information is
-// stored, is passed as arguments to the setFirstSegInfo function, and used
-// by NAMEMORY::allocateBlock. addSegId is called by NAMemory::allocateBlock
-// to maintain an array of secondary (allocated after the first) flat segment
-// ids. getSegId is called on MIPS by switchToPriv and switchToNonPriv to
-// obtain the flat segment ids to hide and reveal.  On Yosemite, the
-// segments are not hidden and revealed.
-////////////////////////////////////////////////////////////////////////////
-class NASegGlobals {
-public:
-  inline short getSegId(Lng32 &index) const
-  {
-    Lng32 i, addedSegCount;
-    for (i = 0, addedSegCount = 0; addedSegCount < addedSegCount_; i++)
-    {
-      if (addedSegId_[i] != 0)
-      {
-        addedSegCount += 1;
-        if (i >= index)
-        {
-          index = i;
-          return addedSegId_[i];
-        }
-      }
-    }
-    return 0;
-  }
-
-  short getSegInfo(Lng32 index, void **startAddr) const
-    {
-      *startAddr = startAddresses_[index];
-      return addedSegId_[index];
-    }
-  void   setFirstSegInfo(
-			 SEG_ID firstSegId,
-                         void *firstSegStart,
-                         off_t  firstSegOffset,
-                         size_t  firstSegLen,
-                         size_t  firstSegMaxLen);
-  void   setMaxSecSegCount(Lng32 maxSecSegCount)
-                                { maxSecSegCount_ = maxSecSegCount; }
-  NABoolean reachedMaxSegCnt() const
-                                { return addedSegCount_ >= maxSecSegCount_; }
-  Lng32   addSegId(short segId, void *start, size_t len);
-  void   deleteSegId(short segId);
-  SEG_ID  getFirstSegId() const			 { return firstSegId_; }
-  void * getFirstSegStart() const                { return firstSegStart_; }
-  off_t   getFirstSegOffset() const              { return firstSegOffset_; }
-  size_t   getFirstSegLen() const                { return firstSegLen_; }
-  size_t   getFirstSegMaxLen() const             { return firstSegMaxLen_; }
-  void   resizeSeg(short segId, void *start, size_t newLen);
-
-  // check whether a specified range of memory overlaps any of the segments
-  NABoolean overlaps(void *start, size_t len) const;
-
-  enum { NA_MAX_SECONDARY_SEGS=28 };   // Seg IDs 2111 - 2138
-private:
-  SEG_ID firstSegId_;
-  void *firstSegStart_;    // starting addr of segment
-  off_t  firstSegOffset_;  // offset of free space in the segment
-  size_t  firstSegLen_;    // length of external segment
-  size_t  firstSegMaxLen_; // max. len the segment can be resized to
-  Lng32	addedSegCount_;    // number of additional segments
-  Lng32  maxSecSegCount_;  // Maximum number of secondary segments
-  short addedSegId_     [NA_MAX_SECONDARY_SEGS]; // array of secondary seg ids
-  void *startAddresses_ [NA_MAX_SECONDARY_SEGS]; // start addresses of segs
-  size_t lengths_[NA_MAX_SECONDARY_SEGS]; // lengths of segments
-
-  // total range of memory spanned by the segments (may have other
-  // things or holes between those water marks)
-  void *lowWaterMark_;
-  void *highWaterMark_;
-};
-
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -263,15 +184,6 @@ public:
   // time. Before a memory can be used, the type_ has to be set via
   // setType() or setParent()
   //
-  // The number of NAMemory objects of NAMemoryType SYSTEM_MEMORY or IPC_MEMORY
-  // is currently restricted to one because the assignment of flat segment ids
-  // (NSK) for SYSTEM/IPC_MEMORY is not managed globally. If one such object
-  // already exists, an assertion failure will occur following an attempt to
-  // to allocate a segment with an id that was previously used. This is not
-  // a problem because only the compiler's main statement heap resides in
-  // SYSTEM_MEMORY, and only ESPs use IPC_Memory. If needed in the future, 
-  // multiple SYSTEM/IPC _MEMORY heaps could be supported by keeping track of
-  // SYSTEM_MEMORY/IPC segment ids in the NASegGlobals object.
   enum NAMemoryType {
     NO_MEMORY_TYPE = 0,
     EXECUTOR_MEMORY = 2,
@@ -304,21 +216,17 @@ public:
   NAMemory(const char * name, NAMemoryType type, size_t blockSize,
            size_t upperLimit);
 
-  // an NAMemory of type EXECUTOR_MEMORY that uses a first flat segment
-  // that is allocated by the caller (on NSK, uses malloc on NT and ignores
-  // the parameters after the first one)
-  NAMemory(const char * name,
-           SEG_ID  extFirstSegId,
-           void  * extFirstSegStart,
-           off_t   extFirstSegOffset,
-           size_t  extFirstSegLen,
-           size_t  extFirstSegMaxLen,
-           NASegGlobals  * segGlobals,
-           Lng32   extMaxSecSegCount = NASegGlobals::NA_MAX_SECONDARY_SEGS);
-
   // DERIVED_MEMORY
   NAMemory(const char * name, NAHeap * parent, size_t blockSize,
            size_t upperLimit);
+
+  // an NAMemory of type EXECUTOR_MEMORY that imposes the NAMemory struture 
+  // on already allocated memory
+  NAMemory(const char * name,
+           SEG_ID segmentId,
+           void  * baseAddr,
+           off_t   heapStartOffset,
+           size_t  maxSize);
 
   ~NAMemory();
 
@@ -374,7 +282,6 @@ public:
 
   inline void resetIntervalWaterMark() { intervalWaterMark_ = allocSize_;};
 
-  inline NASegGlobals * getSegGlobals() { return segGlobals_; }
   char *getName() {  return name_; }
   NAMemoryType getType() {  return type_; }
 
@@ -451,8 +358,6 @@ private:
                               // that was allocated before this memory
                               // was created (allows to put the memory
                               // itself and other info into the segment)
-  NASegGlobals *segGlobals_;  // Executor flat segment globals object
-
   NAMemory *memoryList_;      // list of memory directly derived from this
   NAMemory *lastListEntry_;   // last entry of this list
   NAMemory *nextEntry_;       // pointer if this memory is on a memoryList_
@@ -531,17 +436,19 @@ public:
   NAHeap(const char * name, 
 	 NAHeap * parent, 
 	 Lng32 blockSize = 0, 
-	 Lng32 upperLimit =0);
-  NAHeap(const char * name, NAMemoryType type = DERIVED_FROM_SYS_HEAP, 
-         Lng32 blockSize = 0, Lng32 upperLimit = 0);
-  NAHeap(const char  * name,
-         SEG_ID   extFirstSegId,
-	 void  * extFirstSegStart,
-	 Lng32    extFirstSegOffset,
-	 Lng32    extFirstSegLen,
-	 Lng32    extFirstSegMaxLen,
-	 NASegGlobals *segGlobals,
-         Lng32    extMaxSecSegCount = NASegGlobals::NA_MAX_SECONDARY_SEGS);
+	 size_t upperLimit =0);
+  NAHeap(const char * name, NAMemoryType type,
+         Lng32 blockSize = 0, size_t upperLimit = 0);
+
+  // Constructor that imposes the NAHeap struture on already allocated memory 
+  NAHeap(const char * name,
+           SEG_ID  segmentId,
+           void  * baseAddr,
+           off_t   heapStartOffset,
+           size_t  maxSize);
+
+  NAHeap(const char  * name);
+
   ~NAHeap();
   void destroy();
   void reInitializeHeap();

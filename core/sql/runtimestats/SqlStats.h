@@ -507,7 +507,6 @@ private:
   short cpu_;
   pid_t semPid_;    // Pid of the process that holds semaphore lock - This element is used for debugging purpose only
   Int64 semPidCreateTime_; // Creation timestamp - pid recycle workaround. 
-  NASegGlobals segGlobals_;
   NAHeap statsHeap_;
   NABoolean isSscpInitialized_;
   short rtsEnvType_; // 1 - Global Environment

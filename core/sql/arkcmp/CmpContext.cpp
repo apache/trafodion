@@ -211,7 +211,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_HISTCACHE_UPPER_KB);
     const Lng32 initHeapSize = 16 * 1024;    // ## 16K
     NAHeap *histogramCacheHeap = new (heap_) 
-                                 NAHeap("HistogramCache Heap",
+                                 NAHeap((const char *)"HistogramCache Heap",
                                  heap_,
                                  initHeapSize,
                                  memLimit);
