@@ -4805,7 +4805,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
   "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
     "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
     "when dt.USEPRECISION = -1 then co.COLUMN_SIZE when dt.USEPRECISION = -2 then co.COLUMN_PRECISION "
-    "when co.FS_DATA_TYPE = 192 then dt.USEPRECISION + 1 "
+    "when co.FS_DATA_TYPE = 192 then dt.USEPRECISION "
     "when co.FS_DATA_TYPE >= 195 and co.FS_DATA_TYPE <= 207 then dt.USEPRECISION + 1 "
     "else dt.USEPRECISION end) as integer) COLUMN_SIZE, "
 "cast((case when dt.USELENGTH = -1 then co.COLUMN_SIZE when dt.USELENGTH = -2 then co.COLUMN_PRECISION "
