@@ -123,10 +123,11 @@ char *TraceOptionToString(long TraceOption)
 	long index;
 
 	if (TraceOption == 0) 
-            index = sizeof(TraceOptionString) - 1;	    
+            index = sizeof(TraceOptionString)/sizeof(TraceOptionString[0]) - 1;
 	else 
             for (index = 0; 
-                 (TraceOption & 1) == 0 && index < sizeof(TraceOptionString);  
+                 (TraceOption & 1) == 0 && 
+                     index < sizeof(TraceOptionString)/sizeof(TraceOptionString[0]);
                  TraceOption >>= 1, index++);
 	return TraceOptionString[index];
 }

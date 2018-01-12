@@ -233,7 +233,7 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
 
   char className[]="org/trafodion/dtm/HBaseTxClient";
-  return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, (JavaMethodInit*)&JavaMethods_, (int)JM_LAST, false);
+  return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, (JavaMethodInit*)&JavaMethods_, (int)JM_TMLAST, false);
 }
 
 //////////////////////////////////////////////
@@ -1173,10 +1173,10 @@ HMN_RetCode HashMapArray::init()
       return HMN_OK;
 
    if (JavaMethods_)
-      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_LAST, true);
+      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_MAPLAST, true);
    else
    {
-      JavaMethods_ = new JavaMethodInit[JM_LAST];
+      JavaMethods_ = new JavaMethodInit[JM_MAPLAST];
 
       JavaMethods_[JM_CTOR           ].jm_name       = "<init>";
       JavaMethods_[JM_CTOR           ].jm_signature  = "()V";
@@ -1199,7 +1199,7 @@ HMN_RetCode HashMapArray::init()
       JavaMethods_[JM_GET_REGINFO    ].jm_name       = "getRegionInfo";
       JavaMethods_[JM_GET_REGINFO    ].jm_signature  = "(J)Ljava/lang/String;";
 
-      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_LAST, false);
+      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_MAPLAST, false);
     }
 }
 
