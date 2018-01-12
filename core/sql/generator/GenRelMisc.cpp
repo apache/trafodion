@@ -4014,7 +4014,16 @@ short TupleList::codeGen(Generator * generator)
 	    tmpAssign = (Assign *)tmpAssign->bindNode(bindWA);
             setInUpdateOrInsert(bindWA, NULL);
 	    childNode = tmpAssign->getSource().getItemExpr();
-
+            //don't allow LOB insert in a tuple list
+            if (childNode->getOperatorType() == ITM_LOBINSERT)
+              {                                                          
+                // cannot have this function in a values list with
+                // multiple tuples. Use a single tuple.
+                *CmpCommon::diags() << DgSqlCode(-4483);
+                GenExit();
+                return -1;
+                        
+              }
             castNode->child(0) = childNode;
           }
           else
