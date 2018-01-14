@@ -40,7 +40,7 @@
   <packaging>pom</packaging>
   <name>Apache Trafodion</name>
   <description>Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop.</description>
-  <url>http://trafodion.incubator.apache.org</url>
+  <url>http://trafodion.apache.org</url>
   <inceptionYear>2015</inceptionYear>
 
   <licenses>
@@ -63,9 +63,9 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</developerConnection>
-    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git</url>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/trafodion.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/trafodion.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=trafodion.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -77,35 +77,35 @@
   <mailingLists>
     <mailingList>
       <name>User List</name>
-      <subscribe>user-subscribe@trafodion.incubator.apache.org</subscribe>
-      <unsubscribe>user-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
-      <post>user@trafodion.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-user/</archive>
+      <subscribe>user-subscribe@trafodion.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@trafodion.apache.org</unsubscribe>
+      <post>user@trafodion.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-user/</archive>
     </mailingList>
     <mailingList>
       <name>Developer List</name>
-      <subscribe>dev-subscribe@trafodion.incubator.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
-      <post>dev@trafodion.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-dev/</archive>
+      <subscribe>dev-subscribe@trafodion.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@trafodion.apache.org</unsubscribe>
+      <post>dev@trafodion.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-dev/</archive>
     </mailingList>
     <mailingList>
       <name>GitHub Codereview List</name>
-      <subscribe>codereview-subscribe@trafodion.incubator.apache.org</subscribe>
-      <unsubscribe>codereview-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-codereview/</archive>
+      <subscribe>codereview-subscribe@trafodion.apache.org</subscribe>
+      <unsubscribe>codereview-unsubscribe@trafodion.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-codereview/</archive>
     </mailingList>
     <mailingList>
       <name>Commits List</name>
-      <subscribe>commits-subscribe@trafodion.incubator.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-commits/</archive>
+      <subscribe>commits-subscribe@trafodion.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@trafodion.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-commits/</archive>
     </mailingList>
     <mailingList>
       <name>Issues List</name>
-      <subscribe>issues-subscribe@trafodion.incubator.apache.org</subscribe>
-      <unsubscribe>issues-unsubscribe@trafodion.incubator.apache.org</unsubscribe>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-trafodion-issues/</archive>
+      <subscribe>issues-subscribe@trafodion.apache.org</subscribe>
+      <unsubscribe>issues-unsubscribe@trafodion.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/trafodion-issues/</archive>
     </mailingList>
   </mailingLists>
 
@@ -113,7 +113,7 @@
     <developer>
       <id>TrafodionDeveloper</id>
       <name>See list of Trafodion developers</name>
-      <email>dev@trafodion.incubator.apache.org</email>
+      <email>dev@trafodion.apache.org</email>
       <url>https://cwiki.apache.org/confluence/display/TRAFODION/Contributors</url>
     </developer>
   </developers>
@@ -121,7 +121,7 @@
   <contributors>
     <contributor>
       <name>See list of Trafodion contributors</name>
-      <email>dev@trafodion.incubator.apache.org</email>
+      <email>dev@trafodion.apache.org</email>
       <url>https://cwiki.apache.org/confluence/display/TRAFODION/Contributors</url>
     </contributor>
   </contributors>
@@ -280,9 +280,9 @@
 
   <distributionManagement>
     <site>
-      <id>trafodion.incubator.apache.org</id>
-      <name>Trafodion Website at incubator.apache.org</name>
-      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      <id>trafodion.apache.org</id>
+      <name>Trafodion Website at apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.apache.org, see
       https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
       -->
       <url>file:///tmp</url>

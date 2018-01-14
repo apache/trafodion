@@ -92,7 +92,7 @@ Set these values for your environment:
 `<port-number>` is the location where the 
 {project-name} Database Connectivity Service (DCS) is running. (Default: *23400*).
 
-See the http://trafodion.incubator.apache.org/docs/dcs_reference/index.html[{project-name} Database Connectivity Services Reference Guide]
+See the http://trafodion.apache.org/docs/dcs_reference/index.html[{project-name} Database Connectivity Services Reference Guide]
 for information about how to configure the DCS port.
 
 *Example*

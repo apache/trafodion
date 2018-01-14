@@ -1,7 +1,7 @@
 // The EMPLOYEEJOB procedure accepts an employee number and returns a job
 // code or null value to an output parameter.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#employeejob-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#employeejob-procedure
 // for more documentation.
 public static void employeeJob( int empNum
 			      , java.lang.Integer[] jobCode

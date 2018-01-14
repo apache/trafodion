@@ -51,9 +51,9 @@
 </distributionManagement>
  
  <scm>
-    <connection>scm:git:https://github.com/apache/incubator-trafodion.git</connection>
-    <developerConnection>scm:git:https://github.com/apache/incubator-trafodion.git</developerConnection>
-    <url>https://github.com/apache/incubator-trafodion.git</url>
+    <connection>scm:git:https://github.com/apache/trafodion.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/trafodion.git</developerConnection>
+    <url>https://github.com/apache/trafodion.git</url>
     <tag>HEAD</tag>
   </scm>
 

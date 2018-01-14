@@ -55,7 +55,7 @@ You unpack the updated {project-name} Installer into a new directory.
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
+$ tar -zxf apache-trafodion-pyinstaller-2.2.0.tar.gz -C $HOME/trafodion-installer
 $
 ```
 
@@ -149,13 +149,13 @@ $ cd $HOME/trafodion-configuration
 $ cp my_config my_config_2.0
 $ # Pre edit content
 
-traf_package = "/home/centos/trafodion-download/apache-trafodion-2.0.0-incubating.tar.gz"
+traf_package = "/home/centos/trafodion-download/apache-trafodion-2.2.0.tar.gz"
 
 $ # Use your favorite editor to modify my_config_2.0
 $ emacs my_config_2.0
 $ # Post edit changes
 
-traf_package = "/home/centos/trafodion-download/apache-trafodion-2.1.0-incubating.tar.gz"
+traf_package = "/home/centos/trafodion-download/apache-trafodion-2.2.0.tar.gz"
 ```
 
 NOTE: The {project-name} Installer performs the same configuration changes as it does for an installation,

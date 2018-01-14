@@ -1528,7 +1528,7 @@ cd $MY_SW_ROOT
 echo "Setting up DCS, REST and Phoenix tests..."
 
 #Default GIT location
-GIT_DIR="git@github.com:apache/incubator-trafodion"
+GIT_DIR="git@github.com:apache/trafodion"
 DCS_SRC=$TRAF_HOME/../../dcs
 
 if [ -d $DCS_SRC ]; then
@@ -1540,7 +1540,7 @@ if [ -d $DCS_SRC ]; then
    # Default location for phoenix_test
    PHX_SRC=$TRAF_HOME/../../tests/phx
 else
-   TRAF_SRC=$MY_SW_ROOT/src/incubator-trafodion
+   TRAF_SRC=$MY_SW_ROOT/src/trafodion
    if [ ! -d $TRAF_SRC ]; then
      mkdir -p $MY_SW_ROOT/src
      cd $MY_SW_ROOT/src

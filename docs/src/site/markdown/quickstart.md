@@ -101,8 +101,8 @@ Trafodion provides connectivity services so that applications, tools, and other 
 
 # More Information
 
-For more information, refer to the [Trafodion Documentation Page] (documentation.html) for starting points.  There is also a lot more information on the [Trafodion website] (http://trafodion.incubator.apache.org) and [Trafodion Wiki] (https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home) that you might refer to as you explore Trafodion.
+For more information, refer to the [Trafodion Documentation Page] (documentation.html) for starting points.  There is also a lot more information on the [Trafodion website] (http://trafodion.apache.org) and [Trafodion Wiki] (https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home) that you might refer to as you explore Trafodion.
 
-If you have questions or suggestions or just want to share what you've learned about Trafodion, you can contact a community of Trafodion users via the [Trafodion User Group mailing list](http://mail-archives.apache.org/mod_mbox/incubator-trafodion-user/) or other [Project Mailing Lists] (http://trafodion.apache.org/mail-lists.html)
+If you have questions or suggestions or just want to share what you've learned about Trafodion, you can contact a community of Trafodion users via the [Trafodion User Group mailing list](http://mail-archives.apache.org/mod_mbox/trafodion-user/) or other [Project Mailing Lists] (http://trafodion.apache.org/mail-lists.html)
 
 Have fun with Trafodion!

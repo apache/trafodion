@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-all: LICENSE-src LICENSE-server LICENSE-pyinstall LICENSE-install LICENSE-clients NOTICE-server DISCLAIMER-server
+all: LICENSE-src LICENSE-server LICENSE-pyinstall LICENSE-install LICENSE-clients NOTICE-server 
 
 # All source code included in Trafodion source
 LICENSE-src:
@@ -32,9 +32,6 @@ LICENSE-server:
 
 NOTICE-server:
 	cat ../NOTICE note-server-bin > $@
-
-DISCLAIMER-server:
-	cat ../DISCLAIMER > $@
 
 LICENSE-install:
 	cat Apache > $@

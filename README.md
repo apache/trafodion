@@ -1,4 +1,4 @@
-# Apache Trafodion (incubating)
+# Apache Trafodion
 ![trafodion logo](http://trafodion.apache.org/images/logos/trafodion-logo.jpg)
 
 Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or 
@@ -20,14 +20,14 @@ Hadoop.
   
   http://trafodion.apache.org/release-notes.html
 
-  - the latest Apache Trafodion can be downloaded from Apache incubator
+  - the latest Apache Trafodion can be downloaded from the Apache
     distribution site or accessed from git:
 
     - download site:
-      https://dist.apache.org/repos/dist/release/incubator/trafodion
+      https://dist.apache.org/repos/dist/release/trafodion
 
     - git site:
-      `git@github.com:apache/incubator-trafodion`
+      `git@github.com:apache/trafodion`
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:

@@ -29,7 +29,7 @@ Group:		Applications/Databases
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:	%{_arch}
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}
-URL:            http://trafodion.incubator.apache.org
+URL:            http://trafodion.apache.org
 
 
 %define _binary_filedigest_algorithm 1

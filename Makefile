@@ -36,15 +36,15 @@ package-all:
 	@echo "Packaging all Trafodion components"
 	cd core && $(MAKE) package-all 
 
-package-src: $(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE
+package-src: $(SRCDIR)-${TRAFODION_VER}/LICENSE
 	@echo "Packaging source for $(TRAFODION_VER_PROD) $(TRAFODION_VER)"
 	mkdir -p distribution
-	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}-incubating/ HEAD > distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
-	tar rf distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar $^
-	gzip distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar
-	rm -rf $(SRCDIR)-${TRAFODION_VER}-incubating LICENSE
+	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}/ HEAD > distribution/$(SRCDIR)-${TRAFODION_VER}-src.tar
+	tar rf distribution/$(SRCDIR)-${TRAFODION_VER}-src.tar $^
+	gzip distribution/$(SRCDIR)-${TRAFODION_VER}-src.tar
+	rm -rf $(SRCDIR)-${TRAFODION_VER} LICENSE
 
-$(SRCDIR)-${TRAFODION_VER}-incubating/LICENSE:
+$(SRCDIR)-${TRAFODION_VER}/LICENSE:
 	cd licenses && $(MAKE) LICENSE-src
 	mkdir -p $(@D)
 	cp licenses/LICENSE-src $@
@@ -57,7 +57,7 @@ clean:
 	@echo "Removing Trafodion objects"
 	cd core && $(MAKE) clean 
 	cd licenses && $(MAKE) clean
-	rm -rf $(SRCDIR)-${TRAFODION_VER}-incubating LICENSE
+	rm -rf $(SRCDIR)-${TRAFODION_VER} LICENSE
 
 cleanall:
 	@echo "Removing all Trafodion objects"
