@@ -23,14 +23,12 @@ under the License.
 package org.trafodion.dcs.master;
 
 import java.net.InetAddress;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
-
 import java.util.Scanner;
 import java.util.Collections;
 import java.util.Iterator;
@@ -47,17 +45,13 @@ import java.util.Date;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.HashMap;
-
 import java.text.DateFormat;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
-
 import org.apache.hadoop.conf.Configuration;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.trafodion.dcs.master.RunningServer;
 import org.trafodion.dcs.master.RegisteredServer;
 import org.trafodion.dcs.master.Metrics;
@@ -66,7 +60,6 @@ import org.trafodion.dcs.script.ScriptContext;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.util.*;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -316,6 +309,7 @@ public class ServerManager implements Callable {
             getServersFile();
             createServersPortMap();
             getZkRunning();
+            getUnwathedServers();
             getZkRegistered();
 
             while (true) {
@@ -505,6 +499,56 @@ public class ServerManager implements Callable {
             metrics.setTotalRunning(runningServers.size());
         } else {
             metrics.setTotalRunning(0);
+        }
+    }
+
+    private void getUnwathedServers() {
+        // In some situation, if DCS Server does not have znode info in zookeeper
+        // when DCS Master is starting, then server will never be watched by zookeeper,
+        // and if it downs, it will never be restarted.
+
+        // configuredServers
+        // hostName + ":" + lineNum + ":" + serverCount
+        // runningServers
+        // hostName + ":" + instance + ":" + infoPort + ":" + serverStartTimestamp
+        // eg : gy26.esgyncn.local:3:24413:1515056285028
+        // RestartHandler need to know hostName, instanceNum(lineNum), serverStartTimestamp(for if condition)
+        if (runningServers.size() == configuredServers.size()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("all dcs servers have started, no need to add watchers");
+            }
+            return;
+        }
+
+        boolean found = false;
+        for (String configured : configuredServers) {
+            Scanner configuredScn = new Scanner(configured);
+            configuredScn.useDelimiter(":");
+            String hostName = configuredScn.next();
+            int instance = Integer.parseInt(configuredScn.next());
+            int serverCount = Integer.parseInt(configuredScn.next());
+            configuredScn.close();
+            for (String running : runningServers) {
+                Scanner runningScn = new Scanner(running);
+                runningScn.useDelimiter(":");
+                String runningHostName = runningScn.next();
+
+                runningScn.close();
+                if (runningHostName.equals(hostName)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                found = false;
+                continue;
+            } else {
+                LOG.error("DcsServer [" + hostName + ":" + instance + "] does not started when starting DcsMaster [" + master.getServerName() + "] add to restart queue.");
+                // add to the restart handler
+                String simulatePath = hostName + ":" + instance + ":0:" + System.currentTimeMillis();
+                RestartHandler handler = new RestartHandler(simulatePath, serverCount);
+                restartQueue.add(handler);
+            }
         }
     }
 
