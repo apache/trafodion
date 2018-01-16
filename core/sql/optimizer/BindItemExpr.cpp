@@ -3654,12 +3654,10 @@ ItemExpr *Concat::bindNode(BindWA *bindWA)
         else if (convType == 2)
           {
             Parser parser(bindWA->currentCmpContext());
-            char buf[1000];
+            char buf[128];
             
-            // right justify the string representation of numeric operand 
-            // and then do the concat
-            sprintf(buf, "CAST(SPACE(%d - CHAR_LENGTH(CAST(@A1 AS VARCHAR(%d)))) || CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
-                    dLen, dLen, dLen, dLen);
+            sprintf(buf, "CAST(CAST(@A1 AS VARCHAR(%d)) AS VARCHAR(%d))",
+                    dLen, dLen);
             newChild = 
               parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, child(srcChildIndex));
             
