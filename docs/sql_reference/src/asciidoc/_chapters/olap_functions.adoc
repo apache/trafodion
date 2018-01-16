@@ -260,7 +260,7 @@ and <<interval_value_expressions,Interval Value Expressions>>.
 
 * `_inline-window-specification_`
 +
-specifies_the_window_over_which_the_avg_is_computed. The
+specifies the window over which the avg is computed. The
 _inline-window-specification_ can contain an optional partition by
 clause, an optional ORDER BY clause and an optional window frame clause.
 The PARTITION BY clause specifies how the intermediate result is
