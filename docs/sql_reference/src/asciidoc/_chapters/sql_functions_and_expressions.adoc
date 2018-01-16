@@ -6358,6 +6358,31 @@ For example, a query that contains three rollup columns returns the following ro
 
 NOTE: Trafodion does not support CUBE function which works slightly differently from ROLLUP.
 
+[[considerations_for_rollup]]
+=== Considerations for ROLLUP
+
+[[null_in_result_sets]]
+==== NULL in Result Sets
+
+* The NULLs in each super-aggregate row represent subtotals and grand total.
+* The NULLs in selected columns are considered equal and sorted into one NULL group in result sets.
+
+[[using_rollup_with_the_column_order_reversed]]
+==== Using ROLLUP with the Column Order Reversed
+
+ROLLUP removes the right-most column at each step, therefore the result sets vary with the column order specified in the comma-separated list. 
+
+[cols="50%,50%"]
+|===
+| If the column order is _country_, _state_, _city_ and _name_, ROLLUP returns following groupings. 
+| If the column order is _name_, _city_, _state_ and _country_, ROLLUP returns following groupings.
+| _country_, _state_, _city_ and _name_      | _name_, _city_, _state_ and _country_
+| _country_, _state_ and _city_              | _name_, _city_ and _state_
+| _country_ and _state_                      | _name_ and _city_
+| _country_                                  | _name_
+| grand total                                | grand total
+|===
+
 <<<
 [[round_function]]
 == ROUND Function
