@@ -6383,6 +6383,254 @@ ROLLUP removes the right-most column at each step, therefore the result sets var
 | grand total                                | grand total
 |===
 
+[[examples_of_rollup]]
+=== Examples of ROLLUP
+
+[[examples_of_grouping_by_one_or_multiple_rollup_columns]]
+==== Examples of Grouping By One or Multiple Rollup Columns
+
+Suppose that we have a _sales1_ table like this:
+
+```
+SELECT * FROM sales1;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         2016 A      Dress                                    100
+         2016 A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         2017 B      Pullover                                 700
+         2017 B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+* This is an example of grouping by one rollup column.
++
+```
+SELECT delivery_year, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year);
+```
+
++
+```
+DELIVERY_YEAR TOTAL_REVENUE       
+------------- --------------------
+         2016                 1000
+         2017                 2600
+         NULL                 3600
+
+--- 3 row(s) selected.
+```
+
+* This is an example of grouping by two rollup columns.
++ 
+ROLLUP firstly aggregates at the lowest level (_region_) and then rollup those aggregations to the next
+level (_delivery_year_), finally it produces a grand total across these two levels.
+
++
+```
+SELECT delivery_year, region, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region);
+```
+
++
+```
+DELIVERY_YEAR REGION TOTAL_REVENUE       
+------------- ------ --------------------
+         2016 A                       600
+         2016 B                       400
+         2016 NULL                   1000
+         2017 A                       500
+         2017 B                      2100
+         2017 NULL                   2600
+         NULL NULL                   3600
+
+--- 7 row(s) selected.
+```
++
+
+* This is an example of grouping by three rollup columns.
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+.Grouping By Three Rollup Columns
+image::grouping-by-three-rollup-columns.jpg[700,700]
+
++
+** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are caculated by GROUP BY instead of ROLLUP.
+
++
+** Second-level: the rows marked in *red* provide the total revenue for the given _delivery_year_ and _region_ by _product_.
++ 
+These rows have the _product_ columns set to NULL.
+
++
+** Third-level: the rows marked in *yellow* show the total revenue in each year (_2016_ and _2017_).
++ 
+These rows have the _region_ and _product_ columns set to NULL.
+
++
+** Fourth-level: the row marked in *purple* aggregates over all rows in the _delivery_year_, _region_ and _product_ columns.
++ 
+This row has the _delivery_year_, _region_ and _product_ columns set to NULL. 
+ 
+[[examples_of_null]]
+=== Examples of NULL
+
+The example below demonstrates how ROLLUP treats NULLs in the selected columns and generates NULLs for super-aggregate rows.
+
+Suppose that we have a _sales2_ table like this:
+
+```
+SELECT * FROM sales2;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         NULL A      Dress                                    100
+         NULL A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         NULL B      Pullover                                 700
+         NULL B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales2
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              300
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                              700
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      NULL                                              600
+         2017 NULL   NULL                                             1100
+         NULL A      Dress                                             300
+         NULL A      NULL                                              300
+         NULL B      Pullover                                         1500
+         NULL B      NULL                                             1500
+         NULL NULL   NULL                                             1800
+         NULL NULL   NULL                                             3600
+
+--- 16 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_the_column_order_reversed]]
+==== Examples of Using ROLLUP with the Column Order Reversed
+
+Suppose that we have the same _sale1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+* The column order of the example below is _delivery_year_, _region_ and _product_.
+
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Dress                                             300
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              600
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                             1000
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      Pullover                                         1500
+         2017 B      NULL                                             2100
+         2017 NULL   NULL                                             2600
+         NULL NULL   NULL                                             3600
+
+--- 13 row(s) selected.
+```
+
+* The column order of the example below is _product_, _region_ and _delivery_year_, the output is different than the result sets above. 
+
++
+```
+SELECT product, region, delivery_year, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (product, region, delivery_year);
+```
+
++
+```
+PRODUCT                          REGION DELIVERY_YEAR TOTAL_REVENUE       
+-------------------------------- ------ ------------- --------------------
+Dress                            A               2016                  300
+Dress                            A               NULL                  300
+Dress                            B               2016                  400
+Dress                            B               2017                  600
+Dress                            B               NULL                 1000
+Dress                            NULL            NULL                 1300
+Pullover                         A               2016                  300
+Pullover                         A               2017                  500
+Pullover                         A               NULL                  800
+Pullover                         B               2017                 1500
+Pullover                         B               NULL                 1500
+Pullover                         NULL            NULL                 2300
+NULL                             NULL            NULL                 3600
+
+--- 13 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_order_by]]
+==== Examples of Using ROLLUP with ORDER BY
+
+Suppose that we have the same _sale1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+This example uses ROLLUP with the ORDER BY clause to sort the results.
+
+```
+SELECT delivery_year, product, SUM (revenue) AS total_revenue 
+FROM sales1 
+GROUP BY ROLLUP (delivery_year, product)
+ORDER BY total_revenue;
+```
+
+```
+DELIVERY_YEAR PRODUCT                          TOTAL_REVENUE       
+------------- -------------------------------- --------------------
+         2016 Pullover                                          300
+         2017 Dress                                             600
+         2016 Dress                                             700
+         2016 NULL                                             1000
+         2017 Pullover                                         2000
+         2017 NULL                                             2600
+         NULL NULL                                             3600
+
+--- 7 row(s) selected.
+```
+
 <<<
 [[round_function]]
 == ROUND Function
