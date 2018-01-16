@@ -201,13 +201,19 @@ public final class Constants {
     /** Default value for user program restart handler retry interval millis */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS = 5000;
 
+    /** Configuration key for user program restart handler attempts for mxosrvr*/
+    public static final String DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS = "dcs.server.startup.mxosrvr.user.program.restart.handler.attempts";
+
+    /** Default value for user program restart handler attempts for mxosrvr */
+    public static final int DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS = 6;
+
     /** Configuration key for user program restart handler retry timeout minutes */
-    public static final String DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES = "dcs.server.user.program.restart.handler.retry.timeout.minutes";
+    public static final String DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES = "dcs.server.startup.mxosrvr.user.program.restart.handler.retry.timeout.minutes";
 
-    /** Default value for user program restart handler retry timeout minutes */
-    public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES = 30;
+    /** Default value for user program restart handler retry timeout minutes for mxosrvr */
+    public static final int DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES = 6;
 
-    /** Name of ZooKeeper quorum configuration parameter. */
+    /** Name of6ZooKeeper quorum configuration parameter. */
     public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
 
     /** Name of ZooKeeper config file in conf/ directory. */

@@ -373,10 +373,17 @@
     </description>
   </property>
   <property>
-    <name>dcs.server.user.program.restart.handler.retry.timeout.minutes</name>
-    <value>30</value>
+    <name>dcs.server.startup.mxosrvr.user.program.restart.handler.attempts</name>
+    <value>6</value>
     <description>
-        Timeout minutes between first and max server restart times.
+        DCS Server attempts to startup MXOSRVR times inner a configured time.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.startup.mxosrvr.user.program.restart.handler.retry.timeout.minutes</name>
+    <value>6</value>
+    <description>
+        Timeout minutes between first and max times (6 default) DCS Server startup MXOSRVR.
     </description>
   </property>
 </configuration>

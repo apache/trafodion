@@ -212,12 +212,12 @@ public final class ServerManager implements Callable {
 
         public void exec() throws Exception {
             cleanupZk();
-            LOG.info("[" + childInstance + "]. User program exec [" + scriptContext.getCommand() + "]");
+            LOG.info("Instance : [" + childInstance + "], User program exec [" + scriptContext.getCommand() + "]");
             ScriptManager.getInstance().runScript(scriptContext);// This will
                                                                  // block while
                                                                  // user prog is
                                                                  // running
-            LOG.info("[" + childInstance + "]. User program exit [" + scriptContext.getExitCode() + "]");
+            LOG.info("Instance : [" + childInstance + "], User program exit [" + scriptContext.getExitCode() + "]");
             StringBuilder sb = new StringBuilder();
             sb.append("exit code [" + scriptContext.getExitCode() + "]");
             if (!scriptContext.getStdOut().toString().isEmpty())
@@ -260,11 +260,11 @@ public final class ServerManager implements Callable {
         RetryCounter retryCounter;
 
         public ServerHandler(Configuration conf ,int childInstance) {
-            int maxRestartAttempts = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS,
-                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS);
+            int maxRestartAttempts = conf.getInt(Constants.DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS,
+                    Constants.DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS);
             int retryTimeoutMinutes = conf.getInt(
-                    Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES,
-                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES);
+                    Constants.DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES,
+                    Constants.DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES);
             this.childInstance = childInstance;
             this.registeredPath = parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED
