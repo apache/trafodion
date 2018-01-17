@@ -120,7 +120,7 @@ do
 done
 
 #check the HBase compatiblity if TrafExportSnapshot is able to be used
-java org.trafodion.utility.backuprestore.TrafExportSnapshot -test
+java org.trafodion.utility.backuprestore.TrafExportSnapshot -t
 if [[ $? -ne 0 ]]; then
   echo 'not able to use TrafExportSnapshot'
   mr_limit=0
