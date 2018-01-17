@@ -1877,7 +1877,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
  // mdam off on open source at this point
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
-  DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+  DDflt0_(MDAM_SELECTION_DEFAULT,		"8.0"),
 
   // Overhead charge for a subset in the rewritten MDAM costing code
   DDflt0_(MDAM_SUBSET_FACTOR,                   "8.0"),

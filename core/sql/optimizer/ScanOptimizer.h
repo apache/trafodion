@@ -387,8 +387,7 @@ public:
 					 const ValueIdSet nonKeyColumnSet,
 					 const Disjuncts &curDisjuncts,
 					 const IndexDesc * indexDesc,
-					 const ValueIdSet externalInputs,
-					 NABoolean mdamFlag);
+					 const ValueIdSet externalInputs);
 
   // get and set various probing counters for all partitions.
 
