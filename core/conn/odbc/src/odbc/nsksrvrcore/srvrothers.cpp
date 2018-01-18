@@ -972,7 +972,7 @@ odbc_SQLSvc_Prepare2_sme_(
 			{
 				char *RGWarningOrError;
 				RGWarningOrError = new char[256];
-				sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+				sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 				sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
 				GETMXCSWARNINGORERROR(1, "01000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
 				delete RGWarningOrError;
@@ -999,7 +999,7 @@ odbc_SQLSvc_Prepare2_sme_(
 			{
 				char *RGWarningOrError;
 				RGWarningOrError = new char[256];
-				sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+				sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 				sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
 				GETMXCSWARNINGORERROR(-1, "HY000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
 				delete RGWarningOrError;
@@ -1265,7 +1265,7 @@ odbc_SQLSvc_Prepare2withRowsets_sme_(
 			{
 				char RGWarningOrError[256];
 
-				sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+				sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 				sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
 				GETMXCSWARNINGORERROR(1, "01000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
 			}
@@ -1294,7 +1294,7 @@ odbc_SQLSvc_Prepare2withRowsets_sme_(
 			{
 				char *RGWarningOrError;
 				RGWarningOrError = new char[256];
-				sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+				sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 				sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
 				GETMXCSWARNINGORERROR(-1, "HY000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
 				delete RGWarningOrError;
@@ -2233,7 +2233,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
 		{
 			char RGWarningOrError[256];
 
-			sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+			sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 			sprintf( RGWarningOrError
                   , "The query's estimated cost: %.50s exceeded resource management attribute limit set."
                   , b
@@ -2260,7 +2260,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
 			char *RGWarningOrError;
 
 			RGWarningOrError = new char[256];
-			sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+			sprintf(b,"%lf",pSrvrStmt->cost_info.totalTime);
 			sprintf( RGWarningOrError
                   , "The query's estimated cost: %.50s exceeded resource management attribute limit set."
                   , b

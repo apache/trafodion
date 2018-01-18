@@ -289,18 +289,23 @@ static void sqstate_pi_openers_com(MS_Mon_Node_Info_Entry_Type *pp_node,
     lp_prog = basename(pp_proc->program);
 #ifdef SQ_PHANDLE_VERIFIER
     sprintf(la_title, "sb-openers for process=%s, type=%d(%s), p-id=%d/%d" PFVY ", prog=%s",
-#else
-    sprintf(la_title, "sb-openers for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
-#endif
             pp_proc->process_name,
             pp_proc->type,
             lp_proc_t,
             pp_proc->nid,
             pp_proc->pid,
-#ifdef SQ_PHANDLE_VERIFIER
             pp_proc->verifier,
-#endif
             lp_prog);
+#else
+    sprintf(la_title, "sb-openers for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            lp_prog);
+#endif
+
     if (pv_str)
         lp_op = "sb_ic_get_openers";
     else
@@ -339,18 +344,22 @@ static void sqstate_pi_opens_com(MS_Mon_Node_Info_Entry_Type *pp_node,
     lp_prog = basename(pp_proc->program);
 #ifdef SQ_PHANDLE_VERIFIER
     sprintf(la_title, "sb-opens for process=%s, type=%d(%s), p-id=%d/%d" PFVY ", prog=%s",
-#else
-    sprintf(la_title, "sb-opens for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
-#endif
             pp_proc->process_name,
             pp_proc->type,
             lp_proc_t,
             pp_proc->nid,
             pp_proc->pid,
-#ifdef SQ_PHANDLE_VERIFIER
             pp_proc->verifier,
-#endif
             lp_prog);
+#else
+    sprintf(la_title, "sb-opens for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            lp_prog);
+#endif
     if (pv_str)
         lp_op = "sb_ic_get_opens";
     else

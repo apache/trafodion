@@ -647,7 +647,7 @@ void ODBCMXTraceMsg::TraceExecute2Exit(IDL_long returnCode,
 	pBuffer += length;
 	if (sqlWarningOrErrorLength > 0) pBuffer  = printHex(pBuffer, sqlWarningOrError, sqlWarningOrErrorLength);
 
-	tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:");
+	tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:", rowsAffected);
 	pBuffer    = writeTraceMsg(pBuffer, temp, tempStrlen);
 	if (outValuesLength > 0) pBuffer = printHex(pBuffer, outValues, outValuesLength);
 
@@ -1243,7 +1243,7 @@ void ODBCMXTraceMsg::TraceSrvrFetchExit( IDL_long  returnCode,
   if (sqlWarningOrErrorLength > 0) 
     pBuffer  = printHex(pBuffer, sqlWarningOrError, sqlWarningOrErrorLength);
 
-  tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:");
+  tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:", rowsAffected);
   pBuffer    = writeTraceMsg(pBuffer, temp, tempStrlen);
   if (outValuesLength > 0)
      pBuffer = printHex(pBuffer, outValues, outValuesLength);
@@ -1318,7 +1318,7 @@ void ODBCMXTraceMsg::TraceFetch2Exit( IDL_long  returnCode,
   if (sqlWarningOrErrorLength > 0) 
     pBuffer  = printHex(pBuffer, sqlWarningOrError, sqlWarningOrErrorLength);
 
-  tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:");
+  tempStrlen = sprintf(temp, "RowsAffected:%d OutValues:", rowsAffected);
   pBuffer    = writeTraceMsg(pBuffer, temp, tempStrlen);
   if (outValuesLength > 0)
      pBuffer = printHex(pBuffer, outValues, outValuesLength);

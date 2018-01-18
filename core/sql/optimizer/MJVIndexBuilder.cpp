@@ -534,7 +534,7 @@ NestingStack::out()		const
   for (size_t i = 0; i < size; i++) {
     at(i)->out();
     if (i < size-1) {
-      printf(" --> ", i);
+      printf(" --> ");
     }
   }
 };
@@ -853,7 +853,7 @@ MJVIndexBuilder::buildIndex(const IndexList inputList)
 void PrintColIndList (const IndexList& toPrint, char* name)
 {
   printf ("\n%s:\n",name);
-  printf ("--------------------------\n",name);
+  printf ("--------------------------\n");
   for (size_t i = 0; i < toPrint.entries(); i++) 
   {
     ColIndList currList = toPrint.at(i);	
