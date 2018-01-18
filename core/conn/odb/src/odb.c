@@ -2314,6 +2314,7 @@ int main(int ac, char *av[])
             (void)signal(SIGINT, sigcatch);                     /* Keyboard Ctrl-C */
             (void)signal(SIGTERM, sigcatch);                    /* Software termination (kill) */
             WaitForMultipleObjects(i, thhn, TRUE, INFINITE);    /* wait threads */
+            Sleep(1000 * 10);
             for ( i = 0 ; i < tn ; i++)                         /* close thread handles */
                 CloseHandle(thhn[i]);
 #else
@@ -7080,7 +7081,7 @@ static void Oload(int eid)
             mfl = (size_t) etab[eid].td[i].Osize;
 
     /* Allocate field buffer */
-    if ( (str = (char *)malloc (mfl + 128)) == (void *)NULL ) {
+    if ( (str = (char *)calloc (1, etab[eid].buffsz + 1)) == (void *)NULL ) {
         fprintf(stderr, "odb [Oload(%d)] - Error allocating field buffer: [%d] %s\n",
             __LINE__, errno, strerror(errno));
         goto oload_exit;
@@ -8460,7 +8461,20 @@ static void Oload2(int eid)
                     fg &= ~0100;                                /* set escape flag off */
                 }
             }
+
+            if (rl + ifl > (size_t)(etab[eid].td[k].Osize)) { /* prevent Orowsetl[] overflow */
+                char *tmpbuf = (char*)malloc(rl + ifl + 1);
+                strncpy(tmpbuf, (const char*)(Odp - rl), rl);
+                strncpy(tmpbuf + rl, str, ifl);
+                tmpbuf[rl + ifl] = '\0';
+                fprintf(stderr, "odb [Oload2(%d)] - Error: row %lu col %u field truncation. Input "
+                    "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, tmpbuf, ifl);
+                free(tmpbuf);
+                goto oload2_exit;
+            }
+
             if ( fg & 0060 ) {                                  /* field complete */
+                fg &= 0;                                        /* reset flags */
                 if ( ifl ) {
                     MEMCPY(Odp, str, ifl);
                     Odp += etab[eid].td[k].Osize + etab[eid].td[k].pad - rl ;
@@ -8478,9 +8492,10 @@ static void Oload2(int eid)
                     k = 0 ;
                     m++ ;
                     nrf++ ;
+                    Odp = &etab[eid].Orowsetl[m*etab[eid].s];
                 }
             } else {                                            /* field incomplete */
-                rl = ifl;
+                rl += ifl;                                      /* = change to +=, for = may cause potential bug */
                 if ( ifl )
                     MEMCPY(Odp, str, ifl);
                 memset(str, '\0', ifl);
@@ -9087,6 +9102,11 @@ static void OloadX(int eid)
                 if ( ( xnd - xrtnd ) == 2 ) {
                     xvalue = (char *)(*xmlvalue)(xread);
                     ifl = strlen(xvalue) ;
+                    if (ifl > etab[eid].td[k].Osize) { // prevent Orowsetl[] overflow
+                        fprintf(stderr, "odb [OloadX(%d)] - Error: row %lu col %u field truncation. Input "
+                            "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, xvalue, ifl);
+                        goto oloadX_exit;
+                    }
                     if ( xdump ) {
                         printf("%s: %s\n", xname, xvalue);
                     } else {
@@ -9352,7 +9372,7 @@ static void OloadJson(int eid)
     JsonReader *pJsonReader = 0; /* XML reader */
     int readState = 0; /* 0: look for key, 1: look for array value */
     char keybuf[128];
-    char valuebuf[1024];
+    char *valuebuf;
     /* Check if we have to use another ODBC connection */
     if (thps[tid].cr > 0) {
         thps[tid].Oc = thps[thps[tid].cr].Oc;
@@ -9403,6 +9423,13 @@ static void OloadJson(int eid)
             etab[eid].post = 0; /* prevent post SQL execution */
             goto oloadJson_exit;
         }
+    }
+
+    /* alocate valuebuf */
+    if ((valuebuf = calloc(1, etab[eid].buffsz + 1)) == (void *)NULL) {
+        fprintf(stderr, "odb [OloadJson(%d)] - Error allocating field buffer: [%d] %s\n",
+            __LINE__, errno, strerror(errno));
+        goto oloadJson_exit;
     }
 
     /* Open input file */
@@ -9705,12 +9732,17 @@ static void OloadJson(int eid)
                     jsonReadKey(pJsonReader, keybuf, sizeof(keybuf));
                 }
                 else if (pJsonReader->state == JSON_STATE_MEMBER_VALUE) {
-                    jsonReadMemberValue(pJsonReader, valuebuf, sizeof(valuebuf));
+                    jsonReadMemberValue(pJsonReader, valuebuf, etab[eid].buffsz);
                     ifl = strlen(valuebuf);
 
                     for (k = 0; k < l; k++) {
                         if (!strmicmp((char *)etab[eid].td[k].Oname, keybuf, strlen(keybuf))) {    /* name matches */
                             Odp = etab[eid].Orowsetl + m*etab[eid].s + etab[eid].td[k].start;
+                            if (ifl > etab[eid].td[k].Osize) { // prevent Orowsetl[] overflow
+                                fprintf(stderr, "odb [OloadJson(%d)] - Error: row %lu col %u field truncation. Input "
+                                    "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, valuebuf, ifl);
+                                goto oloadJson_exit;
+                            }
                             MEMCPY(Odp, valuebuf, ifl);
                             Odp += etab[eid].td[k].Osize + etab[eid].td[k].pad;
                             *((SQLLEN *)(Odp)) = (SQLLEN)(ifl);
