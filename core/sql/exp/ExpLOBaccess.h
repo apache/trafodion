@@ -589,7 +589,7 @@ class ExLobGlobals
 {
   public :
   
-    ExLobGlobals(NAHeap *lobHeap=NULL); 
+    ExLobGlobals(NAHeap *lobHeap); 
     ~ExLobGlobals();
 
     Ex_Lob_Error initialize();
