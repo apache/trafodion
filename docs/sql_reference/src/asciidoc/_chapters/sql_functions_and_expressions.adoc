@@ -1492,7 +1492,7 @@ is a character string.
 
 <<<
 [[concat_function]]
-=== CONCAT Function
+== CONCAT Function
 
 The CONCAT function returns the concatenation of two character value
 expressions as a character string value. You can also use the
@@ -1534,7 +1534,7 @@ An operand can be any SQL value expression of data type CHAR or VARCHAR.
 === Considerations for CONCAT
 
 [[operands]]
-=== Operands
+==== Operands
 
 
 A string value can be specified by any character value expression, such
@@ -1547,7 +1547,7 @@ VARCHAR.
 
 
 [[sql-parameters]]
-=== SQL Parameters
+==== SQL Parameters
 
 You can concatenate an SQL parameter and a character value expression.
 The concatenated parameter takes on the data type attributes of the

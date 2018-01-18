@@ -784,7 +784,7 @@ Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:23:04.301579
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.381
 --- SQL operation complete.
 
-SQL>select * from target_table1;  
+SQL>SELECT * FROM target_table1;  
 A           B   
 ----------- ----
           4 dd  
@@ -832,8 +832,8 @@ drwxr-xr-x   - trafodion trafodion          0 2018-01-03 17:19
 
 Suppose that we have two same tables (_source_table_ and _target_table1_) as shown in the <<continue_on_error_examples,Examples of `CONTINUE ON ERROR`>>.
 
-* The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
-+
+The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
+
 ```
 SQL>LOAD WITH STOP AFTER 2 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
@@ -851,7 +851,7 @@ Task:  LOADING DATA    Status: Started    Time: 2018-01-05 10:53:52.45757
 SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
 ```
-+
+
 ```
 SQL>LOAD WITH STOP AFTER 3 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
@@ -930,10 +930,10 @@ CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE1
 
 _target_table2_:
 ```
-SQL>select * from target_table2;
+SQL>SELECT * FROM target_table2;
 --- 0 row(s) selected.
 
-SQL>showddl target_table2;
+SQL>SHOWDDL target_table2;
 CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE2
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
@@ -995,10 +995,10 @@ SQL>SET PARSERFLAGS 1;
 SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table1) SELECT b,a FROM source_table;
 --- SQL operation complete.
 
-SQL>select * from target_table1;
+SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
 
-select * from table(index_table index_target_table1);  
+SELECT * FROM table(index_table index_target_table1);  
 B@    A              
 ----  --------------------
 aaaa                     1
@@ -1033,7 +1033,7 @@ A            B
           6  fff 
 --- 6 row(s) selected.
 
-SQL>select * from table(index_table index_target_table1);  
+SQL>SELECT * FROM table(index_table index_target_table1);  
 B@    A              
 ----  --------------------
 aaaa                     1
@@ -1125,7 +1125,7 @@ A@
 ** The _target_table4_ has columns A (index column) and B defined, in this case, populate the index table with column A and syskey from the _source_table_.
 +
 ```
-SQL> create index index_target_table4 on target_table4(a) no populate;
+SQL> CREATE INDEX index_target_table4 ON target_table4(a) NO POPULATE;
 --- SQL operation complete.
 
 SQL>SET PARSERFLAGS 1;
@@ -1173,6 +1173,8 @@ SQL> POPULATE INDEX index_target_table4 ON target_table4;
 SQL> DROP INDEX index_target_table4;
 --- SQL operation complete.
 ```
+[[loading_data_from_hive_table_examples]]
+==== Examples of Loading data from Hive Table
 
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using
