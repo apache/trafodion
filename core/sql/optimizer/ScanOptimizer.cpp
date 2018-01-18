@@ -3124,8 +3124,7 @@ NABoolean ScanOptimizer::canStillConsiderMDAM(const ValueIdSet partKeyPreds,
 					 const ValueIdSet nonKeyColumnSet,
 					 const Disjuncts &curDisjuncts,
 					 const IndexDesc * indexDesc,
-					 const ValueIdSet externalInputs,
-					 NABoolean mdamFlag)
+					 const ValueIdSet externalInputs)
 {
 
   NABoolean canDoMdam = TRUE;
@@ -3135,11 +3134,6 @@ NABoolean ScanOptimizer::canStillConsiderMDAM(const ValueIdSet partKeyPreds,
   // Check whether MDAM can be considered for this node:
   // -----------------------------------------------------------------------
 
-  if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() != OptDefaults::MINIMUM
-     AND mdamFlag == MDAM_OFF)
-       	canDoMdam = FALSE;
-
-  else
   if (NOT indexDesc->getNAFileSet()->isKeySequenced())
   {
     // -----------------------------------------------------------
@@ -3474,17 +3468,6 @@ ScanOptimizer::getMdamStatus(const FileScan& fileScan
     ActiveControlDB()->getControlTableValue(
       fileScan.getIndexDesc()->getNAFileSet()->getExtFileSetName(), "MDAM");
   if ((val) && (*val == "OFF")) {
-    return ScanForceWildCard::MDAM_OFF;
-  }
-
-  // The Index elimination project added the MdamFlag which can force
-  // MDAM off
-  //
-  if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() != OptDefaults::MINIMUM
-     AND fileScan.getMdamFlag() == MDAM_OFF 
-	 && (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) != DF_ON )
-	 )
-  { 
     return ScanForceWildCard::MDAM_OFF;
   }
 
@@ -4166,7 +4149,6 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
        else
        {
 	 ValueIdSet externalInputs = getExternalInputs();
-	 NABoolean mdamFlag = getMdamFlag();
 
 	 if (NOT partKeyPreds.isEmpty())
 	 {
@@ -4174,8 +4156,7 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
 						 nonKeyColumnSet,
 						 *curDisjuncts,
 						 indexDesc,
-						 externalInputs,
-						 mdamFlag);
+						 externalInputs);
 	 }
 	 else
 	 {
@@ -4183,8 +4164,7 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
 						 nonKeyColumnSet,
 						 getDisjuncts(),
 						 indexDesc,
-						 externalInputs,
-						 mdamFlag);
+						 externalInputs);
 	 }
 
        }
