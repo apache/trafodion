@@ -569,9 +569,10 @@ int CPNodeConfigContainer::hostnamecmp( const char *p_str1, const char *p_str2 )
     if ( !p_str1 ) return 1;
     if ( !p_str2 ) return 1;
 
+    // Compare the string passed in
     int lv_ret = strcmp( p_str1, p_str2 );
     if ( lv_ret == 0 )
-    {
+    { // Got a match!
         return lv_ret;
     }
     if ( sb_strict_hostname_check )
@@ -586,23 +587,45 @@ int CPNodeConfigContainer::hostnamecmp( const char *p_str1, const char *p_str2 )
 
     char *lp_str1_dot = strchr( (char *) p_str1, '.' );
     if ( lp_str1_dot )
-    {
+    { // Found '.', copy up to one char before '.'
         memcpy( lv_str1_to_cmp, p_str1, lp_str1_dot - p_str1 );
     }
     else
-    {
+    { // Copy entire string
         strcpy( lv_str1_to_cmp, p_str1 );
     }
 
     char *lp_str2_dot = strchr( (char *) p_str2, '.' );
     if ( lp_str2_dot )
-    {
+    { // Found '.', copy up to one char before '.'
         memcpy( lv_str2_to_cmp, p_str2, lp_str2_dot - p_str2 );
     }
     else
-    {
+    { // Copy entire string
         strcpy( lv_str2_to_cmp, p_str2 );
     }
 
+    // Ignore case
+    NormalizeCase( lv_str1_to_cmp );
+    NormalizeCase( lv_str2_to_cmp );
     return strcmp( lv_str1_to_cmp, lv_str2_to_cmp );
 }
+
+char *CPNodeConfigContainer::NormalizeCase( char *token )
+{
+    char *ptr = token;
+
+    const char method_name[] = "CPNodeConfigContainer::NormalizeCase";
+    TRACE_ENTRY;
+
+    while ( *ptr )
+    {
+        *ptr = tolower( *ptr );
+        if ( *ptr == '\n' ) *ptr = '\0';
+        ptr++;
+    }
+
+    TRACE_EXIT;
+    return token;
+}
+

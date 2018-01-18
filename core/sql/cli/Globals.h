@@ -64,7 +64,6 @@
 
 #include "NAMemory.h"
 #include "sqlcli.h"
-#include "QuasiFileManager.h"
 #include "Ipc.h"
 #include "ComQueue.h"
 #include "logmxevent.h"
@@ -72,14 +71,13 @@
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
 class ContextCli;
-class Statement;  // $$$ possibly a stub for QuasiFileberManager
-class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
+class Statement;  
+class ComDiagsArea; 
 class ExEspManager;
 class ExSsmpManager;
 class ExSqlComp;
 class IpcEnvironment;
 class MemoryMonitor;
-class QuasiFileManager;
 class HashQueue;
 class ExUdrServerManager;
 class ExControlArea;
@@ -159,48 +157,11 @@ public:
   ExUdrServerManager *getUdrServerManager();
   inline MemoryMonitor * getMemoryMonitor()     { return memMonitor_; }
   inline void setMemoryMonitor(MemoryMonitor *memMon) { memMonitor_ = memMon; }
-  inline QuasiFileManager * getQuasiFileManager() { return quasiFileManager_; }
 
   inline NAHeap * getExecutorMemory()      { return &executorMemory_; }
-  inline NAHeap * getNoWaitHeap()  { return noWaitSQLHeap_; }
-
-  inline short getSegId(Lng32 &index)
-                                { return segGlobals_.getSegId(index); }
-  inline const NASegGlobals * getSegGlobals() const
-      
-                                         { return &segGlobals_; }
-  inline UInt32 getDefaultVolSeed()       { return defaultVolSeed_; }
-  inline void     setDefaultVolSeed( UInt32 seed)
-                                            { defaultVolSeed_ = seed; }
-  inline char **  getListOfVolNames()       { return listOfVolNames_; }
-  inline void     setListOfVolNames( char ** pVols)
-                                           { listOfVolNames_ = pVols; }
-  inline void *   getListOfAuditedVols() { return listOfAuditedVols_; }
-  inline void     setListOfAuditedVols( void *p)
-                                            { listOfAuditedVols_ = p; }
-  inline Int64   getListOfVolNamesCacheTime()  // 64-bit
-                                   { return listOfVolNamesCacheTime_; }
-  inline void     setListOfVolNamesCacheTime(Int64 cacheTime)
-                              { listOfVolNamesCacheTime_ = cacheTime; }
-  inline NABoolean isSysVolNameInitialized()
-                                     { return sysVolNameInitialized_; }
-  inline void setSysVolNameIsInitialized() 
-                                     { sysVolNameInitialized_ = TRUE; }
-  inline char * getSysVolName()                 { return sysVolName_; }
-
-  void clearQualifiedDiskInfo();
-  void addQualifiedDiskInfo(const char *volumeName, Lng32 primaryCpu,
-                            Lng32 capacity, Lng32 freeSpace, Lng32 largestFragment);
   inline void setNodeName(const char *nodeName)
                     { strncpy(nodeName_, nodeName, sizeof(nodeName_)); }
   inline char *getNodeName() { return nodeName_; }
-
-  inline Lng32 getNumOfQualifyingVols() { return qualifyingVolsPerNode_.entries(); }
-  inline char *getQualifyingVolume(Lng32 i) { return qualifyingVolsPerNode_[i]; }
-  inline Lng32 getCpuNumberForVol(Lng32 i) { return cpuNumbers_[i]; }
-  inline Lng32 getCapacityForVol(Lng32 i) { return capacities_[i]; }
-  inline Lng32 getFreespaceForVol(Lng32 i) { return freespaces_[i]; }
-  inline Lng32 getLargestFragmentForVol(Lng32 i) { return largestFragments_[i]; }
 
   inline Lng32 incrNumOfCliCalls()                   { return ++numCliCalls_; }
   inline Lng32 decrNumOfCliCalls()                   
@@ -442,41 +403,11 @@ private:
   // executor memory that maintains all heap memory for this executor
   NAHeap executorMemory_;
 
-  // Object that contains: 1) attributes of the first flat segment
-  //                       2) array of secondary segment ids
-  NASegGlobals segGlobals_;
-
   // heap used by the IPC procedures
   NAHeap * ipcHeap_;
   
   // memory monitor for this process
   MemoryMonitor *memMonitor_;
-
-  // heap used by no-wait SQL procedures
-  NAHeap * noWaitSQLHeap_;
-
-  // quasi file manager for this process
-  QuasiFileManager * quasiFileManager_;
-
-  // Cache of descriptive table information from resource forks. Used
-  // in the audit reading CLI procedures called by utilities and by
-  // TMFARLB2. Code for these audit reading procedures is in
-  // CliMxArLib.cpp.
-  NAHeap *arlibHeap_;
-  //
-  // used by the catalog manager get-default-volume algorithm
-  //
-  UInt32 defaultVolSeed_;
-  char **  listOfVolNames_;
-  void *   listOfAuditedVols_;
-  Int64   listOfVolNamesCacheTime_;  // 64-bit
-
-  //
-  // cache the Tandem System Volume name
-  //
-  NABoolean sysVolNameInitialized_;
-  char sysVolName_[ 18 ];  // '$' + VOLNAME +  '.' +
-                          // SUBVOL + null-terminator
 
   // copy of the oss envvars
   char ** envvars_;
@@ -521,8 +452,6 @@ private:
 
   // location of the application program which is calling SQL.
   // Fully qualified oss pathname for OSS processes.
-  // \sys.$vol.subvol for guardian processes. Currently, programDir_
-  // is not set or used for guardian processes.
   char * programDir_;
   short  processType_; // 0, oss process.  1, guardian process.
   NABoolean logReclaimEventDone_;
@@ -556,13 +485,7 @@ private:
   // EMS event descriptor
   SQLMXLoggingArea::ExperienceLevel emsEventExperienceLevel_;
 
-  // these vars are used by GetListOfQualifyingVolumes.. methods.
   char nodeName_[9];
-  LIST(char *) qualifyingVolsPerNode_;
-  LIST(Lng32) cpuNumbers_;
-  LIST(Lng32) capacities_;
-  LIST(Lng32) freespaces_;
-  LIST(Lng32) largestFragments_;
 
   StatsGlobals *statsGlobals_;
 // heap used for the Stats collection

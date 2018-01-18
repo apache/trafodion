@@ -2515,8 +2515,10 @@ short HbaseInsert::codeGen(Generator *generator)
       FALSE,                                 // [IN] add convert nodes?
       1,                                     // [IN] target atp number (work atp 1)
       loggingTuppIndex,                      // [IN] target tupp index
-      tupleFormat,                           // [IN] target tuple data format
-      loggingRowLen,                          // [OUT] target tuple length
+      // The target format should be exploded format always because the column delimiter
+      // added during execution assumes exploded format
+      ExpTupleDesc::SQLARK_EXPLODED_FORMAT,  // [IN] target tuple data format 
+      loggingRowLen,                         // [OUT] target tuple length
       &loggingDataExpr,                      // [OUT] move expression
       &loggingDataTupleDesc,                 // [optional OUT] target tuple desc
       ExpTupleDesc::LONG_FORMAT              // [optional IN] target desc format

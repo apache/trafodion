@@ -174,7 +174,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     numRoles_(0),
     unusedBMOsMemoryQuota_(0)
 {
-  exHeap_.setJmpBuf(cliGlobals->getJmpBuf());
   cliSemaphore_ = new (&exHeap_) CLISemaphore();
   ipcHeap_ = new (cliGlobals_->getProcessIpcHeap())
                   NAHeap("IPC Context Heap",

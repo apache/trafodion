@@ -36,6 +36,36 @@
 
 #define MAXCHARLEN 32768 //32K
 
+// for server2008 when using function pow() then throws STATUS_ILLEGAL_INSTRUCTION
+double pow(int base, short power, unsigned long *error)
+{
+	DWORD dwVersion = 0;
+	DWORD dwBuild = 0;
+
+	dwVersion = GetVersion();
+
+	// Get the build number.
+
+	if (dwVersion < 0x80000000)
+		dwBuild = (DWORD)(HIWORD(dwVersion));
+
+	double retValue = 1;
+	if (dwBuild == 7600)
+	{
+		for (int i = 0; i < power; i++)
+			retValue = retValue * 10;
+	}
+	else
+	{
+		errno = 0;
+		retValue = pow((double)base, power);
+		if (errno == ERANGE || retValue == 0)
+			*error = IDS_22_003;
+	}
+
+	return retValue;
+}
+
 extern short convDoItMxcs(char * source,
 						  long sourceLen,
 						  short sourceType,
@@ -1277,22 +1307,30 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			case SQLTYPECODE_SMALLINT:
 				dTmp = *((SHORT *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_SMALLINT_UNSIGNED:
 				dTmp = *((USHORT *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_INTEGER:
 				dTmp = *((LONG *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_INTEGER_UNSIGNED:
 				dTmp = *((ULONG *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_LARGEINT:
 				tempVal64 = *((__int64 *)srcDataPtr);
@@ -1595,6 +1633,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(DATE_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_DATE, 
@@ -1845,6 +1884,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(TIME_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIME, 
@@ -2066,6 +2106,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 						}
 					}
+					DataLen = sizeof(TIMESTAMP_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIMESTAMP, 
@@ -2278,7 +2319,9 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				if (srcPrecision > 0)
 				{
 					// SQL returns fraction of a second which has to be converted to nano seconds
-					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision);
+					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision,&retCode);
+					if (retCode == IDS_22_003)
+						return retCode;
 					ulFraction = dTmp;
 				}
 				else
@@ -2804,7 +2847,9 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				if (srcPrecision > 0)
 				{
 					// SQL returns fraction of a second which has to be converted to nano seconds
-					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision);
+					dTmp = (*(UDWORD*)SQLTimestamp->fraction *  1000000000.0) / pow(10,srcPrecision,&retCode);
+					if (retCode == IDS_22_003)
+						return retCode;
 					ulFraction = dTmp;
 
 				}
@@ -3298,22 +3343,30 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			case SQLTYPECODE_SMALLINT:
 				dTmp = *((SHORT *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_SMALLINT_UNSIGNED:
 				dTmp = *((USHORT *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_INTEGER:
 				dTmp = *((LONG *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_INTEGER_UNSIGNED:
 				dTmp = *((ULONG *)srcDataPtr);
 				if (srcScale > 0)
-					dTmp = dTmp / (long)pow(10,srcScale);
+					dTmp = dTmp / (long)pow(10,srcScale,&retCode);
+				if (retCode == IDS_22_003)
+					return retCode;
 				break;
 			case SQLTYPECODE_LARGEINT:
 				tempVal64 = *((__int64 *)srcDataPtr);
@@ -3661,7 +3714,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLSMALLINT srcScale, 
 			char *cTmpBuf, SQLINTEGER &DecimalPoint)
 {
-	
+	unsigned long retCode = SQL_SUCCESS;
 	long lTmp;
 	ldiv_t lDiv;
 	__int64 i64Tmp;
@@ -3672,7 +3725,9 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((short *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
+				if (retCode == IDS_22_003)
+					return retCode;
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 				{
 					if (lDiv.rem < 0)
@@ -3695,8 +3750,9 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((unsigned short *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
+				if (retCode == IDS_22_003)
+					return retCode;
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 					sprintf(cTmpBuf, ".%0*ld", srcScale, abs(lDiv.rem));
 				else
@@ -3709,7 +3765,9 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 			lTmp = *((long *)srcDataPtr);
 			if (srcScale > 0)
 			{
-				lDiv = ldiv(lTmp, (long)pow(10,srcScale));
+				lDiv = ldiv(lTmp, (long)pow(10,srcScale,&retCode));
+				if (retCode == IDS_22_003)
+					return retCode;
 				if (gDrvrGlobal.gSpecial_1 && lDiv.quot == 0)
 				{
 					if (lDiv.rem < 0)
@@ -3779,13 +3837,13 @@ SQLRETURN ODBC::ConvertNumericToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 				sprintf(cTmpBuf, "%I64d", i64Tmp);
 			break;
 		default:
-			return SQL_ERROR;
+			retCode = IDS_07_006;
 	}
 	if ((tmpPtr = strchr(cTmpBuf, '.')) != NULL)
 		DecimalPoint = tmpPtr - cTmpBuf;
 	else
 		DecimalPoint = 0;
-	return SQL_SUCCESS;
+	return retCode;
 }
 
 SQLRETURN ODBC::ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
@@ -3898,6 +3956,7 @@ SQLRETURN ODBC::ConvertDecimalToChar(SQLSMALLINT SQLDataType, SQLPOINTER srcData
 SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER srcDataPtr, SQLINTEGER srcLength, 
 								SQLSMALLINT srcScale, double &dTmp)
 {
+	unsigned long retCode = SQL_SUCCESS;
 	char *stopStr;
 	char cTmpBuf[256];
 	double dTmp1;
@@ -3911,7 +3970,9 @@ SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER s
 			for (i = 1; i < srcLength ; cTmpBuf[i++] += '0');
 			cTmpBuf[srcLength] =  '\0';
 			dTmp = strtod(cTmpBuf,&stopStr);
-			dTmp1 = pow(10, srcScale);
+			dTmp1 = pow(10, srcScale, &retCode);
+			if (retCode == IDS_22_003)
+				return retCode;
 			dTmp = dTmp / dTmp1;
 			break;
 		case SQLTYPECODE_DECIMAL_LARGE_UNSIGNED:
@@ -3920,13 +3981,15 @@ SQLRETURN ODBC::ConvertSoftDecimalToDouble(SQLSMALLINT SQLDataType, SQLPOINTER s
 			for (i = 0; i < srcLength ; cTmpBuf[i++] += '0');
 			cTmpBuf[srcLength] =  '\0';
 			dTmp = strtod(cTmpBuf,&stopStr);
-			dTmp1 = pow(10, srcScale);
+			dTmp1 = pow(10, srcScale, &retCode);
+			if (retCode == IDS_22_003)
+				return retCode;
 			dTmp = dTmp / dTmp1;
 			break;
 		default:
-			return SQL_ERROR;
+			retCode = IDS_07_006;
 	}
-	return SQL_SUCCESS;
+	return retCode;
 }
 
 unsigned long ODBC::ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER srcLength,
@@ -3987,7 +4050,8 @@ unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType,
 						SQLINTEGER	srcLength,
 						SQLSMALLINT CDataType,
 						SQLPOINTER outValue)
-{						  
+{
+	unsigned long retCode = SQL_SUCCESS;
     char    in_value[50];
     short   datetime_parts[8];
     char    *token;
@@ -4058,7 +4122,9 @@ unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType,
 	if (token != NULL)
     {
 		int exponent = 9 - strlen(token);
-		fraction_part = (exponent >= 0)? atol(token) * pow((double)10,exponent):atol(token) / pow((double)10,-exponent) ;
+		fraction_part = (exponent >= 0)? atol(token) * pow((double)10,exponent,&retCode):atol(token) / pow((double)10,-exponent,&retCode);
+		if (retCode == IDS_22_003)
+			return retCode;
 		datetime_parts[6] = (short)(fraction_part / 1000);
 		datetime_parts[7] = (short)(fraction_part % 1000);
     }

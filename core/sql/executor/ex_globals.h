@@ -38,8 +38,6 @@
 ******************************************************************************
 */
 
-#include <setjmp.h>
-
 #include "Platform.h"
 #include "ExCollections.h"
 #include "Int64.h"
@@ -114,10 +112,6 @@ public:
   ExStatisticsArea* getOrigStatsArea() 
   { return statsArea_; }
 
-  inline jmp_buf *getJmpBuf()             { return &longJmpTgt_; }
-  inline void setJmpInScope(NABoolean jmpInScope)
-    { jmpInScope_ = jmpInScope; }
-  inline NABoolean IsJmpInScope() { return jmpInScope_; }
 
   inline void setEventConsumed(UInt32 *eventConsumed)
     { eventConsumedAddr_ = eventConsumed; }
@@ -234,10 +228,6 @@ private:
 
   // pointer to the statsArea (if statistics are collected)
   ExStatisticsArea * statsArea_;
-
-  // for handling tcb-build-time errors, and memory alloc errors.
-  jmp_buf  longJmpTgt_;
-  NABoolean jmpInScope_;
 
   // for cleanup.
   LIST(ex_tcb *) tcbList_;

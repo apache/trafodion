@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 # @@@ END COPYRIGHT @@@
-RELEASE_VER ?= ${TRAFODION_VER}-incubating
+RELEASE_VER ?= ${TRAFODION_VER}
 RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
 PYINSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_pyinstaller-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
@@ -26,7 +26,7 @@ pkg-ambari:
 create-dir:
 	mkdir -p ../distribution
 
-pkg-pyinstaller: create-dir python-installer/LICENSE python-installer/NOTICE python-installer/DISCLAIMER
+pkg-pyinstaller: create-dir python-installer/LICENSE python-installer/NOTICE 
 	tar czf ${PYINSTALLER_TARNAME} python-installer
 	mv ${PYINSTALLER_TARNAME} ../distribution
 
@@ -37,9 +37,6 @@ python-installer/LICENSE: ../licenses/LICENSE-pyinstall
 	cp -f $? $@
 
 python-installer/NOTICE: ../NOTICE
-	cp -f $? $@
-
-python-installer/DISCLAIMER: ../DISCLAIMER
 	cp -f $? $@
 
 version:

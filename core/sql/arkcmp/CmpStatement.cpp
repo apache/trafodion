@@ -165,12 +165,10 @@ CmpStatement::CmpStatement(CmpContext* context,
   {
     // set up statement heap with 32 KB allocation units
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_CMPSTMT_UPPER_KB);
-    heap_ = new (context_->heap()) NAHeap("Cmp Statement Heap",
+    heap_ = new (context_->heap()) NAHeap((const char *)"Cmp Statement Heap",
                        context_->heap(),
                        (Lng32)32768,
                        memLimit);
-
-    heap_->setJmpBuf(&ExportJmpBuf);
     heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
   }
 
@@ -1515,17 +1513,18 @@ QueryAnalysis* CmpStatement::initQueryAnalysis()
   // do any necessary initialization work here (unless this
   // initialization work fits in the constructor)
 
-  // Initialize the global "empty input logprop".
-  context_->setGEILP(EstLogPropSharedPtr(new (STMTHEAP)
-                              EstLogProp(1,
-                                         NULL,
-                                         EstLogProp::NOT_SEMI_TSJ,
-                                         new (STMTHEAP) CANodeIdSet(),
-                                         TRUE)));
-
-    //++MV
-    // This input cardinality is not estimated , so we keep this knowledge
-    // in a special attribute.
+  // Initialize the global "empty input logprop"
+  if (emptyInLogProp_ == NULL)
+    emptyInLogProp_ = EstLogPropSharedPtr(
+         new (STMTHEAP) EstLogProp(1,
+                                   NULL,
+                                   EstLogProp::NOT_SEMI_TSJ,
+                                   new (STMTHEAP) CANodeIdSet(STMTHEAP),
+                                   TRUE));
+  
+  //++MV
+  // This input cardinality is not estimated , so we keep this knowledge
+  // in a special attribute.
   (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();
 
 #ifdef _DEBUG

@@ -66,7 +66,7 @@ Do the following:
 +
 ```
 $ # Set up the environmental variables.
-$ cd $HOME/trafodion-incubator
+$ cd $HOME/trafodion
 $ source env.sh
 $ # Prepare the class jar file
 $ cd $HOME/trafodion-spjs

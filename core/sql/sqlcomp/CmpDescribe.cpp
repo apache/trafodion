@@ -2411,7 +2411,12 @@ short CmpDescribeHiveTable (
     }
 
   if (type == 2)
-    outputShortLine(space, ";");
+    {
+      outputShortLine(space, ";");
+
+      outputShortLine(space," ");
+      outputShortLine(space,"/* Trafodion DDL */");
+    }
 
   // if this hive table is registered in traf metadata, show that.
   if ((type == 2) &&
@@ -2455,9 +2460,6 @@ short CmpDescribeHiveTable (
       QualifiedName qn(extName, 3);
       CorrName cn(qn);
 
-      outputShortLine(space," ");
-      outputShortLine(space,"/* Trafodion DDL */");
- 
       short rc = CmpDescribeSeabaseTable(cn, 
                                          type,
                                          dummyBuf, dummyLen, heap, 

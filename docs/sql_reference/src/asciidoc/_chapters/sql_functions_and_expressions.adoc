@@ -955,7 +955,7 @@ The BUFFERTOLOB function takes the address and size of an input buffer, and conv
 
 BUFFERTOLOB function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)   
@@ -3474,7 +3474,7 @@ This function can be used in an INSERT or UPDATE statement, to initialize a LOB 
 
 EMPTY_BLOB() function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 EMPTY_BLOB()
@@ -3519,7 +3519,7 @@ This function can be used in an INSERT or UPDATE statement, to initialize a LOB 
 
 EMPTY_CLOB() function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion LOB Guide].
 
 ```
 EMPTY_CLOB()
@@ -3791,7 +3791,7 @@ The EXTERNALTOLOB function converts data from an external file into LOB format. 
 
 EXTERNALTOLOB function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 EXTERNALTOLOB('external lob source file name')              
@@ -3878,7 +3878,7 @@ The FILETOLOB function converts data from a local linux/hdfs file into LOB forma
 
 FILETOLOB function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 FILETOLOB('lob source file name')
@@ -7419,7 +7419,7 @@ The STRINGTOLOB function converts a simple string literal into LOB format. This 
 
 STRINGTOLOB function is a Trafodion SQL extension.
 
-For more information, see http://trafodion.incubator.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
+For more information, see http://trafodion.apache.org/docs/lob_guide/index.html[Trafodion SQL Large Objects Guide].
 
 ```
 STRINGTOLOB('string literal expression')  

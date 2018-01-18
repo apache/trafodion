@@ -563,7 +563,7 @@ EMPTY_BLOB()                                                                 |
 EMPTY_CLOB()
 ```
 
-For more information about examples, see http://trafodion.incubator.apache.org/docs/jdbct4ref_guide/index.html[*Trafodion JDBC Type 4 Programmer’s Reference Guide*].
+For more information about examples, see http://trafodion.apache.org/docs/jdbct4ref_guide/index.html[*Trafodion JDBC Type 4 Programmer’s Reference Guide*].
 
 [#considerations]
 === Considerations
@@ -819,7 +819,7 @@ This mechanism has not been implemented yet as a separate utility but it is trig
 
 Drop works like any other drop table. All dependent tables are deleted. All files in hdfs (data and descriptor) files are also deleted.
 
-For more information, see <<drop_table_statement,DROP TABLE Statement>> in http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+For more information, see <<drop_table_statement,DROP TABLE Statement>> in http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
 
 [#garbage collection]
 == Garbage Collection
@@ -847,7 +847,7 @@ Setting the CQD `LOB_GC_LIMIT_SIZE` to 0 would prevent GC from occurring.
 
 Cleanup works like cleanup of any other table. The command ensures all dependent SQL LOB tables and hdfs files are dropped ignoring errors if any.
 
-For more information, see <<cleanup_statement,CLEANUP Statement>> in http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+For more information, see <<cleanup_statement,CLEANUP Statement>> in http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
 
 [#showddl for lob]
 == SHOWDDL for LOB

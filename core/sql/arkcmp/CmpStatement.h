@@ -230,6 +230,9 @@ public:
   const LIST(CSEInfo *) *getCSEInfoList() const { return cses_; }
   void addCSEInfo(CSEInfo *info);
 
+  // context global empty input logical property
+  EstLogPropSharedPtr* getGEILP() { return &emptyInLogProp_; }
+    
 protected:
   // CmpStatement(const CmpStatement&); please remove this line
   CmpStatement& operator=(const CmpStatement&);
@@ -326,6 +329,9 @@ private:
   // indicates whether we are retrying the compile in
   // CmpMain::sqlcomp(QueryText, ...
   Int32 numOfCompilationRetries_;
+
+  // context global empty input logical property
+  EstLogPropSharedPtr emptyInLogProp_;
 
 }; // end of CmpStatement
 

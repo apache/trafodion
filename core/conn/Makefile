@@ -30,7 +30,7 @@ OS_MAJOR ?=  $(shell lsb_release -rs | cut -f1 -d.)
 P_TYPE = $(shell uname -p)
 
 ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-incubating.tar.gz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}.tar.gz
 else
   CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/apache-trafodion_clients-$(TRAFODION_VER)-${OS_TYPE}${OS_MAJOR}-${P_TYPE}-debug.tar.gz
 endif
@@ -39,7 +39,7 @@ endif
 .PHONY: all
 all: pkg-clients
 
-pkg-clients: clients/LICENSE clients/NOTICE clients/DISCLAIMER
+pkg-clients: clients/LICENSE clients/NOTICE 
 	mkdir -p $$(dirname $(CLIENT_TAR))
 	tar -zcvf $(CLIENT_TAR) clients
 
@@ -50,9 +50,6 @@ clients/LICENSE: ../../licenses/LICENSE-clients
 	cd $(@D) && $(MAKE) $(@F)
 
 clients/NOTICE: ../../NOTICE
-	cp -f $? $@
-
-clients/DISCLAIMER: ../../DISCLAIMER
 	cp -f $? $@
 
 clean:	

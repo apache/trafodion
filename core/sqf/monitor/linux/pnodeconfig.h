@@ -74,6 +74,8 @@ protected:
     int             nextPNid_;    // next physical node id available
 
 private:
+    static char  *NormalizeCase( char *token );
+
     int             pnodesConfigMax_; // maximum number of physical nodes
     PNodesConfigList_t  spareNodesConfigList_; // configured spare nodes list
     CPNodeConfig  *head_; // head of physical nodes linked list

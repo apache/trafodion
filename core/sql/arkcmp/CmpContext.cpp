@@ -151,9 +151,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   cmpCurrentContext = this;
   CMPASSERT(heap_ != NULL);
 
-  // For embedded arkcmp, the CmpInternalErrorJmpBuf will be populated
-  // later but the buffer location and pointer are valid
-  heap_->setJmpBuf(CmpInternalErrorJmpBufPtr);
   heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
 
   // Reserve memory that can be used for out-of-memory reporting.
@@ -214,12 +211,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_HISTCACHE_UPPER_KB);
     const Lng32 initHeapSize = 16 * 1024;    // ## 16K
     NAHeap *histogramCacheHeap = new (heap_) 
-                                 NAHeap("HistogramCache Heap",
+                                 NAHeap((const char *)"HistogramCache Heap",
                                  heap_,
                                  initHeapSize,
                                  memLimit);
-
-    histogramCacheHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
 
     // Setting up the cache for histogram
     histogramCache_ = new(histogramCacheHeap) HistogramCache(histogramCacheHeap, 107);
@@ -304,9 +299,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   // create dynamic metadata descriptors
   CmpSeabaseDDL cmpSeabaseDDL(heap_);
   cmpSeabaseDDL.createMDdescs(trafMDDescsInfo_);
-
-  emptyInLogProp_ = NULL;
-
 }
 
 // MV

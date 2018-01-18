@@ -661,6 +661,7 @@ public class DatabaseQuery extends QueryWrapper
       
       try
       {
+         // here if stmtName = null, then it will pass a "null" string, this will skip driver's conditional judgment (if (stmtName ==null) throw exception).
          cStmt = ((TrafT4Connection)conn).prepareCall(queryStr,"\"" + stmtName + "\"");
       } catch (NoSuchMethodError nsme)
       {

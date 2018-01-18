@@ -441,8 +441,7 @@ bool ex_mj_tcb::reacquireResources(void)
     {
 
       
-      tspace_->reacquireResources();  // failure will invoke longjmp handler
-
+      tspace_->reacquireResources();  
 
       if (mjTdb().getLogDiagnostics())
         {

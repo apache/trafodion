@@ -749,14 +749,6 @@ short ExSortTcb::workUp()
   ExSortPrivateState &pstate = *((ExSortPrivateState*) pentry_down->pstate);
   ex_queue::down_request request = pentry_down->downState.request;
 
-  //A jump handler is introduced here as safty measure to handle any
-  //memory allocation failures(from sortHeap_). If NAHeap fails
-  //to allocate memory, it calls handleExhaustedMemory that performs
-  //a longjmp to this location. Basically pstate is set to error
-  //and cleanup is performed. This feature is only enabled in calls
-  //to allocateMemory by setting the failureIsFatal flag which is 
-  //always set by default.
-   
   //while there are requests in the parent down queue, process them
   while (qparent_.down->getHeadIndex() != processedInputs_)
     {
@@ -1943,14 +1935,6 @@ short ExSortFromTopTcb::work()
     }
   
   ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-
-  //A jump handler is introduced here as safty measure to handle any
-  //memory allocation failures(from sortHeap_). If NAHeap fails
-  //to allocate memory, it calls handleExhaustedMemory that performs
-  //a longjmp to this location. Basically pstate is set to error
-  //and cleanup is performed. This feature is only enabled in calls
-  //to allocateMemory by setting the failureIsFatal flag which is 
-  //always set by default.
 
   if (pentry_down->downState.request == ex_queue::GET_NOMORE)
     {

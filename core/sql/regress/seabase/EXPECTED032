@@ -333,8 +333,8 @@ B
 (EXPR)      
 ------------
 
-          11
-          21
+11
+21
 
 --- 2 row(s) selected.
 >>insert into t032t1 values ('3', 3, 3, date '2016-08-15',  time '10:11:12',

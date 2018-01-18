@@ -600,7 +600,7 @@ TEST136_USER1                                                                   
 >>
 >>grant create on schema $$TEST_CATALOG$$.t136sch to test136_user1;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[4222] The DDL feature is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -668,7 +668,7 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
 --- SQL operation complete.
 >>grant create on schema $$TEST_CATALOG$$.t136sch to test136_user1;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[4222] The DDL feature is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -679,7 +679,7 @@ CREATE PRIVATE SCHEMA "TRAFODION"."T136SCH" AUTHORIZATION "DB__ROOT";
 --- SQL operation complete.
 >>revoke create on schema $$TEST_CATALOG$$.t136sch from test136_user1;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[4222] The DDL feature is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 

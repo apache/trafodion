@@ -132,7 +132,6 @@ Parser::Parser(const CmpContext* cmpContext)
                         NAMemory::DERIVED_FROM_SYS_HEAP,
                         524288,
                         memLimit);
-    wHeap_->setJmpBuf(CmpInternalErrorJmpBufPtr);
     wHeap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
   }
 

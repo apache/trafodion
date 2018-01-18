@@ -714,7 +714,7 @@ create table t027t02 (a.a.a  int);
 >>-- cannot have col fam for aligned format tables
 >>create table t027t02 ("cf".a int) attribute aligned format;
 
-*** ERROR[4223] Column Family specification on columns of an aligned format table is not supported in this software version.
+*** ERROR[4223] Column Family specification on columns of an aligned format table is not supported in this software version or edition.
 
 --- SQL operation failed with errors.
 >>

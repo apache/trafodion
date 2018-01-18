@@ -416,6 +416,7 @@ class MessagesTable:
             elif state == 2:
                 if line[i] == '>':
                     state = 0
+                    result = result + '.elided.'
                 else:
                     throwAway = throwAway + '>' + line[i]
             i = i + 1
@@ -426,7 +427,7 @@ class MessagesTable:
             result = result + ' <' + throwAway
         #print "Before<: " + line
         #print "After<: " + result
-        return result 
+        return result.rstrip() # ignore trailing spaces
 
     def removeDollarTerms(self,line):
         # removes text of the form $0~Datatype0 (where Datatype might
@@ -470,10 +471,11 @@ class MessagesTable:
                 if line[i].isalpha():
                     throwAway = throwAway + line[i]
                 elif line[i].isdigit():
-                    state = 0  # we reached the end of the dollar text                  
-                else:
-                    result = result + line[i]
                     state = 0  # we reached the end of the dollar text
+                    result = result + '.elided.'                  
+                else: 
+                    state = 0  # we reached the end of the dollar text
+                    result = result + '.elided.' + line[i]
             i = i + 1
 
         # if we reached the end of the line then put the throwaway text
@@ -482,7 +484,7 @@ class MessagesTable:
             result = result + throwAway
         #print "Before$: " + line
         #print "After$: " + result
-        return result           
+        return result.rstrip() # ignore trailing spaces          
 
 
     def compareText(self):

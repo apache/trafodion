@@ -284,43 +284,36 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // unused                                       = 1297
                   , CAT_UNABLE_TO_ALTER_SCHEMA                    = 1298
 
-                  // Restrict and No Action referential action Messages.
-                  , CAT_REF_CONSTRAINT_NO_ACTION_NOT_SUPPORTED    = 1301
-                  , CAT_REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT    = 1302
+                  // unused                                       = 1301
+                  // unused                                       = 1302
 
-                  // Anchor file access error
-                  , CAT_ANCHOR_FILE_ERROR                         = 1304
+                  // unused                                       = 1304
+                  // unused                                       = 1305
+                  // unused                                       = 1306
+                  // unused                                       = 1307
+                  // unused                                       = 1309
+                  // unused                                       = 1310
 
-                  // Schema subvol error/warnings
-                  , CAT_DUP_SCHEMA_SUBVOL_SPECIFIED               = 1305
-                  , CAT_DUP_SCHEMA_SUBVOL_GENERATED               = 1306
-                  , CAT_METADATA_SCHEMA_SUBVOL                    = 1307
-                  , CAT_INVALID_OBJECT_TYPE                       = 1309
-                  , CAT_TRIGGER_UNSUPPORTED_IN_COMPOUNDCREATE     = 1310
-
-                  , CAT_UNABLE_TO_XXX_CONSTRAINT_DUE_TO_ERRORS    = 1311
-                  , CAT_UNABLE_TO_XXX_DUE_TO_ERRORS               = 1312
+                  // unused                                       = 1311
+                  // unused                                       = 1312
                   , CAT_NOT_ENFORCED_RI_CONSTRAINT_WARNING        = 1313
 
-                  // Alter catalog, disable creates
-                  , CAT_CREATE_OPERATION_DISABLED                 = 1314
-                  , CAT_NO_DEFINITION_SCHEMA                      = 1315
-
-                  // Publish/unpublish errors
-                  , CAT_PUBLISH_NOT_SYSTEM_VIEW                   = 1316
-                  , CAT_PUBLISH_NO_DBA_USER_DEFINED               = 1317
-                  , CAT_PUBLISH_SYNONYM_NAME_TOO_LONG             = 1318
-                  , CAT_PUBLISH_MISMATCH_COLUMN_TABLE_PRIVS       = 1319
-                  , CAT_PUBLISH_MISMATCH_COLUMN_COLUMN_PRIVS      = 1320
-                  , CAT_PUBLISH_NO_PUBLIC_SCHEMA                  = 1321
-                  , CAT_PUBLISH_VIEW_NOT_REFERENCING_OBJECT       = 1322
+                  // unused                                       = 1314
+                  // unused                                       = 1315
+                  // unused                                       = 1316
+                  // unused                                       = 1317
+                  // unused                                       = 1318
+                  // unused                                       = 1319
+                  // unused                                       = 1320
+                  // unused                                       = 1321
+                  // unused                                       = 1322
                   , CAT_UNABLE_TO_GRANT_PRIVILEGES                = 1323
-                  , CAT_NO_SCHEMA_WGO_ALLOWED                     = 1325
-
-                  , CAT_REGULAR_OPERATION_ON_INMEMORY_OBJECT      = 1326
-                  , CAT_INMEMORY_OPERATION_ON_REGULAR_OBJECT      = 1327
+                  // unused                                       = 1324
+                  // unused                                       = 1325
+                  // unused                                       = 1326
+                  // unused                                       = 1327
                   , CAT_INVALID_PRIV_FOR_OBJECT                   = 1328
-                  , CAT_UNABLE_TO_CREATE_METADATA_VIEWS           = 1329
+                  // unused                                       = 1329
                   , CAT_ROLE_IS_GRANTED_NO_REVOKE                 = 1330
                   , CAT_LDAP_USER_NOT_FOUND                       = 1331
                   , CAT_LDAP_COMM_ERROR                           = 1332
@@ -332,89 +325,88 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_ROLE_NOT_EXIST                            = 1338
                   , CAT_IS_NOT_A_ROLE                             = 1339
                   , CAT_IS_NOT_A_USER                             = 1340
-                  , CAT_NO_UNREG_USER_OWNS_CATALOG                = 1341
-                  , CAT_NO_UNREG_USER_OWNS_SCHEMA                 = 1342
+                  // unused                                       = 1341
+                  // unused                                       = 1342
                   , CAT_NO_UNREG_USER_OWNS_OBJECT                 = 1343
-                  , CAT_NO_UNREG_USER_HAS_SCHEMA_PRIVS            = 1344
-                  , CAT_NO_UNREG_USER_HAS_TABLE_PRIVS             = 1345
-                  , CAT_NO_UNREG_USER_HAS_COLUMN_PRIVS            = 1346
+                  // unused                                       = 1344
+                  // unused                                       = 1345
+                  // unused                                       = 1346
                   , CAT_NO_UNREG_USER_OWNS_ROLES                  = 1347
                   , CAT_ROLE_IS_GRANTED_NO_DROP                   = 1348
                   , CAT_NO_UNREG_USER_GRANTED_ROLES               = 1349
-                  , CAT_ROLE_NOT_GRANTED_TO_USER                  = 1350
+                  // unused                                       = 1350
                   , CAT_DUPLICATE_ROLES_IN_LIST                   = 1351
                   , CAT_DUPLICATE_USERS_IN_LIST                   = 1352
-                  , CAT_NO_ROLE_WGO_ALLOWED                       = 1353
-                  , CAT_NO_ROLE_SCHEMA_GRANT_ALLOWED              = 1354
+                  // unused                                       = 1353
+                  // unused                                       = 1354
                   , CAT_NO_GRANT_ROLE_TO_PUBLIC_OR_SYSTEM         = 1355
                   , CAT_COMPONENT_PRIVILEGE_CODE_EXISTS           = 1356
                   , CAT_COMPONENT_PRIVILEGE_NAME_EXISTS           = 1357
-                  , CAT_COMPONENT_PRIVILEGE_NOT_FOUND             = 1358
+                  // unused                                       = 1358
                   , CAT_INVALID_PRIVILEGE_FOR_GRANT_OR_REVOKE     = 1359
-                  , CAT_DEPENDENT_COMPONENT_PRIVILEGES_EXIST      = 1360
+                  // unused                                       = 1360
                   , CAT_LIBRARY_DOES_NOT_EXIST                    = 1361
-                  , CAT_NOT_A_LIBRARY                             = 1362
-                  , CAT_LIBRARY_EXISTS                            = 1363
+                  // unused                                       = 1362
+                  // unused                                       = 1363
                   , CAT_DEPENDENT_ROLE_PRIVILEGES_EXIST           = 1364
-                  , CAT_COULDNT_LOCK_PARTICIPATING_AUTH_ID        = 1365
+                  // unused                                       = 1365
                   , CAT_DEPENDENT_ROUTINES_EXIST                  = 1366
-                  , CAT_ROUTINE_USES_LIBRARY                      = 1367
-                  , CAT_LIBRARY_MUST_BE_IN_SAME_CATALOG           = 1368
-                  , CAT_ONLY_UPDATE_OR_USAGE_PRIV_FOR_LIBRARY     = 1369
+                  // unused                                       = 1367
+                  // unused                                       = 1368
+                  // unused                                       = 1369
                   , CAT_INVALID_CHARS_IN_AUTH_NAME                = 1370
-                  , CAT_ONLY_SELECT_OR_INSERT_FOR_TABLE           = 1371
-                  , CAT_ALTER_TABLE_INSERT_ONLY_FAILED            = 1372
-                  , CAT_AUDIT_NOT_A_VALID_BOOL_VALUE              = 1373
-                  , CAT_AUDIT_NOT_A_VALID_LOG_TYPE                = 1374
-                  , CAT_AUDIT_INPUT_TOO_LARGE                     = 1375
-                  , CAT_AUDIT_INVALID_COLUMN_NUMBER               = 1376
-                  , CAT_AUDIT_ALTER_CONFIG_FAILED                 = 1377
-                  , CAT_AUDIT_REFRESH_RANGE                       = 1378
-                  , CAT_AUDIT_AGING_RANGE                         = 1379
-                  , CAT_AUDIT_THRESHOLD_RANGE                     = 1380
-                  , CAT_AUDIT_COLUMN_VALUE_COUNT_MISMATCH         = 1381
+                  // unused                                       = 1371
+                  // unused                                       = 1372
+                  // unused                                       = 1373
+                  // unused                                       = 1374
+                  // unused                                       = 1375
+                  // unused                                       = 1376
+                  // unused                                       = 1377
+                  // unused                                       = 1378
+                  // unused                                       = 1379
+                  // unused                                       = 1380
+                  // unused                                       = 1381
                   , CAT_JAR_NOT_FOUND                             = 1382
-                  , CAT_DISABLE_AUTHNAME_CHANGES                  = 1383
-                  , CAT_POS_UNEQUABLE_DISK_POOL_DEFINED           = 1384
-                  , CAT_POS_DISK_POOL_MAPPING_FAILED              = 1385
+                  // unused                                       = 1383
+                  // unused                                       = 1384
+                  // unused                                       = 1385
                   , CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION        = 1389
                   , CAT_TRAFODION_OBJECT_EXISTS                   = 1390
 
-                  , CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE  = 1400
+                  // unused                                       = 1400
                   , CAT_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE_TO_CHARSET = 1401
                   , CAT_UNIQUE_INDEX_COLS_NOT_IN_DIV_EXPRS        = 1402
                   , CAT_ALTER_NOT_ALLOWED_IN_SMD                  = 1403
 
-                  // Detectable metadata inconsistencies
-                  , CAT_CATSYS_CATREF_MISMATCH                    = 1500
-                  , CAT_OBJECTS_REPLICAS_MISMATCH                 = 1502
-                  , CAT_OBJECTS_PARTITIONS_MISMATCH               = 1503
-                  , CAT_NO_OBJECTS_ROW_FOR_SMD                    = 1504
-                  , CAT_CATSYS_MISMATCH_ON_AUTOREF_NODE           = 1505
-                  , CAT_SCHEMA_MISMATCH_ON_AUTOREF_NODE           = 1506
+                  // unused                                       = 1500
+                  // unused                                       = 1502
+                  // unused                                       = 1503
+                  // unused                                       = 1504
+                  // unused                                       = 1505
+                  // unused                                       = 1506
 
                   // IDENTITY Column (Surrogate Key) related Errors.
                   , CAT_IDENTITY_COLUMN_DATATYPE_MISMATCH         = 1510
                   , CAT_IDENTITY_COLUMN_ONE_PER_TABLE             = 1511
-                  , CAT_IDENTITY_COLUMN_NOT_NULL_NOT_DROPPABLE    = 1512
-                  , CAT_IDENTITY_COLUMN_HASH_PARTITIONED_ONLY     = 1513
+                  // unused                                       = 1512
+                  // unused                                       = 1513
                   , CAT_IDENTITY_COLUMN_NO_ALTER_TABLE            = 1514
                   // unused                                       = 1515
 
-                  , CAT_CANNOT_DISABLE_NOT_DROPPABLE_CONSTRAINT   = 1517
-                  , CAT_CANNOT_ENABLE_CONSTRAINT                  = 1518
-                  , CAT_CANNOT_DISABLE_FK_CONSTRAINT              = 1519
-                  , CAT_SCHEMA_MISMATCH_ON_EXCEPTION_TABLE        = 1521
-                  , CAT_NOT_AN_EXCEPTION_TABLE                    = 1522
-                  , CAT_EXCEPTION_TABLE_DOES_NOT_EXIST            = 1523
-                  , CAT_NO_EXCEPTIONS_ON_METADATA                 = 1524
-                  , CAT_NO_EXCEPTIONS_ON_EXCEPTIONS               = 1525
-                  , CAT_EXCEPTION_NOT_IN_METADATA_TABLE           = 1526
-                  , CAT_NO_KEY_ON_BASE_TABLE                      = 1527
-                  , CAT_NO_EXCEPTION_TABLE_FOR_BASE_TABLE         = 1528
+                  // unused                                       = 1517
+                  // unused                                       = 1518
+                  // unused                                       = 1519
+                  // unused                                       = 1521
+                  // unused                                       = 1522
+                  // unused                                       = 1523
+                  // unused                                       = 1524
+                  // unused                                       = 1525
+                  // unused                                       = 1526
+                  // unused                                       = 1527
+                  // unused                                       = 1528
 
-                  , CAT_SG_NOT_IN_METADATA                        = 1529
-                  , CAT_LDAP_DEFAULTCONFIG_INSERT_ERROR           = 1530
+                  // unused                                       = 1529
+                  // unused                                       = 1530
 
                   , CAT_NO_POPULATE_VOLATILE_INDEX                = 1540
                   , CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY            = 1541
@@ -424,48 +416,23 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_SG_INCREMENT_BY_ZERO_ERROR                = 1571
                   , CAT_SG_NEGATIVE_ERROR                         = 1572
                   , CAT_SG_STARTWITH_MINVALUE_MAXVALUE_ERROR      = 1573
-                  , CAT_SG_CYCLE_NOT_SUPPORTED_ERROR              = 1574
+                  // unused                                       = 1574
                   , CAT_SG_INCREMENT_BY_MAXVALUE_ERROR            = 1575
                   , CAT_SG_MAXIMUM_DATATYPE_ERROR                 = 1576
 
-                  // Collation for Catlog & Schema
-                  , CAT_CATALOG_COLLATION_NOT_SUPPORTED           = 1580
-                  , CAT_SCHEMA_COLLATION_NOT_SUPPORTED            = 1581
-
                   // Sequence Generator alter table errors
                   , CAT_SG_ALTER_NOT_IDENTITY_COLUMN_ERROR        = 1590
-                  , CAT_SG_ALTER_MAXVALUE_NOT_GT_ERROR            = 1591
+                  // unused                                       = 1591
                   , CAT_SG_ALTER_UNSUPPORTED_OPTION_ERROR         = 1592
-                  , CAT_SG_ALTER_TOO_MANY_OPTIONS_ERROR           = 1593
-                  , CAT_SG_ALTER_CURRENT_VALUE_ERROR              = 1594
-                  , CAT_SG_ALTER_NO_MAXVALUE_ERROR                = 1595
-                  , CAT_SG_ALTER_RECALIBRATION_ERROR              = 1596
-                  , CAT_SG_ALTER_RECALIBRATION_MAXIMUM_ERROR      = 1597
-                  , CAT_SG_ALTER_RECALIBRATION_CURRENT_ERROR      = 1598
-                  , CAT_SG_ALTER_RECALIBRATION_SPECIFIED_ERROR    = 1599
-                  , CAT_SG_ALTER_RECALIBRATION_LOCKING_ERROR      = 1600
-                  , CAT_SG_ALTER_RECALIBRATION_NO_SELECT_ERROR    = 1601
-
-                  // UDF related errors
-                  , CAT_NOT_UUDF_OBJECT                           = 1700
-                  , CAT_TOO_MANY_PASS_THRU_INPUTS                 = 1701
-                  , CAT_ONLY_STRING_LITERAL                       = 1702
-                  , CAT_BINARY_ONLY_OPTION_WITH_UCS2              = 1703
-                  , CAT_BINARY_ONLY_OPTION_WITHIN_VALUE_FROM_FILE_CLAUSE = 1704
-                  , CAT_UNABLE_TO_OPEN_FILE                       = 1705
-                  , CAT_UNABLE_TO_READ_FILE                       = 1706
-                  , CAT_RA_ALREADY_EXISTS_UUDF                    = 1707
-                  , CAT_EXCEEDS_NUMBER_OF_OUTPUT_VALUES           = 1708
-                  , CAT_UNABLE_TO_DROP_UUDF_BEING_USED_BY_RA      = 1709
-                  , CAT_PASS_THRU_INPUT_WRONG_POSITION_SPECIFIED  = 1710
-                  , CAT_POSITION_SPECIFIED_EXCEEDS_NUMBER_OF_PASS_THRU_INPUTS = 1711
-                  , CAT_SPECIFIED_POSITION_APPEARS_MULTIPLE_TIMES = 1712
-                  , CAT_MISSING_UUDF_FUNCTION_NAME_CLAUSE         = 1713
-                  , CAT_INVALID_ROUTINE_ACTION_NAME               = 1714
-                  , CAT_UNABLE_TO_START_TRANSACTION               = 1715
-                  , CAT_SQL_STYLE_PARAMETER_EXCEEDS_LIMIT         = 1716
-                  , CAT_PASS_THRU_BINARY_INPUT_CANNOT_BE_EMPTY    = 1717
-                  , CAT_BINARY_TYPE_FILE_EMPTY                    = 1718
+                  // unused                                       = 1593
+                  // unused                                       = 1594
+                  // unused                                       = 1595
+                  // unused                                       = 1596
+                  // unused                                       = 1597
+                  // unused                                       = 1598
+                  // unused                                       = 1599
+                  // unused                                       = 1600
+                  // unused                                       = 1601
 
                   // Method validation failures
                   , CAT_CLASS_NOT_FOUND                           = 11205

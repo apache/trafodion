@@ -1288,7 +1288,7 @@ void CRedirectStderr::handleOutput(ssize_t count, char *buffer)
                 buf[size-1] = '\n';
             }
         }
-        mon_log_write(MON_REDIR_STDERR, SQ_LOG_INFO, buf);
+        mon_log_write(MON_REDIR_STDERR, SQ_LOG_DEBUG, buf);
 
         delete [] buf;
     }
@@ -1764,7 +1764,7 @@ void CRedirector::stdinOn(int fd)
     TRACE_EXIT;
 }
 
-void CRedirector::tryShutdownPipeFd(int pid, int fd)
+void CRedirector::tryShutdownPipeFd(int pid, int fd, bool pv_delete_redirect)
 {
     const char method_name[] = "CRedirector::tryShutdownPipeFd";
     TRACE_ENTRY;
@@ -1784,9 +1784,12 @@ void CRedirector::tryShutdownPipeFd(int pid, int fd)
         redirect = iter->second;
 
         // bugcatcher, temp call
-        redirect->validateObj();
+        if (redirect->pid() != 0)
+            redirect->validateObj();
 
-        if (!redirect->active() && (pid == redirect->pid()))
+        if (((pv_delete_redirect) ||
+             (!redirect->active())) &&
+            (pid == redirect->pid()))
         {
             if (trace_settings & TRACE_REDIRECTION)
                 trace_printf("%s@%d invoking shutdownPipeFd for fd=%d\n",

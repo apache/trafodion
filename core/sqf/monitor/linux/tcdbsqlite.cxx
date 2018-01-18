@@ -2507,10 +2507,6 @@ int CTcdbSqlite::GetUniqueString( int nid, int id, const char *uniqStr )
         }
         else
         {
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
             char buf[TC_LOG_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s] (%s) failed, nid=%d, id=%d, error: %s\n"
@@ -2631,10 +2627,6 @@ int CTcdbSqlite::GetUniqueStringId( int nid
         }
         else
         {
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
             char buf[TC_LOG_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s] (%s) failed, nid=%d, id=%d, error: %s\n"

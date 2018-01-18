@@ -2,7 +2,7 @@
 // is, have less than 50 orders) and lowers the price of these items in the
 // database by 10 percent.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#lowerprice-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#lowerprice-procedure
 // for more documentation.
 public static void lowerPrice() throws SQLException
 {

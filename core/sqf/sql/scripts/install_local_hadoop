@@ -1318,7 +1318,7 @@ lc-messages-dir=${MY_SW_ROOT}/mysql/share
 
 # Enable logging by default to help find problems
 general-log=1
-general-log-file=${MY_SW_ROOT}/log/mysql-general.\${HOSTNAME}.log
+general-log-file=${MY_SW_ROOT}/log/mysql-general.${HOSTNAME}.log
 
 EOF
 

@@ -7,7 +7,7 @@ public class Sales
    // is, have less than 50 orders) and lowers the price of these items in the
    // database by 10 percent.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#lowerprice-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#lowerprice-procedure
    // for more documentation.
    public static void lowerPrice() throws SQLException
    {
@@ -50,7 +50,7 @@ public class Sales
    // The DAILYORDERS procedure accepts a date and returns the number of
    //orders on that date to an output parameter.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#dailyorders-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#dailyorders-procedure
    // for additional documenation.
    public static void numDailyOrders( Date date
                                     , int[] numOrders 
@@ -80,7 +80,7 @@ public class Sales
    // The MONTHLYORDERS procedure accepts an integer representing the month
    // and returns the number of orders during that month to an output parameter.
    // 
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#monthlyorders-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#monthlyorders-procedure
    // for more documentation.
    public static void numMonthlyOrders( int month
                                       , int[] numOrders
@@ -122,7 +122,7 @@ public class Sales
    // of an item, calculates the total price, including tax and shipping
    // charges, and returns the total price to an input/output parameter.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#totalprice-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#totalprice-procedure
    // for more documentation.
    public static void totalPrice( BigDecimal qtyOrdered
                                 , String shippingSpeed
@@ -175,7 +175,7 @@ public class Sales
    // * A result set that contains rows from the PARTSUPP table for suppliers who carry this part.
    // * A result set that contains rows from the EMPLOYEE table for sales reps who have sold this part.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#partdata-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#partdata-procedure
    // for more documentation.
    public static void partData( int partNum
                               , String[] partDescription
@@ -281,7 +281,7 @@ public class Sales
    //   contains fields for the order number, part number, unit price, quantity
    //   ordered, and part description.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#ordersummary-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#ordersummary-procedure
    // for more documentation.
    public static void orderSummary( java.lang.String onOrAfter
                                   , long[] numOrders

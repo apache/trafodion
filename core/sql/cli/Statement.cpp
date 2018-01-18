@@ -218,9 +218,6 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
 {
   cliLevel_ = context_->getNumOfCliCalls();
 
-  space_.setJmpBuf(cliGlobals_->getJmpBuf());
-  heap_.setJmpBuf(cliGlobals_->getJmpBuf());
-
 #ifdef _DEBUG
   stmtDebug_ = FALSE;
   stmtListDebug_ = FALSE;

@@ -7,7 +7,7 @@ public class Inventory
    // supplier's name, street, city, state, and post code to separate output
    // parameters.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#supplierinfo-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#supplierinfo-procedure
    // for more documentation.
    public static void supplierInfo( BigDecimal suppNum
                                   , String[] suppName
@@ -46,7 +46,7 @@ public class Inventory
    // quantities of available parts in inventory to separate output
    // parameters.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#supplyquantities-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#supplyquantities-procedure
    // for more documentation.
    public static void supplyQuantities( int[] avgQty
                                       , int[] minQty
@@ -79,7 +79,7 @@ public class Inventory
    // set of location codes that have the exact quantity and a set of location
    // codes that have more than that quantity.
    //
-   // See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#partlocations-procedure
+   // See http://trafodion.apache.org/docs/spj_guide/index.html#partlocations-procedure
    // for more documentation.
    public static void partLocations( int partNum
                                    , int quantity

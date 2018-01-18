@@ -32,7 +32,7 @@ This section includes process creation errors, IPC errors, static compilation er
 == SQL 2004
 
 ```
-Internal error: error from MXCMP; cannot work on this query.
+Internal error: error from Compiler; cannot work on this query.
 ```
 
 *Cause:* {project-name} received an internal error from the {project-name} compiler.
@@ -45,7 +45,7 @@ Internal error: error from MXCMP; cannot work on this query.
 == SQL 2009
 
 ```
-The user transaction must be rolled back (or committed, if that makes sense in the application) before MXCMP can be restarted and proceed.
+The user transaction must be rolled back (or committed, if that makes sense in the application) before Compiler can be restarted and proceed.
 ```
 
 *Cause:* An outstanding transaction must be resolved before the {project-name} compiler can be restarted.
@@ -59,7 +59,7 @@ The user transaction must be rolled back (or committed, if that makes sense in t
 == SQL 2011
 
 ```
-Server process could not be created - error <number> while resolving program file name <name>.
+Server process could not be created - Operating system error <number> while resolving program file name <name>.
 ```
 
 Where error <number> is the error number.

@@ -425,11 +425,6 @@ static void runServer(Int32 argc, char **argv)
                                256 * 1024 // 256K block size
                                );
 
-  udrHeap->setJmpBuf(&UdrHeapLongJmpTgt);
-  Int32 udrJmpRc = setjmp(UdrHeapLongJmpTgt);
-  if (udrJmpRc)
-     UDR_ABORT("udrHeap allocation failed.");
-
   NAHeap *ipcHeap = new NAHeap("UDR IPC Heap",
                                NAMemory::DERIVED_FROM_SYS_HEAP,
                                256 * 1024 // 256K block size
@@ -439,11 +434,6 @@ static void runServer(Int32 argc, char **argv)
   if (getenv("SQLMX_UDR_MEMORY_LOG"))
     HeapLogRoot::control(LOG_START);
 #endif
-
-  ipcHeap->setJmpBuf(&IpcHeapLongJmpTgt);
-  Int32 ipcJmpRc = setjmp(IpcHeapLongJmpTgt);
-  if (ipcJmpRc)
-     UDR_ABORT("ipcHeap allocation failed.");
 
   UDR_GLOBALS = new (udrHeap) UdrGlobals(udrHeap, ipcHeap);
 
@@ -2105,7 +2095,7 @@ static Int32 invokeUdrMethod(const char *method,
     if (txRequired && result == LM_OK)
     {
       cliResult = SQL_EXEC_Xact(SQLTRANS_QUIESCE, NULL);
-      if (cliResult != 0)
+      if (cliResult < 0)
       {
         fprintf(f, "%s SQL_EXEC_Xact() returned %d\n",
                 prefix, cliResult);

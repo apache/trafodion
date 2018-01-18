@@ -156,7 +156,6 @@ Int32 main(Int32 argc, char **argv)
 void runServer(Int32 argc, char **argv)
 {
   Int32 shmid;
-  jmp_buf sscpJmpBuf;
   StatsGlobals *statsGlobals = NULL;
   void *statsGlobalsAddr;
   NABoolean createStatsGlobals = FALSE;
@@ -275,9 +274,6 @@ void runServer(Int32 argc, char **argv)
   }
   XPROCESSHANDLE_GETMINE_(statsGlobals->getSscpProcHandle());
   NAHeap *sscpHeap = cliGlobals->getExecutorMemory();
-  cliGlobals->setJmpBufPtr(&sscpJmpBuf);
-  if (setjmp(sscpJmpBuf))
-    NAExit(1); // Abend
   IpcEnvironment  *sscpIpcEnv = new (sscpHeap) IpcEnvironment(sscpHeap, cliGlobals->getEventConsumed(),
       FALSE, IPC_SQLSSCP_SERVER, FALSE, TRUE);
 

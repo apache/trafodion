@@ -130,8 +130,5 @@ CPPSRC += vers_libexecutor.cpp \
 	ExSMReadyList.cpp \
 	ExFastTransport.cpp
 
-ifneq ($(SP_DIS),)
-EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so
-endif
 SYS_LIBS := -lrt -lpthread
 SRCPATH := bin executor runtimestats porting_layer qmscommon

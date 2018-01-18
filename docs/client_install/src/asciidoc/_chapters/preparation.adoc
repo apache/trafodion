@@ -103,7 +103,6 @@ The {project-name} Client binaries are in the `clients` folder, which contains t
 [cols="30%,70%", options="header"]
 |===
 | File                               | Usage
-| `DISCLAIMER`                       | {project-name} Apache incubation disclaimer.
 | `JDBCT4.zip`                       | {project-name} JDBC Type 4 Driver.
 | `LICENCE`                          | Apache license.
 | `NOTICE`                           | Apache notice.
@@ -137,7 +136,7 @@ an `apache-trafodion-clients-*.tar` file.
 . Verify content of the `clients` directory:
 +
 ```
-DISCLAIMER JDBCT4.zip LICENSE NOTICE odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
+JDBCT4.zip LICENSE NOTICE odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
 ```
 +
 You use these files to install the different {project-name} clients.
@@ -166,10 +165,10 @@ using the URL you copied in step 3 above.
 $ mkdir $HOME/trafodion
 $ cd $HOME/trafodion
 $ wget <link to package>
-$ tar -xzvf apache-trafodion_clients-*-incubating.tar.gz
+$ tar -xzvf apache-trafodion_clients-*.tar.gz
 $ cd clients
 $ ls
-DISCLAIMER  LICENSE  odb64_linux.tar.gz  TRAF_ODBC_Linux_Driver_64.tar.gz
+LICENSE  odb64_linux.tar.gz  TRAF_ODBC_Linux_Driver_64.tar.gz
 JDBCT4.zip  NOTICE   trafci.zip
 $
 ```
@@ -220,7 +219,7 @@ $ unzip trafci.zip -d $HOME/trafodion/trafci
 .
 $ cd ..
 $ ls
-apache-trafodion_clients-2.0.1-incubating.tar.gz  clients  jdbct4  trafci
+apache-trafodion_clients-2.2.0.tar.gz  clients  jdbct4  trafci
 $
 ```
 
@@ -258,7 +257,7 @@ $ tar -xzvf odb64_linux.tar.gz -C $HOME/trafodion/odb
 .
 $ cd ..
 $ ls
-apache-trafodion_clients-2.0.1-incubating.tar.gz  clients  odb  odbc
+apache-trafodion_clients-2.2.0.tar.gz  clients  odb  odbc
 ```
 
 

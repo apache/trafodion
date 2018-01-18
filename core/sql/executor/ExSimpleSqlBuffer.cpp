@@ -214,9 +214,6 @@ ExSimpleSQLBuffer::init(CollHeap *heap)
 #endif
     }
 
-  // If we could not get enough memory for at least one tuple, let the
-  // memory manager do a longjmp by requesting the original number of 
-  // tuples to be allocated while passing true for failureIsFatal.
   if (!data_)
     {
       nBytes = tuplesRequested * allocationSize_;

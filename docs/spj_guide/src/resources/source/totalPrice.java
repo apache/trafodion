@@ -2,7 +2,7 @@
 // of an item, calculates the total price, including tax and shipping
 // charges, and returns the total price to an input/output parameter.
 //
-// See http://trafodion.incubator.apache.org/docs/spj_guide/index.html#totalprice-procedure
+// See http://trafodion.apache.org/docs/spj_guide/index.html#totalprice-procedure
 // for more documentation.
 public static void totalPrice( BigDecimal qtyOrdered
 			     , String shippingSpeed

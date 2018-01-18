@@ -30,7 +30,7 @@
   <packaging>pom</packaging>
   <name>Trafodion Messages Guide</name>
   <description>This guide describes user-visible messages produced by Trafodion.</description>
-  <url>http://trafodion.incubator.apache.org</url>
+  <url>http://trafodion.apache.org</url>
   <inceptionYear>2015</inceptionYear>
 
   <parent>
@@ -60,9 +60,9 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</developerConnection>
-    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git</url>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/trafodion.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/trafodion.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=trafodion.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -186,8 +186,8 @@
                 <project-version>${env.TRAFODION_VER}</project-version>
                 <project-name>Trafodion</project-name>
                 <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
-                <project-support>user@trafodion.incubator.apache.org</project-support>
-                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <project-support>user@trafodion.apache.org</project-support>
+                <docs-url>http://trafodion.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
@@ -208,8 +208,8 @@
                 <project-version>${env.TRAFODION_VER}</project-version>
                 <project-name>Trafodion</project-name>
                 <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
-                <project-support>user@trafodion.incubator.apache.org</project-support>
-                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <project-support>user@trafodion.apache.org</project-support>
+                <docs-url>http://trafodion.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
                 <pdf-style>trafodion</pdf-style>
@@ -286,9 +286,9 @@
 
   <distributionManagement>
     <site>
-      <id>trafodion.incubator.apache.org</id>
-      <name>Trafodion Website at incubator.apache.org</name>
-      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      <id>trafodion.apache.org</id>
+      <name>Trafodion Website at apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.apache.org, see
       https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
       -->
       <url>file:///tmp</url>
