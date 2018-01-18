@@ -5078,7 +5078,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                     "cast('%s' as varchar(128)) TABLE_CAT, "
                     "cast(trim(ob_table.SCHEMA_NAME) as varchar(128)) TABLE_SCHEM, "
                     "cast(trim(ob_table.OBJECT_NAME) as varchar(128)) TABLE_NAME, "
-                    "cast(idx.is_unique as smallint) NON_UNIQUE, "
+                    "cast(case when idx.is_unique = 1 then 0 else 1 end as smallint) NON_UNIQUE, "
                     "cast(NULL as varchar(128)) INDEX_QUALIFIER, " // not support
                     "cast(trim(ob.OBJECT_NAME) as varchar(128)) INDEX_NAME, "
                     "cast(3 as smallint) TYPE, " // SQL_INDEX_OTHER
