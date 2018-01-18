@@ -2782,8 +2782,7 @@ void ExExeUtilLobExtractTcb::freeResources()
                0); // open type not applicable
 
     
-  ExpLOBinterfaceCleanup
-    (exLobGlobals_, currContext->exHeap());
+  ExpLOBinterfaceCleanup(exLobGlobals_);
   exLobGlobals_ = NULL;
 }
 
@@ -3505,7 +3504,7 @@ void ExExeUtilLobUpdateTcb::freeResources()
  ContextCli *currContext =
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
     getStatement()->getContext();
- ExpLOBinterfaceCleanup(exLobGlobals_, currContext->exHeap());
+ ExpLOBinterfaceCleanup(exLobGlobals_);
  exLobGlobals_ = NULL;
 }
 

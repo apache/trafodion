@@ -9542,7 +9542,7 @@ Lng32 SQLCLI_LOBddlInterface
  
 {
   Lng32 cliRC = 0;
-
+  ExLobGlobals *exLobGlob = NULL;
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
@@ -9611,12 +9611,28 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	  } // for
 
+        //Initialize LOB interface 
+        
+        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
+        if (rc)
+          {
+            {
+              cliRC = 0;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
 
+			    getLobErrStr(rc));
+		goto error_return;
+	      }
+          }
+          
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    // create lob data tables
-	    Lng32 rc = ExpLOBoper::createLOB
-	      (NULL, &currContext,currContext.exHeap(),
+	       rc = ExpLOBoper::createLOB
+	      (exLobGlob, &currContext,
 	       lobLocList[i],  hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i],lobMaxSize);
 	    
@@ -9726,10 +9742,26 @@ Lng32 SQLCLI_LOBddlInterface
         //lob data files.  Note that if there is an error in the drop of the 
         //descriptor tables above , the transaction will restore each of the 
         //above tables . 
+        //Initialize LOB interface 
+       
+        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
+        if (rc)
+          {
+            {
+              cliRC = 0;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
+
+			    getLobErrStr(rc));
+		goto error_return;
+	      }
+          }
         for (Lng32 i = 0; i < numLOBs; i++)
 	  {
-	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),&currContext,
+	      rc = ExpLOBoper::dropLOB
+	      (exLobGlob,&currContext,
 	       lobLocList[i],hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i]);
             // Ignore 'not found' error from hdfs file deletes until this is made transactional just like Hbase tables are.
@@ -9765,12 +9797,27 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	    goto error_return;
 	  }
-	
+	//Initialize LOB interface 
+        
+        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
+        if (rc)
+          {
+            {
+              cliRC = 0;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
+
+			    getLobErrStr(rc));
+		goto error_return;
+	      }
+          }
 	// drop descriptor table
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),&currContext,
+	      (exLobGlob,&currContext,
 	       lobLocList[i],hdfsPort, hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
@@ -9919,6 +9966,7 @@ Lng32 SQLCLI_LOBddlInterface
     } // switch
 
  error_return:
+  ExpLOBinterfaceCleanup(exLobGlob);
   NADELETEBASIC(query, currContext.exHeap());
   NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;

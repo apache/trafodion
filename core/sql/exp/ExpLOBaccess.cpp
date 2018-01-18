@@ -2566,8 +2566,8 @@ Ex_Lob_Error ExLobsOper (
     {
       if ((operation == Lob_Init))
 	{
-          
-          globPtr = new ExLobGlobals();
+          NAHeap *lobHeap = (NAHeap *)blackBox;
+          globPtr = new (lobHeap) ExLobGlobals(lobHeap);
 	  if (globPtr == NULL) 
 	    return LOB_INIT_ERROR;
 
@@ -2877,7 +2877,7 @@ Ex_Lob_Error ExLobsOper (
       err = lobPtr->purgeLob();
       it = lobMap->find(string(lobName));
       lobMap->erase(it);
-      delete lobPtr;
+      NADELETE(lobPtr, ExLob,lobGlobals->getHeap()) ;
       lobPtr = NULL;
       if (err != LOB_OPER_OK)           
         lobDebugInfo("purgeLob failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -2887,7 +2887,7 @@ Ex_Lob_Error ExLobsOper (
       err = lobPtr->purgeLob();
       it = lobMap->find(string(lobName));
       lobMap->erase(it);
-      delete lobPtr;
+      NADELETE(lobPtr, ExLob,lobGlobals->getHeap()) ;
       lobPtr = NULL;
       if (err != LOB_OPER_OK)           
         lobDebugInfo("purgeLob failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -2925,7 +2925,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Cleanup:
-        delete lobGlobals;
+        NADELETE(lobGlobals,ExLobGlobals, lobGlobals->getHeap());
         break;
      
     case Lob_PerformGC:
@@ -3393,14 +3393,14 @@ Ex_Lob_Error ExLob::sendReqToLobServer()
 // ExLobGlobals definitions
 ///////////////////////////////////////////////////////////////////////////////
 
-ExLobGlobals::ExLobGlobals() :
+ExLobGlobals::ExLobGlobals(NAHeap *lobHeap) :
     lobMap_(NULL), 
     fs_(NULL),
     isCliInitialized_(FALSE),
     threadTraceFile_(NULL),
     lobTrace_(FALSE),
     numWorkerThreads_(0),
-    heap_(NULL)
+    heap_(lobHeap)
 {
   //initialize the log file
   if (getenv("TRACE_HDFS_THREAD_ACTIONS"))
@@ -3418,9 +3418,7 @@ ExLobGlobals::~ExLobGlobals()
     ExLobCursor::bufferList_t::iterator c_it;
     ExLobCursorBuffer *buf = NULL;
 
-    preOpenListLock_.lock();
-    preOpenList_.clear();
-    preOpenListLock_.unlock();
+   
 
     if (numWorkerThreads_ > 0) { 
        for (int i=0; numWorkerThreads_-i > 0 && i < NUM_WORKER_THREADS; i++) {
@@ -3442,9 +3440,37 @@ ExLobGlobals::~ExLobGlobals()
     //Free the preOpenList AFTER the worker threads have left to avoid the 
     //case where a slow worker thread is still processing a preOpen and 
     //may access the preOpenList.
+  
+   
     preOpenListLock_.lock();
-    preOpenList_.clear();
+    ExLobPreOpen *po = NULL;
+    preOpenList_t::iterator p_it;
+    p_it = preOpenList_.begin();
+    while (p_it != preOpenList_.end()) 
+      {
+        po = *p_it;
+        NADELETE(po,ExLobPreOpen,heap_);
+        p_it = preOpenList_.erase(p_it);
+      }
+       
+        
     preOpenListLock_.unlock();
+        
+      
+    //Free the request list 
+    ExLobHdfsRequest *request;
+    reqList_t::iterator it;
+   
+    reqQueueLock_.lock();
+    it = reqQueue_.begin();
+    while (it != reqQueue_.end())
+      {
+        request = *it;
+        NADELETE(request,ExLobHdfsRequest,heap_);
+        it = reqQueue_.erase(it);
+      }       
+    reqQueueLock_.unlock();
+      
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
     // buffers and not consuming the buffers which could cause a  lock.
@@ -3463,7 +3489,10 @@ ExLobGlobals::~ExLobGlobals()
     //delete the lobMap AFTER the worker threads have finished their pending 
     //work since they may still be using an objetc that was fetched off the lobMap_
     if (lobMap_) 
-      delete lobMap_;
+      {
+        NADELETE(lobMap_,lobMap_t,heap_);
+        lobMap_ = NULL;
+      }
     
     //msg_mon_close_process(&serverPhandle);
     if (threadTraceFile_)
@@ -3617,8 +3646,8 @@ Ex_Lob_Error ExLobGlobals::enqueueRequest(ExLobHdfsRequest *request)
 }
 
 Ex_Lob_Error ExLobGlobals::enqueuePrefetchRequest(ExLob *lobPtr, ExLobCursor *cursor)
-{// Leaving this allocated from system heap. Since this class contains hdfsFS unable to derive from LOB heap
-  ExLobHdfsRequest *request = new  ExLobHdfsRequest(Lob_Hdfs_Cursor_Prefetch, lobPtr, cursor);
+{
+  ExLobHdfsRequest *request = new  (heap_) ExLobHdfsRequest(Lob_Hdfs_Cursor_Prefetch, lobPtr, cursor);
    
    if (!request) {
      // return error
@@ -3631,8 +3660,7 @@ Ex_Lob_Error ExLobGlobals::enqueuePrefetchRequest(ExLob *lobPtr, ExLobCursor *cu
 
 Ex_Lob_Error ExLobGlobals::enqueueShutdownRequest()
 {
- // Leaving this allocated from system heap. Since this class contains hdfsFS unable to derive from LOB heap
-  ExLobHdfsRequest *request = new ExLobHdfsRequest(Lob_Hdfs_Shutdown);
+  ExLobHdfsRequest *request = new (heap_) ExLobHdfsRequest(Lob_Hdfs_Shutdown);
    
    if (!request) {
      // return error
@@ -3704,7 +3732,7 @@ void ExLobGlobals::doWorkInThread()
       }
       else {
          performRequest(request);
-         delete request;
+         NADELETE(request, ExLobHdfsRequest, heap_);
       }
    }
 

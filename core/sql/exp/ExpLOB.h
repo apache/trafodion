@@ -124,11 +124,11 @@ public:
   static Int32 restoreLobDataFile(ExLobGlobals *lobGlob, char *lobName, NAHeap *lobHeap, ContextCli *currContext,char *hdfsServer, Int32 hdfsPort,char *lobLocation );
   static Int32 purgeBackupLobDataFile(ExLobGlobals *lobGlob,char *lobName, NAHeap *lobHeap, ContextCli *currContext, char *hdfsServer, Int32 hdfsPort, char *lobLocation);
 
-  static Lng32 createLOB(ExLobGlobals * lobGlob, ContextCli *currContext,NAHeap * lobHeap,
+  static Lng32 createLOB(ExLobGlobals * lobGlob, ContextCli *currContext,
 			 char * lobLoc, Int32 hdfsPort, char *hdfsServer,
 			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
-  static Lng32 dropLOB(ExLobGlobals * lobGlob, NAHeap *lobHeap, ContextCli *currContext, 
+  static Lng32 dropLOB(ExLobGlobals * lobGlob, ContextCli *currContext, 
 		       char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 		       Int64 uid, Lng32 lobNum);
 
