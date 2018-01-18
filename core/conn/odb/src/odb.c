@@ -2314,7 +2314,6 @@ int main(int ac, char *av[])
             (void)signal(SIGINT, sigcatch);                     /* Keyboard Ctrl-C */
             (void)signal(SIGTERM, sigcatch);                    /* Software termination (kill) */
             WaitForMultipleObjects(i, thhn, TRUE, INFINITE);    /* wait threads */
-            Sleep(1000 * 10);
             for ( i = 0 ; i < tn ; i++)                         /* close thread handles */
                 CloseHandle(thhn[i]);
 #else
