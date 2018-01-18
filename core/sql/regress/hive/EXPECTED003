@@ -120,7 +120,7 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 >>-- some negative tests
 >>insert into hive.ins_promotion (p_promo_sk, p_item_sk) select * from hive.promotion;
 
-*** ERROR[4223] Target column list for insert into Hive table not supported in this software version.
+*** ERROR[4223] Target column list for insert into Hive table not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
