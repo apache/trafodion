@@ -541,7 +541,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			stmtLabel = stmtLabel.toUpperCase();
 		}
 
-		TrafT4CallableStatement stmt;
+		TrafT4CallableStatement stmt = null;
 
 		clearWarnings();
 		if (_isClosed() == true) {
@@ -557,8 +557,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 					return stmt;
 				}
 			}
-
-			stmt = new TrafT4CallableStatement(this, sql, stmtLabel);
+            if (stmtLabel.equalsIgnoreCase("null")) {
+                stmt = new TrafT4CallableStatement(this, sql);
+            } else {
+                stmt = new TrafT4CallableStatement(this, sql, stmtLabel);
+            }
 			stmt.prepareCall(stmt.sql_, stmt.queryTimeout_, stmt.resultSetHoldability_);
 
 			if (isStatementCachingEnabled()) {
