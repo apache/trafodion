@@ -9612,16 +9612,14 @@ Lng32 SQLCLI_LOBddlInterface
         Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
         if (rc)
           {
-            {
-              cliRC = 0;
-		ComDiagsArea * da = &diags;
-		ExRaiseSqlError(currContext.exHeap(), &da, 
+            cliRC = 0;
+            ComDiagsArea * da = &diags;
+            ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
 
 			    getLobErrStr(rc));
-		goto error_return;
-	      }
+            goto error_return;
           }
           
 	for (Lng32 i = 0; i < numLOBs; i++)
@@ -9743,16 +9741,14 @@ Lng32 SQLCLI_LOBddlInterface
         Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
         if (rc)
           {
-            {
-              cliRC = 0;
-		ComDiagsArea * da = &diags;
-		ExRaiseSqlError(currContext.exHeap(), &da, 
+            cliRC = 0;
+            ComDiagsArea * da = &diags;
+            ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
-
 			    getLobErrStr(rc));
-		goto error_return;
-	      }
+            goto error_return;
+	      
           }
         for (Lng32 i = 0; i < numLOBs; i++)
 	  {
