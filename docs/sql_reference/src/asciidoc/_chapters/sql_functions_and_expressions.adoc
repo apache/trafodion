@@ -6341,17 +6341,19 @@ SET jobdesc = RIGHT (jobdesc, 12);
 [[rollup_function]]
 == ROLLUP Function
 
-The ROLLUP function calculates multiple levels of subtotals aggregating from right to left through the comma-separated list of columns, and provides a grand total. It is a an extension to the `GROUP BY` clause and can be used with `ORDER BY` to sort the results.
+The ROLLUP function calculates multiple levels of subtotals aggregating from right to left through the comma-separated list of columns, and provides a grand total. 
+
+ROLLUP is an extension to the 'GROUP BY' clause. Related features such as the GROUPING function can be used with 'ORDER BY' to control the placement of summary results.
 
 ```
 SELECT…GROUP BY ROLLUP (column 1, [column 2,]…[column n])
 ```
 
-ROLLUP generates n+1 levels of subtotals and grand total, where n is the number of the selected column(s).
+ROLLUP generates n+1 levels of subtotals, including a grand total, where n is the number of the selected column(s).
 
 For example, a query that contains three rollup columns returns the following rows:
 
-* First-level: stand aggregate values calculated by GROUP BY clause without using ROLLUP.
+* First-level: the usual aggregate values as calculated by GROUP BY clause without using ROLLUP.
 * Second-level: subtotals aggregating across column 3 for each combination of column 1 and column 2.
 * Third-level: subtotals aggregating across column 2 and column 3 for each column 1.
 * Fourth-level: the grand total row.
@@ -6364,7 +6366,7 @@ NOTE: Trafodion does not support CUBE function which works slightly differently 
 [[null_in_result_sets]]
 ==== NULL in Result Sets
 
-* The NULLs in each super-aggregate row represent subtotals and grand total.
+* In super-aggregate rows representing subtotals or the grand total, lower level grouping columns are replaced by NULLs.
 * The NULLs in selected columns are considered equal and sorted into one NULL group in result sets.
 
 [[using_rollup_with_the_column_order_reversed]]
@@ -6429,7 +6431,7 @@ DELIVERY_YEAR TOTAL_REVENUE
 
 * This is an example of grouping by two rollup columns.
 + 
-ROLLUP firstly aggregates at the lowest level (_region_) and then rollup those aggregations to the next
+ROLLUP firstly aggregates at the lowest level (_region_) and then rolls up those aggregations to the next
 level (_delivery_year_), finally it produces a grand total across these two levels.
 
 +
@@ -6541,7 +6543,7 @@ DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE
 [[examples_of_using_rollup_with_the_column_order_reversed]]
 ==== Examples of Using ROLLUP with the Column Order Reversed
 
-Suppose that we have the same _sale1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+Suppose that we have the same _sales1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
 
 * The column order of the example below is _delivery_year_, _region_ and _product_.
 
