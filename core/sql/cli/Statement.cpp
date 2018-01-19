@@ -2133,12 +2133,12 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
     } // for
 
   if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob, &heap_);
+    ExpLOBinterfaceCleanup(lobGlob);
   return SUCCESS;
   
  error_return:
   if (lobGlob)
-    ExpLOBinterfaceCleanup(lobGlob, &heap_);
+    ExpLOBinterfaceCleanup(lobGlob);
   return ERROR;
 }
 

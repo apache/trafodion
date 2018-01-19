@@ -589,7 +589,7 @@ class ExLobGlobals
 {
   public :
   
-    ExLobGlobals(); 
+    ExLobGlobals(NAHeap *lobHeap); 
     ~ExLobGlobals();
 
     Ex_Lob_Error initialize();
@@ -602,7 +602,7 @@ class ExLobGlobals
     void doWorkInThread();
     ExLobHdfsRequest* getHdfsRequest();
     Ex_Lob_Error enqueueRequest(ExLobHdfsRequest *request);
-    Ex_Lob_Error enqueuePrefetchRequest(ExLob *lobPtr, ExLobCursor *cursor);
+  Ex_Lob_Error enqueuePrefetchRequest(ExLob *lobPtr, ExLobCursor *cursor);
     Ex_Lob_Error enqueueShutdownRequest();
     Ex_Lob_Error performRequest(ExLobHdfsRequest *request);
     Ex_Lob_Error addToPreOpenList(ExLobPreOpen *preOpenObj);

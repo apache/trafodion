@@ -280,7 +280,7 @@ void ExHdfsScanTcb::freeResources()
   }
   deallocateRuntimeRanges();
   if (lobGlob_) { 
-     ExpLOBinterfaceCleanup(lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap());
+     ExpLOBinterfaceCleanup(lobGlob_);
      lobGlob_ = NULL;
   }
 }

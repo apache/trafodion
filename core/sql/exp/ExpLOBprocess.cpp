@@ -575,7 +575,7 @@ Lng32 main(Lng32 argc, char *argv[])
     // setup log4cxx
     QRLogger::initLog4cxx(QRLogger::QRL_LOB);
     // initialize lob globals
-    lobGlobals = new ExLobGlobals();
+    lobGlobals = new ExLobGlobals(NULL);
     if (lobGlobals == NULL) 
       return -1;
 

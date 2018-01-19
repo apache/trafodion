@@ -82,7 +82,7 @@ enum ExpLOBinterfaceInputFlags
 
 Lng32 ExpLOBinterfaceInit(ExLobGlobals *& lobGlob, NAHeap *lobHeap, ContextCli *currContext,NABoolean isHiveRead, char *hdfsServer=(char *)"default", Int32 port=0);
 
-Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& lobGlob, NAHeap *lobHeap);
+Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& lobGlob);
 
 Lng32 ExpLOBinterfaceCreate(ExLobGlobals * lobGlob, 
 			    char * lobName,

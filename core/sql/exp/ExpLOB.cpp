@@ -56,10 +56,10 @@
 #include "ex_god.h"
 
 
-Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *lobHeap, ContextCli *currContext, char *hdfsServer ,Int32 port)
+Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *parentHeap, ContextCli *currContext, char *hdfsServer ,Int32 port)
 {
   // call ExeLOBinterface to initialize lob globals
-  ExpLOBinterfaceInit(exLobGlobals, lobHeap,currContext,FALSE, hdfsServer,  port);
+  ExpLOBinterfaceInit(exLobGlobals, parentHeap,currContext,FALSE, hdfsServer,  port);
 
   return 0;
 }
@@ -151,7 +151,7 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 
   return outBuf;
 }
-Lng32 ExpLOBoper::createLOB(ExLobGlobals * exLobGlob, ContextCli *currContext, NAHeap * lobHeap, 
+Lng32 ExpLOBoper::createLOB(ExLobGlobals * exLobGlob, ContextCli *currContext, 
 			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
 			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
@@ -162,20 +162,11 @@ Lng32 ExpLOBoper::createLOB(ExLobGlobals * exLobGlob, ContextCli *currContext, N
     return -1;
 
   Lng32 rc = 0;
-  void * exLobGlobL = NULL;
+  
   // Call ExeLOBinterface to create the LOB
-  if (exLobGlob == NULL)
-    {
-      rc = initLOBglobal(exLobGlob, lobHeap,currContext,hdfsServer,hdfsPort);
-      if (rc)
-	return rc;
-    }
-  else
-    exLobGlobL = exLobGlob;
 
   rc = ExpLOBinterfaceCreate(exLobGlob, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
-  if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlob, lobHeap);
+  
   return rc;
 }
 void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries)
@@ -233,7 +224,7 @@ Lng32 ExpLOBoper::compactLobDataFile(ExLobGlobals *exLobGlob,ExLobInMemoryDescCh
   rc = ExpLOBinterfacePerformGC(exLobGlobL,tgtLobName, (void *)dcArray, numEntries,hdfsServer,hdfsPort,lobLoc,lobMaxChunkMemSize);
   
   if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+     ExpLOBinterfaceCleanup(exLobGlobL);
   return rc;
 }
 
@@ -251,7 +242,7 @@ Int32 ExpLOBoper::restoreLobDataFile(ExLobGlobals *exLobGlob, char *lobName, NAH
     exLobGlobL = exLobGlob;
   rc = ExpLOBinterfaceRestoreLobDataFile(exLobGlobL,hdfsServer,hdfsPort,lobLoc,lobName);
   if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+     ExpLOBinterfaceCleanup(exLobGlobL);
   return rc;
 
 }
@@ -270,12 +261,12 @@ Int32 ExpLOBoper::purgeBackupLobDataFile(ExLobGlobals *exLobGlob,char *lobName, 
     exLobGlobL = exLobGlob;
   rc = ExpLOBinterfacePurgeBackupLobDataFile(exLobGlobL,(char *)hdfsServer,hdfsPort,lobLoc,lobName);
   if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+     ExpLOBinterfaceCleanup(exLobGlobL);
   return rc;
 }
 
 
-Lng32 ExpLOBoper::dropLOB(ExLobGlobals * exLobGlob, NAHeap * lobHeap, ContextCli *currContext,
+Lng32 ExpLOBoper::dropLOB(ExLobGlobals * exLobGlob, ContextCli *currContext,
 			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
@@ -286,20 +277,12 @@ Lng32 ExpLOBoper::dropLOB(ExLobGlobals * exLobGlob, NAHeap * lobHeap, ContextCli
     return -1;
 
   Lng32 rc = 0;
-  ExLobGlobals * exLobGlobL = NULL;
+ 
   // Call ExeLOBinterface to create the LOB
-  if (exLobGlob == NULL)
-    {
-      rc = initLOBglobal(exLobGlobL, lobHeap,currContext,hdfsServer,hdfsPort);
-      if (rc)
-	return rc;
-    }
-  else
-    exLobGlobL = exLobGlob;
+ 
   // Call ExeLOBinterface to drop the LOB
-  rc = ExpLOBinterfaceDrop(exLobGlobL,hdfsServer, hdfsPort, lobName, lobLoc);
-  if (exLobGlob == NULL)
-     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+  rc = ExpLOBinterfaceDrop(exLobGlob,hdfsServer, hdfsPort, lobName, lobLoc);
+  
   return rc;
 }
 

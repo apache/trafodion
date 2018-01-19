@@ -257,7 +257,7 @@ private:
 
   // pool shared by among PAs under PAPA
   sql_buffer_pool *sharedPool_;
-  ExLobGlobals * exLobGlobals_;
+  ExLobGlobals *exLobGlobals_;
 
   // pointer passed to interface methods that store and retrieve lob data
   // from flatfile or hdfs filesystem.

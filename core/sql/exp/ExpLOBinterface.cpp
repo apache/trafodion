@@ -34,7 +34,7 @@ using std::ofstream;
 #include "ExpLOBinterface.h"
 #include "ex_globals.h"
 
-Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * lobHeap,
+Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
                           ContextCli *currContext,NABoolean isHiveRead,
                           char *hdfsServer, 
                           Int32 port)
@@ -45,7 +45,8 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * lobHeap,
   Int64 cliError = -1; 
   Ex_Lob_Error status;
   Int32 dummyParam2 = 0;
-  
+
+  NAHeap *lobHeap = new ((NAHeap *)parentHeap) NAHeap("LOB Heap", (NAHeap *)parentHeap);
  
   err = ExLobsOper((char*)"dummy",
 		   NULL, 0,
@@ -60,17 +61,17 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * lobHeap,
                    1, // waited op
 		   exLobGlob,
 		   0,
-		   NULL, 0,
+		   lobHeap, 0,
 		   0);
   if (exLobGlob)
     {
-      NAHeap *heap = new ((NAHeap *)lobHeap) NAHeap("LOB Heap", (NAHeap *)lobHeap);
+    
       if (isHiveRead)
         {
           ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
-          heap->setThreadSafe();
+          lobHeap->setThreadSafe();
         }
-      ((ExLobGlobals *)exLobGlob)->setHeap(heap);
+      
       
     }
 
@@ -177,7 +178,7 @@ Lng32 ExpLOBinterfacePurgeBackupLobDataFile(ExLobGlobals *& exLobGlob, char *hdf
   else
     return 0;
 }
-Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& exLobGlob, NAHeap * lobHeap)
+Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& exLobGlob)
 {
   Ex_Lob_Error err;
   Ex_Lob_Error status;
@@ -197,7 +198,7 @@ Lng32 ExpLOBinterfaceCleanup(ExLobGlobals *& exLobGlob, NAHeap * lobHeap)
                    1, // waited op
 		   exLobGlob,
 		   0,
-		   lobHeap, 0
+		   NULL, 0
 		   );
   if (err != LOB_OPER_OK)
     return -err;

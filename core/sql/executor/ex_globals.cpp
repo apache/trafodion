@@ -45,6 +45,7 @@
 #include "Globals.h"
 #include "SqlStats.h"
 #include "ExpLOB.h"
+#include "ExpLOBaccess.h"
 
 ex_globals::ex_globals(short num_temps,
 		       short create_gui_sched,
@@ -134,6 +135,9 @@ void ex_globals::deleteMe(NABoolean fatalError)
   statsArea_ = NULL;
   cleanupTcbs();
   tcbList_.deallocate();
+  ExpLOBinterfaceCleanup(exLobGlobals_);
+  exLobGlobals_ = NULL;
+
 }
 
 void ex_globals::deleteMemory(void *mem)
