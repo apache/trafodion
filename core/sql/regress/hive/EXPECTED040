@@ -1949,25 +1949,25 @@ DESCRIPTION
 >>-- del/update not supported on parquet or hive
 >>prepare s from delete from hive.hive.store2_sales_parquet;
 
-*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version.
+*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from update hive.hive.store2_sales_parquet set ss_ext_tax = 1;
 
-*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version.
+*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from delete from hive.hive.store_sales;
 
-*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from update hive.hive.store_sales set ss_ext_tax = 1;
 
-*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1993,31 +1993,31 @@ DESCRIPTION
 
 >>prepare s from update hive.hive.store2_sales_parquet set ss_net_paid = 1;
 
-*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version.
+*** ERROR[4223] Update/Delete on PARQUET table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from upsert into hive.hive.store2_sales_parquet(ss_sold_date_sk) values (1);
 
-*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version.
+*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from insert into hive.hive.store2_sales_parquet(ss_sold_date_sk) values (1);
 
-*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version.
+*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from upsert into hive.hive.store_sales(ss_sold_date_sk) values (1);
 
-*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version.
+*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>prepare s from insert into hive.hive.store_sales(ss_sold_date_sk) values (1);
 
-*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version.
+*** ERROR[4223] Target column list specification for insert/upsert into a Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 

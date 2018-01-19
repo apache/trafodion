@@ -301,13 +301,13 @@ TRAFODION.SCH007.VHIVEHBASE
 >>-- del/upd not allowed
 >>delete from trafodion.sch007.vhive1;
 
-*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>update trafodion.sch007.vhive1 set b = 1;
 
-*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version or edition.
 
 *** ERROR[8822] The statement was not prepared.
 
