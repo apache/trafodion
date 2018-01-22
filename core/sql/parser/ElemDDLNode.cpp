@@ -3170,7 +3170,7 @@ void ElemDDLDivisionClause::synthesize(ElemDDLNode * pColRefTree)
   {
     columnRefArray_.insert(pColRefTree->castToElemDDLColRef());
   }
-  else if (colRefEntries > 1)
+  else if (colRefEntries > 1 AND pColRefTree NEQ NULL)
   {
     ElemDDLList * pElemDDLList = pColRefTree->castToElemDDLList();
     ElemDDLColRef * pElemDDLColRef = NULL;

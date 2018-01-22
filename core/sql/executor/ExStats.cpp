@@ -8239,7 +8239,8 @@ ExStatisticsArea *ExStatsTcb::sendToSsmp()
         rtsQueryId = NULL;
         break;
     }
-    *ssmpMsgStream << *rtsQueryId;
+    if (NULL != rtsQueryId)
+      *ssmpMsgStream << *rtsQueryId;
   }
   if (RtsTimeout != 0)
   {

@@ -1041,10 +1041,10 @@ RelExpr * CascadesMemo::findDuplicate(RelExpr * expr) const
 
 	  // compare characteristic inputs/outputs
 	  if ((ga = expr->getGroupAttr()) != NULL AND
-	      NOT (ga->getCharacteristicInputs() ==
-		   old->getGroupAttr()->getCharacteristicInputs()) OR
-	      NOT (ga->getCharacteristicOutputs() ==
-		   old->getGroupAttr()->getCharacteristicOutputs()))
+	      (NOT (ga->getCharacteristicInputs() ==
+                    old->getGroupAttr()->getCharacteristicInputs()) OR
+               NOT (ga->getCharacteristicOutputs() ==
+                    old->getGroupAttr()->getCharacteristicOutputs())))
 	    goto not_a_duplicate;
 
 	  // compare operators and their arguments

@@ -3356,7 +3356,8 @@ ExStatisticsArea *ContextCli::getMergedStats(
         break;
       break;
     }
-    *ssmpMsgStream << *rtsQueryId;
+    if (NULL != rtsQueryId)
+      *ssmpMsgStream << *rtsQueryId;
   }
   if (RtsTimeout != 0)
   {
