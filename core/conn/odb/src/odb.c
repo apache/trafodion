@@ -5313,7 +5313,7 @@ static void etabadd(char type, char *run, int id)
                     }
                 }
                 if ( etab[no].type == 'e' ) { /* name & create output file */
-                    for ( i = j = 0; etab[no].tgt[i] && i < sizeof(buff); i++ ) {
+                    for ( i = j = 0; i < sizeof(buff) && etab[no].tgt[i]; i++ ) {
                         switch ( etab[no].tgt[i] ) {
                         case '%':
                             switch ( etab[no].tgt[++i] ) {
@@ -5570,7 +5570,7 @@ static void etabadd(char type, char *run, int id)
                         strmcat ( etab[no].src , (char *)Ostn[2] , ll , 0 );
                         etab[no].Ocso[2] = &Ostn[2][0]; /* update table name pointer with expanded tab name */
                         memset ( buff, 0, sizeof(buff));
-                        for ( i = j = 0; etab[no].tgt[i] && i < sizeof(buff); i++ ) {
+                        for ( i = j = 0; i < sizeof(buff) && etab[no].tgt[i]; i++ ) {
                             switch ( etab[no].tgt[i] ) {
                             case '%':
                                 switch ( etab[no].tgt[++i] ) {
@@ -6356,7 +6356,7 @@ static void Oload(int eid)
             len = 100;                              /* set it to 100 */
         fg |= 0002;                                 /* set nofile flag */
     } else {
-        for ( i = j = 0; etab[eid].src[i] && i < etab[eid].buffsz; i++ ) {
+        for ( i = j = 0; i < etab[eid].buffsz && etab[eid].src[i]; i++ ) {
             switch ( etab[eid].src[i] ) {
             case '%':
                 switch ( etab[eid].src[++i] ) {
@@ -8045,7 +8045,7 @@ static void Oload2(int eid)
     if ( !strcmp ( etab[eid].src , "stdin" ) ) {
         fl = stdin ;
     } else {
-        for ( i = j = 0; etab[eid].src[i] && i < etab[eid].buffsz; i++ ) {
+        for ( i = j = 0; i < etab[eid].buffsz && etab[eid].src[i]; i++ ) {
             switch ( etab[eid].src[i] ) {
             case '%':
                 switch ( etab[eid].src[++i] ) {
@@ -8768,7 +8768,7 @@ static void OloadX(int eid)
         xdump = 1 ;
 
     /* Open input file */
-    for ( i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++ ) {
+    for ( i = j = 0; i < sizeof(buff) && etab[eid].src[i]; i++ ) {
         switch ( etab[eid].src[i] ) {
         case '%':
             switch ( etab[eid].src[++i] ) {
@@ -9432,7 +9432,7 @@ static void OloadJson(int eid)
     }
 
     /* Open input file */
-    for (i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++) {
+    for (i = j = 0; i < sizeof(buff) && etab[eid].src[i]; i++) {
         switch (etab[eid].src[i]) {
         case '%':
             switch (etab[eid].src[++i]) {

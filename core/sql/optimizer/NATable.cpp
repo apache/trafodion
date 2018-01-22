@@ -5450,8 +5450,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
            //Measure length of node name
            //skip over node name i.e. \MAYA, \AZTEC, etc
            //and get to volume name
-           while((nodeName[nodeNameLen]!='.')&&
-                 (nodeNameLen < 8)){
+           while((nodeNameLen < 8) && (nodeName[nodeNameLen]!='.')){
              catStr++;
              nodeNameLen++;
            };
@@ -5462,8 +5461,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
            //skip over the volume/catalog name
            //while measuring catalog name length
-           while((catStr[catStrLen]!='.')&&
-                 (catStrLen < 8))
+           while((catStrLen < 8) && (catStr[catStrLen]!='.'))
              {
                schemaStr++;
                catStrLen++;
@@ -5475,8 +5473,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
            //skip over the subvolume/schema name
            //while measuring schema name length
-           while((schemaStr[schemaStrLen]!='.')&&
-                 (schemaStrLen < 8))
+           while((schemaStrLen < 8) && (schemaStr[schemaStrLen]!='.'))
              {
                fileStr++;
                schemaStrLen++;
@@ -5514,8 +5511,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          //Measure length of node name
          //skip over node name i.e. \MAYA, \AZTEC, etc
          //and get to volume name
-         while((nodeName[nodeNameLen]!='.')&&
-               (nodeNameLen < 8)){
+         while((nodeNameLen < 8) && (nodeName[nodeNameLen]!='.')){
            catStr++;
            nodeNameLen++;
          };

@@ -3760,29 +3760,31 @@ namespace STFS {
     // Update this array when a class associated with 
     // a new message type is added
     static size_t FixedMessageSizeTable[] = {
-      0, //MT_Invalid
-      sizeof (STFSMsgBuf_CreateFileReq),
-      sizeof (STFSMsgBuf_CreateFileReply),
-      sizeof (STFSMsgBuf_CreateFragmentReq),
-      sizeof (STFSMsgBuf_CreateFragmentReply),
-      sizeof (STFSMsgBuf_OpenFileReq), 
-      sizeof (STFSMsgBuf_OpenFileReply), 
-      sizeof (STFSMsgBuf_CloseFileReq),
-      sizeof (STFSMsgBuf_CloseFileReply),
-      sizeof (STFSMsgBuf_UnlinkFileReq),
-      sizeof (STFSMsgBuf_UnlinkFileReply),
-      sizeof (STFSMsgBuf_ErrorReply), //MT_ErrorReply,
-      0, //MT_GetFileMetadata,
-      0, //MT_GetFileMetadataReply,
-      sizeof (STFSMsgBuf_OpenersReq), 
-      sizeof (STFSMsgBuf_OpenersReply), 
-      sizeof (STFSMsgBuf_FOpenersReq), 
-      sizeof (STFSMsgBuf_FOpenersReply), 
-      sizeof (STFSMsgBuf_StatReq), 
-      sizeof (STFSMsgBuf_StatReply), 
+        0,                                     // MT_Invalid
+        sizeof (STFSMsgBuf_CreateFileReq),     // MT_CreateFile
+        sizeof (STFSMsgBuf_CreateFileReply),   // MT_CreateFileReply
+        sizeof (STFSMsgBuf_CreateFragmentReq), // MT_CreateFragment
+        sizeof (STFSMsgBuf_CreateFragmentReply), // MT_CreateFragmentReply
+        sizeof (STFSMsgBuf_OpenFileReq),         // MT_OpenFile
+        sizeof (STFSMsgBuf_OpenFileReply),       // MT_OpenFileReply
+        sizeof (STFSMsgBuf_CloseFileReq),        // MT_CloseFile
+        sizeof (STFSMsgBuf_CloseFileReply),      // MT_CloseFileReply
+        sizeof (STFSMsgBuf_UnlinkFileReq),       // MT_UnlinkFile
+        sizeof (STFSMsgBuf_UnlinkFileReply),     // MT_UnlinkFileReply
+        sizeof (STFSMsgBuf_ErrorReply),          // MT_ErrorReply,
+        0,                                       // MT_GetFileMetadata,
+        0,                                 // MT_GetFileMetadataReply,
+        sizeof (STFSMsgBuf_OpenersReq),    // MT_Openers
+        sizeof (STFSMsgBuf_OpenersReply),  // MT_OpenersReply
+        sizeof (STFSMsgBuf_FOpenersReq),   // MT_FOpeners
+        sizeof (STFSMsgBuf_FOpenersReply), // MT_FOpenersReply
+        sizeof (STFSMsgBuf_StatReq),       // MT_Stat
+        sizeof (STFSMsgBuf_StatReply),     // MT_StatReply
+        0,                                 // MT_GetEFMReply
+        0,                                 // MT_GetEFM
 
-      /// new message types go immediately before this line
-      0, //MT_Unknown
+        /// new message types go immediately before this line
+        0,                      // MT_Unknown
     };
 
     if ((pv_MessageType <= MT_Invalid) ||

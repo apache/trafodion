@@ -2231,7 +2231,7 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
   };
    
   // skip leading zeros
-  while((source[sourceStart] == '0') && (sourceStart < sourceLen))
+  while((sourceStart < sourceLen) && (source[sourceStart] == '0'))
     sourceStart++;
 
   // only zeros found, target is 0
@@ -3409,7 +3409,7 @@ ex_expr::exp_return_type convDecToInt64(Int64 &target,
 
   // skip leading zeros only if first byte was zero
   if (!target) {
-    while ((source[currPos] == '0') && (currPos < sourceLen))
+    while ((currPos < sourceLen) && (source[currPos] == '0'))
       currPos++;
   };
 
