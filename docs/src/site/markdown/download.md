@@ -37,34 +37,34 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
     * [Ambari Plugin][ap210]  -  [PGP][appgp210] [MD5][apmd5210] [SHA1][apsha210]
 * [Documentation](documentation.html#210_Release)
 
-[src210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz
-[pgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.asc
-[md5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.md5
-[sha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.sha
-[ins210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz
-[inpgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.asc
-[inmd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.md5
-[insha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.sha
-[pins210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
-[pinpgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.asc
-[pinmd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.md5
-[pinsha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.sha
-[ser210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz
-[sepgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.asc
-[semd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.md5
-[sesha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.sha
-[cl210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz
-[clpgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.asc
-[clmd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.md5
-[clsha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.sha
-[ar210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm
-[arpgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.asc
-[armd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.md5
-[arsha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.sha
-[ap210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm
-[appgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.asc
-[apmd5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.md5
-[apsha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.sha
+[src210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz
+[pgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.asc
+[md5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.md5
+[sha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.sha
+[ins210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz
+[inpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.asc
+[inmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.md5
+[insha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.sha
+[pins210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
+[pinpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.asc
+[pinmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.md5
+[pinsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.sha
+[ser210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz
+[sepgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.asc
+[semd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.md5
+[sesha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.sha
+[cl210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz
+[clpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.asc
+[clmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.md5
+[clsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.sha
+[ar210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm
+[arpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.asc
+[armd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.md5
+[arsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.sha
+[ap210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm
+[appgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.asc
+[apmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.md5
+[apsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.sha
 
 ## 2.0.1 (June 2016)
 
@@ -76,22 +76,22 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
     * [Clients][cl201]  -  [PGP][clpgp201] [MD5][clmd5201] [SHA1][clsha201]
 * [Documentation](documentation.html#20x_Releases)
 
-[src201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz
-[pgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.asc
-[md5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.md5
-[sha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.sha
-[ins201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz
-[inpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.asc
-[inmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.md5
-[insha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.sha
-[ser201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz
-[sepgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.asc
-[semd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.md5
-[sesha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.sha
-[cl201]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz
-[clpgp201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.asc
-[clmd5201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.md5
-[clsha201]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.sha
+[src201]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz
+[pgp201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.asc
+[md5201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.md5
+[sha201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion-2.0.1-incubating-src.tar.gz.sha
+[ins201]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz
+[inpgp201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.asc
+[inmd5201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.md5
+[insha201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/installer-2.0.1.tar.gz.sha
+[ser201]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz
+[sepgp201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.asc
+[semd5201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.md5
+[sesha201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_server-2.0.1-incubating.tar.gz.sha
+[cl201]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz
+[clpgp201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.asc
+[clmd5201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.md5
+[clsha201]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.1-incubating/apache-trafodion_clients-2.0.1-incubating.tar.gz.sha
 
 ## 2.0.0 (June 2016)
 
@@ -103,23 +103,23 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
     * Clients binary package not available, must be built from source code.
 * [Documentation](documentation.html#20x_Releases)
 
-[src200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz
-[pgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.asc
-[md5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.md5
-[sha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.sha
-[ins200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz
-[inpgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.asc
-[inmd5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.md5
-[insha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.sha
-[ser200]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz
-[sepgp200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.asc
-[semd5200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.md5
-[sesha200]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.sha
+[src200]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz
+[pgp200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.asc
+[md5200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.md5
+[sha200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion-2.0.0-incubating-src.tar.gz.sha
+[ins200]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz
+[inpgp200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.asc
+[inmd5200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.md5
+[insha200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_installer-2.0.0-incubating.tar.gz.sha
+[ser200]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz
+[sepgp200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.asc
+[semd5200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.md5
+[sesha200]: http://www.apache.org/dist/trafodion/apache-trafodion-2.0.0-incubating/apache-trafodion_server-2.0.0-incubating.tar.gz.sha
 
 ## 1.3.0 (January 2016)
 
 * [Release Notes](release-notes-1-3-0.html)
-* [Source Code Release](http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz) -  [PGP](https://www.apache.org/dist/incubator/trafodion/trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.asc) [MD5](http://www.apache.org/dist/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.md5) [SHA1](http://www.apache.org/dist/incubator/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.sha)
+* [Source Code Release](http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz) -  [PGP](https://www.apache.org/dist/trafodion/trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.asc) [MD5](http://www.apache.org/dist/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.md5) [SHA1](http://www.apache.org/dist/trafodion/apache-trafodion-1.3.0-incubating/apache-trafodion-1.3.0-incubating-src.tar.gz.sha)
 * [log4c++ RPM](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/log4cxx-0.10.0-13.el6.x86_64.rpm)
 * [Documentation](documentation.html#130_Release)
 
