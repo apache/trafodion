@@ -9108,6 +9108,82 @@ corresponding column in the target _table_. See
 [[upsert_examples]]
 === Examples of UPSERT
 
+* This UPSERT statement inserts 1,000,000 rows from _source_table_ into _target_table_.
+
++
+Suppose that we have following tables:
+
++
+_source_table_:
+
++
+```
+SQL>SELECT COUNT(*) FROM source_table;
+
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
++
+_target_table_:
++
+```
+SQL>CREATE TABLE target_table
+  ( 
+    ID                               INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , NUM                              INT DEFAULT NULL NOT SERIALIZED
+  , CARD_ID                          LARGEINT DEFAULT NULL NOT SERIALIZED
+  , PRICE                            DECIMAL(11, 3) DEFAULT NULL NOT SERIALIZED
+  , START_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , START_TIME                       TIME(0) DEFAULT NULL NOT SERIALIZED
+  , END_TIME                         TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , B_YEAR                           INTERVAL YEAR(10) DEFAULT NULL NOT
+      SERIALIZED
+  , B_YM                             INTERVAL YEAR(5) TO MONTH DEFAULT NULL NOT
+      SERIALIZED
+  , B_DS                             INTERVAL DAY(10) TO SECOND(3) DEFAULT NULL
+      NOT SERIALIZED
+  , PRIMARY KEY (ID ASC)
+  )
+  SALT USING 9 PARTITIONS
+ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_1500000' 
+  HBASE_OPTIONS 
+  ( 
+    MEMSTORE_FLUSH_SIZE = '1073741824' 
+  ) 
+;
+```
+
++
+It takes approximately 10 seconds to finish loading 1,000,000 rows.
++
+```
+SQL>SET STATISTICS ON;
+
+SQL>UPSERT USING LOAD INTO target_table SELECT * FROM source_table;
+--- 1000000 row(s) inserted.
+
+Start Time             2018/01/18 11:38:02.739433
+End Time               2018/01/18 11:48:25.822903
+Elapsed Time                      00:10:23.083470
+Compile Time                      00:00:00.381337
+Execution Time                    00:10:22.700870
+```
++
+```
+SQL>SELECT COUNT(*) FROM target_table;
+
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
 * This UPSERT statement either inserts or updates the part number and
 price in the PARTS table using the part number and unit price from the
 ODETAIL table where the part number is 244:
