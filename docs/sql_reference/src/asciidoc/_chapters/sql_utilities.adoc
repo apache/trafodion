@@ -415,6 +415,7 @@ option is:
   | NO DUPLICATE CHECK
   | NO OUTPUT
   | INDEX TABLE ONLY
+  | UPSERT USING LOAD
 ```
 
 [[load_syntax]]
@@ -516,6 +517,10 @@ Bulk Loader is executing.
 +
 specifies that the target table, which is an index, be populated with
 data from the parent table.
+
+** `UPSERT USING LOAD`
++
+specifies that the data from the source table will be inserted into the target table using rowset inserts without transactions.
 
 <<<
 [[load_considerations]]
@@ -1173,6 +1178,119 @@ SQL> POPULATE INDEX index_target_table4 ON target_table4;
 SQL> DROP INDEX index_target_table4;
 --- SQL operation complete.
 ```
+
+[[upsert_using_load_examples]]
+==== Examples of `UPSERT USING LOAD`
+Suppose that we have following tables:
+
+_source_table2_:
+
+```
+SQL>SELECT COUNT(*) FROM source_table2;
+
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
+_target_table5_:
+```
+CREATE TABLE target_table5
+  ( 
+    ID                               INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , NUM                              INT DEFAULT NULL NOT SERIALIZED
+  , CARD_ID                          LARGEINT DEFAULT NULL NOT SERIALIZED
+  , PRICE                            DECIMAL(11, 3) DEFAULT NULL NOT SERIALIZED
+  , START_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , START_TIME                       TIME(0) DEFAULT NULL NOT SERIALIZED
+  , END_TIME                         TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , B_YEAR                           INTERVAL YEAR(10) DEFAULT NULL NOT
+      SERIALIZED
+  , B_YM                             INTERVAL YEAR(5) TO MONTH DEFAULT NULL NOT
+      SERIALIZED
+  , B_DS                             INTERVAL DAY(10) TO SECOND(3) DEFAULT NULL
+      NOT SERIALIZED
+  , PRIMARY KEY (ID ASC)
+  )
+  SALT USING 9 PARTITIONS
+ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_1500000' 
+  HBASE_OPTIONS 
+  ( 
+    MEMSTORE_FLUSH_SIZE = '1073741824' 
+  ) 
+;
+```
+
+* This example loads data from _source_table2_ into _target_table5_ using `UPSERT USING LOAD`, and it takes more than 10 minutes to complete.
++
+For more information about `UPSERT USING LOAD`, see <<upsert_statement,UPSERT Statement>>.
++
+```
+SQL>SET STATISTICS ON;
+
+SQL>UPSERT USING LOAD INTO target_table5 SELECT * FROM source_table2;
+--- 1000000 row(s) inserted.
+
+Start Time             2018/01/18 11:38:02.739433
+End Time               2018/01/18 11:48:25.822903
+Elapsed Time                      00:10:23.083470
+Compile Time                      00:00:00.381337
+Execution Time                    00:10:22.700870
+```
++
+```
+SQL>SELECT COUNT(*) FROM target_table5;
+
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
+* Compare with the example above, this example loads data from _source_table2_ into _target_table5_ using `LOAD WITH UPSERT USING LOAD`, and it takes only 44 seconds to complete.
++
+```
+SQL>SET STATISTICS ON;
+
+SQL>LOAD WITH UPSERT USING LOAD INTO target_table5 SELECT * FROM source_table2;
+
+UTIL_OUTPUT
+----------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.TEST_WHX.TEST_1                                                     
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 11:52:22.495                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 11:52:35.901
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:12.594
+Task:  UPSERT USING L  Status: Started    Time: 2018-01-18 11:52:35.901                                                         
+       Rows Processed: 1000000 
+Task:  UPSERT USING L  Status: Ended      Time: 2018-01-18 11:52:49.304
+Task:  UPSERT USING L  Status: Ended      Elapsed Time:    00:00:14.215
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 11:52:49.304                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 11:53:06.286
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:16.982
+
+--- SQL operation complete.
+
+Start Time             2018/01/18 11:52:21.752878
+End Time               2018/01/18 11:53:06.719536
+Elapsed Time                      00:00:44.966658
+Compile Time                      00:00:00.404836
+Execution Time                    00:00:44.561124
+```
++
+```
+SQL>SELECT COUNT(*) FROM target_table5;
+
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
 [[loading_data_from_hive_table_examples]]
 ==== Examples of Loading data from Hive Table
 
