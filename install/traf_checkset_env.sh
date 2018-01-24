@@ -244,11 +244,14 @@ if [ ! -d ${javapath} ]; then
      exit 1
 fi
 
+source $HOME/.bashrc
 javahome=`grep JAVA_HOME ~/.bashrc | wc -l`
 if [ "x${javahome}" = "x0" ]; then
     echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
     echo -en "export JAVA_HOME=${javapath}\n" >> $HOME/.bashrc
     echo -en "export PATH=\$PATH:\$JAVA_HOME/bin\n" >> $HOME/.bashrc
+    export JAVA_HOME=${javapath}
+    export PATH=$PATH:$JAVA_HOME/bin
 else
     java_version=`${JAVA_HOME}/bin/java -version 2>&1 | awk 'NR==1{ gsub(/"/,""); print $3}'`
     case ${java_version} in
@@ -268,11 +271,13 @@ if [ "x${local_locale}" != "x" ]; then
     if [ "x${lang_set}" != "xen_US.UTF-8" ]; then
 	echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
 	echo -en "export LANG=\"en_US.UTF-8\"\n" >> $HOME/.bashrc
+	export LANG="en_US.UTF-8"
     fi
     lc_all_set=`grep LC_TIME ~/.bashrc | awk -F= '{ print $2 }'`
     if [ "x${lc_all_set}" != "xen_US.UTF-8" ]; then
 	echo -en "\n# Added by traf_checkset_env.sh of trafodion\n" >> $HOME/.bashrc
 	echo -en "export LC_ALL=\"en_US.UTF-8\"\n" >> $HOME/.bashrc
+	export LC_ALL="en_US.UTF-8"
     fi
 fi
 
@@ -282,7 +287,6 @@ if (("${#faillibs[@]}" > "0")); then
     exit 1;
 fi
 
-source $HOME/.bashrc
 echo $'\n'"Build environment is created SUCCESS!"
 
 echo $'\n'"Install the required Build tools start!"
