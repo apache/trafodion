@@ -15527,36 +15527,15 @@ Context * FirstN::createContextForAChild(Context* myContext,
 
   if (reqdOrder().entries() > 0)
     {
-      // replace our sort requirement with that implied by our ORDER BY clause
-
-      rg.removeSortKey();
-
-      ValueIdList sortKey;
-      sortKey.insert(reqdOrder());
+      // add our sort requirement as implied by our ORDER BY clause
 
       // Shouldn't/Can't add a sort order type requirement
       // if we are in DP2
       if (rppForMe->executeInDP2())
-        rg.addSortKey(sortKey,NO_SOT);
+        rg.addSortKey(reqdOrder(),NO_SOT);
       else
-        rg.addSortKey(sortKey,ESP_SOT);
+        rg.addSortKey(reqdOrder(),ESP_SOT);
     }
-
-  if (NOT pws->isEmpty())
-  {
-    const Context* childContext = pws->getLatestChildContext();
-
-    // ------------------------------------------------------------------
-    // Cost limit exceeded or got no solution? Give up since we only
-    // try one plan.
-    // ------------------------------------------------------------------
-    if(NOT (childContext AND childContext->hasOptimalSolution()))
-      return NULL;
-
-    if (NOT pws->isLatestContextWithinCostLimit())
-      return NULL;
-
-  }
 
   if (NOT rg.checkFeasibility())
     return NULL;
