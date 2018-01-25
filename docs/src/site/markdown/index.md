@@ -42,6 +42,9 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 
 
 <table><tr><td>
+  <p><h5>Apache Trafodion is now a Top Level Project!</h5></p>
+  <p>Check out the <a href="http://globenewswire.com/news-release/2018/01/10/1286517/0/en/The-Apache-Software-Foundation-Announces-Apache-Trafodion-as-a-Top-Level-Project.html">NewsWire</a> article for the official announcement.</p>
+  <p>See also this nice <a href="https://thenewstack.io/sql-hadoop-database-trafodion-bridges-transactions-analysis-divide/">article</a> where Trafodion's own Suresh Subbiah spreads the word on Trafodion's features.</p>
   <p><h5>We're working on release 2.2!</h5></p> 
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
   <p><h5>Apache Trafodion 2.1.0-incubating was released on May 1, 2017</h5></p> 
