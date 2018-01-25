@@ -6662,16 +6662,37 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
         }
     }
 
-  if ((NOT hasOrderBy()) &&
-      ((getFirstNRows() != -1) ||
-       (getFirstNRowsParam())))
+  if ((getFirstNRows() != -1) ||
+       (getFirstNRowsParam()))
     {
       // create a firstN node to retrieve firstN rows.
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(child(0), getFirstNRows(), getFirstNRowsParam());
+        FirstN(child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
+
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
         return NULL;
+
+      // Note: For ORDER BY + [first n], we want to sort the rows before 
+      // picking just n of them. (We don't do this for [any n].) We might
+      // be tempted to copy the orderByTree into the FirstN node at this
+      // point, but this doesn't work. Instead, we copy the bound ValueIds
+      // at normalize time. We have to do this in case there are expressions
+      // involved in the ORDER BY and there is a DESC. The presence of the
+      // Inverse node at the top of the expression tree seems to cause the
+      // expressions underneath to be bound to different ValueIds, which 
+      // causes coverage tests in FirstN::createContextForAChild requirements
+      // generation to fail. An example of where this occurs is:
+      //
+      // prepare s1 from
+      //   select [first 2] y, x from
+      //    (select a,b + 26 from t1) as t(x,y)
+      //   order by y desc;
+      //
+      // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
+      // ValueId for the expression b + 26 in the child characteristic outputs
+      // than what we get for the child of Inverse in Inverse(B + 26). The
+      // trick of copying the already-bound ORDER BY clause later avoids this.
 
       setChild(0, firstn);
 
@@ -11545,7 +11566,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
       if (scanNode->getFirstNRows() >= 0)
         {
           FirstN * firstn = new(bindWA->wHeap())
-            FirstN(scanNode, scanNode->getFirstNRows(), NULL);
+            FirstN(scanNode, scanNode->getFirstNRows(), FALSE /* there's no ORDER BY on an UPDATE */, NULL);
           firstn->bindNode(bindWA);
           if (bindWA->errStatus())
             return NULL;
@@ -11901,7 +11922,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
       RelExpr * childNode = child(0)->castToRelExpr();
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(childNode, getFirstNRows(), NULL);
+        FirstN(childNode, getFirstNRows(), FALSE /* There's no ORDER BY on a DELETE */, NULL);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
         return NULL;
@@ -11988,7 +12009,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
       // during handleInlining. Occurs when DELETE FIRST N is used on table with no
       // dependent objects. 
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(boundExpr, getFirstNRows());
+        FirstN(boundExpr, getFirstNRows(), FALSE /* There's no ORDER BY on a DELETE */ );
       if (NOT(scanNode && scanNode->getSelectionPred().containsSubquery()))
         firstn->setCanExecuteInDp2(TRUE);
       firstn->bindNode(bindWA);

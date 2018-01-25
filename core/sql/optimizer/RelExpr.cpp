@@ -11651,12 +11651,14 @@ RelExpr * FirstN::copyTopNode(RelExpr *derivedNode,
   FirstN *result;
 
   if (derivedNode == NULL) {
-    result = new (outHeap) FirstN(NULL, getFirstNRows(), getFirstNRowsParam(),
+    result = new (outHeap) FirstN(NULL, getFirstNRows(), isFirstN(), getFirstNRowsParam(),
                                   outHeap);
     result->setCanExecuteInDp2(canExecuteInDp2());
   }
   else
     result = (FirstN *) derivedNode;
+
+  result->reqdOrder().insert(reqdOrder());
 
   return RelExpr::copyTopNode(result, outHeap);
 }
