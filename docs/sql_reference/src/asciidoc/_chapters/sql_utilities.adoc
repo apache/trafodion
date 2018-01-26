@@ -415,6 +415,7 @@ option is:
   | NO DUPLICATE CHECK
   | NO OUTPUT
   | INDEX TABLE ONLY
+  | REBUILD INDEXES
 ```
 
 [[load_syntax]]
@@ -516,6 +517,18 @@ Bulk Loader is executing.
 +
 specifies that the target table, which is an index, be populated with
 data from the parent table.
+
+** `REBUILD INDEXES`
++
+specifies that indexes of the target table will be updated automatically when the source table 
+is updated. 
++
+This is the default behavior of the LOAD Statement, that is, even if this option is not 
+specified, the LOAD Statement will rebuild indexes except the 
+CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` is turned *ON*. This CQD is turned *OFF* by default, 
+in this case, the elapsed time of using LOAD Statement without options is nearly equal to 
+using LOAD WITH REBUILD INDEXES, and the elapsed time of the former is less than the latter 
+if this CQD is turned ON.
 
 <<<
 [[load_considerations]]
