@@ -33,6 +33,7 @@
 #include "NLSConversion.h"
 #include "ExHdfsScan.h"
 #include "Context.h"
+#include "HdfsClient_JNI.h"
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -1142,7 +1143,6 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     prevRowId_ (NULL),
     hdfs_(NULL),
     hdfsSampleFile_(NULL),
-    loggingFileName_(NULL),
     lastErrorCnd_(NULL)
 {
    hFileParamsInitialized_ = false;
@@ -1158,7 +1158,7 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
                       "traf_upsert_err",
                       fileNum,
                       loggingFileName_);
-   LoggingFileCreated_ = FALSE;
+   loggingFileCreated_ = FALSE;
    loggingRow_ =  new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
 }
 
@@ -1676,10 +1676,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         createLoggingRow( hbaseAccessTdb().updateTuppIndex_,  updateRow_,
             loggingRow_ , loggingRowLen);
         ExHbaseAccessTcb::handleException((NAHeap *)getHeap(), loggingRow_, loggingRowLen,
-               lastErrorCnd_,
-               ehi_,
-               LoggingFileCreated_,
-               loggingFileName_, &loggingErrorDiags_);
+               lastErrorCnd_);
       }
       if (pentry_down->getDiagsArea())
         pentry_down->getDiagsArea()->clear();
@@ -1771,7 +1768,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
-            ehi_->hdfsClose();
+            if (hdfsClient_ != NULL)
+               hdfsClient_->hdfsClose();
             hFileParamsInitialized_ = false;
             retcode = ehi_->close();
           }

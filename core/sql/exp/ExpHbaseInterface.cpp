@@ -1055,26 +1055,6 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
      return -HBASE_CLEANUP_HFILE_ERROR;
  }
  ///////////////////
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsCreateFile(const char* path)
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-
-    retCode_ = hive_->hdfsCreateFile( path);
-
-    if (retCode_ == HVC_OK)
-      return HBASE_ACCESS_SUCCESS;
-    else
-      return -HVC_ERROR_HDFS_CREATE_EXCEPTION;
- }
-
  Lng32  ExpHbaseInterface_JNI::incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count)
@@ -1107,59 +1087,6 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
    else
       return -HBC_ERROR_CREATE_COUNTER_EXCEPTION;
  }
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsWrite(const char* data, Int64 len)
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-   retCode_ = hive_->hdfsWrite( data, len);
-
-   if (retCode_ == HVC_OK)
-      return HBASE_ACCESS_SUCCESS;
-    else
-      return -HVC_ERROR_HDFS_WRITE_EXCEPTION;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- Lng32 ExpHbaseInterface_JNI::hdfsClose()
- {
-   if (hive_ == NULL) {
-      retCode_ = initHive();
-      if (retCode_ != HVC_OK)
-         return retCode_;
-   }
-
-   retCode_ = hive_->hdfsClose();
-
-   if (retCode_ == HVC_OK)
-      return HVC_OK;
-    else
-      return -HVC_ERROR_HDFS_CLOSE_EXCEPTION;
- }
-/*
- Lng32 ExpHbaseInterface_JNI::hdfsCleanPath( const std::string& path)
- {
-   if (hblc_ == NULL) {
-      retCode_ = initHBLC();
-      if (retCode_ != HBLC_OK)
-         return -HBASE_ACCESS_ERROR;
-   }
-
-   retCode_ = hblc_->hdfsCleanPath(path);
-
-   if (retCode_ == HBLC_OK)
-      return HBLC_OK;
-    else
-      return -HBLC_ERROR_HDFS_CLOSE_EXCEPTION;
- }
-*/
 
 Lng32 ExpHbaseInterface_JNI::isEmpty(
                                      HbaseStr &tblName)

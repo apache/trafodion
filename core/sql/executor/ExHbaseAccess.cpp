@@ -41,6 +41,7 @@
 #include "jni.h"
 #include "hdfs.h"
 #include <random>
+#include "HdfsClient_JNI.h"
 
 // forward declare
 Int64 generateUniqueValueFast ();
@@ -241,6 +242,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , colValVecSize_(0)
   , colValEntry_(0)
   , loggingErrorDiags_(NULL)
+  , hdfsClient_(NULL)
+  , loggingFileCreated_(FALSE)
+  , loggingFileName_(NULL)
 {
   Space * space = (glob ? glob->getSpace() : NULL);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
@@ -502,6 +506,8 @@ void ExHbaseAccessTcb::freeResources()
      NADELETEBASIC(directRowBuffer_, getHeap());
   if (colVal_.val != NULL)
      NADELETEBASIC(colVal_.val, getHeap());
+  if (hdfsClient_ != NULL) 
+     NADELETE(hdfsClient_, HdfsClient, getHeap());
 }
 
 
@@ -3251,30 +3257,28 @@ void ExHbaseAccessTcb::buildLoggingPath(
 void ExHbaseAccessTcb::handleException(NAHeap *heap,
                                     char *logErrorRow,
                                     Lng32 logErrorRowLen,
-                                    ComCondition *errorCond,
-                                    ExpHbaseInterface * ehi,
-                                    NABoolean & LoggingFileCreated,
-                                    char *loggingFileName,
-                                    ComDiagsArea **loggingErrorDiags)
+                                    ComCondition *errorCond)
 {
   Lng32 errorMsgLen = 0;
   charBuf *cBuf = NULL;
   char *errorMsg;
-  Lng32 retcode;
+  HDFS_Client_RetCode hdfsClientRetcode;
 
-  if (*loggingErrorDiags != NULL)
+  if (loggingErrorDiags_ != NULL)
      return;
 
-  if (!LoggingFileCreated) {
-     retcode = ehi->hdfsCreateFile(loggingFileName);
-     if (retcode == HBASE_ACCESS_SUCCESS)
-        LoggingFileCreated = TRUE;
+  if (!loggingFileCreated_) {
+     hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        hdfsClientRetcode = hdfsClient_->hdfsCreate(loggingFileName_, FALSE);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        loggingFileCreated_ = TRUE;
      else 
         goto logErrorReturn;
   }
   
-  retcode = ehi->hdfsWrite(logErrorRow, logErrorRowLen);
-  if (retcode != HBASE_ACCESS_SUCCESS) 
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
      goto logErrorReturn;
   if (errorCond != NULL) {
      errorMsgLen = errorCond->getMessageLength();
@@ -3289,12 +3293,12 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
      errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
      errorMsgLen = strlen(errorMsg);
   }
-  retcode = ehi->hdfsWrite(errorMsg, errorMsgLen);
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
 logErrorReturn:
-  if (retcode != HBASE_ACCESS_SUCCESS) {
-     *loggingErrorDiags = ComDiagsArea::allocate(heap);
-     **loggingErrorDiags << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
-                 << DgString0(loggingFileName)
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+     loggingErrorDiags_ = ComDiagsArea::allocate(heap);
+     *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
+                 << DgString0(loggingFileName_)
                  << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
   }
   return;

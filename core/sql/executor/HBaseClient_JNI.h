@@ -631,11 +631,6 @@ typedef enum {
  ,HVC_ERROR_GET_ALLSCH_EXCEPTION
  ,HVC_ERROR_GET_ALLTBL_PARAM
  ,HVC_ERROR_GET_ALLTBL_EXCEPTION
- ,HVC_ERROR_HDFS_CREATE_PARAM
- ,HVC_ERROR_HDFS_CREATE_EXCEPTION
- ,HVC_ERROR_HDFS_WRITE_PARAM
- ,HVC_ERROR_HDFS_WRITE_EXCEPTION
- ,HVC_ERROR_HDFS_CLOSE_EXCEPTION
  ,HVC_LAST
 } HVC_RetCode;
 
@@ -668,9 +663,6 @@ public:
   HVC_RetCode getAllSchemas(LIST(Text *)& schNames);
   HVC_RetCode getAllTables(const char* schName, LIST(Text *)& tblNames);
 
-  HVC_RetCode hdfsCreateFile(const char* path);
-  HVC_RetCode hdfsWrite(const char* data, Int64 len);
-  HVC_RetCode hdfsClose();
   HVC_RetCode executeHiveSQL(const char* hiveSQL);
   // Get the error description.
   virtual char* getErrorText(HVC_RetCode errEnum);
@@ -698,9 +690,6 @@ private:
    ,JM_GET_RDT
    ,JM_GET_ASH
    ,JM_GET_ATL
-   ,JM_HDFS_CREATE_FILE
-   ,JM_HDFS_WRITE
-   ,JM_HDFS_CLOSE
    ,JM_EXEC_HIVE_SQL
    ,JM_LAST
   };

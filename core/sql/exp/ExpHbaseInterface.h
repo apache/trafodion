@@ -296,9 +296,6 @@ class ExpHbaseInterface : public NABasicObject
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location) = 0;
 
- virtual Lng32  hdfsCreateFile(const char* path)=0;
- virtual Lng32  hdfsWrite(const char* data, Int64 size)=0;
- virtual Lng32  hdfsClose()=0;
  virtual Lng32  incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count)=0;
@@ -609,9 +606,6 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
  
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);
- virtual Lng32  hdfsCreateFile(const char* path);
- virtual Lng32  hdfsWrite(const char* data, Int64 size);
- virtual Lng32  hdfsClose();
  virtual Lng32  incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count);

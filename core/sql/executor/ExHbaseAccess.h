@@ -52,6 +52,8 @@ class ExHbaseAccessStats;
 class ExpHbaseInterface;
 class ExHbaseAccessSelectTcb;
 class ExHbaseAccessUMDTcb;
+class HdfsClient;
+
 #define INLINE_ROWID_LEN 255
 // -----------------------------------------------------------------------
 // ExHbaseAccessTdb
@@ -163,14 +165,11 @@ public:
   static void getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
                                const char * tabName, const char * rowId);
 
-  static void handleException(NAHeap *heap,
+  void handleException(NAHeap *heap,
                           char *loggingDdata,
                           Lng32 loggingDataLen,
-                          ComCondition *errorCond,
-                          ExpHbaseInterface * ehi,
-                          NABoolean & LoggingFileCreated,
-                          char * loggingFileName,
-                          ComDiagsArea **loggingErrorDiags);
+                          ComCondition *errorCond);
+
   static void buildLoggingPath(const char * loggingLocation,
                                char *logId,
                                const char *tableName,
@@ -502,6 +501,9 @@ protected:
   NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
   ComDiagsArea *loggingErrorDiags_;
+  HdfsClient *hdfsClient_;
+  char *loggingFileName_;
+  NABoolean loggingFileCreated_ ;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 
@@ -939,8 +941,6 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     Text   importLocation_;
     Text   hFileName_;
 
-    char *loggingFileName_;
-    NABoolean LoggingFileCreated_ ;
     ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;
 

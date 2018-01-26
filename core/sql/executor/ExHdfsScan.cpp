@@ -45,6 +45,7 @@
 
 #include "ExpORCinterface.h"
 #include "ComSmallDefs.h"
+#include "HdfsClient_JNI.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -118,6 +119,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
   , loggingFileName_(NULL)
+  , hdfsClient_(NULL)
   , hdfsFileInfoListAsArray_(glob->getDefaultHeap(), hdfsScanTdb.getHdfsFileInfoList()->numEntries())
 {
   Space * space = (glob ? glob->getSpace() : 0);
@@ -192,7 +194,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
                      "hive_scan_err",
                      fileNum,
                      loggingFileName_);
-  LoggingFileCreated_ = FALSE;
+  loggingFileCreated_ = FALSE;
 
   
   //shoud be move to work method
@@ -283,6 +285,8 @@ void ExHdfsScanTcb::freeResources()
      ExpLOBinterfaceCleanup(lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap());
      lobGlob_ = NULL;
   }
+  if (hdfsClient_ != NULL) 
+     NADELETE(hdfsClient_, HdfsClient, getHeap());
 }
 
 NABoolean ExHdfsScanTcb::needStatsEntry()
@@ -1365,12 +1369,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           if (hdfsScanTdb().getLogErrorRows())
           {
             int loggingRowLen =  hdfsLoggingRowEnd_ - hdfsLoggingRow_ +1;
-            ExHbaseAccessTcb::handleException((NAHeap *)getHeap(), hdfsLoggingRow_,
-                       loggingRowLen, lastErrorCnd_, 
-                       ehi_,
-                       LoggingFileCreated_,
-                       loggingFileName_,
-                       &loggingErrorDiags_);
+            handleException((NAHeap *)getHeap(), hdfsLoggingRow_,
+                       loggingRowLen, lastErrorCnd_ );
 
             
           }
@@ -1511,8 +1511,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
-            if (ehi_ != NULL)
-               retcode = ehi_->hdfsClose();
+            if (hdfsClient_ != NULL)
+               retcode = hdfsClient_->hdfsClose();
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
 	    up_entry->upState.parentIndex =
@@ -1946,6 +1946,54 @@ short ExHdfsScanTcb::handleDone(ExWorkProcRetcode &rc)
   qparent_.down->removeHead();
 
   return 0;
+}
+
+void ExHdfsScanTcb::handleException(NAHeap *heap,
+                                    char *logErrorRow,
+                                    Lng32 logErrorRowLen,
+                                    ComCondition *errorCond)
+{
+  Lng32 errorMsgLen = 0;
+  charBuf *cBuf = NULL;
+  char *errorMsg;
+  HDFS_Client_RetCode hdfsClientRetcode;
+
+  if (loggingErrorDiags_ != NULL)
+     return;
+
+  if (!loggingFileCreated_) {
+     hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        hdfsClientRetcode = hdfsClient_->hdfsCreate(loggingFileName_, FALSE);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        loggingFileCreated_ = TRUE;
+     else 
+        goto logErrorReturn;
+  }
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
+     goto logErrorReturn;
+  if (errorCond != NULL) {
+     errorMsgLen = errorCond->getMessageLength();
+     const NAWcharBuf wBuf((NAWchar*)errorCond->getMessageText(), errorMsgLen, heap);
+     cBuf = unicodeToISO88591(wBuf, heap, cBuf);
+     errorMsg = (char *)cBuf->data();
+     errorMsgLen = cBuf -> getStrLen();
+     errorMsg[errorMsgLen]='\n';
+     errorMsgLen++;
+  }
+  else {
+     errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
+     errorMsgLen = strlen(errorMsg);
+  }
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
+logErrorReturn:
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+     loggingErrorDiags_ = ComDiagsArea::allocate(heap);
+     *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
+                 << DgString0(loggingFileName_)
+                 << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

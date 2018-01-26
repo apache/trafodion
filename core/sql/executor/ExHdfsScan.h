@@ -207,6 +207,11 @@ protected:
   short handleError(short &rc);
   short handleDone(ExWorkProcRetcode &rc);
 
+  void handleException(NAHeap *heap,
+                          char *loggingDdata,
+                          Lng32 loggingDataLen,
+                          ComCondition *errorCond);
+
   short setupError(Lng32 exeError, Lng32 retcode, 
                    const char * str, const char * str2, const char * str3);
 
@@ -275,7 +280,7 @@ protected:
   char cursorId_[8];
 
   char *loggingFileName_;
-  NABoolean LoggingFileCreated_ ;
+  NABoolean loggingFileCreated_ ;
   char * hdfsLoggingRow_;
   char * hdfsLoggingRowEnd_;
   tupp_descriptor * defragTd_;
@@ -291,6 +296,7 @@ protected:
 
   // this array is populated from the info list stored as Queue.
   HdfsFileInfoArray hdfsFileInfoListAsArray_;
+  HdfsClient *hdfsClient_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb
