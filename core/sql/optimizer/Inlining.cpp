@@ -3132,7 +3132,7 @@ RelExpr *GenericUpdate::inlineOnlyRIandIMandMVLogging(BindWA *bindWA,
 	{
 	  // create a firstN node to delete N rows.
 	  FirstN * firstn = new(bindWA->wHeap())
-	    FirstN(topNode, topNode->getFirstNRows());
+	    FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
 	  firstn->bindNode(bindWA);
 	  if (bindWA->errStatus())
 	    return NULL;
@@ -3314,7 +3314,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackbone(BindWA *bindWA,
   {
     // create a firstN node to delete N rows.
     FirstN * firstn = new(bindWA->wHeap())
-      FirstN(topNode, topNode->getFirstNRows());
+      FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
     firstn->bindNode(bindWA);
     if (bindWA->errStatus())
       return NULL;
@@ -3429,7 +3429,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackboneForUndo(BindWA *bindWA,
     {
       // create a firstN node to delete N rows.
       FirstN * firstn = new(bindWA->wHeap())
-	FirstN(topNode, topNode->getFirstNRows());
+	FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
 	return NULL;

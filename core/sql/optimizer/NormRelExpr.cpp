@@ -6925,6 +6925,22 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
   if (normalizedThis->getOperatorType() == REL_LEAF_INSERT)
     return normalizedThis;
 
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
+
   // If the child is not a Tuple node - nothing to do here.
   CMPASSERT(normalizedThis->getArity() > 0);
   if (normalizedThis->child(0)->getOperatorType() != REL_TUPLE)
@@ -7595,6 +7611,24 @@ RelExpr * RelRoot::normalizeNode(NormWA & normWARef)
 
     childGAPtr->addCharacteristicInputs(inputsNeededForOrderBy);
   }
+
+  // ---------------------------------------------------------------------
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  // ---------------------------------------------------------------------
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
 
   // ---------------------------------------------------------------------
   // Normalize the child.
@@ -10908,5 +10942,5 @@ NABoolean CqsWA::isMPTable(const NAString &tableName)
     return FALSE;
   }
 } // CqsWA::isMPTable()
- 
+
  
