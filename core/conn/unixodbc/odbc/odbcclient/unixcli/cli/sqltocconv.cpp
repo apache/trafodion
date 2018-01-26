@@ -1280,225 +1280,248 @@ unsigned long ODBC::ConvSQLBigintToNumber(SQLPOINTER srcDataPtr, bool unsignedVa
 {
     unsigned long       retCode = SQL_SUCCESS;
 
+    CHAR                tTmp        = 0;
+    UCHAR               utTmp       = 0;
+    SHORT               sTmp        = 0;
+    USHORT              usTmp       = 0;
+    SLONG               lTmp        = 0;
+    ULONG               ulTmp       = 0;
     __int64             tempVal64   = 0;
     unsigned __int64    utempVal64  = 0;
+    FLOAT               fltTmp      = 0;
+    DOUBLE              dTmp        = 0;
+
+    SQLPOINTER          DataPtr     = NULL;
+    SQLLEN              DataLen     = 0;
 
     if (unsignedValue)
     {
         utempVal64 = *((unsigned __int64 *) srcDataPtr);
+        switch (CDataType)
+        {
+            case SQL_C_BIT:
+                if (utempVal64 / pow(10, Scale) == 0 || utempVal64 / pow(10, Scale) == 1)
+                    utTmp = utempVal64 / pow(10, Scale);
+                else if (utempVal64 / pow(10, Scale) > 0 && utempVal64 / pow(10, Scale) < 2)
+                {
+                    utTmp = utempVal64 / pow(10, Scale);
+                    retCode = IDS_01_S07;
+                }
+                else
+                    retCode = IDS_22_003;
+                DataPtr = &utTmp;
+                DataLen = sizeof(UCHAR);
+                break;
+            case SQL_C_TINYINT:
+            case SQL_C_STINYINT:
+                if (utempVal64 / pow(10, Scale) > SCHAR_MAX)
+                    return IDS_22_003;
+                tTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != tTmp)
+                        retCode = IDS_01_S07;
+                DataPtr = &tTmp;
+                DataLen = sizeof(SCHAR);
+                break;
+            case SQL_C_UTINYINT:
+                if (utempVal64 / pow(10, Scale) > UCHAR_MAX)
+                    return IDS_22_003;
+                utTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != utTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &utTmp;
+                DataLen = sizeof(UCHAR);
+                break;
+
+            case SQL_C_SHORT:
+            case SQL_C_SSHORT:
+                if (utempVal64 / pow(10, Scale) > SHRT_MAX)
+                    return IDS_22_003;
+                sTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != sTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &sTmp;
+                DataLen = sizeof(SHORT);
+                break;
+            case SQL_C_USHORT:
+                if (utempVal64 / pow(10, Scale) > USHRT_MAX)
+                    return IDS_22_003;
+                usTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != usTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &usTmp;
+                DataLen = sizeof(USHORT);
+                break;
+
+            case SQL_C_LONG:
+            case SQL_C_SLONG:
+                if (utempVal64 / pow(10, Scale) > LONG_MAX)
+                    return IDS_22_003;
+                lTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != lTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &lTmp;
+                DataLen = sizeof(SLONG);
+                break;
+            case SQL_C_ULONG:
+                if (utempVal64 / pow(10, Scale) > ULONG_MAX)
+                    return IDS_22_003;
+                ulTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != ulTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &ulTmp;
+                DataLen = sizeof(ULONG);
+                break;
+
+            case SQL_C_SBIGINT:
+                if (utempVal64 / pow(10, Scale) > LLONG_MAX)
+                    return IDS_22_003;
+                tempVal64 = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != tempVal64)
+                    retCode = IDS_01_S07;
+                DataPtr = &tempVal64;
+                DataLen = sizeof(__int64);
+                break;
+            case SQL_C_UBIGINT:
+                DataPtr = &utempVal64;
+                DataLen = sizeof(unsigned __int64);
+                break;
+
+            case SQL_C_FLOAT:
+                fltTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != fltTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &fltTmp;
+                DataLen = sizeof(FLOAT);
+                break;
+            case SQL_C_DOUBLE:
+                dTmp = utempVal64 / pow(10, Scale);
+                if (utempVal64 / pow(10, Scale) != dTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &dTmp;
+                DataLen = sizeof(DOUBLE);
+                break;
+
+            default:
+                return IDS_07_006;
+        }
+
     }
     else
     {
         tempVal64 = *((__int64 *) srcDataPtr);
-    }
-
-    switch (CDataType)
-    {
-        case SQL_C_BIT:
-        case SQL_C_TINYINT:
-        case SQL_C_STINYINT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > SCHAR_MAX)
-                    return IDS_22_003;
-                *((SCHAR *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((SCHAR *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                        retCode = IDS_01_S07;
-            }
-            else
-            {
+        switch (CDataType)
+        {
+            case SQL_C_BIT:
+                if (tempVal64 / pow(10, Scale) == 0 || tempVal64 / pow(10, Scale) == 1)
+                    utTmp = tempVal64 / pow(10, Scale);
+                else if (tempVal64 / pow(10, Scale) > 0 && tempVal64 / pow(10, Scale) < 2)
+                {
+                    utTmp = tempVal64 / pow(10, Scale);
+                    retCode = IDS_01_S07;
+                }
+                else
+                    retCode = IDS_22_003;
+                DataPtr = &utTmp;
+                DataLen = sizeof(UCHAR);
+                break;
+            case SQL_C_TINYINT:
+            case SQL_C_STINYINT:
                 if (tempVal64 / pow(10, Scale) < SCHAR_MIN || tempVal64 / pow(10, Scale) > SCHAR_MAX)
                     return IDS_22_003;
-                *((SCHAR *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((SCHAR *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                tTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != tTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(SCHAR); 
-            break;
-        case SQL_C_UTINYINT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > UCHAR_MAX)
-                    return IDS_22_003;
-                *((UCHAR *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((UCHAR *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+                DataPtr = &tTmp;
+                DataLen = sizeof(SCHAR);
+                break;
+            case SQL_C_UTINYINT:
                 if (tempVal64 / pow(10, Scale) < 0 || tempVal64 / pow(10, Scale) > UCHAR_MAX)
                     return IDS_22_003;
-                *((UCHAR *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((UCHAR *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                utTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != utTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(UCHAR); 
-            break;
+                DataPtr = &utTmp;
+                DataLen = sizeof(UCHAR);
+                break;
 
-        case SQL_C_SHORT:
-        case SQL_C_SSHORT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > SHRT_MAX)
-                    return IDS_22_003;
-                *((SHORT *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((SHORT *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+            case SQL_C_SHORT:
+            case SQL_C_SSHORT:
                 if (tempVal64 / pow(10, Scale) < SHRT_MIN || tempVal64 / pow(10, Scale) > SHRT_MAX)
                     return IDS_22_003;
-                *((SHORT *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((SHORT *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                sTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != sTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(SHORT); 
-            break;
-
-        case SQL_C_USHORT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > USHRT_MAX)
-                    return IDS_22_003;
-                *((USHORT *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((USHORT *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+                DataPtr = &sTmp;
+                DataLen = sizeof(SHORT);
+                break;
+            case SQL_C_USHORT:
                 if (tempVal64 / pow(10, Scale) < 0 || tempVal64 / pow(10, Scale) > USHRT_MAX)
                     return IDS_22_003;
-                *((USHORT *)targetDataPtr) = (USHORT)(tempVal64 / pow(10, Scale));
-                if (*((USHORT *)targetDataPtr) != (USHORT)(tempVal64 / pow(10, Scale)))
+                usTmp = (USHORT)(tempVal64 / pow(10, Scale));
+                if ((USHORT)(tempVal64 / pow(10, Scale)) != usTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(USHORT); 
-            break;
+                DataPtr = &usTmp;
+                DataLen = sizeof(USHORT);
+                break;
 
-        case SQL_C_LONG:
-        case SQL_C_SLONG:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > LONG_MAX)
-                    return IDS_22_003;
-                *((SLONG_P *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((SLONG_P *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+            case SQL_C_LONG:
+            case SQL_C_SLONG:
                 if (tempVal64 / pow(10, Scale) < LONG_MIN || tempVal64 / pow(10, Scale) > LONG_MAX)
                     return IDS_22_003;
-                *((SLONG_P *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((SLONG_P *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                lTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != lTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(SLONG_P); 
-            break;
-
-        case SQL_C_ULONG:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > ULONG_MAX)
-                    return IDS_22_003;
-                *((ULONG_P *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((ULONG_P *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+                DataPtr = &lTmp;
+                DataLen = sizeof(SLONG);
+                break;
+            case SQL_C_ULONG:
                 if (tempVal64 / pow(10, Scale) < 0 || tempVal64 / pow(10, Scale) > ULONG_MAX)
                     return IDS_22_003;
-                *((ULONG_P *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((ULONG_P *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                ulTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != ulTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(ULONG_P); 
-            break;
+                DataPtr = &ulTmp;
+                DataLen = sizeof(ULONG);
+                break;
 
-        case SQL_C_SBIGINT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > LLONG_MAX)
-                    return IDS_22_003;
-                *((__int64 *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((__int64 *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
-                if (tempVal64 / pow(10, Scale) < LLONG_MIN || tempVal64 / pow(10, Scale) > LLONG_MAX)
-                    return IDS_22_003;
-                *((__int64 *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((__int64 *)targetDataPtr) != tempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(__int64); 
-            break;
-
-        case SQL_C_UBIGINT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > ULLONG_MAX)
-                    return IDS_22_003;
-                *((unsigned __int64 *)targetDataPtr) = utempVal64 / pow(10, Scale);
-                if (*((unsigned __int64 *)targetDataPtr) != utempVal64 / pow(10, Scale))
-                    retCode = IDS_01_S07;
-            }
-            else
-            {
+            case SQL_C_SBIGINT:
+                DataPtr = &tempVal64;
+                DataLen = sizeof(__int64);
+                break;
+            case SQL_C_UBIGINT:
                 if (tempVal64 / pow(10, Scale) < 0 || tempVal64 / pow(10, Scale) > ULLONG_MAX)
                     return IDS_22_003;
-                *((unsigned __int64 *)targetDataPtr) = tempVal64 / pow(10, Scale);
-                if (*((unsigned __int64 *)targetDataPtr) != tempVal64 / pow(10, Scale))
+                utempVal64 = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != utempVal64)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(unsigned __int64); 
-            break;
+                DataPtr = &utempVal64;
+                DataLen = sizeof(unsigned __int64);
+                break;
 
-        case SQL_C_FLOAT:
-            if (unsignedValue)
-            {
-                if (utempVal64 / pow(10, Scale) > FLT_MAX)
-                    return IDS_22_003;
-                *((FLOAT *)targetDataPtr) = (FLOAT)utempVal64 / pow(10, Scale);
-                if (*((FLOAT *)targetDataPtr) != (FLOAT)utempVal64 / pow(10, Scale))
+            case SQL_C_FLOAT:
+                fltTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != fltTmp)
                     retCode = IDS_01_S07;
-            }
-            else
-            {
-                if (tempVal64 / pow(10, Scale) < -FLT_MAX || tempVal64 / pow(10, Scale) > FLT_MAX)
-                    return IDS_22_003;
-                *((FLOAT *)targetDataPtr) = (FLOAT)tempVal64 / pow(10, Scale);
-                if (*((FLOAT *)targetDataPtr) != (FLOAT)tempVal64 / pow(10, Scale))
+                DataPtr = &fltTmp;
+                DataLen = sizeof(FLOAT);
+                break;
+            case SQL_C_DOUBLE:
+                dTmp = tempVal64 / pow(10, Scale);
+                if (tempVal64 / pow(10, Scale) != dTmp)
                     retCode = IDS_01_S07;
-            }
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(FLOAT); 
-            break;
+                DataPtr = &dTmp;
+                DataLen = sizeof(DOUBLE);
+                break;
 
-        case SQL_C_DOUBLE:
-            *((SQLDOUBLE*)targetDataPtr) = (unsignedValue ?
-                                                ((SQLDOUBLE)utempVal64 / pow(10, Scale)): ((SQLDOUBLE)tempVal64 / pow(10, Scale)));
-            if (*((SQLDOUBLE*)targetDataPtr) = (unsignedValue ?
-                                                ((SQLDOUBLE)utempVal64 / pow(10, Scale)): ((SQLDOUBLE)tempVal64 / pow(10, Scale))))
-                retCode = IDS_01_S07;
-            if (targetStrLenPtr)
-                *targetStrLenPtr = sizeof(SQLDOUBLE); 
-            break;
-
-        default:
-            return IDS_07_006;
+            default:
+                return IDS_07_006;
+        }
     }
+
+    memcpy(targetDataPtr, DataPtr, DataLen);
+
+    if (targetStrLenPtr)
+        *targetStrLenPtr = DataLen;
 
     return retCode;
 }

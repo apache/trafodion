@@ -213,9 +213,6 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
     
     switch (targetDescPtr->m_ODBCDataType)
     {
-        case SQL_VARCHAR:
-        case SQL_LONGVARCHAR:
-        case SQL_WVARCHAR:
         case SQL_CHAR:
             if( targetDescPtr->m_SQLDataType == SQLTYPECODE_BOOLEAN )
             {
@@ -223,6 +220,9 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
                 break;
             }
         case SQL_WCHAR:
+        case SQL_VARCHAR:
+        case SQL_LONGVARCHAR:
+        case SQL_WVARCHAR:
             retCode = ConvertToCharTypes(ODBCAppVersion,
                     CDataType,
                     srcDataPtr,
@@ -561,7 +561,7 @@ unsigned long  ODBC::MemcpyToNumeric(SQLPOINTER  DataPtr,
                 case SQLTYPECODE_TINYINT_UNSIGNED:
                     if (tempVal64 < 0)
                         return IDS_22_003_02;
-                    if ((UCHAR)tempVal64 > UCHAR_MAX)
+                    if (tempVal64 > UCHAR_MAX)
                         return IDS_22_003;
                     utTmp = (UCHAR)tempVal64;
                     if  (tempVal64 != utTmp)
@@ -582,7 +582,7 @@ unsigned long  ODBC::MemcpyToNumeric(SQLPOINTER  DataPtr,
                 case SQLTYPECODE_SMALLINT_UNSIGNED:
                     if (tempVal64 < 0)
                         return IDS_22_003_02;
-                    if ((USHORT)tempVal64 > USHRT_MAX)
+                    if (tempVal64 > USHRT_MAX)
                         return IDS_22_003;
                     usTmp = (USHORT)tempVal64;
                     if  (tempVal64 != usTmp)
@@ -1355,7 +1355,7 @@ unsigned long  ODBC::MemcpyToNumber(SQLPOINTER  DataPtr,
                 case SQLTYPECODE_SMALLINT_UNSIGNED:
                     if (tempVal64 < 0)
                         return IDS_22_003_02;
-                    if ((USHORT)tempVal64 > USHRT_MAX)
+                    if (tempVal64 > USHRT_MAX)
                         return IDS_22_003;
                     usTmp = (USHORT)tempVal64;
                     if  (tempVal64 != usTmp)
@@ -1376,7 +1376,7 @@ unsigned long  ODBC::MemcpyToNumber(SQLPOINTER  DataPtr,
                 case SQLTYPECODE_INTEGER_UNSIGNED:
                     if (tempVal64 < 0)
                         return IDS_22_003_02;
-                    if ((ULONG_P)tempVal64 > ULONG_MAX)
+                    if (tempVal64 > ULONG_MAX)
                         return IDS_22_003;
                     ulTmp = (ULONG_P)tempVal64;
                     if  (tempVal64 != ulTmp)
@@ -4229,7 +4229,7 @@ unsigned long ODBC::ConvertCharToInt64(SQLPOINTER srcDataPtr,
 	int		tempLen;
 	char	cTmpBuf[100];
         bool truncation = false;
-    int     nuberLen = 0;
+
 	if (srcLength == SQL_NTS )
 		tempLen = strlen((const char *)srcDataPtr);
 	else
