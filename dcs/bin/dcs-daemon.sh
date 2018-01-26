@@ -145,7 +145,7 @@ case $startStop in
     if [ -f $pid ]; then
       if kill -0 `cat $pid` > /dev/null 2>&1; then
         echo $command  `cat $pid`.  Stop it first.
-        exit 1
+        exit -2
       fi
     fi
 

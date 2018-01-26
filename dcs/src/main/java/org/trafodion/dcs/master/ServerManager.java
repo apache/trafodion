@@ -320,8 +320,12 @@ public class ServerManager implements Callable {
                     RestartHandler handler = restartQueue.poll();
                     Future<ScriptContext> runner = pool.submit(handler);
                     ScriptContext scriptContext = runner.get();// blocking call
-                    if (scriptContext.getExitCode() != 0)
+                    // In some situation, there may restart dcs server replicated.
+                    // Exit code == -2 means dcs server had been started,
+                    // no needs to add to restart queue.
+                    if (scriptContext.getExitCode() != 0 && scriptContext.getExitCode() != -2) {
                         restartQueue.add(handler);
+                    }
                 }
 
                 try {
@@ -503,7 +507,7 @@ public class ServerManager implements Callable {
     }
 
     private void getUnwathedServers() {
-        // In some situation, if DCS Server does not have znode info in zookeeper
+        // In some situation when open HA, if DCS Server does not have znode info in zookeeper
         // when DCS Master is starting, then server will never be watched by zookeeper,
         // and if it downs, it will never be restarted.
 
@@ -513,9 +517,13 @@ public class ServerManager implements Callable {
         // hostName + ":" + instance + ":" + infoPort + ":" + serverStartTimestamp
         // eg : gy26.esgyncn.local:3:24413:1515056285028
         // RestartHandler need to know hostName, instanceNum(lineNum), serverStartTimestamp(for if condition)
-        if (runningServers.size() == configuredServers.size()) {
+        if (!master.isFollower() || runningServers.size() == configuredServers.size()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("all dcs servers have started, no need to add watchers");
+                if (!master.isFollower()) {
+                    LOG.debug("dcs master start normally, no need to add watchers");
+                } else {
+                    LOG.debug("backup master start, all dcs servers have started, no need to add watchers");
+                }
             }
             return;
         }
