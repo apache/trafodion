@@ -524,9 +524,9 @@ specifies that indexes of the target table will be updated automatically when th
 is updated. 
 +
 This is the default behavior of the LOAD Statement, that is, even if this option is not 
-specified, the LOAD Statement will rebuild indexes except the 
-CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` is turned *ON*. This CQD is turned *OFF* by default, 
-in this case, the elapsed time of using LOAD Statement without options is nearly equal to 
+specified, the LOAD Statement will rebuild indexes unless the
+CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` is turned *ON*. This CQD is turned *OFF* by default. 
+In this case, the elapsed time of using LOAD Statement without options is nearly equal to 
 using LOAD WITH REBUILD INDEXES, and the elapsed time of the former is less than the latter 
 if this CQD is turned ON.
 
@@ -1203,7 +1203,7 @@ SQL>select count(*) from source_table;
 --- 1 row(s) selected. 
 ```
 
-_target_table1_ has the same structure as _target_table2_, here takes _target_table1_ for example:
+_target_table1_ and _target_table2_ both have the following structure:
 
 ```
 SQL>CREATE TABLE target_table1
@@ -1395,7 +1395,7 @@ SQL>SELECT COUNT(*) FROM TABLE(INDEX_TABLE index_target_table2);
 
 * This example compares the execution time of using LOAD Statement without options and 
 using `LOAD WITH REBUILD INDEXES` when the CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` 
-is turned *ON*. The former takes shorter time than the latter.
+is turned *ON*. The former takes less time than the latter.
 
 +
 ```
