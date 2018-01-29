@@ -59,6 +59,8 @@ values from a group.
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
 evaluation of the expression argument.
+| <<rollup_function,ROLLUP Function>>           | Calculates multiple levels of subtotals aggregating from right to left through the 
+comma-separated list of columns, and provides a grand total.
 | <<stddev_function,STDDEV Function>>           | Computes the statistical standard deviation of a group of numbers
 derived from the evaluation of the expression argument of the function.
 The numbers can be weighted.
@@ -6343,7 +6345,7 @@ SET jobdesc = RIGHT (jobdesc, 12);
 
 The ROLLUP function calculates multiple levels of subtotals aggregating from right to left through the comma-separated list of columns, and provides a grand total. 
 
-ROLLUP is an extension to the 'GROUP BY' clause. Related features such as the GROUPING function can be used with 'ORDER BY' to control the placement of summary results.
+ROLLUP is an extension to the `GROUP BY` clause. Related features such as the GROUPING function can be used with `ORDER BY` to control the placement of summary results.
 
 ```
 SELECT…GROUP BY ROLLUP (column 1, [column 2,]…[column n])
@@ -6456,7 +6458,6 @@ DELIVERY_YEAR REGION TOTAL_REVENUE
 --- 7 row(s) selected.
 ```
 +
-
 * This is an example of grouping by three rollup columns.
 +
 ```
@@ -6488,7 +6489,7 @@ These rows have the _region_ and _product_ columns set to NULL.
 This row has the _delivery_year_, _region_ and _product_ columns set to NULL. 
  
 [[examples_of_null]]
-=== Examples of NULL
+==== Examples of NULL
 
 The example below demonstrates how ROLLUP treats NULLs in the selected columns and generates NULLs for super-aggregate rows.
 
