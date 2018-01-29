@@ -949,7 +949,8 @@ void UDFunction::transformToRelExpr(NormWA & normWARef,
 
        // The routine desc points to both the NARoutine structs.
        isUdf->setRoutineDesc(udfDesc_);
-    
+       isUdf->getGroupAttr()->setHasNonDeterministicUDRs(
+            !getRoutineDesc()->getEffectiveNARoutine()->isDeterministic());
 
        // Get the valueIds of the parameters
        isUdf->gatherParamValueIds(isUdf->getProcAllParamsTree(), 

@@ -1464,7 +1464,8 @@ void Join::transformNode(NormWA & normWARef,
   //   reference the left subtree data.
   // 
   // For RoutineJoins/Udfs we also want to convert it to a join if the UDF
-  // does not need any inputs from the left. 
+  // does not need any inputs from the left and if the routine is
+  // deterministic.
   // ---------------------------------------------------------------------
   if (isTSJ())
     {
@@ -1597,18 +1598,21 @@ void Join::transformNode(NormWA & normWARef,
          if (crossReferences2.isEmpty() && 
              !isTSJForWrite()           &&
              !getInliningInfo().isDrivingPipelinedActions() &&
-             !getInliningInfo().isDrivingTempInsert() )// Triggers -
+             !getInliningInfo().isDrivingTempInsert() && // Triggers -
+             !(isRoutineJoin() &&
+               child(1).getGroupAttr()->getHasNonDeterministicUDRs()))
          {
            // Remember we used to be a RoutineJoin. This is used to determine
            // what type of contexts for partitioning we will try in OptPhysRel.
-           if (isRoutineJoin()) setDerivedFromRoutineJoin();
+           if (isRoutineJoin())
+             setDerivedFromRoutineJoin();
            convertToNotTsj();
          }
     
       else
          {
            // We have a TSJ that will be changed to Nested join 
-           // safe to change NOtIn here to non equi-predicate form (NE)
+           // safe to change NotIn here to non equi-predicate form (NE)
            // at this point only the case on single column NotIn can reach here
            // and the either the outer or inner column or both is nullable
            // and may have null values
@@ -2319,17 +2323,20 @@ RelExpr * Join::normalizeNode(NormWA & normWARef)
   // and if a value that is produced by the left subtree is not
   // referenced in the right subtree, 
   // ---------------------------------------------------------------------
-  if (isATSJ AND NOT isTSJForWrite() AND //NOT isRoutineJoin() AND
+  if (isATSJ AND NOT isTSJForWrite() AND
       NOT child(1)->getGroupAttr()->
             getCharacteristicInputs().referencesOneValueFromTheSet
                (child(0)->getGroupAttr()->getCharacteristicOutputs())
       && !getInliningInfo().isDrivingPipelinedActions() 
       && !getInliningInfo().isDrivingTempInsert() // Triggers -
+      && !(isRoutineJoin() &&
+           child(1).getGroupAttr()->getHasNonDeterministicUDRs())
      )
   {
     // Remember we used to be a RoutineJoin. This is used to determine
     // what type of contexts for partitioning we will try in OptPhysRel.
-    if (isRoutineJoin()) setDerivedFromRoutineJoin();
+    if (isRoutineJoin())
+      setDerivedFromRoutineJoin();
 
     convertToNotTsj();
     // ---------------------------------------------------------------

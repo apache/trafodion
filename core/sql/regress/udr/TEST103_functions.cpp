@@ -69,7 +69,7 @@ SQLUDR_LIBFUNC SQLUDR_INT32 genPhoneNumber(SQLUDR_INT32 *in1, // seed
     }
   }
 
-  strcpy(out, result.c_str());
+  memcpy(out, result.c_str(), result.length());
   return SQLUDR_SUCCESS;
 }
 
@@ -117,10 +117,40 @@ SQLUDR_LIBFUNC SQLUDR_INT32 genRandomNumber(SQLUDR_INT32 *in1,
     }
   }
   
-  strcpy(out, result.c_str());
+  memcpy(out, result.c_str(), result.length());
   return SQLUDR_SUCCESS;
 }
 
+
+SQLUDR_LIBFUNC SQLUDR_INT32 nonDeterministicRandom(SQLUDR_INT32 *out1,
+                                                   SQLUDR_INT16 *outInd1,
+                                                   SQLUDR_TRAIL_ARGS)
+{
+  if (calltype == SQLUDR_CALLTYPE_FINAL)
+    return SQLUDR_SUCCESS;
+
+  // pointer to the buffer in the state area that is
+  // available for the lifetime of this statement,
+  // this can be used by the UDF to maintain state
+  int *my_state = (int *) statearea->stmt_data.data;
+
+  if (calltype == SQLUDR_CALLTYPE_INITIAL && *my_state == 0)
+    {
+      *my_state = 555;
+    }
+  else
+    // Use a simple linear congruential generator, we
+    // want deterministic regression results, despite
+    // the name of this function. Note that a
+    // this UDF is still "not deterministic", since it
+    // returns different results when called with the
+    // same (empty) inputs.
+    *my_state = (13 * (*my_state) + 101) % 1000;
+
+  (*out1) = *my_state;
+
+  return SQLUDR_SUCCESS;
+}
 
 SQLUDR_LIBFUNC SQLUDR_INT32 canAccessView(SQLUDR_CHAR *inZoneNeeded,
                                           SQLUDR_CHAR *inZoneHas,

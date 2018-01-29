@@ -209,6 +209,68 @@ CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE '/mnt2/ansharma/ansh
 
 --- SQL operation complete.
 >>
+>>create function nonDeterministicRandom
++>  () returns (r integer)
++>  language c parameter style sql external name 'nonDeterministicRandom'
++>  library functionsForTest103
++>  not deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>cqd nested_joins 'off';
+
+--- SQL operation complete.
+>>cqd merge_joins 'off';
+
+--- SQL operation complete.
+>>cqd join_order_by_user 'on';
+
+--- SQL operation complete.
+>>prepare s from
++>select a, nonDeterministicRandom() r1,
++>       generateRandomNumber(a, 4) r2, generateRandomNumber(123, 4) r3
++>from (values (1), (2), (3)) T(a);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  3.00E+000
+7    1    8    hybrid_hash_join                                      3.00E+000
+4    6    7    nested_join                                           3.00E+000
+5    .    6    probe_cache                                           1.00E+000
+.    .    5    isolated_scalar_udf             GENERATERANDOMNUMBER  1.00E+000
+2    3    4    nested_join                                           3.00E+000
+.    .    3    isolated_scalar_udf             NONDETERMINISTICRAND  1.00E+000
+.    .    2    tuplelist                                             3.00E+000
+.    .    1    isolated_scalar_udf             GENERATERANDOMNUMBER  1.00E+000
+
+--- SQL operation complete.
+>>-- r1: Nested join, no probe cache, because it's non-deterministic
+>>-- r2: Nested join, probe cache, because it refers to the outer table
+>>-- r3: Hash join, because it's deterministic, no refs to outer
+>>execute s;
+
+A       R1           R2              R3            
+------  -----------  --------------  --------------
+
+     1          555  3675            3330          
+     2          316  1985            3330          
+     3          209  6580            3330          
+
+--- 3 row(s) selected.
+>>cqd nested_joins reset;
+
+--- SQL operation complete.
+>>cqd merge_joins reset;
+
+--- SQL operation complete.
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
 >>-- procedures
 >>create procedure updateSubscriptions(
 +>  IN operation char(20),
@@ -398,6 +460,68 @@ CREATE LIBRARY TRAFODION.UDR103SCH.FUNCTIONSFORTEST103 FILE '/mnt2/ansharma/ansh
 
 --- SQL operation complete.
 >>
+>>create function nonDeterministicRandom
++>  () returns (r integer)
++>  language c parameter style sql external name 'nonDeterministicRandom'
++>  library functionsForTest103
++>  not deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>cqd nested_joins 'off';
+
+--- SQL operation complete.
+>>cqd merge_joins 'off';
+
+--- SQL operation complete.
+>>cqd join_order_by_user 'on';
+
+--- SQL operation complete.
+>>prepare s from
++>select a, nonDeterministicRandom() r1,
++>       generateRandomNumber(a, 4) r2, generateRandomNumber(123, 4) r3
++>from (values (1), (2), (3)) T(a);
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  3.00E+000
+7    1    8    hybrid_hash_join                                      3.00E+000
+4    6    7    nested_join                                           3.00E+000
+5    .    6    probe_cache                                           1.00E+000
+.    .    5    isolated_scalar_udf             GENERATERANDOMNUMBER  1.00E+000
+2    3    4    nested_join                                           3.00E+000
+.    .    3    isolated_scalar_udf             NONDETERMINISTICRAND  1.00E+000
+.    .    2    tuplelist                                             3.00E+000
+.    .    1    isolated_scalar_udf             GENERATERANDOMNUMBER  1.00E+000
+
+--- SQL operation complete.
+>>-- r1: Nested join, no probe cache, because it's non-deterministic
+>>-- r2: Nested join, probe cache, because it refers to the outer table
+>>-- r3: Hash join, because it's deterministic, no refs to outer
+>>execute s;
+
+A       R1           R2              R3            
+------  -----------  --------------  --------------
+
+     1          555  3675            3330          
+     2          316  1985            3330          
+     3          209  6580            3330          
+
+--- 3 row(s) selected.
+>>cqd nested_joins reset;
+
+--- SQL operation complete.
+>>cqd merge_joins reset;
+
+--- SQL operation complete.
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
 >>-- procedures
 >>create procedure updateSubscriptions(
 +>  IN operation char(20),
@@ -427,6 +551,7 @@ Functions in Schema TRAFODION.UDR103SCH
 CANACCESSVIEW
 GENERATEPHONENUMBER
 GENERATERANDOMNUMBER
+NONDETERMINISTICRANDOM
 
 --- SQL operation complete.
 >>get procedures in schema udr103sch;
