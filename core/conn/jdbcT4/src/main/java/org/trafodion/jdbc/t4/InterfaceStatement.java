@@ -1447,7 +1447,11 @@ class InterfaceStatement {
 				TrafT4CallableStatement cstmt = (TrafT4CallableStatement) stmt;
 				Object[] outputValueArray;
 				if(er.returnCode == TRANSPORT.NO_DATA_FOUND) { //this should really only happen with LAST0 specified
-					outputValueArray = new Object[cstmt.outputDesc_.length];
+					if (null != cstmt.outputDesc_) {
+					    outputValueArray = new Object[cstmt.outputDesc_.length];
+					} else {
+					    outputValueArray = null;
+					}
 				}
 				else {
 					outputValueArray = InterfaceResultSet.getExecute2Outputs(cstmt.connection_, cstmt.outputDesc_, 
