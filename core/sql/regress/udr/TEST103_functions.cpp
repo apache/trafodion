@@ -139,12 +139,11 @@ SQLUDR_LIBFUNC SQLUDR_INT32 nonDeterministicRandom(SQLUDR_INT32 *out1,
       *my_state = 555;
     }
   else
-    // Use a simple linear congruential generator, we
-    // want deterministic regression results, despite
-    // the name of this function. Note that a
-    // this UDF is still "not deterministic", since it
-    // returns different results when called with the
-    // same (empty) inputs.
+    // Use a simple linear congruential generator, we want
+    // deterministic regression results, despite the name of this
+    // function. Note that this UDF is still "not deterministic",
+    // since it returns different results when called with the same
+    // (empty) inputs.
     *my_state = (13 * (*my_state) + 101) % 1000;
 
   (*out1) = *my_state;
