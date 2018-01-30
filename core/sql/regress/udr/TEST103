@@ -225,6 +225,28 @@ create function generateRandomNumber
   library functionsForTest103
   deterministic no sql final call allow any parallelism state area size 1024 ;
 
+create function nonDeterministicRandom
+  () returns (r integer)
+  language c parameter style sql external name 'nonDeterministicRandom'
+  library functionsForTest103
+  not deterministic no sql final call allow any parallelism state area size 1024 ;
+
+cqd nested_joins 'off';
+cqd merge_joins 'off';
+cqd join_order_by_user 'on';
+prepare s from
+select a, nonDeterministicRandom() r1,
+       generateRandomNumber(a, 4) r2, generateRandomNumber(123, 4) r3
+from (values (1), (2), (3)) T(a);
+explain options 'f' s;
+-- r1: Nested join, no probe cache, because it's non-deterministic
+-- r2: Nested join, probe cache, because it refers to the outer table
+-- r3: Hash join, because it's deterministic, no refs to outer
+execute s;
+cqd nested_joins reset;
+cqd merge_joins reset;
+cqd join_order_by_user reset;
+
 -- procedures
 create procedure updateSubscriptions(
   IN operation char(20),
