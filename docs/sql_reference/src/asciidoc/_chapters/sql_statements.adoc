@@ -4791,17 +4791,18 @@ option is:
     COMPONENT PRIVILEGES ON component-name [FOR auth-name]
   | COMPONENTS
   | FUNCTIONS FOR LIBRARY [[catalog-name.]schema-name.]library-name
-  | functions [in schema [catalog-name.]schema-name]
-  | libraries [in schema [catalog-name.]schema-name]
-  | procedures for library [[catalog-name.]schema-name.]library-name
-  | procedures [in schema [catalog-name.]schema-name]
-  | roles [for user database-username]
-  | schemas [in catalog catalog-name]
-  | schemas for [user | role] authorization-id
-  | tables [in schema [catalog-name.]schema-name]
-  | users [for role role-name]
-  | views [in schema [catalog-name.]schema-name]
-  | views on table [[catalog-name.]schema-name.]table-name
+  | FUNCTIONS [IN SCHEMA [catalog-name.]schema-name]
+  | LIBRARIES [IN SCHEMA [catalog-name.]schema-name]
+  | PROCEDURES FOR LIBRARY [[catalog-name.]schema-name.]library-name
+  | PROCEDURES [IN SCHEMA [catalog-name.]schema-name]
+  | ROLES [FOR USER database-username]
+  | SCHEMAS [IN CATALOG catalog-name]
+  | SCHEMAS FOR [USER | ROLE] authorization-id
+  | TABLES [IN SCHEMA [catalog-name.]schema-name]
+  | USERS [FOR ROLE role-name]
+  | VIEWS [IN SCHEMA [catalog-name.]schema-name]
+  | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
+  | PRIVILEGES FOR {USER database-username | ROLE role-name}
 ```
 
 [[get_syntax]]
@@ -4812,7 +4813,7 @@ option is:
 displays the names of the component privileges available for the specified component.
 
 * `COMPONENT PRIVILEGES ON _component-name_ FOR _auth-name_`
-
++
 displays the component privileges that have been granted to the specified authorization name for the specified component.
 The _auth-name_ is either a registered database username or an existing role name and can be a regular or delimited
 case-insensitive identifier. See <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
@@ -4837,7 +4838,7 @@ displays the names of all the UDFs in the specified schema.
 
 * `libraries`
 +
-displays the names of all the libraries in the catalog and schema of the current session. by default, the catalog is trafodion,
+displays the names of all the libraries in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
 * `libraries in schema [_catalog-name_.]_schema-name_`
@@ -4846,7 +4847,7 @@ displays the libraries in the specified schema.
 
 * `procedures`
 +
-displays the names of all the procedures in the catalog and schema of the current session. by default, the catalog is trafodion,
+displays the names of all the procedures in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
 * `procedures for library \[[_catalog-name_.]_schema-name_.]_library-name_`
@@ -4863,28 +4864,28 @@ displays a list of all the existing roles.
 
 * `roles for user _database-username_`
 +
-displays all the roles that have been granted to the specified database user. the _database-username_ can be a regular or delimited
+displays all the roles that have been granted to the specified database user. The _database-username_ can be a regular or delimited
 case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
 * `schemas`
 +
-displays the names of all the schemas in the catalog of the current session. by default, the catalog is trafodion.
+displays the names of all the schemas in the catalog of the current session. By default, the catalog is trafodion.
 
 * `schemas in catalog _catalog-name_`
 +
-displays the names of all the schemas in the specified catalog. for the _catalog-name_, you can specify only trafodion.
+displays the names of all the schemas in the specified catalog. For the _catalog-name_, you can specify only trafodion.
 
 * `schemas for [user | role] _authorization-id_`
 +
 displays all the schemas managed (or owned) by a specified user or role.
 
-* `_authorization-id_
+* `_authorization-id_`
 +
 is the name of a user or role. you may specify either user or role for users or roles.
 
 * `tables`
 +
-displays the names of all the tables in the catalog and schema of the current session. by default, the catalog is trafodion,
+displays the names of all the tables in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
 * `tables in schema [_catalog-name_.]_schema-name_`
@@ -4897,29 +4898,29 @@ displays a list of all the registered database users.
 
 * `users for role _role-name_`
 +
-displays all the database users who have been granted the specified role. the _role-name_ can be a regular or delimited
-case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
+displays all the database users who have been granted the specified role. The _role-name_ can be a regular or delimited
+case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
 <<<
 * `views`
 +
-displays the names of all the views in the catalog and schema of the current session. by default, the catalog is trafodion,
+displays the names of all the views in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
 * `views in schema [_catalog-name_.]_schema-name_`
 +
-displays the names of all the views in the specified schema. for the _catalog-name_, you can specify only trafodion.
+displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
 * `views on table \[[_catalog-name_.]_schema-name_.]_table-name_`
 +
-displays the names of all the views that were created for the specified table. if you do not qualify the table name with
-catalog and schema names, get uses the catalog and schema of the current session. for the _catalog-name_, you can specify
+displays the names of all the views that were created for the specified table. If you do not qualify the table name with
+catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
 
 [[get_considerations]]
 === Considerations for GET
 
-IMPORTANT: The GET COMPONENT PRIVILEGES, GET COMPONENTS, GET ROLES FOR USER, and GET USERS FOR ROLE statements work only when
+IMPORTANT: The GET COMPONENT PRIVILEGES, GET COMPONENTS, GET ROLES FOR USER, GET USERS FOR ROLE statements and GET PRIVILEGES FOR {USER database-username | ROLE role-name} statements work only when
 authentication and authorization are enabled in {project-name}. For more information, see
 {docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
@@ -5042,43 +5043,88 @@ GET FUNCTIONS FOR LIBRARY MYSCHEMA.MYUDFS;
 * This GET statement displays a list of all the existing components:
 +
 ```
-get components;
+GET COMPONENTS;
 ```
 
 * This GET statement displays the names of the component privileges available for the SQL_OPERATIONS component:
 +
 ```
-get component privileges on sql_operations;
+GET COMPONENT PRIVILEGES ON sql_operations;
 ```
 
 * This GET statement displays the component privileges that have been granted to the DB ROOT user for the SQL_OPERATIONS component:
 +
 ```
-get component privileges on sql_operations for db root;
+GET COMPONENT PRIVILEGES ON sql_operations FOR db root;
 ```
 
 * This GET statement displays a list of all the existing roles:
 +
 ```
-get roles;
+GET ROLES;
 ```
 
 * This GET statement displays all the roles that have been granted to the DB ROOT user:
 +
 ```
-get roles for user db root;
+GET ROLES FOR USER db root;
 ```
 
 * This GET statement displays a list of all the registered database users:
 +
 ```
-get users;
+GET USERS;
 ```
 
 * This GET statement displays all the database users who have been granted the DB ROOTROLE role:
 +
 ```
-get users for role db rootrole;
+GET USERS FOR ROLE db rootrole;
+```
+
+* This example demonstrates how to grant privileges to the specified database user _testuser1_ and display privileges. 
++
+The _testuser1_ grants some privileges to the _testuser2_ on the table _project_.
++
+```
+SQL>GRANT DELETE, INSERT, REFERENCES, SELECT (PROJCODE,PROJDESC), UPDATE ON TABLE project TO testuser2;
+
+--- SQL operation complete.
+```
++
+This GET statement displays all the privileges that have been granted to the _testuser2_.
++
+```
+SQL>GET PRIVILEGES FOR USER testuser2;
+
+-IDU-R-    TRAFODION.SEABASE.PROJECT
+S------    TRAFODION.SEABASE.PROJECT <Column> PROJCODE
+S------    TRAFODION.SEABASE.PROJECT <Column> PROJDESC 
+
+--- SQL operation complete.
+```
+
+* This example shows how to grant privileges to the specified role _"TECHNICAL_WRITER"_ and display privileges.
++
+The _testuser1_ grants some privileges to the _"TECHNICAL_WRITER"_ on the table _project_.
++
+```
+SQL>GRANT DELETE, INSERT, REFERENCES, SELECT (start_date,ship_timestamp,est_complete), UPDATE ON TABLE project TO "TECHNICAL_WRITER";
+
+--- SQL operation complete.
+```
++
+This GET statement displays all the privileges that have been granted to the _"TECHNICAL_WRITER"_.
++
+```
+SQL>GET PRIVILEGES FOR ROLE "TECHNICAL_WRITER";
+
+-IDU-R-    TRAFODION.SEABASE.PROJECT
+S------    TRAFODION.SEABASE.PROJECT <Column> EST_COMPLETE
+S------    TRAFODION.SEABASE.PROJECT <Column> SHIP_TIMESTAMP
+S------    TRAFODION.SEABASE.PROJECT <Column> START_DATE
+
+--- SQL operation complete.
 ```
 
 <<<
@@ -5623,7 +5669,7 @@ grantee is:
 [[grant_role_syntax]]
 === Syntax Description of GRANT ROLE
 
-* `_role-name_ [,_role-name_] &#8230; 
+* `_role-name_ [,_role-name_]_`
 + 
 specifies the existing roles to grant.
 
