@@ -408,7 +408,7 @@ protected:
                           
   NABoolean isSequenceFile();
   void createSequenceFileError(Int32 sfwRetCode);
-  void createHdfsClientFileError(Int32 sfwRetCode);
+  void createHdfsClientFileError(Int32 hdfsClientRetCode);
   NABoolean isHdfsCompressed();
   NABoolean getEmptyNullString()
   {

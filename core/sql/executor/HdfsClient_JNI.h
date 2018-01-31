@@ -24,6 +24,7 @@
 #define HDFS_CLIENT_H
 
 #include "JavaObjectInterface.h"
+#include "ExHdfsScan.h"
 
 // ===========================================================================
 // ===== The native HdfsScan class implements access to the Java methods 
@@ -33,6 +34,11 @@
 typedef enum {
    HDFS_SCAN_OK     = JOI_OK
   ,HDFS_SCAN_FIRST = JOI_LAST
+  ,HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM = HDFS_SCAN_FIRST
+  ,HDFS_SCAN_ERROR_SET_SCAN_RANGES_EXCEPTION
+  ,HDFS_SCAN_ERROR_TRAF_HDFS_READ_PARAM
+  ,HDFS_SCAN_ERROR_TRAF_HDFS_READ_EXCEPTION
+  ,HDFS_SCAN_EOR
   ,HDFS_SCAN_LAST
 } HDFS_Scan_RetCode;
 
@@ -44,28 +50,28 @@ public:
   :  JavaObjectInterface(heap) 
   {}
 
-  // Destructor
-  virtual ~HdfsScan();
-
-  // Get the error description.
-  virtual char* getErrorText(HDFS_Scan_RetCode errEnum);
-  
   // Initialize JVM and all the JNI configuration.
   // Must be called.
   HDFS_Scan_RetCode init();
 
-  HDFS_Scan_RetCode initScanRanges();
+  // Get the error description.
+  static char* getErrorText(HDFS_Scan_RetCode errEnum);
 
-  HDFS_Scan_RetCode trafHdfsRead();
+  static HdfsScan *newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, 
+            HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize, HDFS_Scan_RetCode &hdfsScanRetCode);
+
+  HDFS_Scan_RetCode setScanRanges(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, 
+            HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize);
+
+  HDFS_Scan_RetCode trafHdfsRead(NAHeap *heap, int retArray[], short arrayLen);
 
 private:
   enum JAVA_METHODS {
     JM_CTOR = 0, 
-    JM_INIT_SCAN_RANGES,
+    JM_SET_SCAN_RANGES,
     JM_TRAF_HDFS_READ,
     JM_LAST
   };
- 
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
   static bool javaMethodsInitialized_;
@@ -109,7 +115,7 @@ public:
   static HdfsClient *newInstance(NAHeap *heap, HDFS_Client_RetCode &retCode);
 
   // Get the error description.
-  virtual char* getErrorText(HDFS_Client_RetCode errEnum);
+  static char* getErrorText(HDFS_Client_RetCode errEnum);
   
   // Initialize JVM and all the JNI configuration.
   // Must be called.

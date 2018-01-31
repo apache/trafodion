@@ -115,7 +115,8 @@ SFR_RetCode SequenceFileReader::init()
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
    
     rc = (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == SFR_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -440,7 +441,8 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
 
     rc = (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == SFW_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;

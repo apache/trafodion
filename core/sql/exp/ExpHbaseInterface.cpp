@@ -48,9 +48,7 @@
 
 ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
                                      const char * server,
-                                     const char * zkPort,
-                                     int debugPort,
-                                     int debugTimeout)
+                                     const char * zkPort)
 {
   heap_ = heap;
   hbs_ = NULL;
@@ -66,19 +64,13 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
     strcpy(zkPort_, zkPort);
   else
     zkPort_[0] = 0;
-
-  debugPort_ = debugPort;
-  debugTimeout_ = debugTimeout;
 }
 
 ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                                   const char* server,
-                                                  const char *zkPort,
-                                                  int debugPort,
-                                                  int debugTimeout)
+                                                  const char *zkPort)
 {
-  return new (heap) ExpHbaseInterface_JNI(heap, server, TRUE, zkPort,
-                                          debugPort, debugTimeout); // This is the transactional interface
+  return new (heap) ExpHbaseInterface_JNI(heap, server, TRUE,zkPort);
 }
 
 NABoolean isParentQueryCanceled()
@@ -283,8 +275,8 @@ char * getHbaseErrStr(Lng32 errEnum)
 // ===========================================================================
 
 ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server, bool useTRex,
-                                             const char *zkPort, int debugPort, int debugTimeout)
-     : ExpHbaseInterface(heap, server, zkPort, debugPort, debugTimeout)
+                                             const char *zkPort)
+     : ExpHbaseInterface(heap, server, zkPort)
    ,useTRex_(useTRex)
    ,client_(NULL)
    ,htc_(NULL)
@@ -324,7 +316,7 @@ Lng32 ExpHbaseInterface_JNI::init(ExHbaseAccessStats *hbs)
   if (client_ == NULL)
   {
     HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::init() creating new client.");
-    client_ = HBaseClient_JNI::getInstance(debugPort_, debugTimeout_);
+    client_ = HBaseClient_JNI::getInstance();
     
     if (client_->isInitialized() == FALSE)
     {

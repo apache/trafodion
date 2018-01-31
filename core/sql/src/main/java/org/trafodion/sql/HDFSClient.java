@@ -54,6 +54,7 @@ public class HDFSClient
    private static FileSystem defaultFs_ = null;
    private FileSystem fs_ = null;
    private int bufNo_;
+   private int rangeNo_;
    private FSDataInputStream fsdis_; 
    private OutputStream outStream_;
    private String filename_;
@@ -66,7 +67,7 @@ public class HDFSClient
    private int blockSize_; 
    private int bytesRead_;
    private Future future_ = null;
-    
+   private int isEOF_ = 0; 
    static {
       String confFile = System.getProperty("trafodion.log4j.configFile");
       System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
@@ -111,9 +112,10 @@ public class HDFSClient
    {
    }
  
-   public HDFSClient(int bufNo, String filename, ByteBuffer buffer, long position, int length) throws IOException
+   public HDFSClient(int bufNo, int rangeNo, String filename, ByteBuffer buffer, long position, int length) throws IOException
    {
       bufNo_ = bufNo; 
+      rangeNo_ = rangeNo;
       filename_ = filename;
       Path filepath = new Path(filename_);
       fs_ = FileSystem.get(filepath.toUri(),config_);
@@ -164,13 +166,27 @@ public class HDFSClient
       return bytesRead;
    } 
 
+   public int getRangeNo()
+   {
+      return rangeNo_;
+   }
+  
+   public int isEOF()
+   {
+      return isEOF_;
+   }
+
    public int trafHdfsReadBuffer() throws IOException, InterruptedException, ExecutionException
    {
       int bytesRead;
       int totalBytesRead = 0;
       while (true) {
          bytesRead = trafHdfsRead();
-         if (bytesRead == -1 || bytesRead == 0)
+         if (bytesRead == -1) {
+            isEOF_ = 1;
+            return totalBytesRead;
+         }
+         if (bytesRead == 0)
             return totalBytesRead;
          totalBytesRead += bytesRead;
          if (totalBytesRead == bufLen_)

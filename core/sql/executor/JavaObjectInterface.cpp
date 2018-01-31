@@ -40,6 +40,9 @@
 
 JavaVM* JavaObjectInterface::jvm_  = NULL;
 jint JavaObjectInterface::jniHandleCapacity_ = 0;
+int JavaObjectInterface::debugPort_ = 0;
+int JavaObjectInterface::debugTimeout_ = 0;
+
 __thread JNIEnv* jenv_ = NULL;
 __thread NAString *tsRecentJMFromJNI = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
@@ -285,7 +288,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
       if (mySqRoot != NULL)
         {
           len = strlen(mySqRoot); 
-          oomDumpDir = new (heap_) char[len+50];
+          oomDumpDir = new char[len+50];
           strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
           strcat(oomDumpDir, mySqRoot);
           strcat(oomDumpDir, "/logs");
@@ -317,7 +320,7 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   if (classPathArg)
     free(classPathArg);
   if (oomDumpDir)
-    NADELETEBASIC(oomDumpDir, heap_);
+    delete oomDumpDir;
   return ret;
 }
 
@@ -346,8 +349,6 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
          GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_CHECK_JVM));
          return JOI_ERROR_CREATE_JVM;
       }
-        
-      needToDetach_ = false;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Created a new JVM.");
     }
     char *jniHandleCapacityStr =  getenv("TRAF_JNIHANDLE_CAPACITY");
@@ -371,7 +372,6 @@ JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
       if (result != JNI_OK)
         return JOI_ERROR_ATTACH_JVM;
       
-      needToDetach_ = true;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Attached to an existing JVM from another thread.");
       break;
        
@@ -537,11 +537,10 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
 
 NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
 {
-   NAString error_msg(heap_);
-
    if (jenv == NULL)
        jenv = jenv_;
    CliGlobals *cliGlobals = GetCliGlobals();
+   NAString error_msg(heap_);
    if (jenv == NULL)
    {
       error_msg = "Internal Error - Unable to obtain jenv";
@@ -646,7 +645,6 @@ JOI_RetCode JavaObjectInterface::initJNIEnv()
          return retcode;
   }
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails();
     return JOI_ERROR_INIT_JNI;
   }
   return JOI_OK;

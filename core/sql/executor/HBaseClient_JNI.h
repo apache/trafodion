@@ -246,7 +246,7 @@ public:
   std::string* getHTableName();
 
   // Get the error description.
-  virtual char* getErrorText(HTC_RetCode errEnum);
+  static char* getErrorText(HTC_RetCode errEnum);
 
   void setTableName(const char *tableName)
   {
@@ -429,7 +429,7 @@ typedef enum {
 class HBaseClient_JNI : public JavaObjectInterface
 {
 public:
-  static HBaseClient_JNI* getInstance(int debugPort, int debugTimeout);
+  static HBaseClient_JNI* getInstance();
   static void deleteInstance();
 
   // Destructor
@@ -488,7 +488,7 @@ public:
   HBaseClientRequest* getHBaseRequest();
   bool workerThreadsStarted() { return (threadID_[0] ? true : false); }
   // Get the error description.
-  virtual char* getErrorText(HBC_RetCode errEnum);
+  static char* getErrorText(HBC_RetCode errEnum);
   
   static void logIt(const char* str);
 
@@ -542,7 +542,7 @@ public:
 
 private:   
   // private default constructor
-  HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
+  HBaseClient_JNI(NAHeap *heap);
   NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
@@ -665,7 +665,7 @@ public:
 
   HVC_RetCode executeHiveSQL(const char* hiveSQL);
   // Get the error description.
-  virtual char* getErrorText(HVC_RetCode errEnum);
+  static char* getErrorText(HVC_RetCode errEnum);
   
   static void logIt(const char* str);
 
@@ -757,7 +757,7 @@ public:
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
   // Get the error description.
-  virtual char* getErrorText(HBLC_RetCode errEnum);
+  static char* getErrorText(HBLC_RetCode errEnum);
 
 
 private:

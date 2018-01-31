@@ -37,6 +37,11 @@ pthread_mutex_t HdfsScan::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const hdfsScanErrorEnumStr[] = 
 {
+   "Error in HdfsScan::setScanRanges"
+  ,"Java Exception in HdfsScan::setScanRanges"
+  ,"Error in HdfsScan::trafHdfsRead"
+  ,"Java Exceptiokn in HdfsScan::trafHdfsRead"
+  , "Hdfs scan End of Ranges"
 };
 
  
@@ -62,13 +67,14 @@ HDFS_Scan_RetCode HdfsScan::init()
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR      ].jm_signature = "()V";
-    JavaMethods_[JM_INIT_SCAN_RANGES].jm_name      = "<init>";
-    JavaMethods_[JM_INIT_SCAN_RANGES].jm_signature = "(Ljava/lang/Object;Ljava/lang/Object;[Ljava/lang/String;[J[J)V";
+    JavaMethods_[JM_SET_SCAN_RANGES].jm_name      = "setScanRanges";
+    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[Ljava/lang/String;[J[J)V";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_name      = "trafHdfsRead";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_signature = "()[I";
    
     rc = (HDFS_Scan_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HDFS_SCAN_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -79,17 +85,131 @@ char* HdfsScan::getErrorText(HDFS_Scan_RetCode errEnum)
   if (errEnum < (HDFS_Scan_RetCode)JOI_LAST)
     return JavaObjectInterface::getErrorText((JOI_RetCode)errEnum);
   else
-    return (char*)hdfsScanErrorEnumStr[errEnum-HDFS_SCAN_FIRST-1];
+    return (char*)hdfsScanErrorEnumStr[errEnum-HDFS_SCAN_FIRST];
 }
-//////////////////////////////////////////////////////////////////////////////
-HDFS_Scan_RetCode HdfsScan::initScanRanges()
+
+/////////////////////////////////////////////////////////////////////////////
+HDFS_Scan_RetCode HdfsScan::setScanRanges(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
+      HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize)
 {
+   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::setScanRanges() called.");
+
+  if (initJNIEnv() != JOI_OK)
+     return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
+
+   jobject j_buf1 = jenv_->NewDirectByteBuffer(hdfsScanBuf[0].buf_, scanBufSize);
+   if (j_buf1 == NULL) {
+      GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM));
+      jenv_->PopLocalFrame(NULL);
+      return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
+   }
+
+   jobject j_buf2 = jenv_->NewDirectByteBuffer(hdfsScanBuf[1].buf_, scanBufSize);
+   if (j_buf2 == NULL) {
+      GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM));
+      jenv_->PopLocalFrame(NULL);
+      return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
+   }
+   jobjectArray j_filenames = NULL;
+   jlongArray j_offsets = NULL;
+   jlongArray j_lens = NULL;  
+   HdfsFileInfo *hdfo;
+   jstring j_obj;
+
+   HDFS_Scan_RetCode hdfsScanRetCode =  HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
+   int arrayLen = hdfsFileInfoArray->entries();
+   for (int i = 0; i < arrayLen; i++) {
+       hdfo = hdfsFileInfoArray->at(i);
+       j_obj = jenv_->NewStringUTF(hdfo->fileName());
+       if (jenv_->ExceptionCheck()) {
+          jenv_->PopLocalFrame(NULL);
+          return hdfsScanRetCode;
+       }
+       if (j_filenames == NULL) {
+          j_filenames = jenv_->NewObjectArray(arrayLen, jenv_->GetObjectClass(j_obj), NULL);
+          if (jenv_->ExceptionCheck()) {
+             jenv_->PopLocalFrame(NULL);
+             return hdfsScanRetCode;
+          }
+       }
+       jenv_->SetObjectArrayElement(j_filenames, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
+       if (j_offsets == NULL) {
+          j_offsets = jenv_->NewLongArray(arrayLen);
+          if (jenv_->ExceptionCheck()) {
+             jenv_->PopLocalFrame(NULL);
+             return hdfsScanRetCode;
+          }
+       }
+       long offset = hdfo->getStartOffset(); 
+       jenv_->SetLongArrayRegion(j_offsets, i, 1, &offset);
+       if (j_lens == NULL) {
+          j_lens = jenv_->NewLongArray(arrayLen);
+          if (jenv_->ExceptionCheck()) {
+             jenv_->PopLocalFrame(NULL);
+             return hdfsScanRetCode;
+          }
+       }
+       long len = hdfo->getBytesToRead()+rangeTailIOSize;
+       jenv_->SetLongArrayRegion(j_lens, i, 1, &len);
+   } 
+
+   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_filenames, j_offsets, j_lens);
+
+   if (jenv_->ExceptionCheck()) {
+      getExceptionDetails();
+      logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+      logError(CAT_SQL_HDFS, "HdfsScan::setScanRanges()", getLastError());
+      jenv_->PopLocalFrame(NULL);
+      return HDFS_SCAN_ERROR_SET_SCAN_RANGES_EXCEPTION;
+   }
    return HDFS_SCAN_OK; 
 }
 
-HDFS_Scan_RetCode HdfsScan::trafHdfsRead()
+HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
+      HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize, HDFS_Scan_RetCode &hdfsScanRetCode)
 {
-   return HDFS_SCAN_OK; 
+   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::newInstance() called.");
+
+   if (initJNIEnv() != JOI_OK)
+     return NULL;
+   hdfsScanRetCode = HDFS_SCAN_OK;
+   HdfsScan *hdfsScan = new (heap) HdfsScan(heap);
+   if (hdfsScan != NULL) {
+       hdfsScanRetCode = hdfsScan->init();
+       if (hdfsScanRetCode == HDFS_SCAN_OK) 
+          hdfsScanRetCode = hdfsScan->setScanRanges(heap, hdfsScanBuf, scanBufSize, 
+                    hdfsFileInfoArray, rangeTailIOSize); 
+       if (hdfsScanRetCode != HDFS_SCAN_OK) {
+          NADELETE(hdfsScan, HdfsScan, heap);
+          hdfsScan = NULL;
+       }
+   }
+   return hdfsScan;
+}
+
+
+HDFS_Scan_RetCode HdfsScan::trafHdfsRead(NAHeap *heap, int retArray[], short arrayLen)
+{
+   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::trafHdfsRead() called.");
+
+   if (initJNIEnv() != JOI_OK)
+     return HDFS_SCAN_ERROR_TRAF_HDFS_READ_PARAM;
+
+   jintArray j_retArray = (jintArray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_TRAF_HDFS_READ].methodID);
+   if (jenv_->ExceptionCheck()) {
+      getExceptionDetails();
+      logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+      logError(CAT_SQL_HDFS, "HdfsScan::setScanRanges()", getLastError());
+      jenv_->PopLocalFrame(NULL);
+      return HDFS_SCAN_ERROR_TRAF_HDFS_READ_EXCEPTION;
+   }
+   if (j_retArray == NULL)
+      return HDFS_SCAN_EOR;
+   short retArrayLen = jenv_->GetArrayLength(j_retArray);
+   ex_assert(retArrayLen == arrayLen, "HdfsScan::trafHdfsRead() InternalError: retArrayLen != arrayLen");
+   jenv_->GetIntArrayRegion(j_retArray, 0, 4, retArray);
+   return HDFS_SCAN_OK;
 }
 
 // ===========================================================================
@@ -123,12 +243,15 @@ static const char* const hdfsClientErrorEnumStr[] =
 //////////////////////////////////////////////////////////////////////////////
 HdfsClient *HdfsClient::newInstance(NAHeap *heap, HDFS_Client_RetCode &retCode)
 {
+   QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::newInstance() called.");
+
+   if (initJNIEnv() != JOI_OK)
+     return NULL;
    retCode = HDFS_CLIENT_OK;
    HdfsClient *hdfsClient = new (heap) HdfsClient(heap);
    if (hdfsClient != NULL) {
        retCode = hdfsClient->init();
-       if (retCode != HDFS_CLIENT_OK)
-       {
+       if (retCode != HDFS_CLIENT_OK) {
           NADELETE(hdfsClient, HdfsClient, heap);
           hdfsClient = NULL;
        }
@@ -170,7 +293,8 @@ HDFS_Client_RetCode HdfsClient::init()
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_name      = "hdfsDeletePath";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_signature = "(Ljava/lang/String;)Z";
     rc = (HDFS_Client_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HDFS_CLIENT_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -189,7 +313,7 @@ char* HdfsClient::getErrorText(HDFS_Client_RetCode errEnum)
 
 HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean compress)
 {
-  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "HdfsClient::hdfsCreate(%s) called.", path);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsCreate(%s) called.", path);
 
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_CREATE_PARAM;
@@ -209,15 +333,15 @@ HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean compress)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsCreate()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsCreate()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CREATE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsCreate()", getLastError());
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsCreate()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CREATE_PARAM;
   }
@@ -231,7 +355,7 @@ HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean compress)
 //////////////////////////////////////////////////////////////////////////////
 HDFS_Client_RetCode HdfsClient::hdfsWrite(const char* data, Int64 len)
 {
-  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "HdfsClient::hdfsWrite(%ld) called.", len);
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsWrite(%ld) called.", len);
 
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
@@ -252,15 +376,15 @@ HDFS_Client_RetCode HdfsClient::hdfsWrite(const char* data, Int64 len)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsWrite()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsWrite()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsWrite()", getLastError());
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsWrite()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
   }
@@ -275,7 +399,7 @@ HDFS_Client_RetCode HdfsClient::hdfsWrite(const char* data, Int64 len)
 //////////////////////////////////////////////////////////////////////////////
 HDFS_Client_RetCode HdfsClient::hdfsClose()
 {
-  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "HdfsClient::close() called.");
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::close() called.");
 
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION;
@@ -287,15 +411,15 @@ HDFS_Client_RetCode HdfsClient::hdfsClose()
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsClose()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsClose()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsClose()", getLastError());
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsClose()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION;
   }
@@ -306,7 +430,7 @@ HDFS_Client_RetCode HdfsClient::hdfsClose()
 
 HDFS_Client_RetCode HdfsClient::hdfsCleanUnloadPath( const NAString& uldPath)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HdfsClient::hdfsCleanUnloadPath(%s) called.",
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsCleanUnloadPath(%s) called.",
                                                                              uldPath.data());
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_CLEANUP_PARAM;
@@ -324,8 +448,8 @@ HDFS_Client_RetCode HdfsClient::hdfsCleanUnloadPath( const NAString& uldPath)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsCleanUnloadPath()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsCleanUnloadPath()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
@@ -337,7 +461,7 @@ HDFS_Client_RetCode HdfsClient::hdfsCleanUnloadPath( const NAString& uldPath)
 HDFS_Client_RetCode HdfsClient::hdfsMergeFiles( const NAString& srcPath,
                                                 const NAString& dstPath)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HdfsClient::hdfsMergeFiles(%s, %s) called.",
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsMergeFiles(%s, %s) called.",
                   srcPath.data(), dstPath.data());
 
   if (initJNIEnv() != JOI_OK)
@@ -364,15 +488,15 @@ HDFS_Client_RetCode HdfsClient::hdfsMergeFiles( const NAString& srcPath,
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsMergeFiles()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsMergeFiles()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsMergeFiles()", getLastError());
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsMergeFiles()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   } 
@@ -383,7 +507,7 @@ HDFS_Client_RetCode HdfsClient::hdfsMergeFiles( const NAString& srcPath,
 
 HDFS_Client_RetCode HdfsClient::hdfsDeletePath( const NAString& delPath)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HdfsClient::hdfsDeletePath(%s called.",
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsDeletePath(%s called.",
                   delPath.data());
   if (initJNIEnv() != JOI_OK)
      return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
@@ -402,15 +526,15 @@ HDFS_Client_RetCode HdfsClient::hdfsDeletePath( const NAString& delPath)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsDeletePath()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsDeletePath()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsDeletePath()", getLastError());
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsDeletePath()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
@@ -421,7 +545,7 @@ HDFS_Client_RetCode HdfsClient::hdfsDeletePath( const NAString& delPath)
 
 HDFS_Client_RetCode HdfsClient::hdfsExists( const NAString& uldPath, NABoolean & exist)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HdfsClient::hdfsExists(%s) called.",
+  QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::hdfsExists(%s) called.",
                                                       uldPath.data());
 
   if (initJNIEnv() != JOI_OK)
@@ -441,8 +565,8 @@ HDFS_Client_RetCode HdfsClient::hdfsExists( const NAString& uldPath, NABoolean &
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HdfsClient::hdfsExists()", getLastError());
+    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
+    logError(CAT_SQL_HDFS, "HdfsClient::hdfsExists()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_EXISTS_EXCEPTION;
   } 

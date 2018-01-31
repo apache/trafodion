@@ -1291,8 +1291,6 @@ void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
                   NULL, NULL, NULL, NULL,
                   errorMsg,
                 (char *)currContext->getJniErrorStr().data());
-  //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
-  //pentry_down->setDiagsArea(diagsArea);
   updateWorkATPDiagsArea(diagsArea);
 }
 

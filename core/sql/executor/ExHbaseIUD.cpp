@@ -1158,16 +1158,11 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
                       "traf_upsert_err",
                       fileNum,
                       loggingFileName_);
-   loggingFileCreated_ = FALSE;
    loggingRow_ =  new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
 }
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 {
-  if (loggingFileName_ != NULL) {
-     NADELETEBASIC(loggingFileName_, getHeap());
-     loggingFileName_ = NULL;
-  }
   // Flush and close sample file if used
   if (hdfs_)
     {

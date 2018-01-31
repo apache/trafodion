@@ -24,7 +24,7 @@
 #define COM_HDFS_SCAN_H
 
 #include "ComTdb.h"
-//#include "hdfs.h"  // tPort 
+//#include "hdfs.h"   
 #include "ExpLOBinterface.h"
 #include "ComQueue.h"
 
@@ -54,7 +54,8 @@ class ComTdbHdfsScan : public ComTdb
     // ignore conversion errors and continue reading the next row.
     CONTINUE_ON_ERROR           = 0x0020,
     LOG_ERROR_ROWS              = 0x0040,
-    ASSIGN_RANGES_AT_RUNTIME    = 0x0080
+    ASSIGN_RANGES_AT_RUNTIME    = 0x0080,
+    USE_LIBHDFS_SCAN            = 0x0100
   };
 
   // Expression to filter rows.
@@ -284,6 +285,11 @@ public:
   {(v ? flags_ |= ASSIGN_RANGES_AT_RUNTIME : flags_ &= ~ASSIGN_RANGES_AT_RUNTIME); }
   NABoolean getAssignRangesAtRuntime() const
                                 { return (flags_ & ASSIGN_RANGES_AT_RUNTIME) != 0; }
+
+  void setUseLibhdfsScan(NABoolean v)
+  {(v ? flags_ |= USE_LIBHDFS_SCAN : flags_ &= ~USE_LIBHDFS_SCAN); }
+  NABoolean getUseLibhdfsScan() const
+                                { return (flags_ & USE_LIBHDFS_SCAN) != 0; }
   
   UInt32 getMaxErrorRows() const { return maxErrorRows_;}
   void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }

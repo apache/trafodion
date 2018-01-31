@@ -344,19 +344,6 @@ Lng32 ExpLOBInterfaceGetLobLength(ExLobGlobals * exLobGlob,
 				  );
 
 
-/*
-class HdfsFileInfo
-{
- public:
-  char * fileName() { return fileName_; }
-  Int64 getStartOffset() { return startOffset_; }
-  Int64 getBytesToRead() { return bytesToRead_; }
-  Lng32 entryNum_; // 0 based, first entry is entry num 0.
-  NABasicPtr  fileName_;
-  Int64 startOffset_;
-  Int64 bytesToRead_;
-};
-*/
 #endif
 
 

@@ -358,15 +358,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   registerSubtasks();
   registerResizeSubtasks();
 
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
-					//					(char*)"localhost", 
 					(char*)hbaseAccessTdb.server_, 
-					//                                        (char*)"2181", 
-					(char*)hbaseAccessTdb.zkPort_,
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)hbaseAccessTdb.zkPort_);
 
   asciiRow_ = NULL;
   asciiRowMissingCols_ = NULL;
@@ -508,6 +502,8 @@ void ExHbaseAccessTcb::freeResources()
      NADELETEBASIC(colVal_.val, getHeap());
   if (hdfsClient_ != NULL) 
      NADELETE(hdfsClient_, HdfsClient, getHeap());
+  if (loggingFileName_ != NULL)
+     NADELETEBASIC(loggingFileName_, getHeap());
 }
 
 

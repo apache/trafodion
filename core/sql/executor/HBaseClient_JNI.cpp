@@ -114,8 +114,8 @@ static const char* const hbcErrorEnumStr[] =
 // 
 //////////////////////////////////////////////////////////////////////////////
 // private default constructor
-HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout)
-                 :  JavaObjectInterface(heap, debugPort, debugTimeout)
+HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap)
+                 :  JavaObjectInterface(heap)
                    ,isConnected_(FALSE)
 {
   for (int i=0; i<NUM_HBASE_WORKER_THREADS; i++) {
@@ -137,7 +137,7 @@ char* HBaseClient_JNI::getErrorText(HBC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
+HBaseClient_JNI* HBaseClient_JNI::getInstance()
 {
    ContextCli *currContext = GetCliGlobals()->currContext();
    HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
@@ -145,8 +145,7 @@ HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
    {
      NAHeap *heap = currContext->exHeap();
     
-     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap,
-                   debugPort, debugTimeout);
+     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap);
      currContext->setHbaseClient(hbaseClient_JNI);
    }
    return hbaseClient_JNI;
@@ -301,7 +300,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_TRUNCATE   ].jm_name      = "truncate";
     JavaMethods_[JM_TRUNCATE   ].jm_signature = "(Ljava/lang/String;ZJ)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -1583,7 +1583,8 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_ADD_TO_HFILE_DB  ].jm_signature = "(SLjava/lang/Object;Ljava/lang/Object;)Z";
 
     rc = (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBLC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -3208,7 +3209,8 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HTC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -3798,7 +3800,8 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_name = "executeHiveSQL";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_signature = "(Ljava/lang/String;)V";
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HVC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;

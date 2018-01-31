@@ -1391,6 +1391,9 @@ if (hTabStats->isOrcFile())
   hdfsscan_tdb->setUseCif(useCIF);
   hdfsscan_tdb->setUseCifDefrag(useCIFDegrag);
 
+  if (CmpCommon::getDefault(USE_LIBHDFS_SCAN) == DF_ON)
+     hdfsscan_tdb->setUseLibhdfsScan(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hdfsscan_tdb, 0, 0, generator));

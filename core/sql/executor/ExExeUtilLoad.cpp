@@ -1245,9 +1245,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       int jniDebugTimeout = 0;
       ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                               (char*)"", //Later may need to change to hblTdb.server_,
-                                              (char*)"", //Later may need to change to hblTdb.zkPort_,
-                                              jniDebugPort,
-                                              jniDebugTimeout);
+                                              (char*)""); //Later may need to change to hblTdb.zkPort_);
       retcode = ehi_->initHBLC();
       if (retcode == 0) 
         retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
@@ -1983,13 +1981,9 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
        oneFile_(FALSE)
 {
   hdfsClient_ = NULL;
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                    (char*)"", //Later may need to change to hblTdb.server_,
-                                   (char*)"", //Later may need to change to hblTdb.zkPort_,
-                                   jniDebugPort,
-                                   jniDebugTimeout);
+                                   (char*)""); //Later may need to change to hblTdb.zkPort_);
   qparent_.down->allocatePstate(this);
 
 }
