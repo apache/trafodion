@@ -428,6 +428,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("FEATURE_VERSION_INFO",TOK_FEATURE_VERSION_INFO, NONRESTOKEN_),
   ParKeyWord("FETCH",              TOK_FETCH,       ANS_|RESWORD_|MPWORD_),
   ParKeyWord("FILE",               TOK_FILE,        NONRESTOKEN_),
+  ParKeyWord("FILENAME",           TOK_FILENAME,        NONRESTOKEN_),
   ParKeyWord("FILETOLOB",          TOK_FILETOLOB,   NONRESTOKEN_),
   ParKeyWord("FILETOEXTERNAL",          TOK_FILETOEXTERNAL,   NONRESTOKEN_),
   ParKeyWord("FINAL",              TOK_FINAL,       NONRESTOKEN_),

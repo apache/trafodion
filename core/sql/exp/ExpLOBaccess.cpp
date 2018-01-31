@@ -870,6 +870,67 @@ Ex_Lob_Error ExLob::getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen
       }
   return err;
 }
+Ex_Lob_Error ExLob::getOffset(char *handleIn, Int32 handleInLen,Int64 &outLobOffset,LobsSubOper so, Int64 transId)
+{
+  char logBuf[4096];
+  Int32 cliErr = 0;
+  Ex_Lob_Error err=LOB_OPER_OK; 
+  char *blackBox = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
+  Int32 blackBoxLen = 0;
+  Int64 dummy = 0;
+  Int32 dummy2 = 0;
+  if (so != Lob_External_File)
+    {
+      
+      cliErr = SQL_EXEC_LOBcliInterface(handleIn, handleInLen,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBOFFSET,LOB_CLI_ExecImmed,&outLobOffset,0, 0, 0,0,transId,lobTrace_);
+    
+      if (cliErr < 0 ) {
+        str_sprintf(logBuf,"CLI SELECT_LOBOFFSET returned error %d",cliErr);
+        lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+  
+        return LOB_DESC_READ_ERROR;
+      }
+    }
+ 
+  return err;
+}
+
+Ex_Lob_Error ExLob::getFileName(char *handleIn, Int32 handleInLen, char *outFileName, Int32 &outFileLen , LobsSubOper so, Int64 transId)
+{
+  char logBuf[4096];
+  Int32 cliErr = 0;
+  Ex_Lob_Error err=LOB_OPER_OK; 
+  Int64 dummy = 0;
+  Int32 dummy2 = 0;
+  if (so != Lob_External_File)
+    {
+      //Derive the filename from the LOB handle and return
+      str_cpy_all(outFileName, (char *)lobDataFile_.data(),lobDataFile_.length());
+    }
+    else
+      {
+        //Get the lob external filename from the descriptor file 
+        cliErr = SQL_EXEC_LOBcliInterface(handleIn, 
+                                          handleInLen, 
+                                          (char *)outFileName, &outFileLen,
+                                          NULL, 0,
+                                          LOB_CLI_SELECT_UNIQUE, LOB_CLI_ExecImmed,
+                                          &dummy, &dummy,
+                                          &dummy, &dummy, 
+                                          0,
+                                          transId,lobTrace_);
+        if (cliErr < 0 ) {
+          str_sprintf(logBuf,"CLI SELECT_FILENAME returned error %d",cliErr);
+          lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+  
+          return LOB_DESC_READ_ERROR;
+        }
+             
+      }
+  return err;
+}
+
+
 Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOper, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char *handleOut, Int32 &handleOutLen, Int64 xnId, void *lobGlobals)
 {
   Ex_Lob_Error err=LOB_OPER_OK; 
@@ -2742,6 +2803,16 @@ Ex_Lob_Error ExLobsOper (
     case Lob_GetLength:
       {
         err = lobPtr->getLength(handleIn, handleInLen,retOperLen,subOperation,transId);  
+      }
+      break;
+  case Lob_GetOffset:
+      {
+        err = lobPtr->getOffset(handleIn, handleInLen,retOperLen,subOperation,transId);  
+      }
+      break;
+    case Lob_GetFileName:
+      {
+        err = lobPtr->getFileName(handleIn, handleInLen, (char *)blackBox, blackBoxLen,  subOperation, transId);
       }
       break;
     case Lob_ReadDesc: // read desc only. Needed for pass thru.

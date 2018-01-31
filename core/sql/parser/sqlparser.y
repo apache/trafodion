@@ -750,6 +750,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EXTERNALTOSTRING
 %token <tokval> TOK_EMPTY_BLOB
 %token <tokval> TOK_EMPTY_CLOB
+%token <tokval> TOK_FILENAME
 %token <tokval> TOK_INSERT
 %token <tokval> TOK_INSERT_ONLY
 %token <tokval> TOK_INS
@@ -15930,6 +15931,59 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 
 		 $$ = lle;
 	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_FILENAME'(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		 Int64 returnFilenameAddr = atoInt64($8->data());
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_HDFSFILENAME_,
+		    returnFilenameAddr, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_FILENAME '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_HDFSFILENAME_,
+		    -1, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_OFFSET'(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		 Int64 returnOffsetAddr = atoInt64($8->data());
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_OFFSET_,
+		    returnOffsetAddr, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_OFFSET '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_OFFSET_,
+		    -1, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+
 
                | TOK_EXTRACT TOK_LOBTOSTRING '(' TOK_LOB QUOTED_STRING ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {

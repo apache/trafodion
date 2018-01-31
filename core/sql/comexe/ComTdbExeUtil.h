@@ -2798,7 +2798,8 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_,NOOP_
+    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_, RETRIEVE_HDFSFILENAME_,
+    RETRIEVE_OFFSET_,NOOP_
   };
   
 
@@ -2879,7 +2880,13 @@ public:
   void setRetrieveLength(NABoolean v)
   {(v ? flags_ |= RETRIEVE_LENGTH : flags_ &= ~RETRIEVE_LENGTH); };
   NABoolean retrieveLength() { return (flags_ & RETRIEVE_LENGTH) != 0; };
-
+ 
+  void setRetrieveHdfsFileName(NABoolean v)
+  {(v ? flags_ |= RETRIEVE_HDFSFILENAME : flags_ &= ~RETRIEVE_HDFSFILENAME); };
+  NABoolean retrieveHdfsFileName() { return (flags_ & RETRIEVE_HDFSFILENAME) != 0; };
+ void setRetrieveOffset(NABoolean v)
+  {(v ? flags_ |= RETRIEVE_OFFSET : flags_ &= ~RETRIEVE_OFFSET); };
+  NABoolean retrieveOffset() { return (flags_ & RETRIEVE_OFFSET) != 0; };
   void setErrorIfNotExists(NABoolean v)
   {(v ? flags_ |= ERROR_IF_NOT_EXISTS : flags_ &= ~ERROR_IF_NOT_EXISTS); };
   NABoolean errorIfNotExists() { return (flags_ & ERROR_IF_NOT_EXISTS) != 0; };
@@ -2913,7 +2920,9 @@ private:
     ERROR_IF_NOT_EXISTS =0x0010,
     ERROR_IF_EXISTS     =0x0020,
     TRUNCATE_EXISTING = 0x0040,
-    APPEND_OR_CREATE = 0x0080
+    APPEND_OR_CREATE = 0x0080,
+    RETRIEVE_HDFSFILENAME= 0x0100,
+    RETRIEVE_OFFSET=0x0200
   
     
   };
