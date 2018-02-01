@@ -567,7 +567,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract filename(LOB '/g" | sed "s/$/');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract name(LOB '/g" | sed "s/$/');/g" >> t130_extract_command;
 obey t130_extract_command;
 sh rm t130_extract_command;
 sh grep "^LOBH" TMP130 | sed "s/^/extract offset(LOB '/g" | sed "s/$/');/g" >> t130_extract_command;

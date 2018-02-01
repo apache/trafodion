@@ -750,7 +750,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EXTERNALTOSTRING
 %token <tokval> TOK_EMPTY_BLOB
 %token <tokval> TOK_EMPTY_CLOB
-%token <tokval> TOK_FILENAME
 %token <tokval> TOK_INSERT
 %token <tokval> TOK_INSERT_ONLY
 %token <tokval> TOK_INS
@@ -15932,7 +15931,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 $$ = lle;
 	       }
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_FILENAME'(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
+exe_util_lob_extract : TOK_EXTRACT TOK_NAME '(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
                {
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 		 Int64 returnFilenameAddr = atoInt64($8->data());
@@ -15945,7 +15944,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_FILENAME'(' TOK_LOB QUOTED_STRING  ')' TO
 		 $$ = lle;
 	       }
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_FILENAME '(' TOK_LOB QUOTED_STRING  ')' 
+exe_util_lob_extract : TOK_EXTRACT TOK_NAME '(' TOK_LOB QUOTED_STRING  ')' 
                {
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 		
