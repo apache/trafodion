@@ -5491,7 +5491,7 @@ static void etabadd(char type, char *run, int id)
                     }
                 } else {                            /* not a load job */
                     etab[no].k = no;                /* record grandparent for copy/diff ops */
-                    if ( etab[no].ps ){
+                    if ( etab[no].ps > 1 ){
                         etab[no].TotalMaxRecords = etab[no].mr;
                         etab[no].mr /= etab[no].ps; /* each thread will get a portion of the max record to fetch */
                         if (etab[0].r > etab[0].mr) /* rowset size should not exceeds the max size */
