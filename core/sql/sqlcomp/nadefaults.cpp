@@ -3046,6 +3046,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
+  DDkwd__(USTAT_AUTOMATIC_LOGGING,              "OFF"),  // OFF gives same semantics as 
+                                                         // UPDATE STATISTICS LOG OFF, while
+                                                         // ON gives same semantics as 
+                                                         // UPDATE STATISTICS LOG SYSTEM 
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),
   DDkwd__(USTAT_AUTO_EMPTYHIST_TWO_TRANS,       "OFF"),  // When ON empty hist insert will be 2 trans.
   DDkwd__(USTAT_AUTO_FOR_VOLATILE_TABLES,       "OFF"),  // Toggle for vol tbl histogram usage

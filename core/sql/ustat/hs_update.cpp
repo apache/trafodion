@@ -170,6 +170,8 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     sortBuffer2 = NULL;
 
     HSLogMan *LM = HSLogMan::Instance();
+    if (LM->GetLogSetting() == HSLogMan::SYSTEM)
+      LM->StartLog();  // start a log automatically for each UPDATE STATS command
 
     ComDiagsArea *ptrDiags = CmpCommon::diags();
     if (!ptrDiags)
@@ -329,7 +331,10 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
                                                 /* MODIFY HISTOGRAMS.           */
                                                 /*==============================*/
     if (hs_globals_obj.optFlags & LOG_OPT)            /* log option requested   */
-      return 0;
+      {
+        HSCleanUpLog();
+        return 0;
+      }
 
                                                 /*==============================*/
                                                 /* VERIFY THAT THE REQUESTOR    */
@@ -410,6 +415,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
         hs_globals_obj.optFlags & REMOVE_SAMPLE_OPT)  /* delete sample requested*/
     {
       retcode =  managePersistentSamples();
+      HSCleanUpLog();
       HSClearCLIDiagnostics();
       return retcode;
     }
@@ -421,6 +427,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     if (hs_globals_obj.optFlags & VIEWONLY_OPT)
     {
+      HSCleanUpLog();
       return 0;
     }
 
@@ -538,6 +545,8 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR RESET");
 
     LM->StopTimer();
+
+    HSCleanUpLog();
 
     return retcode;
   }
