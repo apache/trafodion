@@ -202,7 +202,14 @@ short ExFirstNTcb::work()
 	    // 0 means process all but don't return any rows.
 	    // -1 means get all rows. Should not reach this state.
 	    // <-1 means return the last '-(N+2)' rows.
-            effectiveFirstN_ = firstnTdb().firstNRows();
+            //TRAFODION-2930
+            //fix [first 600000000000] crash
+	    //effectiveFirstN_ = firstnTdb().firstNRows();
+            Int64 nFirstN = firstnTdb().firstNRows();
+            Int64 nMaxInt = INT_MAX;
+            effectiveFirstN_ = Lng32( min( nMaxInt,nFirstN ) );
+            //TRAFODION-2930
+
             returnedSoFar_ = 0;
 
             if (firstnTdb().firstNRowsExpr_)
