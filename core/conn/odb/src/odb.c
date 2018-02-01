@@ -5494,6 +5494,8 @@ static void etabadd(char type, char *run, int id)
                     if ( etab[no].ps ){
                         etab[no].TotalMaxRecords = etab[no].mr;
                         etab[no].mr /= etab[no].ps; /* each thread will get a portion of the max record to fetch */
+                        if (etab[0].r > etab[0].mr) /* rowset size should not exceeds the max size */
+                            etab[0].r = etab[0].mr;
                     }
                     strmcpy(tabn, etab[no].src, sizeof(tabn));
                     if ( !SQL_SUCCEEDED(Oret=SQLAllocHandle(SQL_HANDLE_STMT, Oc, &Os))){
