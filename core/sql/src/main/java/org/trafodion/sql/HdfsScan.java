@@ -65,7 +65,6 @@ public class HdfsScan
    private long lenRemain_;
    private int lastBufCompleted_ = -1;
    private boolean scanCompleted_;
-   private boolean lastScanRangeScheduled_;
    
    class HdfsScanRange 
    {
@@ -113,41 +112,44 @@ public class HdfsScan
       }
       if (hdfsScanRanges_.length > 0) {
          currRange_ = 0;
-         currPos_ = hdfsScanRanges_[0].pos_;
-         lenRemain_ = hdfsScanRanges_[0].len_;
-         hdfsScanRange(0);
+         currPos_ = hdfsScanRanges_[currRange_].pos_;
+         lenRemain_ = hdfsScanRanges_[currRange_].len_; 
+         hdfsScanRange(0, 0);
       }
       scanCompleted_ = false;
-      lastScanRangeScheduled_ = false;
    }
 
-   public void hdfsScanRange(int bufNo) throws IOException
+   public void hdfsScanRange(int bufNo, int bytesCompleted) throws IOException
    {
-      if (logger_.isDebugEnabled())
-         logger_.debug(" CurrentRange " + currRange_ + " LenRemain " + lenRemain_ + " BufNo " + bufNo); 
+      lenRemain_ -= bytesCompleted;
+      currPos_ += bytesCompleted; 
       int readLength;
-      if (lenRemain_ > bufLen_[bufNo])
-         readLength = bufLen_[bufNo];
-      else
-         readLength = (int)lenRemain_;
-      hdfsClient_[bufNo] = new HDFSClient(bufNo, currRange_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currPos_, readLength);
-      lenRemain_ -= readLength;
-      currPos_ += readLength; 
-      if (lenRemain_ == 0) {
-         if (currRange_  == (hdfsScanRanges_.length-1)) 
-            lastScanRangeScheduled_ = true;
+      if (lenRemain_ <= 0) {
+         if (currRange_  == (hdfsScanRanges_.length-1)) {
+            scanCompleted_ = true;
+            return;
+         }
          else {
             currRange_++;
             currPos_ = hdfsScanRanges_[currRange_].pos_;
             lenRemain_ = hdfsScanRanges_[currRange_].len_; 
          }
       } 
+      if (lenRemain_ > bufLen_[bufNo])
+         readLength = bufLen_[bufNo];
+      else
+         readLength = (int)lenRemain_;
+      if (! scanCompleted_) {
+         if (logger_.isDebugEnabled())
+            logger_.debug(" CurrentRange " + currRange_ + " LenRemain " + lenRemain_ + " BufNo " + bufNo); 
+         hdfsClient_[bufNo] = new HDFSClient(bufNo, currRange_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currPos_, readLength);
+      }
    } 
    
    public int[] trafHdfsRead() throws IOException, InterruptedException, ExecutionException
    {
       int[] retArray;
-      int byteCompleted;
+      int bytesRead;
       int bufNo;
       int rangeNo;
       int isEOF;
@@ -160,44 +162,41 @@ public class HdfsScan
       switch (lastBufCompleted_) {
          case -1:
          case 1:
-            byteCompleted = hdfsClient_[0].trafHdfsReadBuffer(); 
+            bytesRead = hdfsClient_[0].trafHdfsReadBuffer(); 
             bufNo = 0;
             rangeNo = hdfsClient_[0].getRangeNo();
             isEOF = hdfsClient_[0].isEOF();
             break;
          case 0:
-            byteCompleted = hdfsClient_[1].trafHdfsReadBuffer(); 
+            bytesRead = hdfsClient_[1].trafHdfsReadBuffer(); 
             bufNo = 1;
             rangeNo = hdfsClient_[1].getRangeNo();
             isEOF = hdfsClient_[1].isEOF();
             break;
          default:
             bufNo = -1;
-            byteCompleted = -1;
+            bytesRead = -1;
             rangeNo = -1;
             isEOF = 0;
       }    
-      lastBufCompleted_ = bufNo;
-      retArray[0] = byteCompleted;
+      retArray[0] = bytesRead;
       retArray[1] = bufNo;
       retArray[2] = rangeNo; 
       retArray[3] = isEOF;
       if (logger_.isDebugEnabled())
          logger_.debug(" Range No " + retArray[2] + " Buffer No " + retArray[1] + " Bytes Read " + retArray[0] + " isEOF " + retArray[3]); 
       lastBufCompleted_ = bufNo;
-      if ((isEOF == 1) && (currRange_ == (hdfsScanRanges_.length-1))) 
-         lastScanRangeScheduled_ = true;
-      if (lastScanRangeScheduled_) {
+      if ((isEOF == 1) && (currRange_ == (hdfsScanRanges_.length-1))) {
          scanCompleted_ = true;
-         return retArray; 
+         return retArray;
       }
       switch (lastBufCompleted_)
       {
          case 0:
-            hdfsScanRange(1);
+            hdfsScanRange(1, bytesRead);
             break;
          case 1:
-            hdfsScanRange(0);
+            hdfsScanRange(0, bytesRead);
             break;            
          default:
             break;
@@ -257,10 +256,20 @@ public class HdfsScan
       hdfsScan.setScanRanges(buf1, buf2, fileName, pos, len);
       int[] retArray;
       int bytesCompleted;
+      ByteBuffer buf;
       while (true) {
          retArray = hdfsScan.trafHdfsRead();
          if (retArray == null)
             break;
+         System.out.println("Range No:" + retArray[2] + " Buf No:" + retArray[1] + " Bytes Completed:" + retArray[0] + " EOF:" + retArray[3]);
+         if (retArray[1] == 0)
+            buf = buf1;
+         else
+            buf = buf2; 
+         buf.position(0);
+         for (int i = 0; i < 50; i++)
+           System.out.print(buf.get());
+         System.out.println("");
       }
       long time2 = System.currentTimeMillis();
       HdfsScan.shutdown();

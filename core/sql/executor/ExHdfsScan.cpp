@@ -143,7 +143,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
      }
      bufBegin_ = NULL;
      bufEnd_ = NULL;
-     logicalBufEnd_ = NULL;
+     bufLogicalEnd_ = NULL;
      headRoomCopied_ = 0;
      prevRangeNum_ = -1;
      currRangeBytesRead_ = 0;
@@ -567,11 +567,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              } 
              bufBegin_ = NULL;
              bufEnd_ = NULL;
-             logicalBufEnd_ = NULL;
+             bufLogicalEnd_ = NULL;
              headRoomCopied_ = 0;
              prevRangeNum_ = -1;                         
              currRangeBytesRead_ = 0;                   
              recordSkip_ = FALSE;
+             extraBytesRead_ = 0;
              step_ = TRAF_HDFS_READ;
           } 
           break;
@@ -589,25 +590,28 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 break;
              } 
              // Assign the starting address of the buffer
+             hdfo = hdfsFileInfoListAsArray_.at(retArray_[RANGE_NO]);
              bufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED];
-             if (retArray_[IS_EOF])
-                logicalBufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED];
-             else if (retArray_[BYTES_COMPLETED] < hdfsScanBufMaxSize_) 
-                logicalBufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED] - headRoom_;   
-             else
-                logicalBufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED];
-             hdfo_ = getRange(retArray_[RANGE_NO]);
              if (retArray_[RANGE_NO] != prevRangeNum_) {  
+                currRangeBytesRead_ = retArray_[BYTES_COMPLETED];
                 bufBegin_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_;
-                if (hdfo_->getStartOffset() == 0)
+                if (hdfo->getStartOffset() == 0)
                    recordSkip_ = FALSE;
                 else
                    recordSkip_ = TRUE; 
              } else {
+                currRangeBytesRead_ += retArray_[BYTES_COMPLETED];
                 bufBegin_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ - headRoomCopied_;
                 recordSkip_ = FALSE;
-             } 
+             }
+             if (currRangeBytesRead_ > hdfo->getBytesToRead())
+                extraBytesRead_ = currRangeBytesRead_ - hdfo->getBytesToRead(); 
+             else
+                extraBytesRead_ = 0;
+             bufLogicalEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED] - extraBytesRead_;
+ 
              prevRangeNum_ = retArray_[RANGE_NO];
+             headRoomCopied_ = 0;
              if (recordSkip_) {
 		hdfsBufNextRow_ = hdfs_strchr((char *)bufBegin_,
 			      hdfsScanTdb().recordDelimiter_, 
@@ -628,6 +632,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           break;
         case COPY_TAIL_TO_HEAD:
           {
+             BYTE *headRoomStartAddr;
+             headRoomCopied_ = bufEnd_ - (BYTE *)hdfsBufNextRow_;
+             if (retArray_[BUF_NO] == 0)
+                headRoomStartAddr = hdfsScanBuf_[1].buf_ - headRoomCopied_;
+             else
+                headRoomStartAddr = hdfsScanBuf_[0].buf_ - headRoomCopied_;
+             memcpy(headRoomStartAddr, hdfsBufNextRow_, headRoomCopied_);
              step_ = TRAF_HDFS_READ;  
           }
           break;
@@ -1023,6 +1034,10 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	case PROCESS_HDFS_ROW:
 	{
+          if (!useLibhdfsScan_ && hdfsBufNextRow_ == NULL) {
+             step_ = TRAF_HDFS_READ;
+             break;
+          } 
 	  exception_ = FALSE;
 	  nextStep_ = NOT_STARTED;
 	  debugPenultimatePrevRow_ = debugPrevRow_;
@@ -1066,9 +1081,20 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  }
 	  else
 	  {
-	    numBytesProcessedInRange_ +=
+            if (useLibhdfsScan_) {
+	       numBytesProcessedInRange_ +=
 	        startOfNextRow - hdfsBufNextRow_;
-	    hdfsBufNextRow_ = startOfNextRow;
+	       hdfsBufNextRow_ = startOfNextRow;
+             } 
+             else {
+                if ((BYTE *)startOfNextRow >= bufLogicalEnd_) {
+                   step_ = TRAF_HDFS_READ;
+                   hdfsBufNextRow_ = NULL;
+                }
+                else
+	          hdfsBufNextRow_ = startOfNextRow;
+             }
+           
 	  }
 
 	  if (exception_)
@@ -1691,7 +1717,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   }
   else {
      sourceDataEnd = (const char *)bufEnd_;
-     endOfRequestedRange = (const char *)logicalBufEnd_;
+     endOfRequestedRange = NULL;
   }
   hdfsLoggingRow_ = hdfsBufNextRow_;
   if (asciiSourceTD->numAttrs() == 0)

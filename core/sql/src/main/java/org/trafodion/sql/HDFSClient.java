@@ -87,31 +87,45 @@ public class HDFSClient
 
    class HDFSRead implements Callable 
    {
-      int length_;
-
-      HDFSRead(int length) 
+      HDFSRead() 
       {
-         length_ = length;
       }
  
       public Object call() throws IOException 
       {
          int bytesRead;
-         if (buf_.hasArray())
-            bytesRead = fsdis_.read(pos_, buf_.array(), bufOffset_, length_);
-         else
+         int totalBytesRead = 0;
+         if (! buf_.hasArray())
+            fsdis_.seek(pos_);
+         do
          {
-            buf_.limit(bufOffset_ + length_);
-            bytesRead = fsdis_.read(buf_);
-         }
-         return new Integer(bytesRead);
+            if (buf_.hasArray())
+               bytesRead = fsdis_.read(pos_, buf_.array(), bufOffset_, lenRemain_);
+            else 
+               bytesRead = fsdis_.read(buf_);
+            if (bytesRead == -1) {
+               isEOF_ = 1;
+               break;
+            }
+            if (bytesRead == 0)
+               break;
+            totalBytesRead += bytesRead;          
+            if (totalBytesRead == bufLen_)
+                break;
+            bufOffset_ += bytesRead;
+            pos_ += bytesRead;
+            lenRemain_ -= bytesRead;
+         } while (lenRemain_ > 0);
+         return new Integer(totalBytesRead);
       }
    }
        
    public HDFSClient() 
    {
    }
- 
+
+   // This constructor enables the hdfs data to be read in another thread while the previously 
+   // read buffer is being processed by the SQL engine 
    public HDFSClient(int bufNo, int rangeNo, String filename, ByteBuffer buffer, long position, int length) throws IOException
    {
       bufNo_ = bufNo; 
@@ -127,44 +141,24 @@ public class HDFSClient
       len_ = length;
       if (buffer.hasArray()) 
          bufLen_ = buffer.array().length;
-      else
-      {
+      else {
          bufLen_ = buffer.capacity();
          buf_.position(0);
       }
       lenRemain_ = (len_ > bufLen_) ? bufLen_ : len_;
-      if (lenRemain_ != 0)
-      {
-         int readLength = (lenRemain_ > blockSize_) ? blockSize_ : lenRemain_;
-         future_ = executorService_.submit(new HDFSRead(readLength));
+      if (lenRemain_ != 0) {
+         future_ = executorService_.submit(new HDFSRead());
       }
    }
 
-   public int trafHdfsRead() throws IOException, InterruptedException, ExecutionException
+   public int trafHdfsReadBuffer() throws IOException, InterruptedException, ExecutionException
    {
       Integer retObject = 0;
       int bytesRead;
-      int readLength;
-       
-      if (lenRemain_ == 0)
-         return 0;
       retObject = (Integer)future_.get();
       bytesRead = retObject.intValue();
-      if (bytesRead == -1)
-         return -1;
-      bufOffset_ += bytesRead;
-      pos_ += bytesRead;
-      lenRemain_ -= bytesRead;
-      if (bufOffset_ == bufLen_)
-         return bytesRead; 
-      else if (bufOffset_ > bufLen_)
-         throw new IOException("Internal Error in trafHdfsRead ");
-      if (lenRemain_ == 0)
-         return bytesRead; 
-      readLength = (lenRemain_ > blockSize_) ? blockSize_ : lenRemain_;
-      future_ = executorService_.submit(new HDFSRead(readLength));
       return bytesRead;
-   } 
+   }
 
    public int getRangeNo()
    {
@@ -175,24 +169,6 @@ public class HDFSClient
    {
       return isEOF_;
    }
-
-   public int trafHdfsReadBuffer() throws IOException, InterruptedException, ExecutionException
-   {
-      int bytesRead;
-      int totalBytesRead = 0;
-      while (true) {
-         bytesRead = trafHdfsRead();
-         if (bytesRead == -1) {
-            isEOF_ = 1;
-            return totalBytesRead;
-         }
-         if (bytesRead == 0)
-            return totalBytesRead;
-         totalBytesRead += bytesRead;
-         if (totalBytesRead == bufLen_)
-              return totalBytesRead;
-      }  
-   } 
 
    boolean hdfsCreate(String fname , boolean compress) throws IOException
    {

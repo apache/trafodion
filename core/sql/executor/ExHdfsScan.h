@@ -119,7 +119,7 @@ private:
          a) filename
          b) offset
          c) len
-      Java layer always reads more than the len by rangeTailIOSize_ to accomdate the record split 
+      Java layer always reads more than the len by rangeTailIOSize_ to accommdate the record split 
    2. Two ByteBuffer objects are also passsed to HdfsScan object. These ByteBuffers are backed up by
       2 native buffers where the data is fetched. The buffer has a head room of size rangeTailIOSize_ and the 
       data is always read after the head room. 
@@ -347,11 +347,12 @@ protected:
   int retArray_[4];
   BYTE *bufBegin_;
   BYTE *bufEnd_;
-  BYTE *logicalBufEnd_;
+  BYTE *bufLogicalEnd_;
   long currRangeBytesRead_;
   int headRoomCopied_;
   int headRoom_;
   int prevRangeNum_;
+  int extraBytesRead_;
   NABoolean recordSkip_;
 };
 
