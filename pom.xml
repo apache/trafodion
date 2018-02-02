@@ -107,6 +107,10 @@
       <unsubscribe>issues-unsubscribe@trafodion.apache.org</unsubscribe>
       <archive>http://mail-archives.apache.org/mod_mbox/trafodion-issues/</archive>
     </mailingList>
+    <mailingList>
+      <name>Security Issues</name>
+      <post>security@trafodion.apache.org</post>
+    </mailingList>
   </mailingLists>
 
   <developers>

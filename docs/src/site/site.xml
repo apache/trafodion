@@ -225,6 +225,7 @@
       <item href="source-repository.html" name="Source Repository"/>
       <item href="issue-tracking.html" name="Issue Tracking"/>
       <item href="http://www.apache.org/security/" name="Security"/>
+      <item href="mailto:security@trafodion.apache.org" name="Report Security Issue"/>
       <item href="license.html" name="License"/>
     </menu>
     <menu name="Features">
