@@ -49,7 +49,6 @@ FLAGS+= -Wall -Wextra
 
 # Flags for use in compiling Seabed trace modules
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
-SBDIR = ../../src/seabed/src
 
 COMMONLOGGERDIR = ../../commonLogger
 
@@ -72,11 +71,10 @@ ifeq ($(SQ_BUILD_TYPE), debug)
     FLAGS+= -DMON_DEBUG
 endif
 
-INCLUDES = -I$(INCEXPDIR)
-
 ifeq ($(USE_DMALLOC),1)
     INCLUDES+= -I$(DMALLOCROOT)
 endif
+
 INCLUDES+= -I../../inc
 INCLUDES+= -I../../commonLogger
 INCLUDES+= -I$(LOG4CXX_INC_DIR) 
@@ -109,10 +107,6 @@ MONITORSRC += montrace.cxx
 MONITORSRC += monsonar.cxx
 MONITORSRC += redirector.cxx
 MONITORSRC += lock.cxx
-MONITORSRC += clusterconf.cxx
-MONITORSRC += lnodeconfig.cxx
-MONITORSRC += pnodeconfig.cxx
-MONITORSRC += persistconfig.cxx
 MONITORSRC += lnode.cxx
 MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
@@ -280,6 +274,7 @@ ZOOMONOBJS += $(OUTDIR)/zclient.o
 ZOOMONOBJS += $(OUTDIR)/lock.o
 ZOOMONOBJS += $(OUTDIR)/montrace.o
 ZOOMONOBJS += $(OUTDIR)/CommonLogger.o
+ZOOMONOBJS += $(OUTDIR)/type2str.o
 
 MSG_LOG_OBJS = $(OUTDIR)/monlogging.o
 
@@ -296,33 +291,6 @@ CONFOBJS += $(OUTDIR)/lnodeconfig.o
 CONFOBJS += $(OUTDIR)/pnodeconfig.o
 CONFOBJS += $(OUTDIR)/persistconfig.o
 
-TRAFCONFOBJS = $(OUTDIR)/trafconf.o
-TRAFCONFOBJS += $(OUTDIR)/clusterconf.o
-TRAFCONFOBJS += $(OUTDIR)/lnodeconfig.o
-TRAFCONFOBJS += $(OUTDIR)/pnodeconfig.o
-TRAFCONFOBJS += $(OUTDIR)/persistconfig.o
-
-TCDB_SRC = tcdb.cxx
-TCDB_OBJS = $(OUTDIR)/tcdb.o
-
-TCDBSQLITE_SRC = tcdbsqlite.cxx
-TCDBSQLITE_OBJS = $(OUTDIR)/tcdbsqlite.o
-
-TCDBSTORE_SRC = tcdbstore.cxx
-TCDBSTORE_OBJS = $(OUTDIR)/tcdbstore.o
-
-TCDBZSTORE_SRC = tcdbzstore.cxx
-TCDBZSTORE_OBJS = $(OUTDIR)/tcdbzstore.o
-
-TCLOG_SRC = tclog.cxx
-TCLOG_OBJS = $(OUTDIR)/tclog.o
-
-TCTRACE_SRC = tctrace.cxx
-TCTRACE_OBJS = $(OUTDIR)/tctrace.o
-
-TRAFCONFIG_SRC = trafconfig.cxx
-TRAFCONFIG_OBJS = $(OUTDIR)/trafconfig.o
-
 TYPE2STR_SRC = type2str.cxx
 TYPE2STR_OBJS = $(OUTDIR)/type2str.o
 
@@ -338,14 +306,6 @@ ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
 ALLOBJS += $(ZOOMONOBJS)
-ALLOBJS += $(TRAFCONFOBJS)
-ALLOBJS += $(TCDB_OBJS)
-ALLOBJS += $(TCDBSQLITE_OBJS)
-ALLOBJS += $(TCDBSTORE_OBJS)
-#ALLOBJS += $(TCDBZSTORE_OBJS)
-ALLOBJS += $(TCLOG_OBJS)
-ALLOBJS += $(TCTRACE_OBJS)
-ALLOBJS += $(TRAFCONFIG_OBJS)
 ALLOBJS += $(TYPE2STR_OBJS)
 
 SHAREDLIBS =   $(LIBEXPDIR)/libtrafconfig.so
@@ -372,18 +332,7 @@ TEST_PGMS += $(OUTDIR)/testspx
 TEST_PGMS += $(OUTDIR)/testconf
 TEST_PGMS += $(OUTDIR)/zootest
 
-#	    $(OUTDIR)/attach \
-#	    $(OUTDIR)/testenv \
-
 # Compile rules for building sources
-
-#$(OUTDIR)/%:%.cxx $(INCLUDE)
-#	@echo 'Building target: $@'
-#	@echo 'Invoking: C++ Compile & Linker'
-#	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(OUTDIR)/clio.o $(OUTDIR)/props.o $<
-#	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(OUTDIR)/clio.o $(OUTDIR)/props.o $<
-#	@echo 'Finished building target: $@'
-#	@echo ' '
 
 $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
@@ -420,11 +369,20 @@ $(OUTDIR)/%.o:%.cc
 	@echo ' '
 
 # For compiling Seabed trace modules
-$(OUTDIR)/%.o:$(SBDIR)/%.cpp $(INCLUDE)
+$(OUTDIR)/%.o:$(SRCSBDIR)/%.cpp $(INCLUDE)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compiler'
-	@echo $(CXX) $(SBFLAGS) -I$(INCEXPDIR) -I$(SBDIR) -c -o $@ $<
-	@$(CXX) $(SBFLAGS) -I../../export/include -I../../src/seabed/src -c -o $@ $<
+	@echo $(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@$(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+# For compiling Trafodion Configuration  modules
+$(OUTDIR)/%.o:$(SRCTCDIR)/%.cpp
+	@echo 'Building target: $@'
+	@echo 'Invoking: C++ Compiler'
+	@echo $(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
+	@$(CXX) $(SBFLAGS) $(INCLUDES) -c -o $@ $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -439,7 +397,7 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-.NOTPARALLEL:
+#.NOTPARALLEL:
 
 all: programs examples
 
@@ -468,21 +426,9 @@ $(OUTDIR)/notify : notify.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/testtm : testtm.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
-#$(OUTDIR)/attach : attach.cxx $(OUTDIR)/clio.o
-
-#$(OUTDIR)/testenv : testenv.cxx
-
 $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: Linker'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
-	@echo 'Finished building target: $@'
-	@echo ' '
-
-$(BINEXPDIR)/trafconf : $(TRAFCONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
@@ -522,7 +468,7 @@ $(BINEXPDIR)/pstartd: $(PSTARTDOBJS) $(OUTDIR)/monclio.o $(TRACE_LOG_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BINEXPDIR)/monmemlog : $(MEMLOGOBJS)
+$(BINEXPDIR)/monmemlog : $(MEMLOGOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(FLAGS) -pthread $(OPTIONS) $(INCLUDES) -o $@ $(LIBS) $^
@@ -549,23 +495,6 @@ $(LIBEXPDIR)/libseabasesig.so: $(RTSIGBLOCK_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-#$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@echo 'Building target: $@'
-#	@echo 'Invoking: Linker'
-#	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TCDBZSTORE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-#	@echo 'Finished building target: $@'
-#	@echo ' '
-
-$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(TCDB_OBJS) $(TCDBSTORE_OBJS) $(TCDBSQLITE_OBJS) $(TRACE_LOG_OBJS) $(TCLOG_OBJS) $(TCTRACE_OBJS) $(TYPE2STR_OBJS)
-	@echo 'Finished building target: $@'
-	@echo ' '
-
-
 setup:
 	@# do nothing
 
@@ -574,7 +503,6 @@ clean:
 	-rm -f $(ALLOBJS)
 	-rm -f $(CDEP_DIR)/*.dep
 	-rm -f $(LIBEXPDIR)/libseabasesig.so
-	-rm -f $(LIBEXPDIR)/libtrafconfig.so
 	@echo ' '
 
 cleanall: clean
@@ -582,18 +510,6 @@ cleanall: clean
 
 cleaner: clean
 	-rm -f *~
-
-#install:
-#	@echo 'Installing programs in $(INSTALL_DIR)'
-#	-cp $(PGMS) $(INSTALL_DIR)
-#	@echo 'Finished installing programs'
-#	@echo ' '
-
-#uninstall:
-#	@echo 'Uninstalling programs from $(INSTALL_DIR)'
-#	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
-#	@echo 'Finished uninstalling programs'
-#	@echo ' '
 
 rebuild: clean all
 	-@echo ' '

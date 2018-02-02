@@ -36,26 +36,19 @@ using namespace std;
 #include <iostream>
 #include <string>
 #include <vector>
-#include <mpi.h>
-#include "msgdef.h"
-#include "seabed/trace.h"
-#include "montrace.h"
-#include "monlogging.h"
-#include "config.h"
-#include "pnode.h"
-#include "trafconfig.h"
+#include "tclog.h"
+#include "tctrace.h"
+#include "trafconf/trafconfig.h"
 #include "clusterconf.h"
 
-extern CNodeContainer *Nodes;
-extern CConfigContainer *Config;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Cluster Configuration
 ///////////////////////////////////////////////////////////////////////////////
 
 CClusterConfig::CClusterConfig( void )
-              : CPNodeConfigContainer(MAX_NODES)
-              , CLNodeConfigContainer(MAX_LNODES)
+              : CPNodeConfigContainer(TC_NODES_MAX)
+              , CLNodeConfigContainer(TC_NODES_MAX)
               , nodeReady_(false)
               , persistReady_(false)
               , newPNodeConfig_(true)
@@ -99,11 +92,11 @@ void CClusterConfig::Clear( void )
         int rc = tc_close();
         if ( rc )
         {
-            char la_buf[MON_STRING_BUF_SIZE];
+            char la_buf[TC_LOG_BUF_SIZE];
             snprintf( la_buf, sizeof(la_buf)
                     , "[%s], Can't close configuration!\n"
                     , method_name );
-            mon_log_write( MON_CLUSTERCONF_CLEAR_1, SQ_LOG_CRIT, la_buf );
+            TcLogWrite( MON_CLUSTERCONF_CLEAR_1, TC_LOG_CRIT, la_buf );
         }
     
         trafConfigInitialized_ = false;
@@ -118,7 +111,7 @@ void CClusterConfig::AddNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo
     const char method_name[] = "CClusterConfig::AddNodeConfiguration";
     TRACE_ENTRY;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d nid=%d, pnid=%d, nodename=%s\n"
                     , method_name, __LINE__
@@ -143,7 +136,7 @@ void CClusterConfig::AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo )
     const char method_name[] = "CClusterConfig::AddSNodeConfiguration";
     TRACE_ENTRY;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d pnid=%d, nodename=%s\n"
                     , method_name, __LINE__
@@ -167,7 +160,7 @@ void CClusterConfig::AddPersistConfiguration( persistConfigInfo_t &persistConfig
     const char method_name[] = "CClusterConfig::AddPersistConfiguration";
     TRACE_ENTRY;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d persistkey=%s\n"
                     , method_name, __LINE__
@@ -187,7 +180,7 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
     bool rs = true;
     int rc;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d deleting (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
                      , method_name, __LINE__
@@ -224,7 +217,7 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
             {
                 DeletePNodeConfig( pnodeConfig );
 
-                if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+                if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
                 {
                     trace_printf( "%s@%d deleted (pnid=%d), pnodesCount=%d, lnodesCount=%d\n"
                                  , method_name, __LINE__
@@ -237,10 +230,10 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
     }
     else
     {
-        char buf[MON_STRING_BUF_SIZE];
+        char buf[TC_LOG_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s] Node delete failed, pnid=%d\n",
                   method_name,  pnid );
-        mon_log_write( MON_CLUSTERCONF_DELETENODE_1, SQ_LOG_ERR, buf );
+        TcLogWrite( MON_CLUSTERCONF_DELETENODE_1, TC_LOG_ERR, buf );
         rs = false;
     }
 
@@ -250,8 +243,8 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
 
 // The following method maps the 'sqconfig' text file persist section's
 // <persist-key>_PROCESS_TYPE string value to the internal
-// PROCESSTYPE enum value
-PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
+// TC_PROCESS_TYPE enum value
+TC_PROCESS_TYPE CClusterConfig::GetProcessType( const char *processtype )
 {
     if (strcmp( "DTM", processtype) == 0)
     {
@@ -299,10 +292,10 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
 
 bool CClusterConfig::Initialize( void )
 {
-    return( Initialize( NULL ) );
+    return( Initialize( false, NULL ) );
 }
 
-bool CClusterConfig::Initialize( const char *traceFile )
+bool CClusterConfig::Initialize( bool traceEnabled, const char *traceFile )
 {
     const char method_name[] = "CClusterConfig::Initialize";
     TRACE_ENTRY;
@@ -313,15 +306,14 @@ bool CClusterConfig::Initialize( const char *traceFile )
         return( true );
     }
 
-    bool trafConfigTrace = (trace_settings & TRACE_TRAFCONFIG);
-    int rc = tc_initialize( trafConfigTrace, traceFile );
+    int rc = tc_initialize( traceEnabled, traceFile );
     if ( rc )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
                 , "[%s], Can't initialize configuration!\n"
                 , method_name );
-        mon_log_write( MON_CLUSTERCONF_INIT_1, SQ_LOG_CRIT, la_buf );
+        TcLogWrite( MON_CLUSTERCONF_INIT_1, TC_LOG_CRIT, la_buf );
         return( false );
     }
 
@@ -369,11 +361,11 @@ bool CClusterConfig::LoadNodeConfig( void )
                      , nodeConfigData );
     if ( rc )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
                 , "[%s] Node configuration access failed!\n"
                 , method_name );
-        mon_log_write(MON_CLUSTERCONF_LOADNODE_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_CLUSTERCONF_LOADNODE_1, TC_LOG_CRIT, la_buf);
         return( false );
     }
 
@@ -389,11 +381,11 @@ bool CClusterConfig::LoadNodeConfig( void )
                      , spareNodeConfigData );
     if ( rc )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
                 , "[%s] Node configuration access failed!\n"
                 , method_name );
-        mon_log_write(MON_CLUSTERCONF_LOADNODE_2, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_CLUSTERCONF_LOADNODE_2, TC_LOG_CRIT, la_buf);
         return( false );
     }
 
@@ -406,7 +398,7 @@ bool CClusterConfig::LoadNodeConfig( void )
 
     nodeReady_ = true;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         if ( nodeReady_ )
             trace_printf("%s@%d - Successfully loaded node configuration\n", method_name, __LINE__);
@@ -430,11 +422,11 @@ bool CClusterConfig::LoadPersistConfig( void )
     rc = tc_get_persist_keys( persistProcessKeys );
     if ( rc )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
                 , "[%s] Persist keys configuration access failed!\n"
                 , method_name );
-        mon_log_write(MON_CLUSTERCONF_LOADPERSIST_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_CLUSTERCONF_LOADPERSIST_1, TC_LOG_CRIT, la_buf);
         return( false );
     }
 
@@ -447,11 +439,11 @@ bool CClusterConfig::LoadPersistConfig( void )
                                                   , pkeysVector );
     if ( CPersistConfigContainer::GetPersistKeysCount() == 0 )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
                 , "[%s] Invalid PERSIST_PROCESS_KEYS value, %s\n"
                 , method_name, persistProcessKeys );
-        mon_log_write(MON_CLUSTERCONF_LOADPERSIST_2, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_CLUSTERCONF_LOADPERSIST_2, TC_LOG_CRIT, la_buf);
         return( false );
     }
 
@@ -468,11 +460,11 @@ bool CClusterConfig::LoadPersistConfig( void )
         rc = tc_get_persist_process( pkit->c_str(), &persistConfig );
         if ( rc )
         {
-            char la_buf[MON_STRING_BUF_SIZE];
+            char la_buf[TC_LOG_BUF_SIZE];
             snprintf( la_buf, sizeof(la_buf)
                     , "[%s] Persist process info for prefix key %s does not exist!\n"
                     , method_name, pkit->c_str() );
-            mon_log_write(MON_CLUSTERCONF_LOADPERSIST_3, SQ_LOG_CRIT, la_buf);
+            TcLogWrite(MON_CLUSTERCONF_LOADPERSIST_3, TC_LOG_CRIT, la_buf);
             return( false );
         }
     
@@ -482,7 +474,7 @@ bool CClusterConfig::LoadPersistConfig( void )
 
     persistReady_ = true;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         if ( persistReady_ )
             trace_printf("%s@%d - Successfully loaded persist configuration\n", method_name, __LINE__);
@@ -503,7 +495,7 @@ void CClusterConfig::ProcessLNode( node_configuration_t &nodeConfigData
 
     bool excludedCores = false;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d nid=%d, pnid=%d, name=%s, excluded cores=(%d:%d),"
                       " cores=(%d:%d), processors=%d, roles=%d\n"
@@ -557,7 +549,7 @@ void CClusterConfig::ProcessLNode( node_configuration_t &nodeConfigData
                , nodeConfigData.last_core
                , lnodeConfigInfo.coreMask );
     lnodeConfigInfo.processor = nodeConfigData.processors;
-    lnodeConfigInfo.zoneType  = (ZoneType)nodeConfigData.roles;
+    lnodeConfigInfo.zoneType  = static_cast<TC_ZONE_TYPE>(nodeConfigData.roles);
 
     TRACE_EXIT;
 }
@@ -568,7 +560,7 @@ void CClusterConfig::ProcessSNode( physical_node_configuration_t &pnodeConfig
     const char method_name[] = "CClusterConfig::ProcessSNode";
     TRACE_ENTRY;
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d pnid=%d, name=%s, excluded cores=(%d:%d), "
                       "spareCount=%d\n"
@@ -623,7 +615,7 @@ void CClusterConfig::ProcessPersistInfo( persist_configuration_t &persistConfig
     static const char *delimPercent = "%";
     static int chPercent = '%';
 
-    if ( trace_settings & TRACE_INIT )
+    if ( TcTraceSettings & TC_TRACE_INIT )
     {
         trace_printf( "%s@%d Processing persist info for persistKey=%s\n"
                     , method_name, __LINE__
@@ -720,7 +712,7 @@ bool CClusterConfig::SaveNodeConfig( const char *name
     pnodeConfigInfo_t           pnodeConfigInfo;
     lnodeConfigInfo_t           lnodeConfigInfo;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d Saving node config (node_name=%s, processors=%d, "
                       "roles=%d, firstCore=%d, lastCore=%d "
@@ -756,10 +748,10 @@ bool CClusterConfig::SaveNodeConfig( const char *name
     else
     {
         rs = false;
-        char buf[MON_STRING_BUF_SIZE];
+        char buf[TC_LOG_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s] Node add failed, pnid=%d\n",
                   method_name,  pnid );
-        mon_log_write( MON_CLUSTERCONF_SAVENODE_1, SQ_LOG_ERR, buf );
+        TcLogWrite( MON_CLUSTERCONF_SAVENODE_1, TC_LOG_ERR, buf );
     }
 
     TRACE_EXIT;
@@ -789,7 +781,7 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
     int  rc;
     physical_node_configuration_t pnodeConfig;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d Updating pnode config "
                       "(pnid=%d, node_name=%s, "
@@ -820,11 +812,11 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
     else
     {
         rs = false;
-        char buf[MON_STRING_BUF_SIZE];
+        char buf[TC_LOG_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s] PNode update failed, pnid=%d, node_name=%s\n"
                 , method_name,  pnid, name );
-        mon_log_write( MON_CLUSTERCONF_UPDATEPNODECFG_1, SQ_LOG_ERR, buf );
+        TcLogWrite( MON_CLUSTERCONF_UPDATEPNODECFG_1, TC_LOG_ERR, buf );
     }
 
     TRACE_EXIT;
@@ -839,7 +831,7 @@ void CClusterConfig::UpdatePNodeConfiguration( int         pnid
     const char method_name[] = "CClusterConfig::UpdatePNodeConfiguration";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d pnid=%d, name=%s, "
                        "excludedFirstCore=%d, excludedLastCore=%d\n"

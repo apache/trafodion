@@ -32,6 +32,7 @@ using namespace std;
 
 #include "tclog.h"
 #include "tctrace.h"
+#include "trafconf/trafconfig.h"
 #include "tcdbstore.h"
 
 ///////////////////////////////////////////////////////////////////////////////

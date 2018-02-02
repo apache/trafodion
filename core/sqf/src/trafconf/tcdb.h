@@ -23,22 +23,44 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef TCDBSQLITE_H_
-#define TCDBSQLITE_H_
+#ifndef TCDB_H_
+#define TCDB_H_
 
 #include <stdlib.h>
-#include <sqlite3.h>
-#include "trafconfig.h"
-#include "tcdbstore.h"
+//#include "tcdbmysql.h"
+#include "tcdbsqlite.h"
+#include "trafconf/trafconfig.h"
 
-class CTcdbSqlite : public CTcdbStore
+using namespace std;
+
+
+//
+// Trafodion Configuration Database Adaptor (CTrafConfigDb class)
+//
+//  Implements common interface to storage classes used by the
+//  Trafodion Configuration API (trafconfig.cxx/.h).
+//
+
+class CTcdb
 {
+private:
+    int            eyecatcher_;      // Debuggging aid -- leave as first
+                                     // member variable of the class
 public:
 
-    CTcdbSqlite( void );
-    ~CTcdbSqlite( void );
+    CTcdb( void );
+    ~CTcdb( void );
 
-    int         Close( void );
+    int         AddLNodeData( int nid
+                            , int pnid
+                            , int firstCore
+                            , int lastCore
+                            , int processors
+                            , int roles );
+    int         AddPNodeData( const char *name
+                            , int pnid
+                            , int excludedFirstCore
+                            , int excludedLastCore );
     int         AddRegistryKey( const char *key );
     int         AddRegistryProcess( const char *name );
     int         AddRegistryClusterData( const char *key, const char *dataValue );
@@ -46,6 +68,7 @@ public:
                                       , const char *key
                                       , const char *dataValue );
     int         AddUniqueString( int nid, int id, const char *uniqStr );
+    int         Close( void );
     int         DeleteNodeData( int pnid );
     int         DeleteUniqueString( int nid );
     int         GetNode( int nid
@@ -71,23 +94,15 @@ public:
     int         GetRegistryProcessSet( int &count
                                      , int max
                                      , registry_configuration_t registryConfig[] );
+    inline TC_STORAGE_TYPE GetStorageType( void ) { return(dbStorageType_); }
     int         GetUniqueString( int nid, int id, const char *uniqStr );
     int         GetUniqueStringId( int nid
                                  , const char *uniqStr
                                  , int &id );
     int         GetUniqueStringIdMax( int nid, int &id );
-    int         Initialize( void );
-    inline bool IsInitialized( void ) { return( (db_ != NULL) ); }
-    int         SaveLNodeData( int nid
-                             , int pnid
-                             , int firstCore
-                             , int lastCore
-                             , int processors
-                             , int roles );
-    int         SavePNodeData( const char *name
-                             , int pnid
-                             , int excludedFirstCore
-                             , int excludedLastCore );
+    int         Initialize( const char *rootNode = NULL
+                          , const char *instanceNode = NULL );
+    bool        IsInitialized( void );
     int         UpdatePNodeConfig( int pnid
                                  , const char *name
                                  , int excludedFirstCore
@@ -95,36 +110,9 @@ public:
 
 protected:
 private:
-    int  GetSNodeData( int pnid
-                     , const char *nodename
-                     , int excfirstcore
-                     , int exclastcore
-                     , physical_node_configuration_t &spareNodeConfig );
-    void SetLNodeData( int nid
-                     , int pnid
-                     , const char *nodename
-                     , int excfirstcore
-                     , int exclastcore
-                     , int firstcore
-                     , int lastcore
-                     , int processors
-                     , int roles 
-                     , node_configuration_t &nodeConfig );
-    void SetPNodeData( int pnid
-                     , const char *nodename
-                     , int excfirstcore
-                     , int exclastcore
-                     , physical_node_configuration_t &pnodeConfig );
-    int  SetPersistProcessData( const char *persistkey
-                              , const char *persistvalue
-                              , persist_configuration_t &persistConfig );
-    int  UpdatePNodeData( int pnid
-                        , const char *name
-                        , int excludedFirstCore
-                        , int excludedLastCore );
-
-    sqlite3   *db_;
+    TC_STORAGE_TYPE         dbStorageType_;
+    CTcdbStore             *tcdbStore_;
 };
 
 
-#endif /* TCDBSQLITE_H_ */
+#endif /* TCDB_H_ */

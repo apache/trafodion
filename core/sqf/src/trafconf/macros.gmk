@@ -1,0 +1,112 @@
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# his allows logging
+USE_LOGGING	= 1
+
+ifndef SQ_MTYPE
+   SQ_MTYPE	= 32
+endif
+
+# Trafodion Configuration 
+#TCROOT		= .
+#INCTCDIR	= -I$(TCROOT)
+
+# Seabed
+SRCSBDIR	= ../seabed/src
+
+INCMISCDIR	+= -I$(SRCSBDIR)
+
+# export
+EXPROOT		= $(TRAF_HOME)/export
+
+# tools
+CXX		+= $(PHVERIF)
+ifeq ($(SQ_MTYPE),32)
+   CC		+= -mpi32
+   CXX		+= -mpi32
+   ifeq ($(SQ_USE_INTC),0)
+      CC		+= -m32
+      CXX		+= -m32
+   endif
+endif
+
+# flags
+CFLAGS          = $(DEFINES) $(SCOPEFLAGS) $(CWARN) $(DFLAG) $(COVER_FLGS)
+CXXFLAGS        = $(DEFINES) $(SCOPEFLAGS) $(CXXWARN) $(DFLAG) $(COVER_FLGS)
+SCOPEFLAGS      = $(CLOSED_SOURCE_GPP_OPTS)
+DFLAG		= -g3 $(OPTIM_FLGS)
+DFLAG		= -g3
+CFLAGS	       += -fPIC
+CXXFLAGS       += -fPIC
+ifeq ($(SQ_USE_INTC),1)
+   # 177=variable "<variable>" was declared but never referenced
+   # 981=operands are evaluated in unspecified order
+   # 1418=external function definition with no prior declaration
+   # 1684=conversion from "long long" to "long" may lose significant bits
+   IOPTS		= -Wall -Werror -wd177 -wd981 -wd1418 -wd1684 -Wcheck -Wp64
+   IOPTSTEMP	= -wd383
+   CWARN		= $(HPCWARN) $(IOPTS)
+   CXXWARN		= $(HPCXXWARN) $(IOPTS)
+   #
+   ifeq ($(SQ_BUILD_TYPE),release)
+      DFLAG		= -g -debug full $(OPTIM_FLGS)
+   else
+      DFLAG		= -g
+   endif
+else
+   # Gnu
+   GOPTS		= -Wall -Wunused -Wextra -pedantic -Werror -Wno-long-long -Wconversion
+   ifeq ($(SQ_MTYPE),32)
+      GOPTS		+= -march=i686
+   endif
+   CWARN		= $(HPCWARN) $(GOPTS)
+   CXXWARN		= $(HPCXXWARN) $(GOPTS)
+endif
+
+INCLUDES	= -I$(INCEXPDIR) $(INCMISCDIR)
+
+# cover
+COVFILES	= $(OUTDIR)/*.gcda $(OUTDIR)/*.gcno $(OUTDIR)/*.gcov *.gcda *.gcno *.gcov
+
+# Trafodion Configuration Library
+LIBTRAFCONFIG	= $(LIBEXPDIR)/libtrafconfig.so
+LIBTRAFCONFIGX	= -L$(LIBEXPDIR) -ltrafconfig
+
+# Trafodion Configuration Utility
+TRAFCONF		= $(BINEXPDIR)/trafconf
+
+# common rules
+.c.o:
+	$(CC) $(CDEPFLAGS) $(CFLAGS) $(INCLUDES) -c $<
+
+.cpp.o:
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c $<
+
+# common pattern rules
+$(OUTDIR)/%.o: %.c
+	$(CC) $(CDEPFLAGS) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: %.cpp
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: $(SRCSBDIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<

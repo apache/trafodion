@@ -26,8 +26,7 @@
 #ifndef TCDBSTORE_H_
 #define TCDBSTORE_H_
 
-#include "zookeeper/zookeeper.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 
 using namespace std;
 
@@ -49,7 +48,16 @@ public:
     CTcdbStore( TC_STORAGE_TYPE dbStorageType );
     virtual ~CTcdbStore( void );
 
-    virtual int         Close( void ) = 0;
+    virtual int         AddLNodeData( int nid
+                                    , int pnid
+                                    , int firstCore
+                                    , int lastCore
+                                    , int processors
+                                    , int roles ) = 0;
+    virtual int         AddPNodeData( const char *name
+                                    , int pnid
+                                    , int excludedFirstCore
+                                    , int excludedLastCore ) = 0;
     virtual int         AddRegistryKey( const char *key ) = 0;
     virtual int         AddRegistryProcess( const char *name ) = 0;
     virtual int         AddRegistryClusterData( const char *key
@@ -60,6 +68,7 @@ public:
     virtual int         AddUniqueString( int nid
                                        , int id
                                        , const char *uniqStr ) = 0;
+    virtual int         Close( void ) = 0;
     virtual int         DeleteNodeData( int pnid ) = 0;
     virtual int         DeleteUniqueString( int nid ) = 0;
     virtual int         GetNode( int nid
@@ -93,16 +102,6 @@ public:
     inline TC_STORAGE_TYPE GetStorageType( void ) { return( dbStorageType_ ); }
     virtual int         Initialize( void ) = 0;
     virtual bool        IsInitialized( void ) = 0;
-    virtual int         SaveLNodeData( int nid
-                                     , int pnid
-                                     , int firstCore
-                                     , int lastCore
-                                     , int processors
-                                     , int roles ) = 0;
-    virtual int         SavePNodeData( const char *name
-                                     , int pnid
-                                     , int excludedFirstCore
-                                     , int excludedLastCore ) = 0;
 
 protected:
     TC_STORAGE_TYPE     dbStorageType_;

@@ -32,8 +32,7 @@ using namespace std;
 
 #include "tclog.h"
 #include "tctrace.h"
-#include "trafconfig.h"
-//#include "tcdbzstore.h"
+//#include "tcdbmysql.h"
 #include "tcdbsqlite.h"
 #include "tcdb.h"
 
@@ -70,7 +69,7 @@ CTcdb::CTcdb( void )
         {
             char buf[TC_LOG_BUF_SIZE];
             snprintf( buf, sizeof(buf)
-                    , "[%s], Environment variable TRAF_CONFIGDB_STORE value is not set, "
+                    , "[%s], Environment variable TRAF_CONFIG_DBSTORE value is not set, "
                       "defaulting to SQLite storage method!\n"
                     , method_name );
             TcLogWrite( TCDB_TCDB_1, TC_LOG_WARNING, buf );
@@ -85,10 +84,10 @@ CTcdb::CTcdb( void )
             }
             else
             {
-                found = tcDbType.find( TC_STORE_ZOOKEEPER );
+                found = tcDbType.find( TC_STORE_MYSQL );
                 if (found != std::string::npos)
                 {
-                    dbStorageType_ = TCDBZOOKEEPER;
+                    dbStorageType_ = TCDBMYSQL;
                 }
                 else
                 {
@@ -99,22 +98,14 @@ CTcdb::CTcdb( void )
                     }
                     else
                     {
-                        found = tcDbType.find( TC_STORE_MYSQL );
-                        if (found != std::string::npos)
+                        if ( tcDbType.length() == 0 )
                         {
-                            dbStorageType_ = TCDBMYSQL;
-                        }
-                        else
-                        {
-                            if ( tcDbType.length() == 0 )
-                            {
-                                char buf[TC_LOG_BUF_SIZE];
-                                snprintf( buf, sizeof(buf)
-                                        , "[%s], Environment variable TRAF_CONFIG_DBSTORE value (%s) invalid!\n"
-                                        , method_name, tcDbType.c_str() );
-                                TcLogWrite( TCDB_TCDB_2, TC_LOG_CRIT, buf );
-                                TRACE_EXIT;
-                            }
+                            char buf[TC_LOG_BUF_SIZE];
+                            snprintf( buf, sizeof(buf)
+                                    , "[%s], Environment variable TRAF_CONFIG_DBSTORE value (%s) invalid!\n"
+                                    , method_name, tcDbType.c_str() );
+                            TcLogWrite( TCDB_TCDB_2, TC_LOG_CRIT, buf );
+                            TRACE_EXIT;
                         }
                     }
                 }
@@ -137,6 +128,45 @@ CTcdb::~CTcdb ( void )
     TRACE_ENTRY;
     memcpy(&eyecatcher_, "tcdb", 4);
     TRACE_EXIT;
+}
+
+int CTcdb::AddLNodeData( int         nid
+                       , int         pnid
+                       , int         firstCore
+                       , int         lastCore
+                       , int         processors
+                       , int         roles )
+{
+    const char method_name[] = "CTcdb::AddLNodeData";
+    TRACE_ENTRY;
+
+    int rc = tcdbStore_->AddLNodeData( nid
+                                      , pnid
+                                      , firstCore
+                                      , lastCore
+                                      , processors
+                                      , roles );
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+int CTcdb::AddPNodeData( const char *name
+                        , int         pnid
+                        , int         excludedFirstCore
+                        , int         excludedLastCore )
+{
+    const char method_name[] = "CTcdb::AddPNodeData";
+    TRACE_ENTRY;
+
+
+    int rc = tcdbStore_->AddPNodeData( name
+                                     , pnid
+                                     , excludedFirstCore
+                                     , excludedLastCore );
+
+    TRACE_EXIT;
+    return( rc );
 }
 
 int CTcdb::AddRegistryKey( const char *key )
@@ -232,7 +262,8 @@ int CTcdb::DeleteUniqueString( int nid )
     return( rc );
 }
 
-int CTcdb::Initialize( void )
+int CTcdb::Initialize( const char *rootNode
+                     , const char *instanceNode )
 {
     const char method_name[] = "CTcdb::Initialize";
     TRACE_ENTRY;
@@ -246,8 +277,11 @@ int CTcdb::Initialize( void )
     {
         switch (dbStorageType_)
         {
-            case TCDBZOOKEEPER:
-//                tcdbStore_ = new CTcdbZstore;
+            case TCDBMYSQL:
+                rootNode     = rootNode;
+                instanceNode = instanceNode;
+//                tcdbStore_ = new CTcdbMySql( rootNode
+//                                            , instanceNode );
                 return( TCNOTIMPLEMENTED );
                 break;
             case TCDBSQLITE:
@@ -438,41 +472,3 @@ int CTcdb::GetUniqueStringIdMax( int nid, int &id )
     return( rc );
 }
 
-int CTcdb::SaveLNodeData( int         nid
-                        , int         pnid
-                        , int         firstCore
-                        , int         lastCore
-                        , int         processors
-                        , int         roles )
-{
-    const char method_name[] = "CTcdb::SaveLNodeData";
-    TRACE_ENTRY;
-
-    int rc = tcdbStore_->SaveLNodeData( nid
-                                      , pnid
-                                      , firstCore
-                                      , lastCore
-                                      , processors
-                                      , roles );
-
-    TRACE_EXIT;
-    return( rc );
-}
-
-int CTcdb::SavePNodeData( const char *name
-                        , int         pnid
-                        , int         excludedFirstCore
-                        , int         excludedLastCore )
-{
-    const char method_name[] = "CTcdb::SavePNodeData";
-    TRACE_ENTRY;
-
-
-    int rc = tcdbStore_->SavePNodeData( name
-                                      , pnid
-                                      , excludedFirstCore
-                                      , excludedLastCore );
-
-    TRACE_EXIT;
-    return( rc );
-}

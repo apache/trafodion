@@ -31,7 +31,7 @@ using namespace std;
 
 #include "tclog.h"
 #include "tctrace.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 #include "tcdbsqlite.h"
 
 #define MAX_PROCESS_PATH           256
@@ -62,6 +62,315 @@ CTcdbSqlite::~CTcdbSqlite ( void )
     TRACE_EXIT;
 }
 
+int CTcdbSqlite::AddLNodeData( int         nid
+                             , int         pnid
+                             , int         firstCore
+                             , int         lastCore
+                             , int         processors
+                             , int         roles )
+{
+    const char method_name[] = "CTcdbSqlite::AddLNodeData";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+    
+    if (TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d inserting into lnode values (lNid=%d, pNid=%d, "
+                      "processors=%d, roles=%d, firstCore=%d, lastCore=%d)\n"
+                     , method_name, __LINE__
+                     , nid
+                     , pnid
+                     , processors
+                     , roles
+                     , firstCore
+                     , lastCore );
+    }
+
+    int rc;
+    const char *sqlStmt;
+    sqlStmt = "insert into lnode values (?, ?, ?, ?, ?, ?)";
+
+    sqlite3_stmt *prepStmt = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] prepare (%s) failed, error: %s\n"
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
+        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+        TRACE_EXIT;
+        return( TCDBOPERROR );
+    }
+    else
+    {
+        rc = sqlite3_bind_int( prepStmt, 1, nid );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(nid) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 2, pnid );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(pnid) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 3, processors );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(processors) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 4, roles );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(roles) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 5, firstCore );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(firsCore) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 6, lastCore );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(lastCore) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+
+        rc = sqlite3_step( prepStmt );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] (%s) failed, error: %s\n"
+                      "(lNid=%d, pNid=%d, processors=%d, roles=%d, "
+                      "firstCore=%d, lastCore=%d)\n"
+                    , method_name, sqlStmt, sqlite3_errmsg(db_) 
+                    , nid, pnid, processors, roles, firstCore, lastCore );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+    }
+
+    if ( prepStmt != NULL )
+    {
+        sqlite3_finalize( prepStmt );
+    }
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
+int CTcdbSqlite::AddPNodeData( const char *name
+                             , int         pnid
+                             , int         excludedFirstCore
+                             , int         excludedLastCore )
+{
+    const char method_name[] = "CTcdbSqlite::AddPNodeData";
+    TRACE_ENTRY;
+
+    if ( !IsInitialized() )  
+    {
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Database is not initialized for access!\n"
+                        , method_name, __LINE__);
+        }
+        TRACE_EXIT;
+        return( TCNOTINIT );
+    }
+    
+    if (TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d inserting into pnode values (pNid=%d, "
+                      "nodeName=%s, excFirstCore=%d, excLastCore=%d)\n"
+                     , method_name, __LINE__
+                     , pnid
+                     , name
+                     , excludedFirstCore
+                     , excludedLastCore );
+    }
+
+    int rc;
+    const char *sqlStmt;
+    sqlStmt = "insert into pnode values (?, ?, ?, ?)";
+
+    sqlite3_stmt *prepStmt = NULL;
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
+    if ( rc != SQLITE_OK )
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s] prepare (%s) failed, error: %s\n"
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
+        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+        TRACE_EXIT;
+        return( TCDBOPERROR );
+    }
+    else
+    {
+        rc = sqlite3_bind_int( prepStmt, 1, pnid );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(pnid) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_text( prepStmt, 2, name, -1, SQLITE_STATIC );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] sqlite3_bind_text(name) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 3, excludedFirstCore );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(excludedFirstCore) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+        rc = sqlite3_bind_int( prepStmt, 4, excludedLastCore );
+        if ( rc != SQLITE_OK )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s] sqlite3_bind_int(excludedLastCore) failed, error: %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+
+        rc = sqlite3_step( prepStmt );
+        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
+         && ( rc != SQLITE_CONSTRAINT ) )
+        {
+            char buf[TC_LOG_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] (%s) failed, error: %s\n"
+                      "(pNid=%d, nodeName=%s, excFirstCore=%d, excLastCore=%d)\n"
+                    , method_name, sqlStmt, sqlite3_errmsg(db_)
+                    , pnid, name, excludedFirstCore, excludedLastCore );
+            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
+            if ( prepStmt != NULL )
+            {
+                sqlite3_finalize( prepStmt );
+            }
+            TRACE_EXIT;
+            return( TCDBOPERROR );
+        }
+    }
+
+    if ( prepStmt != NULL )
+    {
+        sqlite3_finalize( prepStmt );
+    }
+    TRACE_EXIT;
+    return( TCSUCCESS );
+}
+
 // insert key into monRegKeyName table
 int CTcdbSqlite::AddRegistryKey( const char *key )
 {
@@ -89,7 +398,7 @@ int CTcdbSqlite::AddRegistryKey( const char *key )
     const char * sqlStmt;
     sqlStmt = "insert into monRegKeyName (keyName) values ( :key );";
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -174,7 +483,7 @@ int CTcdbSqlite::AddRegistryProcess( const char *name )
     const char * sqlStmt;
     sqlStmt = "insert into monRegProcName (procName) values ( :name );";
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -262,7 +571,7 @@ int CTcdbSqlite::AddRegistryClusterData( const char *key
               "         k.keyId FROM monRegKeyName k"
               " where k.keyName = :key";
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -374,7 +683,7 @@ int CTcdbSqlite::AddRegistryProcessData( const char *procName
               "   WHERE UPPER(p.procName) = UPPER(:procName)";
 
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -498,7 +807,7 @@ int CTcdbSqlite::AddUniqueString( int nid
     sqlStmt = "insert or replace into monRegUniqueStrings values (?, ?, ?)";
 
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -648,7 +957,7 @@ int CTcdbSqlite::DeleteNodeData( int pnid )
     sqlStmt1 = "delete from lnode where lnode.pNid = ?";
 
     sqlite3_stmt *prepStmt1 = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt1, strlen(sqlStmt1)+1, &prepStmt1, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt1, static_cast<int>(strlen(sqlStmt1)+1), &prepStmt1, NULL);
     if ( rc != SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];
@@ -699,7 +1008,7 @@ int CTcdbSqlite::DeleteNodeData( int pnid )
     sqlStmt2 = "delete from pnode where pnode.pNid = ?";
 
     sqlite3_stmt *prepStmt2 = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt2, strlen(sqlStmt2)+1, &prepStmt2, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt2, static_cast<int>(strlen(sqlStmt2)+1), &prepStmt2, NULL);
     if ( rc != SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];
@@ -799,7 +1108,7 @@ int CTcdbSqlite::DeleteUniqueString( int nid )
     sqlStmtA = "delete from monRegUniqueStrings where monRegUniqueStrings.nid = ?";
 
     sqlite3_stmt *prepStmtA = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmtA, strlen(sqlStmtA)+1, &prepStmtA, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmtA, static_cast<int>(strlen(sqlStmtA)+1), &prepStmtA, NULL);
     if ( rc != SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];
@@ -972,7 +1281,7 @@ int CTcdbSqlite::GetNode( int nid
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1116,7 +1425,7 @@ int CTcdbSqlite::GetNode( const char *name
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1262,7 +1571,7 @@ int CTcdbSqlite::GetNodes( int &count
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1400,7 +1709,7 @@ int CTcdbSqlite::GetPNode( int pNid
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1520,7 +1829,7 @@ int CTcdbSqlite::GetPNode( const char *name
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1641,7 +1950,7 @@ int CTcdbSqlite::GetSNodes( int &count
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1801,7 +2110,7 @@ int CTcdbSqlite::GetSNodeData( int pnid
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1916,7 +2225,7 @@ int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
     char param[TC_PERSIST_KEY_MAX];
     const char   *persistKey;
     const char   *persistValue;
-    const char   *sqlStmtStmt;
+    const char   *sqlStmt;
     sqlite3_stmt *prepStmt = NULL;
 
     if ( TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST) )
@@ -1933,13 +2242,13 @@ int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
     snprintf( param, sizeof(param), "%s_%%", persistPrefix );
 
     // Prepare select persistent process for the key
-    sqlStmtStmt = "select p.keyName, p.valueName"
-                     " from monRegPersistData p"
-                     "  where p.keyName like ?";
+    sqlStmt = "select p.keyName, p.valueName"
+              " from monRegPersistData p"
+              "  where p.keyName like ?";
 
     rc = sqlite3_prepare_v2( db_
-                           , sqlStmtStmt
-                           , strlen(sqlStmtStmt)+1
+                           , sqlStmt
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -1947,7 +2256,7 @@ int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
         char buf[TC_LOG_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s] prepare (%s) failed, error: %s\n"
-                , method_name, sqlStmtStmt, sqlite3_errmsg(db_) );
+                , method_name, sqlStmt, sqlite3_errmsg(db_) );
         TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
         TRACE_EXIT;
         return( TCDBOPERROR );
@@ -2032,7 +2341,7 @@ int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
             char buf[TC_LOG_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s] (%s) failed, error: %s\n"
-                    , method_name, sqlStmtStmt, sqlite3_errmsg(db_) );
+                    , method_name, sqlStmt, sqlite3_errmsg(db_) );
             TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
             if ( prepStmt != NULL )
             {
@@ -2078,7 +2387,7 @@ int CTcdbSqlite::GetPersistProcessKeys( const char *persistProcessKeys )
 
     rc = sqlite3_prepare_v2( db_
                            , sqlStmt
-                           , strlen(sqlStmt)+1
+                           , static_cast<int>(strlen(sqlStmt)+1)
                            , &prepStmt
                            , NULL);
     if ( rc != SQLITE_OK )
@@ -2195,7 +2504,7 @@ int CTcdbSqlite::GetRegistryClusterSet( int &count
               " where k.keyId = d.keyId";
     sqlite3_stmt *prepStmt;
 
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
     if( rc!=SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];
@@ -2324,7 +2633,7 @@ int CTcdbSqlite::GetRegistryProcessSet( int &count
               "   and k.keyId = d.keyId";
     sqlite3_stmt *prepStmt;
 
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
     if( rc!=SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];
@@ -2435,7 +2744,7 @@ int CTcdbSqlite::GetUniqueString( int nid, int id, const char *uniqStr )
     // Read process configuration registry entries and populate in-memory
     // structures.
     sqlStmt = "select dataValue from monRegUniqueStrings where nid = ? and id = ?";
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
 
     if ( rc != SQLITE_OK )
     {
@@ -2558,7 +2867,7 @@ int CTcdbSqlite::GetUniqueStringId( int nid
     sqlStmt = "select id from monRegUniqueStrings where nid = ? and dataValue = ?";
 
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
 
     if ( rc != SQLITE_OK )
@@ -2671,7 +2980,7 @@ int CTcdbSqlite::GetUniqueStringIdMax( int nid, int &id )
     sqlStmt = "select max(id) from monRegUniqueStrings where nid=?";
 
     sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt,
                              NULL);
     if ( rc != SQLITE_OK )
     {
@@ -2739,315 +3048,6 @@ int CTcdbSqlite::GetUniqueStringIdMax( int nid, int &id )
         }
     }
         
-    if ( prepStmt != NULL )
-    {
-        sqlite3_finalize( prepStmt );
-    }
-    TRACE_EXIT;
-    return( TCSUCCESS );
-}
-
-int CTcdbSqlite::SaveLNodeData( int         nid
-                              , int         pnid
-                              , int         firstCore
-                              , int         lastCore
-                              , int         processors
-                              , int         roles )
-{
-    const char method_name[] = "CTcdbSqlite::SaveLNodeData";
-    TRACE_ENTRY;
-
-    if ( !IsInitialized() )  
-    {
-        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
-        {
-            trace_printf( "%s@%d Database is not initialized for access!\n"
-                        , method_name, __LINE__);
-        }
-        TRACE_EXIT;
-        return( TCNOTINIT );
-    }
-    
-    if (TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d inserting into lnode values (lNid=%d, pNid=%d, "
-                      "processors=%d, roles=%d, firstCore=%d, lastCore=%d)\n"
-                     , method_name, __LINE__
-                     , nid
-                     , pnid
-                     , processors
-                     , roles
-                     , firstCore
-                     , lastCore );
-    }
-
-    int rc;
-    const char *sqlStmt;
-    sqlStmt = "insert into lnode values (?, ?, ?, ?, ?, ?)";
-
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        char buf[TC_LOG_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s] prepare (%s) failed, error: %s\n"
-                , method_name, sqlStmt, sqlite3_errmsg(db_) );
-        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
-        TRACE_EXIT;
-        return( TCDBOPERROR );
-    }
-    else
-    {
-        rc = sqlite3_bind_int( prepStmt, 1, nid );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(nid) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 2, pnid );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(pnid) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 3, processors );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(processors) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 4, roles );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(roles) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 5, firstCore );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(firsCore) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 6, lastCore );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(lastCore) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s] (%s) failed, error: %s\n"
-                      "(lNid=%d, pNid=%d, processors=%d, roles=%d, "
-                      "firstCore=%d, lastCore=%d)\n"
-                    , method_name, sqlStmt, sqlite3_errmsg(db_) 
-                    , nid, pnid, processors, roles, firstCore, lastCore );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-    }
-
-    if ( prepStmt != NULL )
-    {
-        sqlite3_finalize( prepStmt );
-    }
-    TRACE_EXIT;
-    return( TCSUCCESS );
-}
-
-int CTcdbSqlite::SavePNodeData( const char *name
-                              , int         pnid
-                              , int         excludedFirstCore
-                              , int         excludedLastCore )
-{
-    const char method_name[] = "CTcdbSqlite::SavePNodeData";
-    TRACE_ENTRY;
-
-    if ( !IsInitialized() )  
-    {
-        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
-        {
-            trace_printf( "%s@%d Database is not initialized for access!\n"
-                        , method_name, __LINE__);
-        }
-        TRACE_EXIT;
-        return( TCNOTINIT );
-    }
-    
-    if (TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d inserting into pnode values (pNid=%d, "
-                      "nodeName=%s, excFirstCore=%d, excLastCore=%d)\n"
-                     , method_name, __LINE__
-                     , pnid
-                     , name
-                     , excludedFirstCore
-                     , excludedLastCore );
-    }
-
-    int rc;
-    const char *sqlStmt;
-    sqlStmt = "insert into pnode values (?, ?, ?, ?)";
-
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        char buf[TC_LOG_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s] prepare (%s) failed, error: %s\n"
-                , method_name, sqlStmt, sqlite3_errmsg(db_) );
-        TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
-        TRACE_EXIT;
-        return( TCDBOPERROR );
-    }
-    else
-    {
-        rc = sqlite3_bind_int( prepStmt, 1, pnid );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(pnid) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_text( prepStmt, 2, name, -1, SQLITE_STATIC );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s] sqlite3_bind_text(name) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 3, excludedFirstCore );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(excludedFirstCore) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-        rc = sqlite3_bind_int( prepStmt, 4, excludedLastCore );
-        if ( rc != SQLITE_OK )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf),
-                      "[%s] sqlite3_bind_int(excludedLastCore) failed, error: %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_CRIT, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[TC_LOG_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s] (%s) failed, error: %s\n"
-                      "(pNid=%d, nodeName=%s, excFirstCore=%d, excLastCore=%d)\n"
-                    , method_name, sqlStmt, sqlite3_errmsg(db_)
-                    , pnid, name, excludedFirstCore, excludedLastCore );
-            TcLogWrite( SQLITE_DB_ACCESS_ERROR, TC_LOG_ERR, buf );
-            if ( prepStmt != NULL )
-            {
-                sqlite3_finalize( prepStmt );
-            }
-            TRACE_EXIT;
-            return( TCDBOPERROR );
-        }
-    }
-
     if ( prepStmt != NULL )
     {
         sqlite3_finalize( prepStmt );
@@ -3277,7 +3277,7 @@ int CTcdbSqlite::UpdatePNodeData( int         pnid
               "   where pnode.pNid = :pNid";
 
     sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
+    rc = sqlite3_prepare_v2( db_, sqlStmt, static_cast<int>(strlen(sqlStmt)+1), &prepStmt, NULL);
     if ( rc != SQLITE_OK )
     {
         char buf[TC_LOG_BUF_SIZE];

@@ -28,9 +28,9 @@ function Usage {
     echo
     echo $script_name generates various Trafodion files in the $TRAF_HOME/sql/scripts directory.
     echo
-    echo "Usage: $script_name {-ft | -perf | [sqconfig_filename] | -h}"
+    echo "Usage: $script_name [ -? | -h ] [<sqconfig_filename>]"
     echo "  -h    Help"
-    echo "  [sqconfig_filename] Name of the SQ config file (in $TRAF_HOME/sql/scripts directory)(defaults to 'sqconfig')"
+    echo "  <sqconfig_filename> Name of the SQ config file (in $TRAF_HOME/sql/scripts directory)(defaults to 'sqconfig')"
     echo
     exit 1;
 }
@@ -120,38 +120,38 @@ cd $TRAF_HOME/sql/scripts
 
 # Check to make sure this is a real cluster
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then 
-    # The configuration database can only be created the first time.		
-    # Since nodes can be added and deleted through the 'shell node add/delete'		
-    # commands, the 'sqconfig' node section may not reflect the current node		
-    # configured. The 'sqregen' script can be used to update the SQCONFIG_FILE		
-    # node section to reflect the current node configuration stored in		
-    # the SQCONFIG_DB_FILE.		
-    echo "Checking for the configuration file ($SQCONFIG_DB_FILE)."		
-    if [ -f $SQCONFIG_DB_FILE ]; then		
-        echo		
-        echo "The configuration file ($SQCONFIG_DB_FILE) exists."		
-        echo "Use the 'sqshell node add/delete' commands to change the node membership in the configuration database."		
-        echo "Use the 'sqshell persist add/delete' commands to change the persist object configuration in the configuration database."		
-        echo "Use the 'sqregen -node' script to update the $SQCONFIG_FILE 'node' section with the"		
-        echo "current node membership in the configuration database."		
-        echo "Use the 'sqregen -persist' script to update the $SQCONFIG_FILE 'persist' section with the"		
-        echo "current persist configuration stored in the configuration database."		
-        exit 1		
+    # The configuration database can only be created the first time.
+    # Since nodes can be added and deleted through the 'shell node add/delete'
+    # commands, the 'sqconfig' node section may not reflect the current node
+    # configured. The 'sqregen' script can be used to update the SQCONFIG_FILE
+    # node section to reflect the current node configuration stored in
+    # the SQCONFIG_DB_FILE.
+    echo "Checking for the configuration file ($SQCONFIG_DB_FILE)."
+    if [ -f $SQCONFIG_DB_FILE ]; then
+        echo
+        echo "The configuration file ($SQCONFIG_DB_FILE) exists."
+        echo "Use the 'sqshell node add/delete' commands to change the node membership in the configuration database."
+        echo "Use the 'sqshell persist add/delete' commands to change the persist object configuration in the configuration database."
+        echo "Use the 'sqregen -node' script to update the $SQCONFIG_FILE 'node' section with the"
+        echo "current node membership in the configuration database."
+        echo "Use the 'sqregen -persist' script to update the $SQCONFIG_FILE 'persist' section with the"
+        echo "current persist configuration stored in the configuration database."
+        exit 1
     fi
-    GetSQcnfg
 
+    GetSQcnfg
 else
     echo
     echo "Workstation environment - Not a clustered environment"
-    if [ -f $SQCONFIG_DB_FILE ]; then		
-        echo		
-        echo "The configuration file ($SQCONFIG_DB_FILE) was previously created."		
-        echo "Removing and re-creating $SQCONFIG_DB_FILE!"		
-        rm -f $SQCONFIG_DB_FILE		
-    fi		
+    if [ -f $SQCONFIG_DB_FILE ]; then
+        echo
+        echo "The configuration file ($SQCONFIG_DB_FILE) was previously created."
+        echo "Removing and re-creating $SQCONFIG_DB_FILE!"
+        rm -f $SQCONFIG_DB_FILE
+    fi
 fi
 
-# assume option is SQCONFIG_FILE
+# Assume option is SQCONFIG_FILE
 while [ $# != 0 ]
   do
     flag="$1"
@@ -210,8 +210,8 @@ else
     ./genms > $SQETC_DIR/ms.env
     lv_retcode=$?
     if [[ $lv_retcode != 0 ]]; then 
-	echo "Error $lv_retcode while executing genms. Exiting..."
-	exit $lv_retcode
+        echo "Error $lv_retcode while executing genms. Exiting..."
+        exit $lv_retcode
     fi
 fi
 
@@ -281,8 +281,8 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo
     echo "Copying rest of the generated files to $PWD"
 
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
 
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD

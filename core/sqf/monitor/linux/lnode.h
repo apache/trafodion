@@ -26,6 +26,7 @@
 #ifndef LNODE_H_
 #define LNODE_H_
 
+#include "clusterconf.h"
 #include "process.h"
 
 class CLNodeContainer;

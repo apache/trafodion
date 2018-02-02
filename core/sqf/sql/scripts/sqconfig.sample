@@ -55,6 +55,13 @@ end node
 
 
 ###############################################################################
+#
+# Section to configure persistent processes (see sqconfig.persist file)
+#
+###############################################################################
+
+
+###############################################################################
 # 
 # Note: You could use '%' as the first character on the line followed by
 #       any SQ shell command. All the text would be passed verbatim.

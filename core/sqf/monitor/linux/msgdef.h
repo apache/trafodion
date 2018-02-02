@@ -27,6 +27,7 @@
 #define MSGDEF_H_
 
 #include <mpi.h>
+#include "trafconf/trafconfig.h"
 
 // HP_MPI supports both 32bit and 64bit modes
 
@@ -210,18 +211,20 @@ typedef enum {
     RoleType_Aggregation = 0x0002,          // Maps to ZoneType_Aggregation, Backend or Any
     RoleType_Storage     = 0x0004           // Maps to ZoneType_Storage, Backend or Any
 } RoleType;
-
+#if 0
 typedef enum {
-    ZoneType_Undefined = 0x0000,            // No zone type defined
-    ZoneType_Edge = 0x0001,                 // Zone of service only nodes
+    ZoneType_Undefined   = 0x0000,          // No zone type defined
+    ZoneType_Edge        = 0x0001,          // Zone of service only nodes
     ZoneType_Aggregation = 0x0002,          // Zone of compute only nodes
-    ZoneType_Storage = 0x0004,              // Zone of storage only nodes
-    ZoneType_Excluded = 0x0010,             // Excluded cores
-    ZoneType_Any = ( ZoneType_Edge | ZoneType_Aggregation | ZoneType_Storage ),
-    ZoneType_Frontend = ( ZoneType_Edge | ZoneType_Aggregation ),
-    ZoneType_Backend = ( ZoneType_Aggregation | ZoneType_Storage )
+    ZoneType_Storage     = 0x0004,          // Zone of storage only nodes
+    ZoneType_Excluded    = 0x0010,          // Excluded cores
+    ZoneType_Any         = ( ZoneType_Edge | ZoneType_Aggregation | ZoneType_Storage ),
+    ZoneType_Frontend    = ( ZoneType_Edge | ZoneType_Aggregation ),
+    ZoneType_Backend     = ( ZoneType_Aggregation | ZoneType_Storage )
 } ZoneType;
-
+#else
+typedef TC_ZONE_TYPE ZoneType;
+#endif
 // Service Request types
 // note: other data structures depend on the ordering of the REQTYPE elements.
 //       if the ordering changes corresponding changes must be made to 
@@ -327,7 +330,7 @@ typedef enum {
                                             // types, add any new message types 
                                             // before this one
 } MSGTYPE;
-
+#if 0
 typedef enum {
     ProcessType_Undefined=0,                // No process type as been defined
     ProcessType_TSE,                        // Identifies a Table Storage Engine (DP2)
@@ -350,7 +353,9 @@ typedef enum {
                                             // types, add any new process
                                             // types before this one
 } PROCESSTYPE;
-
+#else
+typedef TC_PROCESS_TYPE PROCESSTYPE;
+#endif
 typedef enum {
     ShutdownLevel_Undefined=-1,
     ShutdownLevel_Normal=0,                 // Wait for all transactions and processes to end

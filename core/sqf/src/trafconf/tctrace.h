@@ -31,14 +31,16 @@
 #define TC_TRACE_NODE            0x00002
 // Persist configuration processing
 #define TC_TRACE_PERSIST         0x00004
+// Persist configuration processing
+#define TC_TRACE_PROCESS         0x00008
 // Registry configuration processing
-#define TC_TRACE_REGISTRY        0x00008
+#define TC_TRACE_REGISTRY        0x00010
 // Initialization/shutdown information
-#define TC_TRACE_INIT            0x00010
+#define TC_TRACE_INIT            0x00020
 // Event messages logged (error,informational,critical,etc.)
-#define TC_TRACE_LOG_MSG         0x00020
+#define TC_TRACE_LOG_MSG         0x00040
 // Entry and exit from methods/functions
-#define TC_TRACE_ENTRY_EXIT      0x00040
+#define TC_TRACE_ENTRY_EXIT      0x00080
 
 #define TRACE_ENTRY \
    if (TcTraceSettings & TC_TRACE_ENTRY_EXIT) trace_printf("%s@%d\n", method_name, __LINE__)

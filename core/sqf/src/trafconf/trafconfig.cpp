@@ -27,7 +27,7 @@ using namespace std;
 
 #include "tcdb.h"
 #include "tctrace.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 
 bool TcTraceEnabled = false;
 
@@ -76,19 +76,47 @@ TC_Export const char *tc_errmsg( int err )
     return "Error undefined!";
 }
 
-TC_Export int tc_initialize( bool traceEnabled, const char *traceFileName )
+TC_Export int tc_initialize( bool traceEnabled
+                           , const char *traceFileName
+                           , const char *instanceNode
+                           , const char *rootNode )
 {
+    int rc;
+
+    if ( TrafConfigDb.IsInitialized() )
+    {
+        return( TCALREADYINIT );
+    }
+
     TcTraceEnabled = traceEnabled;
     if (TcTraceEnabled)
     {
         TrafConfigTrace.TraceInit( TcTraceEnabled, "0", traceFileName );
     }
 
-    int rc = TrafConfigDb.Initialize();
+    switch (TrafConfigDb.GetStorageType())
+    {
+        case TCDBMYSQL:
+            if (!instanceNode)
+            {
+                instanceNode = TC_INSTANCE_NODE;
+            }
+            if (!rootNode)
+            {
+                rootNode = TC_ROOT_NODE;
+            }
+            rc = TrafConfigDb.Initialize( rootNode
+                                        , instanceNode );
+            break;
+        case TCDBSQLITE:
+            rc = TrafConfigDb.Initialize();
+            break;
+        default:
+            rc = TCNOTIMPLEMENTED;
+    }
 
     return( rc );
 }
-
 
 TC_Export int tc_delete_node( int nid
                             , const char *node_name )
@@ -150,18 +178,18 @@ TC_Export int tc_put_node( node_configuration_t *node_config )
 
     int rc = TCDBOPERROR;
 
-    rc = TrafConfigDb.SavePNodeData( node_config->node_name
-                                   , node_config->pnid
-                                   , node_config->excluded_first_core
-                                   , node_config->excluded_last_core );
+    rc = TrafConfigDb.AddPNodeData( node_config->node_name
+                                  , node_config->pnid
+                                  , node_config->excluded_first_core
+                                  , node_config->excluded_last_core );
     if (rc == TCSUCCESS)
     {
-        rc = TrafConfigDb.SaveLNodeData( node_config->nid
-                                       , node_config->pnid
-                                       , node_config->first_core
-                                       , node_config->last_core
-                                       , node_config->processors
-                                       , node_config->roles );
+        rc = TrafConfigDb.AddLNodeData( node_config->nid
+                                      , node_config->pnid
+                                      , node_config->first_core
+                                      , node_config->last_core
+                                      , node_config->processors
+                                      , node_config->roles );
     }
 
     return( rc );
@@ -191,10 +219,10 @@ TC_Export int tc_put_pnode( physical_node_configuration_t *pnode_config )
 
     int rc = TCDBOPERROR;
 
-    rc = TrafConfigDb.SavePNodeData( pnode_config->node_name
-                                   , pnode_config->pnid
-                                   , pnode_config->excluded_first_core
-                                   , pnode_config->excluded_last_core );
+    rc = TrafConfigDb.AddPNodeData( pnode_config->node_name
+                                  , pnode_config->pnid
+                                  , pnode_config->excluded_first_core
+                                  , pnode_config->excluded_last_core );
 
     return( rc );
 }
@@ -278,6 +306,7 @@ TC_Export int tc_put_persist_keys( const char *persist_keys )
 
     int rc = TCNOTIMPLEMENTED;
 
+    persist_keys = persist_keys;
     //
 
     return( rc );
@@ -292,6 +321,7 @@ TC_Export int tc_delete_persist_process( const char *persist_key_prefix )
 
     int rc = TCNOTIMPLEMENTED;
 
+    persist_key_prefix = persist_key_prefix;
     //
 
     return( rc );
@@ -322,6 +352,8 @@ TC_Export int tc_put_persist_process( const char *persist_key_prefix
 
     int rc = TCNOTIMPLEMENTED;
 
+    persist_key_prefix = persist_key_prefix;
+    persist_config = persist_config;
     //
 
     return( rc );
@@ -368,6 +400,7 @@ TC_Export int tc_get_registry_key( const char *key )
 
     int rc = TCNOTIMPLEMENTED;
 
+    key          = key;
     //rc = TrafConfigDb.GetRegistryKey( key );
 
     return( rc );
@@ -396,6 +429,7 @@ TC_Export int tc_get_registry_process( const char *process_name )
 
     int rc = TCNOTIMPLEMENTED;
 
+    process_name = process_name;
     //rc = TrafConfigDb.GetRegistryProcess( process_name );
 
     return( rc );
@@ -425,6 +459,8 @@ TC_Export int tc_get_registry_cluster_data( const char *key
 
     int rc = TCNOTIMPLEMENTED;
 
+    key          = key;
+    data         = data;
     //rc = TrafConfigDb.GetRegistryClusterData( key, data );
 
     return( rc );
@@ -456,6 +492,9 @@ TC_Export int tc_get_registry_process_data( const char *process_name
 
     int rc = TCNOTIMPLEMENTED;
 
+    process_name = process_name;
+    key          = key;
+    data         = data;
     //rc = TrafConfigDb.GetRegistryProcessData( process_name, key, data );
 
     return( rc );

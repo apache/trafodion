@@ -44,7 +44,7 @@ public:
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
     bool            Initialize( void );
-    bool            Initialize( const char *traceFile );
+    bool            Initialize( bool traceEnabled, const char *traceFile );
     void            InitCoreMask( cpu_set_t &coreMask );
     inline bool     IsConfigReady( void ) { return( nodeReady_ && persistReady_ ); }
     inline bool     IsNodeReady( void ) { return( nodeReady_ ); }
@@ -87,7 +87,7 @@ private:
     void  AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo );
     void  AddPersistConfiguration( persistConfigInfo_t &persistConfigInfo );
     bool  DeleteDbNodeData( int  pnid );
-    PROCESSTYPE GetProcessType( const char *processtype );
+    TC_PROCESS_TYPE GetProcessType( const char *processtype );
     void  ProcessLNode( node_configuration_t &nodeConfig
                       , pnodeConfigInfo_t    &pnodeConfigInfo
                       , lnodeConfigInfo_t    &lnodeConfigInfo );

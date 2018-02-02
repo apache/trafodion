@@ -37,11 +37,9 @@ using namespace std;
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <mpi.h>
-
-#include "msgdef.h"
-#include "montrace.h"
-#include "sqevlog/evl_sqlog_writer.h"
+#include "seabed/logalt.h"
+#include "tclog.h"
+#include "tctrace.h"
 #include "clusterconf.h"
 
 #define MAX_TOKEN   132
@@ -80,30 +78,30 @@ bool DisplayShortHost = false;  // Valid only with:
                                 //   TrafConfType_NodeName
                                 //   TrafConfType_NodeName_w
 
-char NodeName[MPI_MAX_PROCESSOR_NAME] = { 0 };
+char NodeName[TC_PROCESSOR_NAME_MAX] = { 0 };
 char Key[MAX_TOKEN] = { 0 };
 TrafConfType_t TrafConfType = TrafConfType_Undefined;
 CClusterConfig  ClusterConfig;
 
 //char Node_name[MPI_MAX_PROCESSOR_NAME];
 //int MyPNID = -1;
-long trace_settings = 0;
+long TcTraceSettings = 0;
 
 const char *FormatNidString( FormatNid_t type );
 const char *FormatZidString( FormatZid_t type );
 
-extern const char *PersistProcessTypeString( PROCESSTYPE type );
+extern const char *PersistProcessTypeString( TC_PROCESS_TYPE type );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Function/Method: mon_log_write()
+// Function/Method: TcLogWrite()
 //
 // Description:     Display event log message on terminal
 //
 // Usage:           Invoked to display error message
 //
 ///////////////////////////////////////////////////////////////////////////////
-int mon_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
+int TcLogWrite(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
     
     pv_event_type = pv_event_type;
@@ -150,7 +148,7 @@ void DisplayUsage( void )
 // Function/Method: RoleTypeString()
 //
 ///////////////////////////////////////////////////////////////////////////////
-const char *RoleTypeString( ZoneType type )
+const char *RoleTypeString( TC_ZONE_TYPE type )
 {
     const char *str;
 
@@ -601,13 +599,14 @@ int main( int argc, char *argv[] )
     }
 
     char *env;
+    bool traceEnabled = false;
     env = getenv("TC_TRACE_ENABLE");
     if ( env && *env == '1' )
     {
-        trace_settings |= TRACE_TRAFCONFIG;
+        traceEnabled = true;
     }
 
-    if ( !ClusterConfig.Initialize() )
+    if ( !ClusterConfig.Initialize( traceEnabled, NULL ) )
     {
         printf( "Failed to initialize Trafodion Configuration!\n" );
         exit( EXIT_FAILURE );
