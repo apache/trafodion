@@ -8333,8 +8333,15 @@ user_defined_scalar_function : user_defined_function_name '(' udr_value_expressi
             = ParScannedTokens->getScannedTokenInfo(0);
         Int32 pos = tokInfo.tokenStrPos - tokInfo.tokenStrOffset +
                     tokInfo.tokenStrLen;
-        NAString *input = unicodeToChar(&inputStr[0], pos, (long) SqlParser_ISO_MAPPING,
-                                         PARSERHEAP());
+        //TRAFODION-2931
+	//Chinese character of inputStr will cause core dump
+        //NAString *input = unicodeToChar(&inputStr[0], pos, (long) SqlParser_ISO_MAPPING,
+        //                                 PARSERHEAP());
+        NAString *input = unicodeToChar(&inputStr[0],
+                                        pos,
+                                        (CharInfo::CharSet) (ComGetNameInterfaceCharSet()),
+                                        PARSERHEAP());
+        //TRAFODION-2931
         char *inputC = new (PARSERHEAP()) char[pos+1];
         strncpy(inputC, input->data(), pos+1);
         delete input;
