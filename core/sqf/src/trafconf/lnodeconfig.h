@@ -37,7 +37,7 @@ typedef struct lnodeConfigInfo_s
     int        lastCore;
     cpu_set_t  coreMask;
     int        processor;
-    TC_ZONE_TYPE zoneType;
+    TcZoneType_t zoneType;
 } lnodeConfigInfo_t;
 
 
@@ -99,7 +99,7 @@ public:
     CPNodeConfig        *GetPNodeConfig( void ) { return(pnodeConfig_); }
 
     inline int           GetProcessors( void ) { return( processors_ ); }
-    inline TC_ZONE_TYPE  GetZoneType( void ) { return( zoneType_ ); }
+    inline TcZoneType_t  GetZoneType( void ) { return( zoneType_ ); }
 
 protected:
 private:
@@ -109,7 +109,7 @@ private:
     int           firstCore_;   // First SMP processor core used by logical node
     int           lastCore_;    // Last SMP processor core used by logical node
     int           processors_;  // # of logical processors in logical node
-    TC_ZONE_TYPE  zoneType_;    // type of zone
+    TcZoneType_t  zoneType_;    // type of zone
     CPNodeConfig *pnodeConfig_; // logical node's current physical node
 
     CLNodeConfig *next_;   // next LNodeConfig in CLNodeConfigContainer list

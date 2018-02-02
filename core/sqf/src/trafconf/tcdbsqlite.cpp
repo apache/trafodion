@@ -1244,7 +1244,7 @@ int CTcdbSqlite::Initialize( void )
 }
 
 int CTcdbSqlite::GetNode( int nid
-                        , node_configuration_t &nodeConfig )
+                        , TcNodeConfiguration_t &nodeConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetNode";
     TRACE_ENTRY;
@@ -1388,7 +1388,7 @@ int CTcdbSqlite::GetNode( int nid
 }
 
 int CTcdbSqlite::GetNode( const char *name
-                        , node_configuration_t &nodeConfig )
+                        , TcNodeConfiguration_t &nodeConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetNode";
     TRACE_ENTRY;
@@ -1534,7 +1534,7 @@ int CTcdbSqlite::GetNode( const char *name
 
 int CTcdbSqlite::GetNodes( int &count
                          , int max
-                         , node_configuration_t nodeConfig[] )
+                         , TcNodeConfiguration_t nodeConfig[] )
 {
     const char method_name[] = "CTcdbSqlite::GetNodes";
     TRACE_ENTRY;
@@ -1679,7 +1679,7 @@ int CTcdbSqlite::GetNodes( int &count
 }
 
 int CTcdbSqlite::GetPNode( int pNid
-                         , physical_node_configuration_t &pnodeConfig )
+                         , TcPhysicalNodeConfiguration_t &pnodeConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetPNode";
     TRACE_ENTRY;
@@ -1799,7 +1799,7 @@ int CTcdbSqlite::GetPNode( int pNid
 }
 
 int CTcdbSqlite::GetPNode( const char *name
-                         , physical_node_configuration_t &pnodeConfig )
+                         , TcPhysicalNodeConfiguration_t &pnodeConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetPNode";
     TRACE_ENTRY;
@@ -1918,7 +1918,7 @@ int CTcdbSqlite::GetPNode( const char *name
 
 int CTcdbSqlite::GetSNodes( int &count
                           , int max
-                          , physical_node_configuration_t spareNodeConfig[] )
+                          , TcPhysicalNodeConfiguration_t spareNodeConfig[] )
 {
     const char method_name[] = "CTcdbSqlite::GetSNodes";
     TRACE_ENTRY;
@@ -2066,7 +2066,7 @@ int CTcdbSqlite::GetSNodeData( int pnid
                              , const char *nodename
                              , int excfirstcore
                              , int exclastcore 
-                             , physical_node_configuration_t &spareNodeConfig )
+                             , TcPhysicalNodeConfiguration_t &spareNodeConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetSNodeData";
     TRACE_ENTRY;
@@ -2205,7 +2205,7 @@ int CTcdbSqlite::GetSNodeData( int pnid
 }
 
 int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
-                                  , persist_configuration_t &persistConfig )
+                                  , TcPersistConfiguration_t &persistConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetPersistProcess";
     TRACE_ENTRY;
@@ -2459,7 +2459,7 @@ int CTcdbSqlite::GetPersistProcessKeys( const char *persistProcessKeys )
 
 int CTcdbSqlite::GetRegistryClusterSet( int &count
                                       , int max
-                                      , registry_configuration_t registryConfig[] )
+                                      , TcRegistryConfiguration_t registryConfig[] )
 {
     const char method_name[] = "CTcdbSqlite::GetRegistryClusterSet";
     TRACE_ENTRY;
@@ -2587,7 +2587,7 @@ int CTcdbSqlite::GetRegistryClusterSet( int &count
 
 int CTcdbSqlite::GetRegistryProcessSet( int &count
                                       , int max
-                                      , registry_configuration_t registryConfig[] )
+                                      , TcRegistryConfiguration_t registryConfig[] )
 {
     const char method_name[] = "CTcdbSqlite::GetRegistryProcessSet";
     TRACE_ENTRY;
@@ -3065,7 +3065,7 @@ void CTcdbSqlite::SetLNodeData( int nid
                               , int lastcore
                               , int processors
                               , int roles 
-                              , node_configuration_t &nodeConfig )
+                              , TcNodeConfiguration_t &nodeConfig )
                                  
 {
     const char method_name[] = "CTcdbSqlite::SetLNodeData";
@@ -3106,7 +3106,7 @@ void CTcdbSqlite::SetPNodeData( int pnid
                               , const char *nodename
                               , int excfirstcore
                               , int exclastcore
-                              , physical_node_configuration_t &pnodeConfig )
+                              , TcPhysicalNodeConfiguration_t &pnodeConfig )
                                  
 {
     const char method_name[] = "CTcdbSqlite::SetLNodeData";
@@ -3134,7 +3134,7 @@ void CTcdbSqlite::SetPNodeData( int pnid
 
 int CTcdbSqlite::SetPersistProcessData( const char       *persistkey
                                       , const char       *persistvalue
-                                      , persist_configuration_t &persistConfig )
+                                      , TcPersistConfiguration_t &persistConfig )
 {
     const char method_name[] = "CTcdbSqlite::GetPersistProcessData";
     TRACE_ENTRY;

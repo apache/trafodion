@@ -39,7 +39,7 @@ using namespace std;
 //  Cluster Configuration
 ///////////////////////////////////////////////////////////////////////////////
 
-CTcdbStore::CTcdbStore( TC_STORAGE_TYPE dbStorageType )
+CTcdbStore::CTcdbStore( TcStorageType_t dbStorageType )
           : dbStorageType_(dbStorageType)
 {
     const char method_name[] = "CTcdbStore::CTcdbStore";

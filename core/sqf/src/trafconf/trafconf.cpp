@@ -90,7 +90,7 @@ long TcTraceSettings = 0;
 const char *FormatNidString( FormatNid_t type );
 const char *FormatZidString( FormatZid_t type );
 
-extern const char *PersistProcessTypeString( TC_PROCESS_TYPE type );
+extern const char *PersistProcessTypeString( TcProcessType_t type );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -148,7 +148,7 @@ void DisplayUsage( void )
 // Function/Method: RoleTypeString()
 //
 ///////////////////////////////////////////////////////////////////////////////
-const char *RoleTypeString( TC_ZONE_TYPE type )
+const char *RoleTypeString( TcZoneType_t type )
 {
     const char *str;
 

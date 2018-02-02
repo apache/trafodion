@@ -72,29 +72,29 @@ public:
     int         DeleteNodeData( int pnid );
     int         DeleteUniqueString( int nid );
     int         GetNode( int nid
-                       , node_configuration_t &nodeConfig );
+                       , TcNodeConfiguration_t &nodeConfig );
     int         GetNode( const char *name
-                       , node_configuration_t &nodeConfig );
+                       , TcNodeConfiguration_t &nodeConfig );
     int         GetNodes( int &count
                         , int max
-                        , node_configuration_t nodeConfig[] );
+                        , TcNodeConfiguration_t nodeConfig[] );
     int         GetPNode( int pnid
-                        , physical_node_configuration_t &pnodeConfig );
+                        , TcPhysicalNodeConfiguration_t &pnodeConfig );
     int         GetPNode( const char *name
-                        , physical_node_configuration_t &pnodeConfig );
+                        , TcPhysicalNodeConfiguration_t &pnodeConfig );
     int         GetSNodes( int &count
                          , int max
-                         , physical_node_configuration_t pNodeConfig[] );
+                         , TcPhysicalNodeConfiguration_t pNodeConfig[] );
     int         GetPersistProcess( const char *persistPrefix
-                                 , persist_configuration_t &persistConfig );
+                                 , TcPersistConfiguration_t &persistConfig );
     int         GetPersistProcessKeys( const char *persistProcessKeys );
     int         GetRegistryClusterSet( int &count
                                      , int max
-                                     , registry_configuration_t registryConfig[] );
+                                     , TcRegistryConfiguration_t registryConfig[] );
     int         GetRegistryProcessSet( int &count
                                      , int max
-                                     , registry_configuration_t registryConfig[] );
-    inline TC_STORAGE_TYPE GetStorageType( void ) { return(dbStorageType_); }
+                                     , TcRegistryConfiguration_t registryConfig[] );
+    inline TcStorageType_t GetStorageType( void ) { return(dbStorageType_); }
     int         GetUniqueString( int nid, int id, const char *uniqStr );
     int         GetUniqueStringId( int nid
                                  , const char *uniqStr
@@ -110,7 +110,7 @@ public:
 
 protected:
 private:
-    TC_STORAGE_TYPE         dbStorageType_;
+    TcStorageType_t         dbStorageType_;
     CTcdbStore             *tcdbStore_;
 };
 

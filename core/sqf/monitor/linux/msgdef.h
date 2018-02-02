@@ -223,7 +223,7 @@ typedef enum {
     ZoneType_Backend     = ( ZoneType_Aggregation | ZoneType_Storage )
 } ZoneType;
 #else
-typedef TC_ZONE_TYPE ZoneType;
+typedef TcZoneType_t ZoneType;
 #endif
 // Service Request types
 // note: other data structures depend on the ordering of the REQTYPE elements.
@@ -354,7 +354,7 @@ typedef enum {
                                             // types before this one
 } PROCESSTYPE;
 #else
-typedef TC_PROCESS_TYPE PROCESSTYPE;
+typedef TcProcessType_t PROCESSTYPE;
 #endif
 typedef enum {
     ShutdownLevel_Undefined=-1,

@@ -243,8 +243,8 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
 
 // The following method maps the 'sqconfig' text file persist section's
 // <persist-key>_PROCESS_TYPE string value to the internal
-// TC_PROCESS_TYPE enum value
-TC_PROCESS_TYPE CClusterConfig::GetProcessType( const char *processtype )
+// TcProcessType_t enum value
+TcProcessType_t CClusterConfig::GetProcessType( const char *processtype )
 {
     if (strcmp( "DTM", processtype) == 0)
     {
@@ -351,8 +351,8 @@ bool CClusterConfig::LoadNodeConfig( void )
     int rc;
     int nodeCount = 0;
     int snodeCount = 0;
-    node_configuration_t            nodeConfigData[TC_NODES_MAX];
-    physical_node_configuration_t   spareNodeConfigData[TC_SPARE_NODES_MAX];
+    TcNodeConfiguration_t           nodeConfigData[TC_NODES_MAX];
+    TcPhysicalNodeConfiguration_t   spareNodeConfigData[TC_SPARE_NODES_MAX];
     pnodeConfigInfo_t               pnodeConfigInfo;
     lnodeConfigInfo_t               lnodeConfigInfo;
 
@@ -430,7 +430,7 @@ bool CClusterConfig::LoadPersistConfig( void )
         return( false );
     }
 
-    persist_configuration_t persistConfig;
+    TcPersistConfiguration_t persistConfig;
     persistConfigInfo_t     persistConfigInfo;
     pkeysVector_t     pkeysVector;   // vector of persist prefix strings
 
@@ -452,7 +452,7 @@ bool CClusterConfig::LoadPersistConfig( void )
     // Process each prefix in the vector
     for (pkit = pkeysVector.begin(); pkit < pkeysVector.end(); pkit++ )
     {
-        memset( &persistConfig, 0, sizeof(persist_configuration_t) );
+        memset( &persistConfig, 0, sizeof(TcPersistConfiguration_t) );
         memset( &persistConfigInfo, 0, sizeof(persistConfigInfo_t) );
         strncpy( persistConfig.persist_prefix
                , pkit->c_str()
@@ -486,7 +486,7 @@ bool CClusterConfig::LoadPersistConfig( void )
     return( persistReady_ );
 }
 
-void CClusterConfig::ProcessLNode( node_configuration_t &nodeConfigData
+void CClusterConfig::ProcessLNode( TcNodeConfiguration_t &nodeConfigData
                                  , pnodeConfigInfo_t  &pnodeConfigInfo
                                  , lnodeConfigInfo_t  &lnodeConfigInfo )
 {
@@ -549,12 +549,12 @@ void CClusterConfig::ProcessLNode( node_configuration_t &nodeConfigData
                , nodeConfigData.last_core
                , lnodeConfigInfo.coreMask );
     lnodeConfigInfo.processor = nodeConfigData.processors;
-    lnodeConfigInfo.zoneType  = static_cast<TC_ZONE_TYPE>(nodeConfigData.roles);
+    lnodeConfigInfo.zoneType  = static_cast<TcZoneType_t>(nodeConfigData.roles);
 
     TRACE_EXIT;
 }
 
-void CClusterConfig::ProcessSNode( physical_node_configuration_t &pnodeConfig
+void CClusterConfig::ProcessSNode( TcPhysicalNodeConfiguration_t &pnodeConfig
                                  , pnodeConfigInfo_t             &pnodeConfigInfo )
 {
     const char method_name[] = "CClusterConfig::ProcessSNode";
@@ -603,7 +603,7 @@ void CClusterConfig::ProcessSNode( physical_node_configuration_t &pnodeConfig
     TRACE_EXIT;
 }
 
-void CClusterConfig::ProcessPersistInfo( persist_configuration_t &persistConfig
+void CClusterConfig::ProcessPersistInfo( TcPersistConfiguration_t &persistConfig
                                        , persistConfigInfo_t     &persistConfigInfo )
 {
     const char method_name[] = "CClusterConfig::ProcessPersistInfo";
@@ -708,7 +708,7 @@ bool CClusterConfig::SaveNodeConfig( const char *name
 
     bool rs = true;
     int  rc;
-    node_configuration_t        nodeConfig;
+    TcNodeConfiguration_t       nodeConfig;
     pnodeConfigInfo_t           pnodeConfigInfo;
     lnodeConfigInfo_t           lnodeConfigInfo;
 
@@ -779,7 +779,7 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
 
     bool rs = true;
     int  rc;
-    physical_node_configuration_t pnodeConfig;
+    TcPhysicalNodeConfiguration_t pnodeConfig;
 
     if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
@@ -793,7 +793,7 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
                      , excludedLastCore );
     }
 
-    memset( &pnodeConfig, 0, sizeof(physical_node_configuration_t) );
+    memset( &pnodeConfig, 0, sizeof(TcPhysicalNodeConfiguration_t) );
     pnodeConfig.pnid = pnid;
     strncpy( pnodeConfig.node_name, name, sizeof(pnodeConfig.node_name) );
     pnodeConfig.excluded_first_core = excludedFirstCore;

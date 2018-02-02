@@ -315,7 +315,7 @@ bool CTcdb::IsInitialized( void )
 }
 
 int CTcdb::GetNode( int nid
-                  , node_configuration_t &nodeConfig )
+                  , TcNodeConfiguration_t &nodeConfig )
 {
     const char method_name[] = "CTcdb::GetNode";
     TRACE_ENTRY;
@@ -327,7 +327,7 @@ int CTcdb::GetNode( int nid
 }
 
 int CTcdb::GetNode( const char *name
-                  , node_configuration_t &nodeConfig )
+                  , TcNodeConfiguration_t &nodeConfig )
 {
     const char method_name[] = "CTcdb::GetNode";
     TRACE_ENTRY;
@@ -340,7 +340,7 @@ int CTcdb::GetNode( const char *name
 
 int CTcdb::GetNodes( int &count
                    , int max
-                   , node_configuration_t nodeConfig[] )
+                   , TcNodeConfiguration_t nodeConfig[] )
 {
     const char method_name[] = "CTcdb::GetNodes";
     TRACE_ENTRY;
@@ -352,7 +352,7 @@ int CTcdb::GetNodes( int &count
 }
 
 int CTcdb::GetPNode( int pNid
-                   , physical_node_configuration_t &pnodeConfig )
+                   , TcPhysicalNodeConfiguration_t &pnodeConfig )
 {
     const char method_name[] = "CTcdb::GetPNode";
     TRACE_ENTRY;
@@ -364,7 +364,7 @@ int CTcdb::GetPNode( int pNid
 }
 
 int CTcdb::GetPNode( const char *name
-                   , physical_node_configuration_t &pnodeConfig )
+                   , TcPhysicalNodeConfiguration_t &pnodeConfig )
 {
     const char method_name[] = "CTcdb::GetPNode";
     TRACE_ENTRY;
@@ -377,7 +377,7 @@ int CTcdb::GetPNode( const char *name
 
 int CTcdb::GetSNodes( int &count
                     , int max
-                    , physical_node_configuration_t spareNodeConfig[] )
+                    , TcPhysicalNodeConfiguration_t spareNodeConfig[] )
 {
     const char method_name[] = "CTcdb::GetSNodes";
     TRACE_ENTRY;
@@ -389,7 +389,7 @@ int CTcdb::GetSNodes( int &count
 }
 
 int CTcdb::GetPersistProcess( const char *persistPrefix
-                            , persist_configuration_t &persistConfig )
+                            , TcPersistConfiguration_t &persistConfig )
 {
     const char method_name[] = "CTcdb::GetPersistProcess";
     TRACE_ENTRY;
@@ -413,7 +413,7 @@ int CTcdb::GetPersistProcessKeys( const char *persistProcessKeys )
 
 int CTcdb::GetRegistryClusterSet( int &count
                                 , int max
-                                , registry_configuration_t registryConfig[] )
+                                , TcRegistryConfiguration_t registryConfig[] )
 {
     const char method_name[] = "CTcdb::GetRegistryClusterSet";
     TRACE_ENTRY;
@@ -426,7 +426,7 @@ int CTcdb::GetRegistryClusterSet( int &count
 
 int CTcdb::GetRegistryProcessSet( int &count
                                 , int max
-                                , registry_configuration_t registryConfig[] )
+                                , TcRegistryConfiguration_t registryConfig[] )
 {
     const char method_name[] = "CTcdb::GetRegistryProcessSet";
     TRACE_ENTRY;

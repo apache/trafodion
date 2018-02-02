@@ -127,7 +127,7 @@ TC_Export int tc_delete_node( int nid
     }
 
     int rc = TCDBOPERROR;
-    node_configuration_t nodeConfig;
+    TcNodeConfiguration_t nodeConfig;
 
     if (node_name)
     {
@@ -155,7 +155,7 @@ TC_Export int tc_delete_node( int nid
 }
 
 TC_Export int tc_get_node( const char *node_name
-                         , node_configuration_t *node_config )
+                         , TcNodeConfiguration_t *node_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -169,7 +169,7 @@ TC_Export int tc_get_node( const char *node_name
     return( rc );
 }
 
-TC_Export int tc_put_node( node_configuration_t *node_config )
+TC_Export int tc_put_node( TcNodeConfiguration_t *node_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -196,7 +196,7 @@ TC_Export int tc_put_node( node_configuration_t *node_config )
 }
 
 TC_Export int tc_get_pnode( const char *node_name
-                          , physical_node_configuration_t *pnode_config )
+                          , TcPhysicalNodeConfiguration_t *pnode_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -210,7 +210,7 @@ TC_Export int tc_get_pnode( const char *node_name
     return( rc );
 }
 
-TC_Export int tc_put_pnode( physical_node_configuration_t *pnode_config )
+TC_Export int tc_put_pnode( TcPhysicalNodeConfiguration_t *pnode_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -229,7 +229,7 @@ TC_Export int tc_put_pnode( physical_node_configuration_t *pnode_config )
 
 TC_Export int tc_get_nodes( int *count
                           , int  max
-                          , node_configuration_t *node_config )
+                          , TcNodeConfiguration_t *node_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -250,7 +250,7 @@ TC_Export int tc_get_nodes( int *count
 
 TC_Export int tc_get_snodes( int *scount
                            , int  max
-                           , physical_node_configuration_t *pnode_config )
+                           , TcPhysicalNodeConfiguration_t *pnode_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -328,7 +328,7 @@ TC_Export int tc_delete_persist_process( const char *persist_key_prefix )
 }
 
 TC_Export int tc_get_persist_process( const char *persist_key_prefix
-                                    , persist_configuration_t *persist_config )
+                                    , TcPersistConfiguration_t *persist_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -343,7 +343,7 @@ TC_Export int tc_get_persist_process( const char *persist_key_prefix
 }
 
 TC_Export int tc_put_persist_process( const char *persist_key_prefix
-                                    , persist_configuration_t *persist_config )
+                                    , TcPersistConfiguration_t *persist_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -361,7 +361,7 @@ TC_Export int tc_put_persist_process( const char *persist_key_prefix
 
 TC_Export int tc_get_registry_cluster_set( int *count
                                          , int  max
-                                         , registry_configuration_t *registry_config )
+                                         , TcRegistryConfiguration_t *registry_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -377,7 +377,7 @@ TC_Export int tc_get_registry_cluster_set( int *count
 
 TC_Export int tc_get_registry_process_set( int *count
                                          , int  max
-                                         , registry_configuration_t *registry_config )
+                                         , TcRegistryConfiguration_t *registry_config )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {
@@ -516,7 +516,7 @@ TC_Export int tc_put_registry_process_data( const char *process_name
     return( rc );
 }
 
-TC_Export TC_STORAGE_TYPE tc_get_storage_type( void )
+TC_Export TcStorageType_t tc_get_storage_type( void )
 {
     if ( ! TrafConfigDb.IsInitialized() )
     {

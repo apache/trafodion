@@ -28,7 +28,7 @@ using namespace std;
 #include "tctrace.h"
 #include "persistconfig.h"
 
-const char *PersistProcessTypeString( TC_PROCESS_TYPE type )
+const char *PersistProcessTypeString( TcProcessType_t type )
 {
     const char *str;
 
@@ -87,7 +87,7 @@ const char *PersistProcessTypeString( TC_PROCESS_TYPE type )
     return( str );
 }
 
-const char *ProcessTypeString( TC_PROCESS_TYPE type )
+const char *ProcessTypeString( TcProcessType_t type )
 {
     const char *str;
     
@@ -579,7 +579,7 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( const char *persistPr
     return config;
 }
 
-CPersistConfig *CPersistConfigContainer::GetPersistConfig( TC_PROCESS_TYPE processType
+CPersistConfig *CPersistConfigContainer::GetPersistConfig( TcProcessType_t processType
                                                          , const char *processName
                                                          , int         nid )
 {
