@@ -1292,6 +1292,11 @@ public class T4Properties {
 	 * @see #setServerDataSource(String)
 	 */
 	void setConnectionTimeout(int connectionTimeout) {
+        if (connectionTimeout > Short.MAX_VALUE) {
+            sqlExceptionMessage_ = "Incorrect value for connectionTimeout set: [" + connectionTimeout
+                    + "]. Max value is: [" + Short.MAX_VALUE + "]";
+        }
+
 		if (connectionTimeout < 0) {
 			/*
 			 * sqlExceptionMessage_ = "Incorrect value for connectionTimeout
