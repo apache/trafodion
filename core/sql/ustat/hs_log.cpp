@@ -307,20 +307,7 @@ void HSLogMan::Log(const char *data)
   {
     if (logNeeded_)
       {
-        time_t currentTime = time(0);
-        struct tm currentTimeExploded;
-        localtime_r(&currentTime,&currentTimeExploded);
-        char localTime[100];  // way more space than needed
-        strftime(localTime,sizeof(localTime),"%c",&currentTimeExploded);
-       
-        NAString temp;
-        temp = "[";
-        temp += localTime;
-        temp += "] ";
-        temp += data;
-        // Note: LL_FATAL always logs. The format we use doesn't include
-        // the severity, so "FATAL" doesn't actually show up in ULOG data
-        QRLogger::log1(CAT_SQL_USTAT, LL_FATAL, temp.data());  // use log1 to avoid cpu, process etc. prefix
+        QRLogger::log(CAT_SQL_USTAT, LL_INFO, data);
       }
   }
 
@@ -395,19 +382,24 @@ void HSLogMan::StartLog(NABoolean needExplain)
         if (logFileName.size() > 0)
           logFileName += '/';
 
+        logFileName += "ustat";  // file name prefix will always be "ustat"
+
+        // if CQD USTAT_LOG is set, extract the file name part from it and insert
+        // that to the log file name as an additional qualifier
         const char * ustatLog = ActiveSchemaDB()->getDefaults().getValue(USTAT_LOG);
-        const char * fileNameStem = ustatLog + strlen(ustatLog);
-        if (ustatLog == fileNameStem) 
-          fileNameStem = "ULOG";  // CQD USTAT_LOG is the empty string
-        else
+        if (strlen(ustatLog) > 0)
           {
+            const char * fileNameQualifier = ustatLog + strlen(ustatLog);
+
             // strip off any directory path name; we will always use the logs directory
             // as configured via QRLogger
-            while ((fileNameStem > ustatLog) && (*(fileNameStem - 1) != '/'))
-              fileNameStem--;
+            while ((fileNameQualifier > ustatLog) && (*(fileNameQualifier - 1) != '/'))
+              fileNameQualifier--;
+
+            logFileName += '.';
+            logFileName += fileNameQualifier;
           }
 
-        logFileName += fileNameStem;
         logFileName += qualifiers;
 
         NABoolean logStarted = QRLogger::startLogFile(CAT_SQL_USTAT,logFileName.c_str());

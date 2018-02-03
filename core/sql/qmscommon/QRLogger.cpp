@@ -608,7 +608,8 @@ NABoolean QRLogger::startLogFile(const std::string &cat, const char * logFileNam
     {
       log4cxx::LoggerPtr logger(Logger::getLogger(cat));
       logger->setAdditivity(false);  // make this logger non-additive
-      log4cxx::PatternLayout * layout = new PatternLayout("%m%n"); // want just the message text
+
+      log4cxx::PatternLayout * layout = new PatternLayout("%d, %p, %c, %m%n");
       log4cxx::LogString fileName(logFileName);
       log4cxx::FileAppenderPtr fap(new FileAppender(layout,fileName,false /* no append */));
       

@@ -98,9 +98,9 @@ class ParseULOG:
         self.beginEndIntervals = []
      
 
-    def parseULOG(self):
+    def parseOldULOG(self):
         #
-        # Begin/End entries look like this:
+        # Until Trafodion release 2.3, Begin/End entries looked like this:
         #
         # [Tue Mar 21 21:02:27 2017] :|  BEGIN Allocate storage for columns
         # [Tue Mar 21 21:02:30 2017] :|  END   Allocate storage for columns elapsed time (00:00:02.666)
@@ -151,7 +151,58 @@ class ParseULOG:
             print "Could not open " + self.ULOGFileName
             print detail        
         
+    def parseNewULOG(self):
+        #
+        # Starting in Trafodion release 2.3, Begin/End entries looked like this:
+        #
+        # 2018-02-02 23:00:28,786, INFO, SQL.USTAT, Node Number: 0, CPU: 0, PIN: 15271, Process Name: $Z000CGB,,,:|  BEGIN Allocate storage for columns
+        # 2018-02-02 23:00:28,786, INFO, SQL.USTAT, Node Number: 0, CPU: 0, PIN: 15271, Process Name: $Z000CGB,,,:|  END   Allocate storage for columns elapsed time (00:00:00.000)
+        #
+        # The number of vertical bars varies and indicates levels of nesting.
+        # For now we ignore the timestamp, and just pick out the description
+        # and the elapsed time.
+        #
 
+        try:
+            f = open(self.ULOGFileName)
+            previousItemNumber = []
+            messageNumberStr = None
+            messageText = None
+            for line in f:
+                #originalLine = line
+                line = line.rstrip('\n')  # get rid of trailing return character
+                index = line.find(',,,')
+                if index >= 0:
+                    line = line[index+3:] # strip off leading stuff
+                if line.startswith(':'):
+                    line = line[1:]  # strip off colon
+                    level = 0
+                    while line.startswith('|  '):
+                        level = level + 1
+                        line = line[3:]
+                    if line.startswith('BEGIN '):
+                        description = line[6:]  # strip off BEGIN; description is what's left
+                        # create a BeginEnd interval and add to stack
+                        beginEndInterval = BeginEndInterval(description,level,previousItemNumber)
+                        previousItemNumber = list(beginEndInterval.itemNumber)
+                        self.beginEndIntervals.append(beginEndInterval)
+                    elif line.startswith('END   '):
+                        index = line.find(' elapsed time (')
+                        if index >= 0:
+                            description = line[6:index]
+                            elapsedTime = line[index+15:]
+                            elapsedTime = elapsedTime.rstrip(')')
+                            # pop the last BeginEnd interval from the stack
+                            beginEndInterval = self.beginEndIntervals.pop()
+                            beginEndInterval.setEnd(description,elapsedTime)
+                            beginEndInterval.generateData()
+                            previousItemNumber = list(beginEndInterval.itemNumber)
+                            del beginEndInterval                 
+            f.close()
+         
+        except IOError as detail:
+            print "Could not open " + self.ULOGFileName
+            print detail  
 
 
 
@@ -163,6 +214,8 @@ class ParseULOG:
 parser = argparse.ArgumentParser(
     description='This script parses out interesting data from a ULOG.')
 parser.add_argument("ULOGFileName", help='The name of the ULOG file you wish to parse.')
+parser.add_argument("--ULOGFormat",help='"new" is current ULOG format (this is the default), "old" is the old ULOG format',
+    default="new", choices=["new","old"])
 
 args = parser.parse_args()  # exits and prints help if args are incorrect
 
@@ -170,7 +223,10 @@ exitCode = 0
 
 ULOGparser = ParseULOG(args.ULOGFileName)
 
-ULOGparser.parseULOG()
+if args.ULOGFormat == "old":
+    ULOGparser.parseOldULOG()
+else:
+    ULOGparser.parseNewULOG()
 
 exit(exitCode)   
 

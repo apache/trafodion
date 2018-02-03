@@ -3112,7 +3112,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
 
   DDkwd__(USTAT_JIT_LOGGING,                    "OFF"),
-  DD_____(USTAT_LOG,                            "ULOG"),
+  DD_____(USTAT_LOG,                            ""),   // if non-empty, gives second qualifier to ustat log file name
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
   DDui___(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,   "256"),  // When computing UECs, char cols are limited to this many bytes
   DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
