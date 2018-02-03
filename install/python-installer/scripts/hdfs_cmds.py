@@ -45,7 +45,7 @@ def run():
     traf_user = dbcfgs['traf_user']
     hdfs_user = dbcfgs['hdfs_user']
     hbase_user = dbcfgs['hbase_user']
-    hbase_group = cmd_output('%s groups %s | cut -d" " -f3' % (hdfs_bin, hbase_user))
+    hbase_group = run_cmd_as_user(hdfs_user, '%s groups %s | cut -d" " -f3' % (hdfs_bin, hbase_user))
 
     run_cmd_as_user(hdfs_user, '%s dfsadmin -safemode wait' % hdfs_bin)
     run_cmd_as_user(hdfs_user, '%s dfs -mkdir -p %s/{trafodion_backups,bulkload,lobs} /hbase/archive' % (hdfs_bin, traf_loc))
