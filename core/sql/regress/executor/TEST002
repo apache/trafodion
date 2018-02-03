@@ -1137,6 +1137,7 @@ insert into student values('s2', 88);
 insert into student values('s2', 188);
 insert into student values('s2', 18);
 insert into student values('s2', 58);
+insert into student values('学生三',79);
 
 SELECT student_name,
           GROUP_CONCAT(DISTINCT test_score
@@ -1149,6 +1150,8 @@ SELECT student_name,
                     ORDER BY test_score SEPARATOR '-')
           FROM student
           GROUP BY student_name order by student_name;
+
+SELECT GROUP_CONCAT(student_name) from student;
 
 cqd ATTEMPT_ESP_PARALLELISM 'ON';
 control query shape exchange(cut);
