@@ -3046,7 +3046,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
-  DDkwd__(USTAT_AUTOMATIC_LOGGING,              "OFF"),  // OFF gives same semantics as 
+  DDkwd__(USTAT_AUTOMATIC_LOGGING,              "ON"),   // OFF gives same semantics as 
                                                          // UPDATE STATISTICS LOG OFF, while
                                                          // ON gives same semantics as 
                                                          // UPDATE STATISTICS LOG SYSTEM 
