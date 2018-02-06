@@ -57,6 +57,8 @@
 
 #include "TrafDDLdesc.h"
 
+#define MAX_HBASE_ROWKEY_LEN 32768
+
 // defined in CmpDescribe.cpp
 extern short CmpDescribeSeabaseTable ( 
      const CorrName  &dtName,
@@ -2517,6 +2519,16 @@ short CmpSeabaseDDL::createSeabaseTable2(
 	}
       keyLength += colType->getEncodedKeyLength();
     }
+  //check the key length
+  if(keyLength > MAX_HBASE_ROWKEY_LEN )
+  {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ROWKEY_LEN_TOO_LARGE)
+                              << DgInt0(keyLength)
+                              << DgInt1(MAX_HBASE_ROWKEY_LEN);
+      deallocEHI(ehi); 
+      processReturn();
+      return -1;
+  }
 
   if (hbaseMapFormat)
     {
