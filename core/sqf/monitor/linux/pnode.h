@@ -32,8 +32,6 @@
 
 #include "internal.h"
 #include "clusterconf.h"
-#include "pnodeconfig.h"
-#include "lnodeconfig.h"
 #include "lnode.h"
 #include "monlogging.h"
 

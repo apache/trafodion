@@ -25,8 +25,7 @@
 
 #include <string>
 #include <vector>
-#include "msgdef.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 
 using namespace std;
 
@@ -64,7 +63,7 @@ typedef struct persistConfigInfo_s
     char            programName[TC_PERSIST_VALUE_MAX];
     char            programArgs[TC_PERSIST_VALUE_MAX];
     char            zoneFormat[TC_PERSIST_VALUE_MAX];
-    PROCESSTYPE     processType;
+    TcProcessType_t processType;
     bool            requiresDTM;
     int             persistRetries;
     int             persistWindow;
@@ -83,7 +82,7 @@ public:
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
     CPersistConfig *GetPersistConfig( const char *persistPrefix );
-    CPersistConfig *GetPersistConfig( PROCESSTYPE processType
+    CPersistConfig *GetPersistConfig( TcProcessType_t processType
                                     , const char *processName
                                     , int         nid );
     inline int    GetPersistConfigCount( void ) { return ( persistsCount_ ); }
@@ -91,7 +90,7 @@ public:
 protected:
     void  InitializePersistKeys( char *persistkeys 
                                , pkeysVector_t &pkeysVector );
-    int   GetPersistKeysCount( void ) { return ( pkeysVector_.size() ); }
+    int   GetPersistKeysCount( void ) { return ( static_cast<int>(pkeysVector_.size()) ); }
 
     int             persistsCount_; // # of persistent configuration object
     pkeysVector_t   pkeysVector_;   // vector of persist keys
@@ -127,7 +126,7 @@ public:
     inline int           GetProgramArgvLen( void ) { return( programArgvLen_ ); }
     inline const char   *GetZoneFormat( void ) { return( zoneFormat_.c_str() ); }
     inline FormatZid_t   GetZoneZidFormat( void ) { return( zoneZidFormat_ ); }
-    inline PROCESSTYPE   GetProcessType( void ) { return ( processType_ ); }
+    inline TcProcessType_t GetProcessType( void ) { return ( processType_ ); }
     inline bool          GetRequiresDTM( void ) { return ( requiresDTM_ ); }
     inline int           GetPersistRetries( void ) { return ( persistRetries_ ); }
     inline int           GetPersistWindow( void ) { return ( persistWindow_ ); }
@@ -146,7 +145,7 @@ private:
     string          programName_;
     string          programArgs_;
     string          zoneFormat_;
-    PROCESSTYPE     processType_;
+    TcProcessType_t processType_;
     FormatNid_t     processNameNidFormat_;
     FormatNid_t     stdoutNidFormat_;
     FormatZid_t     zoneZidFormat_;

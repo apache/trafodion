@@ -538,8 +538,8 @@ void CConfigContainer::Init(void)
     int regClusterMax = 0;
     int regProcessMax = 0;
     ConfigType type;
-    registry_configuration_t *regClusterConfig;
-    registry_configuration_t *regProcessConfig;
+    TcRegistryConfiguration_t *regClusterConfig;
+    TcRegistryConfiguration_t *regProcessConfig;
     
     // Get cluster scope configuration registry entries count
     rc = tc_get_registry_cluster_set( &regClusterCount
@@ -555,7 +555,7 @@ void CConfigContainer::Init(void)
     }
 
     regClusterMax = regClusterCount;
-    regClusterConfig = new registry_configuration_t[regClusterMax];
+    regClusterConfig = new TcRegistryConfiguration_t[regClusterMax];
     if (regClusterConfig)
     {
         rc = tc_get_registry_cluster_set( &regClusterCount
@@ -605,7 +605,7 @@ void CConfigContainer::Init(void)
     }
 
     regProcessMax = regProcessCount;
-    regProcessConfig = new registry_configuration_t[regProcessMax];
+    regProcessConfig = new TcRegistryConfiguration_t[regProcessMax];
     if (regClusterConfig)
     {
         rc = tc_get_registry_cluster_set( &regProcessCount

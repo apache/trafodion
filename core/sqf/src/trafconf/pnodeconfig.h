@@ -28,6 +28,7 @@
 
 #include <list>
 
+#include "trafconf/trafconfig.h"
 #include "lnodeconfig.h"
 
 class CLNodeConfig;
@@ -38,12 +39,12 @@ typedef list<CPNodeConfig *>   PNodesConfigList_t;
 typedef struct pnodeConfigInfo_s
 {
     int        pnid;
-    char       nodename[MPI_MAX_PROCESSOR_NAME];
+    char       nodename[TC_PROCESSOR_NAME_MAX];
     int        excludedFirstCore;
     int        excludedLastCore;
     cpu_set_t  excludedCoreMask;
     int        spareCount;
-    int        sparePNid[MAX_NODES];
+    int        sparePNid[TC_SPARE_NODES_MAX];
 } pnodeConfigInfo_t;
 
 class CPNodeConfigContainer
@@ -114,7 +115,7 @@ public:
 protected:
 private:
     CPNodeConfigContainer *pnodesConfig_; // physical nodes container
-    char                   name_[MPI_MAX_PROCESSOR_NAME]; // hostname
+    char                   name_[TC_PROCESSOR_NAME_MAX]; // hostname
     int                    pnid_;         // physical node identifier
     cpu_set_t              excludedCoreMask_; // mask of excluded SMP processor cores
     int                    excludedFirstCore_;// First excluded SMP processor core used by logical node

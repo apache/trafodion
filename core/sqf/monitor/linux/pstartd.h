@@ -35,7 +35,7 @@ using namespace std;
 
 #include "msgdef.h"
 #include "lock.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 
 class CMonUtil
 {

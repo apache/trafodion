@@ -44,12 +44,12 @@ public:
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
     bool            Initialize( void );
-    bool            Initialize( const char *traceFile );
+    bool            Initialize( bool traceEnabled, const char *traceFile );
     void            InitCoreMask( cpu_set_t &coreMask );
     inline bool     IsConfigReady( void ) { return( nodeReady_ && persistReady_ ); }
     inline bool     IsNodeReady( void ) { return( nodeReady_ ); }
     inline bool     IsPersistReady( void ) { return( persistReady_ ); }
-    inline TC_STORAGE_TYPE GetStorageType( void ) { return(trafConfigStorageType_); }
+    inline TcStorageType_t GetStorageType( void ) { return(trafConfigStorageType_); }
     bool            LoadConfig( void );
     bool            LoadNodeConfig( void );
     bool            LoadPersistConfig( void );
@@ -77,7 +77,7 @@ private:
     bool            persistReady_; // true when persist configuration loaded
     bool            newPNodeConfig_;
     bool            trafConfigInitialized_;
-    TC_STORAGE_TYPE trafConfigStorageType_;
+    TcStorageType_t trafConfigStorageType_;
     CPNodeConfig   *prevPNodeConfig_;
     CLNodeConfig   *prevLNodeConfig_;
     CPersistConfig *prevPersistConfig_;
@@ -87,14 +87,14 @@ private:
     void  AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo );
     void  AddPersistConfiguration( persistConfigInfo_t &persistConfigInfo );
     bool  DeleteDbNodeData( int  pnid );
-    PROCESSTYPE GetProcessType( const char *processtype );
-    void  ProcessLNode( node_configuration_t &nodeConfig
-                      , pnodeConfigInfo_t    &pnodeConfigInfo
-                      , lnodeConfigInfo_t    &lnodeConfigInfo );
-    void  ProcessSNode( physical_node_configuration_t &pnodeConfig
+    TcProcessType_t GetProcessType( const char *processtype );
+    void  ProcessLNode( TcNodeConfiguration_t &nodeConfig
+                      , pnodeConfigInfo_t     &pnodeConfigInfo
+                      , lnodeConfigInfo_t     &lnodeConfigInfo );
+    void  ProcessSNode( TcPhysicalNodeConfiguration_t &pnodeConfig
                       , pnodeConfigInfo_t             &pnodeConfigInfo );
-    void  ProcessPersistInfo( persist_configuration_t &persistConfigData
-                            , persistConfigInfo_t     &persistConfigInfo );
+    void  ProcessPersistInfo( TcPersistConfiguration_t &persistConfigData
+                            , persistConfigInfo_t      &persistConfigInfo );
     bool  SaveDbLNodeData( int         nid
                          , int         pnid
                          , int         firstCore

@@ -37,6 +37,14 @@ ifndef SQ_MTYPE
    SQ_MTYPE	= 32
 endif
 
+# Trafodion Configuration 
+SRCTCDIR	= ../../src/trafconf
+
+# Seabed
+SRCSBDIR	= ../../src/seabed/src
+
+INCMISCDIR	+= -I$(SRCTCDIR) -I$(SRCSBDIR)
+
 TOOLBASE	:= $(shell echo `pwd` | sed -e 's|/src\/.*||')
 DEPTOOL 	:= $(TOOLBASE)/tools/make/deptool
 DEPFLAGS	= $(DEFINES) $(INCLUDES) -f $(DEPFILE)
@@ -75,3 +83,5 @@ CXXFLAGS	= $(CXXWARN) $(DBG_FLGS) $(OPTIM_FLGS)
 
 CWARN		= -Wno-long-long -fmessage-length=0
 CXXWARN		= -Wno-long-long -Wno-deprecated -fmessage-length=0
+
+INCLUDES	= -I$(INCEXPDIR) $(INCMISCDIR)

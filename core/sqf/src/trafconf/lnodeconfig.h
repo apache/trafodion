@@ -26,16 +26,18 @@
 #ifndef LNODECONFIG_H_
 #define LNODECONFIG_H_
 
+#include "trafconf/trafconfig.h"
+
 typedef struct lnodeConfigInfo_s
 {
     int        nid;
     int        pnid;
-    char       nodename[MPI_MAX_PROCESSOR_NAME];
+    char       nodename[TC_PROCESSOR_NAME_MAX];
     int        firstCore;
     int        lastCore;
     cpu_set_t  coreMask;
     int        processor;
-    ZoneType   zoneType;
+    TcZoneType_t zoneType;
 } lnodeConfigInfo_t;
 
 
@@ -97,7 +99,7 @@ public:
     CPNodeConfig        *GetPNodeConfig( void ) { return(pnodeConfig_); }
 
     inline int           GetProcessors( void ) { return( processors_ ); }
-    inline ZoneType      GetZoneType( void ) { return( zoneType_ ); }
+    inline TcZoneType_t  GetZoneType( void ) { return( zoneType_ ); }
 
 protected:
 private:
@@ -107,7 +109,7 @@ private:
     int           firstCore_;   // First SMP processor core used by logical node
     int           lastCore_;    // Last SMP processor core used by logical node
     int           processors_;  // # of logical processors in logical node
-    ZoneType      zoneType_;    // type of zone
+    TcZoneType_t  zoneType_;    // type of zone
     CPNodeConfig *pnodeConfig_; // logical node's current physical node
 
     CLNodeConfig *next_;   // next LNodeConfig in CLNodeConfigContainer list

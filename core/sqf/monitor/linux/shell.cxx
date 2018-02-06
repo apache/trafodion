@@ -3097,7 +3097,8 @@ bool load_configuration( void )
         // It was previously loaded, remove the current configuration
         ClusterConfig.Clear();
     }
-    if ( ClusterConfig.Initialize( traceFileName ) )
+    bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
+    if ( ClusterConfig.Initialize( traceEnabled, traceFileName ) )
     {
         if ( ! ClusterConfig.LoadConfig() )
         {
@@ -3211,7 +3212,7 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
                       "   roles      = %s\n"
                     , method_name, __LINE__, MyName
                     , node_name, first_core, last_core, processors
-                    , RoleTypeString( (ZoneType) roles ));
+                    , RoleTypeString( static_cast<ZoneType>(roles) ));
 
     // Check that node_name is not in the configuration
     pnid = get_pnid_by_node_name( node_name );

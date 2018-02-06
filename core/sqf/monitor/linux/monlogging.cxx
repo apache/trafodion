@@ -37,8 +37,7 @@ using namespace std;
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <errno.h>
-#include <seabed/logalt.h>
-
+#include "seabed/logalt.h"
 #include "monlogging.h"
 #include "montrace.h"
 #include "msgdef.h"
