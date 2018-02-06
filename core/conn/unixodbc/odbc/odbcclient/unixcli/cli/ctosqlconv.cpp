@@ -2861,7 +2861,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld:%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
@@ -2923,7 +2923,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				if (intervalTmp->interval_sign == SQL_TRUE)
 					sprintf(cTmpBuf,"-%ld",intervalTmp->intval.day_second.hour);
 				else
-					sprintf(cTmpBuf,"%ld:%ld",intervalTmp->intval.day_second.hour,intervalTmp->intval.day_second.minute);
+					sprintf(cTmpBuf,"%ld",intervalTmp->intval.day_second.hour);
 				break;
 			case SQL_INTERVAL_MINUTE:
 				if (intervalTmp->interval_sign == SQL_TRUE)
