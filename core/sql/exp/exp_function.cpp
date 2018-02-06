@@ -6514,6 +6514,10 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
     JsonReturnType ret = json_extract_path_text(&rltStr, jsonStr, 1, jsonAttr);
     if (ret != JSON_OK)
     {
+        if (jsonStr)
+            NADELETEBASIC(jsonStr,(heap));
+        if (jsonAttr)
+            NADELETEBASIC(jsonAttr,(heap));
         ExRaiseJSONError(heap, diagsArea, ret);
         return ex_expr::EXPR_ERROR;
     }
@@ -6530,6 +6534,11 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
     }
     else
         getOperand(0)->setVarLength(0, op_data[-MAX_OPERANDS]);
+
+    if (jsonStr)
+        NADELETEBASIC(jsonStr,(heap));
+    if (jsonAttr)
+        NADELETEBASIC(jsonAttr,(heap));
 
     return ex_expr::EXPR_OK;
 }
