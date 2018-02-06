@@ -22,12 +22,13 @@
 
 using namespace std;
 
+#include <errno.h>
 #include <string.h>
-#include "montrace.h"
-#include "monlogging.h"
+#include "tclog.h"
+#include "tctrace.h"
 #include "persistconfig.h"
 
-const char *PersistProcessTypeString( PROCESSTYPE type )
+const char *PersistProcessTypeString( TcProcessType_t type )
 {
     const char *str;
 
@@ -86,7 +87,7 @@ const char *PersistProcessTypeString( PROCESSTYPE type )
     return( str );
 }
 
-const char *ProcessTypeString( PROCESSTYPE type )
+const char *ProcessTypeString( TcProcessType_t type )
 {
     const char *str;
     
@@ -263,7 +264,7 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
         token = strtok( programArgs, delim );
         while (token != NULL)
         {
-            if ( trace_settings & TRACE_INIT )
+            if ( TcTraceSettings & TC_TRACE_INIT )
             {
                 trace_printf("%s@%d Setting argvVector=%s\n",
                              method_name, __LINE__, token);
@@ -272,16 +273,16 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
             token = strtok( NULL, delim );
         }
 
-        programArgc_ = argvVector.size();
+        programArgc_ = static_cast<int>(argvVector.size());
 
         // Compute amount of space need to store argument strings
         stringVector_t::iterator avit;
         for (avit = argvVector.begin(); avit < argvVector.end(); avit++ )
         {
-            programArgvLen_ += strlen(avit->c_str()) + 1;
+            programArgvLen_ += static_cast<int>(strlen(avit->c_str()) + 1);
         }
         
-        if ( trace_settings & TRACE_INIT )
+        if ( TcTraceSettings & TC_TRACE_INIT )
         {
             trace_printf( "%s@%d - Copying arguments "
                           "programArgc_=%d, programArgvLen_=%d\n"
@@ -298,7 +299,7 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
                 char *pProgramArgv = programArgv_;
                 for (avit = argvVector.begin(); avit < argvVector.end(); avit++ )
                 {
-                    if ( trace_settings & TRACE_INIT )
+                    if ( TcTraceSettings & TC_TRACE_INIT )
                     {
                         trace_printf("%s@%d - prefix=%s, Copying argvVector='%s'\n"
                                     , method_name, __LINE__
@@ -332,7 +333,7 @@ const char *CPersistConfig::GetProcessName( int nid )
     const char method_name[] = "CPersistConfig::GetProcessName";
     TRACE_ENTRY;
 
-    char nidStr[MAX_PROCESS_NAME];
+    char nidStr[TC_PROCESSOR_NAME_MAX];
 
     switch (processNameNidFormat_)
     {
@@ -352,7 +353,7 @@ const char *CPersistConfig::GetProcessName( int nid )
         processName_ = processNamePrefix_;
     }
 
-    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    if ( TcTraceSettings & (TC_TRACE_REQUEST | TC_TRACE_PROCESS))
     {
         trace_printf( "%s@%d Process prefix=%s, name=%s, format=%s\n"
                     , method_name, __LINE__
@@ -370,7 +371,7 @@ const char *CPersistConfig::GetStdoutFile( int nid )
     const char method_name[] = "CPersistConfig::GetStdoutFile";
     TRACE_ENTRY;
 
-    char nidStr[MAX_PROCESS_NAME];
+    char nidStr[TC_PROCESSOR_NAME_MAX];
 
     switch (stdoutNidFormat_)
     {
@@ -390,7 +391,7 @@ const char *CPersistConfig::GetStdoutFile( int nid )
         stdoutFile_ = stdoutPrefix_;
     }
 
-    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    if ( TcTraceSettings & (TC_TRACE_REQUEST | TC_TRACE_PROCESS))
     {
         trace_printf( "%s@%d stdout prefix=%s, file=%s, format=%s\n"
                     , method_name, __LINE__
@@ -533,11 +534,11 @@ CPersistConfig *CPersistConfigContainer::AddPersistConfig( persistConfigInfo_t &
     else
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf(la_buf, "[%s], Error: Can't allocate persistent configuration "
                         "object - errno=%d (%s)\n"
                       , method_name, err, strerror(errno));
-        mon_log_write(MON_PERSISTCONFIG_ADDCONFIG_1, SQ_LOG_ERR, la_buf);
+        TcLogWrite(MON_PERSISTCONFIG_ADDCONFIG_1, TC_LOG_ERR, la_buf);
     }
 
     TRACE_EXIT;
@@ -578,7 +579,7 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( const char *persistPr
     return config;
 }
 
-CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processType
+CPersistConfig *CPersistConfigContainer::GetPersistConfig( TcProcessType_t processType
                                                          , const char *processName
                                                          , int         nid )
 {
@@ -591,7 +592,7 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processTy
     {
         if (config->GetProcessType() == processType)
         {
-            if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            if ( TcTraceSettings & (TC_TRACE_REQUEST | TC_TRACE_PROCESS))
             {
                 trace_printf( "%s@%d Process type=%s, name=%s\n"
                             , method_name, __LINE__
@@ -622,7 +623,7 @@ void CPersistConfigContainer::InitializePersistKeys( char *persistkeys
     token = strtok( persistkeys, delim );
     while (token != NULL)
     {
-        if ( trace_settings & TRACE_INIT )
+        if ( TcTraceSettings & TC_TRACE_INIT )
         {
             trace_printf("%s@%d Setting pkeysVector=%s\n",
                          method_name, __LINE__, token);

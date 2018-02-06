@@ -26,8 +26,7 @@
 #ifndef TCDBSTORE_H_
 #define TCDBSTORE_H_
 
-#include "zookeeper/zookeeper.h"
-#include "trafconfig.h"
+#include "trafconf/trafconfig.h"
 
 using namespace std;
 
@@ -46,10 +45,19 @@ protected:
                                      // member variable of the class
 public:
 
-    CTcdbStore( TC_STORAGE_TYPE dbStorageType );
+    CTcdbStore( TcStorageType_t dbStorageType );
     virtual ~CTcdbStore( void );
 
-    virtual int         Close( void ) = 0;
+    virtual int         AddLNodeData( int nid
+                                    , int pnid
+                                    , int firstCore
+                                    , int lastCore
+                                    , int processors
+                                    , int roles ) = 0;
+    virtual int         AddPNodeData( const char *name
+                                    , int pnid
+                                    , int excludedFirstCore
+                                    , int excludedLastCore ) = 0;
     virtual int         AddRegistryKey( const char *key ) = 0;
     virtual int         AddRegistryProcess( const char *name ) = 0;
     virtual int         AddRegistryClusterData( const char *key
@@ -60,52 +68,43 @@ public:
     virtual int         AddUniqueString( int nid
                                        , int id
                                        , const char *uniqStr ) = 0;
+    virtual int         Close( void ) = 0;
     virtual int         DeleteNodeData( int pnid ) = 0;
     virtual int         DeleteUniqueString( int nid ) = 0;
     virtual int         GetNode( int nid
-                               , node_configuration_t &nodeConfig ) = 0;
+                               , TcNodeConfiguration_t &nodeConfig ) = 0;
     virtual int         GetNode( const char *name
-                               , node_configuration_t &nodeConfig ) = 0;
+                               , TcNodeConfiguration_t &nodeConfig ) = 0;
     virtual int         GetNodes( int &count
                                 , int max
-                                , node_configuration_t nodeConfig[] ) = 0;
+                                , TcNodeConfiguration_t nodeConfig[] ) = 0;
     virtual int         GetPNode( int pnid
-                                , physical_node_configuration_t &pnodeConfig ) = 0;
+                                , TcPhysicalNodeConfiguration_t &pnodeConfig ) = 0;
     virtual int         GetPNode( const char *name
-                                , physical_node_configuration_t &pnodeConfig ) = 0;
+                                , TcPhysicalNodeConfiguration_t &pnodeConfig ) = 0;
     virtual int         GetSNodes( int &count
                                  , int max
-                                 , physical_node_configuration_t pNodeConfig[] ) = 0;
+                                 , TcPhysicalNodeConfiguration_t pNodeConfig[] ) = 0;
     virtual int         GetPersistProcess( const char *persistPrefix
-                                         , persist_configuration_t &persistConfig ) = 0;
+                                         , TcPersistConfiguration_t &persistConfig ) = 0;
     virtual int         GetPersistProcessKeys( const char *persistProcessKeys ) = 0;
     virtual int         GetRegistryClusterSet( int &count
                                              , int max
-                                             , registry_configuration_t registryConfig[] ) = 0;
+                                             , TcRegistryConfiguration_t registryConfig[] ) = 0;
     virtual int         GetRegistryProcessSet( int &count
                                              , int max
-                                             , registry_configuration_t registryConfig[] ) = 0;
+                                             , TcRegistryConfiguration_t registryConfig[] ) = 0;
     virtual int         GetUniqueString( int nid, int id, const char *uniqStr ) = 0;
     virtual int         GetUniqueStringId( int nid
                                          , const char *uniqStr
                                          , int &id ) = 0;
     virtual int         GetUniqueStringIdMax( int nid, int &id ) = 0;
-    inline TC_STORAGE_TYPE GetStorageType( void ) { return( dbStorageType_ ); }
+    inline TcStorageType_t GetStorageType( void ) { return( dbStorageType_ ); }
     virtual int         Initialize( void ) = 0;
     virtual bool        IsInitialized( void ) = 0;
-    virtual int         SaveLNodeData( int nid
-                                     , int pnid
-                                     , int firstCore
-                                     , int lastCore
-                                     , int processors
-                                     , int roles ) = 0;
-    virtual int         SavePNodeData( const char *name
-                                     , int pnid
-                                     , int excludedFirstCore
-                                     , int excludedLastCore ) = 0;
 
 protected:
-    TC_STORAGE_TYPE     dbStorageType_;
+    TcStorageType_t     dbStorageType_;
 private:
 };
 

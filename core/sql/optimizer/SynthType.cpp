@@ -1762,7 +1762,16 @@ const NAType *AggrGrouping::synthesizeType()
 // -----------------------------------------------------------------------
 const NAType *PivotGroup::synthesizeType()
 {
-  return new HEAP SQLVarChar(HEAP, maxLen_, TRUE);
+  //for Character type, need to consider the charset
+  //the output charset should be same as input child 0
+  const NAType &operand = child(0)->getValueId().getType();
+  if(operand.getTypeQualifier() == NA_CHARACTER_TYPE)
+  {
+    CharType & origType = (CharType &) operand;
+    return new HEAP SQLVarChar(HEAP, maxLen_, TRUE, origType.isUpshifted(), FALSE, operand.getCharSet());
+  }
+  else
+    return new HEAP SQLVarChar(HEAP, maxLen_, TRUE);
 }
 
 // -----------------------------------------------------------------------

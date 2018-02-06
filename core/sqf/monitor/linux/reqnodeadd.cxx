@@ -137,7 +137,7 @@ void CExtNodeAddReq::performRequest()
                         clusterConfig->SetCoreMask( lnodeConfigInfo.lastCore
                                                   , lnodeConfigInfo.firstCore
                                                   , lnodeConfigInfo.coreMask );
-                        lnodeConfigInfo.zoneType  = (ZoneType)msg_->u.request.u.node_add.roles;
+                        lnodeConfigInfo.zoneType  = static_cast<ZoneType>(msg_->u.request.u.node_add.roles);
                         lnodeConfig = new CLNodeConfig( pnodeConfig
                                                       , lnodeConfigInfo );
                         if (lnodeConfig)

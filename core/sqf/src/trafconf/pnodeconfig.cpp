@@ -30,14 +30,12 @@ using namespace std;
 #include <sched.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <iostream>
-#include <mpi.h>
-#include "msgdef.h"
-#include "seabed/trace.h"
-#include "montrace.h"
-#include "monlogging.h"
+#include "tclog.h"
+#include "tctrace.h"
 #include "pnodeconfig.h"
 
 
@@ -130,16 +128,16 @@ void CPNodeConfig::SetSpareList( int sparePNids[], int spareCount )
     if ( ! sparePNids_ )
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf(la_buf, "[%s], Error: Can't allocate spare pnids array - errno=%d (%s)\n", method_name, err, strerror(errno));
-        mon_log_write(MON_PNODECONF_SET_SPARE_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_PNODECONF_SET_SPARE_1, TC_LOG_CRIT, la_buf);
     }
     else
     {
         for ( int i = 0; i < sparePNidsCount_ ; i++ )
         {
             sparePNids_[i] = sparePNids[i];
-            if (trace_settings & TRACE_INIT)
+            if (TcTraceSettings & TC_TRACE_INIT)
             {
                 trace_printf("%s@%d - Added spare pnid=%d to spare node array in (pnid=%d, nodename=%s)\n", method_name, __LINE__, sparePNids_[i], pnid_, name_);
             }
@@ -185,9 +183,9 @@ CPNodeConfigContainer::CPNodeConfigContainer( int pnodesConfigMax )
     if ( ! pnodesConfig_ )
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf(la_buf, "[%s], Error: Can't allocate physical node configuration array - errno=%d (%s)\n", method_name, err, strerror(errno));
-        mon_log_write(MON_PNODECONF_CONSTR_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_PNODECONF_CONSTR_1, TC_LOG_CRIT, la_buf);
     }
     else
     {
@@ -264,10 +262,10 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeCon
     // pnid list is NOT sequential from zero
     if ( ! (pnodeConfigInfo.pnid >= 0 && pnodeConfigInfo.pnid < pnodesConfigMax_) )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf( la_buf, "[%s], Error: Invalid pnid=%d - should be >= 0 and < %d)\n"
                , method_name, pnodeConfigInfo.pnid, pnodesConfigMax_);
-        mon_log_write(MON_PNODECONF_ADD_PNODE_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_PNODECONF_ADD_PNODE_1, TC_LOG_CRIT, la_buf);
         return( NULL );
     }
 
@@ -326,7 +324,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeCon
             }
         }
 
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
         {
             trace_printf( "%s@%d - Added physical node configuration object\n"
                           "        (pnid=%d, nextPNid_=%d)\n"
@@ -339,10 +337,10 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeCon
     else
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf( la_buf, "[%s], Error: Can't allocate physical node configuration object - errno=%d (%s)\n"
                , method_name, err, strerror(errno));
-        mon_log_write(MON_PNODECONF_ADD_PNODE_2, SQ_LOG_ERR, la_buf);
+        TcLogWrite(MON_PNODECONF_ADD_PNODE_2, TC_LOG_ERR, la_buf);
     }
 
     TRACE_EXIT;
@@ -354,7 +352,7 @@ void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *pnodeConfig )
     const char method_name[] = "CPNodeConfigContainer::DeletePNodeConfig";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d Deleting node=%s, pnid=%d, nextPNid_=%d\n"
                      , method_name, __LINE__
@@ -388,7 +386,7 @@ void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *pnodeConfig )
         nextPNid_ = pnid;
     }
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d - Deleted physical node configuration object\n"
                       "        (pnid=%d, nextPNid_=%d)\n"
@@ -476,7 +474,7 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
           itSn++ ) 
     {
         spareNodeConfig = *itSn;
-        if (trace_settings & TRACE_INIT)
+        if (TcTraceSettings & TC_TRACE_INIT)
         {
             trace_printf( "%s@%d - %s is a configured spare node\n"
                         , method_name, __LINE__
@@ -497,7 +495,7 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
             if ( pNodeconfig )
             {
                 tempSpareSet.push_back( pNodeconfig );
-                if (trace_settings & TRACE_INIT)
+                if (TcTraceSettings & TC_TRACE_INIT)
                 {
                     trace_printf( "%s@%d - Added %s as member of spare set (%s, count=%ld)\n"
                                 , method_name, __LINE__
@@ -515,7 +513,7 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
               itSnSet++ ) 
         {
             pNodeconfig = *itSnSet;
-            if (trace_settings & TRACE_INIT)
+            if (TcTraceSettings & TC_TRACE_INIT)
             {
                 trace_printf( "%s@%d - %s is in spare set (%s, count=%ld)\n"
                             , method_name, __LINE__
@@ -527,7 +525,7 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
             {
                 foundInSpareSet = true;
                 spareSet = tempSpareSet;
-                if (trace_settings & TRACE_INIT)
+                if (TcTraceSettings & TC_TRACE_INIT)
                 {
                     trace_printf( "%s@%d - Found %s in spare set (%s, count=%ld)\n"
                                 , method_name, __LINE__
@@ -620,7 +618,7 @@ char *CPNodeConfigContainer::NormalizeCase( char *token )
 
     while ( *ptr )
     {
-        *ptr = tolower( *ptr );
+        *ptr = static_cast<char>(tolower( *ptr ));
         if ( *ptr == '\n' ) *ptr = '\0';
         ptr++;
     }

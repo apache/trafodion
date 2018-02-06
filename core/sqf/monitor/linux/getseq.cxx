@@ -420,8 +420,6 @@ void InitLocalIO( void )
 
 int main (int argc, char *argv[])
 {
-    int i;
-
     int key = 413675219; //413675218 to display banner
     MPI_Initialized(&key);
 

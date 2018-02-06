@@ -3159,7 +3159,8 @@ void CNodeContainer::LoadConfig( void )
     }
     if ( clusterConfig_ )
     {
-        if ( clusterConfig_->Initialize( MonTrace->getTraceFileName() ) )
+        bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
+        if ( clusterConfig_->Initialize( traceEnabled, MonTrace->getTraceFileName() ) )
         {
             if ( ! clusterConfig_->LoadConfig() )
             {

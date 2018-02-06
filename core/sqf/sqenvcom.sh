@@ -47,6 +47,15 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
+# Set the Trafodion Configuration store type
+if [[ -n "$CLUSTERNAME" ]]; then
+  # This is a cluster environment, not a workstation
+  #export TRAF_CONFIG_DBSTORE=MySQL
+  export TRAF_CONFIG_DBSTORE=Sqlite
+else
+  export TRAF_CONFIG_DBSTORE=Sqlite
+fi
+
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
 # IBV for infiniband, TCP for tcp
 export SQ_IC=${SQ_IC:-TCP}
