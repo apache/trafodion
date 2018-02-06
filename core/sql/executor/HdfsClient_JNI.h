@@ -58,12 +58,14 @@ public:
   static char* getErrorText(HDFS_Scan_RetCode errEnum);
 
   static HdfsScan *newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, 
-            HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize, HDFS_Scan_RetCode &hdfsScanRetCode);
+            HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize,
+            ExHdfsScanStats *hdfsStats, HDFS_Scan_RetCode &hdfsScanRetCode);
 
   HDFS_Scan_RetCode setScanRanges(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, 
-            HdfsFileInfoArray *hdfsFileInfoArray, int rangeTailIOSize);
+            HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, 
+            int rangeTailIOSize, ExHdfsScanStats *hdfsStats);
 
-  HDFS_Scan_RetCode trafHdfsRead(NAHeap *heap, int retArray[], short arrayLen);
+  HDFS_Scan_RetCode trafHdfsRead(NAHeap *heap, ExHdfsScanStats *hdfsStats, int retArray[], short arrayLen);
 
 private:
   enum JAVA_METHODS {

@@ -71,12 +71,14 @@ public class HdfsScan
       String filename_;
       long pos_;
       long len_;
+      int tdbRangeNum_;
       
-      HdfsScanRange(String filename, long pos, long len)
+      HdfsScanRange(String filename, long pos, long len, int tdbRangeNum)
       {
          filename_ = filename;
          pos_ = pos;
          len_ = len;
+         tdbRangeNum_ = tdbRangeNum;
       }
    }
    
@@ -91,7 +93,7 @@ public class HdfsScan
    {
    }
 
-   public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, String filename[], long pos[], long len[]) throws IOException
+   public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, String filename[], long pos[], long len[], int rangeNum[]) throws IOException
    {
       buf_ = new ByteBuffer[2];
       bufLen_ = new int[2];
@@ -108,7 +110,7 @@ public class HdfsScan
       hdfsClient_ = new HDFSClient[2];
       hdfsScanRanges_ = new HdfsScanRange[filename.length]; 
       for (int i = 0; i < filename.length; i++) {
-         hdfsScanRanges_[i] = new HdfsScanRange(filename[i], pos[i], len[i]);
+         hdfsScanRanges_[i] = new HdfsScanRange(filename[i], pos[i], len[i], rangeNum[i]);
       }
       if (hdfsScanRanges_.length > 0) {
          currRange_ = 0;
@@ -141,8 +143,8 @@ public class HdfsScan
          readLength = (int)lenRemain_;
       if (! scanCompleted_) {
          if (logger_.isDebugEnabled())
-            logger_.debug(" CurrentRange " + currRange_ + " LenRemain " + lenRemain_ + " BufNo " + bufNo); 
-         hdfsClient_[bufNo] = new HDFSClient(bufNo, currRange_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currPos_, readLength);
+            logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + lenRemain_ + " BufNo " + bufNo); 
+         hdfsClient_[bufNo] = new HDFSClient(bufNo, hdfsScanRanges_[currRange_].tdbRangeNum_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currPos_, readLength);
       }
    } 
    
@@ -233,6 +235,7 @@ public class HdfsScan
       String fileName[] = new String[file_status.length * split];
       long pos[] = new long[file_status.length * split];
       long len[] = new long[file_status.length * split];
+      int range[] = new int[file_status.length * split];
       for (int i = 0 ; i < file_status.length * split; i++) {
          Path filePath = file_status[i].getPath();
          long fileLen = file_status[i].getLen(); 
@@ -245,6 +248,7 @@ public class HdfsScan
             fileName[i] = filePath.toString();
             pos[i] = splitPos + (splitLen * j);
             len[i] = splitLen;
+            range[i] = i;
             if (j == (split-1))
                len[i] = fileLen - (splitLen *(j));
             System.out.println ("Range " + i + " Pos " + pos[i] + " Length " + len[i]); 
@@ -253,7 +257,7 @@ public class HdfsScan
       }
       long time1 = System.currentTimeMillis();
       HdfsScan hdfsScan = new HdfsScan();
-      hdfsScan.setScanRanges(buf1, buf2, fileName, pos, len);
+      hdfsScan.setScanRanges(buf1, buf2, fileName, pos, len, range);
       int[] retArray;
       int bytesCompleted;
       ByteBuffer buf;

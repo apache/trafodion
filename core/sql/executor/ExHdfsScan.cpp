@@ -121,6 +121,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , loggingFileName_(NULL)
   , hdfsClient_(NULL)
   , hdfsScan_(NULL)
+  , hdfsStats_(NULL)
   , hdfsFileInfoListAsArray_(glob->getDefaultHeap(), hdfsScanTdb.getHdfsFileInfoList()->numEntries())
 {
   Space * space = (glob ? glob->getSpace() : 0);
@@ -333,12 +334,12 @@ ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(CollHeap *heap,
   else
      ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
   
-  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+  hdfsStats_ = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
   if (ss != NULL) 
-     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
-  return hdfsScanStats;
+     hdfsStats_->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsStats_;
 }
 
 void ExHdfsScanTcb::registerSubtasks()
@@ -419,12 +420,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    matches_ = 0;
 	    
-	    hdfsStats_ = NULL;
-	    if (getStatsEntry())
-	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
-
-	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
-
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;
 	    hdfsOffset_ = 0;
@@ -557,7 +552,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              if (hdfsScan_ != NULL)
                 NADELETE(hdfsScan_, HdfsScan, getHeap());
              hdfsScan_ = HdfsScan::newInstance((NAHeap *)getHeap(), hdfsScanBuf_, hdfsScanBufMaxSize_, 
-                            &hdfsFileInfoListAsArray_, hdfsScanTdb().rangeTailIOSize_, hdfsScanRetCode);
+                            &hdfsFileInfoListAsArray_, beginRangeNum_, numRanges_, hdfsScanTdb().rangeTailIOSize_, 
+                            hdfsStats_, hdfsScanRetCode);
              if (hdfsScanRetCode != HDFS_SCAN_OK)
              {
                 setupError(EXE_ERROR_HDFS_SCAN, hdfsScanRetCode, "SETUP_HDFS_SCAN", 
@@ -578,7 +574,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
           break;
         case TRAF_HDFS_READ:
           {
-             hdfsScanRetCode = hdfsScan_->trafHdfsRead((NAHeap *)getHeap(), retArray_, sizeof(retArray_)/sizeof(int));
+             hdfsScanRetCode = hdfsScan_->trafHdfsRead((NAHeap *)getHeap(), hdfsStats_, retArray_, sizeof(retArray_)/sizeof(int));
              if (hdfsScanRetCode == HDFS_SCAN_EOR) {
                 step_ = DONE;
                 break;
@@ -589,7 +585,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 step_ = HANDLE_ERROR_AND_DONE;
                 break;
              } 
-             // Assign the starting address of the buffer
              hdfo = hdfsFileInfoListAsArray_.at(retArray_[RANGE_NO]);
              bufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED];
              if (retArray_[RANGE_NO] != prevRangeNum_) {  
@@ -608,8 +603,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 extraBytesRead_ = currRangeBytesRead_ - hdfo->getBytesToRead(); 
              else
                 extraBytesRead_ = 0;
+             // headRoom_ is the number of extra bytes read (rangeTailIOSize)
+             // If EOF is reached while reading the range and the extraBytes read
+             // is less than headRoom_, then process all the data till EOF 
+             if (retArray_[IS_EOF] && extraBytesRead_ < headRoom_)
+                extraBytesRead_ = 0;
              bufLogicalEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED] - extraBytesRead_;
- 
              prevRangeNum_ = retArray_[RANGE_NO];
              headRoomCopied_ = 0;
              if (recordSkip_) {
@@ -633,7 +632,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
         case COPY_TAIL_TO_HEAD:
           {
              BYTE *headRoomStartAddr;
-             headRoomCopied_ = bufEnd_ - (BYTE *)hdfsBufNextRow_;
+             headRoomCopied_ = bufLogicalEnd_ - (BYTE *)hdfsBufNextRow_;
              if (retArray_[BUF_NO] == 0)
                 headRoomStartAddr = hdfsScanBuf_[1].buf_ - headRoomCopied_;
              else
@@ -1087,9 +1086,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	       hdfsBufNextRow_ = startOfNextRow;
              } 
              else {
-                if ((BYTE *)startOfNextRow >= bufLogicalEnd_) {
+                if ((BYTE *)startOfNextRow > bufLogicalEnd_) {
                    step_ = TRAF_HDFS_READ;
                    hdfsBufNextRow_ = NULL;
+	           if (!exception_)
+	               break;
                 }
                 else
 	          hdfsBufNextRow_ = startOfNextRow;
@@ -1223,8 +1224,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 if (hdfsScanTdb().continueOnError())
                 {
                   if ((pentry_down->downState.request == ex_queue::GET_N) &&
-                      (pentry_down->downState.requestValue == matches_))
-                    step_ = CLOSE_HDFS_CURSOR;
+                      (pentry_down->downState.requestValue == matches_)) {
+                     if (useLibhdfsScan_)
+                        step_ = CLOSE_HDFS_CURSOR;
+                     else
+                        step_ = DONE;
+                  }
                   else
                     step_ = PROCESS_HDFS_ROW;
 
@@ -1290,8 +1295,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	        if (hdfsScanTdb().continueOnError())
 	        {
 	          if ((pentry_down->downState.request == ex_queue::GET_N) &&
-	              (pentry_down->downState.requestValue == matches_))
-	            step_ = CLOSE_FILE;
+	              (pentry_down->downState.requestValue == matches_)) {
+                     if (useLibhdfsScan_)
+                        step_ = CLOSE_HDFS_CURSOR;
+                     else
+                        step_ = DONE;
+                  }
 	          else
 	            step_ = PROCESS_HDFS_ROW;
 
@@ -1332,7 +1341,10 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          pentry_down->getDiagsArea()->
 	              mergeAfter(*up_entry->getDiagsArea());
 	          up_entry->setDiagsArea(NULL);
-	          step_ = HANDLE_ERROR_WITH_CLOSE;
+                  if (useLibhdfsScan_)
+	             step_ = HANDLE_ERROR_WITH_CLOSE;
+	          else
+	             step_ = HANDLE_ERROR;
 	          break;
 	        }
 	      }
@@ -1551,15 +1563,17 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    up_entry->upState.status = ex_queue::Q_SQLERROR;
 	    qparent_.up->insert();
-	    
-            if (step_ == HANDLE_ERROR_WITH_CLOSE)
-               step_ = CLOSE_HDFS_CURSOR;
-            else if (step_ == HANDLE_ERROR_AND_DONE)
-              step_ = DONE;
-            else
-	       step_ = ERROR_CLOSE_FILE;
+          
+            if (useLibhdfsScan_) {
+               if (step_ == HANDLE_ERROR_WITH_CLOSE)
+                  step_ = CLOSE_HDFS_CURSOR;
+               else if (step_ == HANDLE_ERROR_AND_DONE)
+                  step_ = DONE;
+               else
+	          step_ = ERROR_CLOSE_FILE;
+            } else
+               step_ = DONE;
 	    break;
-           
 	  }
 
 	case CLOSE_FILE:
@@ -2280,12 +2294,6 @@ ExWorkProcRetcode ExOrcScanTcb::work()
 	  {
 	    matches_ = 0;
 	    
-	    hdfsStats_ = NULL;
-	    if (getStatsEntry())
-	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
-
-	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
-
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;
 
@@ -2628,12 +2636,6 @@ ExWorkProcRetcode ExOrcFastAggrTcb::work()
 	case NOT_STARTED:
 	  {
 	    matches_ = 0;
-
-	    hdfsStats_ = NULL;
-	    if (getStatsEntry())
-	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
-            
-	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
 
             orcAggrTdb().getHdfsFileInfoList()->position();
 
