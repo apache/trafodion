@@ -13417,27 +13417,36 @@ static int runsql(int tid, int eid, int ten, char *script)
                     line = l ;
                 }
                 strmcpy ( line, (char *)Ocmd, j );
-                if ( !strmicmp(line, "odb ", 4) ) {
-                    snprintf((char *)Ocmd, bs, "%s -u %s -p %s %s%s %s%s %s",
-                        odbcmd, (char *)Ouser, (char *)Opwd, Odsn[0] ? "-d " : "", Odsn[0] ? (char *)Odsn : "",
-                        clca ? "-ca" : "", clca ? clca : "", line + 4 );
+                // eliminate left spaces
+                unsigned int alphaIndex = 0;
+                while (alphaIndex < j && (line[alphaIndex] == ' ' || line[alphaIndex] == '\t')) ++alphaIndex;
+
+                if (alphaIndex != j) { // skip blank line
+                    if (!strmicmp(line, "odb ", 4)) {
+                        snprintf((char *)Ocmd, bs, "%s -u %s -p %s %s%s %s%s %s",
+                            odbcmd, (char *)Ouser, (char *)Opwd, Odsn[0] ? "-d " : "", Odsn[0] ? (char *)Odsn : "",
+                            clca ? "-ca" : "", clca ? clca : "", line + 4);
 #ifdef _WIN32
-                    _spawnlp(_P_WAIT, "cmd.exe", "cmd.exe", "/c", var_exp((char *)Ocmd, &bs, &thps[tid].tva), NULL);
+                        _spawnlp(_P_WAIT, "cmd.exe", "cmd.exe", "/c", var_exp((char *)Ocmd, &bs, &thps[tid].tva), NULL);
 #else
-                    if ( system((const char *)var_exp((char *)Ocmd, &bs, &thps[tid].tva)) < 0 )
-                        fprintf(stderr, "odb [runsql(%d)] - Error running %s\n", __LINE__, &Ocmd[1]);
+                        if (system((const char *)var_exp((char *)Ocmd, &bs, &thps[tid].tva)) < 0)
+                            fprintf(stderr, "odb [runsql(%d)] - Error running %s\n", __LINE__, &Ocmd[1]);
 #endif
-                    j = 0;
-                } else {
-                    nrag = tokenize ( line, j, rag );
-                    if ( nrag && !strmicmp(rag[0], "set", 0) ) {
-                        setan ( eid, tid, nrag, rag, ql );
                         j = 0;
-                    } else if ( !strmicmp(rag[0], "print", 0 ) ) {
-                        var_exp (nrag ? rag[1] : "", 0, &thps[0].tva);
-                        j = 0;
-                    } else {
-                        Ocmd[j++] = (SQLCHAR)ch;
+                    }
+                    else {
+                        nrag = tokenize(line, j, rag);
+                        if (nrag && !strmicmp(rag[0], "set", 0)) {
+                            setan(eid, tid, nrag, rag, ql);
+                            j = 0;
+                        }
+                        else if (!strmicmp(rag[0], "print", 0)) {
+                            var_exp(nrag ? rag[1] : "", 0, &thps[0].tva);
+                            j = 0;
+                        }
+                        else {
+                            Ocmd[j++] = (SQLCHAR)ch;
+                        }
                     }
                 }
             }
