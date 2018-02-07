@@ -3382,6 +3382,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         case SQL_WCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpwc;
+            /* FALLTHRU */
         case SQL_CHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpc;
@@ -3399,6 +3400,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         case SQL_WLONGVARCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpwc;
+            /* FALLTHRU */
         case SQL_VARCHAR:
         case SQL_LONGVARCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
@@ -3984,6 +3986,7 @@ static void *Oruncmd(void *tid)
                         MutexUnlock(&dlbmutex);
                         continue ;
                     }
+                    /* FALLTHRU */
                 default:
                     if ( etab[eid].tbe != 1 ) {
                         MutexUnlock(&dlbmutex);
@@ -4036,7 +4039,8 @@ static void *Oruncmd(void *tid)
                     ret = Oloadbuff( eid );
                     if ( ret ) {
                         if ( f & 020000 ) 
-                            fprintf(stderr, "odb [Oruncmd(%d)] - Oloadbuff[%d] returned %d\n", __LINE__, eid, ret);fflush(stdout);
+                            fprintf(stderr, "odb [Oruncmd(%d)] - Oloadbuff[%d] returned %d\n", __LINE__, eid, ret);
+                        fflush(stdout);
                         /* Disconnect */
                         if (!SQL_SUCCEEDED(Oret=SQLDisconnect(thps[etab[eid].id].Oc)))
                             Oerr(0, 0, __LINE__, thps[etab[eid].id].Oc, SQL_HANDLE_DBC);
@@ -4063,7 +4067,8 @@ static void *Oruncmd(void *tid)
                     ret = Ocopy( eid );
                     if ( ret  && etab[eid].roe ) {
                         if ( f & 020000 ) 
-                            fprintf(stderr, "odb [Oruncmd(%d)] - OCopy returned %d\n", __LINE__, ret);fflush(stdout);
+                            fprintf(stderr, "odb [Oruncmd(%d)] - OCopy returned %d\n", __LINE__, ret);
+                        fflush(stdout);
                         /* Disconnect */
                         if (!SQL_SUCCEEDED(Oret=SQLDisconnect(thps[etab[eid].id].Oc)))
                             Oerr(0, 0, __LINE__, thps[etab[eid].id].Oc, SQL_HANDLE_DBC);
@@ -4310,6 +4315,7 @@ static void gclean(void)
             break;
         case 'F':               /* ...(F) allocated during -S/-P */
             free(etab[i].run);
+            /* FALLTHRU */
         case 'f':
         case 'I':
             if ( etab[i].ns != ns )     /* nullstr allocated */
@@ -10481,6 +10487,7 @@ static void Oextract(int eid)
                         cmdl += strmcat ( (char *) Ocmd, ")", cl, 0);
                         break;
                     }
+                    /* FALLTHRU */
                 case SQL_VARCHAR:
                 case SQL_WVARCHAR:
                 case SQL_LONGVARCHAR:
@@ -10869,7 +10876,7 @@ static int Ocopy(int eid)
     }
 
     /* Build Extract Command */
-    if ( etab[eid].ps ) {
+    if ( etab[eid].ps > 1 ) {
         if ( etab[eid].flg2 & 040000 ) {    /* custom parallel SQL */
             /* Set initial Ocmd */
             strmcpy((char *)Ocmd, etab[eid].sql, cl);
@@ -13858,6 +13865,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                 } else {                        /* param with value */
                     o = 1;
                 }
+                /* FALLTHRU */
             case 1: /* looking for value */
                 if ( str[j+1] == '[' ) {
                     j++; 
@@ -13885,6 +13893,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                     str[j]='\0';
                 }
                 o = 2;
+                /* FALLTHRU */
             case 2: /* fill etab structure */
                 if ( str[l] == '=' ) {
                     str[l++] = '\0';
@@ -14373,6 +14382,7 @@ static char *parsehdfs(int eid, char *hdfs)
     switch ( hdfs[i] ) {
     case ',' :
         uf = 1 ;    /* optional user string present */
+        /* FALLTHRU */
     case '.':
         hdfs[i] = '\0' ;        /* replace ',' with NULL to terminate hdfsport */
         etab[eid].hdfsport = (tPort)atoi(s);    /* save hdfsport */
