@@ -58,6 +58,8 @@
 
 #include "NAClusterInfo.h"
 
+#include "QRLogger.h"
+
 #define ULOG_PATH_WARN 2244
 
 // -----------------------------------------------------------------------
@@ -166,6 +168,28 @@ void HSFuncMergeDiags( Lng32 sqlcode
 }
 
 
+// -----------------------------------------------------------------------
+// Clean up log as determined by the current log settings
+void HSCleanUpLog()
+{
+  HSLogMan *LM = HSLogMan::Instance();
+  if (LM->GetLogSetting() == HSLogMan::SYSTEM)
+    {
+      NABoolean internalError = CmpCommon::diags()->contains(-UERR_INTERNAL_ERROR);
+      NABoolean dropError = CmpCommon::diags()->contains(-UERR_UNABLE_TO_DROP_OBJECT);
+      NABoolean descError = CmpCommon::diags()->contains(-UERR_UNABLE_TO_DESCRIBE_COLUMN_NAMES);
+      NABoolean createError = CmpCommon::diags()->contains(-UERR_UNABLE_TO_CREATE_OBJECT);
+      NABoolean internalError1 = CmpCommon::diags()->contains(-UERR_GENERIC_ERROR);
+      NABoolean bwError = CmpCommon::diags()->contains(-UERR_UNEXPECTED_BACKWARDS_DATA);
+
+      if (internalError || dropError || descError || createError ||
+          internalError1 || bwError)
+        LM->StopLog();  // stop logging but keep the log
+      else
+        LM->StopAndDeleteLog();  // stop logging and throw the log away
+    }
+}
+
 
 // -----------------------------------------------------------------------
 // Log the location of error.
@@ -249,11 +273,13 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno)
 /*****************************************************************************/
 THREAD_P HSLogMan* HSLogMan::instance_ = 0;
 HSLogMan::HSLogMan()
-: currentTimingEvent_(-1), logNeeded_(FALSE)
+: logSetting_(OFF), currentTimingEvent_(-1), logNeeded_(FALSE)
   {
     memset(startTime_, 0, MAX_TIMING_EVENTS*sizeof(Int64));
     logFile_ = new (CTXTHEAP) NAString();
     prevTime_.tv_sec = prevTime_.tv_usec = 0;
+    if (CmpCommon::getDefault(USTAT_AUTOMATIC_LOGGING) == DF_ON)
+      logSetting_ = SYSTEM;
   }
 
 /***********************************************/
@@ -281,95 +307,38 @@ void HSLogMan::Log(const char *data)
   {
     if (logNeeded_)
       {
-        ofstream fileout(logFile_->data(), ios::app);
-        time_t currentTime = time(0);
-        struct tm currentTimeExploded;
-        localtime_r(&currentTime,&currentTimeExploded);
-        char localTime[100];  // way more space than needed
-        strftime(localTime,sizeof(localTime),"%c",&currentTimeExploded);
-        fileout << "[" << localTime << "] " << data << endl;
+        QRLogger::log(CAT_SQL_USTAT, LL_INFO, data);
       }
   }
 
-// -----------------------------------------------------------------------
-// Check whether the dir containing ULOG file exists,
-// making sure ULOG can be created in it later.
-// -----------------------------------------------------------------------
-NABoolean HSLogMan::ContainDirExist(const char* path)
+//
+// METHOD:  SetLogSetting()
+// PURPOSE: Change the current logging state
+// INPUT:   logSetting - Indicates the new logging state
+//  
+void HSLogMan::SetLogSetting(LogSetting logSetting)
 {
-  CMPASSERT(strlen(path)>0);
-  struct stat sb;
-  NAString containDir = path;
-  Int32 pos = containDir.last('/');
-  if(-1 == pos)
-    return TRUE;
-  containDir = containDir.remove(pos);
-  Int32 rVal = stat(containDir.data(), &sb);
-  
-  NABoolean dirExist = rVal != -1 && S_ISDIR(sb.st_mode);
-    
-  if(!dirExist)
-  {
-    char buf[256];
-    snprintf(buf, sizeof(buf), "Directory %s does not exist", containDir.data());
-    *CmpCommon::diags() << DgSqlCode(ULOG_PATH_WARN) << DgString0(buf);
-  }
-  //contain dir exist but not accessible
-  if(dirExist&&
-       (!((sb.st_mode & S_IRWXU)&S_IXUSR)
-      ||!((sb.st_mode & S_IRWXU)&S_IRUSR)
-      ||!((sb.st_mode & S_IRWXU)&S_IWUSR)))
-  {
-    char buf[256];
-    snprintf(buf, sizeof(buf), "Directory %s Permission denied", containDir.data());
-    *CmpCommon::diags() << DgSqlCode(ULOG_PATH_WARN) << DgString0(buf);
-    //return FALSE so we don't start logging
-    dirExist = FALSE;
-  }
+  switch (logSetting)
+    {
+      case ON:
+        StartLog();
+        break;
+      case SYSTEM:
+        if (logSetting_ == ON)  // if logging was ON
+          StopLog();  // stop existing log so it doesn't get deleted
+        StartLog();
+        break;
+      case OFF:
+        if (logSetting_ == SYSTEM)  // if logging was SYSTEM
+          StopAndDeleteLog();  // stop and delete log
+        else
+          StopLog();
+        break;
+      default:
+        break; // should not occur; just ignore
+    }
 
-  return dirExist;
-}
-
-// -----------------------------------------------------------------------
-// @param: path(OUT), return changed real path on success.
-// @param: cqd_valud(IN), filename set by CQD USTAT_LOG ...
-// In situation of cluster:
-// prefix $TAR_DOWNLOAD_ROOT to value of USTAT_LOG to form a safe log path, 
-// and change file name to filename.<tdm_arkcmp>.<NodeId>.<Hostname>.<pid>.log,
-// e.g. USTAT_LOG="ULOG", real path will be $TAR_DOWNLOAD_ROOT/ULOG.<tdm_arkcmp>.<NodeId>.<Hostname>.<pid>.log.
-// For cqd_value, an absolute path is not allowd, and will return FALSE.
-// -----------------------------------------------------------------------
-NABoolean HSLogMan::GetLogFile(NAString & path, const char* cqd_value)
-{
-    CMPASSERT(strlen(cqd_value) > 0);
-    if('/' == cqd_value[0])
-    {//Absolute path is not allowed on cluster.
-      *CmpCommon::diags() << DgSqlCode(ULOG_PATH_WARN) << DgString0("Absolute path is not allowed on cluster.");
-      return FALSE;
-    }
-    else if( getenv("TAR_DOWNLOAD_ROOT") )
-    {// relative path
-      const size_t HOSTNAME_SIZE = 64; 
-      char hostname[HOSTNAME_SIZE];
-      Int32 nodeNum;
-      Int32 pin;
-      SB_Phandle_Type procHandle;
-      XPROCESSHANDLE_GETMINE_(&procHandle);
-      XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
-      gethostname(hostname, sizeof(hostname));
-      path = NAString(getenv("TAR_DOWNLOAD_ROOT")) + "/" + NAString(cqd_value)
-				+ "."  + "tdm_arkcmp" 
-				+ "." + LongToNAString((Lng32)nodeNum)
-                                + "." + hostname
-				+ "." + LongToNAString((Lng32)pin)
-				+".log";
-    }
-    else
-    {//Environment variable $TAR_DOWNLOAD_ROOT not set
-      *CmpCommon::diags() << DgSqlCode(ULOG_PATH_WARN) << DgString0("Environment variable $TAR_DOWNLOAD_ROOT is not set on cluster.");
-      return FALSE;
-    }
-    return TRUE;
+  logSetting_ = logSetting;
 }
 
 /***********************************************/
@@ -389,44 +358,69 @@ NABoolean HSLogMan::GetLogFile(NAString & path, const char* cqd_value)
 /*          until either StartLog() or         */
 /*          ClearLog() methods are called.     */
 /***********************************************/
-void HSLogMan::StartLog(NABoolean needExplain, const char* logFileName)
+void HSLogMan::StartLog(NABoolean needExplain)
   {
-    // The GENERATE_EXPLAIN cqd captures explain data pertaining to dynamic
-    // queries. Ordinarily we want it on, but for just-in-time logging triggered
-    // by an error, we don't need it, and can't set it because HSFuncExecQuery
-    // clears the diagnostics area, which causes the error to be lost.
-    explainOn_ = needExplain;
-    if (!needExplain ||
-        HSFuncExecQuery("CONTROL QUERY DEFAULT GENERATE_EXPLAIN 'ON'") == 0)
+    if (!logNeeded_)  // if logging isn't already on
       {
-        CollIndex activeNodes = gpClusterInfo->numOfSMPs();
-        if (logFileName)
-        {
-          *logFile_ = logFileName;
-           currentTimingEvent_ = -1;
-           startTime_[0] = 0;           /* reset timer           */
-           logNeeded_ = TRUE;
-        }
-        else if(activeNodes > 2)
-        {//we consider we are running on cluster 
-         //if gpClusterInfo->numOfSMPs() > 2
-           NABoolean ret = FALSE;
-           if(GetLogFile(*logFile_, ActiveSchemaDB()->getDefaults().getValue(USTAT_LOG)))
-             ret = ContainDirExist(logFile_->data());
+        // Construct logfile name incorporating process id and node number. Note that
+        // the 2nd parameter of processhandle_decompose is named cpu but is actually
+        // the node number for Seaquest (the 4th param, named nodenumber, is the cluster
+        // number).
+        Int32 nodeNum;
+        Int32 pin;
+        SB_Phandle_Type procHandle;
+        XPROCESSHANDLE_GETMINE_(&procHandle);
+        XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
+        long currentTime = (long)time(0);
 
-           if(ret)
-             logNeeded_ = TRUE;
+        const size_t MAX_FILENAME_SIZE = 50;
+        char qualifiers[MAX_FILENAME_SIZE];
+        sprintf(qualifiers, ".%d.%d.%ld.txt", nodeNum, pin, currentTime);
+   
+        std::string logFileName;
+        QRLogger::getRootLogDirectory(CAT_SQL_USTAT, logFileName /* out */);
+        if (logFileName.size() > 0)
+          logFileName += '/';
 
-           currentTimingEvent_ = -1;
-           startTime_[0] = 0;           /* reset timer           */
-        }
-        else
-        {
-          *logFile_ = ActiveSchemaDB()->getDefaults().getValue(USTAT_LOG);
-           currentTimingEvent_ = -1;
-           startTime_[0] = 0;           /* reset timer           */
-           logNeeded_ = TRUE;
-        }
+        logFileName += "ustat";  // file name prefix will always be "ustat"
+
+        // if CQD USTAT_LOG is set, extract the file name part from it and insert
+        // that to the log file name as an additional qualifier
+        const char * ustatLog = ActiveSchemaDB()->getDefaults().getValue(USTAT_LOG);
+        if (strlen(ustatLog) > 0)
+          {
+            const char * fileNameQualifier = ustatLog + strlen(ustatLog);
+
+            // strip off any directory path name; we will always use the logs directory
+            // as configured via QRLogger
+            while ((fileNameQualifier > ustatLog) && (*(fileNameQualifier - 1) != '/'))
+              fileNameQualifier--;
+
+            logFileName += '.';
+            logFileName += fileNameQualifier;
+          }
+
+        logFileName += qualifiers;
+
+        NABoolean logStarted = QRLogger::startLogFile(CAT_SQL_USTAT,logFileName.c_str());
+        if (logStarted)
+          {
+            *logFile_ = logFileName.c_str();
+            currentTimingEvent_ = -1;
+            startTime_[0] = 0;           /* reset timer           */
+            logNeeded_ = TRUE;
+
+            // The GENERATE_EXPLAIN cqd captures explain data pertaining to dynamic
+            // queries. Ordinarily we want it on, but for just-in-time logging triggered
+            // by an error, we don't need it, and can't set it because HSFuncExecQuery
+            // clears the diagnostics area, which causes the error to be lost.
+            explainOn_ = needExplain;
+            if (needExplain)
+              {
+                if (HSFuncExecQuery("CONTROL QUERY DEFAULT GENERATE_EXPLAIN 'ON'") != 0)
+                  explainOn_ = FALSE;  // couldn't turn it on (shouldn't happen)
+              }
+          }
       }
   }
 
@@ -442,6 +436,21 @@ void HSLogMan::StopLog()
     if (explainOn_)
       HSFuncExecQuery("CONTROL QUERY DEFAULT GENERATE_EXPLAIN RESET");
     logNeeded_ = FALSE;
+
+    NABoolean logStopped = QRLogger::stopLogFile(CAT_SQL_USTAT);
+  }
+
+/***********************************************/
+/* METHOD:  StopAndDeleteLog()                 */
+/* PURPOSE: Stop capturing log information     */
+/*          and then delete the log file       */
+/* INPUT:   none                               */
+/***********************************************/
+void HSLogMan::StopAndDeleteLog()
+  {
+    StopLog();
+    unlink(logFile_->data());
+    logFile_->clear();  
   }
 
 /***********************************************/
@@ -456,12 +465,14 @@ void HSLogMan::StopLog()
 /***********************************************/
 void HSLogMan::ClearLog()
   {
-    //*logFile_ = ActiveSchemaDB()->getDefaults().getValue(USTAT_LOG);
-    struct stat sb;
-    if(0==stat(logFile_->data(), &sb))//if log exists, empty it.
-      ofstream fileout(logFile_->data(), ios::out);
-    currentTimingEvent_ = -1;
-    startTime_[0] = 0;                 /* reset timer           */
+    if (logFile_->length() > 0)
+      {
+        struct stat sb;
+        if(0==stat(logFile_->data(), &sb))//if log exists, empty it.
+          ofstream fileout(logFile_->data(), ios::out);
+        currentTimingEvent_ = -1;
+        startTime_[0] = 0;                 /* reset timer           */
+      }
   }
 
 /***********************************************/

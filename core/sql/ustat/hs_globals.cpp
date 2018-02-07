@@ -3847,34 +3847,8 @@ void HSGlobalsClass::startJitLogging(const char* checkPointName, Int64 elapsedSe
 {
   HSLogMan *LM = HSLogMan::Instance();
 
-
-
-
-  // Construct logfile name incorporating process id and node number. Note that
-  // the 2nd parameter of processhandle_decompose is named cpu but is actually
-  // the node number for Seaquest (the 4th param, named nodenumber, is the cluster
-  // number).
-  Int32 nodeNum;
-  Int32 pin;
-  SB_Phandle_Type procHandle;
-  XPROCESSHANDLE_GETMINE_(&procHandle);
-  XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
-
-  NAString filePath;
-  char* sqroot = getenv("TRAF_HOME");
-  if (sqroot)
-    {
-	  filePath = sqroot;
-      filePath.append("/logs/");
-    }
-
-  const size_t MAX_FILENAME_SIZE = 50;
-  char fileName[MAX_FILENAME_SIZE];
-  sprintf(fileName, "ULOG.%d.%d.txt", nodeNum, pin);
-  filePath.append(fileName);
-
-  // Turn logging on using the filepath we just created.
-  LM->StartLog(TRUE, filePath.data());
+  // Turn logging on 
+  LM->StartLog(TRUE);
   jitLogOn = TRUE;
 
   // Write introductory information to log; name of table and columns being
