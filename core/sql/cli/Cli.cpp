@@ -9160,6 +9160,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	Int64 outlen = 0;Lng32 len = 0;
 	cliRC = cliInterface->executeImmediate(query,(char *)dataLen, &len, FALSE);
+        currContext.resetSqlParserFlags(0x1);
         if (inoutDescPartnKey)
           *inoutDescPartnKey = descPartnKey;
 
@@ -9194,6 +9195,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	Lng32 len = 0;
 	cliRC = cliInterface->executeImmediate(query,(char *)dataOffset, &len, FALSE);
+        currContext.resetSqlParserFlags(0x1);
         if (inoutDescPartnKey)
           *inoutDescPartnKey = descPartnKey;
 

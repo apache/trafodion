@@ -875,8 +875,7 @@ Ex_Lob_Error ExLob::getOffset(char *handleIn, Int32 handleInLen,Int64 &outLobOff
   char logBuf[4096];
   Int32 cliErr = 0;
   Ex_Lob_Error err=LOB_OPER_OK; 
-  char *blackBox = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
-  Int32 blackBoxLen = 0;
+
   Int64 dummy = 0;
   Int32 dummy2 = 0;
   if (so != Lob_External_File)
