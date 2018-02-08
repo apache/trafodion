@@ -342,7 +342,28 @@ Lng32 ExpLOBInterfaceGetLobLength(ExLobGlobals * exLobGlob,
 			          Int64 &outLobLen 
                                   
 				  );
+Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+                                  char * lobHandle,  
+                                 char * outFileName,
+                                  Int32 &outFileLen);
 
+Lng32 ExpLOBInterfaceGetOffset(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+			          Int64 &outLobOffset 
+                                  
+				  );
 
 /*
 class HdfsFileInfo

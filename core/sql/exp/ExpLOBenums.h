@@ -260,7 +260,9 @@ typedef enum {
    Lob_PerformGC,
    Lob_RestoreLobDataFile,
    Lob_PurgeBackupLobDataFile,
-   Lob_GetLength
+   Lob_GetLength,
+   Lob_GetFileName,
+   Lob_GetOffset
    
 } LobsOper;
 

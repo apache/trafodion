@@ -4165,11 +4165,13 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      handleLen,
      (toType_ == TO_BUFFER_ ? ComTdbExeUtilLobExtract::TO_BUFFER_ :
       (toType_ == RETRIEVE_LENGTH_ ? ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_ :
+       (toType_ == RETRIEVE_HDFSFILENAME_ ? ComTdbExeUtilLobExtract::RETRIEVE_HDFSFILENAME_ :
+        (toType_ == RETRIEVE_OFFSET_ ? ComTdbExeUtilLobExtract::RETRIEVE_OFFSET_ :
        (toType_ == TO_STRING_ ? ComTdbExeUtilLobExtract::TO_STRING_ :
 	(toType_ == TO_FILE_ ? ComTdbExeUtilLobExtract::TO_FILE_ :
 	(toType_ == TO_EXTERNAL_FROM_STRING_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_ :
 	 (toType_ == TO_EXTERNAL_FROM_FILE_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_ :
-	  ComTdbExeUtilLobExtract::NOOP_)))))),
+	  ComTdbExeUtilLobExtract::NOOP_)))))))),
      bufAddr_,
      extractSizeAddr_,
      intParam_,
@@ -4225,6 +4227,14 @@ if (handleInStringFormat_)
   if (toType_ == RETRIEVE_LENGTH_)
     {
       exe_util_tdb->setRetrieveLength(TRUE);
+    }
+  if (toType_ == RETRIEVE_HDFSFILENAME_)
+    {
+      exe_util_tdb->setRetrieveHdfsFileName(TRUE);
+    }
+  if (toType_ == RETRIEVE_OFFSET_)
+    {
+      exe_util_tdb->setRetrieveOffset(TRUE);
     }
   exe_util_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
 

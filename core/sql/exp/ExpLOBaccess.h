@@ -497,6 +497,8 @@ class ExLob : public NABasicObject
   ExLobStats *getStats() { return &stats_; }
   NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
   Ex_Lob_Error getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen,LobsSubOper so, Int64 transId);
+  Ex_Lob_Error getOffset(char *handleIn, Int32 handleInLen,Int64 &outOffset,LobsSubOper so, Int64 transId);
+  Ex_Lob_Error getFileName(char *handleIn, Int32 handleInLen, char *outFileName, Int32 &outFileLen, LobsSubOper so, Int64 transId);
   //    ExLobRequest *getRequest() { return &request_; }
   
   //The next 2 functions are not active at this point. They serve as an example

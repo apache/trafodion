@@ -15937,6 +15937,59 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 
 		 $$ = lle;
 	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_NAME '(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		 Int64 returnFilenameAddr = atoInt64($8->data());
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_HDFSFILENAME_,
+		    returnFilenameAddr, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_NAME '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_HDFSFILENAME_,
+		    -1, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_OFFSET'(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		 Int64 returnOffsetAddr = atoInt64($8->data());
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_OFFSET_,
+		    returnOffsetAddr, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_OFFSET '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_OFFSET_,
+		    -1, 0, 0, 0);
+
+		 $$ = lle;
+	       }
+
 
                | TOK_EXTRACT TOK_LOBTOSTRING '(' TOK_LOB QUOTED_STRING ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {

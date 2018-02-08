@@ -9160,11 +9160,47 @@ Lng32 SQLCLI_LOBcliInterface
 
 	Int64 outlen = 0;Lng32 len = 0;
 	cliRC = cliInterface->executeImmediate(query,(char *)dataLen, &len, FALSE);
-	    if (inoutDescPartnKey)
-	      *inoutDescPartnKey = descPartnKey;
+        currContext.resetSqlParserFlags(0x1);
+        if (inoutDescPartnKey)
+          *inoutDescPartnKey = descPartnKey;
 
-	    if (inoutDescSyskey)
-	      *inoutDescSyskey = inDescSyskey;
+        if (inoutDescSyskey)
+          *inoutDescSyskey = inDescSyskey;
+	    
+	Lng32 saveCliErr = cliRC;
+
+	
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+
+	cliRC = saveCliErr;
+      }
+      break;
+     case LOB_CLI_SELECT_LOBOFFSET:
+      {
+	
+	//Retrive offset of the first chunk
+	str_sprintf(query, "select  c.dataOffset from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %ld and h.syskey = %ld and c.chunkNum = 1 for read committed access",
+		    lobDescHandleName, lobDescChunksName, 
+		    descPartnKey, inDescSyskey);
+
+        lobDebugInfo(query,0,__LINE__,lobTrace);
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+
+	Lng32 len = 0;
+	cliRC = cliInterface->executeImmediate(query,(char *)dataOffset, &len, FALSE);
+        currContext.resetSqlParserFlags(0x1);
+        if (inoutDescPartnKey)
+          *inoutDescPartnKey = descPartnKey;
+
+        if (inoutDescSyskey)
+          *inoutDescSyskey = inDescSyskey;
 	    
 
 
@@ -9180,8 +9216,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	cliRC = saveCliErr;
       }
-      break;
-        
+      break;    
     } // switch 
 
   // normal return. Fall down to deallocate of structures.

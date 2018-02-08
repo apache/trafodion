@@ -1050,6 +1050,121 @@ Lng32 ExpLOBInterfaceGetLobLength(ExLobGlobals * exLobGlob,
   
   return LOB_ACCESS_SUCCESS;
 }
+
+Lng32 ExpLOBInterfaceGetOffset(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+			          Int64 &outLobOffset
+                                 
+				  )
+{
+  Ex_Lob_Error err;
+  
+  Int64 dummyParam = 0;
+  Int32 dummyParam2 = 0;
+  Ex_Lob_Error status;
+  Int64 cliError=0;
+  
+  LobsOper lo;
+  LobsSubOper so;
+  LobsStorage ls = (LobsStorage)lobType;
+  if (ls == Lob_External_HDFS_File)
+    {
+      so = Lob_External_File;
+      outLobOffset = 0;
+      return LOB_ACCESS_SUCCESS;
+    }
+  else 
+    so = Lob_Buffer;
+  err = ExLobsOper(lobName, 
+		   lobHandle, handleLen, 
+		   lobHdfsServer, lobHdfsPort,
+                   NULL, dummyParam2, 
+		   dummyParam, dummyParam, 
+		   outLobOffset,
+                   dummyParam, dummyParam,
+		   status, cliError, 
+		   lobLoc, ls, //Lob_HDFS_File,
+		   NULL, 0, 
+		   dummyParam,NULL,
+		   Lob_GetOffset,
+		   so,
+                   TRUE,
+		   exLobGlob,
+		   0,
+		   0, 0,0,0,0,0,0,0,
+                   0
+		   );
+
+  if (err != LOB_OPER_OK)
+    {
+      return -err;
+    }
+  
+  return LOB_ACCESS_SUCCESS;
+}
+
+Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+                                  char * fileName,
+			          Int32 &outFileLen
+                                 
+				  )
+{
+  Ex_Lob_Error err;
+  
+  Int64 dummyParam = 0;
+  Int32 dummyParam2 = 0;
+  Ex_Lob_Error status;
+  Int64 cliError=0;
+  Int64 hdfsFileLen = 0;
+  LobsOper lo;
+  LobsSubOper so;
+  LobsStorage ls = (LobsStorage)lobType;
+  if (ls == Lob_External_HDFS_File)
+    so = Lob_External_File;
+  else 
+    so = Lob_Buffer;
+  err = ExLobsOper(lobName, 
+		   lobHandle, handleLen, 
+		   lobHdfsServer, lobHdfsPort,
+                   NULL, dummyParam2, 
+		   dummyParam, dummyParam, 
+		   dummyParam,
+                   dummyParam, dummyParam,
+		   status, cliError, 
+		   lobLoc, ls, //Lob_HDFS_File,
+		   NULL, 0, 
+		   dummyParam,NULL,
+		   Lob_GetFileName,
+		   so,
+                   TRUE,
+		   exLobGlob,
+		   0,
+		   fileName, outFileLen,
+                   0,0,0,0,0,0,
+                   0
+		   );
+
+  if (err != LOB_OPER_OK)
+    {
+      return -err;
+    }
+  
+  
+  return LOB_ACCESS_SUCCESS;
+}
 Lng32 ExpLOBinterfaceStats(
 			    ExLobGlobals * exLobGlob, 
 			    ExLobStats * lobStats,
