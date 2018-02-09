@@ -188,9 +188,16 @@ public class HdfsScan
       if (logger_.isDebugEnabled())
          logger_.debug(" Range No " + retArray[2] + " Buffer No " + retArray[1] + " Bytes Read " + retArray[0] + " isEOF " + retArray[3]); 
       lastBufCompleted_ = bufNo;
-      if ((isEOF == 1) && (currRange_ == (hdfsScanRanges_.length-1))) {
-         scanCompleted_ = true;
-         return retArray;
+      if (isEOF == 1) {
+         if (currRange_ == (hdfsScanRanges_.length-1)) {
+            scanCompleted_ = true;
+            return retArray;
+         } else {
+            currRange_++;
+            currPos_ = hdfsScanRanges_[currRange_].pos_;
+            lenRemain_ = hdfsScanRanges_[currRange_].len_;
+            bytesRead = 0;
+         }
       }
       switch (lastBufCompleted_)
       {

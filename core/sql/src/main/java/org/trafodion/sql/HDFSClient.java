@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.io.EOFException;
 import java.io.OutputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -95,8 +96,14 @@ public class HDFSClient
       {
          int bytesRead;
          int totalBytesRead = 0;
-         if (! buf_.hasArray())
-            fsdis_.seek(pos_);
+         if (! buf_.hasArray()) {
+            try {
+              fsdis_.seek(pos_);
+            } catch (EOFException e) {
+              isEOF_ = 1;
+              return new Integer(totalBytesRead);
+            } 
+         }
          do
          {
             if (buf_.hasArray())
@@ -157,6 +164,7 @@ public class HDFSClient
       int bytesRead;
       retObject = (Integer)future_.get();
       bytesRead = retObject.intValue();
+      fsdis_.close();
       return bytesRead;
    }
 
