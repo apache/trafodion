@@ -663,6 +663,7 @@ short BuiltinFunction::codeGen(Generator * generator)
     break;
 
     case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_SHORT_ID:
       {
 	function_clause =
 	  new(generator->getSpace()) ExFunctionUniqueId(getOperatorType(),

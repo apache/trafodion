@@ -7619,6 +7619,8 @@ const NAString BuiltinFunction::getText() const
       return "pack";
     case ITM_SAMPLE_VALUE:
       return "sample_size";
+    case ITM_UNIQUE_SHORT_ID:
+      return "unique_short_id";
     case ITM_UNIQUE_ID:
       return "unique_id";
     case ITM_HBASE_COLUMN_LOOKUP:

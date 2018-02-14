@@ -474,6 +474,7 @@ enum OperatorTypeEnum {
 			ITM_UNIX_TIMESTAMP = 2179,
 			ITM_UUID_SHORT = 2180,
 			ITM_SLEEP = 2181,
+			ITM_UNIQUE_SHORT_ID = 2182,
 
                         // numeric functions
                         ITM_ABS = 2200,

@@ -8716,14 +8716,22 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                    $$ = new (PARSERHEAP()) Cast(ie, type);
 				}
     | TOK_UUID '(' ')'
-    | TOK_UUID_SHORT '(' ')'
               {
                   ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-                  ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
                   NAType * type;
                   type = new (PARSERHEAP())
-                       SQLVarChar(PARSERHEAP() , 128 , FALSE);
-                  $$ = new (PARSERHEAP()) Cast(conv,type);
+                       SQLVarChar(PARSERHEAP() , 36, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(uniqueId,type);
+              }
+    | TOK_UUID_SHORT '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_SHORT_ID, PARSERHEAP());
+                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 36, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(uniqueId,type);
               }
 
 /* type item */

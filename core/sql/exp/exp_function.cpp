@@ -50,6 +50,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <uuid/uuid.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -6799,21 +6800,38 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
   Lng32 retcode = 0;
 
   char * result = op_data[0];
+  if(getOperType() == ITM_UNIQUE_ID)
+  {
+    //it is hard to find a common header file for these length
+    //so hardcode 36 here
+    //if change, please check the SynthType.cpp for ITM_UNIQUE_ID part as well
+    //libuuid is global unique, even across computer node
+    //NOTE: libuuid is avialble on normal CentOS, other system like Ubuntu may need to check 
+    //Trafodion only support RHEL and CentOS as for now
+    char str[36 + 1];
+    uuid_t uu;
+    uuid_generate( uu ); 
+    uuid_unparse(uu, str);
+    str_cpy_all(result, str, 36);
+  }
+  else //at present , it must be ITM_UUID_SHORT_ID
+  { 
+    Int64 uniqueUID;
 
-  Int64 uniqueUID;
-
-  ComUID comUID;
-  comUID.make_UID();
+    ComUID comUID;
+    comUID.make_UID();
 
 #if defined( NA_LITTLE_ENDIAN )
-  uniqueUID = reversebytes(comUID.get_value());
+    uniqueUID = reversebytes(comUID.get_value());
 #else
-  uniqueUID = comUID.get_value();
+    uniqueUID = comUID.get_value();
 #endif
 
-  str_cpy_all(result, (char*)&uniqueUID, sizeof(Int64));
-  str_pad(&result[sizeof(Int64)], sizeof(Int64), '\0');
-  
+    //it is safe, since the result is allocated 21 bytes in this case from synthtype,
+    //max in64 is 19 digits and one for sign, 21 is enough
+    sprintf(result,"%lu",uniqueUID); 
+  }
+ 
   return ex_expr::EXPR_OK;
 }
 

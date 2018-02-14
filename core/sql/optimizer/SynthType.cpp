@@ -1122,9 +1122,23 @@ const NAType *BuiltinFunction::synthesizeType()
 
     case ITM_SLEEP:
       {
-        ValueId vid1 = child(0)->getValueId();
-        SQLInt c1( HEAP, TRUE , TRUE);
-        vid1.coerceType(c1, NA_NUMERIC_TYPE);
+        const NAType &typ1 = child(0)->getValueId().getType();
+       	if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+        {
+	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("SLEEP");
+	    return NULL;
+        }
+        const NumericType &ntyp1 = (NumericType &) typ1;
+        if (NOT ntyp1.isExact() )
+        {
+             *CmpCommon::diags() << DgSqlCode(-4046) << DgString0(getTextUpper());
+             return NULL;
+        }
+        if (ntyp1.getScale() != 0 )
+        {
+          *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
+          return NULL;
+        } 
         retType = new HEAP SQLInt(HEAP, TRUE, TRUE);
       }
     break;
@@ -1352,7 +1366,14 @@ const NAType *BuiltinFunction::synthesizeType()
 
     case ITM_UNIQUE_ID:
       {
-	retType = new HEAP SQLChar(HEAP, 16, FALSE);
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 36, FALSE);
+      }
+      break;
+    case ITM_UNIQUE_SHORT_ID:
+      {
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 21, FALSE);
       }
       break;
 
