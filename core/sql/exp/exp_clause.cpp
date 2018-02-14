@@ -260,6 +260,12 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LOWER_UNICODE:
 	  setClassID(FUNC_LOWER_UNICODE_ID);
 	  break;
+	case ITM_UNIX_TIMESTAMP:
+	  setClassID(FUNC_UNIX_TIMESTAMP_ID);
+	  break;
+	case ITM_SLEEP:
+	  setClassID(FUNC_SLEEP_ID);
+	  break;
 	case ITM_CURRENT_TIMESTAMP:
 	  setClassID(FUNC_CURRENT_TIMESTAMP_ID);
 	  break;
@@ -756,6 +762,12 @@ char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_LOWER_UNICODE_ID:
       GetVTblPtr(vtblPtr, ex_function_lower_unicode);
       break;
+    case ex_clause::FUNC_SLEEP_ID:
+      GetVTblPtr(vtblPtr, ex_function_sleep);
+      break;
+    case ex_clause::FUNC_UNIX_TIMESTAMP_ID:
+      GetVTblPtr(vtblPtr, ex_function_unixtime);
+      break;
     case ex_clause::FUNC_CURRENT_TIMESTAMP_ID:
       GetVTblPtr(vtblPtr, ex_function_current);
       break;
@@ -1196,6 +1208,8 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_BETWEEN: return "ITM_BETWEEN";
     case ITM_LIKE: return "ITM_LIKE";
     case ITM_REGEXP: return "ITM_REGEXP";
+    case ITM_UNIX_TIMESTAMP: return "ITM_UNIX_TIMESTAMP";
+    case ITM_SLEEP: return "ITM_SLEEP";
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
     case ITM_SESSION_USER: return "ITM_SESSION_USER";

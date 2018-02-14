@@ -152,6 +152,22 @@ short BuiltinFunction::codeGen(Generator * generator)
 
       break;
       
+    case ITM_SLEEP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_sleep(getOperatorType(),(1+getArity()), 
+							 attr, space);
+      }
+      
+      break;
+    case ITM_UNIX_TIMESTAMP:
+      {
+	function_clause =
+	  new(generator->getSpace()) ex_function_unixtime(getOperatorType(), (1+getArity()),
+							 attr, space);
+      }
+      
+      break;
     case ITM_CURRENT_TIMESTAMP:
     case ITM_CURRENT_TIMESTAMP_RUNNING:
       {

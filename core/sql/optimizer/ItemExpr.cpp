@@ -7491,6 +7491,10 @@ const NAString BuiltinFunction::getText() const
       return "CONVERTTOBITS";
     case ITM_CONVERTTIMESTAMP:
       return "converttimestamp";
+    case ITM_SLEEP:
+      return "sleep";
+    case ITM_UNIX_TIMESTAMP:
+      return "unix_timestamp";
     case ITM_CURRENT_TIMESTAMP:
       return "current_timestamp";
     case ITM_CURRENT_TIMESTAMP_RUNNING:
@@ -8265,6 +8269,24 @@ ItemExpr * ConvertTimestamp::copyTopNode(ItemExpr *derivedNode,
   return BuiltinFunction::copyTopNode(result,outHeap);
 
 } // ConvertTimestamp::copyTopNode()
+
+UnixTimestamp::~UnixTimestamp() {}
+
+ItemExpr * UnixTimestamp::copyTopNode(ItemExpr *derivedNode,
+					 CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) UnixTimestamp();
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result,outHeap);
+
+} // UnixTimestamp::copyTopNode()
+
+NABoolean UnixTimestamp::isAUserSuppliedInput() const    { return TRUE; }
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp

@@ -1119,6 +1119,15 @@ const NAType *BuiltinFunction::synthesizeType()
 	  }
       }
     break;
+
+    case ITM_SLEEP:
+      {
+        ValueId vid1 = child(0)->getValueId();
+        SQLInt c1( HEAP, TRUE , TRUE);
+        vid1.coerceType(c1, NA_NUMERIC_TYPE);
+        retType = new HEAP SQLInt(HEAP, TRUE, TRUE);
+      }
+    break;
     case ITM_INET_ATON:
       {
         // type cast any params
@@ -3060,6 +3069,11 @@ const NAType *ConvertTimestamp::synthesizeType()
   return new HEAP SQLTimestamp (HEAP, operand.supportsSQLnullLogical(),
                                SQLTimestamp::DEFAULT_FRACTION_PRECISION);
 
+}
+
+const NAType *UnixTimestamp::synthesizeType()
+{
+  return new HEAP SQLLargeInt(HEAP, FALSE,FALSE);
 }
 
 // -----------------------------------------------------------------------

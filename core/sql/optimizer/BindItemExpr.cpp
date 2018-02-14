@@ -3187,6 +3187,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
     case ITM_ISIPV4:
     case ITM_ISIPV6:
+    case ITM_SLEEP:
     case ITM_MD5:
     case ITM_CRC32:
     case ITM_SHA1:
@@ -8417,6 +8418,38 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
 } // DefaultSpecification::bindNode()
 
 // -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+
+ItemExpr *UnixTimestamp::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // UnixTimestamp::bindNode()
+
+// -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp
 // -----------------------------------------------------------------------
 
@@ -11980,7 +12013,17 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	  }
       }
     break;
-
+/*
+    case ITM_SLEEP:
+      {
+        ItemExpr * tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA);
+        if (bindWA->errStatus())
+          return this;
+        buf[0] = 0;
+        parseTree = child(0);
+      }
+    break;
+*/
     case ITM_TO_NUMBER:
       {
 	ItemExpr *tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA); 

@@ -1176,6 +1176,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
 %token <tokval> TOK_WITH
+%token <tokval> TOK_SLEEP
+%token <tokval> TOK_UUID_SHORT
+%token <tokval> TOK_UNIX_TIMESTAMP
 // QSTUFF
 %token <tokval> TOK_WITHOUT             /* standard holdable cursor */
 // QSTUFF
@@ -8696,6 +8699,33 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                   $$ = CurrentTimestamp::construct(PARSERHEAP());
                                 }
 
+    | TOK_UNIX_TIMESTAMP '(' ')'
+                                {
+                                   NAType * type;
+                                   type = new (PARSERHEAP())
+                                      SQLLargeInt(PARSERHEAP() , FALSE , FALSE);
+                                   ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp();
+                                   $$ = new (PARSERHEAP()) Cast(ie, type);
+                                }
+    | TOK_UNIX_TIMESTAMP '(' value_expression ')'
+                                {
+                                   NAType * type;
+                                   type = new (PARSERHEAP())
+                                      SQLLargeInt(PARSERHEAP() , FALSE , FALSE);
+                                   ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp($3);
+                                   $$ = new (PARSERHEAP()) Cast(ie, type);
+				}
+    | TOK_UUID '(' ')'
+    | TOK_UUID_SHORT '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
+                  ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 128 , FALSE);
+                  $$ = new (PARSERHEAP()) Cast(conv,type);
+              }
+
 /* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
@@ -8849,6 +8879,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
+    | TOK_SLEEP '(' value_expression ')'
+				{
+				 $$ = new (PARSERHEAP()) 
+				   BuiltinFunction(ITM_SLEEP,  CmpCommon::statementHeap(), 1, $3);
+				}
 
 CHAR_FUNC_optional_character_set : ',' CHAR_FUNC_character_set
 	  {
@@ -14811,24 +14846,6 @@ interactive_query_expression:
                                 {
                                   $$ = finalize($1);
                                 }
-              | TOK_SELECT TOK_UUID '(' ')'
-	                        {
-				  NAString * v = new (PARSERHEAP()) NAString("1");
-				  ItemExpr * lit = literalOfNumericNoScale(v);
-				  Tuple * tuple = new (PARSERHEAP()) Tuple(lit);
-				  NAString cn ("x");
-				  RenameTable * rt = 
-				    new(PARSERHEAP()) RenameTable(tuple, cn);
-				  RelRoot * rr1 = new (PARSERHEAP()) RelRoot(rt, REL_ROOT);
-				  ItemExpr * uniqueId = 
-				    new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-				  ItemExpr * convToHex =
-				    new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
-
-				  RelRoot * rr = new (PARSERHEAP())
-				    RelRoot(rr1, REL_ROOT, convToHex);
-				  $$ = finalize(rr);
-				}
 
 dml_query : query_expression order_by_clause access_type
             optional_lock_mode for_update_spec optional_limit_spec

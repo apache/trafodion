@@ -40,6 +40,7 @@
 
 
 #include <math.h>
+#include <unistd.h>
 #include <zlib.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>  
@@ -159,6 +160,8 @@ ex_function_trim_char::ex_function_trim_char(){};
 ExFunctionTokenStr::ExFunctionTokenStr(){};
 ExFunctionReverseStr::ExFunctionReverseStr(){};
 ex_function_current::ex_function_current(){};
+ex_function_unixtime::ex_function_unixtime(){};
+ex_function_sleep::ex_function_sleep(){};
 ex_function_unique_execute_id::ex_function_unique_execute_id(){};//Trigger -
 ex_function_get_triggers_status::ex_function_get_triggers_status(){};//Trigger -
 ex_function_get_bit_value_at::ex_function_get_bit_value_at(){};//Trigger -
@@ -435,6 +438,19 @@ ex_function_current::ex_function_current(OperatorTypeEnum oper_type,
   
 };
 
+ex_function_sleep::ex_function_sleep(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
+
+ex_function_unixtime::ex_function_unixtime(OperatorTypeEnum oper_type, short numOperands,
+					 Attributes ** attr, Space * space)
+: ex_function_clause(oper_type, numOperands, attr, space)
+{
+  
+};
 //++ Triggers -
 ex_function_unique_execute_id::ex_function_unique_execute_id(OperatorTypeEnum oper_type,
 					 Attributes ** attr, Space * space)
@@ -2500,6 +2516,100 @@ ex_expr::exp_return_type ExFunctionReverseStr::eval(char *op_data[],
 
   return ex_expr::EXPR_OK;
 };
+
+ex_expr::exp_return_type ex_function_sleep::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+   Int32 sec = 0;
+  switch (getOperand(1)->getDatatype())
+  {
+    case REC_BIN8_SIGNED:
+      sec = *(Int8 *)op_data[1] ;
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN16_SIGNED:
+      sec = *(short *)op_data[1] ; 
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    case REC_BIN32_SIGNED:
+      *(Lng32 *)sec = labs(*(Lng32 *)op_data[1]);
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+ 
+    case REC_BIN64_SIGNED:
+      sec = *(Int64 *)op_data[1];
+      if(sec < 0 )
+      {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+        return ex_expr::EXPR_ERROR;
+      }
+      sleep(sec);
+      *(Int64 *)op_data[0] = 1;
+      break;
+      
+    default:
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("SLEEP");
+      return ex_expr::EXPR_ERROR;
+      break;
+  }
+  //get the seconds to sleep
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
+						   CollHeap* heap,
+						   ComDiagsArea** diagsArea)
+{
+  char *opData = op_data[1];
+  //if there is input value
+  if(opData[0] != 0 &&  getNumOperands() == 2)
+  {
+    struct tm* ptr;
+    char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", ptr);
+    if( r == NULL)
+    {
+        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+        *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+      return ex_expr::EXPR_ERROR;
+    }
+    else
+      *(Int64 *)op_data[0] = mktime(ptr);
+
+  }
+  else
+  {
+    time_t seconds;  
+    seconds = time((time_t *)NULL);   
+    *(Int64 *)op_data[0] = seconds; 
+  }
+  return ex_expr::EXPR_OK;
+}
 
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,

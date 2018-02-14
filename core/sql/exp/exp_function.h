@@ -1174,6 +1174,66 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class  ex_function_sleep: public ex_function_clause {
+public:
+  ex_function_sleep(OperatorTypeEnum oper_type, short numOperands,
+				 Attributes ** attr,
+				 Space * space);
+  ex_function_sleep();
+
+
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);
+  Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
+class  ex_function_unixtime: public ex_function_clause {
+public:
+  ex_function_unixtime(OperatorTypeEnum oper_type, short num,
+				 Attributes ** attr,
+				 Space * space);
+  ex_function_unixtime();
+
+
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);
+  Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
 class  ex_function_current : public ex_function_clause {
 public:
   ex_function_current(OperatorTypeEnum oper_type,
