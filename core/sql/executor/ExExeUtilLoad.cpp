@@ -3081,10 +3081,13 @@ short ExExeUtilLobExtractTcb::work()
             NADELETEBASIC(lobColNameList[0],getHeap());
             NADELETEBASIC(lobNumList,getHeap());
             NADELETEBASIC(lobTypList,getHeap());
-	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
+            if (lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_HDFSFILENAME_)
+	      step_ = EXTRACT_HDFSFILENAME_;
+            else if (lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_OFFSET_)
+	      step_ = RETRIEVE_OFFSET_;     
+	    else if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
 	      step_ = EXTRACT_LOB_DATA_;
-	    else
-	      if ((lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_) || (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_))
+	    else if ((lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_) || (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_))
 	      step_ = RETRIEVE_LOB_LENGTH_;
 	      else
 		{
@@ -3101,6 +3104,42 @@ short ExExeUtilLobExtractTcb::work()
 		}
 	    break;
 	  }
+        case EXTRACT_HDFSFILENAME_:
+          {
+	    Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024]={'\0'};
+            char hdfsFileName[MAX_LOB_FILE_NAME_LEN]={'\0'};
+            
+            Int32 fileNameLen = 0;
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+
+
+	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);	   
+            //Retrieve the filename of this lob using the handle info and return to the caller
+            retcode = ExpLOBInterfaceGetFileName( lobGlobs,
+                                                  lobName_, 
+                                                  lobLoc_,
+                                                  lobType_,
+                                                  lobTdb().getLobHdfsServer(),
+                                                  lobTdb().getLobHdfsPort(),
+                                                  lobHandleLen_, lobHandle_, 
+                                                  hdfsFileName,
+                                                  fileNameLen);
+       
+            if ((lobTdb().getBufAddr() != -1) && (lobTdb().getBufAddr() != 0))
+              str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobDataLen_,sizeof(Int64));
+            str_sprintf(statusString_," LOB filename : %s", hdfsFileName);
+            step_ = RETURN_STATUS_;
+            break;	
+              
+          }
+          break;
 	case RETRIEVE_LOB_LENGTH_ : 
 	  {
 	    Int16 flags;
@@ -3108,6 +3147,7 @@ short ExExeUtilLobExtractTcb::work()
 	    Int64 uid, inDescSyskey, descPartnKey;
 	    short schNameLen;
 	    char schName[1024];
+         
 	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
 					     &inDescSyskey, &descPartnKey, 
 					     &schNameLen, (char *)schName,
@@ -3139,6 +3179,43 @@ short ExExeUtilLobExtractTcb::work()
               step_ = EXTRACT_LOB_DATA_;
             break;
 	      
+	  }
+	case RETRIEVE_OFFSET_ : 
+	  {
+	    Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024];
+            Int64 lobOffset = 0;
+         
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+
+
+	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);	   
+       
+            //Retrieve the total length of this lob using the handle info and return to the caller
+
+            retcode = ExpLOBInterfaceGetOffset( lobGlobs,
+                                                   lobName_, 
+                                                   lobLoc_,
+                                                   lobType_,
+                                                   lobTdb().getLobHdfsServer(),
+                                                   lobTdb().getLobHdfsPort(),
+                                                   lobHandleLen_, lobHandle_, 
+                                                   lobOffset);
+                                                  
+           
+            if ((lobTdb().getBufAddr() != -1) && (lobTdb().getBufAddr() != 0))
+              str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobOffset,sizeof(Int64));
+            str_sprintf(statusString_," LOB Offset : %ld", lobOffset);
+            step_ = RETURN_STATUS_;
+            break;	
+              
+           	      
 	  }
 	case EXTRACT_LOB_DATA_ :
 	  {
@@ -3222,8 +3299,6 @@ short ExExeUtilLobExtractTcb::work()
 	      }
 	  }
 	  break;
-
-       
 
 	case OPEN_CURSOR_:
 	  {

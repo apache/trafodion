@@ -507,6 +507,7 @@ enum DefaultConstants
   USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC,  // Generate MCs for primary key prefixes as well as full key of
                                          //   salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
+  USTAT_AUTOMATIC_LOGGING,     // If ON, gives same semantics as UPDATE STATISTICS LOG SYSTEM
   USTAT_COMPACT_VARCHARS,      // For internal sort, store only the actual # chars used in each value
   USTAT_DELETE_NO_ROLLBACK,    // If ON, use DELETE WITH NO ROLLBACK in incremental stats when updating sample table
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject

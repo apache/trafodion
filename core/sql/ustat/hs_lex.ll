@@ -315,6 +315,10 @@ CMNT_START              "/*"
                           return(NO);
                         }
 
+[Ss][Yy][Ss][Tt][Ee][Mm]        {
+                          return(SYSTEM);
+                        }
+
 {R_IDENTIFIER}          {
                           yylval->stringval = new(STMTHEAP) NAString(STMTHEAP);
                           *yylval->stringval = yytext;

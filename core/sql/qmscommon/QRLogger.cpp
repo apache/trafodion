@@ -21,6 +21,7 @@
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 
+#include <log4cxx/fileappender.h>
 #include <log4cxx/rollingfileappender.h>
 #include <log4cxx/patternlayout.h>
 #include <log4cxx/propertyconfigurator.h>
@@ -54,6 +55,7 @@ std::string CAT_SQL_SSMP                      = "SQL.SSMP";
 std::string CAT_SQL_SSCP                      = "SQL.SSCP";
 std::string CAT_SQL_UDR                       = "SQL.UDR";
 std::string CAT_SQL_PRIVMGR                   = "SQL.PRIVMGR";
+std::string CAT_SQL_USTAT                     = "SQL.USTAT";
 // hdfs
 std::string CAT_SQL_HDFS_JNI_TOP              =  "SQL.HDFS.JniTop";
 std::string CAT_SQL_HDFS_SEQ_FILE_READER      =  "SQL.HDFS.SeqFileReader";
@@ -211,15 +213,6 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
     return TRUE;
   }
   return FALSE;
-}
-
-// **************************************************************************
-// **************************************************************************
-void QRLogger::initCategory(std::string &cat, log4cxx::LevelPtr defaultPriority)
-{
-  log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(cat));
-  myLogger->addAppender(fileAppender_);
-  myLogger->setLevel(defaultPriority);
 }
 
 
@@ -504,7 +497,7 @@ CommonTracer::~CommonTracer()
   }
 }
 
-void QRLogger::log(std::string &cat,
+void QRLogger::log(const std::string &cat,
                    logLevel    level,
                    int         sqlCode,
                    const char  *queryId,
@@ -556,7 +549,7 @@ void QRLogger::log(std::string &cat,
   va_end(args);
 }
 
-void QRLogger::log(std::string &cat,
+void QRLogger::log(const std::string &cat,
                    logLevel    level,
                    const char  *logMsgTemplate...)
 {
@@ -605,6 +598,89 @@ NABoolean QRLogger::initLog4cxx(ExecutableModule module)
    else
       retcode =  QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
    return retcode;
+}
+
+
+NABoolean QRLogger::startLogFile(const std::string &cat, const char * logFileName)
+{
+  NABoolean retcode = TRUE;  // assume success
+  try 
+    {
+      log4cxx::LoggerPtr logger(Logger::getLogger(cat));
+      logger->setAdditivity(false);  // make this logger non-additive
+
+      log4cxx::PatternLayout * layout = new PatternLayout("%d, %p, %c, %m%n");
+      log4cxx::LogString fileName(logFileName);
+      log4cxx::FileAppenderPtr fap(new FileAppender(layout,fileName,false /* no append */));
+      
+      logger->addAppender(fap);
+    }
+  catch (...)
+    {
+      retcode = FALSE;
+    }
+
+  return retcode;
+}
+
+NABoolean QRLogger::stopLogFile(const std::string &cat)
+{
+  NABoolean retcode = TRUE;  // assume success
+  try 
+    {
+      log4cxx::LoggerPtr logger(Logger::getLogger(cat));
+      logger->removeAllAppenders();
+    }
+  catch (...)
+    {
+      retcode = FALSE;
+    }
+
+  return retcode;
+}
+
+NABoolean QRLogger::getRootLogDirectory(const std::string &cat, std::string &out)
+{
+  NABoolean retcode = TRUE;  // assume success
+   
+  out.clear();
+
+  // strip off all but the first qualifier of the category name
+
+  size_t firstDot = cat.find_first_of('.');
+  std::string firstQualifier;
+  if (firstDot == std::string::npos)
+    firstQualifier = cat;  // no dot, use the whole thing
+  else
+    firstQualifier = cat.substr(0,firstDot);
+
+  try 
+    {
+      log4cxx::LoggerPtr logger(Logger::getLogger(firstQualifier));
+      log4cxx::AppenderList appenderList = logger->getAllAppenders();
+      for (size_t i = 0; i < appenderList.size(); i++)
+        {
+          log4cxx::AppenderPtr appender = appenderList[i];
+          log4cxx::LogString appenderName = appender->getName();
+          log4cxx::Appender * appenderP = appender;
+          log4cxx::FileAppender * fileAppender = dynamic_cast<FileAppender *>(appenderP);
+          if (fileAppender)
+            {
+              log4cxx::LogString logFileName = fileAppender->getFile();
+              out = logFileName.data();
+              size_t lastSlash = out.find_last_of('/');
+              if (lastSlash != std::string::npos)
+                out = out.substr(0,lastSlash);
+              return TRUE;
+            }
+        }
+    }
+  catch (...)
+    {
+      retcode = FALSE;
+    }
+
+  return retcode;
 }
 
 

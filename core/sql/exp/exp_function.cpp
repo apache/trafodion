@@ -6613,8 +6613,15 @@ ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[
         Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
         len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
     }
+
     char *rltStr = NULL;
-    JsonReturnType ret = json_extract_path_text(&rltStr, op_data[1], 1, op_data[2]);
+    char jsonStr[len1+1];
+    char jsonAttr[len2+1];
+    strncpy(jsonStr, op_data[1], len1);
+    jsonStr[len1] = '\0';
+    strncpy(jsonAttr, op_data[2], len2);
+    jsonAttr[len2] = '\0';
+    JsonReturnType ret = json_extract_path_text(&rltStr, jsonStr, 1, jsonAttr);
     if (ret != JSON_OK)
     {
         ExRaiseJSONError(heap, diagsArea, ret);

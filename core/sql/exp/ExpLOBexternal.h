@@ -96,7 +96,10 @@ enum LOBcliQueryType
     LOB_CLI_SELECT_LOBLENGTH,
    
     // performs GC of lob file
-    LOB_CLI_PERFORM_LOB_GC
+    LOB_CLI_PERFORM_LOB_GC,
+
+    //returns beginning offset of a lob
+    LOB_CLI_SELECT_LOBOFFSET
 
   };
 
