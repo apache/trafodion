@@ -36,7 +36,6 @@
 #include "key_range.h"
 #include "key_single_subset.h"
 #include "ex_mdam.h"
-#include "hdfs.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -501,14 +500,13 @@ protected:
   NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
   ComDiagsArea *loggingErrorDiags_;
-  HdfsClient *hdfsClient_;
+  HdfsClient *logFileHdfsClient_;
   char *loggingFileName_;
   NABoolean loggingFileCreated_ ;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 
-  virtual hdfsFS getHdfs() const { return NULL; }
-  virtual hdfsFile getHdfsSampleFile() const { return NULL; }
+  virtual HdfsClient *sampleFileHdfsClient() const { return NULL; }
 };
 
 class ExHbaseTaskTcb : public ExGod
@@ -921,14 +919,9 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     virtual ExWorkProcRetcode work();
 
   protected:
-    virtual hdfsFS getHdfs() const
+    virtual HdfsClient *sampleFileHdfsClient() const
     {
-      return hdfs_;
-    }
-
-    virtual hdfsFile getHdfsSampleFile() const
-    {
-      return hdfsSampleFile_;
+      return sampleFileHdfsClient_;
     }
 
    private:
@@ -949,8 +942,7 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
 
 
     // HDFS file system and output file ptrs used for ustat sample table.
-    hdfsFS hdfs_;
-    hdfsFile hdfsSampleFile_;
+    HdfsClient *sampleFileHdfsClient_;
 };
 // UMD SQ: UpdMergeDel on Trafodion table
 class ExHbaseUMDtrafSubsetTaskTcb  : public ExHbaseTaskTcb

@@ -31,9 +31,6 @@
 #include "ExStats.h"
 #include "sql_buffer.h"
 #include "ex_queue.h"
-
-#include "hdfs.h"
-
 #include <time.h>
 #include "ExHbaseAccess.h"
 #include "ExpHbaseInterface.h"
@@ -130,7 +127,7 @@ private:
       another Java thread.
    6. Native layer after processing all the rows in one ByteBuffer, moves the last incomplete row to head room of the
       other ByteBuffer. Then it requests to check if the read is complete. The native layer processes the buffer starting
-      from the copied incomplete row.
+      from the copied partial row.
 */
 
 class ExHdfsScanTcb  : public ex_tcb
@@ -339,6 +336,7 @@ protected:
   // this array is populated from the info list stored as Queue.
   HdfsFileInfoArray hdfsFileInfoListAsArray_;
 
+  HdfsClient *logFileHdfsClient_;
   HdfsClient *hdfsClient_;
   HdfsScan *hdfsScan_;
   NABoolean useLibhdfsScan_;

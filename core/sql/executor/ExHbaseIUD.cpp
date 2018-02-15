@@ -1141,8 +1141,6 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           ex_globals * glob ) :
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
     prevRowId_ (NULL),
-    hdfs_(NULL),
-    hdfsSampleFile_(NULL),
     lastErrorCnd_(NULL)
 {
    hFileParamsInitialized_ = false;
@@ -1163,17 +1161,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 {
-  // Flush and close sample file if used
-  if (hdfs_)
-    {
-      if (hdfsSampleFile_)
-        {
-          hdfsFlush(hdfs_, hdfsSampleFile_);
-          hdfsCloseFile(hdfs_, hdfsSampleFile_);
-        }
-     
-    }
-
+  if (sampleFileHdfsClient_ != NULL)
+     NADELETE(sampleFileHdfsClient_, HdfsClient, getHeap()); 
 }
 
 // Given the type information available via the argument, return the name of
@@ -1394,7 +1383,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       if (!hFileParamsInitialized_)
       {
-              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
+        importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
             ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
         familyLocation_ = std::string(importLocation_ + "/#1");
         Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
@@ -1424,15 +1413,30 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             // Set up HDFS file for sample table.
            
             ContextCli *currContext = getGlobals()->castToExExeStmtGlobals()->getCliGlobals()->currContext();
-            hdfs_ = currContext->getHdfsServerConnection((char*)"default",0);
             Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
                                           ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
             char filePart[10];
             sprintf(filePart, "/%d", fileNum);
+            HDFS_Client_RetCode hdfsClientRetcode;
             samplePath.append(filePart);
-            hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
+            if (sampleFileHdfsClient_ == NULL)
+                sampleFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+            if (hdfsClientRetcode == HDFS_CLIENT_OK) {
+                hdfsClientRetcode = sampleFileHdfsClient_->hdfsOpen(samplePath.data(), FALSE);
+                if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+                    NADELETE(sampleFileHdfsClient_, HdfsClient, getHeap());
+                    sampleFileHdfsClient_ = NULL;
+                }
+            } 
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+              ComDiagsArea * diagsArea = NULL;
+              ExRaiseSqlError(getHeap(), &diagsArea,
+                              (ExeErrorCode)(8110));
+              pentry_down->setDiagsArea(diagsArea);
+              step_ = HANDLE_ERROR;
+              break;
+            }
           }
-
           posVec_.clear();
           hbaseAccessTdb().listOfUpdatedColNames()->position();
           while (NOT hbaseAccessTdb().listOfUpdatedColNames()->atEnd())
@@ -1763,8 +1767,10 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
-            if (hdfsClient_ != NULL)
-               hdfsClient_->hdfsClose();
+            if (logFileHdfsClient_ != NULL)
+               logFileHdfsClient_->hdfsClose();
+            if (sampleFileHdfsClient_ != NULL)
+               sampleFileHdfsClient_->hdfsClose();
             hFileParamsInitialized_ = false;
             retcode = ehi_->close();
           }

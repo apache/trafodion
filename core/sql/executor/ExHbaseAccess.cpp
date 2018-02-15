@@ -39,7 +39,6 @@
 #include  "cli_stdh.h"
 #include "exp_function.h"
 #include "jni.h"
-#include "hdfs.h"
 #include <random>
 #include "HdfsClient_JNI.h"
 
@@ -242,7 +241,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , colValVecSize_(0)
   , colValEntry_(0)
   , loggingErrorDiags_(NULL)
-  , hdfsClient_(NULL)
+  , logFileHdfsClient_(NULL)
   , loggingFileCreated_(FALSE)
   , loggingFileName_(NULL)
 {
@@ -500,8 +499,8 @@ void ExHbaseAccessTcb::freeResources()
      NADELETEBASIC(directRowBuffer_, getHeap());
   if (colVal_.val != NULL)
      NADELETEBASIC(colVal_.val, getHeap());
-  if (hdfsClient_ != NULL) 
-     NADELETE(hdfsClient_, HdfsClient, getHeap());
+  if (logFileHdfsClient_ != NULL) 
+     NADELETE(logFileHdfsClient_, HdfsClient, getHeap());
   if (loggingFileName_ != NULL)
      NADELETEBASIC(loggingFileName_, getHeap());
 }
@@ -2992,7 +2991,7 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
     {
       // Overwrite trailing delimiter with newline.
       hiveBuff[hiveBuffInx-1] = '\n';
-      hdfsWrite(getHdfs(), getHdfsSampleFile(), hiveBuff, hiveBuffInx);
+      sampleFileHdfsClient()->hdfsWrite(hiveBuff, hiveBuffInx);
     }
   return 0;
 }
@@ -3264,16 +3263,16 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
      return;
 
   if (!loggingFileCreated_) {
-     hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+     logFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
-        hdfsClientRetcode = hdfsClient_->hdfsCreate(loggingFileName_, FALSE);
+        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, FALSE);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
         loggingFileCreated_ = TRUE;
      else 
         goto logErrorReturn;
   }
   
-  hdfsClientRetcode = hdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
+  hdfsClientRetcode = logFileHdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
   if (hdfsClientRetcode != HDFS_CLIENT_OK) 
      goto logErrorReturn;
   if (errorCond != NULL) {
@@ -3289,7 +3288,7 @@ void ExHbaseAccessTcb::handleException(NAHeap *heap,
      errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
      errorMsgLen = strlen(errorMsg);
   }
-  hdfsClientRetcode = hdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
+  hdfsClientRetcode = logFileHdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
 logErrorReturn:
   if (hdfsClientRetcode != HDFS_CLIENT_OK) {
      loggingErrorDiags_ = ComDiagsArea::allocate(heap);

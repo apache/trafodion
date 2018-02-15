@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
 import java.io.IOException;
@@ -84,6 +85,7 @@ public class HDFSClient
       catch (IOException ioe) {
          throw new RuntimeException("Exception in HDFSClient static block", ioe);
       }
+      System.loadLibrary("executor");
    }
 
    class HDFSRead implements Callable 
@@ -202,6 +204,35 @@ public class HDFSClient
          logger_.debug("HDFSClient.hdfsCreate() - compressed output stream created" );
       return true;
     }
+
+    boolean hdfsOpen(String fname , boolean compress) throws IOException
+    {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsOpen() - started" );
+      Path filePath = null;
+      if (!compress || (compress && fname.endsWith(".gz")))
+        filePath = new Path(fname);
+      else
+        filePath = new Path(fname + ".gz");
+        
+      FileSystem fs = FileSystem.get(filePath.toUri(),config_);
+      FSDataOutputStream fsOut;
+      if (fs.exists(filePath))
+         fsOut = fs.append(filePath);
+      else
+         fsOut = fs.create(filePath);
+      
+      if (compress) {
+        GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
+        Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
+        outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
+      }
+      else
+        outStream_ = fsOut;      
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsCreate() - compressed output stream created" );
+      return true;
+    }
     
     boolean hdfsWrite(byte[] buff, long len) throws IOException
     {
@@ -225,7 +256,7 @@ public class HDFSClient
     }
 
     
-    public boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws IOException
+    public static boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws IOException
     {
       if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsMergeFiles() - start");
       if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsMergeFiles() - source Path: " + srcPathStr + 
@@ -265,7 +296,7 @@ public class HDFSClient
       return true;
     }
 
-   public boolean hdfsCleanUnloadPath(String uldPathStr
+   public static boolean hdfsCleanUnloadPath(String uldPathStr
                          /*, boolean checkExistence, String mergeFileStr*/) throws IOException
    {
       if (logger_.isDebugEnabled()) 
@@ -289,7 +320,7 @@ public class HDFSClient
       return true;
    }
 
-   public boolean hdfsExists(String filePathStr) throws IOException 
+   public static boolean hdfsExists(String filePathStr) throws IOException 
    {
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsExists() - Path: " + filePathStr);
@@ -301,7 +332,7 @@ public class HDFSClient
       return false;
    }
 
-   public boolean hdfsDeletePath(String pathStr) throws IOException
+   public static boolean hdfsDeletePath(String pathStr) throws IOException
    {
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsDeletePath() - start - Path: " + pathStr);
@@ -310,10 +341,54 @@ public class HDFSClient
       fs.delete(delPath, true);
       return true;
    }
+
+   public int hdfsListDirectory(String pathStr, long hdfsClientJniObj) throws IOException
+   {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsListDirectory() - start - Path: " + pathStr);
+      Path listPath = new Path(pathStr );
+      FileSystem fs = FileSystem.get(listPath.toUri(), config_);
+      FileStatus[] fileStatus;
+      if (fs.isDirectory(listPath)) 
+         fileStatus = fs.listStatus(listPath); 
+      else
+         throw new IOException("The path " + listPath + "is not a directory");
+      FileStatus aFileStatus; 
+      int retcode;
+      if (fileStatus != null) {
+         for (int i = 0; i < fileStatus.length; i++)
+         {
+             aFileStatus = fileStatus[i];
+             retcode = sendFileStatus(hdfsClientJniObj, fileStatus.length, 
+                            i,
+                            aFileStatus.isDirectory(),
+                            aFileStatus.getPath().toString(),
+                            aFileStatus.getModificationTime(),
+                            aFileStatus.getLen(),
+                            aFileStatus.getReplication(),
+                            aFileStatus.getBlockSize(),
+                            aFileStatus.getOwner(),
+                            aFileStatus.getGroup(),
+                            aFileStatus.getPermission().toShort(),
+                            aFileStatus.getAccessTime());          
+             if (retcode != 0)
+                throw new IOException("Error " + retcode + " while sending the file status info for file " + aFileStatus.getPath().toString());
+         }
+         return fileStatus.length;
+      }
+      else  
+         return 0;
+   }
  
    public static void shutdown() throws InterruptedException
    {
       executorService_.awaitTermination(100, TimeUnit.MILLISECONDS);
       executorService_.shutdown();
    }
+   
+   private native int sendFileStatus(long jniObj, int numFiles, int fileNo, boolean isDir, 
+                        String filename, long modTime, long len,
+                        short numReplicas, long blockSize, String owner, String group,
+                        short permissions, long accessTime);
+
 }

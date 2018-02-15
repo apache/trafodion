@@ -24,7 +24,6 @@
 #define COM_HDFS_SCAN_H
 
 #include "ComTdb.h"
-//#include "hdfs.h"   
 #include "ExpLOBinterface.h"
 #include "ComQueue.h"
 
@@ -108,7 +107,6 @@ class ComTdbHdfsScan : public ComTdb
 
   UInt32 flags_;                                             // 96 - 99
 
-  // hadoop port num. An unsigned short in hdfs.h, subject to change.
   UInt16 port_;                                              // 100 - 101
 
   UInt16 convertSkipListSize_;                               // 102 - 103

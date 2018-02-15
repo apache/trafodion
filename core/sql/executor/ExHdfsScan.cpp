@@ -119,6 +119,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
   , loggingFileName_(NULL)
+  , logFileHdfsClient_(NULL)
   , hdfsClient_(NULL)
   , hdfsScan_(NULL)
   , hdfsStats_(NULL)
@@ -226,7 +227,10 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
                                         (char*)"",  //Later replace with server cqd
                                         (char*)"");
-
+  ex_assert(ehi_ != NULL, "Internal error: ehi_ is null in ExHdfsScan");
+  HDFS_Client_RetCode hdfsClientRetcode;
+  hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+  ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error"); 
   // Populate the hdfsInfo list into an array to gain o(1) lookup access
   Queue* hdfsInfoList = hdfsScanTdb.getHdfsFileInfoList();
   if ( hdfsInfoList && hdfsInfoList->numEntries() > 0 )
@@ -308,6 +312,8 @@ void ExHdfsScanTcb::freeResources()
   }
   if (hdfsClient_ != NULL) 
      NADELETE(hdfsClient_, HdfsClient, getHeap());
+  if (logFileHdfsClient_ != NULL) 
+     NADELETE(logFileHdfsClient_, HdfsClient, getHeap());
   if (hdfsScan_ != NULL) 
      NADELETE(hdfsScan_, HdfsScan, getHeap());
 }
@@ -408,8 +414,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   Lng32 openType = 0;
   int changedLen = 0;
   ContextCli *currContext = getGlobals()->castToExExeStmtGlobals()->getCliGlobals()->currContext();
-  hdfsFS hdfs = currContext->getHdfsServerConnection(hdfsScanTdb().hostName_,hdfsScanTdb().port_);
-  hdfsFileInfo *dirInfo = NULL;
   Int32 hdfsErrorDetail = 0;//this is errno returned form underlying hdfsOpenFile call.
   HDFS_Scan_RetCode hdfsScanRetCode;
 
@@ -1075,8 +1079,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
             if (useLibhdfsScan_)
 	       step_ = REPOS_HDFS_DATA;
-            else
-               step_ = COPY_TAIL_TO_HEAD;
+            else {
+               if (retArray_[IS_EOF]) 
+                  step_ = TRAF_HDFS_READ;
+               else
+                  step_ = COPY_TAIL_TO_HEAD;
+            }
 	    if (!exception_)
 	      break;
 	  }
@@ -1299,7 +1307,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          if ((pentry_down->downState.request == ex_queue::GET_N) &&
 	              (pentry_down->downState.requestValue == matches_)) {
                      if (useLibhdfsScan_)
-                        step_ = CLOSE_HDFS_CURSOR;
+                        step_ = CLOSE_FILE;
                      else
                         step_ = DONE;
                   }
@@ -1668,8 +1676,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
-            if (hdfsClient_ != NULL)
-               retcode = hdfsClient_->hdfsClose();
+            if (logFileHdfsClient_ != NULL)
+               retcode = logFileHdfsClient_->hdfsClose();
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
 	    up_entry->upState.parentIndex =
@@ -1693,7 +1701,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    
 	    qparent_.down->removeHead();
 	    step_ = NOT_STARTED;
-            dirInfo = hdfsGetPathInfo(hdfs, "/");
 	    break;
 	  }
 	  
@@ -1900,19 +1907,19 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
   Int64 firstFileStartingOffset = 0;
   Int64 lastFileBytesToRead = -1;
   Int32 numParallelInstances = MAXOF(getGlobals()->getNumOfInstances(),1);
-  hdfsFS fs = ((GetCliGlobals()->currContext())->getHdfsServerConnection(
-                    hdfsScanTdb().hostName_,
-                    hdfsScanTdb().port_));
-  hdfsFileInfo *fileInfos = hdfsListDirectory(fs,
-                                              hdfsScanTdb().hdfsRootDir_,
-                                              &numFiles);
+
+  HDFS_FileInfo *fileInfos;
+  HDFS_Client_RetCode hdfsClientRetcode;
+
+  hdfsClientRetcode = hdfsClient_->hdfsListDirectory(hdfsScanTdb().hdfsRootDir_, &fileInfos, &numFiles); 
+  ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error:hdfsClient->hdfsListDirectory returned an error")
 
   deallocateRuntimeRanges();
 
   // in a first round, count the total number of bytes
   for (int f=0; f<numFiles; f++)
     {
-      ex_assert(fileInfos[f].mKind == kObjectKindFile,
+      ex_assert(fileInfos[f].mKind == HDFS_FILE_KIND,
                 "subdirectories not supported with runtime HDFS ranges");
       totalSize += (Int64) fileInfos[f].mSize;
     }
@@ -2127,15 +2134,15 @@ void ExHdfsScanTcb::handleException(NAHeap *heap,
      return;
 
   if (!loggingFileCreated_) {
-     hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+     logFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
-        hdfsClientRetcode = hdfsClient_->hdfsCreate(loggingFileName_, FALSE);
+        hdfsClientRetcode = logFileHdfsClient_->hdfsCreate(loggingFileName_, FALSE);
      if (hdfsClientRetcode == HDFS_CLIENT_OK)
         loggingFileCreated_ = TRUE;
      else 
         goto logErrorReturn;
   }
-  hdfsClientRetcode = hdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
+  hdfsClientRetcode = logFileHdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
   if (hdfsClientRetcode != HDFS_CLIENT_OK) 
      goto logErrorReturn;
   if (errorCond != NULL) {
@@ -2151,7 +2158,7 @@ void ExHdfsScanTcb::handleException(NAHeap *heap,
      errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
      errorMsgLen = strlen(errorMsg);
   }
-  hdfsClientRetcode = hdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
+  hdfsClientRetcode = logFileHdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
 logErrorReturn:
   if (hdfsClientRetcode != HDFS_CLIENT_OK) {
      loggingErrorDiags_ = ComDiagsArea::allocate(heap);

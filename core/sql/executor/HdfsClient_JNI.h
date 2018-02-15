@@ -87,10 +87,31 @@ private:
 // ===========================================================================
 
 typedef enum {
+     HDFS_FILE_KIND
+   , HDFS_DIRECTORY_KIND 
+} HDFS_FileType;
+
+typedef struct {
+   HDFS_FileType mKind; /* file or directory */
+   char *mName;         /* the name of the file */
+   Int64 mLastMod;      /* the last modification time for the file in seconds */
+   Int64 mSize;       /* the size of the file in bytes */
+   short mReplication;    /* the count of replicas */
+   Int64 mBlockSize;  /* the block size for the file */
+   char *mOwner;        /* the owner of the file */
+   char *mGroup;        /* the group associated with the file */
+   short mPermissions;  /* the permissions associated with the file */
+   Int64 mLastAccess;    /* the last access time for the file in seconds */
+} HDFS_FileInfo;
+
+
+typedef enum {
   HDFS_CLIENT_OK     = JOI_OK
  ,HDFS_CLIENT_FIRST  = HDFS_SCAN_LAST
  ,HDFS_CLIENT_ERROR_HDFS_CREATE_PARAM = HDFS_CLIENT_FIRST
  ,HDFS_CLIENT_ERROR_HDFS_CREATE_EXCEPTION
+ ,HDFS_CLIENT_ERROR_HDFS_OPEN_PARAM
+ ,HDFS_CLIENT_ERROR_HDFS_OPEN_EXCEPTION
  ,HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION
  ,HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION
@@ -103,6 +124,9 @@ typedef enum {
  ,HDFS_CLIENT_ERROR_HDFS_EXISTS_FILE_EXISTS
  ,HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_PARAM
  ,HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION
+ ,HDFS_CLIENT_ERROR_SET_HDFSFILEINFO
+ ,HDFS_CLIENT_ERROR_HDFS_LIST_DIR_PARAM
+ ,HDFS_CLIENT_ERROR_HDFS_LIST_DIR_EXCEPTION
  ,HDFS_CLIENT_LAST
 } HDFS_Client_RetCode;
 
@@ -112,8 +136,12 @@ public:
   // Default constructor - for creating a new JVM		
   HdfsClient(NAHeap *heap)
   :  JavaObjectInterface(heap) 
-  {}
-
+    , hdfsFileInfo_(NULL) 
+    , numFiles_(0)
+  {
+  }
+ 
+  ~HdfsClient();
   static HdfsClient *newInstance(NAHeap *heap, HDFS_Client_RetCode &retCode);
 
   // Get the error description.
@@ -123,6 +151,7 @@ public:
   // Must be called.
   HDFS_Client_RetCode    init();
   HDFS_Client_RetCode    hdfsCreate(const char* path, NABoolean compress);
+  HDFS_Client_RetCode    hdfsOpen(const char* path, NABoolean compress);
   HDFS_Client_RetCode    hdfsWrite(const char* data, Int64 size);
   HDFS_Client_RetCode    hdfsClose();
   HDFS_Client_RetCode    hdfsMergeFiles(const NAString& srcPath,
@@ -130,25 +159,34 @@ public:
   HDFS_Client_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
   HDFS_Client_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
   HDFS_Client_RetCode    hdfsDeletePath(const NAString& delPath);
+  HDFS_Client_RetCode    setHdfsFileInfo(JNIEnv *jenv, jint numFiles, jint fileNo, jboolean isDir, 
+          jstring filename, jlong modTime, jlong len, jshort numReplicas, jlong blockSize, 
+          jstring owner, jstring group, jshort permissions, jlong accessTime);
+  HDFS_Client_RetCode    hdfsListDirectory(const char *pathStr, HDFS_FileInfo **hdfsFileInfo, int *numFiles);
+  void	                 deleteHdfsFileInfo();
 
 private:  
   enum JAVA_METHODS {
     JM_CTOR = 0, 
     JM_HDFS_CREATE,
+    JM_HDFS_OPEN,
     JM_HDFS_WRITE,
     JM_HDFS_CLOSE,
     JM_HDFS_MERGE_FILES,
     JM_HDFS_CLEAN_UNLOAD_PATH,
     JM_HDFS_EXISTS,
     JM_HDFS_DELETE_PATH,
+    JM_HDFS_LIST_DIRECTORY,
     JM_LAST
   };
-  
+  HDFS_FileInfo *hdfsFileInfo_; 
+  int numFiles_;
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
   static bool javaMethodsInitialized_;
   // this mutex protects both JaveMethods_ and javaClass_ initialization
   static pthread_mutex_t javaMethodsInitMutex_;
 };
+
 
 #endif
