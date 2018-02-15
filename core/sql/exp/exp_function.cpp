@@ -2593,7 +2593,7 @@ ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
   {
     struct tm* ptr;
     char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", ptr);
-    if( r == NULL)
+    if( (r == NULL) ||  (*r != '\0') )
     {
         ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
         *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
