@@ -585,7 +585,7 @@ public:
   const CostScalar & getOptMDAMProbeSubsets() const;
   const ValueIdSet & getOptKeyPreds() const;
 
-  void compute(NABoolean & noExePreds /* out */);
+  void compute(NABoolean & noExePreds /* out */,CostScalar & incomingScanProbes);
 
   CollIndex getStopColumn() const;
 
@@ -10215,7 +10215,7 @@ void NewMDAMCostWA::compute()
   }
   else 
   {
-    incomingScanProbes_ = 1; // TODO: why is this necessary?
+    incomingScanProbes_ = 1;
     MDAM_DEBUG0(MTL2, "Mdam scan is a single probe");
   }
 
@@ -10282,45 +10282,51 @@ void NewMDAMCostWA::compute()
     CostScalar refinedSeqBlocksReadUpperBound = MINOF(seqBlocksReadUpperBound,
       seqBlocksFetchUpperBound + seqBlocksProbeUpperBound);
 
+    // There are two kinds of overhead that we model as part of "seeks".
+    // One kind is actual disk seeks. There may be one per subset, but if
+    // subsets are near each other (as quite often happens between 
+    // successive levels of probes and then fetches), there won't be a seek.
+    // The other kind is message interactions with the HBase RegionServer.
+    // There is one of these per subset.
+
+    // If the upper bound of the number of sequential blocks is the same as
+    // the single subset upper bound, seqBlocksReadUpperBound, we'll assume
+    // no seeks. (Why none instead of one? Single subset uses none, so we in
+    // effect subtract one to make an apples-to-apples comparison.) If the
+    // upper bound of the number of sequential blocks is close to the single
+    // subset bound, we'll use the difference as an upper bound on the number 
+    // of seeks.
+ 
     CostScalar seeks = csZero;
+    CostScalar totalSubsets = sumMDAMProbeSubsets + sumMDAMFetchSubsets - csOne;
     if (refinedSeqBlocksReadUpperBound < seqBlocksReadUpperBound)
       {
-        // Here we know that in the worst case, we won't touch all the blocks 
-        // that a single subset scan will. Let's assume worst case placement
-        // of the blocks we do touch -- that is, spread them out as much
-        // as possible. The number of gaps is the number of seeks.
-        CostScalar maxNumberOfChunks = MINOF(refinedSeqBlocksReadUpperBound,
-          seqBlocksReadUpperBound - refinedSeqBlocksReadUpperBound);
-
-        // We don't count a seek for the first block. (Single subset scan
-        // costing doesn't count it either. So this makes it apples-to-apples.)
-        seeks = maxNumberOfChunks - csOne;
+        CostScalar difference = 
+          seqBlocksReadUpperBound - refinedSeqBlocksReadUpperBound;
+        seeks = MINOF(difference,totalSubsets);
       }
 
-    // Add into the seeks some overhead per subset. Not every subset will cause
-    // a seek, but there is some overhead per subset. (We subtract one, because
-    // simple scans don't charge for their one subset. That makes the comparison
-    // more applies-to-apples.)
-
-    CostScalar totalSubsets = sumMDAMProbeSubsets + sumMDAMFetchSubsets - csOne;
+    // Add into the seeks some overhead per subset. In our experience, subsets
+    // are more expensive than disk seeks, so they get multiplied by a
+    // subset factor.
+   
     CostScalar MDAMSubsetAdjustmentFactor = ActiveSchemaDB()->getDefaults().getAsDouble(MDAM_SUBSET_FACTOR);
     totalSubsets *= MDAMSubsetAdjustmentFactor;
     seeks += totalSubsets;
 
-    CostScalar rowSize = optimizer_.getIndexDesc()->getRecordSizeInKb() * csOneKiloBytes;
-    CostScalar rowSizeFactor = optimizer_.scmRowSizeFactor(rowSize);
-    totRowsProcessed *= rowSizeFactor;
-
-    CostScalar randIORowSizeFactor = 
-      optimizer_.scmRowSizeFactor(rowSize, ScanOptimizer::RAND_IO_ROWSIZE_FACTOR);
-    seeks *= randIORowSizeFactor;
-
-    CostScalar seqIORowSizeFactor = 
-      optimizer_.scmRowSizeFactor(rowSize, ScanOptimizer::SEQ_IO_ROWSIZE_FACTOR);
-    refinedSeqBlocksReadUpperBound *= seqIORowSizeFactor;
-
     CostScalar totalSeqKBRead = refinedSeqBlocksReadUpperBound *
       optimizer_.getIndexDesc()->getBlockSizeInKb();
+
+    // All the quantities we have calculated so far are from the standpoint of
+    // a single scan probe. So if we have multiple incoming scan probes (that is,
+    // if we are the inner table of a nested loop join), we need to multiply the
+    // cost by the number of incoming scan probes.
+    if (isMultipleScanProbes_)  // the "if" really isn't needed; but is useful for debug stops
+      {
+        totRowsProcessed *= incomingScanProbes_;
+        seeks *= incomingScanProbes_;
+        totalSeqKBRead *= incomingScanProbes_;
+      }
 
     scmCost_ = optimizer_.scmComputeMDAMCostForHbase(totRowsProcessed, seeks, 
                                                      totalSeqKBRead, incomingScanProbes_);
@@ -10413,7 +10419,7 @@ void NewMDAMCostWA::computeDisjunct()
                                        singleSubsetSize_,
 				       disjunctIndex_);
 
-  prefixWA.compute(noExePreds_ /*out */);
+  prefixWA.compute(noExePreds_ /*out */, incomingScanProbes_);
   CollIndex stopColumn = prefixWA.getStopColumn();
   disjunctOptMDAMFetchRows_ = prefixWA.getOptMDAMFetchRows();
   disjunctOptMDAMProbeRows_ = prefixWA.getOptMDAMProbeRows();
@@ -10567,7 +10573,7 @@ NewMDAMOptimalDisjunctPrefixWA::~NewMDAMOptimalDisjunctPrefixWA()
 // key predicates, then the output parameter noExePreds will be
 // set to FALSE. Otherwise we leave it untouched.
 
-void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/)
+void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/,CostScalar & incomingScanProbes)
 {
   // Cumulative probe counters (MDAM is a recursive algorithm; this
   // represents the cost of recursion)
@@ -10702,9 +10708,19 @@ void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/)
 
     // Calculate the number of fetch rows and fetch subsets for that column
 
+    // Note: Unfortunately, the histograms logic calculates the row counts
+    // from the standpoint of the result of a join while here we are trying
+    // to calculate from the standpoint of a single outer row. So, we divide
+    // the number of rows fetched (MDAMFetchRows) by the number of incoming
+    // scan probes. Note that for probes, we already took care of this by
+    // examining the actual predicates (e.g. if it is equality, we set the
+    // column UEC to one above).
+
     CostScalar MDAMFetchRows = disjunctHistograms_.getColStatsForColumn(
                    optimizer_.getIndexDesc()->
                    getIndexKey()[i]).getRowcount().getCeiling();
+    if (crossProductApplied_)
+      MDAMFetchRows = MDAMFetchRows / incomingScanProbes;
     CostScalar MDAMFetchSubsets = previousColumnMDAMProbeRows * MDAMIntervalEstimate;
 
     MDAM_DEBUG1(MTL2,"MDAM Fetch Rows on this column: %f",MDAMFetchRows.value());
@@ -10809,8 +10825,9 @@ void NewMDAMOptimalDisjunctPrefixWA::applyPredsToHistogram(const ValueIdSet * pr
           // estimate the cost factors (rows, uecs)
           // Therefore, apply the cross product to the disjunctHistograms only once.
           // Use the disjunctHistograms as normal after cross product is applied.
-          // ??? It seems that we need do the cross product even though there
-          // ??? is no pred on the current column. This is not being done?
+          // Note that this causes the row counts to be scaled up; our caller
+          // will have to compensate after this point by dividing by the number
+          // of incoming scan probes.
           crossProductApplied_ = TRUE;
           disjunctHistograms_.
                 applyPredicatesWhenMultipleProbes(
