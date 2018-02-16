@@ -69,7 +69,7 @@ def run():
     #    err('Failed to access LDAP server with user %s' % db_root_user)
 
     print 'Modfiy sqenvcom.sh to turn on authentication'
-    mod_file(sqenv_file, {'TRAFODION_ENABLE_AUTHENTICATION=NO':'TRAFODION_ENABLE_AUTHENTICATION=YES'})
+    mod_file(sqenv_file, {'TRAFODION_ENABLE_AUTHENTICATION=.*':'TRAFODION_ENABLE_AUTHENTICATION=YES'})
 
 # main
 try:
