@@ -1141,7 +1141,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           ex_globals * glob ) :
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
     prevRowId_ (NULL),
-    lastErrorCnd_(NULL)
+    lastErrorCnd_(NULL),
+    sampleFileHdfsClient_(NULL)
 {
    hFileParamsInitialized_ = false;
    //sortedListOfColNames_ = NULL;
