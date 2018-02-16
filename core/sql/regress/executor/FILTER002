@@ -31,4 +31,6 @@ if [ "$fil" = "" ]; then
 fi
 sed "
 s/\.[ ]*\*\*\*/\. \*\*\*/g
+s/^uuidrow.*$/uuid/
+s/^unixtimestamp.*$/unixtimestamp/
 " $fil

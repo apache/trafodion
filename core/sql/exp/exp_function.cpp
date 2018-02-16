@@ -2589,7 +2589,7 @@ ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
 {
   char *opData = op_data[1];
   //if there is input value
-  if(opData[0] != 0 &&  getNumOperands() == 2)
+  if( getNumOperands() == 2)
   {
     struct tm* ptr;
     char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", ptr);
