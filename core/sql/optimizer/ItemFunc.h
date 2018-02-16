@@ -680,6 +680,12 @@ public:
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
 
+  // A method that returns for "user-given" input values.
+  // These are values that are either constants, host variables, parameters,
+  // or even values that are sensed from the environment such as
+  // current time, the user name, etcetera.
+  virtual NABoolean isAUserSuppliedInput() const;
+
   // Each operator supports a (virtual) method for transforming its
   // scalar expressions to a canonical form
   virtual void transformNode(NormWA & normWARef,

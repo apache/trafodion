@@ -1793,6 +1793,8 @@ void GroupAttributes::resolveCharacteristicInputs(const ValueIdSet& externalInpu
 	     ItemExpr * vidExpr = vid.getItemExpr();
 	     if ((vidExpr->getOperatorType() == ITM_CURRENT_USER) ||
 		 (vidExpr->getOperatorType() == ITM_CURRENT_TIMESTAMP) ||
+		 (vidExpr->getOperatorType() == ITM_UNIQUE_SHORT_ID) ||
+		 (vidExpr->getOperatorType() == ITM_UNIQUE_ID) ||
 		 (vidExpr->getOperatorType() == ITM_UNIX_TIMESTAMP))
 
 	       currentConstants += vid;

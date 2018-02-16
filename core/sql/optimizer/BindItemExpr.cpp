@@ -3199,6 +3199,23 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       {
          break;
       }
+    case ITM_UNIQUE_ID:
+    case ITM_UNIQUE_SHORT_ID:
+      {
+        if (nodeIsBound())
+          return getValueId().getItemExpr();
+        const NAType *type = synthTypeWithCollateClause(bindWA);
+        if (!type) return this;
+ 
+        ItemExpr* ie = ItemExpr::bindUserInput(bindWA,type,getText());
+        if (bindWA->errStatus())
+          return this;
+ 
+        // add this value id to BindWA's input function list.
+        bindWA->inputFunction().insert(getValueId());
+        return ie;
+      }
+    break;
     case ITM_NULLIFZERO:
       {
 	// binder has already verified that child is numeric
@@ -3473,6 +3490,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   // expression getting translated correctly. 
 
   setReplacementExpr(ie);
+
   return ie;
 }
 
@@ -12013,17 +12031,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	  }
       }
     break;
-/*
-    case ITM_SLEEP:
-      {
-        ItemExpr * tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA);
-        if (bindWA->errStatus())
-          return this;
-        buf[0] = 0;
-        parseTree = child(0);
-      }
-    break;
-*/
+
     case ITM_TO_NUMBER:
       {
 	ItemExpr *tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA); 
