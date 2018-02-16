@@ -114,8 +114,8 @@ static const char* const hbcErrorEnumStr[] =
 // 
 //////////////////////////////////////////////////////////////////////////////
 // private default constructor
-HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout)
-                 :  JavaObjectInterface(heap, debugPort, debugTimeout)
+HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap)
+                 :  JavaObjectInterface(heap)
                    ,isConnected_(FALSE)
 {
   for (int i=0; i<NUM_HBASE_WORKER_THREADS; i++) {
@@ -137,7 +137,7 @@ char* HBaseClient_JNI::getErrorText(HBC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
+HBaseClient_JNI* HBaseClient_JNI::getInstance()
 {
    ContextCli *currContext = GetCliGlobals()->currContext();
    HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
@@ -145,8 +145,7 @@ HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
    {
      NAHeap *heap = currContext->exHeap();
     
-     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap,
-                   debugPort, debugTimeout);
+     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap);
      currContext->setHbaseClient(hbaseClient_JNI);
    }
    return hbaseClient_JNI;
@@ -301,7 +300,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_TRUNCATE   ].jm_name      = "truncate";
     JavaMethods_[JM_TRUNCATE   ].jm_signature = "(Ljava/lang/String;ZJ)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -1583,7 +1583,8 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_ADD_TO_HFILE_DB  ].jm_signature = "(SLjava/lang/Object;Ljava/lang/Object;)Z";
 
     rc = (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBLC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -1871,121 +1872,6 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
-HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsCreate(%s) called.", path);
-
-  if (initJNIEnv() != JOI_OK)
-     return HVC_ERROR_INIT_PARAM;
-
-   jstring js_path = jenv_->NewStringUTF(path);
-   if (js_path == NULL) {
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_PARAM;
-   }
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE_FILE].methodID, js_path);
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreate()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreaten()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
-   }
-
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- HVC_RetCode  HiveClient_JNI::hdfsWrite(const char* data, Int64 len)
- {
-   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsWrite(%ld) called.", len);
-
-   if (initJNIEnv() != JOI_OK)
-     return HVC_ERROR_INIT_PARAM;
-
-   //Write the requisite bytes into the file
-   jbyteArray jbArray = jenv_->NewByteArray( len);
-   if (!jbArray) {
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_PARAM;
-   }
-   jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
-
-   jlong j_len = len;
-   // String write(java.lang.String);
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
-
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
-   }
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
-HVC_RetCode  HiveClient_JNI::hdfsClose()
-{
-   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
-   if (initJNIEnv() != JOI_OK)
-      return HVC_ERROR_INIT_PARAM;
-   if (javaObj_ == NULL)
-   {
-     // Maybe there was an initialization error.
-     jenv_->PopLocalFrame(NULL);
-     return HVC_OK;
-   }
-
-   // String close();
-   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLOSE].jm_full_name;
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLOSE].methodID);
-
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
-   }
-
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
-}
  //////////////////////////////////////////////////////////////////////////////
  //
  //////////////////////////////////////////////////////////////////////////////
@@ -3323,7 +3209,8 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HTC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -3817,11 +3704,6 @@ static const char* const hvcErrorEnumStr[] =
  ,"Java exception in getAllSchemas()."
  ,"Preparing parameters for getAllTables()."
  ,"Java exception in getAllTables()."
- ,"preparing parameters for hdfsCreateFile()."
- ,"java exception in hdfsCreateFile()."
- ,"preparing parameters for hdfsWrite()."
- ,"java exception in hdfsWrite()."
- ,"java exception in hdfsclose()."
 };
 
 
@@ -3915,16 +3797,11 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_ASH     ].jm_signature = "()[Ljava/lang/Object;";
     JavaMethods_[JM_GET_ATL    ].jm_name      = "getAllTables";
     JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)[Ljava/lang/Object;";
-    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_name      = "hdfsCreateFile";
-    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_HDFS_WRITE       ].jm_name      = "hdfsWrite";
-    JavaMethods_[JM_HDFS_WRITE       ].jm_signature = "([BJ)Z";
-    JavaMethods_[JM_HDFS_CLOSE       ].jm_name      = "hdfsClose";
-    JavaMethods_[JM_HDFS_CLOSE       ].jm_signature = "()Z";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_name = "executeHiveSQL";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_signature = "(Ljava/lang/String;)V";
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HVC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;

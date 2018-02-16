@@ -68,7 +68,6 @@
 #include "ComMisc.h"
 #include "CmpSeabaseDDLmd.h"
 #include "CmpSeabaseDDLroutine.h"
-#include "hdfs.h"
 #include "StmtDDLAlterLibrary.h"
 #include "logmxevent_traf.h"
 #include "exp_clause_derived.h"
