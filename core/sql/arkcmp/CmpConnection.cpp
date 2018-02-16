@@ -349,7 +349,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
           // The number of NAMemory objects that reside in SYSTEM_MEMORY
           // is currently restricted to one at a time--see explanation in
           // NAMemory.h.
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageSQLText sqltext(NULL,0,CTXTHEAP,SQLCHARSETCODE_UNKNOWN,
                                     (CmpMessageObj::MessageTypeEnum)typ);
           receiveAndSetUp(this, sqltext);
@@ -388,7 +388,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DDL) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDDL statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
@@ -397,7 +397,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DESCRIBE) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDescribe statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
@@ -433,7 +433,7 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
 
       case (CmpMessageObj::DDL_WITH_STATUS) :
         {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
+          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
           CmpMessageDDLwithStatus statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);

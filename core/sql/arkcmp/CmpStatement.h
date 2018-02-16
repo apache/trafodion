@@ -86,8 +86,7 @@ public:
   // memoryType parameter is ignored 
   CmpStatement(
       CmpContext*,
-      NAMemory* outHeap = 0,
-      NAMemory::NAMemoryType memoryType=NAMemory::DERIVED_MEMORY);
+      NAMemory *outHeap = NULL);
   
   // requests process
   ReturnStatus process(const CmpMessageObj&);
@@ -253,6 +252,11 @@ protected:
 
   // The reply to be sent back to executor after processing the request in CmpStatement
   CmpMessageReply* reply_;
+
+  // The result of Compile for statements like invoke, get tables, show stats
+  // that calls CmpDescribe internally immediately after compilation.
+
+  CmpMessageReply *bound_;
 
   // The flag to record whether exception has been raised in the
   // statement compilation/execution. This is used to clean up properly once the 
