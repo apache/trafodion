@@ -10069,6 +10069,7 @@ ExRMSStats::ExRMSStats(NAHeap *heap)
   rmsStatsResetTimestamp_ = NA_JulianTimestamp();
   numQueryInvKeys_ = 0;
   nodesInCluster_ = 0;
+  configuredPidMax_ = 0;
 }
 
 void ExRMSStats::reset()
@@ -10217,7 +10218,7 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
         "stmtStatsGCed: %d lastGCTime: %ld "
         "totalStmtStatsGCed: %ld ssmpReqMsgCnt: %ld ssmpReqMsgBytes: %ld ssmpReplyMsgCnt: %ld ssmpReplyMsgBytes: %ld "
         "sscpReqMsgCnt: %ld sscpReqMsgBytes: %ld sscpReplyMsgCnt: %ld sscpReplyMsgBytes: %ld resetTimestamp: %ld " 
-        "numQueryInvKeys: %d ",
+        "numQueryInvKeys: %d  configuredPidMax: %d",
         statType(),
         rmsVersion_,
         nodeName_,
@@ -10252,7 +10253,8 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
         sscpReplyMsgCnt_,
         sscpReplyMsgBytes_,
         rmsStatsResetTimestamp_,
-        numQueryInvKeys_
+        numQueryInvKeys_,
+        configuredPidMax_
        );
   }
   buf += str_len(buf);
@@ -10383,6 +10385,9 @@ Lng32 ExRMSStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_RMS_STATS_NUM_SQL_SIK:
     sqlStats_item->int64_value = numQueryInvKeys_;
+    break;
+  case SQLSTATS_RMS_CONFIGURED_PID_MAX:
+    sqlStats_item->int64_value = configuredPidMax_;
     break;
   default:
     sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;

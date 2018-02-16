@@ -1122,3 +1122,26 @@ const char *ComRtGetUnknownString(Int32 val)
   sprintf(ComRtGetUnknownString_Buf, "UNKNOWN (%d)", (int) val);
   return &(ComRtGetUnknownString_Buf[0]);
 }
+
+
+pid_t ComRtGetConfiguredPidMax()
+{
+   FILE *fd_pid_max;
+   char buffer[100];
+   size_t bytesRead = 0;
+   pid_t pid_max = 0;
+
+   fd_pid_max = fopen("/proc/sys/kernel/pid_max", "r");
+   if (fd_pid_max != NULL) {
+      bytesRead = fread(buffer, 1, sizeof(buffer)-1, fd_pid_max);
+      if (ferror(fd_pid_max))
+         assert(false); 
+      if (feof(fd_pid_max))
+         clearerr(fd_pid_max);
+      buffer[bytesRead] = '\0';
+      pid_max = atoi(buffer);
+      fclose(fd_pid_max);
+      return pid_max;
+   } 
+   return 0;
+}

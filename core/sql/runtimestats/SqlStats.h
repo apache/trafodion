@@ -1,5 +1,5 @@
 /**********************************************************************
-// @@@ START COPYRIGHT @@@
+/ @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
@@ -69,13 +69,14 @@ class MemoryMonitor;
 #include "SQLCLIdev.h"
 #include "memorymonitor.h"
 
-#define MAX_PID_ARRAY_SIZE 65536
+#define PID_MAX_DEFAULT     65536
+#define PID_MAX_DEFAULT_MAX 131072
+#define PID_MAX_DEFAULT_MIN 32768
 
 typedef struct GlobalStatsArray
 {
   pid_t  processId_;
   SB_Verif_Type  phandleSeqNum_;
-  Int64  creationTime_;
   ProcessStats  *processStats_;
 } GlobalStatsArray;
 
@@ -219,7 +220,6 @@ private:
   char *queryId_;
   Lng32 queryIdLen_;
   ExMasterStats *masterStats_;
-  HashQueue *EspProcHandle_;
   ExStatisticsArea *stats_;
   Int64 lastMergedTime_;
   ExStatisticsArea *mergedStats_;
@@ -435,6 +435,7 @@ public:
   inline pid_t getSemPid() { return semPid_; }
   inline pid_t getSsmpPid();
   inline Int64 getSsmpTimestamp();
+  inline pid_t getConfiguredPidMax() { return configuredPidMax_; }
   inline void setSsmpDumpTimestamp(Int64 dumpTime) 
           { ssmpDumpedTimestamp_ = dumpTime; }
   inline Int64 getSsmpDumpTimestamp() 
@@ -531,6 +532,7 @@ private:
   pid_t maxPid_;
   Int64 ssmpDumpedTimestamp_;
   MemoryMonitor *memMonitor_;
+  pid_t configuredPidMax_;
 };
 StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP = TRUE);
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu);
