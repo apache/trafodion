@@ -595,11 +595,16 @@ private:
 
   NABoolean isColumnDense(CollIndex columnPosition);
 
-  void calculateMetricsFromKeyPreds(const ValueIdSet * predsPtr, const CostScalar & maxUEC,
+  void calculateMetricsFromKeyPreds(const ValueId & keyColumn, 
+                                    const ValueIdSet * predsPtr, const CostScalar & maxUEC,
                                     CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/);
-  void calculateMetricsFromKeyPred(const ValueId & keyPred, const CostScalar & maxUEC, 
+
+  void calculateMetricsFromKeyPred(const ValueId & keyColumn,
+    const ValueId & keyPred, const CostScalar & maxUEC, 
     CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/,
     int & lessCount /*in/out*/, int & greaterCount /*in/out*/);
+
+  NABoolean keyColumnIsOnTheLeft(const ValueId & keyColumn, ItemExpr * ie);
 
   NABoolean isMinimalCost(Cost * currentCost,
                           CollIndex columnPosition,
@@ -10598,17 +10603,16 @@ void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/,Cost
     // Note that the append method receives a one-based column position,
     // so add one to the prefix because the prefix is zero based.
 
+    ValueId keyColumn = keyColumns[i];
     disjunctHistograms_.appendHistogramForColumnPosition(i+1);
     CostScalar ColumnUECBeforePreds = disjunctHistograms_.getColStatsForColumn(
-                   optimizer_.getIndexDesc()->
-                   getIndexKey()[i]).getTotalUec().getCeiling();
+                   keyColumn).getTotalUec().getCeiling();
     MDAM_DEBUG1(MTL2,"Column UEC from histograms before applying key predicates: %f",ColumnUECBeforePreds.value());
 
     const ValueIdSet * predsPtr = keyPredsByCol_[i];
     applyPredsToHistogram(predsPtr);
     CostScalar columnUEC = disjunctHistograms_.getColStatsForColumn(
-                   optimizer_.getIndexDesc()->
-                   getIndexKey()[i]).getTotalUec().getCeiling();
+                   keyColumn).getTotalUec().getCeiling();
     MDAM_DEBUG1(MTL2,"Column UEC from histograms: %f",columnUEC.value());
 
     // Determine if column is dense or sparse and set it accordingly
@@ -10636,7 +10640,7 @@ void NewMDAMOptimalDisjunctPrefixWA::compute(NABoolean & noExePreds /*out*/,Cost
 
     if (predsPtr AND (NOT predsPtr->isEmpty()))
     {
-      calculateMetricsFromKeyPreds(predsPtr, ColumnUECBeforePreds,
+      calculateMetricsFromKeyPreds(keyColumn, predsPtr, ColumnUECBeforePreds,
         MDAMUECEstimate /*out*/, MDAMIntervalEstimate /*out*/);
     
       MDAM_DEBUG1(MTL2,"Column UEC from predicates: %f",MDAMUECEstimate.value());
@@ -10911,7 +10915,8 @@ NABoolean NewMDAMOptimalDisjunctPrefixWA::isColumnDense(CollIndex columnPosition
 }
 
 
-void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueIdSet * predsPtr, 
+void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueId & keyColumn,
+  const ValueIdSet * predsPtr, 
   const CostScalar & maxUEC, CostScalar & UECFromPreds, CostScalar & IntervalCountFromPreds)
 {
   // If the key predicates for a column are all of the form
@@ -10969,7 +10974,7 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueIdS
 
   ValueId vid = predsPtr->init();
   predsPtr->next(vid);  // expect it to return true, as caller insured predsPtr was not empty
-  calculateMetricsFromKeyPred(vid, maxUEC,
+  calculateMetricsFromKeyPred(keyColumn, vid, maxUEC,
                               UECFromPreds /*out*/, IntervalCountFromPreds /*out*/,
                               lessCount /*in/out*/, greaterCount /*in/out*/);
   predsPtr->advance(vid);
@@ -10978,7 +10983,7 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueIdS
     {      
       CostScalar UECFromPreds1;
       CostScalar IntervalCountFromPreds1;
-      calculateMetricsFromKeyPred(vid, maxUEC,
+      calculateMetricsFromKeyPred(keyColumn, vid, maxUEC,
                                   UECFromPreds1 /*out*/, IntervalCountFromPreds1 /*out*/,
                                   lessCount /*in/out*/, greaterCount /*in/out*/);
       // this predicate is ANDed with the previous; so the
@@ -11005,20 +11010,21 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPreds(const ValueIdS
 
 }
 
-void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId & keyPred, const CostScalar & maxUEC, 
+void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId & keyColumn,
+ const ValueId & keyPred, const CostScalar & maxUEC, 
  CostScalar & UECFromPreds /*out*/, CostScalar & IntervalCountFromPreds /*out*/,
  int & lessCount /*in/out*/, int & greaterCount /*in/out*/)
 {
-  // TODO: Add logic to make sure our key column is always on the left (otherwise our lessCount and greaterCount
-  // will be inaccurate)
-
   ItemExpr * ie = keyPred.getItemExpr();
   switch (ie->getOperatorType())
     {
       case ITM_LESS:
       case ITM_LESS_EQ:
         {
-          lessCount++;
+          if (keyColumnIsOnTheLeft(keyColumn,ie))
+            lessCount++;
+          else
+            greaterCount++;
           UECFromPreds = maxUEC * CostPrimitives::getBasicCostFactor(HIST_DEFAULT_SEL_FOR_PRED_RANGE);
           if (UECFromPreds < csOne)
             UECFromPreds = csOne;
@@ -11028,7 +11034,10 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId &
       case ITM_GREATER:
       case ITM_GREATER_EQ:
         {
-          greaterCount++;
+          if (keyColumnIsOnTheLeft(keyColumn,ie))
+            greaterCount++;
+          else
+            lessCount++;
           UECFromPreds = maxUEC * CostPrimitives::getBasicCostFactor(HIST_DEFAULT_SEL_FOR_PRED_RANGE);
           if (UECFromPreds < csOne)
             UECFromPreds = csOne;
@@ -11048,12 +11057,12 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId &
           int localGreaterCount = 0;
           CostScalar UECFromPreds0;
           CostScalar IntervalCountFromPreds0;
-          calculateMetricsFromKeyPred(ie->child(0),maxUEC,
+          calculateMetricsFromKeyPred(keyColumn,ie->child(0),maxUEC,
                                       UECFromPreds0,IntervalCountFromPreds0,
                                       localLessCount,localGreaterCount);
           CostScalar UECFromPreds1;
           CostScalar IntervalCountFromPreds1;
-          calculateMetricsFromKeyPred(ie->child(1),maxUEC,
+          calculateMetricsFromKeyPred(keyColumn,ie->child(1),maxUEC,
                                       UECFromPreds1,IntervalCountFromPreds1,
                                       localLessCount,localGreaterCount);
           // we'll be pessimistic here and assume no overlap in the values satisfying each leg of the OR
@@ -11065,12 +11074,12 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId &
         {
           CostScalar UECFromPreds0;
           CostScalar IntervalCountFromPreds0;
-          calculateMetricsFromKeyPred(ie->child(0),maxUEC,
+          calculateMetricsFromKeyPred(keyColumn,ie->child(0),maxUEC,
                                       UECFromPreds0,IntervalCountFromPreds0,
                                       lessCount,greaterCount);
           CostScalar UECFromPreds1;
           CostScalar IntervalCountFromPreds1;
-          calculateMetricsFromKeyPred(ie->child(1),maxUEC,
+          calculateMetricsFromKeyPred(keyColumn,ie->child(1),maxUEC,
                                       UECFromPreds1,IntervalCountFromPreds1,
                                       lessCount,greaterCount);
           // the most pessimistic assumption we can make is that the same set of rows that satisfies
@@ -11089,6 +11098,22 @@ void NewMDAMOptimalDisjunctPrefixWA::calculateMetricsFromKeyPred(const ValueId &
     }
 }
 
+// This function returns TRUE if the key column is on the left, FALSE otherwise.
+// It is used for comparison predicates.
+
+NABoolean NewMDAMOptimalDisjunctPrefixWA::keyColumnIsOnTheLeft(const ValueId & keyColumn,
+                                                               ItemExpr * ie)
+{
+  if (ie->getArity() >= 2)
+    {
+      ValueId leftChild = ie->child(0);
+      ItemExpr * leftChildie = leftChild.getItemExpr();
+      if (leftChildie->containsTheGivenValue(keyColumn))
+        return TRUE;
+    }
+
+  return FALSE;
+}
 
 // This function determines if the "currentCost" is a new minimum and returns TRUE if so,
 // FALSE otherwise. If the decision was forced, the "forced" parameter will be set to TRUE,
