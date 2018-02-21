@@ -4166,8 +4166,8 @@ void CCluster::ReIntegrateSock( int initProblem )
     {
         for (int i=0; i<pnodeCount; i++)
         {
-            if (Node[nodeInfo[i].pnid] == NULL) continue;
             if (nodeInfo[i].pnid == -1) continue;
+            if (Node[nodeInfo[i].pnid] == NULL) continue;
             trace_printf( "%s@%d - Node info for pnid=%d (%s)\n"
                           "        Node[%d] commPort=%s\n"
                           "        Node[%d] syncPort=%s\n"
@@ -4181,6 +4181,7 @@ void CCluster::ReIntegrateSock( int initProblem )
         }
         for ( int i =0; i < pnodeCount; i++ )
         {
+            if (nodeInfo[i].pnid == -1) continue;
             trace_printf( "%s@%d socks_[%d]=%d, sockPorts_[%d]=%d\n"
                         , method_name, __LINE__
                         , nodeInfo[i].pnid, socks_[nodeInfo[i].pnid]

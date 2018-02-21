@@ -61,9 +61,11 @@
                                // NOTE: Increase with caution as this number
                                //  is also used to gather local CPU statistics
                                //  and a large number may degrade performance
-#define MAX_NODES        256   // This can be higher when needed and will
+#define MAX_NODES TC_NODES_MAX // This can be higher when needed and will
                                // have performance implications
-                               // Increment by 64 to match node state bitmask
+                               // NOTE: Must increment by 64 to match node state
+                               //       bitmask. See trafconfig.h TC_NODES_MAX in
+                               //       Trafodion Configuration API
 #define MAX_LNODES_PER_NODE 1  // The 1 is a per physical node limit 
                                // (it can be more, but it is not currently used)
 #define MAX_LNODES       (MAX_NODES*MAX_LNODES_PER_NODE)  
@@ -211,20 +213,9 @@ typedef enum {
     RoleType_Aggregation = 0x0002,          // Maps to ZoneType_Aggregation, Backend or Any
     RoleType_Storage     = 0x0004           // Maps to ZoneType_Storage, Backend or Any
 } RoleType;
-#if 0
-typedef enum {
-    ZoneType_Undefined   = 0x0000,          // No zone type defined
-    ZoneType_Edge        = 0x0001,          // Zone of service only nodes
-    ZoneType_Aggregation = 0x0002,          // Zone of compute only nodes
-    ZoneType_Storage     = 0x0004,          // Zone of storage only nodes
-    ZoneType_Excluded    = 0x0010,          // Excluded cores
-    ZoneType_Any         = ( ZoneType_Edge | ZoneType_Aggregation | ZoneType_Storage ),
-    ZoneType_Frontend    = ( ZoneType_Edge | ZoneType_Aggregation ),
-    ZoneType_Backend     = ( ZoneType_Aggregation | ZoneType_Storage )
-} ZoneType;
-#else
+
 typedef TcZoneType_t ZoneType;
-#endif
+
 // Service Request types
 // note: other data structures depend on the ordering of the REQTYPE elements.
 //       if the ordering changes corresponding changes must be made to 
@@ -330,32 +321,9 @@ typedef enum {
                                             // types, add any new message types 
                                             // before this one
 } MSGTYPE;
-#if 0
-typedef enum {
-    ProcessType_Undefined=0,                // No process type as been defined
-    ProcessType_TSE,                        // Identifies a Table Storage Engine (DP2)
-    ProcessType_DTM,                        // Identifies a Distributed Transaction Monitor process
-    ProcessType_ASE,                        // Identifies a Audit Storage Engine (ADP)
-    ProcessType_Generic,                    // Identifies a generic process
-    ProcessType_Watchdog,                   // Identifies the monitor's watchdog processes
-    ProcessType_AMP,                        // Identifies a AMP process
-    ProcessType_Backout,                    // Identifies a Backout process
-    ProcessType_VolumeRecovery,             // Identifies a Volume Recovery process
-    ProcessType_MXOSRVR,                    // Identifies a MXOSRVR process
-    ProcessType_SPX,                        // Identifies a SeaPilot ProXy process
-    ProcessType_SSMP,                       // Identifies a SQL Statistics Merge Process (SSMP)
-    ProcessType_PSD,                        // Identifies the monitor's process start daemon processes
-    ProcessType_SMS,                        // Identifies a SeaMonster Service process
-    ProcessType_TMID,                       // Identifies a Transaction Management ID process
-    ProcessType_PERSIST,                    // Identifies a generic persistent process
 
-    ProcessType_Invalid                     // marks the end of the process
-                                            // types, add any new process
-                                            // types before this one
-} PROCESSTYPE;
-#else
 typedef TcProcessType_t PROCESSTYPE;
-#endif
+
 typedef enum {
     ShutdownLevel_Undefined=-1,
     ShutdownLevel_Normal=0,                 // Wait for all transactions and processes to end

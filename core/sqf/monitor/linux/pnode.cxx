@@ -1977,6 +1977,13 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
 
     int pnid, pnidConfig;
 
+    // lock sync thread since we are making a change the monitor's
+    // operational view of the cluster
+    if ( !Emulate_Down )
+    {
+        Monitor->EnterSyncCycle();
+    }
+
     for (int count = 0; count < nodeMapCount; count++)
     {
         pnidConfig = *buffer++;
@@ -1990,6 +1997,12 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
     }
 
     UpdateCluster();
+
+    // unlock sync thread
+    if ( !Emulate_Down )
+    {
+        Monitor->ExitSyncCycle();
+    }
 
     TRACE_EXIT;
     return;

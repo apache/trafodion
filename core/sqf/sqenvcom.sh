@@ -707,6 +707,13 @@ export SQ_MON_EPOLL_RETRY_COUNT=4
 # Trafodion Configuration Zookeeper store
 #export TC_ZCONFIG_SESSION_TIMEOUT=120
 
+# increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
+if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
+export SQ_MON_EPOLL_WAIT_TIMEOUT=20
+export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
+export SQ_WDT_KEEPALIVETIMERVALUE=360
+fi
+
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
 

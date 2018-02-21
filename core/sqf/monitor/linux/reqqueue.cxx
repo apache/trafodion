@@ -2355,7 +2355,6 @@ void CIntReviveReq::performRequest()
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Spare Nodes List unpacked\n", method_name, __LINE__);
 
-    //Nodes->UnpackNodeMappings( (intBuffPtr_t&)buffer, header.nodeMapCount_ );
     Nodes->UnpackNodeMappings( (intBuffPtr_t&)buffer, header.nodeMapCount_ );
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
@@ -2469,8 +2468,8 @@ void CIntSnapshotReq::performRequest()
     }
 
     // estimate size of snapshot buffer
-    // about 100 bytes per process, 2 times total
-    int procSize = Nodes->ProcessCount() * 2 * 100;
+    // about 500 bytes per process, 2 times total
+    int procSize = Nodes->ProcessCount() * 2 * 500;
     int idsSize = Nodes->GetSNodesCount() * sizeof(int); // spare pnids
     idsSize += (Nodes->GetPNodesCount() + Nodes->GetLNodesCount()) * sizeof(int); // pnid/nid map
     idsSize += Nodes->GetLNodesCount() * sizeof(int);    // nids
@@ -2481,7 +2480,7 @@ void CIntSnapshotReq::performRequest()
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_4, procSize, idsSize);
 
-    snapshotBuf = (char *) malloc (procSize + idsSize); 
+    snapshotBuf = (char *) malloc (procSize + idsSize);
 
     if (!snapshotBuf) 
     {
@@ -2497,6 +2496,7 @@ void CIntSnapshotReq::performRequest()
 
     clock_gettime(CLOCK_REALTIME, &startTime);
 
+    memset( snapshotBuf, 0, (procSize + idsSize) );
     char *buf = snapshotBuf;
 
     CCluster::snapShotHeader_t header;
@@ -2550,6 +2550,7 @@ void CIntSnapshotReq::performRequest()
         return;
     }
         
+    memset( compBuf, 0, compSize );
     z_result = compress((Bytef *)compBuf, (unsigned long *)&compSize, 
                         (Bytef *)snapshotBuf, header.fullSize_);
  
