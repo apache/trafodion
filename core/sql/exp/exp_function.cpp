@@ -2522,7 +2522,7 @@ ex_expr::exp_return_type ex_function_sleep::eval(char *op_data[],
 						   CollHeap* heap,
 						   ComDiagsArea** diagsArea)
 {
-   Int32 sec = 0;
+  Int32 sec = 0;
   switch (getOperand(1)->getDatatype())
   {
     case REC_BIN8_SIGNED:

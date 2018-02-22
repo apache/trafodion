@@ -1120,28 +1120,6 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
 
-    case ITM_SLEEP:
-      {
-        const NAType &typ1 = child(0)->getValueId().getType();
-       	if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
-        {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("SLEEP");
-	    return NULL;
-        }
-        const NumericType &ntyp1 = (NumericType &) typ1;
-        if (NOT ntyp1.isExact() )
-        {
-             *CmpCommon::diags() << DgSqlCode(-4046) << DgString0(getTextUpper());
-             return NULL;
-        }
-        if (ntyp1.getScale() != 0 )
-        {
-          *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
-          return NULL;
-        } 
-        retType = new HEAP SQLInt(HEAP, TRUE, TRUE);
-      }
-    break;
     case ITM_INET_ATON:
       {
         // type cast any params
@@ -3092,6 +3070,17 @@ const NAType *ConvertTimestamp::synthesizeType()
 
 }
 
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+const NAType *SleepFunction::synthesizeType()
+{
+    return  new HEAP SQLInt(HEAP, TRUE, TRUE);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
 const NAType *UnixTimestamp::synthesizeType()
 {
   return new HEAP SQLLargeInt(HEAP, FALSE,FALSE);

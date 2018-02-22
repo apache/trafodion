@@ -872,8 +872,6 @@ NABoolean ItemExpr::doesExprEvaluateToConstant(NABoolean strict,
 
 		case ITM_DYN_PARAM:
 		case ITM_CACHE_PARAM:
-		case ITM_UNIQUE_ID:
-		case ITM_UNIQUE_SHORT_ID:
 		case ITM_CURRENT_USER:
 		case ITM_SESSION_USER:
 		case ITM_CURRENT_TIMESTAMP:
@@ -971,8 +969,6 @@ NABoolean ItemExpr::referencesAHostVar() const
       case ITM_CURRENT_TIMESTAMP:
       case ITM_GET_TRIGGERS_STATUS:
       case ITM_UNIQUE_EXECUTE_ID:
-      case ITM_UNIQUE_SHORT_ID:
-      case ITM_UNIQUE_ID:
       case ITM_CURR_TRANSID:
 	return TRUE;
 
@@ -7372,15 +7368,6 @@ Int32 BuiltinFunction::getArity() const
   return getNumChildren();
 }
 
-NABoolean BuiltinFunction::isAUserSuppliedInput() const 
-{
-  if(getOperatorType() == ITM_UNIQUE_ID ||
-     getOperatorType() == ITM_UNIQUE_SHORT_ID ) 
-    return TRUE;
-  else
-    return FALSE;
-}
-
 // -----------------------------------------------------------------------
 // BuiltinFunction::isCovered()
 // -----------------------------------------------------------------------
@@ -8284,6 +8271,22 @@ ItemExpr * ConvertTimestamp::copyTopNode(ItemExpr *derivedNode,
   return BuiltinFunction::copyTopNode(result,outHeap);
 
 } // ConvertTimestamp::copyTopNode()
+
+SleepFunction::~SleepFunction() {}
+ItemExpr * SleepFunction::copyTopNode(ItemExpr *derivedNode,
+					 CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) SleepFunction(child(0));
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result,outHeap);
+
+} // SleepFunction::copyTopNode()
+NABoolean SleepFunction::isAUserSuppliedInput() const    { return TRUE; }
 
 UnixTimestamp::~UnixTimestamp() {}
 

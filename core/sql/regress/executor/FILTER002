@@ -32,5 +32,6 @@ fi
 sed "
 s/\.[ ]*\*\*\*/\. \*\*\*/g
 s/^uuidrow.*$/uuid/
+s/^sleeptimetest002.*$/good/
 s/^unixtimestamp.*$/unixtimestamp/
 " $fil

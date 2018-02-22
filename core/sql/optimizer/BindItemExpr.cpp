@@ -3187,7 +3187,6 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
     case ITM_ISIPV4:
     case ITM_ISIPV6:
-    case ITM_SLEEP:
     case ITM_MD5:
     case ITM_CRC32:
     case ITM_SHA1:
@@ -3199,23 +3198,6 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       {
          break;
       }
-    case ITM_UNIQUE_ID:
-    case ITM_UNIQUE_SHORT_ID:
-      {
-        if (nodeIsBound())
-          return getValueId().getItemExpr();
-        const NAType *type = synthTypeWithCollateClause(bindWA);
-        if (!type) return this;
- 
-        ItemExpr* ie = ItemExpr::bindUserInput(bindWA,type,getText());
-        if (bindWA->errStatus())
-          return this;
- 
-        // add this value id to BindWA's input function list.
-        bindWA->inputFunction().insert(getValueId());
-        return ie;
-      }
-    break;
     case ITM_NULLIFZERO:
       {
 	// binder has already verified that child is numeric
@@ -8434,6 +8416,38 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
   return NULL;
 
 } // DefaultSpecification::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+
+ItemExpr *SleepFunction::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // SleepFunction::bindNode()
 
 // -----------------------------------------------------------------------
 // member functions for class UnixTimestamp

@@ -3701,8 +3701,7 @@ short ExpGenerator::generateInputExpr(const ValueIdList &val_id_list,
 	if ((item_expr->isAUserSuppliedInput()) || //evaluate once functions
 		(item_expr->getOperatorType() == ITM_CURRENT_TIMESTAMP) ||
 		(item_expr->getOperatorType() == ITM_UNIX_TIMESTAMP) ||
-		(item_expr->getOperatorType() == ITM_UNIQUE_ID) ||
-		(item_expr->getOperatorType() == ITM_UNIQUE_SHORT_ID) ||
+		(item_expr->getOperatorType() == ITM_SLEEP) ||
 	    (item_expr->getOperatorType() == ITM_CURRENT_USER) ||
 	    (item_expr->getOperatorType() == ITM_SESSION_USER) ||
             (item_expr->getOperatorType() == ITM_EXEC_COUNT) ||

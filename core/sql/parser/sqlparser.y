@@ -8887,10 +8887,15 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
-    | TOK_SLEEP '(' value_expression ')'
+    | TOK_SLEEP '(' numeric_literal_exact ')'
 				{
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLInt(PARSERHEAP() , FALSE, FALSE);
+				 //ItemExpr* ie = new (PARSERHEAP()) 
 				 $$ = new (PARSERHEAP()) 
-				   BuiltinFunction(ITM_SLEEP,  CmpCommon::statementHeap(), 1, $3);
+				   SleepFunction( $3);
+                  //$$ = new (PARSERHEAP()) Cast(ie,type);
 				}
 
 CHAR_FUNC_optional_character_set : ',' CHAR_FUNC_character_set
