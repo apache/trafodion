@@ -258,7 +258,7 @@ static const char* const hdfsClientErrorEnumStr[] =
 {
   "JNI NewStringUTF() in hdfsCreate()."
  ,"Java exception in hdfsCreate()."
-  "JNI NewStringUTF() in hdfsOpen()."
+ ,"JNI NewStringUTF() in hdfsOpen()."
  ,"Java exception in hdfsOpen()."
  ,"JNI NewStringUTF() in hdfsWrite()."
  ,"Java exception in hdfsWrite()."
