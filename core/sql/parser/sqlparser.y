@@ -8889,13 +8889,8 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_SLEEP '(' numeric_literal_exact ')'
 				{
-                  NAType * type;
-                  type = new (PARSERHEAP())
-                       SQLInt(PARSERHEAP() , FALSE, FALSE);
-				 //ItemExpr* ie = new (PARSERHEAP()) 
 				 $$ = new (PARSERHEAP()) 
 				   SleepFunction( $3);
-                  //$$ = new (PARSERHEAP()) Cast(ie,type);
 				}
 
 CHAR_FUNC_optional_character_set : ',' CHAR_FUNC_character_set
