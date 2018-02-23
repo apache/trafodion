@@ -1811,6 +1811,8 @@ NABoolean BuiltinFunction::calculateMinMaxUecs(ColStatDescList & histograms,
     }
     break;
   case ITM_CONVERTTIMESTAMP:
+  case ITM_UNIX_TIMESTAMP:
+  case ITM_SLEEP:
   case ITM_CURRENT_TIMESTAMP:
   case ITM_CURRENT_TIMESTAMP_RUNNING:
   case ITM_JULIANTIMESTAMP:

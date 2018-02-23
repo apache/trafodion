@@ -260,6 +260,12 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LOWER_UNICODE:
 	  setClassID(FUNC_LOWER_UNICODE_ID);
 	  break;
+	case ITM_UNIX_TIMESTAMP:
+	  setClassID(FUNC_UNIX_TIMESTAMP_ID);
+	  break;
+	case ITM_SLEEP:
+	  setClassID(FUNC_SLEEP_ID);
+	  break;
 	case ITM_CURRENT_TIMESTAMP:
 	  setClassID(FUNC_CURRENT_TIMESTAMP_ID);
 	  break;
@@ -500,6 +506,7 @@ ex_clause::ex_clause(clause_type type,
 	  setClassID(FUNC_QUERYID_EXTRACT);
 	  break;
 	case ITM_UNIQUE_ID:
+	case ITM_UNIQUE_SHORT_ID:
 	  setClassID(FUNC_UNIQUE_ID);
 	  break;
 	case ITM_ROWNUM:
@@ -755,6 +762,12 @@ char *ex_clause::findVTblPtr(short classID)
     // 12/17/97: added for unicode LOWER()
     case ex_clause::FUNC_LOWER_UNICODE_ID:
       GetVTblPtr(vtblPtr, ex_function_lower_unicode);
+      break;
+    case ex_clause::FUNC_SLEEP_ID:
+      GetVTblPtr(vtblPtr, ex_function_sleep);
+      break;
+    case ex_clause::FUNC_UNIX_TIMESTAMP_ID:
+      GetVTblPtr(vtblPtr, ex_function_unixtime);
       break;
     case ex_clause::FUNC_CURRENT_TIMESTAMP_ID:
       GetVTblPtr(vtblPtr, ex_function_current);
@@ -1196,6 +1209,8 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_BETWEEN: return "ITM_BETWEEN";
     case ITM_LIKE: return "ITM_LIKE";
     case ITM_REGEXP: return "ITM_REGEXP";
+    case ITM_UNIX_TIMESTAMP: return "ITM_UNIX_TIMESTAMP";
+    case ITM_SLEEP: return "ITM_SLEEP";
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
     case ITM_SESSION_USER: return "ITM_SESSION_USER";
@@ -1493,6 +1508,7 @@ const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
+    case ITM_UNIQUE_SHORT_ID: return "ITM_UNIQUE_SHORT_ID";
     case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
     case ITM_HBASE_COLUMNS_DISPLAY: return "ITM_HBASE_COLUMNS_DISPLAY";

@@ -1751,6 +1751,67 @@ public:
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
 }; // class ConvertTimestamp
 
+class SleepFunction : public CacheableBuiltinFunction
+{
+public:
+
+  SleepFunction( ItemExpr *val1Ptr )
+   : CacheableBuiltinFunction(ITM_SLEEP, 1, val1Ptr)
+  {}
+  // virtual destructor
+  virtual ~SleepFunction();
+
+  // A method that returns for "user-given" input values.
+  // These are values that are either constants, host variables, parameters,
+  // or even values that are sensed from the environment such as
+  // current time, the user name, etcetera.
+  virtual NABoolean isAUserSuppliedInput() const;
+
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+}; // class SleepFunction 
+
+class UnixTimestamp : public CacheableBuiltinFunction
+{
+public:
+  UnixTimestamp()
+   : CacheableBuiltinFunction(ITM_UNIX_TIMESTAMP)
+  {}
+
+  UnixTimestamp( ItemExpr *val1Ptr )
+   : CacheableBuiltinFunction(ITM_UNIX_TIMESTAMP, 1, val1Ptr)
+  {}
+  // virtual destructor
+  virtual ~UnixTimestamp();
+
+  // A method that returns for "user-given" input values.
+  // These are values that are either constants, host variables, parameters,
+  // or even values that are sensed from the environment such as
+  // current time, the user name, etcetera.
+  virtual NABoolean isAUserSuppliedInput() const;
+
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+}; // class UnixTimestamp
+
 class CurrentTimestamp : public CacheableBuiltinFunction
 {
 public:
