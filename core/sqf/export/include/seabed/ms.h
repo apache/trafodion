@@ -406,6 +406,7 @@ typedef enum {
     MS_ReqType_MonStats,
     MS_ReqType_Mount,
     MS_ReqType_NewProcess,
+    MS_ReqType_NewProcessNs,
     MS_ReqType_NodeAdd,
     MS_ReqType_NodeDelete,
     MS_ReqType_NodeDown,

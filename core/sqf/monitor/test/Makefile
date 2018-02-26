@@ -29,7 +29,7 @@ FLAGS+= -Wall -Wextra
 
 LIBS+= -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lsqlite3 -ltrafconfig
 
-INCLUDES =  -I$(INCEXPDIR) -I../linux
+INCLUDES =  -I$(INCEXPDIR) -I../linux -I../../src/trafconf
 
 MONOUTDIR = ../linux/$(OUTDIR)
 
@@ -62,6 +62,7 @@ TEST_PGMS	+= $(OUTDIR)/spxCtrl
 TEST_PGMS	+= $(OUTDIR)/spxProc
 #TEST_PGMS	+= $(OUTDIR)/tmSyncTest
 #TEST_PGMS	+= $(OUTDIR)/tmSyncCtrl
+TEST_PGMS	+= $(OUTDIR)/dummy
 
 # Compile rules for building tests
 $(OUTDIR)/%:%.cxx $(CLIENTOBJS)
