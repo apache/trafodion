@@ -25,6 +25,7 @@
 
 #ifndef NOTICE_H_
 #define NOTICE_H_
+#ifndef NAMESERVER_PROCESS
 
 #include "mlio.h"
 
@@ -70,4 +71,5 @@ private:
     CNotice *Prev;
 };
 
+#endif
 #endif /*NOTICE_H_*/

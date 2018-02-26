@@ -59,17 +59,23 @@ extern bool Emulate_Down;
 extern CConfigContainer *Config;
 extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;
+#ifndef NAMESERVER_PROCESS
 extern CDeviceContainer *Devices;
+#endif
 extern CNode *MyNode;
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 extern CReplicate Replicator;
 extern CMonTrace *MonTrace;
 
 extern bool IAmIntegrating;
 
 const char *StateString( STATE state);
+#ifndef NAMESERVER_PROCESS
 const char *SyncStateString( SyncState state);
+#endif
 
 // The following defines are necessary for the new watchdog timer facility.  They should really be
 // ultimately placed in watchdog.h in my opinion, especially so people know not to re-use values 16,17
@@ -143,8 +149,10 @@ CNode::CNode( char *name, int pnid, int rank )
       ,next_(NULL)
       ,prev_(NULL)
       ,rank_(rank)
+#ifndef NAMESERVER_PROCESS
       ,tmSyncNid_(-1)
       ,tmSyncState_(SyncState_Null)
+#endif
       ,shutdownLevel_(ShutdownLevel_Undefined)
       ,wdtKeepAliveTimerValue_(WDT_KeepAliveTimerDefault)
       ,zid_(pnid)
@@ -230,8 +238,10 @@ CNode::CNode( char *name, int pnid, int rank )
 
     gettimeofday(&todStart_, NULL);
 
+#ifndef NAMESERVER_PROCESS
     quiesceSendPids_ = new SQ_LocalIOToClient::bcastPids_t;
     quiesceExitPids_ = new SQ_LocalIOToClient::bcastPids_t;
+#endif
     internalState_ = State_Default; 
 
     uniqStrId_ = Config->getMaxUniqueId ( pnid_ ) + 1;
@@ -345,8 +355,10 @@ CNode::CNode( char *name
     
     gettimeofday(&todStart_, NULL);
 
+#ifndef NAMESERVER_PROCESS
     quiesceSendPids_ = new SQ_LocalIOToClient::bcastPids_t;
     quiesceExitPids_ = new SQ_LocalIOToClient::bcastPids_t;
+#endif
     internalState_ = State_Default; 
 
     uniqStrId_ = Config->getMaxUniqueId ( pnid_ ) + 1;
@@ -373,6 +385,7 @@ CNode::~CNode( void )
     if ( procMeminfoFile_ != -1 )
         close( procMeminfoFile_ );
 
+#ifndef NAMESERVER_PROCESS
     if (quiesceSendPids_)
     {
         delete quiesceSendPids_;
@@ -382,10 +395,12 @@ CNode::~CNode( void )
     {
         delete quiesceExitPids_;
     }
+#endif
     
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CNode::addToQuiesceSendPids( int pid, Verifier_t verifier )
 {
     SQ_LocalIOToClient::pidVerifier_t pv;
@@ -409,6 +424,7 @@ void CNode::delFromQuiesceExitPids( int pid, Verifier_t verifier )
     pv.pv.verifier = verifier;
     quiesceExitPids_->erase( pv.pnv );
 }
+#endif
 
 int CNode::AssignNid(void)
 {
@@ -492,12 +508,15 @@ void CNode::CheckActivationPhase( void )
         if (trace_settings & (TRACE_INIT | TRACE_SYNC | TRACE_TMSYNC))
             trace_printf("%s@%d - Activation Phase_Ready on node %s, pnid=%d\n", method_name, __LINE__, GetName(), GetPNid());
         phase_ = Phase_Ready;
+#ifndef NAMESERVER_PROCESS
         tmSyncState_ = SyncState_Null;
+#endif
     }
 
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CNode::CheckShutdownProcessing( void )
 {
     struct message_def *msg;
@@ -524,7 +543,9 @@ void CNode::CheckShutdownProcessing( void )
     }
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 // In virtual node configuration, empty the quiescing pids so that new ones could be added.
 void CNode::EmptyQuiescingPids()
 {
@@ -543,7 +564,9 @@ void CNode::EmptyQuiescingPids()
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 // Send quiescing notices to pids in the QiesceSendPids list. 
 void CNode::SendQuiescingNotices( void )
 {
@@ -574,6 +597,7 @@ void CNode::SendQuiescingNotices( void )
 
     TRACE_EXIT;
 }
+#endif
 
 void CNode::SetState( STATE state )
 {
@@ -1061,6 +1085,7 @@ void CNode::MoveLNodes( CNode *spareNode )
     return;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CNode::SetAffinity( int nid, pid_t pid, PROCESSTYPE type )
 {
     CLNode  *lnode = Nodes->GetLNode( nid );
@@ -1413,6 +1438,7 @@ void CNode::StartSMServiceProcess( void )
 
     TRACE_EXIT;
 }
+#endif
 
 CNodeContainer::CNodeContainer( void )
                :CLNodeContainer(NULL)
@@ -1523,12 +1549,14 @@ void CNodeContainer::AddedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
+#ifndef NAMESERVER_PROCESS
     // Broadcast node added notice to local processes
     CLNode *lnode = node->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Added();
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -2211,6 +2239,7 @@ void CNodeContainer::ChangedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
+#ifndef NAMESERVER_PROCESS
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     CLNodeConfig   *lnodeConfig = NULL;
 
@@ -2221,10 +2250,12 @@ void CNodeContainer::ChangedNode( CNode *node )
         lnodeConfig = clusterConfig->GetLNodeConfig( lnode->GetNid() );
         lnode->Changed( lnodeConfig );
     }
+#endif
 
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CNodeContainer::CancelDeathNotification( int nid
                                             , int pid
                                             , int verifier
@@ -2245,6 +2276,7 @@ void CNodeContainer::CancelDeathNotification( int nid
 
     TRACE_EXIT;
 }
+#endif
    
 void CNodeContainer::DeletedNode( CNode *node )
 {
@@ -2260,12 +2292,14 @@ void CNodeContainer::DeletedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
+#ifndef NAMESERVER_PROCESS
     // Broadcast node deleted notice to local processes
     CLNode *lnode = node->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Deleted();
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -2784,6 +2818,7 @@ CProcess *CNodeContainer::GetProcessByName( const char *name, bool checkstate )
     return( process );
 }
 
+#ifndef NAMESERVER_PROCESS
 SyncState CNodeContainer::GetTmState ( SyncState check_state )
 {
     SyncState state = check_state;
@@ -2845,6 +2880,7 @@ SyncState CNodeContainer::GetTmState ( SyncState check_state )
     TRACE_EXIT;
     return state;
 }
+#endif
 
 CNode *CNodeContainer::GetZoneNode(int zid)
 {
@@ -2878,7 +2914,9 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
 
     syncBuf->nodeInfo.node_state    = MyNode->GetState();
     syncBuf->nodeInfo.sdLevel       = MyNode->GetShutdownLevel();
+#ifndef NAMESERVER_PROCESS
     syncBuf->nodeInfo.tmSyncState   = MyNode->GetTmSyncState();
+#endif
     syncBuf->nodeInfo.internalState = MyNode->getInternalState();
     syncBuf->nodeInfo.change_nid    = -1;
     syncBuf->nodeInfo.seq_num       = seqNum;
@@ -2895,15 +2933,21 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
     }
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
+#ifdef NAMESERVER_PROCESS
+        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, change_nid=%d, seqNum_=%lld\n"
+#else
         trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, TmSyncState=(%d)(%s), change_nid=%d, seqNum_=%lld\n"
+#endif
                     , method_name, __LINE__
                     , MyNode->GetName()
                     , MyPNID
                     , syncBuf->nodeInfo.node_state
                     , StateString( MyNode->GetState() )
                     , syncBuf->nodeInfo.internalState
+#ifndef NAMESERVER_PROCESS
                     , syncBuf->nodeInfo.tmSyncState
                     , SyncStateString( syncBuf->nodeInfo.tmSyncState )
+#endif
                     , syncBuf->nodeInfo.change_nid
                     , syncBuf->nodeInfo.seq_num);
 
@@ -3029,7 +3073,7 @@ void CNodeContainer::AddMsg (struct internal_msg_def *&msg,
     return;
 }
 
-
+#ifndef NAMESERVER_PROCESS
 void CNodeContainer::KillAll( CProcess *requester )
 {
     CNode *node = head_;
@@ -3045,6 +3089,7 @@ void CNodeContainer::KillAll( CProcess *requester )
 
     TRACE_EXIT;
 }
+#endif
 
 
 int CNodeContainer::ProcessCount( void )

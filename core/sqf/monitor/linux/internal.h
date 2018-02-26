@@ -280,6 +280,9 @@ struct process_def
     bool unhooked;
     int nid;               // node id of process
     int pid;               // process id
+#ifdef NAMESERVER_PROCESS
+    Verifier_t verifier;   // verifier
+#endif
     PROCESSTYPE type;      // process handling catagory
     int priority;          // process priority
     int parent_nid;        // node id of parent process

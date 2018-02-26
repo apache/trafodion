@@ -51,6 +51,9 @@ extern CReplicate Replicator;
 extern CReqQueue ReqQueue;
 extern CConfigContainer *Config;
 extern CHealthCheck HealthCheck;
+#ifdef NAMESERVER_PROCESS
+extern char *ErrorMsg (int error_code);
+#endif
 
 extern int req_type_startup;
 
@@ -358,6 +361,51 @@ void CRequest::evalReqPerformance( void )
     }
 }
 
+#ifdef NAMESERVER_PROCESS
+void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
+{
+    const char method_name[] = "CRequest::monreply";
+    TRACE_ENTRY;
+
+    if (error)
+        *error = 0;
+    if (!msg->noreply) // send reply
+    {
+        if (trace_settings & (TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d reply type = %d\n", method_name, __LINE__,
+                         msg->u.reply.type);
+        int size = offsetof(message_def, u) + sizeof(REPLYTYPE );
+        switch (msg->u.reply.type)
+        {
+        case ReplyType_Generic:
+            size += sizeof(struct Generic_reply_def);
+            break;
+        case ReplyType_NewProcess:
+            size += sizeof(struct NewProcess_reply_def);
+            break;
+        case ReplyType_ProcessInfo:
+            size += sizeof(struct ProcessInfo_reply_def);
+            break;
+        default:
+            abort();
+        }
+        int rc = Monitor->SendSock( (char *) msg
+                              , size
+                              , sockFd);
+        if ( rc )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s], cannot send monitor reply: %s\n"
+                     , method_name, ErrorMsg(rc));
+            //mon_log_write(MON_COMMACCEPT_2, SQ_LOG_ERR, buf);  // TODO
+            if (error)
+                *error = rc;
+        }
+    }
+
+    TRACE_EXIT;
+}
+#else
 // Sending reply to request from local io client
 void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
 {
@@ -409,8 +457,7 @@ void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
 
     TRACE_EXIT;
 }
-
-
+#endif
 
 void CExternalReq::validateObj( void )
 {
@@ -429,8 +476,10 @@ void CExternalReq::errorReply( int rc )
     msg_->u.reply.u.generic.process_name[0] = '\0';
     msg_->u.reply.u.generic.return_code = rc;
 
+#ifndef NAMESERVER_PROCESS
     // Send reply to requester
     lioreply(msg_, pid_);
+#endif
 }
 
 
@@ -494,9 +543,9 @@ void CExternalReq::giveupOwnership()
     TRACE_EXIT;
 }
 
-CExtNullReq::CExtNullReq (reqQueueMsg_t msgType, int pid,
+CExtNullReq::CExtNullReq (reqQueueMsg_t msgType, int pid, int sockFd,
                           struct message_def *msg )
-    : CExternalReq(msgType, pid, msg)
+    : CExternalReq(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQE_", 4);
@@ -766,6 +815,7 @@ void CIntCloneProcReq::performRequest()
 
 
 
+#ifndef NAMESERVER_PROCESS
 CIntDeviceReq::CIntDeviceReq( char *ldevName )
     : CInternalReq()
 {
@@ -803,6 +853,7 @@ void CIntDeviceReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
 
 CIntExitReq::CIntExitReq( )
             : CInternalReq()
@@ -889,7 +940,9 @@ void CIntExitReq::performRequest()
             lnode->GetNode()->DelFromNameMap ( process );
             lnode->GetNode()->DelFromPidMap ( process );
 
+#ifndef NAMESERVER_PROCESS
             lnode->GetNode()->Exit_Process (process, abended_, -1);
+#endif
         }
     }
     else 
@@ -903,6 +956,7 @@ void CIntExitReq::performRequest()
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 CIntKillReq::CIntKillReq( struct kill_def *killDef ) 
             : CInternalReq()
             , nid_( killDef->nid )
@@ -1009,8 +1063,13 @@ void CIntKillReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
 
 CIntNewProcReq::CIntNewProcReq( int nid
+#ifdef NAMESERVER_PROCESS
+                              , int pid
+                              , Verifier_t verifier
+#endif
                               , PROCESSTYPE type
                               , int priority
                               , int backup
@@ -1033,6 +1092,10 @@ CIntNewProcReq::CIntNewProcReq( int nid
                               , const char * stringData )
     : CInternalReq(),
       nid_ ( nid ),
+#ifdef NAMESERVER_PROCESS
+      pid_ ( pid ),
+      verifier_ ( verifier ),
+#endif
       type_( type ),
       priority_( priority ),
       backup_( backup ),
@@ -1133,6 +1196,10 @@ void CIntNewProcReq::performRequest()
             newProcess = lnode->GetNode()->
                 CreateProcess ( parentProcess,
                                 nid_,
+#ifdef NAMESERVER_PROCESS
+                                pid_,
+                                verifier_,
+#endif
                                 type_,
                                 0,
                                 priority_,
@@ -1145,6 +1212,7 @@ void CIntNewProcReq::performRequest()
                                 &stringData_[nameLen_],  // infile
                                 &stringData_[nameLen_ + infileLen_], // outfile
                                 result);
+#ifndef NAMESERVER_PROCESS
             if ( newProcess != NULL )
             {
                 newProcess->userArgs ( argc_, argvLen_,
@@ -1179,6 +1247,7 @@ void CIntNewProcReq::performRequest()
                                                         result, parentNid_);
                 Replicator.addItem(repl);
             }
+#endif
         }
     }
     else if ( parentProcess == NULL )
@@ -1193,6 +1262,7 @@ void CIntNewProcReq::performRequest()
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 CIntOpenReq::CIntOpenReq( struct open_def *openDef ) 
             : CInternalReq()
             , openerNid_( openDef->nid )
@@ -1268,6 +1338,7 @@ void CIntOpenReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
 
 CIntProcInitReq::CIntProcInitReq( struct process_init_def *procInitDef ) 
                 : CInternalReq()
@@ -1311,8 +1382,10 @@ void CIntProcInitReq::performRequest()
     {  // Was unable to create the process, send response to requester
         if ( process_ )
         {
+#ifndef NAMESERVER_PROCESS
             // this will send response to to the requester and remove the process object
             MyNode->Exit_Process(process_, true, process_->GetNid());
+#endif
         }
     }
     else if ( process_ )
@@ -1617,7 +1690,9 @@ void CIntShutdownReq::performRequest()
     {
         // Stop all processes
         Monitor->HardNodeDown( MyPNID );
+#ifndef NAMESERVER_PROCESS
         MyNode->EmptyQuiescingPids();
+#endif
         // now stop the Watchdog process
         HealthCheck.setState(MON_NODE_DOWN);
     }
@@ -2336,12 +2411,16 @@ void CIntReviveReq::performRequest()
 
     char *buffer = buf;
 
+#ifndef NAMESERVER_PROCESS
     // unpack the current TM leader
     Monitor->SetTmLeader( header.tmLeader_ );
+#endif
 
+#ifndef NAMESERVER_PROCESS
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf( "%s@%d - TM leader (%d) unpacked\n", method_name, __LINE__
                     , Monitor->GetTmLeader() );
+#endif
 
     mem_log_write(MON_REQQUEUE_REVIVE_4);
 
@@ -2501,8 +2580,10 @@ void CIntSnapshotReq::performRequest()
 
     CCluster::snapShotHeader_t header;
 
+#ifndef NAMESERVER_PROCESS
     // pack the current TM leader
     header.tmLeader_ = Monitor->GetTmLeader();
+#endif
 
     // pack spareNodes pnids
     header.spareNodesCount_ = Nodes->PackSpareNodesList( (intBuffPtr_t&)buf ); 
@@ -2591,10 +2672,12 @@ void CIntSnapshotReq::performRequest()
        }
 
        sprintf(buf, "Node reintegration aborted due to buffer compression error.");
+#ifndef NAMESERVER_PROCESS
        SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                               , MyNode->GetCreatorVerifier()
                                               , Monitor->ReIntegErrorMessage( buf )
                                               , NULL );
+#endif
        TRACE_EXIT;
        return;
     }
@@ -2725,7 +2808,9 @@ void CQuiesceReq::performRequest()
         Monitor->CompleteSyncCycle(); // let other nodes know that we are in quiesce state
     }
 
+#ifndef NAMESERVER_PROCESS
     MyNode->SendQuiescingNotices();
+#endif
 
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[%s], Quiesce notices sent.\n", method_name);
@@ -2733,12 +2818,14 @@ void CQuiesceReq::performRequest()
 
     // if nothing in exit list, schedule a node down. 
     // if not, node down will be scheduled when exit list becomes empty.
+#ifndef NAMESERVER_PROCESS
     if (MyNode->getNumQuiesceExitPids() == 0)
     {   
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
             trace_printf("%s@%d - Scheduling node down\n", method_name, __LINE__);
         HealthCheck.setState(MON_SCHED_NODE_DOWN);
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -2786,7 +2873,9 @@ void CPostQuiesceReq::performRequest()
     {
         // Stop all processes
         Monitor->HardNodeDown( MyPNID );
+#ifndef NAMESERVER_PROCESS
         MyNode->EmptyQuiescingPids();
+#endif
         // now stop the Watchdog process
         HealthCheck.setState(MON_NODE_DOWN);
         // and tell the cluster the node is down
@@ -2796,6 +2885,7 @@ void CPostQuiesceReq::performRequest()
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 CIntCreatePrimitiveReq::CIntCreatePrimitiveReq( int pnid ) 
                        :CInternalReq()
                        ,pnid_ ( pnid )
@@ -2840,7 +2930,9 @@ void CIntCreatePrimitiveReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CIntTmReadyReq::CIntTmReadyReq( int nid ) 
                :CInternalReq()
                ,nid_ ( nid )
@@ -2877,6 +2969,7 @@ void CIntTmReadyReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
 
 //
 CReqQueue::CReqQueue(): busyExclusive_(false), busyWorkers_(0), syncDependentRequests_(0), maxQueueSize_(0), 
@@ -2896,7 +2989,9 @@ CReqQueue::~CReqQueue()
 
 
 CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
-                                         int pid, struct message_def *msg)
+                                         int pid,
+                                         int sockFd,
+                                         struct message_def *msg)
 {
     const char method_name[] = "CReqQueue::prepExternalReq";
     TRACE_ENTRY;
@@ -2913,10 +3008,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
         switch (msg->u.request.type)
         {
+#ifndef NAMESERVER_PROCESS
         case ReqType_Close:
             // No work to do for "close" (obsolete request).  Reply
             // with success.
-            request = new CExtNullReq(msgType, pid, msg);
+            request = new CExtNullReq(msgType, pid, -1, msg);
             request->errorReply( MPI_SUCCESS );
             delete request;
             request = NULL;
@@ -2928,12 +3024,12 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             break;
 
         case ReqType_ProcessInfo:
-            request = new CExtProcInfoReq(msgType, pid, msg);
+            request = new CExtProcInfoReq(msgType, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_ProcessInfoCont:
-            request = new CExtProcInfoContReq(msgType, pid, msg);
+            request = new CExtProcInfoContReq(msgType, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -2958,7 +3054,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             break;
 
         case ReqType_NewProcess:
-            request = new CExtNewProcReq(msgType, pid, msg);
+            request = new CExtNewProcReq(msgType, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3075,18 +3171,20 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
         case ReqType_Notice:
         case ReqType_TransInfo:
         case ReqType_Stfsd:
+#endif
         default:
             // Invalid request type
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d invalid request type\n",
                              method_name, __LINE__);
             // Send error reply
-            request = new CExtNullReq(msgType, pid, msg);
+            request = new CExtNullReq(msgType, pid, sockFd, msg);
             request->errorReply( MPI_ERR_REQUEST );
             delete request;
             request = NULL;
         }        
     }
+#ifndef NAMESERVER_PROCESS
     else if (msg && msg->type == MsgType_UnsolicitedMessage)
     {
         if ( msg->u.reply.type == ReplyType_TmSync )
@@ -3121,10 +3219,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             mon_log_write(MON_REQQUEUE_PREP_EXT_REQ_1, SQ_LOG_ERR, buf);
         }
     }
+#endif
 
     else if (msgType == CExternalReq::ShutdownWork)
     {
-        request = new CExtNullReq(msgType, pid, msg);
+        request = new CExtNullReq(msgType, pid, sockFd, msg);
         request->setConcurrent(true);
     }
     else
@@ -3135,7 +3234,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
                          ((msg != NULL) ? msg->type : -1));
 
         // Send error reply
-        request = new CExtNullReq(msgType, pid, msg);
+        request = new CExtNullReq(msgType, pid, sockFd, msg);
         request->errorReply( MPI_ERR_REQUEST );
         delete request;
         request = NULL;
@@ -3147,6 +3246,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
 // Enqueue an external request
 void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType, int pid,
+                           int sockFd,
                            struct message_def *msg)
 {
     const char method_name[] = "CReqQueue::enqueueReq (ext)";
@@ -3155,7 +3255,7 @@ void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType, int pid,
     MemModLock.lock();
 
     CExternalReq *extReq;
-    extReq = prepExternalReq(msgType, pid, msg);
+    extReq = prepExternalReq(msgType, pid, sockFd, msg);
 
     if (extReq)
     {   // Have a valid external request
@@ -3253,6 +3353,7 @@ void CReqQueue::enqueuePostQuiesceReq ()
     enqueueReq ( request );
 }
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueDeviceReq ( char *ldevName )
 {
     CInternalReq * request;
@@ -3261,6 +3362,7 @@ void CReqQueue::enqueueDeviceReq ( char *ldevName )
     
     enqueueReq ( request );
 }
+#endif
 
 void CReqQueue::enqueueNodeAddReq( int req_nid
                                  , int req_pid
@@ -3385,6 +3487,7 @@ void CReqQueue::enqueueExitReq( struct exit_def *exitDef )
     enqueueReq ( request );
 }
 
+#ifndef NAMESERVER_PROCESS
 //void CReqQueue::enqueueKillReq( int nid, int pid, bool abort )
 void CReqQueue::enqueueKillReq( struct kill_def *killDef )
 {
@@ -3394,12 +3497,17 @@ void CReqQueue::enqueueKillReq( struct kill_def *killDef )
 
     enqueueReq ( request );
 }
+#endif
 
 void CReqQueue::enqueueNewProcReq( struct process_def *procDef )
 {
     CIntNewProcReq * request;
 
     request = new CIntNewProcReq( procDef->nid
+#ifdef NAMESERVER_PROCESS
+                                , procDef->pid
+                                , procDef->verifier
+#endif
                                 , procDef->type
                                 , procDef->priority
                                 , procDef->backup
@@ -3425,6 +3533,7 @@ void CReqQueue::enqueueNewProcReq( struct process_def *procDef )
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueOpenReq( struct open_def *openDef )
 {
     CIntOpenReq * request;
@@ -3433,6 +3542,7 @@ void CReqQueue::enqueueOpenReq( struct open_def *openDef )
 
     enqueueReq ( request );
 }
+#endif
 
 void CReqQueue::enqueueProcInitReq( struct process_init_def *procInitDef )
 {
@@ -3463,6 +3573,7 @@ void CReqQueue::enqueueUniqStrReq( struct uniqstr_def *uniqStrDef )
     enqueueReq ( request );
 }
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueChildDeathReq( pid_t pid )
 {
     CIntChildDeathReq * request;
@@ -3471,7 +3582,9 @@ void CReqQueue::enqueueChildDeathReq( pid_t pid )
     // queue the request to be handled later by worker thread
     enqueueReq ( request );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueAttachedDeathReq( pid_t pid )
 {
     CIntAttachedDeathReq * request;
@@ -3480,7 +3593,9 @@ void CReqQueue::enqueueAttachedDeathReq( pid_t pid )
     // queue the request to be handled later by worker thread
     enqueueReq ( request );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueCreatePrimitiveReq( int pnid )
 {
     CInternalReq * request;
@@ -3489,7 +3604,9 @@ void CReqQueue::enqueueCreatePrimitiveReq( int pnid )
 
     enqueueReq ( request );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueTmReadyReq( int nid )
 {
     CInternalReq * request;
@@ -3498,6 +3615,7 @@ void CReqQueue::enqueueTmReadyReq( int nid )
 
     enqueueReq ( request );
 }
+#endif
 
 // this function moves the queued requests from revive queue to the main request queue.
 // it will skip the requests whose seq num is less than the given one.
@@ -3963,6 +4081,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_MonStats
    false,    // ReqType_Mount
    false,    // ReqType_NewProcess
+   false,    // ReqType_NewProcessNs
    false,    // ReqType_NodeAdd
    false,    // ReqType_NodeDelete
    false,    // ReqType_NodeDown
@@ -4002,6 +4121,7 @@ const char * CReqQueue::svcReqType[] = {
     "MonStats",
     "Mount",
     "NewProcess",
+    "NewProcessNs",
     "NodeAdd",
     "NodeDelete",
     "NodeDown",

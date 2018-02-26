@@ -29,10 +29,15 @@
 #include "montrace.h"
 #include "monsonar.h"
 #include "monlogging.h"
+#include "nameserver.h"
 
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+#ifndef NAMESERVER_PROCESS
+extern int NameServerEnabled;
+extern CNameServer *NameServer;
+#endif
 
 
 // Copy information for a specific process into the reply message buffer.
@@ -237,8 +242,9 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
 }
 
 CExtProcInfoReq::CExtProcInfoReq (reqQueueMsg_t msgType, int pid,
+                                  int sockFd,
                                   struct message_def *msg )
-    : CExtProcInfoBase(msgType, pid, msg)
+    : CExtProcInfoBase(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEO", 4);
@@ -276,6 +282,11 @@ void CExtProcInfoReq::performRequest()
 {
     const char method_name[] = "CExtProcInfoReq::performRequest";
     TRACE_ENTRY;
+
+#ifndef NAMESERVER_PROCESS
+    if ( NameServerEnabled )
+        NameServer->ProcessInfo(&msg_->u.request.u.process_info);
+#endif
 
     int count = 0;
 
@@ -435,8 +446,12 @@ void CExtProcInfoReq::performRequest()
         msg_->u.reply.u.process_info.num_processes = count;
         msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
 
+#ifdef NAMESERVER_PROCESS
+        monreply(msg_, sockFd_);
+#else
         // Send reply to requester
         lioreply(msg_, pid_);
+#endif
     }
     else
     {   // Reply to requester so it can release the buffer.  
@@ -448,8 +463,9 @@ void CExtProcInfoReq::performRequest()
 }
 
 CExtProcInfoContReq::CExtProcInfoContReq (reqQueueMsg_t msgType, int pid,
+                                          int sockFd,
                                           struct message_def *msg )
-    : CExtProcInfoBase(msgType, pid, msg)
+    : CExtProcInfoBase(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEP", 4);
@@ -563,8 +579,12 @@ void CExtProcInfoContReq::performRequest()
     msg_->u.reply.u.process_info.num_processes = count;
     msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
 
+#ifdef NAMESERVER_PROCESS
+    monreply(msg_, sockFd_);
+#else
     // Send reply to requester
     lioreply(msg_, pid_);
+#endif
 
     TRACE_EXIT;
 }

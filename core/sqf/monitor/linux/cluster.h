@@ -106,6 +106,9 @@ public:
 
     int  AcceptCommSock( void );
     int  AcceptSyncSock( void );
+#ifdef NAMESERVER_PROCESS
+    int  AcceptMon2NsSock( void );
+#endif
     int  Connect( const char *portName );
     void ConnectToSelf( void );
     int  SetKeepAliveSockOpt( int sock );
@@ -113,25 +116,35 @@ public:
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
+#ifndef NAMESERVER_PROCESS
     void AssignTmLeader( int pnid, bool checkProcess );
+#endif
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
     void EnterSyncCycle() { syncCycle_.lock(); }
     void ExitSyncCycle() { syncCycle_.unlock(); }
 
+#ifndef NAMESERVER_PROCESS
     void DoDeviceReq(char * ldevname);
+#endif
     void ExpediteDown( void );
+#ifndef NAMESERVER_PROCESS
     inline int  GetTmLeader( void ) { return( TmLeaderNid); }
     inline void SetTmLeader( int tmLeaderNid ) { TmLeaderNid = tmLeaderNid; } 
+#endif
     int  GetDownedNid( void );
+#ifndef NAMESERVER_PROCESS
     inline int GetTmSyncPNid( void ) { return( TmSyncPNid ); } // Physical Node ID of current TmSync operations master
+#endif
     void InitClusterComm(int worldSize, int myRank, int *rankToPnid);
     void addNewComm(int nid, int otherRank, MPI_Comm comm);
     void addNewSock(int nid, int otherRank, int sockFd );
 
     bool exchangeNodeData ( );
+#ifndef NAMESERVER_PROCESS
     void exchangeTmSyncData ( struct sync_def *sync, bool bumpSync );
+#endif
     int GetConfigPNodesCount() { return configPNodesCount_; }
     int GetConfigPNodesMax() { return configPNodesMax_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
@@ -164,7 +177,9 @@ public:
     int getJoinSock() { return joinSock_; }
     void ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth=false );
     void NodeReady( CNode *spareNode );
+#ifndef NAMESERVER_PROCESS
     void NodeTmReady( int nid );
+#endif
     bool isMonSyncResponsive() { return monSyncResponsive_; }
     void SaveSchedData( struct internal_msg_def *recv_msg );
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
@@ -199,6 +214,9 @@ protected:
     int           *sockPorts_;
     int            commSock_;
     int            syncSock_;
+#ifdef NAMESERVER_PROCESS
+    int            mon2nsSock_;
+#endif
     int            epollFD_;
     int           *indexToPnid_;
 
@@ -207,13 +225,17 @@ protected:
     int      TmSyncPNid;     // Physical Node ID of current TmSync operations master
 
 
+#ifndef NAMESERVER_PROCESS
     void AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
                      , struct sync_def *sync
                      , struct internal_msg_def *msg);
+#endif
     void AddReplData (struct internal_msg_def *msg);
     void AddMyNodeState ();
+#ifndef NAMESERVER_PROCESS
     void TraceTMSyncState(struct sync_buffer_def *recv_buffer,
                           size_t recvCount);
+#endif
     void UpdateAllNodeState(struct sync_buffer_def *recv_buffer,
                             size_t recvCount,
                             bool &overflow);
@@ -228,8 +250,10 @@ private:
     int     configPNodesCount_; // # of physical nodes configured
     int     configPNodesMax_;   // max # of physical nodes that can be configured
     int    *NodeMap;        // Mapping of Node ranks to COMM_WORLD ranks
+#ifndef NAMESERVER_PROCESS
     int     TmLeaderNid;    // Nid of currently assigned TM Leader node
     int     tmReadyCount_;  // # of DTM processes ready for transactions
+#endif
     size_t  minRecvCount_;  // minimum size of receive buffer for allgather
 
     // Pointer to array of "sync_buffer_def" structures.  Used by

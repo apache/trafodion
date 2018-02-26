@@ -293,6 +293,9 @@ public:
     //inline void SetPort( char * port) { port_ = port; }
     inline void SetCommPort( char *commPort) { commPort_ = commPort; }
     inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
+#ifdef NAMESERVER_PROCESS
+    inline void SetMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
+#endif
     //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
     inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
     inline void SetSyncSocketPort( int syncSocketPort) { syncSocketPort_ = syncSocketPort; }
@@ -314,9 +317,11 @@ public:
     void addToQuiesceSendPids( int pid, Verifier_t verifier );
     void addToQuiesceExitPids( int pid, Verifier_t verifier );
     void delFromQuiesceExitPids( int pid, Verifier_t verifier );
+#ifndef NAMESERVER_PROCESS
     inline bool isQuiesceExitPidsEmpty() { return quiesceExitPids_->empty(); }
     inline int getNumQuiesceExitPids() { return quiesceExitPids_->size(); }
     inline int getNumQuiesceSendPids() { return quiesceExitPids_->size(); }
+#endif
     inline bool isInQuiesceState() { return (internalState_ == State_Quiesce); }
     inline void setQuiesceState() { internalState_ = State_Quiesce; }
     inline void clearQuiesceState() { internalState_ = State_Default; }
@@ -374,13 +379,18 @@ private:
     int           wdtKeepAliveTimerValue_; // expiration time
     struct timeval todStart_;    // time of last watchdog reset
 
+#ifndef NAMESERVER_PROCESS
     SQ_LocalIOToClient::bcastPids_t   *quiesceSendPids_;   // list of pids on this node that needs quiescing.
     SQ_LocalIOToClient::bcastPids_t   *quiesceExitPids_;   // list of pids on this node that will exit on quiescing
+#endif
     IntNodeState  internalState_;     // internal state of a node, not externalized to users 
     
     int           zid_;
     string        commPort_;          // monitor MPI or Integration port
     string        syncPort_;          // monitor socket allgather port
+#ifdef NAMESERVER_PROCESS
+    string        mon2NsPort_;        // monitor to ns port
+#endif
     int           commSocketPort_;          // re-integration socket port
     int           syncSocketPort_;          // algather socket port
 

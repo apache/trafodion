@@ -338,16 +338,20 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
     case ConfigType_Cluster:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
            trace_printf("%s@%d - Sending Configuration Change message to cluster\n", method_name, __LINE__);
+#ifndef NAMESERVER_PROCESS
         // Each monitor will send this notice to their nodes processes
         if ( MyNode ) MyNode->Bcast(msg);
+#endif
         delete msg;
         break;
 
     case ConfigType_Node:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
            trace_printf("%s@%d - Sending Configuration Change message to nodes in pnid=%d\n", method_name, __LINE__, MyPNID);
+#ifndef NAMESERVER_PROCESS
         // Only this node's processes will receive the notice    
         if ( MyNode ) MyNode->Bcast(msg);
+#endif
         delete msg;
         break;
         
@@ -360,10 +364,12 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
                     trace_printf("%s@%d - Sending Configuration Change message to %s\n", method_name, __LINE__, process->GetName());
+#ifndef NAMESERVER_PROCESS
                 SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
                                                        , process->GetVerifier()
                                                        , msg
                                                        , NULL);
+#endif
             }
             else
             {

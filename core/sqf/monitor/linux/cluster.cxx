@@ -72,6 +72,9 @@ extern char IntegratingMonitorPort[MPI_MAX_PORT_NAME];
 extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char MyMPICommPort[MPI_MAX_PORT_NAME];
 extern char MySyncPort[MPI_MAX_PORT_NAME];
+#ifdef NAMESERVER_PROCESS
+extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
+#endif
 extern bool SMSIntegrating;
 extern int CreatorShellPid;
 extern Verifier_t CreatorShellVerifier;
@@ -85,10 +88,14 @@ extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;
 extern CConfigContainer *Config;
+#ifndef NAMESERVER_PROCESS
 extern CDeviceContainer *Devices;
+#endif
 extern CNode *MyNode;
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 extern CMonLog *MonLog;
 extern CHealthCheck HealthCheck;
 extern CCommAccept CommAccept;
@@ -101,7 +108,9 @@ extern char *ErrorMsg (int error_code);
 
 const char *JoiningPhaseString( JOINING_PHASE phase);
 const char *StateString( STATE state);
+#ifndef NAMESERVER_PROCESS
 const char *SyncStateString( SyncState state);
+#endif
 const char *EpollEventString( __uint32_t events );
 const char *EpollOpString( int op );
 const char *NodePhaseString( NodePhase phase );
@@ -178,6 +187,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
             {
                 downNode->SetState( State_Down ); 
             
+#ifndef NAMESERVER_PROCESS
                 // Send process death notices
                 spareNode->KillAllDown();
     
@@ -188,6 +198,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                     // Watchdog process clone was removed in KillAllDown
                     lnode->Down();
                 }
+#endif
             }
         }
 
@@ -206,7 +217,9 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
         // Create Watchdog and PSD processes if this node is the activating spare
         if ( spareNode->GetPNid() == MyPNID )
         {
+#ifndef NAMESERVER_PROCESS
             Monitor->StartPrimitiveProcesses();
+#endif
         }
         else
         {
@@ -215,6 +228,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
             {
                 spareNode->SetState( State_Up );
             }
+#ifndef NAMESERVER_PROCESS
             if ( tmCount )
             {
                 // Send node prepare notice to local DTM processes
@@ -224,8 +238,10 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                     lnode->PrepareForTransactions( downNode->GetPNid() != spareNode->GetPNid() );
                 }
             }
+#endif
         }
 
+#ifndef NAMESERVER_PROCESS
         if ( downNode->GetPNid() != spareNode->GetPNid() )
         {
             // we need to abort any active TmSync
@@ -239,6 +255,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                    trace_printf("%s@%d" " - Node "  "%d" " TmSyncState updated (" "%d" ")" "\n", method_name, __LINE__, MyPNID, MyNode->GetTmSyncState());
             }
         }
+#endif
     
         if (trace_settings & TRACE_INIT)
         {
@@ -261,6 +278,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
         CReplActivateSpare *repl = new CReplActivateSpare( MyPNID, downNode->GetPNid() );
         Replicator.addItem(repl);
 
+#ifndef NAMESERVER_PROCESS
         if ( !tmCount )
         {
             // No DTMs in environment so implicitly make ready for transactions
@@ -270,11 +288,13 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                 ReqQueue.enqueueTmReadyReq( lnode->GetNid() );
             }
         }
+#endif
     }
 
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CCluster::NodeTmReady( int nid )
 {
     const char method_name[] = "CCluster::NodeTmReady";
@@ -325,6 +345,7 @@ void CCluster::NodeTmReady( int nid )
 
     TRACE_EXIT;
 }
+#endif
 
 void CCluster::NodeReady( CNode *spareNode )
 {
@@ -339,12 +360,14 @@ void CCluster::NodeReady( CNode *spareNode )
 
     assert( spareNode->GetState() == State_Up );
 
+#ifndef NAMESERVER_PROCESS
     // Send node up notice
     CLNode *lnode = spareNode->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Up();
     }
+#endif
 
     spareNode->SetActivatingSpare( false );
     ResetIntegratingPNid();
@@ -352,6 +375,7 @@ void CCluster::NodeReady( CNode *spareNode )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 // Assigns a new TMLeader if given pnid is same as TmLeaderNid 
 // TmLeader is a logical node num. 
 // pnid has gone down, so if that node was previously the TM leader, a new one needs to be chosen.
@@ -476,6 +500,7 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 
     TRACE_EXIT;
 }
+#endif
 
 
 CCluster::CCluster (void)
@@ -484,6 +509,9 @@ CCluster::CCluster (void)
       ,sockPorts_(NULL)
       ,commSock_(-1)
       ,syncSock_(-1)
+#ifdef NAMESERVER_PROCESS
+      ,mon2nsSock_(-1)
+#endif
       ,epollFD_(-1),
       Node (NULL),
       LNode (NULL),
@@ -493,8 +521,10 @@ CCluster::CCluster (void)
       configPNodesCount_ (-1),
       configPNodesMax_ (-1),
       NodeMap (NULL),
+#ifndef NAMESERVER_PROCESS
       TmLeaderNid (-1),
       tmReadyCount_(0),
+#endif
       minRecvCount_(4096),
       recvBuffer_(NULL),
       recvBuffer2_(NULL),
@@ -710,7 +740,9 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
     CNode  *node;
+#ifndef NAMESERVER_PROCESS
     CLNode *lnode;
+#endif
     char    buf[MON_STRING_BUF_SIZE];
     
     const char method_name[] = "CCluster::HardNodeDown";
@@ -826,7 +858,9 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                 if ( ! Emulate_Down )
                 {
                     // make sure no processes are alive if in the middle of re-integration
+#ifndef NAMESERVER_PROCESS
                     node->KillAllDown();
+#endif
                     snprintf(buf, sizeof(buf),
                              "[CCluster::HardNodeDown], Node %s (%d)is down.\n",
                              node->GetName(), node->GetPNid());
@@ -846,14 +880,18 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             {
                 ResetIntegratingPNid();
             }
+#ifndef NAMESERVER_PROCESS
             node->KillAllDown();
+#endif
             node->SetState( State_Down ); 
+#ifndef NAMESERVER_PROCESS
             // Send node down message to local node's processes
             lnode = node->GetFirstLNode();
             for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 lnode->Down();
             }
+#endif
             if ( ZClientEnabled )
             {
                 ZClient->WatchNodeDelete( node->GetName() );
@@ -861,6 +899,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         }
     }
 
+#ifndef NAMESERVER_PROCESS
     // we need to abort any active TmSync
     if (( MyNode->GetTmSyncState() == SyncState_Start    ) ||
         ( MyNode->GetTmSyncState() == SyncState_Continue ) ||
@@ -871,11 +910,14 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
     }
+#endif
 
     if ( Emulate_Down )
     {
         IAmIntegrated = false;
+#ifndef NAMESERVER_PROCESS
         AssignTmLeader(pnid, false);
+#endif
     }
 
     TRACE_EXIT;
@@ -935,7 +977,9 @@ void CCluster::SoftNodeDown( int pnid )
             Replicator.addItem(repl);
         }
 
+#ifndef NAMESERVER_PROCESS
         node->KillAllDownSoft();            // Kill all processes
+#endif
 
         snprintf( buf, sizeof(buf)
                 , "[%s], Node %s (%d) executed soft down.\n"
@@ -954,6 +998,7 @@ void CCluster::SoftNodeDown( int pnid )
         abort();
     }
 
+#ifndef NAMESERVER_PROCESS
     // we need to abort any active TmSync
     if (( MyNode->GetTmSyncState() == SyncState_Start    ) ||
         ( MyNode->GetTmSyncState() == SyncState_Continue ) ||
@@ -964,6 +1009,7 @@ void CCluster::SoftNodeDown( int pnid )
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
     }
+#endif
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
     {
@@ -976,7 +1022,9 @@ void CCluster::SoftNodeDown( int pnid )
     }
 
     IAmIntegrated = false;
+#ifndef NAMESERVER_PROCESS
     AssignTmLeader(pnid, false);
+#endif
 
     TRACE_EXIT;
 }
@@ -1293,13 +1341,16 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                     MyNode->clearQuiesceState();
                     HealthCheck.initializeVars(); 
                     SMSIntegrating = true;
+#ifndef NAMESERVER_PROCESS
                     Monitor->StartPrimitiveProcesses();
+#endif
                     // Let other monitors know this node is up
                     CReplNodeUp *repl = new CReplNodeUp(MyPNID);
                     Replicator.addItem(repl);
                 }
                 else
                 {
+#ifndef NAMESERVER_PROCESS
                     if ( tmCount )
                     {
                         // Send node prepare notice to local DTM processes
@@ -1318,6 +1369,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                             lnode->Up();
                         }
                     }
+#endif
                 }
             }
             else
@@ -1347,12 +1399,14 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
             }
             if ( MyNode->IsCreator() )
             {
+#ifndef NAMESERVER_PROCESS
                 SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                        , MyNode->GetCreatorVerifier()
                                                        , JoinMessage( node->GetName()
                                                                     , node->GetPNid()
                                                                     , JoiningPhase_1 )
                                                        , NULL);
+#endif
 
                 // save the current seq num in the snapshot request.
                 // this sequence number will match the state of the cluster
@@ -1361,9 +1415,11 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
             }
             if ( MyPNID == pnid )
             {
+#ifndef NAMESERVER_PROCESS
                 // request and process revive packet from the creator.
                 // when complete, this will call HardNodeUp again.
                 ReqQueue.enqueueReviveReq( ); 
+#endif
             }
             else
             {
@@ -1427,12 +1483,14 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                            trace_printf( "%s@%d" " - Sending spare up notice to creator shell(%d) spare node=%s, pnid=%d\n"
                                        , method_name, __LINE__, MyNode->GetCreatorPid(), node->GetName(), node->GetPNid() );
+#ifndef NAMESERVER_PROCESS
                         // Tell creator spare node is up
                         SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
                                                                , MyNode->GetCreatorVerifier()
                                                                , SpareUpMessage( node->GetName()
                                                                                , node->GetPNid() )
                                                                , NULL);
+#endif
                     }
                 }
             }
@@ -1525,7 +1583,9 @@ int CCluster::SoftNodeUpPrepare( int pnid )
     if ( MyPNID == pnid )
     {
         SMSIntegrating = true;
+#ifndef NAMESERVER_PROCESS
         Monitor->StartPrimitiveProcesses();
+#endif
         // Let other monitors know this node is preparing to soft up
         CReplSoftNodeUp *repl = new CReplSoftNodeUp(MyPNID);
         Replicator.addItem(repl);
@@ -1545,12 +1605,14 @@ int CCluster::SoftNodeUpPrepare( int pnid )
         }
         if ( tmCount )
         {
+#ifndef NAMESERVER_PROCESS
             // Send DTM restarted notice to local DTM processes
             lnode = node->GetFirstLNode();
             for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 lnode->SendDTMRestarted();
             }
+#endif
         }
         else
         {
@@ -1649,6 +1711,7 @@ const char *SyncStateString( SyncState state)
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CCluster::AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
                            , struct sync_def *sync
                            , struct internal_msg_def *msg)
@@ -1691,8 +1754,9 @@ void CCluster::AddTmsyncMsg( struct sync_buffer_def *tmSyncBuffer
 
     TRACE_EXIT;
 }
+#endif
 
-
+#ifndef NAMESERVER_PROCESS
 void CCluster::DoDeviceReq(char * ldevName)
 {
     const char method_name[] = "CCluster::DoDeviceReq";
@@ -1766,6 +1830,7 @@ void CCluster::DoDeviceReq(char * ldevName)
 
     TRACE_EXIT;
 }
+#endif
 
 void CCluster::SaveSchedData( struct internal_msg_def *recv_msg )
 {
@@ -1813,8 +1878,10 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
 
     CNode *downNode;
     CNode *spareNode;
+#ifndef NAMESERVER_PROCESS
     CProcess *process;
     CLNode  *lnode;
+#endif
 
     switch (recv_msg->type)
     {
@@ -1873,9 +1940,11 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueCloneReq( &recv_msg->u.clone );
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Device:
         ReqQueue.enqueueDeviceReq(recv_msg->u.device.ldev_name);
         break;
+#endif
 
     case InternalType_Shutdown:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -1939,6 +2008,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueUpReq( recv_msg->u.up.pnid, NULL, -1 );
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Dump:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal dump request for nid=%d, pid=%d\n",
@@ -2019,6 +2089,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
 
     case InternalType_Exit:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2026,6 +2097,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueExitReq( &recv_msg->u.exit );
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Event:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal event request\n", method_name, __LINE__);
@@ -2071,7 +2143,9 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_IoData:
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_REDIRECTION))
             trace_printf("%s@%d - Internal IO data request\n", method_name, __LINE__);
@@ -2113,7 +2187,9 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_StdinReq:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal STDIN request\n", method_name, __LINE__);
@@ -2192,7 +2268,9 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_ERR, buf); 
         }
         break;
+#endif
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Kill:
         // Queue the kill request for processing by a worker thread.
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2200,8 +2278,8 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
 
         ReqQueue.enqueueKillReq( &recv_msg->u.kill );
         break;
+#endif
                     
-
     case InternalType_Process:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal process request\n", method_name, __LINE__);
@@ -2219,12 +2297,14 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         }
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Open:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal open request for (%d, %d), opened (%d, %d)\n", method_name, __LINE__, recv_msg->u.open.nid, recv_msg->u.open.pid, recv_msg->u.open.opened_nid, recv_msg->u.open.opened_pid);
 
         ReqQueue.enqueueOpenReq( &recv_msg->u.open );
         break;
+#endif
 
     case InternalType_SchedData:
         SaveSchedData( recv_msg );
@@ -2242,6 +2322,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueUniqStrReq( &recv_msg->u.uniqstr );
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Sync:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_TMSYNC))
             trace_printf("%s@%d - Internal sync request for"
@@ -2352,6 +2433,8 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
+
     default:
         {
             char buf[MON_STRING_BUF_SIZE];
@@ -2369,8 +2452,10 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
     const char method_name[] = "CCluster::HandleMyNodeMsg";
     TRACE_ENTRY;
 
+#ifndef NAMESERVER_PROCESS
     CProcess *process;
     CLNode  *lnode;
+#endif
 
     if (trace_settings & TRACE_SYNC_DETAIL)
         trace_printf("%s@%d - Marking object as replicated, msg type=%d\n",
@@ -2420,10 +2505,12 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             trace_printf("%s@%d - Internal clone request, completed replicating process (%d, %d) %s\n", method_name, __LINE__, recv_msg->u.clone.nid, recv_msg->u.clone.os_pid, (recv_msg->u.clone.backup?" Backup":""));
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Device:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal device request, completed device processing for ldev %s\n", method_name, __LINE__, recv_msg->u.device.ldev_name);
         break;
+#endif
 
     case InternalType_Shutdown:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2477,6 +2564,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             trace_printf("%s@%d - Internal up node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.up.pnid);
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Dump:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal dump request for nid=%d, pid=%d\n",
@@ -2557,27 +2645,35 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
 
     case InternalType_Exit:
         // Final process exit logic is done in Process_Exit, not here
         // as in the past.
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Event:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal event request\n", method_name, __LINE__);
         break;
+#endif
                     
+#ifndef NAMESERVER_PROCESS
     case InternalType_IoData:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal IO data request\n", method_name, __LINE__);
         break;
+#endif
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_StdinReq:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal STDIN request\n", method_name, __LINE__);
         break;
+#endif
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Kill:
         // Queue the kill request for processing by a worker thread.
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2585,6 +2681,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
 
         ReqQueue.enqueueKillReq( &recv_msg->u.kill );
         break;
+#endif
 
     case InternalType_Process:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2595,6 +2692,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
         // No action needed
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Open:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal open request, completed open replication, "
@@ -2607,6 +2705,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                          recv_msg->u.open.opened_pid,
                          recv_msg->u.open.opened_verifier);
         break;
+#endif
 
     case InternalType_SchedData:
         // No action needed
@@ -2622,6 +2721,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             trace_printf("%s@%d - Internal unique string request, completed replicating (%d, %d)\n", method_name, __LINE__, recv_msg->u.uniqstr.nid, recv_msg->u.uniqstr.id);
         break;
 
+#ifndef NAMESERVER_PROCESS
     case InternalType_Sync:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_TMSYNC))
             trace_printf("%s@%d - Internal sync request for node %s, pnid=%d, SyncType=%d\n"
@@ -2661,6 +2761,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             }
         }
         break;
+#endif
                     
     default:
         {
@@ -2994,8 +3095,10 @@ void CCluster::InitializeConfigCluster( void )
             delete [] commPortNums;
             delete [] syncPortNums;
 
+#ifndef NAMESERVER_PROCESS
             TmLeaderNid = Nodes->GetFirstNid();
             int TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
+#endif
 
             // Any nodes not in the initial MPI_COMM_WORLD are down.
             for (int i=0; i<GetConfigPNodesCount(); ++i)
@@ -3012,11 +3115,13 @@ void CCluster::InitializeConfigCluster( void )
                     node = Nodes->GetNode(indexToPnid_[i]);
                     if ( node ) node->SetState( State_Down );
 
+#ifndef NAMESERVER_PROCESS
                     // assign new TmLeader if TMLeader node is dead.
                     if (TmLeaderPNid == indexToPnid_[i]) 
                     {
                         AssignTmLeader(indexToPnid_[i], false);
                     }
+#endif
                 }
                 else
                 {   // Set bit indicating node is up
@@ -3033,10 +3138,12 @@ void CCluster::InitializeConfigCluster( void )
                 }
             }
         }
+#ifndef NAMESERVER_PROCESS
         else
         {
             TmLeaderNid = 0;
         }
+#endif
 
         // Initialize communicators for point-to-point communications
         int myRank;
@@ -6180,8 +6287,10 @@ void CCluster::HandleDownNode( int pnid )
     if (trace_settings & TRACE_INIT)
         trace_printf("%s@%d - Added down node to list, pnid=%d, name=(%s)\n", method_name, __LINE__, downNode->GetPNid(), downNode->GetName());
 
+#ifndef NAMESERVER_PROCESS
     // assign new TmLeader if TMLeader node is dead.
     AssignTmLeader(pnid, false);
+#endif
 
     // Build available list of spare nodes
     CNode *spareNode;
@@ -6286,7 +6395,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     TRACE_ENTRY;
 
     struct sync_buffer_def *recvBuf;
+#ifndef NAMESERVER_PROCESS
     struct sync_buffer_def *sendBuf = Nodes->GetSyncBuffer();
+#endif
     STATE node_state;
     int change_nid;
     cluster_state_def_t nodestate[GetConfigPNodesMax()];
@@ -6380,6 +6491,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             }
         }
 
+#ifndef NAMESERVER_PROCESS
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
         {
            trace_printf( "%s@%d - Node %s (pnid=%d) TmSyncState=(%d)(%s)\n"
@@ -6389,7 +6501,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                        , recvBuf->nodeInfo.tmSyncState
                        , SyncStateString( recvBuf->nodeInfo.tmSyncState ));
         }
+#endif
 
+#ifndef NAMESERVER_PROCESS
         if ( Node[index]->GetTmSyncState() != recvBuf->nodeInfo.tmSyncState )
         {    
             Node[index]->SetTmSyncState(recvBuf->nodeInfo.tmSyncState);
@@ -6402,6 +6516,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                              SyncStateString( recvBuf->nodeInfo.tmSyncState ));
             }
         }
+#endif
 
         // Check if we need to increase my node's shutdown level ...
         // all nodes should be at the highest level selected from any source
@@ -6553,6 +6668,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     if ( validateNodeDown_ )
         ValidateClusterState( nodestate, clusterViewDivergence );
 
+#ifndef NAMESERVER_PROCESS
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
     {
        trace_printf( "%s@%d - Node %s (pnid=%d) TmSyncState=(%d)(%s)\n"
@@ -6562,6 +6678,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                    , sendBuf->nodeInfo.tmSyncState
                    , SyncStateString( sendBuf->nodeInfo.tmSyncState ));
     }
+#endif
 
     // Update our node states
     for (int index = 0; index < GetConfigPNodesMax(); index++)
@@ -6781,6 +6898,7 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
         // reset msg length to zero to initialize for PopMsg()
         msgBuf->msgInfo.msg_offset = 0;
 
+#ifndef NAMESERVER_PROCESS
         if ( msgBuf->msgInfo.msg_count == 1 
         && (( internal_msg_def *)msgBuf->msg)->type == InternalType_Sync )
         {
@@ -6812,6 +6930,9 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
             }
         }
         else if ( !deferredTmSync )
+#else
+        if ( !deferredTmSync )
+#endif
         {
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d - Handling messages for "
@@ -6900,7 +7021,9 @@ bool CCluster::checkIfDone (  )
         return false;
     }
 
+#ifndef NAMESERVER_PROCESS
     MyNode->CheckShutdownProcessing();
+#endif
 
     TRACE_EXIT;
 
@@ -7271,6 +7394,7 @@ reconnected:
     return result;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CCluster::exchangeTmSyncData ( struct sync_def *sync, bool bumpSync )
 {
     const char method_name[] = "CCluster::exchangeTmSyncData";
@@ -7526,6 +7650,7 @@ reconnected:
 
     TRACE_EXIT;
 }
+#endif
 
 void CCluster::EpollCtl( int efd, int op, int fd, struct epoll_event *event )
 {
@@ -7794,6 +7919,9 @@ void CCluster::InitServerSock( void )
     TRACE_ENTRY;
     int serverCommPort = 0;
     int serverSyncPort = 0;
+#ifdef NAMESERVER_PROCESS
+    int mon2nsPort = 0;
+#endif
 
     unsigned char addr[4];
     struct hostent *he;
@@ -7894,6 +8022,49 @@ void CCluster::InitServerSock( void )
                         , MyNode->GetSyncPort() );
     }
 
+#ifdef NAMESERVER_PROCESS
+    env = getenv("MON2NAMESERVER_COMM_PORT");
+    if ( env )
+    {
+        int val;
+        errno = 0;
+        val = strtol(env, NULL, 10);
+        if ( errno == 0) mon2nsPort = val;
+    }
+
+    mon2nsSock_ = MkSrvSock( &mon2nsPort );
+    if ( mon2nsSock_ < 0 )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] MkSrvSock(MON2NAMESERVER_COMM_PORT=%d) error: %s\n"
+                , method_name, __LINE__, mon2nsPort
+                , strerror_r( errno, ebuff, 256 ) );
+        mon_log_write( MON_CLUSTER_INITSERVERSOCK_4, SQ_LOG_CRIT, buf );
+        abort();
+    }
+    else
+    {
+        snprintf( MyMon2NsPort, sizeof(MyMon2NsPort)
+                , "%d.%d.%d.%d:%d"
+                , (int)((unsigned char *)addr)[0]
+                , (int)((unsigned char *)addr)[1]
+                , (int)((unsigned char *)addr)[2]
+                , (int)((unsigned char *)addr)[3]
+                , mon2nsPort );
+        MyNode->SetMon2NsPort( MyMon2NsPort );
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d Initialized my comm socket port, "
+                          "pnid=%d (%s:%s) (commPort=%s)\n"
+                        , method_name, __LINE__
+                        , MyPNID, MyNode->GetName(), MyMon2NsPort
+                        , MyNode->GetCommPort() );
+
+    }
+#endif
+
     epollFD_ = epoll_create1( EPOLL_CLOEXEC );
     if ( epollFD_ < 0 )
     {
@@ -7929,6 +8100,19 @@ int CCluster::AcceptSyncSock( void )
     TRACE_EXIT;
     return( csock  );
 }
+
+#ifdef NAMESERVER_PROCESS
+int CCluster::AcceptMon2NsSock( void )
+{
+    const char method_name[] = "CCluster::AcceptMon2NsSock";
+    TRACE_ENTRY;
+
+    int csock = AcceptSock( mon2nsSock_ );
+
+    TRACE_EXIT;
+    return( csock  );
+}
+#endif
 
 int CCluster::AcceptSock( int sock )
 {
@@ -7976,7 +8160,7 @@ int CCluster::AcceptSock( int sock )
 
     if ( csock > 0 )
     {
-        int reuse;
+        int reuse = 1;
         if ( setsockopt( csock
                        , SOL_SOCKET
                        , SO_REUSEADDR
@@ -8274,6 +8458,11 @@ int CCluster::MkSrvSock( int *pport )
         mon_log_write(MON_CLUSTER_MKSRVSOCK_1, SQ_LOG_CRIT, la_buf); 
         return ( -1 );
     }
+
+#ifdef NAMESERVER_PROCESS
+    int on = 1;
+    setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) );
+#endif
 
     // Bind socket.
     size = sizeof(sockinfo);

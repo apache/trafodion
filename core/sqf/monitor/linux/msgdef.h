@@ -239,6 +239,7 @@ typedef enum {
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
+    ReqType_NewProcessNs,                   // process is request server to be spawned
     ReqType_NodeAdd,                        // add node to configuration database
     ReqType_NodeDelete,                     // delete node from configuration database
     ReqType_NodeDown,                       // take down the identified node
@@ -516,6 +517,32 @@ struct NewProcess_def
 {
     int  nid;                               // zone or node id if TM type to start process on, 
                                             // if -1 then will assign node
+    PROCESSTYPE type;                       // Identifies the process handling catagory
+    int  priority;                          // Linux system priority
+    int  debug;                             // if non-zero, starts processing using GDB
+    int  backup;                            // if non-zero, starts process as backup
+    bool unhooked;                          // if hooked, parent process dies will trigger child process exits
+    bool nowait;                            // reply after local node initiates new process and send notice on completion
+    long long tag;                          // user defined tag to be sent in completion notice
+    char path[MAX_SEARCH_PATH];             // process's object lookup path to program
+    char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
+    char program[MAX_PROCESS_PATH];         // full path to object file
+    char process_name[MAX_PROCESS_NAME];    // process name
+    int  argc;                              // number of additional command line argument
+    char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
+    char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
+    char outfile[MAX_PROCESS_PATH];         // if null then use monitor's outfile
+    int  fill1;                             // filler to fill out struct
+};
+
+struct NewProcessNs_def
+{
+    int   parent_nid;                       // parent's node id
+    int   parent_pid;                       // parent's process id
+    Verifier_t parent_verifier;             // parent's process verifier
+    int  nid;                               // node id
+    int  pid;                               // process id
+    Verifier_t verifier;                    // process verifier
     PROCESSTYPE type;                       // Identifies the process handling catagory
     int  priority;                          // Linux system priority
     int  debug;                             // if non-zero, starts processing using GDB
@@ -1103,6 +1130,7 @@ struct request_def
         struct Mount_def             mount;
         struct Kill_def              kill;
         struct NewProcess_def        new_process;
+        struct NewProcessNs_def      new_process_ns;
         struct NodeAdd_def           node_add;
         struct NodeAdded_def         node_added;
         struct NodeChanged_def       node_changed;

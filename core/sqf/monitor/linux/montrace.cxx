@@ -113,13 +113,23 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
     // Format default trace file name and remove any existing trace file.
     if( getenv("SQ_VIRTUAL_NODES") )
     {
+#ifndef NAMESERVER_PROCESS
         sprintf(trace_file_name,"%s/monitor.trace.%d.%s",
                 getenv("MPI_TMPDIR"),MyPNID,Node_name);
+#else
+        sprintf(trace_file_name,"%s/ns.trace.%d.%s",
+                getenv("MPI_TMPDIR"),MyPNID,Node_name);
+#endif
     }
     else
     {
+#ifndef NAMESERVER_PROCESS
         sprintf(trace_file_name,"%s/monitor.trace.%s",
                 getenv("MPI_TMPDIR"), Node_name);
+#else
+        sprintf(trace_file_name,"%s/ns.trace.%s",
+                getenv("MPI_TMPDIR"), Node_name);
+#endif
     }
     remove(trace_file_name);
 
@@ -290,13 +300,23 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
         {   // No user specified trace file name, use default
             if( getenv("SQ_VIRTUAL_NODES") )
             {
+#ifndef NAMESERVER_PROCESS
                 sprintf(fname,"%s/monitor.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
                         Node_name);
+#else
+                sprintf(fname,"%s/ns.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
+                        Node_name);
+#endif
             }
             else
             {
+#ifndef NAMESERVER_PROCESS
                 sprintf(fname,"%s/monitor.trace.%s",getenv("MPI_TMPDIR"),
                         Node_name);
+#else
+                sprintf(fname,"%s/ns.trace.%s",getenv("MPI_TMPDIR"),
+                        Node_name);
+#endif
             }
         }
 

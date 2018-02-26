@@ -102,6 +102,10 @@ class CProcessContainer
                                       struct timespec *creation_time );
     CProcess *CreateProcess( CProcess *parent, 
                              int nid,
+#ifdef NAMESERVER_PROCESS
+                             int pid,
+                             Verifier_t verifier,
+#endif
                              PROCESSTYPE Type,
                              int debug,
                              int priority,
@@ -196,6 +200,9 @@ class CProcess
     CProcess( CProcess *parent, 
               int nid, 
               int pid,
+#ifdef NAMESERVER_PROCESS
+              Verifier_t verifier,
+#endif
               PROCESSTYPE type,
               int priority,
               int backup, 
@@ -300,7 +307,9 @@ class CProcess
     inline int GetDumperVerifier ( ) { return DumperVerifier; }
     inline const char * GetDumpFile () { return dumpFile_.c_str(); }
 
+#ifndef NAMESERVER_PROCESS
     inline CNotice * GetNoticeHead() { return NoticeHead; }
+#endif
 
     CProcess *GetProcessByType( PROCESSTYPE type );
     inline pid_t GetPriorPid ( ) { return priorPid_; }
@@ -313,11 +322,13 @@ class CProcess
     bool MakePrimary(void);
     bool MyTransactions( struct message_def *msg );
     bool Open( CProcess *opened_process, int death_notification );
+#ifndef NAMESERVER_PROCESS
     CNotice *RegisterDeathNotification( int nid
                                       , int pid
                                       , Verifier_t verifier
                                       , const char *name
                                       , _TM_Txid_External trans_id );
+#endif
     void ReplyNewProcess (struct message_def * reply_msg, CProcess * process,
                           int result);
     void SendProcessCreatedNotice(CProcess *parent, int result);
@@ -509,6 +520,7 @@ private:
     ssmpDeath_t ssmpNotices_;
     CLock       ssmpNoticesLock_;
 
+#ifndef NAMESERVER_PROCESS
     // Container to keep track of the processes for which this process
     // is interested in process death.  deathInterestLock_ is used to
     // protect both the deathInterest_ and CNotice list.
@@ -517,6 +529,7 @@ private:
 
     CNotice       *NoticeHead;   // List of processes requesting death notice 
     CNotice       *NoticeTail;
+#endif
 };
 
 #endif /*PROCESS_H_*/

@@ -66,6 +66,7 @@ using namespace std;
 #include "process.h"
 #include "intprocess.h"
 #include "gentrap.h"
+#include "nameserver.h"
 
 #include "reqqueue.h"
 extern CReqQueue ReqQueue;
@@ -81,12 +82,20 @@ extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern sigset_t SigSet;
 extern CLock MemModLock;
 extern CMonitor *Monitor;
+#ifndef NAMESERVER_PROCESS
+extern int NameServerEnabled;
+extern CNameServer *NameServer;
+#endif
 extern CNodeContainer *Nodes;
 extern CConfigContainer *Config;
+#ifndef NAMESERVER_PROCESS
 extern CDeviceContainer *Devices;
+#endif
 extern CNode *MyNode;
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 extern CHealthCheck HealthCheck;
 extern CReplicate Replicator;
 extern CIntProcess IntProcess;
@@ -104,14 +113,22 @@ extern bool SMSIntegrating;
 extern const char *NodePhaseString( NodePhase phase );
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
-CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
+CProcess::CProcess (CProcess * parent, int nid, int pid,
+#ifdef NAMESERVER_PROCESS
+                    Verifier_t verifier,
+#endif
+                    PROCESSTYPE type,
                     int priority, int backup, bool debug, bool unhooked,
                     char *name, strId_t pathStrId, strId_t ldpathStrId,
                     strId_t programStrId, char *infile, char *outfile)
   :
     Nid (nid),
     Pid (pid),
+#ifdef NAMESERVER_PROCESS
+    Verifier ( verifier ),
+#else
     Verifier ( -1 ),
+#endif
     PidAtFork_ (pid),
     Type (type),
     Event_messages (false),
@@ -170,8 +187,10 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
     , ownerId_(0)
     , replRefCount_(0)
     , requestBuf_ (NULL)
+#ifndef NAMESERVER_PROCESS
     , NoticeHead(NULL)
     , NoticeTail(NULL)
+#endif
 {
     char la_buf[MON_STRING_BUF_SIZE];
 
@@ -305,6 +324,7 @@ CProcess::~CProcess (void)
        MonStats->NumProcsDecr();
 
 
+#ifndef NAMESERVER_PROCESS
     deathInterestLock_.lock();
     CNotice *notice = NoticeHead;
     while (notice)
@@ -316,6 +336,7 @@ CProcess::~CProcess (void)
         notice = NoticeHead;
     }
     deathInterestLock_.unlock();
+#endif
 
     // For SSM process, release any undelivered pending notices.
     struct message_def * deathNotice;
@@ -326,6 +347,7 @@ CProcess::~CProcess (void)
 
     delete [] userArgv_;
 
+#ifndef NAMESERVER_PROCESS
     if (fd_stdin_ != -1 && !Clone)
     {
         Redirector.tryShutdownPipeFd(Pid, fd_stdin_, false);
@@ -340,6 +362,7 @@ CProcess::~CProcess (void)
     {
         Redirector.tryShutdownPipeFd(Pid, fd_stderr_, false);
     }
+#endif
 
     // Remove the fifos associated with this process (if any)
     if (fifo_stdin_.size() != 0)
@@ -421,6 +444,7 @@ void CProcess::validateObj( void )
     }
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcess::CancelDeathNotification( int nid
                                       , int pid
                                       , Verifier_t verifier
@@ -485,8 +509,9 @@ bool CProcess::CancelDeathNotification( int nid
     TRACE_EXIT;
     return status;
 }
+#endif
 
-
+#ifndef NAMESERVER_PROCESS
 // Death notice registration for a process
 bool CProcess::procExitReg(CProcess *targetProcess, 
                            _TM_Txid_External transId)
@@ -533,8 +558,9 @@ bool CProcess::procExitReg(CProcess *targetProcess,
     TRACE_EXIT;
     return status;
 }
+#endif
 
-
+#ifndef NAMESERVER_PROCESS
 void CProcess::procExitUnregAll ( _TM_Txid_External transId )
 {
     const char method_name[] = "CProcess::procExitUnregAll";
@@ -569,6 +595,7 @@ void CProcess::procExitUnregAll ( _TM_Txid_External transId )
 
     TRACE_EXIT;
 }
+#endif
 
 void CProcess::childAdd ( int nid, int pid )
 {
@@ -627,6 +654,7 @@ bool CProcess::childRemoveFirst ( nidPid_t & child)
     return result;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
 {
     CProcess           *dumper;
@@ -674,6 +702,7 @@ void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
 
     TRACE_EXIT;
 }
+#endif
 
 void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messages,
                                        bool system_messages, bool preclone,
@@ -707,6 +736,10 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                 // Replicate the clone to other nodes
                 CReplClone *repl = new CReplClone(this);
                 Replicator.addItem(repl);
+#ifndef NAMESERVER_PROCESS
+                if ( NameServerEnabled )
+                    NameServer->NewProcess(this);
+#endif
             }
             else
             {
@@ -721,6 +754,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         }
     }
 
+#ifndef NAMESERVER_PROCESS
     if (!Clone)
     {
         // check if we need to setup any associated devices.
@@ -749,6 +783,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                  trace_printf("%s%d: pid %d added to quiesce exit list\n", method_name, __LINE__, GetPid());
         }
     }
+#endif
 
     if ( Clone && !preclone )
     {
@@ -764,6 +799,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                      Clone, StartupCompleted);
     State_ = State_Up;
 
+#ifndef NAMESERVER_PROCESS
     // Check if node is shutting down
     if ( !Clone && MyNode->GetState() == State_Shutdown )
     {
@@ -794,7 +830,9 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             SQ_theLocalIOToClient->putOnNoticeQueue( Pid, Verifier, msg, NULL );
         }
     }
+#endif
 
+#ifndef NAMESERVER_PROCESS
     // some special handling for native processes
     if ( !Clone )
     {
@@ -833,13 +871,16 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             Monitor->SoftNodeUpPrepare( MyPNID );
         }
     }
+#endif
 
     TRACE_EXIT;
 }
 
 void CProcess::CompleteRequest( int status )
 {
+#ifndef NAMESERVER_PROCESS
     struct message_def *msg;
+#endif
 
     const char method_name[] = "CProcess::CompleteRequest";
     TRACE_ENTRY;
@@ -848,6 +889,7 @@ void CProcess::CompleteRequest( int status )
        trace_printf("%s@%d - Process %s (%d,%d:%d), status %d\n",
                     method_name, __LINE__, Name, Nid, Pid, Verifier, status);
 
+#ifndef NAMESERVER_PROCESS
     if ( !Clone )
     {
         msg = parentContext();
@@ -865,6 +907,7 @@ void CProcess::CompleteRequest( int status )
             parentContext( NULL );
         }
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -1034,6 +1077,7 @@ void CProcess::SetVerifier()
    return;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
 {
     const char method_name[] = "CProcess::SetupFifo";
@@ -1106,8 +1150,10 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
         }
 
+#ifndef NAMESERVER_PROCESS
         Redirector.stdoutFd(attachee_nid, attachee_pid, fd_stdout_, outfile_.c_str(),
                             -1, -1);
+#endif
     }
 
     // Release memory allocated by tempnam
@@ -1137,7 +1183,9 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
         }
 
+#ifndef NAMESERVER_PROCESS
         Redirector.stderrFd(MyNode->GetHostname(), Name, Nid, attachee_pid, fd_stderr_);
+#endif
     }
 
     // Release memory allocated by tempnam
@@ -1156,6 +1204,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
 
     TRACE_EXIT;
 }
+#endif
 
 // LCOV_EXCL_START
 // Methods CProcess::SetupPipe and CProcess::RedirectStdFiles are
@@ -1165,6 +1214,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
 // is done.
 
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::SetupPipe(int orig_fd, int unused_pipe_fd, int pipe_fd)
 {
     int newfd;
@@ -1208,7 +1258,9 @@ void CProcess::SetupPipe(int orig_fd, int unused_pipe_fd, int pipe_fd)
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::RedirectStdFiles(int pfds_stdin[2], int pfds_stdout[2],
                                 int pfds_stderr[2])
 
@@ -1224,6 +1276,7 @@ void CProcess::RedirectStdFiles(int pfds_stdin[2], int pfds_stdout[2],
 
     TRACE_EXIT;
 }
+#endif
 
 // LCOV_EXCL_STOP
 
@@ -1292,6 +1345,7 @@ void CProcess::setEnvFromRegistry ( char **envp, int &countEnv )
     setEnvRegGroupVals ( group, envp, countEnv );
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcess::Create (CProcess *parent, int & result)
 {
     bool monAltLogEnabled = false;
@@ -2338,7 +2392,9 @@ bool CProcess::Create (CProcess *parent, int & result)
 
     return successful;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 bool CProcess::Dump (CProcess *dumper, char *core_path)
 {
     bool status = FAILURE;
@@ -2374,13 +2430,17 @@ bool CProcess::Dump (CProcess *dumper, char *core_path)
 
     return status;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 static void cprocess_dump_cb(void *ctx, pid_t pid, int status)
 {
     CLNode   *lnode = static_cast<CLNode *>(ctx); 
     lnode->DumpCallback( lnode->GetNid(), pid, status );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path)
 {
     char           *argv[6];
@@ -2484,7 +2544,9 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 const char *DumpStateString( DUMPSTATE state)
 {
     const char *str;
@@ -2513,7 +2575,9 @@ const char *DumpStateString( DUMPSTATE state)
 
     return( str );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::DumpEnd (DUMPSTATUS status, char *core_file)
 {
     const char method_name[] = "CProcess::DumpEnd";
@@ -2533,8 +2597,9 @@ void CProcess::DumpEnd (DUMPSTATUS status, char *core_file)
 
     TRACE_EXIT;
 }
+#endif
 
-
+#ifndef NAMESERVER_PROCESS
 struct message_def * CProcess::DeathMessage( )
 {
     struct message_def *msg;
@@ -2571,6 +2636,7 @@ struct message_def * CProcess::DeathMessage( )
 
     return msg;
 }
+#endif
 
 void CProcess::Exit( CProcess *parent )
 {
@@ -2579,10 +2645,12 @@ void CProcess::Exit( CProcess *parent )
     const char method_name[] = "CProcess::Exit";
     TRACE_ENTRY;
 
+#ifndef NAMESERVER_PROCESS
     if ( DumpState != Dump_Ready )
     {
         DumpEnd( Dump_Failed, (char *)corefile_.c_str() );
     }
+#endif
 
     SetState(State_Stopped);
 
@@ -2598,6 +2666,7 @@ void CProcess::Exit( CProcess *parent )
                                         : !node->IsKillingNode();
     }
 
+#ifndef NAMESERVER_PROCESS
     if(  NoticeHead &&
         !MyNode->IsKillingNode() &&
         !(Type == ProcessType_DTM && IsAbended()) &&
@@ -2606,6 +2675,7 @@ void CProcess::Exit( CProcess *parent )
         // Notify all registered processes of this process' death
         NoticeHead->NotifyAll();
     }
+#endif
     
     if ( !Clone && !Paired )
     {
@@ -2613,11 +2683,14 @@ void CProcess::Exit( CProcess *parent )
         {
             case ProcessType_TSE:
             case ProcessType_ASE:
+#ifndef NAMESERVER_PROCESS
                 MyNode->delFromQuiesceExitPids( GetPid(), GetVerifier() );
+#endif
 
                 if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
                     trace_printf("%s%d: pid %d deleted from quiesce exit list\n", method_name, __LINE__, GetPid());
 
+#ifndef NAMESERVER_PROCESS
                 if (MyNode->isInQuiesceState())
                 {
                     if (MyNode->isQuiesceExitPidsEmpty())
@@ -2625,9 +2698,12 @@ void CProcess::Exit( CProcess *parent )
                         HealthCheck.setState(MON_SCHED_NODE_DOWN);  // schedule a node down req 
                     }
                 }
+#endif
                 else
                 {   // unmount volumes only if node is not quiescing. 
+#ifndef NAMESERVER_PROCESS
                     Devices->UnMountVolume( Name, Backup );
+#endif
                 }
                 break;
             case ProcessType_DTM:
@@ -2655,6 +2731,7 @@ void CProcess::Exit( CProcess *parent )
                     }
                     else
                     {
+#ifndef NAMESERVER_PROCESS
                         if ( Monitor->GetTmLeader() == MyPNID )
                         {
                             // set the clean shutdown condition
@@ -2664,6 +2741,7 @@ void CProcess::Exit( CProcess *parent )
                             strcpy(value,"True");
                             Config->GetClusterGroup()->Set( key, value );
                         }
+#endif
                     }
                 }
                 break;
@@ -2719,10 +2797,12 @@ void CProcess::Exit( CProcess *parent )
                                 trace_printf("%s@%d: Queueing death notice for SSMP process for %s (%d, %d:%d)\n",
                                              method_name, __LINE__, Name, Nid, Pid, Verifier);
 
+#ifndef NAMESERVER_PROCESS
                             ssmpProcess->ssmpNoticesLock_.lock();
                             ssmpProcess->ssmpNotices_.push_back( DeathMessage() );
                             ssmpProcess->ssmpNoticesLock_.unlock();
                             SQ_theLocalIOToClient->nudgeNotifier ();
+#endif
                         }
                         else
                         {
@@ -2783,10 +2863,12 @@ void CProcess::Exit( CProcess *parent )
                 CProcess *spxProcess = lnode->GetProcessLByType( ProcessType_SPX );
                 if ( spxProcess && MyNode->GetState() == State_Up )
                 {
+#ifndef NAMESERVER_PROCESS
                     SQ_theLocalIOToClient->putOnNoticeQueue( spxProcess->Pid
                                                            , spxProcess->Verifier
                                                            , DeathMessage()
                                                            , NULL);
+#endif
 
                     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                        trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d)\n"
@@ -2822,10 +2904,12 @@ void CProcess::Exit( CProcess *parent )
                 CProcess *tmProcess = lnode->GetProcessLByType( ProcessType_DTM );
                 if ( tmProcess && MyNode->GetState() == State_Up )
                 {
+#ifndef NAMESERVER_PROCESS
                     SQ_theLocalIOToClient->putOnNoticeQueue( tmProcess->Pid
                                                            , tmProcess->Verifier
                                                            , DeathMessage()
                                                            , NULL);
+#endif
 
                     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                        trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d)\n"
@@ -2857,10 +2941,12 @@ void CProcess::Exit( CProcess *parent )
                parent->GetType()  == ProcessType_DTM) &&
              supplyProcessDeathNotices )
         {
+#ifndef NAMESERVER_PROCESS
             SQ_theLocalIOToClient->putOnNoticeQueue( parent->Pid
                                                    , parent->Verifier
                                                    , DeathMessage()
                                                    , NULL);
+#endif
 
             if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d) \n"
@@ -2878,6 +2964,7 @@ void CProcess::Exit( CProcess *parent )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::GenerateEvent( int event_id, int length, char *data )
 {
     struct message_def *msg;
@@ -2917,6 +3004,7 @@ void CProcess::GenerateEvent( int event_id, int length, char *data )
     }
     TRACE_EXIT;
 }
+#endif
 
 CProcess *CProcess::GetBackup (void)
 {
@@ -3095,6 +3183,7 @@ bool CProcess::MakePrimary (void)
     return successful;
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcess::MyTransactions( struct message_def *msg )
 {
     int idx;
@@ -3124,7 +3213,9 @@ bool CProcess::MyTransactions( struct message_def *msg )
     TRACE_EXIT;
     return SUCCESS;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 bool CProcess::Open (CProcess * opened_process, int death_notification)
 {
     const char method_name[] = "CProcess::Open";
@@ -3162,6 +3253,7 @@ bool CProcess::Open (CProcess * opened_process, int death_notification)
 
     return status;
 }
+#endif
 
 void CProcessContainer::close_fds ( void )
 {
@@ -3186,6 +3278,7 @@ void CProcessContainer::close_fds ( void )
         closedir(dirp);
 }
 
+#ifndef NAMESERVER_PROCESS
 CNotice *CProcess::RegisterDeathNotification( int nid
                                             , int pid
                                             , Verifier_t verifier
@@ -3228,6 +3321,7 @@ CNotice *CProcess::RegisterDeathNotification( int nid
     TRACE_EXIT;
     return notice;
 }
+#endif
 
 void CProcess::ReplyNewProcess (struct message_def * reply_msg,
                                 CProcess * process, int result)
@@ -3252,14 +3346,17 @@ void CProcess::ReplyNewProcess (struct message_def * reply_msg,
                      process->Name, process->Nid, process->Pid, process->Verifier,
                      Name, Nid, Pid, result);
 
+#ifndef NAMESERVER_PROCESS
     // send reply to the parent
     SQ_theLocalIOToClient->sendCtlMsg
         ( Pid, MC_SReady, ((SharedMsgDef*)reply_msg)-> trailer.index );
+#endif
 
     TRACE_EXIT;
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::SendProcessCreatedNotice(CProcess *parent, int result)
 {
     const char method_name[] = "CProcess::SendProcessCreatedNotice";
@@ -3294,6 +3391,7 @@ void CProcess::SendProcessCreatedNotice(CProcess *parent, int result)
 
     TRACE_EXIT;
 }
+#endif
 
 struct message_def * CProcess::GetDeathNotice( void )
 {
@@ -3773,6 +3871,7 @@ void CProcessContainer::AddToListL(CProcess *process)
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
 {
     CProcess *process;
@@ -3980,7 +4079,9 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::Bcast (struct message_def *msg)
 {
     CProcess *process = NULL;
@@ -4051,7 +4152,7 @@ void CProcessContainer::Bcast (struct message_def *msg)
 
     TRACE_EXIT;
 }
-
+#endif
 
 char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
 {
@@ -4100,6 +4201,7 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
     return name;
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcessContainer::CancelDeathNotification( int nid
                                                , int pid
                                                , int verifier
@@ -4118,7 +4220,7 @@ bool CProcessContainer::CancelDeathNotification( int nid
     
     return status;
 }
-
+#endif
 
 void CProcessContainer::Child_Exit ( CProcess * parent )
 {
@@ -4296,9 +4398,15 @@ CProcess *CProcessContainer::CloneProcess (int nid,
                      "parent (%d, %d)\n", method_name,
                      __LINE__, pname, nid, os_pid, port, parent_nid, parent_pid);
 
+#ifdef NAMESERVER_PROCESS
+    process =
+        new CProcess (parent, nid, os_pid, verifier, type, priority, backup, false, unhooked, pname, pathStrId, ldpathStrId,
+                      programStrId, infile, outfile);
+#else
     process =
         new CProcess (parent, nid, os_pid, type, priority, backup, false, unhooked, pname, pathStrId, ldpathStrId,
                       programStrId, infile, outfile);
+#endif
 
     if (process)
     {
@@ -4393,7 +4501,117 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
     return process;
 }
 
+#ifdef NAMESERVER_PROCESS
+CProcess *CProcessContainer::CreateProcess (CProcess * parent,
+                                            int nid,
+                                            int pid,
+                                            Verifier_t verifier,
+                                            PROCESSTYPE type,
+                                            int debug,
+                                            int priority,
+                                            int backup,
+                                            bool unhooked,
+                                            char *process_name,
+                                            strId_t pathStrId, 
+                                            strId_t ldpathStrId,
+                                            strId_t programStrId,
+                                            char *infile,
+                                            char *outfile,
+                                            int &result)
+{
+    CProcess *process = NULL;
+    char la_buf[MON_STRING_BUF_SIZE];
 
+    const char method_name[] = "CProcessContainer::CreateProcess";
+    TRACE_ENTRY;
+
+    result = MPI_SUCCESS;
+
+    // load & normalize process name
+    if( process_name[0] != '\0' )
+    {
+        NormalizeName (process_name);
+    }
+
+    if (backup)
+    {
+        if ( !parent || (strcmp (parent->GetName(), process_name) != 0) )
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Backup does not have parent's name.\n",
+                     method_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_1, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_NAME;
+
+            return NULL;
+        }
+        if (parent->GetNid() == nid)
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Backup can't be in parent's node.\n",
+                     method_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_2, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_RANK;
+
+            return NULL;
+        }
+    }
+    else
+    {
+        Nodes->GetLNode (process_name, &process, false);
+        if (process)
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Duplicate processname (%s).\n",
+                     method_name, process_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_NAME;
+            return NULL;
+        }
+    }
+
+    process =
+#if 0
+        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name, 
+                      pathStrId, ldpathStrId, programStrId, infile, outfile);
+#else
+        new CProcess (parent, nid, pid, verifier, type, priority, backup, debug, unhooked, process_name, 
+                      pathStrId, ldpathStrId, programStrId, infile, outfile);
+#endif
+    if (process)
+    {
+        AddToList( process );
+        if (type == ProcessType_Watchdog || 
+            type == ProcessType_PSD ||  
+            type == ProcessType_SMS )
+        {
+#if 0
+            if (process->Create (parent, result))
+            {
+                AddToPidMap(process->GetPid(), process);
+            }
+#endif
+        }
+        else if ( type == ProcessType_SSMP )
+        {
+            Nodes->GetLNode ( nid )->SetSSMProc ( process );
+        }
+#if 1
+        char port[1];
+        port[0] = '\0';
+        struct timespec creation_time;
+        memset(&creation_time, 0, sizeof(creation_time));
+        process->CompleteProcessStartup (port, pid, false, false, false, &creation_time);
+#endif
+    }
+    TRACE_EXIT;
+
+    return process;
+}
+#else
 CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             int nid,
                                             PROCESSTYPE type,
@@ -4473,10 +4691,12 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
             type == ProcessType_PSD ||  
             type == ProcessType_SMS )
         {
+#ifndef NAMESERVER_PROCESS
             if (process->Create (parent, result))
             {
                 AddToPidMap(process->GetPid(), process);
             }
+#endif
         }
         else if ( type == ProcessType_SSMP )
         {
@@ -4487,6 +4707,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
 
     return process;
 }
+#endif
 
 void CProcessContainer::DeleteFromList( CProcess *process )
 {
@@ -4599,6 +4820,7 @@ void CProcessContainer::RemoveFromListL( CProcess *process )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcessContainer::Dump_Process (CProcess *dumper, CProcess *process, char *core_path)
 {
     bool status;
@@ -4611,7 +4833,9 @@ bool CProcessContainer::Dump_Process (CProcess *dumper, CProcess *process, char 
     TRACE_EXIT;
     return status;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::DumpCallback( int nid, pid_t pid, int status )
 {
     const char method_name[] = "CProcessContainer::DumpCallback";
@@ -4664,6 +4888,7 @@ void CProcessContainer::DumpCallback( int nid, pid_t pid, int status )
 
     TRACE_EXIT;
 }
+#endif
 
 
 CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result )
@@ -4682,8 +4907,10 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
     // If we have a parent process then it is expecting a reply
     if (parent && !parent->IsClone() && !parent->IsPaired())
     {
+#ifndef NAMESERVER_PROCESS
         if (!process->IsNowait())
         {   // The new process request was "waited" so send reply now
+#endif
             struct message_def *reply_msg;
             reply_msg = process->parentContext();
  
@@ -4695,11 +4922,13 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
                 // buffer) is no longer valid.
                 process->parentContext( NULL );
             }
+#ifndef NAMESERVER_PROCESS
         }
         else
         {   // The new process request was "no-wait" so send notice now
             process->SendProcessCreatedNotice(parent, result);
         }
+#endif
     }  
 
     TRACE_EXIT;
@@ -4708,6 +4937,7 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNode)
 {
     bool restarted = false;
@@ -4876,6 +5106,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
     return;
 }
+#endif
 
 
 
@@ -5124,6 +5355,7 @@ CProcess *CProcessContainer::GetProcessLByType(PROCESSTYPE type)
 }
 
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 {
     CProcess *process = NULL;
@@ -5200,7 +5432,9 @@ void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDown()
 {
     CProcess *process  = NULL;
@@ -5250,12 +5484,14 @@ void CProcessContainer::KillAllDown()
             // exit processing will get queued until this completes. 
             kill( pid, SIGKILL ); 
             PROCESSTYPE type = process->GetType();
+#ifndef NAMESERVER_PROCESS
             if ( type == ProcessType_TSE ||
                  type == ProcessType_ASE )
             {
                 // unmount volume would acquire nameMapLock_ internally. 
                 Devices->UnMountVolume( process->GetName(), process->IsBackup() );
             }
+#endif
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Completed kill for %s (%d, %d)\n", method_name, __LINE__, process->GetName(), nid, pid);
         }
@@ -5284,7 +5520,9 @@ void CProcessContainer::KillAllDown()
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDownSoft()
 {
     const char method_name[] = "CProcessContainer::KillAllDownSoft";
@@ -5338,12 +5576,14 @@ void CProcessContainer::KillAllDownSoft()
                 // exit processing will get queued until this completes.
                 kill( pid, SIGKILL );
                 PROCESSTYPE type = process->GetType();
+#ifndef NAMESERVER_PROCESS
                 if ( type == ProcessType_TSE ||
                      type == ProcessType_ASE )
                 {
                     // unmount volume would acquire nameMapLock_ internally.
                     Devices->UnMountVolume( process->GetName(), process->IsBackup() );
                 }
+#endif
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                     trace_printf("%s@%d - Completed kill for %s (%d, %d)\n", method_name, __LINE__, process->GetName(), nid, pid);
             }
@@ -5376,6 +5616,7 @@ void CProcessContainer::KillAllDownSoft()
 
     TRACE_EXIT;
 }
+#endif
 
 char *CProcessContainer::NormalizeName (char *name)
 {
@@ -5394,6 +5635,7 @@ char *CProcessContainer::NormalizeName (char *name)
     return name;
 }
 
+#ifndef NAMESERVER_PROCESS
 bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int death_notification, CProcess * process)
 {
     bool status = FAILURE;
@@ -5442,7 +5684,9 @@ bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int
 
     return status;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 //
 // Persistent process re-creation logic:
 //
@@ -5828,21 +6072,27 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
 
     return successful;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::PidHangupSet ( int pid )
 {
     hungupPidsLock_.lock();
     hungupPids_.insert ( pid );
     hungupPidsLock_.unlock();
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::PidHangupClear ( int pid )
 {
     hungupPidsLock_.lock();
     hungupPids_.erase ( pid );
     hungupPidsLock_.unlock();
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::CheckFdState ( int fd )
 {
     const char method_name[   ] = "CProcessContainer::CheckFdState";
@@ -5904,7 +6154,9 @@ void CProcessContainer::CheckFdState ( int fd )
 
     close( epollfd );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::PidHangupCheck ( time_t now )
 {
     const char method_name[   ] = "CProcessContainer::PidHangupCheck";
@@ -6030,7 +6282,7 @@ void CProcessContainer::PidHangupCheck ( time_t now )
 
     TRACE_EXIT;
 }
-
+#endif
 
 void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool abend, int downNode )
 {
@@ -6073,7 +6325,9 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                 int         processNid  = process->GetNid();
                 int         processPid  = process->GetPid();
                 Verifier_t  processVerifier = process->GetVerifier();
+#ifndef NAMESERVER_PROCESS
                 Exit_Process( process, abend, downNode );
+#endif
                 if (trace_settings & TRACE_PROCESS)
                     trace_printf( "%s@%d Set State_Stopped for process %s(%d,%d:%d), abend=%d, down=%d, "
                                   "killingMyNode=%d,DTM aborted=%d, SMS aborted=%d\n"
@@ -6140,6 +6394,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
 
 
 
+#ifndef NAMESERVER_PROCESS
 bool CProcessContainer::WhoEnlisted( _TM_Txid_External trans_id, struct message_def *msg )
 {
     int idx;
@@ -6176,3 +6431,4 @@ bool CProcessContainer::WhoEnlisted( _TM_Txid_External trans_id, struct message_
     TRACE_EXIT;
     return SUCCESS;
 }
+#endif

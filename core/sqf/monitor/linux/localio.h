@@ -25,6 +25,7 @@
 
 #ifndef LOCALIO_H
 #define LOCALIO_H
+#ifndef NAMESERVER_PROCESS
 
 #include <iostream>
 #include <string>
@@ -94,4 +95,4 @@ typedef struct LioSharedMemHdr
 
 typedef int SB_Verif_Type;
 #endif
-
+#endif

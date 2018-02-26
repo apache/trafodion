@@ -224,6 +224,7 @@ private:
     bool abort_;
 };
 
+#ifndef NAMESERVER_PROCESS
 class CReplDevice: public CReplObj
 {
 public:
@@ -235,7 +236,9 @@ public:
 private:
     CLogicalDevice* ldev_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplDump: public CReplObj
 {
 public:
@@ -247,7 +250,9 @@ public:
 private:
     CProcess * process_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplDumpComplete: public CReplObj
 {
 public:
@@ -259,6 +264,7 @@ public:
 private:
     CProcess * process_;
 };
+#endif
 
 class CReplShutdown: public CReplObj
 {
@@ -377,6 +383,7 @@ private:
 
 };
 
+#ifndef NAMESERVER_PROCESS
 class CReplStdioData: public CReplObj
 {
 public:
@@ -392,7 +399,9 @@ private:
     ssize_t count_;
     char *data_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplStdinReq: public CReplObj
 {
 public:
@@ -408,6 +417,7 @@ private:
     int supplierNid_;
     int supplierPid_;
 };
+#endif
 
 
 class CReplUniqStr: public CReplObj

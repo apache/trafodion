@@ -58,7 +58,9 @@ using namespace std;
 extern CReqQueue ReqQueue;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 extern CHealthCheck HealthCheck;
 extern CReplicate Replicator;
 extern int MyPNID;
@@ -440,7 +442,9 @@ void CHealthCheck::sendEventToSMService(SMServiceEvent_t event)
             trace_printf( "%s@%d - Sending event=%d\n"
                         , method_name, __LINE__, event );
         }
+#ifndef NAMESERVER_PROCESS
         smserviceProcess_->GenerateEvent( event, 0, NULL );
+#endif
     }
 
     TRACE_EXIT;
@@ -459,7 +463,9 @@ void CHealthCheck::sendEventToWatchDog(WatchdogEvent_t event)
             trace_printf( "%s@%d - Sending event=%d\n"
                         , method_name, __LINE__, event );
         }
+#ifndef NAMESERVER_PROCESS
         watchdogProcess_->GenerateEvent( event, 0, NULL );
+#endif
     }
 
     TRACE_EXIT;
@@ -545,11 +551,13 @@ void CHealthCheck::processTimerEvent()
         scheduleNodeDown(); // bring the node down
     }
 
+#ifndef NAMESERVER_PROCESS
     // refresh WDT 
     if ( SQ_theLocalIOToClient )
     {
         SQ_theLocalIOToClient->refreshWDT(++refreshCounter_);
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -604,6 +612,7 @@ void CHealthCheck::startQuiesce()
 
     ReqQueue.enqueueQuiesceReq();
 
+#ifndef NAMESERVER_PROCESS
     if (MyNode->getNumQuiesceExitPids() > 0) // count down quiesce only if there are pids on exit list.
     {
         clock_gettime(CLOCK_REALTIME, &quiesceStartTime_);
@@ -621,6 +630,7 @@ void CHealthCheck::startQuiesce()
     sprintf(buf, "[%s], Quiesce req queued. Send pids = %d, Exit pids = %d\n", 
             method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
     mon_log_write(MON_HEALTHCHECK_QUIESCE_1, SQ_LOG_WARNING, buf);
+#endif
 
     TRACE_EXIT;
 }
@@ -637,19 +647,23 @@ void CHealthCheck::scheduleNodeDown()
     {
         if (quiesceCountingDown_)
         {
+#ifndef NAMESERVER_PROCESS
             if (trace_settings & TRACE_HEALTH)
                 trace_printf("%s@%d After wait, QuiesceSendPids = %d, QuiesceExitPids = %d\n", method_name,
                              __LINE__, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
+#endif
             quiesceCountingDown_ = false;
         }
         
         ReqQueue.enqueuePostQuiesceReq();
         nodeDownScheduled_ = true;
 
+#ifndef NAMESERVER_PROCESS
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Final node down req scheduled. QuiesceSendPids = %d, QuiesceExitPids = %d\n", 
                 method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
         mon_log_write(MON_HEALTHCHECK_SCH_1, SQ_LOG_WARNING, buf);
+#endif
     }
 
     TRACE_EXIT; 

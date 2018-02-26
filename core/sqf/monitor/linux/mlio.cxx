@@ -94,6 +94,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
    sizeof(REQTYPE) + sizeof( Mount_def ),           // ReqType_Mount
    sizeof(REQTYPE) + sizeof( NewProcess_def ),      // ReqType_NewProcess
+   sizeof(REQTYPE) + sizeof( NewProcessNs_def ),    // ReqType_NewProcessNs
    sizeof(REQTYPE) + sizeof( NodeAdd_def ),         // ReqType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeDelete_def ),      // ReqType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeDown_def ),        // ReqType_NodeDown
@@ -911,7 +912,7 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
           }
 
           // Place new request on request queue
-          ReqQueue.enqueueReq(msgType, pid, msg);
+          ReqQueue.enqueueReq(msgType, pid, -1, msg);
       }
 
       break;
@@ -1239,6 +1240,10 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
 
   int shsize = (int) ((sharedBuffersMax * sizeof( SharedMsgDef )) + 
                 sizeof( SharedMemHdr ));
+
+  if (trace_settings & TRACE_INIT)
+     trace_printf("%s@%d number of buffers=%d, shared mem header size=%u, shared buffer size=%u, shared size=%d\n", method_name, __LINE__,
+                  sharedBuffersMax, (int)sizeof(SharedMemHdr), (int)sizeof(SharedMsgDef), shsize);
 
   long enableHugePages;
   int lv_shmFlag = SHM_NORESERVE | IPC_CREAT | IPC_EXCL | SQ_LIO_SHM_PERMISSIONS;

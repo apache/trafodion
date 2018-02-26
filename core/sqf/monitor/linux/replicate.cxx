@@ -39,7 +39,9 @@ extern int MyPNID;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 CReplicate Replicator;
 
 int CReplObj::objAllocSize_ = CReplObj::calcAllocSize();
@@ -65,6 +67,10 @@ void CReplObj::validateObj()
     }
 }
 
+#ifdef NAMESERVER_PROCESS
+struct dummy_sizeof_def {};
+#endif
+
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
@@ -82,13 +88,33 @@ int CReplObj::calcAllocSize()
                                                     sizeof(CReplClone)),
                                                 sizeof(CReplExit)),
                                             sizeof(CReplKill)),
+#ifdef NAMESERVER_PROCESS
+                                        sizeof(dummy_sizeof_def)),
+#else
                                         sizeof(CReplDevice)),
+#endif
                                     sizeof(CReplNodeDown)),
                                 sizeof(CReplNodeUp)),
+#ifdef NAMESERVER_PROCESS
+                            sizeof(dummy_sizeof_def)),
+#else
                             sizeof(CReplDump)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                        sizeof(dummy_sizeof_def)),
+#else
                         sizeof(CReplDumpComplete)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                    sizeof(dummy_sizeof_def)),
+#else
                     sizeof(CReplStdioData)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                sizeof(dummy_sizeof_def)),
+#else
                 sizeof(CReplStdinReq)),
+#endif
             sizeof(CReplShutdown));
 }
 
@@ -940,6 +966,7 @@ bool CReplKill::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifndef NAMESERVER_PROCESS
 CReplDevice::CReplDevice(CLogicalDevice *ldev) : ldev_(ldev)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1012,7 +1039,9 @@ bool CReplDevice::replicate(struct internal_msg_def *&msg)
 
     return copied;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplDump::CReplDump(CProcess *process) : process_(process)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1085,7 +1114,9 @@ bool CReplDump::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplDumpComplete::CReplDumpComplete(CProcess *process) : process_(process)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1161,6 +1192,7 @@ bool CReplDumpComplete::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
 CReplShutdown::CReplShutdown(int level) : level_(level)
 {
@@ -1731,6 +1763,7 @@ bool CReplSoftNodeUp::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifndef NAMESERVER_PROCESS
 CReplStdioData::CReplStdioData(int nid, int pid, StdIoType type, ssize_t count,
                                char *data)
     : nid_(nid), pid_(pid), type_(type), count_(count)
@@ -1794,7 +1827,9 @@ bool CReplStdioData::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplStdinReq::CReplStdinReq(int nid, int pid, StdinReqType type,
                              int supplierNid, int supplierPid) 
     : nid_(nid), pid_(pid), type_(type), supplierNid_(supplierNid),
@@ -1853,7 +1888,7 @@ bool CReplStdinReq::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
-
+#endif
 
 CReplicate::CReplicate(): 
     maxListSize_(0), syncClusterData_ (false)

@@ -48,10 +48,16 @@ enum OpType
 #endif
 };
 
+#ifdef NAMESERVER_PROCESS
+class CMonitor : public CCluster
+#else
 class CMonitor : public CTmSync_Container
+#endif
 {
+#ifndef NAMESERVER_PROCESS
 friend class SQ_LocalIOToClient;
 friend class CExternalReq;
+#endif
 public:
     int OpenCount;
     int NoticeCount;
@@ -59,7 +65,11 @@ public:
     int NumOutstandingIO;     // Current # of I/Os outstanding
     int NumOutstandingSends;  // Current # of Sends outstanding
 
+#ifdef NAMESERVER_PROCESS
+    CMonitor(void);
+#else
     CMonitor( int procTermSig );
+#endif
     ~CMonitor( void );
 
     bool  CompleteProcessStartup( struct message_def *msg );
@@ -70,7 +80,9 @@ public:
     void  DecrOpenCount(void);
     void  DecrNoticeCount(void);
     void  DecrProcessCount(void);
+#ifndef NAMESERVER_PROCESS
     void  StartPrimitiveProcesses( void );  
+#endif
     void  StartZookeeperClient( void );
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );

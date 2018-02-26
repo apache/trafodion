@@ -31,6 +31,7 @@
 #include "redirector.h"
 
 using namespace std;
+#include "msgdef.h"
 #include "internal.h"
 #include "monlogging.h"
 #include "monsonar.h"
@@ -213,6 +214,7 @@ void CLNode::DeLinkP(CLNode **head, CLNode **tail)
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::Added( void )
 {
     struct  message_def *msg;
@@ -254,7 +256,9 @@ void CLNode::Added( void )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::Changed( CLNodeConfig *lnodeConfig )
 {
     struct  message_def *msg;
@@ -308,7 +312,9 @@ void CLNode::Changed( CLNodeConfig *lnodeConfig )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::Deleted( void )
 {
     struct  message_def *msg;
@@ -350,7 +356,9 @@ void CLNode::Deleted( void )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::Down( void )
 {
     struct  message_def *msg;
@@ -398,6 +406,7 @@ void CLNode::Down( void )
 
     TRACE_EXIT;
 }
+#endif
 
 CProcess *CLNode::GetProcessL(int pid)
 {
@@ -566,6 +575,7 @@ CLNode *CLNode::LinkP(CLNode * entry)
     return entry;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::PrepareForTransactions( bool activatingSpare )
 {
     const char method_name[] = "CLNode::PrepareForTransactions";
@@ -656,7 +666,9 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SendDTMRestarted( void )
 {
     const char method_name[] = "CLNode::SendDTMRestarted";
@@ -708,7 +720,9 @@ void CLNode::SendDTMRestarted( void )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
 {
     int rc = 0;
@@ -781,7 +795,9 @@ void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SetAffinity( CProcess *process )
 {
     int rc = 0;
@@ -919,7 +935,9 @@ void CLNode::SetAffinity( CProcess *process )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::Up( void )
 {
     struct  message_def *msg;
@@ -967,6 +985,7 @@ void CLNode::Up( void )
 
     TRACE_EXIT;
 }
+#endif
 
 CLNodeContainer::CLNodeContainer(CNode *node)
                 :LNode(NULL)
@@ -1106,6 +1125,7 @@ void CLNodeContainer::AddLNodeP( CLNode *lnode )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CLNodeContainer::CancelDeathNotification( int nid
                                              , int pid
                                              , int verifier
@@ -1123,6 +1143,7 @@ void CLNodeContainer::CancelDeathNotification( int nid
 
     TRACE_EXIT;
 }
+#endif
    
 void CLNodeContainer::CheckForPendingCreates ( CProcess *process )
 {

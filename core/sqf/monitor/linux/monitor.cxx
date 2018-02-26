@@ -60,6 +60,9 @@ using namespace std;
 #include "replicate.h"
 #include "robsem.h"
 #include "commaccept.h"
+#ifdef NAMESERVER_PROCESS
+#include "nscommacceptmon.h"
+#endif
 
 #include <assert.h>
 #include <signal.h>
@@ -72,6 +75,7 @@ using namespace std;
 #include "mlio.h"
 #include "redirector.h"
 #include "intprocess.h"
+#include "nameserver.h"
 
 #include "reqqueue.h"
 #include "reqworker.h"
@@ -96,6 +100,9 @@ char MyPath[MAX_PROCESS_PATH];
 char MyCommPort[MPI_MAX_PORT_NAME] = {'\0'};
 char MyMPICommPort[MPI_MAX_PORT_NAME] = {'\0'};
 char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
+#ifdef NAMESERVER_PROCESS
+char MyMon2NsPort[MPI_MAX_PORT_NAME] = {'\0'};
+#endif
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
 bool Emulate_Down = false;
@@ -111,23 +118,36 @@ int  CreatorShellPid = -1;
 Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
+#ifndef NAMESERVER_PROCESS
+int  NameServerEnabled = false;
+#endif
 
 // Lock to manage memory modifications during fork/exec
 CLock MemModLock;
 CMonitor *Monitor = NULL;
+#ifndef NAMESERVER_PROCESS
+CNameServer *NameServer = NULL;
+#endif
 CNodeContainer *Nodes = NULL;
 CConfigContainer *Config = NULL;
+#ifndef NAMESERVER_PROCESS
 CDeviceContainer *Devices = NULL;
+#endif
 int MyPNID = -1;
 CNode *MyNode;
 CMonLog *MonLog =  NULL;
 CMonStats * MonStats = NULL;
 extern CMonTrace *MonTrace;
+#ifndef NAMESERVER_PROCESS
 CRedirector Redirector;
+#endif
 CIntProcess IntProcess;
 CReqQueue ReqQueue;
 CHealthCheck HealthCheck;
 CCommAccept CommAccept;
+#ifdef NAMESERVER_PROCESS
+CCommAcceptMon CommAcceptMon;
+#endif
 extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
 // Seabed disconnect semaphore
@@ -135,8 +155,13 @@ RobSem * sbDiscSem = NULL;
 
 
 
+#ifdef NAMESERVER_PROCESS
+DEFINE_EXTERN_COMP_DOVERS(nameserver)
+DEFINE_EXTERN_COMP_GETVERS2(nameserver)
+#else
 DEFINE_EXTERN_COMP_DOVERS(monitor)
 DEFINE_EXTERN_COMP_GETVERS2(monitor)
+#endif
 
 
 _TM_Txid_External invalid_trans( void )
@@ -200,6 +225,7 @@ char *ErrorMsg (int error_code)
     return buffer;
 }
 
+#ifndef NAMESERVER_PROCESS
 void child_death_signal_handler2 (int signal, siginfo_t *info, void *)
 {
     pid_t pid;
@@ -283,6 +309,7 @@ void child_death_signal_handler2 (int signal, siginfo_t *info, void *)
     if (trace_settings & TRACE_ENTRY_EXIT)
         trace_nolock_printf("%s@%d - Exit\n", method_name, __LINE__);
 }
+#endif
 
 void monMallocStats()
 {
@@ -316,16 +343,23 @@ const char *CommTypeString( CommType_t commType)
 }
 
 
+#ifdef NAMESERVER_PROCESS
+CMonitor::CMonitor ()
+    : CCluster (),
+#else
 CMonitor::CMonitor (int procTermSig)
     : CTmSync_Container (),
-      OpenCount (0),
-      NoticeCount (0),
-      ProcessCount (0),
-      NumOutstandingIO (0),
-      NumOutstandingSends (0),
-      Last_error (MPI_SUCCESS),
-      processMapFd ( -1 ),
-      procTermSig_ ( procTermSig )
+#endif
+      OpenCount (0)
+    , NoticeCount (0)
+    , ProcessCount (0)
+    , NumOutstandingIO (0)
+    , NumOutstandingSends (0)
+    , Last_error (MPI_SUCCESS)
+    , processMapFd ( -1 )
+#ifndef NAMESERVER_PROCESS
+    , procTermSig_ ( procTermSig )
+#endif
 {
     const char method_name[] = "CMonitor::CMonitor";
     TRACE_ENTRY;
@@ -392,8 +426,13 @@ void CMonitor::openProcessMap ( void )
         PidMap = true;
     }
 
+#ifdef NAMESERVER_PROCESS
+    snprintf( fname, sizeof(fname), "%s/ns.map.%d.%s",
+             getenv("MPI_TMPDIR"), MyPNID, Node_name );
+#else
     snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
              getenv("MPI_TMPDIR"), MyPNID, Node_name );
+#endif
     remove(fname);
     processMapFd = open(fname, O_WRONLY | O_APPEND | O_CREAT,
                         S_IRUSR | S_IWUSR );
@@ -742,6 +781,7 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
     return;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CMonitor::StartPrimitiveProcesses( void )
 {
     const char method_name[] = "CMonitor::StartPrimitiveProcesses";
@@ -756,6 +796,7 @@ void CMonitor::StartPrimitiveProcesses( void )
     
     TRACE_EXIT;
 }
+#endif
 
 void HandleMyNodeExpiration( void )
 {
@@ -951,13 +992,19 @@ int main (int argc, char *argv[])
     char *nodename = NULL;
     char fname[MAX_PROCESS_PATH];
     char short_node_name[MPI_MAX_PROCESSOR_NAME];
+#ifndef NAMESERVER_PROCESS
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
+#endif
     char buf[MON_STRING_BUF_SIZE];
     unsigned int initSleepTime = 1; // 1 second
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
  
+#ifdef NAMESERVER_PROCESS
+    CALL_COMP_DOVERS(nameserver, argc, argv);
+#else
     CALL_COMP_DOVERS(monitor, argc, argv);
+#endif
 
     const char method_name[] = "main";
 
@@ -1309,9 +1356,15 @@ int main (int argc, char *argv[])
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyIncr();
 
+#ifdef NAMESERVER_PROCESS
+    snprintf(buf, sizeof(buf),
+                 "[CMonitor::main], %s, Started! CommType: %s\n"
+                , CALL_COMP_GETVERS2(nameserver), CommTypeString( CommType ));
+#else
     snprintf(buf, sizeof(buf),
                  "[CMonitor::main], %s, Started! CommType: %s\n"
                 , CALL_COMP_GETVERS2(monitor), CommTypeString( CommType ));
+#endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
        
 #ifdef DMALLOC
@@ -1329,18 +1382,32 @@ int main (int argc, char *argv[])
            trace_printf("%s@%d" "EMULATE_DOWN Option set" "\n", method_name, __LINE__);
 
     {
+#ifndef NAMESERVER_PROCESS
         // Create thread for monitoring redirected i/o.
         // This is also used for monitor logs, so start it early. 
         Redirector.start();
+#endif
 
         // CNodeContainer loads static configuration from database
         Nodes = new CNodeContainer ();
         Config = new CConfigContainer ();
+#ifdef NAMESERVER_PROCESS
+        Monitor = new CMonitor ();
+#else
         Monitor = new CMonitor (procTermSig);
+#endif
+#ifndef NAMESERVER_PROCESS
+        env = getenv("NAMESERVER_ENABLE");
+        if ( env && isdigit(*env) )
+            NameServerEnabled = atoi(env);
+        if ( NameServerEnabled )
+            NameServer = new CNameServer ();
+#endif
         if (!IAmIntegrating)
         {
             Config->Init ();
         }
+#ifndef NAMESERVER_PROCESS
         Devices = new CDeviceContainer ();
         if ( !Devices->IsInitialized() )
         {
@@ -1353,6 +1420,7 @@ int main (int argc, char *argv[])
                 MPI_Abort(MPI_COMM_SELF,99); // too early to call failsafe node down.
             }
         }
+#endif
         nodename = new char [Monitor->GetConfigPNodesCount() * MPI_MAX_PROCESSOR_NAME];
 
         // Create health check thread
@@ -1360,9 +1428,18 @@ int main (int argc, char *argv[])
 
         // Create thread to accept connections from other monitors
         CommAccept.start();
+#ifdef NAMESERVER_PROCESS
+        CommAcceptMon.start();
+#endif
         // Open file used to record process start/end times
         Monitor->openProcessMap ();
 
+#ifndef NAMESERVER_PROCESS
+        if ( NameServerEnabled )
+            NameServer->InitializeNameServer();
+#endif
+
+#ifndef NAMESERVER_PROCESS
         // Always using localio now, no other option
         SQ_theLocalIOToClient = new SQ_LocalIOToClient( MyPNID );
         assert (SQ_theLocalIOToClient);
@@ -1385,8 +1462,10 @@ int main (int argc, char *argv[])
         }
 
         memset( (void *)ioBuffer, 0 , BLOCK_SIZE );
+#endif
 
 // start ok
+#ifndef NAMESERVER_PROCESS
         if (IsRealCluster)
         {
             snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",
@@ -1398,6 +1477,7 @@ int main (int argc, char *argv[])
             snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%d.%s",
                      getenv("MPI_TMPDIR"),MyPNID,Node_name);
         }
+#endif
 
         // Change Node_name what we have in our configuration
         CNode *myNode = Nodes->GetNode(MyPNID);
@@ -1406,6 +1486,7 @@ int main (int argc, char *argv[])
             strcpy (Node_name, myNode->GetName()); 
         }
         
+#ifndef NAMESERVER_PROCESS
         // create with no caching, user read/write, group read/write, other read
         fd = open( port_fname
                    , O_RDWR | O_TRUNC | O_CREAT | O_DIRECT 
@@ -1469,6 +1550,7 @@ int main (int argc, char *argv[])
 
         if (trace_settings & TRACE_INIT)
             trace_printf("%s@%d" "started LocalIOToClient environment\n" "\n", method_name, __LINE__);
+#endif
 
         if (trace_settings & TRACE_INIT)
         {
@@ -1583,10 +1665,12 @@ int main (int argc, char *argv[])
     // Create request worker threads
     CReqWorker::startReqWorkers();
 
+#ifndef NAMESERVER_PROCESS
     if ( ! IAmIntegrating )
     {
         Monitor->StartPrimitiveProcesses();
     }
+#endif
 
     env = getenv( "SQ_USE_CPU_AFFINITY" );
     if ( env && strcmp( env, "1" ) == 0 )
@@ -1645,30 +1729,38 @@ int main (int argc, char *argv[])
         if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyIncr();
 
+#ifndef NAMESERVER_PROCESS
         Monitor->EnterSyncCycle();
         if ( Monitor->TmSyncPending() )
         {
             Monitor->TmSync ();
         }
         Monitor->ExitSyncCycle();
+#endif
 
+#ifndef NAMESERVER_PROCESS
         if ( !Monitor->GetPendingSlaveTmSync() &&
              Monitor->GetTotalSlaveTmSyncCount() == 0 )
         {
+#endif
             Monitor->EnterSyncCycle();
             done = Monitor->exchangeNodeData();
             Monitor->ExitSyncCycle();
+#ifndef NAMESERVER_PROCESS
         }
+#endif
 
         if (done)
             break; 
 
 
+#ifndef NAMESERVER_PROCESS
         // Check to see if 'ckillall' is executing and disable the watchdog
         if ( !SQ_theLocalIOToClient->isWDTEnabled() )
         {
            // HealthCheck.setState(MON_EXIT_WATCHDOG);
         }
+#endif
 
     }
 
@@ -1683,7 +1775,9 @@ int main (int argc, char *argv[])
         ZClient->ShutdownWork();
     }
 
+#ifndef NAMESERVER_PROCESS
     Redirector.shutdownWork();
+#endif
 
     // shut down health check thread before shutting down reqWorker thread.
     HealthCheck.shutdownWork();
@@ -1695,18 +1789,24 @@ int main (int argc, char *argv[])
 
     Monitor->stats();
 
+#ifndef NAMESERVER_PROCESS
     // Tell the LIO worker threads to exit
     SQ_theLocalIOToClient->shutdownWork();
+#endif
 
     CommAccept.shutdownWork();
 
+#ifndef NAMESERVER_PROCESS
     // Rename the monitor "port" file
     sprintf(temp_fname, "%s.bak", port_fname);
     remove(temp_fname);
     rename(port_fname, temp_fname);
+#endif
 
     delete [] nodename;
+#ifndef NAMESERVER_PROCESS
     delete Devices;
+#endif
     delete Nodes;
     delete ZClient;
     delete Monitor;
@@ -1729,6 +1829,7 @@ int main (int argc, char *argv[])
        trace_printf("%s@%d" "- Calling MPI_Finalize()" "\n", method_name, __LINE__);
     MPI_Finalize ();
 #endif
+#ifndef NAMESERVER_PROCESS
     if (trace_settings & TRACE_STATS)
     {
       trace_printf("%s@%d" "- LIO Stats: shared_buffers_total="  "%d" "\n", method_name, __LINE__, SQ_theLocalIOToClient->getSharedBufferCount());
@@ -1744,6 +1845,7 @@ int main (int argc, char *argv[])
       trace_printf("%s@%d" "- LIO Stats: verifierMap="  "%d" "\n", method_name, __LINE__, SQ_theLocalIOToClient->getVerifierMapCount());
     }
     delete SQ_theLocalIOToClient;
+#endif
 
     snprintf(buf, sizeof(buf), "[CMonitor::main], Shutdown normally.\n");
     mon_log_write(MON_MONITOR_MAIN_11, SQ_LOG_INFO, buf);

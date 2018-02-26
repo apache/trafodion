@@ -25,19 +25,26 @@
 
 using namespace std;
 
+#ifndef NAMESERVER_PROCESS
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#endif
 #include <sys/epoll.h>
+#ifndef NAMESERVER_PROCESS
 #include <errno.h>
 #include <stdlib.h>
+#endif
 #include <string.h>
+#ifndef NAMESERVER_PROCESS
 #include <sys/time.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/stat.h>
+#endif
 
+#ifndef NAMESERVER_PROCESS
 #include "monlogging.h"
 #include "montrace.h"
 #include "monitor.h"
@@ -51,7 +58,9 @@ using namespace std;
 #include "replicate.h"
 #include "monsonar.h"
 #include "reqqueue.h"
+#endif
 
+#ifndef NAMESERVER_PROCESS
 extern CNode *MyNode;
 extern sigset_t SigSet;
 extern CRedirector Redirector;
@@ -61,6 +70,7 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
+#endif
 
 const char *EpollEventString( __uint32_t events )
 {
@@ -127,6 +137,7 @@ const char *EpollOpString( int op )
     return( str );
 }
 
+#ifndef NAMESERVER_PROCESS
 CRedirect::CRedirect(int nid, int pid)
                     :fd_(-1)
                     ,activity_(false)
@@ -2124,3 +2135,4 @@ void CRedirector::start()
 
     TRACE_EXIT;
 }
+#endif
