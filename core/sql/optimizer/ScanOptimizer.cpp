@@ -10350,10 +10350,11 @@ void NewMDAMCostWA::compute()
   CostScalar costAdj = (ActiveSchemaDB()->getDefaults()).getAsDouble(NCM_MDAM_COST_ADJ_FACTOR);
   scmCost_->cpScmlr().scaleByValue(costAdj);
 
-  // If the cost exceeds the bound, MDAM loses
+  // If MDAM is not forced and the cost exceeds the bound, MDAM loses
 
-  if (costBoundPtr_ != NULL &&
-      costBoundPtr_->scmCompareCosts(*scmCost_) == LESS)
+  if (!mdamForced_ &&
+      (costBoundPtr_ != NULL) &&
+      (costBoundPtr_->scmCompareCosts(*scmCost_) == LESS))
   {
     mdamWon_ = FALSE;
     MDAM_DEBUG0(MTL2, "Mdam scan lost due to higher cost determined by scmCompareCosts()");
