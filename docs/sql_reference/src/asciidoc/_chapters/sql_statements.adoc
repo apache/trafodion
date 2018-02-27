@@ -3500,6 +3500,152 @@ CREATE TABLE t2 (c1 int, c2 char (50) UPSHIFT NOT NULL) AS SELECT * FROM t1;
 ```
 
 <<<
+[[create_external_table_examples]]
+==== Examples of CREATE EXTERNAL TABLE
+* This example compares the execution time of using external table and not using external table when reading hive tables.
+
+** This is the definition of the table _customer_address1_ which has a trafodion external table.
++
+```
+/* Hive DDL */
+
+CREATE TABLE HIVE.TPCDS_SF1000_ORC.customer_address1
+  (
+    CA_ADDRESS_SK                    int
+  , CA_ADDRESS_ID                    string
+  , CA_STREET_NUMBER                 string
+  , CA_STREET_NAME                   string
+  , CA_STREET_TYPE                   string
+  , CA_SUITE_NUMBER                  string
+  , CA_CITY                          string
+  , CA_COUNTY                        string
+  , CA_STATE                         string
+  , CA_ZIP                           string
+  , CA_COUNTRY                       string
+  , CA_GMT_OFFSET                    float
+  , CA_LOCATION_TYPE                 string
+  )
+  stored as orc
+  tblproperties
+ (
+    "orc.bloom.filter.columns"="CA_COUNTY, CA_CITY, CA_GMT_OFFSET, CA_LOCATION_TYPE"
+   ,"orc.stripe.size"="67108864"
+  )
+;
+
+
+/* Trafodion DDL */
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.TPCDS_SF1000_ORC.customer_address1;
+/* ObjectUID = 8789483533085275772 */
+
+CREATE EXTERNAL TABLE customer_address1
+  (
+    CA_ADDRESS_SK                    INT DEFAULT NULL NOT SERIALIZED
+  , CA_ADDRESS_ID                    VARCHAR(16) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_STREET_NUMBER                 VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_STREET_NAME                   VARCHAR(60) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_STREET_TYPE                   VARCHAR(15) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_SUITE_NUMBER                  VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_CITY                          VARCHAR(60) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_COUNTY                        VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_STATE                         VARCHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_ZIP                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_COUNTRY                       VARCHAR(20 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL NOT SERIALIZED
+  , CA_GMT_OFFSET                    REAL DEFAULT NULL NOT SERIALIZED
+  , CA_LOCATION_TYPE                 VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+  FOR HIVE.TPCDS_SF1000_ORC.customer_address1
+;
+
+--- SQL operation complete.
+```
+
++
+The size of the table _customer_address1_ is 71.1M.
++
+```
+[trafodion@nap001 ~]$ hdfs dfs -du -h /user/hive/warehouse/tpcds_sf1000_orc.db/customer_address1
+42.4 M  84.8 M  /user/hive/warehouse/tpcds_sf1000_orc.db/customer_address1/000000_0    
+28.7 M  57.4 M  /user/hive/warehouse/tpcds_sf1000_orc.db/customer_address1/000001_0
+```
+
++
+It takes approximately 13 seconds to get the result using the external table.
++
+```
+SQL>SELECT [ LAST 1 ] * FROM customer_address1 WHERE char_length(CA_ADDRESS_ID) > 100;        
+--- 0 row(s) selected. 
+
+Start Time             2018/01/31 02:21:55.409105
+End Time               2018/01/31 02:22:09.299215
+Elapsed Time                      00:00:13.890110
+Compile Time                      00:00:00.264101
+Execution Time                    00:00:13.625538
+```
+
+** This is the definition of the table _customer_address2_, it has same structure and size as the table _customer_address1_, but it does not have an external table.
++
+```
+/* Hive DDL */
+CREATE TABLE TPCDS_SF1000_ORC.customer_address2
+  (
+    CA_ADDRESS_SK                    int
+  , CA_ADDRESS_ID                    string
+  , CA_STREET_NUMBER                 string
+  , CA_STREET_NAME                   string
+  , CA_STREET_TYPE                   string
+  , CA_SUITE_NUMBER                  string
+  , CA_CITY                          string
+  , CA_COUNTY                        string
+  , CA_STATE                         string
+  , CA_ZIP                           string
+  , CA_COUNTRY                       string
+  , CA_GMT_OFFSET                    float
+  , CA_LOCATION_TYPE                 string
+  )
+  stored as orc
+  tblproperties
+  (
+    "orc.bloom.filter.columns"="CA_COUNTY, CA_CITY, CA_GMT_OFFSET, CA_LOCATION_TYPE"
+   ,"orc.stripe.size"="67108864"
+  )
+;
+
+/* Trafodion DDL */
+
+--- SQL operation complete.
+```
+
++
+It takes approximately 24 seconds to get the result not using the external table.
+
++
+```
+SQL>SELECT [ LAST 1 ] * FROM HIVE.HIVE.customer_address2 WHERE char_length(CA_ADDRESS_ID) > 100;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_ID) from table HIVE.TPCDS_SF1000_ORC.CUSTOMER_ADDRESS2 were not available. As a result, the access path chosen31 02:22:20]
+--- 0 row(s) selected. 
+
+Start Time             2018/01/31 02:22:20.783859
+End Time               2018/01/31 02:22:45.146483
+Elapsed Time                      00:00:24.362624
+Compile Time                      00:00:00.023941
+Execution Time                    00:00:24.307888
+```
+
+<<<
 [[create_view_statement]]
 == CREATE VIEW Statement
 
