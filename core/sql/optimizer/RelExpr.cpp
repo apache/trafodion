@@ -11390,7 +11390,7 @@ void RelRoot::setMvBindContext(MvBindContext * pMvBindContext)
 
 NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg)
 {
-  NABoolean GroupByAggNodeAdded = FALSE;
+  NABoolean groupByAggNodeAdded = FALSE;
   RelExpr * childOfRoot = child(0);
   GroupByAgg *aggNode = NULL;
   // If the One Row Subquery is already enforced by a scalar aggregate
@@ -11426,7 +11426,7 @@ NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg
 
     }
   if (aggNode)
-    return GroupByAggNodeAdded;
+    return groupByAggNodeAdded;
 
   const RETDesc *oldTable = getRETDesc();
   RETDesc *resultTable = new(bindWA->wHeap()) RETDesc(bindWA);
@@ -11474,12 +11474,12 @@ NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg
 
   newGrby->bindNode(bindWA) ;
   child(0) = newGrby ;
-  GroupByAggNodeAdded = TRUE;
+  groupByAggNodeAdded = TRUE;
   // Set the return descriptor
   //
   setRETDesc(resultTable);
 
-  return GroupByAggNodeAdded;
+  return groupByAggNodeAdded;
 }
 // -----------------------------------------------------------------------
 // member functions for class PhysicalRelRoot
