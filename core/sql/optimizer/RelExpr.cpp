@@ -11388,8 +11388,9 @@ void RelRoot::setMvBindContext(MvBindContext * pMvBindContext)
   pMvBindContextForScope_ = pMvBindContext;
 }
 
-void RelRoot::addOneRowAggregates(BindWA* bindWA)
+NABoolean RelRoot::addOneRowAggregates(BindWA* bindWA, NABoolean forceGroupByAgg)
 {
+  NABoolean GroupByAggNodeAdded = FALSE;
   RelExpr * childOfRoot = child(0);
   GroupByAgg *aggNode = NULL;
   // If the One Row Subquery is already enforced by a scalar aggregate
@@ -11404,7 +11405,11 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
   // way out and add a one row aggregate.
   // Also if the groupby is non scalar then we need to add a one row aggregate.
   // Also if we have select max(a) + select b from t1 from t2;
-  if (childOfRoot->getOperatorType() == REL_GROUPBY)
+  // Still another exception is if there is a [last 0] on top of this node. We
+  // need an extra GroupByAgg node with one row aggregates in this case so
+  // we can put the FirstN node underneath that.
+  if (!forceGroupByAgg &&
+      (childOfRoot->getOperatorType() == REL_GROUPBY))
     {
       aggNode = (GroupByAgg *)childOfRoot;
 
@@ -11421,7 +11426,7 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
     }
   if (aggNode)
-    return ;
+    return GroupByAggNodeAdded;
 
   const RETDesc *oldTable = getRETDesc();
   RETDesc *resultTable = new(bindWA->wHeap()) RETDesc(bindWA);
@@ -11469,9 +11474,12 @@ void RelRoot::addOneRowAggregates(BindWA* bindWA)
 
   newGrby->bindNode(bindWA) ;
   child(0) = newGrby ;
+  GroupByAggNodeAdded = TRUE;
   // Set the return descriptor
   //
   setRETDesc(resultTable);
+
+  return GroupByAggNodeAdded;
 }
 // -----------------------------------------------------------------------
 // member functions for class PhysicalRelRoot
