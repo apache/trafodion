@@ -6094,10 +6094,10 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (prevScope)
     inRowSubquery = prevScope->context()->inRowSubquery();
 
-  NABoolean GroupByAggNodeAdded = FALSE;
+  NABoolean groupByAggNodeAdded = FALSE;
   if (inRowSubquery && (CmpCommon::getDefault(COMP_BOOL_137) == DF_OFF))
     // force adding one row aggregates in the [last 0] case
-    GroupByAggNodeAdded = addOneRowAggregates(bindWA, 
+    groupByAggNodeAdded = addOneRowAggregates(bindWA, 
                             getFirstNRows() == -2 /* [last 0] case */);
 
   returnedRoot = 
@@ -6690,7 +6690,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
           // to force the aggregates to become NULL. Adding a one-row 
           // aggregate group on top of the scalar aggregate, with the FirstN
           // node in between them does the trick.
-          if (GroupByAggNodeAdded &&
+          if (groupByAggNodeAdded &&
                ( (getFirstNRows() == 1) ||   // [first 1] or [any 1]
                  (getFirstNRows() == -2) ||  // [last 0]
                  (getFirstNRows() == -3) ) ) // [last 1]
@@ -6698,9 +6698,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
               nodeToInsertUnder = child(0);
               CMPASSERT(nodeToInsertUnder->getOperatorType() == REL_GROUPBY);             
             }
-          else if (!GroupByAggNodeAdded && (getFirstNRows() == -2))  // [last 0]
+          else if (!groupByAggNodeAdded && (getFirstNRows() == -2))  // [last 0]
             {
-              CMPASSERT(GroupByAggNodeAdded);  // a GroupByAgg should have been forced
+              CMPASSERT(groupByAggNodeAdded);  // a GroupByAgg should have been forced
             }
           else  // a case where we can throw the [first/any/last N] away
             {
