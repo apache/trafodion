@@ -521,7 +521,8 @@ public:
   // defined in generator/GenRelMisc.cpp
   TrafQuerySimilarityInfo * genSimilarityInfo(Generator *generator);
 
-  void addOneRowAggregates(BindWA * bindWA);
+  // returns TRUE if a GroupByAgg node was added
+  NABoolean addOneRowAggregates(BindWA * bindWA, NABoolean forceGroupByAgg);
 
   inline void setNumBMOs(unsigned short num) { numBMOs_ = num; }
   inline unsigned short getNumBMOs() { return numBMOs_; }
