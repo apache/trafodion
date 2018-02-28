@@ -29,6 +29,7 @@
 
 // for DNS name resolution
 #include <netdb.h>
+#include "HdfsClient_JNI.h"
 #include "Globals.h"
 #include "Context.h"
 // Initialize static variables

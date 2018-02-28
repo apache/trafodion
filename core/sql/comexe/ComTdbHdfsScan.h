@@ -54,7 +54,8 @@ class ComTdbHdfsScan : public ComTdb
     CONTINUE_ON_ERROR           = 0x0020,
     LOG_ERROR_ROWS              = 0x0040,
     ASSIGN_RANGES_AT_RUNTIME    = 0x0080,
-    USE_LIBHDFS_SCAN            = 0x0100
+    TREAT_EMPTY_AS_NULL         = 0x0100,
+    USE_LIBHDFS_SCAN            = 0x0200
   };
 
   // Expression to filter rows.
@@ -288,7 +289,7 @@ public:
   {(v ? flags_ |= USE_LIBHDFS_SCAN : flags_ &= ~USE_LIBHDFS_SCAN); }
   NABoolean getUseLibhdfsScan() const
                                 { return (flags_ & USE_LIBHDFS_SCAN) != 0; }
-  
+
   UInt32 getMaxErrorRows() const { return maxErrorRows_;}
   void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
   

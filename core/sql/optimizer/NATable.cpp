@@ -87,6 +87,7 @@
 #define MAX_NODE_NAME 9
 
 #include "SqlParserGlobals.h"
+#include "HdfsClient_JNI.h"
 
 //#define __ROSETTA
 //#include "rosetta_ddl_include.h"

@@ -512,6 +512,7 @@ private:
   NAString jniErrorStr_; 
   HBaseClient_JNI *hbaseClientJNI_;
   HiveClient_JNI *hiveClientJNI_;
+  HdfsClient *hdfsClientJNI_;
 
   // this points to data used by trafSE (traf storage engine) that is context specific.
   // It points to a list of 'black box' of data allocated by user and is returned

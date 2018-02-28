@@ -827,12 +827,11 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           }
         }
       else
-        {
+      {
           updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
           pstate.step_ = EXTRACT_ERROR;
           break;
-        }
-
+      }
       for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
       {
         Attributes * attr = myTdb().getChildTableAttr(i);
@@ -1290,7 +1289,7 @@ void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                (char *)currContext->getJniErrorStr().data());
+                  (char *)currContext->getJniErrorStr().data());
   updateWorkATPDiagsArea(diagsArea);
 }
 

@@ -6103,7 +6103,6 @@ ExExeUtilRegionStatsTcb::ExExeUtilRegionStatsTcb(
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)"", //exe_util_tdb.server(), 
 					(char*)""); //exe_util_tdb.zkPort(),
-
   regionInfoList_ = NULL;
   
   tableName_ = new(glob->getDefaultHeap()) char[2000];
@@ -6876,7 +6875,6 @@ ExExeUtilClusterStatsTcb::ExExeUtilClusterStatsTcb(
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)"", //exe_util_tdb.server(), 
 					(char*)""); //exe_util_tdb.zkPort());
-
   regionInfoList_ = NULL;
   
   // get hbase rootdir location. Max linux pathlength is 1024.

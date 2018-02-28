@@ -63,6 +63,7 @@
 #include "ComQueue.h"
 #include "QRLogger.h"
 #include "NAMemory.h"
+#include "HdfsClient_JNI.h"
 #include <seabed/ms.h>
 #include <seabed/fserr.h>
 #include <curl/curl.h>

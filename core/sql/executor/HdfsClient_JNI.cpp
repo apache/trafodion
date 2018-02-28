@@ -23,6 +23,7 @@
 
 #include "QRLogger.h"
 #include "Globals.h"
+#include "Context.h"
 #include "jni.h"
 #include "HdfsClient_JNI.h"
 
@@ -239,6 +240,7 @@ HDFS_Scan_RetCode HdfsScan::trafHdfsRead(NAHeap *heap, ExHdfsScanStats *hdfsStat
    }
    if (j_retArray == NULL)
       return HDFS_SCAN_EOR;
+
    short retArrayLen = jenv_->GetArrayLength(j_retArray);
    ex_assert(retArrayLen == arrayLen, "HdfsScan::trafHdfsRead() InternalError: retArrayLen != arrayLen");
    jenv_->GetIntArrayRegion(j_retArray, 0, 4, retArray);
@@ -285,23 +287,11 @@ HdfsClient::~HdfsClient()
    deleteHdfsFileInfo();
 }
 
-void HdfsClient::deleteHdfsFileInfo()
-{
-   for (int i = 0; i < numFiles_ ; i ++) {
-      NADELETEBASIC(hdfsFileInfo_[i].mName, getHeap());
-      NADELETEBASIC(hdfsFileInfo_[i].mOwner, getHeap());
-      NADELETEBASIC(hdfsFileInfo_[i].mGroup, getHeap());
-   }
-   NADELETEBASIC(hdfsFileInfo_, getHeap()); 
-   numFiles_ = 0;
-   hdfsFileInfo_ = NULL;
-}
-
 HdfsClient *HdfsClient::newInstance(NAHeap *heap, HDFS_Client_RetCode &retCode)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::newInstance() called.");
 
-   if (initJNIEnv() != JOI_OK)
+      if (initJNIEnv() != JOI_OK)
      return NULL;
    retCode = HDFS_CLIENT_OK;
    HdfsClient *hdfsClient = new (heap) HdfsClient(heap);
@@ -313,6 +303,18 @@ HdfsClient *HdfsClient::newInstance(NAHeap *heap, HDFS_Client_RetCode &retCode)
        }
    }
    return hdfsClient;
+}
+
+void HdfsClient::deleteHdfsFileInfo()
+{
+   for (int i = 0; i < numFiles_ ; i ++) {
+      NADELETEBASIC(hdfsFileInfo_[i].mName, getHeap());
+      NADELETEBASIC(hdfsFileInfo_[i].mOwner, getHeap());
+      NADELETEBASIC(hdfsFileInfo_[i].mGroup, getHeap());
+   }
+   NADELETEBASIC(hdfsFileInfo_, getHeap()); 
+   numFiles_ = 0;
+   hdfsFileInfo_ = NULL;
 }
 
 HDFS_Client_RetCode HdfsClient::init()

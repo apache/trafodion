@@ -21,19 +21,20 @@
 
 package org.trafodion.sql;
 
+import java.io.IOException;
+import java.io.EOFException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.conf.Configuration;
-import java.nio.ByteBuffer;
-import java.io.IOException;
 import java.io.EOFException;
-import java.io.OutputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
@@ -168,7 +169,7 @@ public class HDFSClient
       bytesRead = retObject.intValue();
       fsdis_.close();
       return bytesRead;
-   }
+   }  
 
    public int getRangeNo()
    {
@@ -392,3 +393,5 @@ public class HDFSClient
                         short permissions, long accessTime);
 
 }
+
+

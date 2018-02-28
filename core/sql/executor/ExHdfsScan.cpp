@@ -317,7 +317,6 @@ void ExHdfsScanTcb::freeResources()
   if (hdfsScan_ != NULL) 
      NADELETE(hdfsScan_, HdfsScan, getHeap());
 }
-
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -1099,15 +1098,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 if ((BYTE *)startOfNextRow > bufLogicalEnd_) {
                    step_ = TRAF_HDFS_READ;
                    hdfsBufNextRow_ = NULL;
-	           if (!exception_)
-	               break;
                 }
                 else
 	          hdfsBufNextRow_ = startOfNextRow;
-             }
+            }
            
 	  }
-
+           
 	  if (exception_)
 	  {
 	    nextStep_ = step_;
@@ -2019,6 +2016,54 @@ void ExHdfsScanTcb::deallocateRuntimeRanges()
     }
 }
 
+void ExHdfsScanTcb::handleException(NAHeap *heap,
+                                    char *logErrorRow,
+                                    Lng32 logErrorRowLen,
+                                    ComCondition *errorCond)
+{
+  Lng32 errorMsgLen = 0;
+  charBuf *cBuf = NULL;
+  char *errorMsg;
+  HDFS_Client_RetCode hdfsClientRetcode;
+
+  if (loggingErrorDiags_ != NULL)
+     return;
+
+  if (!loggingFileCreated_) {
+     hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        hdfsClientRetcode = hdfsClient_->hdfsCreate(loggingFileName_, FALSE);
+     if (hdfsClientRetcode == HDFS_CLIENT_OK)
+        loggingFileCreated_ = TRUE;
+     else 
+        goto logErrorReturn;
+  }
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(logErrorRow, logErrorRowLen);
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) 
+     goto logErrorReturn;
+  if (errorCond != NULL) {
+     errorMsgLen = errorCond->getMessageLength();
+     const NAWcharBuf wBuf((NAWchar*)errorCond->getMessageText(), errorMsgLen, heap);
+     cBuf = unicodeToISO88591(wBuf, heap, cBuf);
+     errorMsg = (char *)cBuf->data();
+     errorMsgLen = cBuf -> getStrLen();
+     errorMsg[errorMsgLen]='\n';
+     errorMsgLen++;
+  }
+  else {
+     errorMsg = (char *)"[UNKNOWN EXCEPTION]\n";
+     errorMsgLen = strlen(errorMsg);
+  }
+  hdfsClientRetcode = hdfsClient_->hdfsWrite(errorMsg, errorMsgLen);
+logErrorReturn:
+  if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+     loggingErrorDiags_ = ComDiagsArea::allocate(heap);
+     *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
+                 << DgString0(loggingFileName_)
+                 << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+  }
+}
+
 short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len, 
                                       short * rc, NABoolean isVarchar)
 {
@@ -2119,7 +2164,7 @@ short ExHdfsScanTcb::handleDone(ExWorkProcRetcode &rc)
 
   return 0;
 }
-
+/*
 void ExHdfsScanTcb::handleException(NAHeap *heap,
                                     char *logErrorRow,
                                     Lng32 logErrorRowLen,
@@ -2167,6 +2212,7 @@ logErrorReturn:
                  << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
   }
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////
 // ORC files
