@@ -1263,7 +1263,6 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
       if (trace_settings & TRACE_INIT)
       {
           int err = errno;
-          char la_buf[MON_STRING_BUF_SIZE];
           trace_printf( "%s@%d" " failed shmget(%d), errno=%d (%s)\n"
                       , method_name, __LINE__
                       , (shsize), err, strerror(err) );

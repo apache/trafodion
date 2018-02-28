@@ -580,6 +580,7 @@ const char* CZClient::WaitForAndReturnMaster( bool doWait )
             trace_printf( "%s@%d (MasterMonitor) Master Monitor found (%s)\n"
                         , method_name, __LINE__, masterMonitor.c_str() );
         }
+        TRACE_EXIT;
         return nodes.data[0];
     }
 
@@ -1811,7 +1812,7 @@ int CZClient::WatchNodeMasterDelete( const char *nodeName )
         // This is fine since we call it indiscriminately
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZNONODE (fine)\n"
+            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete already deleted %s, with rc == ZNONODE (fine)\n"
                         , method_name, __LINE__
                         , nodeName );
         }
@@ -1821,15 +1822,15 @@ int CZClient::WatchNodeMasterDelete( const char *nodeName )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZOK\n"
+            trace_printf( "%s@%d (MasterMonitor) znode (%s) already deleted or cannot be accessed, rc=%d (%s)\n"
                         , method_name, __LINE__
-                        , nodeName );
+                        , nodeName, rc, zerror(rc)  );
         }
         rc = ZOK;
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], znode (%s) already deleted or cannot be accessed!\n"
-                , method_name, nodeName );
+                , "[%s], znode (%s) already deleted or cannot be accessed, rc=%d (%s)\n"
+                , method_name, nodeName, rc, zerror(rc)  );
         mon_log_write(MON_ZCLIENT_WATCHMASTERNODEDELETE_2, SQ_LOG_INFO, buf);
     }
     else
