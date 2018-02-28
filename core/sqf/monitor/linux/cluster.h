@@ -113,7 +113,9 @@ public:
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
+    void AssignLeaders( int pnid, bool checkProcess );
     void AssignTmLeader( int pnid, bool checkProcess );
+    void AssignMonitorLeader( int pnid );
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -124,6 +126,8 @@ public:
     void ExpediteDown( void );
     inline int  GetTmLeader( void ) { return( TmLeaderNid); }
     inline void SetTmLeader( int tmLeaderNid ) { TmLeaderNid = tmLeaderNid; } 
+    inline int  GetMonitorLeader( void ) { return( MonitorLeaderPNid); }
+    inline void SetMonitorLeader( int monitorLeaderPNid ) { MonitorLeaderPNid = monitorLeaderPNid; } 
     int  GetDownedNid( void );
     inline int GetTmSyncPNid( void ) { return( TmSyncPNid ); } // Physical Node ID of current TmSync operations master
     void InitClusterComm(int worldSize, int myRank, int *rankToPnid);
@@ -177,6 +181,7 @@ public:
     bool ReinitializeConfigCluster( bool nodeAdded, int pnid );
 
     int incrGetVerifierNum();
+    int getConfigMaster() { return configMaster_; }
 
     enum { SYNC_MAX_RESPONSIVE = 1 }; // Max seconds before sync thread is "stuck"
 
@@ -201,6 +206,7 @@ protected:
     int            syncSock_;
     int            epollFD_;
     int           *indexToPnid_;
+    int            configMaster_;
 
     CNode  **Node;           // array of nodes
     CLNode **LNode;          // array of logical nodes
@@ -229,6 +235,7 @@ private:
     int     configPNodesMax_;   // max # of physical nodes that can be configured
     int    *NodeMap;        // Mapping of Node ranks to COMM_WORLD ranks
     int     TmLeaderNid;    // Nid of currently assigned TM Leader node
+    int     MonitorLeaderPNid; // PNid of currently assigned Monitor leader node
     int     tmReadyCount_;  // # of DTM processes ready for transactions
     size_t  minRecvCount_;  // minimum size of receive buffer for allgather
 

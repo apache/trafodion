@@ -53,6 +53,7 @@ using namespace std;
 #include "tmsync.h"
 #include "cluster.h"
 #include "monitor.h"
+#include "props.h"
 
 #ifdef DMALLOC
 #include "dm.h"
@@ -99,12 +100,16 @@ char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
 bool Emulate_Down = false;
-long next_test_delay = 10000; // in usec.
-
+long next_test_delay = 100000; // in usec. (default 100 msec)
+CClusterConfig *ClusterConfig = NULL;
 bool IAmIntegrating = false;
 bool IAmIntegrated = false;
 char IntegratingMonitorPort[MPI_MAX_PORT_NAME] = {'\0'};
 bool IsRealCluster = true;
+bool IsAgentMode = false;
+bool IsMaster = false;
+bool IsMPIChild = false;
+char MasterMonitorName[MAX_PROCESS_PATH]= {'\0'};
 CommType_t CommType = CommType_Undefined;
 bool SMSIntegrating = false;
 int  CreatorShellPid = -1;
@@ -865,9 +870,9 @@ void HandleNodeExpiration( const char *nodeName )
     TRACE_EXIT;
 }
 
-void CMonitor::CreateZookeeperClient( void )
+void CreateZookeeperClient( void )
 {
-    const char method_name[] = "CMonitor::CreateZookeeperClient";
+    const char method_name[] = "CreateZookeeperClient";
     TRACE_ENTRY;
 
     if ( ZClientEnabled )
@@ -961,9 +966,9 @@ void CMonitor::CreateZookeeperClient( void )
     TRACE_EXIT;
 }
 
-void CMonitor::StartZookeeperClient( void )
+void StartZookeeperClient( void )
 {
-    const char method_name[] = "CMonitor::StartZookeeperClient";
+    const char method_name[] = "StartZookeeperClient";
     TRACE_ENTRY;
 
     int rc = -1;
@@ -1043,19 +1048,71 @@ int main (int argc, char *argv[])
     char temp_fname[MAX_PROCESS_PATH];
     char buf[MON_STRING_BUF_SIZE];
     unsigned int initSleepTime = 1; // 1 second
+
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
  
     CALL_COMP_DOVERS(monitor, argc, argv);
 
     const char method_name[] = "main";
 
+    if (argc < 2) {
+      printf("error: monitor needs an argument...exitting...\n");
+      exit(0);
+    }
+
+    int lv_arg_index = 1;
+    while ( lv_arg_index < argc )
+    {
+        // Installations like Cloudera Manager, the monitor is started in AGENT mode
+        if ( strcmp( argv[lv_arg_index], "COLD_AGENT" ) == 0 )
+        {
+            IsAgentMode = true;
+        }
+
+        lv_arg_index++;
+    }
+
     // Set flag to indicate whether we are operating in a real cluster
     // or a virtual cluster.   This is used throughout the monitor when
     // behavior differs for a real vs. virtual cluster environment.
-    if ( getenv("SQ_VIRTUAL_NODES") )
+    if ( !IsAgentMode )
     {
-        IsRealCluster = false;
-        Emulate_Down = true;
+        if ( getenv( "SQ_VIRTUAL_NODES" ) )
+        {
+            IsRealCluster = false;
+            Emulate_Down = true;
+        }
+        if (IsRealCluster)
+        {
+            // The monitor processes may be started by MPIrun utility
+            env = getenv("SQ_MON_CREATOR");
+            if ( env != NULL && strcmp(env, "MPIRUN") == 0 )
+            {
+                IsMPIChild = true;
+            }
+            // The monitor can be set to run in AGENT mode
+            env = getenv("SQ_MON_RUN_MODE");
+            if ( env != NULL && strcmp(env, "AGENT") == 0 )
+            {
+                IsAgentMode = true;
+            }
+        }
+    }
+
+    if ( IsAgentMode )
+    {
+        MON_Props xprops( true );
+        xprops.load( "monitor.env" );
+        MON_Smap_Enum xenum( &xprops );
+        while ( xenum.more( ) )
+        {
+            char *xkey = xenum.next( );
+            const char *xvalue = xprops.get( xkey );
+            if ( xkey && xkey[0] && xvalue )
+            {
+                setenv( xkey, xvalue, 1 );
+            }
+        }
     }
 
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
@@ -1240,7 +1297,7 @@ int main (int argc, char *argv[])
             abort();
     }
 
-    if (argc > 3 && strcmp (argv[2], "-integrate") == 0)
+    if ((!IsAgentMode) && (argc > 3 && strcmp (argv[2], "-integrate") == 0))
     {
         switch( CommType )
         {
@@ -1257,13 +1314,13 @@ int main (int argc, char *argv[])
                 }
                 break;
             case CommType_Sockets:
-                if ( isdigit (*argv[3]) )
+                if ( IsAgentMode || isdigit (*argv[3]) )
                 {
                     // In agent mode and when re-integrating (node up), all
                     // monitors processes start as a cluster of 1 and join to the 
                     // creator monitor to establish the real cluster.
-                    // Therefore, MyPNID will always be zero when in and
-                    // it is necessary to use the node name to obtain the correct
+                    // Therefore, MyPNID will always be zero them it is 
+                    // necessary to use the node name to obtain the correct
                     // <pnid> from the configuration which occurs when creating the
                     // CMonitor object down below. By setting MyPNID to -1, when the 
                     // CCluster::InitializeConfigCluster() invoked during the creation
@@ -1306,8 +1363,15 @@ int main (int argc, char *argv[])
         // Trace cannot be specified on startup command but need to
         // check for trace environment variable settings.
         MonTrace->mon_trace_init("0", NULL);
+
     }
-    else 
+
+    if (IsAgentMode)
+    {    
+        CreatorShellPid = 1000; // per monitor.sh
+        CreatorShellVerifier = 0;
+    }
+
     if (argc == 3 && isdigit(*argv[2]) )
     {
         MonTrace->mon_trace_init(argv[2], "STDOUT");
@@ -1398,8 +1462,12 @@ int main (int argc, char *argv[])
        MonStats->MonitorBusyIncr();
 
     snprintf(buf, sizeof(buf),
-                 "[CMonitor::main], %s, Started! CommType: %s\n"
-                , CALL_COMP_GETVERS2(monitor), CommTypeString( CommType ));
+                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s)\n"
+                , CALL_COMP_GETVERS2(monitor)
+                , CommTypeString( CommType )
+                , IsRealCluster?"RealCluster":"VirtualCluster"
+                , IsAgentMode?"/AgentMode":""
+                , IsMPIChild?"/MPIChild":"" );
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
        
 #ifdef DMALLOC
@@ -1420,11 +1488,230 @@ int main (int argc, char *argv[])
         // Create thread for monitoring redirected i/o.
         // This is also used for monitor logs, so start it early. 
         Redirector.start();
+        
+        // Create global configuration now
+        ClusterConfig = new CClusterConfig();
+        if (ClusterConfig)
+        {
+            bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
+            if (ClusterConfig->Initialize( traceEnabled, MonTrace->getTraceFileName()))
+            {
+                if (!ClusterConfig->LoadConfig())
+                {
+                     char la_buf[MON_STRING_BUF_SIZE];
+                     sprintf(la_buf, "[%s], Failed to load cluster configuration.\n", method_name);
+                     mon_log_write(MON_MONITOR_MAIN_12, SQ_LOG_CRIT, la_buf);
+                
+                     abort();
+                }
+            }
+            else
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                sprintf(la_buf, "[%s], Failed to open cluster configuration.\n", method_name);
+                mon_log_write(MON_MONITOR_MAIN_13, SQ_LOG_CRIT, la_buf);
+            
+                abort();
+            }
+        }
+       else  
+       {
+           char la_buf[MON_STRING_BUF_SIZE];
+           sprintf(la_buf, "[%s], Failed to allocate cluster configuration.\n", method_name);
+           mon_log_write(MON_MONITOR_MAIN_14, SQ_LOG_CRIT, la_buf);
+          
+           abort();
+        }
 
-        // CNodeContainer loads static configuration from database
-        Nodes = new CNodeContainer ();
+        // Set up zookeeper and determine the master 
+         if ( IsAgentMode || IsRealCluster )
+        {
+            // Zookeeper client is enabled only in a real cluster
+            env = getenv("SQ_MON_ZCLIENT_ENABLED");
+
+            if ( env )
+            {
+                if ( env && isdigit(*env) )
+                {
+                    if ( strcmp(env,"0")==0 )
+                    {
+                        ZClientEnabled = false;
+                    }
+                }
+            }
+
+            if ( ZClientEnabled )
+            {
+                 CreateZookeeperClient( );
+            }
+        }
+        else
+        {
+            ZClientEnabled = false;
+        }
+        
+        if (IsAgentMode)
+        {
+            if ((ZClientEnabled) && (ZClient != NULL))
+            {
+                // Do not wait, just see if one exists
+                const char *masterMonitor = ZClient->WaitForAndReturnMaster(false);
+
+                if (masterMonitor)
+                {
+                    strcpy (MasterMonitorName, masterMonitor);
+                    // unfortunately, we have to do this to see if we are the master before
+                    // other things are set up.   This is how we must do that
+                    if (strcmp(Node_name, masterMonitor) == 0)
+                    {
+                        IsMaster = true;
+                    }
+                    else 
+                    {
+                        IsMaster = false;
+                    }
+                }
+                else
+                {
+                    strcpy (MasterMonitorName, ClusterConfig->GetConfigMasterByName());  
+                    if (strcmp (Node_name,  ClusterConfig->GetConfigMasterByName()) == 0)
+                    {
+                        IsMaster = true;
+                    }
+                    else
+                    {
+                        IsMaster = false;
+                    }
+                }
+      
+             }
+         }
+
+         if (IsAgentMode)
+         {
+            if (!IsMaster)
+            {
+                MyPNID=-1;
+                SMSIntegrating = IAmIntegrating = true;
+                char *monitorPort = getenv ("MONITOR_COMM_PORT");
+                if (monitorPort)
+                {
+                    strcpy( IntegratingMonitorPort, MasterMonitorName);
+                    strcat( IntegratingMonitorPort, ":");
+                    strcat( IntegratingMonitorPort, monitorPort);
+                }
+                if (trace_settings & TRACE_INIT)
+                {
+                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode = TRUE, I am NOT the master, "
+                                  "MyPNID=%d, master port=%s\n"
+                                , method_name, __LINE__
+                                , MyPNID, IntegratingMonitorPort );
+                }
+            }
+            else
+            {
+                if (trace_settings & TRACE_INIT)
+                {
+                    trace_printf( "%s@%d (MasterMonitor) IsAgentMode = TRUE, I am the master, MyPNID=%d\n"
+                                , method_name, __LINE__, MyPNID );
+                }
+                IAmIntegrating = false; 
+            }
+        }
+        Nodes = new CNodeContainer (); 
         Config = new CConfigContainer ();
-        Monitor = new CMonitor (procTermSig);
+        Monitor = new CMonitor (procTermSig);  
+
+        if ( IsAgentMode )
+        {
+            if (trace_settings & TRACE_INIT)
+            {
+                trace_printf( "%s@%d MyPNID=%d\n"
+                            , method_name, __LINE__, MyPNID );
+            }
+            MonLog->setPNid( MyPNID );
+        }
+        
+        if (IsAgentMode)
+        {
+            CNode *myNode = Nodes->GetNode(MyPNID);
+            const char *masterMonitor=NULL;
+            if (myNode == NULL)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                sprintf( la_buf
+                       , "[%s], Failed to get my Node, MyPNID=%d\n"
+                       , method_name, MyPNID );
+                mon_log_write(MON_MONITOR_MAIN_15, SQ_LOG_CRIT, la_buf);
+                
+                abort();
+            }
+            
+            if ((ZClientEnabled) && (ZClient != NULL))
+            {
+                CNode *masterNode = Nodes->GetNode(MasterMonitorName);    
+                if (!masterNode)
+                {
+                    if (trace_settings & TRACE_INIT)
+                    {
+                          trace_printf("%s@%d (MasterMonitor) IsMaster == %d, masterNode is NULL, with MasterMonitorName %s\n", method_name, __LINE__, IsMaster, MasterMonitorName);
+                    }
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    sprintf(la_buf, "[%s], Failed to get my Master Node.\n", method_name);
+                    mon_log_write(MON_MONITOR_MAIN_16, SQ_LOG_CRIT, la_buf);
+                
+                    abort();
+                }
+                else
+                {
+                    if (trace_settings & TRACE_INIT)
+                    {
+                          trace_printf("%s@%d (MasterMonitor) IsMaster == %d, masterNode=%s\n", method_name, __LINE__, IsMaster, masterNode->GetName() );
+                    }
+                }
+                Monitor->SetMonitorLeader( masterNode->GetPNid() );
+                if (MyPNID == masterNode->GetPNid())
+                {
+                     ZClient->CreateMasterZNode ( myNode->GetName() );
+                     strcpy (MasterMonitorName, myNode->GetName());
+                     if (trace_settings & TRACE_INIT)
+                     {
+                         trace_printf("%s@%d (MasterMonitor) IsMaster == %d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, MyPNID);
+                     }           
+                 }
+                 else
+                 {
+                     masterMonitor = ZClient->WaitForAndReturnMaster(true);
+                     CNode *masterNode = NULL;
+                     if (masterMonitor)
+                     {
+                         strcpy (MasterMonitorName, masterMonitor);
+                         masterNode = Nodes->GetNode(MasterMonitorName); 
+                     }
+                
+                     if (masterNode)
+                     {
+                          if (trace_settings & TRACE_INIT)
+                          {
+                              trace_printf("%s@%d (MasterMonitor) IsMaster == %d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, masterNode->GetPNid());
+                          } 
+                          Monitor->SetMonitorLeader( masterNode->GetPNid() );
+                     }
+                     else
+                     {
+                          if (trace_settings & TRACE_INIT)
+                          {
+                              trace_printf("%s@%d (MasterMonitor) IsMaster == %d, masterNode is NULL, with MasterMonitorName %s\n", method_name, __LINE__, IsMaster, MasterMonitorName);
+                          }
+                          char la_buf[MON_STRING_BUF_SIZE];
+                          sprintf(la_buf, "[%s], Failed to get my Master Node.\n", method_name);
+                          mon_log_write(MON_MONITOR_MAIN_17, SQ_LOG_CRIT, la_buf);
+                 
+                          abort();
+                     }
+                }
+            }
+        }
         if (!IAmIntegrating)
         {
             Config->Init ();
@@ -1493,7 +1780,6 @@ int main (int argc, char *argv[])
         {
             strcpy (Node_name, myNode->GetName()); 
         }
-        
         // create with no caching, user read/write, group read/write, other read
         fd = open( port_fname
                    , O_RDWR | O_TRUNC | O_CREAT | O_DIRECT 
@@ -1539,7 +1825,6 @@ int main (int argc, char *argv[])
                 MPI_Abort(MPI_COMM_SELF,99);
         }
         free( ioBuffer );
-
         int ret = SQ_theLocalIOToClient->initWorker();
         if (ret)
         {
@@ -1566,33 +1851,7 @@ int main (int argc, char *argv[])
                 printf("%s@%d" " RLIMIT_SIGPENDING cur=%d, max=%d\n", method_name, __LINE__, (int)Rl.rlim_cur, (int)Rl.rlim_max);
             }
         }
-
-        if ( IsRealCluster )
-        {
-            // Zookeeper client is enabled only in a real cluster
-            env = getenv("SQ_MON_ZCLIENT_ENABLED");
-            if ( env )
-            {
-                if ( env && isdigit(*env) )
-                {
-                    if ( strcmp(env,"0")==0 )
-                    {
-                        ZClientEnabled = false;
-                    }
-                }
-            }
-
-            if ( ZClientEnabled )
-            {
-                Monitor->CreateZookeeperClient();
-            }
-        }
-        else
-        {
-            ZClientEnabled = false;
-        }
-    
-        if ( IAmIntegrating )
+      if ( IAmIntegrating )
         {
             // This monitor is integrating to (joining) an existing cluster
             Monitor->ReIntegrate( 0 );
@@ -1602,7 +1861,7 @@ int main (int argc, char *argv[])
                 trace_printf("%s@%d" " After UpdateCluster" "\n", method_name, __LINE__);
         }
         else
-        {
+        {  
             Monitor->EnterSyncCycle();
             done = Monitor->exchangeNodeData();
             Monitor->ExitSyncCycle();
@@ -1618,7 +1877,18 @@ int main (int argc, char *argv[])
     {
         if ( ZClientEnabled )
         {
-            Monitor->StartZookeeperClient();
+            {
+                StartZookeeperClient();
+                // Set watch for master
+                if (IsAgentMode)
+                {
+                    ZClient->WatchMasterNode( MasterMonitorName );
+                }
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                {
+                    trace_printf( "%s@%d (MasterMonitor) set watch for MasterMonitorName %s\n", method_name, __LINE__, MasterMonitorName );
+                }
+            }
         }
     }
 

@@ -488,6 +488,103 @@ int CZClient::ZooExistRetry(zhandle_t *zh, const char *path, int watch, struct S
     return rc;
 }
 
+const char* CZClient::WaitForAndReturnMaster( bool doWait )
+{
+    const char method_name[] = "CZClient::WaitForAndReturnMaster";
+    TRACE_ENTRY;
+    
+    bool found = false;
+    int rc = -1;
+    int retries = 0;
+    Stat stat;
+
+    struct String_vector nodes = {0, NULL};
+    stringstream ss;
+    ss.str( "" );
+    ss << zkRootNode_.c_str() 
+       << zkRootNodeInstance_.c_str() 
+       << ZCLIENT_MASTER_ZNODE;
+    string masterMonitor( ss.str( ) );
+
+    // wait for 3 minutes for giving up.  
+    while ( (!found) && (retries < 180)) 
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d trafCluster=%s\n"
+                        , method_name, __LINE__, masterMonitor.c_str() );
+        }
+        // Verify the existence of the parent ZCLIENT_MASTER_ZNODE
+        rc = ZooExistRetry( ZHandle, masterMonitor.c_str( ), 0, &stat );
+        
+        if ( rc == ZNONODE )
+        {
+            if (doWait == false)
+            {
+                break;
+            } 
+            continue;
+        }
+        else if ( rc == ZOK )
+        {
+            // Now get the list of available znodes in the cluster.
+            //
+            // This will return child znodes for each monitor process that has
+            // registered, including this process.
+            rc = zoo_get_children( ZHandle, masterMonitor.c_str( ), 0, &nodes );
+            if ( nodes.count > 0 )
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                {
+                    trace_printf( "%s@%d nodes.count=%d\n"
+                                , method_name, __LINE__
+                                , nodes.count );
+                }
+                found = true;
+            }
+            else
+            {
+                if (doWait == false)
+                {
+                    break;
+                }
+                usleep(1000000); // sleep for a second as to not overwhelm the system   
+		retries++;
+                continue;
+            }
+        }
+         
+        else  // error
+        { 
+	    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d Error (MasterMonitor) WaitForAndReturnMaster returned rc (%d), retries %d\n"
+                        , method_name, __LINE__, rc, retries );
+            }
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], ZooExistRetry() for %s failed with error %s\n"
+                    ,  method_name, masterMonitor.c_str( ), zerror(rc));
+            mon_log_write(MON_ZCLIENT_WAITFORANDRETURNMASTER, SQ_LOG_ERR, buf);
+            break;
+        }
+    }
+         
+    //should we assert nodes.count == 1?
+    if (found)
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) Master Monitor found (%s)\n"
+                        , method_name, __LINE__, masterMonitor.c_str() );
+        }
+        return nodes.data[0];
+    }
+
+    TRACE_EXIT;
+    return NULL;
+}
+
 int CZClient::GetClusterZNodes( String_vector *nodes )
 {
     const char method_name[] = "CZClient::GetClusterZNodes";
@@ -700,7 +797,7 @@ void CZClient::HandleExpiredZNode( void )
 
 int CZClient::InitializeZClient( void )
 {
-    const char method_name[] = "CZClient::MakeClusterZNodes";
+    const char method_name[] = "CZClient::InitializeZClient";
     TRACE_ENTRY;
 
     int rc;
@@ -797,6 +894,67 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
 
     TRACE_EXIT;
     return( expired );
+}
+
+int CZClient::CreateMasterZNode(  const char *nodeName )
+{
+    const char method_name[] = "CZClient::CreateMasterZNode";
+    TRACE_ENTRY;
+
+    int rc;
+    int retries = 0;
+    
+    stringstream masterpath;
+    masterpath.str( "" );
+    masterpath << zkRootNode_.c_str() 
+            << zkRootNodeInstance_.c_str() 
+            << ZCLIENT_MASTER_ZNODE<< "/"
+            << nodeName;
+            
+    string monZnode = masterpath.str( );
+
+    stringstream ss;
+    ss.str( "" );
+    ss <<nodeName << ":" << MyPNID;
+    string monData = ss.str( ); 
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d RegisterZNode(%s:%s)\n"
+                    , method_name, __LINE__
+                    , monZnode.c_str()
+                    , monData.c_str() );
+    }
+
+    rc = RegisterZNode( monZnode.c_str(), monData.c_str(), ZOO_EPHEMERAL );
+    while ( ((rc == ZCONNECTIONLOSS) || (rc == ZOPERATIONTIMEOUT)) && retries < ZOOKEEPER_RETRY_COUNT)
+    {
+        sleep(ZOOKEEPER_RETRY_WAIT);
+        retries++;
+        rc = RegisterZNode( monZnode.c_str(), monData.c_str(), ZOO_EPHEMERAL );
+    }
+    
+    if (rc != ZOK)
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Error (MasterMonitor) Create master node for %s with rc = %d)\n"
+                    , method_name, __LINE__, monZnode.c_str( ), rc);
+        }
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], RegisterZNode(%s) failed with error %s\n"
+                , method_name, monData.c_str(), zerror(rc) );
+        mon_log_write(MON_ZCLIENT_CREATEMASTERZNODE, SQ_LOG_ERR, buf);
+        return(rc); // Return the error
+    }
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d (MasterMonitor) Created master node for %s with rc = %d)\n"
+                , method_name, __LINE__, monZnode.c_str( ), rc);
+    }
+    TRACE_EXIT;
+    return(rc);
 }
 
 int CZClient::MakeClusterZNodes( void )
@@ -908,6 +1066,40 @@ int CZClient::MakeClusterZNodes( void )
         break;
     }
 
+    ss.str( "" );
+    ss << zkRootNode_.c_str() 
+       << zkRootNodeInstance_.c_str() 
+       << ZCLIENT_MASTER_ZNODE;
+    string masterDir( ss.str( ) );
+
+    rc = ZooExistRetry( ZHandle, masterDir.c_str( ), 0, &stat );
+    switch (rc)
+    {
+    case ZOK:
+        break;
+    case ZNONODE:
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d RegisterZNode(%s)\n"
+                        , method_name, __LINE__
+                        , masterDir.c_str() );
+        }
+        rc = RegisterZNode( masterDir.c_str(), NULL, 0 );
+        if ( rc && rc != ZNODEEXISTS )
+        {
+            return(rc); // Return the error
+        }
+        rc = ZOK;
+        break;
+    default:
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], zoo_exists(%s) failed with error %s\n"
+                , method_name, masterDir.c_str(), zerror(rc) );
+        mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_3, SQ_LOG_ERR, buf);
+        break;
+    }
+    
     TRACE_EXIT;
     return(rc);
 }
@@ -1484,6 +1676,53 @@ void CZClient::WatchCluster( void )
     TRACE_EXIT;
 }
 
+int CZClient::WatchMasterNode( const char *nodeName )
+{
+    const char method_name[] = "CZClient::WatchMasterNode";
+    TRACE_ENTRY;
+
+    int rc;
+    stringstream newpath;
+    newpath.str( "" );
+    newpath << zkRootNode_.c_str() 
+            << zkRootNodeInstance_.c_str() 
+            << ZCLIENT_MASTER_ZNODE << "/"
+            << nodeName;
+    string monZnode = newpath.str( );
+
+    lock();
+    rc = SetZNodeWatch( monZnode );
+    unlock();
+    if ( rc != ZOK )
+    {
+       if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d Error (MasterMonitor) WatchMasterNode failed with rc = %d for %s\n"
+                        , method_name, __LINE__
+                        , rc
+                        , nodeName);
+        }
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], SetZNodeWatch(%s) failed!\n"
+                , method_name
+                , monZnode.c_str() );
+        mon_log_write(MON_ZCLIENT_WATCHNODE_1, SQ_LOG_ERR, buf); 
+    }
+    else
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) WatchMasterNode set on monZnode=%s\n"
+                        , method_name, __LINE__
+                        , monZnode.c_str() );
+        }
+    }
+
+    TRACE_EXIT;
+    return(rc);
+}
+
 int CZClient::WatchNode( const char *nodeName )
 {
     const char method_name[] = "CZClient::WatchNode";
@@ -1522,6 +1761,108 @@ int CZClient::WatchNode( const char *nodeName )
 
     TRACE_EXIT;
     return(rc);
+}
+
+int CZClient::WatchNodeMasterDelete( const char *nodeName )
+{
+    const char method_name[] = "CZClient::WatchMasterDelete";
+    TRACE_ENTRY;
+    
+    int rc = -1;
+    stringstream newpath;
+    newpath.str( "" );
+    newpath << zkRootNode_.c_str() 
+            << zkRootNodeInstance_.c_str() 
+            << ZCLIENT_MASTER_ZNODE
+            << nodeName;
+           
+    string monZnode = newpath.str( );
+    
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d zoo_delete(%s)\n"
+                    , method_name, __LINE__
+                    , monZnode.c_str() );
+    }
+   
+    rc = zoo_delete( ZHandle
+                   , monZnode.c_str( )
+                   , -1 );
+    if ( rc == ZOK )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZOK\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], znode (%s) deleted!\n"
+                , method_name, nodeName );
+        mon_log_write(MON_ZCLIENT_WATCHMASTERNODEDELETE_1, SQ_LOG_INFO, buf);
+    }
+    else if ( rc == ZNONODE )
+    {
+        // This is fine since we call it indiscriminately
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZNONODE (fine)\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+    }
+    else if ( rc == ZCONNECTIONLOSS || 
+              rc == ZOPERATIONTIMEOUT )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZOK\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+        rc = ZOK;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], znode (%s) already deleted or cannot be accessed!\n"
+                , method_name, nodeName );
+        mon_log_write(MON_ZCLIENT_WATCHMASTERNODEDELETE_2, SQ_LOG_INFO, buf);
+    }
+    else
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) WatchNodeMasterDelete deleted %s, with rc == ZOK\n"
+                        , method_name, __LINE__
+                        , nodeName );
+        }
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], zoo_delete(%s) failed with error %s\n"
+                , method_name, nodeName, zerror(rc) );
+        mon_log_write(MON_ZCLIENT_WATCHMASTERNODEDELETE_3, SQ_LOG_CRIT, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleMyNodeExpiration();
+            break;
+        default:
+            break;
+        }
+    }
+    
+    TRACE_EXIT;
+    return( rc );
 }
 
 int CZClient::WatchNodeDelete( const char *nodeName )

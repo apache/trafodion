@@ -56,6 +56,7 @@ extern int req_type_startup;
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
+
 extern CommType_t CommType;
 
 CReqResource::CReqResource()

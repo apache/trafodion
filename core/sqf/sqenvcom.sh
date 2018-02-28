@@ -673,6 +673,18 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
+# Monitor process creator:
+#   MPIRUN - monitor process is created by mpirun
+# Uncomment SQ_MON_CREATOR when running monitor in AGENT mode
+#export SQ_MON_CREATOR=MPIRUN
+
+# Monitor process run mode:
+#   AGENT - monitor process runs in agent mode versus MPI collective
+# Uncomment the three environment variables below
+#export SQ_MON_RUN_MODE=AGENT
+#export MONITOR_COMM_PORT=23399
+#export MONITOR_SYNC_PORT=23398
+
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0
 
