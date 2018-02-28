@@ -252,7 +252,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 532
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 576
 convertSkipListSize_ = 33, convertSkipList_ = 3
 outputRowLength_ = 16
-Flag = 0xc
+Flag = 0x20c
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -390,7 +390,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 16
 convertSkipListSize_ = 33, convertSkipList_ = 3
 outputRowLength_ = 16
-Flag = 0xc
+Flag = 0x20c
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -546,7 +546,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 8
 convertSkipListSize_ = 33, convertSkipList_ = 2
 outputRowLength_ = 8
-Flag = 0xc
+Flag = 0x20c
 
 Number of ranges to scan: 1
 Number of esps to scan:    1
@@ -682,7 +682,7 @@ asciiTuppIndex_ = 4, asciiRowLen_ = 8
 moveExprColsTuppIndex_ = 2, moveExprColsRowLength_ = 8
 convertSkipListSize_ = 33, convertSkipList_ = 2
 outputRowLength_ = 8
-Flag = 0xc
+Flag = 0x20c
 
 Number of ranges to scan: 1
 Number of esps to scan:    1

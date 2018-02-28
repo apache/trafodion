@@ -60,7 +60,6 @@
 #include "ComUser.h"
 #include "CmpSeabaseDDLauth.h"
 
-#include "hdfs.h"
 #include "StmtCompilationMode.h"
 
 #include "ExCextdecs.h"
@@ -165,6 +164,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     jniErrorStr_(&exHeap_),
     hbaseClientJNI_(NULL),
     hiveClientJNI_(NULL),
+    hdfsClientJNI_(NULL),
     arkcmpArray_(&exHeap_),
     cmpContextInfo_(&exHeap_),
     cmpContextInUse_(&exHeap_),

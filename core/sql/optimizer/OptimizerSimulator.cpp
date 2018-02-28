@@ -55,7 +55,6 @@
 #include "HBaseClient_JNI.h"
 
 #include "vproc.h"
-#include "hdfs.h"
 #include "CmpSeabaseDDL.h"
 #include "ExExeUtilCli.h"
 #include "ComUser.h"

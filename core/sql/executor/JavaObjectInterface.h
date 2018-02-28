@@ -119,12 +119,12 @@ protected:
   // Get the error description.
   static char* getErrorText(JOI_RetCode errEnum);
  
-  NAString getLastError();
+  static NAString getLastError();
 
   // Write the description of a Java error to the log file.
-  void logError(std::string &cat, const char* methodName, const char *result);
-  void logError(std::string &cat, const char* methodName, jstring jresult);
-  void logError(std::string &cat, const char* file, int line);
+  static void logError(std::string &cat, const char* methodName, const char *result);
+  static void logError(std::string &cat, const char* methodName, jstring jresult);
+  static void logError(std::string &cat, const char* file, int line);
 
   static JOI_RetCode initJNIEnv();
   static char* buildClassPath();  
@@ -145,9 +145,9 @@ public:
   }
   // Pass in jenv if the thread where the object is created is different than
   // the thread where exception occurred
-  NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
+  static NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
 
-  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
+  static void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
   
   NAHeap *getHeap() { return heap_; }
 protected:

@@ -646,7 +646,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
                  (char*)getHiveTableName().data(),
                  TRUE, // isHive
                  (char*)getTargetName().data(), // root dir
-                 hTabStats->getModificationTS(),
+                 hTabStats->getModificationTSmsec(),
                  0,
                  NULL,
                  (char*)getHdfsHostName().data(), 
@@ -657,7 +657,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
       else
         {
           // sim check at leaf
-          modTS = hTabStats->getModificationTS();
+          modTS = hTabStats->getModificationTSmsec();
         }
     } // do sim check
 

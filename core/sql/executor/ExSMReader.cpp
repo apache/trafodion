@@ -23,6 +23,7 @@
 
 #include <unistd.h>
 #include <time.h>
+#include "Platform.h"
 #include "seabed/pctl.h"
 #include "seabed/pevents.h"
 #include "ExSMReader.h"

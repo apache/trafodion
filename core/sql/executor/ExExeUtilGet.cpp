@@ -69,7 +69,6 @@
 
 #include "ExpHbaseInterface.h"
 #include "sql_buffer_size.h"
-#include "hdfs.h"
 
 #include "NAType.h"
 
@@ -6873,8 +6872,8 @@ ExExeUtilClusterStatsTcb::ExExeUtilClusterStatsTcb(
   stats_ = (ComTdbClusterStatsVirtTableColumnStruct*)statsBuf_;
 
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
-					(char*)"", //exe_util_tdb.server(), 
-					(char*)""); //exe_util_tdb.zkPort());
+					(char*)"", 
+					(char*)""); 
   regionInfoList_ = NULL;
   
   // get hbase rootdir location. Max linux pathlength is 1024.

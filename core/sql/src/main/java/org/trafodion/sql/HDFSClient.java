@@ -22,17 +22,21 @@
 package org.trafodion.sql;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.EOFException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.FileStatus;
 import java.io.EOFException;
 import java.util.concurrent.Callable;
@@ -41,6 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -48,6 +53,17 @@ import org.apache.hadoop.io.compress.Compressor;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.util.ReflectionUtils;
+
+//
+//  To read a range in a Hdfs file, use the constructor
+//   public HDFSClient(int bufNo, int rangeNo, String filename, ByteBuffer buffer, long position, int length) throws IOException
+// 
+//  For instance methods like hdfsListDirectory use the constructor
+//     public HDFSClient()
+//
+//  For all static methods use
+//     HdfsClient::<static_method_name>
+//
 
 public class HDFSClient 
 {
@@ -71,6 +87,9 @@ public class HDFSClient
    private int bytesRead_;
    private Future future_ = null;
    private int isEOF_ = 0; 
+   private int totalBytesWritten_ = 0;
+   private Path filepath_ = null;
+   private boolean compression_;
    static {
       String confFile = System.getProperty("trafodion.log4j.configFile");
       System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
@@ -88,6 +107,13 @@ public class HDFSClient
       }
       System.loadLibrary("executor");
    }
+
+   // The object instance that runs in the threadpool to read
+   // the requested chunk in the range
+
+   // FSDataInputStream.read method may not read the requested length in one shot
+   // Loop to read the requested length or EOF is reached 
+   // Requested length can never be larger than the buffer size
 
    class HDFSRead implements Callable 
    {
@@ -136,15 +162,19 @@ public class HDFSClient
 
    // This constructor enables the hdfs data to be read in another thread while the previously 
    // read buffer is being processed by the SQL engine 
+   // Opens the file and hands over the needed info to HdfsRead instance to read 
+   // The passed in length can never be more than the size of the buffer
+   // If the range has a length more than the buffer length, the range is chunked
+   // in HdfsScan
    public HDFSClient(int bufNo, int rangeNo, String filename, ByteBuffer buffer, long position, int length) throws IOException
    {
       bufNo_ = bufNo; 
       rangeNo_ = rangeNo;
       filename_ = filename;
-      Path filepath = new Path(filename_);
-      fs_ = FileSystem.get(filepath.toUri(),config_);
-      fsdis_ = fs_.open(filepath);
-      blockSize_ = (int)fs_.getDefaultBlockSize(filepath);
+      filepath_ = new Path(filename_);
+      fs_ = FileSystem.get(filepath_.toUri(),config_);
+      fsdis_ = fs_.open(filepath_);
+      blockSize_ = (int)fs_.getDefaultBlockSize(filepath_);
       buf_  = buffer;
       bufOffset_ = 0;
       pos_ = position;
@@ -161,6 +191,10 @@ public class HDFSClient
       }
    }
 
+  //  This method waits for the read to complete. Read can complete due to one of the following
+  //  a) buffer is full
+  //  b) EOF is reached
+  //  c) An exception is encountered while reading the file
    public int trafHdfsReadBuffer() throws IOException, InterruptedException, ExecutionException
    {
       Integer retObject = 0;
@@ -168,6 +202,7 @@ public class HDFSClient
       retObject = (Integer)future_.get();
       bytesRead = retObject.intValue();
       fsdis_.close();
+      fsdis_ = null;
       return bytesRead;
    }  
 
@@ -181,78 +216,127 @@ public class HDFSClient
       return isEOF_;
    }
 
-   boolean hdfsCreate(String fname , boolean compress) throws IOException
+   boolean hdfsCreate(String fname , boolean overwrite, boolean compress) throws IOException
    {
-     if (logger_.isDebugEnabled()) 
+      if (logger_.isDebugEnabled()) 
         logger_.debug("HDFSClient.hdfsCreate() - started" );
-      Path filePath = null;
       if (!compress || (compress && fname.endsWith(".gz")))
-        filePath = new Path(fname);
+        filepath_ = new Path(fname);
       else
-        filePath = new Path(fname + ".gz");
+        filepath_ = new Path(fname + ".gz");
         
-      FileSystem fs = FileSystem.get(filePath.toUri(),config_);
-      FSDataOutputStream fsOut = fs.create(filePath, true);
-      
-      if (compress) {
-        GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
-        Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
-        outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
+      fs_ = FileSystem.get(filepath_.toUri(),config_);
+      compression_ = compress;
+      fsdis_ = null;      
+      FSDataOutputStream fsOut;
+      if (overwrite)
+         fsOut = fs_.create(filepath_);
+      else
+      if (fs_.exists(filepath_))
+         fsOut = fs_.append(filepath_);
+      else
+         fsOut = fs_.create(filepath_);
+
+      if (compression_) {
+          GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
+          Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
+          outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
       }
       else
-        outStream_ = fsOut;      
-      if (logger_.isDebugEnabled()) 
-         logger_.debug("HDFSClient.hdfsCreate() - compressed output stream created" );
+         outStream_ = fsOut;
       return true;
-    }
+   }
 
-    boolean hdfsOpen(String fname , boolean compress) throws IOException
-    {
+   boolean hdfsOpen(String fname , boolean compress) throws IOException
+   {
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsOpen() - started" );
-      Path filePath = null;
       if (!compress || (compress && fname.endsWith(".gz")))
-        filePath = new Path(fname);
+        filepath_ = new Path(fname);
       else
-        filePath = new Path(fname + ".gz");
-        
-      FileSystem fs = FileSystem.get(filePath.toUri(),config_);
-      FSDataOutputStream fsOut;
-      if (fs.exists(filePath))
-         fsOut = fs.append(filePath);
-      else
-         fsOut = fs.create(filePath);
-      
-      if (compress) {
-        GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
-        Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
-        outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
-      }
-      else
-        outStream_ = fsOut;      
-      if (logger_.isDebugEnabled()) 
-         logger_.debug("HDFSClient.hdfsCreate() - compressed output stream created" );
+        filepath_ = new Path(fname + ".gz");
+      fs_ = FileSystem.get(filepath_.toUri(),config_);
+      compression_ = compress;  
+      outStream_ = null;
+      fsdis_ = null;      
       return true;
     }
     
-    boolean hdfsWrite(byte[] buff, long len) throws IOException
+    int hdfsWrite(byte[] buff) throws IOException
     {
-
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsWrite() - started" );
+
+      FSDataOutputStream fsOut;
+      if (outStream_ == null) {
+         if (fs_.exists(filepath_))
+            fsOut = fs_.append(filepath_);
+         else
+            fsOut = fs_.create(filepath_);
+      
+         if (compression_) {
+            GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
+            Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
+            outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
+         }
+         else
+            outStream_ = fsOut;      
+         if (logger_.isDebugEnabled()) 
+            logger_.debug("HDFSClient.hdfsWrite() - output stream created" );
+      }
       outStream_.write(buff);
-      outStream_.flush();
-      if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsWrite() - bytes written and flushed:" + len  );
-      return true;
+      if (outStream_ instanceof FSDataOutputStream)
+         totalBytesWritten_ = ((FSDataOutputStream)outStream_).size();
+      else
+         totalBytesWritten_ += buff.length; 
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsWrite() - bytes written " + totalBytesWritten_ );
+      return totalBytesWritten_;
+    }
+
+    int hdfsRead(ByteBuffer buffer) throws IOException
+    {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsRead() - started" );
+      if (fsdis_ == null) {
+         fsdis_ = fs_.open(filepath_);
+         pos_ = 0;
+      }
+      int lenRemain;   
+      int bytesRead;
+      int totalBytesRead = 0;
+      int bufLen;
+      int bufOffset = 0;
+      if (buffer.hasArray())
+         bufLen = buffer.array().length;
+      else
+         bufLen = buffer.capacity();
+      lenRemain = bufLen;
+      do
+      {
+         if (buffer.hasArray())
+            bytesRead = fsdis_.read(pos_, buffer.array(), bufOffset, lenRemain);
+         else
+            bytesRead = fsdis_.read(buffer);    
+         if (bytesRead == -1 || bytesRead == 0)
+            break;    
+         totalBytesRead += bytesRead;
+         pos_ += bytesRead;
+         lenRemain -= bytesRead;
+      } while (lenRemain > 0);
+      return totalBytesRead;
     }
     
     boolean hdfsClose() throws IOException
     {
       if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsClose() - started" );
       if (outStream_ != null) {
+          outStream_.flush();
           outStream_.close();
           outStream_ = null;
       }
+      if (fsdis_ != null)
+         fsdis_.close();
       return true;
     }
 
@@ -380,6 +464,25 @@ public class HDFSClient
       else  
          return 0;
    }
+
+
+   public void stop() throws IOException
+   {
+      if (future_ != null) {
+         try {
+           future_.get(200, TimeUnit.MILLISECONDS);
+         } catch(TimeoutException e) {
+            logger_.error("Asynchronous Thread of HdfsScan is Cancelled (timeout), ", e);
+            future_.cancel(true);
+        } catch(InterruptedException e) {
+            logger_.error("Asynchronous Thread of HdfsScan is Cancelled (interrupt), ", e);
+            future_.cancel(true); // Interrupt the thread
+        } catch (ExecutionException ee)
+        {
+        }
+        future_ = null;
+      }
+   }
  
    public static void shutdown() throws InterruptedException
    {
@@ -387,6 +490,103 @@ public class HDFSClient
       executorService_.shutdown();
    }
    
+   private static FileSystem getFileSystem() throws IOException
+   {
+       return defaultFs_;
+   }
+
+   // if levelDeep = 0, return the max modification timestamp of the passed-in HDFS URIs
+   // (a tab-separated list of 0 or more paths)
+   // if levelDeep > 0, also check all directories "levelDeep" levels below. Exclude
+   // directories that start with a dot (hidden directories)
+   public static long getHiveTableMaxModificationTs( String stableDirPaths, int levelDeep) throws FileNotFoundException, IOException
+   {
+       long result = 0;
+       if (logger_.isDebugEnabled())
+          logger_.debug("HDFSClient:getHiveTableMaxModificationTs enter");
+
+       String[] tableDirPaths = stableDirPaths.split("\t");
+       // account for root dir
+       for (int i=0; i<tableDirPaths.length; i++) {
+           FileStatus r = getFileSystem().getFileStatus(new Path(tableDirPaths[i]));// super fast API, return in .2ms
+           if (r != null && r.getModificationTime() > result)
+               result = r.getModificationTime();
+       }
+
+       if (levelDeep>0)
+       {
+           Path[] paths = new Path[tableDirPaths.length];
+           for (int i=0; i<tableDirPaths.length; i++)
+               paths[i] = new Path(tableDirPaths[i]);
+           long l = getHiveTableMaxModificationTs2(paths,levelDeep);
+           if (l > result)
+              result = l;
+       }
+       if (logger_.isDebugEnabled())
+           logger_.debug("HDFSClient:getHiveTableMaxModificationTs "+stableDirPaths+" levelDeep"+levelDeep+":"+result);
+       return result;
+   }
+
+   private static long getHiveTableMaxModificationTs2(Path[] paths, int levelDeep)throws FileNotFoundException, IOException
+   {
+       long result = 0;
+       PathFilter filter = new PathFilter(){
+           public boolean accept(Path file){
+             return !file.getName().startsWith(".");//filter out hidden files and directories
+           }
+       };
+       FileStatus[] fileStatuss=null;
+       if (levelDeep == 1){ // stop condition on recursive function
+           //check parent level (important for deletes):
+           for (Path path : paths){
+               FileStatus r = getFileSystem().getFileStatus(path);// super fast API, return in .2ms
+               if (r != null && r.getModificationTime()>result)
+                   result = r.getModificationTime();
+           }
+           if (paths.length==1)
+               fileStatuss = getFileSystem().listStatus(paths[0],filter);// minor optimization. avoid using list based API when not needed
+           else
+               fileStatuss = getFileSystem().listStatus(paths,filter);
+           for(int i=0;i<fileStatuss.length;i++)
+               if (fileStatuss[i].isDirectory() && fileStatuss[i].getModificationTime()>result)
+                   result = fileStatuss[i].getModificationTime();
+       }else{//here levelDeep >1
+           List<Path> pathList = new ArrayList<Path>();
+           if (paths.length==1)
+               fileStatuss = getFileSystem().listStatus(paths[0],filter);// minor optimization. avoid using list based API when not needed
+           else
+               fileStatuss = getFileSystem().listStatus(paths,filter);
+           for(int i=0;i<fileStatuss.length;i++)
+               if (fileStatuss[i].isDirectory())
+               {
+                   pathList.add(fileStatuss[i].getPath());
+                   if (fileStatuss[i].getModificationTime()>result)
+                       result = fileStatuss[i].getModificationTime();// make sure level n-1 is accounted for for delete partition case
+               }
+           long l = getHiveTableMaxModificationTs2(pathList.toArray(new Path[pathList.size()]),levelDeep-1);
+           if (l>result) result = l;
+
+       }
+     return result;
+   }
+
+   public static String getFsDefaultName()
+   {
+      String uri = config_.get("fs.defaultFS");
+      return uri;
+   }
+
+
+   public static boolean hdfsCreateDirectory(String pathStr) throws IOException
+   {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsCreateDirectory()" + pathStr);
+      Path dirPath = new Path(pathStr );
+      FileSystem fs = FileSystem.get(dirPath.toUri(), config_);
+      fs.mkdirs(dirPath);
+      return true;
+   }
+
    private native int sendFileStatus(long jniObj, int numFiles, int fileNo, boolean isDir, 
                         String filename, long modTime, long len,
                         short numReplicas, long blockSize, String owner, String group,

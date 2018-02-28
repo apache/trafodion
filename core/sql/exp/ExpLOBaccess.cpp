@@ -367,74 +367,6 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::dataModCheck2(
-       char * dirPath, 
-       Int64  inputModTS,
-       Lng32  numOfPartLevels,
-       Int64 &failedModTS,
-       char  *failedLocBuf,
-       Int32 *failedLocBufLen)
-{
-  if (numOfPartLevels == 0)
-    return LOB_OPER_OK;
-
-  Lng32 currNumFilesInDir = 0;
-  hdfsFileInfo * fileInfos = 
-    hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
-  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
-    {
-      return LOB_DATA_FILE_NOT_FOUND_ERROR;
-    }
-
-  NABoolean failed = FALSE;
-  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
-    {
-      hdfsFileInfo &fileInfo = fileInfos[i];
-      if (fileInfo.mKind == kObjectKindDirectory)
-        {
-          Int64 currModTS = fileInfo.mLastMod;
-          if ((inputModTS > 0) &&
-              (currModTS > inputModTS) &&
-	      (!strstr(fileInfo.mName, ".hive-staging_hive_")))
-            {
-              failed = TRUE;
-              failedModTS = currModTS;
-
-              if (failedLocBuf && failedLocBufLen)
-                {
-                  Lng32 failedFileLen = strlen(fileInfo.mName);
-                  Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
-                                   ? (*failedLocBufLen-1) : failedFileLen);
-                  
-                  str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
-                                   '\0', ' ', TRUE);
-                  *failedLocBufLen = copyLen;
-                }
-            }
-        }
-    }
-
-  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
-  if (failed)
-    return LOB_DATA_MOD_CHECK_ERROR;
-
-  numOfPartLevels--;
-  Ex_Lob_Error err = LOB_OPER_OK;
-  if (numOfPartLevels > 0)
-    {
-      for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
-        {
-          hdfsFileInfo &fileInfo = fileInfos[i];
-          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels,
-                              failedModTS, failedLocBuf, failedLocBufLen);
-          if (err != LOB_OPER_OK)
-            return err;
-        }
-    }
-
-  return LOB_OPER_OK;
-}
-
 // numOfPartLevels: 0, if not partitioned
 //                  N, number of partitioning cols
 // failedModTS: timestamp value that caused the mismatch
@@ -447,63 +379,46 @@ Ex_Lob_Error ExLob::dataModCheck(
        char  *failedLocBuf,
        Int32 *failedLocBufLen)
 {
+  if (inputModTS <= 0)
+    return LOB_OPER_OK;
+
+  Ex_Lob_Error result = LOB_OPER_OK;
+  HDFS_Client_RetCode rc;
+  Int64 currModTS;
+
+
   failedModTS = -1;
 
-  // find mod time of root dir
-  hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
-  if (fileInfos == NULL)
-    {       
+  // libhdfs returns a second-resolution timestamp,
+  // get a millisecond-resolution timestamp via JNI
+  rc = HdfsClient::getHiveTableMaxModificationTs(currModTS,
+                                                dirPath,
+                                                numOfPartLevels);
+  // check for errors and timestamp mismatches
+  if (rc != HDFS_CLIENT_OK || currModTS <= 0)
+    {
+      result = LOB_DATA_READ_ERROR;
+    }
+  else if (currModTS > inputModTS)
+    {
+      result = LOB_DATA_MOD_CHECK_ERROR;
+      failedModTS = currModTS;
+    }
+
+  if (result != LOB_OPER_OK && failedLocBuf && failedLocBufLen)
+    {
+      // sorry, we lost the exact location for partitioned
+      // files, user needs to search for him/herself
       Lng32 failedFileLen = strlen(dirPath);
       Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
                        ? (*failedLocBufLen-1) : failedFileLen);
-      Int32 hdfserror = errno;
-      char hdfsErrStr[20];
-      snprintf(hdfsErrStr,sizeof(hdfsErrStr),"(errno %d)",errno);
+
       str_cpy_and_null(failedLocBuf, dirPath, copyLen,
                        '\0', ' ', TRUE);
-      str_cat_c(failedLocBuf,hdfsErrStr);
       *failedLocBufLen = copyLen;
-      if (errno)
-        {
-          // Allow for hdfs error. AQR will find the new hive mapped files
-          // if the hive table has been remapped to new data files
-          return LOB_DATA_MOD_CHECK_ERROR;
-        }
-      else
-        return LOB_DATA_READ_ERROR;
-    }
-    
-  Int64 currModTS = fileInfos[0].mLastMod;
-  if ((inputModTS > 0) &&
-      (currModTS > inputModTS))
-    {
-      hdfsFileInfo &fileInfo = fileInfos[0];
-
-      failedModTS = currModTS;
-
-      if (failedLocBuf && failedLocBufLen)
-        {
-          Lng32 failedFileLen = strlen(fileInfo.mName);
-          Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
-                           ? (*failedLocBufLen-1) : failedFileLen);
-          
-          str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
-                           '\0', ' ', TRUE);
-          *failedLocBufLen = copyLen;
-        }
-
-      hdfsFreeFileInfo(fileInfos, 1);
-      return LOB_DATA_MOD_CHECK_ERROR;
     }
 
-  hdfsFreeFileInfo(fileInfos, 1);
-  if (numOfPartLevels > 0)
-    {
-      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, 
-                           failedModTS, failedLocBuf, failedLocBufLen);
-    }
-
-  return LOB_OPER_OK;
+  return result;
 }
 
 Ex_Lob_Error ExLob::emptyDirectory(char *dirPath,

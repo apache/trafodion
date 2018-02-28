@@ -227,6 +227,7 @@ protected:
   , SETUP_HDFS_SCAN
   , TRAF_HDFS_READ
   , COPY_TAIL_TO_HEAD
+  , STOP_HDFS_SCAN
   } step_,nextStep_;
 
   /////////////////////////////////////////////////////

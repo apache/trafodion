@@ -62,6 +62,7 @@
 #include "ExpSeqGen.h"
 #include "ssmpipc.h"
 #include "hdfs.h"
+#include "HdfsClient_JNI.h"
 
 class CliGlobals;
 class HashQueue;
@@ -200,6 +201,11 @@ public:
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }
+
+  HdfsClient *getHDFSClient() { return hdfsClientJNI_; }
+  void setHDFSClient(HdfsClient *hdfsClientJNI)
+  { hdfsClientJNI_ = hdfsClientJNI; }
+
   //expose cmpContextInfo_ to get HQC info of different contexts
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 

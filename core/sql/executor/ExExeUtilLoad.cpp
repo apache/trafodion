@@ -1960,7 +1960,7 @@ ex_tcb * ExExeUtilHBaseBulkUnLoadTdb::build(ex_globals * glob)
 void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 hdfsClientRetCode)
 {
   ComDiagsArea * diagsArea = NULL;
-  char* errorMsg = hdfsClient_->getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
+  char* errorMsg = HdfsClient::getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
   ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
                   NULL, NULL, NULL, errorMsg, (char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
   ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
@@ -1980,7 +1980,6 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
        emptyTarget_(FALSE),
        oneFile_(FALSE)
 {
-  hdfsClient_ = NULL;
   ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                    (char*)"", //Later may need to change to hblTdb.server_,
                                    (char*)""); //Later may need to change to hblTdb.zkPort_);
@@ -2004,12 +2003,6 @@ void ExExeUtilHBaseBulkUnLoadTcb::freeResources()
     }
     NADELETEBASIC (snapshotsList_, getMyHeap());
     snapshotsList_ = NULL;
-  }
-
-  if (hdfsClient_)
-  {
-    NADELETE(hdfsClient_, HdfsClient, getMyHeap());
-    hdfsClient_ = NULL;
   }
   NADELETE(ehi_, ExpHbaseInterface, getGlobals()->getDefaultHeap());
   ehi_ = NULL;
@@ -2192,16 +2185,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       }
       setEmptyTarget(hblTdb().getEmptyTarget());
       setOneFile(hblTdb().getOneFile());
-      if (!hdfsClient_)
-      {
-        hdfsClient_ = HdfsClient::newInstance((NAHeap *)getMyHeap(), hdfsClientRetCode);
-        if (hdfsClientRetCode != HDFS_CLIENT_OK)
-        {
-          createHdfsFileError(hdfsClientRetCode);
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-      }
       if ((retcode = ehi_->init(NULL)) != HBASE_ACCESS_SUCCESS)
       {
          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
@@ -2213,7 +2196,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
       {
         NABoolean exists = FALSE;
-        hdfsClientRetCode = hdfsClient_->hdfsExists( hblTdb().getMergePath(), exists);
+        hdfsClientRetCode = HdfsClient::hdfsExists( hblTdb().getMergePath(), exists);
         if (hdfsClientRetCode != HDFS_CLIENT_OK)
         {
           createHdfsFileError(hdfsClientRetCode);
@@ -2298,7 +2281,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
       NAString uldPath ( hblTdb().getExtractLocation());
 
-      hdfsClientRetCode = hdfsClient_->hdfsCleanUnloadPath( uldPath);
+      hdfsClientRetCode = HdfsClient::hdfsCleanUnloadPath( uldPath);
       if (hdfsClientRetCode != HDFS_CLIENT_OK)
       {
         createHdfsFileError(hdfsClientRetCode);
@@ -2443,7 +2426,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
       NAString srcPath ( hblTdb().getExtractLocation());
       NAString dstPath ( hblTdb().getMergePath());
-      hdfsClientRetCode = hdfsClient_->hdfsMergeFiles( srcPath, dstPath);
+      hdfsClientRetCode = HdfsClient::hdfsMergeFiles( srcPath, dstPath);
       if (hdfsClientRetCode != HDFS_CLIENT_OK)
       {
         createHdfsFileError(hdfsClientRetCode);
