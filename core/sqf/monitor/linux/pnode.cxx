@@ -1709,7 +1709,6 @@ void CNodeContainer::AddNodes( )
         else
         {
             if (pnid >= maxNode) // only for workstation acting as single node
-//             || (IsAgentMode &&(strcmp( MasterMonitorName, Node_name ) != 0)))   
             {
                 rank = -1; // -1 creates node in down state
             }

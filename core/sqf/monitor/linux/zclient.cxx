@@ -523,6 +523,8 @@ const char* CZClient::WaitForAndReturnMaster( bool doWait )
             {
                 break;
             } 
+            usleep(1000000); // sleep for a second as to not overwhelm the system   
+            retries++;
             continue;
         }
         else if ( rc == ZOK )
@@ -549,14 +551,14 @@ const char* CZClient::WaitForAndReturnMaster( bool doWait )
                     break;
                 }
                 usleep(1000000); // sleep for a second as to not overwhelm the system   
-		retries++;
+                retries++;
                 continue;
             }
         }
          
         else  // error
         { 
-	    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
                 trace_printf( "%s@%d Error (MasterMonitor) WaitForAndReturnMaster returned rc (%d), retries %d\n"
                         , method_name, __LINE__, rc, retries );
@@ -946,6 +948,8 @@ int CZClient::CreateMasterZNode(  const char *nodeName )
                 , "[%s], RegisterZNode(%s) failed with error %s\n"
                 , method_name, monData.c_str(), zerror(rc) );
         mon_log_write(MON_ZCLIENT_CREATEMASTERZNODE, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
         return(rc); // Return the error
     }
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))

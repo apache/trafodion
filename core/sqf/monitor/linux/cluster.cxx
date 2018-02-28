@@ -380,45 +380,46 @@ void CCluster::AssignMonitorLeader( int pnid )
     int i = 0;
     int rc = 0;
     
-    int lMonitorLeaderPNid = MonitorLeaderPNid;
+    int monitorLeaderPNid = monitorLeaderPNid_;
     CNode *node = NULL;
 
-    if (MonitorLeaderPNid != pnid) 
+    if (monitorLeaderPNid_ != pnid) 
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
             trace_printf( "%s@%d" " - (MasterMonitor) returning, pnid %d != monitorLead %d\n"
-                        , method_name, __LINE__, pnid, MonitorLeaderPNid );
+                        , method_name, __LINE__, pnid, monitorLeaderPNid_ );
         }
-         return;
+        TRACE_EXIT;
+        return;
     }
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
     {
         trace_printf( "%s@%d" " - (MasterMonitor) Node "  "%d" " MonitorLeader failed!\n"
-                    , method_name, __LINE__, MonitorLeaderPNid );
+                    , method_name, __LINE__, monitorLeaderPNid_ );
     }
 
     for (i=0; i<GetConfigPNodesMax(); i++)
     {
-        lMonitorLeaderPNid++;
+        monitorLeaderPNid++;
 
-        if (lMonitorLeaderPNid == GetConfigPNodesMax())
+        if (monitorLeaderPNid == GetConfigPNodesMax())
         {
-            lMonitorLeaderPNid = 0; // restart with nid 0
+            monitorLeaderPNid = 0; // restart with nid 0
         }
 
-        if (lMonitorLeaderPNid == pnid)
+        if (monitorLeaderPNid == pnid)
         {
             continue; // this is the node that is going down, skip it
         }
 
-        if (Node[lMonitorLeaderPNid] == NULL)
+        if (Node[monitorLeaderPNid] == NULL)
         {
             continue;
         }
 
-        node = Node[lMonitorLeaderPNid];
+        node = Node[monitorLeaderPNid];
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
@@ -438,11 +439,11 @@ void CCluster::AssignMonitorLeader( int pnid )
             continue; // skip this node for any of the above reasons 
         }  
 
-        MonitorLeaderPNid = node->GetPNid();
+        monitorLeaderPNid_ = node->GetPNid();
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
-            trace_printf("%s@%d" " - Node "  "%d" " is the new MonitorLeaderPNid." "\n", method_name, __LINE__, MonitorLeaderPNid);
+            trace_printf("%s@%d" " - Node "  "%d" " is the new monitorLeaderPNid_." "\n", method_name, __LINE__, monitorLeaderPNid_);
         }
 
         if (ZClientEnabled)
@@ -483,7 +484,7 @@ void CCluster::AssignMonitorLeader( int pnid )
     TRACE_EXIT;
 }
 
-// Assigns a new TMLeader if given pnid is same as TmLeaderNid 
+// Assigns a new TMLeader if given pnid is same as tmLeaderNid_ 
 // TmLeader is a logical node num. 
 // pnid has gone down, so if that node was previously the TM leader, a new one needs to be chosen.
 void CCluster::AssignTmLeader( int pnid, bool checkProcess )
@@ -495,15 +496,15 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
     CNode *node = NULL;
     CProcess *process = NULL;
 
-    int TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
+    int TmLeaderPNid = LNode[tmLeaderNid_]->GetNode()->GetPNid();
 
     if (TmLeaderPNid != pnid) 
     {
-        node = LNode[TmLeaderNid]->GetNode();
+        node = LNode[tmLeaderNid_]->GetNode();
 
         if (checkProcess)
         {
-            process = LNode[TmLeaderNid]->GetProcessLByType( ProcessType_DTM );
+            process = LNode[tmLeaderNid_]->GetProcessLByType( ProcessType_DTM );
             if (process)
             {
                 if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
@@ -544,7 +545,7 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
     {
         trace_printf( "%s@%d" " - Node "  "%d" " TmLeader failed! (checkProcess=%d)\n"
-                    , method_name, __LINE__, TmLeaderNid, checkProcess );
+                    , method_name, __LINE__, tmLeaderNid_, checkProcess );
     }
 
     for (i=0; i<GetConfigPNodesMax(); i++)
@@ -586,11 +587,11 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
             continue; // skip this node for any of the above reasons 
         }  
 
-        TmLeaderNid = node->GetFirstLNode()->GetNid();
+        tmLeaderNid_ = node->GetFirstLNode()->GetNid();
 
         if (checkProcess)
         {
-            process = LNode[TmLeaderNid]->GetProcessLByType( ProcessType_DTM );
+            process = LNode[tmLeaderNid_]->GetProcessLByType( ProcessType_DTM );
             if (!process)
             {
                 continue; // skip this node no DTM process exists
@@ -599,7 +600,7 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
-            trace_printf("%s@%d" " - Node "  "%d" " is the new TmLeader." "\n", method_name, __LINE__, TmLeaderNid);
+            trace_printf("%s@%d" " - Node "  "%d" " is the new TmLeader." "\n", method_name, __LINE__, tmLeaderNid_);
         }
 
         break;
@@ -618,14 +619,13 @@ CCluster::CCluster (void)
       ,epollFD_(-1),
       Node (NULL),
       LNode (NULL),
-      TmSyncPNid (-1),
-      CurNodes (0),
-      CurProcs (0),
+      tmSyncPNid_ (-1),
+      currentNodes_ (0),
       configPNodesCount_ (-1),
       configPNodesMax_ (-1),
-      NodeMap (NULL),
-      TmLeaderNid (-1),
-      MonitorLeaderPNid (-1),
+      nodeMap_ (NULL),
+      tmLeaderNid_ (-1),
+      monitorLeaderPNid_ (-1),
       tmReadyCount_(0),
       minRecvCount_(4096),
       recvBuffer_(NULL),
@@ -795,10 +795,10 @@ CCluster::~CCluster (void)
     delete [] otherMonRank_;
     delete [] socks_;
     delete [] sockPorts_;
-    if (NodeMap)
+    if (nodeMap_)
     {
-        delete [] NodeMap;
-        NodeMap = NULL;
+        delete [] nodeMap_;
+        nodeMap_ = NULL;
     }
 
     delete [] recvBuffer2_;
@@ -2416,7 +2416,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                     // Begin a Slave Sync Start
                     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                         trace_printf("%s@%d - Slave Sync Start on Node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
-                    TmSyncPNid = pnid;
+                    tmSyncPNid_ = pnid;
                     Node[pnid]->SetTmSyncState( recv_msg->u.sync.state );
                     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                     {
@@ -2430,12 +2430,12 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                         trace_printf("%s@%d - Sync State Collision! Node %s (pnid=%d) TmSyncState=(%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState()) );
                     if ( MyNode->GetTmSyncState() == SyncState_Continue )
                     {
-                        if ( pnid > TmSyncPNid ) 
+                        if ( pnid > tmSyncPNid_ ) 
                             // highest node id will continue
                         {
                             // They take priority ... we abort
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                                trace_printf("%s@%d - Aborting Slave Sync Start on node %s (pnid=%d)\n", method_name, __LINE__, Node[Monitor->TmSyncPNid]->GetName(), Monitor->TmSyncPNid);
+                                trace_printf("%s@%d - Aborting Slave Sync Start on node %s (pnid=%d)\n", method_name, __LINE__, Node[Monitor->tmSyncPNid_]->GetName(), Monitor->tmSyncPNid_);
                             MyNode->SetTmSyncState( SyncState_Null );
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                                 trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ) );
@@ -2443,7 +2443,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                             // Continue with other node's Slave TmSync Start request
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                                 trace_printf("%s@%d - Slave Sync Start on node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
-                            TmSyncPNid = pnid;
+                            tmSyncPNid_ = pnid;
                             Node[pnid]->SetTmSyncState( recv_msg->u.sync.state );
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                             {
@@ -2467,7 +2467,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                             // Continue with other node's Slave TmSync Start request
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                                 trace_printf("%s@%d - Slave Sync Start on node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
-                            TmSyncPNid = pnid;
+                            tmSyncPNid_ = pnid;
                             Node[pnid]->SetTmSyncState( recv_msg->u.sync.state );
                             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                             {
@@ -2783,9 +2783,9 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
         case SyncType_TmData:
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d    - TMSYNC(TmData) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[MyPNID]->GetName(), MyPNID);
-            TmSyncPNid = MyPNID;
+            tmSyncPNid_ = MyPNID;
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                trace_printf("%s@%d    - Sync communicated, TmSyncPNid=%d\n", method_name, __LINE__, TmSyncPNid);
+                trace_printf("%s@%d    - Sync communicated, tmSyncPNid_=%d\n", method_name, __LINE__, tmSyncPNid_);
             if ( ! MyNode->IsSpareNode() && MyNode->GetPhase() != Phase_Ready )
             {
                 MyNode->CheckActivationPhase();
@@ -2974,7 +2974,7 @@ void CCluster::InitializeConfigCluster( void )
     int rankToPnid[worldSize];
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     
-    CurNodes = worldSize;
+    currentNodes_ = worldSize;
 
     if ( IsRealCluster )
     {
@@ -3038,10 +3038,10 @@ void CCluster::InitializeConfigCluster( void )
         int TmLeaderPNid = -1;
         if (IsMaster)
         {
-            TmLeaderNid = Nodes->GetFirstNid();
-            TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
+            tmLeaderNid_ = Nodes->GetFirstNid();
+            TmLeaderPNid = LNode[tmLeaderNid_]->GetNode()->GetPNid();
         }
-        // Non-master monitors in AGENT mode in a real cluster initialize all
+        // Monitors processes in AGENT mode in a real cluster initialize all
         // remote nodes to a down state. The master monitor and the joining
         // monitors will set the joining node state to up as part of the node
         // re-integration processing as monitor processes join the cluster
@@ -3179,8 +3179,8 @@ void CCluster::InitializeConfigCluster( void )
             delete [] commPortNums;
             delete [] syncPortNums;
 
-            TmLeaderNid = Nodes->GetFirstNid();
-            int TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
+            tmLeaderNid_ = Nodes->GetFirstNid();
+            int TmLeaderPNid = LNode[tmLeaderNid_]->GetNode()->GetPNid();
 
             // Any nodes not in the initial MPI_COMM_WORLD are down.
             for (int i=0; i<GetConfigPNodesCount(); ++i)
@@ -3220,7 +3220,7 @@ void CCluster::InitializeConfigCluster( void )
         }
         else
         {
-            TmLeaderNid = 0;
+            tmLeaderNid_ = 0;
         }
 
         // Initialize communicators for point-to-point communications
@@ -3828,7 +3828,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
         {   // Already connected to creator monitor
             comms_[i] = intraCommCreatorMon;
             otherMonRank_[i] = 0;
-            ++CurNodes;
+            ++currentNodes_;
 
             // Set bit indicating node is up
             upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
@@ -3922,7 +3922,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
 
             comms_[i] = intraComm;
             otherMonRank_[i] = 0;
-            ++CurNodes;
+            ++currentNodes_;
             Node[i]->SetSyncPort( nodeInfo[i].syncPort );
             Node[i]->SetState( State_Up );
 
@@ -4163,7 +4163,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             }
 
             otherMonRank_[nodeInfo[i].pnid] = 0;
-            ++CurNodes;
+            ++currentNodes_;
 
             // Store port numbers for the node
             strncpy(commPort, nodeInfo[i].commPort, MPI_MAX_PORT_NAME);
@@ -4310,7 +4310,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             }
 
             otherMonRank_[nodeInfo[i].pnid] = 0;
-            ++CurNodes;
+            ++currentNodes_;
 
             // Store port numbers for the node
             strncpy(commPort, nodeInfo[i].commPort, MPI_MAX_PORT_NAME);
@@ -4583,7 +4583,7 @@ void CCluster::setNewComm( int pnid )
                     close( socks_[pnid] );
                     socks_[pnid] = -1;
                 }
-                --CurNodes;
+                --currentNodes_;
             }
 
             if (trace_settings & TRACE_RECOVERY)
@@ -4595,7 +4595,7 @@ void CCluster::setNewComm( int pnid )
 
             comms_[it->pnid] = it->comm;
             otherMonRank_[it->pnid] = it->otherRank;
-            ++CurNodes;
+            ++currentNodes_;
             // Set bit indicating node is up
             upNodes_.upNodes[it->pnid/MAX_NODE_BITMASK] |= (1ull << (it->pnid%MAX_NODE_BITMASK));
 
@@ -4686,14 +4686,14 @@ void CCluster::setNewSock( int pnid )
                 shutdown( socks_[pnid], SHUT_RDWR);
                 close( socks_[pnid] );
                 socks_[pnid] = -1;
-                --CurNodes;
+                --currentNodes_;
             }
 
             CNode *node= Nodes->GetNode( it->pnid );
             socks_[it->pnid] = it->socket;
             sockPorts_[it->pnid] = node->GetSyncSocketPort();
             otherMonRank_[it->pnid] = it->otherRank;
-            ++CurNodes;
+            ++currentNodes_;
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
@@ -6040,7 +6040,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             // Evaluate each active (up) node in the cluster
             int pnodesCount = 0;
             for (int index = 0;
-                 index < GetConfigPNodesMax() && pnodesCount < CurNodes;
+                 index < GetConfigPNodesMax() && pnodesCount < currentNodes_;
                  ++index)
             {
                 if ( nodestate[index].seq_num != 0 )
@@ -6104,11 +6104,11 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
 
             if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
             {
-                trace_printf("%s@%d concurringNodes=%d, CurNodes=%d\n",
-                             method_name, __LINE__, concurringNodes, CurNodes);
+                trace_printf("%s@%d concurringNodes=%d, currentNodes_=%d\n",
+                             method_name, __LINE__, concurringNodes, currentNodes_);
             }
 
-            if (concurringNodes == CurNodes)
+            if (concurringNodes == currentNodes_)
             {   // General agreement that node is down, proceed to mark it down
 
                 CNode *downNode = Nodes->GetNode( it->exitedPnid );
@@ -6149,7 +6149,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
                           "%d but only %d of %d nodes also lost the "
                           "connection.  See up: %s.  See down: %s.  So node "
                           "%d is going down (at seq #%lld).\n", method_name,
-                          it->exitedPnid, concurringNodes, CurNodes,
+                          it->exitedPnid, concurringNodes, currentNodes_,
                           setSeesUp.c_str(), setSeesDown.c_str(),
                           MyPNID, seqNum_ );
                 mon_log_write(MON_CLUSTER_VALIDATE_STATE_2, SQ_LOG_ERR, buf);
@@ -6198,7 +6198,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
 
         int pnodesCount2 = 0;
         for (int remIndex = 0;
-             remIndex < GetConfigPNodesMax() && pnodesCount2 < CurNodes;
+             remIndex < GetConfigPNodesMax() && pnodesCount2 < currentNodes_;
              ++remIndex)
         {
             bool someExited = false;
@@ -6248,7 +6248,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             {  // This remote node sees node pnid as up
                 int pnodesCount3 = 0;
                 for (int exitedPNid = 0;
-                     exitedPNid < GetConfigPNodesMax() && pnodesCount3 < CurNodes;
+                     exitedPNid < GetConfigPNodesMax() && pnodesCount3 < currentNodes_;
                      ++exitedPNid)
                 {
                     CNode *exitedNode = Nodes->GetNode( /*indexToPnid_[remIndex]*/exitedPNid );
@@ -6666,7 +6666,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                     abort();
             }
             Node[index]->SetState( State_Down );
-            --CurNodes;
+            --currentNodes_;
             // Clear bit in set of "up nodes"
             upNodes_.upNodes[index/MAX_NODE_BITMASK] &= ~(1ull << (index%MAX_NODE_BITMASK));
         }
@@ -6738,7 +6738,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                         // Programmer bonehead!
                         abort();
                 }
-                --CurNodes;
+                --currentNodes_;
 
                 // Clear bit in set of "up nodes"
                 upNodes_.upNodes[index/MAX_NODE_BITMASK] &= ~(1ull << (index%MAX_NODE_BITMASK));
@@ -7068,14 +7068,14 @@ bool CCluster::checkIfDone (  )
 
     if (trace_settings & TRACE_SYNC_DETAIL)
         trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Process "
-                     "count=%d, internal state=%d, CurNodes=%d, "
+                     "count=%d, internal state=%d, currentNodes_=%d, "
                      "local process count=%d\n",
                      method_name, __LINE__, MyNode->GetPNid(),
                      MyNode->GetShutdownLevel(),
                      StateString(MyNode->GetState()),
                      Nodes->ProcessCount(),
                      MyNode->getInternalState(),
-                     CurNodes, MyNode->GetNumProcs());
+                     currentNodes_, MyNode->GetNumProcs());
 
     // Check if we are also done
     if (( MyNode->GetState() != State_Down    ) &&
@@ -7094,7 +7094,7 @@ bool CCluster::checkIfDone (  )
                 return false;
             }
             else if ( (Nodes->ProcessCount() <=
-                      (CurNodes*MAX_PRIMITIVES))        // only WDGs alive
+                      (currentNodes_*MAX_PRIMITIVES))        // only WDGs alive
                       && !MyNode->isInQuiesceState()    // post-quiescing will
                                                         // expire WDG (cluster)
                       && !waitForWatchdogExit_ )        // WDG not yet exiting

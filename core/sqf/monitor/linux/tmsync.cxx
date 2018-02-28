@@ -321,7 +321,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 exchangeTmSyncData( sync, false );
                 syncCycle_.unlock();
                 ExchangeTmSyncState( false );
-                if (( Monitor->TmSyncPNid == MyPNID                           ) &&
+                if (( Monitor->tmSyncPNid_ == MyPNID                           ) &&
                     ( Nodes->GetTmState( SyncState_Start ) == SyncState_Start )   )
                 {
                     // send unsolicited messages to other TMs in
@@ -353,7 +353,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 else
                 {
                     if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                       trace_printf("%s@%d" " - Tm Sync failed to start, TmSyncPNid=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, TmSyncPNid, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
+                       trace_printf("%s@%d" " - Tm Sync failed to start, tmSyncPNid_=%d, MyPNID=%d, " "TmSyncState=%d, expecting=%d\n", method_name, __LINE__, tmSyncPNid_, MyPNID, Nodes->GetTmState( SyncState_Start ), SyncState_Start);
                     if (MyNode->GetTmSyncState() == SyncState_Start)
                     {
                         MyNode->SetTmSyncState( SyncState_Null );
@@ -449,7 +449,7 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
             {
                 trace_printf("%s@%d - Request (%p) nid=%d, handle=%d, tag=%d, unsol=%d, comp=%d\n", method_name, __LINE__, req, req->Nid, req->Handle, req->Tag, req->Unsolicited, req->Completed);
             }
-            if ( TmSyncPNid == MyPNID )
+            if ( tmSyncPNid_ == MyPNID )
             {
                 if ( MyNode->GetLNodesCount() > 1 )
                 {
@@ -666,7 +666,7 @@ void CTmSync_Container::ProcessTmSyncReply( struct message_def * msg )
             TmSyncReplyCode |= msg->u.reply.u.unsolicited_tm_sync.return_code;
             tmsync_req->Completed = true;
             UnsolicitedComplete( msg );
-            if ( TmSyncPNid == MyPNID )
+            if ( tmSyncPNid_ == MyPNID )
             {
                 if (trace_settings & (TRACE_REQUEST | TRACE_TMSYNC))
                     trace_printf("%s@%d - Local Unsolicited TmSync reply, handle="
@@ -1102,7 +1102,7 @@ bool CTmSync_Container::TmSyncPending( void )
        trace_printf("%s@%d" " - PendingTmSync=%d, total=%d, replies=%d, pending=%d\n", method_name, __LINE__, PendingSlaveTmSync, GetTotalSlaveTmSyncCount(), GetTmSyncReplies(), GetPendingSlaveTmSyncCount() );
 
     if (( MyNode->GetTmSyncState() == SyncState_Abort ) &&
-        ( TmSyncPNid != MyPNID ) &&
+        ( tmSyncPNid_ != MyPNID ) &&
         ( GetTmSyncReplies() == GetTotalSlaveTmSyncCount() )   )
     {
         CommitTmDataBlock( MPI_ERR_UNKNOWN );
