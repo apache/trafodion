@@ -6844,7 +6844,7 @@ sql-query is:
 
 query-specification is:
 [with-clause]
-SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
+SELECT [ "[" ANY N "]" | "[" FIRST N "]" | "[" LAST N "]" ] [ALL | DISTINCT] select-list
    FROM table-ref [,table-ref]...
    [WHERE search-condition]
    [SAMPLE sampling-method]
@@ -6989,13 +6989,13 @@ By abstracting the complicated parts of the query into simpler, separate and log
 +
 specifies the unique name of the CTE to be created, which is a valid SQL identifier with a maximum of 128 characters. Duplicate names are not allowed in a single with-clause.
 
-* `"[" ANY _N_ "]" | "[" FIRST _N_ "]"`
+* `"[" ANY _N_ "]" | "[" FIRST _N_ "]" | "[" LAST _N_ "]" `
 +
 specifies that _N_ rows are to be returned (assuming the table has at least _N_ rows and that the qualification
 criteria specified in the WHERE clause, if any, would select at least _N_ rows) and you do not care which _N_ rows
 are chosen (out of the qualified rows) to actually be returned.
 +
-_You must enclose ANY N or FIRST N in square brackets ([])._ The quotation marks ("") around each square bracket in
+You must enclose `ANY _N_`, `FIRST _N_` or `LAST _N_` in square brackets ([]). The quotation marks ("") around each square bracket in
 the syntax diagram indicate that the bracket is a required character that you must type as shown (for example, [ANY 10]
 or [FIRST 5]). Do not include quotation marks in ANY or FIRST clauses.
 +
@@ -7003,6 +7003,8 @@ or [FIRST 5]). Do not include quotation marks in ANY or FIRST clauses.
 result table of the SELECT statement. _N_ is an unsigned numeric literal with no scale. If _N_ is greater than the number
 of rows in the table, all rows are returned. [ANY _N_] and [FIRST _N_] are disallowed in nested SELECT statements and on
 either side of a UNION operation.
++
+`[LAST _N_]` performs a full table scan and calculates elapsed time. The _N_ must be 0 or 1. `[LAST _0_]` does not return any rows. `[LAST _1_]` returns only the last qualified row.
 
 * `ALL | DISTINCT`
 +
@@ -8095,6 +8097,31 @@ SELECT sum(a) FROM t GROUP BY sum(a);
 SELECT (SELECT a FROM t1) FROM t GROUP BY (SELECT a FROM t1);
 
 SELECT a+1 FROM t GROUP BY 1+a;
+```
+
+* Examples of using `[LAST _N_]` option:
++
+```
+SQL>SELECT [LAST 0] * FROM employee;
+
+--- 0 row(s) selected.
+```
++
+```
+SQL>SELECT [LAST 1] * FROM employee WHERE jobcode <> 100 AND salary = 30000;
+
+EMPNUM FIRST_NAME      LAST_NAME            DEPTNUM JOBCODE SALARY    
+------ --------------- -------------------- ------- ------- ----------
+   227 XAVIER          SEDLEMEYER              3300     300   30000.00
+
+--- 1 row(s) selected.
+```
++
+```
+SQL>SELECT [LAST 2] * FROM employee;
+
+*** ERROR[15002] Internal parser error: Number of rows must be 0 or 1 with LAST option. 
+. [2018-02-28 18:05:12]
 ```
 
 <<<
