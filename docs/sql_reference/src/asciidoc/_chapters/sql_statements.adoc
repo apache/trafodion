@@ -7004,7 +7004,7 @@ result table of the SELECT statement. _N_ is an unsigned numeric literal with no
 of rows in the table, all rows are returned. [ANY _N_] and [FIRST _N_] are disallowed in nested SELECT statements and on
 either side of a UNION operation.
 +
-`[LAST _N_]` performs a full table scan and calculates elapsed time. The _N_ must be 0 or 1. `[LAST _0_]` does not return any rows. `[LAST _1_]` returns only the last qualified row.
+`[LAST _N_]` performs the entire query and calculates elapsed time. The _N_ must be 0 or 1. `[LAST _0_]` does not return any rows. `[LAST _1_]` returns only the last qualified row.
 
 * `ALL | DISTINCT`
 +
