@@ -381,7 +381,7 @@ bool CClusterConfig::LoadNodeConfig( void )
         if (i == 0)
         {
             configMaster_ = pnodeConfigInfo.pnid;
-            strcpy (configMasterName_ ,pnodeConfigInfo.nodename);
+            strncpy( configMasterName_ , pnodeConfigInfo.nodename, sizeof(configMasterName_) );
         }
         AddNodeConfiguration( pnodeConfigInfo, lnodeConfigInfo );
     }
