@@ -17,22 +17,6 @@ specific language governing permissions and limitations
 under the License.
 **********************************************************************/
 
-//*************************************************
-//
-//   ##    ##   ######   ########  ########
-//   ###   ##  ########  ########  ########
-//   ####  ##  ##    ##     ##     ##
-//   ## ## ##  ##    ##     ##     #####
-//   ##  ####  ##    ##     ##     ##
-//   ##   ###  ########     ##     ########
-//   ##    ##   ######      ##     ########
-//
-//**************************************************
-//
-// This file is deprecated. Please update file
-// core/sql/lib_mgmt/src/main/java/org/trafodion/sql/libmgmt/JDBCUDR.java
-// instead!!
-
 /***************************************************
  * A TMUDF that executes a generic JDBC query
  * and returns the result of the one SQL statement
@@ -71,7 +55,7 @@ under the License.
  * core/sql/regress/udr/TEST002.
  ***************************************************/
 
-package org.trafodion.sql.udr.predef;
+package org.trafodion.libmgmt;
 
 import org.trafodion.sql.udr.*;
 import java.sql.*;
