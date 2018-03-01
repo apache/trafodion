@@ -38,6 +38,9 @@
 #include "replicate.h"
 #include "internal.h"
 #include "healthcheck.h"
+#ifndef NAMESERVER_PROCESS
+#include "nameserver.h"
+#endif
 
 extern int MyPNID;
 extern bool Emulate_Down;
@@ -53,6 +56,9 @@ extern CConfigContainer *Config;
 extern CHealthCheck HealthCheck;
 #ifdef NAMESERVER_PROCESS
 extern char *ErrorMsg (int error_code);
+#else
+extern int NameServerEnabled;
+extern CNameServer *NameServer;
 #endif
 
 extern int req_type_startup;
@@ -361,51 +367,7 @@ void CRequest::evalReqPerformance( void )
     }
 }
 
-#ifdef NAMESERVER_PROCESS
-void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
-{
-    const char method_name[] = "CRequest::monreply";
-    TRACE_ENTRY;
-
-    if (error)
-        *error = 0;
-    if (!msg->noreply) // send reply
-    {
-        if (trace_settings & (TRACE_PROCESS_DETAIL))
-            trace_printf("%s@%d reply type = %d\n", method_name, __LINE__,
-                         msg->u.reply.type);
-        int size = offsetof(message_def, u) + sizeof(REPLYTYPE );
-        switch (msg->u.reply.type)
-        {
-        case ReplyType_Generic:
-            size += sizeof(struct Generic_reply_def);
-            break;
-        case ReplyType_NewProcess:
-            size += sizeof(struct NewProcess_reply_def);
-            break;
-        case ReplyType_ProcessInfo:
-            size += sizeof(struct ProcessInfo_reply_def);
-            break;
-        default:
-            abort();
-        }
-        int rc = Monitor->SendSock( (char *) msg
-                              , size
-                              , sockFd);
-        if ( rc )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], cannot send monitor reply: %s\n"
-                     , method_name, ErrorMsg(rc));
-            //mon_log_write(MON_COMMACCEPT_2, SQ_LOG_ERR, buf);  // TODO
-            if (error)
-                *error = rc;
-        }
-    }
-
-    TRACE_EXIT;
-}
-#else
+#ifndef NAMESERVER_PROCESS
 // Sending reply to request from local io client
 void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
 {
@@ -461,7 +423,8 @@ void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
 
 void CExternalReq::validateObj( void )
 {
-    if (strncmp((const char *)&eyecatcher_, "RQE", 3) !=0 )
+    if ((strncmp((const char *)&eyecatcher_, "RQE", 3) !=0 ) &&
+        (strncmp((const char *)&eyecatcher_, "RQX", 3) !=0 ))
     {  // Not a valid object
         abort();
     }
@@ -476,7 +439,9 @@ void CExternalReq::errorReply( int rc )
     msg_->u.reply.u.generic.process_name[0] = '\0';
     msg_->u.reply.u.generic.return_code = rc;
 
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+    monreply(msg_, sockFd_);
+#else
     // Send reply to requester
     lioreply(msg_, pid_);
 #endif
@@ -603,7 +568,7 @@ void CInternalReq::errorReply( int  )
 {
 }
 
-CIntCloneProcReq::CIntCloneProcReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData)
+CIntCloneProcReq::CIntCloneProcReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData, int origPNidNs)
     : CInternalReq(),
       backup_( backup ),
       unhooked_( unhooked ),
@@ -627,7 +592,8 @@ CIntCloneProcReq::CIntCloneProcReq( bool backup, bool unhooked, bool eventMessag
       portLen_ ( portLen ),
       infileLen_ ( infileLen ),
       outfileLen_ ( outfileLen ),
-      argvLen_ ( argvLen )
+      argvLen_ ( argvLen ),
+      origPNidNs_ ( origPNidNs )
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQIL", 4);
@@ -703,7 +669,8 @@ void CIntCloneProcReq::performRequest()
                                              eventMessages_,
                                              systemMessages_,
                                              false,
-                                             &creationTime_);
+                                             &creationTime_,
+                                             origPNidNs_);
             node->AddToNameMap ( process );
             node->AddToPidMap ( osPid_, process );
         }
@@ -728,7 +695,8 @@ void CIntCloneProcReq::performRequest()
                                    osPid_,
                                    eventMessages_,
                                    systemMessages_,
-                                   &creationTime_);
+                                   &creationTime_,
+                                   origPNidNs_);
         if (process)
         {
             if (trace_settings & TRACE_SYNC)
@@ -800,7 +768,8 @@ void CIntCloneProcReq::performRequest()
                                 programStrId_,
                                 &stringData_[nameLen_ + portLen_],  // infile
                                 &stringData_[nameLen_ + portLen_ + infileLen_], // outfile
-                                &creationTime_);
+                                &creationTime_,
+                                origPNidNs_);
             if ( process )
             {
                 process->userArgs ( argc_, argvLen_,
@@ -1582,6 +1551,10 @@ void CIntChildDeathReq::performRequest()
 
     if ( process_ != NULL)
     {
+#ifndef NAMESERVER_PROCESS
+        if ( NameServerEnabled )
+            NameServer->ProcessDelete(process_); // in reqQueue thread (CIntChildDeathReq)
+#endif
         MyNode->DelFromNameMap ( process_ );
         MyNode->DelFromPidMap ( process_ );
 
@@ -3297,7 +3270,7 @@ void CReqQueue::enqueueCloneReq ( struct clone_def *cloneDef )
 {
     CInternalReq * request;
 
-    request = new CIntCloneProcReq ( cloneDef->backup, cloneDef->unhooked, cloneDef->event_messages, cloneDef->system_messages, cloneDef->nid, cloneDef->type, cloneDef->priority, cloneDef->parent_nid, cloneDef->parent_pid, cloneDef->parent_verifier, cloneDef->os_pid, cloneDef->verifier, cloneDef->prior_pid, cloneDef->persistent_retries, cloneDef->argc, cloneDef->creation_time, cloneDef->pathStrId, cloneDef->ldpathStrId, cloneDef->programStrId, cloneDef->nameLen, cloneDef->portLen, cloneDef->infileLen, cloneDef->outfileLen, cloneDef->argvLen, &cloneDef->stringData);
+    request = new CIntCloneProcReq ( cloneDef->backup, cloneDef->unhooked, cloneDef->event_messages, cloneDef->system_messages, cloneDef->nid, cloneDef->type, cloneDef->priority, cloneDef->parent_nid, cloneDef->parent_pid, cloneDef->parent_verifier, cloneDef->os_pid, cloneDef->verifier, cloneDef->prior_pid, cloneDef->persistent_retries, cloneDef->argc, cloneDef->creation_time, cloneDef->pathStrId, cloneDef->ldpathStrId, cloneDef->programStrId, cloneDef->nameLen, cloneDef->portLen, cloneDef->infileLen, cloneDef->outfileLen, cloneDef->argvLen, &cloneDef->stringData, cloneDef->origPNidNs);
 
     enqueueReq ( request );
 }
@@ -4073,6 +4046,7 @@ void CReqQueue::stats()
 const bool CReqQueue::reqConcurrent[] = {
    false,    // unused, request types start at 1
    false,    // ReqType_Close
+   false,    // ReqType_DelProcessNs
    true,     // ReqType_Dump
    false,    // ReqType_Event
    false,    // ReqType_Exit
@@ -4113,6 +4087,7 @@ const bool CReqQueue::reqConcurrent[] = {
 const char * CReqQueue::svcReqType[] = {
     "",
     "Close",
+    "DeleteNs",
     "Dump",
     "Event",
     "Exit",

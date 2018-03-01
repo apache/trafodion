@@ -342,6 +342,7 @@ static const char *ga_ms_mon_process_type_short_labels[] = {
 
 static const char *ga_ms_mon_req_type_labels[] = {
     "MS_ReqType_Close",
+    "MS_ReqType_DelProcessNs",
     "MS_ReqType_Dump",
     "MS_ReqType_Event",
     "MS_ReqType_Exit",
@@ -380,6 +381,7 @@ static const char *ga_ms_mon_req_type_labels[] = {
 
 static const char *ga_ms_mon_req_type_short_labels[] = {
     "Close",
+    "DelProcessNs",
     "Dump",
     "Event",
     "Exit",
@@ -459,11 +461,13 @@ static const char *ga_sb_md_type_labels[] = {
 
 static const char *ga_sb_msmon_reply_type_labels[] = {
     "Generic",
+    "DeleteNs",
     "Dump",
     "Get",
     "MonStats",
     "Mount",
     "NewProcess",
+    "NewProcessNs",
     "NodeInfo",
     "NodeName",
     "Open",
@@ -565,6 +569,7 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
 
 static const char *ga_sb_utrace_api_mon_reqtype_labels[] = {
     "ReqType_Close",
+    "ReqType_DelProcessNs",
     "ReqType_Dump",
     "ReqType_Event",
     "ReqType_Exit",

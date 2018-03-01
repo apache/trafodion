@@ -86,6 +86,7 @@ extern char *ErrorMsg( int error_code );
 const int SQ_LocalIOToClient::serviceRequestSize[] = {
    0, // unused, request types start at 1
    sizeof(REQTYPE) + sizeof( Close_def ),           // ReqType_Close
+   sizeof(REQTYPE) + sizeof( DelProcessNs_def ),    // ReqType_DelProcessNs
    sizeof(REQTYPE) + sizeof( Dump_def ),            // ReqType_Dump
    sizeof(REQTYPE) + sizeof( Event_Notice_def ),    // ReqType_Event
    sizeof(REQTYPE) + sizeof( Exit_def ),            // ReqType_Exit
@@ -125,6 +126,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
 // that of the REPLYTYPE enum in msgdef.h.
 const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( Generic_reply_def ),     // ReplyType_Generic
+   sizeof(REPLYTYPE) + sizeof( DelProcessNs_reply_def ),// ReplyType_DelProcessNs
    sizeof(REPLYTYPE) + sizeof( Dump_reply_def ),        // ReplyType_Dump
    sizeof(REPLYTYPE) + sizeof( Get_reply_def ),         // ReplyType_Get
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats

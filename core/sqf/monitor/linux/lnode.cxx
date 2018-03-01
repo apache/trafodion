@@ -497,7 +497,8 @@ CProcess *CLNode::CompleteProcessStartup( char *process_name,
                                           int os_pid, 
                                           bool event_messages,
                                           bool system_messages,
-                                          struct timespec *creation_time )
+                                          struct timespec *creation_time,
+                                          int origPNidNs )
 {
     CProcess *entry = NULL;
     const char method_name[] = "CLNode::CompleteProcessStartup";
@@ -508,7 +509,8 @@ CProcess *CLNode::CompleteProcessStartup( char *process_name,
                                               os_pid, 
                                               event_messages,
                                               system_messages,
-                                              creation_time);
+                                              creation_time,
+                                              origPNidNs);
     TRACE_EXIT;
     return entry;
 }

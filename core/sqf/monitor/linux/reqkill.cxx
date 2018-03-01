@@ -40,7 +40,7 @@ extern int MyPNID;
 
 CExtKillReq::CExtKillReq (reqQueueMsg_t msgType, int pid,
                           struct message_def *msg )
-    : CExternalReq(msgType, pid, msg)
+    : CExternalReq(msgType, pid, -1, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEF", 4);
@@ -78,7 +78,7 @@ void CExtKillReq::Kill( CProcess *process )
     CNode  *node = NULL;
     CLNode *lnode = NULL;
 
-    const char method_name[] = "CMonitor::Kill";
+    const char method_name[] = "CExtKillReq::Kill";
     TRACE_ENTRY;
     
     process->SetAbended ( true );

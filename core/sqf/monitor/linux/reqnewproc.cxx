@@ -35,9 +35,7 @@ extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
-#ifndef NAMESERVER_PROCESS
 extern CDeviceContainer *Devices;
-#endif
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
@@ -75,7 +73,6 @@ void CExtNewProcReq::populateRequestString( void )
     requestString_.assign( strBuf );
 }
 
-#ifndef NAMESERVER_PROCESS
 void CExtNewProcReq::performRequest()
 {
     const char method_name[] = "CExtNewProcReq::performRequest";
@@ -519,7 +516,8 @@ void CExtNewProcReq::performRequest()
                                               programStrId,
                                               msg_->u.request.u.new_process.infile,
                                               msg_->u.request.u.new_process.outfile,
-                                              NULL);
+                                              NULL,
+                                              -1);
                 if (process)
                 {
                     process->userArgs (  msg_->u.request.u.new_process.argc,
@@ -605,41 +603,3 @@ void CExtNewProcReq::performRequest()
 
     TRACE_EXIT;
 }
-#else
-void CExtNewProcReq::performRequest()
-{
-    const char method_name[] = "CExtNewProcReq::performRequest";
-    TRACE_ENTRY;
-
-    CNode *node;
-#if 0
-    CLNode *lnode = NULL;
-#endif
-    int result;
-    node = Nodes->GetLNode(msg_->u.request.u.new_process_ns.nid)->GetNode();
-    strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.path );
-    strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
-    strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.program );
-    CProcess *requester = MyNode->GetProcess( pid_ );
-    CProcess *process = node->CreateProcess ( requester,
-                                                msg_->u.request.u.new_process_ns.nid,
-                                                msg_->u.request.u.new_process_ns.pid,
-                                                msg_->u.request.u.new_process_ns.verifier,
-                                                msg_->u.request.u.new_process_ns.type,
-                                                msg_->u.request.u.new_process_ns.debug,
-                                                msg_->u.request.u.new_process_ns.priority,
-                                                msg_->u.request.u.new_process_ns.backup,
-                                                msg_->u.request.u.new_process_ns.unhooked,
-                                                msg_->u.request.u.new_process_ns.process_name,
-                                                pathStrId,
-                                                ldpathStrId,
-                                                programStrId,
-                                                msg_->u.request.u.new_process_ns.infile,
-                                                msg_->u.request.u.new_process_ns.outfile,
-                                                result
-                                              );
-    process = process; // touch
-
-    TRACE_EXIT;
-}
-#endif

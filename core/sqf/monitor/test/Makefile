@@ -105,8 +105,7 @@ $(OUTDIR)/spxCtrl : spxCtrl.cxx $(CLIENTOBJS)
 $(OUTDIR)/spxProc : spxProc.cxx $(CLIENTOBJS)
 $(OUTDIR)/tmSyncTest: tmSyncTest.cxx  $(CLIENTOBJS)
 $(OUTDIR)/tmSyncCtrl: tmSyncCtrl.cxx  $(CLIENTOBJS)
-
-montestutil.cxx: montestutil.h
+$(OUTDIR)/montestutil.o: montestutil.cxx ../linux/msgdef.h
 
 clean:
 	@echo -rm -f $(OUTDIR)/*.o $(TEST_PGMS)

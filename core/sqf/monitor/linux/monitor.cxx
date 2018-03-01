@@ -119,7 +119,7 @@ Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
-int  NameServerEnabled = false;
+int  NameServerEnabled = true;
 #endif
 
 // Lock to manage memory modifications during fork/exec
@@ -167,7 +167,7 @@ DEFINE_EXTERN_COMP_GETVERS2(monitor)
 _TM_Txid_External invalid_trans( void )
 {
     _TM_Txid_External trans1;
-    
+
     trans1.txid[0] = -1LL;
     trans1.txid[1] = -1LL;
     trans1.txid[2] = -1LL;
@@ -179,7 +179,7 @@ _TM_Txid_External invalid_trans( void )
 _TM_Txid_External null_trans( void )
 {
     _TM_Txid_External trans1;
-    
+
     trans1.txid[0] = 0LL;
     trans1.txid[1] = 0LL;
     trans1.txid[2] = 0LL;
@@ -325,7 +325,7 @@ void monMallocStats()
 const char *CommTypeString( CommType_t commType)
 {
     const char *str;
-    
+
     switch( commType )
     {
         case CommType_InfiniBand:
@@ -504,7 +504,7 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
 
     const char method_name[] = "CMonitor::CompleteProcessStartup";
     TRACE_ENTRY;
-    
+
     lnode = Nodes->GetLNode( msg->u.request.u.startup.nid );
     if ( lnode )
     {
@@ -514,7 +514,8 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
                                      msg->u.request.u.startup.os_pid,
                                      msg->u.request.u.startup.event_messages,
                                      msg->u.request.u.startup.system_messages,
-                                     NULL );
+                                     NULL,
+                                     -1 );
     }
     else
     {
@@ -525,7 +526,7 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
 
         process = NULL;
     }
-    
+
     if (process)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
@@ -544,7 +545,7 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[CMonitor::CompleteProcessStartup], Error= Can't find process: %s!\n", msg->u.request.u.startup.process_name);
         mon_log_write(MON_MONITOR_COMPLETEPSTARTUP_2, SQ_LOG_ERR, buf);
-           
+
         msg->u.reply.type = ReplyType_Generic;
         msg->u.reply.u.generic.nid = -1;
         msg->u.reply.u.generic.pid = -1;
@@ -711,7 +712,7 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
         procObj = (struct clone_def *)buffer;
 
         stringData = &procObj->stringData;
-  
+
         node = Nodes->GetLNode (procObj->nid)->GetNode();
 
         if (procObj->infileLen)
@@ -722,7 +723,7 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
         {
             infile = NULL;
         }
-          
+
         if (procObj->outfileLen)
         {
             outfile = &stringData[procObj->nameLen + procObj->portLen + procObj->infileLen];
@@ -761,7 +762,8 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
                                       procObj->programStrId,
                                       infile, 
                                       outfile,
-                                      &procObj->creation_time);
+                                      &procObj->creation_time,
+                                      procObj->origPNidNs);
 
         if ( process && procObj->argvLen )
         {
@@ -793,7 +795,7 @@ void CMonitor::StartPrimitiveProcesses( void )
         // processing by a worker thread.
         ReqQueue.enqueueCreatePrimitiveReq( MyPNID );
     }
-    
+
     TRACE_EXIT;
 }
 #endif
@@ -850,7 +852,7 @@ void CMonitor::CreateZookeeperClient( void )
             TRACE_EXIT;
             return;
         }
-        
+
         env = getenv("ZOOKEEPER_NODES");
         if ( env )
         {
@@ -867,10 +869,10 @@ void CMonitor::CreateZookeeperClient( void )
                 TRACE_EXIT;
                 return;
             }
-            
+
             strcpy( hostsStr, zkQuorumHosts.c_str() );
             zkQuorumPort.str( "" );
-            
+
             tkn = strtok( hostsStr, "," );
             do
             {
@@ -886,7 +888,7 @@ void CMonitor::CreateZookeeperClient( void )
                 {
                     zkQuorumPort << ",";
                 }
-                
+
             }
             while( tkn != NULL );
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -896,7 +898,7 @@ void CMonitor::CreateZookeeperClient( void )
                             , zkQuorumPort.str().c_str() );
             }
         }
-    
+
         ZClient = new CZClient( zkQuorumPort.str().c_str()
                               , ZCLIENT_TRAFODION_ZNODE
                               , ZCLIENT_INSTANCE_ZNODE );
@@ -952,7 +954,7 @@ long long CMonitor::GetTimeSeqNum()
 
     struct timespec currTime;
     clock_gettime(CLOCK_REALTIME, &currTime);
-    
+
     if ( (currTime.tv_sec > savedTime_.tv_sec) ||
          ( (currTime.tv_sec == savedTime_.tv_sec) &&   
            (currTime.tv_nsec > savedTime_.tv_nsec) ) ) 
@@ -976,7 +978,7 @@ long long CMonitor::GetTimeSeqNum()
 
     if (trace_settings & TRACE_REQUEST_DETAIL)
         trace_printf("%s@%d Time seq num = %Lx\n", method_name, __LINE__, result);
-    
+
     TRACE_EXIT;
 
     return result;
@@ -999,7 +1001,7 @@ int main (int argc, char *argv[])
     char buf[MON_STRING_BUF_SIZE];
     unsigned int initSleepTime = 1; // 1 second
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
- 
+
 #ifdef NAMESERVER_PROCESS
     CALL_COMP_DOVERS(nameserver, argc, argv);
 #else
@@ -1017,7 +1019,11 @@ int main (int argc, char *argv[])
         Emulate_Down = true;
     }
 
+#ifdef NAMESERVER_PROCESS
+    MonLog = new CMonLog( "log4cxx.monitor.ns.config", "NS", "alt.mon", -1, -1, getpid(), "$NS" );
+#else
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
+#endif
 
     MonLog->setupInMemoryLog();
 
@@ -1103,7 +1109,7 @@ int main (int argc, char *argv[])
     {
         genSnmpTrapEnabled = true;
     }
-    
+
     env = getenv("MON_INIT_SLEEP");
     if ( env && isdigit(*env) )
     {
@@ -1243,7 +1249,7 @@ int main (int argc, char *argv[])
         }
         if ( isdigit (*argv[4]) )
         {
-            
+
             CreatorShellPid = atoi( argv[4] );
         }
         else
@@ -1253,7 +1259,7 @@ int main (int argc, char *argv[])
         }
         if ( isdigit (*argv[5]) )
         {
-            
+
             CreatorShellVerifier = atoi( argv[5] );
         }
         else
@@ -1366,7 +1372,7 @@ int main (int argc, char *argv[])
                 , CALL_COMP_GETVERS2(monitor), CommTypeString( CommType ));
 #endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
-       
+
 #ifdef DMALLOC
     if (trace_settings & TRACE_INIT)
        trace_printf("%s@%d" "DMALLOC Option set" "\n", method_name, __LINE__);
@@ -1443,11 +1449,11 @@ int main (int argc, char *argv[])
         // Always using localio now, no other option
         SQ_theLocalIOToClient = new SQ_LocalIOToClient( MyPNID );
         assert (SQ_theLocalIOToClient);
- 
+
         #define BLOCK_SIZE  512
         char *ioBuffer = NULL;
         int fd;
-            
+
         rc = posix_memalign( (void**)&ioBuffer, BLOCK_SIZE, BLOCK_SIZE);
         if ( rc == -1 )
         {
@@ -1485,7 +1491,7 @@ int main (int argc, char *argv[])
         {
             strcpy (Node_name, myNode->GetName()); 
         }
-        
+
 #ifndef NAMESERVER_PROCESS
         // create with no caching, user read/write, group read/write, other read
         fd = open( port_fname
@@ -1585,7 +1591,7 @@ int main (int argc, char *argv[])
         {
             ZClientEnabled = false;
         }
-    
+
         if ( IAmIntegrating )
         {
             // This monitor is integrating to (joining) an existing cluster

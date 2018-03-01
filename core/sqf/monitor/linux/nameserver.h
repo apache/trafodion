@@ -42,8 +42,10 @@ public:
 
     int  InitializeNameServer( void );
 
-    int  NewProcess(CProcess* process);
-    int  ProcessInfo(struct ProcessInfo_def* infoReq);
+    int  ProcessDelete(CProcess* process);
+    int  ProcessInfo(struct message_def* msg);
+    int  ProcessInfoCont(struct message_def* msg);
+    int  ProcessNew(CProcess* process);
 
 private:
     int  mon2nsSock_;
@@ -53,6 +55,7 @@ private:
     int  MkCltSock( const char *portName );
 
     int  ReceiveSock(char *buf, int size, int sockFd);
+    int  SendReceive(struct message_def* msg);
     int  SendSock(char *buf, int size, int sockFd);
     int  SendToNs(const char *reqType, struct message_def *msg, int size);
 

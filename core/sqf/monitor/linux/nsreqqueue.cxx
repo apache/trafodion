@@ -26,3 +26,64 @@
 #include "nstype.h"
 
 #include "reqqueue.cxx"
+
+void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
+{
+    const char method_name[] = "CRequest::monreply";
+    TRACE_ENTRY;
+
+    if (error)
+        *error = 0;
+    if (!msg->noreply) // send reply
+    {
+        if (trace_settings & (TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d reply type = %d\n", method_name, __LINE__,
+                         msg->u.reply.type);
+        int size = offsetof(message_def, u.reply.u);
+        switch (msg->u.reply.type)
+        {
+        case ReplyType_Generic:
+            size += sizeof(struct Generic_reply_def);
+            break;
+        case ReplyType_DelProcessNs:
+            size += sizeof(struct DelProcessNs_reply_def);
+            break;
+        case ReplyType_NewProcessNs:
+            size += sizeof(struct NewProcessNs_reply_def);
+            break;
+        case ReplyType_ProcessInfo:
+            size += sizeof(struct ProcessInfo_reply_def);
+            break;
+        default:
+            abort();
+        }
+        int rc = Monitor->SendSock( (char *) &size
+                                  , sizeof(size)
+                                  , sockFd);
+        if ( rc )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s], cannot send monitor reply: %s\n"
+                     , method_name, ErrorMsg(rc));
+            //mon_log_write(MON_COMMACCEPT_2, SQ_LOG_ERR, buf);  // TODO
+            if (error)
+                *error = rc;
+        } else
+        {
+            rc = Monitor->SendSock( (char *) msg
+                                  , size
+                                  , sockFd);
+            if ( rc )
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf), "[%s], cannot send monitor reply: %s\n"
+                         , method_name, ErrorMsg(rc));
+                //mon_log_write(MON_COMMACCEPT_2, SQ_LOG_ERR, buf);  // TODO
+                if (error)
+                    *error = rc;
+            }
+        }
+    }
+
+    TRACE_EXIT;
+}

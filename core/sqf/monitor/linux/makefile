@@ -248,6 +248,7 @@ ifeq ($(USE_DMALLOC),1)
 endif
 NSOBJS += $(OUTDIR)/nsreqworker.o
 NSOBJS += $(OUTDIR)/nsreqqueue.o
+NSOBJS += $(OUTDIR)/nsreqdelproc.o
 NSOBJS += $(OUTDIR)/nsreqnewproc.o
 NSOBJS += $(OUTDIR)/nsreqprocinfo.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
@@ -340,6 +341,7 @@ TYPE2STR_SRC = type2str.cxx
 TYPE2STR_OBJS = $(OUTDIR)/type2str.o
 
 ALLOBJS = $(MONITOROBJS)
+ALLOBJS += $(NSOBJS)
 ALLOBJS += $(SHELLOBJS)
 ALLOBJS += $(CLIENTOBJS)
 ALLOBJS += $(WATCHDOGOBJS)

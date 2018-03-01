@@ -65,7 +65,6 @@ CCommAcceptMon::~CCommAcceptMon()
     const char method_name[] = "CCommAcceptMon::~CCommAcceptMon";
     TRACE_ENTRY;
 
-
     TRACE_EXIT;
 }
 
@@ -274,6 +273,47 @@ bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
     return sentData;
 }
 
+#if 1
+void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqDeleteProcess";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Received monitor request delete-process data.\n"
+                      "        msg.del_process_ns.nid=%d\n"
+                      "        msg.del_process_ns.pid=%d\n"
+                      "        msg.del_process_ns.verifier=%d\n"
+                      "        msg.del_process_ns.process_name=%s\n"
+                      "        msg.del_process_ns.target_nid=%d\n"
+                      "        msg.del_process_ns.target_pid=%d\n"
+                      "        msg.del_process_ns.target_verifier=%d\n"
+                      "        msg.del_process_ns.target_process_name=%s\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.del_process_ns.nid
+                    , msg->u.request.u.del_process_ns.pid
+                    , msg->u.request.u.del_process_ns.verifier
+                    , msg->u.request.u.del_process_ns.process_name
+                    , msg->u.request.u.del_process_ns.target_nid
+                    , msg->u.request.u.del_process_ns.target_pid
+                    , msg->u.request.u.del_process_ns.target_verifier
+                    , msg->u.request.u.del_process_ns.target_process_name
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    int pid;
+    CExternalReq * request;
+    msgType = CExternalReq::NonStartupMsg;
+    pid = msg->u.request.u.del_process_ns.pid;
+    request = new CExtDelProcessNsReq(msgType, pid, sockFd, msg);
+    monReqExec(request);
+
+    TRACE_EXIT;
+}
+#endif
+
 void CCommAcceptMon::monReqExec( CExternalReq * request )
 {
     const char method_name[] = "CCommAcceptMon::monReqExec";
@@ -335,6 +375,59 @@ void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
 #endif
 
 #if 1
+void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqProcessInfoCont";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Received monitor request process-info-cont data.\n"
+                      "        msg.info_cont.nid=%d\n"
+                      "        msg.info_cont.pid=%d\n"
+                      "        msg.info_cont.context[0].nid=%d\n"
+                      "        msg.info_cont.context[0].pid=%d\n"
+                      "        msg.info_cont.context[1].nid=%d\n"
+                      "        msg.info_cont.context[1].pid=%d\n"
+                      "        msg.info_cont.context[2].nid=%d\n"
+                      "        msg.info_cont.context[2].pid=%d\n"
+                      "        msg.info_cont.context[3].nid=%d\n"
+                      "        msg.info_cont.context[3].pid=%d\n"
+                      "        msg.info_cont.context[4].nid=%d\n"
+                      "        msg.info_cont.context[5].pid=%d\n"
+                      "        msg.info_cont.type=%d\n"
+                      "        msg.info_cont.allNodes=%d\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.process_info_cont.nid
+                    , msg->u.request.u.process_info_cont.pid
+                    , msg->u.request.u.process_info_cont.context[0].nid
+                    , msg->u.request.u.process_info_cont.context[0].pid
+                    , msg->u.request.u.process_info_cont.context[1].nid
+                    , msg->u.request.u.process_info_cont.context[1].pid
+                    , msg->u.request.u.process_info_cont.context[2].nid
+                    , msg->u.request.u.process_info_cont.context[2].pid
+                    , msg->u.request.u.process_info_cont.context[3].nid
+                    , msg->u.request.u.process_info_cont.context[3].pid
+                    , msg->u.request.u.process_info_cont.context[4].nid
+                    , msg->u.request.u.process_info_cont.context[4].pid
+                    , msg->u.request.u.process_info_cont.type
+                    , msg->u.request.u.process_info_cont.allNodes
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    int pid;
+    CExternalReq * request;
+    msgType = CExternalReq::NonStartupMsg;
+    pid = msg->u.request.u.process_info_cont.pid;
+    request = new CExtProcInfoContReq(msgType, pid, sockFd, msg);
+    monReqExec(request);
+
+    TRACE_EXIT;
+}
+#endif
+
+#if 1
 void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqNewProcess";
@@ -368,7 +461,7 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
     int pid = -1;
     CExternalReq * request;
     msgType = CExternalReq::NonStartupMsg;
-    request = new CExtNewProcReq(msgType, pid, sockFd, msg);
+    request = new CExtNewProcNsReq(msgType, pid, sockFd, msg);
     monReqExec(request);
 
     TRACE_EXIT;
@@ -712,13 +805,22 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                         );
             switch (msg.u.request.type)
             {
+            case ReqType_DelProcessNs:
+                monReqDeleteProcess(&msg, sockFd);
+                break;
+
             case ReqType_ProcessInfo:
                 monReqProcessInfo(&msg, sockFd);
+                break;
+
+            case ReqType_ProcessInfoCont:
+                monReqProcessInfoCont(&msg, sockFd);
                 break;
 
             case ReqType_NewProcessNs:
                 monReqNewProcess(&msg, sockFd);
                 break;
+
             default:
                 trace_printf( "%s@%d - Received monitor request UNKNOWN data.\n"
                             , method_name, __LINE__

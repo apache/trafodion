@@ -45,7 +45,9 @@ public:
     void processNewSock( int sockFd );
     void processMonReqs( int sockFd );
     void monReqExec( CExternalReq * request );
+    void monReqDeleteProcess( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
+    void monReqProcessInfoCont( struct message_def* msg, int sockFd );
     void monReqNewProcess( struct message_def* msg, int sockFd );
     void startAccepting( void );
     void stopAccepting( void );

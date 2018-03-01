@@ -797,6 +797,9 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     msg->u.clone.persistent_retries = process_->GetPersistentRetries();
     msg->u.clone.event_messages = process_->IsEventMessages();
     msg->u.clone.system_messages = process_->IsSystemMessages();
+#ifdef NAMESERVER_PROCESS
+    msg->u.clone.origPNidNs = process_->GetOrigPNidNs();
+#endif
     msg->u.clone.argc = process_->argc();
     msg->u.clone.creation_time = process_->GetCreationTime();
 
@@ -904,7 +907,6 @@ bool CReplExit::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
-
 CReplKill::CReplKill( int nid
                     , int pid
                     , Verifier_t verifier
@@ -915,7 +917,7 @@ CReplKill::CReplKill( int nid
           , abort_(abort)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RPLJ", 4);
+    memcpy(&eyecatcher_, "RPLU", 4);
 
     // Compute message size (adjust if needed to conform to
     // internal_msg_def structure alignment).
@@ -939,7 +941,7 @@ CReplKill::~CReplKill()
                      method_name, __LINE__, nid_, pid_, verifier_ );
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rplj", 4);
+    memcpy(&eyecatcher_, "rplu", 4);
 }
 
 bool CReplKill::replicate(struct internal_msg_def *&msg)

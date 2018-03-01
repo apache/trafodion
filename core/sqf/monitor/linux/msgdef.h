@@ -231,6 +231,7 @@ typedef TcZoneType_t ZoneType;
 //       SQ_LocalIOToClient::serviceRequestSize and CReqQueue::svcReqType.
 typedef enum {
     ReqType_Close=1,                        // process closing server request
+    ReqType_DelProcessNs,                   // delete process
     ReqType_Dump,                           // dump process
     ReqType_Event,                          // send target processes an Event notice
     ReqType_Exit,                           // process is exiting
@@ -239,7 +240,7 @@ typedef enum {
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
-    ReqType_NewProcessNs,                   // process is request server to be spawned
+    ReqType_NewProcessNs,                   // new process
     ReqType_NodeAdd,                        // add node to configuration database
     ReqType_NodeDelete,                     // delete node from configuration database
     ReqType_NodeDown,                       // take down the identified node
@@ -276,11 +277,13 @@ typedef enum {
 //       SQ_LocalIOToClient::serviceReplySize.
 typedef enum {
     ReplyType_Generic=100,                  // general reply across message types
+    ReplyType_DelProcessNs,                 // reply with results
     ReplyType_Dump,                         // reply with dump info
     ReplyType_Get,                          // reply with configuration key/value pairs
     ReplyType_MonStats,                     // reply with monitor statistics
     ReplyType_Mount,                        // reply with mount info
     ReplyType_NewProcess,                   // reply with new process information
+    ReplyType_NewProcessNs,                 // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
     ReplyType_NodeName,                     // reply with results
     ReplyType_Open,                         // reply with open server information
@@ -380,6 +383,27 @@ struct Close_def
     char process_name[MAX_PROCESS_NAME];   // requesting process's name
     int  aborted;                          // Non-zero if close because of process abort
     int  mon;                              // Non-zero if monitor close
+};
+
+struct DelProcessNs_def
+{
+    int  nid;                               // requesting process's node id
+    int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
+    int  target_nid;                        // Node id of processes to delete
+    int  target_pid;                        // Process id of process to delete
+    Verifier_t target_verifier;             // Process verifier of processes to delete
+    char target_process_name[MAX_PROCESS_NAME];    // Name of process to delete
+};
+
+struct DelProcessNs_reply_def
+{
+    int  nid;                               // requesting process's node id
+    int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
+    int  return_code;                       // mpi error code of error
 };
 
 struct Dump_def
@@ -562,6 +586,15 @@ struct NewProcessNs_def
 };
 
 struct NewProcess_reply_def
+{
+    int  nid;                               // node id of started process
+    int  pid;                               // internal process id of started process
+    Verifier_t verifier;                    // Process verifier
+    char process_name[MAX_PROCESS_NAME];    // process names assigned to started process
+    int  return_code;                       // mpi error code of spawn operation
+};
+
+struct NewProcessNs_reply_def
 {
     int  nid;                               // node id of started process
     int  pid;                               // internal process id of started process
@@ -1121,6 +1154,7 @@ struct request_def
         struct Change_def            change;
         struct Close_def             close;
         struct ProcessDeath_def      death;
+        struct DelProcessNs_def      del_process_ns;
         struct NodeDown_def          down;
         struct Dump_def              dump;
         struct Event_def             event;
@@ -1173,11 +1207,13 @@ struct reply_def
     REPLYTYPE type;
     union
     {
+        struct DelProcessNs_reply_def  del_process_ns;
         struct Dump_reply_def          dump;
         struct Generic_reply_def       generic;
         struct Get_reply_def           get;
         struct Mount_reply_def         mount;
         struct NewProcess_reply_def    new_process;
+        struct NewProcessNs_reply_def  new_process_ns;
         struct NodeInfo_reply_def      node_info;
         struct Open_reply_def          open;
         struct OpenInfo_reply_def      open_info;

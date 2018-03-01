@@ -8032,6 +8032,15 @@ void CCluster::InitServerSock( void )
         if ( errno == 0) mon2nsPort = val;
     }
 
+    env = getenv("PMI_RANK");
+    if ( env )
+    {
+        int val;
+        errno = 0;
+        val = strtol(env, NULL, 10);
+        if ( errno == 0) mon2nsPort += val;
+    }
+
     mon2nsSock_ = MkSrvSock( &mon2nsPort );
     if ( mon2nsSock_ < 0 )
     {
@@ -8100,19 +8109,6 @@ int CCluster::AcceptSyncSock( void )
     TRACE_EXIT;
     return( csock  );
 }
-
-#ifdef NAMESERVER_PROCESS
-int CCluster::AcceptMon2NsSock( void )
-{
-    const char method_name[] = "CCluster::AcceptMon2NsSock";
-    TRACE_ENTRY;
-
-    int csock = AcceptSock( mon2nsSock_ );
-
-    TRACE_EXIT;
-    return( csock  );
-}
-#endif
 
 int CCluster::AcceptSock( int sock )
 {

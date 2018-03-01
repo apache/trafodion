@@ -34,11 +34,10 @@
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
-#ifndef NAMESERVER_PROCESS
 extern int NameServerEnabled;
+#ifndef NAMESERVER_PROCESS
 extern CNameServer *NameServer;
 #endif
-
 
 // Copy information for a specific process into the reply message buffer.
 void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState &procState)
@@ -285,179 +284,191 @@ void CExtProcInfoReq::performRequest()
 
 #ifndef NAMESERVER_PROCESS
     if ( NameServerEnabled )
-        NameServer->ProcessInfo(&msg_->u.request.u.process_info);
+        NameServer->ProcessInfo(msg_); // in reqQueue thread (CExternalReq)
 #endif
 
-    int count = 0;
-
-    // Record statistics (sonar counters)
-    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_processinfo_Incr();
-
-    nid_ = msg_->u.request.u.process_info.nid;
-    verifier_ = msg_->u.request.u.process_info.verifier;
-    processName_ = msg_->u.request.u.process_info.process_name;
-
-    int       target_nid = -1;
-    int       target_pid = -1;
-    string    target_process_name;
-    Verifier_t target_verifier = -1;
-    CProcess *requester = NULL;
-
-    target_nid = msg_->u.request.u.process_info.target_nid;
-    target_pid = msg_->u.request.u.process_info.target_pid;
-    target_process_name = (const char *) msg_->u.request.u.process_info.target_process_name;
-    target_verifier  = msg_->u.request.u.process_info.target_verifier;
-
-    if ( processName_.size() )
-    { // find by name
-        requester = MyNode->GetProcess( processName_.c_str()
-                                      , verifier_ );
+#ifndef NAMESERVER_PROCESS
+    if ( NameServerEnabled )
+    {
+        // Send reply to requester
+        lioreply(msg_, pid_);
     }
     else
-    { // find by pid
-        requester = MyNode->GetProcess( pid_
-                                      , verifier_ );
-    }
-
-    if ( requester )
     {
-        msg_->u.reply.u.process_info.more_data = false;
+#endif
+        int count = 0;
 
-        // setup for type of status request
-        if ( target_process_name.size() )
-        { // find by name 
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            {
-                trace_printf( "%s@%d request #%ld: ProcessInfo from %s (%d, %d:%d) "
-                              "by name for %s:%d, process type=%d\n"
-                            , method_name, __LINE__, id_
-                            , requester->GetName()
-                            , requester->GetNid()
-                            , requester->GetPid()
-                            , requester->GetVerifier()
-                            , target_process_name.c_str(), target_verifier
-                            , msg_->u.request.u.process_info.type);
-            }
+        // Record statistics (sonar counters)
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+           MonStats->req_type_processinfo_Incr();
 
-            //if requester is requesting info for itself, return local process info
-            if ( strcmp( requester->GetName()
-                       , msg_->u.request.u.process_info.target_process_name) == 0 )
-            {
-                ProcessInfo_CopyData(requester,
-                                     msg_->u.reply.u.process_info.process[0]);
-                count = 1;
-            }
-            else
-            {
-                // find by name (check node state, don't check process state, 
-                //               if verifier is -1, backup is NOT Ok, else is Ok)
-                CProcess *process = Nodes->GetProcess( target_process_name.c_str()
-                                                     , target_verifier
-                                                     , true, false
-                                                     , target_verifier == -1 ? false : true );
-                if (process)
-                {
-                    if ( target_verifier == -1 )
-                    { // the name may represent process pair, return primary only
-                        ProcessInfo_CopyPairData( process
-                                                , msg_->u.reply.u.process_info.process[0] );
-                        count = 1;
-                
-                    }
-                    else
-                    { 
-                        ProcessInfo_CopyData( process
-                                            , msg_->u.reply.u.process_info.process[0] );
-                        count = 1;
-                    }
-                }
-            }
-        }
-        else if (msg_->u.request.u.process_info.target_nid == -1)
-        {
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            {
-                trace_printf("%s@%d request #%ld: ProcessInfo, for all "
-                             "processes\n", method_name, __LINE__, id_);
-            }
+        nid_ = msg_->u.request.u.process_info.nid;
+        verifier_ = msg_->u.request.u.process_info.verifier;
+        processName_ = msg_->u.request.u.process_info.process_name;
 
-            // get info for all processes in all nodes
-            int nid = Nodes->GetFirstNid();
-            count = ProcessInfo_BuildReply( ProcessInfo_GetProcess(nid, true)
-                                          , msg_
-                                          , msg_->u.request.u.process_info.type
-                                          , true
-                                          , msg_->u.request.u.process_info.target_process_pattern );
+        int       target_nid = -1;
+        int       target_pid = -1;
+        string    target_process_name;
+        Verifier_t target_verifier = -1;
+        CProcess *requester = NULL;
+
+        target_nid = msg_->u.request.u.process_info.target_nid;
+        target_pid = msg_->u.request.u.process_info.target_pid;
+        target_process_name = (const char *) msg_->u.request.u.process_info.target_process_name;
+        target_verifier  = msg_->u.request.u.process_info.target_verifier;
+
+        if ( processName_.size() )
+        { // find by name
+            requester = MyNode->GetProcess( processName_.c_str()
+                                          , verifier_ );
         }
         else
-        {
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            {
-                trace_printf( "%s@%d request #%ld: ProcessInfo, for (%d, %d:%d), "
-                              "process type=%d\n"
-                            , method_name, __LINE__, id_
-                            , target_nid, target_pid, target_verifier
-                            , msg_->u.request.u.process_info.type);
-            }
+        { // find by pid
+            requester = MyNode->GetProcess( pid_
+                                          , verifier_ );
+        }
 
-            if (target_pid == -1)
-            {
-                // get info for all processes in node
-                if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+        if ( requester )
+        {
+            msg_->u.reply.u.process_info.more_data = false;
+
+            // setup for type of status request
+            if ( target_process_name.size() )
+            { // find by name 
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 {
-                    count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
-                                                   msg_,
-                                                   msg_->u.request.u.process_info.type,
-                                                   false,
-                                                   msg_->u.request.u.process_info.target_process_pattern);
+                    trace_printf( "%s@%d request #%ld: ProcessInfo from %s (%d, %d:%d) "
+                                  "by name for %s:%d, process type=%d\n"
+                                , method_name, __LINE__, id_
+                                , requester->GetName()
+                                , requester->GetNid()
+                                , requester->GetPid()
+                                , requester->GetVerifier()
+                                , target_process_name.c_str(), target_verifier
+                                , msg_->u.request.u.process_info.type);
                 }
-            }
-            else
-            {
-                // get info for single process in node
-                if ((requester->GetType() == ProcessType_TSE ||
-                     requester->GetType() == ProcessType_ASE ||
-                     requester->GetType() == ProcessType_AMP)  &&
-                    (requester->GetNid() == target_nid &&
-                     requester->GetPid() == target_pid))
+
+                //if requester is requesting info for itself, return local process info
+                if ( strcmp( requester->GetName()
+                           , msg_->u.request.u.process_info.target_process_name) == 0 )
                 {
                     ProcessInfo_CopyData(requester,
                                          msg_->u.reply.u.process_info.process[0]);
                     count = 1;
                 }
-                else if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
-                { // find by nid/pid (check node state, don't check process state, backup is Ok)
-                    CProcess *process = Nodes->GetProcess( target_nid
-                                                         , target_pid
+                else
+                {
+                    // find by name (check node state, don't check process state, 
+                    //               if verifier is -1, backup is NOT Ok, else is Ok)
+                    CProcess *process = Nodes->GetProcess( target_process_name.c_str()
                                                          , target_verifier
-                                                         , true, false, true );
+                                                         , true, false
+                                                         , target_verifier == -1 ? false : true );
                     if (process)
                     {
-                        ProcessInfo_CopyData(process,
-                                             msg_->u.reply.u.process_info.process[0]);
-                        count = 1;
+                        if ( target_verifier == -1 )
+                        { // the name may represent process pair, return primary only
+                            ProcessInfo_CopyPairData( process
+                                                    , msg_->u.reply.u.process_info.process[0] );
+                            count = 1;
+
+                        }
+                        else
+                        { 
+                            ProcessInfo_CopyData( process
+                                                , msg_->u.reply.u.process_info.process[0] );
+                            count = 1;
+                        }
                     }
                 }
             }
+            else if (msg_->u.request.u.process_info.target_nid == -1)
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                    trace_printf("%s@%d request #%ld: ProcessInfo, for all "
+                                 "processes\n", method_name, __LINE__, id_);
+                }
+
+                // get info for all processes in all nodes
+                int nid = Nodes->GetFirstNid();
+                count = ProcessInfo_BuildReply( ProcessInfo_GetProcess(nid, true)
+                                              , msg_
+                                              , msg_->u.request.u.process_info.type
+                                              , true
+                                              , msg_->u.request.u.process_info.target_process_pattern );
+            }
+            else
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                    trace_printf( "%s@%d request #%ld: ProcessInfo, for (%d, %d:%d), "
+                                  "process type=%d\n"
+                                , method_name, __LINE__, id_
+                                , target_nid, target_pid, target_verifier
+                                , msg_->u.request.u.process_info.type);
+                }
+
+                if (target_pid == -1)
+                {
+                    // get info for all processes in node
+                    if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+                    {
+                        count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
+                                                       msg_,
+                                                       msg_->u.request.u.process_info.type,
+                                                       false,
+                                                       msg_->u.request.u.process_info.target_process_pattern);
+                    }
+                }
+                else
+                {
+                    // get info for single process in node
+                    if ((requester->GetType() == ProcessType_TSE ||
+                         requester->GetType() == ProcessType_ASE ||
+                         requester->GetType() == ProcessType_AMP)  &&
+                        (requester->GetNid() == target_nid &&
+                         requester->GetPid() == target_pid))
+                    {
+                        ProcessInfo_CopyData(requester,
+                                             msg_->u.reply.u.process_info.process[0]);
+                        count = 1;
+                    }
+                    else if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+                    { // find by nid/pid (check node state, don't check process state, backup is Ok)
+                        CProcess *process = Nodes->GetProcess( target_nid
+                                                             , target_pid
+                                                             , target_verifier
+                                                             , true, false, true );
+                        if (process)
+                        {
+                            ProcessInfo_CopyData(process,
+                                                 msg_->u.reply.u.process_info.process[0]);
+                            count = 1;
+                        }
+                    }
+                }
+            }
+
+            msg_->u.reply.type = ReplyType_ProcessInfo;
+            msg_->u.reply.u.process_info.num_processes = count;
+            msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
+
+    #ifdef NAMESERVER_PROCESS
+            monreply(msg_, sockFd_);
+    #else
+            // Send reply to requester
+            lioreply(msg_, pid_);
+    #endif
         }
-
-        msg_->u.reply.type = ReplyType_ProcessInfo;
-        msg_->u.reply.u.process_info.num_processes = count;
-        msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
-
-#ifdef NAMESERVER_PROCESS
-        monreply(msg_, sockFd_);
-#else
-        // Send reply to requester
-        lioreply(msg_, pid_);
+        else
+        {   // Reply to requester so it can release the buffer.  
+            // We don't know about this process.
+            errorReply( MPI_ERR_EXITED );
+        }
+#ifndef NAMESERVER_PROCESS
+    }
 #endif
-    }
-    else
-    {   // Reply to requester so it can release the buffer.  
-        // We don't know about this process.
-        errorReply( MPI_ERR_EXITED );
-    }
 
     TRACE_EXIT;
 }
@@ -494,6 +505,11 @@ void CExtProcInfoContReq::performRequest()
 {
     const char method_name[] = "CExtProcInfoContReq::performRequest";
     TRACE_ENTRY;
+
+#ifndef NAMESERVER_PROCESS
+    if ( NameServerEnabled )
+        NameServer->ProcessInfoCont(msg_); // in reqQueue thread (CExternalReq)
+#endif
 
     int count = 0;
     int nid;

@@ -80,7 +80,6 @@ void CExtNodeAddReq::performRequest()
     CLNodeConfig   *lnodeConfig = NULL;
     CPNodeConfig   *pnodeConfig = NULL; 
     CProcess       *requester = NULL;
-    cpu_set_t       coreMask;
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))

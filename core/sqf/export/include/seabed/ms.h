@@ -398,6 +398,7 @@ typedef enum {
 } MS_Mon_MSGTYPE;
 typedef enum {
     MS_ReqType_Close = 1,
+    MS_ReqType_DeleteNs,
     MS_ReqType_Dump,
     MS_ReqType_Event,
     MS_ReqType_Exit,

@@ -191,6 +191,9 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     , NoticeHead(NULL)
     , NoticeTail(NULL)
 #endif
+#ifdef NAMESERVER_PROCESS
+    , origPNidNs_(-1)
+#endif
 {
     char la_buf[MON_STRING_BUF_SIZE];
 
@@ -704,9 +707,10 @@ void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messages,
                                        bool system_messages, bool preclone,
-                                       struct timespec *creation_time)
+                                       struct timespec *creation_time, int origPNidNs)
 {
     const char method_name[] = "CProcess::CompleteProcessStartup";
     TRACE_ENTRY;
@@ -715,6 +719,9 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
     Pid = os_pid;
     Event_messages = event_messages;
     System_messages = system_messages;
+#ifdef NAMESERVER_PROCESS
+    origPNidNs_ = origPNidNs;
+#endif
 
     if (preclone)
     {
@@ -733,13 +740,12 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         {
             if ( MyNode->IsMyNode(Nid) )
             {
+                if ( NameServerEnabled )
+                    NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
+
                 // Replicate the clone to other nodes
                 CReplClone *repl = new CReplClone(this);
                 Replicator.addItem(repl);
-#ifndef NAMESERVER_PROCESS
-                if ( NameServerEnabled )
-                    NameServer->NewProcess(this);
-#endif
             }
             else
             {
@@ -754,7 +760,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         }
     }
 
-#ifndef NAMESERVER_PROCESS
     if (!Clone)
     {
         // check if we need to setup any associated devices.
@@ -783,7 +788,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                  trace_printf("%s%d: pid %d added to quiesce exit list\n", method_name, __LINE__, GetPid());
         }
     }
-#endif
 
     if ( Clone && !preclone )
     {
@@ -799,7 +803,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                      Clone, StartupCompleted);
     State_ = State_Up;
 
-#ifndef NAMESERVER_PROCESS
     // Check if node is shutting down
     if ( !Clone && MyNode->GetState() == State_Shutdown )
     {
@@ -830,9 +833,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             SQ_theLocalIOToClient->putOnNoticeQueue( Pid, Verifier, msg, NULL );
         }
     }
-#endif
 
-#ifndef NAMESERVER_PROCESS
     // some special handling for native processes
     if ( !Clone )
     {
@@ -871,10 +872,10 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             Monitor->SoftNodeUpPrepare( MyPNID );
         }
     }
-#endif
 
     TRACE_EXIT;
 }
+#endif
 
 void CProcess::CompleteRequest( int status )
 {
@@ -4015,7 +4016,8 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
                                                      msg->u.request.u.startup.event_messages,
                                                      msg->u.request.u.startup.system_messages,
                                                      false,
-                                                     NULL );
+                                                     NULL,
+                                                     MyPNID );
 
                     msg->u.reply.type = ReplyType_Startup;
                     msg->u.reply.u.startup_info.nid = process->GetNid( );
@@ -4334,7 +4336,8 @@ CProcess *CProcessContainer::CloneProcess (int nid,
                                            strId_t programStrId,
                                            char *infile,
                                            char *outfile,
-                                           struct timespec *creation_time)
+                                           struct timespec *creation_time,
+                                           int origPNidNs)
 {
     char pname[MAX_PROCESS_NAME];
     CProcess *process;
@@ -4415,7 +4418,7 @@ CProcess *CProcessContainer::CloneProcess (int nid,
 
         AddToList( process );
 
-        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, os_pid==-1, creation_time);
+        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, os_pid==-1, creation_time, origPNidNs);
     }
 
     TRACE_EXIT;
@@ -4428,7 +4431,8 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                                                      int os_pid,
                                                      bool event_messages,
                                                      bool system_messages,
-                                                     struct timespec *creation_time)
+                                                     struct timespec *creation_time,
+                                                     int origPNidNs)
 {
     CProcess *process = NULL;
 
@@ -4492,7 +4496,7 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
             }
             AddToPidMap ( os_pid, process );
         }
-        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, false, creation_time);
+        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, false, creation_time, origPNidNs);
     }
     // When using process maps do not log an error if the process is
     // not found.  This method can be called from
@@ -4501,202 +4505,90 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
     return process;
 }
 
-#ifdef NAMESERVER_PROCESS
-CProcess *CProcessContainer::CreateProcess (CProcess * parent,
-                                            int nid,
-                                            int pid,
-                                            Verifier_t verifier,
-                                            PROCESSTYPE type,
-                                            int debug,
-                                            int priority,
-                                            int backup,
-                                            bool unhooked,
-                                            char *process_name,
-                                            strId_t pathStrId, 
-                                            strId_t ldpathStrId,
-                                            strId_t programStrId,
-                                            char *infile,
-                                            char *outfile,
-                                            int &result)
-{
-    CProcess *process = NULL;
-    char la_buf[MON_STRING_BUF_SIZE];
-
-    const char method_name[] = "CProcessContainer::CreateProcess";
-    TRACE_ENTRY;
-
-    result = MPI_SUCCESS;
-
-    // load & normalize process name
-    if( process_name[0] != '\0' )
-    {
-        NormalizeName (process_name);
-    }
-
-    if (backup)
-    {
-        if ( !parent || (strcmp (parent->GetName(), process_name) != 0) )
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Backup does not have parent's name.\n",
-                     method_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_1, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_NAME;
-
-            return NULL;
-        }
-        if (parent->GetNid() == nid)
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Backup can't be in parent's node.\n",
-                     method_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_2, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_RANK;
-
-            return NULL;
-        }
-    }
-    else
-    {
-        Nodes->GetLNode (process_name, &process, false);
-        if (process)
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Duplicate processname (%s).\n",
-                     method_name, process_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_NAME;
-            return NULL;
-        }
-    }
-
-    process =
-#if 0
-        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name, 
-                      pathStrId, ldpathStrId, programStrId, infile, outfile);
-#else
-        new CProcess (parent, nid, pid, verifier, type, priority, backup, debug, unhooked, process_name, 
-                      pathStrId, ldpathStrId, programStrId, infile, outfile);
-#endif
-    if (process)
-    {
-        AddToList( process );
-        if (type == ProcessType_Watchdog || 
-            type == ProcessType_PSD ||  
-            type == ProcessType_SMS )
-        {
-#if 0
-            if (process->Create (parent, result))
-            {
-                AddToPidMap(process->GetPid(), process);
-            }
-#endif
-        }
-        else if ( type == ProcessType_SSMP )
-        {
-            Nodes->GetLNode ( nid )->SetSSMProc ( process );
-        }
-#if 1
-        char port[1];
-        port[0] = '\0';
-        struct timespec creation_time;
-        memset(&creation_time, 0, sizeof(creation_time));
-        process->CompleteProcessStartup (port, pid, false, false, false, &creation_time);
-#endif
-    }
-    TRACE_EXIT;
-
-    return process;
-}
-#else
-CProcess *CProcessContainer::CreateProcess (CProcess * parent,
-                                            int nid,
-                                            PROCESSTYPE type,
-                                            int debug,
-                                            int priority,
-                                            int backup,
-                                            bool unhooked,
-                                            char *process_name,
-                                            strId_t pathStrId, 
-                                            strId_t ldpathStrId,
-                                            strId_t programStrId,
-                                            char *infile,
-                                            char *outfile,
-                                            int &result)
-{
-    CProcess *process = NULL;
-    char la_buf[MON_STRING_BUF_SIZE];
-
-    const char method_name[] = "CProcessContainer::CreateProcess";
-    TRACE_ENTRY;
-
-    result = MPI_SUCCESS;
-
-    // load & normalize process name
-    if( process_name[0] != '\0' )
-    {
-        NormalizeName (process_name);
-    }
-
-    if (backup)
-    {
-        if ( !parent || (strcmp (parent->GetName(), process_name) != 0) )
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Backup does not have parent's name.\n",
-                     method_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_1, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_NAME;
-
-            return NULL;
-        }
-        if (parent->GetNid() == nid)
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Backup can't be in parent's node.\n",
-                     method_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_2, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_RANK;
-
-            return NULL;
-        }
-    }
-    else
-    {
-        Nodes->GetLNode (process_name, &process, false);
-        if (process)
-        {
-            snprintf(la_buf, sizeof(la_buf),
-                     "[%s], Failed, Duplicate processname (%s).\n",
-                     method_name, process_name);
-            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
-
-            result = MPI_ERR_NAME;
-            return NULL;
-        }
-    }
-
-    process =
-        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name, 
-                      pathStrId, ldpathStrId, programStrId, infile, outfile);
-    if (process)
-    {
-        AddToList( process );
-        if (type == ProcessType_Watchdog || 
-            type == ProcessType_PSD ||  
-            type == ProcessType_SMS )
-        {
 #ifndef NAMESERVER_PROCESS
-            if (process->Create (parent, result))
+CProcess *CProcessContainer::CreateProcess (CProcess * parent,
+                                            int nid,
+                                            PROCESSTYPE type,
+                                            int debug,
+                                            int priority,
+                                            int backup,
+                                            bool unhooked,
+                                            char *process_name,
+                                            strId_t pathStrId, 
+                                            strId_t ldpathStrId,
+                                            strId_t programStrId,
+                                            char *infile,
+                                            char *outfile,
+                                            int &result)
+{
+    CProcess *process = NULL;
+    char la_buf[MON_STRING_BUF_SIZE];
+
+    const char method_name[] = "CProcessContainer::CreateProcess";
+    TRACE_ENTRY;
+
+    result = MPI_SUCCESS;
+
+    // load & normalize process name
+    if( process_name[0] != '\0' )
+    {
+        NormalizeName (process_name);
+    }
+
+    if (backup)
+    {
+        if ( !parent || (strcmp (parent->GetName(), process_name) != 0) )
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Backup does not have parent's name.\n",
+                     method_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_1, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_NAME;
+
+            return NULL;
+        }
+        if (parent->GetNid() == nid)
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Backup can't be in parent's node.\n",
+                     method_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_2, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_RANK;
+
+            return NULL;
+        }
+    }
+    else
+    {
+        Nodes->GetLNode (process_name, &process, false);
+        if (process)
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Failed, Duplicate processname (%s).\n",
+                     method_name, process_name);
+            mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
+
+            result = MPI_ERR_NAME;
+            return NULL;
+        }
+    }
+
+    process =
+        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name, 
+                      pathStrId, ldpathStrId, programStrId, infile, outfile);
+    if (process)
+    {
+        AddToList( process );
+        if (type == ProcessType_Watchdog || 
+            type == ProcessType_PSD ||  
+            type == ProcessType_SMS )
+        {
+            if (process->Create (parent, result)) // monitor
             {
                 AddToPidMap(process->GetPid(), process);
             }
-#endif
         }
         else if ( type == ProcessType_SSMP )
         {

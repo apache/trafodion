@@ -26,3 +26,90 @@
 #include "nstype.h"
 
 #include "process.cxx"
+
+CProcess *CProcessContainer::CreateProcess (CProcess * parent,
+                                            int nid,
+                                            int pid,
+                                            Verifier_t verifier,
+                                            PROCESSTYPE type,
+                                            int debug,
+                                            int priority,
+                                            int backup,
+                                            bool unhooked,
+                                            char *process_name,
+                                            strId_t pathStrId, 
+                                            strId_t ldpathStrId,
+                                            strId_t programStrId,
+                                            char *infile,
+                                            char *outfile,
+                                            int &result)
+{
+    CProcess *process = NULL;
+
+    const char method_name[] = "CProcessContainer::CreateProcess";
+    TRACE_ENTRY;
+
+    result = MPI_SUCCESS;
+
+    // load & normalize process name
+    if( process_name[0] != '\0' )
+    {
+        NormalizeName (process_name);
+    }
+
+    process =
+        new CProcess (parent, nid, pid, verifier, type, priority, backup, debug, unhooked, process_name, 
+                      pathStrId, ldpathStrId, programStrId, infile, outfile);
+    if (process)
+    {
+        AddToList( process );
+        char port[1];
+        port[0] = '\0';
+        struct timespec creation_time;
+        memset(&creation_time, 0, sizeof(creation_time));
+        process->SetOrigPNidNs( MyPNID );
+        process->CompleteProcessStartup (port, pid, false, false, false, &creation_time, MyPNID);
+    }
+
+    TRACE_EXIT;
+
+    return process;
+}
+
+void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messages,
+                                       bool system_messages, bool preclone,
+                                       struct timespec *creation_time,
+                                       int origPNidNs)
+{
+    const char method_name[] = "CProcess::CompleteProcessStartup";
+    TRACE_ENTRY;
+
+    STRCPY (Port, port);
+    Pid = os_pid;
+    Event_messages = event_messages;
+    System_messages = system_messages;
+    origPNidNs_ = origPNidNs;
+    State_ = State_Up;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf("%s@%d: process %s (%d, %d), preclone=%d"
+                     ", clone=%d\n",
+                     method_name, __LINE__, Name,
+                     Nid, os_pid, preclone, Clone);
+    StartupCompleted = true;
+    if (creation_time != NULL)
+        CreationTime = *creation_time;
+
+    if ( MyPNID == GetOrigPNidNs() )
+    {
+        // Replicate to other nodes
+        CReplClone *repl = new CReplClone(this);
+        Replicator.addItem(repl);
+    }
+    else
+    {
+        Clone = true;
+    }
+
+    TRACE_EXIT;
+}

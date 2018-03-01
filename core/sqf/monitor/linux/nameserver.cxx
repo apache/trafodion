@@ -145,7 +145,7 @@ int CNameServer::MkCltSock( const char *portName )
         ret = 1;
         while ( ret != 0 && connect_failures <= 10 )
         {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
             {
                 trace_printf( "%s@%d - Connecting to %s addr=%d.%d.%d.%d, port=%d, connect_failures=%d\n"
                             , method_name, __LINE__
@@ -237,7 +237,7 @@ int CNameServer::InitializeNameServer( void )
     else
     {
         mon2nsSock_ = sock;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - connected to nameserver=%s, sock=%d\n"
                         , method_name, __LINE__
@@ -258,7 +258,7 @@ int CNameServer::InitializeNameServer( void )
         msg.creatorShellVerifier = -1;
         msg.creator = false;
         msg.ping = false;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - sending node-info to nameserver=%s, sock=%d\n"
                         , method_name, __LINE__
@@ -268,7 +268,7 @@ int CNameServer::InitializeNameServer( void )
         err = SendSock((char *) &msg, sizeof(msg), mon2nsSock_);
         if (err)
         {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
             {
                 trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
                             , method_name, __LINE__
@@ -283,73 +283,58 @@ int CNameServer::InitializeNameServer( void )
     return err;
 }
 
-int CNameServer::ProcessInfo(struct ProcessInfo_def* infoReq)
+int CNameServer::ProcessDelete(CProcess* process)
 {
-    const char method_name[] = "CNameServer::ProcessInfo";
+    const char method_name[] = "CNameServer::ProcessDelete";
     TRACE_ENTRY;
+
     struct message_def msg;
     memset(&msg, 0, sizeof(msg)); // TODO: remove!
     msg.type = MsgType_Service;
     msg.noreply = false;
     msg.reply_tag = seqNum_++;
-    msg.u.request.type = ReqType_ProcessInfo;
-    struct ProcessInfo_def *msginfo = &msg.u.request.u.process_info;
-    msginfo->nid = infoReq->nid;
-    msginfo->pid = infoReq->pid;
-    msginfo->verifier = infoReq->verifier;
-    strcpy(msginfo->process_name, infoReq->process_name);
-    msginfo->target_nid = infoReq->target_nid;
-    msginfo->target_pid = infoReq->target_pid;
-    msginfo->target_verifier = infoReq->target_verifier;
-    strcpy(msginfo->target_process_name, infoReq->target_process_name);
-    strcpy(msginfo->target_process_pattern, infoReq->target_process_pattern);
-    msginfo->type = infoReq->type;
-    int size = offsetof(struct message_def, u) +
-               sizeof(REQTYPE) +
-               sizeof(msg.u.request.u.process_info);
+    msg.u.request.type = ReqType_DelProcessNs;
+    struct DelProcessNs_def *msgdel = &msg.u.request.u.del_process_ns;
+    msgdel->nid = process->GetNid();
+    msgdel->pid = process->GetPid();
+    msgdel->verifier = process->GetVerifier();
+    strcpy(msgdel->process_name, process->GetName());
+    msgdel->target_nid = msgdel->nid;
+    msgdel->target_pid = msgdel->pid;
+    msgdel->target_verifier = msgdel->verifier;
+    strcpy(msgdel->target_process_name, msgdel->process_name);
 
-    int error = SendToNs("process-info", &msg, size);
-    if (error == 0)
-    {
-        size = offsetof(struct message_def, u) +
-               sizeof(REPLYTYPE);
-        error = ReceiveSock((char *) &msg, size, mon2nsSock_);
-        if (error)
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - error receiving (hdr) from nameserver=%s, sock=%d, error=%d\n"
-                            , method_name, __LINE__
-                            , mon2nsPort_
-                            , mon2nsSock_
-                            , error );
-            }
-        }
-        else
-        {
-            size = sizeof( struct ProcessInfo_reply_def );
-            error = ReceiveSock((char *) &msg.u.reply.u.process_info, size, mon2nsSock_);
-            if (error)
-            {
-                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-                {
-                    trace_printf( "%s@%d - error receiving (data) from nameserver=%s, sock=%d, error=%d\n"
-                                , method_name, __LINE__
-                                , mon2nsPort_
-                                , mon2nsSock_
-                                , error );
-                }
-            }
-        }
-    }
+    int error = SendReceive(&msg);
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::NewProcess(CProcess* process)
+int CNameServer::ProcessInfo(struct message_def* msg)
 {
-    const char method_name[] = "CNameServer::NewProcess";
+    const char method_name[] = "CNameServer::ProcessInfo";
+    TRACE_ENTRY;
+
+    int error = SendReceive(msg);
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CNameServer::ProcessInfoCont(struct message_def* msg)
+{
+    const char method_name[] = "CNameServer::ProcessInfoCont";
+    TRACE_ENTRY;
+
+    int error = SendReceive(msg);
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CNameServer::ProcessNew(CProcess* process)
+{
+    const char method_name[] = "CNameServer::ProcessNew";
     TRACE_ENTRY;
 
     struct message_def msg;
@@ -378,11 +363,8 @@ int CNameServer::NewProcess(CProcess* process)
     msgnew->type = process->GetType();
     msgnew->priority = process->GetPriority();
     strcpy(msgnew->process_name, process->GetName());
-    int size = offsetof(struct message_def, u) +
-               sizeof(REQTYPE) +
-               sizeof(msg.u.request.u.new_process_ns);
 
-    int error = SendToNs("new-process", &msg, size);
+    int error = SendReceive(&msg);
 
     TRACE_EXIT;
     return error;
@@ -406,7 +388,7 @@ int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
                               , sizeCount
                               , 0 );
     
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - Count read %d = recv(%d)\n"
                         , method_name, __LINE__
@@ -448,12 +430,136 @@ int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
     }
     while( readAgain );
 
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
                     , method_name, __LINE__
                     , received
                     , error, strerror(error) );
+    }
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CNameServer::SendReceive(struct message_def* msg)
+{
+    const char method_name[] = "CNameServer::SendReceive";
+    char desc[100];
+    char* descp;
+    struct DelProcessNs_def *msgdel;
+    struct NewProcessNs_def *msgnew;
+
+    TRACE_ENTRY;
+
+    descp = desc;
+    int size = offsetof(struct message_def, u.request.u);
+    switch (msg->u.request.type)
+    {
+    case ReqType_DelProcessNs:
+        msgdel = &msg->u.request.u.del_process_ns;
+        sprintf(desc, "delete-process (nid=%d, pid=%d, verifier=%d, name=%s)",
+                msgdel->nid, msgdel->pid, msgdel->verifier, msgdel->process_name);
+        size += sizeof(msg->u.request.u.del_process_ns);
+        break;
+    case ReqType_NewProcessNs:
+        msgnew = &msg->u.request.u.new_process_ns;
+        sprintf(desc, "new-process (nid=%d, pid=%d, verifier=%d, name=%s)",
+                msgnew->nid, msgnew->pid, msgnew->verifier, msgnew->process_name);
+        size += sizeof(msg->u.request.u.new_process_ns);
+        break;
+    case ReqType_ProcessInfo:
+        descp = (char *) "process-info";
+        size += sizeof(msg->u.request.u.process_info);
+        break;
+    case ReqType_ProcessInfoCont:
+        descp = (char *) "process-info-cont";
+        size += sizeof(msg->u.request.u.process_info_cont);
+        break;
+    default:
+        abort(); // TODO change
+        break;
+    }
+
+    int error = SendToNs(descp, msg, size);
+    if (error == 0)
+    {
+        error = ReceiveSock((char *) &size, sizeof(size), mon2nsSock_);
+        if (error)
+        {
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d - error receiving (size) from nameserver=%s, sock=%d, error=%d\n"
+                            , method_name, __LINE__
+                            , mon2nsPort_
+                            , mon2nsSock_
+                            , error );
+            }
+        }
+        else
+        {
+            error = ReceiveSock((char *) msg, size, mon2nsSock_);
+            if (error)
+            {
+                if (trace_settings & (TRACE_PROCESS))
+                {
+                    trace_printf( "%s@%d - error receiving (data) from nameserver=%s, sock=%d, error=%d\n"
+                                , method_name, __LINE__
+                                , mon2nsPort_
+                                , mon2nsSock_
+                                , error );
+                }
+            }
+            else
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                    char desc[200];
+                    char* descp = desc;
+                    switch (msg->u.reply.type)
+                    {
+                    case ReplyType_DelProcessNs:
+                        sprintf(desc, "DelProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                                msg->u.reply.u.del_process_ns.nid,
+                                msg->u.reply.u.del_process_ns.pid,
+                                msg->u.reply.u.del_process_ns.verifier,
+                                msg->u.reply.u.del_process_ns.process_name,
+                                msg->u.reply.u.del_process_ns.return_code);
+                        break;
+                    case ReplyType_Generic:
+                        sprintf(desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                                msg->u.reply.u.generic.nid,
+                                msg->u.reply.u.generic.pid,
+                                msg->u.reply.u.generic.verifier,
+                                msg->u.reply.u.generic.process_name,
+                                msg->u.reply.u.generic.return_code);
+                        break;
+                    case ReplyType_NewProcessNs:
+                        sprintf(desc, "NewProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                                msg->u.reply.u.new_process_ns.nid,
+                                msg->u.reply.u.new_process_ns.pid,
+                                msg->u.reply.u.new_process_ns.verifier,
+                                msg->u.reply.u.new_process_ns.process_name,
+                                msg->u.reply.u.new_process_ns.return_code);
+                        break;
+                    case ReplyType_ProcessInfo:
+                        sprintf(desc, "ProcessInfo, num_processes=%d, rc=%d, more_data=%d\n",
+                                msg->u.reply.u.process_info.num_processes,
+                                msg->u.reply.u.process_info.return_code,
+                                msg->u.reply.u.process_info.more_data);
+                        break;
+                    default:
+                        descp = (char *) "UNKNOWN";
+                        break;
+                    }
+                    trace_printf( "%s@%d - msgType=%d, replyType=%d, ReplyType=%s\n"
+                                , method_name, __LINE__
+                                , msg->type, msg->u.reply.type
+                                , descp
+                                );
+                }
+            }
+        }
     }
 
     TRACE_EXIT;
@@ -477,7 +583,7 @@ int CNameServer::SendSock(char *buf, int size, int sockFd)
                               , size
                               , 0 );
     
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - send(), sendCount=%d\n"
                         , method_name, __LINE__
@@ -511,7 +617,7 @@ int CNameServer::SendSock(char *buf, int size, int sockFd)
     }
     while( sendAgain );
 
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
                     , method_name, __LINE__
@@ -528,7 +634,7 @@ int CNameServer::SendToNs(const char *reqType, struct message_def *msg, int size
     const char method_name[] = "CNameServer::SendToNs";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d - sending %s REQ to nameserver=%s, sock=%d\n"
                     , method_name, __LINE__
@@ -539,7 +645,7 @@ int CNameServer::SendToNs(const char *reqType, struct message_def *msg, int size
     int error = SendSock((char *) &size, sizeof(size), mon2nsSock_);
     if (error)
     {
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
                         , method_name, __LINE__
@@ -551,7 +657,7 @@ int CNameServer::SendToNs(const char *reqType, struct message_def *msg, int size
     error = SendSock((char *) msg, size, mon2nsSock_);
     if (error)
     {
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
                         , method_name, __LINE__
