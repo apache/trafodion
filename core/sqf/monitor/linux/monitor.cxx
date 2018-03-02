@@ -124,7 +124,7 @@ Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
-int  NameServerEnabled = true;
+int  NameServerEnabled = false;
 #endif
 
 // Lock to manage memory modifications during fork/exec
