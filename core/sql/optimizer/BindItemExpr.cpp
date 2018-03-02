@@ -3472,6 +3472,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   // expression getting translated correctly. 
 
   setReplacementExpr(ie);
+
   return ie;
 }
 
@@ -8415,6 +8416,70 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
   return NULL;
 
 } // DefaultSpecification::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+
+ItemExpr *SleepFunction::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // SleepFunction::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+
+ItemExpr *UnixTimestamp::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // UnixTimestamp::bindNode()
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp

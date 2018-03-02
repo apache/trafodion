@@ -136,12 +136,12 @@ CmpStatement::error(Lng32 no, const char* s)
 
 
 CmpStatement::CmpStatement(CmpContext* context,
-                           CollHeap* outHeap,
-                           NAMemory::NAMemoryType memoryType)
+                           CollHeap* outHeap)
  : parserStmtLiteralList_(outHeap)
 {
   exceptionRaised_ = FALSE;
-  reply_ = 0;
+  reply_ = NULL;
+  bound_ = NULL;
   context_ = context;
   storedProc_ = 0;
   prvCmpStatement_ = 0;
@@ -171,14 +171,16 @@ CmpStatement::CmpStatement(CmpContext* context,
                        memLimit);
     heap_->setErrorCallback(&CmpErrLog::CmpErrLogCallback);
   }
+  
+  // Embedded arkcmp reply is consumed by the caller before the CmpStatement
+  // is deleted, hence use CmpStatement Heap itself to avoid any leaks
 
-  // The default output heap will be the context heap, because the
-  // CmpMessageReply object might last after the CmpStatement goes
-  // out of scope.
-  outHeap_ = outHeap ? outHeap : context_ ? context_->heap() : 0;
+  if (context_->isEmbeddedArkcmp())
+     outHeap_ = heap_;
+  else
+     outHeap_ = context_->heap();
 
   context->setStatement(this);
-
 
   compStats_   = new (heap_) CompilationStats();
 
@@ -210,8 +212,18 @@ CmpStatement::~CmpStatement()
   // to end the interface.
   delete storedProc_; 
 
-  if (reply_)
+  if (reply_ != NULL)
     reply_->decrRefCount();
+
+/*
+  // At times, this delete can cause corruption in the heap
+  // Hence, it is commented out for now - Selva
+  // To miminze the leak from this the heap_ that used for this
+  // objects comes from CmpStatement Heap in case of embedded arkcmp,
+  // and from CmpContext Heap in case of standalone arkcmp.
+  if (bound_ != NULL)
+    bound_->decrRefCount();
+*/
 
   // GLOBAL_EMPTY_INPUT_LOGPROP points to an EstLogProp object in the heap.
   // Because it is a SharedPtr, it must be set to NULL before the statement
@@ -760,9 +772,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
       
       QueryText qText(sqlStr, inputCS);
 
-      CmpMessageReplyCode
-	*bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
-
       //      CmpMain cmpmain;
       Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
       Parser parser(CmpCommon::context());
@@ -861,9 +870,6 @@ short CmpStatement::getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
   CmpMain::ReturnStatus rs = CmpMain::SUCCESS;
   
   QueryText qText(sqlStr, inputCS);
-  
-  //  CmpMessageReplyCode
-  //    *bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
   
   Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
   Parser parser(CmpCommon::context());
@@ -1033,13 +1039,8 @@ CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageDescribe& statement)
 {
   ReturnStatus ret = CmpStatement_SUCCESS;
-  // There will be memory leak handling CmpMessageReplyCode *bound this way. 
-  // The correct way should be making bound a local variable with statementHeap passed in.
-  // But Matt has tried it, there seem to be some memory problems show up later, 
-  // so in the future, when time allows in the memory cleanup stage, this code should be
-  // revisited.
-  CmpMessageReplyCode
-  *bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
+
+  bound_ = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
   reply_ = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
 
   // A pointer to user SQL query is stored in CmpStatement; if an exception is
@@ -1067,11 +1068,11 @@ CmpStatement::process (const CmpMessageDescribe& statement)
   // pass this (casting to RelExpr, which it really is) to CmpDescribe
   CmpMain cmpmain;
   if (cmpmain.sqlcomp(qText, 0,				   //IN
-		      &bound->data(), &bound->size(), bound->outHeap(),	   //OUT
+		      &bound_->data(), &bound_->size(), bound_->outHeap(),	   //OUT
 		      CmpMain::BIND)					   //IN
      ||
       CmpDescribe(statement.data(),					   //IN
-		      (RelExpr*)bound->data(),				   //IN
+		      (RelExpr*)bound_->data(),				   //IN
 		      reply_->data(), reply_->size(), reply_->outHeap()))  //OUT
     {
       error(arkcmpErrorNoDiags, statement.data());

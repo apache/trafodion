@@ -6094,8 +6094,11 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (prevScope)
     inRowSubquery = prevScope->context()->inRowSubquery();
 
+  NABoolean groupByAggNodeAdded = FALSE;
   if (inRowSubquery && (CmpCommon::getDefault(COMP_BOOL_137) == DF_OFF))
-      addOneRowAggregates(bindWA);
+    // force adding one row aggregates in the [last 0] case
+    groupByAggNodeAdded = addOneRowAggregates(bindWA, 
+                            getFirstNRows() == -2 /* [last 0] case */);
 
   returnedRoot = 
     transformGroupByWithOrdinalPhase2(bindWA);
@@ -6665,36 +6668,79 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if ((getFirstNRows() != -1) ||
        (getFirstNRowsParam()))
     {
-      // create a firstN node to retrieve firstN rows.
-      FirstN * firstn = new(bindWA->wHeap())
-        FirstN(child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
+      // [first/any/last N] processing
 
-      firstn->bindNode(bindWA);
-      if (bindWA->errStatus())
-        return NULL;
+      RelExpr * nodeToInsertUnder = this;
+      if (inRowSubquery)
+        {
+          // [first/any/last N] in a row subquery special case
+          //
+          // In this case, if N > 1 it is first/any N, and we can simply
+          // ignore that as row subqueries already enforce an at-most-one
+          // row semantic. For [first 1], [last 1], [last 0], we need to
+          // add the node below any one-row aggregate group by node created
+          // earlier in this method. (If it put it above that group by node,
+          // that is too late; the one-row aggregate will raise an 8401 error
+          // before our FirstN node has a chance to narrow the result down to
+          // zero or one rows.) There is an interesting nuance with [last 0]:
+          // We forced the addition of a one-row aggregate group by node
+          // in that case, because [last 0] returns no rows. We might have
+          // a scalar aggregate subquery which ordinarily would not require
+          // a one-row aggregate group, but when [last 0] is present we want
+          // to force the aggregates to become NULL. Adding a one-row 
+          // aggregate group on top of the scalar aggregate, with the FirstN
+          // node in between them does the trick.
+          if (groupByAggNodeAdded &&
+               ( (getFirstNRows() == 1) ||   // [first 1] or [any 1]
+                 (getFirstNRows() == -2) ||  // [last 0]
+                 (getFirstNRows() == -3) ) ) // [last 1]
+            {
+              nodeToInsertUnder = child(0);
+              CMPASSERT(nodeToInsertUnder->getOperatorType() == REL_GROUPBY);             
+            }
+          else if (!groupByAggNodeAdded && (getFirstNRows() == -2))  // [last 0]
+            {
+              CMPASSERT(groupByAggNodeAdded);  // a GroupByAgg should have been forced
+            }
+          else  // a case where we can throw the [first/any/last N] away
+            {
+              nodeToInsertUnder = NULL;
+            }
+        }
+          
+      if (nodeToInsertUnder)
+        {
+          // create a firstN node to retrieve firstN rows.
+          FirstN * firstn = new(bindWA->wHeap())
+            FirstN(nodeToInsertUnder->child(0), getFirstNRows(), needFirstSortedRows(), getFirstNRowsParam());   
 
-      // Note: For ORDER BY + [first n], we want to sort the rows before 
-      // picking just n of them. (We don't do this for [any n].) We might
-      // be tempted to copy the orderByTree into the FirstN node at this
-      // point, but this doesn't work. Instead, we copy the bound ValueIds
-      // at normalize time. We have to do this in case there are expressions
-      // involved in the ORDER BY and there is a DESC. The presence of the
-      // Inverse node at the top of the expression tree seems to cause the
-      // expressions underneath to be bound to different ValueIds, which 
-      // causes coverage tests in FirstN::createContextForAChild requirements
-      // generation to fail. An example of where this occurs is:
-      //
-      // prepare s1 from
-      //   select [first 2] y, x from
-      //    (select a,b + 26 from t1) as t(x,y)
-      //   order by y desc;
-      //
-      // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
-      // ValueId for the expression b + 26 in the child characteristic outputs
-      // than what we get for the child of Inverse in Inverse(B + 26). The
-      // trick of copying the already-bound ORDER BY clause later avoids this.
+          firstn->bindNode(bindWA);
+          if (bindWA->errStatus())
+            return NULL;
 
-      setChild(0, firstn);
+          // Note: For ORDER BY + [first n], we want to sort the rows before 
+          // picking just n of them. (We don't do this for [any n].) We might
+          // be tempted to copy the orderByTree into the FirstN node at this
+          // point, but this doesn't work. Instead, we copy the bound ValueIds
+          // at normalize time. We have to do this in case there are expressions
+          // involved in the ORDER BY and there is a DESC. The presence of the
+          // Inverse node at the top of the expression tree seems to cause the
+          // expressions underneath to be bound to different ValueIds, which 
+          // causes coverage tests in FirstN::createContextForAChild requirements
+          // generation to fail. An example of where this occurs is:
+          //
+          // prepare s1 from
+          //   select [first 2] y, x from
+          //    (select a,b + 26 from t1) as t(x,y)
+          //   order by y desc;
+          //
+          // If we copy the ORDER BY ItemExpr tree and rebind, we get a different
+          // ValueId for the expression b + 26 in the child characteristic outputs
+          // than what we get for the child of Inverse in Inverse(B + 26). The
+          // trick of copying the already-bound ORDER BY clause later avoids this.
+
+          nodeToInsertUnder->setChild(0, firstn);
+        }
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);

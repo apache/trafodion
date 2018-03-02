@@ -46,7 +46,6 @@
 
 #define MAX_FILE_NAME 64
 #define MAX_NUM_TRANS   1024
-#define MAX_NODES 256
 #define MAX_SYNC_TXS 50
 #define MAX_RECEIVE_BUFFER 200000
 // low number for testing

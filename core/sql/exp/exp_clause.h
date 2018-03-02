@@ -209,7 +209,9 @@ public:
     FUNC_JSON_ID             = 128,
     FUNC_AES_ENCRYPT         = 129,
     FUNC_AES_DECRYPT         = 130,
-    FUNC_REVERSE_ID         = 131
+    FUNC_REVERSE_ID         = 131,
+    FUNC_SLEEP_ID           = 132,
+    FUNC_UNIX_TIMESTAMP_ID = 133
   };
 
   // max number of operands (including result) in a clause.

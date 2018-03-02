@@ -36,7 +36,6 @@
 #include "key_range.h"
 #include "key_single_subset.h"
 #include "ex_mdam.h"
-#include "hdfs.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -52,6 +51,8 @@ class ExHbaseAccessStats;
 class ExpHbaseInterface;
 class ExHbaseAccessSelectTcb;
 class ExHbaseAccessUMDTcb;
+class HdfsClient;
+
 #define INLINE_ROWID_LEN 255
 // -----------------------------------------------------------------------
 // ExHbaseAccessTdb
@@ -163,14 +164,11 @@ public:
   static void getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
                                const char * tabName, const char * rowId);
 
-  static void handleException(NAHeap *heap,
+  void handleException(NAHeap *heap,
                           char *loggingDdata,
                           Lng32 loggingDataLen,
-                          ComCondition *errorCond,
-                          ExpHbaseInterface * ehi,
-                          NABoolean & LoggingFileCreated,
-                          char * loggingFileName,
-                          ComDiagsArea **loggingErrorDiags);
+                          ComCondition *errorCond);
+
   static void buildLoggingPath(const char * loggingLocation,
                                char *logId,
                                const char *tableName,
@@ -502,11 +500,13 @@ protected:
   NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
   ComDiagsArea *loggingErrorDiags_;
+  HdfsClient *logFileHdfsClient_;
+  char *loggingFileName_;
+  NABoolean loggingFileCreated_ ;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 
-  virtual hdfsFS getHdfs() const { return NULL; }
-  virtual hdfsFile getHdfsSampleFile() const { return NULL; }
+  virtual HdfsClient *sampleFileHdfsClient() const { return NULL; }
 };
 
 class ExHbaseTaskTcb : public ExGod
@@ -919,14 +919,9 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     virtual ExWorkProcRetcode work();
 
   protected:
-    virtual hdfsFS getHdfs() const
+    virtual HdfsClient *sampleFileHdfsClient() const
     {
-      return hdfs_;
-    }
-
-    virtual hdfsFile getHdfsSampleFile() const
-    {
-      return hdfsSampleFile_;
+      return sampleFileHdfsClient_;
     }
 
    private:
@@ -939,8 +934,6 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     Text   importLocation_;
     Text   hFileName_;
 
-    char *loggingFileName_;
-    NABoolean LoggingFileCreated_ ;
     ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;
 
@@ -949,8 +942,7 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
 
 
     // HDFS file system and output file ptrs used for ustat sample table.
-    hdfsFS hdfs_;
-    hdfsFile hdfsSampleFile_;
+    HdfsClient *sampleFileHdfsClient_;
 };
 // UMD SQ: UpdMergeDel on Trafodion table
 class ExHbaseUMDtrafSubsetTaskTcb  : public ExHbaseTaskTcb

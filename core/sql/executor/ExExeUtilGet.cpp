@@ -3521,13 +3521,9 @@ ExExeUtilGetHbaseObjectsTcb::ExExeUtilGetHbaseObjectsTcb(
      ex_globals * glob)
      : ExExeUtilGetMetadataInfoTcb( exe_util_tdb, glob)
 {
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)exe_util_tdb.server(), 
-					(char*)exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)exe_util_tdb.zkPort());
 
   hbaseName_ = NULL;
   hbaseNameBuf_ = new(getGlobals()->getDefaultHeap()) 
@@ -6106,9 +6102,7 @@ ExExeUtilRegionStatsTcb::ExExeUtilRegionStatsTcb(
   int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)"", //exe_util_tdb.server(), 
-					(char*)"", //exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)""); //exe_util_tdb.zkPort(),
 
   regionInfoList_ = NULL;
   
@@ -6879,13 +6873,9 @@ ExExeUtilClusterStatsTcb::ExExeUtilClusterStatsTcb(
 
   stats_ = (ComTdbClusterStatsVirtTableColumnStruct*)statsBuf_;
 
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)"", //exe_util_tdb.server(), 
-					(char*)"", //exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)""); //exe_util_tdb.zkPort());
 
   regionInfoList_ = NULL;
   

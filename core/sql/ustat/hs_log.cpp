@@ -307,7 +307,7 @@ void HSLogMan::Log(const char *data)
   {
     if (logNeeded_)
       {
-        QRLogger::log(CAT_SQL_USTAT, LL_INFO, data);
+        QRLogger::log(CAT_SQL_USTAT, LL_INFO, "%s", data);
       }
   }
 

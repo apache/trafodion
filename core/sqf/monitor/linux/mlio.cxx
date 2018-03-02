@@ -1268,7 +1268,12 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
   if (cmid == -1)
   {
       if (trace_settings & TRACE_INIT)
-         trace_printf("%s@%d" " failed shmget("  "%d" "), errno="  "%d" "\n", method_name, __LINE__, (shsize), errno);
+      {
+          int err = errno;
+          trace_printf( "%s@%d" " failed shmget(%d), errno=%d (%s)\n"
+                      , method_name, __LINE__
+                      , (shsize), err, strerror(err) );
+      }
       if ( errno == EEXIST)
       {
           // and try getting it with a smaller size

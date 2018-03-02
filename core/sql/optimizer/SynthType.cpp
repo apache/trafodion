@@ -1119,6 +1119,7 @@ const NAType *BuiltinFunction::synthesizeType()
 	  }
       }
     break;
+
     case ITM_INET_ATON:
       {
         // type cast any params
@@ -1343,7 +1344,14 @@ const NAType *BuiltinFunction::synthesizeType()
 
     case ITM_UNIQUE_ID:
       {
-	retType = new HEAP SQLChar(HEAP, 16, FALSE);
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 36, FALSE);
+      }
+      break;
+    case ITM_UNIQUE_SHORT_ID:
+      {
+        //please check the ExFunctionUniqueId::eval if the size is changed
+	retType = new HEAP SQLChar(HEAP, 21, FALSE);
       }
       break;
 
@@ -3060,6 +3068,22 @@ const NAType *ConvertTimestamp::synthesizeType()
   return new HEAP SQLTimestamp (HEAP, operand.supportsSQLnullLogical(),
                                SQLTimestamp::DEFAULT_FRACTION_PRECISION);
 
+}
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+const NAType *SleepFunction::synthesizeType()
+{
+    return  new HEAP SQLInt(HEAP, TRUE, TRUE);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+const NAType *UnixTimestamp::synthesizeType()
+{
+  return new HEAP SQLLargeInt(HEAP, FALSE,FALSE);
 }
 
 // -----------------------------------------------------------------------

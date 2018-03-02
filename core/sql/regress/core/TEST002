@@ -50,6 +50,9 @@ create table t002ut1 (a int, b nchar(9), c int, d nchar(4));
 create table t002ut2 (a int not null, b nchar(9), c int, d nchar(4), primary key (a));
 #ifMX
 
+create table t002main (a int not null, b int, primary key (a));
+create table t002sub  (x int not null, y int, primary key (x));
+
 ?section dml
 -- INSERT queries
 insert into t002t1 values (10, 'abc', 20, 'xy');
@@ -62,6 +65,9 @@ insert into t002ut1 values (10, N'abc', 20, N'xy');
 insert into t002ut1(b,d,a,c) values (N'defg', N'wx', 10+10, 30);
 insert into t002ut2 select * from t002ut1;
 #ifMX
+
+insert into t002main values (1,1);
+insert into t002sub values (1,1), (2,1);
 
 ?section subqtests
 -- Expect 2 identical rows saying "2 2";
@@ -533,6 +539,53 @@ select SUM  (O.X) from t002FU O having exists(select COUNT(I.X) from t002FUI I);
 select COUNT(O.X) from t002FU O having exists(select COUNT(I.X) from t002FUI I); -- cnt
 ------------------------------------------------------------------------
 
+-- Tests of the interaction of [first n] etc. with subqueries
+
+-- Should return 1
+select 
+(select [FIRST 1] y aa from t002sub b where b.x = a.b) as result_value
+from t002main a;
+
+-- Should return null
+select 
+(select [last 0] y aa from t002sub b where b.x = a.b) as result_value
+from t002main a;
+
+-- Should get a cardinality violation (error 8401)
+select 
+(select [first 2] y aa from t002sub b where b.y = a.b) as result_value
+from t002main a;
+
+-- Should return 1
+select 
+(select [first 1] y aa from t002sub b where b.y = a.b) as result_value
+from t002main a;
+
+-- Should return 1
+select 
+(select [last 1] y aa from t002sub b where b.y = a.b) as result_value
+from t002main a;
+
+-- Should return null
+select 
+(select [last 0] y aa from t002sub b where b.y = a.b) as result_value
+from t002main a;
+
+-- Should return null
+select
+(select [last 0] count(*) from t002sub) as result_value
+from t002main;
+
+-- Should return 2
+select
+(select [first 20] count(*) from t002sub) as result_value
+from t002main;
+
+-- Should return null
+select
+(select [last 0] x from t002sub) as result_value
+from t002main;
+
 log;
 obey TEST002(clnup);
 exit;
@@ -553,6 +606,9 @@ drop table t002FUI;
 drop table t002ut1;
 drop table t002ut2;
 #ifMX
+
+drop table t002main;
+drop table t002sub;
 
 ?section clnup_end
 

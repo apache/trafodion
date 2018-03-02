@@ -73,7 +73,6 @@ public:
     ~CMonitor( void );
 
     bool  CompleteProcessStartup( struct message_def *msg );
-    void  CreateZookeeperClient( void );
     void  IncOpenCount(void);
     void  IncNoticeCount(void);
     void  IncProcessCount(void);
@@ -83,7 +82,6 @@ public:
 #ifndef NAMESERVER_PROCESS
     void  StartPrimitiveProcesses( void );  
 #endif
-    void  StartZookeeperClient( void );
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );
     void  writeProcessMapBegin( const char *name

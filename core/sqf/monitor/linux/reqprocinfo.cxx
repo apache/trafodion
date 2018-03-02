@@ -454,12 +454,12 @@ void CExtProcInfoReq::performRequest()
             msg_->u.reply.u.process_info.num_processes = count;
             msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
 
-    #ifdef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
             monreply(msg_, sockFd_);
-    #else
+#else
             // Send reply to requester
             lioreply(msg_, pid_);
-    #endif
+#endif
         }
         else
         {   // Reply to requester so it can release the buffer.  

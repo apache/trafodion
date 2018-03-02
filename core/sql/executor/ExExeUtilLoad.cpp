@@ -68,6 +68,7 @@ using std::ofstream;
 #include "ExpHbaseInterface.h"
 #include "ExHbaseAccess.h"
 #include "ExpErrorEnums.h"
+#include "HdfsClient_JNI.h"
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilCreateTableAsTdb::build(ex_globals * glob)
@@ -1244,9 +1245,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       int jniDebugTimeout = 0;
       ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                               (char*)"", //Later may need to change to hblTdb.server_,
-                                              (char*)"", //Later may need to change to hblTdb.zkPort_,
-                                              jniDebugPort,
-                                              jniDebugTimeout);
+                                              (char*)""); //Later may need to change to hblTdb.zkPort_);
       retcode = ehi_->initHBLC();
       if (retcode == 0) 
         retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
@@ -1958,10 +1957,10 @@ ex_tcb * ExExeUtilHBaseBulkUnLoadTdb::build(ex_globals * glob)
 
   return (exe_util_tcb);
 }
-void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 sfwRetCode)
+void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 hdfsClientRetCode)
 {
   ComDiagsArea * diagsArea = NULL;
-  char* errorMsg = sequenceFileWriter_->getErrorText((SFW_RetCode)sfwRetCode);
+  char* errorMsg = hdfsClient_->getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
   ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
                   NULL, NULL, NULL, errorMsg, (char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
   ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
@@ -1981,14 +1980,10 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
        emptyTarget_(FALSE),
        oneFile_(FALSE)
 {
-  sequenceFileWriter_ = NULL;
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
+  hdfsClient_ = NULL;
   ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                    (char*)"", //Later may need to change to hblTdb.server_,
-                                   (char*)"", //Later may need to change to hblTdb.zkPort_,
-                                   jniDebugPort,
-                                   jniDebugTimeout);
+                                   (char*)""); //Later may need to change to hblTdb.zkPort_);
   qparent_.down->allocatePstate(this);
 
 }
@@ -2011,10 +2006,10 @@ void ExExeUtilHBaseBulkUnLoadTcb::freeResources()
     snapshotsList_ = NULL;
   }
 
-  if (sequenceFileWriter_)
+  if (hdfsClient_)
   {
-    NADELETE(sequenceFileWriter_, SequenceFileWriter, getMyHeap());
-    sequenceFileWriter_ = NULL;
+    NADELETE(hdfsClient_, HdfsClient, getMyHeap());
+    hdfsClient_ = NULL;
   }
   NADELETE(ehi_, ExpHbaseInterface, getGlobals()->getDefaultHeap());
   ehi_ = NULL;
@@ -2163,7 +2158,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
   short rc;
-  SFW_RetCode sfwRetCode = SFW_OK;
+  HDFS_Client_RetCode hdfsClientRetCode = HDFS_CLIENT_OK;
   Lng32 hbcRetCode = HBC_OK;
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -2197,14 +2192,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       }
       setEmptyTarget(hblTdb().getEmptyTarget());
       setOneFile(hblTdb().getOneFile());
-      if (!sequenceFileWriter_)
+      if (!hdfsClient_)
       {
-        sequenceFileWriter_ = new(getMyHeap())
-                           SequenceFileWriter((NAHeap *)getMyHeap());
-        sfwRetCode = sequenceFileWriter_->init();
-        if (sfwRetCode != SFW_OK)
+        hdfsClient_ = HdfsClient::newInstance((NAHeap *)getMyHeap(), hdfsClientRetCode);
+        if (hdfsClientRetCode != HDFS_CLIENT_OK)
         {
-          createHdfsFileError(sfwRetCode);
+          createHdfsFileError(hdfsClientRetCode);
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2220,10 +2213,10 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
       {
         NABoolean exists = FALSE;
-        sfwRetCode = sequenceFileWriter_->hdfsExists( hblTdb().getMergePath(), exists);
-        if (sfwRetCode != SFW_OK)
+        hdfsClientRetCode = hdfsClient_->hdfsExists( hblTdb().getMergePath(), exists);
+        if (hdfsClientRetCode != HDFS_CLIENT_OK)
         {
-          createHdfsFileError(sfwRetCode);
+          createHdfsFileError(hdfsClientRetCode);
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2305,10 +2298,10 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
       NAString uldPath ( hblTdb().getExtractLocation());
 
-      sfwRetCode = sequenceFileWriter_->hdfsCleanUnloadPath( uldPath);
-      if (sfwRetCode != SFW_OK)
+      hdfsClientRetCode = hdfsClient_->hdfsCleanUnloadPath( uldPath);
+      if (hdfsClientRetCode != HDFS_CLIENT_OK)
       {
-        createHdfsFileError(sfwRetCode);
+        createHdfsFileError(hdfsClientRetCode);
         step_ = UNLOAD_END_ERROR_;
         break;
       }
@@ -2450,10 +2443,10 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
       NAString srcPath ( hblTdb().getExtractLocation());
       NAString dstPath ( hblTdb().getMergePath());
-      sfwRetCode = sequenceFileWriter_->hdfsMergeFiles( srcPath, dstPath);
-      if (sfwRetCode != SFW_OK)
+      hdfsClientRetCode = hdfsClient_->hdfsMergeFiles( srcPath, dstPath);
+      if (hdfsClientRetCode != HDFS_CLIENT_OK)
       {
-        createHdfsFileError(sfwRetCode);
+        createHdfsFileError(hdfsClientRetCode);
         step_ = UNLOAD_END_;
         break;
       }

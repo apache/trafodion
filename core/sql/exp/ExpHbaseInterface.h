@@ -71,9 +71,7 @@ class ExpHbaseInterface : public NABasicObject
 
   static ExpHbaseInterface* newInstance(CollHeap* heap, 
                                         const char* server = NULL, 
-                                        const char *zkPort = NULL, 
-                                        int debugPort = 0, 
-                                        int DebugTimeout = 0);
+                                        const char *zkPort = NULL);
 
   virtual ~ExpHbaseInterface()
   {}
@@ -296,9 +294,6 @@ class ExpHbaseInterface : public NABasicObject
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location) = 0;
 
- virtual Lng32  hdfsCreateFile(const char* path)=0;
- virtual Lng32  hdfsWrite(const char* data, Int64 size)=0;
- virtual Lng32  hdfsClose()=0;
  virtual Lng32  incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count)=0;
@@ -392,16 +387,12 @@ protected:
 
   ExpHbaseInterface(CollHeap * heap,
                     const char * server = NULL,
-                    const char * zkPort = NULL,
-                    int debugPort = 0,
-                    int debugTimeout = 0);
+                    const char * zkPort = NULL);
   
   CollHeap * heap_;
   ExHbaseAccessStats * hbs_;
   char server_[MAX_SERVER_SIZE+1];
   char zkPort_[MAX_PORT_SIZE+1];
-  int  debugPort_;
-  int  debugTimeout_;
 };
 
 char * getHbaseErrStr(Lng32 errEnum);
@@ -413,7 +404,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   ExpHbaseInterface_JNI(CollHeap* heap,
                         const char* server, bool useTRex,
-                        const char *zkPort, int debugPort, int debugTimeout);
+                        const char *zkPort);
   
   virtual ~ExpHbaseInterface_JNI();
   
@@ -609,9 +600,6 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
  
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);
- virtual Lng32  hdfsCreateFile(const char* path);
- virtual Lng32  hdfsWrite(const char* data, Int64 size);
- virtual Lng32  hdfsClose();
  virtual Lng32  incrCounter( const char * tabName, const char * rowId,
                              const char * famName, const char * qualName ,
                              Int64 incr, Int64 & count);

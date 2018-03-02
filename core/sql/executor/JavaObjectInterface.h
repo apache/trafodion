@@ -79,13 +79,10 @@ public:
 protected:
 
   // Default constructor - for creating a new JVM		
-  JavaObjectInterface(NAHeap *heap , int debugPort = 0, int debugTimeout = 0)
+  JavaObjectInterface(NAHeap *heap)
     :  heap_(heap)
       ,javaObj_(NULL)
-      ,needToDetach_(false)
       ,isInitialized_(false)
-      ,debugPort_(debugPort)
-      ,debugTimeout_(debugTimeout)
   {
      tid_ = syscall(SYS_gettid);
   }
@@ -94,10 +91,7 @@ protected:
   JavaObjectInterface(NAHeap *heap, jobject jObj)
     :  heap_(heap)
       ,javaObj_(NULL)
-      ,needToDetach_(false)
       ,isInitialized_(false)
-      ,debugPort_(0)
-      ,debugTimeout_(0)
   {
     tid_ = syscall(SYS_gettid);
     // When jObj is not null in the constructor
@@ -113,17 +107,17 @@ protected:
   virtual ~JavaObjectInterface();
   
   // Create a new JVM
-  int createJVM(LmJavaOptions *options);
+  static int createJVM(LmJavaOptions *options);
   
   // Initialize the JVM.
-  JOI_RetCode    initJVM(LmJavaOptions *options = NULL);
+  static JOI_RetCode    initJVM(LmJavaOptions *options = NULL);
   
   // Initialize JVM and all the JNI configuration.
   // Must be called.
   JOI_RetCode    init(char *className, jclass &javaclass, JavaMethodInit* JavaMethods, Int32 howManyMethods, bool methodsInitialized);
 
   // Get the error description.
-  virtual char* getErrorText(JOI_RetCode errEnum);
+  static char* getErrorText(JOI_RetCode errEnum);
  
   NAString getLastError();
 
@@ -132,8 +126,8 @@ protected:
   void logError(std::string &cat, const char* methodName, jstring jresult);
   void logError(std::string &cat, const char* file, int line);
 
-  JOI_RetCode initJNIEnv();
-  char* buildClassPath();  
+  static JOI_RetCode initJNIEnv();
+  static char* buildClassPath();  
   
 public:
   void setJavaObject(jobject jobj);
@@ -152,6 +146,7 @@ public:
   // Pass in jenv if the thread where the object is created is different than
   // the thread where exception occurred
   NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
+
   void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
   
   NAHeap *getHeap() { return heap_; }
@@ -166,10 +161,9 @@ protected:
   static jint jniHandleCapacity_;
 
   jobject   javaObj_;
-  bool      needToDetach_;
   bool      isInitialized_;
-  int       debugPort_;
-  int       debugTimeout_;
+  static int debugPort_;
+  static int debugTimeout_;
   pid_t     tid_;
   NAHeap    *heap_;
 };

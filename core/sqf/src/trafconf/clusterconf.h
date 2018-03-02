@@ -43,6 +43,8 @@ public:
 
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
+    int             GetConfigMaster ( ) { return configMaster_;} 
+    char *          GetConfigMasterByName() {return configMasterName_;} 
     bool            Initialize( void );
     bool            Initialize( bool traceEnabled, const char *traceFile );
     void            InitCoreMask( cpu_set_t &coreMask );
@@ -73,6 +75,8 @@ public:
 protected:
 private:
 
+    int             configMaster_;
+    char            configMasterName_[TC_PROCESSOR_NAME_MAX];
     bool            nodeReady_;    // true when node configuration loaded
     bool            persistReady_; // true when persist configuration loaded
     bool            newPNodeConfig_;
