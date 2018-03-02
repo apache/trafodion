@@ -99,7 +99,7 @@ public:
 
   SFR_RetCode    fetchRowsIntoBuffer(Int64 stopOffset, char* buffer, Int64 buffSize, Int64& bytesRead, char rowDelimiter);
 
-  virtual char*  getErrorText(SFR_RetCode errEnum);
+  static char*  getErrorText(SFR_RetCode errEnum);
 
 protected:
   jstring getLastError();
@@ -187,7 +187,7 @@ public:
   SFW_RetCode    close();
   SFW_RetCode    release();
 
-  virtual char*  getErrorText(SFW_RetCode errEnum);
+  static char*  getErrorText(SFW_RetCode errEnum);
 
 
 

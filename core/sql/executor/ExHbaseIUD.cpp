@@ -1421,7 +1421,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             HDFS_Client_RetCode hdfsClientRetcode;
             samplePath.append(filePart);
             if (sampleFileHdfsClient_ == NULL)
-                sampleFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetcode);
+                sampleFileHdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetcode);
             if (hdfsClientRetcode == HDFS_CLIENT_OK) {
                 hdfsClientRetcode = sampleFileHdfsClient_->hdfsOpen(samplePath.data(), FALSE);
                 if (hdfsClientRetcode != HDFS_CLIENT_OK) {

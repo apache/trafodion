@@ -882,7 +882,8 @@ public:
                              char* &hdfsHostName,
                              Int32 &hdfsPort,
                              NABoolean &doMultiCursor,
-                             NABoolean &doSplitFileOpt);
+                             NABoolean &doSplitFileOpt,
+                             NABoolean &isHdfsCompressed);
   static short genForOrc(Generator * generator,
                          const HHDFSTableStats* hTabStats,
                          const PartitioningFunction * mypart,

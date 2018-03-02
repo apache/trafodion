@@ -20,7 +20,7 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-
+#include "Platform.h"
 #include "ExSMTaskList.h"
 #include "ExSMTask.h"
 #include "ExSMTrace.h"
