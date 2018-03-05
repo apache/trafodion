@@ -39,6 +39,8 @@ enum InternalType
     , InternalType_Exit             // Delete process for monitor
     , InternalType_IoData           // Stdin/Stdout data for a process
     , InternalType_Kill             // Kill monitored process
+    , InternalType_NameServerAdd    // Add NameServer to configuration database
+    , InternalType_NameServerDelete // Delete NameServer from configuration database
     , InternalType_NodeAdd          // Add Node to configuration database
     , InternalType_NodeAdded        // Reload Node configuration and send node added notice
     , InternalType_NodeDelete       // Delete Node from configuration database
@@ -222,6 +224,22 @@ struct kill_def
     Verifier_t verifier;    // Verifier of the process to kill
     bool persistent_abort;  // when true, persistent process is not restarted
                             // otherwise, it is ignored
+};
+
+struct nameserver_add_def
+{
+    int req_nid;                            // Node id of requesting process
+    int req_pid;                            // Process id of requesting process
+    Verifier_t req_verifier;                // Verifier of the requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct nameserver_delete_def
+{
+    int req_nid;                            // Node id of requesting process
+    int req_pid;                            // Process id of requesting process
+    Verifier_t req_verifier;                // Verifier of the requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
 };
 
 struct node_add_def
@@ -413,6 +431,8 @@ struct internal_msg_def
         struct event_def   event;
         ioData_t           iodata;
         struct kill_def    kill;
+        struct nameserver_add_def nameserver_add;
+        struct nameserver_delete_def nameserver_delete;
         struct node_add_def     node_add;
         struct node_added_def   node_added;
         struct node_delete_def  node_delete;

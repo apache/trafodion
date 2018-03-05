@@ -46,13 +46,13 @@ CExtNewProcNsReq::CExtNewProcNsReq (reqQueueMsg_t msgType, int pid,
     : CExternalReq(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQXB", 4);
+    memcpy(&eyecatcher_, "RqEB", 4);
 }
 
 CExtNewProcNsReq::~CExtNewProcNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqxb", 4);
+    memcpy(&eyecatcher_, "rQeb", 4);
 }
 
 void CExtNewProcNsReq::populateRequestString( void )

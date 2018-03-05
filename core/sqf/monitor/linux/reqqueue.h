@@ -420,6 +420,80 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
+class CExtNameServerAddReq: public CExternalReq
+{
+public:
+    CExtNameServerAddReq (reqQueueMsg_t msgType, int pid,
+                          struct message_def *msg );
+    virtual ~CExtNameServerAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CExtNameServerDeleteReq: public CExternalReq
+{
+public:
+    CExtNameServerDeleteReq (reqQueueMsg_t msgType, int pid,
+                             struct message_def *msg );
+    virtual ~CExtNameServerDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CExtNameServerDownReq: public CExternalReq
+{
+public:
+    CExtNameServerDownReq (reqQueueMsg_t msgType, int pid,
+                           struct message_def *msg );
+    virtual ~CExtNameServerDownReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CExtNameServerInfoReq: public CExternalReq
+{
+public:
+    CExtNameServerInfoReq (reqQueueMsg_t msgType, int pid,
+                           struct message_def *msg );
+    virtual ~CExtNameServerInfoReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
+class CExtNameServerUpReq: public CExternalReq
+{
+public:
+    CExtNameServerUpReq (reqQueueMsg_t msgType, int pid,
+                         struct message_def *msg );
+    virtual ~CExtNameServerUpReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+#ifndef NAMESERVER_PROCESS
 class CExtNodeInfoReq: public CExternalReq
 {
 public:
@@ -985,6 +1059,47 @@ private:
     int level_;
 };
 
+class CIntNameServerAddReq: public CInternalReq
+{
+public:
+    CIntNameServerAddReq( int req_nid
+                        , int req_pid
+                        , Verifier_t req_verifier
+                        , char *nodeName
+                        );
+    virtual ~CIntNameServerAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    char nodeName_[MPI_MAX_PROCESSOR_NAME];
+};
+
+class CIntNameServerDeleteReq: public CInternalReq
+{
+public:
+    CIntNameServerDeleteReq( int req_nid
+                           , int req_pid
+                           , Verifier_t req_verifier
+                           , const char *nodeName );
+    virtual ~CIntNameServerDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    char nodeName_[MPI_MAX_PROCESSOR_NAME];
+};
+
 class CIntNodeNameReq: public CInternalReq
 {
 public:
@@ -1248,6 +1363,14 @@ class CReqQueue
     void enqueueChildDeathReq ( pid_t pid );
     void enqueueAttachedDeathReq ( pid_t pid );
 #endif
+    void enqueueNameServerAddReq( int req_nid
+                                , int req_pid
+                                , Verifier_t req_verifier
+                                , char *node_name );
+    void enqueueNameServerDeleteReq( int req_nid
+                                   , int req_pid
+                                   , Verifier_t req_verifier
+                                   , char *node_name );
     void enqueueNodeAddReq( int req_nid
                           , int req_pid
                           , Verifier_t req_verifier
@@ -1372,11 +1495,12 @@ private:
       RQIX   CIntSoftNodeDownReq
       RQIY   CIntSoftNodeUpReq
       RQIZ   CIntNodeNameReq
-      RQNA   CIntDeleteNsReq
+      RqIA   CIntNameServerAddReq
+      RqIB   CIntNameServerDeleteReq
 
    CExternalReq:
       RQEA   CExtAttachStartupReq
-      RQXA   CExtDelProcessNsReq
+      RqEA   CExtDelProcessNsReq
       RQEB   CExtDumpReq
       RQEC   CExtEventReq
       RQED   CExtExitReq
@@ -1385,12 +1509,17 @@ private:
       RQEG   CExtMonStatsReq
       RQEH   CExtMountReq
       RQEI   CExtNewProcReq
-      RQXB   CExtNewProcessNsReq
+      RqEB   CExtNewProcessNsReq
       RQEJ   CExtNodeDownReq
       RQEK   CExtNodeInfoReq
       RQEK   CExtPNodeInfoReq
       RQEL   CExtNodeUpReq
       RQEM   CExtNotifyReq
+      RqEC   CExtNameServerAddReq
+      RqED   CExtNameServerDeleteReq
+      RqEE   CExtNameServerDownReq
+      RqEF   CExtNameServerInfoReq
+      RqEG   CExtNameServerUpReq
       RQEN   CExtOpenReq
       RQEO   CExtProcInfoReq
       RQEP   CExtProcInfoContReq

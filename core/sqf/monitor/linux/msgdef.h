@@ -239,6 +239,11 @@ typedef enum {
     ReqType_Kill,                           // stop and cleanup the identified process
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
+    ReqType_NameServerAdd,                  // add nameserver to configuration database
+    ReqType_NameServerDelete,               // delete nameserver from configuration database
+    ReqType_NameServerDown,                 // take down the identified nameserver
+    ReqType_NameServerInfo,                 // nameserver operational status information request 
+    ReqType_NameServerUp,                   // bring up the identified nameserver
     ReqType_NewProcess,                     // process is request server to be spawned
     ReqType_NewProcessNs,                   // new process
     ReqType_NodeAdd,                        // add node to configuration database
@@ -282,6 +287,7 @@ typedef enum {
     ReplyType_Get,                          // reply with configuration key/value pairs
     ReplyType_MonStats,                     // reply with monitor statistics
     ReplyType_Mount,                        // reply with mount info
+    ReplyType_NameServerInfo,               // reply with info on list of nameservers
     ReplyType_NewProcess,                   // reply with new process information
     ReplyType_NewProcessNs,                 // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
@@ -341,6 +347,7 @@ typedef enum {
     ProcessType_DTM,                        // Identifies a Distributed Transaction Monitor process
     ProcessType_ASE,                        // Identifies a Audit Storage Engine (ADP)
     ProcessType_Generic,                    // Identifies a generic process
+    ProcessType_NameServer,                 // Identifies a nameserver processes
     ProcessType_Watchdog,                   // Identifies the monitor's watchdog processes
     ProcessType_AMP,                        // Identifies a AMP process
     ProcessType_Backout,                    // Identifies a Backout process
@@ -536,6 +543,51 @@ struct Mount_reply_def
     DEVICESTATE  mirror_state;              // State of mirror device
     int          return_code;               // mpi error code of spawn operation
 }; 
+
+struct NameServerAdd_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerDelete_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerDown_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerInfo_def
+{
+    int nid;                                // node id of requesting process
+    int pid;                                // process id of requesting process
+};
+
+struct NameServerInfo_reply_def
+{
+    int num_returned;                       // Number of nameservers returned
+    struct
+    {
+        STATE state;                        // Node's state (i.e. UP, DOWN, STOPPING)
+        char  node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+    } node[MAX_NODE_LIST];
+    int return_code;                        // error returned to sender
+};
+
+struct NameServerUp_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
 
 struct NewProcess_def
 {
@@ -1163,6 +1215,11 @@ struct request_def
         struct Get_def               get;
         struct Mount_def             mount;
         struct Kill_def              kill;
+        struct NameServerAdd_def     nameserver_add;
+        struct NameServerDelete_def  nameserver_delete;
+        struct NameServerDown_def    nameserver_down;
+        struct NameServerInfo_def    nameserver_info;
+        struct NameServerUp_def      nameserver_up;
         struct NewProcess_def        new_process;
         struct NewProcessNs_def      new_process_ns;
         struct NodeAdd_def           node_add;
@@ -1212,6 +1269,7 @@ struct reply_def
         struct Generic_reply_def       generic;
         struct Get_reply_def           get;
         struct Mount_reply_def         mount;
+        struct NameServerInfo_reply_def nameserver_info;
         struct NewProcess_reply_def    new_process;
         struct NewProcessNs_reply_def  new_process_ns;
         struct NodeInfo_reply_def      node_info;

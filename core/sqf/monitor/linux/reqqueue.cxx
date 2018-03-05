@@ -32,6 +32,7 @@
 #include "montrace.h"
 #include "monsonar.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 #include "lock.h"
 #include "lnode.h"
 #include "pnode.h"
@@ -424,7 +425,7 @@ void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
 void CExternalReq::validateObj( void )
 {
     if ((strncmp((const char *)&eyecatcher_, "RQE", 3) !=0 ) &&
-        (strncmp((const char *)&eyecatcher_, "RQX", 3) !=0 ))
+        (strncmp((const char *)&eyecatcher_, "RqE", 3) !=0 ))
     {  // Not a valid object
         abort();
     }
@@ -538,7 +539,8 @@ CInternalReq::~CInternalReq()
 
 void CInternalReq::validateObj( void )
 {
-    if (strncmp((const char *)&eyecatcher_, "RQI", 3) !=0 )
+    if ((strncmp((const char *)&eyecatcher_, "RQI", 3) !=0 ) &&
+        (strncmp((const char *)&eyecatcher_, "RqI", 3) !=0 ))
     {  // Not a valid object
         abort();
     }
@@ -1672,6 +1674,153 @@ void CIntShutdownReq::performRequest()
 
     TRACE_EXIT;
 }
+
+CIntNameServerAddReq::CIntNameServerAddReq( int req_nid
+                                          , int req_pid
+                                          , Verifier_t req_verifier
+                                          , char *nodeName
+                                          )
+              : CInternalReq()
+              , req_nid_(req_nid)
+              , req_pid_(req_pid)
+              , req_verifier_(req_verifier)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RqIA", 4);
+    STRCPY( nodeName_, nodeName );
+}
+
+CIntNameServerAddReq::~CIntNameServerAddReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rQia", 4);
+}
+
+void CIntNameServerAddReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    snprintf( strBuf, sizeof(strBuf), 
+              "IntReq(%s) req #=%ld "
+              "(node_name=%s)"
+            , CReqQueue::intReqType[InternalType_NodeAdd]
+            , getId()
+            , nodeName_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntNameServerAddReq::performRequest()
+{
+    const char method_name[] = "CIntNameServerAddReq::performRequest";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+    CProcess *requester = NULL;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+    {
+        trace_printf("%s@%d - NameServer add request (%s), "
+                     "node_name=%s\n"
+                    , method_name, __LINE__
+                    , requester ? requester->GetName() : ""
+                    , nodeName_);
+    }
+
+    CNameServerConfigContainer *nameServerConfig = Nodes->GetNameServerConfig();
+
+    // Insert nameserver in configuration database
+    if ( nameServerConfig->SaveConfig( nodeName_ ) )
+    {
+    }
+    else
+    {
+        rc = MPI_ERR_IO;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
+    TRACE_EXIT;
+}
+
+CIntNameServerDeleteReq::CIntNameServerDeleteReq( int req_nid
+                                                , int req_pid
+                                                , Verifier_t req_verifier
+                                                , const char *nodeName ) 
+                 : CInternalReq()
+                 , req_nid_(req_nid)
+                 , req_pid_(req_pid)
+                 , req_verifier_(req_verifier)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RqIB", 4);
+    STRCPY( nodeName_, nodeName );
+}
+
+CIntNameServerDeleteReq::~CIntNameServerDeleteReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rQib", 4);
+}
+
+void CIntNameServerDeleteReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    snprintf( strBuf, sizeof(strBuf), 
+              "IntReq(%s) req #=%ld "
+              "(node=%s)"
+            , CReqQueue::intReqType[InternalType_NameServerDelete]
+            , getId()
+            , nodeName_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntNameServerDeleteReq::performRequest()
+{
+    const char method_name[] = "CIntNameServerDeleteReq::performRequest";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+    CProcess *requester = NULL;
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf( "%s@%d - NameServer delete request (%s), node=%s\n"
+                    , method_name, __LINE__
+                    , requester ? requester->GetName() : ""
+                    , nodeName_ );
+
+    CNameServerConfigContainer *nameServerConfig = Nodes->GetNameServerConfig();
+    CNameServerConfig *config = nameServerConfig->GetConfig( nodeName_ );
+    if ( config )
+    {
+        nameServerConfig->DeleteConfig( config );
+    }
+    else
+    {
+        rc = MPI_ERR_IO;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
+    TRACE_EXIT;
+}
+
 
 CIntNodeNameReq::CIntNodeNameReq( int req_nid
                                 , int req_pid
@@ -2892,6 +3041,9 @@ void CIntCreatePrimitiveReq::performRequest()
                      method_name, __LINE__, pnid_);
     if ( pnid_ == MyPNID )
     {
+#if 0
+        MyNode->StartNameServerProcess();
+#endif
         MyNode->StartWatchdogProcess();
         MyNode->StartPStartDProcess();
         char *env = getenv( "SQ_SEAMONSTER" );
@@ -3006,6 +3158,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NameServerInfo:
+            request = new CExtNameServerInfoReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
         case ReqType_NodeInfo:
             request = new CExtNodeInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3077,6 +3234,26 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
         case ReqType_Mount:
             request = new CExtMountReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NameServerAdd:
+            request = new CExtNameServerAddReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NameServerDelete:
+            request = new CExtNameServerDeleteReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NameServerDown:
+            request = new CExtNameServerDownReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NameServerUp:
+            request = new CExtNameServerUpReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3336,6 +3513,42 @@ void CReqQueue::enqueueDeviceReq ( char *ldevName )
     enqueueReq ( request );
 }
 #endif
+
+void CReqQueue::enqueueNameServerAddReq( int req_nid
+                                       , int req_pid
+                                       , Verifier_t req_verifier
+                                       , char *node_name
+                                       )
+{
+    CInternalReq * request;
+
+    request = new CIntNameServerAddReq( req_nid
+                                      , req_pid
+                                      , req_verifier
+                                      , node_name
+                                      );
+
+    request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
+void CReqQueue::enqueueNameServerDeleteReq( int req_nid
+                                          , int req_pid
+                                          , Verifier_t req_verifier
+                                          , char *node_name )
+{
+    CInternalReq * request;
+
+    request = new CIntNameServerDeleteReq( req_nid
+                                         , req_pid
+                                         , req_verifier
+                                         , node_name );
+
+    request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
 
 void CReqQueue::enqueueNodeAddReq( int req_nid
                                  , int req_pid
@@ -4054,6 +4267,11 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Kill
    false,    // ReqType_MonStats
    false,    // ReqType_Mount
+   false,    // ReqType_NameServerAdd
+   false,    // ReqType_NameServerDelete
+   false,    // ReqType_NameServerDown
+   false,    // ReqType_NameServerInfo
+   false,    // ReqType_NameServerUp
    false,    // ReqType_NewProcess
    false,    // ReqType_NewProcessNs
    false,    // ReqType_NodeAdd
@@ -4095,6 +4313,11 @@ const char * CReqQueue::svcReqType[] = {
     "Kill",
     "MonStats",
     "Mount",
+    "NameServerAdd",
+    "NameServerDelete",
+    "NameServerDown",
+    "NameServerInfo",
+    "NameServerUp",
     "NewProcess",
     "NewProcessNs",
     "NodeAdd",

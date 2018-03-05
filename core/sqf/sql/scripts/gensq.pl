@@ -22,6 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 use sqconfigdb;
+use sqnameserver;
 use sqnodes;
 use sqpersist;
 use POSIX;
@@ -278,6 +279,30 @@ sub executeShellCommand {
 
 }
 
+
+sub processNameserver {
+    my $err = 0;
+    while (<>) {
+        if (/^begin name-server/) {
+        }
+        elsif (/^end name-server/) {
+            if (sqnameserver::validateNameserver() != 0) {
+                $err = 1;
+            }
+            if ($err != 0) {
+                print "   Error: not a valid name-server configuration statement.\n";
+                print "Exiting without generating sqconfig.db due to errors.\n";
+                exit 1;
+            }
+            return;
+        }
+        else {
+            if (sqnameserver::parseStmt() != 0) {
+                $err = 1;
+            }
+        }
+    }
+}
 
 sub processNodes {
     my $bNodeSpecified = 0;
@@ -640,6 +665,9 @@ while (<>) {
     }
     elsif (/^begin persist/) {
         processPersist;
+    }
+    elsif (/^begin name-server/) {
+        processNameserver;
     }
     elsif (/^%/) {
         printSQShellCommand;

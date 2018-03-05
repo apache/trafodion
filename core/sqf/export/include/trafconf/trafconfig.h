@@ -77,6 +77,7 @@ typedef enum {
     ProcessType_DTM,                        // Identifies a Distributed Transaction Monitor process
     ProcessType_ASE,                        // Identifies a Audit Storage Engine (ADP)
     ProcessType_Generic,                    // Identifies a generic process
+    ProcessType_NameServer,                 // Identifies a nameserver processes
     ProcessType_Watchdog,                   // Identifies the monitor's watchdog processes
     ProcessType_AMP,                        // Identifies a AMP process
     ProcessType_Backout,                    // Identifies a Backout process
@@ -180,6 +181,20 @@ TC_Export int tc_initialize( bool traceEnabled
                            , const char *traceFileName = NULL
                            , const char *instanceNode = NULL
                            , const char *rootNode = NULL )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_delete_nameservice( const char *node_name )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_get_nameservers( int   *count
+                                , int    max
+                                , char **nodeNames )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_get_nameserver( const char *node_name )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_put_nameserver( const char *node_name )
 TC_DIAG_UNUSED;
 
 TC_Export TcStorageType_t tc_get_storage_type( void )

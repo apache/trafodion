@@ -46,13 +46,13 @@ CExtDelProcessNsReq::CExtDelProcessNsReq (reqQueueMsg_t msgType, int pid,
     : CExternalReq(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQXA", 4);
+    memcpy(&eyecatcher_, "RqEA", 4);
 }
 
 CExtDelProcessNsReq::~CExtDelProcessNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqxa", 4);
+    memcpy(&eyecatcher_, "rQea", 4);
 }
 
 void CExtDelProcessNsReq::populateRequestString( void )

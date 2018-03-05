@@ -62,6 +62,7 @@ OBJTRAFCONF		= $(OUTDIR)/trafconf.o \
 		  $(OUTDIR)/lnodeconfig.o \
 		  $(OUTDIR)/pnodeconfig.o \
 		  $(OUTDIR)/persistconfig.o \
+		  $(OUTDIR)/nameserverconfig.o \
 		  $(OUTDIR)/trace.o \
 		  $(OUTDIR)/otrace.o \
 		  $(OUTDIR)/threadtls.o

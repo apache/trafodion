@@ -1907,6 +1907,31 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueActivateSpareReq( spareNode, downNode );
         break;
 
+    case InternalType_NameServerAdd:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal NameServer add request for node_name=%s\n"
+                        , method_name, __LINE__
+                        , recv_msg->u.nameserver_add.node_name );
+
+        // Queue the nameserver add request for processing by a worker thread.
+        ReqQueue.enqueueNameServerAddReq( recv_msg->u.nameserver_add.req_nid
+                                        , recv_msg->u.nameserver_add.req_pid
+                                        , recv_msg->u.nameserver_add.req_verifier
+                                        , recv_msg->u.nameserver_add.node_name );
+        break;
+
+    case InternalType_NameServerDelete:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal NameServer delete request for node=%s\n"
+                        , method_name, __LINE__, recv_msg->u.nameserver_delete.node_name);
+
+        // Queue the nameserver delete request for processing by a worker thread.
+        ReqQueue.enqueueNameServerDeleteReq( recv_msg->u.nameserver_delete.req_nid
+                                           , recv_msg->u.nameserver_delete.req_pid
+                                           , recv_msg->u.nameserver_delete.req_verifier
+                                           , recv_msg->u.nameserver_delete.node_name );
+        break;
+
     case InternalType_NodeAdd:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf( "%s@%d - Internal node add request for node_name=%s, "
@@ -2475,6 +2500,31 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                         , method_name, __LINE__
                         , recv_msg->u.activate_spare.spare_pnid
                         , recv_msg->u.activate_spare.down_pnid);
+        break;
+
+    case InternalType_NameServerAdd:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal NameServer add request for node_name=%s\n"
+                        , method_name, __LINE__
+                        , recv_msg->u.nameserver_add.node_name );
+
+        // Queue the nameserver add request for processing by a worker thread.
+        ReqQueue.enqueueNameServerAddReq( recv_msg->u.nameserver_add.req_nid
+                                        , recv_msg->u.nameserver_add.req_pid
+                                        , recv_msg->u.nameserver_add.req_verifier
+                                        , recv_msg->u.nameserver_add.node_name );
+        break;
+
+    case InternalType_NameServerDelete:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal NameServer delete request for node=%s\n"
+                        , method_name, __LINE__, recv_msg->u.nameserver_delete.node_name);
+
+        // Queue the nameserver delete request for processing by a worker thread.
+        ReqQueue.enqueueNameServerDeleteReq( recv_msg->u.nameserver_delete.req_nid
+                                           , recv_msg->u.nameserver_delete.req_pid
+                                           , recv_msg->u.nameserver_delete.req_verifier
+                                           , recv_msg->u.nameserver_delete.node_name );
         break;
 
     case InternalType_NodeAdd:

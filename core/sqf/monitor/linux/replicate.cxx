@@ -61,7 +61,8 @@ CReplObj::~CReplObj()
 
 void CReplObj::validateObj()
 {
-    if (strncmp((const char *)&eyecatcher_, "RPL", 3) !=0 )
+    if ((strncmp((const char *)&eyecatcher_, "RPL", 3) !=0 ) &&
+        (strncmp((const char *)&eyecatcher_, "RpL", 3) !=0 ))
     {  // Not a valid object
         abort();
     }
@@ -74,7 +75,8 @@ struct dummy_sizeof_def {};
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplNodeName),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplNameServerAdd),
+                                                                                                sizeof(CReplNodeName)),
                                                                                             sizeof(CReplNodeAdd)),
                                                                                         sizeof(CReplNodeDelete)),
                                                                                     sizeof(CReplSoftNodeUp)),
@@ -1236,6 +1238,160 @@ bool CReplShutdown::replicate(struct internal_msg_def *&msg)
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_Shutdown;
     msg->u.shutdown.level = level_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplNameServerAdd::CReplNameServerAdd(CNameServerConfig *config, CProcess *process) 
+            : config_(config)
+            , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RpLA", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( nameserver_add_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNameServerAdd::CReplNameServerAdd";
+        trace_printf( "%s@%d  - Queuing node add replication: node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNameServerAdd::~CReplNameServerAdd()
+{
+    const char method_name[] = "CReplNameServerAdd::~CReplNameServerAdd";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - NameServer add replication for node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+
+    delete config_;
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rPla", 4);
+}
+
+bool CReplNameServerAdd::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNameServerAdd::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf( "%s@%d  - Replicating node add (%s): node-name=%s\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , config_->GetName()
+                    );
+
+    // build message to replicate this node add to other nodes
+    msg->type = InternalType_NameServerAdd;
+    msg->u.nameserver_add.req_nid = process_->GetNid();
+    msg->u.nameserver_add.req_pid = process_->GetPid();
+    msg->u.nameserver_add.req_verifier = process_->GetVerifier();
+    STRCPY( msg->u.nameserver_add.node_name, config_->GetName() );
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplNameServerDelete::CReplNameServerDelete(CNameServerConfig *config, CProcess *process) 
+               : config_(config)
+               , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RpLB", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( nameserver_delete_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNameServerDelete::CReplNameServerDelete";
+        trace_printf( "%s@%d  - Queuing node delete replication: node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNameServerDelete::~CReplNameServerDelete()
+{
+    const char method_name[] = "CReplNameServerDelete::~CReplNameServerDelete";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - NameServer delete replication for node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rPlb", 4);
+}
+
+bool CReplNameServerDelete::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNameServerDelete::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d  - Replicating nameserver delete (%s): node-name=%s\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , config_->GetName()
+                    );
+
+    // build message to replicate this node delete to other nodes
+    msg->type = InternalType_NameServerDelete;
+    msg->u.nameserver_delete.req_nid = process_->GetNid();
+    msg->u.nameserver_delete.req_pid = process_->GetPid();
+    msg->u.nameserver_delete.req_verifier = process_->GetVerifier();
+    strcpy(msg->u.nameserver_delete.node_name, config_->GetName());
 
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );

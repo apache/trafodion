@@ -48,6 +48,7 @@ using namespace std;
 #include "config.h"
 #include "device.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 #include "lnode.h"
 #include "pnode.h"
 #include "tmsync.h"
@@ -119,7 +120,7 @@ Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
-int  NameServerEnabled = true;
+int  NameServerEnabled = false;
 #endif
 
 // Lock to manage memory modifications during fork/exec
@@ -130,6 +131,7 @@ CNameServer *NameServer = NULL;
 #endif
 CNodeContainer *Nodes = NULL;
 CConfigContainer *Config = NULL;
+CNameServerConfigContainer *NameServerConfig = NULL;
 #ifndef NAMESERVER_PROCESS
 CDeviceContainer *Devices = NULL;
 #endif
@@ -152,6 +154,8 @@ extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
 // Seabed disconnect semaphore
 RobSem * sbDiscSem = NULL;
+int monitorArgc = 0;
+char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
 
 
 
@@ -1092,11 +1096,36 @@ int main (int argc, char *argv[])
     }
 
     // Setup HP_MPI software license
+#ifdef NAMESERVER_PROCESS
+    if ( argc > 1 )
+    {
+        if ( strcmp(argv[1], "SQMON1.1") == 0 )
+        {
+            MyPNID = atoi( argv[2] );
+            int arg = 1;
+            for ( ; argv[arg+11]; arg++ )
+            {
+                argv[arg] = argv[arg+11];
+            }
+            argv[arg] = NULL;
+            argc -= 11;
+        }
+        else
+        {
+            abort(); // TODO
+        }
+    }
+#endif
     int key = 413675219; //413675218 to display banner
     MPI_Initialized(&key);
 
     // Initialize MPI environment
     MPI_Init (&argc, &argv);
+#ifndef NAMESERVER_PROCESS
+    monitorArgc = argc;
+    for ( int arg = 0; arg < argc; arg++ )
+        STRCPY(monitorArgv[arg], argv[arg]);
+#endif
 
     env = getenv("MON_PROF_ENABLE");
     if ( env )
@@ -1163,6 +1192,20 @@ int main (int argc, char *argv[])
     setThreadVariable( (char *)"mainThread" );
 #endif
 
+#ifdef NAMESERVER_PROCESS
+    // Without mpi daemon the monitor has no default standard output.
+    // We create a standard output file here.
+    if ( IsRealCluster )
+    {
+        snprintf(fname, sizeof(fname), "%s/logs/sqns.%s.log",
+                 getenv("TRAF_HOME"), Node_name);
+    }
+    else
+    {
+        snprintf(fname, sizeof(fname), "%s/logs/sqns.%d.%s.log",
+                 getenv("TRAF_HOME"), MyPNID, Node_name);
+    }
+#else
     // Without mpi daemon the monitor has no default standard output.
     // We create a standard output file here.
     if ( IsRealCluster )
@@ -1175,6 +1218,7 @@ int main (int argc, char *argv[])
         snprintf(fname, sizeof(fname), "%s/logs/sqmon.%d.%s.log",
                  getenv("TRAF_HOME"), MyPNID, Node_name);
     }
+#endif
     remove(fname);
     if( freopen (fname, "w", stdout) == NULL )
     {
@@ -1397,6 +1441,7 @@ int main (int argc, char *argv[])
         // CNodeContainer loads static configuration from database
         Nodes = new CNodeContainer ();
         Config = new CConfigContainer ();
+        NameServerConfig = new CNameServerConfigContainer ();
 #ifdef NAMESERVER_PROCESS
         Monitor = new CMonitor ();
 #else

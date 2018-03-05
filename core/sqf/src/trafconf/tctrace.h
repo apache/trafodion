@@ -41,6 +41,8 @@
 #define TC_TRACE_LOG_MSG         0x00040
 // Entry and exit from methods/functions
 #define TC_TRACE_ENTRY_EXIT      0x00080
+// NameServer configuration processing
+#define TC_TRACE_NAMESERVER      0x00100
 
 #define TRACE_ENTRY \
    if (TcTraceSettings & TC_TRACE_ENTRY_EXIT) trace_printf("%s@%d\n", method_name, __LINE__)

@@ -35,6 +35,7 @@ using namespace std;
 #include "process.h"
 #include "open.h"
 #include "notice.h"
+#include "nameserverconfig.h"
 
 
 
@@ -276,6 +277,32 @@ public:
 
 private:
     int level_;
+};
+
+class CReplNameServerAdd: public CReplObj
+{
+public:
+    CReplNameServerAdd(CNameServerConfig *config, CProcess *process);
+    virtual ~CReplNameServerAdd();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CNameServerConfig *config_;
+    CProcess          *process_;
+};
+
+class CReplNameServerDelete: public CReplObj
+{
+public:
+    CReplNameServerDelete(CNameServerConfig *config, CProcess *process);
+    virtual ~CReplNameServerDelete();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CNameServerConfig *config_;
+    CProcess          *process_;
 };
 
 class CReplNodeAdd: public CReplObj

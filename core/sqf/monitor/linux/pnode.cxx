@@ -1124,6 +1124,64 @@ void CNode::SetAffinity( CProcess *process )
     TRACE_EXIT;
 }
 
+void CNode::StartNameServerProcess( void )
+{
+    const char method_name[] = "CNode::StartNameServerProcess";
+    TRACE_ENTRY;
+
+    char path[MAX_SEARCH_PATH];
+    char *ldpath = NULL; // = getenv("LD_LIBRARY_PATH");
+    char filename[MAX_PROCESS_PATH];
+    char name[MAX_PROCESS_NAME];
+    char stdout[MAX_PROCESS_PATH];
+    CProcess * nameServiceProcess;
+    
+    snprintf( name, sizeof(name), "$ZNS%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_ZNS%d", MyNode->GetZone() );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+       trace_printf("%s@%d" " - Creating NameService Process\n", method_name, __LINE__);
+
+    strcpy(path,getenv("PATH"));
+    strcat(path,":");
+    strcat(path,MyPath);
+    strcpy(filename,"ns");
+    ldpath = getenv("LD_LIBRARY_PATH");
+    strId_t pathStrId = MyNode->GetStringId ( path );
+    strId_t ldpathStrId = MyNode->GetStringId ( ldpath );
+    strId_t programStrId = MyNode->GetStringId ( filename );
+
+    int result;
+    nameServiceProcess  = CreateProcess( NULL, //parent
+                                         MyNode->AssignNid(),
+                                         ProcessType_NameServer,
+                                         0,  //debug
+                                         0,  //priority
+                                         0,  //backup
+                                         true, //unhooked
+                                         name,
+                                         pathStrId,
+                                         ldpathStrId,
+                                         programStrId,
+                                         (char *) "", //infile,
+                                         stdout, //outfile,
+                                         result
+                                         );
+    if ( nameServiceProcess  )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+           trace_printf("%s@%d" " - NameService Process created\n", method_name, __LINE__);
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf(la_buf, "[%s], NameService Process creation failed.\n", method_name);
+        mon_log_write( MON_NODE_STARTNAMESERVER_1, SQ_LOG_ERR, la_buf );
+    }
+
+    TRACE_EXIT;
+}
+
 void CNode::StartWatchdogProcess( void )
 {
     const char method_name[] = "CNode::StartWatchdogProcess";
@@ -1446,6 +1504,7 @@ CNodeContainer::CNodeContainer( void )
                ,pnodeCount_(0)
                ,indexToPnid_(NULL)
                ,clusterConfig_(NULL)
+               ,nameServerConfig_(NULL)
                ,head_(NULL)
                ,tail_(NULL)
                ,syncBufferFreeSpace_(MAX_SYNC_SIZE)
@@ -1507,6 +1566,10 @@ CNodeContainer::~CNodeContainer( void )
     if (clusterConfig_)
     {
         delete clusterConfig_;
+    }
+    if (nameServerConfig_)
+    {
+        delete nameServerConfig_;
     }
     if (Node)
     {
@@ -3232,6 +3295,22 @@ void CNodeContainer::LoadConfig( void )
         mon_log_write(MON_NODECONT_LOAD_CONFIG_3, SQ_LOG_CRIT, la_buf);
         
         abort();
+    }
+
+    if ( !nameServerConfig_ )
+    {
+        nameServerConfig_ = new CNameServerConfigContainer();
+    }
+    if ( nameServerConfig_ )
+    {
+        if ( ! nameServerConfig_->LoadConfig() )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Failed to load nameserver configuration.\n", method_name);
+            mon_log_write(MON_NODECONT_LOAD_CONFIG_4, SQ_LOG_CRIT, la_buf);
+            
+            abort();
+        }
     }
 
     TRACE_EXIT;
