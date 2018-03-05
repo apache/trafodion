@@ -1027,8 +1027,10 @@ void ex_hash_grby_tcb::returnResultCurrentRow(HashRow * dataPointer)
   upParentEntry->upState.downIndex = parentQueue_.down->getHeadIndex();
   
   // if stats are to be collected, collect them.
-  if (bmoStats_)
-    bmoStats_->incActualRowsReturned();
+  ExOperStats *statsEntry = getStatsEntry();
+
+  if (statsEntry)
+    statsEntry->incActualRowsReturned();
   if (hashGroupByStats_)
     hashGroupByStats_->incPartialGroupsReturned();
   
@@ -1774,7 +1776,7 @@ void ex_hash_grby_tcb::workEvaluate() {
 /////////////////////////////////////////////////////////////////////////////
 ULng32 ex_hash_grby_tcb::workReturnRows(NABoolean tryToDefrag) {
   HashRow * dataPointer = NULL;
-
+  ExOperStats *statsEntry = getStatsEntry();
   ex_queue_entry * downParentEntry = parentQueue_.down->getHeadEntry();
 
   // If we are returning rows from the bitmux buffer, then search through
@@ -1879,8 +1881,8 @@ ULng32 ex_hash_grby_tcb::workReturnRows(NABoolean tryToDefrag) {
       
 
       // if stats are to be collected, collect them.
-      if (bmoStats_) {
-	bmoStats_->incActualRowsReturned();
+      if (statsEntry) {
+	statsEntry->incActualRowsReturned();
       }    
 
       upParentEntry->upState.status = ex_queue::Q_OK_MMORE;

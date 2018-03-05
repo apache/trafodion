@@ -53,7 +53,6 @@
 #include  "ComRtUtils.h"
 #include  "ExStats.h"
 #include  "ComSmallDefs.h"
-//#include  "hdfs.h" //will replace with LOB interface
 #include <unistd.h>
 
 //////////////////////////////////////////////////////////

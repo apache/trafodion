@@ -47,8 +47,6 @@ DEFINE_EXTERN_COMP_DOVERS(dtmci)
     
 const char ga_timestamp[] = "v 3.1.0, Nov 26, 2014";
 
-#define MAX_NODES 256
-
 using namespace std;
 extern const char *ms_getenv_str(const char *pp_key);
 

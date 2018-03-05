@@ -138,7 +138,8 @@ OFR_RetCode OrcFileReader::init()
 							javaClass_,
 							JavaMethods_,
 							(Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (lv_retcode == OFR_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return lv_retcode;

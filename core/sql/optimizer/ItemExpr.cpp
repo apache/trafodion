@@ -7491,6 +7491,10 @@ const NAString BuiltinFunction::getText() const
       return "CONVERTTOBITS";
     case ITM_CONVERTTIMESTAMP:
       return "converttimestamp";
+    case ITM_SLEEP:
+      return "sleep";
+    case ITM_UNIX_TIMESTAMP:
+      return "unix_timestamp";
     case ITM_CURRENT_TIMESTAMP:
       return "current_timestamp";
     case ITM_CURRENT_TIMESTAMP_RUNNING:
@@ -7615,6 +7619,8 @@ const NAString BuiltinFunction::getText() const
       return "pack";
     case ITM_SAMPLE_VALUE:
       return "sample_size";
+    case ITM_UNIQUE_SHORT_ID:
+      return "unique_short_id";
     case ITM_UNIQUE_ID:
       return "unique_id";
     case ITM_HBASE_COLUMN_LOOKUP:
@@ -8265,6 +8271,40 @@ ItemExpr * ConvertTimestamp::copyTopNode(ItemExpr *derivedNode,
   return BuiltinFunction::copyTopNode(result,outHeap);
 
 } // ConvertTimestamp::copyTopNode()
+
+SleepFunction::~SleepFunction() {}
+ItemExpr * SleepFunction::copyTopNode(ItemExpr *derivedNode,
+					 CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) SleepFunction(child(0));
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result,outHeap);
+
+} // SleepFunction::copyTopNode()
+NABoolean SleepFunction::isAUserSuppliedInput() const    { return TRUE; }
+
+UnixTimestamp::~UnixTimestamp() {}
+
+ItemExpr * UnixTimestamp::copyTopNode(ItemExpr *derivedNode,
+					 CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) UnixTimestamp();
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result,outHeap);
+
+} // UnixTimestamp::copyTopNode()
+
+NABoolean UnixTimestamp::isAUserSuppliedInput() const    { return TRUE; }
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp

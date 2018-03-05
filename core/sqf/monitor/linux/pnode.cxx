@@ -49,6 +49,8 @@ using namespace std;
 
 #include "replicate.h"
 #include "reqqueue.h"
+#include "healthcheck.h"
+
 extern CReqQueue ReqQueue;
 extern char MyPath[MAX_PROCESS_PATH];
 extern int MyPNID;
@@ -68,9 +70,13 @@ extern CMonStats *MonStats;
 extern CRedirector Redirector;
 #endif
 extern CReplicate Replicator;
+extern CHealthCheck HealthCheck;
 extern CMonTrace *MonTrace;
-
+extern bool IsAgentMode;
 extern bool IAmIntegrating;
+extern char MasterMonitorName[MAX_PROCESS_PATH];
+extern char Node_name[MPI_MAX_PROCESSOR_NAME];
+extern CClusterConfig *ClusterConfig;
 
 const char *StateString( STATE state);
 #ifndef NAMESERVER_PROCESS
@@ -480,13 +486,14 @@ void CNode::CheckActivationPhase( void )
     int         tmCount = 0;
     CLNode     *lnode;
     CProcess   *process;
-    bool        tmReady;
+    bool        tmReady = false;
 
     const char method_name[] = "CNode::CheckActivationPhase";
     TRACE_ENTRY;
 
     // check for a TM process in each lnode
     lnode = GetFirstLNode();
+
     tmReady = lnode ? true : false;
     for ( ; lnode ; lnode = lnode->GetNextP() )
     {
@@ -1792,8 +1799,10 @@ void CNodeContainer::AddNodes( )
         }
         else
         {
-           if (pnid >= maxNode) // only for workstation acting as single node
-              rank = -1;
+            if (pnid >= maxNode) // only for workstation acting as single node
+            {
+                rank = -1; // -1 creates node in down state
+            }
             node = new CNode( (char *)pnodeConfig->GetName(), pnid, rank );
             assert( node != NULL );
         }
@@ -2068,6 +2077,13 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
 
     int pnid, pnidConfig;
 
+    // lock sync thread since we are making a change the monitor's
+    // operational view of the cluster
+    if ( !Emulate_Down )
+    {
+        Monitor->EnterSyncCycle();
+    }
+
     for (int count = 0; count < nodeMapCount; count++)
     {
         pnidConfig = *buffer++;
@@ -2081,6 +2097,12 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
     }
 
     UpdateCluster();
+
+    // unlock sync thread
+    if ( !Emulate_Down )
+    {
+        Monitor->ExitSyncCycle();
+    }
 
     TRACE_EXIT;
     return;
@@ -3229,7 +3251,7 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list, in
             if ( node->GetState() == State_Up && node->IsSpareNode() )
             {
                 spareNodesConfigList_.push_back( node );
-                if ( IAmIntegrating )
+                if (IAmIntegrating)
                 {
                     // do nothing. spareNodesList will get populated in the join phase.
                 }
@@ -3261,40 +3283,11 @@ void CNodeContainer::LoadConfig( void )
     const char method_name[] = "CNodeContainer::LoadConfig";
     TRACE_ENTRY;
 
+    // The configuration is now global.  To minimize impact for the time being, just set the local
+    // pointer to the global configuration
     if ( !clusterConfig_ )
     {
-        clusterConfig_ = new CClusterConfig();
-    }
-    if ( clusterConfig_ )
-    {
-        bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
-        if ( clusterConfig_->Initialize( traceEnabled, MonTrace->getTraceFileName() ) )
-        {
-            if ( ! clusterConfig_->LoadConfig() )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                sprintf(la_buf, "[%s], Failed to load cluster configuration.\n", method_name);
-                mon_log_write(MON_NODECONT_LOAD_CONFIG_1, SQ_LOG_CRIT, la_buf);
-                
-                abort();
-            }
-        }
-        else
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to open cluster configuration.\n", method_name);
-            mon_log_write(MON_NODECONT_LOAD_CONFIG_2, SQ_LOG_CRIT, la_buf);
-            
-            abort();
-        }
-    }
-    else
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Failed to allocate cluster configuration.\n", method_name);
-        mon_log_write(MON_NODECONT_LOAD_CONFIG_3, SQ_LOG_CRIT, la_buf);
-        
-        abort();
+        clusterConfig_ = ClusterConfig;
     }
 
     if ( !nameServerConfig_ )

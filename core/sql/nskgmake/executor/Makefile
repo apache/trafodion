@@ -112,6 +112,7 @@ CPPSRC := Allocator.cpp \
         JavaObjectInterface.cpp \
         SequenceFileReader.cpp \
         OrcFileReader.cpp \
+        HdfsClient_JNI.cpp \
         HBaseClient_JNI.cpp
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \

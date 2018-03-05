@@ -48,6 +48,7 @@
 #include <pthread.h>
 #include "ComSysUtils.h"
 #include "SequenceFileReader.h" 
+#include "HdfsClient_JNI.h" 
 #include  "cli_stdh.h"
 #include "ComSmallDefs.h"
 
@@ -457,6 +458,7 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
       childTcb,
       glob),
     sequenceFileWriter_(NULL)
+  , hdfsClient_(NULL)
 {
 
 } // ExHdfsFastExtractTcb::ExFastExtractTcb
@@ -473,6 +475,12 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
      sequenceFileWriter_ = NULL;
   }
+
+  if (hdfsClient_ != NULL) {
+     NADELETE(hdfsClient_, HdfsClient, getHeap());
+     hdfsClient_ = NULL;
+  }
+
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 
@@ -599,6 +607,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 {
   Lng32 retcode = 0;
   SFW_RetCode sfwRetCode = SFW_OK;
+  HDFS_Client_RetCode hdfsClientRetCode = HDFS_CLIENT_OK;
   ULng32 recSepLen = strlen(myTdb().getRecordSeparator());
   ULng32 delimLen = strlen(myTdb().getDelimiter());
   ULng32 nullLen = 
@@ -767,7 +776,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           else
             snprintf(fileName_,999, "%s%d-%s-%d", "file", fileNum, pt,rand() % 1000);
 
-          if (!sequenceFileWriter_)
+          if (isSequenceFile() && sequenceFileWriter_ == NULL)
           {
             sequenceFileWriter_ = new(getHeap())
                                      SequenceFileWriter((NAHeap *)getHeap());
@@ -779,20 +788,39 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
               break;
             }
           }
+          else if (!isSequenceFile() && hdfsClient_ == NULL)
+          {
+             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetCode);
+             if (hdfsClientRetCode != HDFS_CLIENT_OK)
+             {
+                createHdfsClientFileError(hdfsClientRetCode);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+             }
+          }
 
           strcat(targetLocation_, "//");
           strcat(targetLocation_, fileName_);
           if (isSequenceFile())
+          {
             sfwRetCode = sequenceFileWriter_->open(targetLocation_, SFW_COMP_NONE);
-          else
-            sfwRetCode = sequenceFileWriter_->hdfsCreate(targetLocation_, isHdfsCompressed());
-          if (sfwRetCode != SFW_OK)
+            if (sfwRetCode != SFW_OK)
             {
               createSequenceFileError(sfwRetCode);
               pstate.step_ = EXTRACT_ERROR;
               break;
             }
-            
+          }
+          else
+          {
+            hdfsClientRetCode = hdfsClient_->hdfsCreate(targetLocation_, isHdfsCompressed());
+            if (hdfsClientRetCode != HDFS_CLIENT_OK)
+            {
+              createHdfsClientFileError(hdfsClientRetCode);
+              pstate.step_ = EXTRACT_ERROR;
+              break;
+            }
+          }  
           if (feStats)
           {
             feStats->setPartitionNumber(fileNum);
@@ -1014,10 +1042,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         }
       else
         {
-          sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
-          if (sfwRetCode != SFW_OK)
+          hdfsClientRetCode = hdfsClient_->hdfsWrite(currBuffer_->data_, bytesToWrite);
+          if (hdfsClientRetCode != HDFS_CLIENT_OK)
           {
-            createSequenceFileError(sfwRetCode);
+            createSequenceFileError(hdfsClientRetCode);
             pstate.step_ = EXTRACT_ERROR;
             break;
           }
@@ -1105,28 +1133,31 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         return WORK_OK;
 
       if (isSequenceFile())
-        {
-          sfwRetCode = sequenceFileWriter_->close();
-          if (!errorOccurred_ && sfwRetCode != SFW_OK )
-          {
-            createSequenceFileError(sfwRetCode);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
-        }
-      else
-        {
-          if (sequenceFileWriter_)
+      {
+         if (sequenceFileWriter_) 
+         {
+            sfwRetCode = sequenceFileWriter_->close();
+            if (!errorOccurred_ && sfwRetCode != SFW_OK )
             {
-              sfwRetCode = sequenceFileWriter_->hdfsClose();
-              if (!errorOccurred_ && sfwRetCode != SFW_OK )
-                {
-                  createSequenceFileError(sfwRetCode);
-                  pstate.step_ = EXTRACT_ERROR;
-                  break;
-                }
+               createSequenceFileError(sfwRetCode);
+               pstate.step_ = EXTRACT_ERROR;
+               break;
             }
-        }
+         }
+      }
+      else
+      {
+         if (hdfsClient_)
+         {
+            hdfsClientRetCode = hdfsClient_->hdfsClose();
+            if (!errorOccurred_ && HDFS_CLIENT_OK != HDFS_CLIENT_OK )
+            {
+               createHdfsClientFileError(hdfsClientRetCode);
+               pstate.step_ = EXTRACT_ERROR;
+               break;
+            }
+         }   
+      }
 
       //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
       //remove the head of the down queue
@@ -1245,6 +1276,21 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
                 (char *)currContext->getJniErrorStr().data());
   //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
   //pentry_down->setDiagsArea(diagsArea);
+  updateWorkATPDiagsArea(diagsArea);
+}
+
+void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
+{
+  ContextCli *currContext = GetCliGlobals()->currContext();
+
+  ComDiagsArea * diagsArea = NULL;
+  char* errorMsg = hdfsClient_->getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
+  ExRaiseSqlError(getHeap(),
+                  &diagsArea,
+                  (ExeErrorCode)(8447),
+                  NULL, NULL, NULL, NULL,
+                  errorMsg,
+                (char *)currContext->getJniErrorStr().data());
   updateWorkATPDiagsArea(diagsArea);
 }
 

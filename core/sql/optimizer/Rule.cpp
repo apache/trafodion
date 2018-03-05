@@ -394,6 +394,8 @@ RuleSet::~RuleSet()
 {
   for (Lng32 i = 0; i < (Lng32)allRules_.entries(); i++)
     delete allRules_[i];
+  for (Lng32 i = 0; i < (Lng32)passNRules_.entries(); i++)
+    delete passNRules_[i];
 }
 
 void RuleSet::insert(Rule * r)

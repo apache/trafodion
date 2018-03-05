@@ -471,6 +471,9 @@ enum OperatorTypeEnum {
 
                         // Regular Expression
                         ITM_REGEXP = 2178,
+			ITM_UNIX_TIMESTAMP = 2179,
+			ITM_SLEEP = 2180,
+			ITM_UNIQUE_SHORT_ID = 2181,
 
                         // numeric functions
                         ITM_ABS = 2200,

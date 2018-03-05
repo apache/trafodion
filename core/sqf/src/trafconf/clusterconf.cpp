@@ -49,6 +49,7 @@ using namespace std;
 CClusterConfig::CClusterConfig( void )
               : CPNodeConfigContainer(TC_NODES_MAX)
               , CLNodeConfigContainer(TC_NODES_MAX)
+              , configMaster_(-1)
               , nodeReady_(false)
               , persistReady_(false)
               , newPNodeConfig_(true)
@@ -60,6 +61,8 @@ CClusterConfig::CClusterConfig( void )
 {
     const char method_name[] = "CClusterConfig::CClusterConfig";
     TRACE_ENTRY;
+
+    memset( &configMasterName_, 0, TC_PROCESSOR_NAME_MAX );
 
     TRACE_EXIT;
 }
@@ -373,6 +376,13 @@ bool CClusterConfig::LoadNodeConfig( void )
     for (int i =0; i < nodeCount; i++ )
     {
         ProcessLNode( nodeConfigData[i], pnodeConfigInfo, lnodeConfigInfo );
+        // We want to pick the first configured node so all monitors pick the same one
+        // This only comes into play for a Trafodion start from scratch
+        if (i == 0)
+        {
+            configMaster_ = pnodeConfigInfo.pnid;
+            strncpy( configMasterName_ , pnodeConfigInfo.nodename, sizeof(configMasterName_) );
+        }
         AddNodeConfiguration( pnodeConfigInfo, lnodeConfigInfo );
     }
 

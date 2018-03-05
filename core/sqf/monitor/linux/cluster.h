@@ -116,9 +116,11 @@ public:
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
+    void AssignLeaders( int pnid, bool checkProcess );
 #ifndef NAMESERVER_PROCESS
     void AssignTmLeader( int pnid, bool checkProcess );
 #endif
+    void AssignMonitorLeader( int pnid );
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -130,12 +132,14 @@ public:
 #endif
     void ExpediteDown( void );
 #ifndef NAMESERVER_PROCESS
-    inline int  GetTmLeader( void ) { return( TmLeaderNid); }
-    inline void SetTmLeader( int tmLeaderNid ) { TmLeaderNid = tmLeaderNid; } 
+    inline int  GetTmLeader( void ) { return( tmLeaderNid_ ); }
+    inline void SetTmLeader( int tmLeaderNid ) { tmLeaderNid_ = tmLeaderNid; } 
 #endif
+    inline int  GetMonitorLeader( void ) { return( monitorLeaderPNid_); }
+    inline void SetMonitorLeader( int monitorLeaderPNid ) { monitorLeaderPNid_ = monitorLeaderPNid; } 
     int  GetDownedNid( void );
 #ifndef NAMESERVER_PROCESS
-    inline int GetTmSyncPNid( void ) { return( TmSyncPNid ); } // Physical Node ID of current TmSync operations master
+    inline int GetTmSyncPNid( void ) { return( tmSyncPNid_ ); } // Physical Node ID of current TmSync operations master
 #endif
     void InitClusterComm(int worldSize, int myRank, int *rankToPnid);
     void addNewComm(int nid, int otherRank, MPI_Comm comm);
@@ -192,6 +196,7 @@ public:
     bool ReinitializeConfigCluster( bool nodeAdded, int pnid );
 
     int incrGetVerifierNum();
+    int getConfigMaster() { return configMaster_; }
 
     enum { SYNC_MAX_RESPONSIVE = 1 }; // Max seconds before sync thread is "stuck"
 
@@ -219,10 +224,11 @@ protected:
 #endif
     int            epollFD_;
     int           *indexToPnid_;
+    int            configMaster_;
 
     CNode  **Node;           // array of nodes
     CLNode **LNode;          // array of logical nodes
-    int      TmSyncPNid;     // Physical Node ID of current TmSync operations master
+    int      tmSyncPNid_;    // Physical Node ID of current TmSync operations master
 
 
 #ifndef NAMESERVER_PROCESS
@@ -245,16 +251,16 @@ protected:
     CLock syncCycle_;
 
 private:
-    int     CurNodes;       // Current # of nodes in the cluster
-    int     CurProcs;       // Current # if processes alive in MPI_COMM_WORLD
+    int     currentNodes_;      // Current # of nodes in the cluster
     int     configPNodesCount_; // # of physical nodes configured
     int     configPNodesMax_;   // max # of physical nodes that can be configured
-    int    *NodeMap;        // Mapping of Node ranks to COMM_WORLD ranks
+    int    *nodeMap_;           // Mapping of Node ranks to COMM_WORLD ranks
+    int     monitorLeaderPNid_; // PNid of currently assigned Monitor leader node
 #ifndef NAMESERVER_PROCESS
-    int     TmLeaderNid;    // Nid of currently assigned TM Leader node
-    int     tmReadyCount_;  // # of DTM processes ready for transactions
+    int     tmLeaderNid_;       // Nid of currently assigned TM Leader node
+    int     tmReadyCount_;      // # of DTM processes ready for transactions
 #endif
-    size_t  minRecvCount_;  // minimum size of receive buffer for allgather
+    size_t  minRecvCount_;      // minimum size of receive buffer for allgather
 
     // Pointer to array of "sync_buffer_def" structures.  Used by
     // ShareWithPeers in "Allgather" operation.
