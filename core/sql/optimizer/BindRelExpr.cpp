@@ -17272,6 +17272,18 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           for (int i=0; i<getArity(); i++)
             result->child(i) = child(i);
 
+          if (opType == REL_TABLE_MAPPING_BUILTIN_LOG_READER ||
+              opType == REL_TABLE_MAPPING_BUILTIN_JDBC)
+            {
+              // The event log reader and JDBC TMUDFs are being migrated
+              // to real UDFs, use of the predefined UDFs is deprecated.
+              // Issue a warning. Eventually these predefined functions
+              // will be removed.
+              (*CmpCommon::diags())
+                << DgSqlCode(4323)
+                << DgString0(tmfuncName.getExposedNameAsAnsiString());
+            }
+
           // Abandon the current node and return the bound new node.
           // Next time it will reach this method it will call an
           // overloaded getRoutineMetadata() that will succeed.

@@ -50,6 +50,8 @@
 #define SYSTEM_PROC_RM           "RM"
 #define SYSTEM_PROC_RMREX        "RMREX"
 #define SYSTEM_TMUDF_SYNCLIBUDF  "SYNCLIBUDF"
+#define SYSTEM_TMUDF_EVENT_LOG_READER "EVENT_LOG_READER"
+#define SYSTEM_TMUDF_JDBC        "JDBC"
 
 // Create procedure text for system procedures
 static const QString seabaseProcAddlibDDL[] =
@@ -244,6 +246,24 @@ static const QString seabaseProcRmrexDDL[] =
   {" ; "}
 };
 
+  static const QString seabaseTMUDFEventLogReaderDDL[] = 
+{
+  {"  CREATE TABLE_MAPPING FUNCTION IF NOT EXISTS %s.\"%s\".EVENT_LOG_READER() "},
+  {"  EXTERNAL NAME 'TRAF_CPP_EVENT_LOG_READER' "},
+  {"  LIBRARY %s.\"%s\".%s "},
+  {"  LANGUAGE CPP "},
+  {" ; "}
+};
+
+  static const QString seabaseTMUDFJDBCDDL[] = 
+{
+  {"  CREATE TABLE_MAPPING FUNCTION IF NOT EXISTS %s.\"%s\".JDBC() "},
+  {"  EXTERNAL NAME 'org.trafodion.libmgmt.JDBCUDR' "},
+  {"  LIBRARY %s.\"%s\".%s "},
+  {"  LANGUAGE JAVA "},
+  {" ; "}
+};
+
 struct LibmgrRoutineInfo
 {
   // type of the UDR (used in grant)
@@ -255,79 +275,131 @@ struct LibmgrRoutineInfo
   // ddl stmt corresponding to the current ddl.
   const QString *newDDL;
   Lng32 sizeOfnewDDL;
+
+  enum LibmgrLibEnum
+    {
+      JAVA_LIB,
+      CPP_LIB
+    } whichLib;
+
+  enum LibmgrRoleEnum
+    {
+      LIBMGR_ROLE,
+      PUBLIC
+    } whichRole;
 };
 
 static const LibmgrRoutineInfo allLibmgrRoutineInfo[] = {
   {"PROCEDURE",
    SYSTEM_PROC_ADDLIB, 
    seabaseProcAddlibDDL, 
-   sizeof(seabaseProcAddlibDDL)
+   sizeof(seabaseProcAddlibDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_ALTERLIB, 
    seabaseProcAlterlibDDL, 
-   sizeof(seabaseProcAlterlibDDL)
+   sizeof(seabaseProcAlterlibDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_DROPLIB, 
    seabaseProcDroplibDDL, 
-   sizeof(seabaseProcDroplibDDL)
+   sizeof(seabaseProcDroplibDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_GETFILE, 
    seabaseProcGetfileDDL, 
-   sizeof(seabaseProcGetfileDDL)
+   sizeof(seabaseProcGetfileDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_HELP, 
    seabaseProcHelpDDL, 
-   sizeof(seabaseProcHelpDDL)
+   sizeof(seabaseProcHelpDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_LS, 
    seabaseProcLsDDL, 
-   sizeof(seabaseProcLsDDL)
+   sizeof(seabaseProcLsDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_LSALL, 
    seabaseProcLsallDDL, 
-   sizeof(seabaseProcLsallDDL)
+   sizeof(seabaseProcLsallDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_PUT, 
    seabaseProcPutDDL, 
-   sizeof(seabaseProcPutDDL)
+   sizeof(seabaseProcPutDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_PUTFILE, 
    seabaseProcPutFileDDL, 
-   sizeof(seabaseProcPutFileDDL)
+   sizeof(seabaseProcPutFileDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_RM, 
    seabaseProcRmDDL, 
-   sizeof(seabaseProcRmDDL)
+   sizeof(seabaseProcRmDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"PROCEDURE",
    SYSTEM_PROC_RMREX, 
    seabaseProcRmrexDDL, 
-   sizeof(seabaseProcRmrexDDL)
+   sizeof(seabaseProcRmrexDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
   },
 
   {"FUNCTION",
    SYSTEM_TMUDF_SYNCLIBUDF,
    seabaseTMUDFSyncLibDDL,
-   sizeof(seabaseTMUDFSyncLibDDL)
+   sizeof(seabaseTMUDFSyncLibDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::LIBMGR_ROLE
+  },
+
+  {"FUNCTION",
+   SYSTEM_TMUDF_EVENT_LOG_READER,
+   seabaseTMUDFEventLogReaderDDL,
+   sizeof(seabaseTMUDFEventLogReaderDDL),
+   LibmgrRoutineInfo::CPP_LIB,
+   LibmgrRoutineInfo::PUBLIC
+  },
+
+  {"FUNCTION",
+   SYSTEM_TMUDF_JDBC,
+   seabaseTMUDFJDBCDDL,
+   sizeof(seabaseTMUDFJDBCDDL),
+   LibmgrRoutineInfo::JAVA_LIB,
+   LibmgrRoutineInfo::PUBLIC
   }
 
 };

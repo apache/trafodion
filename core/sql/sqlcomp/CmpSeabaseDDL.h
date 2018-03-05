@@ -1306,6 +1306,7 @@ protected:
   short dropSeabaseLibmgr(ExeCliInterface *inCliInterface);
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
+  short createSeabaseLibmgrCPPLib(ExeCliInterface * cliInterface);
 
   short registerNativeTable
   (
