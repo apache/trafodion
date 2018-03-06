@@ -183,7 +183,7 @@ TC_Export int tc_initialize( bool traceEnabled
                            , const char *rootNode = NULL )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_delete_nameservice( const char *node_name )
+TC_Export int tc_delete_nameserver( const char *node_name )
 TC_DIAG_UNUSED;
 
 TC_Export int tc_get_nameservers( int   *count

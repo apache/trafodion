@@ -2691,7 +2691,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                         , recv_msg->u.node_add.processors
                         , recv_msg->u.node_add.roles );
 
-        // Queue the node name request for processing by a worker thread.
+        // Queue the node add request for processing by a worker thread.
         ReqQueue.enqueueNodeAddReq( recv_msg->u.node_add.req_nid
                                   , recv_msg->u.node_add.req_pid
                                   , recv_msg->u.node_add.req_verifier

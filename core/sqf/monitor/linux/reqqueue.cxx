@@ -1803,7 +1803,8 @@ void CIntNameServerDeleteReq::performRequest()
     CNameServerConfig *config = nameServerConfig->GetConfig( nodeName_ );
     if ( config )
     {
-        nameServerConfig->DeleteConfig( config );
+        if ( !nameServerConfig->DeleteConfig( config ) )
+            rc = MPI_ERR_IO;
     }
     else
     {

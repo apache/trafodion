@@ -119,7 +119,7 @@ CNameServerConfigContainer::~CNameServerConfigContainer(void)
         // Delete entries
         while ( head_ )
         {
-            DeleteConfig( Config );
+            RemoveConfig( Config );
             Config = head_;
         }
     
@@ -145,7 +145,7 @@ void CNameServerConfigContainer::Clear( void )
     {
         while ( head_ )
         {
-            DeleteConfig( Config );
+            RemoveConfig( Config );
             Config = head_;
         }
     
@@ -197,10 +197,13 @@ void CNameServerConfigContainer::AddConfig( const char *nodeName )
     TRACE_EXIT;
 }
 
-void CNameServerConfigContainer::DeleteConfig( CNameServerConfig *config )
+bool CNameServerConfigContainer::DeleteConfig( CNameServerConfig *config )
 {
     const char method_name[] = "CNameServerConfigContainer::DeleteConfig";
     TRACE_ENTRY;
+
+    bool rs = true;
+    int rc;
 
     if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
@@ -209,28 +212,22 @@ void CNameServerConfigContainer::DeleteConfig( CNameServerConfig *config )
                      , config->GetName());
     }
     
-    if ( head_ == config )
-        head_ = config->next_;
-    if ( tail_ == config )
-        tail_ = config->prev_;
-    if ( config->prev_ )
-        config->prev_->next_ = config->next_;
-    if ( config->next_ )
-        config->next_->prev_ = config->prev_;
-    delete config;
-
-    // Decrement the nameserver count
-    count_--;
-    
-    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
+    rc = tc_delete_nameserver( config->GetName() );
+    if ( rc == 0 )
     {
-        trace_printf( "%s@%d - Deleted nameserver configuration\n"
-                      "        (count_=%d,ConfigMax=%d)\n"
-                    , method_name, __LINE__
-                    , count_, configMax_);
+        RemoveConfig( config );
+    }
+    else
+    {
+        char buf[TC_LOG_BUF_SIZE];
+        snprintf( buf, sizeof(buf), "[%s] NameServer delete failed, node=%s\n",
+                  method_name,  config->GetName() );
+        TcLogWrite( MON_CLUSTERCONF_DELETENODE_1, TC_LOG_ERR, buf ); // TODO
+        rs = false;
     }
 
     TRACE_EXIT;
+    return( rs );
 }
 
 CNameServerConfig *CNameServerConfigContainer::GetConfig( const char *nodeName )
@@ -289,6 +286,28 @@ bool CNameServerConfigContainer::LoadConfig( void )
     TRACE_EXIT;
     return( true );
 }
+
+void CNameServerConfigContainer::RemoveConfig( CNameServerConfig *config )
+{
+    const char method_name[] = "CNameServerConfigContainer::RemoveConfig";
+    TRACE_ENTRY;
+
+    if ( head_ == config )
+        head_ = config->next_;
+    if ( tail_ == config )
+        tail_ = config->prev_;
+    if ( config->prev_ )
+        config->prev_->next_ = config->next_;
+    if ( config->next_ )
+        config->next_->prev_ = config->prev_;
+    delete config;
+
+    // Decrement the nameserver count
+    count_--;
+
+    TRACE_EXIT;
+}
+
 bool CNameServerConfigContainer::SaveConfig( const char *nodeName )
 {
     const char method_name[] = "CNameServerConfigContainer::SaveConfig";

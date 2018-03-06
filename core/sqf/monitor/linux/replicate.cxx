@@ -1262,7 +1262,7 @@ CReplNameServerAdd::CReplNameServerAdd(CNameServerConfig *config, CProcess *proc
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
     {
         const char method_name[] = "CReplNameServerAdd::CReplNameServerAdd";
-        trace_printf( "%s@%d  - Queuing node add replication: node-name=%s\n"
+        trace_printf( "%s@%d  - Queuing NameServer add replication: node-name=%s\n"
                     , method_name, __LINE__
                     , config_->GetName()
                     );
@@ -1340,7 +1340,7 @@ CReplNameServerDelete::CReplNameServerDelete(CNameServerConfig *config, CProcess
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
     {
         const char method_name[] = "CReplNameServerDelete::CReplNameServerDelete";
-        trace_printf( "%s@%d  - Queuing node delete replication: node-name=%s\n"
+        trace_printf( "%s@%d  - Queuing NameServer delete replication: node-name=%s\n"
                     , method_name, __LINE__
                     , config_->GetName()
                     );

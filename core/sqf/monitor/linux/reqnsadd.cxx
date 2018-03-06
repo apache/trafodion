@@ -110,7 +110,7 @@ void CExtNameServerAddReq::performRequest()
                             if (repl)
                             {
                                 // we will not reply at this time ... but wait for 
-                                // node add to be processed in CIntNameServerAddReq
+                                // NameServer add to be processed in CIntNameServerAddReq
             
                                 // Retain reference to requester's request buffer so can
                                 // send completion message.

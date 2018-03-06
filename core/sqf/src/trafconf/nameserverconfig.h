@@ -37,12 +37,13 @@ public:
     ~CNameServerConfigContainer( void );
     void                      AddConfig( const char *nodeName );
     void                      Clear( void );
-    void                      DeleteConfig( CNameServerConfig *config );
+    bool                      DeleteConfig( CNameServerConfig *config );
     bool                      LoadConfig( void );
     inline CNameServerConfig *GetFirstConfig( void ) { return ( head_ ); }
     CNameServerConfig        *GetConfig( const char *nodeName );
     inline int                GetConfigMax( void ) { return ( configMax_ ); }
     inline int                GetCount( void ) { return ( count_ ); }
+    void                      RemoveConfig( CNameServerConfig *config );
     bool                      SaveConfig( const char *nodeName );
 
 protected:
@@ -59,7 +60,7 @@ private:
 class CNameServerConfig
 {
     friend void CNameServerConfigContainer::AddConfig( const char *nodeName );
-    friend void CNameServerConfigContainer::DeleteConfig( CNameServerConfig *nameServerConfig );
+    friend void CNameServerConfigContainer::RemoveConfig( CNameServerConfig *nameServerConfig );
 public:
     CNameServerConfig( const char *nodeName );
     ~CNameServerConfig( void );

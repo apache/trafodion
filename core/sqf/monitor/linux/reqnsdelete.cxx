@@ -101,7 +101,7 @@ void CExtNameServerDeleteReq::performRequest()
                     if (repl)
                     {
                         // we will not reply at this time ... but wait for 
-                        // node delete to be processed in CIntNameServerDeleteReq
+                        // NameServer delete to be processed in CIntNameServerDeleteReq
     
                         // Retain reference to requester's request buffer so can
                         // send completion message.
