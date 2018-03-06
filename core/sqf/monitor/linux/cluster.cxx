@@ -3433,12 +3433,14 @@ void CCluster::InitializeConfigCluster( void )
         }
     }
 
+#ifndef NAMESERVER_PROCESS
     // Kill the MPICH hydra_pmi_proxy to prevent it from killing all
     // processes in cluster when mpirun or monitor processes are killed
     if (!IsAgentMode  || (IsAgentMode && IsMPIChild))
     {
         kill( getppid(), SIGKILL );
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -8217,7 +8219,11 @@ void CCluster::InitServerSock( void )
     }
     memcpy( addr, he->h_addr, 4 );
 
+#ifdef NAMESERVER_PROCESS
+    char *env = getenv ("NS_COMM_PORT");
+#else
     char *env = getenv("MONITOR_COMM_PORT");
+#endif
     if ( env )
     {
         int val;
@@ -8259,7 +8265,11 @@ void CCluster::InitServerSock( void )
 
     }
 
+#ifdef NAMESERVER_PROCESS
+    env = getenv("NS_SYNC_PORT");
+#else
     env = getenv("MONITOR_SYNC_PORT");
+#endif
     if ( env )
     {
         int val;
@@ -8300,7 +8310,7 @@ void CCluster::InitServerSock( void )
     }
 
 #ifdef NAMESERVER_PROCESS
-    env = getenv("MON2NAMESERVER_COMM_PORT");
+    env = getenv("NS_M2N_COMM_PORT");
     if ( env )
     {
         int val;
@@ -8308,15 +8318,7 @@ void CCluster::InitServerSock( void )
         val = strtol(env, NULL, 10);
         if ( errno == 0) mon2nsPort = val;
     }
-
-    env = getenv("PMI_RANK");
-    if ( env )
-    {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( errno == 0) mon2nsPort += val;
-    }
+    mon2nsPort += MyPNID;
 
     mon2nsSock_ = MkSrvSock( &mon2nsPort );
     if ( mon2nsSock_ < 0 )
@@ -8324,7 +8326,7 @@ void CCluster::InitServerSock( void )
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s@%d] MkSrvSock(MON2NAMESERVER_COMM_PORT=%d) error: %s\n"
+                , "[%s@%d] MkSrvSock(NS_M2N_COMM_PORT=%d) error: %s\n"
                 , method_name, __LINE__, mon2nsPort
                 , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_4, SQ_LOG_CRIT, buf );
@@ -8342,11 +8344,11 @@ void CCluster::InitServerSock( void )
         MyNode->SetMon2NsPort( MyMon2NsPort );
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d Initialized my comm socket port, "
-                          "pnid=%d (%s:%s) (commPort=%s)\n"
+            trace_printf( "%s@%d Initialized my mon2ns comm socket port, "
+                          "pnid=%d (%s:%s) (Mon2NsCommPort=%s)\n"
                         , method_name, __LINE__
                         , MyPNID, MyNode->GetName(), MyMon2NsPort
-                        , MyNode->GetCommPort() );
+                        , MyNode->GetMon2NsPort() );
 
     }
 #endif

@@ -3125,6 +3125,7 @@ bool load_configuration( void )
         // It was previously loaded, remove the current configuration
         ClusterConfig.Clear();
     }
+    NameServerConfig.Clear();
     bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
     if ( ClusterConfig.Initialize( traceEnabled, traceFileName ) )
     {
@@ -3291,7 +3292,14 @@ void nameserver_add( char *node_name )
         if ((msg->type == MsgType_Service) &&
             (msg->u.reply.type == ReplyType_Generic))
         {
-            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
+            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            {
+                if ( !load_configuration() )
+                {
+                    exit (1);
+                }
+            }
+            else
             {
                 if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
                 {
@@ -3418,7 +3426,14 @@ void nameserver_delete( char *node_name )
         if ((msg->type == MsgType_Service) &&
             (msg->u.reply.type == ReplyType_Generic))
         {
-            if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
+            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            {
+                if ( !load_configuration() )
+                {
+                    exit (1);
+                }
+            }
+            else
             {
                 if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
                 {

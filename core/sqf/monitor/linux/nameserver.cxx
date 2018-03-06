@@ -225,7 +225,7 @@ int CNameServer::InitializeNameServer( void )
 
     gethostname(mon2nsPort_, MAX_PROCESSOR_NAME);
     strcat(mon2nsPort_, ":");
-    p = getenv( "MON2NAMESERVER_COMM_PORT" );
+    p = getenv( "NS_M2N_COMM_PORT" );
     if (p)
         strcat(mon2nsPort_, p);
     else

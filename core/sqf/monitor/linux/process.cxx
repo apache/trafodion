@@ -119,7 +119,6 @@ extern const char *ProcessTypeString( PROCESSTYPE type );
 extern int monitorArgc;
 extern char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
 
-
 CProcess::CProcess (CProcess * parent, int nid, int pid,
 #ifdef NAMESERVER_PROCESS
                     Verifier_t verifier,
@@ -1416,6 +1415,9 @@ bool CProcess::Create (CProcess *parent, int & result)
     char xauthority[MAX_PROCESS_PATH];
     char *display;
     char *vnodes;
+    char nsCommPort[10];
+    char nsSyncPort[10];
+    char nsMon2NsPort[10];
     MON_Props xprops(true);
     MON_Props xprops_exe(true);
     char *xprops_exe_file;
@@ -1483,6 +1485,15 @@ bool CProcess::Create (CProcess *parent, int & result)
     if (env && strcmp( env, "1" ) == 0)
        shellTrace = true;
 
+    if ( Type == ProcessType_NameServer )
+    {
+        env = getenv ("NS_COMM_PORT");
+        STRCPY (nsCommPort, (env?env:""));
+        env = getenv ("NS_SYNC_PORT");
+        STRCPY (nsSyncPort, (env?env:""));
+        env = getenv ("NS_M2N_COMM_PORT");
+        STRCPY (nsMon2NsPort, (env?env:""));
+    }
     if ( Type == ProcessType_Watchdog )
     {
         env = getenv( "WDT_TRACE_CMD" );
@@ -1654,6 +1665,17 @@ bool CProcess::Create (CProcess *parent, int & result)
         setEnvIntVal ( childEnv, nextEnv, "SQ_LIO_VIRTUAL_NID", MyPNID );
     }
 
+    if ( Type == ProcessType_NameServer )
+    {
+        setEnvStr ( childEnv, nextEnv, "SQ_MON_CREATOR=MPIRUN" );
+        setEnvStr ( childEnv, nextEnv, "SQ_MON_RUN_MODE=AGENT" );
+        if ( nsCommPort[0] )
+            setEnvStrVal ( childEnv, nextEnv, "NS_COMM_PORT", nsCommPort );
+        if ( nsSyncPort[0] )
+            setEnvStrVal ( childEnv, nextEnv, "NS_SYNC_PORT", nsSyncPort );
+        if ( nsMon2NsPort[0] )
+            setEnvStrVal ( childEnv, nextEnv, "NS_M2N_COMM_PORT", nsMon2NsPort );
+    }
     if ( Type == ProcessType_Watchdog )
     {
         if ( wdtTraceCmd )
@@ -1872,48 +1894,6 @@ bool CProcess::Create (CProcess *parent, int & result)
     childEnv[nextEnv] = NULL;
     ++nextEnv;
 
-    j = 0;
-    if ( Type == ProcessType_NameServer && !Clone )
-    {
-        const char *args[] = { "mpirun",
-                               "-disable-auto-cleanup", 
-                               "-demux",
-                               "select",
-                               "-env",
-                               "SQ_IC",
-                               "TCP",
-                               "-env",
-                               "MPI_ERROR_LEVEL",
-                               "2",
-                               "-env",
-                               "MPI_TMPDIR",
-                               "$MPI_TMPDIR",
-                               "-env",
-                               "TRAF_HOME",
-                               "$TRAF_HOME",
-                               "-env",
-                               "MON2NAMESERVER_COMM_PORT",
-                               "$MON2NAMESERVER_COMM_PORT",
-                               NULL };
-        int count = 0;
-        for (i = 0; args[i]; i++)
-            count++;
-        argv = new char *[argc_ + count + 13];
-        for (i = 0; i < count; i++)
-        {
-            const char *arg = args[i];
-            if (arg[0] == '$')
-            {
-                arg = (const char *) getenv(&arg[1]);
-            }
-            if (arg == NULL)
-                arg = "";
-            argv[i] = new char[strlen(arg)+1];
-            strcpy(argv[i], arg);
-        }
-        j += count;
-    }
-    else
     if ( !SMSIntegrating && Type == ProcessType_SMS && !Clone && !argc_ )
     {
         argv = new char *[13];
@@ -1922,11 +1902,9 @@ bool CProcess::Create (CProcess *parent, int & result)
     {
         argv = new char *[argc_ + 13];
     }
-    argv[j] = new char [strlen(filename)+1];
-    strcpy(argv[j], filename);
-    if ( Type == ProcessType_NameServer && !Clone )
-        strcpy(filename, argv[0]);
-    j++;
+    argv[0] = new char [strlen(filename)+1];
+    strcpy(argv[0], filename);
+    j = 1;
 
     // finish setting up arguments for process after <filename> in argv[0]
     // "SQMON1.0" <pnid> <nid> <pid> <pname> <port> <ptype> <zid> <verifier> "SPARE"

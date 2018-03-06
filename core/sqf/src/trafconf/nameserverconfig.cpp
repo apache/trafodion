@@ -112,7 +112,7 @@ CNameServerConfigContainer::~CNameServerConfigContainer(void)
 
     // Only the main container builds the array of 
     // nameserver configuration objects. 
-    // The nameserver container in a physical node configuration object
+    // The nameserver container in a nameserver configuration object
     // only stores the configured nameserver it hosts.
     if ( config_ )
     { // This is the main container
@@ -139,7 +139,7 @@ void CNameServerConfigContainer::Clear( void )
 
     // Only the main container builds the array of 
     // nameserver configuration objects. 
-    // The nameserver container in a physical node configuration object
+    // The nameserver container in a nameserver configuration object
     // only stores the configured nameserver it hosts.
     if ( config_ )
     {

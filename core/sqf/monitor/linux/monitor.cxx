@@ -1241,6 +1241,12 @@ int main (int argc, char *argv[])
     }
 
     // Setup HP_MPI software license
+    int key = 413675219; //413675218 to display banner
+    MPI_Initialized(&key);
+
+    // Initialize MPI environment
+    MPI_Init (&argc, &argv);
+
 #ifdef NAMESERVER_PROCESS
     if ( argc > 1 )
     {
@@ -1260,15 +1266,10 @@ int main (int argc, char *argv[])
             abort(); // TODO
         }
     }
-#endif
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-
-    // Initialize MPI environment
-    MPI_Init (&argc, &argv);
-#ifndef NAMESERVER_PROCESS
+#else
     monitorArgc = argc;
-    for ( int arg = 0; arg < argc; arg++ )
+    STRCPY(monitorArgv[0], "ns");
+    for ( int arg = 1; arg < argc; arg++ )
         STRCPY(monitorArgv[arg], argv[arg]);
 #endif
 
@@ -1698,7 +1699,11 @@ int main (int argc, char *argv[])
             {
                 MyPNID=-1;
                 SMSIntegrating = IAmIntegrating = true;
+#ifdef NAMESERVER_PROCESS
+                char *monitorPort = getenv ("NS_COMM_PORT");
+#else
                 char *monitorPort = getenv ("MONITOR_COMM_PORT");
+#endif
                 if (monitorPort)
                 {
                     strcpy( IntegratingMonitorPort, MasterMonitorName);

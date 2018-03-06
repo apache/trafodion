@@ -231,6 +231,9 @@ public:
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
     inline const char *GetCommPort( void ) { return commPort_.c_str(); }
     inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
+#ifdef NAMESERVER_PROCESS
+    inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
+#endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
     inline PNidVector   &GetSparePNids( void ) { return( sparePNids_ ); }
