@@ -3043,9 +3043,8 @@ void CIntCreatePrimitiveReq::performRequest()
                      method_name, __LINE__, pnid_);
     if ( pnid_ == MyPNID )
     {
-#if 0
-        MyNode->StartNameServerProcess();
-#endif
+        if ( NameServerEnabled )
+            MyNode->StartNameServerProcess();
         MyNode->StartWatchdogProcess();
         MyNode->StartPStartDProcess();
         char *env = getenv( "SQ_SEAMONSTER" );

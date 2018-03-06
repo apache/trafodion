@@ -1872,6 +1872,48 @@ bool CProcess::Create (CProcess *parent, int & result)
     childEnv[nextEnv] = NULL;
     ++nextEnv;
 
+    j = 0;
+    if ( Type == ProcessType_NameServer && !Clone )
+    {
+        const char *args[] = { "mpirun",
+                               "-disable-auto-cleanup", 
+                               "-demux",
+                               "select",
+                               "-env",
+                               "SQ_IC",
+                               "TCP",
+                               "-env",
+                               "MPI_ERROR_LEVEL",
+                               "2",
+                               "-env",
+                               "MPI_TMPDIR",
+                               "$MPI_TMPDIR",
+                               "-env",
+                               "TRAF_HOME",
+                               "$TRAF_HOME",
+                               "-env",
+                               "MON2NAMESERVER_COMM_PORT",
+                               "$MON2NAMESERVER_COMM_PORT",
+                               NULL };
+        int count = 0;
+        for (i = 0; args[i]; i++)
+            count++;
+        argv = new char *[argc_ + count + 13];
+        for (i = 0; i < count; i++)
+        {
+            const char *arg = args[i];
+            if (arg[0] == '$')
+            {
+                arg = (const char *) getenv(&arg[1]);
+            }
+            if (arg == NULL)
+                arg = "";
+            argv[i] = new char[strlen(arg)+1];
+            strcpy(argv[i], arg);
+        }
+        j += count;
+    }
+    else
     if ( !SMSIntegrating && Type == ProcessType_SMS && !Clone && !argc_ )
     {
         argv = new char *[13];
@@ -1880,9 +1922,11 @@ bool CProcess::Create (CProcess *parent, int & result)
     {
         argv = new char *[argc_ + 13];
     }
-    argv[0] = new char [strlen(filename)+1];
-    strcpy(argv[0], filename);
-    j = 1;
+    argv[j] = new char [strlen(filename)+1];
+    strcpy(argv[j], filename);
+    if ( Type == ProcessType_NameServer && !Clone )
+        strcpy(filename, argv[0]);
+    j++;
 
     // finish setting up arguments for process after <filename> in argv[0]
     // "SQMON1.0" <pnid> <nid> <pid> <pname> <port> <ptype> <zid> <verifier> "SPARE"
