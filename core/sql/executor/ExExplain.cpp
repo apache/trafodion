@@ -1724,9 +1724,9 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   if (vi->get(0, ptr, len))
     goto label_error2;
   
-  explainFragLen_ = str_decoded_len(len); // remove trailing null terminator
+  explainFragLen_ = str_decoded_len(len - 1); // remove trailing null terminator
   explainFrag_ = new(getHeap()) char[explainFragLen_];
-  if (str_decode(explainFrag_, explainFragLen_, ptr, len) < 0)
+  if (str_decode(explainFrag_, explainFragLen_, ptr, len - 1) < 0)
     {
       diagsArea = pEntryDown->getAtp()->getDiagsArea();
       ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
