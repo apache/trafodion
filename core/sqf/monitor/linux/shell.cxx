@@ -3540,73 +3540,14 @@ void nameserver_down( char *node_name )
 
 void nameserver_info( )
 {
-    int i;
-    int count;
-    MPI_Status status;
+    char process_name[1];
 
-    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-    {   // Could not acquire a message buffer
-        printf ("[%s] Unable to acquire message buffer.\n", MyName);
-        return;
-    }
-
-    bool needBanner = true;
-    msg->type = MsgType_Service;
-    msg->noreply = false;
-    msg->reply_tag = REPLY_TAG;
-    msg->u.request.type = ReqType_NameServerInfo;
-    msg->u.request.u.nameserver_info.nid = MyNid;
-    msg->u.request.u.nameserver_info.pid = MyPid;
-
-    gp_local_mon_io->send_recv( msg );
-    count = sizeof( *msg );
-    status.MPI_TAG = msg->reply_tag;
-
-    if ((status.MPI_TAG == REPLY_TAG) &&
-        (count == sizeof (struct message_def)))
-    {
-        if ((msg->type == MsgType_Service) &&
-            (msg->u.reply.type == ReplyType_NameServerInfo))
-        {
-            if (msg->u.reply.u.nameserver_info.return_code == MPI_SUCCESS)
-            {
-                if (msg->u.reply.u.nameserver_info.num_returned)
-                {
-                    if (needBanner)
-                    {
-                        printf ("[%s] State    Name\n", MyName);
-                        printf ("[%s] -------- --------\n", MyName);
-                        needBanner = false;
-                    }
-
-                    for (i=0; i < msg->u.reply.u.nameserver_info.num_returned; i++)
-                    {
-                        printf ("[%s] %-8s %s\n",
-                                MyName,
-                                StateString( msg->u.reply.u.nameserver_info.node[i].state ),
-                                msg->u.reply.u.nameserver_info.node[i].node_name );
-                    }
-                }
-            }
-            else
-            {
-                printf ("[%s] NameServerInfo failed, error=%s\n", MyName,
-                    ErrorMsg(msg->u.reply.u.nameserver_info.return_code));
-            }
-        }
-        else
-        {
-            printf
-                ("[%s] Invalid MsgType(%d)/ReplyType(%d) for NameServerInfo message\n",
-                 MyName, msg->type, msg->u.reply.type);
-        }
-    }
-    else
-    {
-        printf ("[%s] NameServerInfo reply message invalid\n", MyName);
-    }
-
-    gp_local_mon_io->release_msg(msg);
+    process_name[0] = '\0';
+    get_proc_info( -1
+                 , -1
+                 , process_name
+                 , ProcessType_NameServer
+                 , false );
 }
 
 void nameserver_up( char *node_name )
@@ -6696,7 +6637,7 @@ void help_cmd (void)
     printf ("[%s] -- persist exec <persist-process-prefix>\n", MyName);
     printf ("[%s] -- persist info [<persist-process-prefix>]\n", MyName);
     printf ("[%s] -- persist kill <persist-process-prefix>\n", MyName);
-    printf ("[%s] -- ps [{CS|DTM|GEN|PSD|SMS|SSMP|WDG}] [<nid>|<process_name>|<nid,pid>]\n", MyName);
+    printf ("[%s] -- ps [{CS|DTM|GEN|PSD|SMS|SSMP|WDG|NS}] [<nid>|<process_name>|<nid,pid>]\n", MyName);
     printf ("[%s] -- pwd\n", MyName);
     printf ("[%s] -- quit\n", MyName);
     printf ("[%s] -- scanbufs\n", MyName);
@@ -8388,6 +8329,10 @@ void ps_cmd (char *cmd_tail, char delimiter)
             else if (strcmp (token, "wdg") == 0)
             {
                 process_type = ProcessType_Watchdog;
+            }
+            else if (strcmp (token, "ns") == 0)
+            {
+                process_type = ProcessType_NameServer;
             }
             else
             {

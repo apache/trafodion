@@ -409,7 +409,6 @@ typedef enum {
     MS_ReqType_NameServerAdd,
     MS_ReqType_NameServerDelete,
     MS_ReqType_NameServerDown,
-    MS_ReqType_NameServerInfo,
     MS_ReqType_NameServerUp,
     MS_ReqType_NewProcess,
     MS_ReqType_NewProcessNs,

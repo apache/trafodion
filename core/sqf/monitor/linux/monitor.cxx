@@ -166,8 +166,8 @@ char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
 
 
 #ifdef NAMESERVER_PROCESS
-DEFINE_EXTERN_COMP_DOVERS(nameserver)
-DEFINE_EXTERN_COMP_GETVERS2(nameserver)
+DEFINE_EXTERN_COMP_DOVERS(trafns)
+DEFINE_EXTERN_COMP_GETVERS2(trafns)
 #else
 DEFINE_EXTERN_COMP_DOVERS(monitor)
 DEFINE_EXTERN_COMP_GETVERS2(monitor)
@@ -437,7 +437,7 @@ void CMonitor::openProcessMap ( void )
     }
 
 #ifdef NAMESERVER_PROCESS
-    snprintf( fname, sizeof(fname), "%s/ns.map.%d.%s",
+    snprintf( fname, sizeof(fname), "%s/trafns.map.%d.%s",
              getenv("MPI_TMPDIR"), MyPNID, Node_name );
 #else
     snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
@@ -1102,7 +1102,7 @@ int main (int argc, char *argv[])
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
 
 #ifdef NAMESERVER_PROCESS
-    CALL_COMP_DOVERS(nameserver, argc, argv);
+    CALL_COMP_DOVERS(trafns, argc, argv);
 #else
     CALL_COMP_DOVERS(monitor, argc, argv);
 #endif
@@ -1170,7 +1170,7 @@ int main (int argc, char *argv[])
     }
 
 #ifdef NAMESERVER_PROCESS
-    MonLog = new CMonLog( "log4cxx.monitor.ns.config", "NS", "alt.mon", -1, -1, getpid(), "$NS" );
+    MonLog = new CMonLog( "log4cxx.monitor.trafns.config", "NS", "alt.mon", -1, -1, getpid(), "$TNS" );
 #else
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
 #endif
@@ -1269,7 +1269,7 @@ int main (int argc, char *argv[])
     }
 #else
     monitorArgc = argc;
-    STRCPY(monitorArgv[0], "ns");
+    STRCPY(monitorArgv[0], "trafns");
     for ( int arg = 1; arg < argc; arg++ )
         STRCPY(monitorArgv[arg], argv[arg]);
 #endif
@@ -1344,12 +1344,12 @@ int main (int argc, char *argv[])
     // We create a standard output file here.
     if ( IsRealCluster )
     {
-        snprintf(fname, sizeof(fname), "%s/logs/sqns.%s.log",
+        snprintf(fname, sizeof(fname), "%s/logs/trafns.%s.log",
                  getenv("TRAF_HOME"), Node_name);
     }
     else
     {
-        snprintf(fname, sizeof(fname), "%s/logs/sqns.%d.%s.log",
+        snprintf(fname, sizeof(fname), "%s/logs/trafns.%d.%s.log",
                  getenv("TRAF_HOME"), MyPNID, Node_name);
     }
 #else
@@ -1563,7 +1563,7 @@ int main (int argc, char *argv[])
 #ifdef NAMESERVER_PROCESS
     snprintf(buf, sizeof(buf),
                  "[CMonitor::main], %s, Started! CommType: %s\n"
-                , CALL_COMP_GETVERS2(nameserver), CommTypeString( CommType ));
+                , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
 #else
     snprintf(buf, sizeof(buf),
                  "[CMonitor::main], %s, Started! CommType: %s (%s%s%s)\n"

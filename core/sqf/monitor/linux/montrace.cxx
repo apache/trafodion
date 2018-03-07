@@ -117,7 +117,7 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
         sprintf(trace_file_name,"%s/monitor.trace.%d.%s",
                 getenv("MPI_TMPDIR"),MyPNID,Node_name);
 #else
-        sprintf(trace_file_name,"%s/ns.trace.%d.%s",
+        sprintf(trace_file_name,"%s/trafns.trace.%d.%s",
                 getenv("MPI_TMPDIR"),MyPNID,Node_name);
 #endif
     }
@@ -127,7 +127,7 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
         sprintf(trace_file_name,"%s/monitor.trace.%s",
                 getenv("MPI_TMPDIR"), Node_name);
 #else
-        sprintf(trace_file_name,"%s/ns.trace.%s",
+        sprintf(trace_file_name,"%s/trafns.trace.%s",
                 getenv("MPI_TMPDIR"), Node_name);
 #endif
     }
@@ -304,7 +304,7 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
                 sprintf(fname,"%s/monitor.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
                         Node_name);
 #else
-                sprintf(fname,"%s/ns.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
+                sprintf(fname,"%s/trafns.trace.%d.%s",getenv("MPI_TMPDIR"), MyPNID,
                         Node_name);
 #endif
             }
@@ -314,7 +314,7 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
                 sprintf(fname,"%s/monitor.trace.%s",getenv("MPI_TMPDIR"),
                         Node_name);
 #else
-                sprintf(fname,"%s/ns.trace.%s",getenv("MPI_TMPDIR"),
+                sprintf(fname,"%s/trafns.trace.%s",getenv("MPI_TMPDIR"),
                         Node_name);
 #endif
             }

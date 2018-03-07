@@ -465,21 +465,6 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
-class CExtNameServerInfoReq: public CExternalReq
-{
-public:
-    CExtNameServerInfoReq (reqQueueMsg_t msgType, int pid,
-                           struct message_def *msg );
-    virtual ~CExtNameServerInfoReq();
-
-    void performRequest();
-
-private:
-    void populateRequestString( void );
-};
-#endif
-
-#ifndef NAMESERVER_PROCESS
 class CExtNameServerUpReq: public CExternalReq
 {
 public:

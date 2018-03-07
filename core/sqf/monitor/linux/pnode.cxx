@@ -1145,8 +1145,8 @@ void CNode::StartNameServerProcess( void )
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
     
-    snprintf( name, sizeof(name), "$ZNS%d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_ZNS%d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$TNS%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_TNS%d", MyNode->GetZone() );
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - Creating NameService Process\n", method_name, __LINE__);
@@ -1154,7 +1154,7 @@ void CNode::StartNameServerProcess( void )
     strcpy(path,getenv("PATH"));
     strcat(path,":");
     strcat(path,MyPath);
-    strcpy(filename,"ns");
+    strcpy(filename,"trafns");
     ldpath = getenv("LD_LIBRARY_PATH");
     strId_t pathStrId = MyNode->GetStringId ( path );
     strId_t ldpathStrId = MyNode->GetStringId ( ldpath );

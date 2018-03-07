@@ -136,7 +136,6 @@ MONITORSRC += reqnotify.cxx
 MONITORSRC += reqnsadd.cxx
 MONITORSRC += reqnsdown.cxx
 MONITORSRC += reqnsdelete.cxx
-MONITORSRC += reqnsinfo.cxx
 MONITORSRC += reqnsup.cxx
 MONITORSRC += reqopen.cxx
 MONITORSRC += reqprocinfo.cxx
@@ -207,7 +206,6 @@ MONITOROBJS += $(OUTDIR)/reqnotify.o
 MONITOROBJS += $(OUTDIR)/reqnsadd.o
 MONITOROBJS += $(OUTDIR)/reqnsdelete.o
 MONITOROBJS += $(OUTDIR)/reqnsdown.o
-MONITOROBJS += $(OUTDIR)/reqnsinfo.o
 MONITOROBJS += $(OUTDIR)/reqnsup.o
 MONITOROBJS += $(OUTDIR)/reqopen.o
 MONITOROBJS += $(OUTDIR)/reqprocinfo.o
@@ -377,7 +375,7 @@ PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
-PGMS +=  $(BINEXPDIR)/ns
+PGMS +=  $(BINEXPDIR)/trafns
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -548,7 +546,7 @@ $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BINEXPDIR)/ns: $(NSOBJS)
+$(BINEXPDIR)/trafns: $(NSOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto

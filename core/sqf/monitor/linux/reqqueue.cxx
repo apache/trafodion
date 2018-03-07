@@ -3160,11 +3160,6 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_NameServerInfo:
-            request = new CExtNameServerInfoReq(msgType, pid, msg);
-            request->setConcurrent(reqConcurrent[msg->u.request.type]);
-            break;
-
         case ReqType_NodeInfo:
             request = new CExtNodeInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -4272,7 +4267,6 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_NameServerAdd
    false,    // ReqType_NameServerDelete
    false,    // ReqType_NameServerDown
-   false,    // ReqType_NameServerInfo
    false,    // ReqType_NameServerUp
    false,    // ReqType_NewProcess
    false,    // ReqType_NewProcessNs
@@ -4318,7 +4312,6 @@ const char * CReqQueue::svcReqType[] = {
     "NameServerAdd",
     "NameServerDelete",
     "NameServerDown",
-    "NameServerInfo",
     "NameServerUp",
     "NewProcess",
     "NewProcessNs",

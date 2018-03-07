@@ -97,7 +97,6 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( NameServerAdd_def ),   // ReqType_NameServerAdd
    sizeof(REQTYPE) + sizeof( NameServerDelete_def ),// ReqType_NameServerDelete
    sizeof(REQTYPE) + sizeof( NameServerDown_def ),  // ReqType_NameServerDown
-   sizeof(REQTYPE) + sizeof( NameServerInfo_def ),  // ReqType_NameServerInfo
    sizeof(REQTYPE) + sizeof( NameServerUp_def ),    // ReqType_NameServerUp
    sizeof(REQTYPE) + sizeof( NewProcess_def ),      // ReqType_NewProcess
    sizeof(REQTYPE) + sizeof( NewProcessNs_def ),    // ReqType_NewProcessNs
@@ -136,7 +135,6 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( Get_reply_def ),         // ReplyType_Get
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
    sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
-   sizeof(REPLYTYPE) + sizeof( NameServerInfo_reply_def ), // ReplyType_NameServerInfo
    sizeof(REPLYTYPE) + sizeof( NewProcess_reply_def ),  // ReplyType_NewProcess
    sizeof(REPLYTYPE) + sizeof( NodeInfo_reply_def ),    // ReplyType_NodeInfo
    sizeof(REPLYTYPE) + sizeof( Open_reply_def ),        // ReplyType_Open

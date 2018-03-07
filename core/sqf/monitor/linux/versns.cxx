@@ -25,6 +25,6 @@
 
 #include "vers.h"
 
-VERS_BIN(nameserver)
+VERS_BIN(trafns)
 
-DEFINE_COMP_DOVERS(nameserver)
+DEFINE_COMP_DOVERS(trafns)

@@ -147,7 +147,7 @@ int CNameServer::ConnectToNs( void )
                 if ( !nsStartupComplete_ )
                 {
                     nsStartupComplete_ = true;
-                    NameServerProcess->CompleteProcessStartup( ""
+                    NameServerProcess->CompleteProcessStartup( (char *) ""
                                                              , msg.pid
                                                              , false
                                                              , false
