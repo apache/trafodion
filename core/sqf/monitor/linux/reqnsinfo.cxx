@@ -94,6 +94,16 @@ void CExtNameServerInfoReq::performRequest()
         config = nameServerConfig->GetFirstConfig();
         for ( ; config; config = config->GetNext())
         {
+            msg_->u.reply.u.nameserver_info.node[num_returned].state = State_Unknown;
+            CNode *node = Nodes->GetNode( (char *) config->GetName() );
+            if ( node )
+            {
+                char nsName[10];
+                sprintf( nsName, "$ZNS%d", node->GetZone() );
+                CProcess *process = Nodes->GetProcessByName( nsName, false );
+                if ( process )
+                    msg_->u.reply.u.nameserver_info.node[num_returned].state = process->GetState();
+            }
             strcpy(msg_->u.reply.u.nameserver_info.node[num_returned].node_name, config->GetName());
 
             num_returned++;

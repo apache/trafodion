@@ -46,6 +46,7 @@ using namespace std;
 #include "lnode.h"
 #include "pnode.h"
 #include "mlio.h"
+#include "nameserver.h"
 
 #include "replicate.h"
 #include "reqqueue.h"
@@ -81,6 +82,8 @@ extern CClusterConfig *ClusterConfig;
 const char *StateString( STATE state);
 #ifndef NAMESERVER_PROCESS
 const char *SyncStateString( SyncState state);
+extern CNameServer *NameServer;
+extern CProcess *NameServerProcess;
 #endif
 
 // The following defines are necessary for the new watchdog timer facility.  They should really be
@@ -1141,7 +1144,6 @@ void CNode::StartNameServerProcess( void )
     char filename[MAX_PROCESS_PATH];
     char name[MAX_PROCESS_NAME];
     char stdout[MAX_PROCESS_PATH];
-    CProcess * nameServiceProcess;
     
     snprintf( name, sizeof(name), "$ZNS%d", MyNode->GetZone() );
     snprintf( stdout, sizeof(stdout), "stdout_ZNS%d", MyNode->GetZone() );
@@ -1159,22 +1161,22 @@ void CNode::StartNameServerProcess( void )
     strId_t programStrId = MyNode->GetStringId ( filename );
 
     int result;
-    nameServiceProcess  = CreateProcess( NULL, //parent
-                                         MyNode->AssignNid(),
-                                         ProcessType_NameServer,
-                                         0,  //debug
-                                         0,  //priority
-                                         0,  //backup
-                                         true, //unhooked
-                                         name,
-                                         pathStrId,
-                                         ldpathStrId,
-                                         programStrId,
-                                         (char *) "", //infile,
-                                         stdout, //outfile,
-                                         result
-                                         );
-    if ( nameServiceProcess  )
+    NameServerProcess  = CreateProcess( NULL, //parent
+                                        MyNode->AssignNid(),
+                                        ProcessType_NameServer,
+                                        0,  //debug
+                                        0,  //priority
+                                        0,  //backup
+                                        true, //unhooked
+                                        name,
+                                        pathStrId,
+                                        ldpathStrId,
+                                        programStrId,
+                                        (char *) "", //infile,
+                                        stdout, //outfile,
+                                        result
+                                        );
+    if ( NameServerProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d" " - NameService Process created\n", method_name, __LINE__);
@@ -1254,7 +1256,7 @@ void CNode::StartWatchdogProcess( void )
                                       stdout, //outfile,
                                       result
                                       );
-    if ( watchdogProcess  )
+    if ( watchdogProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d" " - Watchdog Process created\n", method_name, __LINE__);
@@ -1311,7 +1313,7 @@ void CNode::StartPStartDProcess( void )
                                       stdout, //outfile,
                                       result
                                       );
-    if ( pstartdProcess  )
+    if ( pstartdProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d - pstartd process created\n",
@@ -1352,7 +1354,7 @@ void CNode::StartPStartDPersistent( void )
         for ( ; lnode; lnode = lnode->GetNextP() )
         {
             CProcess *process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process  ) tmCount++;
+            if ( process ) tmCount++;
         }
     }
 
@@ -1408,7 +1410,7 @@ void CNode::StartPStartDPersistentDTM( int nid )
         for ( ; lnode; lnode = lnode->GetNextP() )
         {
             process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process  ) tmCount++;
+            if ( process ) tmCount++;
         }
     }
 
@@ -1487,7 +1489,7 @@ void CNode::StartSMServiceProcess( void )
                                  stdout, //outfile,
                                  result
                                  );
-    if ( smsProcess  )
+    if ( smsProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d - smservice process (%s) created\n",

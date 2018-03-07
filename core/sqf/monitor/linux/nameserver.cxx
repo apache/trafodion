@@ -49,18 +49,28 @@ using namespace std;
 #include "montrace.h"
 
 extern CNode *MyNode;
+extern CProcess *NameServerProcess;
 
-CNameServer::CNameServer (void)
-: mon2nsSock_(0)
+CNameServer::CNameServer( void )
+: mon2nsSock_(-1)
+, nsStartupComplete_(false)
 , seqNum_(0)
 {
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
 
+    gethostname( mon2nsPort_, MAX_PROCESSOR_NAME);
+    strcat( mon2nsPort_, ":");
+    char *p = getenv( "NS_M2N_COMM_PORT" );
+    if ( p )
+        strcat( mon2nsPort_, p );
+    else
+        strcat( mon2nsPort_, "0" );
+
     TRACE_EXIT;
 }
 
-CNameServer::~CNameServer (void)
+CNameServer::~CNameServer( void )
 {
     const char method_name[] = "CNameServer::~CNameServer";
     TRACE_ENTRY;
@@ -68,9 +78,104 @@ CNameServer::~CNameServer (void)
     TRACE_EXIT;
 }
 
-int CNameServer::MkCltSock( const char *portName )
+int CNameServer::ConnectToNs( void )
 {
-    const char method_name[] = "CNameServer::MkCltSock";
+    const char method_name[] = "CNameServer::ConnectToNs";
+    TRACE_ENTRY;
+    int err = 0;
+
+    int sock = SockCreate();
+    if ( sock < 0 )
+        err = sock;
+    if ( err == 0)
+    {
+        mon2nsSock_ = sock;
+        if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+        {
+            trace_printf( "%s@%d - connected to nameserver=%s, sock=%d\n"
+                        , method_name, __LINE__
+                        , mon2nsPort_
+                        , mon2nsSock_ );
+        }
+    }
+
+    if ( err == 0)
+    {
+        nodeId_t msg;
+        strcpy( msg.nodeName, MyNode->GetName() );
+        strcpy( msg.commPort, MyNode->GetCommPort() );
+        strcpy( msg.syncPort, MyNode->GetSyncPort() );
+        msg.pid = -1;
+        msg.pnid = MyNode->GetPNid();
+        msg.creatorPNid = -1;
+        msg.creatorShellPid = -1;
+        msg.creatorShellVerifier = -1;
+        msg.creator = false;
+        msg.ping = false;
+        if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+        {
+            trace_printf( "%s@%d - sending node-info to nameserver=%s, sock=%d\n"
+                        , method_name, __LINE__
+                        , mon2nsPort_
+                        , mon2nsSock_ );
+        }
+        err = SockSend( ( char *) &msg, sizeof(msg) );
+        if ( err == 0 )
+        {
+            if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+            {
+                trace_printf( "%s@%d - OK send to nameserver=%s, sock=%d, error=%d, waiting receive\n"
+                            , method_name, __LINE__
+                            , mon2nsPort_
+                            , mon2nsSock_
+                            , err );
+            }
+            err = SockReceive( (char *) &msg, sizeof(msg ) );
+            if ( err )
+            {
+                if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+                {
+                    trace_printf( "%s@%d - error receiving from nameserver=%s, sock=%d, error=%d\n"
+                                , method_name, __LINE__
+                                , mon2nsPort_
+                                , mon2nsSock_
+                                , err );
+                }
+            }
+            else
+            {
+                if ( !nsStartupComplete_ )
+                {
+                    nsStartupComplete_ = true;
+                    NameServerProcess->CompleteProcessStartup( ""
+                                                             , msg.pid
+                                                             , false
+                                                             , false
+                                                             , false
+                                                             , NULL
+                                                             , -1 );
+                }
+            }
+        }
+    }
+
+    TRACE_EXIT;
+    return err;
+}
+
+void CNameServer::SockClose( void )
+{
+    const char method_name[] = "CNameServer::SockClose";
+    TRACE_ENTRY;
+
+    close( mon2nsSock_ );
+    mon2nsSock_ = -1;
+    TRACE_EXIT;
+}
+
+int CNameServer::SockCreate( void )
+{
+    const char method_name[] = "CNameServer::SockCreate";
     TRACE_ENTRY;
 
     int    sock;        // socket
@@ -87,13 +192,13 @@ int CNameServer::MkCltSock( const char *portName )
     const char *colon;
     unsigned int port;
 
-    colon = strstr(portName, ":");
-    strcpy(host, portName);
-    int len = colon - portName;
+    colon = strstr( mon2nsPort_, ":" );
+    strcpy( host, mon2nsPort_ );
+    int len = colon - mon2nsPort_;
     host[len] = '\0';
     port = atoi(&colon[1]);
     
-    size = sizeof(sockinfo);
+    size = sizeof(sockinfo );
 
     if ( !retries )
     {
@@ -111,8 +216,8 @@ int CNameServer::MkCltSock( const char *portName )
             int err = errno;
             snprintf( la_buf, sizeof(la_buf) 
                     , "[%s], socket() failed! errno=%d (%s)\n"
-                    , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf); 
+                    , method_name, err, strerror(err) );
+            mon_log_write( MON_CLUSTER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf ); 
             return ( -1 );
         }
 
@@ -121,10 +226,10 @@ int CNameServer::MkCltSock( const char *portName )
         {
             char la_buf[MON_STRING_BUF_SIZE];
             int err = errno;
-            snprintf( la_buf, sizeof(la_buf), 
+            snprintf( la_buf, sizeof(la_buf ), 
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
-                    , method_name, host, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf); 
+                    , method_name, host, err, strerror(err) );
+            mon_log_write(MON_CLUSTER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf ); 
             close( sock );
             return ( -1 );
         }
@@ -145,7 +250,7 @@ int CNameServer::MkCltSock( const char *portName )
         ret = 1;
         while ( ret != 0 && connect_failures <= 10 )
         {
-            if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
+            if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
             {
                 trace_printf( "%s@%d - Connecting to %s addr=%d.%d.%d.%d, port=%d, connect_failures=%d\n"
                             , method_name, __LINE__
@@ -160,19 +265,18 @@ int CNameServer::MkCltSock( const char *portName )
     
             ret = connect( sock, (struct sockaddr *) &sockinfo, size );
             if ( ret == 0 ) break;
-            if ( errno == EINTR )
-            {
-                ++connect_failures;
-            }
-            else
+            ++connect_failures;
+            if ( errno != EINTR )
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 int err = errno;
                 sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
-                       , method_name, err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf); 
-                close(sock);
-                return ( -1 );
+                       , method_name, err, strerror(err) );
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf ); 
+                struct timespec req, rem;
+                req.tv_sec = 0;
+                req.tv_nsec = 500000000L; // 500,000,000
+                nanosleep( &req, &rem );
             }
         }
 
@@ -188,8 +292,8 @@ int CNameServer::MkCltSock( const char *portName )
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
-                       , method_name, retries);
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf); 
+                       , method_name, retries );
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf ); 
                 close( sock );
                 return ( -1 );
             }
@@ -206,9 +310,9 @@ int CNameServer::MkCltSock( const char *portName )
         char la_buf[MON_STRING_BUF_SIZE];
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
-               , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); 
-        close( (int)sock );
+               , method_name, err, strerror(err) );
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf ); 
+        close( sock );
         return ( -2 );
     }
 
@@ -216,80 +320,13 @@ int CNameServer::MkCltSock( const char *portName )
     return ( sock );
 }
 
-int CNameServer::InitializeNameServer( void )
-{
-    const char method_name[] = "CNameServer::InitializeNameServer";
-    TRACE_ENTRY;
-    int err = 0;
-    char   *p;     // getenv results 
-
-    gethostname(mon2nsPort_, MAX_PROCESSOR_NAME);
-    strcat(mon2nsPort_, ":");
-    p = getenv( "NS_M2N_COMM_PORT" );
-    if (p)
-        strcat(mon2nsPort_, p);
-    else
-        strcat(mon2nsPort_, "3000");
-
-    int sock = MkCltSock(mon2nsPort_);
-    if (sock < 0)
-        err = sock;
-    else
-    {
-        mon2nsSock_ = sock;
-        if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - connected to nameserver=%s, sock=%d\n"
-                        , method_name, __LINE__
-                        , mon2nsPort_
-                        , mon2nsSock_ );
-        }
-    }
-
-    if (err == 0)
-    {
-        nodeId_t msg;
-        strcpy(msg.nodeName, MyNode->GetName());
-        strcpy(msg.commPort, MyNode->GetCommPort());
-        strcpy(msg.syncPort, MyNode->GetSyncPort());
-        msg.pnid = MyNode->GetPNid();
-        msg.creatorPNid = -1;
-        msg.creatorShellPid = -1;
-        msg.creatorShellVerifier = -1;
-        msg.creator = false;
-        msg.ping = false;
-        if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - sending node-info to nameserver=%s, sock=%d\n"
-                        , method_name, __LINE__
-                        , mon2nsPort_
-                        , mon2nsSock_);
-        }
-        err = SendSock((char *) &msg, sizeof(msg), mon2nsSock_);
-        if (err)
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_PROCESS))
-            {
-                trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
-                            , method_name, __LINE__
-                            , mon2nsPort_
-                            , mon2nsSock_
-                            , err );
-            }
-        }
-    }
-
-    TRACE_EXIT;
-    return err;
-}
-
-int CNameServer::ProcessDelete(CProcess* process)
+int CNameServer::ProcessDelete(CProcess* process )
 {
     const char method_name[] = "CNameServer::ProcessDelete";
     TRACE_ENTRY;
 
     struct message_def msg;
-    memset(&msg, 0, sizeof(msg)); // TODO: remove!
+    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
     msg.type = MsgType_Service;
     msg.noreply = false;
     msg.reply_tag = seqNum_++;
@@ -298,54 +335,54 @@ int CNameServer::ProcessDelete(CProcess* process)
     msgdel->nid = process->GetNid();
     msgdel->pid = process->GetPid();
     msgdel->verifier = process->GetVerifier();
-    strcpy(msgdel->process_name, process->GetName());
+    strcpy( msgdel->process_name, process->GetName() );
     msgdel->target_nid = msgdel->nid;
     msgdel->target_pid = msgdel->pid;
     msgdel->target_verifier = msgdel->verifier;
-    strcpy(msgdel->target_process_name, msgdel->process_name);
+    strcpy( msgdel->target_process_name, msgdel->process_name );
 
-    int error = SendReceive(&msg);
+    int error = SendReceive(&msg );
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::ProcessInfo(struct message_def* msg)
+int CNameServer::ProcessInfo( struct message_def* msg )
 {
     const char method_name[] = "CNameServer::ProcessInfo";
     TRACE_ENTRY;
 
-    int error = SendReceive(msg);
+    int error = SendReceive( msg );
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::ProcessInfoCont(struct message_def* msg)
+int CNameServer::ProcessInfoCont( struct message_def* msg )
 {
     const char method_name[] = "CNameServer::ProcessInfoCont";
     TRACE_ENTRY;
 
-    int error = SendReceive(msg);
+    int error = SendReceive( msg );
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::ProcessNew(CProcess* process)
+int CNameServer::ProcessNew(CProcess* process )
 {
     const char method_name[] = "CNameServer::ProcessNew";
     TRACE_ENTRY;
 
     struct message_def msg;
-    memset(&msg, 0, sizeof(msg)); // TODO: remove!
+    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
     msg.type = MsgType_Service;
     msg.noreply = false;
     msg.reply_tag = seqNum_++;
     msg.u.request.type = ReqType_NewProcessNs;
     struct NewProcessNs_def *msgnew = &msg.u.request.u.new_process_ns;
     CProcess* parent = process->GetParent();
-    if (parent)
+    if ( parent )
     {
         msgnew->parent_nid = parent->GetNid();
         msgnew->parent_pid = parent->GetPid();
@@ -362,17 +399,141 @@ int CNameServer::ProcessNew(CProcess* process)
     msgnew->verifier = process->GetVerifier();
     msgnew->type = process->GetType();
     msgnew->priority = process->GetPriority();
-    strcpy(msgnew->process_name, process->GetName());
+    strcpy( msgnew->process_name, process->GetName() );
 
-    int error = SendReceive(&msg);
+    int error = SendReceive(&msg );
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
+int CNameServer::SendReceive( struct message_def* msg )
 {
-    const char method_name[] = "CNameServer::ReceiveSock";
+    const char method_name[] = "CNameServer::SendReceive";
+    char desc[100];
+    char* descp;
+    struct DelProcessNs_def *msgdel;
+    struct NewProcessNs_def *msgnew;
+
+    TRACE_ENTRY;
+
+    descp = desc;
+    int size = offsetof(struct message_def, u.request.u);
+    switch ( msg->u.request.type )
+    {
+    case ReqType_DelProcessNs:
+        msgdel = &msg->u.request.u.del_process_ns;
+        sprintf( desc, "delete-process (nid=%d, pid=%d, verifier=%d, name=%s)",
+                 msgdel->nid, msgdel->pid, msgdel->verifier, msgdel->process_name );
+        size += sizeof(msg->u.request.u.del_process_ns);
+        break;
+    case ReqType_NewProcessNs:
+        msgnew = &msg->u.request.u.new_process_ns;
+        sprintf( desc, "new-process (nid=%d, pid=%d, verifier=%d, name=%s)",
+                msgnew->nid, msgnew->pid, msgnew->verifier, msgnew->process_name );
+        size += sizeof(msg->u.request.u.new_process_ns);
+        break;
+    case ReqType_ProcessInfo:
+        descp = (char *) "process-info";
+        size += sizeof(msg->u.request.u.process_info);
+        break;
+    case ReqType_ProcessInfoCont:
+        descp = (char *) "process-info-cont";
+        size += sizeof(msg->u.request.u.process_info_cont);
+        break;
+    default:
+        abort(); // TODO change
+        break;
+    }
+
+    int error = SendToNs( descp, msg, size );
+    if ( error == 0 )
+        error = SockReceive( (char *) &size, sizeof(size ) );
+    if ( error == 0 )
+        error = SockReceive( (char *) msg, size );
+    if ( error == 0 )
+    {
+        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        {
+            char desc[200];
+            char* descp = desc;
+            switch ( msg->u.reply.type )
+            {
+            case ReplyType_DelProcessNs:
+                sprintf( desc, "DelProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                         msg->u.reply.u.del_process_ns.nid,
+                         msg->u.reply.u.del_process_ns.pid,
+                         msg->u.reply.u.del_process_ns.verifier,
+                         msg->u.reply.u.del_process_ns.process_name,
+                         msg->u.reply.u.del_process_ns.return_code );
+                break;
+            case ReplyType_Generic:
+                sprintf( desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                         msg->u.reply.u.generic.nid,
+                         msg->u.reply.u.generic.pid,
+                         msg->u.reply.u.generic.verifier,
+                         msg->u.reply.u.generic.process_name,
+                         msg->u.reply.u.generic.return_code );
+                break;
+            case ReplyType_NewProcessNs:
+                sprintf( desc, "NewProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                         msg->u.reply.u.new_process_ns.nid,
+                         msg->u.reply.u.new_process_ns.pid,
+                         msg->u.reply.u.new_process_ns.verifier,
+                         msg->u.reply.u.new_process_ns.process_name,
+                         msg->u.reply.u.new_process_ns.return_code );
+                break;
+            case ReplyType_ProcessInfo:
+                sprintf( desc, "ProcessInfo, num_processes=%d, rc=%d, more_data=%d\n",
+                         msg->u.reply.u.process_info.num_processes,
+                         msg->u.reply.u.process_info.return_code,
+                         msg->u.reply.u.process_info.more_data );
+                break;
+            default:
+                descp = (char *) "UNKNOWN";
+                break;
+            }
+            trace_printf( "%s@%d - msgType=%d, replyType=%d, ReplyType=%s\n"
+                        , method_name, __LINE__
+                        , msg->type, msg->u.reply.type
+                        , descp
+                        );
+        }
+    }
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int size )
+{
+    const char method_name[] = "CNameServer::SendToNs";
+    TRACE_ENTRY;
+
+    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+    {
+        trace_printf( "%s@%d - sending %s REQ to nameserver=%s, sock=%d\n"
+                    , method_name, __LINE__
+                    , reqType
+                    , mon2nsPort_
+                    , mon2nsSock_ );
+    }
+
+    int error = 0;
+    if ( mon2nsSock_ < 0 )
+        error = ConnectToNs();
+    if ( error == 0 )
+        error = SockSend( (char *) &size, sizeof(size) );
+    if ( error == 0 )
+        error = SockSend( (char *) msg, size );
+
+    TRACE_EXIT;
+    return error;
+}
+
+int CNameServer::SockReceive( char *buf, int size )
+{
+    const char method_name[] = "CNameServer::SockReceive";
     TRACE_ENTRY;
 
     bool    readAgain = false;
@@ -383,12 +544,12 @@ int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
     
     do
     {
-        readCount = (int) recv( sockFd
+        readCount = (int) recv( mon2nsSock_
                               , buf
                               , sizeCount
                               , 0 );
     
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
         {
             trace_printf( "%s@%d - Count read %d = recv(%d)\n"
                         , method_name, __LINE__
@@ -430,7 +591,7 @@ int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
     }
     while( readAgain );
 
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
     {
         trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
                     , method_name, __LINE__
@@ -438,137 +599,16 @@ int CNameServer::ReceiveSock(char *buf, int size, int sockFd)
                     , error, strerror(error) );
     }
 
-    TRACE_EXIT;
-    return error;
-}
-
-int CNameServer::SendReceive(struct message_def* msg)
-{
-    const char method_name[] = "CNameServer::SendReceive";
-    char desc[100];
-    char* descp;
-    struct DelProcessNs_def *msgdel;
-    struct NewProcessNs_def *msgnew;
-
-    TRACE_ENTRY;
-
-    descp = desc;
-    int size = offsetof(struct message_def, u.request.u);
-    switch (msg->u.request.type)
-    {
-    case ReqType_DelProcessNs:
-        msgdel = &msg->u.request.u.del_process_ns;
-        sprintf(desc, "delete-process (nid=%d, pid=%d, verifier=%d, name=%s)",
-                msgdel->nid, msgdel->pid, msgdel->verifier, msgdel->process_name);
-        size += sizeof(msg->u.request.u.del_process_ns);
-        break;
-    case ReqType_NewProcessNs:
-        msgnew = &msg->u.request.u.new_process_ns;
-        sprintf(desc, "new-process (nid=%d, pid=%d, verifier=%d, name=%s)",
-                msgnew->nid, msgnew->pid, msgnew->verifier, msgnew->process_name);
-        size += sizeof(msg->u.request.u.new_process_ns);
-        break;
-    case ReqType_ProcessInfo:
-        descp = (char *) "process-info";
-        size += sizeof(msg->u.request.u.process_info);
-        break;
-    case ReqType_ProcessInfoCont:
-        descp = (char *) "process-info-cont";
-        size += sizeof(msg->u.request.u.process_info_cont);
-        break;
-    default:
-        abort(); // TODO change
-        break;
-    }
-
-    int error = SendToNs(descp, msg, size);
-    if (error == 0)
-    {
-        error = ReceiveSock((char *) &size, sizeof(size), mon2nsSock_);
-        if (error)
-        {
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            {
-                trace_printf( "%s@%d - error receiving (size) from nameserver=%s, sock=%d, error=%d\n"
-                            , method_name, __LINE__
-                            , mon2nsPort_
-                            , mon2nsSock_
-                            , error );
-            }
-        }
-        else
-        {
-            error = ReceiveSock((char *) msg, size, mon2nsSock_);
-            if (error)
-            {
-                if (trace_settings & (TRACE_PROCESS))
-                {
-                    trace_printf( "%s@%d - error receiving (data) from nameserver=%s, sock=%d, error=%d\n"
-                                , method_name, __LINE__
-                                , mon2nsPort_
-                                , mon2nsSock_
-                                , error );
-                }
-            }
-            else
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    char desc[200];
-                    char* descp = desc;
-                    switch (msg->u.reply.type)
-                    {
-                    case ReplyType_DelProcessNs:
-                        sprintf(desc, "DelProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
-                                msg->u.reply.u.del_process_ns.nid,
-                                msg->u.reply.u.del_process_ns.pid,
-                                msg->u.reply.u.del_process_ns.verifier,
-                                msg->u.reply.u.del_process_ns.process_name,
-                                msg->u.reply.u.del_process_ns.return_code);
-                        break;
-                    case ReplyType_Generic:
-                        sprintf(desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
-                                msg->u.reply.u.generic.nid,
-                                msg->u.reply.u.generic.pid,
-                                msg->u.reply.u.generic.verifier,
-                                msg->u.reply.u.generic.process_name,
-                                msg->u.reply.u.generic.return_code);
-                        break;
-                    case ReplyType_NewProcessNs:
-                        sprintf(desc, "NewProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
-                                msg->u.reply.u.new_process_ns.nid,
-                                msg->u.reply.u.new_process_ns.pid,
-                                msg->u.reply.u.new_process_ns.verifier,
-                                msg->u.reply.u.new_process_ns.process_name,
-                                msg->u.reply.u.new_process_ns.return_code);
-                        break;
-                    case ReplyType_ProcessInfo:
-                        sprintf(desc, "ProcessInfo, num_processes=%d, rc=%d, more_data=%d\n",
-                                msg->u.reply.u.process_info.num_processes,
-                                msg->u.reply.u.process_info.return_code,
-                                msg->u.reply.u.process_info.more_data);
-                        break;
-                    default:
-                        descp = (char *) "UNKNOWN";
-                        break;
-                    }
-                    trace_printf( "%s@%d - msgType=%d, replyType=%d, ReplyType=%s\n"
-                                , method_name, __LINE__
-                                , msg->type, msg->u.reply.type
-                                , descp
-                                );
-                }
-            }
-        }
-    }
+    if ( error )
+        SockClose();
 
     TRACE_EXIT;
     return error;
 }
 
-int CNameServer::SendSock(char *buf, int size, int sockFd)
+int CNameServer::SockSend( char *buf, int size )
 {
-    const char method_name[] = "CNameServer::SendSock";
+    const char method_name[] = "CNameServer::SockSend";
     TRACE_ENTRY;
 
     bool    sendAgain = false;
@@ -578,12 +618,12 @@ int CNameServer::SendSock(char *buf, int size, int sockFd)
     
     do
     {
-        sendCount = (int) send( sockFd
+        sendCount = (int) send( mon2nsSock_
                               , buf
                               , size
                               , 0 );
     
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
         {
             trace_printf( "%s@%d - send(), sendCount=%d\n"
                         , method_name, __LINE__
@@ -617,7 +657,7 @@ int CNameServer::SendSock(char *buf, int size, int sockFd)
     }
     while( sendAgain );
 
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
     {
         trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
                     , method_name, __LINE__
@@ -625,47 +665,9 @@ int CNameServer::SendSock(char *buf, int size, int sockFd)
                     , error, strerror(error) );
     }
 
-    TRACE_EXIT;
-    return error;
-}
+    if ( error )
+        SockClose();
 
-int CNameServer::SendToNs(const char *reqType, struct message_def *msg, int size)
-{
-    const char method_name[] = "CNameServer::SendToNs";
-    TRACE_ENTRY;
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-    {
-        trace_printf( "%s@%d - sending %s REQ to nameserver=%s, sock=%d\n"
-                    , method_name, __LINE__
-                    , reqType
-                    , mon2nsPort_
-                    , mon2nsSock_);
-    }
-    int error = SendSock((char *) &size, sizeof(size), mon2nsSock_);
-    if (error)
-    {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
-                        , method_name, __LINE__
-                        , mon2nsPort_
-                        , mon2nsSock_
-                        , error );
-        }
-    }
-    error = SendSock((char *) msg, size, mon2nsSock_);
-    if (error)
-    {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
-                        , method_name, __LINE__
-                        , mon2nsPort_
-                        , mon2nsSock_
-                        , error );
-        }
-    }
     TRACE_EXIT;
     return error;
 }

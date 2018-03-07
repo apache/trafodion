@@ -542,7 +542,7 @@ struct NameServerInfo_reply_def
     int num_returned;                       // Number of nameservers returned
     struct
     {
-        STATE state;                        // Node's state (i.e. UP, DOWN, STOPPING)
+        STATE state;                        // nameserver's state (i.e. UP, DOWN, STOPPING)
         char  node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
     } node[MAX_NODE_LIST];
     int return_code;                        // error returned to sender

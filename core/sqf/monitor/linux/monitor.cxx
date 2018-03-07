@@ -133,6 +133,7 @@ CLock MemModLock;
 CMonitor *Monitor = NULL;
 #ifndef NAMESERVER_PROCESS
 CNameServer *NameServer = NULL;
+CProcess *NameServerProcess = NULL;
 #endif
 CNodeContainer *Nodes = NULL;
 CConfigContainer *Config = NULL;
@@ -1741,8 +1742,7 @@ int main (int argc, char *argv[])
         env = getenv("NAMESERVER_ENABLE");
         if ( env && isdigit(*env) )
             NameServerEnabled = atoi(env);
-        if ( NameServerEnabled )
-            NameServer = new CNameServer ();
+        NameServer = new CNameServer ();
 #endif
 
         if ( IsAgentMode )
@@ -1865,11 +1865,6 @@ int main (int argc, char *argv[])
 #endif
         // Open file used to record process start/end times
         Monitor->openProcessMap ();
-
-#ifndef NAMESERVER_PROCESS
-        if ( NameServerEnabled )
-            NameServer->InitializeNameServer();
-#endif
 
 #ifndef NAMESERVER_PROCESS
         // Always using localio now, no other option

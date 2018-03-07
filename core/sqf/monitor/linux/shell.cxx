@@ -320,6 +320,9 @@ const char *StateString( STATE state )
     case State_Shutdown:
         str = "Shutdown";
         break;
+    case State_Initializing:
+        str = "Initing";
+        break;
     case State_Merged:
         str = "Merged";
         break;

@@ -728,6 +728,12 @@ void CCommAcceptMon::processMonReqs( int sockFd )
 
     TRACE_ENTRY;
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Accepted connection sock=%d\n"
+                    , method_name, __LINE__, sockFd );
+    }
+
     // Get info about connecting monitor
     rc = Monitor->ReceiveSock( (char *) &nodeId
                              , sizeof(nodeId_t)
@@ -763,6 +769,36 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                     , nodeId.creatorShellPid
                     , nodeId.creatorShellVerifier
                     , nodeId.ping );
+    }
+
+    strcpy(nodeId.nodeName, MyNode->GetName());
+    strcpy(nodeId.commPort, MyNode->GetCommPort());
+    strcpy(nodeId.syncPort, MyNode->GetSyncPort());
+    nodeId.pid = getpid();
+    nodeId.pnid = MyNode->GetPNid();
+    nodeId.creatorPNid = -1;
+    nodeId.creatorShellPid = -1;
+    nodeId.creatorShellVerifier = -1;
+    nodeId.creator = false;
+    nodeId.ping = false;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Sending nodeId back\n", method_name, __LINE__ );
+    }
+
+    // return Send info to connecting monitor
+    rc = Monitor->SendSock( (char *) &nodeId
+                          , sizeof(nodeId_t)
+                          , sockFd );
+    if ( rc )
+    {   // Handle error
+        close( sockFd );
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf(buf, sizeof(buf), "[%s], unable to send node id from new "
+                 "monitor: %s.\n", method_name, ErrorMsg(rc));
+        mon_log_write(MON_NSCOMMACCEPT_8, SQ_LOG_ERR, buf); // TODO
+        return;
     }
 
     while (true)

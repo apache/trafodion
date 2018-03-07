@@ -462,6 +462,7 @@ typedef struct nodeId_s
     char nodeName[MPI_MAX_PROCESSOR_NAME];
     char commPort[MPI_MAX_PORT_NAME];
     char syncPort[MPI_MAX_PORT_NAME];
+    int  pid;
     int  pnid;
     int  creatorPNid;
     int  creatorShellPid;
