@@ -7812,6 +7812,8 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
   myLocalExpr += child(0).getGroupAttr()->getCharacteristicInputs();
   myLocalExpr += groupExpr();
   myLocalExpr += aggregateExpr();
+  // make sure we can still produce our characteristic outputs too
+  myLocalExpr += getGroupAttr()->getCharacteristicOutputs();
           
   // consider only preds that we can evaluate in the parent
   if (optionalMap)
