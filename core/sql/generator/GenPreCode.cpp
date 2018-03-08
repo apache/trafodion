@@ -1154,12 +1154,14 @@ VEGReference::replaceVEGReference(const ValueIdSet &origAvailableValues,
 
   if (VEG_DEBUG)
     {
-      NAString av,iv,vb;
+      NAString av,iv,vb,vr;
       availableValues.unparse(av);
       inputValues.unparse(iv);
       valuesToBeBound.unparse(vb);
+      ValueIdSet thisVegRef(getValueId());
+      thisVegRef.unparse(vr);
       cout << endl;
-	  cout << "VEGReference " << getValueId() << " :" << endl;
+      cout << "VEGReference " << getValueId() << " (" << vr << "):" << endl;
       cout << "AV: " << av << endl;
       cout << "IV: " << iv << endl;
       cout << "VB: " << vb << endl;
