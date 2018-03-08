@@ -11632,7 +11632,12 @@ Int32 HSGlobalsClass::allocateMemoryForColumns(HSColGroupStruct* group,
          memReduceAllowance();
          break;
        }
-
+     //trafodion-2978
+     //group->mcis_memFreed may be set TRUE in HSColGroupStruct::freeISMemory
+     //so if allocate memory success,set group->mcis_memFreed to FALSE agin.
+     if(group->mcis_memFreed)
+         group->mcis_memFreed = FALSE;
+     //trafodion-2978
      group->nextData = group->data;
      group->mcis_nextData = group->mcis_data;
      numCols++;
