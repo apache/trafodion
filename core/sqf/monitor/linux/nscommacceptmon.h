@@ -44,6 +44,7 @@ public:
 #endif
     void processNewSock( int sockFd );
     void processMonReqs( int sockFd );
+    int  processMonReqsGetBestNs( void );
     void monReqExec( CExternalReq * request );
     void monReqDeleteProcess( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
@@ -75,6 +76,7 @@ private:
     // commAccept thread's id
     pthread_t                      thread_id_;
 
+    enum { HEURISTIC_COUNT = 10 };
 };
 
 #endif

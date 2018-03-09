@@ -46,12 +46,16 @@ public:
     int  ProcessNew(CProcess* process );
 
 private:
-    char mon2nsPort_[MAX_PROCESSOR_NAME+100];
+    char mon2nsHost_[MAX_PROCESSOR_NAME];
+    char mon2nsPort_[10];
     int  mon2nsSock_;
+    int  nsConfigInx_;
     bool nsStartupComplete_;
     int  seqNum_;
 
-    int  ConnectToNs( void );
+    void ChooseNextNs( void );
+    int  ConnectToNs( bool *retry );
+    void GetM2NPort( int PNid );
     int  SendReceive( struct message_def* msg );
     int  SendToNs( const char *reqType, struct message_def *msg, int size );
     void SockClose( void );

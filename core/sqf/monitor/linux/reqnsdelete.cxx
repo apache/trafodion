@@ -142,7 +142,7 @@ void CExtNameServerDeleteReq::performRequest()
         else
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+            sprintf(la_buf, "[%s], Failed to retrieve ClusterConfig object!\n",
                     method_name);
             mon_log_write(MON_REQ_NAMESERVER_DELETE_4, SQ_LOG_CRIT, la_buf);
 

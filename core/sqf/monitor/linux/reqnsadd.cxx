@@ -154,7 +154,7 @@ void CExtNameServerAddReq::performRequest()
             else
             {
                 char la_buf[MON_STRING_BUF_SIZE];
-                sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+                sprintf(la_buf, "[%s], Failed to retrieve NameServerConfig object!\n",
                         method_name);
                 mon_log_write(MON_REQ_NAMESERVER_ADD_3, SQ_LOG_CRIT, la_buf);
     
@@ -164,7 +164,7 @@ void CExtNameServerAddReq::performRequest()
         else
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+            sprintf(la_buf, "[%s], Failed to retrieve ClusterConfig object!\n",
                     method_name);
             mon_log_write(MON_REQ_NAMESERVER_ADD_4, SQ_LOG_CRIT, la_buf);
 
