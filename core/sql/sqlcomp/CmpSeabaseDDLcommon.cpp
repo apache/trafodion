@@ -177,13 +177,13 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
 
 short CmpSeabaseDDL::switchBackCompiler()
 {
-  ComDiagsArea * tempDiags = NULL;
+
+  Lng32 diagsMark = 0;
   if (cmpSwitched_)
-    {
-      tempDiags = ComDiagsArea::allocate(heap_);
-      tempDiags->mergeAfter(*CmpCommon::diags());
-    }
-  
+  {
+     if (CmpCommon::diags() != NULL)
+        diagsMark = CmpCommon::diags()->mark(); 
+  }
   // do restore here even though switching may not have happened, i.e.
   // when switchToCompiler() was not called by the embedded CI, see above.
   restoreAllControlsAndFlags();
@@ -191,11 +191,7 @@ short CmpSeabaseDDL::switchBackCompiler()
   if (cmpSwitched_)
     {
       // ignore new (?) from restore call but restore old diags
-      CmpCommon::diags()->clear();
-      CmpCommon::diags()->mergeAfter(*tempDiags);
-      tempDiags->clear();
-      tempDiags->deAllocate();
-  
+      CmpCommon::diags()->rewind(diagsMark, TRUE);
       // switch back to the original commpiler, ignore return error
       SQL_EXEC_SWITCH_BACK_COMPILER();
 

@@ -2525,11 +2525,12 @@ void ContextCli::createMxcmpSession()
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect(pMessage,
                                (ULng32) sizeof(userMessage), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::DATABASE_USER,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2544,6 +2545,11 @@ void ContextCli::createMxcmpSession()
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -2725,11 +2731,12 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect((char *) &flags,
                                (ULng32) sizeof(Lng32), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::END_SESSION,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2744,6 +2751,11 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -3033,7 +3045,7 @@ ExSqlComp::ReturnStatus ContextCli::sendXnMsgToArkcmp
            CmpMessageObj::MessageTypeEnum(xnMsgType),
            dummyReply, dummyLength,
            currCtxt->getSqlParserFlags(),
-           NULL, 0);
+           NULL, 0, diagsArea);
       if (cmpRet != 0)
         {
           char emsText[120];
@@ -3116,7 +3128,7 @@ Lng32 ContextCli::setSecInvalidKeys(
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   tempDiagsArea->clear();
  
-  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(
+  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
                                  cliGlobals->myNodeName(), 
                                  cliGlobals->myCpu(), tempDiagsArea);
   if (ssmpServer == NULL)
@@ -3284,7 +3296,7 @@ ExStatisticsArea *ContextCli::getMergedStats(
   }
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
-  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, 
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(exHeap(), nodeName, 
            (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDiagsArea);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_

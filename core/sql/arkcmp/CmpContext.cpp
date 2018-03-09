@@ -763,7 +763,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
                           char *&gen_code, UInt32 &gen_code_len,
                           UInt32 parserFlags, const char *parentQid,
                           Int32 parentQidLen,
-                          ComDiagsArea *diagsArea)
+                          ComDiagsArea *&diagsArea)
 {
 
   CmpStatement::ReturnStatus rs = CmpStatement::CmpStatement_SUCCESS;
@@ -1081,10 +1081,14 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
       }
   }
 
-  // get any errors or warnings from compilation out before distroy it
-  if (diagsArea)
-    diagsArea->mergeAfter(*CmpCommon::diags());
-
+  ComDiagsArea *compileDiagsArea = CmpCommon::diags();
+  if (compileDiagsArea->getNumber() > 0)
+  {
+     // get any errors or warnings from compilation out before distroy it
+     if (diagsArea == NULL)
+       diagsArea = ComDiagsArea::allocate(outHeap);
+     diagsArea->mergeAfter(*compileDiagsArea);
+  }
   // cleanup and return
   if (cmpStatement && cmpStatement->readyToDie())
     delete cmpStatement;

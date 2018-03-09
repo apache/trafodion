@@ -197,7 +197,7 @@ short ExControlTcb::work()
       {
          
         NAHeap *arkcmpHeap = currCtxt->exHeap();
-	ComDiagsArea *da = ComDiagsArea::allocate(getHeap());
+	ComDiagsArea *da = NULL;
         cmpStatus = CmpCommon::context()->compileDirect(
                                (char *) data, dataLen, arkcmpHeap,
                                SQLCHARSETCODE_UTF8,
@@ -217,11 +217,12 @@ short ExControlTcb::work()
             
 	    // da->clear();
             getHeap()->deallocateMemory(emsText);
+            if (da != NULL)
+               da->decrRefCount();
           }
         else
           saveControl = TRUE; // need to save control to exe ControlInfoTable
 
-        da->decrRefCount();
         if (dummyReply != NULL)
           {
             arkcmpHeap->deallocateMemory((void*)dummyReply);

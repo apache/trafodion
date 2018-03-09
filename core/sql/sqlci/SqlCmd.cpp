@@ -146,10 +146,30 @@ void SqlCmd::clearCLIDiagnostics()
 
 volatile Int32 breakReceived = 0;
 
-void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
+void HandleCLIError(SQLSTMT_ID *stmt, Lng32 &error, SqlciEnv *sqlci_env,
 		    NABoolean displayErr, NABoolean * isEOD,
                                Int32 prepcode)
 {
+  Int64 diagsCondCount = 0;
+  if (error == 100) 
+     diagsCondCount = getDiagsCondCount(stmt); 
+  NABoolean getWarningWithEOF = (diagsCondCount > 0); 
+  HandleCLIError(error, sqlci_env, displayErr, isEOD, prepcode, getWarningWithEOF);
+}
+
+void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
+		    NABoolean displayErr, NABoolean * isEOD,
+                               Int32 prepcode, NABoolean getWarningsWithEOF)
+{
+  if (error == 100) 
+  {
+     if (isEOD != NULL)
+        *isEOD = 1;
+     if (! getWarningsWithEOF) {
+        SqlCmd::clearCLIDiagnostics();
+        return;
+     }
+  }
   if (isEOD)
     *isEOD = 0;
 
@@ -366,7 +386,7 @@ void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
 #endif
 			outtext += pfxl;
 		    
-		    #ifdef USE_WCHAR
+#ifdef USE_WCHAR
 		    if (showSQLSTATE)
 		      {
 			$$do something here$$
@@ -429,7 +449,8 @@ void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
 
 } // HandleCLIError
 
-void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env)
+
+void handleLocalError(ComDiagsArea *diags, SqlciEnv *sqlci_env)
 {
   Logfile *log = sqlci_env->get_logfile();
 
@@ -440,10 +461,10 @@ void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env)
   // when HandleCLIError() is called with a error after a CLI call.
   // Soln :10-021203-3433
 
-  if (diags.getNumber(DgSqlCode::ERROR_)) {
+  if (diags->getNumber(DgSqlCode::ERROR_)) {
      worstcode = SQL_Error;
   }
-  else if (diags.getNumber(DgSqlCode::WARNING_)) {
+  else if (diags->getNumber(DgSqlCode::WARNING_)) {
     worstcode = SQL_Warning;
   }
 
@@ -451,12 +472,37 @@ void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env)
   lastLineWasABlank = TRUE;
 
   ostringstream errMsg;
-  NADumpDiags(errMsg, &diags, TRUE/*newline*/, 0, NULL, log->isVerbose(),
+  NADumpDiags(errMsg, diags, TRUE/*newline*/, 0, NULL, log->isVerbose(),
               sqlci_env->getTerminalCharset());
 
   errMsg << ends;
 
   log->WriteAllWithoutEOL(errMsg.str().c_str());
+}
+
+Int64 getRowsAffected(SQLSTMT_ID *stmt)
+{
+   Int32 rc;
+   rc = SQL_EXEC_GetDiagnosticsStmtInfo2(stmt,
+                           SQLDIAG_ROW_COUNT, &rowsAffected,
+                           NULL, 0, NULL);
+   if (rc == 0)
+      return rowsAffected; 
+   else
+      return -1;
+}
+
+Int64 getDiagsCondCount(SQLSTMT_ID *stmt)
+{
+   Int32 rc;
+   Int64 diagsCondCount;
+   rc = SQL_EXEC_GetDiagnosticsStmtInfo2(stmt,
+                           SQLDIAG_NUMBER, &diagsCondCount,
+                           NULL, 0, NULL);
+   if (rc == 0)
+      return 0; 
+   else
+      return diagsCondCount;
 }
 
 static char * upshiftStr(char * inStr, char * outStr, UInt32 len)
@@ -1384,7 +1430,7 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
   Lng32 retcode = 0;
   Int32 num_named_params = 0;
   SqlciList<Param>    *unnamed_param_list = NULL;
-  ComDiagsArea diags(&sqlci_Heap);
+  ComDiagsArea *diags = NULL;
 
   SQLDESC_ID * input_desc  = prep_stmt->getInputDesc();
 
@@ -1546,21 +1592,27 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 		NABoolean error = FALSE;
 		
                 Lng32 inLength = length;
-                Int32 previousEntry = diags.getNumber();
+
+                Int32 previousEntry = 0;
+       
+                if (diags != NULL)
+                    previousEntry = diags->getNumber(DgSqlCode::ERROR_);
 		
 		if ( DFS2REC::isAnyCharacter(datatype) ) 
 		  scale = (Lng32)charset; // pass in target charset in argument 'scale'
 		
 		retcode = param->convertValue(sqlci_env, datatype, length,
-					      precision, scale, vcIndLen, &diags);
-                Int32 newestEntry = diags.getNumber();
+					      precision, scale, vcIndLen, diags);
+                Int32 newestEntry = 0;
+                if (diags != NULL)
+                    newestEntry = diags->getNumber(DgSqlCode::ERROR_);
 		
 		//if the convertValue gets a string overflow warning, convert
 		//it to error for non characters and it remains warning for characters
 		if (newestEntry > previousEntry) {
-		  if (diags[newestEntry].getSQLCODE() == EXE_STRING_OVERFLOW ){
+		  if (diags->getErrorEntry(newestEntry)->getSQLCODE() == EXE_STRING_OVERFLOW ){
 		    if (!DFS2REC::isAnyCharacter(datatype)) {
-		      diags.negateCondition(newestEntry-1);
+		      diags->negateCondition(newestEntry-1);
 		      error = TRUE;
 		    }
 		  }
@@ -1665,7 +1717,9 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 		  NAString srcval(param->getDisplayValue(sqlci_env->getTerminalCharset()));
 		  if (srcval.isNull()) srcval = "''";	// empty string literal
 		  
-		  diags << DgSqlCode(-SQLCI_PARAM_BAD_CONVERT)
+                  if (diags == NULL)
+                     diags = ComDiagsArea::allocate(&sqlci_Heap);
+		  *diags << DgSqlCode(-SQLCI_PARAM_BAD_CONVERT)
 			<< DgString0(Param::getExternalName(param_name))
 			<< DgString1(srcval)
 			<< DgString2(tgttype);
@@ -1673,7 +1727,9 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 	      } // not null param
 	    }	// if param
 	  else {
-	    diags << DgSqlCode(-SQLCI_PARAM_NOT_FOUND)
+            if (diags == NULL)
+                diags = ComDiagsArea::allocate(&sqlci_Heap);
+	    *diags << DgSqlCode(-SQLCI_PARAM_NOT_FOUND)
 		  << DgString0(Param::getExternalName(param_name));
 	  }
 	  
@@ -1701,16 +1757,18 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
   if (numUnnamedParams > 0 &&
       numUnnamedParams > num_input_entries - num_named_params)
     {
+       if (diags == NULL)
+          diags = ComDiagsArea::allocate(&sqlci_Heap);
       // Warning only, so continue processing after this!
-      diags << DgSqlCode(+SQLCI_EXTRA_PARAMS_SUPPLIED)	// + (i.e. warning)
+      *diags << DgSqlCode(+SQLCI_EXTRA_PARAMS_SUPPLIED)	// + (i.e. warning)
 	    << DgInt0(numUnnamedParams)
 	    << DgInt1(num_input_entries - num_named_params);
     }
   
-  if (diags.getNumber())
+  if (diags != NULL)
     {
       handleLocalError(diags, sqlci_env);
-      if (diags.getNumber(DgSqlCode::ERROR_)) {
+      if (diags->getNumber(DgSqlCode::ERROR_)) {
 	return SQL_Error;
       }
     }
@@ -1782,7 +1840,6 @@ short SqlCmd::doExec(SqlciEnv * sqlci_env,
 		     CharInfo::CharSet* unnamedParamCharSetArray,
 		     NABoolean handleError)
 {
-  ComDiagsArea diags(&sqlci_Heap);
   Lng32 retcode = 0;
   rowsAffected = 0;
   SqlciList<Param>    *unnamed_param_list = NULL;
@@ -1809,8 +1866,11 @@ short SqlCmd::doExec(SqlciEnv * sqlci_env,
   if (unnamed_param_list)
     delete unnamed_param_list;
 
+  if (retcode > 0)
+     getRowsAffected(stmt);
   return (short)retcode;
 } // SqlCmd::doExec
+
 short SqlCmd::doFetch(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt,
 		      PrepStmt * prep_stmt,
 		      NABoolean firstFetch,
@@ -1827,7 +1887,7 @@ short SqlCmd::doFetch(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt,
 
   NABoolean isEOD = 0;
   if (handleError)
-    HandleCLIError(retcode, sqlci_env, TRUE, &isEOD,prepcode);
+    HandleCLIError(stmt, retcode, sqlci_env, TRUE, &isEOD,prepcode);
   if (isEOD)
     retcode = SQL_Eof;
 
@@ -1871,7 +1931,8 @@ short SqlCmd::doClearExecFetchClose(SqlciEnv * sqlci_env,
   if (handleError)
     HandleCLIError(retcode, sqlci_env, TRUE);
 
-
+  if (retcode > 0)
+     getRowsAffected(stmt);
   return (short)retcode;
 }
 
@@ -2047,7 +2108,6 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
                          CharInfo::CharSet* unnamedParamCharSetArray,
                          Int32 prepcode)
 {
-  ComDiagsArea diags(&sqlci_Heap);
   Lng32 retcode = 0;
   //short ret;
   Logfile *log = sqlci_env->get_logfile();
@@ -2317,6 +2377,7 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
 	  }
 	HandleCLIError(retcode, sqlci_env);
       }
+    getRowsAffected(stmt); 
     
   } // retcode >= 0
   
@@ -3754,7 +3815,8 @@ short Cursor::close(SqlciEnv * sqlci_env, char * donemsg,
   
   retcode = SQL_EXEC_CloseStmt(cursor->cursorStmtId());
   HandleCLIError(retcode, sqlci_env);
-  
+  if (retcode > 0)
+     getRowsAffected(cursor->cursorStmtId());  
   if (donemsg)
     sprintf(donemsg, OP_COMPLETE_MESSAGE);
   

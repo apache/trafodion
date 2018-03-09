@@ -2088,17 +2088,17 @@ Lng32 ExeCliInterface::deleteContext(char* contextHandle) // in buf contains con
   return SQL_EXEC_DeleteContext(*(SQLCTX_HANDLE*)contextHandle);
 }
 
-Lng32 ExeCliInterface::retrieveSQLDiagnostics(ComDiagsArea * toDiags)
+Lng32 ExeCliInterface::retrieveSQLDiagnostics(ComDiagsArea *toDiags)
 {
   Lng32 retcode;
 
-  if (diagsArea_)
+  if (diagsArea_ != NULL)
     {
       diagsArea_->clear();
       diagsArea_->deAllocate();
     }
 
-  if (toDiags)
+  if (toDiags != NULL)
     {
       retcode = SQL_EXEC_MergeDiagnostics_Internal(*toDiags);
       SQL_EXEC_ClearDiagnostics(NULL);

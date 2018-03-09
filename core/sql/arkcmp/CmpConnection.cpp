@@ -554,7 +554,9 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
   
   if (cmpStatement)
   {
-    *this << *cmpStatement->diags();
+    ComDiagsArea *diags = cmpStatement->diags();
+    if (diags->getNumber() > 0)
+       *this << *cmpStatement->diags();
     if (cmpStatement->reply()) 
       *this << *cmpStatement->reply();
   }

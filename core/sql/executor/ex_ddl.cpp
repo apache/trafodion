@@ -258,8 +258,6 @@ short ExDDLTcb::work()
           const char *parentQid = masterGlob->getStatement()->
             getUniqueStmtId();
           CmpCommon::context()->sqlSession()->setParentQid(parentQid);
-          if (cpDiagsArea == NULL)
-	    cpDiagsArea = ComDiagsArea::allocate(getHeap());
           // Despite its name, the compileDirect method is where 
           // the DDL is actually performed. 
           Int32 cpStatus = CmpCommon::context()->compileDirect(
@@ -606,8 +604,6 @@ short ExDDLwithStatusTcb::work()
               getUniqueStmtId();
             CmpCommon::context()->sqlSession()->setParentQid(parentQid);
             
-            if (cpDiagsArea == NULL)
-              cpDiagsArea = ComDiagsArea::allocate(getHeap());
             cmpStatus = CmpCommon::context()->compileDirect(
                data_, dataLen_,
                currContext->exHeap(),
@@ -987,8 +983,6 @@ short ExDescribeTcb::work()
                   getUniqueStmtId();
                 CmpCommon::context()->sqlSession()->setParentQid(parentQid);
 
-                if (da == NULL)
-                  da = ComDiagsArea::allocate(arkcmpHeap);
                 compStatus = CmpCommon::context()->compileDirect(
                                  describeTdb().query_,
                                  describeTdb().queryLen_,
