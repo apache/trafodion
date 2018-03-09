@@ -41,6 +41,9 @@
 #include "healthcheck.h"
 #ifndef NAMESERVER_PROCESS
 #include "nameserver.h"
+#include "ptpclient.h"
+extern CPtpClient *PtpClient;
+extern int NameServerEnabled;
 #endif
 
 extern int MyPNID;
@@ -1199,9 +1202,18 @@ void CIntNewProcReq::performRequest()
 
                     // Successfully forked process.  Replicate actual process
                     // id and process name.
-                    CReplProcInit *repl
-                        = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
-                    Replicator.addItem(repl);
+                    
+/* //TRK-PTP-NEW
+                    if (NameServerEnabled)
+                    {
+                        PtpClient->ProcessInit(newProcess, reqTag_, 0, parentNid_, lnode->GetNode()->GetName());
+                    }
+                    else
+                    {                    
+*/                      CReplProcInit *repl
+                            = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
+                        Replicator.addItem(repl);
+                  // }
                 }
                 else
                 {
@@ -1214,7 +1226,7 @@ void CIntNewProcReq::performRequest()
             {  
                 // Process creation failure, relay error code to node
                 // that requested process creation.
-
+//TRK-PTP-NEW
                 CReplProcInit *repl = new CReplProcInit(newProcess, reqTag_,
                                                         result, parentNid_);
                 Replicator.addItem(repl);
