@@ -201,6 +201,10 @@ public:
     void    GetCpuStat ( void );
     bool    GetSchedulingData( void );
 
+#ifdef NAMESERVER_PROCESS
+    inline void AddMonConnCount( int add ) { monConnCount_ += add; }
+#endif
+
     inline unsigned int GetFreeCache( void ) { return( freeCache_ ); }
     inline unsigned int GetFreeMemory( void )
                       { return( memInfoData_[memFree] ); }
@@ -233,6 +237,7 @@ public:
     inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
 #ifdef NAMESERVER_PROCESS
     inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
+    inline int GetMonConnCount( void ) { return monConnCount_; }
 #endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
@@ -397,6 +402,7 @@ private:
     string        syncPort_;          // monitor socket allgather port
 #ifdef NAMESERVER_PROCESS
     string        mon2NsPort_;        // monitor to ns port
+    int           monConnCount_;      // monitor connections
 #endif
     int           commSocketPort_;          // re-integration socket port
     int           syncSocketPort_;          // algather socket port
