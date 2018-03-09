@@ -115,6 +115,7 @@ bool IAmIntegrated = false;
 char IntegratingMonitorPort[MPI_MAX_PORT_NAME] = {'\0'};
 bool IsRealCluster = true;
 bool IsAgentMode = false;
+bool IsNameServer = false;
 bool IsMaster = false;
 bool IsMPIChild = false;
 char MasterMonitorName[MAX_PROCESS_PATH]= {'\0'};
@@ -158,8 +159,10 @@ CCommAcceptMon CommAcceptMon;
 #endif
 extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
+#ifndef NAMESERVER_PROCESS
 // Seabed disconnect semaphore
 RobSem * sbDiscSem = NULL;
+#endif
 int monitorArgc = 0;
 char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
 
@@ -366,8 +369,8 @@ CMonitor::CMonitor (int procTermSig)
     , NumOutstandingIO (0)
     , NumOutstandingSends (0)
     , Last_error (MPI_SUCCESS)
-    , processMapFd ( -1 )
 #ifndef NAMESERVER_PROCESS
+    , processMapFd ( -1 )
     , procTermSig_ ( procTermSig )
 #endif
 {
@@ -392,10 +395,12 @@ CMonitor::~CMonitor (void)
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "mntr", 4);
 
+#ifndef NAMESERVER_PROCESS
     if ( processMapFd != -1)
     {
         close ( processMapFd );
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -425,6 +430,7 @@ void CMonitor::DecrProcessCount (void)
     ProcessCount--;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CMonitor::openProcessMap ( void )
 {
     char fname[MAX_PROCESS_PATH];
@@ -436,13 +442,8 @@ void CMonitor::openProcessMap ( void )
         PidMap = true;
     }
 
-#ifdef NAMESERVER_PROCESS
-    snprintf( fname, sizeof(fname), "%s/trafns.map.%d.%s",
-             getenv("MPI_TMPDIR"), MyPNID, Node_name );
-#else
     snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
              getenv("MPI_TMPDIR"), MyPNID, Node_name );
-#endif
     remove(fname);
     processMapFd = open(fname, O_WRONLY | O_APPEND | O_CREAT,
                         S_IRUSR | S_IWUSR );
@@ -455,13 +456,17 @@ void CMonitor::openProcessMap ( void )
         mon_log_write(MON_PROCESS_COMPLETEPSTARTUP_2, SQ_LOG_ERR, buf);
     }
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CMonitor::writeProcessMapEntry ( const char * buf )
 {
     if ( processMapFd != -1 )
         write( processMapFd, buf, strlen(buf));
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CMonitor::writeProcessMapBegin( const char *name
                                    , int nid
                                    , int pid
@@ -483,7 +488,9 @@ void CMonitor::writeProcessMapBegin( const char *name
             , parentNid, parentPid, parentVerifier, program);
     writeProcessMapEntry ( buf );
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CMonitor::writeProcessMapEnd( const char *name
                                  , int nid
                                  , int pid
@@ -505,6 +512,7 @@ void CMonitor::writeProcessMapEnd( const char *name
             , parentNid, parentPid, parentVerifier, program);
     writeProcessMapEntry ( buf );
 }
+#endif
 
 bool CMonitor::CompleteProcessStartup (struct message_def * msg)
 {
@@ -1109,6 +1117,10 @@ int main (int argc, char *argv[])
 
     const char method_name[] = "main";
 
+#ifdef NAMESERVER_PROCESS
+    IsNameServer = true;
+#endif
+
     if (argc < 2) {
       printf("error: monitor needs an argument...exitting...\n");
       exit(0);
@@ -1153,7 +1165,7 @@ int main (int argc, char *argv[])
         }
     }
 
-    if ( IsAgentMode )
+    if ( IsAgentMode || IsNameServer )
     {
         MON_Props xprops( true );
         xprops.load( "monitor.env" );
@@ -1262,10 +1274,6 @@ int main (int argc, char *argv[])
             argv[arg] = NULL;
             argc -= 11;
         }
-        else
-        {
-            abort(); // TODO
-        }
     }
 #else
     monitorArgc = argc;
@@ -1307,7 +1315,9 @@ int main (int argc, char *argv[])
 
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
+#ifndef NAMESERVER_PROCESS
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
+#endif
 
     MonLog->setPNid( MyPNID );
 
@@ -1603,7 +1613,7 @@ int main (int argc, char *argv[])
             bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
             if (ClusterConfig->Initialize( traceEnabled, MonTrace->getTraceFileName()))
             {
-                if (!ClusterConfig->LoadConfig())
+                if (!ClusterConfig->LoadConfig( IsNameServer && IsRealCluster ))
                 {
                      char la_buf[MON_STRING_BUF_SIZE];
                      sprintf(la_buf, "[%s], Failed to load cluster configuration.\n", method_name);
@@ -1730,9 +1740,9 @@ int main (int argc, char *argv[])
             }
         }
 
+        NameServerConfig = new CNameServerConfigContainer ();
         Nodes = new CNodeContainer (); 
         Config = new CConfigContainer ();
-        NameServerConfig = new CNameServerConfigContainer ();
 #ifdef NAMESERVER_PROCESS
         Monitor = new CMonitor ();
 #else
@@ -1863,8 +1873,10 @@ int main (int argc, char *argv[])
 #ifdef NAMESERVER_PROCESS
         CommAcceptMon.start();
 #endif
+#ifndef NAMESERVER_PROCESS
         // Open file used to record process start/end times
         Monitor->openProcessMap ();
+#endif
 
 #ifndef NAMESERVER_PROCESS
         // Always using localio now, no other option
@@ -2026,6 +2038,7 @@ int main (int argc, char *argv[])
         }
     }
 
+#ifndef NAMESERVER_PROCESS
     // Initialize Seabed disconnect semaphore
     char *port;
     switch( CommType )
@@ -2070,7 +2083,7 @@ int main (int argc, char *argv[])
             sbDiscSem = NULL;
         }
     }
-
+#endif
 
     // Create request worker threads
     CReqWorker::startReqWorkers();
@@ -2223,10 +2236,13 @@ int main (int argc, char *argv[])
     Monitor = NULL; // TRACE uses this
     delete Config;
 
+#ifndef NAMESERVER_PROCESS
     if ( sbDiscSem != NULL )
     {
         RobSem::destroy_sem( sbDiscSem );
     }
+#endif
+
     if ( CommType == CommType_InfiniBand )
     {
         MPI_Close_port( MyCommPort );
