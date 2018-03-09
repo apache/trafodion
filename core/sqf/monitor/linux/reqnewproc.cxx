@@ -36,6 +36,11 @@ extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CDeviceContainer *Devices;
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+extern CPtpClient *PtpClient;
+extern int NameServerEnabled;
+#endif
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
@@ -523,8 +528,17 @@ void CExtNewProcReq::performRequest()
                     process->userArgs (  msg_->u.request.u.new_process.argc,
                                          msg_->u.request.u.new_process.argv );
                     // Replicate the process to other nodes
-                    CReplProcess *repl = new CReplProcess(process);
-                    Replicator.addItem(repl);
+                    
+/*// TRK-PTP-NEW 
+                    if (NameServerEnabled)
+                    {
+                        PtpClient->NewProcess(process, lnode->GetNid(), lnode->GetNode()->GetName());
+                    }
+                    else
+                    {
+*/                      CReplProcess *repl = new CReplProcess(process);
+                        Replicator.addItem(repl);
+  //                  }
                 }
             }
             if (process)

@@ -301,6 +301,8 @@ public:
     inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
 #ifdef NAMESERVER_PROCESS
     inline void SetMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
+#else
+    inline void SetMon2MonPort( char *mon2MonPort) { mon2MonPort_ = mon2MonPort; }  
 #endif
     //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
     inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
@@ -397,6 +399,8 @@ private:
     string        syncPort_;          // monitor socket allgather port
 #ifdef NAMESERVER_PROCESS
     string        mon2NsPort_;        // monitor to ns port
+#else
+    string        mon2MonPort_;
 #endif
     int           commSocketPort_;          // re-integration socket port
     int           syncSocketPort_;          // algather socket port

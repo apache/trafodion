@@ -108,6 +108,8 @@ public:
     int  AcceptSyncSock( void );
 #ifdef NAMESERVER_PROCESS
     int  AcceptMon2NsSock( void );
+#else
+    int  AcceptMon2MonSock( void );
 #endif
     int  Connect( const char *portName );
     void ConnectToSelf( void );
@@ -221,6 +223,8 @@ protected:
     int            syncSock_;
 #ifdef NAMESERVER_PROCESS
     int            mon2nsSock_;
+#else
+    int            mon2monSock_;
 #endif
     int            epollFD_;
     int           *indexToPnid_;

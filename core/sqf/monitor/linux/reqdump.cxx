@@ -103,6 +103,7 @@ void CExtDumpReq::performRequest()
                     , msg_->u.request.u.dump.path);
     }
 
+
     target_nid = msg_->u.request.u.dump.target_nid;
     target_pid = msg_->u.request.u.dump.target_pid;
     target_process_name = (const char *) msg_->u.request.u.dump.target_process_name;
