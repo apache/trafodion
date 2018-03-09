@@ -750,6 +750,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                 if ( NameServerEnabled )
                     NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
 
+//TRK-PTP-NEW - ??
                 // Replicate the clone to other nodes
                 CReplClone *repl = new CReplClone(this);
                 Replicator.addItem(repl);

@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////
 //
 // @@@ START COPYRIGHT @@@
 //
@@ -79,6 +79,8 @@ extern char MyMPICommPort[MPI_MAX_PORT_NAME];
 extern char MySyncPort[MPI_MAX_PORT_NAME];
 #ifdef NAMESERVER_PROCESS
 extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
+#else
+extern char MyMon2MonPort[MPI_MAX_PORT_NAME];
 #endif
 extern bool SMSIntegrating;
 extern int CreatorShellPid;
@@ -8261,6 +8263,8 @@ void CCluster::InitServerSock( void )
     int serverSyncPort = 0;
 #ifdef NAMESERVER_PROCESS
     int mon2nsPort = 0;
+#else
+    int mon2monPort = 0;
 #endif
 
     unsigned char addr[4];
@@ -8418,6 +8422,58 @@ void CCluster::InitServerSock( void )
                         , MyNode->GetMon2NsPort() );
 
     }
+#else
+    env = getenv("MONITOR_COMM_PORT");
+    if ( env )
+    {
+        int val;
+        errno = 0;
+        val = strtol(env, NULL, 10);
+        if ( errno == 0) mon2monPort = val;
+    }
+    else
+    {
+       mon2monPort = 23399; 
+    }
+
+    // For virtual env, add PNid to the port so we can still test without collisions of port numbers
+    if (!IsRealCluster)
+    {
+        mon2monPort += MyNode->GetPNid();
+    }
+    mon2monSock_ = MkSrvSock( &mon2monPort );
+
+
+    if ( mon2monSock_ < 0 )
+    {
+        char ebuff[256];
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] MkSrvSock(MON2MONSERVER_COMM_PORT=%d) error: %s\n"
+                , method_name, __LINE__, mon2monPort
+                , strerror_r( errno, ebuff, 256 ) );
+        mon_log_write( MON_CLUSTER_INITSERVERSOCK_4, SQ_LOG_CRIT, buf );
+        abort();
+    }
+    else
+    {
+        snprintf( MyMon2MonPort, sizeof(MyMon2MonPort)
+                , "%d.%d.%d.%d:%d"
+                , (int)((unsigned char *)addr)[0]
+                , (int)((unsigned char *)addr)[1]
+                , (int)((unsigned char *)addr)[2]
+                , (int)((unsigned char *)addr)[3]
+                , mon2monPort );
+        MyNode->SetMon2MonPort( MyMon2MonPort );
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d Initialized my comm socket port, "
+                          "pnid=%d (%s:%s) (commPort=%s)\n"
+                        , method_name, __LINE__
+                        , MyPNID, MyNode->GetName(), MyMon2MonPort
+                        , MyNode->GetCommPort() );
+
+    }
 #endif
 
     epollFD_ = epoll_create1( EPOLL_CLOEXEC );
@@ -8455,6 +8511,20 @@ int CCluster::AcceptSyncSock( void )
     TRACE_EXIT;
     return( csock  );
 }
+
+#ifndef NAMESERVER_PROCESS
+int CCluster::AcceptMon2MonSock( void )
+{
+    const char method_name[] = "CCluster::AcceptMon2MonSock";
+    TRACE_ENTRY;
+ 
+    int csock = AcceptSock( mon2monSock_ );
+     
+    TRACE_EXIT;
+    return( csock  );
+}
+#endif
+
 
 int CCluster::AcceptSock( int sock )
 {
@@ -8789,7 +8859,6 @@ int CCluster::MkSrvSock( int *pport )
     unsigned int size; // size of socket address
 #endif
     struct sockaddr_in  sockinfo;   // socket address info
-
     sock = socket( AF_INET, SOCK_STREAM, 0 );
     if ( sock < 0 )
     {
@@ -8831,7 +8900,6 @@ int CCluster::MkSrvSock( int *pport )
     } while ( err && 
              (errno == EADDRINUSE) &&
              (++lv_bind_tries < 4) );
-
     if ( err )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -8842,7 +8910,6 @@ int CCluster::MkSrvSock( int *pport )
         close( sock );
         return ( -1 );
     }
-
     if ( pport )
     {
         if ( getsockname( sock, (struct sockaddr *) &sockinfo, &size ) )
@@ -8858,7 +8925,6 @@ int CCluster::MkSrvSock( int *pport )
 
         *pport = (int) ntohs( sockinfo.sin_port );
     }
-
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
         unsigned char *addrp = (unsigned char *) &sockinfo.sin_addr.s_addr;
@@ -8888,7 +8954,6 @@ int CCluster::MkSrvSock( int *pport )
         close( sock );
         return ( -1 );
     }
-
     TRACE_EXIT;
     return ( sock );
 }

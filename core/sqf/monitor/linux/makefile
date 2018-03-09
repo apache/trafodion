@@ -112,6 +112,7 @@ MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
 MONITORSRC += healthcheck.cxx
 MONITORSRC += commaccept.cxx
+MONITORSRC += ptpcommaccept.cxx
 ifeq ($(USE_DMALLOC),1)
     MONITORSRC += $(OUTDIR)/dm.cxx
 endif
@@ -181,6 +182,7 @@ MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
 MONITOROBJS += $(OUTDIR)/healthcheck.o
 MONITOROBJS += $(OUTDIR)/commaccept.o
+MONITOROBJS += $(OUTDIR)/ptpcommaccept.o
 ifeq ($(USE_DMALLOC),1)
     MONITOROBJS += $(OUTDIR)/dm.o
 endif
@@ -225,6 +227,7 @@ MONITOROBJS += $(OUTDIR)/monrobsem.o
 MONITOROBJS += $(OUTDIR)/CommonLogger.o
 MONITOROBJS += $(OUTDIR)/zclient.o
 MONITOROBJS += $(OUTDIR)/type2str.o
+MONITOROBJS += $(OUTDIR)/ptpclient.o
 
 NSOBJS = $(OUTDIR)/versns.o
 NSOBJS += $(OUTDIR)/nsmonitor.o

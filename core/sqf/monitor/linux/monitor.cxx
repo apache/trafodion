@@ -85,6 +85,11 @@ using namespace std;
 
 #include "SCMVersHelp.h"
 
+#ifndef NAMESERVER_PROCESS
+#include "ptpcommaccept.h"
+#include "ptpclient.h"
+#endif
+
 #define LOG_ERROR
 #define RidRecvPrioritySlot 4096
 #define MinimumSlotToPrioritize 4096
@@ -104,6 +109,8 @@ char MyMPICommPort[MPI_MAX_PORT_NAME] = {'\0'};
 char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
 #ifdef NAMESERVER_PROCESS
 char MyMon2NsPort[MPI_MAX_PORT_NAME] = {'\0'};
+#else
+char MyMon2MonPort[MPI_MAX_PORT_NAME] = {'\0'};
 #endif
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
@@ -135,6 +142,7 @@ CMonitor *Monitor = NULL;
 #ifndef NAMESERVER_PROCESS
 CNameServer *NameServer = NULL;
 CProcess *NameServerProcess = NULL;
+CPtpClient *PtpClient = NULL;
 #endif
 CNodeContainer *Nodes = NULL;
 CConfigContainer *Config = NULL;
@@ -156,6 +164,8 @@ CHealthCheck HealthCheck;
 CCommAccept CommAccept;
 #ifdef NAMESERVER_PROCESS
 CCommAcceptMon CommAcceptMon;
+#else
+CPtpCommAccept PtpCommAccept;
 #endif
 extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
@@ -1752,7 +1762,10 @@ int main (int argc, char *argv[])
         env = getenv("NAMESERVER_ENABLE");
         if ( env && isdigit(*env) )
             NameServerEnabled = atoi(env);
+
         NameServer = new CNameServer ();
+        PtpClient = new CPtpClient ();
+
 #endif
 
         if ( IsAgentMode )
@@ -1872,6 +1885,8 @@ int main (int argc, char *argv[])
         CommAccept.start();
 #ifdef NAMESERVER_PROCESS
         CommAcceptMon.start();
+#else
+        PtpCommAccept.start();
 #endif
 #ifndef NAMESERVER_PROCESS
         // Open file used to record process start/end times
@@ -1879,6 +1894,7 @@ int main (int argc, char *argv[])
 #endif
 
 #ifndef NAMESERVER_PROCESS
+
         // Always using localio now, no other option
         SQ_theLocalIOToClient = new SQ_LocalIOToClient( MyPNID );
         assert (SQ_theLocalIOToClient);
@@ -2215,6 +2231,7 @@ int main (int argc, char *argv[])
 #ifndef NAMESERVER_PROCESS
     // Tell the LIO worker threads to exit
     SQ_theLocalIOToClient->shutdownWork();
+    PtpCommAccept.shutdownWork();
 #endif
 
     CommAccept.shutdownWork();
