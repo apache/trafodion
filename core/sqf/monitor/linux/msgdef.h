@@ -230,6 +230,10 @@ typedef enum {
     ReqType_Kill,                           // stop and cleanup the identified process
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
+    ReqType_NameServerAdd,                  // add nameserver to configuration database
+    ReqType_NameServerDelete,               // delete nameserver from configuration database
+    ReqType_NameServerDown,                 // take down the identified nameserver
+    ReqType_NameServerUp,                   // bring up the identified nameserver
     ReqType_NewProcess,                     // process is request server to be spawned
     ReqType_NewProcessNs,                   // new process
     ReqType_NodeAdd,                        // add node to configuration database
@@ -325,7 +329,6 @@ typedef enum {
                                             // types, add any new message types 
                                             // before this one
 } MSGTYPE;
-
 typedef TcProcessType_t PROCESSTYPE;
 
 typedef enum {
@@ -504,6 +507,34 @@ struct Mount_reply_def
     DEVICESTATE  mirror_state;              // State of mirror device
     int          return_code;               // mpi error code of spawn operation
 }; 
+
+struct NameServerAdd_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerDelete_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerDown_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
+
+struct NameServerUp_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+};
 
 struct NewProcess_def
 {
@@ -1131,6 +1162,10 @@ struct request_def
         struct Get_def               get;
         struct Mount_def             mount;
         struct Kill_def              kill;
+        struct NameServerAdd_def     nameserver_add;
+        struct NameServerDelete_def  nameserver_delete;
+        struct NameServerDown_def    nameserver_down;
+        struct NameServerUp_def      nameserver_up;
         struct NewProcess_def        new_process;
         struct NewProcessNs_def      new_process_ns;
         struct NodeAdd_def           node_add;

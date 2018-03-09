@@ -119,6 +119,33 @@ sub addDbClusterData {
     $insDbClusterDataStmt->execute;
 }
 
+sub addDbNameServer {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $nodeName    = $_[0];
+
+    my $insDbNameServerStmt = $DBH->prepare("insert into monRegNameServer values (?, ?)");
+
+    $insDbNameServerStmt->bind_param(1, $nodeName);
+    $insDbNameServerStmt->bind_param(2, $nodeName);
+
+    $insDbNameServerStmt->execute;
+}
+
+sub delDbNameServerData {
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $delDbNameServerStmt = $DBH->prepare("delete from monRegNameServer");
+    $delDbNameServerStmt->execute;
+}
+
 #sub addDbProcData {
 #
 #    if (not defined $DBH) {

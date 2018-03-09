@@ -41,6 +41,7 @@ using namespace std;
 #include "tclog.h"
 #include "tctrace.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 
 #define MAX_TOKEN   132
 
@@ -60,7 +61,7 @@ typedef enum {
     TrafConfType_PersistConfigKeys,   // Display persist configuration keys
     // PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
 
-    TrafConfType_PersistConfigKey     // Display persist configuration attributes of a 'key'
+    TrafConfType_PersistConfigKey,    // Display persist configuration attributes of a 'key'
     // { <persist-prefix>_PROCESS_NAME    = {$<string><nid-format>} }
     // [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG} ]
     // { <persist-prefix>_PROGRAM_NAME    = {<program-name>} }
@@ -68,12 +69,14 @@ typedef enum {
     // [ <persist-prefix>_STDOUT          = {<file-name-prefix><nid-format>} ]
     // { <persist-prefix>_PERSIST_RETRIES = {<retries> , <time-window-secs>} }
     // { <persist-prefix>_PERSIST_ZONES   = {<zid-format> [,<zid-format>] . . . }
+    TrafConfType_NameServerConfig     // Display nameserver configuration
 
 } TrafConfType_t;
 
 bool DisplayBeginEnd = false;   // Valid only with:
                                 //   TrafConfType_NodeConfig
                                 //   TrafConfType_PersistConfig
+                                //   TrafConfType_NameServerConfig
 bool DisplayShortHost = false;  // Valid only with:
                                 //   TrafConfType_NodeName
                                 //   TrafConfType_NodeName_w
@@ -82,6 +85,7 @@ char NodeName[TC_PROCESSOR_NAME_MAX] = { 0 };
 char Key[MAX_TOKEN] = { 0 };
 TrafConfType_t TrafConfType = TrafConfType_Undefined;
 CClusterConfig  ClusterConfig;
+CNameServerConfigContainer  NameServerConfig;
 
 //char Node_name[MPI_MAX_PROCESSOR_NAME];
 //int MyPNID = -1;
@@ -140,6 +144,8 @@ void DisplayUsage( void )
 "          -persist     Displays persist configuration (without begin/end brackets).\n\n"
 "          --node       Displays node configuration (with begin/end brackets).\n"
 "          --persist    Displays persist configuration (with begin/end brackets).\n\n"
+"          -nameserver  Displays nameserver configuration (without begin/end brackets).\n"
+"          --nameserver Displays nameserver configuration (with begin/end brackets).\n"
            );
 }
 
@@ -255,6 +261,52 @@ void DisplayNodeName( CLNodeConfig *lnodeConfig, bool dashW )
         }
         printf( "%s ", NodeNameStr(lnodeConfig->GetName()) );
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function/Method: DisplayNameServerConfig()
+//
+///////////////////////////////////////////////////////////////////////////////
+int DisplayNameServerConfig( void )
+{
+    int rc = 0;
+    bool prev = false;
+    CNameServerConfig *config;
+
+    if ( DisplayBeginEnd && TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "BEGIN name-server\n\n" );
+    }
+    else if ( TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\n" );
+    }
+    
+    if (NameServerConfig.GetCount() > 0)
+    {
+        config = NameServerConfig.GetFirstConfig();
+        printf( "nodes=" );
+        for ( ; config; config = config->GetNext() )
+        {
+            const char *configNodeName = config->GetName();
+            if (prev)
+                printf( "," );
+            printf( "%s", NodeNameStr(configNodeName) );
+            prev = true;
+        }
+    }
+
+    if ( DisplayBeginEnd && TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\nEND name-server\n" );
+    }
+    else if ( TrafConfType == TrafConfType_NameServerConfig )
+    {
+        printf( "\n" );
+    }
+
+    return(rc);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -517,6 +569,9 @@ int ProcessTrafConfig( void )
         case TrafConfType_PersistConfigKey:
             rc = DisplayPersistConfig( Key );
             break;
+        case TrafConfType_NameServerConfig:
+            rc = DisplayNameServerConfig( );
+            break;
         case TrafConfType_NodeId:
         case TrafConfType_PhysicalNodeId:
         case TrafConfType_ZoneId:
@@ -573,6 +628,15 @@ int main( int argc, char *argv[] )
             DisplayShortHost = true;
             TrafConfType = TrafConfType_NodeName_w;
         }
+        else if ( strcasecmp( argv [argx], "-nameserver" ) == 0 )
+        {
+            TrafConfType = TrafConfType_NameServerConfig;
+        }
+        else if ( strcasecmp( argv [argx], "--nameserver" ) == 0 )
+        {
+            DisplayBeginEnd = true;
+            TrafConfType = TrafConfType_NameServerConfig;
+        }
         else if ( strcasecmp( argv [argx], "-node" ) == 0 )
         {
             TrafConfType = TrafConfType_NodeConfig;
@@ -616,6 +680,11 @@ int main( int argc, char *argv[] )
         if ( !ClusterConfig.LoadConfig() )
         {
             printf( "Failed to load Trafodion Configuration!\n" );
+            exit( EXIT_FAILURE );
+        }
+        if ( !NameServerConfig.LoadConfig() )
+        {
+            printf( "Failed to load nameserver Configuration!\n" );
             exit( EXIT_FAILURE );
         }
     }

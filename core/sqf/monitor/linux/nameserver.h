@@ -40,26 +40,24 @@ public:
     CNameServer( void );
     virtual ~CNameServer( void );
 
-    int  InitializeNameServer( void );
-
-    int  ProcessDelete(CProcess* process);
-    int  ProcessInfo(struct message_def* msg);
-    int  ProcessInfoCont(struct message_def* msg);
-    int  ProcessNew(CProcess* process);
+    int  ProcessDelete(CProcess* process );
+    int  ProcessInfo( struct message_def* msg );
+    int  ProcessInfoCont( struct message_def* msg );
+    int  ProcessNew(CProcess* process );
 
 private:
-    int  mon2nsSock_;
-    int  seqNum_;
     char mon2nsPort_[MAX_PROCESSOR_NAME+100];
+    int  mon2nsSock_;
+    bool nsStartupComplete_;
+    int  seqNum_;
 
-    int  MkCltSock( const char *portName );
-
-    int  ReceiveSock(char *buf, int size, int sockFd);
-    int  SendReceive(struct message_def* msg);
-    int  SendSock(char *buf, int size, int sockFd);
-    int  SendToNs(const char *reqType, struct message_def *msg, int size);
-
-    int  MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port );
+    int  ConnectToNs( void );
+    int  SendReceive( struct message_def* msg );
+    int  SendToNs( const char *reqType, struct message_def *msg, int size );
+    void SockClose( void );
+    int  SockCreate();
+    int  SockReceive( char *buf, int size );
+    int  SockSend( char *buf, int size );
 };
 
 #endif

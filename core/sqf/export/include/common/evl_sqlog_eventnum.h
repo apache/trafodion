@@ -417,6 +417,7 @@
 #define MON_NODECONT_LOAD_CONFIG_1          101040701
 #define MON_NODECONT_LOAD_CONFIG_2          101040702
 #define MON_NODECONT_LOAD_CONFIG_3          101040703
+#define MON_NODECONT_LOAD_CONFIG_4          101040704
 #define MON_NODE_SHUTDOWN_1                 101040801
 #define MON_NODE_STARTPSTARTD_1             101040901
 #define MON_NODE_STARTSMSERVICE_1           101041001
@@ -428,6 +429,7 @@
 #define MON_NODE_ADDLNODES_3                101041203
 #define MON_NODE_ADDLNODES_4                101041204
 #define MON_NODE_DELETENODE_1               101041301
+#define MON_NODE_STARTNAMESERVER_1          101041401
 
 /* Module: config.cxx = 05 */
 
@@ -700,6 +702,15 @@
 #define MON_INTREQ_NODE_NAME_1              101181001
 #define MON_INTREQ_NODE_NAME_2              101181002
 #define MON_INTREQ_NODE_NAME_3              101181003
+#define MON_REQ_NAMESERVER_ADD_1            101181101
+#define MON_REQ_NAMESERVER_ADD_2            101181102
+#define MON_REQ_NAMESERVER_ADD_3            101181103
+#define MON_REQ_NAMESERVER_ADD_4            101181104
+#define MON_REQ_NAMESERVER_DELETE_1         101181201
+#define MON_REQ_NAMESERVER_DELETE_2         101181202
+#define MON_REQ_NAMESERVER_DELETE_3         101181203
+#define MON_REQ_NAMESERVER_DELETE_4         101181204
+#define MON_REQ_NAMESERVER_INFO_1           101181301
 
 /* Module: clio.cxx = 19 */
 #define MON_CLIO_ACQUIRE_MSG_1              101190101
@@ -934,6 +945,32 @@
 #define ZCONFIG_DELETECONFIGZNODE_1         101381001
 #define ZCONFIG_DELETECONFIGZNODE_2         101381002
 #define ZCONFIG_DELETECONFIGZNODE_3         101381003
+
+/* Module nscommaccept.cxx = 39 */
+#define MON_NSCOMMACCEPT_1                  101390101
+#define MON_NSCOMMACCEPT_3                  101390102
+#define MON_NSCOMMACCEPT_2                  101390103
+#define MON_NSCOMMACCEPT_4                  101390104
+#define MON_NSCOMMACCEPT_5                  101390105
+#define MON_NSCOMMACCEPT_6                  101390106
+#define MON_NSCOMMACCEPT_7                  101390107
+#define MON_NSCOMMACCEPT_8                  101390108
+#define MON_NSCOMMACCEPT_9                  101390109
+#define MON_NSCOMMACCEPT_10                 101390110
+#define MON_NSCOMMACCEPT_11                 101390111
+#define MON_NSCOMMACCEPT_12                 101390112
+#define MON_NSCOMMACCEPT_13                 101390113
+#define MON_NSCOMMACCEPT_14                 101390114
+#define MON_NSCOMMACCEPT_15                 101390115
+#define MON_NSCOMMACCEPT_16                 101390116
+#define MON_NSCOMMACCEPT_17                 101390117
+#define MON_NSCOMMACCEPT_18                 101390118
+#define MON_NSCOMMACCEPT_19                 101390119
+#define MON_NSCOMMACCEPT_20                 101390120
+#define MON_NSCOMMACCEPT_21                 101390121
+#define MON_NSCOMMACCEPT_22                 101390122
+#define MON_NSCOMMACCEPT_23                 101390123
+#define MON_NSCOMMACCEPT_24                 101390124
 
 /* Module: tcdb.cxx = 90 */
 #define TCDB_TCDB_1                         101900101

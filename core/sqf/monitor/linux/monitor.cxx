@@ -48,6 +48,7 @@ using namespace std;
 #include "config.h"
 #include "device.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 #include "lnode.h"
 #include "pnode.h"
 #include "tmsync.h"
@@ -132,9 +133,11 @@ CLock MemModLock;
 CMonitor *Monitor = NULL;
 #ifndef NAMESERVER_PROCESS
 CNameServer *NameServer = NULL;
+CProcess *NameServerProcess = NULL;
 #endif
 CNodeContainer *Nodes = NULL;
 CConfigContainer *Config = NULL;
+CNameServerConfigContainer *NameServerConfig = NULL;
 #ifndef NAMESERVER_PROCESS
 CDeviceContainer *Devices = NULL;
 #endif
@@ -157,12 +160,14 @@ extern CReplicate Replicator;
 CZClient  *ZClient = NULL;
 // Seabed disconnect semaphore
 RobSem * sbDiscSem = NULL;
+int monitorArgc = 0;
+char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
 
 
 
 #ifdef NAMESERVER_PROCESS
-DEFINE_EXTERN_COMP_DOVERS(nameserver)
-DEFINE_EXTERN_COMP_GETVERS2(nameserver)
+DEFINE_EXTERN_COMP_DOVERS(trafns)
+DEFINE_EXTERN_COMP_GETVERS2(trafns)
 #else
 DEFINE_EXTERN_COMP_DOVERS(monitor)
 DEFINE_EXTERN_COMP_GETVERS2(monitor)
@@ -432,7 +437,7 @@ void CMonitor::openProcessMap ( void )
     }
 
 #ifdef NAMESERVER_PROCESS
-    snprintf( fname, sizeof(fname), "%s/ns.map.%d.%s",
+    snprintf( fname, sizeof(fname), "%s/trafns.map.%d.%s",
              getenv("MPI_TMPDIR"), MyPNID, Node_name );
 #else
     snprintf( fname, sizeof(fname), "%s/monitor.map.%d.%s",
@@ -1097,7 +1102,7 @@ int main (int argc, char *argv[])
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
 
 #ifdef NAMESERVER_PROCESS
-    CALL_COMP_DOVERS(nameserver, argc, argv);
+    CALL_COMP_DOVERS(trafns, argc, argv);
 #else
     CALL_COMP_DOVERS(monitor, argc, argv);
 #endif
@@ -1165,7 +1170,7 @@ int main (int argc, char *argv[])
     }
 
 #ifdef NAMESERVER_PROCESS
-    MonLog = new CMonLog( "log4cxx.monitor.ns.config", "NS", "alt.mon", -1, -1, getpid(), "$NS" );
+    MonLog = new CMonLog( "log4cxx.monitor.trafns.config", "NS", "alt.mon", -1, -1, getpid(), "$TNS" );
 #else
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
 #endif
@@ -1243,6 +1248,32 @@ int main (int argc, char *argv[])
     // Initialize MPI environment
     MPI_Init (&argc, &argv);
 
+#ifdef NAMESERVER_PROCESS
+    if ( argc > 1 )
+    {
+        if ( strcmp(argv[1], "SQMON1.1") == 0 )
+        {
+            MyPNID = atoi( argv[2] );
+            int arg = 1;
+            for ( ; argv[arg+11]; arg++ )
+            {
+                argv[arg] = argv[arg+11];
+            }
+            argv[arg] = NULL;
+            argc -= 11;
+        }
+        else
+        {
+            abort(); // TODO
+        }
+    }
+#else
+    monitorArgc = argc;
+    STRCPY(monitorArgv[0], "trafns");
+    for ( int arg = 1; arg < argc; arg++ )
+        STRCPY(monitorArgv[arg], argv[arg]);
+#endif
+
     env = getenv("MON_PROF_ENABLE");
     if ( env )
     {
@@ -1308,6 +1339,20 @@ int main (int argc, char *argv[])
     setThreadVariable( (char *)"mainThread" );
 #endif
 
+#ifdef NAMESERVER_PROCESS
+    // Without mpi daemon the monitor has no default standard output.
+    // We create a standard output file here.
+    if ( IsRealCluster )
+    {
+        snprintf(fname, sizeof(fname), "%s/logs/trafns.%s.log",
+                 getenv("TRAF_HOME"), Node_name);
+    }
+    else
+    {
+        snprintf(fname, sizeof(fname), "%s/logs/trafns.%d.%s.log",
+                 getenv("TRAF_HOME"), MyPNID, Node_name);
+    }
+#else
     // Without mpi daemon the monitor has no default standard output.
     // We create a standard output file here.
     if ( IsRealCluster )
@@ -1320,6 +1365,7 @@ int main (int argc, char *argv[])
         snprintf(fname, sizeof(fname), "%s/logs/sqmon.%d.%s.log",
                  getenv("TRAF_HOME"), MyPNID, Node_name);
     }
+#endif
     remove(fname);
     if( freopen (fname, "w", stdout) == NULL )
     {
@@ -1517,7 +1563,7 @@ int main (int argc, char *argv[])
 #ifdef NAMESERVER_PROCESS
     snprintf(buf, sizeof(buf),
                  "[CMonitor::main], %s, Started! CommType: %s\n"
-                , CALL_COMP_GETVERS2(nameserver), CommTypeString( CommType ));
+                , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
 #else
     snprintf(buf, sizeof(buf),
                  "[CMonitor::main], %s, Started! CommType: %s (%s%s%s)\n"
@@ -1654,7 +1700,11 @@ int main (int argc, char *argv[])
             {
                 MyPNID=-1;
                 SMSIntegrating = IAmIntegrating = true;
+#ifdef NAMESERVER_PROCESS
+                char *monitorPort = getenv ("NS_COMM_PORT");
+#else
                 char *monitorPort = getenv ("MONITOR_COMM_PORT");
+#endif
                 if (monitorPort)
                 {
                     strcpy( IntegratingMonitorPort, MasterMonitorName);
@@ -1682,6 +1732,7 @@ int main (int argc, char *argv[])
 
         Nodes = new CNodeContainer (); 
         Config = new CConfigContainer ();
+        NameServerConfig = new CNameServerConfigContainer ();
 #ifdef NAMESERVER_PROCESS
         Monitor = new CMonitor ();
 #else
@@ -1691,8 +1742,7 @@ int main (int argc, char *argv[])
         env = getenv("NAMESERVER_ENABLE");
         if ( env && isdigit(*env) )
             NameServerEnabled = atoi(env);
-        if ( NameServerEnabled )
-            NameServer = new CNameServer ();
+        NameServer = new CNameServer ();
 #endif
 
         if ( IsAgentMode )
@@ -1815,11 +1865,6 @@ int main (int argc, char *argv[])
 #endif
         // Open file used to record process start/end times
         Monitor->openProcessMap ();
-
-#ifndef NAMESERVER_PROCESS
-        if ( NameServerEnabled )
-            NameServer->InitializeNameServer();
-#endif
 
 #ifndef NAMESERVER_PROCESS
         // Always using localio now, no other option

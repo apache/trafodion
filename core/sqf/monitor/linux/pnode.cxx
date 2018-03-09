@@ -46,6 +46,7 @@ using namespace std;
 #include "lnode.h"
 #include "pnode.h"
 #include "mlio.h"
+#include "nameserver.h"
 
 #include "replicate.h"
 #include "reqqueue.h"
@@ -81,6 +82,8 @@ extern CClusterConfig *ClusterConfig;
 const char *StateString( STATE state);
 #ifndef NAMESERVER_PROCESS
 const char *SyncStateString( SyncState state);
+extern CNameServer *NameServer;
+extern CProcess *NameServerProcess;
 #endif
 
 // The following defines are necessary for the new watchdog timer facility.  They should really be
@@ -1131,6 +1134,63 @@ void CNode::SetAffinity( CProcess *process )
     TRACE_EXIT;
 }
 
+void CNode::StartNameServerProcess( void )
+{
+    const char method_name[] = "CNode::StartNameServerProcess";
+    TRACE_ENTRY;
+
+    char path[MAX_SEARCH_PATH];
+    char *ldpath = NULL; // = getenv("LD_LIBRARY_PATH");
+    char filename[MAX_PROCESS_PATH];
+    char name[MAX_PROCESS_NAME];
+    char stdout[MAX_PROCESS_PATH];
+    
+    snprintf( name, sizeof(name), "$TNS%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_TNS%d", MyNode->GetZone() );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+       trace_printf("%s@%d" " - Creating NameService Process\n", method_name, __LINE__);
+
+    strcpy(path,getenv("PATH"));
+    strcat(path,":");
+    strcat(path,MyPath);
+    strcpy(filename,"trafns");
+    ldpath = getenv("LD_LIBRARY_PATH");
+    strId_t pathStrId = MyNode->GetStringId ( path );
+    strId_t ldpathStrId = MyNode->GetStringId ( ldpath );
+    strId_t programStrId = MyNode->GetStringId ( filename );
+
+    int result;
+    NameServerProcess  = CreateProcess( NULL, //parent
+                                        MyNode->AssignNid(),
+                                        ProcessType_NameServer,
+                                        0,  //debug
+                                        0,  //priority
+                                        0,  //backup
+                                        true, //unhooked
+                                        name,
+                                        pathStrId,
+                                        ldpathStrId,
+                                        programStrId,
+                                        (char *) "", //infile,
+                                        stdout, //outfile,
+                                        result
+                                        );
+    if ( NameServerProcess )
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+           trace_printf("%s@%d" " - NameService Process created\n", method_name, __LINE__);
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf(la_buf, "[%s], NameService Process creation failed.\n", method_name);
+        mon_log_write( MON_NODE_STARTNAMESERVER_1, SQ_LOG_ERR, la_buf );
+    }
+
+    TRACE_EXIT;
+}
+
 void CNode::StartWatchdogProcess( void )
 {
     const char method_name[] = "CNode::StartWatchdogProcess";
@@ -1196,7 +1256,7 @@ void CNode::StartWatchdogProcess( void )
                                       stdout, //outfile,
                                       result
                                       );
-    if ( watchdogProcess  )
+    if ( watchdogProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d" " - Watchdog Process created\n", method_name, __LINE__);
@@ -1253,7 +1313,7 @@ void CNode::StartPStartDProcess( void )
                                       stdout, //outfile,
                                       result
                                       );
-    if ( pstartdProcess  )
+    if ( pstartdProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d - pstartd process created\n",
@@ -1294,7 +1354,7 @@ void CNode::StartPStartDPersistent( void )
         for ( ; lnode; lnode = lnode->GetNextP() )
         {
             CProcess *process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process  ) tmCount++;
+            if ( process ) tmCount++;
         }
     }
 
@@ -1350,7 +1410,7 @@ void CNode::StartPStartDPersistentDTM( int nid )
         for ( ; lnode; lnode = lnode->GetNextP() )
         {
             process = lnode->GetProcessLByType( ProcessType_DTM );
-            if ( process  ) tmCount++;
+            if ( process ) tmCount++;
         }
     }
 
@@ -1429,7 +1489,7 @@ void CNode::StartSMServiceProcess( void )
                                  stdout, //outfile,
                                  result
                                  );
-    if ( smsProcess  )
+    if ( smsProcess )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
            trace_printf("%s@%d - smservice process (%s) created\n",
@@ -1453,6 +1513,7 @@ CNodeContainer::CNodeContainer( void )
                ,pnodeCount_(0)
                ,indexToPnid_(NULL)
                ,clusterConfig_(NULL)
+               ,nameServerConfig_(NULL)
                ,head_(NULL)
                ,tail_(NULL)
                ,syncBufferFreeSpace_(MAX_SYNC_SIZE)
@@ -1514,6 +1575,10 @@ CNodeContainer::~CNodeContainer( void )
     if (clusterConfig_)
     {
         delete clusterConfig_;
+    }
+    if (nameServerConfig_)
+    {
+        delete nameServerConfig_;
     }
     if (Node)
     {
@@ -3225,6 +3290,22 @@ void CNodeContainer::LoadConfig( void )
     if ( !clusterConfig_ )
     {
         clusterConfig_ = ClusterConfig;
+    }
+
+    if ( !nameServerConfig_ )
+    {
+        nameServerConfig_ = new CNameServerConfigContainer();
+    }
+    if ( nameServerConfig_ )
+    {
+        if ( ! nameServerConfig_->LoadConfig() )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Failed to load nameserver configuration.\n", method_name);
+            mon_log_write(MON_NODECONT_LOAD_CONFIG_4, SQ_LOG_CRIT, la_buf);
+            
+            abort();
+        }
     }
 
     TRACE_EXIT;

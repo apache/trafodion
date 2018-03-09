@@ -23,3 +23,6 @@ begin node
 _virtualnodes 6
 end node
 
+begin name-server
+nodes=n054,n055
+end name-server

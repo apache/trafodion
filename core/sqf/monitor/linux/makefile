@@ -133,6 +133,10 @@ MONITORSRC += reqnodeinfo.cxx
 MONITORSRC += reqnodename.cxx
 MONITORSRC += reqnodeup.cxx
 MONITORSRC += reqnotify.cxx
+MONITORSRC += reqnsadd.cxx
+MONITORSRC += reqnsdown.cxx
+MONITORSRC += reqnsdelete.cxx
+MONITORSRC += reqnsup.cxx
 MONITORSRC += reqopen.cxx
 MONITORSRC += reqprocinfo.cxx
 MONITORSRC += reqset.cxx
@@ -171,6 +175,7 @@ MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
 MONITOROBJS += $(OUTDIR)/persistconfig.o
+MONITOROBJS += $(OUTDIR)/nameserverconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
@@ -198,6 +203,10 @@ MONITOROBJS += $(OUTDIR)/reqnodename.o
 MONITOROBJS += $(OUTDIR)/reqpnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqnodeup.o
 MONITOROBJS += $(OUTDIR)/reqnotify.o
+MONITOROBJS += $(OUTDIR)/reqnsadd.o
+MONITOROBJS += $(OUTDIR)/reqnsdelete.o
+MONITOROBJS += $(OUTDIR)/reqnsdown.o
+MONITOROBJS += $(OUTDIR)/reqnsup.o
 MONITOROBJS += $(OUTDIR)/reqopen.o
 MONITOROBJS += $(OUTDIR)/reqprocinfo.o
 MONITOROBJS += $(OUTDIR)/reqset.o
@@ -237,6 +246,7 @@ NSOBJS += $(OUTDIR)/clusterconf.o
 NSOBJS += $(OUTDIR)/lnodeconfig.o
 NSOBJS += $(OUTDIR)/pnodeconfig.o
 NSOBJS += $(OUTDIR)/persistconfig.o
+NSOBJS += $(OUTDIR)/nameserverconfig.o
 NSOBJS += $(OUTDIR)/nslnode.o
 NSOBJS += $(OUTDIR)/nspnode.o
 NSOBJS += $(OUTDIR)/intprocess.o
@@ -270,6 +280,7 @@ SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
 SHELLOBJS += $(OUTDIR)/persistconfig.o
+SHELLOBJS += $(OUTDIR)/nameserverconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -336,6 +347,7 @@ CONFOBJS += $(OUTDIR)/clusterconf.o
 CONFOBJS += $(OUTDIR)/lnodeconfig.o
 CONFOBJS += $(OUTDIR)/pnodeconfig.o
 CONFOBJS += $(OUTDIR)/persistconfig.o
+CONFOBJS += $(OUTDIR)/nameserverconfig.o
 
 TYPE2STR_SRC = type2str.cxx
 TYPE2STR_OBJS = $(OUTDIR)/type2str.o
@@ -363,7 +375,7 @@ PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
-PGMS +=  $(BINEXPDIR)/ns
+PGMS +=  $(BINEXPDIR)/trafns
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -534,7 +546,7 @@ $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BINEXPDIR)/ns: $(NSOBJS)
+$(BINEXPDIR)/trafns: $(NSOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(LNK_FLGS) -o$@ $(NSOBJS) $(LIBS) -lz -lcrypto

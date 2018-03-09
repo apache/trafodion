@@ -32,6 +32,7 @@
 
 #include "internal.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 #include "lnode.h"
 #include "monlogging.h"
 
@@ -78,6 +79,7 @@ public:
     bool    DeleteNode( int pnid );
     void    DeleteNode( CNode *node );
     inline CClusterConfig *GetClusterConfig( void ) { return ( clusterConfig_ ); }
+    inline CNameServerConfigContainer *GetNameServerConfig( void ) { return ( nameServerConfig_ ); }
     int     GetFirstNid( void );
     int     GetNextNid( int nid );
     inline CNode *GetFirstNode( void ) { return ( head_ ); }
@@ -150,6 +152,7 @@ private:
     int     pnodeCount_;    // # of physical node objects in array
     int    *indexToPnid_;   // map of configuration entries to Node[pnid]
     CClusterConfig *clusterConfig_;  // configuration objects
+    CNameServerConfigContainer *nameServerConfig_;  // name server config
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list
     CNode  *head_;  // head of physical nodes linked list
@@ -228,6 +231,9 @@ public:
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
     inline const char *GetCommPort( void ) { return commPort_.c_str(); }
     inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
+#ifdef NAMESERVER_PROCESS
+    inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
+#endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
     inline PNidVector   &GetSparePNids( void ) { return( sparePNids_ ); }
@@ -310,6 +316,7 @@ public:
     void StartPStartDPersistent( void );
     void StartPStartDPersistentDTM( int nid );
     void StartSMServiceProcess( void );
+    void StartNameServerProcess( void );
     void StartWatchdogProcess( void );
     void StartWatchdogTimer( void );
     void StopWatchdogTimer( void );
