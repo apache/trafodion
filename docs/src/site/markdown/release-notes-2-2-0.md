@@ -105,14 +105,6 @@ Build instructions are available in the [Trafodion Contributor Guide](https://cw
       <td>Ensure RMS can be disabled properly</td>
       <td>[TRAFODION-2698](https://issues.apache.org/jira/browse/TRAFODION-2698)</td>
     </tr>
-    <tr>
-      <td>Add or edition to error info 4222</td>
-      <td>[TRAFODION-2805](https://issues.apache.org/jira/browse/TRAFODION-2805)</td>
-    </tr>
-    <tr>
-      <td>A redundant statement</td>
-      <td>[TRAFODION-2984](https://issues.apache.org/jira/browse/TRAFODION-2984)</td>
-    </tr>
   </table>
 </span>
 
