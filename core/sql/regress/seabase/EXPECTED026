@@ -37,7 +37,8 @@
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>drop table t026t1;
 
 *** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
@@ -105,12 +106,14 @@
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T0 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>invoke t026t1;
 
 *** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>set parserflags 131072;
 

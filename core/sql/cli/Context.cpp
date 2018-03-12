@@ -159,6 +159,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     dropInProgress_(FALSE),
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL),
+    prevCmpContext_(NULL),
     ddlStmtsExecuted_(FALSE),
     numCliCalls_(0),
     jniErrorStr_(&exHeap_),
@@ -4653,22 +4654,31 @@ Int32 ContextCli::switchToCmpContext(void *cmpCntxt)
   return (cmpCntxtInfo->getUseCount() == 1? 0: 1); // success
 }
 
-Int32 ContextCli::switchBackCmpContext(void)
+void ContextCli::copyDiagsAreaToPrevCmpContext()
 {
   ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
 
+  CmpContext *curr = embeddedArkcmpContext_;
+
+  if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+    return; 
+  if (curr->diags()->getNumber() > 0)
+     prevCmpContext_->diags()->mergeAfter(*curr->diags());
+}
+
+Int32 ContextCli::switchBackCmpContext(void)
+{
+  if (prevCmpContext_ == NULL) 
+  {
+     ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
+     if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+        return -1; 
+  }
   // switch back
   CmpContext *curr = embeddedArkcmpContext_;
-  CmpContext *prevCmpCntxt;
 
-  if (cmpContextInUse_.getLast(prevCmpCntxt) == FALSE)
-    return -1;  // failed to get previous CmpContext, should not have happened.
-
-  embeddedArkcmpContext_ = prevCmpCntxt;
-  cmpCurrentContext = prevCmpCntxt;  // restore the thread global
-
-  // merge diags to previous CmpContext
-  prevCmpCntxt->diags()->mergeAfter(*curr->diags());
+  embeddedArkcmpContext_ = prevCmpContext_;
+  cmpCurrentContext = prevCmpContext_;  // restore the thread global
 
   // book keeping
   CmpContextInfo *cmpCntxtInfo;
@@ -4686,6 +4696,7 @@ Int32 ContextCli::switchBackCmpContext(void)
   cmpCurrentContext->switchBackContext();
 
   deinitializeArkcmp();
+  prevCmpContext_ = NULL;
 
   return 0;  // success
 }

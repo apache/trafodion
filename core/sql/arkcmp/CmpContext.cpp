@@ -714,8 +714,6 @@ void CmpContext::switchContext()
       ActiveSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr();
   gpClusterInfo = clusterInfo_;
   SqlParser_Diags = diags();
-  if (CmpCommon::diags())
-     CmpCommon::diags()->clear();
   cmpMemMonitor = cmpMemMonitor_;
 }
 
@@ -1088,6 +1086,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
      if (diagsArea == NULL)
        diagsArea = ComDiagsArea::allocate(outHeap);
      diagsArea->mergeAfter(*compileDiagsArea);
+     compileDiagsArea->clear();
   }
   // cleanup and return
   if (cmpStatement && cmpStatement->readyToDie())

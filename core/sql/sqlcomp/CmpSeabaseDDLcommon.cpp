@@ -175,14 +175,15 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
   return 0;
 }
 
+
 short CmpSeabaseDDL::switchBackCompiler()
 {
 
   Lng32 diagsMark = 0;
   if (cmpSwitched_)
   {
-     if (CmpCommon::diags() != NULL)
-        diagsMark = CmpCommon::diags()->mark(); 
+      GetCliGlobals()->currContext()->copyDiagsAreaToPrevCmpContext();
+      CmpCommon::diags()->clear();
   }
   // do restore here even though switching may not have happened, i.e.
   // when switchToCompiler() was not called by the embedded CI, see above.
@@ -190,8 +191,8 @@ short CmpSeabaseDDL::switchBackCompiler()
   
   if (cmpSwitched_)
     {
-      // ignore new (?) from restore call but restore old diags
-      CmpCommon::diags()->rewind(diagsMark, TRUE);
+      // Clear the diagnostics area of the current CmpContext
+      CmpCommon::diags()->clear();
       // switch back to the original commpiler, ignore return error
       SQL_EXEC_SWITCH_BACK_COMPILER();
 

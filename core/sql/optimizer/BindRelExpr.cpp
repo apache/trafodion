@@ -14698,12 +14698,9 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
 
   if (! describedTableName_.getQualifiedNameObj().getObjectName().isNull())
     {
-      if ((getFormat() >= CONTROL_FIRST_) &&
-          (getFormat() <= CONTROL_LAST_))
-        {
+       if (getIsControl())
           describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
-        }
-      else
+        if (NOT getIsControl())
         {
           // do not override schema for showddl
           bindWA->setToOverrideSchema(FALSE);  
@@ -14712,27 +14709,20 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
           // describedTableName_ is qualified by getNATable
           if (describedTableName_.getQualifiedNameObj().getSchemaName().isNull())
             setToTryPublicSchema(TRUE);
-      
-          bindWA->getNATable(describedTableName_);
-          if (bindWA->errStatus()) 
+
+          if ((getFormat() == Describe::INVOKE_) ||
+              (getFormat() == Describe::SHOWDDL_) &&
+              (getLabelAnsiNameSpace() == COM_TABLE_NAME) &&
+              (NOT getIsSchema()))
             {
-              // if volatile related error, return it.
-              // Otherwise, clear diags and let this error be caught
-              // when describe is executed.
-              if ((CmpCommon::diags()->mainSQLCODE() == -4190) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4191) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4192) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4193) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
-                  (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
-                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
-                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
-                    return this;
-      
-              CmpCommon::diags()->clear();
-              bindWA->resetErrStatus();
+              bindWA->getNATable(describedTableName_);
+              if (bindWA->errStatus())
+                {
+                  return this;
+                }
             }
+          else
+            describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
         }
       if (pUUDFName_ NEQ NULL AND NOT pUUDFName_->getObjectName().isNull())
       {

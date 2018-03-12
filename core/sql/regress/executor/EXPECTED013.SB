@@ -801,7 +801,8 @@ CREATE VOLATILE TABLE T013T1
 
 *** ERROR[4082] Object TRAFODION.T013SCH1.T013T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>
 >>-- store by a, 4 partns
