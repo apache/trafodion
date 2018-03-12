@@ -3500,6 +3500,148 @@ CREATE TABLE t2 (c1 int, c2 char (50) UPSHIFT NOT NULL) AS SELECT * FROM t1;
 ```
 
 <<<
+[[create_table_examples_create_external_table]]
+==== Examples of CREATE EXTERNAL TABLE 
+
+This example compares the execution time of using external table and not using external table when reading hive tables.
+
+The former takes less time than the latter, since the trafodion external table supplies upper bounds for varchar lengths, which may lead to better plans and/or run-time behavior.
+
+TIP: Either running UPDATE STATISTICS or using a trafodion external table may improve performance. To get full performance benefit, you must run UPDATE STATISTICS and use the trafodion external table.
+
+This is the definition of the *hive table* _test_mix_ which has a trafodion external table, the size is 137.6G.
+
+```
+SQL>SHOWDDL test_mix;
+
+CREATE EXTERNAL TABLE test_mix(
+	mix_id int not null not droppable primary key,
+	mix_age int,
+	mix_name string,
+	mix_timestamp01 string,
+	mix_timestamp02 string,
+	mix_other01 string,
+	mix_other02 string,
+	mix_other03 string,
+	mix_other04 string,
+	mix_other05 string,
+	mix_other06 string,
+	mix_other07 string,
+	mix_other08 string,
+	mix_other09 string,
+	mix_other10 string,
+	mix_other11 string,
+	mix_other12 string,
+	mix_other13 string,
+	mix_other14 string,
+	mix_other15 string
+  )
+row format delimited fields terminated by '|'
+  location '/user/trafodion/data/ExternalTable_data';
+--  01-06 short 06-11medium  12-15 long  
+```
+
+This is the definition of the *trafodion external table* _test_mix_, it has the same structure and size as the hive table _test_mix_.
+
+```
+SQL>SHOWDDL text_mix;
+
+CREATE EXTERNAL TABLE test_mix(
+	mix_id int,
+	mix_age int,
+	mix_name varchar(20),
+	mix_timestamp01 timestamp,
+	mix_timestamp02 varchar(20),
+	mix_other01 varchar(12),
+	mix_other02 varchar(12),
+	mix_other03 varchar(12),
+	mix_other04 varchar(12),
+	mix_other05 varchar(12),
+	mix_other06 varchar(12),
+	mix_other07 varchar(64),
+	mix_other08 varchar(64),
+	mix_other09 varchar(64),
+	mix_other10 varchar(64),
+	mix_other11 varchar(128),
+	mix_other12 varchar(128),
+	mix_other13 varchar(128),
+	mix_other14 varchar(1024),
+	mix_other15 varchar(1024)
+  )for hive.hive.test_mix;
+--  01-06 short 07-11medium  12-15 long  
+```
+
+* When executing the following query:
+
++
+```
+SELECT [LAST 1] * FROM hive.hive.test_mix WHERE mix_other02 = 'Ot';
+```
+
++
+it takes approximately *6 minutes* (average value) to get the result using the trafodion external table. 
+
++
+[cols="20%,20%,20%,20%,20%",options="header"]
+|=====
+|                | First Result | Second Result | Third Result | Average Value
+| Start Time     | 2018/03/07 18:40:31.655159 | 2018/03/07 09:37:50.801345 | 2018/03/07 09:45:05.921706 |
+| End Time       | 2018/03/07 18:49:08.879780 | 2018/03/07 09:43:16.695492 | 2018/03/07 09:48:58.251764 |
+| Elapsed Time   | 2018/03/07 00:08:37.224621 | 2018/03/07 00:05:25.894147 | 2018/03/07 00:03:52.330058 | 00:06:12.23
+| Compile Time   | 2018/03/07 00:00:03.497624 | 2018/03/07 00:00:11.595054 | 2018/03/07 00:00:00.551781 | 00:00:04.8
+| Execution Time | 2018/03/07 00:08:33.715742 | 2018/03/07 00:05:14.295840 | 2018/03/07 00:03:51.708673 | *00:06:12*
+|=====
+
++
+while it takes approximately *14 minutes* (average value) to get the result without using the trafodion external table.
+
++
+[cols="20%,20%,20%,20%,20%",options="header"]
+|=====
+|                | First Result | Second Result | Third Result | Average Value
+| Start Time     | 2018/03/07 13:33:46.722646 | 2018/03/07 14:39:30.323730 | 2018/03/07 14:54:58.177258 |
+| End Time       | 2018/03/07 13:48:35.028916 | 2018/03/07 14:53:53.887911 | 2018/03/07 15:09:11.517646 |
+| Elapsed Time   | 2018/03/07 00:14:48.306270 | 2018/03/07 00:14:23.564181 | 2018/03/07 00:14:13.340388 | 00:14:28.40
+| Compile Time   | 2018/03/07 00:00:00.773770 | 2018/03/07 00:00:00.388777 | 2018/03/07 00:00:14.856643 | 00:00:04
+| Execution Time | 2018/03/07 00:14:47.530017 | 2018/03/07 00:14:23.146420 | 2018/03/07 00:13:58.463850 | *00:13:58*
+|=====
+
+* When executing the following query:
+
++
+```
+SELECT [LAST 1] mix_other02, substring(mix_other12 from 1 for 10) FROM hive.hive.test_mix WHERE substring(mix_other02 from 1 for 1) = 'O';
+```
+
++
+it takes approximately *6 minutes* (average value) to get the result using the trafodion external table. 
+
++
+[cols="20%,20%,20%,20%,20%",options="header"]
+|=====
+|                | First Result | Second Result | Third Result | Average Value
+| Start Time     | 2018/03/09 14:07:59.353015 | 2018/03/09 14:16:27.725035 | 2018/03/09 14:41:01.454408 |
+| End Time       | 2018/03/09 14:15:05.979546 | 2018/03/09 14:20:44.939776 | 2018/03/09 14:46:58.238246 |
+| Elapsed Time   | 2018/03/09 00:07:06.626531 | 2018/03/09 00:04:17.214741 | 2018/03/09 00:05:56.783838 | 00:05:59
+| Compile Time   | 2018/03/09 00:00:00.197789 | 2018/03/09 00:00:00.296705 | 2018/03/09 00:00:00.227511 | 00:00:00.23 
+| Execution Time | 2018/03/09 00:07:06.411065 | 2018/03/09 00:04:16.873090 | 2018/03/09 00:05:56.554411 | *00:05:59*
+|=====
+
++
+while it takes approximately 35 minutes (average value) to get the result without using the trafodion external table.
+
++
+[cols="20%,20%,20%,20%,20%",options="header"]
+|=====
+|                | First Result | Second Result | Third Result | Average Value
+| Start Time     | 2018/03/09 11:01:12.676307 | 2018/03/09 11:35:54.514479 | 2018/03/09 13:15:07.006658 |
+| End Time       | 2018/03/09 11:35:16.264756 | 2018/03/09 12:11:09.587147 | 2018/03/09 13:49:23.740406 |
+| Elapsed Time   | 2018/03/09 00:34:03.588449 | 2018/03/09 00:35:15.072668 | 2018/03/09 00:34:16.733748 | 34:44:00
+| Compile Time   | 2018/03/09 00:00:00.703053 | 2018/03/09 00:00:00.280146 | 2018/03/09 00:00:00.536929 | 00:00:00.5 
+| Execution Time | 2018/03/09 00:34:02.828529 | 2018/03/09 00:35:14.743914 | 2018/03/09 00:34:16.155336 | *34:44:00*
+|=====
+
+<<<
 [[create_view_statement]]
 == CREATE VIEW Statement
 
