@@ -4634,9 +4634,6 @@ static short AssignColEntry(ExeCliInterface *cliInterface, Lng32 entry,
   Lng32 indOffset = -1;
   Lng32 varOffset = -1;
   
-  cliRC = cliInterface->getAttributes(1, TRUE, fsDatatype, length, 
-                                      &indOffset, &varOffset);
-
   cliRC = cliInterface->getAttributes(entry, TRUE, fsDatatype, length, 
                                       &indOffset, &varOffset);
   if (cliRC < 0)
