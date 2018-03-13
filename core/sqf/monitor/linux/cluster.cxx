@@ -156,7 +156,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
     const char method_name[] = "CCluster::ActivateSpare";
     TRACE_ENTRY;
     // if not checking health, assume the spare is healthy
-    bool spareHealthy = checkHealth ? false : true; 
+    bool spareHealthy = checkHealth ? false : true;
     int tmCount = 0;
     CNode *node;
     CLNode *lnode;
@@ -181,26 +181,25 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
             Replicator.addItem(repl);
         }
     }
-    
+
     if ( spareHealthy )
     {
         if ( downNode->GetPNid() != spareNode->GetPNid() )
         {
             // Move down node's logical nodes to spare node
             downNode->MoveLNodes( spareNode );
-    
+
             spareNode->SetPhase( Phase_Activating );
 
             Nodes->AddToSpareNodesList( downNode->GetPNid() );
 
             if ( !IsIntegrating() )
             {
-                downNode->SetState( State_Down ); 
-            
-#ifndef NAMESERVER_PROCESS
+                downNode->SetState( State_Down );
+
                 // Send process death notices
                 spareNode->KillAllDown();
-    
+
                 // Send node down notice
                 lnode = spareNode->GetFirstLNode();
                 for ( ; lnode; lnode = lnode->GetNextP() )
@@ -208,7 +207,6 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                     // Watchdog process clone was removed in KillAllDown
                     lnode->Down();
                 }
-#endif
             }
         }
 
@@ -223,7 +221,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                 if ( process  ) tmCount++;
             }
         }
-        
+
         // Create Watchdog and PSD processes if this node is the activating spare
         if ( spareNode->GetPNid() == MyPNID )
         {
@@ -266,7 +264,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
             }
         }
 #endif
-    
+
         if (trace_settings & TRACE_INIT)
         {
             trace_printf( "%s@%d - Spare node activating! pnid=%d, name=(%s)\n"
@@ -274,7 +272,7 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                         , spareNode->GetPNid(), spareNode->GetName());
         }
     }
-    
+
     if ( spareNode->GetPNid() == MyPNID && spareHealthy )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -316,7 +314,7 @@ void CCluster::NodeTmReady( int nid )
     }
 
     tmReadyCount_++;
-    
+
     if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
     {
         trace_printf( "%s@%d - TmReady, nid=%d, tm count=%d, soft node down=%d, LNodesCount=%d\n"
@@ -371,14 +369,12 @@ void CCluster::NodeReady( CNode *spareNode )
 
     assert( spareNode->GetState() == State_Up );
 
-#ifndef NAMESERVER_PROCESS
     // Send node up notice
     CLNode *lnode = spareNode->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Up();
     }
-#endif
 
     spareNode->SetActivatingSpare( false );
     ResetIntegratingPNid();
@@ -392,14 +388,14 @@ void CCluster::AssignLeaders( int pnid, bool checkProcess )
 {
     const char method_name[] = "CCluster::AssignLeaders";
     TRACE_ENTRY;
-    
+
 #ifndef NAMESERVER_PROCESS
     AssignTmLeader ( pnid, checkProcess );
 #else
     checkProcess = checkProcess;
 #endif
     AssignMonitorLeader ( pnid );
-    
+
     TRACE_EXIT;
 }
 
@@ -408,14 +404,14 @@ void CCluster::AssignMonitorLeader( int pnid )
 {
     const char method_name[] = "CCluster::AssignMonitorLeader";
     TRACE_ENTRY;
-     
+
     int i = 0;
     int rc = 0;
-    
+
     int monitorLeaderPNid = monitorLeaderPNid_;
     CNode *node = NULL;
 
-    if (monitorLeaderPNid_ != pnid) 
+    if (monitorLeaderPNid_ != pnid)
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
         {
@@ -468,8 +464,8 @@ void CCluster::AssignMonitorLeader( int pnid )
              node->GetState() != State_Up ||
              node->GetPhase() != Phase_Ready )
         {
-            continue; // skip this node for any of the above reasons 
-        }  
+            continue; // skip this node for any of the above reasons
+        }
 
         monitorLeaderPNid_ = node->GetPNid();
 
@@ -480,7 +476,7 @@ void CCluster::AssignMonitorLeader( int pnid )
 
         if (ZClientEnabled)
         {
-            rc = ZClient->CreateMasterZNode ( node->GetName() );  
+            rc = ZClient->CreateMasterZNode ( node->GetName() );
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
             {
                 trace_printf("%s@%d" " (MasterMonitor) AssignMonitorLeader CreateMasterZNode with rc = %d\n", method_name, __LINE__, rc);
@@ -512,13 +508,13 @@ void CCluster::AssignMonitorLeader( int pnid )
 
         break;
     }
-    
+
     TRACE_EXIT;
 }
 
 #ifndef NAMESERVER_PROCESS
-// Assigns a new TMLeader if given pnid is same as tmLeaderNid_ 
-// TmLeader is a logical node num. 
+// Assigns a new TMLeader if given pnid is same as tmLeaderNid_
+// TmLeader is a logical node num.
 // pnid has gone down, so if that node was previously the TM leader, a new one needs to be chosen.
 void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 {
@@ -531,7 +527,7 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 
     int TmLeaderPNid = LNode[tmLeaderNid_]->GetNode()->GetPNid();
 
-    if (TmLeaderPNid != pnid) 
+    if (TmLeaderPNid != pnid)
     {
         node = LNode[tmLeaderNid_]->GetNode();
 
@@ -617,8 +613,8 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
              node->GetState() != State_Up ||
              node->GetPhase() != Phase_Ready )
         {
-            continue; // skip this node for any of the above reasons 
-        }  
+            continue; // skip this node for any of the above reasons
+        }
 
         tmLeaderNid_ = node->GetFirstLNode()->GetNid();
 
@@ -676,7 +672,7 @@ CCluster::CCluster (void)
       commDupCount_(0),
       barrierCountSaved_(0),
       allGatherCountSaved_(0),
-      commDupCountSaved_(0), 
+      commDupCountSaved_(0),
       inBarrier_(false),
       inAllGather_(false),
       inCommDup_(false),
@@ -722,7 +718,7 @@ CCluster::CCluster (void)
        trace_printf("%s@%d Checking sync sequence numbers is %s\n",
                     method_name, __LINE__,
                     (checkSeqNum_ ? "enabled" : "disabled"));
-    
+
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     configPNodesMax_ = clusterConfig->GetPNodesConfigMax();
 
@@ -746,7 +742,7 @@ CCluster::CCluster (void)
     //   The actual number could be based on the number of nodes configured
     //   which is better from a memory allocation perspective. However,
     //   this requires changing to an index-to-pnid map structure to access
-    //   physical node objects (CNode) in the array structures and managing 
+    //   physical node objects (CNode) in the array structures and managing
     //   the map as nodes are added and deleted. (an optimization task)
     //
     comms_        = new MPI_Comm[MAX_NODES];
@@ -778,7 +774,7 @@ CCluster::CCluster (void)
     char buf[MON_STRING_BUF_SIZE];
     snprintf(buf, sizeof(buf), "[%s] Validation of node down is %s\n",
              method_name, (validateNodeDown_ ? "enabled" : "disabled"));
-    mon_log_write(MON_CLUSTER_CLUSTER_1, SQ_LOG_INFO, buf);  
+    mon_log_write(MON_CLUSTER_CLUSTER_1, SQ_LOG_INFO, buf);
 
     InitializeConfigCluster();
 
@@ -802,12 +798,12 @@ CCluster::CCluster (void)
     {
         nodeDownDeathNotices_ = false;
     }
-    
+
     // build the node objects & Sync collision assignment arrays
-    // these buffers will be used in ShareWithPeers in AllGather 
+    // these buffers will be used in ShareWithPeers in AllGather
     // operation to get TMSync data as well as Replication data.
     // Allocate the maximum allowed so that we pay the price only once.
-    // This wastes a bit of memory but reduces complexity when 
+    // This wastes a bit of memory but reduces complexity when
     // adding and deleting nodes. Usage is based on GetConfigPNodesMax()
     // the maximum number that can be configured.
     recvBuffer_ = new struct sync_buffer_def[GetConfigPNodesMax()];
@@ -852,10 +848,10 @@ CCluster::~CCluster (void)
     TRACE_EXIT;
 }
 
-int CCluster::incrGetVerifierNum() 
+int CCluster::incrGetVerifierNum()
 {
     verifierNum_++;
-    if ( verifierNum_ < 0 ) 
+    if ( verifierNum_ < 0 )
     {
         verifierNum_ = 0;
     }
@@ -881,7 +877,7 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
         }
         if (nodestate[indexToPnid_[i]].seq_num > 1)
         {
-            if (seqNum == 0) 
+            if (seqNum == 0)
             {
                 seqNum = nodestate[indexToPnid_[i]].seq_num;
             }
@@ -906,16 +902,14 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
     CNode  *node;
-#ifndef NAMESERVER_PROCESS
     CLNode *lnode;
-#endif
     char    buf[MON_STRING_BUF_SIZE];
-    
+
     const char method_name[] = "CCluster::HardNodeDown";
     TRACE_ENTRY;
 
     node = Nodes->GetNode(pnid);
-    
+
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
        trace_printf( "%s@%d - pnid=%d, comm_state=%d, state=%s, isInQuiesceState=%d,"
                      " (local pnid=%d, state=%s, isInQuiesceState=%d, "
@@ -926,13 +920,13 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                      MyNode->isInQuiesceState(), MyNode->GetShutdownLevel() );
 
     if (( MyPNID == pnid              ) &&
-        ( MyNode->GetState() == State_Down || 
+        ( MyNode->GetState() == State_Down ||
           MyNode->IsKillingNode() ) )
     {
         // we are coming down ... don't process it
         if ( !IsRealCluster && MyNode->isInQuiesceState())
         {
-          // in virtual env, this would be called after node quiescing, 
+          // in virtual env, this would be called after node quiescing,
           // so continue with mark down processing.
         }
         else
@@ -954,7 +948,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             ReqQueue.enqueueDownReq(MyPNID);
         }
     }
-   
+
     if ( communicate_state && pnid != MyPNID )
     {
         // just communicate the change and let the real node handle it.
@@ -976,7 +970,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             memset( short_node_name, 0, MPI_MAX_PROCESSOR_NAME );
             memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
             strcpy (str1, node->GetName() );
-        
+
             char *str1_dot = strchr( (char *) str1, '.' );
             if ( str1_dot )
             {
@@ -1000,12 +994,12 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                  node->GetName(), node->GetPNid());
         mon_log_write(MON_CLUSTER_MARKDOWN_2, SQ_LOG_CRIT, buf);
 
-        node->SetKillingNode( true ); 
-        
-        if ( MyPNID == pnid && 
+        node->SetKillingNode( true );
+
+        if ( MyPNID == pnid &&
              (MyNode->GetState() == State_Up || MyNode->GetState() == State_Shutdown) &&
             !MyNode->isInQuiesceState() )
-        { 
+        {
             STATE state = MyNode->GetState();
             switch ( state )
             {
@@ -1024,13 +1018,11 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                 if ( ! Emulate_Down )
                 {
                     // make sure no processes are alive if in the middle of re-integration
-#ifndef NAMESERVER_PROCESS
                     node->KillAllDown();
-#endif
                     snprintf(buf, sizeof(buf),
                              "[CCluster::HardNodeDown], Node %s (%d)is down.\n",
                              node->GetName(), node->GetPNid());
-                    mon_log_write(MON_CLUSTER_MARKDOWN_3, SQ_LOG_ERR, buf); 
+                    mon_log_write(MON_CLUSTER_MARKDOWN_3, SQ_LOG_ERR, buf);
                     // Don't generate a core file, abort is intentional
                     struct rlimit limit;
                     limit.rlim_cur = 0;
@@ -1046,18 +1038,14 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             {
                 ResetIntegratingPNid();
             }
-#ifndef NAMESERVER_PROCESS
             node->KillAllDown();
-#endif
-            node->SetState( State_Down ); 
-#ifndef NAMESERVER_PROCESS
+            node->SetState( State_Down );
             // Send node down message to local node's processes
             lnode = node->GetFirstLNode();
             for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 lnode->Down();
             }
-#endif
             if ( ZClientEnabled )
             {
                 ZClient->WatchNodeDelete( node->GetName() );
@@ -1142,9 +1130,7 @@ void CCluster::SoftNodeDown( int pnid )
             Replicator.addItem(repl);
         }
 
-#ifndef NAMESERVER_PROCESS
         node->KillAllDownSoft();            // Kill all processes
-#endif
 
         snprintf( buf, sizeof(buf)
                 , "[%s], Node %s (%d) executed soft down.\n"
@@ -1199,7 +1185,7 @@ bool CCluster::CheckSpareSet( int pnid )
     unsigned int ii;
     unsigned int jj;
     CNode *newNode = Nodes->GetNode( pnid );
-    
+
     const char method_name[] = "CCluster::CheckSpareSet";
     TRACE_ENTRY;
 
@@ -1208,8 +1194,8 @@ bool CCluster::CheckSpareSet( int pnid )
     NodesList spareSetList;
     NodesList *spareNodesConfigList = Nodes->GetSpareNodesConfigList();
     NodesList::iterator itSn;
-    for ( itSn = spareNodesConfigList->begin(); 
-          itSn != spareNodesConfigList->end() && !done ; itSn++ ) 
+    for ( itSn = spareNodesConfigList->begin();
+          itSn != spareNodesConfigList->end() && !done ; itSn++ )
     {
         spareNode = *itSn;
         PNidVector sparePNids = spareNode->GetSparePNids();
@@ -1268,7 +1254,7 @@ bool CCluster::CheckSpareSet( int pnid )
     // if the newNode still owns the zone
     if ( newNode && newNode->GetZone() != -1 )
     {
-        // assume implicit spare node activation 
+        // assume implicit spare node activation
         // (no need to move logical nodes to physical node)
         // since HardNodeUp() already set State_Up,
         // just reset spare node flag and remove from available spare nodes
@@ -1283,11 +1269,11 @@ bool CCluster::CheckSpareSet( int pnid )
     CLNode  *lnode;
     CNode   *node;
     CNode   *downNode = NULL;
-    
+
     // Now check the state of each configured logical node in the set for down state
     spareNode = newNode;  // new node (pnid) is the spare to activate
     NodesList::iterator itSs;
-    for ( itSs = spareSetList.begin(); itSs != spareSetList.end(); itSs++ ) 
+    for ( itSs = spareSetList.begin(); itSs != spareSetList.end(); itSs++ )
     {
         node = *itSs;
         if ( node->GetPNid() != pnid )
@@ -1336,7 +1322,7 @@ bool CCluster::CheckSpareSet( int pnid )
 const char *JoiningPhaseString( JOINING_PHASE phase )
 {
     const char *str;
-    
+
     switch( phase )
     {
         case JoiningPhase_Unknown:
@@ -1365,7 +1351,7 @@ struct message_def *CCluster::JoinMessage( const char *node_name, int pnid, JOIN
 
     const char method_name[] = "CCluster::JoinMessage";
     TRACE_ENTRY;
-    
+
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->notice_death_Incr();
@@ -1392,7 +1378,7 @@ struct message_def *CCluster::SpareUpMessage( const char *node_name, int pnid )
 
     const char method_name[] = "CCluster::SpareUpMessage";
     TRACE_ENTRY;
-    
+
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->notice_death_Incr();
@@ -1418,7 +1404,7 @@ struct message_def *CCluster::ReIntegErrorMessage( const char *msgText )
 
     const char method_name[] = "CCluster::ReIntegErrorMessage";
     TRACE_ENTRY;
-    
+
     msg = new struct message_def;
     msg->type = MsgType_ReintegrationError;
     msg->noreply = true;
@@ -1443,7 +1429,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
     CNode  *node;
     CLNode *lnode;
     STATE   nodeState;
-    
+
     const char method_name[] = "CCluster::HardNodeUp";
     TRACE_ENTRY;
 
@@ -1459,18 +1445,18 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
     {
         node = Nodes->GetNode( pnid );
     }
-    
+
     if ( node == NULL )
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
            trace_printf( "%s@%d" " - Invalid node, pnid=%d, name=%s" "\n"
                        , method_name, __LINE__, pnid, node_name );
-    
+
         return( MPI_ERR_NAME );
     }
-    
+
     nodeState = node->GetState();
-     
+
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
        trace_printf( "%s@%d" " - Node state=%s" "\n"
                    , method_name, __LINE__, StateString( nodeState ) );
@@ -1478,7 +1464,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
     {
         if ( nodeState == State_Down )
         {
-            node->SetKillingNode( false ); 
+            node->SetKillingNode( false );
             if ( Emulate_Down )
             {
                 // Any DTMs running?
@@ -1498,11 +1484,11 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 }
                 // We need to remove any old process objects before we restart the node.
                 node->CleanUpProcesses();
-                node->SetState( State_Up ); 
+                node->SetState( State_Up );
                 if ( MyPNID == pnid )
                 {
                     MyNode->clearQuiesceState();
-                    HealthCheck.initializeVars(); 
+                    HealthCheck.initializeVars();
                     SMSIntegrating = true;
 #ifndef NAMESERVER_PROCESS
                     Monitor->StartPrimitiveProcesses();
@@ -1513,15 +1499,16 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 }
                 else
                 {
-#ifndef NAMESERVER_PROCESS
                     if ( tmCount )
                     {
+#ifndef NAMESERVER_PROCESS
                         // Send node prepare notice to local DTM processes
                         lnode = node->GetFirstLNode();
                         for ( ; lnode; lnode = lnode->GetNextP() )
                         {
                             lnode->PrepareForTransactions( true );
                         }
+#endif
                     }
                     else
                     {
@@ -1532,7 +1519,6 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                             lnode->Up();
                         }
                     }
-#endif
                 }
             }
             else
@@ -1545,9 +1531,9 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
         }
         else if ( nodeState == State_Merged )
         {
-            node->SetKillingNode( false ); 
+            node->SetKillingNode( false );
             node->SetState( State_Joining );
-            
+
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
                 trace_printf( "%s@%d" " - New monitor %s, pnid=%d, state=%s" "\n"
@@ -1573,16 +1559,14 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
 
                 // save the current seq num in the snapshot request.
                 // this sequence number will match the state of the cluster
-                // when this request is processed. 
-                ReqQueue.enqueueSnapshotReq(seqNum_); 
+                // when this request is processed.
+                ReqQueue.enqueueSnapshotReq(seqNum_);
             }
             if ( MyPNID == pnid )
             {
-#ifndef NAMESERVER_PROCESS
                 // request and process revive packet from the creator.
                 // when complete, this will call HardNodeUp again.
-                ReqQueue.enqueueReviveReq( ); 
-#endif
+                ReqQueue.enqueueReviveReq( );
             }
             else
             {
@@ -1602,9 +1586,9 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
         }
         else if ( nodeState == State_Joining )
         {
-            // The new monitor comes in here first and schedules a node up request on all nodes.  
+            // The new monitor comes in here first and schedules a node up request on all nodes.
             // All other monitors come here next, including the creator.
-            // The new monitor will not come here again because 
+            // The new monitor will not come here again because
             // CReplNodeUp is a noop for the one who schedules it.
             node->SetState( State_Up );
 
@@ -1800,7 +1784,7 @@ int CCluster::SoftNodeUpPrepare( int pnid )
 const char *StateString( STATE state)
 {
     const char *str;
-    
+
     switch( state )
     {
         case State_Unknown:
@@ -1844,7 +1828,7 @@ const char *StateString( STATE state)
 const char *SyncStateString( SyncState state)
 {
     const char *str;
-    
+
     switch( state )
     {
         case SyncState_Null:
@@ -1985,7 +1969,7 @@ void CCluster::DoDeviceReq(char * ldevName)
         else
         {
             char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], Can't find ldev %s.\n", method_name, 
+            snprintf(buf, sizeof(buf), "[%s], Can't find ldev %s.\n", method_name,
                     ldevName);
             mon_log_write(MON_CLUSTER_DODEVICEREQ_1, SQ_LOG_ERR, buf);
         }
@@ -2053,7 +2037,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
             trace_printf("%s@%d - Node n%d has nothing to "
                          "update. \n", method_name, __LINE__, pnid);
         break;
-    
+
     case InternalType_ActivateSpare:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal activate spare request, spare pnid=%d, down pnid=%d\n"
@@ -2161,6 +2145,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         // Queue the node down request for processing by a worker thread.
         ReqQueue.enqueueDownReq( recv_msg->u.down.pnid );
         break;
+
     case InternalType_NodeName:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal node name request (%s to %s)\n", method_name, __LINE__, recv_msg->u.node_name.current_name, recv_msg->u.node_name.new_name);
@@ -2172,6 +2157,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                                    , recv_msg->u.node_name.current_name
                                    , recv_msg->u.node_name.new_name );
         break;
+
     case InternalType_SoftNodeDown:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal soft node down request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
@@ -2216,13 +2202,13 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                                        recv_msg->u.dump.dumper_pid,
                                        recv_msg->u.dump.dumper_verifier,
                                        recv_msg->u.dump.core_file);
-                } 
+                }
                 else
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf(buf, sizeof(buf), "[%s], Can't find process nid=%d, "
                              "pid=%d, verifier=%d for dump target.\n", method_name,
-                             recv_msg->u.dump.nid, recv_msg->u.dump.pid, 
+                             recv_msg->u.dump.nid, recv_msg->u.dump.pid,
                              recv_msg->u.dump.verifier);
                     mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_1, SQ_LOG_ERR, buf);
                 }
@@ -2255,13 +2241,13 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                 if ( (verifier == -1) || (verifier == process->GetVerifier()) )
                 {
                     process->DumpEnd(recv_msg->u.dump.status, recv_msg->u.dump.core_file);
-                } 
+                }
                 else
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf(buf, sizeof(buf), "[%s], Can't find process nid=%d, "
                              "pid=%d, verifier=%d for dump target.\n", method_name,
-                             recv_msg->u.dump.nid, recv_msg->u.dump.pid, 
+                             recv_msg->u.dump.nid, recv_msg->u.dump.pid,
                              recv_msg->u.dump.verifier);
                     mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_3, SQ_LOG_ERR, buf);
                 }
@@ -2290,7 +2276,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal event request\n", method_name, __LINE__);
         if ( MyNode->IsMyNode(recv_msg->u.event.nid) )
-        {    
+        {
             if (trace_settings & TRACE_SYNC)
                 trace_printf("%s@%d - processing event for (%d, %d)\n", method_name, __LINE__, recv_msg->u.event.nid, recv_msg->u.event.pid);
 
@@ -2307,13 +2293,13 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                         process->GenerateEvent (recv_msg->u.event.event_id,
                                                 recv_msg->u.event.length,
                                                 &recv_msg->u.event.data);
-                    } 
+                    }
                     else
                     {
                         char buf[MON_STRING_BUF_SIZE];
                         snprintf(buf, sizeof(buf), "[%s], Can't find process nid=%d, "
                                  "pid=%d, verifier=%d for event=%d\n", method_name,
-                                 recv_msg->u.event.nid, recv_msg->u.event.pid, 
+                                 recv_msg->u.event.nid, recv_msg->u.event.pid,
                                  recv_msg->u.event.verifier, recv_msg->u.event.event_id);
                         mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_5, SQ_LOG_ERR, buf);
                     }
@@ -2323,7 +2309,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf(buf, sizeof(buf), "[%s], Can't find process nid"
                              "=%d, pid=%d for processing event.\n",
-                             method_name, 
+                             method_name,
                              recv_msg->u.event.nid, recv_msg->u.event.pid);
                     mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_6, SQ_LOG_ERR,
                                   buf);
@@ -2338,7 +2324,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_REDIRECTION))
             trace_printf("%s@%d - Internal IO data request\n", method_name, __LINE__);
         if ( MyNode->IsMyNode(recv_msg->u.iodata.nid) )
-        {    
+        {
             if (trace_settings & (TRACE_SYNC | TRACE_REDIRECTION))
                 trace_printf("%s@%d - processing IO Data for (%d, %d)\n", method_name, __LINE__, recv_msg->u.iodata.nid, recv_msg->u.iodata.pid);
 
@@ -2370,7 +2356,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                              method_name,
                              recv_msg->u.iodata.nid, recv_msg->u.iodata.pid);
                     mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_7, SQ_LOG_ERR,
-                                  buf); 
+                                  buf);
                 }
             }
         }
@@ -2433,7 +2419,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                                  recv_msg->u.stdin_req.supplier_nid,
                                  recv_msg->u.stdin_req.supplier_pid);
                         mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_8,
-                                      SQ_LOG_ERR, buf); 
+                                      SQ_LOG_ERR, buf);
                     }
                 }
             }
@@ -2453,7 +2439,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                      "pid=%d for stdin data request.\n", method_name,
                      recv_msg->u.stdin_req.nid,
                      recv_msg->u.stdin_req.pid);
-            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_ERR, buf);
         }
         break;
 #endif
@@ -2467,7 +2453,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueKillReq( &recv_msg->u.kill );
         break;
 #endif
-                    
+
     case InternalType_Process:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal process request\n", method_name, __LINE__);
@@ -2547,7 +2533,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                         trace_printf("%s@%d - Sync State Collision! Node %s (pnid=%d) TmSyncState=(%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState()) );
                     if ( MyNode->GetTmSyncState() == SyncState_Continue )
                     {
-                        if ( pnid > tmSyncPNid_ ) 
+                        if ( pnid > tmSyncPNid_ )
                             // highest node id will continue
                         {
                             // They take priority ... we abort
@@ -2603,21 +2589,21 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                     {
                         if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                             trace_printf("%s@%d - Invalid TmSync_State\n", method_name, __LINE__);
-                    }    
-                }    
+                    }
+                }
             }
             break;
-        
+
         case SyncType_TmSyncState:
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d - TMSYNC(TmSyncState) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
-            break; 
-        
+            break;
+
         default:
             {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], Unknown SyncType from pnid=%d.\n", method_name, pnid);
-            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_10, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_10, SQ_LOG_ERR, buf);
             }
         }
         break;
@@ -2627,7 +2613,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], Unknown Internal message received, Physical Node=%d.\n", method_name, pnid);
-            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_11, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_11, SQ_LOG_ERR, buf);
         }
     }
 
@@ -2798,13 +2784,13 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                                        recv_msg->u.dump.dumper_pid,
                                        recv_msg->u.dump.dumper_verifier,
                                        recv_msg->u.dump.core_file);
-                } 
+                }
                 else
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf(buf, sizeof(buf), "[%s], Can't find process nid=%d, "
                              "pid=%d, verifier=%d for dump target.\n", method_name,
-                             recv_msg->u.dump.nid, recv_msg->u.dump.pid, 
+                             recv_msg->u.dump.nid, recv_msg->u.dump.pid,
                              recv_msg->u.dump.verifier);
                     mon_log_write(MON_CLUSTER_HANDLEMYNODE_1, SQ_LOG_ERR, buf);
                 }
@@ -2836,13 +2822,13 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                 if ( (verifier == -1) || (verifier == process->GetVerifier()) )
                 {
                     process->DumpEnd(recv_msg->u.dump.status, recv_msg->u.dump.core_file);
-                } 
+                }
                 else
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf(buf, sizeof(buf), "[%s], Can't find process nid=%d, "
                              "pid=%d, verifier=%d for dump target.\n", method_name,
-                             recv_msg->u.dump.nid, recv_msg->u.dump.pid, 
+                             recv_msg->u.dump.nid, recv_msg->u.dump.pid,
                              recv_msg->u.dump.verifier);
                     mon_log_write(MON_CLUSTER_HANDLEMYNODE_3, SQ_LOG_ERR, buf);
                 }
@@ -2871,7 +2857,7 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
             trace_printf("%s@%d - Internal event request\n", method_name, __LINE__);
         break;
 #endif
-                    
+
 #ifndef NAMESERVER_PROCESS
     case InternalType_IoData:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -2955,32 +2941,34 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                  MyNode->GetPhase() == Phase_Ready &&
                  MyNode->GetLNodesCount() > 1 )
             {
-                // Begin a Slave Sync Start to other 
+                // Begin a Slave Sync Start to other
                 // logical nodes in my physical node
                 if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                     trace_printf("%s@%d - Slave Sync Start on local node %s, pnid=%d\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
                 Monitor->CoordinateTmDataBlock( &recv_msg->u.sync );
             }
             break;
+
         case SyncType_TmSyncState:
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d    - TMSYNC(TmSyncState) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[MyPNID]->GetName(), MyPNID);
-            break;    
+            break;
+
         default:
             {
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf(buf, sizeof(buf), "[%s], Unknown SyncType from node %s, pnid=%d during processing local SyncType.\n", method_name, Node[pnid]->GetName(), pnid);
-                mon_log_write(MON_CLUSTER_HANDLEMYNODE_5, SQ_LOG_ERR, buf); 
+                mon_log_write(MON_CLUSTER_HANDLEMYNODE_5, SQ_LOG_ERR, buf);
             }
         }
         break;
 #endif
-                    
+
     default:
         {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], Unknown Internal message received during processing local SyncType for pnid=%d.\n", method_name, pnid);
-            mon_log_write(MON_CLUSTER_HANDLEMYNODE_6, SQ_LOG_ERR, buf);   
+            mon_log_write(MON_CLUSTER_HANDLEMYNODE_6, SQ_LOG_ERR, buf);
         }
 
     }
@@ -2999,9 +2987,9 @@ bool CCluster::responsive()
 
     // if no difference in barrier count, sync thread is not responsive
     if  ( !barrierDiff && isMonInitComplete() )
-    {   
+    {
         // this proc is called every SYNC_MAX_RESPONSIVE+1 secs
-        cumulativeDelaySec_ += CCluster::SYNC_MAX_RESPONSIVE + 1; 
+        cumulativeDelaySec_ += CCluster::SYNC_MAX_RESPONSIVE + 1;
 
         monSyncResponsive_ = false; // sync thread is no longer responsive
 
@@ -3010,12 +2998,12 @@ bool CCluster::responsive()
             // if sync thread is stuck in mpi call, one of the following checks will be true
             if ( inBarrier_ || inAllGather_ || inCommDup_ )
             {
-                mem_log_write(MON_CLUSTER_RESPONSIVE_1, cumulativeDelaySec_, 
+                mem_log_write(MON_CLUSTER_RESPONSIVE_1, cumulativeDelaySec_,
                               ( ( (inBarrier_ << 1) | inAllGather_ ) << 1 ) | inCommDup_);
             }
             else // non-mpi took quite long
             {
-                mem_log_write(MON_CLUSTER_RESPONSIVE_2, cumulativeDelaySec_); 
+                mem_log_write(MON_CLUSTER_RESPONSIVE_2, cumulativeDelaySec_);
             }
         }
         else
@@ -3023,18 +3011,18 @@ bool CCluster::responsive()
             // if sync thread is stuck in mpi call
             if ( inBarrier_ )
             {
-                mem_log_write(MON_CLUSTER_RESPONSIVE_1, cumulativeDelaySec_, 
+                mem_log_write(MON_CLUSTER_RESPONSIVE_1, cumulativeDelaySec_,
                               inBarrier_);
             }
             else // non-mpi took quite long
             {
-                mem_log_write(MON_CLUSTER_RESPONSIVE_2, cumulativeDelaySec_); 
+                mem_log_write(MON_CLUSTER_RESPONSIVE_2, cumulativeDelaySec_);
             }
         }
     }
     else if (barrierDiff < syncMinPerSec_)
     {
-        mem_log_write(MON_CLUSTER_RESPONSIVE_3, barrierDiff, syncMinPerSec_); 
+        mem_log_write(MON_CLUSTER_RESPONSIVE_3, barrierDiff, syncMinPerSec_);
         cumulativeDelaySec_ = 0;
         monSyncResponsive_ = true; // slow but responsive
     }
@@ -3132,7 +3120,7 @@ void CCluster::InitializeConfigCluster( void )
     TRACE_ENTRY;
 
     int worldSize;
-    MPI_Comm_size (MPI_COMM_WORLD, &worldSize);    
+    MPI_Comm_size (MPI_COMM_WORLD, &worldSize);
 #ifdef NAMESERVER_PROCESS
     if ( !IsRealCluster )
     {
@@ -3144,7 +3132,7 @@ void CCluster::InitializeConfigCluster( void )
 #endif
     int rankToPnid[worldSize];
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
-    
+
     currentNodes_ = worldSize;
 
     if ( IsRealCluster )
@@ -3228,16 +3216,16 @@ void CCluster::InitializeConfigCluster( void )
             {
                 if (Node[indexToPnid_[i]]->GetPNid() == MyPNID)
                 { // Set bit indicating node is up
-                    upNodes_.upNodes[indexToPnid_[i]/MAX_NODE_BITMASK] |= 
+                    upNodes_.upNodes[indexToPnid_[i]/MAX_NODE_BITMASK] |=
                         (1ull << (indexToPnid_[i]%MAX_NODE_BITMASK));
                 }
                 else
-                { // Set node state to down   
+                { // Set node state to down
                     Node[indexToPnid_[i]]->SetState( State_Down );
 #ifndef NAMESERVER_PROCESS
                     if (IsMaster)
                     {
-                        if (TmLeaderPNid == indexToPnid_[i]) 
+                        if (TmLeaderPNid == indexToPnid_[i])
                         {
                             AssignTmLeader(indexToPnid_[i], false);
                         }
@@ -3305,7 +3293,7 @@ void CCluster::InitializeConfigCluster( void )
                                 nodeNames, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                                 MPI_COMM_WORLD);
             if (rc != MPI_SUCCESS)
-            { 
+            {
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf(buf, sizeof(buf), "[%s@%d] MPI_Allgather error=%s\n",
                          method_name, __LINE__, ErrorMsg(rc));
@@ -3379,7 +3367,7 @@ void CCluster::InitializeConfigCluster( void )
 
 #ifndef NAMESERVER_PROCESS
                     // assign new TmLeader if TMLeader node is dead.
-                    if (TmLeaderPNid == indexToPnid_[i]) 
+                    if (TmLeaderPNid == indexToPnid_[i])
                     {
                         AssignTmLeader(indexToPnid_[i], false);
                     }
@@ -3395,7 +3383,7 @@ void CCluster::InitializeConfigCluster( void )
                                     , i, nodeStatus[i]
                                     , i, indexToPnid_[i] ) ;
 
-                    upNodes_.upNodes[indexToPnid_[i]/MAX_NODE_BITMASK] |= 
+                    upNodes_.upNodes[indexToPnid_[i]/MAX_NODE_BITMASK] |=
                         (1ull << (indexToPnid_[i]%MAX_NODE_BITMASK));
                 }
             }
@@ -3500,7 +3488,7 @@ void CCluster::InitClusterComm(int worldSize, int myRank, int * rankToPnid)
             placed = false;
             for (int k=0; k<splitRows; ++k)
             {
-                if (    splitColors[k*worldSize+i] == MPI_UNDEFINED 
+                if (    splitColors[k*worldSize+i] == MPI_UNDEFINED
                      && splitColors[k*worldSize+j] == MPI_UNDEFINED )
                 {
                     splitColors[k*worldSize+i] = color;
@@ -3526,7 +3514,7 @@ void CCluster::InitClusterComm(int worldSize, int myRank, int * rankToPnid)
 
                 ++splitRows;
             }
-            
+
             ++color;
         }
     }
@@ -3644,7 +3632,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
     case Reintegrate_Err5:
         snprintf(buf, sizeof(buf), "[%s], can't to connect to "
                  " node %d monitor, commPort=%s, syncPort=%s: %s.\n",
-                 method_name, pnid, nodeInfo->commPort, 
+                 method_name, pnid, nodeInfo->commPort,
                  nodeInfo->syncPort, ErrorMsg(rc));
         break;
 
@@ -3653,7 +3641,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
                  "for node %d: %s.\n", method_name, pnid,
                  ErrorMsg(rc));
         break;
- 
+
     case Reintegrate_Err7:
         snprintf(buf, sizeof(buf), "[%s], can't disconnect "
                  "intercomm for node %d: %s.\n", method_name, pnid,
@@ -3706,7 +3694,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
     }
 
     mon_log_write(MON_CLUSTER_REINTEGRATE_1, SQ_LOG_ERR, buf);
-    
+
     if ( abortIn )
         MPI_Abort(MPI_COMM_SELF,99);
 
@@ -3818,7 +3806,7 @@ bool CCluster::PingSockPeer(CNode *node)
     nodeInfo.creator = false;
     nodeInfo.creatorShellPid = -1;
     nodeInfo.creatorShellVerifier = -1;
-    
+
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
         trace_printf( "Sending my nodeInfo.pnid=%d\n"
@@ -3852,7 +3840,7 @@ bool CCluster::PingSockPeer(CNode *node)
         snprintf( buf, sizeof(buf)
                 , "[%s], Cannot send ping node info to node %s: (%s)\n"
                 , method_name, node->GetName(), ErrorMsg(rc));
-        mon_log_write(MON_PINGSOCKPEER_1, SQ_LOG_ERR, buf);    
+        mon_log_write(MON_PINGSOCKPEER_1, SQ_LOG_ERR, buf);
     }
     else
     {
@@ -3867,7 +3855,7 @@ bool CCluster::PingSockPeer(CNode *node)
             snprintf( buf, sizeof(buf)
                     , "[%s], Cannot receive ping node info from node %s: (%s)\n"
                     , method_name, node->GetName(), ErrorMsg(rc));
-            mon_log_write(MON_PINGSOCKPEER_2, SQ_LOG_ERR, buf);    
+            mon_log_write(MON_PINGSOCKPEER_2, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -3897,7 +3885,7 @@ void CCluster::ReIntegrate( int initProblem )
 {
     const char method_name[] = "CCluster::ReIntegrate";
     TRACE_ENTRY;
-     
+
     switch( CommType )
     {
         case CommType_InfiniBand:
@@ -3967,10 +3955,10 @@ void CCluster::ReIntegrateMPI( int initProblem )
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
         trace_printf("%s@%d Connected to creator monitor, sending id\n",
-                     method_name, __LINE__); 
+                     method_name, __LINE__);
     }
 
-    // Send this node's name and port number so creator monitor 
+    // Send this node's name and port number so creator monitor
     // knows who we are, and set flag to let creator monitor it is the CREATOR.
     myNodeInfo.creator = true;
     myNodeInfo.creatorShellPid = CreatorShellPid;
@@ -4006,7 +3994,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
         SendReIntegrateStatus( State_Down, initProblem );
     }
 
-    // Connect to each of the other existing monitors and let them know 
+    // Connect to each of the other existing monitors and let them know
     // we are the NEW monitor and reset the creator flag so they know they are
     // not the creator monitor.
     myNodeInfo.creator = false;
@@ -4039,7 +4027,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
             {
                 trace_printf("%s@%d Attempting connection to node %d (%s), "
                              "port %s\n", method_name, __LINE__, i,
-                             nodeInfo[i].nodeName, nodeInfo[i].commPort); 
+                             nodeInfo[i].nodeName, nodeInfo[i].commPort);
             }
 
             mem_log_write(CMonLog::MON_REINTEGRATE_5, MyPNID, i);
@@ -4063,7 +4051,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
                 trace_printf("%s@%d Connected to node %d (%s), sending id\n",
-                             method_name, __LINE__,i,nodeInfo[i].nodeName); 
+                             method_name, __LINE__,i,nodeInfo[i].nodeName);
             }
 
             // Send this nodes name and port number so other monitor
@@ -4102,7 +4090,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
             {
                 trace_printf( "%s@%d - Received ready-flag from node %d (%s)\n",
                               method_name, __LINE__, i,
-                             nodeInfo[i].nodeName); 
+                             nodeInfo[i].nodeName);
             }
 
             if ((rc = MPI_Comm_disconnect(&interComm)))
@@ -4233,7 +4221,7 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     TEST_POINT( TP011_NODE_UP );
 
-    // Send this node's name and port number so creator monitor 
+    // Send this node's name and port number so creator monitor
     // knows who we are, and set flag to let creator monitor it is the CREATOR.
     nodeId_t myNodeInfo;
     strcpy(myNodeInfo.nodeName, MyNode->GetName());
@@ -4319,7 +4307,7 @@ void CCluster::ReIntegrateSock( int initProblem )
                         , i, nodeInfo[i].creatorPNid );
         }
     }
-    // Connect to each of the other existing monitors and let them know 
+    // Connect to each of the other existing monitors and let them know
     // we are the NEW monitor and reset the creator flag so they know they are
     // not the creator monitor.
     myNodeInfo.creator = false;
@@ -4328,7 +4316,7 @@ void CCluster::ReIntegrateSock( int initProblem )
     myNodeInfo.ping = false;
     for (int i=0; i<pnodeCount; i++)
     {
-        if ( nodeInfo[i].creatorPNid != -1 && 
+        if ( nodeInfo[i].creatorPNid != -1 &&
              nodeInfo[i].creatorPNid == nodeInfo[i].pnid )
         {
             // Get acknowledgement that creator monitor is ready to
@@ -4404,7 +4392,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             }
             socks_[nodeInfo[i].pnid] = existingSyncFd;
             // Set bit indicating node is up
-            upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |= 
+            upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |=
                 (1ull << (nodeInfo[i].pnid%MAX_NODE_BITMASK));
 
             if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
@@ -4439,7 +4427,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             {
                 trace_printf("%s@%d Attempting connection to node %d (%s), "
                              "port %s\n", method_name, __LINE__, nodeInfo[i].pnid,
-                             nodeInfo[i].nodeName, nodeInfo[i].commPort); 
+                             nodeInfo[i].nodeName, nodeInfo[i].commPort);
             }
 
             mem_log_write(CMonLog::MON_REINTEGRATE_5, MyPNID, i);
@@ -4460,7 +4448,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
                 trace_printf("%s@%d Connected to node %d (%s), sending my node name\n",
-                             method_name, __LINE__,i,nodeInfo[i].nodeName); 
+                             method_name, __LINE__,i,nodeInfo[i].nodeName);
             }
 
             // Send this nodes name and port number so other monitor
@@ -4505,12 +4493,12 @@ void CCluster::ReIntegrateSock( int initProblem )
             // Store port numbers for the node
             strncpy(commPort, nodeInfo[i].commPort, MPI_MAX_PORT_NAME);
             strncpy(syncPort, nodeInfo[i].syncPort, MPI_MAX_PORT_NAME);
-        
+
             Node[nodeInfo[i].pnid]->SetCommPort( commPort );
             pch1 = strtok (commPort,":");
             pch1 = strtok (NULL,":");
             Node[nodeInfo[i].pnid]->SetCommSocketPort( atoi(pch1) );
-        
+
             Node[nodeInfo[i].pnid]->SetSyncPort( syncPort );
             pch2 = strtok (syncPort,":");
             pch2 = strtok (NULL,":");
@@ -4540,7 +4528,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             socks_[nodeInfo[i].pnid] = existingSyncFd;
 
             // Set bit indicating node is up
-            upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |= 
+            upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |=
             (1ull << (nodeInfo[i].pnid%MAX_NODE_BITMASK));
 
             if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
@@ -4691,7 +4679,7 @@ void CCluster::ResetIntegratingPNid( void )
     TRACE_EXIT;
 }
 
-void CCluster::SetIntegratingPNid( int pnid ) 
+void CCluster::SetIntegratingPNid( int pnid )
 {
     const char method_name[] = "CCluster::SetIntegratingPNid";
     TRACE_ENTRY;
@@ -4724,7 +4712,7 @@ void CCluster::addNewComm(int pnid, int otherRank,  MPI_Comm comm)
     TRACE_EXIT;
 }
 
-// A node is reintegrating.   Add the communicator for the node to the set of 
+// A node is reintegrating.   Add the communicator for the node to the set of
 // communicators used by "Allgather".
 void CCluster::setNewComm( int pnid )
 {
@@ -4835,7 +4823,7 @@ void CCluster::addNewSock(int pnid, int otherRank, int sockFd)
     TRACE_EXIT;
 }
 
-// A node is reintegrating.   Add the socket for the node to the set of 
+// A node is reintegrating.   Add the socket for the node to the set of
 // communicators used by "Allgather".
 void CCluster::setNewSock( int pnid )
 {
@@ -4927,9 +4915,9 @@ int CCluster::Allgather( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status
 {
     const char method_name[] = "CCluster::Allgather";
     TRACE_ENTRY;
-    
+
     int err = 0;
-    
+
     switch( CommType )
     {
         case CommType_InfiniBand:
@@ -4942,7 +4930,7 @@ int CCluster::Allgather( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status
             // Programmer bonehead!
             MPI_Abort(MPI_COMM_SELF,99);
     }
-    
+
     TRACE_EXIT;
     return err;
 }
@@ -4979,7 +4967,7 @@ int CCluster::AllgatherIB( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Stat
                           "MPI_Send_init() error=%s (%d)\n"
                         , method_name, i, Node[i]->GetName()
                         , ErrorMsg(e), e );
-                mon_log_write(MON_CLUSTER_ALLGATHERIB_1, SQ_LOG_ERR, buf); 
+                mon_log_write(MON_CLUSTER_ALLGATHERIB_1, SQ_LOG_ERR, buf);
                 goto early_exit;
             }
 
@@ -4994,7 +4982,7 @@ int CCluster::AllgatherIB( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Stat
                           "MPI_Recv_init() error=%s (%d)\n"
                         , method_name, i, Node[i]->GetName()
                         , ErrorMsg(e), e );
-                mon_log_write(MON_CLUSTER_ALLGATHERIB_2, SQ_LOG_ERR, buf); 
+                mon_log_write(MON_CLUSTER_ALLGATHERIB_2, SQ_LOG_ERR, buf);
                 goto early_exit;
             }
         }
@@ -5014,7 +5002,7 @@ int CCluster::AllgatherIB( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Stat
                       "MPI_Start() error=%s (%d)\n"
                     , method_name, pnid, Node[pnid]->GetName()
                     , ErrorMsg(e), e );
-            mon_log_write(MON_CLUSTER_ALLGATHERIB_3, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_ALLGATHERIB_3, SQ_LOG_ERR, buf);
             goto early_exit;
         }
     }
@@ -5032,7 +5020,7 @@ int CCluster::AllgatherIB( int nbytes, void *sbuf, char *rbuf, int tag, MPI_Stat
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf), "[%s], MPI_Waitall() error=%s (%d)\n"
                     , method_name, ErrorMsg(e), e );
-            mon_log_write(MON_CLUSTER_ALLGATHERIB_4, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_ALLGATHERIB_4, SQ_LOG_ERR, buf);
             inBarrier_ = false;
             goto early_exit;
         }
@@ -5089,7 +5077,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
     memset( p, 0, sizeof(p) );
     tag = 0; // make compiler happy
     // Set to twice the ZClient session timeout
-    static int sessionTimeout = ZClientEnabled 
+    static int sessionTimeout = ZClientEnabled
                                 ? (ZClient->GetSessionTimeout() * 2) : 120;
 
     int nsent = 0, nrecv = 0;
@@ -5205,7 +5193,7 @@ reconnected:
             { // Check no IO completion on peers
                 peer = &p[indexToPnid_[iPeer]];
                 if ( (peer->p_receiving) || (peer->p_sending) )
-                { 
+                {
                     peerTimedoutCount++;
                     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                     {
@@ -5272,7 +5260,7 @@ reconnected:
                                 , peerTimedoutCount );
                 }
                 // First, check ability to connect to all peers
-                // An err returned will mean that connect failed with 
+                // An err returned will mean that connect failed with
                 // at least one peer. No err implies that possible network
                 // reset occurred and there is probably one dead connection
                 // to a peer where no IOs will complete ever, so connections
@@ -5914,7 +5902,7 @@ int CCluster::AllgatherSockReconnect( MPI_Status *stats, bool reestablishConnect
             {
                 idst = -1;
             }
-            if ( idst >= 0 
+            if ( idst >= 0
               && reconnectSock != -1
               && fcntl( socks_[idst], F_SETFL, O_NONBLOCK ) )
             {
@@ -5970,7 +5958,7 @@ int CCluster::AcceptSockPeer( CNode *node, int peer, bool reestablishConnections
                 , "[%s@%d] gethostbyname(%s) error: %s\n"
                 , method_name, __LINE__
                 , MyNode->GetName()
-                , strerror_r( errno, ebuff, 256 ) );
+                , strerror_r( h_errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_ACCEPTSOCKPEER_1, SQ_LOG_CRIT, buf );
         abort();
     }
@@ -6068,7 +6056,7 @@ int CCluster::ConnectSockPeer( CNode *node, int peer, bool reestablishConnection
                 , "[%s@%d] gethostbyname(%s) error: %s\n"
                 , method_name, __LINE__
                 , MyNode->GetName()
-                , strerror_r( errno, ebuff, 256 ) );
+                , strerror_r( h_errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_CONNECTSOCKPEER_1, SQ_LOG_CRIT, buf );
         abort();
     }
@@ -6076,7 +6064,7 @@ int CCluster::ConnectSockPeer( CNode *node, int peer, bool reestablishConnection
     {
         // Initialize my source address structure
         memcpy( srcaddr, he->h_addr, 4 );
-        // Get peer's host structure via its node name 
+        // Get peer's host structure via its node name
         he = gethostbyname( node->GetName() );
         if ( !he )
         {
@@ -6085,7 +6073,7 @@ int CCluster::ConnectSockPeer( CNode *node, int peer, bool reestablishConnection
             snprintf( buf, sizeof(buf),
                 "[%s@%d] gethostbyname(%s) error: %s\n",
                 method_name, __LINE__, node->GetName(),
-                strerror_r( errno, ebuff, 256 ) );
+                strerror_r( h_errno, ebuff, 256 ) );
             mon_log_write( MON_CLUSTER_CONNECTSOCKPEER_2, SQ_LOG_CRIT, buf );
             abort();
         }
@@ -6302,7 +6290,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             {   // General agreement that node is down, proceed to mark it down
 
                 CNode *downNode = Nodes->GetNode( it->exitedPnid );
-                if (downNode && downNode->GetState() != State_Down) 
+                if (downNode && downNode->GetState() != State_Down)
                 {
                     // temp trace
                     if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
@@ -6310,9 +6298,9 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
                         trace_printf("%s@%d proceeding to mark node %d down\n",
                                      method_name, __LINE__, it->exitedPnid);
                     }
-    
+
                     mem_log_write(CMonLog::MON_UPDATE_CLUSTER_3, it->exitedPnid);
-    
+
                     HandleDownNode(it->exitedPnid);
                 }
                 else
@@ -6394,7 +6382,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             bool someExited = false;
             // No need to check local monitor's view of the cluster since
             // any down connections are handled directly when detected.
-            if (/*indexToPnid_[remIndex]*/remIndex == MyPNID) 
+            if (/*indexToPnid_[remIndex]*/remIndex == MyPNID)
             {
                 pnodesCount2++;
                 continue;
@@ -6413,7 +6401,7 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
                 }
                 continue;
             }
-            else if (remoteNode->GetState() == State_Down) 
+            else if (remoteNode->GetState() == State_Down)
             {   //  node is down
                 if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
                 {
@@ -6430,10 +6418,10 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             }
 
             // Check if all active nodes see the node as up.
-            nodeMask.upNodes[/*indexToPnid_[remIndex]*/remIndex/MAX_NODE_BITMASK] = 
+            nodeMask.upNodes[/*indexToPnid_[remIndex]*/remIndex/MAX_NODE_BITMASK] =
                 1ull << (/*indexToPnid_[remIndex]*/remIndex%MAX_NODE_BITMASK);
 
-            if ( upNodes_.upNodes[/*indexToPnid_[remIndex]*/remIndex/MAX_NODE_BITMASK] & 
+            if ( upNodes_.upNodes[/*indexToPnid_[remIndex]*/remIndex/MAX_NODE_BITMASK] &
                  nodeMask.upNodes[/*indexToPnid_[remIndex]*/remIndex/MAX_NODE_BITMASK] )
             {  // This remote node sees node pnid as up
                 int pnodesCount3 = 0;
@@ -6498,7 +6486,7 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
         CNode *node= Nodes->GetNode( pnid );
         if (!node) continue;
         if (node->GetState() != State_Up) continue;
-        
+
         if ( pnid == MyPNID )
         {
             seqNum = nodestate[pnid].seq_num = seqNum_;
@@ -6521,7 +6509,7 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
         {
             loSeqNum = (seqNum < loSeqNum) ? seqNum : loSeqNum;
             hiSeqNum = (seqNum > hiSeqNum) ? seqNum : hiSeqNum;
-    
+
             found = false;
             for (int i=0; i<maxBucket; ++i)
             {
@@ -6561,7 +6549,7 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
 
     lowSeqNum_  = loSeqNum;
     highSeqNum_ = hiSeqNum;
-    
+
     if (trace_settings & TRACE_SYNC)
     {
         if ( lowSeqNum_ != highSeqNum_ )
@@ -6591,7 +6579,7 @@ void CCluster::HandleDownNode( int pnid )
     CNode *downNode = Nodes->GetNode( pnid );
     assert(downNode);
     deadNodeList_.push_back( downNode );
-    
+
     if (trace_settings & TRACE_INIT)
         trace_printf("%s@%d - Added down node to list, pnid=%d, name=(%s)\n", method_name, __LINE__, downNode->GetPNid(), downNode->GetName());
 
@@ -6602,7 +6590,7 @@ void CCluster::HandleDownNode( int pnid )
     CNode *spareNode;
     NodesList *spareNodesList = Nodes->GetSpareNodesList();
     NodesList::iterator itSn;
-    for ( itSn = spareNodesList->begin(); itSn != spareNodesList->end() ; itSn++ ) 
+    for ( itSn = spareNodesList->begin(); itSn != spareNodesList->end() ; itSn++ )
     {
         spareNode = *itSn;
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -6610,8 +6598,8 @@ void CCluster::HandleDownNode( int pnid )
                         , method_name, __LINE__, spareNode->GetName(), spareNode->GetPNid()
                         , StateString(spareNode->GetState()), spareNode->IsSpareNode(), spareNode->IsRankFailure());
         // if spare node is available
-        if ( spareNode->IsSpareNode()    && 
-             !spareNode->IsRankFailure() && 
+        if ( spareNode->IsSpareNode()    &&
+             !spareNode->IsRankFailure() &&
              spareNode->GetState() == State_Up )
         {
             spareNodeVector_.push_back( spareNode );
@@ -6619,10 +6607,10 @@ void CCluster::HandleDownNode( int pnid )
                 trace_printf("%s@%d - pnid=%d, name=(%s) is available Spare\n", method_name, __LINE__, spareNode->GetPNid(), spareNode->GetName());
         }
     }
-    
+
     // Activate spare or down node
     NodesList::iterator itDn;
-    for ( itDn = deadNodeList_.begin(); itDn != deadNodeList_.end() ; itDn++ ) 
+    for ( itDn = deadNodeList_.begin(); itDn != deadNodeList_.end() ; itDn++ )
     {
         downNode = *itDn;
         if ( Emulate_Down )
@@ -6675,7 +6663,7 @@ void CCluster::HandleDownNode( int pnid )
                     ReqQueue.enqueueActivateSpareReq( spareNode, downNode, true );
                 }
             }
-            else 
+            else
             {
                 if ( downNode->IsSpareNode() )
                 {
@@ -6728,7 +6716,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 // Programmer bonehead!
                 abort();
         }
-        
+
         if (noComm
          || status[index].MPI_ERROR != MPI_SUCCESS)
         {
@@ -6781,7 +6769,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
 
         for ( int i =0; i < MAX_NODE_MASKS ; i++ )
         {
-            if ( nodestate[index].nodeMask.upNodes[i] != upNodes_.upNodes[i] ) 
+            if ( nodestate[index].nodeMask.upNodes[i] != upNodes_.upNodes[i] )
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
                 {
@@ -6794,7 +6782,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                                     , seqNum_
                                     , Node[index]->GetName()
                                     , index
-                                    , j 
+                                    , j
                                     , nodestate[index].nodeMask.upNodes[j]
                                     , upNodes_.upNodes[j] );
                     }
@@ -6817,7 +6805,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
 
 #ifndef NAMESERVER_PROCESS
         if ( Node[index]->GetTmSyncState() != recvBuf->nodeInfo.tmSyncState )
-        {    
+        {
             Node[index]->SetTmSyncState(recvBuf->nodeInfo.tmSyncState);
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
             {
@@ -6875,7 +6863,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     }
 
     if ( (checkSeqNum_ || reconnectSeqNum_ != 0)
-      && !ValidateSeqNum( nodestate ) 
+      && !ValidateSeqNum( nodestate )
       && !enqueuedDown_ )
     {
         if ( reconnectSeqNum_ == 0 && MyNode->GetState() == State_Up )
@@ -6914,15 +6902,15 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 abort();
         }
         if (noComm) continue;
-        
+
         if (status[index].MPI_ERROR != MPI_SUCCESS)
-        { 
+        {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s] MPI communications error=%d "
                      "(%s) for node %d (at seq #%lld).\n", method_name,
                      status[index].MPI_ERROR, ErrorMsg(status[index].MPI_ERROR),
                      index,  seqNum_);
-            mon_log_write(MON_CLUSTER_UPDTCLUSTERSTATE_2, SQ_LOG_ERR, buf); 
+            mon_log_write(MON_CLUSTER_UPDTCLUSTERSTATE_2, SQ_LOG_ERR, buf);
 
             if ( status[index].MPI_ERROR == MPI_ERR_EXITED )
             {   // A monitor has gone away
@@ -7004,7 +6992,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         node_state = (STATE)nodestate[index].node_state;
         change_nid = nodestate[index].change_nid;
 
-        if ( index == MyPNID && 
+        if ( index == MyPNID &&
              MyNode->GetState() == State_Merged && seqNum_ == 1)
         {   // Initial "allgather" for this re-integrated monitor.
 
@@ -7014,7 +7002,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             {
                 trace_printf("%s@%d Completed initial allgather for pnid=%d, "
                              "state=%d(%s), seqNum_=%lld\n", method_name, __LINE__,
-                             index, MyNode->GetState(), 
+                             index, MyNode->GetState(),
                              StateString(MyNode->GetState()), seqNum_ );
             }
 
@@ -7026,7 +7014,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         if ( change_nid == MyPNID )
         {
             if( MyNode->GetState() == State_Down ||
-                MyNode->GetState() == State_Merged || 
+                MyNode->GetState() == State_Merged ||
                 MyNode->GetState() == State_Joining )
             {
                 if (trace_settings & TRACE_RECOVERY)
@@ -7102,7 +7090,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                                            (char *)pnode->GetName(),
                                            -1 );
                     break;
- 
+
                 case State_Merged:
                 case State_Joining:
                 default:
@@ -7171,7 +7159,7 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
 
     // Using the data returned from Allgather, process replication data
     // from all nodes.  If there are any TmSync messages from other
-    // nodes, defer processing until all other replicated data are 
+    // nodes, defer processing until all other replicated data are
     // processed.
     struct internal_msg_def *msg;
     struct sync_buffer_def *msgBuf;
@@ -7234,7 +7222,7 @@ bool CCluster::ProcessClusterData( struct sync_buffer_def * syncBuf,
         msgBuf->msgInfo.msg_offset = 0;
 
 #ifndef NAMESERVER_PROCESS
-        if ( msgBuf->msgInfo.msg_count == 1 
+        if ( msgBuf->msgInfo.msg_count == 1
         && (( internal_msg_def *)msgBuf->msg)->type == InternalType_Sync )
         {
             if ( deferredTmSync )
@@ -7343,7 +7331,7 @@ bool CCluster::checkIfDone (  )
         }
     }
     else if ( MyNode->GetShutdownLevel() != ShutdownLevel_Undefined
-              && MyNode->GetState() == State_Down 
+              && MyNode->GetState() == State_Down
               && MyNode->GetNumProcs() == 0)
     {
         if (trace_settings & TRACE_SYNC)
@@ -7356,9 +7344,7 @@ bool CCluster::checkIfDone (  )
         return false;
     }
 
-#ifndef NAMESERVER_PROCESS
     MyNode->CheckShutdownProcessing();
-#endif
 
     TRACE_EXIT;
 
@@ -7403,7 +7389,7 @@ bool CCluster::agTimeStats(struct timespec & ts_begin,
     }
 
     if ( timediff.tv_sec > agMaxElapsed_.tv_sec
-         || (timediff.tv_sec == agMaxElapsed_.tv_sec 
+         || (timediff.tv_sec == agMaxElapsed_.tv_sec
              && timediff.tv_nsec > agMaxElapsed_.tv_nsec ))
         // Have a new maximum elapsed time
         agMaxElapsed_ = timediff;
@@ -7465,12 +7451,12 @@ void CCluster::stats()
             range = "<=";
         }
         bucket = bucket/1000;
-        if (bucket < 1000) 
+        if (bucket < 1000)
             unit = "usec";
         else
         {
             bucket = bucket / 1000;
-            if ( bucket < 1000 ) 
+            if ( bucket < 1000 )
                 unit = "msec";
             else
                 unit = "???";
@@ -7514,7 +7500,7 @@ bool CCluster::exchangeNodeData ( )
     else
     {
       // should not be here in more than one recursive call.
-      assert(swpRecCount_ == 2); 
+      assert(swpRecCount_ == 2);
       recv_buffer = recvBuffer2_;
     }
 
@@ -7564,7 +7550,7 @@ reconnected:
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], Unexpected MPI communications "
                  "error=%s (%d).\n", method_name, ErrorMsg(err), err);
-        mon_log_write(MON_CLUSTER_EXCHANGENODEDATA_1, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_EXCHANGENODEDATA_1, SQ_LOG_ERR, buf);
 
         // Allgather() failed in a fundamental way, bring this node down
         if ( !enqueuedDown_ )
@@ -7580,7 +7566,7 @@ reconnected:
             if ( trace_settings & TRACE_SYNC )
             {
                 trace_printf("%s@%d - slow Allgather info: sync size=%d, message count=%d, MyPNID=%d\n",
-                             method_name, __LINE__,  Nodes->GetSyncSize(), 
+                             method_name, __LINE__,  Nodes->GetSyncSize(),
                              send_buffer->msgInfo.msg_count, MyPNID);
                 struct sync_buffer_def *msgBuf;
                 int nr;
@@ -7634,7 +7620,7 @@ reconnected:
 
             goto reconnected;
         }
-    
+
         if ( reconnectSeqNum_ != 0 )
         {
 
@@ -7694,7 +7680,7 @@ reconnected:
     {   // There is a TmSync message remaining to be handled
         ProcessClusterData( recv_buffer, send_buffer, true );
     }
-    
+
     if (swpRecCount_ == 1)
     {
         // Save the sync buffer and corresponding sequence number we just processed
@@ -7703,7 +7689,7 @@ reconnected:
         // correct order
         Nodes->SaveMyLastSyncBuffer();
         lastSeqNum_ = seqNum_;
-    
+
         // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
         if ( ++seqNum_ == 0) seqNum_ = 1;
     }
@@ -7757,7 +7743,7 @@ void CCluster::exchangeTmSyncData ( struct sync_def *sync, bool bumpSync )
     else
     {
       // should not be here in more than one recursive call.
-      assert(swpRecCount_ == 2); 
+      assert(swpRecCount_ == 2);
       recv_buffer = recvBuffer2_;
     }
 
@@ -7780,7 +7766,7 @@ void CCluster::exchangeTmSyncData ( struct sync_def *sync, bool bumpSync )
                         , swpRecCount_
                         , seqNum_
                         , lastSeqNum_);
-        
+
     }
 
     // Initialize sync buffer header including node state
@@ -7812,7 +7798,7 @@ reconnected:
 
 
     // Exchange info with other nodes
-    err = Allgather(Nodes->GetSyncSize(), send_buffer, (char *)recv_buffer, 
+    err = Allgather(Nodes->GetSyncSize(), send_buffer, (char *)recv_buffer,
              0 /*seqNum_*/, status );
 
     struct timespec ts_ag_end;
@@ -7829,7 +7815,7 @@ reconnected:
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], Unexpected MPI communications "
                  "error=%s (%d).\n", method_name, ErrorMsg(err), err);
-        mon_log_write(MON_CLUSTER_EXCHANGETMSYNC_1, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_EXCHANGETMSYNC_1, SQ_LOG_ERR, buf);
 
         // Allgather() failed in a fundamental way, bring this node down
         if ( !enqueuedDown_ )
@@ -7845,7 +7831,7 @@ reconnected:
             if ( trace_settings & TRACE_SYNC )
             {
                 trace_printf("%s@%d - slow Allgather info: sync size=%d, message count=%d, MyPNID=%d\n",
-                             method_name, __LINE__,  Nodes->GetSyncSize(), 
+                             method_name, __LINE__,  Nodes->GetSyncSize(),
                              send_buffer->msgInfo.msg_count, MyPNID);
                 struct sync_buffer_def *msgBuf;
                 int nr;
@@ -7967,7 +7953,7 @@ reconnected:
         // correct order
         Nodes->SaveMyLastSyncBuffer();
         lastSeqNum_ = seqNum_;
-    
+
         // Increment count of "Allgather" calls.  If wrap-around, start again at 1.
         if ( ++seqNum_ == 0) seqNum_ = 1;
     }
@@ -8131,7 +8117,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s@%d] gethostbyname(%s) error: %s\n",
-            method_name, __LINE__, n, strerror_r( errno, ebuff, 256 ) );
+            method_name, __LINE__, n, strerror_r( h_errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITCLUSTERSOCKS_4, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
     }
@@ -8150,7 +8136,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                 if ( nodeNames )
                 { // Real cluster
                     n = &nodeNames[j*MPI_MAX_PROCESSOR_NAME];
-                    // Get peer's host structure via its node name 
+                    // Get peer's host structure via its node name
                     he = gethostbyname( n );
                     if ( !he )
                     {
@@ -8159,7 +8145,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                         snprintf( buf, sizeof(buf),
                             "[%s@%d] gethostbyname(%s) error: %s\n",
                             method_name, __LINE__, n,
-                            strerror_r( errno, ebuff, 256 ) );
+                            strerror_r( h_errno, ebuff, 256 ) );
                         mon_log_write( MON_CLUSTER_INITCLUSTERSOCKS_5, SQ_LOG_CRIT, buf );
                         MPI_Abort( MPI_COMM_SELF,99 );
                     }
@@ -8269,7 +8255,7 @@ void CCluster::InitServerSock( void )
 
     unsigned char addr[4];
     struct hostent *he;
-    
+
     he = gethostbyname( Node_name );
     if ( !he )
     {
@@ -8278,7 +8264,7 @@ void CCluster::InitServerSock( void )
         snprintf( buf, sizeof(buf)
                 , "[%s@%d] gethostbyname(%s) error: %s\n"
                 , method_name, __LINE__
-                , Node_name, strerror_r( errno, ebuff, 256 ) );
+                , Node_name, strerror_r( h_errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_1, SQ_LOG_CRIT, buf );
         abort();
     }
@@ -8433,7 +8419,7 @@ void CCluster::InitServerSock( void )
     }
     else
     {
-       mon2monPort = 23399; 
+       mon2monPort = 23399;
     }
 
     // For virtual env, add PNid to the port so we can still test without collisions of port numbers
@@ -8467,11 +8453,11 @@ void CCluster::InitServerSock( void )
         MyNode->SetMon2MonPort( MyMon2MonPort );
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d Initialized my comm socket port, "
-                          "pnid=%d (%s:%s) (commPort=%s)\n"
+            trace_printf( "%s@%d Initialized my mon2mon socket port, "
+                          "pnid=%d (%s:%s) (mon2monPort=%s)\n"
                         , method_name, __LINE__
                         , MyPNID, MyNode->GetName(), MyMon2MonPort
-                        , MyNode->GetCommPort() );
+                        , MyNode->GetMon2MonPort() );
 
     }
 #endif
@@ -8517,9 +8503,9 @@ int CCluster::AcceptMon2MonSock( void )
 {
     const char method_name[] = "CCluster::AcceptMon2MonSock";
     TRACE_ENTRY;
- 
+
     int csock = AcceptSock( mon2monSock_ );
-     
+
     TRACE_EXIT;
     return( csock  );
 }
@@ -8550,7 +8536,7 @@ int CCluster::AcceptSock( int sock )
         int err = errno;
         snprintf(buf, sizeof(buf), "[%s], getsockname() failed, errno=%d (%s).\n",
                  method_name, err, strerror(err));
-        mon_log_write(MON_CLUSTER_ACCEPTSOCK_2, SQ_LOG_ERR, buf);    
+        mon_log_write(MON_CLUSTER_ACCEPTSOCK_2, SQ_LOG_ERR, buf);
         return ( -1 );
     }
 
@@ -8572,6 +8558,21 @@ int CCluster::AcceptSock( int sock )
 
     if ( csock > 0 )
     {
+        int nodelay = 1;
+        if ( setsockopt( csock
+                       , IPPROTO_TCP
+                       , TCP_NODELAY
+                       , (char *) &nodelay
+                       , sizeof(int) ) )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            int err = errno;
+            snprintf(buf, sizeof(buf), "[%s], setsockopt() failed, errno=%d (%s).\n",
+                     method_name, err, strerror(err));
+            mon_log_write(MON_CLUSTER_ACCEPTSOCK_3, SQ_LOG_ERR, buf); // TODO
+            return ( -2 );
+        }
+
         int reuse = 1;
         if ( setsockopt( csock
                        , SOL_SOCKET
@@ -8583,7 +8584,7 @@ int CCluster::AcceptSock( int sock )
             int err = errno;
             snprintf(buf, sizeof(buf), "[%s], setsockopt() failed, errno=%d (%s).\n",
                      method_name, err, strerror(err));
-            mon_log_write(MON_CLUSTER_ACCEPTSOCK_3, SQ_LOG_ERR, buf);    
+            mon_log_write(MON_CLUSTER_ACCEPTSOCK_3, SQ_LOG_ERR, buf);
             return ( -2 );
         }
     }
@@ -8599,6 +8600,7 @@ int CCluster::Connect( const char *portName )
 
     int  sock;      // socket
     int  ret;       // returned value
+    int  nodelay = 1; // sockopt reuse option
     int  reuse = 1; // sockopt reuse option
 #if defined(_XOPEN_SOURCE_EXTENDED)
 #ifdef __LP64__
@@ -8612,8 +8614,8 @@ int CCluster::Connect( const char *portName )
     static int retries = 0;      // # times to retry connect
     int    outer_failures = 0;   // # failed connect loops
     int    connect_failures = 0; // # failed connects
-    char   *p;     // getenv results 
-    struct sockaddr_in  sockinfo; // socket address info 
+    char   *p;     // getenv results
+    struct sockaddr_in  sockinfo; // socket address info
     struct hostent *he;
     char   host[1000];
     const char *colon;
@@ -8624,7 +8626,7 @@ int CCluster::Connect( const char *portName )
     int len = colon - portName;
     host[len] = '\0';
     port = atoi(&colon[1]);
-    
+
     size = sizeof(sockinfo);
 
     if ( !retries )
@@ -8643,7 +8645,7 @@ int CCluster::Connect( const char *portName )
             int err = errno;
             sprintf( la_buf, "[%s], socket() failed! errno=%d (%s)\n"
                    , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_CONNECT_1, SQ_LOG_CRIT, la_buf); 
+            mon_log_write(MON_CLUSTER_CONNECT_1, SQ_LOG_CRIT, la_buf);
             abort();
         }
 
@@ -8653,11 +8655,11 @@ int CCluster::Connect( const char *portName )
             char ebuff[256];
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf), "[%s@%d] gethostbyname(%s) error: %s\n",
-                method_name, __LINE__, host, strerror_r( errno, ebuff, 256 ) );
+                method_name, __LINE__, host, strerror_r( h_errno, ebuff, 256 ) );
             mon_log_write( MON_CLUSTER_CONNECT_2, SQ_LOG_CRIT, buf );
             abort();
         }
-    
+
         // Connect socket.
         memset( (char *) &sockinfo, 0, size );
         memcpy( (char *) &sockinfo.sin_addr, (char *) he->h_addr, 4 );
@@ -8686,20 +8688,27 @@ int CCluster::Connect( const char *portName )
                             , port
                             , connect_failures );
             }
-    
+
             ret = connect( sock, (struct sockaddr *) &sockinfo, size );
             if ( ret == 0 ) break;
             if ( errno == EINTR )
             {
                 ++connect_failures;
             }
+#ifdef NAMESERVER_PROCESS
+            else if ( errno == ECONNREFUSED )
+            {
+                ++connect_failures;
+                sleep( 1 );
+            }
+#endif
             else
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 int err = errno;
                 sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
                        , method_name, err, strerror( err ));
-                mon_log_write(MON_CLUSTER_CONNECT_3, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_CONNECT_3, SQ_LOG_ERR, la_buf);
                 close(sock);
                 return ( -1 );
             }
@@ -8718,7 +8727,7 @@ int CCluster::Connect( const char *portName )
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries);
-                mon_log_write(MON_CLUSTER_CONNECT_4, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_CONNECT_4, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -8730,13 +8739,24 @@ int CCluster::Connect( const char *portName )
         close( sock );
     }
 
+    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        int err = errno;
+        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
+               , method_name, err, strerror( err ));
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        close( sock );
+        return ( -2 );
+    }
+
     if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_CONNECT_5, SQ_LOG_ERR, la_buf); 
+        mon_log_write(MON_CLUSTER_CONNECT_5, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -8763,8 +8783,8 @@ void CCluster::ConnectToSelf( void )
 #endif
     static int retries = 0;       // # times to retry connect
     int     connect_failures = 0; // # failed connects
-    char   *p;     // getenv results 
-    struct sockaddr_in  sockinfo; // socket address info 
+    char   *p;     // getenv results
+    struct sockaddr_in  sockinfo; // socket address info
     struct hostent *he;
 
     size = sizeof(sockinfo);
@@ -8783,7 +8803,7 @@ void CCluster::ConnectToSelf( void )
         int err = errno;
         sprintf( la_buf, "[%s], socket() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_CONNECTTOSELF_1, SQ_LOG_CRIT, la_buf); 
+        mon_log_write(MON_CLUSTER_CONNECTTOSELF_1, SQ_LOG_CRIT, la_buf);
         MPI_Abort( MPI_COMM_SELF,99 );
     }
 
@@ -8793,11 +8813,11 @@ void CCluster::ConnectToSelf( void )
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s@%d] gethostbyname(%s) error: %s\n",
-            method_name, __LINE__, "localhost", strerror_r( errno, ebuff, 256 ) );
+            method_name, __LINE__, "localhost", strerror_r( h_errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_CONNECTTOSELF_2, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
     }
-    
+
     // Connect socket.
     memset( (char *) &sockinfo, 0, size );
     memcpy( (char *) &sockinfo.sin_addr, (char *) he->h_addr, 4 );
@@ -8819,7 +8839,7 @@ void CCluster::ConnectToSelf( void )
                         , MyNode->GetCommSocketPort()
                         , connect_failures );
         }
-    
+
         ret = connect( sock, (struct sockaddr *) &sockinfo, size );
         if ( ret == 0 ) break;
         if ( errno == EINTR )
@@ -8832,7 +8852,7 @@ void CCluster::ConnectToSelf( void )
             int err = errno;
             sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
                    , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_CONNECTTOSELF_3, SQ_LOG_CRIT, la_buf); 
+            mon_log_write(MON_CLUSTER_CONNECTTOSELF_3, SQ_LOG_CRIT, la_buf);
             MPI_Abort( MPI_COMM_SELF,99 );
         }
     }
@@ -8866,8 +8886,20 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], socket() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_1, SQ_LOG_CRIT, la_buf); 
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_1, SQ_LOG_CRIT, la_buf);
         return ( -1 );
+    }
+
+    int    nodelay = 1;   // sockopt nodelay option
+    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        int err = errno;
+        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
+               , method_name, err, strerror( err ));
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        close( sock );
+        return ( -2 );
     }
 
     int    reuse = 1;   // sockopt reuse option
@@ -8877,7 +8909,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt(SO_REUSEADDR) failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_4, SQ_LOG_ERR, la_buf); 
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_4, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -8891,13 +8923,13 @@ int CCluster::MkSrvSock( int *pport )
     int lv_bind_tries = 0;
     do
     {
-        if (lv_bind_tries > 0) 
+        if (lv_bind_tries > 0)
         {
             sleep(5);
         }
         err = bind( sock, (struct sockaddr *) &sockinfo, size );
         sched_yield( );
-    } while ( err && 
+    } while ( err &&
              (errno == EADDRINUSE) &&
              (++lv_bind_tries < 4) );
     if ( err )
@@ -8906,7 +8938,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], bind() failed! port=%d, errno=%d (%s)\n"
                , method_name, *pport, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_2, SQ_LOG_CRIT, la_buf); 
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_2, SQ_LOG_CRIT, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -8918,7 +8950,7 @@ int CCluster::MkSrvSock( int *pport )
             int err = errno;
             sprintf( la_buf, "[%s], getsockname() failed! errno=%d (%s)\n"
                    , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKSRVSOCK_3, SQ_LOG_CRIT, la_buf); 
+            mon_log_write(MON_CLUSTER_MKSRVSOCK_3, SQ_LOG_CRIT, la_buf);
             close( sock );
             return ( -1 );
         }
@@ -8950,7 +8982,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], listen() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_8, SQ_LOG_CRIT, la_buf); 
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_8, SQ_LOG_CRIT, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -8966,6 +8998,7 @@ int CCluster::MkCltSock( const char *portName )
     int    sock;        // socket
     int    ret;         // returned value
     int    reuse = 1;   // sockopt reuse option
+    int    nodelay = 1; // sockopt nodelay option
 #if defined(_XOPEN_SOURCE_EXTENDED)
 #ifdef __LP64__
     socklen_t  size;    // size of socket address
@@ -8978,8 +9011,8 @@ int CCluster::MkCltSock( const char *portName )
     static int retries = 0;      // # times to retry connect
     int    outer_failures = 0;   // # failed connect loops
     int    connect_failures = 0; // # failed connects
-    char   *p;     // getenv results 
-    struct sockaddr_in  sockinfo;    // socket address info 
+    char   *p;     // getenv results
+    struct sockaddr_in  sockinfo;    // socket address info
     struct hostent *he;
     char   host[1000];
     const char *colon;
@@ -8990,7 +9023,7 @@ int CCluster::MkCltSock( const char *portName )
     int len = colon - portName;
     host[len] = '\0';
     port = atoi(&colon[1]);
-    
+
     size = sizeof(sockinfo);
 
     if ( !retries )
@@ -9007,10 +9040,10 @@ int CCluster::MkCltSock( const char *portName )
         {
             char la_buf[MON_STRING_BUF_SIZE];
             int err = errno;
-            snprintf( la_buf, sizeof(la_buf) 
+            snprintf( la_buf, sizeof(la_buf)
                     , "[%s], socket() failed! errno=%d (%s)\n"
                     , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf); 
+            mon_log_write(MON_CLUSTER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf);
             return ( -1 );
         }
 
@@ -9018,11 +9051,11 @@ int CCluster::MkCltSock( const char *portName )
         if ( !he )
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            int err = errno;
-            snprintf( la_buf, sizeof(la_buf), 
+            int err = h_errno;
+            snprintf( la_buf, sizeof(la_buf),
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
                     , method_name, host, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf); 
+            mon_log_write(MON_CLUSTER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf);
             close( sock );
             return ( -1 );
         }
@@ -9055,7 +9088,7 @@ int CCluster::MkCltSock( const char *portName )
                             , port
                             , connect_failures );
             }
-    
+
             ret = connect( sock, (struct sockaddr *) &sockinfo, size );
             if ( ret == 0 ) break;
             if ( errno == EINTR )
@@ -9068,7 +9101,7 @@ int CCluster::MkCltSock( const char *portName )
                 int err = errno;
                 sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
                        , method_name, err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf);
                 close(sock);
                 return ( -1 );
             }
@@ -9087,7 +9120,7 @@ int CCluster::MkCltSock( const char *portName )
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries);
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -9099,13 +9132,24 @@ int CCluster::MkCltSock( const char *portName )
         close( sock );
     }
 
+    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        int err = errno;
+        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
+               , method_name, err, strerror( err ));
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        close( sock );
+        return ( -2 );
+    }
+
     if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); 
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -9210,6 +9254,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
     int    sock;        // socket
     int    ret;         // returned value
     int    reuse = 1;   // sockopt reuse option
+    int    nodelay = 1; // sockopt nodelay option
 #if defined(_XOPEN_SOURCE_EXTENDED)
 #ifdef __LP64__
     socklen_t  size;    // size of socket address
@@ -9222,8 +9267,8 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
     static int retries = 0;      // # times to retry connect
     int    outer_failures = 0;   // # failed connect loops
     int    connect_failures = 0; // # failed connects
-    char   *p;     // getenv results 
-    struct sockaddr_in  sockinfo;    // socket address info 
+    char   *p;     // getenv results
+    struct sockaddr_in  sockinfo;    // socket address info
 
     size = sizeof(sockinfo);
 
@@ -9253,7 +9298,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                 int err = errno;
                 sprintf( la_buf, "[%s], bind() failed! errno=%d (%s)\n"
                        , method_name, err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -9312,7 +9357,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                        , (int)((unsigned char *)dstip)[3]
                        , port
                        , err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_7, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_7, SQ_LOG_ERR, la_buf);
                 close(sock);
                 return ( -1 );
             }
@@ -9331,7 +9376,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries);
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_8, SQ_LOG_ERR, la_buf); 
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_8, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -9343,13 +9388,24 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
         close( sock );
     }
 
+    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        int err = errno;
+        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
+               , method_name, err, strerror( err ));
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        close( sock );
+        return ( -2 );
+    }
+
     if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_9, SQ_LOG_ERR, la_buf); 
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_9, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -9370,7 +9426,7 @@ int CCluster::ReceiveMPI(char *buf, int size, int source, MonXChngTags tag, MPI_
     TRACE_ENTRY;
 
     MPI_Request request;
-    MPI_Status status;  
+    MPI_Status status;
     int received = 0;
 
     int error = MPI_Irecv(buf, size, MPI_CHAR, source, tag, comm, &request);
@@ -9406,7 +9462,7 @@ int CCluster::SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Com
     TRACE_ENTRY;
 
     MPI_Request request;
-    MPI_Status status;  
+    MPI_Status status;
     int sent = 0;
 
     int error = MPI_Isend(buf, size, MPI_CHAR, source, tag, comm, &request);
@@ -9446,14 +9502,14 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
     int     readCount = 0;
     int     received = 0;
     int     sizeCount = size;
-    
+
     do
     {
         readCount = (int) recv( sockFd
                               , buf
                               , sizeCount
                               , 0 );
-    
+
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
             trace_printf( "%s@%d - Count read %d = recv(%d)\n"
@@ -9461,7 +9517,7 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
                         , readCount
                         , sizeCount );
         }
-    
+
         if ( readCount > 0 )
         { // Got data
             received += readCount;
@@ -9517,21 +9573,21 @@ int CCluster::SendSock(char *buf, int size, int sockFd)
     int     error = 0;
     int     sendCount = 0;
     int     sent = 0;
-    
+
     do
     {
         sendCount = (int) send( sockFd
                               , buf
                               , size
                               , 0 );
-    
+
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
             trace_printf( "%s@%d - send(), sendCount=%d\n"
                         , method_name, __LINE__
                         , sendCount );
         }
-    
+
         if ( sendCount > 0 )
         { // Sent data
             sent += sendCount;

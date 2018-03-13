@@ -130,7 +130,7 @@ int CPtpClient::MkCltSock( const char *portName )
         if ( !he )
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            int err = errno;
+            int err = h_errno;
             snprintf( la_buf, sizeof(la_buf), 
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
                     , method_name, host, err, strerror( err ));

@@ -238,6 +238,8 @@ public:
 #ifdef NAMESERVER_PROCESS
     inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
     inline int GetMonConnCount( void ) { return monConnCount_; }
+#else
+    inline const char *GetMon2MonPort( void ) { return mon2MonPort_.c_str(); }
 #endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }

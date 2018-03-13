@@ -270,6 +270,7 @@ int CNameServer::SockCreate( void )
     int    sock;        // socket
     int    ret;         // returned value
     int    reuse = 1;   // sockopt reuse option
+    int    nodelay = 1; // sockopt nodelay option
     socklen_t  size;    // size of socket address
     static int retries = 0;      // # times to retry connect
     int    outer_failures = 0;   // # failed connect loops
@@ -310,7 +311,7 @@ int CNameServer::SockCreate( void )
         if ( !he )
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            int err = errno;
+            int err = h_errno;
             snprintf( la_buf, sizeof(la_buf ), 
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
                     , method_name, host, err, strerror(err) );
@@ -388,6 +389,17 @@ int CNameServer::SockCreate( void )
             nanosleep( &req, &rem );
         }
         close( sock );
+    }
+
+    if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        int err = errno;
+        sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
+               , method_name, err, strerror(err) );
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf );  // TODO
+        close( sock );
+        return ( -2 );
     }
 
     if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )

@@ -530,13 +530,13 @@ void CNode::CheckActivationPhase( void )
     TRACE_EXIT;
 }
 
-#ifndef NAMESERVER_PROCESS
 void CNode::CheckShutdownProcessing( void )
 {
-    struct message_def *msg;
-
     const char method_name[] = "CNode::CheckShutdownProcessing";
     TRACE_ENTRY;
+
+#ifndef NAMESERVER_PROCESS
+    struct message_def *msg;
     if ( shutdownLevel_ != lastSdLevel_ )
     {
         lastSdLevel_ = shutdownLevel_;
@@ -555,9 +555,10 @@ void CNode::CheckShutdownProcessing( void )
         Bcast (msg);
         delete msg;
     }
+#endif
+
     TRACE_EXIT;
 }
-#endif
 
 #ifndef NAMESERVER_PROCESS
 // In virtual node configuration, empty the quiescing pids so that new ones could be added.
@@ -1625,14 +1626,12 @@ void CNodeContainer::AddedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
-#ifndef NAMESERVER_PROCESS
     // Broadcast node added notice to local processes
     CLNode *lnode = node->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Added();
     }
-#endif
 
     TRACE_EXIT;
 }
@@ -1769,9 +1768,9 @@ void CNodeContainer::AddNodes( )
     const char* envVar = getenv("SQ_MAX_RANK"); 
     int maxNode;
     if (envVar != NULL)
-      maxNode = atoi (envVar);
+        maxNode = atoi (envVar);
     else
-      maxNode = MAX_NODES; 
+        maxNode = MAX_NODES; 
 
     CPNodeConfig *pnodeConfig = clusterConfig_->GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
@@ -2330,7 +2329,6 @@ void CNodeContainer::ChangedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
-#ifndef NAMESERVER_PROCESS
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     CLNodeConfig   *lnodeConfig = NULL;
 
@@ -2341,7 +2339,6 @@ void CNodeContainer::ChangedNode( CNode *node )
         lnodeConfig = clusterConfig->GetLNodeConfig( lnode->GetNid() );
         lnode->Changed( lnodeConfig );
     }
-#endif
 
     TRACE_EXIT;
 }
@@ -2383,14 +2380,12 @@ void CNodeContainer::DeletedNode( CNode *node )
 
     assert( node->GetState() == State_Down );
 
-#ifndef NAMESERVER_PROCESS
     // Broadcast node deleted notice to local processes
     CLNode *lnode = node->GetFirstLNode();
     for ( ; lnode; lnode = lnode->GetNextP() )
     {
         lnode->Deleted();
     }
-#endif
 
     TRACE_EXIT;
 }

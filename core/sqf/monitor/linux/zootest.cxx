@@ -185,7 +185,7 @@ void CreateZookeeperClient( void )
  * each child. A missing child znode will is assumed to be a down node.
  *
  */
-int main( int argc, char *argv[], char *envp[] )
+int main( int argc, char *argv[] )
 {
     const char method_name[] = "main";
     TRACE_ENTRY;
