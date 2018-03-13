@@ -179,7 +179,6 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
 short CmpSeabaseDDL::switchBackCompiler()
 {
 
-  Lng32 diagsMark = 0;
   if (cmpSwitched_)
   {
       GetCliGlobals()->currContext()->copyDiagsAreaToPrevCmpContext();

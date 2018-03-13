@@ -14715,7 +14715,7 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
               (getLabelAnsiNameSpace() == COM_TABLE_NAME) &&
               (NOT getIsSchema()))
             {
-              bindWA->getNATable(describedTableName_);
+              bindWA->getNATableInternal(describedTableName_);
               if (bindWA->errStatus())
                 {
                   return this;
