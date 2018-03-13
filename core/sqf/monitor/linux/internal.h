@@ -462,7 +462,6 @@ typedef struct nodeId_s
     char nodeName[MPI_MAX_PROCESSOR_NAME];
     char commPort[MPI_MAX_PORT_NAME];
     char syncPort[MPI_MAX_PORT_NAME];
-    int  pid;
     int  pnid;
     int  creatorPNid;
     int  creatorShellPid;
@@ -471,6 +470,8 @@ typedef struct nodeId_s
     bool ping;     // Monitor sets to true to tell remote monitor
                    // it is just checking that it can communicate with it.
                    // Used during allgather reconnect 
+    int  nsPid;    // NS pid
+    int  nsPNid;   // NS better
 } nodeId_t;
 
 typedef struct nodeStatus_s
@@ -488,6 +489,9 @@ typedef struct cluster_state_def
     int change_nid;
     unsigned long long seq_num;
     upNodes_t nodeMask;                 // Set of nodes currently "up"
+#ifdef NAMESERVER_PROCESS
+    int monConnCount;                   // monitor connections
+#endif
 } cluster_state_def_t;
 
 typedef struct msgInfo

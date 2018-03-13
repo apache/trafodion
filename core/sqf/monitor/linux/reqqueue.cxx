@@ -63,6 +63,7 @@ extern char *ErrorMsg (int error_code);
 #else
 extern int NameServerEnabled;
 extern CNameServer *NameServer;
+extern CNameServerConfigContainer *NameServerConfig;
 #endif
 
 extern int req_type_startup;
@@ -71,6 +72,7 @@ extern bool IAmIntegrating;
 extern bool IAmIntegrated;
 
 extern CommType_t CommType;
+extern bool IsRealCluster;
 
 CReqResource::CReqResource()
 {
@@ -1912,7 +1914,7 @@ void CIntNodeNameReq::performRequest()
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     sprintf( buf
-                           , "[%s], Failed to retrive node object for node %s!\n"
+                           , "[%s], Failed to retrieve node object for node %s!\n"
                            ,  method_name, current_n);
                     mon_log_write(MON_INTREQ_NODE_NAME_1, SQ_LOG_ERR, buf);
 
@@ -1934,7 +1936,7 @@ void CIntNodeNameReq::performRequest()
         {
             char buf[MON_STRING_BUF_SIZE];
             sprintf( buf
-                   , "[%s], Failed to retrive pnodeConfig object for node %s!\n"
+                   , "[%s], Failed to retrieve pnodeConfig object for node %s!\n"
                    ,  method_name, current_n);
             mon_log_write(MON_INTREQ_NODE_NAME_2, SQ_LOG_ERR, buf);
     
@@ -1944,7 +1946,7 @@ void CIntNodeNameReq::performRequest()
     else
     {
         char buf[MON_STRING_BUF_SIZE];
-        sprintf(buf, "[%s], Failed to retrive ClusterConfig object!\n",
+        sprintf(buf, "[%s], Failed to retrieve ClusterConfig object!\n",
                 method_name);
         mon_log_write(MON_INTREQ_NODE_NAME_3, SQ_LOG_ERR, buf);
 
@@ -3057,7 +3059,28 @@ void CIntCreatePrimitiveReq::performRequest()
     if ( pnid_ == MyPNID )
     {
         if ( NameServerEnabled )
+        {
+#if 0
+            CNameServerConfig *config;
+            if( !IsRealCluster )
+            {
+                char nodeName[10];
+                sprintf(nodeName, "%d", MyPNID);
+                config = NameServerConfig->GetConfig( nodeName );
+            }
+            else
+            {
+                config = NameServerConfig->GetConfig( MyNode->GetName() );
+            }
+            if ( config )
+            {
+                MyNode->StartNameServerProcess();
+            }
+#endif
+            // for now, create
             MyNode->StartNameServerProcess();
+
+        }
         MyNode->StartWatchdogProcess();
         MyNode->StartPStartDProcess();
         char *env = getenv( "SQ_SEAMONSTER" );
@@ -3812,7 +3835,7 @@ void CReqQueue::enqueueTmReadyReq( int nid )
 }
 #endif
 
-// this function moves the queued requests from revive queue to the main request queue.
+// this function moves the queued requests from revieve queue to the main request queue.
 // it will skip the requests whose seq num is less than the given one.
 void CReqQueue::processReviveRequests(unsigned long long minSeqNum)
 {

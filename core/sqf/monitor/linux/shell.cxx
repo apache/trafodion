@@ -3250,7 +3250,10 @@ void nameserver_add( char *node_name )
         trace_printf ("%s@%d [%s] sending nameserver add message.\n",
                       method_name, __LINE__, MyName);
 
-    pnid = get_pnid_by_node_name( node_name );
+    if(VirtualNodes)
+        pnid = get_pnid_by_nid( atoi(node_name) );
+    else
+        pnid = get_pnid_by_node_name( node_name );
     if ( pnid == -1 )
     {
         sprintf( msgString, "[%s] Node %s is not configured!", MyName, node_name );

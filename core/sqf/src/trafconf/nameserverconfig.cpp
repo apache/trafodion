@@ -135,6 +135,12 @@ void CNameServerConfigContainer::Clear( void )
     const char method_name[] = "CNameServerConfigContainer::Clear";
     TRACE_ENTRY;
 
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d Clearing nameservers\n"
+                     , method_name, __LINE__);
+    }
+    
     CNameServerConfig *Config = head_;
 
     // Only the main container builds the array of 
@@ -168,7 +174,7 @@ void CNameServerConfigContainer::AddConfig( const char *nodeName )
     const char method_name[] = "CNameServerConfigContainer::AddConfig";
     TRACE_ENTRY;
 
-     CNameServerConfig *config = new CNameServerConfig( nodeName );
+    CNameServerConfig *config = new CNameServerConfig( nodeName );
 
     // Bump the nameserver count
     count_++;
@@ -239,7 +245,7 @@ CNameServerConfig *CNameServerConfigContainer::GetConfig( const char *nodeName )
     while (config)
     {
         if ( CPNodeConfigContainer::hostnamecmp( config->GetName(), nodeName ) == 0 )
-        { 
+        {
             break;
         }
         config = config->GetNext();

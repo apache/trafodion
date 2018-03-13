@@ -2937,11 +2937,13 @@ void CProcess::Exit( CProcess *parent )
         // Check if we need to output a entry into the process id map log file
         if ( PidMap )
         {
+#ifndef NAMESERVER_PROCESS
             Monitor->writeProcessMapEnd( Name, Nid, Pid, Verifier,
                                          parent ? parent->GetNid() : -1,
                                          parent ? parent->GetPid() : -1,
                                          parent ? parent->GetVerifier() : -1,
                                          program() );
+#endif
         }    
     }
     if ( Clone && Pid != -1 )

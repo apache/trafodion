@@ -121,6 +121,9 @@ const char *SyncStateString( SyncState state);
 const char *EpollEventString( __uint32_t events );
 const char *EpollOpString( int op );
 const char *NodePhaseString( NodePhase phase );
+#ifdef NAMESERVER_PROCESS
+#define MPI_Abort(a,b) abort()
+#endif
 
 const char *NodePhaseString( NodePhase phase )
 {
@@ -646,6 +649,7 @@ CCluster::CCluster (void)
       ,socks_(NULL)
       ,sockPorts_(NULL)
       ,commSock_(-1)
+      ,syncPort_(0)
       ,syncSock_(-1)
 #ifdef NAMESERVER_PROCESS
       ,mon2nsSock_(-1)
@@ -692,6 +696,11 @@ CCluster::CCluster (void)
       ,enqueuedDown_(false)
       ,nodeDownDeathNotices_(true)
       ,verifierNum_(0)
+#ifdef NAMESERVER_PROCESS
+      ,myMonConnCount_(0)
+      ,minMonConnCount_(0)
+      ,minMonConnPnid_(-1)
+#endif
 {
     int i;
     const char method_name[] = "CCluster::CCluster";
@@ -3124,6 +3133,15 @@ void CCluster::InitializeConfigCluster( void )
 
     int worldSize;
     MPI_Comm_size (MPI_COMM_WORLD, &worldSize);    
+#ifdef NAMESERVER_PROCESS
+    if ( !IsRealCluster )
+    {
+        char *nodes = getenv( "SQ_VIRTUAL_NODES" );
+        worldSize = atoi(nodes);
+        if ( worldSize <= 0 )
+            worldSize = 1;
+    }
+#endif
     int rankToPnid[worldSize];
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
     
@@ -3137,6 +3155,9 @@ void CCluster::InitializeConfigCluster( void )
     {
         // Set virtual cluster size to collective size
         MPI_Comm_size (MPI_COMM_WORLD, &configPNodesCount_);
+#ifdef NAMESERVER_PROCESS
+        configPNodesCount_ = worldSize;
+#endif
 
         // For virtual cluster set physical node id equal to rank
         for (int i=0; i<worldSize; ++i)
@@ -3389,6 +3410,10 @@ void CCluster::InitializeConfigCluster( void )
         // Initialize communicators for point-to-point communications
         int myRank;
         MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
+#ifdef NAMESERVER_PROCESS
+        if ( !IsRealCluster )
+            myRank = MyPNID;
+#endif
 
         InitClusterComm(worldSize, myRank, rankToPnid);
         if ( CommType == CommType_Sockets )
@@ -3583,7 +3608,7 @@ void CCluster::InitClusterComm(int worldSize, int myRank, int * rankToPnid)
 
 void CCluster::HandleReintegrateError( int rc, int err,
                                        int pnid, nodeId_t *nodeInfo,
-                                       bool abort )
+                                       bool abortIn )
 {
     const char method_name[] = "CCluster::HandleReintegrateError";
     TRACE_ENTRY;
@@ -3682,7 +3707,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
 
     mon_log_write(MON_CLUSTER_REINTEGRATE_1, SQ_LOG_ERR, buf);
     
-    if ( abort )
+    if ( abortIn )
         MPI_Abort(MPI_COMM_SELF,99);
 
     TRACE_EXIT;
@@ -6725,6 +6750,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             {
                 nodestate[index].nodeMask.upNodes[i] = 0;
             }
+#ifdef NAMESERVER_PROCESS
+            nodestate[index].monConnCount = 0;
+#endif
 
             continue;
         }
@@ -6747,6 +6775,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         nodestate[index].change_nid  = recvBuf->nodeInfo.change_nid;
         nodestate[index].seq_num     = recvBuf->nodeInfo.seq_num;
         nodestate[index].nodeMask    = recvBuf->nodeInfo.nodeMask;
+#ifdef NAMESERVER_PROCESS
+        nodestate[index].monConnCount = recvBuf->nodeInfo.monConnCount;
+#endif
 
         for ( int i =0; i < MAX_NODE_MASKS ; i++ )
         {
@@ -6862,6 +6893,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     nodestate[MyPNID].change_nid = sentChangeNid;
     nodestate[MyPNID].seq_num = seqNum_;
     nodestate[MyPNID].nodeMask = upNodes_;
+#ifdef NAMESERVER_PROCESS
+    nodestate[MyPNID].monConnCount = Node[MyPNID]->GetMonConnCount();
+#endif
 
     // Examine status returned from MPI receive requests
     for (int index = 0; index < GetConfigPNodesMax(); index++)
@@ -6923,6 +6957,9 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 {
                     nodestate[index].nodeMask.upNodes[i] = 0;
                 }
+#ifdef NAMESERVER_PROCESS
+                nodestate[index].monConnCount = 0;
+#endif
 
                 if ( validateNodeDown_ )
                 {
@@ -7104,6 +7141,23 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                              method_name, __LINE__, index, node_state);
         }
     }
+
+#ifdef NAMESERVER_PROCESS
+    // Update min monConnCount
+    int minConnCount = INT_MAX;
+    int minConnPnid = -1;
+    for (int index = 0; index < GetConfigPNodesMax(); index++)
+    {
+        if ( nodestate[index].monConnCount < minConnCount )
+        {
+            minConnPnid = index;
+            minConnCount = nodestate[index].monConnCount;
+        }
+    }
+    myMonConnCount_ = nodestate[MyPNID].monConnCount;
+    minMonConnCount_ = minConnCount;
+    minMonConnPnid_ = minConnPnid;
+#endif
 
     TRACE_EXIT;
 }
@@ -8050,6 +8104,13 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
         mon_log_write( MON_CLUSTER_INITCLUSTERSOCKS_3, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
     }
+#ifdef NAMESERVER_PROCESS
+    if ( !IsRealCluster )
+    {
+        for ( int i = 0; i < worldSize; i++ )
+            sockPorts_[i] = syncPort_ + i;
+    }
+#endif
 
     char *n, nodeName[MPI_MAX_PROCESSOR_NAME];
     unsigned char srcaddr[4], dstaddr[4];
@@ -8233,6 +8294,8 @@ void CCluster::InitServerSock( void )
         int val;
         errno = 0;
         val = strtol(env, NULL, 10);
+        if ( !IsRealCluster )
+            val += MyPNID;
         if ( errno == 0) serverCommPort = val;
     }
 
@@ -8279,6 +8342,9 @@ void CCluster::InitServerSock( void )
         int val;
         errno = 0;
         val = strtol(env, NULL, 10);
+        if ( errno == 0 ) syncPort_ = val;
+        if ( !IsRealCluster )
+            val += MyPNID;
         if ( errno == 0) serverSyncPort = val;
     }
     syncSock_ = MkSrvSock( &serverSyncPort );
@@ -8320,9 +8386,10 @@ void CCluster::InitServerSock( void )
         int val;
         errno = 0;
         val = strtol(env, NULL, 10);
+        if ( !IsRealCluster )
+            val += MyPNID;
         if ( errno == 0) mon2nsPort = val;
     }
-    mon2nsPort += MyPNID;
 
     mon2nsSock_ = MkSrvSock( &mon2nsPort );
     if ( mon2nsSock_ < 0 )
@@ -8522,7 +8589,7 @@ int CCluster::AcceptSock( int sock )
     }
 
     TRACE_EXIT;
-    return ( (int)csock );
+    return ( csock );
 }
 
 int CCluster::Connect( const char *portName )
@@ -8660,7 +8727,7 @@ int CCluster::Connect( const char *portName )
             req.tv_nsec = 500000;
             nanosleep( &req, &rem );
         }
-        close( (int)sock );
+        close( sock );
     }
 
     if ( setsockopt( sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(int) ) )
@@ -8670,12 +8737,12 @@ int CCluster::Connect( const char *portName )
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
         mon_log_write(MON_CLUSTER_CONNECT_5, SQ_LOG_ERR, la_buf); 
-        close( (int)sock );
+        close( sock );
         return ( -2 );
     }
 
     TRACE_EXIT;
-    return ( (int)sock );
+    return ( sock );
 }
 
 void CCluster::ConnectToSelf( void )
@@ -8770,7 +8837,7 @@ void CCluster::ConnectToSelf( void )
         }
     }
 
-    close( (int)sock );
+    close( sock );
 
     TRACE_EXIT;
 }
@@ -8837,10 +8904,10 @@ int CCluster::MkSrvSock( int *pport )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         int err = errno;
-        sprintf( la_buf, "[%s], bind() failed! errno=%d (%s)\n"
-               , method_name, err, strerror( err ));
+        sprintf( la_buf, "[%s], bind() failed! port=%d, errno=%d (%s)\n"
+               , method_name, *pport, err, strerror( err ));
         mon_log_write(MON_CLUSTER_MKSRVSOCK_2, SQ_LOG_CRIT, la_buf); 
-        close( (int)sock );
+        close( sock );
         return ( -1 );
     }
     if ( pport )
@@ -8852,7 +8919,7 @@ int CCluster::MkSrvSock( int *pport )
             sprintf( la_buf, "[%s], getsockname() failed! errno=%d (%s)\n"
                    , method_name, err, strerror( err ));
             mon_log_write(MON_CLUSTER_MKSRVSOCK_3, SQ_LOG_CRIT, la_buf); 
-            close( (int)sock );
+            close( sock );
             return ( -1 );
         }
 
@@ -8884,16 +8951,16 @@ int CCluster::MkSrvSock( int *pport )
         sprintf( la_buf, "[%s], listen() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
         mon_log_write(MON_CLUSTER_MKSRVSOCK_8, SQ_LOG_CRIT, la_buf); 
-        close( (int)sock );
+        close( sock );
         return ( -1 );
     }
     TRACE_EXIT;
-    return ( (int)sock );
+    return ( sock );
 }
 
 int CCluster::MkCltSock( const char *portName )
 {
-    const char method_name[] = "CCluster::MkCltSock";
+    const char method_name[] = "CCluster::MkCltSock1";
     TRACE_ENTRY;
 
     int    sock;        // socket
@@ -9039,7 +9106,7 @@ int CCluster::MkCltSock( const char *portName )
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
         mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); 
-        close( (int)sock );
+        close( sock );
         return ( -2 );
     }
 
@@ -9137,7 +9204,7 @@ int CCluster::SetKeepAliveSockOpt( int sock )
 
 int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port )
 {
-    const char method_name[] = "CCluster::MkCltSock";
+    const char method_name[] = "CCluster::MkCltSock2";
     TRACE_ENTRY;
 
     int    sock;        // socket
@@ -9208,6 +9275,17 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
         ret = 1;
         while ( ret != 0 && connect_failures <= 10 )
         {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Connecting to addr=%d.%d.%d.%d, port=%d, connect_failures=%d\n"
+                            , method_name, __LINE__
+                            , (int)dstip[0]
+                            , (int)dstip[1]
+                            , (int)dstip[2]
+                            , (int)dstip[3]
+                            , port
+                            , connect_failures );
+            }
             ret = connect( sock, (struct sockaddr *) &sockinfo,
                 size );
             if ( ret == 0 ) break;
@@ -9215,6 +9293,13 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
             {
                 ++connect_failures;
             }
+#ifdef NAMESERVER_PROCESS
+            else if ( errno == ECONNREFUSED )
+            {
+                ++connect_failures;
+                sleep( 1 );
+            }
+#endif
             else
             {
                 char la_buf[MON_STRING_BUF_SIZE];

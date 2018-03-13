@@ -332,44 +332,80 @@ void CClusterConfig::InitCoreMask( cpu_set_t &coreMask )
     CPU_ZERO( &coreMask );
 }
 
-bool CClusterConfig::LoadConfig( void )
+bool CClusterConfig::LoadConfig( bool Ns )
 {
     const char method_name[] = "CClusterConfig::LoadConfig";
     TRACE_ENTRY;
 
-    if ( LoadNodeConfig() )
+    if ( LoadNodeConfig( Ns ) )
     {
-        LoadPersistConfig();
+        if ( !Ns )
+            LoadPersistConfig();
     }
 
     TRACE_EXIT;
     return( nodeReady_ && persistReady_ );
 }
 
-bool CClusterConfig::LoadNodeConfig( void )
+bool CClusterConfig::LoadNodeConfig( bool Ns )
 {
     const char method_name[] = "CClusterConfig::LoadNodeConfig";
     TRACE_ENTRY;
 
     int rc;
     int nodeCount = 0;
+    int nsCount = 0;
     int snodeCount = 0;
+    char                           *nameservers[TC_NODES_MAX];
     TcNodeConfiguration_t           nodeConfigData[TC_NODES_MAX];
     TcPhysicalNodeConfiguration_t   spareNodeConfigData[TC_SPARE_NODES_MAX];
     pnodeConfigInfo_t               pnodeConfigInfo;
     lnodeConfigInfo_t               lnodeConfigInfo;
 
-    rc = tc_get_nodes( &nodeCount
-                     , TC_NODES_MAX
-                     , nodeConfigData );
-    if ( rc )
+    if ( Ns )
     {
-        char la_buf[TC_LOG_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s] Node configuration access failed!\n"
-                , method_name );
-        TcLogWrite(MON_CLUSTERCONF_LOADNODE_1, TC_LOG_CRIT, la_buf);
-        return( false );
+        rc = tc_get_nameservers( &nsCount
+                               , TC_NODES_MAX
+                               , nameservers );
+        if ( rc )
+        {
+            char la_buf[TC_LOG_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Nameserver configuration access failed!\n"
+                    , method_name );
+            TcLogWrite(MON_CLUSTERCONF_LOADNODE_1, TC_LOG_CRIT, la_buf); // TODO
+            return( false );
+        }
+        for (int i =0; i < nsCount; i++ )
+        {
+            rc = tc_get_node( nameservers[i]
+                            , &nodeConfigData[nodeCount] );
+            if ( rc )
+            {
+                char la_buf[TC_LOG_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] Node configuration access failed!\n"
+                        , method_name );
+                TcLogWrite(MON_CLUSTERCONF_LOADNODE_1, TC_LOG_CRIT, la_buf); // TODO
+                return( false );
+            }
+            nodeCount++;
+        }
+    }
+    else
+    {
+        rc = tc_get_nodes( &nodeCount
+                         , TC_NODES_MAX
+                         , nodeConfigData );
+        if ( rc )
+        {
+            char la_buf[TC_LOG_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Node configuration access failed!\n"
+                    , method_name );
+            TcLogWrite(MON_CLUSTERCONF_LOADNODE_1, TC_LOG_CRIT, la_buf);
+            return( false );
+        }
     }
 
     // Process logical nodes

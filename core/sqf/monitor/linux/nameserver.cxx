@@ -50,22 +50,21 @@ using namespace std;
 
 extern CNode *MyNode;
 extern CProcess *NameServerProcess;
+extern CNodeContainer *Nodes;
+extern bool IsRealCluster;
+extern int MyPNID;
 
 CNameServer::CNameServer( void )
 : mon2nsSock_(-1)
+, nsConfigInx_(-1)
 , nsStartupComplete_(false)
 , seqNum_(0)
 {
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
 
-    gethostname( mon2nsPort_, MAX_PROCESSOR_NAME);
-    strcat( mon2nsPort_, ":");
-    char *p = getenv( "NS_M2N_COMM_PORT" );
-    if ( p )
-        strcat( mon2nsPort_, p );
-    else
-        strcat( mon2nsPort_, "0" );
+    gethostname( mon2nsHost_, MAX_PROCESSOR_NAME);
+    mon2nsPort_[0] = '\0';
 
     TRACE_EXIT;
 }
@@ -78,11 +77,31 @@ CNameServer::~CNameServer( void )
     TRACE_EXIT;
 }
 
-int CNameServer::ConnectToNs( void )
+void CNameServer::ChooseNextNs( void )
+{
+    const char method_name[] = "CNameServer::ChooseNextNs";
+    TRACE_ENTRY;
+
+#if 0
+    CNameServerConfig *config = NameServerConfig->GetFirstConfig();
+    while (config)
+    {
+        config = config->GetNext();
+    }
+#endif
+
+    TRACE_EXIT;
+}
+
+int CNameServer::ConnectToNs( bool *retry )
 {
     const char method_name[] = "CNameServer::ConnectToNs";
     TRACE_ENTRY;
+
     int err = 0;
+
+    if ( !mon2nsPort_[0] )
+        CNameServer::GetM2NPort( -1 );
 
     int sock = SockCreate();
     if ( sock < 0 )
@@ -92,8 +111,9 @@ int CNameServer::ConnectToNs( void )
         mon2nsSock_ = sock;
         if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
         {
-            trace_printf( "%s@%d - connected to nameserver=%s, sock=%d\n"
+            trace_printf( "%s@%d - connected to nameserver=%s:%s, sock=%d\n"
                         , method_name, __LINE__
+                        , mon2nsHost_
                         , mon2nsPort_
                         , mon2nsSock_ );
         }
@@ -101,42 +121,62 @@ int CNameServer::ConnectToNs( void )
 
     if ( err == 0)
     {
-        nodeId_t msg;
-        strcpy( msg.nodeName, MyNode->GetName() );
-        strcpy( msg.commPort, MyNode->GetCommPort() );
-        strcpy( msg.syncPort, MyNode->GetSyncPort() );
-        msg.pid = -1;
-        msg.pnid = MyNode->GetPNid();
-        msg.creatorPNid = -1;
-        msg.creatorShellPid = -1;
-        msg.creatorShellVerifier = -1;
-        msg.creator = false;
-        msg.ping = false;
+        nodeId_t nodeId;
+        strcpy( nodeId.nodeName, MyNode->GetName() );
+        strcpy( nodeId.commPort, MyNode->GetCommPort() );
+        strcpy( nodeId.syncPort, MyNode->GetSyncPort() );
+        nodeId.pnid = MyNode->GetPNid();
+        nodeId.creatorPNid = -1;
+        nodeId.creatorShellPid = -1;
+        nodeId.creatorShellVerifier = -1;
+        nodeId.creator = false;
+        nodeId.ping = false;
+        nodeId.nsPid = -1;
+        nodeId.nsPNid = -1;
         if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
         {
-            trace_printf( "%s@%d - sending node-info to nameserver=%s, sock=%d\n"
+            trace_printf( "%s@%d - sending node-info to nameserver=%s:%s, sock=%d\n"
+                          "        nodeId.nodeName=%s\n"
+                          "        nodeId.commPort=%s\n"
+                          "        nodeId.syncPort=%s\n"
+                          "        nodeId.creatorPNid=%d\n"
+                          "        nodeId.creator=%d\n"
+                          "        nodeId.creatorShellPid=%d\n"
+                          "        nodeId.creatorShellVerifier=%d\n"
+                          "        nodeId.ping=%d\n"
                         , method_name, __LINE__
+                        , mon2nsHost_
                         , mon2nsPort_
-                        , mon2nsSock_ );
+                        , mon2nsSock_
+                        , nodeId.nodeName
+                        , nodeId.commPort
+                        , nodeId.syncPort
+                        , nodeId.creatorPNid
+                        , nodeId.creator
+                        , nodeId.creatorShellPid
+                        , nodeId.creatorShellVerifier
+                        , nodeId.ping );
         }
-        err = SockSend( ( char *) &msg, sizeof(msg) );
+        err = SockSend( ( char *) &nodeId, sizeof(nodeId) );
         if ( err == 0 )
         {
             if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
             {
-                trace_printf( "%s@%d - OK send to nameserver=%s, sock=%d, error=%d, waiting receive\n"
+                trace_printf( "%s@%d - OK send to nameserver=%s:%s, sock=%d, error=%d, waiting receive\n"
                             , method_name, __LINE__
+                            , mon2nsHost_
                             , mon2nsPort_
                             , mon2nsSock_
                             , err );
             }
-            err = SockReceive( (char *) &msg, sizeof(msg ) );
+            err = SockReceive( (char *) &nodeId, sizeof(nodeId ) );
             if ( err )
             {
                 if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
                 {
-                    trace_printf( "%s@%d - error receiving from nameserver=%s, sock=%d, error=%d\n"
+                    trace_printf( "%s@%d - error receiving from nameserver=%s:%s, sock=%d, error=%d\n"
                                 , method_name, __LINE__
+                                , mon2nsHost_
                                 , mon2nsPort_
                                 , mon2nsSock_
                                 , err );
@@ -144,16 +184,52 @@ int CNameServer::ConnectToNs( void )
             }
             else
             {
+                if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+                {
+                    trace_printf( "%s@%d - Received nodeId back\n"
+                                  "        nodeId.nodeName=%s\n"
+                                  "        nodeId.commPort=%s\n"
+                                  "        nodeId.syncPort=%s\n"
+                                  "        nodeId.pnid=%d\n"
+                                  "        nodeId.nsPid=%d\n"
+                                  "        nodeId.nsPNid=%d\n"
+                                , method_name, __LINE__
+                                , nodeId.nodeName
+                                , nodeId.commPort
+                                , nodeId.syncPort
+                                , nodeId.pnid
+                                , nodeId.nsPid
+                                , nodeId.nsPNid );
+                }
                 if ( !nsStartupComplete_ )
                 {
                     nsStartupComplete_ = true;
                     NameServerProcess->CompleteProcessStartup( (char *) ""
-                                                             , msg.pid
+                                                             , nodeId.nsPid
                                                              , false
                                                              , false
                                                              , false
                                                              , NULL
                                                              , -1 );
+                }
+                if ( nodeId.nsPNid >= 0 )
+                {
+                    *retry = true;
+                    if ( IsRealCluster )
+                    {
+                        CNode *node = Nodes->GetNode( nodeId.nsPNid );
+                        if ( node )
+                        {
+                            strcpy( mon2nsHost_, node->GetName() );
+                            GetM2NPort( nodeId.nsPNid );
+                        }
+                    }
+                    else
+                    {
+                        gethostname( mon2nsHost_, MAX_PROCESSOR_NAME);
+                        GetM2NPort( -1 );
+                    }
+                    SockClose();
                 }
             }
         }
@@ -161,6 +237,19 @@ int CNameServer::ConnectToNs( void )
 
     TRACE_EXIT;
     return err;
+}
+
+void CNameServer::GetM2NPort( int PNid )
+{
+    int port;
+    char *p = getenv( "NS_M2N_COMM_PORT" );
+    if ( p )
+        port = atoi(p);
+    else
+        port = 0;
+    if ( !IsRealCluster )
+        port += PNid < 0 ? MyPNID : PNid;
+    sprintf( mon2nsPort_, "%d", port );
 }
 
 void CNameServer::SockClose( void )
@@ -188,15 +277,11 @@ int CNameServer::SockCreate( void )
     char   *p;     // getenv results 
     struct sockaddr_in  sockinfo;    // socket address info 
     struct hostent *he;
-    char   host[1000];
-    const char *colon;
+    char   host[MAX_PROCESSOR_NAME];
     unsigned int port;
 
-    colon = strstr( mon2nsPort_, ":" );
-    strcpy( host, mon2nsPort_ );
-    int len = colon - mon2nsPort_;
-    host[len] = '\0';
-    port = atoi(&colon[1]);
+    strcpy( host, mon2nsHost_ );
+    port = atoi( mon2nsPort_ );
     
     size = sizeof(sockinfo );
 
@@ -521,7 +606,15 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
 
     int error = 0;
     if ( mon2nsSock_ < 0 )
-        error = ConnectToNs();
+    {
+        bool retry = false;
+        error = ConnectToNs( &retry );
+        if ( retry )
+        {
+            // only retry once
+            error = ConnectToNs( &retry );
+        }
+    }
     if ( error == 0 )
         error = SockSend( (char *) &size, sizeof(size) );
     if ( error == 0 )

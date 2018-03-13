@@ -92,85 +92,6 @@ struct message_def *CCommAcceptMon::Notice( const char *msgText )
     return msg;
 }
 
-#if 0
-// Send node names and port numbers for all existing monitors
-// to the new monitor.
-bool CCommAcceptMon::sendNodeInfoMPI( MPI_Comm interComm )
-{
-    const char method_name[] = "CCommAcceptMon::sendNodeInfoMPI";
-    TRACE_ENTRY;
-    bool sentData = true;
-
-    int pnodeCount = Nodes->GetPNodesCount();
-
-    nodeId_t *nodeInfo;
-    nodeInfo = new nodeId_t[pnodeCount];
-    int rc;
-
-    CNode *node;
-
-    for (int i=0; i<pnodeCount; ++i)
-    {
-        node = Nodes->GetNode( i );
-        if ( node->GetState() == State_Up)
-        {
-            strncpy(nodeInfo[i].nodeName, node->GetName(),
-                    sizeof(nodeInfo[i].nodeName));
-            strncpy(nodeInfo[i].commPort, node->GetCommPort(),
-                    sizeof(nodeInfo[i].commPort));
-
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - Port for node %d (%s)\n"
-                              "CommPort=%s\n"
-                              "SyncPort=%s\n"
-                            , method_name, __LINE__
-                            , i, node->GetName()
-                            , node->GetCommPort()
-                            , node->GetSyncPort());
-            }
-        }
-        else
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf("%s@%d - No port for node %d (node not up)\n",
-                             method_name, __LINE__, i);
-            }
-
-            nodeInfo[i].nodeName[0] = '\0';
-            nodeInfo[i].commPort[0] = '\0';
-            nodeInfo[i].syncPort[0] = '\0';
-        }
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-       trace_printf("%s@%d - Sending port info to new monitor\n", method_name,
-                    __LINE__);
-    }
-
-    rc = Monitor->SendMPI((char *) nodeInfo, sizeof(nodeId_t)*pnodeCount, 0,
-                       MON_XCHNG_DATA, interComm);
-    if ( rc != MPI_SUCCESS )
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], cannot send node/port info to "
-                 " new monitor process: %s.\n"
-                 , method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_1, SQ_LOG_ERR, buf);
-
-        sentData = false;
-    }
-
-    delete [] nodeInfo;
-
-    TRACE_EXIT;
-
-    return sentData;
-}
-#endif
-
 // Send node names and port numbers for all existing monitors
 // to the new monitor.
 bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
@@ -273,7 +194,6 @@ bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
     return sentData;
 }
 
-#if 1
 void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqDeleteProcess";
@@ -312,7 +232,6 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
 
     TRACE_EXIT;
 }
-#endif
 
 void CCommAcceptMon::monReqExec( CExternalReq * request )
 {
@@ -331,7 +250,6 @@ void CCommAcceptMon::monReqExec( CExternalReq * request )
     TRACE_EXIT;
 }
 
-#if 1
 void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqProcessInfo";
@@ -372,9 +290,7 @@ void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
 
     TRACE_EXIT;
 }
-#endif
 
-#if 1
 void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqProcessInfoCont";
@@ -425,9 +341,7 @@ void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd 
 
     TRACE_EXIT;
 }
-#endif
 
-#if 1
 void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqNewProcess";
@@ -466,259 +380,7 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 
     TRACE_EXIT;
 }
-#endif
 
-#if 0
-void CCommAcceptMon::processNewComm(MPI_Comm interComm)
-{
-    const char method_name[] = "CCommAcceptMon::processNewComm";
-    TRACE_ENTRY;
-
-    int rc;
-    MPI_Comm intraComm;
-    nodeId_t nodeId;
-
-    mem_log_write(CMonLog::MON_NSCONNTONEWMON_1);
-
-    MPI_Comm_set_errhandler( interComm, MPI_ERRORS_RETURN );
-
-    // Get info about connecting monitor
-    rc = Monitor->ReceiveMPI((char *) &nodeId, sizeof(nodeId_t),
-                          MPI_ANY_SOURCE, MON_XCHNG_DATA, interComm);
-    if ( rc != MPI_SUCCESS )
-    {   // Handle error
-        MPI_Comm_free( &interComm );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
-                 "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_3, SQ_LOG_ERR, buf);
-        return;
-    }
-
-    if ( nodeId.creator )
-    {
-        // Indicate that this node is the creator monitor for the node up
-        // operation.
-        MyNode->SetCreator( true
-                          , nodeId.creatorShellPid
-                          , nodeId.creatorShellVerifier );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Accepted connection from node %s, port=%s, "
-                      "creator=%d, creatorShellPid=%d:%d\n"
-                    , method_name, __LINE__
-                    , nodeId.nodeName
-                    , nodeId.commPort
-                    , nodeId.creator
-                    , nodeId.creatorShellPid
-                    , nodeId.creatorShellVerifier );
-    }
-
-    CNode * node= Nodes->GetNode( nodeId.nodeName );
-    int pnid = -1;
-    if ( node != NULL )
-    {   // Store port number for the node
-        pnid = node->GetPNid();
-        node->SetCommPort( nodeId.commPort );
-        node->SetSyncPort( nodeId.syncPort );
-    }
-    else
-    {
-        MPI_Comm_free( &interComm );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], got connection from unknown "
-                 "node %s. Ignoring it.\n", method_name, nodeId.nodeName);
-        mon_log_write(MON_NSCOMMACCEPT_4, SQ_LOG_ERR, buf);
-
-        return;
-    }
-
-    // Merge the inter-communicators obtained from the connect/accept
-    // between this monitor and the connecting monitor.
-    rc = MPI_Intercomm_merge( interComm, 0, &intraComm );
-    if ( rc )
-    {
-        MPI_Comm_free( &interComm );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], Cannot merge intercomm: %s.\n",
-                 method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_5, SQ_LOG_ERR, buf);
-
-#if 0
-        if ( MyNode->IsCreator() )
-        {
-            snprintf(buf, sizeof(buf), "Cannot merge intercomm for node %s: %s.\n",
-                     nodeId.nodeName, ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-        }
-#endif
-        return;
-    }
-
-    MPI_Comm_set_errhandler( intraComm, MPI_ERRORS_RETURN );
-
-    mem_log_write(CMonLog::MON_NSCONNTONEWMON_2, pnid);
-
-    if ( MyNode->IsCreator() )
-    {  // Send port and node info for existing nodes
-        mem_log_write(CMonLog::MON_NSCONNTONEWMON_3, pnid);
-
-        if ( !sendNodeInfoMPI( interComm ) )
-        {   // Had problem communicating with new monitor
-            MPI_Comm_free( &intraComm );
-            MPI_Comm_free( &interComm );
-
-#if 0
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "Cannot send node/port info to "
-                     " node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-#endif
-            return;
-        }
-
-        Monitor->SetJoinComm( interComm );
-
-        Monitor->SetIntegratingPNid( pnid );
-
-        Monitor->addNewComm( pnid, 1, intraComm );
-
-        node->SetState( State_Merging );
-    }
-    else
-    {   // No longer need inter-comm from "MPI_Comm_accept"
-
-        Monitor->addNewComm( pnid, 1, intraComm );
-
-        node->SetState( State_Merging );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Sending ready flag to new monitor\n",
-                          method_name, __LINE__);
-        }
-
-        // Tell connecting monitor that we are ready to integrate it.
-        int readyFlag = 1;
-        rc = Monitor->SendMPI((char *) &readyFlag, sizeof(readyFlag), 0,
-                           MON_XCHNG_DATA, interComm);
-        if ( rc != MPI_SUCCESS )
-        {
-            MPI_Comm_free( &interComm );
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to send connect "
-                     "acknowledgement to new monitor: %s.\n", method_name,
-                     ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_6, SQ_LOG_ERR, buf);
-
-#if 0
-            if ( MyNode->IsCreator() )
-            {
-                snprintf(buf, sizeof(buf), "Cannot send connect acknowledgment "
-                         "to new monitor: %s.\n", ErrorMsg(rc));
-                SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                       , MyNode->GetCreatorVerifier()
-                                                       , Notice( buf )
-                                                       , NULL );
-            }
-#endif
-
-            return;
-        }
-
-        MPI_Comm_free( &interComm );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Connected to new monitor for node %d\n",
-                      method_name, __LINE__, pnid );
-    }
-
-    // Ideally the following logic should be done in another thread
-    // so this thread can post another accept without delay.  For
-    // initial implementation simplicity this work is being done
-    // here for now
-    if ( MyNode->IsCreator() )
-    {
-        mem_log_write(CMonLog::MON_NSCONNTONEWMON_4, pnid);
-
-        // Get status from new monitor indicating whether
-        // it is fully connected to other monitors.
-        nodeStatus_t nodeStatus;
-        rc = Monitor->ReceiveMPI((char *) &nodeStatus,
-                              sizeof(nodeStatus_t),
-                              MPI_ANY_SOURCE, MON_XCHNG_DATA,
-                              interComm);
-        if ( rc != MPI_SUCCESS )
-        {   // Handle error
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to obtain "
-                     "node status from new monitor: %s.\n",
-                     method_name, ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_7, SQ_LOG_ERR, buf);
-
-#if 0
-            snprintf(buf, sizeof(buf), "Unable to obtain node status from "
-                     "node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-#endif
-
-            node->SetState( State_Down );
-
-            MPI_Comm_free ( &interComm );
-            Monitor->ResetIntegratingPNid();
-        }
-        else
-        {
-            mem_log_write(CMonLog::MON_NSCONNTONEWMON_5, node->GetPNid(),
-                          nodeStatus.state);
-
-            if (nodeStatus.state == State_Up)
-            {
-                // communicate the change and handle it after sync
-                // in ImAlive
-                node->SetChangeState( true );
-            }
-            else
-            {
-#if 0
-                char buf[MON_STRING_BUF_SIZE];
-                snprintf(buf, sizeof(buf), "Node %s monitor failed to complete "
-                         "initialization\n", nodeId.nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                       , MyNode->GetCreatorVerifier()
-                                                       , Notice( buf )
-                                                       , NULL );
-#endif
-                node->SetState( State_Down );
-
-                MPI_Comm_free ( &interComm );
-                Monitor->ResetIntegratingPNid();
-            }
-        }
-    }
-
-    TRACE_EXIT;
-}
-#endif
-
-#if 1
 void CCommAcceptMon::processMonReqs( int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::processMonReqs";
@@ -774,17 +436,32 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     strcpy(nodeId.nodeName, MyNode->GetName());
     strcpy(nodeId.commPort, MyNode->GetCommPort());
     strcpy(nodeId.syncPort, MyNode->GetSyncPort());
-    nodeId.pid = getpid();
     nodeId.pnid = MyNode->GetPNid();
     nodeId.creatorPNid = -1;
     nodeId.creatorShellPid = -1;
     nodeId.creatorShellVerifier = -1;
     nodeId.creator = false;
     nodeId.ping = false;
+    nodeId.nsPid = getpid();
+    int pnidNs = processMonReqsGetBestNs();
+    nodeId.nsPNid = pnidNs;
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d - Sending nodeId back\n", method_name, __LINE__ );
+        trace_printf( "%s@%d - Sending nodeId back\n"
+                      "        nodeId.nodeName=%s\n"
+                      "        nodeId.commPort=%s\n"
+                      "        nodeId.syncPort=%s\n"
+                      "        nodeId.pnid=%d\n"
+                      "        nodeId.nsPid=%d\n"
+                      "        nodeId.nsPNid=%d\n"
+                    , method_name, __LINE__
+                    , nodeId.nodeName
+                    , nodeId.commPort
+                    , nodeId.syncPort
+                    , nodeId.pnid
+                    , nodeId.nsPid
+                    , nodeId.nsPNid );
     }
 
     // return Send info to connecting monitor
@@ -865,10 +542,34 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         }
     }
 
-
     TRACE_EXIT;
 }
-#endif
+
+int CCommAcceptMon::processMonReqsGetBestNs( void )
+{
+    const char method_name[] = "CCommAcceptMon::processMonReqsGetBestNs";
+    TRACE_ENTRY;
+    int pnid;
+
+    int myCount = Monitor->GetMyMonConnCount();
+    int minCount = Monitor->GetMinMonConnCount();
+    if ( myCount <= (minCount + HEURISTIC_COUNT) )
+    {
+        pnid = -1;
+    }
+    else
+    {
+        pnid = Monitor->GetMinMonConnPnid();
+    }
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf("%s@%d - myCount=%d, minCount=%d, pnid=%d\n"
+                    ,method_name, __LINE__, myCount, myCount, pnid);
+    }
+
+    TRACE_EXIT;
+    return pnid;
+}
 
 void CCommAcceptMon::processNewSock( int joinFd )
 {
@@ -876,11 +577,6 @@ void CCommAcceptMon::processNewSock( int joinFd )
     TRACE_ENTRY;
 
     int rc;
-#if 0
-    int integratingFd;
-    nodeId_t nodeId;
-    CNode *node;
-#endif
 
     mem_log_write(CMonLog::MON_NSCONNTONEWMON_6);
 
@@ -894,363 +590,6 @@ void CCommAcceptMon::processNewSock( int joinFd )
         mon_log_write(MON_NSCOMMACCEPT_11, SQ_LOG_ERR, buf);
     }
 
-#if 0
-
-    // Get info about connecting monitor
-    rc = Monitor->ReceiveSock( (char *) &nodeId
-                             , sizeof(nodeId_t)
-                             , joinFd );
-    if ( rc )
-    {   // Handle error
-        close( joinFd );
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
-                 "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_12, SQ_LOG_ERR, buf);
-        return;
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Accepted connection from pnid=%d\n"
-                      "        nodeId.nodeName=%s\n"
-                      "        nodeId.commPort=%s\n"
-                      "        nodeId.syncPort=%s\n"
-                      "        nodeId.creatorPNid=%d\n"
-                      "        nodeId.creator=%d\n"
-                      "        nodeId.creatorShellPid=%d\n"
-                      "        nodeId.creatorShellVerifier=%d\n"
-                      "        nodeId.ping=%d\n"
-                    , method_name, __LINE__
-                    , nodeId.pnid
-                    , nodeId.nodeName
-                    , nodeId.commPort
-                    , nodeId.syncPort
-                    , nodeId.creatorPNid
-                    , nodeId.creator
-                    , nodeId.creatorShellPid
-                    , nodeId.creatorShellVerifier
-                    , nodeId.ping );
-    }
-
-    node= Nodes->GetNode( nodeId.nodeName );
-
-    if ( nodeId.ping )
-    {
-        // Reply with my node info
-        nodeId.pnid = MyPNID;
-        strcpy(nodeId.nodeName, MyNode->GetName());
-        strcpy(nodeId.commPort, MyNode->GetCommPort());
-        strcpy(nodeId.syncPort, MyNode->GetSyncPort());
-        nodeId.ping = true;
-        nodeId.creatorPNid = -1;
-        nodeId.creator = false;
-        nodeId.creatorShellPid = -1;
-        nodeId.creatorShellVerifier = -1;
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "Sending my nodeInfo.pnid=%d\n"
-                          "        nodeInfo.nodeName=%s\n"
-                          "        nodeInfo.commPort=%s\n"
-                          "        nodeInfo.syncPort=%s\n"
-                          "        nodeInfo.ping=%d\n"
-                        , nodeId.pnid
-                        , nodeId.nodeName
-                        , nodeId.commPort
-                        , nodeId.syncPort
-                        , nodeId.ping );
-        }
-
-        rc = Monitor->SendSock( (char *) &nodeId
-                              , sizeof(nodeId_t)
-                              , joinFd );
-        if ( rc )
-        {
-            close( joinFd );
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s], Cannot send ping node info to node %s: (%s)\n"
-                    , method_name, node?node->GetName():"", ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_13, SQ_LOG_ERR, buf);
-        }
-        return;
-    }
-
-    if ( nodeId.creator )
-    {
-        // Indicate that this node is the creator monitor for the node up
-        // operation.
-        MyNode->SetCreator( true
-                          , nodeId.creatorShellPid
-                          , nodeId.creatorShellVerifier );
-    }
-
-    int pnid = -1;
-    if ( node != NULL )
-    {   // Store port numbers for the node
-        char commPort[MPI_MAX_PORT_NAME];
-        char syncPort[MPI_MAX_PORT_NAME];
-        strncpy(commPort, nodeId.commPort, MPI_MAX_PORT_NAME);
-        strncpy(syncPort, nodeId.syncPort, MPI_MAX_PORT_NAME);
-        char *pch1;
-        char *pch2;
-        pnid = nodeId.pnid;
-
-        node->SetCommPort( commPort );
-        pch1 = strtok (commPort,":");
-        pch1 = strtok (NULL,":");
-        node->SetCommSocketPort( atoi(pch1) );
-
-        node->SetSyncPort( syncPort );
-        pch2 = strtok (syncPort,":");
-        pch2 = strtok (NULL,":");
-        node->SetSyncSocketPort( atoi(pch2) );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
-                        , method_name, __LINE__
-                        , node->GetPNid()
-                        , node->GetName()
-                        , pch1, atoi(pch1)
-                        , pch2, atoi(pch2) );
-        }
-    }
-    else
-    {
-        close( joinFd );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], got connection from unknown "
-                  "node %d (%s). Ignoring it.\n"
-                , method_name
-                , nodeId.pnid
-                , nodeId.nodeName);
-        mon_log_write(MON_NSCOMMACCEPT_14, SQ_LOG_ERR, buf);
-
-        return;
-    }
-
-    // Sanity check, re-integrating node must be down
-    if ( node->GetState() != State_Down )
-    {
-        int intdata = -1;
-        rc = Monitor->SendSock( (char *) &intdata
-                              , 0
-                              , joinFd );
-
-        close( joinFd );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], got connection from node %s. "
-                  "Node not down, node state=%s\n"
-                , method_name, nodeId.nodeName
-                , StateString(node->GetState()));
-        mon_log_write(MON_NSCOMMACCEPT_15, SQ_LOG_ERR, buf);
-
-        return;
-    }
-
-    mem_log_write(CMonLog::MON_NSCONNTONEWMON_7, pnid);
-
-    if ( MyNode->IsCreator() )
-    {  // Send port and node info for existing nodes
-        mem_log_write(CMonLog::MON_NSCONNTONEWMON_8, pnid);
-
-        if ( !sendNodeInfoSock( joinFd ) )
-        {   // Had problem communicating with new monitor
-            close( joinFd );
-
-#if 0
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "Cannot send node/port info to "
-                     " node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-#endif
-            return;
-        }
-    }
-    else
-    {   // No longer need joinFd
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Sending ready indication to new monitor\n",
-                          method_name, __LINE__);
-        }
-
-        // Tell connecting monitor that we are ready to integrate it.
-        int mypnid = MyPNID;
-        rc = Monitor->SendSock( (char *) &mypnid
-                              , sizeof(mypnid)
-                              , joinFd );
-        if ( rc )
-        {
-            close( joinFd );
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to send connect "
-                     "acknowledgement to new monitor: %s.\n", method_name,
-                     ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_16, SQ_LOG_ERR, buf);
-            return;
-        }
-
-        // Connect to new monitor
-        integratingFd = Monitor->MkCltSock( node->GetSyncPort() );
-        Monitor->addNewSock( pnid, 1, integratingFd );
-
-        node->SetState( State_Merging );
-
-        close( joinFd );
-    }
-
-    if ( MyNode->IsCreator() )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Sending my pnid to new monitor\n",
-                          method_name, __LINE__);
-        }
-
-        // Sanity check, tell integrating monitor my creator pnid
-        int mypnid = MyPNID;
-        rc = Monitor->SendSock( (char *) &mypnid
-                              , sizeof(mypnid)
-                              , joinFd );
-        if ( rc )
-        {
-            close( joinFd );
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to send pnid "
-                     "acknowledgement to new monitor: %s.\n", method_name,
-                     ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_17, SQ_LOG_ERR, buf);
-
-#if 0
-            snprintf(buf, sizeof(buf), "Cannot send pnid acknowledgment "
-                     "to new monitor: %s.\n", ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-#endif
-            return;
-        }
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Wait for ok to connect to new monitor in node %d\n",
-                          method_name, __LINE__, pnid );
-        }
-
-        // Get new monitor acknowledgement that creator can connect
-        int newpnid = -1;
-        rc = Monitor->ReceiveSock( (char *) &newpnid
-                                 , sizeof(newpnid)
-                                 , joinFd );
-        if ( rc || newpnid != pnid )
-        {
-            close( joinFd );
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to send connect "
-                  "acknowledgement to new monitor: %s.\n", method_name,
-                  ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_18, SQ_LOG_ERR, buf);
-
-#if 0
-            snprintf(buf, sizeof(buf), "Cannot receive connect acknowledgment "
-                  "to new monitor: %s.\n", ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                , MyNode->GetCreatorVerifier()
-                                                , Notice( buf )
-                                                , NULL );
-#endif
-            return;
-        }
-
-        Monitor->SetJoinSock( joinFd );
-
-        Monitor->SetIntegratingPNid( pnid );
-
-        // Connect to new monitor
-        integratingFd = Monitor->MkCltSock( node->GetSyncPort() );
-        Monitor->addNewSock( pnid, 1, integratingFd );
-
-        node->SetState( State_Merging );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Connected to new monitor in node %d\n",
-                          method_name, __LINE__, pnid );
-        }
-
-        mem_log_write(CMonLog::MON_NSCONNTONEWMON_9, pnid);
-
-        // Get status from new monitor indicating whether
-        // it is fully connected to other monitors.
-        nodeStatus_t nodeStatus;
-        rc = Monitor->ReceiveSock( (char *) &nodeStatus
-                                 , sizeof(nodeStatus_t)
-                                 , joinFd);
-        if ( rc != MPI_SUCCESS )
-        {   // Handle error
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[%s], unable to obtain "
-                     "node status from new monitor: %s.\n",
-                     method_name, ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_19, SQ_LOG_ERR, buf);
-
-#if 0
-            snprintf(buf, sizeof(buf), "Unable to obtain node status from "
-                     "node %s monitor: %s.\n", nodeId.nodeName, ErrorMsg(rc));
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-#endif
-
-            node->SetState( State_Down );
-            close( joinFd );
-            Monitor->ResetIntegratingPNid();
-            return;
-        }
-
-        mem_log_write(CMonLog::MON_NSCONNTONEWMON_10, node->GetPNid(),
-                      nodeStatus.state);
-
-        if (nodeStatus.state == State_Up)
-        {
-            // communicate the change and handle it after sync
-            // in ImAlive
-            node->SetChangeState( true );
-        }
-        else
-        {
-#if 0
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "Node %s monitor failed to complete "
-                     "initialization\n", nodeId.nodeName);
-            SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                                   , MyNode->GetCreatorVerifier()
-                                                   , Notice( buf )
-                                                   , NULL );
-            node->SetState( State_Down );
-#endif
-            close( joinFd );
-            Monitor->ResetIntegratingPNid();
-        }
-    }
-#endif
-
     TRACE_EXIT;
 }
 
@@ -1261,11 +600,6 @@ void CCommAcceptMon::commAcceptor()
 
     switch( CommType )
     {
-#if 0
-        case CommType_InfiniBand:
-            commAcceptorIB();
-            break;
-#endif
         case CommType_Sockets:
             commAcceptorSock();
             break;
@@ -1277,84 +611,6 @@ void CCommAcceptMon::commAcceptor()
     TRACE_EXIT;
     pthread_exit(0);
 }
-
-#if 0
-// commAcceptor thread main processing loop.  Keep an MPI_Comm_accept
-// request outstanding.  After accepting a connection process it.
-void CCommAcceptMon::commAcceptorIB()
-{
-    const char method_name[] = "CCommAcceptMon::commAcceptorIB";
-    TRACE_ENTRY;
-
-    int rc;
-    int errClass;
-    MPI_Comm interComm;
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf("%s@%d thread %lx starting\n", method_name,
-                     __LINE__, thread_id_);
-    }
-
-    while (true)
-    {
-        if (isAccepting())
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf("%s@%d - Posting socket accept\n", method_name, __LINE__);
-            }
-
-            mem_log_write(CMonLog::MON_NSCONNTONEWMON_11);
-            interComm = MPI_COMM_NULL;
-            rc = MPI_Comm_accept( MyCommPort, MPI_INFO_NULL, 0, MPI_COMM_SELF,
-                                  &interComm );
-        }
-        else
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf("%s@%d - Waiting to post accept\n", method_name, __LINE__);
-            }
-
-            CLock::lock();
-            CLock::wait();
-            CLock::unlock();
-            if (!shutdown_)
-            {
-                continue; // Ok to accept another connection
-            }
-        }
-
-        if (shutdown_)
-        {   // We are being notified to exit.
-            break;
-        }
-
-        if ( rc )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            MPI_Error_class( rc, &errClass );
-            snprintf(buf, sizeof(buf), "[%s], cannot accept remote monitor: %s.\n",
-                     method_name, ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_20, SQ_LOG_ERR, buf);
-
-        }
-        else
-        {
-            processNewComm( interComm );
-        }
-    }
-
-    if ( interComm != MPI_COMM_NULL ) MPI_Comm_free ( &interComm );
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d thread %lx exiting\n", method_name,
-                     __LINE__, pthread_self());
-
-    TRACE_EXIT;
-}
-#endif
 
 // commAcceptor thread main processing loop.  Keep an accept
 // request outstanding.  After accepting a connection process it.
@@ -1498,8 +754,12 @@ static void *mon2nsProcess(void *arg)
         mon_log_write(MON_NSCOMMACCEPT_23, SQ_LOG_ERR, buf);
     }
 
+    MyNode->AddMonConnCount(1);
+
     // Enter thread processing loop
     cao->processMonReqs(cao->pendingFd_);
+
+    MyNode->AddMonConnCount(-1);
 
     TRACE_EXIT;
     return NULL;

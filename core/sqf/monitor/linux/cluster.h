@@ -200,6 +200,12 @@ public:
     int incrGetVerifierNum();
     int getConfigMaster() { return configMaster_; }
 
+#ifdef NAMESERVER_PROCESS
+    int inline GetMyMonConnCount( void ) { return myMonConnCount_; }
+    int inline GetMinMonConnCount( void ) { return minMonConnCount_; }
+    int inline GetMinMonConnPnid( void ) { return minMonConnPnid_; }
+#endif
+
     enum { SYNC_MAX_RESPONSIVE = 1 }; // Max seconds before sync thread is "stuck"
 
     // cluster snapshot header for use in reintegration
@@ -220,6 +226,7 @@ protected:
     int           *socks_;
     int           *sockPorts_;
     int            commSock_;
+    int            syncPort_;
     int            syncSock_;
 #ifdef NAMESERVER_PROCESS
     int            mon2nsSock_;
@@ -366,6 +373,12 @@ private:
     bool nodeDownDeathNotices_; // default true
 
     Verifier_t verifierNum_; // part of phandle that uniquely identifies a process 
+
+#ifdef NAMESERVER_PROCESS
+    int myMonConnCount_;
+    int minMonConnCount_;
+    int minMonConnPnid_;
+#endif
 
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);

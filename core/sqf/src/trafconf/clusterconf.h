@@ -52,8 +52,8 @@ public:
     inline bool     IsNodeReady( void ) { return( nodeReady_ ); }
     inline bool     IsPersistReady( void ) { return( persistReady_ ); }
     inline TcStorageType_t GetStorageType( void ) { return(trafConfigStorageType_); }
-    bool            LoadConfig( void );
-    bool            LoadNodeConfig( void );
+    bool            LoadConfig( bool Ns = false );
+    bool            LoadNodeConfig( bool Ns );
     bool            LoadPersistConfig( void );
     bool            SaveNodeConfig( const char *name
                                   , int         nid

@@ -85,6 +85,7 @@ const char *SyncStateString( SyncState state);
 extern CNameServer *NameServer;
 extern CProcess *NameServerProcess;
 #endif
+extern CNameServerConfigContainer *NameServerConfig;
 
 // The following defines are necessary for the new watchdog timer facility.  They should really be
 // ultimately placed in watchdog.h in my opinion, especially so people know not to re-use values 16,17
@@ -165,6 +166,9 @@ CNode::CNode( char *name, int pnid, int rank )
       ,shutdownLevel_(ShutdownLevel_Undefined)
       ,wdtKeepAliveTimerValue_(WDT_KeepAliveTimerDefault)
       ,zid_(pnid)
+#ifdef NAMESERVER_PROCESS
+      ,monConnCount_(0)
+#endif
       ,commSocketPort_(-1)
       ,syncSocketPort_(-1)
       ,procStatFile_(NULL)
@@ -3008,6 +3012,9 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
     syncBuf->nodeInfo.change_nid    = -1;
     syncBuf->nodeInfo.seq_num       = seqNum;
     syncBuf->nodeInfo.nodeMask      = upNodes;
+#ifdef NAMESERVER_PROCESS
+    syncBuf->nodeInfo.monConnCount  = MyNode->GetMonConnCount();
+#endif
 
     for (int i = 0; i < GetPNodesCount(); i++)
     {
@@ -3020,23 +3027,32 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
     }
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_TMSYNC))
+    {
 #ifdef NAMESERVER_PROCESS
-        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, change_nid=%d, seqNum_=%lld\n"
-#else
-        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, TmSyncState=(%d)(%s), change_nid=%d, seqNum_=%lld\n"
-#endif
+        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, change_nid=%d, seqNum_=%lld, monConnCount=%d\n"
                     , method_name, __LINE__
                     , MyNode->GetName()
                     , MyPNID
                     , syncBuf->nodeInfo.node_state
                     , StateString( MyNode->GetState() )
                     , syncBuf->nodeInfo.internalState
-#ifndef NAMESERVER_PROCESS
+                    , syncBuf->nodeInfo.change_nid
+                    , syncBuf->nodeInfo.seq_num
+                    , syncBuf->nodeInfo.monConnCount);
+#else
+        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, TmSyncState=(%d)(%s), change_nid=%d, seqNum_=%lld\n"
+                    , method_name, __LINE__
+                    , MyNode->GetName()
+                    , MyPNID
+                    , syncBuf->nodeInfo.node_state
+                    , StateString( MyNode->GetState() )
+                    , syncBuf->nodeInfo.internalState
                     , syncBuf->nodeInfo.tmSyncState
                     , SyncStateString( syncBuf->nodeInfo.tmSyncState )
-#endif
                     , syncBuf->nodeInfo.change_nid
                     , syncBuf->nodeInfo.seq_num);
+#endif
+    }
 
     syncBuf->msgInfo.msg_count = 0;
     syncBuf->msgInfo.msg_offset = 0;
@@ -3294,7 +3310,7 @@ void CNodeContainer::LoadConfig( void )
 
     if ( !nameServerConfig_ )
     {
-        nameServerConfig_ = new CNameServerConfigContainer();
+        nameServerConfig_ = NameServerConfig;
     }
     if ( nameServerConfig_ )
     {

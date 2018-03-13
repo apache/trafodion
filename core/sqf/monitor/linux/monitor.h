@@ -82,6 +82,7 @@ public:
 #ifndef NAMESERVER_PROCESS
     void  StartPrimitiveProcesses( void );  
 #endif
+#ifndef NAMESERVER_PROCESS
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );
     void  writeProcessMapBegin( const char *name
@@ -100,6 +101,7 @@ public:
                             , int parentPid
                             , int parentVerifier
                             , const char *program );
+#endif
     int   GetProcTermSig() { return procTermSig_; }
     int   PackProcObjs(char *&buffer);
     void  UnpackProcObjs(char *&buffer, int procCount);
@@ -109,7 +111,9 @@ public:
 protected:
 private:
     int  Last_error;     // last MPI error returned
+#ifndef NAMESERVER_PROCESS
     int  processMapFd;   // file desc for process map file
+#endif
 
 #ifdef DELAY_TP
     void Delay_TP(char *tpName);
