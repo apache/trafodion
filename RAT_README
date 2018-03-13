@@ -59,8 +59,7 @@ $TRAF_HOME/../sql/bin/SqlciErrors.txt
                  -> this file does not handle comments
 
 dcs/conf/servers 
-dcs/conf/backup-masters 
-dcs/conf/master
+dcs/conf/masters
                  :  Apache Trafodion DCS default configuration file
                  -> configuration file do not handle comments
 

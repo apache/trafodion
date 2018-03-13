@@ -290,7 +290,7 @@ then
   echo "Adding swtrafci script..." | tee -a ${MY_LOG_FILE}
   cat <<EOF >$TRAF_HOME/sql/scripts/swtrafci
 #!/bin/sh
-$TRAF_HOME/trafci/bin/trafci
+$TRAF_HOME/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u db__root -p zz
 EOF
   chmod +x $TRAF_HOME/sql/scripts/swtrafci
 else
