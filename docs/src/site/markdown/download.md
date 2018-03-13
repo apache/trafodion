@@ -29,7 +29,6 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 * [Release Notes](release-notes-2-2-0.html)
 * [Source Code Release][src220]  -  [PGP][pgp220] [SHA1][sha220]
 * Convenience Binaries
-    * [bash Installer][ins220]  -  [PGP][inpgp220] [SHA1][insha220]
     * [Python Installer][pins220]  -  [PGP][pinpgp220] [SHA1][pinsha220]
     * [Server][ser220]  -  [PGP][sepgp220] [SHA1][sesha220]
     * [Clients][cl220]  -  [PGP][clpgp220] [SHA1][clsha220]
@@ -40,9 +39,6 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 [src220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz
 [pgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz.asc
 [sha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz.sha
-[ins220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_installer-2.2.0.tar.gz
-[inpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_installer-2.2.0.tar.gz.asc
-[insha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_installer-2.2.0.tar.gz.sha
 [pins220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz
 [pinpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz.asc
 [pinsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz.sha
@@ -52,12 +48,13 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 [cl220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz
 [clpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz.asc
 [clsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz.sha
-[ar220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm
-[arpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.asc
-[arsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.sha
-[ap220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm
-[appgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.asc
-[apsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.sha
+[ar220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm
+[arpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.asc
+[arsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.sha
+[ap220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm
+[appgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.asc
+[apsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.sha
+
 
 ## 2.1.0 (May 2017)
 
