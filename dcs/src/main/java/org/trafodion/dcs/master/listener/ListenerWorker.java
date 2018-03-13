@@ -93,6 +93,8 @@ public class ListenerWorker extends Thread {
                         try {
                             queue.wait();
                         } catch (InterruptedException e) {
+                            LOG.error("ListenerWorker be interrupted by DCS master, exit thread.", e);
+                            return;
                         }
                     }
                     dataEvent = queue.remove(0);

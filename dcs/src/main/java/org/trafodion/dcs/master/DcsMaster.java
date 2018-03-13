@@ -23,21 +23,16 @@ under the License.
 package org.trafodion.dcs.master;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.NetworkInterface;
-import java.nio.charset.Charset;
-import java.util.Enumeration;
-import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
@@ -46,23 +41,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper.States;
-
-import org.apache.hadoop.util.StringUtils;
-
 import org.trafodion.dcs.Constants;
+import org.trafodion.dcs.master.listener.ListenerService;
+import org.trafodion.dcs.master.listener.ListenerWorker;
 import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.util.DcsNetworkConfiguration;
 import org.trafodion.dcs.util.InfoServer;
+import org.trafodion.dcs.util.RetryCounter;
+import org.trafodion.dcs.util.RetryCounterFactory;
 import org.trafodion.dcs.util.VersionInfo;
-import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.zookeeper.ZKConfig;
-import org.trafodion.dcs.master.listener.ListenerService;
+import org.trafodion.dcs.zookeeper.ZkClient;
 
-public class DcsMaster implements Runnable {
+public class DcsMaster implements Callable<Integer> {
     private static final Log LOG = LogFactory.getLog(DcsMaster.class);
     private Thread thrd;
     private ZkClient zkc = null;
@@ -111,11 +105,50 @@ public class DcsMaster implements Runnable {
         trafodionHome = System.getProperty(Constants.DCS_TRAFODION_HOME);
         jvmShutdownHook = new JVMShutdownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
-        thrd = new Thread(this);
-        thrd.start();
+
+        // 35000 * 15mins ~= 1 years
+        RetryCounter retryCounter = RetryCounterFactory.create(35000, 15, TimeUnit.MINUTES);
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(executorService);
+
+        while (true) {
+            completionService.submit(this);
+            Future<Integer> f = null;
+            try {
+                f = completionService.take();
+                if (f != null) {
+                    Integer status = f.get();
+                    if (status <= 0) {
+                        System.exit(status);
+                    } else if (status == 1) {
+                        if (retryCounter.shouldRetry()) {
+                            retryCounter.sleepUntilNextRetry();
+                            retryCounter.useRetry();
+                        } else {
+                            System.exit(-2);
+                        }
+                        // reset lock
+                        isLeader = new CountDownLatch(1);
+                        break;
+                    } else {
+                        //TODO for other unknown status
+                    }
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                LOG.error(e.getMessage(), e);
+            }
+        }
+
     }
 
-    public void run() {
+    // return value lesser than 0, means can't recover exception exit.
+    //    -1 configure error
+    //    -2 retry exhaust
+    // return value greater than 0 , means exception can be recover.
+    //    1 means network error, retry till network recover.
+    // return value equals 0, means unknow exception, do exit now.
+    //    change value other than 0 when confirm the exception real reason.
+    public Integer call() {
         VersionInfo.logVersion();
 
         Options opt = new Options();
@@ -129,19 +162,19 @@ public class DcsMaster implements Runnable {
             instance = "1";
         } catch (NullPointerException e) {
             LOG.error("No args found: ", e);
-            System.exit(1);
+            return -1;
         } catch (ParseException e) {
             LOG.error("Could not parse: ", e);
-            System.exit(1);
+            return -1;
         }
 
         try {
             zkc = new ZkClient();
             zkc.connect();
             LOG.info("Connected to ZooKeeper");
-        } catch (Exception e) {
-            LOG.error(e);
-            System.exit(1);
+        } catch (IOException | InterruptedException e) {
+            LOG.error(e.getMessage(), e);
+            return 1;
         }
 
         try {
@@ -202,9 +235,10 @@ public class DcsMaster implements Runnable {
             }
         } catch (KeeperException.NodeExistsException e) {
             // do nothing...some other server has created znodes
+            LOG.warn(e.getMessage(), e);
         } catch (Exception e) {
-            LOG.error(e);
-            System.exit(0);
+            LOG.error(e.getMessage(), e);
+            return 0;
         }
 
         metrics = new Metrics();
@@ -213,10 +247,10 @@ public class DcsMaster implements Runnable {
         try {
             netConf = new DcsNetworkConfiguration(conf);
             serverName = netConf.getHostName();
-	    if (serverName == null) {
+            if (serverName == null) {
                 LOG.error("DNS Interface [" + conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE)
-	    			+ "] configured in dcs.site.xml is not found!");
-		System.exit(1);
+                        + "] configured in dcs.site.xml is not found!");
+                return -1;
             }
 
             // Wait to become the leader of all DcsMasters
@@ -229,6 +263,11 @@ public class DcsMaster implements Runnable {
                     + ":" + startTime;
             zkc.create(path, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
                     CreateMode.EPHEMERAL);
+            // Add a check path here for session expired situation,
+            // if there meets session expired, use the mark to compare with the exist znode,
+            // if not match, that means a backup master take over the master role.
+            zkc.setCheckPath(path);
+
             LOG.info("Created znode [" + path + "]");
 
             int requestTimeout = conf.getInt(
@@ -262,12 +301,50 @@ public class DcsMaster implements Runnable {
             future.get();// block
 
         } catch (Exception e) {
-            LOG.error(e);
-            e.printStackTrace();
-            if (pool != null)
-                pool.shutdown();
-            System.exit(0);
+            LOG.error(e.getMessage(), e);
+            try {
+                FloatingIp floatingIp = FloatingIp.getInstance(this);
+                floatingIp.unbindScript();
+            } catch (Exception e1) {
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Error creating class FloatingIp [" + e1.getMessage() + "]", e1);
+                }
+            }
+
+            if (pool != null) {
+                try {
+                    pool.shutdown();
+                    LOG.info("Interrupt listenerService.");
+                } catch (Exception e2) {
+                    LOG.error("Error while shutdown ServerManager thread [" + e2.getMessage() + "]", e2);
+                }
+            }
+
+            if (ls != null) {
+                try {
+                    ListenerWorker lw = ls.getWorker();
+                    if (lw != null) {
+                        lw.interrupt();
+                        LOG.info("Interrupt listenerWorker.");
+                    }
+                    ls.interrupt();
+                    LOG.info("Interrupt listenerService.");
+                } catch (Exception e2) {
+                    LOG.error("Error while shutdown ListenerService thread [" + e2.getMessage() + "]", e2);
+                }
+            }
+            if (infoServer != null) {
+                try {
+                    infoServer.stop();
+                    LOG.info("Stop infoServer.");
+                } catch (Exception e2) {
+                    LOG.error("Error while shutdown InfoServer thread [" + e2.getMessage(), e2);
+                }
+            }
+            return 1;
+
         }
+        return 0;
     }
 
     public String getServerName() {

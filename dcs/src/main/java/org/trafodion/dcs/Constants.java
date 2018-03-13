@@ -559,6 +559,12 @@ public final class Constants {
     /** Default value for DcsMaster floating IP command */
     public static final String DEFAULT_DCS_MASTER_FLOATING_IP_COMMAND = "cd ${dcs.home.dir};bin/scripts/dcsbind.sh -i -a -p";
 
+    /** DcsMaster floating IP command unbind*/
+    public static final String DCS_MASTER_FLOATING_IP_COMMAND_UNBIND = "dcs.master.floating.ip.command.unbind";
+
+    /** Default value for DcsMaster floating IP command unbind*/
+    public static final String DEFAULT_DCS_MASTER_FLOATING_IP_COMMAND_UNBIND = "cd ${dcs.home.dir};bin/scripts/dcsunbind.sh self";
+
     /** DcsMaster Floating IP external interface */
     public static final String DCS_MASTER_FLOATING_IP_EXTERNAL_INTERFACE = "dcs.master.floating.ip.external.interface";
 

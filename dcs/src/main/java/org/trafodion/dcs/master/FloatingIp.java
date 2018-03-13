@@ -61,6 +61,43 @@ public class FloatingIp {
         return isEnabled;
     }
 
+    public synchronized int unbindScript() throws Exception {
+        if (isEnabled)
+            LOG.info("Floating IP is enabled");
+        else {
+            LOG.info("Floating IP is disabled");
+            return 0;
+        }
+
+        ScriptContext scriptContext = new ScriptContext();
+        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+        scriptContext.setStripStdOut(false);
+        scriptContext.setStripStdErr(false);
+
+        String command = master.getConfiguration().get(Constants.DCS_MASTER_FLOATING_IP_COMMAND_UNBIND,
+                Constants.DEFAULT_DCS_MASTER_FLOATING_IP_COMMAND_UNBIND);
+
+        scriptContext.setCommand(command);
+        LOG.info("Unbind Floating IP [" + scriptContext.getCommand() + "]");
+        ScriptManager.getInstance().runScript(scriptContext);// Blocking call
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("exit code [" + scriptContext.getExitCode() + "]");
+        if (!scriptContext.getStdOut().toString().isEmpty())
+            sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+        if (!scriptContext.getStdErr().toString().isEmpty())
+            sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+        if (LOG.isErrorEnabled())
+            LOG.error(sb.toString());
+
+        if (scriptContext.getExitCode() == 0)
+            LOG.info("Unbind Floating IP successful, exit code [" + 0 + "]");
+        else
+            LOG.error("Unbind Floating IP failed, exit code [" + scriptContext.getExitCode() + "]");
+
+        return scriptContext.getExitCode();
+    }
+
     public synchronized int runScript() throws Exception {
         if (isEnabled)
             LOG.info("Floating IP is enabled");

@@ -51,6 +51,31 @@ function check_node {
     done
 }
 
+function check_self_node {
+    for myinterface in `/sbin/ip link show|cut -d: -f1- | cut -c1- | awk -F': ' '/^[0-9]+:.*/ {print $2;}'`; do
+        ip_output=$(/sbin/ip addr show $myinterface | cut -d: -f1- | cut -c1-)
+
+        myifport=`echo "$ip_output" | grep -w $gv_float_external_ip`
+        status=$?
+        if [ $status -eq 0 ]; then
+            tempinterface=`echo $gv_float_interface:$gv_port`
+            # check if another interface is bound to this virtual ip address
+            echo "$myifport" | grep "$tempinterface"  > /dev/null
+            if [ $? -eq 0 ]; then
+                unbindip=`echo "$myifport" | awk '{print $2}'`
+                unbindlb=`echo "$myifport"|awk '{print $NF}'`
+                echo "Virtual ip $gv_float_external_ip is in use on node $HOSTNAME bound to interface $myinterface($unbindlb) - unbinding..."
+                sudo /sbin/ip addr del $unbindip dev $myinterface
+                status=$?
+                if [ $status -ne 0 ]; then
+                    echo "Failed to unbind - status is $status"
+                    exit -1
+                fi
+            fi # endif node+name match
+        fi # endif looking for external ip
+    done
+}
+
 function Check_VirtualIP_InUse_And_Unbind {
     echo "check all nodes to see if external virtual ip address is in use and unbind if necessary"
     mynode=""
@@ -64,11 +89,22 @@ function Check_VirtualIP_InUse_And_Unbind {
     fi
 }
 
+function Check_VirtualIP_InUse_And_Unbind_Self {
+    check_self_node
+}
+
 #Main program
 
 if [[ $ENABLE_HA == "false" ]]; then
  exit 0
 fi
+
+unbindSelf=false
+for i in "$@"; do
+    if [[ $i=="self" ]]; then
+        unbindSelf=true
+    fi
+done
 
 gv_float_internal_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_external_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
@@ -94,6 +130,10 @@ if [[ $AWS_CLOUD == "true" ]]; then
       echo "Detached interface :" $NETWORKINTERFACE
    fi
 else
-   Check_VirtualIP_InUse_And_Unbind
+   if [ $unbindSelf ]; then
+       Check_VirtualIP_InUse_And_Unbind_Self
+   else
+       Check_VirtualIP_InUse_And_Unbind
+   fi
 fi
 exit 0

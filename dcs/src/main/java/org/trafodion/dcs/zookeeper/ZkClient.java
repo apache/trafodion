@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.nio.charset.Charset;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.ZooKeeper;
@@ -69,7 +70,9 @@ public class ZkClient implements Watcher {
 	private final String identifier = null;
 	private final byte[] id = null;
 	private String parentZnode;
-	
+    private String checkPath;
+    private boolean sessionRecoverSuccessful = true;
+
 	// The metadata attached to each piece of data has the
 	// format:
 	//   <magic> 1-byte constant
@@ -128,8 +131,17 @@ public class ZkClient implements Watcher {
 		init();
 	}
 
-	public void connect() throws IOException, InterruptedException {
-		if(zk==null) {
+    public void connect() throws IOException, InterruptedException {
+        connect(false);
+    }
+
+	public void connect(boolean force) throws IOException, InterruptedException {
+	    if (force) {
+            LOG.debug("Force reconnect to Zookeeper.");
+            connectedSignal = new CountDownLatch(1);
+        }
+
+		if(zk==null || force) {
 			this.zk = new ZooKeeper(zkServers, sessionTimeout, this);
 			
 			//wait 3 seconds to connect
@@ -151,8 +163,28 @@ public class ZkClient implements Watcher {
 				this.zk=null;
 				throw new IOException("Cannot connect to Zookeeper");
 			}
-			
-			LOG.debug("Zookeeper.State=" + this.zk.getState());
+
+            // Solve the forcible reconnection
+            // When zk reconn, the backup-master may take over the master,
+            // so current master should restart, and queues in /dcs/master/leader
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("force = [" + force + "]. checkPath = [" + checkPath + "]");
+            }
+            if (force && checkPath != null) {
+                try {
+                    Stat stat = zk.exists(checkPath, false);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("stat = [" + stat + "].");
+                    }
+                    if (stat == null) {
+                        // this means master has change.
+                        setSessionRecoverSuccessful(false);
+                    }
+                } catch (KeeperException e) {
+                    throw new IOException(e);
+                }
+            }
+
 			connectedSignal.await();
 		}
 	}
@@ -176,7 +208,19 @@ public class ZkClient implements Watcher {
 	public void process(WatchedEvent event) {
 		if(event.getState() == Watcher.Event.KeeperState.SyncConnected) {
 			connectedSignal.countDown();
-		}
+		} else if (event.getState() == Watcher.Event.KeeperState.Expired) {
+            LOG.info("session expired. now rebuilding");
+            // session expired, may be never happending. but if it happen there
+            // need to close old client and rebuild new client
+            try {
+                connect(true);
+            } catch (IOException e) {
+                setSessionRecoverSuccessful(false);
+                LOG.error("session expired and throw IOException while do reconnect: " + e.getMessage(), e);
+            } catch (InterruptedException e) {
+                LOG.error("session expired and throw InterruptedException while do reconnect: " + e.getMessage(), e);
+            }
+        }
 	}
 
 	public void create(String path, String value, boolean ephemeral) 
@@ -699,6 +743,21 @@ public class ZkClient implements Watcher {
 	    return lockChildren;
 	  }	  
 
+    public String getCheckPath() {
+        return checkPath;
+    }
+
+    public void setCheckPath(String checkPath) {
+        this.checkPath = checkPath;
+    }
+
+    public boolean isSessionRecoverSuccessful() {
+        return sessionRecoverSuccessful;
+    }
+
+    public void setSessionRecoverSuccessful(boolean sessionRecoverSuccessful) {
+        this.sessionRecoverSuccessful = sessionRecoverSuccessful;
+    }
 	public static void main(String [] args) throws Exception {
 		ZkClient zkc = new ZkClient();
 	}
