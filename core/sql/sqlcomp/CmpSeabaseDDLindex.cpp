@@ -239,6 +239,14 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      keyInfoArray[i].hbaseColQual = new(CTXTHEAP) char[strlen(qualNumStr)+1];
      strcpy((char*)keyInfoArray[i].hbaseColQual, qualNumStr);
     }
+
+  if (keyLength > MAX_HBASE_ROWKEY_LEN )
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ROWKEY_LEN_TOO_LARGE)
+                              << DgInt0(keyLength)
+                              << DgInt1(MAX_HBASE_ROWKEY_LEN);
+      return -1;
+    }
   
   if ((syskeyOnly) &&
       (hasSyskey))
