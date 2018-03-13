@@ -102,7 +102,7 @@ short Describe::codeGen(Generator * generator)
   else if (format_ == SHOWSTATS_) type = ComTdbDescribe::SHOWSTATS_;
   else if (format_ == TRANSACTION_) type = ComTdbDescribe::TRANSACTION_;
   else if (format_ == SHORT_) type = ComTdbDescribe::SHORT_;
-  else if (format_ == LONG_) type = ComTdbDescribe::LONG_;
+  else if (format_ == SHOWDDL_) type = ComTdbDescribe::LONG_;
   else if (format_ == PLAN_) type = ComTdbDescribe::PLAN_;
   else if (format_ == LABEL_) type = ComTdbDescribe::LABEL_;
   else if (format_ == SHAPE_) type = ComTdbDescribe::SHAPE_;

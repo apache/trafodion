@@ -57,9 +57,15 @@ extern void HandleCLIErrorInit();
 extern void HandleCLIError(Lng32 &err, SqlciEnv *sqlci_env, 
 			   NABoolean displayErr = TRUE,
 			   NABoolean * isEOD = NULL,
+                           Int32 prepcode = 0, NABoolean getWarningsWithEOF = FALSE);
+extern void HandleCLIError(SQLSTMT_ID *stmt, Lng32 &err, SqlciEnv *sqlci_env, 
+			   NABoolean displayErr = TRUE,
+			   NABoolean * isEOD = NULL,
                            Int32 prepcode = 0);
-void handleLocalError(ComDiagsArea &diags, SqlciEnv *sqlci_env);
 
+void handleLocalError(ComDiagsArea *diags, SqlciEnv *sqlci_env);
+Int64 getRowsAffected(SQLSTMT_ID *stmt);
+Int64 getDiagsCondCount(SQLSTMT_ID *stmt);
 // for unnamed parameters
 #define MAX_NUM_UNNAMED_PARAMS  128
 #define MAX_LEN_UNNAMED_PARAM 300

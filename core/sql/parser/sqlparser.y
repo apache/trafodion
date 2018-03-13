@@ -22695,7 +22695,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_,
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_,
 			          COM_TABLE_NAME, $3/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22711,7 +22711,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, 
 			          COM_TABLE_NAME, $4/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22724,7 +22724,7 @@ show_statement:
                  ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME);
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::SHOWDDL_, 
 			          COM_UDF_NAME, $4/*optional_showddl_options_lsit*/),
 			 REL_ROOT,
 			 new (PARSERHEAP())
@@ -22734,7 +22734,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22743,7 +22743,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::LONG_),
+                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::SHOWDDL_),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))); 
@@ -22753,7 +22753,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::LONG_, $3),
+                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::SHOWDDL_, $3),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22776,7 +22776,7 @@ show_statement:
                    ->getQualifiedNameObj().setObjectNameSpace(COM_LIBRARY_NAME); 
   	         $$ = new (PARSERHEAP())
         		 RelRoot(new (PARSERHEAP()) 
-    	  		 Describe(SQLTEXT(), *$2, Describe::LONG_, COM_LIBRARY_NAME, $3),
+    	  		 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, COM_LIBRARY_NAME, $3),
   	  	           	 REL_ROOT, new (PARSERHEAP())
   			     ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
   	         delete $2; // CorrName * qualified_name
@@ -22786,7 +22786,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, 
 			          COM_SEQUENCE_GENERATOR_NAME, $3),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22803,7 +22803,7 @@ show_statement:
 		 ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME); // SPJ
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, COM_UDF_NAME, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, COM_UDF_NAME, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));

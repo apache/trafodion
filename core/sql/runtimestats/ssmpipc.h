@@ -58,7 +58,7 @@ class ExSsmpManager
 public:
   ExSsmpManager(IpcEnvironment *env);
   ~ExSsmpManager();
-  IpcServer *getSsmpServer(char *nodeName, short cpuNum, ComDiagsArea *&diagsArea);
+  IpcServer *getSsmpServer(NAHeap *heap, char *nodeName, short cpuNum, ComDiagsArea *&diagsArea);
   IpcEnvironment *getIpcEnvironment() { return env_; }
   void removeSsmpServer(char *nodeName, short cpuNum);
   void cleanupDeletedSsmpServers();

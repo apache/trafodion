@@ -72,7 +72,7 @@ ExSsmpManager::~ExSsmpManager()
   }
 }
 
-IpcServer *ExSsmpManager::getSsmpServer(char *nodeName, short cpuNum,
+IpcServer *ExSsmpManager::getSsmpServer(NAHeap *heap, char *nodeName, short cpuNum,
                                         ComDiagsArea *&diagsArea)
 {
    char ssmpProcessName[50];
@@ -101,6 +101,8 @@ IpcServer *ExSsmpManager::getSsmpServer(char *nodeName, short cpuNum,
         // We need to keep 2 entries free - To send QueryFinishedMessage and to get the response for query started message
        if (cbGCTS->numReceiveCallbacksPending()+2 >= cbGCTS->getNowaitDepth())
        {
+          if (diagsArea == NULL)
+             diagsArea = ComDiagsArea::allocate(heap);
           *diagsArea << DgSqlCode(-2026)
             << DgString0(tmpProcessName)
             << DgInt0(GetCliGlobals()->myCpu())

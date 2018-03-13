@@ -305,6 +305,8 @@ private:
   NABoolean isEmbeddedArkcmpInitialized_;
   CmpContext * embeddedArkcmpContext_;
 
+  CmpContext * prevCmpContext_;
+
   // pointer to the array of server  versions used to communicate with ARKCMP.
   ARRAY(ExSqlComp *) arkcmpArray_;
 
@@ -810,6 +812,7 @@ public:
   Int32 switchToCmpContext(Int32 cmpCntxtType);
   Int32 switchToCmpContext(void *cmpCntxt);
   Int32 switchBackCmpContext(void);
+  void copyDiagsAreaToPrevCmpContext();
   NABoolean isDropInProgress() { return dropInProgress_; }
   void setDropInProgress() { dropInProgress_ = TRUE; };
 

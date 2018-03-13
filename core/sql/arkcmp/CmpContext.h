@@ -381,7 +381,7 @@ public :
                 CmpMessageObj::MessageTypeEnum op, char *&gen_code,
                 UInt32 &gen_code_len, UInt32 parserFlags,
                 const char *parentQid, Int32 parentQidLen,
-                ComDiagsArea *diagsArea = NULL);
+                ComDiagsArea *&diagsArea);
 
   // set/reset an env in compiler envs
   void setArkcmpEnvDirect(const char *name, const char *value,

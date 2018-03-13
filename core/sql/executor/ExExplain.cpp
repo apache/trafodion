@@ -1527,7 +1527,7 @@ RtsExplainFrag *ExExplainTcb::sendToSsmp()
     return NULL;
   }
 
-  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, cpu, diagsArea_);
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer((NAHeap *)getHeap(), nodeName, cpu, diagsArea_);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_
 

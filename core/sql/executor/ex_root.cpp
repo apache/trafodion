@@ -2235,6 +2235,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
             }
           else 
             {
+/*
               // redrive the scheduler.
               // Fix for CR 6701 - some ExExeUtil operators call back
               // in to the CLI and explicitly clear the curr context
@@ -2246,13 +2247,15 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
               ContextCli *context = statement->getContext();
               ComDiagsArea *savedContextDiags = context->diags().copy();
               context->diags().clear();
+*/
 
               schedRetcode = glob->getScheduler()->work();
-
+/*
               savedContextDiags->mergeAfter(context->diags());
               context->diags().clear();
               context->diags().mergeAfter(*savedContextDiags);
               savedContextDiags->decrRefCount();
+*/
             }
         }
       if (!getQueueDiags)
@@ -2641,6 +2644,7 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
   SessionDefaults *sessionDefaults = context->getSessionDefaults();
   if (sessionDefaults)
   {
+  
     // Note that it will be required that if a session does not
     // allow queries to be canceled, then it also will not be 
     // possible to suspend the queries.
@@ -2659,15 +2663,11 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       return;
     }
   }
-  NABoolean diagsAreaAllocated = FALSE;
-
-  if (diagsArea == NULL)
-  {
-     diagsAreaAllocated = TRUE;
-     diagsArea = ComDiagsArea::allocate(getHeap());
-  }
+  Lng32 fromCond = 0;
+  if (diagsArea != NULL)
+      fromCond = diagsArea->mark();
   ExSsmpManager *ssmpManager = context->getSsmpManager();
-  cbServer_ = ssmpManager->getSsmpServer(
+  cbServer_ = ssmpManager->getSsmpServer((NAHeap *)getHeap(),
                                  cliGlobals->myNodeName(), 
                                  cliGlobals->myCpu(), diagsArea);
   if (cbServer_ == NULL || cbServer_->getControlConnection() == NULL)		
@@ -2675,16 +2675,8 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       // We could not get a phandle for the cancel broker.  However,		
       // let the query run (on the assumption that it will not need to 		
       // be canceled) and convert any error conditions to warnings.		
-
-      // tbd - figure a way retry registration later, as the query progresses.		
-      if (diagsArea != NULL)		
-         NegateAllErrors(diagsArea);		
+      diagsArea->negateErrors(fromCond); 
       return;
-  }
-  else if (diagsAreaAllocated)
-  {
-     diagsArea->decrRefCount();
-     diagsArea = NULL;
   }
 
   // The stream's actOnSend method will delete (or call decrRefCount()) 

@@ -1687,7 +1687,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		  //!aqRetry  && cliGlobals_->isEmbeddedArkcmpInitialized())
                 {
                   Int32 compStatus;
-                  ComDiagsArea *da = ComDiagsArea::allocate(&heap_);
+                  ComDiagsArea *da = NULL;
 
                   // clean up diags area of regular arkcmp, it could contain
                   // old errors from last use
@@ -1698,14 +1698,17 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
                   compStatus = CmpCommon::context()->compileDirect(
                                    (char *)data, dataLen,
                                    // use arkcmp heap to store the plan
+                                   // check why indexIntoCompilerArray is used here?
                                    cliGlobals_->getArkcmp(indexIntoCompilerArray)->getHeap(),
                                    charset, op,
                                    fetched_gen_code, fetched_gen_code_len,
                                    context_->getSqlParserFlags(), 
                                    NULL, 0, da);
-
-                  diagsArea.mergeAfter(*da);
-                  da->decrRefCount();
+                  if (da != NULL) 
+                  {
+                     diagsArea.mergeAfter(*da);
+                     da->decrRefCount();
+                  }
 
                   if (compStatus == ExSqlComp::SUCCESS)
                     {
