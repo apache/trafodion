@@ -48,6 +48,7 @@ if [ -z "$DCS_HOME" ]; then
   export DCS_HOME=`dirname "$this"`/..
 fi
 
+foreground="false"
 #check to see if the conf dir or dcs home are given as an optional arguments
 while [ $# -gt 1 ]
 do
@@ -63,6 +64,10 @@ do
     hosts=$1
     shift
     DCS_SERVERS=$hosts
+  elif [ "--foreground" = "$1" ]
+  then
+    shift
+    foreground="true"
   else
     # Presume we are at end of options and break
     break
@@ -73,10 +78,8 @@ done
 DCS_CONF_DIR="${DCS_CONF_DIR:-$DCS_HOME/conf}"
 # List of DCS servers.
 DCS_SERVERS="${DCS_SERVERS:-$DCS_CONF_DIR/servers}"
-# DCS primary master.
-DCS_PRIMARY_MASTER="${DCS_PRIMARY_MASTER:-$DCS_CONF_DIR/master}"
-# List of DCS secondary masters.
-DCS_BACKUP_MASTERS="${DCS_BACKUP_MASTERS:-$DCS_CONF_DIR/backup-masters}"
+#List of DCS masters
+DCS_MASTERS="${DCS_MASTERS:-$DCS_CONF_DIR/masters}"
 
 # Source the dcs-env.sh.  Will have JAVA_HOME defined.
 if [ -f "${DCS_CONF_DIR}/dcs-env.sh" ]; then
@@ -87,6 +90,9 @@ fi
 if [ -f "${TRAF_HOME}/sqenv.sh" ]; then
   savedir=`pwd`
   cd $TRAF_HOME
+  if [[ -f /etc/trafodion/trafodion_config ]]; then
+     . /etc/trafodion/trafodion_config
+  fi
   . ./sqenv.sh
   cd $savedir
 fi

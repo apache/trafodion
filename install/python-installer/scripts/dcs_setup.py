@@ -39,8 +39,7 @@ def run():
 
     dcs_conf_dir = '%s/dcs-%s/conf' % (traf_home, traf_ver)
     dcs_srv_file = dcs_conf_dir + '/servers'
-    dcs_master_file = dcs_conf_dir + '/master'
-    dcs_bkmaster_file = dcs_conf_dir + '/backup-masters'
+    dcs_master_file = dcs_conf_dir + '/masters'
     dcs_site_file = dcs_conf_dir + '/dcs-site.xml'
     rest_site_file = '%s/rest-%s/conf/rest-site.xml' % (traf_home, traf_ver)
 
@@ -57,7 +56,7 @@ def run():
     ### modify dcs config files ###
     # modify master
     dcs_master = nodes[0]
-    append_file(dcs_master_file, dcs_master)
+    append_file(dcs_master_file, dcs_master+'\n')
 
     # modify dcs-site.xml
     net_interface = run_cmd('ip route |grep default|awk \'{print $5}\'')
@@ -82,9 +81,9 @@ def run():
         dcs_floating_ip_cfg = 'export DCS_MASTER_FLOATING_IP=%s' % dcs_floating_ip
         append_file(TRAF_CFG_FILE, dcs_floating_ip_cfg)
 
-        # modify backup_master
+        # modify master with backup master host
         for dcs_backup_node in dcs_backup_nodes.split(','):
-            append_file(dcs_bkmaster_file, dcs_backup_node)
+            append_file(dcs_master_file, dcs_backup_node)
 
     p.write_xml()
 

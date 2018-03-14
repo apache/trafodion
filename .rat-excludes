@@ -44,9 +44,8 @@ __init__.py*
 # SQL messages file
 SqlciErrors.txt
 # DCS config files
-backup-masters
 servers
-master
+masters
 # jquery
 jquery-ui.css*
 jquery-ui.js*

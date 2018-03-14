@@ -23,7 +23,6 @@ jpscmd=$JAVA_HOME/bin/jps
 cfg_mxo_cnt=0
 act_mxo_cnt=0
 down_mxo_cnt=0
-backup_dcsmaster_cnt=0
 cfg_dcsmaster_cnt=0
 actual_dcsmaster_cnt=0
 down_dcsmaster_cnt=0
@@ -71,16 +70,10 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
 ### Get the list of DcsServer and DcsMaster
   $L_PDSH $jpscmd |/bin/egrep 'DcsMaster|DcsServer' > $tmpjps
 
-### Get the configured primary node for DcsMaster
-  if [ -s ${DCS_INSTALL_DIR}/conf/master ]; then
-     primary_dcsmaster=`cat ${DCS_INSTALL_DIR}/conf/master | /bin/egrep -v '^#|^$'`
-  fi
-
 ### Get the configured number of DcsMaster's
-  if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
-     let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
-     let cfg_dcsmaster_cnt=$backup_dcsmaster_cnt+1
-     list_of_backups=`cat ${DCS_INSTALL_DIR}/conf/backup-masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
+  if [ -s ${DCS_INSTALL_DIR}/conf/masters ]; then
+     let cfg_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/masters`
+     list_of_masters=`cat ${DCS_INSTALL_DIR}/conf/masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
    else
      let cfg_dcsmaster_cnt=1
    fi
@@ -159,16 +152,13 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
    masterport=`cat $dcstmp | /usr/bin/tail -n 1 | cut -d ":" -f2`
    if [ ! -z "$masterport" ]; then
      echo -e "DcsMaster listen port: $masterport\n"
-     if [[ ! -z "$primary_dcsmaster" ]]; then
-        echo "Configured Primary DcsMaster: \"$primary_dcsmaster\""
-     fi
-     if [[ ! -z "$list_of_backups" ]]; then
-        echo "Configured Backup DcsMasters: \"$list_of_backups\""
+     if [[ ! -z "$list_of_masters" ]]; then
+        echo "Configured DcsMasters: \"$list_of_masters\""
      fi
      if ( [ ! -z "$activeMaster" ] && [ ! -z "$activeDcsPid" ] ); then
-        echo "Active DcsMaster            : \"$activeMaster\", pid $activeDcsPid"
+        echo "Active DcsMaster     : \"$activeMaster\", pid $activeDcsPid"
      else
-        echo "Active DcsMaster            : \"$activeMaster\""
+        echo "Active DcsMaster     : \"$activeMaster\""
      fi
      echo
    fi
