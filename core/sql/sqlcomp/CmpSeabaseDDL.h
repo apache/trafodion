@@ -129,6 +129,11 @@ class CmpDDLwithStatusInfo;
 
 #include "CmpSeabaseDDLmd.h"
 
+// The value HBase uses for checking key length is HConstants.MAX_ROW_LENGTH.
+// The rowID length limit in HBase is enforced in HBase modules Put.java and
+// Mutation.java. (The above was true as of HBase 1.0.0.)
+#define MAX_HBASE_ROWKEY_LEN 32767
+
 #define SEABASEDDL_INTERNAL_ERROR(text)                                   \
    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR) 	  \
                        << DgString0(__FILE__)   		   	  \
