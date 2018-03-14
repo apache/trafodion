@@ -549,7 +549,7 @@ NABoolean ValueId::isColumnWithNonNullNonCurrentDefault() const{
   default:
       break;
   }
-  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT)
+  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_UT_DEFAULT)
       return TRUE;
   else
       return FALSE;

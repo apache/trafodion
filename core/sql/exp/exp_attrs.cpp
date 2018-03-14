@@ -482,6 +482,8 @@ NABoolean SimpleType::operator==(const Attributes& other) const
 	   : (scale_ == otherAttr.scale_)) &&
 	  ((thisAttr.getDefaultClass() == DEFAULT_NULL || 
 	    thisAttr.getDefaultClass() == NO_DEFAULT ||
+	    thisAttr.getDefaultClass() == DEFAULT_UUID ||
+	    thisAttr.getDefaultClass() == DEFAULT_CURRENT_UT ||
 	    thisAttr.getDefaultClass() == DEFAULT_CURRENT) ||
 	   (thisAttr.getDefaultValue() && otherAttr.getDefaultValue() &&
 	    (str_cmp(thisAttr.getDefaultValue(), 

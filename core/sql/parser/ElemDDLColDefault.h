@@ -63,6 +63,7 @@ public:
 
   enum colDefaultTypeEnum { COL_NO_DEFAULT,
                             COL_DEFAULT,
+                            COL_FUNCTION_DEFAULT,
                             COL_COMPUTED_DEFAULT };
 
   // default constructor
@@ -74,6 +75,7 @@ public:
 	  columnDefaultType_(columnDefaultType),
 	  defaultValueExpr_(defaultValueExpr),
 	  sgOptions_(sgOptions),
+	  defaultExprString_(""),
           sgLocation_(NULL)
   {}
 
@@ -93,6 +95,7 @@ public:
   inline colDefaultTypeEnum getColumnDefaultType() const;
 
   inline ItemExpr * getDefaultValueExpr() const;
+  inline const NAString &getDefaultExprString() const;
 
         // returns the pointer to the (only) child parse node
         // pointing to an ItemExpr node representing the
@@ -105,6 +108,7 @@ public:
   // mutator
   virtual void setChild(Lng32 index, ExprNode * pChildNode);
   inline  void setDefaultValueExpr(ItemExpr * pDefaultValueExpr);
+  inline  void setDefaultExprString(NAString &str);
   inline void  setSGOptions(ElemDDLSGOptions * pSGOptions);
   inline void setSGLocation(NAString *pLocation);
   inline void setComputedDefaultExpr(const NAString &computedDefaultExpr);
@@ -126,6 +130,7 @@ private:
 
   ItemExpr * defaultValueExpr_;
   NAString computedDefaultExpr_;
+  NAString defaultExprString_;
 
   ElemDDLSGOptions * sgOptions_;
   NAString * sgLocation_;
@@ -157,6 +162,12 @@ inline void
 ElemDDLColDefault::setDefaultValueExpr(ItemExpr * pDefaultValueExpr)
 {
   setChild(INDEX_DEFAULT_VALUE_EXPR, pDefaultValueExpr);
+}
+
+inline void
+ElemDDLColDefault::setDefaultExprString(NAString &str)
+{
+  defaultExprString_ = str;
 }
 
 inline void
@@ -193,5 +204,11 @@ inline const NAString &
 ElemDDLColDefault::getComputedDefaultExpr() const
 {
   return computedDefaultExpr_;
+}
+
+inline const NAString &
+ElemDDLColDefault::getDefaultExprString() const
+{
+  return defaultExprString_;
 }
 #endif // ELEMDDLCOLDEFAULT_H

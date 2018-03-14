@@ -5424,6 +5424,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       if ((pDefVal) &&
           (pDefVal->origOpType() != ITM_CURRENT_USER) &&
           (pDefVal->origOpType() != ITM_CURRENT_TIMESTAMP) &&
+          (pDefVal->origOpType() != ITM_UNIX_TIMESTAMP) &&
+          (pDefVal->origOpType() != ITM_UNIQUE_ID) &&
           (pDefVal->origOpType() != ITM_CAST))
         {
           if (pDefVal->isNull()) 
@@ -11356,6 +11358,11 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                 tableIsSalted = TRUE;
             }
         }
+      else if (colInfo.defaultClass == COM_FUNCTION_DEFINED_DEFAULT)
+        {
+          oi->get(14, data, len);
+          tempDefVal =  data ;
+        }
       else if (colInfo.defaultClass == COM_NULL_DEFAULT)
         {
           tempDefVal = "NULL";
@@ -11367,6 +11374,14 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
       else if (colInfo.defaultClass == COM_CURRENT_DEFAULT)
         {
           tempDefVal = "CURRENT_TIMESTAMP";
+        }
+      else if (colInfo.defaultClass == COM_CURRENT_UT_DEFAULT)
+        {
+          tempDefVal = "UNIX_TIMESTAMP()";
+        }
+      else if (colInfo.defaultClass == COM_UUID_DEFAULT)
+        {
+          tempDefVal = "UUID()";
         }
       else if ((colInfo.defaultClass == COM_IDENTITY_GENERATED_BY_DEFAULT) ||
                (colInfo.defaultClass == COM_IDENTITY_GENERATED_ALWAYS))
