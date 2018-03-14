@@ -1244,6 +1244,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.CLOB:
 				setString(parameterIndex, x.toString());
 				break;
+			case Types.NCHAR:
+			case Types.NVARCHAR:
+			    setNString(parameterIndex, x.toString());
+			    break;
 			case Types.VARBINARY:
 			case Types.BINARY:
 			case Types.LONGVARBINARY:
@@ -2517,8 +2521,23 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	public void setNString(int parameterIndex, String value)
 			throws SQLException {
-		// TODO Auto-generated method stub
+	    if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, value);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "setNString", "", p);
+        }
 
+        validateSetInvocation(parameterIndex);
+        int dataType = inputDesc_[parameterIndex - 1].dataType_;
+
+        switch (dataType) {
+        case Types.CHAR:
+        case Types.VARCHAR:
+            addParamValue(parameterIndex, value);
+            break;
+        default:
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "fetch_output_inconsistent", null);
+        }
 	}
 
 	public void setNCharacterStream(int parameterIndex, Reader value,
