@@ -2982,14 +2982,6 @@ directs {project-name} SQL to use constraints from _source-table_. Constraint na
 When you perform a CREATE TABLE LIKE, whether or not you include the WITH CONSTRAINTS clause, the target table will have all
 the NOT NULL column constraints that exist for the source table with different constraint names.
 
-*** `WITH PARTITIONS`
-+
-directs {project-name} SQL to use partition definitions from _source-table_. Each new table partition resides on the same volume
-as its original _source-table_ counterpart. The new table partitions do not inherit partition names from the original table.
-Instead, {project-name} SQL generates new names based on the physical file location.
-+
-If you specify the LIKE clause and the SALT USING _num_ PARTITIONS clause, you cannot specify WITH PARTITIONS.
-
 *** `WITHOUT DIVISION`
 +
 directs {project-name} SQL to not use divisioning from _source-table_. If this clause is omitted, then 
