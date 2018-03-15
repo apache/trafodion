@@ -257,6 +257,26 @@ void CPtpCommAccept::processNewSock( int joinFd )
                 */
                  break;
             }
+            //TRK-TODO
+            case InternalType_Clone:
+            {
+                break;
+            }
+            //TRK-TODO
+            case InternalType_Open:
+            {
+                break;
+            }
+            //TRK-TODO
+            case InternalType_Notify:
+            {
+                break;
+            }
+            //TRK-TODO
+            case InternalType_Exit:
+            {
+                break;
+            }
             default:
             {
 
@@ -485,7 +505,7 @@ void CPtpCommAccept::monReqExec( void *req )
     TRACE_EXIT;
 }
 
-//TRK-PTP-NEW
+//TRK-TODO 
 void CPtpCommAccept::monReqNewProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqNewProcess";
