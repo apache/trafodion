@@ -2002,19 +2002,7 @@ void Disjuncts::computeCommonPredicates()
 	      inVidset.next(predId);
 	      inVidset.advance(predId) )
 	 {
-            //TRAFODION-2988
-            /*if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
-            {
-	       if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND ){
-	          predId.getItemExpr()->child(1)->convertToValueIdSet(parsedVs, NULL, ITM_AND, FALSE);
-		    outVidset +=parsedVs;
-            }
-	    else if(predId.getItemExpr()->child(1)->getOperatorType() != ITM_AND 
-			 && predId.getItemExpr()->child(1)->getOperatorType() != ITM_OR)
-	       outVidset += predId.getItemExpr()->child(1)->castToItemExpr()->getValueId();	    
-           }
-	   else
-	     outVidset +=predId;*/
+           //TRAFODION-2988
            if( ITM_RANGE_SPEC_FUNC == predId.getItemExpr()->getOperatorType() )
            {   
                if( ITM_AND == predId.getItemExpr()->child(1)->getOperatorType() )
@@ -2023,7 +2011,7 @@ void Disjuncts::computeCommonPredicates()
                    outVidset +=parsedVs;
                }
                else if( ITM_OR == predId.getItemExpr()->child(1)->getOperatorType() )
-               {   
+               {//add deal with OR operator   
                    outVidset +=predId;
                }
                else
@@ -2033,7 +2021,7 @@ void Disjuncts::computeCommonPredicates()
            }
            else
                outVidset +=predId;
-           //TRAFODION-2988 
+           //TRAFODION-2988
 	 parsedVs.clear();
 	}
 
