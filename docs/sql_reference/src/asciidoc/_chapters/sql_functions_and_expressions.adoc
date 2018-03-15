@@ -7954,7 +7954,7 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 
 <<<
 [[systimestamp_function]]
-== STSTIMESTAMP Function
+== SYSTIMESTAMP Function
 
 The SYSTIMESTAMP function, which is equivalent to the `CURRENT_TIMESTAMP` function, provides much high granularity than the `SYSDATE` function and retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
 
