@@ -7951,9 +7951,6 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 
 --- 1 row(s) selected.
 ```
-<<<
-[[sysdate_function]]
-== SYSDATE Function
 
 <<<
 [[systimestamp_function]]
