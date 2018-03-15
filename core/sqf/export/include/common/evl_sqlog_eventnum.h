@@ -199,6 +199,7 @@
 #define MON_CLUSTER_CONNECT_3               101013903
 #define MON_CLUSTER_CONNECT_4               101013904
 #define MON_CLUSTER_CONNECT_5               101013905
+#define MON_CLUSTER_CONNECT_6               101013906
 
 #define MON_CLUSTER_CONNECTTOSELF_1         101014001
 #define MON_CLUSTER_CONNECTTOSELF_2         101014002
@@ -946,31 +947,25 @@
 #define ZCONFIG_DELETECONFIGZNODE_2         101381002
 #define ZCONFIG_DELETECONFIGZNODE_3         101381003
 
-/* Module nscommaccept.cxx = 39 */
-#define MON_NSCOMMACCEPT_1                  101390101
-#define MON_NSCOMMACCEPT_3                  101390102
-#define MON_NSCOMMACCEPT_2                  101390103
-#define MON_NSCOMMACCEPT_4                  101390104
-#define MON_NSCOMMACCEPT_5                  101390105
-#define MON_NSCOMMACCEPT_6                  101390106
-#define MON_NSCOMMACCEPT_7                  101390107
-#define MON_NSCOMMACCEPT_8                  101390108
-#define MON_NSCOMMACCEPT_9                  101390109
-#define MON_NSCOMMACCEPT_10                 101390110
-#define MON_NSCOMMACCEPT_11                 101390111
-#define MON_NSCOMMACCEPT_12                 101390112
-#define MON_NSCOMMACCEPT_13                 101390113
-#define MON_NSCOMMACCEPT_14                 101390114
-#define MON_NSCOMMACCEPT_15                 101390115
-#define MON_NSCOMMACCEPT_16                 101390116
-#define MON_NSCOMMACCEPT_17                 101390117
-#define MON_NSCOMMACCEPT_18                 101390118
-#define MON_NSCOMMACCEPT_19                 101390119
-#define MON_NSCOMMACCEPT_20                 101390120
-#define MON_NSCOMMACCEPT_21                 101390121
-#define MON_NSCOMMACCEPT_22                 101390122
-#define MON_NSCOMMACCEPT_23                 101390123
-#define MON_NSCOMMACCEPT_24                 101390124
+/* Module nameserver.cxx = 39 */
+#define MON_NAMESERVER_MKCLTSOCK_1          101390101
+#define MON_NAMESERVER_MKCLTSOCK_2          101390102
+#define MON_NAMESERVER_MKCLTSOCK_3          101390103
+#define MON_NAMESERVER_MKCLTSOCK_4          101390104
+#define MON_NAMESERVER_MKCLTSOCK_5          101390105
+#define MON_NAMESERVER_MKCLTSOCK_6          101390106
+
+/* Module nscommaccept.cxx = 40 */
+#define NS_COMMACCEPT_1                     101400101
+#define NS_COMMACCEPT_3                     101400102
+#define NS_COMMACCEPT_2                     101400103
+#define NS_COMMACCEPT_4                     101400104
+#define NS_COMMACCEPT_5                     101400105
+#define NS_COMMACCEPT_6                     101400106
+#define NS_COMMACCEPT_7                     101400107
+#define NS_COMMACCEPT_8                     101400108
+#define NS_COMMACCEPT_9                     101400109
+#define NS_COMMACCEPT_10                    101400110
 
 /* Module: tcdb.cxx = 90 */
 #define TCDB_TCDB_1                         101900101

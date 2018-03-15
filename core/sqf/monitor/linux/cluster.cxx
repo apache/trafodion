@@ -8554,7 +8554,7 @@ int CCluster::AcceptSock( int sock )
         int err = errno;
         snprintf(buf, sizeof(buf), "[%s], getsockname() failed, errno=%d (%s).\n",
                  method_name, err, strerror(err));
-        mon_log_write(MON_CLUSTER_ACCEPTSOCK_2, SQ_LOG_ERR, buf);
+        mon_log_write(MON_CLUSTER_ACCEPTSOCK_1, SQ_LOG_ERR, buf);
         return ( -1 );
     }
 
@@ -8600,7 +8600,7 @@ int CCluster::AcceptSock( int sock )
             int err = errno;
             snprintf(buf, sizeof(buf), "[%s], setsockopt() failed, errno=%d (%s).\n",
                      method_name, err, strerror(err));
-            mon_log_write(MON_CLUSTER_ACCEPTSOCK_3, SQ_LOG_ERR, buf); // TODO
+            mon_log_write(MON_CLUSTER_ACCEPTSOCK_2, SQ_LOG_ERR, buf);
             return ( -2 );
         }
 
@@ -8789,7 +8789,7 @@ int CCluster::Connect( const char *portName )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        mon_log_write(MON_CLUSTER_CONNECT_5, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -8800,7 +8800,7 @@ int CCluster::Connect( const char *portName )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_CONNECT_5, SQ_LOG_ERR, la_buf);
+        mon_log_write(MON_CLUSTER_CONNECT_6, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -8941,7 +8941,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_2, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -8953,7 +8953,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt(SO_REUSEADDR) failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_4, SQ_LOG_ERR, la_buf);
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_3, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -8982,7 +8982,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], bind() failed! port=%d, errno=%d (%s)\n"
                , method_name, *pport, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_2, SQ_LOG_CRIT, la_buf);
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_4, SQ_LOG_CRIT, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -8994,7 +8994,7 @@ int CCluster::MkSrvSock( int *pport )
             int err = errno;
             sprintf( la_buf, "[%s], getsockname() failed! errno=%d (%s)\n"
                    , method_name, err, strerror( err ));
-            mon_log_write(MON_CLUSTER_MKSRVSOCK_3, SQ_LOG_CRIT, la_buf);
+            mon_log_write(MON_CLUSTER_MKSRVSOCK_5, SQ_LOG_CRIT, la_buf);
             close( sock );
             return ( -1 );
         }
@@ -9026,7 +9026,7 @@ int CCluster::MkSrvSock( int *pport )
         int err = errno;
         sprintf( la_buf, "[%s], listen() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKSRVSOCK_8, SQ_LOG_CRIT, la_buf);
+        mon_log_write(MON_CLUSTER_MKSRVSOCK_6, SQ_LOG_CRIT, la_buf);
         close( sock );
         return ( -1 );
     }
@@ -9195,7 +9195,7 @@ int CCluster::MkCltSock( const char *portName )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -9206,7 +9206,7 @@ int CCluster::MkCltSock( const char *portName )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf);
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -9355,7 +9355,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                 int err = errno;
                 sprintf( la_buf, "[%s], bind() failed! errno=%d (%s)\n"
                        , method_name, err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf);
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_7, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -9414,7 +9414,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                        , (int)((unsigned char *)dstip)[3]
                        , port
                        , err, strerror( err ));
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_7, SQ_LOG_ERR, la_buf);
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_8, SQ_LOG_ERR, la_buf);
                 close(sock);
                 return ( -1 );
             }
@@ -9433,7 +9433,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries);
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_8, SQ_LOG_ERR, la_buf);
+                mon_log_write(MON_CLUSTER_MKCLTSOCK_9, SQ_LOG_ERR, la_buf);
                 close( sock );
                 return ( -1 );
             }
@@ -9451,7 +9451,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf); // TODO
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_10, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }
@@ -9462,7 +9462,7 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_9, SQ_LOG_ERR, la_buf);
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_11, SQ_LOG_ERR, la_buf);
         close( sock );
         return ( -2 );
     }

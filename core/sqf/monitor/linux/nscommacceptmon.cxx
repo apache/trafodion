@@ -184,7 +184,7 @@ bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
         snprintf(buf, sizeof(buf), "[%s], cannot send node/port info to "
                  " new monitor process: %s.\n"
                  , method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_2, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_1, SQ_LOG_ERR, buf);
 
         sentData = false;
     }
@@ -400,7 +400,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                  "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_8, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_2, SQ_LOG_ERR, buf);
         return;
     }
 
@@ -469,7 +469,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], unable to send node id from new "
                  "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_NSCOMMACCEPT_8, SQ_LOG_ERR, buf); // TODO
+        mon_log_write(NS_COMMACCEPT_3, SQ_LOG_ERR, buf);
         return;
     }
 
@@ -484,7 +484,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                      "monitor: %s.\n", method_name, ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_9, SQ_LOG_ERR, buf);
+            mon_log_write(NS_COMMACCEPT_4, SQ_LOG_ERR, buf);
             return;
         }
 
@@ -495,7 +495,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                      "monitor: %s.\n", method_name, ErrorMsg(rc));
-            mon_log_write(MON_NSCOMMACCEPT_10, SQ_LOG_ERR, buf);
+            mon_log_write(NS_COMMACCEPT_5, SQ_LOG_ERR, buf);
             return;
         }
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -598,7 +598,7 @@ void CCommAcceptMon::processNewSock( int joinFd )
 
     int rc;
 
-    mem_log_write(CMonLog::MON_NSCONNTONEWMON_6);
+    mem_log_write(CMonLog::MON_NSCONNTONEWMON_1);
 
     pendingFd_ = joinFd;
     rc = pthread_create(&thread_id_, NULL, mon2nsProcess, this);
@@ -607,7 +607,7 @@ void CCommAcceptMon::processNewSock( int joinFd )
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], thread create error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_NSCOMMACCEPT_11, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_6, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
@@ -656,7 +656,7 @@ void CCommAcceptMon::commAcceptorSock()
                 trace_printf("%s@%d - Posting accept\n", method_name, __LINE__);
             }
 
-            mem_log_write(CMonLog::MON_NSCONNTONEWMON_12);
+            mem_log_write(CMonLog::MON_NSCONNTONEWMON_2);
             joinFd = Monitor->AcceptMon2NsSock();
         }
         else
@@ -685,7 +685,7 @@ void CCommAcceptMon::commAcceptorSock()
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], cannot accept new monitor: %s.\n",
                      method_name, strerror(errno));
-            mon_log_write(MON_NSCOMMACCEPT_21, SQ_LOG_ERR, buf);
+            mon_log_write(NS_COMMACCEPT_7, SQ_LOG_ERR, buf);
 
         }
         else
@@ -742,7 +742,7 @@ static void *mon2nsAcceptMon(void *arg)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_NSCOMMACCEPT_22, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_8, SQ_LOG_ERR, buf);
     }
 
     // Enter thread processing loop
@@ -771,7 +771,7 @@ static void *mon2nsProcess(void *arg)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_NSCOMMACCEPT_23, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_9, SQ_LOG_ERR, buf);
     }
 
     MyNode->AddMonConnCount(1);
@@ -798,7 +798,7 @@ void CCommAcceptMon::start()
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], thread create error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_NSCOMMACCEPT_24, SQ_LOG_ERR, buf);
+        mon_log_write(NS_COMMACCEPT_10, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
