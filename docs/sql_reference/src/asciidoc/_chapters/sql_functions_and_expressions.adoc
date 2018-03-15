@@ -7953,6 +7953,63 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 ```
 
 <<<
+[[systimestamp_function]]
+== SYSTIMESTAMP Function
+
+The SYSTIMESTAMP function, which is equivalent to the `CURRENT_TIMESTAMP` function, provides much high granularity than the `SYSDATE` function and retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+
+The returned value is `TIMESTAMP` and the default format is `YYYY-MM-DD HH:MM:SS.FFFFFF`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSTIMESTAMP FROM DUAL;` is 2018-03-13 23:00:00 rather than 2018-03-14 06:00:00.
+
+```
+SYSTIMESTAMP
+```
+
+[[examples_of_systimestamp]]
+=== Examples of SYSTIMESTAMP
+
+* This example calculates the date and time of anniversary using SYSTIMESTAMP function.
+
++
+```
+SELECT SYSTIMESTAMP AS today, SYSTIMESTAMP + INTERVAL '12' MONTH AS Annisversary FROM DUAL; 
+
+TODAY                      ANNISVERSARY              
+-------------------------- --------------------------
+2018-03-15 11:19:42.400382 2019-03-15 11:19:42.400382
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how to insert the value of SYSTIMESTAMP into a column.
+
++
+```
+SQL>CREATE TABLE test1 (C1 TIMESTAMP, C2 VARCHAR(40));
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>INSERT INTO test1 VALUES (SYSTIMESTAMP, 'This is the time that I insert values');
+
+--- 1 row(s) inserted.
+```
+
++
+```
+SQL>SELECT * FROM test1;
+
+C1                         C2                                      
+-------------------------- ----------------------------------------
+2018-03-15 11:33:32.091057 This is the time that I insert values        
+
+--- 1 row(s) selected.
+```
+
+<<<
 [[tan_function]]
 == TAN Function
 
