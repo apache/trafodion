@@ -191,9 +191,9 @@ public:
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
 
     int  ReceiveMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
-    int  ReceiveSock(char *buf, int size, int sockFd);
+    int  ReceiveSock(char *buf, int size, int sockFd, const char *desc);
     int  SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
-    int  SendSock(char *buf, int size, int sockFd);
+    int  SendSock(char *buf, int size, int sockFd, const char *desc);
 
     bool ReinitializeConfigCluster( bool nodeAdded, int pnid );
 

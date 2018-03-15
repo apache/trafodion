@@ -31,6 +31,8 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             int nid,
                                             int pid,
                                             Verifier_t verifier,
+                                            bool event_messages,
+                                            bool system_messages,
                                             PROCESSTYPE type,
                                             int debug,
                                             int priority,
@@ -68,7 +70,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
         struct timespec creation_time;
         memset(&creation_time, 0, sizeof(creation_time));
         process->SetOrigPNidNs( MyPNID );
-        process->CompleteProcessStartup (port, pid, false, false, false, &creation_time, MyPNID);
+        process->CompleteProcessStartup (port, pid, event_messages, system_messages, false, &creation_time, MyPNID);
     }
 
     TRACE_EXIT;

@@ -1727,6 +1727,9 @@ void CNodeContainer::AddNode( CNode *node )
         {
             tail_ = tail_->Link(node);
         }
+#ifdef NAMESERVER_PROCESS
+        AddLNodes( node );
+#else
         // now add logical nodes to physical node
         if (IAmIntegrating)
         {
@@ -1737,6 +1740,7 @@ void CNodeContainer::AddNode( CNode *node )
         {
             AddLNodes( node );
         }
+#endif
 
         if (trace_settings & TRACE_INIT)
         {
@@ -2098,7 +2102,9 @@ void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount 
             trace_printf("%s@%d - Unpacking node mapping, pnidConfig=%d, pnid=%d \n",
                         method_name, __LINE__, pnidConfig, pnid);
 
+#ifndef NAMESERVER_PROCESS
         Nodes->AddLNodes( Nodes->GetNode(pnid), Nodes->GetNode(pnidConfig) );
+#endif
     }
 
     UpdateCluster();
@@ -3200,10 +3206,14 @@ int CNodeContainer::ProcessCount( void )
 
     while (node)
     {
+#ifdef NAMESERVER_PROCESS // don't check state
+        count += node->GetNumProcs();
+#else
         if ( node->GetState() == State_Up || node->GetState() == State_Shutdown )
         {
             count += node->GetNumProcs();
         }
+#endif
         node = node->GetNext ();
     }
 

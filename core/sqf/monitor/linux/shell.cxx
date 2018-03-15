@@ -2231,6 +2231,11 @@ void get_proc_info( int nid
                     ErrorMsg(msg->u.reply.u.process_info.return_code));
             }
         }
+        else if ((msg->type == MsgType_Service) &&
+                 (msg->u.reply.type == ReplyType_Generic))
+        {
+            printf ("ps failed, rc=%d\n", msg->u.reply.u.generic.return_code);
+        }
         else
         {
             printf

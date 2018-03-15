@@ -36,30 +36,44 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
         *error = 0;
     if (!msg->noreply) // send reply
     {
-        if (trace_settings & (TRACE_PROCESS_DETAIL))
-            trace_printf("%s@%d reply type = %d\n", method_name, __LINE__,
-                         msg->u.reply.type);
         int size = offsetof(message_def, u.reply.u);
+        const char *rtype;
         switch (msg->u.reply.type)
         {
         case ReplyType_Generic:
             size += sizeof(struct Generic_reply_def);
+            rtype = "Generic";
             break;
         case ReplyType_DelProcessNs:
             size += sizeof(struct DelProcessNs_reply_def);
+            rtype = "DelProcessNs";
             break;
         case ReplyType_NewProcessNs:
             size += sizeof(struct NewProcessNs_reply_def);
+            rtype = "NewProcessNs";
             break;
         case ReplyType_ProcessInfo:
             size += sizeof(struct ProcessInfo_reply_def);
+            rtype = "ProcessInfo";
             break;
         default:
+            rtype = "?";
             abort();
+        }
+        if (trace_settings & (TRACE_PROCESS_DETAIL))
+        {
+            trace_printf("%s@%d reply type=%d(%s), size=%d, sock=%d\n", method_name, __LINE__,
+                         msg->u.reply.type, rtype, size, sockFd);
+            if ( msg->u.reply.type == ReplyType_Generic )
+            {
+                trace_printf("%s@%d generic reply. rc=%d\n", method_name, __LINE__,
+                             msg->u.reply.u.generic.return_code);
+            }
         }
         int rc = Monitor->SendSock( (char *) &size
                                   , sizeof(size)
-                                  , sockFd);
+                                  , sockFd
+                                  , method_name );
         if ( rc )
         {
             char buf[MON_STRING_BUF_SIZE];
@@ -72,7 +86,8 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
         {
             rc = Monitor->SendSock( (char *) msg
                                   , size
-                                  , sockFd);
+                                  , sockFd
+                                  , method_name );
             if ( rc )
             {
                 char buf[MON_STRING_BUF_SIZE];

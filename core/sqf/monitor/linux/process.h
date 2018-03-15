@@ -107,6 +107,8 @@ class CProcessContainer
 #ifdef NAMESERVER_PROCESS
                              int pid,
                              Verifier_t verifier,
+                             bool event_messages,
+                             bool system_messages,
 #endif
                              PROCESSTYPE Type,
                              int debug,

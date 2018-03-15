@@ -447,6 +447,11 @@ void CExternalReq::errorReply( int rc )
     msg_->u.reply.u.generic.return_code = rc;
 
 #ifdef NAMESERVER_PROCESS
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        const char method_name[] = "CExternalReq::errorReply";
+        trace_printf( "%s@%d rc=%d\n", method_name, __LINE__, rc );
+    }
     monreply(msg_, sockFd_);
 #else
     // Send reply to requester
@@ -1176,6 +1181,8 @@ void CIntNewProcReq::performRequest()
 #ifdef NAMESERVER_PROCESS
                                 pid_,
                                 verifier_,
+                                false,
+                                false,
 #endif
                                 type_,
                                 0,
@@ -2440,7 +2447,8 @@ void CIntReviveReq::performRequest()
         case CommType_Sockets:
             error = Monitor->ReceiveSock( (char *)&header
                                          , sizeof(header)
-                                         , Monitor->getJoinSock());
+                                         , Monitor->getJoinSock()
+                                         , method_name );
             break;
         default:
             // Programmer bonehead!
@@ -2500,7 +2508,8 @@ void CIntReviveReq::performRequest()
         case CommType_Sockets:
             error = Monitor->ReceiveSock( compBuf
                                         , header.compressedSize_
-                                        , Monitor->getJoinSock());
+                                        , Monitor->getJoinSock()
+                                        , method_name );
             break;
         default:
             // Programmer bonehead!
@@ -2799,7 +2808,8 @@ void CIntSnapshotReq::performRequest()
             case CommType_Sockets:
                 error = Monitor->SendSock( (char *)&header
                                          , sizeof(header)
-                                         , Monitor->getJoinSock());
+                                         , Monitor->getJoinSock()
+                                         , method_name );
                 break;
             default:
                 // Programmer bonehead!
@@ -2845,7 +2855,8 @@ void CIntSnapshotReq::performRequest()
         case CommType_Sockets:
             error = Monitor->SendSock( (char *)&header
                                      , sizeof(header)
-                                     , Monitor->getJoinSock());
+                                     , Monitor->getJoinSock()
+                                     , method_name );
             break;
         default:
             // Programmer bonehead!
@@ -2880,7 +2891,8 @@ void CIntSnapshotReq::performRequest()
         case CommType_Sockets:
             error = Monitor->SendSock( compBuf
                                      , header.compressedSize_
-                                     , Monitor->getJoinSock());
+                                     , Monitor->getJoinSock()
+                                     , method_name );
             break;
         default:
             // Programmer bonehead!
@@ -3060,26 +3072,23 @@ void CIntCreatePrimitiveReq::performRequest()
     {
         if ( NameServerEnabled )
         {
-#if 0
-            CNameServerConfig *config;
-            if( !IsRealCluster )
+            bool startNs = false;
+            if ( IsRealCluster )
             {
-                char nodeName[10];
-                sprintf(nodeName, "%d", MyPNID);
-                config = NameServerConfig->GetConfig( nodeName );
+                CNameServerConfig *config;
+                config = NameServerConfig->GetConfig( MyNode->GetName() );
+                if ( config )
+                    startNs = true;
             }
             else
             {
-                config = NameServerConfig->GetConfig( MyNode->GetName() );
+                startNs = true;
             }
-            if ( config )
+            if ( startNs )
             {
+                NameServer->SetLocalHost();
                 MyNode->StartNameServerProcess();
             }
-#endif
-            // for now, create
-            MyNode->StartNameServerProcess();
-
         }
         MyNode->StartWatchdogProcess();
         MyNode->StartPStartDProcess();

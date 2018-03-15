@@ -3114,7 +3114,9 @@ bool CCluster::ReinitializeConfigCluster( bool nodeAdded, int pnid )
 
 void CCluster::InitializeConfigCluster( void )
 {
+#ifndef NAMESERVER_PROCESS // nameserver is running in agent mode
     int rc;
+#endif
 
     const char method_name[] = "CCluster::InitializeConfigCluster";
     TRACE_ENTRY;
@@ -3235,6 +3237,7 @@ void CCluster::InitializeConfigCluster( void )
             }
         }
     }
+#ifndef NAMESERVER_PROCESS // nameserver is running in agent mode
     else
     {
         char *nodeNames = 0;
@@ -3420,6 +3423,7 @@ void CCluster::InitializeConfigCluster( void )
 
         if (nodeNames) delete [] nodeNames;
     }
+#endif
 
     if ( CommType == CommType_Sockets )
     {
@@ -3703,6 +3707,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
 
 void CCluster::SendReIntegrateStatus( STATE nodeState, int initErr )
 {
+    const char method_name[] = "CCluster::SendReIntegrateStatus";
     int rc;
     nodeStatus_t nodeStatus;
     nodeStatus.state = nodeState;
@@ -3724,7 +3729,8 @@ void CCluster::SendReIntegrateStatus( STATE nodeState, int initErr )
         case CommType_Sockets:
             rc = Monitor->SendSock( (char *) &nodeStatus
                                   , sizeof(nodeStatus_t)
-                                  , joinSock_ );
+                                  , joinSock_
+                                  , method_name );
             if ( rc )
             {
                 HandleReintegrateError( rc, Reintegrate_Err8, -1, NULL, true );
@@ -3831,7 +3837,8 @@ bool CCluster::PingSockPeer(CNode *node)
 
     rc = Monitor->SendSock( (char *) &nodeInfo
                           , sizeof(nodeId_t)
-                          , pingSock );
+                          , pingSock
+                          , method_name );
 
     if ( rc )
     {
@@ -3847,7 +3854,8 @@ bool CCluster::PingSockPeer(CNode *node)
         // Get info about connecting monitor
         rc = Monitor->ReceiveSock( (char *) &nodeInfo
                                  , sizeof(nodeId_t)
-                                 , pingSock );
+                                 , pingSock
+                                 , method_name );
         if ( rc )
         {   // Handle error
             rs = false;
@@ -4252,7 +4260,8 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     rc = Monitor->SendSock( (char *) &myNodeInfo
                           , sizeof(nodeId_t)
-                          , joinSock_ );
+                          , joinSock_
+                          , method_name );
     if ( rc )
     {
         HandleReintegrateError( rc, Reintegrate_Err9, -1, NULL, true );
@@ -4276,7 +4285,8 @@ void CCluster::ReIntegrateSock( int initProblem )
     nodeInfo = (nodeId_t *) new char[nodeInfoSize];
     rc = Monitor->ReceiveSock( (char *)nodeInfo
                              , nodeInfoSize
-                             , joinSock_ );
+                             , joinSock_
+                             , method_name );
     if ( rc )
     {
         HandleReintegrateError( rc, Reintegrate_Err3, -1, NULL, true );
@@ -4324,7 +4334,8 @@ void CCluster::ReIntegrateSock( int initProblem )
             int creatorpnid = -1;
             rc = Monitor->ReceiveSock( (char *) &creatorpnid
                                      , sizeof(creatorpnid)
-                                     , joinSock_ );
+                                     , joinSock_
+                                     , method_name );
             if ( rc || creatorpnid != nodeInfo[i].creatorPNid )
             {
                 HandleReintegrateError( rc, Reintegrate_Err15, i, NULL,
@@ -4374,7 +4385,8 @@ void CCluster::ReIntegrateSock( int initProblem )
             int mypnid = MyPNID;
             rc = Monitor->SendSock( (char *) &mypnid
                                   , sizeof(mypnid)
-                                  , joinSock_ );
+                                  , joinSock_
+                                  , method_name );
             if ( rc )
             {
                 HandleReintegrateError( rc, Reintegrate_Err4, i, &nodeInfo[i],
@@ -4390,7 +4402,7 @@ void CCluster::ReIntegrateSock( int initProblem )
                                         false );
                 SendReIntegrateStatus( State_Down, Reintegrate_Err14 );
             }
-            socks_[nodeInfo[i].pnid] = existingSyncFd;
+            socks_[nodeInfo[i].pnid] = existingSyncFd; // ReIntegrateSock
             // Set bit indicating node is up
             upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |=
                 (1ull << (nodeInfo[i].pnid%MAX_NODE_BITMASK));
@@ -4455,7 +4467,8 @@ void CCluster::ReIntegrateSock( int initProblem )
             // knows who we are.
             rc = Monitor->SendSock( (char *) &myNodeInfo
                                   , sizeof(nodeId_t)
-                                  , existingCommFd );
+                                  , existingCommFd
+                                  , method_name );
             if ( rc )
             {
                 HandleReintegrateError( rc, Reintegrate_Err4, i, &nodeInfo[i],
@@ -4471,7 +4484,8 @@ void CCluster::ReIntegrateSock( int initProblem )
             int remotepnid = -1;
             rc = Monitor->ReceiveSock( (char *) &remotepnid
                                      , sizeof(remotepnid)
-                                     , existingCommFd );
+                                     , existingCommFd
+                                     , method_name );
             if ( rc || remotepnid != nodeInfo[i].pnid )
             {
                 HandleReintegrateError( rc, Reintegrate_Err15, i, NULL,
@@ -4525,7 +4539,7 @@ void CCluster::ReIntegrateSock( int initProblem )
                                         false );
                 SendReIntegrateStatus( State_Down, Reintegrate_Err14 );
             }
-            socks_[nodeInfo[i].pnid] = existingSyncFd;
+            socks_[nodeInfo[i].pnid] = existingSyncFd; // ReIntegrateSock
 
             // Set bit indicating node is up
             upNodes_.upNodes[nodeInfo[i].pnid/MAX_NODE_BITMASK] |=
@@ -4867,8 +4881,8 @@ void CCluster::setNewSock( int pnid )
                 --currentNodes_;
             }
 
-            CNode *node= Nodes->GetNode( it->pnid );
-            socks_[it->pnid] = it->socket;
+            CNode *node = Nodes->GetNode( it->pnid );
+            socks_[it->pnid] = it->socket; // setNewSock
             sockPorts_[it->pnid] = node->GetSyncSocketPort();
             otherMonRank_[it->pnid] = it->otherRank;
             ++currentNodes_;
@@ -5254,7 +5268,7 @@ reconnected:
                 checkConnections = false;
                 if (trace_settings & TRACE_RECOVERY)
                 {
-                    trace_printf( "%s@%d - Initianing AllgatherSockReconnect(),"
+                    trace_printf( "%s@%d - Initializing AllgatherSockReconnect(),"
                                   " peerTimedoutCount=%d\n"
                                 , method_name, __LINE__
                                 , peerTimedoutCount );
@@ -6020,7 +6034,7 @@ int CCluster::AcceptSockPeer( CNode *node, int peer, bool reestablishConnections
             }
             if (reconnectSock != -1)
             {
-                socks_[peer] = reconnectSock;
+                socks_[peer] = reconnectSock; // AcceptSockPeer
             }
         }
         else
@@ -6155,7 +6169,7 @@ int CCluster::ConnectSockPeer( CNode *node, int peer, bool reestablishConnection
             }
             if (reconnectSock != -1)
             {
-                socks_[peer] = reconnectSock;
+                socks_[peer] = reconnectSock; // ConnectSockPeer
             }
         }
         else
@@ -6483,7 +6497,7 @@ bool CCluster::ValidateSeqNum( cluster_state_def_t nodestate[] )
     // Count occurrences of sequence numbers
     for (int pnid = 0; pnid < GetConfigPNodesMax(); pnid++)
     {
-        CNode *node= Nodes->GetNode( pnid );
+        CNode *node = Nodes->GetNode( pnid );
         if (!node) continue;
         if (node->GetState() != State_Up) continue;
 
@@ -7045,7 +7059,11 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             // monitor.
 
             CNode *pnode = change_nid != -1 ? Nodes->GetNode( change_nid ) : NULL;
+#ifdef NAMESERVER_PROCESS
+            if ( change_nid != -1 && pnode )
+#else
             if ( ! Emulate_Down && change_nid != -1 && pnode )
+#endif
             {
                 switch ( pnode->GetState() )
                 {
@@ -8179,7 +8197,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
                                 , sockPorts_[j] );
                 }
                 // Connect to peer
-                socks_[rankToPnid[j]] = MkCltSock( srcaddr, dstaddr, sockPorts_[j] );
+                socks_[rankToPnid[j]] = MkCltSock( srcaddr, dstaddr, sockPorts_[j] ); // InitClusterSocks
             }
             else if ( j == myRank )
             { // Current [j] peer my node, accept connection from peer [i] node
@@ -8196,7 +8214,7 @@ void CCluster::InitClusterSocks( int worldSize, int myRank, char *nodeNames, int
 
                 idst = i;
                 // Accept connection from peer [i]
-                socks_[rankToPnid[i]] = AcceptSock( syncSock_ );
+                socks_[rankToPnid[i]] = AcceptSock( syncSock_ ); // InitClusterSocks
             }
             else
             {
@@ -8558,6 +8576,19 @@ int CCluster::AcceptSock( int sock )
 
     if ( csock > 0 )
     {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            unsigned char *addrp = (unsigned char *) &sockinfo.sin_addr.s_addr;
+            trace_printf( "%s@%d - Accepted socket on addr=%d.%d.%d.%d,  port=%d, sock=%d\n"
+                        , method_name, __LINE__
+                        , addrp[0]
+                        , addrp[1]
+                        , addrp[2]
+                        , addrp[3]
+                        , (int) ntohs( sockinfo.sin_port )
+                        , csock );
+        }
+
         int nodelay = 1;
         if ( setsockopt( csock
                        , IPPROTO_TCP
@@ -8737,6 +8768,19 @@ int CCluster::Connect( const char *portName )
             nanosleep( &req, &rem );
         }
         close( sock );
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Connected to %s addr=%d.%d.%d.%d, port=%d, sock=%d\n"
+                    , method_name, __LINE__
+                    , host
+                    , (int)((unsigned char *)he->h_addr)[0]
+                    , (int)((unsigned char *)he->h_addr)[1]
+                    , (int)((unsigned char *)he->h_addr)[2]
+                    , (int)((unsigned char *)he->h_addr)[3]
+                    , port
+                    , sock );
     }
 
     if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
@@ -9132,6 +9176,19 @@ int CCluster::MkCltSock( const char *portName )
         close( sock );
     }
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Connected to %s addr=%d.%d.%d.%d, port=%d, sock=%d\n"
+                    , method_name, __LINE__
+                    , host
+                    , (int)((unsigned char *)he->h_addr)[0]
+                    , (int)((unsigned char *)he->h_addr)[1]
+                    , (int)((unsigned char *)he->h_addr)[2]
+                    , (int)((unsigned char *)he->h_addr)[3]
+                    , port
+                    , sock );
+    }
+
     if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -9492,7 +9549,7 @@ int CCluster::SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Com
     return error;
 }
 
-int CCluster::ReceiveSock(char *buf, int size, int sockFd)
+int CCluster::ReceiveSock(char *buf, int size, int sockFd, const char *desc)
 {
     const char method_name[] = "CCluster::ReceiveSock";
     TRACE_ENTRY;
@@ -9512,10 +9569,12 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d - Count read %d = recv(%d)\n"
+            trace_printf( "%s@%d - recv(%d), sock=%d, readCount=%d, desc=%s\n"
                         , method_name, __LINE__
+                        , sizeCount
+                        , sockFd
                         , readCount
-                        , sizeCount );
+                        , desc );
         }
 
         if ( readCount > 0 )
@@ -9554,17 +9613,19 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
+        trace_printf( "%s@%d - recv(), received=%d, sock=%d, error=%d(%s), desc=%s\n"
                     , method_name, __LINE__
                     , received
-                    , error, strerror(error) );
+                    , sockFd
+                    , error, strerror(error)
+                    , desc );
     }
 
     TRACE_EXIT;
     return error;
 }
 
-int CCluster::SendSock(char *buf, int size, int sockFd)
+int CCluster::SendSock(char *buf, int size, int sockFd, const char *desc)
 {
     const char method_name[] = "CCluster::SendSock";
     TRACE_ENTRY;
@@ -9583,9 +9644,11 @@ int CCluster::SendSock(char *buf, int size, int sockFd)
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d - send(), sendCount=%d\n"
+            trace_printf( "%s@%d - send(), sock=%d, sendCount=%d, desc=%s\n"
                         , method_name, __LINE__
-                        , sendCount );
+                        , sockFd
+                        , sendCount
+                        , desc );
         }
 
         if ( sendCount > 0 )
@@ -9617,10 +9680,12 @@ int CCluster::SendSock(char *buf, int size, int sockFd)
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
+        trace_printf( "%s@%d - send(), sent=%d, sock=%d, error=%d(%s), desc=%s\n"
                     , method_name, __LINE__
                     , sent
-                    , error, strerror(error) );
+                    , sockFd
+                    , error, strerror(error)
+                    , desc );
     }
 
     TRACE_EXIT;

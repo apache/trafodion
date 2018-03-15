@@ -176,7 +176,8 @@ bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
 
     rc = Monitor->SendSock( (char *) nodeInfo
                           , nodeInfoSize
-                          , sockFd);
+                          , sockFd
+                          , method_name );
     if ( rc )
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -391,7 +392,8 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     // Get info about connecting monitor
     rc = Monitor->ReceiveSock( (char *) &nodeId
                              , sizeof(nodeId_t)
-                             , sockFd );
+                             , sockFd
+                             , method_name );
     if ( rc )
     {   // Handle error
         close( sockFd );
@@ -459,7 +461,8 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     // return Send info to connecting monitor
     rc = Monitor->SendSock( (char *) &nodeId
                           , sizeof(nodeId_t)
-                          , sockFd );
+                          , sockFd
+                          , method_name );
     if ( rc )
     {   // Handle error
         close( sockFd );
@@ -474,7 +477,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     {
         // Get monitor request (hdr)
         int size;
-        rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), sockFd );
+        rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), sockFd, method_name );
         if ( rc )
         {   // Handle error
             close( sockFd );
@@ -485,7 +488,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             return;
         }
 
-        rc = Monitor->ReceiveSock( (char *) &msg, size, sockFd );
+        rc = Monitor->ReceiveSock( (char *) &msg, size, sockFd, method_name );
         if ( rc )
         {   // Handle error
             close( sockFd );
@@ -519,12 +522,13 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                 rtype = "?";
             }
                 
-            trace_printf( "%s@%d - Received monitor request hdr.\n"
+            trace_printf( "%s@%d - Received monitor request, sock=%d.\n"
                           "        msg.type=%d(%s)\n"
                           "        msg.noreply=%d\n"
                           "        msg.reply_tag=%d\n"
                           "        msg.u.request.type=%d(%s)\n"
                         , method_name, __LINE__
+                        , sockFd
                         , msg.type
                         , mtype
                         , msg.noreply
