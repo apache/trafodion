@@ -73,6 +73,10 @@ extern CReqQueue ReqQueue;
 
 #include "replicate.h"
 
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+#endif
+
 extern bool IsAgentMode;
 extern bool IsMaster;
 
@@ -88,6 +92,7 @@ extern CMonitor *Monitor;
 #ifndef NAMESERVER_PROCESS
 extern int NameServerEnabled;
 extern CNameServer *NameServer;
+extern CPtpClient *PtpClient;
 #endif
 extern CNodeContainer *Nodes;
 extern CConfigContainer *Config;
@@ -750,7 +755,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                 if ( NameServerEnabled )
                     NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
 
-//TRK-PTP-NEW - ??
+//TRK-TODO - ??
                 // Replicate the clone to other nodes
                 CReplClone *repl = new CReplClone(this);
                 Replicator.addItem(repl);
@@ -5032,12 +5037,20 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
                 {
                     // Replicate the exit to other nodes
-                    CReplExit *repl = new CReplExit(process->GetNid(),
+//TRK-TODO 
+            //        if (NameServerEnabled)
+                    {
+                        //message to monitor  
+                    }
+            //        else
+                    {
+                        CReplExit *repl = new CReplExit(process->GetNid(),
                                                     process->GetPid(),
                                                     process->GetVerifier(),
                                                     process->GetName(),
                                                     process->IsAbended());
-                    Replicator.addItem(repl);
+                        Replicator.addItem(repl);
+                    }
                 }
                 else
                 {
@@ -5064,13 +5077,21 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                    process->IsAbended() &&
                    MyNode->GetShutdownLevel() == ShutdownLevel_Undefined) )
             {
-                // Replicate the exit to other nodes
-                CReplExit *repl = new CReplExit(process->GetNid(),
+//TRK-TODO 
+      //        if (NameServerEnabled)
+                {
+                    //message to monitor  
+                }
+        //        else
+                {
+                    // Replicate the exit to other nodes
+                    CReplExit *repl = new CReplExit(process->GetNid(),
                                                 process->GetPid(),
                                                 process->GetVerifier(),
                                                 process->GetName(),
                                                 process->IsAbended());
-                Replicator.addItem(repl);
+                    Replicator.addItem(repl);
+                }
             }
             else
             {

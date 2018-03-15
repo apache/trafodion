@@ -29,6 +29,12 @@
 #include "monsonar.h"
 #include "monlogging.h"
 
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+extern int NameServerEnabled;
+extern CPtpClient *PtpClient;
+#endif
+
 extern CMonStats *MonStats;
 extern CNodeContainer *Nodes;
 
@@ -93,17 +99,19 @@ void CExtOpenReq::performRequest()
                     , msg_->u.request.u.open.target_verifier
                     , msg_->u.request.u.open.death_notification ? "true" : "false");
     }
-
+    
     bool status;
     CProcess *opener = ((CReqResourceProc *) resources_[0])->getProcess();
     CProcess *opened = ((CReqResourceProc *) resources_[1])->getProcess();
+    
+//TRK-TODO 
 
     // check for the process object as it could have been deleted by the time this request gets to perform.
     if (opened == NULL) 
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-          trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
+              trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
                        method_name, __LINE__, id_);
         }
         errorReply( MPI_ERR_NAME );

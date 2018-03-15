@@ -1212,17 +1212,17 @@ void CIntNewProcReq::performRequest()
                     // Successfully forked process.  Replicate actual process
                     // id and process name.
                     
-/* //TRK-PTP-NEW
-                    if (NameServerEnabled)
+//TRK-TODO 
+              /*      if (NameServerEnabled)
                     {
                         PtpClient->ProcessInit(newProcess, reqTag_, 0, parentNid_, lnode->GetNode()->GetName());
                     }
                     else
-                    {                    
-*/                      CReplProcInit *repl
+             */       {                    
+                        CReplProcInit *repl
                             = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
                         Replicator.addItem(repl);
-                  // }
+                   }
                 }
                 else
                 {
@@ -1231,11 +1231,11 @@ void CIntNewProcReq::performRequest()
                 }
             }
 
+//TRK-TODO
             if (  newProcess == NULL )
             {  
                 // Process creation failure, relay error code to node
                 // that requested process creation.
-//TRK-PTP-NEW
                 CReplProcInit *repl = new CReplProcInit(newProcess, reqTag_,
                                                         result, parentNid_);
                 Replicator.addItem(repl);

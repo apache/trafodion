@@ -93,7 +93,7 @@ void CNameServer::ChooseNextNs( void )
         config = config->GetNext();
     }
     strcpy( mon2nsHost_, config->GetName() );
-    if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) ) // TODO
+    if ( trace_settings & TRACE_NS )
     {
         trace_printf( "%s@%d - nameserver=%s, rnd=%d, cnt=%d\n"
                     , method_name, __LINE__
@@ -123,7 +123,7 @@ int CNameServer::ConnectToNs( bool *retry )
     if ( err == 0)
     {
         mon2nsSock_ = sock;
-        if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+        if ( trace_settings & TRACE_NS )
         {
             trace_printf( "%s@%d - connected to nameserver=%s:%s, sock=%d\n"
                         , method_name, __LINE__
@@ -147,7 +147,7 @@ int CNameServer::ConnectToNs( bool *retry )
         nodeId.ping = false;
         nodeId.nsPid = -1;
         nodeId.nsPNid = -1;
-        if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+        if ( trace_settings & TRACE_NS )
         {
             trace_printf( "%s@%d - sending node-info to nameserver=%s:%s, sock=%d\n"
                           "        nodeId.nodeName=%s\n"
@@ -174,7 +174,7 @@ int CNameServer::ConnectToNs( bool *retry )
         err = SockSend( ( char *) &nodeId, sizeof(nodeId) );
         if ( err == 0 )
         {
-            if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+            if ( trace_settings & TRACE_NS )
             {
                 trace_printf( "%s@%d - OK send to nameserver=%s:%s, sock=%d, error=%d, waiting receive\n"
                             , method_name, __LINE__
@@ -186,7 +186,7 @@ int CNameServer::ConnectToNs( bool *retry )
             err = SockReceive( (char *) &nodeId, sizeof(nodeId ) );
             if ( err )
             {
-                if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+                if ( trace_settings & TRACE_NS )
                 {
                     trace_printf( "%s@%d - error receiving from nameserver=%s:%s, sock=%d, error=%d\n"
                                 , method_name, __LINE__
@@ -198,7 +198,7 @@ int CNameServer::ConnectToNs( bool *retry )
             }
             else
             {
-                if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+                if ( trace_settings & TRACE_NS )
                 {
                     trace_printf( "%s@%d - Received nodeId back\n"
                                   "        nodeId.nodeName=%s\n"
@@ -323,7 +323,7 @@ int CNameServer::SockCreate( void )
             snprintf( la_buf, sizeof(la_buf) 
                     , "[%s], socket() failed! errno=%d (%s)\n"
                     , method_name, err, strerror(err) );
-            mon_log_write( MON_CLUSTER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf ); 
+            mon_log_write( MON_NAMESERVER_MKCLTSOCK_1, SQ_LOG_ERR, la_buf ); 
             return ( -1 );
         }
 
@@ -335,7 +335,7 @@ int CNameServer::SockCreate( void )
             snprintf( la_buf, sizeof(la_buf ), 
                       "[%s] gethostbyname(%s) failed! errno=%d (%s)\n"
                     , method_name, host, err, strerror(err) );
-            mon_log_write(MON_CLUSTER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf ); 
+            mon_log_write(MON_NAMESERVER_MKCLTSOCK_2, SQ_LOG_ERR, la_buf ); 
             close( sock );
             return ( -1 );
         }
@@ -356,7 +356,7 @@ int CNameServer::SockCreate( void )
         ret = 1;
         while ( ret != 0 && connect_failures <= 10 )
         {
-            if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+            if ( trace_settings & TRACE_NS )
             {
                 trace_printf( "%s@%d - Connecting to %s addr=%d.%d.%d.%d, port=%d, connect_failures=%d\n"
                             , method_name, __LINE__
@@ -378,7 +378,7 @@ int CNameServer::SockCreate( void )
                 int err = errno;
                 sprintf( la_buf, "[%s], connect() failed! errno=%d (%s)\n"
                        , method_name, err, strerror(err) );
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf ); 
+                mon_log_write(MON_NAMESERVER_MKCLTSOCK_3, SQ_LOG_ERR, la_buf ); 
                 struct timespec req, rem;
                 req.tv_sec = 0;
                 req.tv_nsec = 500000000L; // 500,000,000
@@ -399,7 +399,7 @@ int CNameServer::SockCreate( void )
                 char la_buf[MON_STRING_BUF_SIZE];
                 sprintf( la_buf, "[%s], connect() exceeded retries! count=%d\n"
                        , method_name, retries );
-                mon_log_write(MON_CLUSTER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf ); 
+                mon_log_write(MON_NAMESERVER_MKCLTSOCK_4, SQ_LOG_ERR, la_buf ); 
                 close( sock );
                 return ( -1 );
             }
@@ -411,7 +411,7 @@ int CNameServer::SockCreate( void )
         close( sock );
     }
 
-    if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+    if ( trace_settings & TRACE_NS )
     {
         trace_printf( "%s@%d - Connected to %s addr=%d.%d.%d.%d, port=%d, sock=%d\n"
                     , method_name, __LINE__
@@ -430,7 +430,7 @@ int CNameServer::SockCreate( void )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror(err) );
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf );  // TODO
+        mon_log_write(MON_NAMESERVER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf );
         close( sock );
         return ( -2 );
     }
@@ -441,7 +441,7 @@ int CNameServer::SockCreate( void )
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror(err) );
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_5, SQ_LOG_ERR, la_buf ); 
+        mon_log_write(MON_NAMESERVER_MKCLTSOCK_6, SQ_LOG_ERR, la_buf ); 
         close( sock );
         return ( -2 );
     }
@@ -586,7 +586,7 @@ int CNameServer::SendReceive( struct message_def* msg )
         error = SockReceive( (char *) msg, size );
     if ( error == 0 )
     {
-        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        if ( trace_settings & TRACE_NS )
         {
             char desc[200];
             char* descp = desc;
@@ -643,7 +643,7 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
     const char method_name[] = "CNameServer::SendToNs";
     TRACE_ENTRY;
 
-    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+    if ( trace_settings & TRACE_NS )
     {
         trace_printf( "%s@%d - sending %s REQ to nameserver=%s:%s, sock=%d\n"
                     , method_name, __LINE__
@@ -691,7 +691,7 @@ int CNameServer::SockReceive( char *buf, int size )
                               , sizeCount
                               , 0 );
     
-        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        if ( trace_settings & TRACE_NS )
         {
             trace_printf( "%s@%d - Count read %d = recv(%d)\n"
                         , method_name, __LINE__
@@ -733,7 +733,7 @@ int CNameServer::SockReceive( char *buf, int size )
     }
     while( readAgain );
 
-    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+    if ( trace_settings & TRACE_NS )
     {
         trace_printf( "%s@%d - recv(), received=%d, error=%d(%s)\n"
                     , method_name, __LINE__
@@ -765,7 +765,7 @@ int CNameServer::SockSend( char *buf, int size )
                               , size
                               , 0 );
     
-        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        if ( trace_settings & TRACE_NS )
         {
             trace_printf( "%s@%d - send(), sendCount=%d\n"
                         , method_name, __LINE__
@@ -799,7 +799,7 @@ int CNameServer::SockSend( char *buf, int size )
     }
     while( sendAgain );
 
-    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+    if ( trace_settings & TRACE_NS )
     {
         trace_printf( "%s@%d - send(), sent=%d, error=%d(%s)\n"
                     , method_name, __LINE__

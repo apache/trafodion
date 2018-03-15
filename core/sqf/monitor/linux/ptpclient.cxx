@@ -297,7 +297,7 @@ int CPtpClient::NewProcess(CProcess* process, int receiveNode, const char *hostN
 {
     const char method_name[] = "CPtpClient::NewProcess";
     TRACE_ENTRY;
-//    printf("\nTRK NewProcess, receiveNode %d, hostname %s\n", receiveNode, hostName);
+ //   printf("\nTRK NewProcess, receiveNode %d, hostname %s\n", receiveNode, hostName);
 
     struct internal_msg_def msg;
     memset(&msg, 0, sizeof(msg)); 
@@ -334,7 +334,7 @@ int CPtpClient::ProcessInit(CProcess *process, void *tag, int result, int receiv
     const char method_name[] = "CPtpClient::ProcessInit";
     TRACE_ENTRY;  
     
-//    printf("\nTRK ProcessInit, receiveNOde %d, hostname %s\n", receiveNode, hostName);
+ //   printf("\nTRK ProcessInit, receiveNOde %d, hostname %s\n", receiveNode, hostName);
     struct internal_msg_def msg;
     memset(&msg, 0, sizeof(msg)); 
     msg.type = InternalType_ProcessInit;
@@ -350,7 +350,7 @@ int CPtpClient::ProcessInit(CProcess *process, void *tag, int result, int receiv
     int size = offsetof(struct internal_msg_def, u);
     size += sizeof(msg.u.processInit);
     
-    int error = SendToMon("new-process", &msg, size, receiveNode, hostName);
+    int error = SendToMon("process-init", &msg, size, receiveNode, hostName);
     
     TRACE_EXIT;
     return error;

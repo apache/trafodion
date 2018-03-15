@@ -560,6 +560,17 @@ void printEntry(memLogEntry_t *entry, int eventStart, int eventEnd)
                    entry->value1_);
             break;
         }
+        case CMonLog::MON_NSCONNTONEWMON_1:
+        {
+            printf("Completed socket accept.  Receiving node id from new "
+                   "monitor.\n");
+            break;
+        }
+        case CMonLog::MON_NSCONNTONEWMON_2:
+        {
+            printf("Posting socket accept.\n");
+            break;
+        }
         default:
         {
             printf("%d %d %d\n", entry->eventType_, entry->value1_, entry->value2_);
