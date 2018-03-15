@@ -4929,7 +4929,6 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
 }
 
 
-#ifndef NAMESERVER_PROCESS
 void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNode)
 {
     bool restarted = false;
@@ -5008,7 +5007,9 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         // Unregister any interest in other process' death
         _TM_Txid_External transid;
         transid = invalid_trans();
+#ifndef NAMESERVER_PROCESS
         process->procExitUnregAll( transid );
+#endif
 
         // Handle the process termination
         process->Exit( parent );
@@ -5098,9 +5099,6 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
     return;
 }
-#endif
-
-
 
 CProcess *CProcessContainer::GetProcess (int pid)
 {
@@ -5346,8 +5344,6 @@ CProcess *CProcessContainer::GetProcessLByType(PROCESSTYPE type)
     return entry;
 }
 
-
-#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 {
     CProcess *process = NULL;
@@ -5424,9 +5420,7 @@ void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 
     TRACE_EXIT;
 }
-#endif
 
-#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDown()
 {
     CProcess *process  = NULL;
@@ -5475,8 +5469,8 @@ void CProcessContainer::KillAllDown()
             // killing the process will not remove the process object because
             // exit processing will get queued until this completes. 
             kill( pid, SIGKILL ); 
-            PROCESSTYPE type = process->GetType();
 #ifndef NAMESERVER_PROCESS
+            PROCESSTYPE type = process->GetType();
             if ( type == ProcessType_TSE ||
                  type == ProcessType_ASE )
             {
@@ -5512,9 +5506,7 @@ void CProcessContainer::KillAllDown()
 
     TRACE_EXIT;
 }
-#endif
 
-#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDownSoft()
 {
     const char method_name[] = "CProcessContainer::KillAllDownSoft";
@@ -5567,8 +5559,8 @@ void CProcessContainer::KillAllDownSoft()
                 // killing the process will not remove the process object because
                 // exit processing will get queued until this completes.
                 kill( pid, SIGKILL );
-                PROCESSTYPE type = process->GetType();
 #ifndef NAMESERVER_PROCESS
+                PROCESSTYPE type = process->GetType();
                 if ( type == ProcessType_TSE ||
                      type == ProcessType_ASE )
                 {
@@ -5608,7 +5600,6 @@ void CProcessContainer::KillAllDownSoft()
 
     TRACE_EXIT;
 }
-#endif
 
 char *CProcessContainer::NormalizeName (char *name)
 {
@@ -5678,7 +5669,12 @@ bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int
 }
 #endif
 
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+bool CProcessContainer::RestartPersistentProcess( CProcess *, int )
+{
+    return false;
+}
+#else
 //
 // Persistent process re-creation logic:
 //

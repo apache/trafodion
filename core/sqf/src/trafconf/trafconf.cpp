@@ -628,11 +628,13 @@ int main( int argc, char *argv[] )
             DisplayShortHost = true;
             TrafConfType = TrafConfType_NodeName_w;
         }
-        else if ( strcasecmp( argv [argx], "-nameserver" ) == 0 )
+        else if ( ( strcasecmp( argv [argx], "-nameserver" ) == 0 ) ||
+                  ( strcasecmp( argv [argx], "-ns" ) == 0 ) )
         {
             TrafConfType = TrafConfType_NameServerConfig;
         }
-        else if ( strcasecmp( argv [argx], "--nameserver" ) == 0 )
+        else if ( ( strcasecmp( argv [argx], "--nameserver" ) == 0 ) ||
+                  ( strcasecmp( argv [argx], "--ns" ) == 0 ) )
         {
             DisplayBeginEnd = true;
             TrafConfType = TrafConfType_NameServerConfig;

@@ -110,12 +110,12 @@ sub parseStatement {
         my $eq;
         ($eq, $s) = parseEq($s);
         if ($eq) {
-            while ($s =~ /([A-Za-z0-9]+)(\s*,\s*)/) {
+            while ($s =~ /([A-Za-z0-9-]+)(\s*,\s*)/) {
                 my $nodeName = $1;
                 $s =~ s:$nodeName$2::;
                 push(@g_nodeNames, $nodeName);
             }
-            if ($s =~ /([A-Za-z0-9]+)/) {
+            if ($s =~ /([A-Za-z0-9-]+)/) {
                 my $nodeName = $1;
                 $s =~ s:$nodeName::;
                 push(@g_nodeNames, $nodeName);

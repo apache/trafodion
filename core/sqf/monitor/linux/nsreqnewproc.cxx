@@ -78,30 +78,32 @@ void CExtNewProcNsReq::performRequest()
     const char method_name[] = "CExtNewProcNsReq::performRequest";
     TRACE_ENTRY;
 
+    CLNode *lnode;
     CNode *node;
     int result;
-    node = Nodes->GetLNode(msg_->u.request.u.new_process_ns.nid)->GetNode();
+    lnode = Nodes->GetLNode(msg_->u.request.u.new_process_ns.nid);
+    node = lnode->GetNode();
     strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.path );
     strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
     strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.program );
     CProcess *requester = MyNode->GetProcess( pid_ );
     CProcess *process = node->CreateProcess ( requester,
-                                                msg_->u.request.u.new_process_ns.nid,
-                                                msg_->u.request.u.new_process_ns.pid,
-                                                msg_->u.request.u.new_process_ns.verifier,
-                                                msg_->u.request.u.new_process_ns.type,
-                                                msg_->u.request.u.new_process_ns.debug,
-                                                msg_->u.request.u.new_process_ns.priority,
-                                                msg_->u.request.u.new_process_ns.backup,
-                                                msg_->u.request.u.new_process_ns.unhooked,
-                                                msg_->u.request.u.new_process_ns.process_name,
-                                                pathStrId,
-                                                ldpathStrId,
-                                                programStrId,
-                                                msg_->u.request.u.new_process_ns.infile,
-                                                msg_->u.request.u.new_process_ns.outfile,
-                                                result
-                                              );
+                                              msg_->u.request.u.new_process_ns.nid,
+                                              msg_->u.request.u.new_process_ns.pid,
+                                              msg_->u.request.u.new_process_ns.verifier,
+                                              msg_->u.request.u.new_process_ns.type,
+                                              msg_->u.request.u.new_process_ns.debug,
+                                              msg_->u.request.u.new_process_ns.priority,
+                                              msg_->u.request.u.new_process_ns.backup,
+                                              msg_->u.request.u.new_process_ns.unhooked,
+                                              msg_->u.request.u.new_process_ns.process_name,
+                                              pathStrId,
+                                              ldpathStrId,
+                                              programStrId,
+                                              msg_->u.request.u.new_process_ns.infile,
+                                              msg_->u.request.u.new_process_ns.outfile,
+                                              result
+                                            );
     process = process; // touch
 
     msg_->u.reply.type = ReplyType_NewProcessNs;

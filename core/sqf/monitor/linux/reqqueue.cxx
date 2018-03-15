@@ -2689,7 +2689,7 @@ void CIntSnapshotReq::performRequest()
     int procSize = Nodes->ProcessCount() * 2 * 500;
     int idsSize = Nodes->GetSNodesCount() * sizeof(int); // spare pnids
     idsSize += (Nodes->GetPNodesCount() + Nodes->GetLNodesCount()) * sizeof(int); // pnid/nid map
-    idsSize += Nodes->GetLNodesCount() * sizeof(int);    // nids
+    idsSize += Nodes->GetPNodesCount() * 2 * sizeof(int);    // pnid/zid
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Snapshot sizes, procSize = %d, idsSize = %d\n",
@@ -2769,7 +2769,7 @@ void CIntSnapshotReq::performRequest()
         return;
     }
         
-    memset( compBuf, 0, compSize );
+    memset( compBuf, 0, compSize ); // TODO: WHY?
     z_result = compress((Bytef *)compBuf, (unsigned long *)&compSize, 
                         (Bytef *)snapshotBuf, header.fullSize_);
  
@@ -2781,44 +2781,44 @@ void CIntSnapshotReq::performRequest()
 
     if (z_result != Z_OK) 
     {
-       char buf[MON_STRING_BUF_SIZE];
-       sprintf(buf, "Snapshot buffer compression error = %d, aborting node reintegration.\n", z_result);
-       mon_log_write (MON_REQQUEUE_SNAPSHOT_9, SQ_LOG_CRIT, buf);
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "Snapshot buffer compression error = %d, aborting node reintegration.\n", z_result);
+        mon_log_write (MON_REQQUEUE_SNAPSHOT_9, SQ_LOG_CRIT, buf);
 
-       // send msg to new monitor so that it can exit
-       header.compressedSize_ = -1;
-       switch( CommType )
-       {
-           case CommType_InfiniBand:
-               error = Monitor->SendMPI( (char *)&header
-                                       , sizeof(header)
-                                       , 0
-                                       , MON_XCHNG_HEADER
-                                       , Monitor->getJoinComm());
-               break;
-           case CommType_Sockets:
-               error = Monitor->SendSock( (char *)&header
+        // send msg to new monitor so that it can exit
+        header.compressedSize_ = -1;
+        switch( CommType )
+        {
+            case CommType_InfiniBand:
+                error = Monitor->SendMPI( (char *)&header
                                         , sizeof(header)
-                                        , Monitor->getJoinSock());
-               break;
-           default:
-               // Programmer bonehead!
-               abort();
-       }
-       if (error) {
-         sprintf(buf, "Unable to send exit msg to new monitor, error = %d\n", error);
-         mon_log_write(MON_REQQUEUE_SNAPSHOT_9, SQ_LOG_CRIT, buf);
-       }
+                                        , 0
+                                        , MON_XCHNG_HEADER
+                                        , Monitor->getJoinComm());
+                break;
+            case CommType_Sockets:
+                error = Monitor->SendSock( (char *)&header
+                                         , sizeof(header)
+                                         , Monitor->getJoinSock());
+                break;
+            default:
+                // Programmer bonehead!
+                abort();
+        }
+        if (error) {
+            sprintf(buf, "Unable to send exit msg to new monitor, error = %d\n", error);
+            mon_log_write(MON_REQQUEUE_SNAPSHOT_9, SQ_LOG_CRIT, buf);
+        }
 
-       sprintf(buf, "Node reintegration aborted due to buffer compression error.");
+        sprintf(buf, "Node reintegration aborted due to buffer compression error.");
 #ifndef NAMESERVER_PROCESS
-       SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
-                                              , MyNode->GetCreatorVerifier()
-                                              , Monitor->ReIntegErrorMessage( buf )
-                                              , NULL );
+        SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
+                                               , MyNode->GetCreatorVerifier()
+                                               , Monitor->ReIntegErrorMessage( buf )
+                                               , NULL );
 #endif
-       TRACE_EXIT;
-       return;
+        TRACE_EXIT;
+        return;
     }
     header.compressedSize_ = compSize;
     header.compressedSize_ = compSize;
@@ -3170,7 +3170,28 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
         switch (msg->u.request.type)
         {
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+        case ReqType_DelProcessNs:
+            request = new CExtDelProcessNsReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NewProcessNs:
+            request = new CExtNewProcNsReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_ProcessInfo:
+            request = new CExtProcInfoReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_ProcessInfoCont:
+            request = new CExtProcInfoContReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+#else
         case ReqType_Close:
             // No work to do for "close" (obsolete request).  Reply
             // with success.

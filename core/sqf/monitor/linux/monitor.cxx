@@ -771,8 +771,13 @@ int CMonitor::PackProcObjs( char *&buffer )
     }
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Total Procs = %d, Total Size = %ld, Avg = %ld bytes\n",
-                       method_name, __LINE__, procCount, buffer - bufPtr, (buffer - bufPtr)/procCount);
+    {
+        long avg = 0;
+        if ( procCount > 0 )
+            avg = (buffer - bufPtr) / procCount;
+        trace_printf("%s@%d - Total Procs = %d, Total Size = %ld, Avg = %ld bytes\n",
+                     method_name, __LINE__, procCount, buffer - bufPtr, avg);
+    }
 
     TRACE_EXIT;
     return procCount;
@@ -1178,7 +1183,11 @@ int main (int argc, char *argv[])
     if ( IsAgentMode || IsNameServer )
     {
         MON_Props xprops( true );
+#ifdef NAMESERVER_PROCESS
+        xprops.load( "nameserver.env" );
+#else
         xprops.load( "monitor.env" );
+#endif
         MON_Smap_Enum xenum( &xprops );
         while ( xenum.more( ) )
         {
@@ -1623,7 +1632,7 @@ int main (int argc, char *argv[])
             bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
             if (ClusterConfig->Initialize( traceEnabled, MonTrace->getTraceFileName()))
             {
-                if (!ClusterConfig->LoadConfig( IsNameServer && IsRealCluster ))
+                if (!ClusterConfig->LoadConfig())
                 {
                      char la_buf[MON_STRING_BUF_SIZE];
                      sprintf(la_buf, "[%s], Failed to load cluster configuration.\n", method_name);
@@ -1651,7 +1660,7 @@ int main (int argc, char *argv[])
         }
 
         // Set up zookeeper and determine the master 
-         if ( IsAgentMode || IsRealCluster )
+        if ( IsAgentMode || IsRealCluster )
         {
             // Zookeeper client is enabled only in a real cluster
             env = getenv("SQ_MON_ZCLIENT_ENABLED");
@@ -1712,6 +1721,21 @@ int main (int argc, char *argv[])
                 }
       
              }
+#ifdef NAMESERVER_PROCESS
+             else
+             {
+                strcpy (MasterMonitorName, ClusterConfig->GetConfigMasterByName());  
+                if (strcmp (Node_name,  ClusterConfig->GetConfigMasterByName()) == 0)
+                {
+                    IsMaster = true;
+                }
+                else
+                {
+                    IsMaster = false;
+                }
+             }
+#endif
+
          }
 
          if (IsAgentMode)

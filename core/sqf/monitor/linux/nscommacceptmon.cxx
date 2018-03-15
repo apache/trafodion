@@ -45,6 +45,7 @@ extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
 extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
+extern CReqQueue ReqQueue;
 
 static void *mon2nsProcess(void *arg);
 
@@ -223,12 +224,9 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
     }
 
     CExternalReq::reqQueueMsg_t msgType;
-    int pid;
-    CExternalReq * request;
     msgType = CExternalReq::NonStartupMsg;
-    pid = msg->u.request.u.del_process_ns.pid;
-    request = new CExtDelProcessNsReq(msgType, pid, sockFd, msg);
-    monReqExec(request);
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -281,12 +279,10 @@ void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
     }
 
     CExternalReq::reqQueueMsg_t msgType;
-    int pid;
-    CExternalReq * request;
     msgType = CExternalReq::NonStartupMsg;
-    pid = msg->u.request.u.process_info.pid;
-    request = new CExtProcInfoReq(msgType, pid, sockFd, msg);
-    monReqExec(request);
+    int pid = msg->u.request.u.process_info.pid;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -332,12 +328,10 @@ void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd 
     }
 
     CExternalReq::reqQueueMsg_t msgType;
-    int pid;
-    CExternalReq * request;
     msgType = CExternalReq::NonStartupMsg;
-    pid = msg->u.request.u.process_info_cont.pid;
-    request = new CExtProcInfoContReq(msgType, pid, sockFd, msg);
-    monReqExec(request);
+    int pid = msg->u.request.u.process_info_cont.pid;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -372,11 +366,9 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
     }
 
     CExternalReq::reqQueueMsg_t msgType;
-    int pid = -1;
-    CExternalReq * request;
     msgType = CExternalReq::NonStartupMsg;
-    request = new CExtNewProcNsReq(msgType, pid, sockFd, msg);
-    monReqExec(request);
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -505,16 +497,40 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         }
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
+            const char *mtype = "?";
+            if ( msg.type == MsgType_Service )
+                mtype = "Service";
+            const char *rtype;
+            switch (msg.u.request.type)
+            {
+            case ReqType_DelProcessNs:
+                rtype = "DelProcessNs";
+                break;
+            case ReqType_ProcessInfo:
+                rtype = "ProcessInfo";
+                break;
+            case ReqType_ProcessInfoCont:
+                rtype = "ProcessInfoCont";
+                break;
+            case ReqType_NewProcessNs:
+                rtype = "NewProcessNs";
+                break;
+            default:
+                rtype = "?";
+            }
+                
             trace_printf( "%s@%d - Received monitor request hdr.\n"
-                          "        msg.type=%d\n"
+                          "        msg.type=%d(%s)\n"
                           "        msg.noreply=%d\n"
                           "        msg.reply_tag=%d\n"
-                          "        msg.u.request.type=%d\n"
+                          "        msg.u.request.type=%d(%s)\n"
                         , method_name, __LINE__
                         , msg.type
+                        , mtype
                         , msg.noreply
                         , msg.reply_tag
                         , msg.u.request.type
+                        , rtype
                         );
             switch (msg.u.request.type)
             {

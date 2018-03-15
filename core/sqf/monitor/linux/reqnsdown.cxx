@@ -67,7 +67,9 @@ void CExtNameServerDownReq::performRequest()
     const char method_name[] = "CExtNameServerDownReq::performRequest";
     TRACE_ENTRY;
 
+#if 0 // TODO
     CNode    *node = NULL;
+#endif
     CProcess *requester = NULL;
 
     // Record statistics (sonar counters)
