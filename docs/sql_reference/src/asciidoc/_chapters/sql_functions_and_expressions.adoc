@@ -7953,6 +7953,153 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 ```
 
 <<<
+[[sysdate_function]]
+== SYSDATE Function
+
+The SYSDATE function, which is equivalent to the `CURRENT_DATE` function, retrieves the current date of the server rather than the session.
+
+The returned value is `DATE` and the default format is `YYYY-MM-DD`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSDATE FROM DUAL;` is 2018-03-13 rather than 2018-03-14.
+
+```
+SYSDATE
+```
+
+[[examples_of_sysdate]]
+=== Examples of SYSDATE
+
+* This example returns the current date.
+
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+
+(EXPR)
+----------
+2018-03-15
+
+--- 1 row(s) selected.
+```
+
+* This example returns the date of yesterday, today and tomorrow.
+
++
+```
+SQL>SELECT SYSDATE -1 AS yesterday, 
+SYSDATE AS today,
+SYSDATE +1 AS tomorrow FROM DUAL;
+ 
+YESTERDAY  TODAY      TOMORROW  
+---------- ---------- ----------
+2018-03-14 2018-03-15 2018-03-16
+ 
+--- 1 row(s) selected.
+```
+
+* The following examples show that the values of `SYSDATE` can be converted to character values.
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE, 'DD-MON-YYYY') FROM DUAL;
+ 
+(EXPR)
+-----------
+15-MAR-2018
+ 
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE,'HH:MI:SS') FROM DUAL;
+ 
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a time. [2018-03-15 11:49:22]
+```
+
++
+``` 
+SQL>SELECT TO_CHAR (SYSDATE, 'MM/DD/YYYY HH24:MI:SS') FROM DUAL;
+ 
+(EXPR)
+-------------------
+03/15/2018 00:00:00
+ 
+--- 1 row(s) selected.
+```
+
+* This example converts days to minutes using `SYSDATE`.
++
+```
+SQL>SELECT (SYSDATE-(SYSDATE-7))*1440 FROM DUAL;
+ 
+(EXPR)
+-----------------
+           10080 
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how the SYSDATE function works in SQL statement.
++
+Suppose that we have the following table:
+
++
+```
+SQL>SELECT * FROM orders;
+
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  100210 2018-03-02 2018-04-10      220     127
+  100250 2018-01-23 2018-06-16      220     123
+  101220 2018-02-21 2018-12-15      221     156
+  200300 2018-02-06 2018-07-15      222     126
+  200320 2018-03-08 2018-07-20      223     121
+  200490 2018-02-19 2018-11-01      226     123
+  300350 2018-03-03 2018-08-10      231     123
+  300380 2018-01-19 2018-08-15      226     156
+  400410 2018-01-27 2018-09-14      227     154
+  500450 2018-03-12 2018-09-16      220     124
+  600480 2018-02-12 2018-10-14      226     123
+  700510 2018-02-01 2018-10-16      220     143
+  800660 2018-01-09 2018-11-01      229     100
+
+--- 13 row(s) selected.
+```
+
++
+The SYSDATE is 2018-03-15.
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+ 
+(EXPR)
+----------
+2018-03-15
+ 
+--- 1 row(s) selected.
+```
+
++
+This statement returns qualified rows using `SYSDATE` function.
++
+```
+SQL>SELECT * FROM orders 
+WHERE DAY(deliv_date) = DAY(sysdate+1) 
+AND ordernum <>100210 
+AND salesrep=220 
+ORDER BY order_date DESC;
+ 
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  500450 2018-03-12 2018-09-16      220     124
+  700510 2018-02-01 2018-10-16      220     143
+  100250 2018-01-23 2018-06-16      220     123
+ 
+--- 3 row(s) selected.
+```
+
+<<<
 [[systimestamp_function]]
 == SYSTIMESTAMP Function
 
@@ -8008,6 +8155,7 @@ C1                         C2
 
 --- 1 row(s) selected.
 ```
+
 
 <<<
 [[tan_function]]
