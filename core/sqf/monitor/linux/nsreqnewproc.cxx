@@ -91,6 +91,8 @@ void CExtNewProcNsReq::performRequest()
                                               msg_->u.request.u.new_process_ns.nid,
                                               msg_->u.request.u.new_process_ns.pid,
                                               msg_->u.request.u.new_process_ns.verifier,
+                                              msg_->u.request.u.new_process_ns.event_messages,
+                                              msg_->u.request.u.new_process_ns.system_messages,
                                               msg_->u.request.u.new_process_ns.type,
                                               msg_->u.request.u.new_process_ns.debug,
                                               msg_->u.request.u.new_process_ns.priority,

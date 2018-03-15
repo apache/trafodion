@@ -47,12 +47,14 @@ using namespace std;
 #include "nameserver.h"
 #include "monlogging.h"
 #include "montrace.h"
+#include "nameserverconfig.h"
 
 extern CNode *MyNode;
 extern CProcess *NameServerProcess;
 extern CNodeContainer *Nodes;
 extern bool IsRealCluster;
 extern int MyPNID;
+extern CNameServerConfigContainer *NameServerConfig;
 
 CNameServer::CNameServer( void )
 : mon2nsSock_(-1)
@@ -63,7 +65,7 @@ CNameServer::CNameServer( void )
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
 
-    gethostname( mon2nsHost_, MAX_PROCESSOR_NAME);
+    mon2nsHost_[0] = '\0';
     mon2nsPort_[0] = '\0';
 
     TRACE_EXIT;
@@ -82,13 +84,23 @@ void CNameServer::ChooseNextNs( void )
     const char method_name[] = "CNameServer::ChooseNextNs";
     TRACE_ENTRY;
 
-#if 0
+    static unsigned int seed = 1;
+    int cnt = NameServerConfig->GetCount();
+    int rnd = (int) ((float) (cnt) * (rand_r(&seed) / (RAND_MAX + 1.0)));
     CNameServerConfig *config = NameServerConfig->GetFirstConfig();
-    while (config)
+    for ( int i = 0; i < rnd; i++)
     {
         config = config->GetNext();
     }
-#endif
+    strcpy( mon2nsHost_, config->GetName() );
+    if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) ) // TODO
+    {
+        trace_printf( "%s@%d - nameserver=%s, rnd=%d, cnt=%d\n"
+                    , method_name, __LINE__
+                    , mon2nsHost_
+                    , rnd
+                    , cnt );
+    }
 
     TRACE_EXIT;
 }
@@ -102,6 +114,8 @@ int CNameServer::ConnectToNs( bool *retry )
 
     if ( !mon2nsPort_[0] )
         CNameServer::GetM2NPort( -1 );
+    if ( !mon2nsHost_[0] )
+        ChooseNextNs();
 
     int sock = SockCreate();
     if ( sock < 0 )
@@ -204,13 +218,14 @@ int CNameServer::ConnectToNs( bool *retry )
                 if ( !nsStartupComplete_ )
                 {
                     nsStartupComplete_ = true;
-                    NameServerProcess->CompleteProcessStartup( (char *) ""
-                                                             , nodeId.nsPid
-                                                             , false
-                                                             , false
-                                                             , false
-                                                             , NULL
-                                                             , -1 );
+                    if ( NameServerProcess )
+                        NameServerProcess->CompleteProcessStartup( (char *) ""
+                                                                 , nodeId.nsPid
+                                                                 , false
+                                                                 , false
+                                                                 , false
+                                                                 , NULL
+                                                                 , -1 );
                 }
                 if ( nodeId.nsPNid >= 0 )
                 {
@@ -250,6 +265,11 @@ void CNameServer::GetM2NPort( int PNid )
     if ( !IsRealCluster )
         port += PNid < 0 ? MyPNID : PNid;
     sprintf( mon2nsPort_, "%d", port );
+}
+
+void CNameServer::SetLocalHost( void )
+{
+    gethostname( mon2nsHost_, MAX_PROCESSOR_NAME );
 }
 
 void CNameServer::SockClose( void )
@@ -391,6 +411,19 @@ int CNameServer::SockCreate( void )
         close( sock );
     }
 
+    if ( trace_settings & (TRACE_INIT | TRACE_PROCESS) )
+    {
+        trace_printf( "%s@%d - Connected to %s addr=%d.%d.%d.%d, port=%d, sock=%d\n"
+                    , method_name, __LINE__
+                    , host
+                    , (int)((unsigned char *)he->h_addr)[0]
+                    , (int)((unsigned char *)he->h_addr)[1]
+                    , (int)((unsigned char *)he->h_addr)[2]
+                    , (int)((unsigned char *)he->h_addr)[3]
+                    , port
+                    , sock );
+    }
+
     if ( setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, (char *) &nodelay, sizeof(int) ) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -496,7 +529,10 @@ int CNameServer::ProcessNew(CProcess* process )
     msgnew->verifier = process->GetVerifier();
     msgnew->type = process->GetType();
     msgnew->priority = process->GetPriority();
+    msgnew->event_messages = process->IsEventMessages();
+    msgnew->system_messages = process->IsSystemMessages();
     strcpy( msgnew->process_name, process->GetName() );
+    strcpy( msgnew->program, process->program() );
 
     int error = SendReceive(&msg );
 
@@ -609,9 +645,10 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
 
     if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
     {
-        trace_printf( "%s@%d - sending %s REQ to nameserver=%s, sock=%d\n"
+        trace_printf( "%s@%d - sending %s REQ to nameserver=%s:%s, sock=%d\n"
                     , method_name, __LINE__
                     , reqType
+                    , mon2nsHost_
                     , mon2nsPort_
                     , mon2nsSock_ );
     }

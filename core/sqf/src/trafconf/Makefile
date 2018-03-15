@@ -48,7 +48,7 @@ LIBSX	+=  -lsqlite3
 
 PROGS		= $(TRAFCONF)
 
-OBJTRAFCONFIG		= $(OUTDIR)/trafconfig.o \
+OBJTRAFCONFIG	= $(OUTDIR)/trafconfig.o \
 		  $(OUTDIR)/tcdb.o \
 		  $(OUTDIR)/tcdbstore.o \
 		  $(OUTDIR)/tclog.o \
@@ -57,7 +57,7 @@ OBJTRAFCONFIG		= $(OUTDIR)/trafconfig.o \
 
 #		  $(OUTDIR)/tcdbmysql.o
 
-OBJTRAFCONF		= $(OUTDIR)/trafconf.o \
+OBJTRAFCONF	= $(OUTDIR)/trafconf.o \
 		  $(OUTDIR)/clusterconf.o \
 		  $(OUTDIR)/lnodeconfig.o \
 		  $(OUTDIR)/pnodeconfig.o \

@@ -599,7 +599,7 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
         char * stringData = & msg->u.process.stringData;
 
-        // Copy the program name
+        // Copy the process name
         msg->u.process.nameLen = nameLen_;
         memcpy(stringData, process_->GetName(),  nameLen_ );
         stringData += nameLen_;
@@ -807,7 +807,7 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
 
     char * stringData = & msg->u.clone.stringData;
 
-    // Copy the program name
+    // Copy the process name
     msg->u.clone.nameLen = nameLen_;
     memcpy(stringData, process_->GetName(),  nameLen_ );
     stringData += nameLen_;

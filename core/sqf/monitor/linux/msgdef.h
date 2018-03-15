@@ -572,6 +572,8 @@ struct NewProcessNs_def
     int  backup;                            // if non-zero, starts process as backup
     bool unhooked;                          // if hooked, parent process dies will trigger child process exits
     bool nowait;                            // reply after local node initiates new process and send notice on completion
+    bool event_messages;                    // true if want event messages
+    bool system_messages;                   // true if want system messages
     long long tag;                          // user defined tag to be sent in completion notice
     char path[MAX_SEARCH_PATH];             // process's object lookup path to program
     char ldpath[MAX_SEARCH_PATH];           // process's library load path for program

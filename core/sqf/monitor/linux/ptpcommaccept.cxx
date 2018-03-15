@@ -146,7 +146,8 @@ bool CPtpCommAccept::sendNodeInfoSock( int sockFd )
 
     rc = Monitor->SendSock( (char *) nodeInfo
                           , nodeInfoSize
-                          , sockFd);
+                          , sockFd
+                          , method_name );
     if ( rc )
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -176,7 +177,8 @@ void CPtpCommAccept::processNewSock( int joinFd )
     // Get info about connecting monitor
     rc = Monitor->ReceiveSock( (char *) &nodeId
                              , sizeof(nodeId_t)
-                             , joinFd );
+                             , joinFd
+                             , method_name );
     if ( rc )
     {   // Handle error
         close( joinFd );
@@ -210,7 +212,7 @@ void CPtpCommAccept::processNewSock( int joinFd )
   */                  
     mem_log_write(CMonLog::MON_CONNTONEWMON_2);
     int size;
-    rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), joinFd );
+    rc = Monitor->ReceiveSock( (char *) &size, sizeof(size), joinFd, method_name );
 
     if ( rc )
     {   // Handle error
@@ -225,7 +227,8 @@ void CPtpCommAccept::processNewSock( int joinFd )
     rc = Monitor->ReceiveSock( /*(char *) &nodeId*/
                               (char *) &msg
                              , size
-                             , joinFd );
+                             , joinFd
+                             , method_name );
                         
     if ( rc )
     {   // Handle error

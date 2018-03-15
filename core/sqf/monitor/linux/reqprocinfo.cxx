@@ -130,6 +130,13 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
     {
         if (lnode)
         {
+#ifdef NAMESERVER_PROCESS // ignore node state
+            process = lnode->GetFirstProcess();
+            if (process != 0)
+            {
+                return process;
+            }
+#else
             if (lnode->GetState() == State_Up ||
                 lnode->GetState() == State_Shutdown)
             {
@@ -139,6 +146,7 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
                     return process;
                 }
             }
+#endif
             lnode = lnode->GetNext();
             nid = lnode ? lnode->GetNid() : nid;
         }
@@ -324,9 +332,25 @@ void CExtProcInfoReq::performRequest()
         }
         else
         { // find by pid
+#ifdef NAMESERVER_PROCESS
+            requester =
+               Nodes->GetProcess( nid_ , pid_ , verifier_
+                                , false, false, false );
+#else
             requester = MyNode->GetProcess( pid_
                                           , verifier_ );
+#endif
         }
+
+#ifdef NAMESERVER_PROCESS
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            trace_printf( "%s@%d tnid=%d, tpid=%d, tver=%d, tpname=%s, requester=%p\n"
+                        , method_name, __LINE__
+                        , target_nid, target_pid, target_verifier, target_process_name.c_str()
+                        , (void *) requester );
+        }
+#endif
 
         if ( requester )
         {

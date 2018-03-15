@@ -44,6 +44,7 @@ public:
     int  ProcessInfo( struct message_def* msg );
     int  ProcessInfoCont( struct message_def* msg );
     int  ProcessNew(CProcess* process );
+    void SetLocalHost( void );
 
 private:
     char mon2nsHost_[MAX_PROCESSOR_NAME];
