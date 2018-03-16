@@ -43,7 +43,7 @@ CExtNameServerStopNsReq::CExtNameServerStopNsReq (reqQueueMsg_t msgType, int pid
     : CExternalReq(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQEJ", 4); // TODO
+    memcpy(&eyecatcher_, "RqEH", 4);
 
     priority_    =  High;
 }
@@ -51,7 +51,7 @@ CExtNameServerStopNsReq::CExtNameServerStopNsReq (reqQueueMsg_t msgType, int pid
 CExtNameServerStopNsReq::~CExtNameServerStopNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqej", 4); // TODO
+    memcpy(&eyecatcher_, "rQeh", 4);
 }
 
 void CExtNameServerStopNsReq::populateRequestString( void )

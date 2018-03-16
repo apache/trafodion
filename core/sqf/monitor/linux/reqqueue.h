@@ -1535,6 +1535,8 @@ private:
       RqED   CExtNameServerDeleteReq
       RqEE   CExtNameServerStartReq
       RqEF   CExtNameServerStopReq
+      RqEG   CExtNameServerNsStartReq
+      RqEH   CExtNameServerNsStopReq
       RQEN   CExtOpenReq
       RQEO   CExtProcInfoReq
       RQEP   CExtProcInfoContReq
