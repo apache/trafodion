@@ -4431,6 +4431,8 @@ const char * CReqQueue::intReqType[] = {
     , "Exit"
     , "IoData"
     , "Kill"
+    , "NameServerAdd"
+    , "NameServerDelete"
     , "NodeAdd"
     , "NodeAdded"
     , "NodeDelete"
