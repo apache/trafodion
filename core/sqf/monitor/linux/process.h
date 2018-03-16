@@ -71,7 +71,9 @@ class CProcessContainer
                                 , int pid
                                 , Verifier_t verifier
                                 , _TM_Txid_External trans_id );
+#ifndef NAMESERVER_PROCESS
     void Child_Exit ( CProcess * parent );
+#endif
     void CleanUpProcesses( void );
     CProcess *CloneProcess( int nid, 
                             PROCESSTYPE type, 
@@ -126,7 +128,9 @@ class CProcessContainer
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
     void DumpCallback( int nid, pid_t pid, int status );
     static CProcess *ParentNewProcReply ( CProcess *process, int result );
+#ifndef NAMESERVER_PROCESS
     void Exit_Process( CProcess *process, bool abend, int downNode );
+#endif
     CProcess *GetFirstProcess( void ) { return(head_); };
     CProcess *GetLastProcess( void ) { return(tail_); };
     inline sem_t *GetMutex() { return Mutex; };
@@ -139,9 +143,11 @@ class CProcessContainer
     inline nameMap_t *GetNameMap() { return nameMap_; };
     inline pidMap_t *GetPidMap() { return pidMap_; };
     CProcess *GetProcessLByType( PROCESSTYPE type );
+#ifndef NAMESERVER_PROCESS
     void KillAll( STATE node_State, CProcess *process );
     void KillAllDown();
     void KillAllDownSoft();
+#endif
     char *NormalizeName( char *name );
     bool Open_Process( int nid, int pid, Verifier_t verifier, int death_notification, CProcess *process );
     int ProcessCount( void ) { CAutoLock alock(pidMapLock_.getLocker()); return(numProcs_); }

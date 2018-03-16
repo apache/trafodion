@@ -23,49 +23,51 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "nstype.h"
+
 #include <stdio.h>
 #include "reqqueue.h"
 #include "montrace.h"
 #include "monsonar.h"
 #include "monlogging.h"
+#include "gentrap.h"
 
 extern CMonStats *MonStats;
-extern CNode *MyNode;
-extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;
-extern const char *StateString( STATE state);
-extern char *ErrorMsg (int error_code);
+extern CMonitor *Monitor;
+extern bool IsRealCluster;
 
-CExtNameServerUpReq::CExtNameServerUpReq (reqQueueMsg_t msgType, int pid,
-                                          struct message_def *msg )
-    : CExternalReq(msgType, pid, msg)
+CExtNameServerStartNsReq::CExtNameServerStartNsReq (reqQueueMsg_t msgType, int pid,
+                                                    int sockFd,
+                                                    struct message_def *msg )
+    : CExternalReq(msgType, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RqEG", 4);
+
+    priority_    =  High;
 }
 
-CExtNameServerUpReq::~CExtNameServerUpReq()
+CExtNameServerStartNsReq::~CExtNameServerStartNsReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "rQeg", 4);
 }
 
-
-void CExtNameServerUpReq::populateRequestString( void )
+void CExtNameServerStartNsReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
               "ExtReq(%s) req #=%ld requester(pid=%d) (nid=%d)"
               , CReqQueue::svcReqType[reqType_], getId(), pid_
-              , msg_->u.request.u.up.nid );
+              , msg_->u.request.u.nameserver_start.nid );
     requestString_.assign( strBuf );
 }
 
-
-void CExtNameServerUpReq::performRequest()
+void CExtNameServerStartNsReq::performRequest()
 {
-    const char method_name[] = "CExtNameServerUpReq::performRequest";
+    const char method_name[] = "CExtNameServerStartNsReq::performRequest";
     TRACE_ENTRY;
 
     CNode  *node;
@@ -73,20 +75,26 @@ void CExtNameServerUpReq::performRequest()
 
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_nameserverup_Incr();
+       MonStats->req_type_nameserverstart_Incr();
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d request #%ld: NameServerUp, name=%s\n",
-                     method_name, __LINE__, id_, msg_->u.request.u.nameserver_up.node_name);
+        trace_printf("%s@%d request #%ld: NameServer Start, name=%s, nid=%d\n",
+                     method_name, __LINE__, id_, msg_->u.request.u.nameserver_start.node_name,
+                     msg_->u.request.u.nameserver_start.nid);
     }
 
-    node = Nodes->GetNode( msg_->u.request.u.nameserver_up.node_name );
+    if ( IsRealCluster )
+        node = Nodes->GetNode( msg_->u.request.u.nameserver_start.node_name );
+    else
+    {
+        int nid = atoi( msg_->u.request.u.nameserver_stop.node_name );
+        node = Nodes->GetLNode( nid )->GetNode();
+    }
 
     if ( node != NULL )
     {
-#if 0 // TODO
         if (  Emulate_Down )
         {   // Virtual node. Set indication that ImAlive cycle will
             // propagate node state change.
@@ -94,40 +102,28 @@ void CExtNameServerUpReq::performRequest()
         }
         // note: see CommAcceptor thread for node up handling in
         // a real cluster.
-#endif
     }
     else
     {
-#if 0 // TODO
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d - Invalid node, name=%s\n",
-                          method_name, __LINE__,
-                          msg_->u.request.u.nameserver_up.node_name );
+            trace_printf( "%s@%d - Invalid node, pnid=%d, name=%s\n",
+                          method_name, __LINE__, msg_->u.request.u.nameserver_start.nid,
+                          msg_->u.request.u.nameserver_start.node_name );
 
         rc = MPI_ERR_NAME;
-#endif
     }
 
     if (!msg_->noreply)  // client needs a reply 
     {
-        CProcess *requester;
-        requester = MyNode->GetProcess( pid_ );
-
         msg_->u.reply.type = ReplyType_Generic;
-        msg_->u.reply.u.generic.nid = requester ? requester->GetNid() : 0;
+        msg_->u.reply.u.generic.nid = msg_->u.request.u.nameserver_start.nid;
         msg_->u.reply.u.generic.pid = pid_;
         msg_->u.reply.u.generic.verifier = verifier_;
         msg_->u.reply.u.generic.process_name[0] = '\0';
         msg_->u.reply.u.generic.return_code = rc;
 
-#if 0 // TODO
-        if ( rc != MPI_SUCCESS )
-        {
-            MyNode->SetCreator( false, -1, -1 );
-        }
-#endif
         // Send reply to requester
-        lioreply(msg_, pid_);
+        monreply(msg_, sockFd_);
     }
 
     TRACE_EXIT;

@@ -39,17 +39,16 @@ public:
 
     void commAcceptor( void );
     bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
-#if 0
-    void processNewComm( MPI_Comm interComm );
-#endif
     void processNewSock( int sockFd );
     void processMonReqs( int sockFd );
     int  processMonReqsGetBestNs( void );
-    void monReqExec( CExternalReq * request );
     void monReqDeleteProcess( struct message_def* msg, int sockFd );
+    void monReqExec( CExternalReq * request );
+    void monReqNameServerStop( struct message_def* msg, int sockFd );
+    void monReqNewProcess( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
     void monReqProcessInfoCont( struct message_def* msg, int sockFd );
-    void monReqNewProcess( struct message_def* msg, int sockFd );
+    void monReqUnknown( struct message_def* msg, int sockFd );
     void startAccepting( void );
     void stopAccepting( void );
     void start( void );
@@ -61,13 +60,7 @@ public:
 private:
     struct message_def *Notice( const char *msgText );
 
-#if 0
-    void commAcceptorIB( void );
-#endif
     void commAcceptorSock( void );
-#if 0
-    bool sendNodeInfoMPI( MPI_Comm interComm );
-#endif
     bool sendNodeInfoSock( int sockFd );
 
     bool accepting_;

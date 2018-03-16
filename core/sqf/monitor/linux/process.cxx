@@ -1148,7 +1148,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
                 fifo_stdout, strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
         fifo_ok = false;
     }
     if (fifo_ok)
@@ -1161,7 +1161,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
                     fifo_stdout, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
             fifo_ok = false;
         }
     }
@@ -1172,7 +1172,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], mkfifo(%s) error, %s.\n", method_name,
                     fifo_stdout, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -1186,7 +1186,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
                 snprintf(buf, sizeof(buf),
                          "[%s], fifo open(%s) error, %s.\n", method_name,
                         fifo_stdout, strerror(errno));
-                mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
+                mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
             }
             else
             {
@@ -1211,7 +1211,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
                 fifo_stderr, strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        mon_log_write(MON_PROCESS_SETUPFIFO_5, SQ_LOG_ERR, buf);
         fifo_ok = false;
     }
 
@@ -1225,7 +1225,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
                     fifo_stderr, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_6, SQ_LOG_ERR, buf);
             fifo_ok = false;
         }
     }
@@ -1237,7 +1237,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             snprintf(buf, sizeof(buf),
                      "[%s], mkfifo(%s) error, %s.\n", method_name, fifo_stderr,
                     strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_7, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -1248,7 +1248,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
                 snprintf(buf, sizeof(buf),
                          "[%s], fifo open(%s) error, %s.\n", method_name,
                         fifo_stderr, strerror(errno));
-                mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
+                mon_log_write(MON_PROCESS_SETUPFIFO_8, SQ_LOG_ERR, buf);
             }
             else
             {
@@ -4381,6 +4381,7 @@ bool CProcessContainer::CancelDeathNotification( int nid
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::Child_Exit ( CProcess * parent )
 {
     CProcess *process;
@@ -4450,6 +4451,7 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
     }
     TRACE_EXIT;
 }
+#endif
 
 void CProcessContainer::CleanUpProcesses( void )
 {
@@ -4990,7 +4992,7 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
     return parent;
 }
 
-
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNode)
 {
     bool restarted = false;
@@ -5177,6 +5179,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
     return;
 }
+#endif
 
 CProcess *CProcessContainer::GetProcess (int pid)
 {
@@ -5422,6 +5425,7 @@ CProcess *CProcessContainer::GetProcessLByType(PROCESSTYPE type)
     return entry;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 {
     CProcess *process = NULL;
@@ -5498,7 +5502,9 @@ void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDown()
 {
     CProcess *process  = NULL;
@@ -5547,7 +5553,6 @@ void CProcessContainer::KillAllDown()
             // killing the process will not remove the process object because
             // exit processing will get queued until this completes. 
             kill( pid, SIGKILL ); 
-#ifndef NAMESERVER_PROCESS
             PROCESSTYPE type = process->GetType();
             if ( type == ProcessType_TSE ||
                  type == ProcessType_ASE )
@@ -5555,7 +5560,6 @@ void CProcessContainer::KillAllDown()
                 // unmount volume would acquire nameMapLock_ internally. 
                 Devices->UnMountVolume( process->GetName(), process->IsBackup() );
             }
-#endif
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Completed kill for %s (%d, %d)\n", method_name, __LINE__, process->GetName(), nid, pid);
         }
@@ -5584,7 +5588,9 @@ void CProcessContainer::KillAllDown()
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcessContainer::KillAllDownSoft()
 {
     const char method_name[] = "CProcessContainer::KillAllDownSoft";
@@ -5637,7 +5643,6 @@ void CProcessContainer::KillAllDownSoft()
                 // killing the process will not remove the process object because
                 // exit processing will get queued until this completes.
                 kill( pid, SIGKILL );
-#ifndef NAMESERVER_PROCESS
                 PROCESSTYPE type = process->GetType();
                 if ( type == ProcessType_TSE ||
                      type == ProcessType_ASE )
@@ -5645,7 +5650,6 @@ void CProcessContainer::KillAllDownSoft()
                     // unmount volume would acquire nameMapLock_ internally.
                     Devices->UnMountVolume( process->GetName(), process->IsBackup() );
                 }
-#endif
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                     trace_printf("%s@%d - Completed kill for %s (%d, %d)\n", method_name, __LINE__, process->GetName(), nid, pid);
             }
@@ -5678,6 +5682,7 @@ void CProcessContainer::KillAllDownSoft()
 
     TRACE_EXIT;
 }
+#endif
 
 char *CProcessContainer::NormalizeName (char *name)
 {

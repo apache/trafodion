@@ -139,6 +139,74 @@ CHealthCheck::~CHealthCheck()
 {
 }
 
+const char *CHealthCheck::getStateStr(HealthCheckStates state)
+{
+    const char *ret;
+    switch (state)
+    {
+    case HC_AVAILABLE:
+        ret = "HC_AVAILABLE";
+        break;
+    case HC_UPDATE_SMSERVICE:
+        ret = "HC_UPDATE_SMSERVICE";
+        break;
+    case HC_UPDATE_WATCHDOG:
+        ret = "HC_UPDATE_WATCHDOG";
+        break;
+    case MON_READY:
+        ret = "MON_READY";
+        break;
+    case MON_SHUT_DOWN:
+        ret = "MON_SHUT_DOWN";
+        break;
+    case MON_NODE_QUIESCE:
+        ret = "MON_NODE_QUIESCE";
+        break;
+    case MON_SCHED_NODE_DOWN:
+        ret = "MON_SCHED_NODE_DOWN";
+        break;
+    case MON_NODE_DOWN:
+        ret = "MON_NODE_DOWN";
+        break;
+    case MON_STOP_WATCHDOG:
+        ret = "MON_STOP_WATCHDOG";
+        break;
+    case MON_START_WATCHDOG:
+        ret = "MON_START_WATCHDOG";
+        break;
+    case MON_EXIT_PRIMITIVES:
+        ret = "MON_EXIT_PRIMITIVES";
+        break;
+    case HC_EXIT:
+        ret = "HC_EXIT";
+        break;
+    default:
+        ret = "?";
+        break;
+    }
+    return ret;
+}
+
+#ifdef NAMESERVER_PROCESS
+void CHealthCheck::stopNameServer()
+{
+    const char method_name[] = "CHealthCheck::stopNameServer";
+    TRACE_ENTRY;
+
+    if (trace_settings & TRACE_HEALTH)
+        trace_printf("%s@%d stopping.\n", method_name, __LINE__);
+    char buf[MON_STRING_BUF_SIZE];
+    sprintf(buf, "[%s], stopping.\n", method_name);
+    mon_log_write(MON_HEALTHCHECK_STOP_NS_1, SQ_LOG_CRIT, buf);
+    // Don't generate a core file, abort is intentional
+    struct rlimit limit;
+    limit.rlim_cur = 0;
+    limit.rlim_max = 0;
+    setrlimit(RLIMIT_CORE, &limit);
+    abort();
+}
+#endif
+
 // Main body:
 // The health check thread waits on two conditions. A signal that is set by other monitor
 // threads after updating the state, and a timer event that pops when the timer expires. 
@@ -180,11 +248,11 @@ void CHealthCheck::healthCheckThread()
 
         state = state_;
 
+        if ( trace_settings & TRACE_HEALTH )
+            trace_printf("%s@%d State: %d(%s)\n", method_name, __LINE__, state, getStateStr(state));
+
         switch(state)
         {
-            if ( trace_settings & TRACE_HEALTH )
-                trace_printf("%s@%d State: %d\n", method_name, __LINE__, state);
-
             case MON_START_WATCHDOG:
                 // Start the watchdog timer. After this, WDT refresh becomes mandatory.
                 sendEventToWatchDog(Watchdog_Start);
@@ -217,6 +285,9 @@ void CHealthCheck::healthCheckThread()
                 break; 
 
             case MON_NODE_DOWN:
+#ifdef NAMESERVER_PROCESS
+                stopNameServer();
+#endif
                 if( getenv("SQ_VIRTUAL_NODES") )
                 {
                     // In a virtual cluster the monitor continues to run
@@ -235,6 +306,9 @@ void CHealthCheck::healthCheckThread()
                 break;
 
             case MON_SHUT_DOWN:
+#ifdef NAMESERVER_PROCESS
+                stopNameServer();
+#endif
                 if( getenv("SQ_VIRTUAL_NODES") )
                 {
                     // In a virtual cluster the monitor continues to run

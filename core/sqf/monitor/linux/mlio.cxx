@@ -96,8 +96,8 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( Mount_def ),           // ReqType_Mount
    sizeof(REQTYPE) + sizeof( NameServerAdd_def ),   // ReqType_NameServerAdd
    sizeof(REQTYPE) + sizeof( NameServerDelete_def ),// ReqType_NameServerDelete
-   sizeof(REQTYPE) + sizeof( NameServerDown_def ),  // ReqType_NameServerDown
-   sizeof(REQTYPE) + sizeof( NameServerUp_def ),    // ReqType_NameServerUp
+   sizeof(REQTYPE) + sizeof( NameServerStart_def ), // ReqType_NameServerStart
+   sizeof(REQTYPE) + sizeof( NameServerStop_def ),  // ReqType_NameServerStop
    sizeof(REQTYPE) + sizeof( NewProcess_def ),      // ReqType_NewProcess
    sizeof(REQTYPE) + sizeof( NewProcessNs_def ),    // ReqType_NewProcessNs
    sizeof(REQTYPE) + sizeof( NodeAdd_def ),         // ReqType_NodeAdd

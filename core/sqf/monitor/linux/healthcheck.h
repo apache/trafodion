@@ -83,6 +83,10 @@ private:
     void processTimerEvent();
     void startQuiesce();
     void scheduleNodeDown();
+    const char *getStateStr(HealthCheckStates state);
+#ifdef NAMESERVER_PROCESS
+    void stopNameServer();
+#endif
 
     HealthCheckStates state_;           // current state of the health check thread
     long long param1_;                  // optional param
