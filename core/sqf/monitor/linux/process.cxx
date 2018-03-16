@@ -1139,29 +1139,60 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
     }
 
     // Create unique fifo name, store in process object
-    char *fifo_stdout = tempnam("/tmp", "sqmp.");
-    fifo_stdout_ = fifo_stdout;
-
-    if (mkfifo(fifo_stdout, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
-    {   // Unexpected fifo creation problem
+    bool fifo_ok = true;
+    char fifo_stdout[50];
+    strcpy(fifo_stdout, "/tmp/sqmp.XXXXXX");
+    int fifo_stdout_fd = mkstemp(fifo_stdout);
+    if (fifo_stdout_fd == -1)
+    {   // Unexpected mkstemp problem
         char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], mkfifo(%s) error, %s.\n", method_name,
+        snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
                 fifo_stdout, strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        fifo_ok = false;
     }
-    else
+    if (fifo_ok)
     {
-        // Open the fifo for reading.  Use non-blocking mode because
-        // otherwise open would not complete until attached process
-        // opens fifo for writing.
-        fd_stdout_ = open (fifo_stdout, O_RDONLY | O_NONBLOCK);
-        if (fd_stdout_ == -1)
-        {
+        fifo_stdout_ = fifo_stdout;
+        // unlink so mkfifo works
+        int err = unlink(fifo_stdout);
+        if (err == -1)
+        {   // Unexpected unlink problem
             char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf),
-                     "[%s], fifo open(%s) error, %s.\n", method_name,
+            snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
                     fifo_stdout, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            fifo_ok = false;
+        }
+    }
+    if (fifo_ok)
+    {
+        if (mkfifo(fifo_stdout, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+        {   // Unexpected fifo creation problem
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s], mkfifo(%s) error, %s.\n", method_name,
+                    fifo_stdout, strerror(errno));
+            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+        }
+        else
+        {
+            // Open the fifo for reading.  Use non-blocking mode because
+            // otherwise open would not complete until attached process
+            // opens fifo for writing.
+            fd_stdout_ = open (fifo_stdout, O_RDONLY | O_NONBLOCK);
+            if (fd_stdout_ == -1)
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf),
+                         "[%s], fifo open(%s) error, %s.\n", method_name,
+                        fifo_stdout, strerror(errno));
+                mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
+            }
+            else
+            {
+                // close the unlinked file
+                close(fifo_stdout_fd);
+            }
         }
 
 #ifndef NAMESERVER_PROCESS
@@ -1170,40 +1201,66 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
 #endif
     }
 
-    // Release memory allocated by tempnam
-    free(fifo_stdout);
-
     // Create unique stderr fifo name, store in process object
-    char *fifo_stderr = tempnam("/tmp", "sqmp.");
-    fifo_stderr_ = fifo_stderr;
-
-    if (mkfifo(fifo_stderr, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
-    {
+    fifo_ok = true;
+    char fifo_stderr[50];
+    strcpy(fifo_stderr, "/tmp/sqmp.XXXXXX");
+    int fifo_stderr_fd = mkstemp(fifo_stderr);
+    if (fifo_stderr_fd == -1)
+    {   // Unexpected mkstemp problem
         char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf),
-                 "[%s], mkfifo(%s) error, %s.\n", method_name, fifo_stderr,
-                strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
+        snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
+                fifo_stderr, strerror(errno));
+        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        fifo_ok = false;
     }
-    else
+
+    if (fifo_ok)
     {
-        fd_stderr_ = open (fifo_stderr, O_RDONLY | O_NONBLOCK);
-        if (fd_stderr_ == -1)
+        fifo_stderr_ = fifo_stderr;
+        // unlink so mkfifo works
+        int err = unlink(fifo_stderr);
+        if (err == -1)
+        {   // Unexpected unlink problem
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
+                    fifo_stderr, strerror(errno));
+            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            fifo_ok = false;
+        }
+    }
+    if (fifo_ok)
+    {
+        if (mkfifo(fifo_stderr, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
         {
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf),
-                     "[%s], fifo open(%s) error, %s.\n", method_name,
-                    fifo_stderr, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
+                     "[%s], mkfifo(%s) error, %s.\n", method_name, fifo_stderr,
+                    strerror(errno));
+            mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
         }
+        else
+        {
+            fd_stderr_ = open (fifo_stderr, O_RDONLY | O_NONBLOCK);
+            if (fd_stderr_ == -1)
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf),
+                         "[%s], fifo open(%s) error, %s.\n", method_name,
+                        fifo_stderr, strerror(errno));
+                mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
+            }
+            else
+            {
+                // close the unlinked file
+                close(fifo_stderr_fd);
+            }
 
 #ifndef NAMESERVER_PROCESS
-        Redirector.stderrFd(MyNode->GetHostname(), Name, Nid, attachee_pid, fd_stderr_);
+            Redirector.stderrFd(MyNode->GetHostname(), Name, Nid, attachee_pid, fd_stderr_);
 #endif
+        }
     }
-
-    // Release memory allocated by tempnam
-    free(fifo_stderr);
 
     if (trace_settings & (TRACE_PROCESS | TRACE_REDIRECTION))
         trace_printf("%s@%d Process=%s, Pid=%d, Infile=[%s], "
