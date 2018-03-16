@@ -40,6 +40,7 @@ public:
     CNameServer( void );
     virtual ~CNameServer( void );
 
+    int  NameServerStop( struct message_def* msg );
     int  ProcessDelete(CProcess* process );
     int  ProcessInfo( struct message_def* msg );
     int  ProcessInfoCont( struct message_def* msg );

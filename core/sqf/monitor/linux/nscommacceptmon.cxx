@@ -249,6 +249,33 @@ void CCommAcceptMon::monReqExec( CExternalReq * request )
     TRACE_EXIT;
 }
 
+void CCommAcceptMon::monReqNameServerStop( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqNameServerStop";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Received monitor request down-nameserver data.\n"
+                      "        msg.nameserver_stop.nid=%d\n"
+                      "        msg.nameserver_stop.pid=%d\n"
+                      "        msg.nameserver_stop.node_name=%s\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.nameserver_stop.nid
+                    , msg->u.request.u.nameserver_stop.pid
+                    , msg->u.request.u.nameserver_stop.node_name
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    msgType = CExternalReq::NonStartupMsg;
+    int pid = msg->u.request.u.nameserver_stop.pid;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
+
+    TRACE_EXIT;
+}
+
 void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqProcessInfo";
@@ -363,6 +390,24 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                     , msg->u.request.u.new_process_ns.type
                     , msg->u.request.u.new_process_ns.priority
                     , msg->u.request.u.new_process_ns.process_name
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    msgType = CExternalReq::NonStartupMsg;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+
+    TRACE_EXIT;
+}
+void CCommAcceptMon::monReqUnknown( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqUnknown";
+    TRACE_ENTRY;
+    if (trace_settings & (TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Received monitor request UNKNOWN data.\n"
+                    , method_name, __LINE__
                     );
     }
 
@@ -515,6 +560,9 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             case ReqType_ProcessInfoCont:
                 rtype = "ProcessInfoCont";
                 break;
+            case ReqType_NameServerStop:
+                rtype = "NameServerStop";
+                break;
             case ReqType_NewProcessNs:
                 rtype = "NewProcessNs";
                 break;
@@ -542,6 +590,10 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                 monReqDeleteProcess(&msg, sockFd);
                 break;
 
+            case ReqType_NameServerStop:
+                monReqNameServerStop(&msg, sockFd);
+                break;
+
             case ReqType_ProcessInfo:
                 monReqProcessInfo(&msg, sockFd);
                 break;
@@ -555,9 +607,8 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                 break;
 
             default:
-                trace_printf( "%s@%d - Received monitor request UNKNOWN data.\n"
-                            , method_name, __LINE__
-                            );
+                monReqUnknown(&msg, sockFd);
+                break;
             }
         }
     }

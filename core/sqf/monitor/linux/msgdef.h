@@ -232,8 +232,8 @@ typedef enum {
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NameServerAdd,                  // add nameserver to configuration database
     ReqType_NameServerDelete,               // delete nameserver from configuration database
-    ReqType_NameServerDown,                 // take down the identified nameserver
-    ReqType_NameServerUp,                   // bring up the identified nameserver
+    ReqType_NameServerStart,                // start the identified nameserver
+    ReqType_NameServerStop,                 // stop the identified nameserver
     ReqType_NewProcess,                     // process is request server to be spawned
     ReqType_NewProcessNs,                   // new process
     ReqType_NodeAdd,                        // add node to configuration database
@@ -522,14 +522,14 @@ struct NameServerDelete_def
     char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
 };
 
-struct NameServerDown_def
+struct NameServerStart_def
 {
     int  nid;                               // node id of requesting process
     int  pid;                               // process id of requesting process
     char node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
 };
 
-struct NameServerUp_def
+struct NameServerStop_def
 {
     int  nid;                               // node id of requesting process
     int  pid;                               // process id of requesting process
@@ -1166,8 +1166,8 @@ struct request_def
         struct Kill_def              kill;
         struct NameServerAdd_def     nameserver_add;
         struct NameServerDelete_def  nameserver_delete;
-        struct NameServerDown_def    nameserver_down;
-        struct NameServerUp_def      nameserver_up;
+        struct NameServerStart_def   nameserver_start;
+        struct NameServerStop_def    nameserver_stop;
         struct NewProcess_def        new_process;
         struct NewProcessNs_def      new_process_ns;
         struct NodeAdd_def           node_add;

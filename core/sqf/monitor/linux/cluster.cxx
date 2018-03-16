@@ -198,7 +198,9 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                 downNode->SetState( State_Down );
 
                 // Send process death notices
+#ifndef NAMESERVER_PROCESS
                 spareNode->KillAllDown();
+#endif
 
                 // Send node down notice
                 lnode = spareNode->GetFirstLNode();
@@ -899,8 +901,10 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
 
 void CCluster::HardNodeDown (int pnid, bool communicate_state)
 {
+#ifndef NAMESERVER_PROCESS
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
+#endif
     CNode  *node;
     CLNode *lnode;
     char    buf[MON_STRING_BUF_SIZE];
@@ -956,6 +960,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         return;
     }
 
+#ifndef NAMESERVER_PROCESS
     if ( !Emulate_Down )
     {
         if( !IsRealCluster )
@@ -986,6 +991,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         remove(temp_fname);
         rename(port_fname, temp_fname);
     }
+#endif
 
     if (node->GetState() != State_Down || !node->isInQuiesceState())
     {
@@ -1018,7 +1024,9 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
                 if ( ! Emulate_Down )
                 {
                     // make sure no processes are alive if in the middle of re-integration
+#ifndef NAMESERVER_PROCESS
                     node->KillAllDown();
+#endif
                     snprintf(buf, sizeof(buf),
                              "[CCluster::HardNodeDown], Node %s (%d)is down.\n",
                              node->GetName(), node->GetPNid());
@@ -1038,7 +1046,9 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             {
                 ResetIntegratingPNid();
             }
+#ifndef NAMESERVER_PROCESS
             node->KillAllDown();
+#endif
             node->SetState( State_Down );
             // Send node down message to local node's processes
             lnode = node->GetFirstLNode();
@@ -1130,7 +1140,9 @@ void CCluster::SoftNodeDown( int pnid )
             Replicator.addItem(repl);
         }
 
+#ifndef NAMESERVER_PROCESS
         node->KillAllDownSoft();            // Kill all processes
+#endif
 
         snprintf( buf, sizeof(buf)
                 , "[%s], Node %s (%d) executed soft down.\n"

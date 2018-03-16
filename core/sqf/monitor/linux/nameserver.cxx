@@ -450,6 +450,17 @@ int CNameServer::SockCreate( void )
     return ( sock );
 }
 
+int CNameServer::NameServerStop( struct message_def* msg )
+{
+    const char method_name[] = "CNameServer::NameServerStop";
+    TRACE_ENTRY;
+
+    int error = SendReceive( msg );
+
+    TRACE_EXIT;
+    return error;
+}
+
 int CNameServer::ProcessDelete(CProcess* process )
 {
     const char method_name[] = "CNameServer::ProcessDelete";
@@ -545,6 +556,8 @@ int CNameServer::SendReceive( struct message_def* msg )
     const char method_name[] = "CNameServer::SendReceive";
     char desc[100];
     char* descp;
+    struct NameServerStart_def *msgstart;
+    struct NameServerStop_def *msgstop;
     struct DelProcessNs_def *msgdel;
     struct NewProcessNs_def *msgnew;
 
@@ -559,6 +572,18 @@ int CNameServer::SendReceive( struct message_def* msg )
         sprintf( desc, "delete-process (nid=%d, pid=%d, verifier=%d, name=%s)",
                  msgdel->nid, msgdel->pid, msgdel->verifier, msgdel->process_name );
         size += sizeof(msg->u.request.u.del_process_ns);
+        break;
+    case ReqType_NameServerStart:
+        msgstart = &msg->u.request.u.nameserver_start;
+        sprintf( desc, "start-nameserver (nid=%d, pid=%d, node=%s)",
+                 msgstart->nid, msgstart->pid, msgstart->node_name );
+        size += sizeof(msg->u.request.u.nameserver_start);
+        break;
+    case ReqType_NameServerStop:
+        msgstop = &msg->u.request.u.nameserver_stop;
+        sprintf( desc, "stop-nameserver (nid=%d, pid=%d, node=%s)",
+                 msgstop->nid, msgstop->pid, msgstop->node_name );
+        size += sizeof(msg->u.request.u.nameserver_stop);
         break;
     case ReqType_NewProcessNs:
         msgnew = &msg->u.request.u.new_process_ns;

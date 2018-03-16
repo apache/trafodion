@@ -135,9 +135,9 @@ MONITORSRC += reqnodename.cxx
 MONITORSRC += reqnodeup.cxx
 MONITORSRC += reqnotify.cxx
 MONITORSRC += reqnsadd.cxx
-MONITORSRC += reqnsdown.cxx
 MONITORSRC += reqnsdelete.cxx
-MONITORSRC += reqnsup.cxx
+MONITORSRC += reqnsstart.cxx
+MONITORSRC += reqnsstop.cxx
 MONITORSRC += reqopen.cxx
 MONITORSRC += reqprocinfo.cxx
 MONITORSRC += reqset.cxx
@@ -207,8 +207,8 @@ MONITOROBJS += $(OUTDIR)/reqnodeup.o
 MONITOROBJS += $(OUTDIR)/reqnotify.o
 MONITOROBJS += $(OUTDIR)/reqnsadd.o
 MONITOROBJS += $(OUTDIR)/reqnsdelete.o
-MONITOROBJS += $(OUTDIR)/reqnsdown.o
-MONITOROBJS += $(OUTDIR)/reqnsup.o
+MONITOROBJS += $(OUTDIR)/reqnsstart.o
+MONITOROBJS += $(OUTDIR)/reqnsstop.o
 MONITOROBJS += $(OUTDIR)/reqopen.o
 MONITOROBJS += $(OUTDIR)/reqprocinfo.o
 MONITOROBJS += $(OUTDIR)/reqset.o
@@ -262,8 +262,10 @@ endif
 NSOBJS += $(OUTDIR)/nsreqworker.o
 NSOBJS += $(OUTDIR)/nsreqqueue.o
 NSOBJS += $(OUTDIR)/nsreqdelproc.o
+NSOBJS += $(OUTDIR)/nsreqstop.o
 NSOBJS += $(OUTDIR)/nsreqnewproc.o
 NSOBJS += $(OUTDIR)/nsreqprocinfo.o
+NSOBJS += $(OUTDIR)/nsreqstart.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
     NSOBJS += $(OUTDIR)/rs.o
 endif

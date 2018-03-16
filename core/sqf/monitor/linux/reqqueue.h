@@ -345,6 +345,36 @@ private:
 #endif
 
 #ifdef NAMESERVER_PROCESS
+class CExtNameServerStartNsReq: public CExternalReq
+{
+public:
+    CExtNameServerStartNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
+                              struct message_def *msg );
+    virtual ~CExtNameServerStartNsReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifdef NAMESERVER_PROCESS
+class CExtNameServerStopNsReq: public CExternalReq
+{
+public:
+    CExtNameServerStopNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
+                             struct message_def *msg );
+    virtual ~CExtNameServerStopNsReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifdef NAMESERVER_PROCESS
 class CExtNewProcNsReq: public CExternalReq
 {
 public:
@@ -450,12 +480,12 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
-class CExtNameServerDownReq: public CExternalReq
+class CExtNameServerStartReq: public CExternalReq
 {
 public:
-    CExtNameServerDownReq (reqQueueMsg_t msgType, int pid,
-                           struct message_def *msg );
-    virtual ~CExtNameServerDownReq();
+    CExtNameServerStartReq (reqQueueMsg_t msgType, int pid,
+                            struct message_def *msg );
+    virtual ~CExtNameServerStartReq();
 
     void performRequest();
 
@@ -465,12 +495,12 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
-class CExtNameServerUpReq: public CExternalReq
+class CExtNameServerStopReq: public CExternalReq
 {
 public:
-    CExtNameServerUpReq (reqQueueMsg_t msgType, int pid,
-                         struct message_def *msg );
-    virtual ~CExtNameServerUpReq();
+    CExtNameServerStopReq (reqQueueMsg_t msgType, int pid,
+                           struct message_def *msg );
+    virtual ~CExtNameServerStopReq();
 
     void performRequest();
 
@@ -478,6 +508,7 @@ private:
     void populateRequestString( void );
 };
 #endif
+
 #ifndef NAMESERVER_PROCESS
 class CExtNodeInfoReq: public CExternalReq
 {
@@ -1502,9 +1533,8 @@ private:
       RQEM   CExtNotifyReq
       RqEC   CExtNameServerAddReq
       RqED   CExtNameServerDeleteReq
-      RqEE   CExtNameServerDownReq
-      RqEF   CExtNameServerInfoReq
-      RqEG   CExtNameServerUpReq
+      RqEE   CExtNameServerStartReq
+      RqEF   CExtNameServerStopReq
       RQEN   CExtOpenReq
       RQEO   CExtProcInfoReq
       RQEP   CExtProcInfoContReq

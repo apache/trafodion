@@ -2972,9 +2972,11 @@ void CQuiesceReq::performRequest()
 #ifndef NAMESERVER_PROCESS
     if (MyNode->getNumQuiesceExitPids() == 0)
     {   
+#endif
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
             trace_printf("%s@%d - Scheduling node down\n", method_name, __LINE__);
         HealthCheck.setState(MON_SCHED_NODE_DOWN);
+#ifndef NAMESERVER_PROCESS
     }
 #endif
 
@@ -3185,6 +3187,16 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NameServerStart:
+            request = new CExtNameServerStartNsReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NameServerStop:
+            request = new CExtNameServerStopNsReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
         case ReqType_NewProcessNs:
             request = new CExtNewProcNsReq(msgType, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3309,13 +3321,13 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_NameServerDown:
-            request = new CExtNameServerDownReq(msgType, pid, msg);
+        case ReqType_NameServerStart:
+            request = new CExtNameServerStartReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_NameServerUp:
-            request = new CExtNameServerUpReq(msgType, pid, msg);
+        case ReqType_NameServerStop:
+            request = new CExtNameServerStopReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -4331,8 +4343,8 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Mount
    false,    // ReqType_NameServerAdd
    false,    // ReqType_NameServerDelete
-   false,    // ReqType_NameServerDown
-   false,    // ReqType_NameServerUp
+   false,    // ReqType_NameServerStart
+   false,    // ReqType_NameServerStop
    false,    // ReqType_NewProcess
    false,    // ReqType_NewProcessNs
    false,    // ReqType_NodeAdd
@@ -4376,8 +4388,8 @@ const char * CReqQueue::svcReqType[] = {
     "Mount",
     "NameServerAdd",
     "NameServerDelete",
-    "NameServerDown",
-    "NameServerUp",
+    "NameServerStart",
+    "NameServerStop",
     "NewProcess",
     "NewProcessNs",
     "NodeAdd",

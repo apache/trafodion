@@ -156,11 +156,11 @@ bool  load_configuration( void );
 void  nameserver_add_cmd( char *cmd );
 void  nameserver_config_cmd( char *cmd );
 void  nameserver_delete_cmd( char *cmd );
-void  nameserver_down( char *node_name );
-void  nameserver_down_cmd ( char *cmd );
 void  nameserver_name_cmd( char *cmd );
-void  nameserver_up( char *node_name );
-void  nameserver_up_cmd( char *cmd );
+void  nameserver_start( char *node_name );
+void  nameserver_start_cmd( char *cmd );
+void  nameserver_stop( char *node_name );
+void  nameserver_stop_cmd ( char *cmd );
 void  node_add_cmd( char *cmd, char delimiter );
 void  node_config_cmd( char *cmd );
 void  node_delete_cmd( char *cmd );
@@ -3489,15 +3489,27 @@ void nameserver_delete( char *node_name )
         gp_local_mon_io->release_msg(msg);
 }
 
-void nameserver_down( char *node_name )
+void nameserver_info( )
 {
-    const char method_name[] = "nameserver_down";
+    char process_name[1];
+
+    process_name[0] = '\0';
+    get_proc_info( -1
+                 , -1
+                 , process_name
+                 , ProcessType_NameServer
+                 , false );
+}
+
+void nameserver_stop( char *node_name )
+{
+    const char method_name[] = "nameserver_stop";
     char msgString[MAX_BUFFER] = { 0 };
     int count;
     MPI_Status status;
 
     if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf("%s@%d [%s] sending down nameserver message.\n",
+        trace_printf("%s@%d [%s] sending nameserver stop message.\n",
                      method_name, __LINE__, MyName);
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -3511,10 +3523,10 @@ void nameserver_down( char *node_name )
     msg->type = MsgType_Service;
     msg->noreply = false;
     msg->reply_tag = REPLY_TAG;
-    msg->u.request.type = ReqType_NameServerDown;
-    msg->u.request.u.nameserver_down.nid = MyNid;
-    msg->u.request.u.nameserver_down.pid = MyPid;
-    STRCPY(msg->u.request.u.nameserver_down.node_name, node_name);
+    msg->u.request.type = ReqType_NameServerStop;
+    msg->u.request.u.nameserver_stop.nid = MyNid;
+    msg->u.request.u.nameserver_stop.pid = MyPid;
+    STRCPY(msg->u.request.u.nameserver_stop.node_name, node_name);
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof( *msg );
@@ -3528,46 +3540,34 @@ void nameserver_down( char *node_name )
         {
             if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
             {
-                printf ("[%s] NameServer Down failed, error=%s\n", MyName,
+                printf ("[%s] NameServer Stop failed, error=%s\n", MyName,
                 ErrorMsg(msg->u.reply.u.generic.return_code));
             }
         }
         else
         {
-            printf( "[%s] Invalid MsgType(%d)/ReplyType(%d) for NameServer Down message\n"
+            printf( "[%s] Invalid MsgType(%d)/ReplyType(%d) for NameServer Stop message\n"
                   , MyName, msg->type, msg->u.reply.type);
         }
     }
     else
     {
-        printf ("[%s] NameServerDown reply message invalid\n", MyName);
+        printf ("[%s] NameServer Stop reply message invalid\n", MyName);
     }
 
     gp_local_mon_io->release_msg(msg);
 }
 
-void nameserver_info( )
+void nameserver_start( char *node_name )
 {
-    char process_name[1];
-
-    process_name[0] = '\0';
-    get_proc_info( -1
-                 , -1
-                 , process_name
-                 , ProcessType_NameServer
-                 , false );
-}
-
-void nameserver_up( char *node_name )
-{
-    const char method_name[] = "nameserver_up";
+    const char method_name[] = "nameserver_start";
     int count;
     int rc = -1;
     char msgString[MAX_BUFFER] = { 0 };
     MPI_Status status;
 
     if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] sending NameServer Up message.\n",
+        trace_printf ("%s@%d [%s] sending NameServer Start message.\n",
                       method_name, __LINE__, MyName);
 
     assert(gp_local_mon_io);
@@ -3582,10 +3582,10 @@ void nameserver_up( char *node_name )
     msg->type = MsgType_Service;
     msg->noreply = false;
     msg->reply_tag = REPLY_TAG;
-    msg->u.request.type = ReqType_NameServerUp;
-    msg->u.request.u.nameserver_up.nid = MyNid;
-    msg->u.request.u.nameserver_up.pid = MyPid;
-    STRCPY( msg->u.request.u.nameserver_up.node_name, node_name );
+    msg->u.request.type = ReqType_NameServerStart;
+    msg->u.request.u.nameserver_start.nid = MyNid;
+    msg->u.request.u.nameserver_start.pid = MyPid;
+    STRCPY( msg->u.request.u.nameserver_start.node_name, node_name );
     gp_local_mon_io->send_recv( msg );
 
     count = sizeof( *msg );
@@ -3619,19 +3619,19 @@ void nameserver_up( char *node_name )
             }
             else
             {
-                printf ("[%s] NameServer Up failed, error=%s\n", MyName,
-                    ErrorMsg(rc));
+                printf ("[%s] NameServer Start failed, error=%d(%s)\n", MyName,
+                        rc, ErrorMsg(rc));
             }
         }
         else
         {
-            printf("[%s] Invalid MsgType(%d)/ReplyType(%d) for NameServer Up message\n",
+            printf("[%s] Invalid MsgType(%d)/ReplyType(%d) for NameServer Start message\n",
                    MyName, msg->type, msg->u.reply.type);
         }
     }
     else
     {
-        printf ("[%s] NameServer Up reply message invalid\n", MyName);
+        printf ("[%s] NameServer Start reply message invalid\n", MyName);
     }
     gp_local_mon_io->release_msg( msg );
 }
@@ -6627,9 +6627,9 @@ void help_cmd (void)
     printf ("[%s] -- nameserver add node-name <node-name>\n", MyName);
     printf ("[%s] -- nameserver config\n", MyName);
     printf ("[%s] -- nameserver delete <node-name>\n", MyName);
-    printf ("[%s] -- nameserver down <node-name>\n", MyName);
     printf ("[%s] -- nameserver info\n", MyName);
-    printf ("[%s] -- nameserver up <node-name>\n", MyName);
+    printf ("[%s] -- nameserver start <node-name>\n", MyName);
+    printf ("[%s] -- nameserver stop <node-name>\n", MyName);
     printf ("[%s] -- node add node-name <node-name>,\n", MyName);
     printf ("[%s] --          cores {<first-core>} [ - <last-core>}],\n", MyName);
     printf ("[%s] --          processors {<processor-count>},\n", MyName);
@@ -6905,18 +6905,6 @@ void nameserver_cmd (char *cmd_tail)
             printf( EnvNotStarted, MyName );
         }
     }
-    else if (strcmp( token, "down" ) == 0)
-    {
-        if (Started)
-        {
-            // <node-name>
-            nameserver_down_cmd( cmd );
-        }
-        else
-        {
-            printf( EnvNotStarted, MyName );
-        }
-    }
     else if (strcmp (token, "info") == 0)
     {
         if (Started)
@@ -6926,12 +6914,24 @@ void nameserver_cmd (char *cmd_tail)
             printf( EnvNotStarted, MyName );
         }
     }
-    else if (strcmp( token, "up" ) == 0)
+    else if (strcmp( token, "start" ) == 0)
     {
         if (Started)
         {
             // <node-name>
-            nameserver_up_cmd( cmd );
+            nameserver_start_cmd( cmd );
+        }
+        else
+        {
+            printf( EnvNotStarted, MyName );
+        }
+    }
+    else if (strcmp( token, "stop" ) == 0)
+    {
+        if (Started)
+        {
+            // <node-name>
+            nameserver_stop_cmd( cmd );
         }
         else
         {
@@ -7065,9 +7065,9 @@ void nameserver_delete_cmd( char *cmd )
     nameserver_delete( node_name );
 }
 
-void nameserver_down_cmd( char *cmd )
+void nameserver_start_cmd( char *cmd )
 {
-    const char method_name[] = "nameserver_down_cmd";
+    const char method_name[] = "nameserver_start_cmd";
 
     char *cmd_tail = cmd;
     char delimiter;
@@ -7076,50 +7076,7 @@ void nameserver_down_cmd( char *cmd )
     char token[MAX_TOKEN] = { 0 };
 
     if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] processing nameserver down command.\n",
-                      method_name, __LINE__, MyName);
-
-    if (*cmd_tail != '\0')
-    {
-        // <node-name>
-        cmd_tail = get_token( cmd_tail, token, &delimiter );
-        STRCPY(node_name, token);
-        if ( !get_nameserver_by_node_name( node_name ) )
-        {
-            sprintf( msgString, "[%s] Node %s is not configured!"
-                   , MyName, node_name);
-            write_startup_log( msgString );
-            printf ("%s\n", msgString);
-            return;
-        }
-        snprintf( msgString, sizeof(msgString)
-                , "[%s] Executing nameserver down. (node_name=%s)"
-                , MyName, node_name );
-        write_startup_log( msgString );
-        printf( "%s\n", msgString );
-
-        nameserver_down( node_name );
-    }
-    else
-    {
-        sprintf( msgString, "[%s] Invalid NameServer Down syntax!",MyName);
-        write_startup_log( msgString );
-        printf( "%s\n", msgString );
-    }
-}
-
-void nameserver_up_cmd( char *cmd )
-{
-    const char method_name[] = "nameserver_up_cmd";
-
-    char *cmd_tail = cmd;
-    char delimiter;
-    char msgString[MAX_BUFFER] = { 0 };
-    char node_name[MAX_TOKEN] = { 0 };
-    char token[MAX_TOKEN] = { 0 };
-
-    if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] processing up nameserver command.\n",
+        trace_printf ("%s@%d [%s] processing nameserver start command.\n",
                       method_name, __LINE__, MyName);
 
     if (*cmd_tail != '\0')
@@ -7136,7 +7093,7 @@ void nameserver_up_cmd( char *cmd )
         }
         if ( VirtualNodes )
         {
-            nameserver_up( node_name );
+            nameserver_start( node_name );
         }
         else
         {
@@ -7144,7 +7101,7 @@ void nameserver_up_cmd( char *cmd )
             {
                 if ( copy_config_db( node_name ) == 0 )
                 {
-                    nameserver_up( node_name );
+                    nameserver_start( node_name );
                 }
             }
         }
@@ -7152,6 +7109,49 @@ void nameserver_up_cmd( char *cmd )
     else
     {
         sprintf( msgString, "[%s] Invalid NameServer Up syntax!",MyName);
+        write_startup_log( msgString );
+        printf( "%s\n", msgString );
+    }
+}
+
+void nameserver_stop_cmd( char *cmd )
+{
+    const char method_name[] = "nameserver_stop_cmd";
+
+    char *cmd_tail = cmd;
+    char delimiter;
+    char msgString[MAX_BUFFER] = { 0 };
+    char node_name[MAX_TOKEN] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing nameserver stop command.\n",
+                      method_name, __LINE__, MyName);
+
+    if (*cmd_tail != '\0')
+    {
+        // <node-name>
+        cmd_tail = get_token( cmd_tail, token, &delimiter );
+        STRCPY(node_name, token);
+        if ( !get_nameserver_by_node_name( node_name ) )
+        {
+            sprintf( msgString, "[%s] Node %s is not configured!"
+                   , MyName, node_name);
+            write_startup_log( msgString );
+            printf ("%s\n", msgString);
+            return;
+        }
+        snprintf( msgString, sizeof(msgString)
+                , "[%s] Executing nameserver stop. (node_name=%s)"
+                , MyName, node_name );
+        write_startup_log( msgString );
+        printf( "%s\n", msgString );
+
+        nameserver_stop( node_name );
+    }
+    else
+    {
+        sprintf( msgString, "[%s] Invalid NameServer Stop syntax!",MyName);
         write_startup_log( msgString );
         printf( "%s\n", msgString );
     }
