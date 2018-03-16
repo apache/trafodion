@@ -74,7 +74,7 @@ void CExtNameServerStopNsReq::performRequest()
 
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_nodedown_Incr(); // TODO
+       MonStats->req_type_nameserverstop_Incr();
        
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
@@ -99,7 +99,7 @@ void CExtNameServerStopNsReq::performRequest()
             , msg_->u.request.u.nameserver_stop.nid
             , msg_->u.request.u.nameserver_stop.pid
             , msg_->u.request.u.nameserver_stop.node_name );
-    mon_log_write(MON_EXT_NODEDOWN_REQ, SQ_LOG_CRIT, la_buf);  // TODO
+    mon_log_write(MON_EXT_NAMESERVERDOWN_REQ, SQ_LOG_CRIT, la_buf);
     snprintf( la_buf, sizeof(la_buf)
             , "Process (%d,%d) requested nameserver stop on Node %s\n"
             , msg_->u.request.u.nameserver_stop.nid

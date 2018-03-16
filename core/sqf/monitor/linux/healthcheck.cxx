@@ -197,7 +197,7 @@ void CHealthCheck::stopNameServer()
         trace_printf("%s@%d stopping.\n", method_name, __LINE__);
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[%s], stopping.\n", method_name);
-    mon_log_write(MON_HEALTHCHECK_Q_BLOCK, SQ_LOG_CRIT, buf); // TODO
+    mon_log_write(MON_HEALTHCHECK_STOP_NS_1, SQ_LOG_CRIT, buf);
     // Don't generate a core file, abort is intentional
     struct rlimit limit;
     limit.rlim_cur = 0;

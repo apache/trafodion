@@ -1148,7 +1148,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
                 fifo_stdout, strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
         fifo_ok = false;
     }
     if (fifo_ok)
@@ -1161,7 +1161,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
                     fifo_stdout, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
             fifo_ok = false;
         }
     }
@@ -1172,7 +1172,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], mkfifo(%s) error, %s.\n", method_name,
                     fifo_stdout, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -1186,7 +1186,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
                 snprintf(buf, sizeof(buf),
                          "[%s], fifo open(%s) error, %s.\n", method_name,
                         fifo_stdout, strerror(errno));
-                mon_log_write(MON_PROCESS_SETUPFIFO_2, SQ_LOG_ERR, buf);
+                mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
             }
             else
             {
@@ -1211,7 +1211,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], mkstemp(%s) error, %s.\n", method_name,
                 fifo_stderr, strerror(errno));
-        mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf); // TODO
+        mon_log_write(MON_PROCESS_SETUPFIFO_5, SQ_LOG_ERR, buf);
         fifo_ok = false;
     }
 
@@ -1225,7 +1225,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], unlink(%s) error, %s.\n", method_name,
                     fifo_stderr, strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_1, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_6, SQ_LOG_ERR, buf);
             fifo_ok = false;
         }
     }
@@ -1237,7 +1237,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
             snprintf(buf, sizeof(buf),
                      "[%s], mkfifo(%s) error, %s.\n", method_name, fifo_stderr,
                     strerror(errno));
-            mon_log_write(MON_PROCESS_SETUPFIFO_3, SQ_LOG_ERR, buf);
+            mon_log_write(MON_PROCESS_SETUPFIFO_7, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -1248,7 +1248,7 @@ void CProcess::SetupFifo(int attachee_nid, int attachee_pid)
                 snprintf(buf, sizeof(buf),
                          "[%s], fifo open(%s) error, %s.\n", method_name,
                         fifo_stderr, strerror(errno));
-                mon_log_write(MON_PROCESS_SETUPFIFO_4, SQ_LOG_ERR, buf);
+                mon_log_write(MON_PROCESS_SETUPFIFO_8, SQ_LOG_ERR, buf);
             }
             else
             {

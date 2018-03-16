@@ -386,6 +386,10 @@
 #define MON_PROCESS_SETUPFIFO_2             101031902
 #define MON_PROCESS_SETUPFIFO_3             101031903
 #define MON_PROCESS_SETUPFIFO_4             101031904
+#define MON_PROCESS_SETUPFIFO_5             101031905
+#define MON_PROCESS_SETUPFIFO_6             101031906
+#define MON_PROCESS_SETUPFIFO_7             101031907
+#define MON_PROCESS_SETUPFIFO_8             101031908
 #define MON_PROCESS_SETUPPIPE_1             101032001
 #define MON_PROCESS_SETUPPIPE_2             101032002
 #define MON_PROCESS_SETUPPIPE_3             101032003
@@ -763,6 +767,7 @@
 #define MON_HEALTHCHECK_WAKEUP_1            101230401
 #define MON_HEALTHCHECK_WAKEUP_2            101230402
 #define MON_HEALTHCHECK_Q_BLOCK             101230501
+#define MON_HEALTHCHECK_STOP_NS_1           101230601
 
 /* Module: sdtimer.cxx = 24 */
 #define MON_SDTIMER_SOFTDOG_TH_1            101240101
@@ -966,6 +971,9 @@
 #define NS_COMMACCEPT_8                     101400108
 #define NS_COMMACCEPT_9                     101400109
 #define NS_COMMACCEPT_10                    101400110
+
+/* Module: reqnodedown.cxx = 41 */
+#define MON_EXT_NAMESERVERDOWN_REQ          101410101
 
 /* Module: tcdb.cxx = 90 */
 #define TCDB_TCDB_1                         101900101

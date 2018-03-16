@@ -75,7 +75,7 @@ void CExtNameServerStartNsReq::performRequest()
 
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_nodeup_Incr(); // TODO
+       MonStats->req_type_nameserverstart_Incr();
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))

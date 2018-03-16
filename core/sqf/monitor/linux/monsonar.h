@@ -120,9 +120,9 @@ class CMonStats
         req_type_newprocess++;
     }
 
-    virtual inline void req_type_nameserverdown_Incr()
+    virtual inline void req_type_nameserverstop_Incr()
     {
-        req_type_nameserverdown++;
+        req_type_nameserverstop++;
     }
 
     virtual inline void req_type_nameserverinfo_Incr()
@@ -130,9 +130,9 @@ class CMonStats
         req_type_nameserverinfo++;
     }
 
-    virtual inline void req_type_nameserverup_Incr()
+    virtual inline void req_type_nameserverstart_Incr()
     {
-        req_type_nameserverup++;
+        req_type_nameserverstart++;
     }
 
     virtual inline void req_type_nodedown_Incr()
@@ -369,9 +369,9 @@ class CMonStats
     unsigned long long req_type_kill;
     unsigned long long req_type_mount;
     unsigned long long req_type_newprocess;
-    unsigned long long req_type_nameserverdown;
     unsigned long long req_type_nameserverinfo;
-    unsigned long long req_type_nameserverup;
+    unsigned long long req_type_nameserverstart;
+    unsigned long long req_type_nameserverstop;
     unsigned long long req_type_nodedown;
     unsigned long long req_type_nodeinfo;
     unsigned long long req_type_nodeup;
