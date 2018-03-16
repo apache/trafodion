@@ -45,7 +45,7 @@ FLAGS+= -UNDEBUG
 # Uncomment the following line to see which compiler option controls
 #   a particular diagnostic (GNU compiler).
 # FLAGS+= -fdiagnostics-show-option
-FLAGS+= -Wall -Wextra
+FLAGS+= -Wall -Wextra -Werror
 
 # Flags for use in compiling Seabed trace modules
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
