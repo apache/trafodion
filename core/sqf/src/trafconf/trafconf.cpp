@@ -59,11 +59,11 @@ typedef enum {
     TrafConfType_PersistConfig,       // Display all persist configuration keys and attributes
 
     TrafConfType_PersistConfigKeys,   // Display persist configuration keys
-    // PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN
+    // PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,TNS,QMN
 
     TrafConfType_PersistConfigKey,    // Display persist configuration attributes of a 'key'
     // { <persist-prefix>_PROCESS_NAME    = {$<string><nid-format>} }
-    // [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG} ]
+    // [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG|TNS} ]
     // { <persist-prefix>_PROGRAM_NAME    = {<program-name>} }
     // { <persist-prefix>_REQUIRES_DTM    = {Y|N} } 
     // [ <persist-prefix>_STDOUT          = {<file-name-prefix><nid-format>} ]

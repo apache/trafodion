@@ -271,6 +271,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
         case ProcessType_SSMP:
         case ProcessType_TMID:
         case ProcessType_Watchdog:
+        case ProcessType_NameServer:
             Persistent = true;
             break;
         default:
