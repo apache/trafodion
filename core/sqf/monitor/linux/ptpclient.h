@@ -43,7 +43,13 @@ public:
     int  InitializePtpClient( char * mon2monPort );
     int  NewProcess(CProcess* proces, int receiveNode, const char *hostName);
     int  ProcessInit(CProcess *process, void *tag, int result, int receiveNode, const char *hostName);
-
+/* //TRK-TODO 
+ Need methods for these message types:
+            InternalType_Clone
+            InternalType_Open
+            InternalType_Notify
+            InternalType_Exit
+*/
 private:
     int  basePort_;
     char mon2monPortBase_[MAX_PROCESSOR_NAME+100];

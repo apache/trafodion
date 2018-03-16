@@ -529,16 +529,16 @@ void CExtNewProcReq::performRequest()
                                          msg_->u.request.u.new_process.argv );
                     // Replicate the process to other nodes
                     
-/*// TRK-PTP-NEW 
-                    if (NameServerEnabled)
+//TRK-TODO 
+         /*           if (NameServerEnabled)
                     {
                         PtpClient->NewProcess(process, lnode->GetNid(), lnode->GetNode()->GetName());
                     }
                     else
-                    {
-*/                      CReplProcess *repl = new CReplProcess(process);
+         */         {
+                        CReplProcess *repl = new CReplProcess(process);
                         Replicator.addItem(repl);
-  //                  }
+                    }
                 }
             }
             if (process)
