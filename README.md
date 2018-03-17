@@ -1,5 +1,5 @@
 # Apache Trafodion
-![trafodion logo](http://trafodion.apache.org/images/logos/trafodion-logo.jpg)
+![trafodion logo](https://trafodion.apache.org/images/logos/trafodion-logo.jpg)
 
 Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or 
 operational workloads on Hadoop.  The name "Trafodion" (the Welsh word for 
@@ -14,17 +14,17 @@ Hadoop.
 
   - documentation for this release can be viewed on the Apache Trafodion wiki page: 
   
-  http://trafodion.apache.org/documentation.html
+  https://trafodion.apache.org/documentation.html
 
   - release notes describing changes for particular releases can be viewed:
   
-  http://trafodion.apache.org/release-notes.html
+  https://trafodion.apache.org/release-notes.html
 
-  - the latest Apache Trafodion can be downloaded from the Apache
-    distribution site or accessed from git:
+  - the latest Apache Trafodion can be downloaded from an Apache
+    mirror site or accessed from git:
 
     - download site:
-      https://dist.apache.org/repos/dist/release/trafodion
+      https://www.apache.org/dyn/closer.lua/trafodion
 
     - git site:
       `git@github.com:apache/trafodion`
