@@ -10,7 +10,7 @@
 * "License"); you may not use this file except in compliance
 * with the License.  You may obtain a copy of the License at
 *
-*   http://www.apache.org/licenses/LICENSE-2.0
+*   https://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing,
 * software distributed under the License is distributed on an
@@ -28,7 +28,7 @@ This guide describes how to provision the end-user {project-name} binaries on to
 (see {docs-url}/client_install/index.html[{project-name} Client Installation Guide]) or via application code you write.
 
 If you want to install a Trafodion developer-build environment, then please refer to the 
-http://trafodion.incubator.apache.org/contributing-redirect.html[Trafodion Contributor Guide] for instructions.
+https://trafodion.incubator.apache.org/contributing-redirect.html[Trafodion Contributor Guide] for instructions.
 
 == Intended Audience
 This guide assumes that you are well-versed in Linux and Hadoop administration. If you don't have such experience, then

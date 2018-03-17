@@ -14,17 +14,17 @@ Hadoop.
 
   - documentation for this release can be viewed on the Apache Trafodion wiki page: 
   
-  http://trafodion.apache.org/documentation.html
+  https://trafodion.apache.org/documentation.html
 
   - release notes describing changes for particular releases can be viewed:
   
-  http://trafodion.apache.org/release-notes.html
+  https://trafodion.apache.org/release-notes.html
 
   - the latest Apache Trafodion can be downloaded from Apache
     distribution site or accessed from git:
 
     - download site:
-      https://dist.apache.org/repos/dist/release/trafodion
+      https://www.apache.org/dyn/closer.lua/trafodion
 
     - git site:
       `git@github.com:apache/trafodion`
