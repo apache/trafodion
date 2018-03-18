@@ -3168,13 +3168,8 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             defaultClass = COM_IDENTITY_GENERATED_BY_DEFAULT;
         }
       else if (ie == NULL)
-        if (colNode->getComputedDefaultExpr().isNull() && colNode->getDefaultExprString().isNull())
+        if (colNode->getComputedDefaultExpr().isNull())
           defaultClass = COM_NO_DEFAULT;
-        else if(!colNode->getDefaultExprString().isNull())
-          {
-            defaultClass = COM_FUNCTION_DEFINED_DEFAULT;
-            defVal = colNode->getDefaultExprString();
-          }
         else
           {
             defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
@@ -3186,6 +3181,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             else
               CMPASSERT(0);
           }
+      else if (!colNode->getDefaultExprString().isNull())
+        {
+            defaultClass = COM_FUNCTION_DEFINED_DEFAULT;
+            defVal = colNode->getDefaultExprString();
+        }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;

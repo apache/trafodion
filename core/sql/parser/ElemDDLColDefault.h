@@ -108,7 +108,7 @@ public:
   // mutator
   virtual void setChild(Lng32 index, ExprNode * pChildNode);
   inline  void setDefaultValueExpr(ItemExpr * pDefaultValueExpr);
-  inline  void setDefaultExprString(NAString &str);
+  inline  void setDefaultExprString(const NAString &str);
   inline void  setSGOptions(ElemDDLSGOptions * pSGOptions);
   inline void setSGLocation(NAString *pLocation);
   inline void setComputedDefaultExpr(const NAString &computedDefaultExpr);
@@ -165,7 +165,7 @@ ElemDDLColDefault::setDefaultValueExpr(ItemExpr * pDefaultValueExpr)
 }
 
 inline void
-ElemDDLColDefault::setDefaultExprString(NAString &str)
+ElemDDLColDefault::setDefaultExprString(const NAString &str)
 {
   defaultExprString_ = str;
 }

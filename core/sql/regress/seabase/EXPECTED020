@@ -3945,4 +3945,35 @@ AAAA                       ?            2
 
 --- 1 row(s) selected.
 >>
+>>obey TEST020(trafodion_2335);
+>>--create seqence test020_seq;
+>>create table test020t45(a  largeint not null default unix_timestamp(),
++>                        b  char(36) not null default uuid(),
++>                        c  varchar(10) default to_char(sysdate,'YYYYMMDD'),
++>                        --support sequence as default in next check-in
++>                        --d  int not null default testi020_seq.nextval,
++>                        e  int );
+
+--- SQL operation complete.
+>>insert into test020t45(e) values(1),(2),(3);
+
+--- 3 row(s) inserted.
+>>select count(*) from test020t45 where c = to_char(sysdate,'YYYYMMDD');
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>--negative tests
+>>--the function is not variable-free, so should fail
+>>create table test020t45(a  largeint not null default unix_timestamp(),
++>                        b  varchar(10) default to_char(test020t45.c,'YYYYMMDD'),
++>                        e  int );
+
+*** ERROR[1084] An invalid default value was specified for column B.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>log;

@@ -940,7 +940,7 @@ create table test020t45(a  largeint not null default unix_timestamp(),
                         --d  int not null default testi020_seq.nextval,
                         e  int );
 insert into test020t45(e) values(1),(2),(3);
-select * from test020t45;
+select count(*) from test020t45 where c = to_char(sysdate,'YYYYMMDD');
 --negative tests
 --the function is not variable-free, so should fail
 create table test020t45(a  largeint not null default unix_timestamp(),

@@ -8741,9 +8741,25 @@ datetime_value_function : TOK_CURDATE '(' ')'
 /* type item */
 datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
                                {
-
-                                $$ = new (PARSERHEAP()) 
+                                 NAString * ves= unicodeToChar
+                                   (ToTokvalPlusYYText(&$3)->yytext,
+                                   ToTokvalPlusYYText(&$3)->yyleng,
+                                   (CharInfo::CharSet) (
+                                          ComGetNameInterfaceCharSet() // CharInfo::UTF8
+                                          ),
+                                   PARSERHEAP()); 
+                                 //save the original text
+                                 NAString fullstr;
+                                 fullstr  += "TO_CHAR(";
+                                 //Column Reference will not be able to convert to NAString
+                                 //And it is not be allowed bo become default value, so no need to save original text 
+                                 if( ves != NULL) 
+                                 {
+                                   fullstr += *ves + ", '" +  *$5 + "')";
+                                 }
+                                 $$ = new (PARSERHEAP()) 
                                    DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
+                                 ((DateFormat *)$$)->setOriginalString(fullstr);
                                }
 
 /* type item */
@@ -25812,11 +25828,8 @@ col_def_default_clause_argument : literal_negatable
                                   $$ = new (PARSERHEAP())
 				    ElemDDLColDefault(
                                        ElemDDLColDefault::COL_FUNCTION_DEFAULT);
-                                  ItemExpr * firstItem = $1;
-                                  NAString unparsed(PARSERHEAP());
-                                  firstItem->unparse(unparsed); // expression as ascii string
 
-                                  ((ElemDDLColDefault *)$$)->setDefaultExprString(unparsed);
+                                  ((ElemDDLColDefault *)$$)->setDefaultExprString( (const NAString &)((DateFormat*)$1)->getOriginalString());
                                   ((ElemDDLColDefault *)$$)->setDefaultValueExpr($1);
                                 }
                       | builtin_function_user
