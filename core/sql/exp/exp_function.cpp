@@ -2550,7 +2550,7 @@ ex_expr::exp_return_type ex_function_sleep::eval(char *op_data[],
       break;
       
     case REC_BIN32_SIGNED:
-      *(Lng32 *)sec = labs(*(Lng32 *)op_data[1]);
+      sec = *(Lng32 *)op_data[1];
       if(sec < 0 )
       {
         ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
