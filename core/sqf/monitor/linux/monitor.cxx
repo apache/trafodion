@@ -78,6 +78,7 @@ using namespace std;
 #include "redirector.h"
 #include "intprocess.h"
 #include "nameserver.h"
+#include "meas.h"
 
 #include "reqqueue.h"
 #include "reqworker.h"
@@ -175,7 +176,7 @@ RobSem * sbDiscSem = NULL;
 #endif
 int monitorArgc = 0;
 char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
-
+CMeas Meas;
 
 
 #ifdef NAMESERVER_PROCESS

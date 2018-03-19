@@ -228,6 +228,7 @@ MONITOROBJS += $(OUTDIR)/CommonLogger.o
 MONITOROBJS += $(OUTDIR)/zclient.o
 MONITOROBJS += $(OUTDIR)/type2str.o
 MONITOROBJS += $(OUTDIR)/ptpclient.o
+MONITOROBJS += $(OUTDIR)/meas.o
 
 NSOBJS = $(OUTDIR)/versns.o
 NSOBJS += $(OUTDIR)/nsmonitor.o
@@ -275,6 +276,7 @@ NSOBJS += $(OUTDIR)/monrobsem.o
 NSOBJS += $(OUTDIR)/CommonLogger.o
 NSOBJS += $(OUTDIR)/zclient.o
 NSOBJS += $(OUTDIR)/type2str.o
+NSOBJS += $(OUTDIR)/meas.o
 
 
 SHELLOBJS = $(OUTDIR)/shell.o
@@ -461,7 +463,7 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-#.NOTPARALLEL:
+.NOTPARALLEL:
 
 all: programs examples
 

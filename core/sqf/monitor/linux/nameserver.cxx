@@ -48,6 +48,7 @@ using namespace std;
 #include "monlogging.h"
 #include "montrace.h"
 #include "nameserverconfig.h"
+#include "meas.h"
 
 extern CNode *MyNode;
 extern CProcess *NameServerProcess;
@@ -55,6 +56,7 @@ extern CNodeContainer *Nodes;
 extern bool IsRealCluster;
 extern int MyPNID;
 extern CNameServerConfigContainer *NameServerConfig;
+extern CMeas Meas;
 
 CNameServer::CNameServer( void )
 : mon2nsSock_(-1)
@@ -715,6 +717,7 @@ int CNameServer::SockReceive( char *buf, int size )
                               , buf
                               , sizeCount
                               , 0 );
+        if ( readCount > 0 ) Meas.addSockNsRcvdBytes( readCount );
     
         if ( trace_settings & TRACE_NS )
         {
@@ -789,6 +792,7 @@ int CNameServer::SockSend( char *buf, int size )
                               , buf
                               , size
                               , 0 );
+        if ( sendCount > 0 ) Meas.addSockNsSentBytes( sendCount );
     
         if ( trace_settings & TRACE_NS )
         {

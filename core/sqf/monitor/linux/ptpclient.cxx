@@ -47,9 +47,11 @@ using namespace std;
 #include "ptpclient.h"
 #include "monlogging.h"
 #include "montrace.h"
+#include "meas.h"
 
 extern CNode *MyNode;
 extern bool IsRealCluster;
+extern CMeas Meas;
 
 CPtpClient::CPtpClient (void)
 : mon2monSock_(0)
@@ -373,6 +375,7 @@ int CPtpClient::ReceiveSock(char *buf, int size, int sockFd)
                               , buf
                               , sizeCount
                               , 0 );
+        if ( readCount > 0 ) Meas.addSockPtpRcvdBytes( readCount );
     
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
@@ -444,6 +447,7 @@ int CPtpClient::SendSock(char *buf, int size, int sockFd)
                               , buf
                               , size
                               , 0 );
+        if ( sendCount > 0 ) Meas.addSockPtpSentBytes( sendCount );
     
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {

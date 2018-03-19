@@ -380,22 +380,6 @@ private:
     int minMonConnPnid_;
 #endif
 
-    long measSockAllGatherRcvdBytes_;
-    long measSockAllGatherRcvdBytesCurr_;
-    long measSockAllGatherSentBytes_;
-    long measSockAllGatherSentBytesCurr_;
-    long measSockAllGatherSent_;
-    long measSockAllGatherSentCurr_;
-    long measSockRcvdBytes_;
-    long measSockRcvdBytesCurr_;
-    long measSockSentBytes_;
-    long measSockSentBytesCurr_;
-    long measSockSent_;
-    long measSockSentCurr_;
-    int  measSockTimeElapsedUsec_;
-    long measSockTimeSecCurr_;
-    int  measSockTimeUsecCurr_;
-
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
     int AllgatherSock(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
@@ -442,9 +426,6 @@ private:
     void EpollCtlDelete( int efd, int fd, struct epoll_event *event );
     int  MkSrvSock( int *pport );
     int  MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port );
-    void TraceMeas( void );
-    void TraceMeasFmt( char *buf, long count );
-    void TraceMeasRateFmt( char *buf, long elapsed, long count );
 
 };
 
