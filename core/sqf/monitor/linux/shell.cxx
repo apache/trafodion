@@ -8252,6 +8252,10 @@ void persist_kill_cmd( char *cmd )
                 {
                     printf ("[%s] Persist process kill of a WDG process type is not allowed!\n", MyName);
                 }
+                else if (persistConfig->GetProcessType() == ProcessType_NameServer)
+                {
+                    printf ("[%s] Persist process kill of a TNS process type is not allowed!\n", MyName);
+                }
                 else if (persistConfig->GetProcessType() == ProcessType_PSD)
                 {
                     printf ("[%s] Persist process kill of a PSD process type is not allowed!\n", MyName);

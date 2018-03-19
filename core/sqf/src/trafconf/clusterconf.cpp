@@ -261,6 +261,10 @@ TcProcessType_t CClusterConfig::GetProcessType( const char *processtype )
     {
         return(ProcessType_Watchdog);
     }
+    else if (strcmp( "TNS", processtype) == 0)
+    {
+        return(ProcessType_NameServer);
+    }
     else if (strcmp( "MXOSRVR", processtype) == 0)
     {
         return(ProcessType_MXOSRVR);
