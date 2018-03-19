@@ -37,38 +37,53 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
     if (!msg->noreply) // send reply
     {
         int size = offsetof(message_def, u.reply.u);
-        const char *rtype;
         switch (msg->u.reply.type)
         {
         case ReplyType_Generic:
             size += sizeof(struct Generic_reply_def);
-            rtype = "Generic";
-            break;
-        case ReplyType_DelProcessNs:
-            size += sizeof(struct DelProcessNs_reply_def);
-            rtype = "DelProcessNs";
-            break;
-        case ReplyType_NewProcessNs:
-            size += sizeof(struct NewProcessNs_reply_def);
-            rtype = "NewProcessNs";
-            break;
-        case ReplyType_ProcessInfo:
-            size += sizeof(struct ProcessInfo_reply_def);
-            rtype = "ProcessInfo";
-            break;
-        default:
-            rtype = "?";
-            abort();
-        }
-        if (trace_settings & (TRACE_PROCESS_DETAIL))
-        {
-            trace_printf("%s@%d reply type=%d(%s), size=%d, sock=%d\n", method_name, __LINE__,
-                         msg->u.reply.type, rtype, size, sockFd);
-            if ( msg->u.reply.type == ReplyType_Generic )
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
             {
+                trace_printf("%s@%d reply type=%d(Generic), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
                 trace_printf("%s@%d generic reply. rc=%d\n", method_name, __LINE__,
                              msg->u.reply.u.generic.return_code);
             }
+            break;
+        case ReplyType_DelProcessNs:
+            size += sizeof(struct DelProcessNs_reply_def);
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d reply type=%d(DelProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
+            }
+            break;
+        case ReplyType_NewProcessNs:
+            size += sizeof(struct NewProcessNs_reply_def);
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d reply type=%d(NewProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
+            }
+            break;
+        case ReplyType_ProcessInfo:
+            size += sizeof(struct ProcessInfo_reply_def);
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d reply type=%d(ProcessInfo), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
+                trace_printf("%s@%d process-info reply. num_processes=%d, more_data=%d, rc=%d\n", method_name, __LINE__,
+                             msg->u.reply.u.process_info.num_processes,
+                             msg->u.reply.u.process_info.more_data,
+                             msg->u.reply.u.process_info.return_code);
+            }
+            break;
+        default:
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d reply type=%d(?), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
+            }
+            abort();
         }
         int rc = Monitor->SendSock( (char *) &size
                                   , sizeof(size)
