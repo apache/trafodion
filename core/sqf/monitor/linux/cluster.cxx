@@ -699,10 +699,28 @@ CCluster::CCluster (void)
       ,minMonConnCount_(0)
       ,minMonConnPnid_(-1)
 #endif
+      ,measSockAllGatherRcvdBytes_(0)
+      ,measSockAllGatherRcvdBytesCurr_(0)
+      ,measSockAllGatherSentBytes_(0)
+      ,measSockAllGatherSentBytesCurr_(0)
+      ,measSockAllGatherSent_(0)
+      ,measSockAllGatherSentCurr_(0)
+      ,measSockRcvdBytes_(0)
+      ,measSockRcvdBytesCurr_(0)
+      ,measSockSentBytes_(0)
+      ,measSockSentBytesCurr_(0)
+      ,measSockSent_(0)
+      ,measSockSentCurr_(0)
+      ,measSockTimeElapsedUsec_(0)
 {
     int i;
     const char method_name[] = "CCluster::CCluster";
     TRACE_ENTRY;
+
+    struct timeval traceTime;
+    gettimeofday( &traceTime, NULL );
+    measSockTimeSecCurr_ = traceTime.tv_sec;
+    measSockTimeUsecCurr_ = traceTime.tv_usec;
 
     configMaster_ = -1;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD,MPI_ERRORS_RETURN);
@@ -5497,6 +5515,11 @@ read_again:
                                     , peer->p_n2recv );
                     }
                     nr = recv( fd, r, n2get, 0 );
+                    if ( nr > 0 )
+                    {
+                        measSockAllGatherRcvdBytes_ += nr;
+                        measSockAllGatherRcvdBytesCurr_ += nr;
+                    }
                     if ( nr >= 0 || errno == EINTR ) break;
                 }
                 if ( nr < 0 )
@@ -5621,6 +5644,15 @@ read_again:
                                     , peer->p_n2recv );
                     }
                     ns = send( fd, s, n2send, 0 );
+                    if ( ns > 0 )
+                    {
+                        measSockAllGatherSentBytes_ += ns;
+                        measSockAllGatherSentBytesCurr_ += ns;
+                        measSockAllGatherSent_++;
+                        measSockAllGatherSentCurr_++;
+                    }
+                    if (trace_settings & TRACE_MEAS)
+                        TraceMeas();
                     if ( ns >= 0 || errno != EINTR ) break;
                 }
                 if ( ns < 0 )
@@ -9578,6 +9610,11 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd, const char *desc)
                               , buf
                               , sizeCount
                               , 0 );
+        if ( readCount > 0 )
+        {
+            measSockRcvdBytes_ += readCount;
+            measSockRcvdBytesCurr_ += readCount;
+        }
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
@@ -9653,6 +9690,15 @@ int CCluster::SendSock(char *buf, int size, int sockFd, const char *desc)
                               , buf
                               , size
                               , 0 );
+        if ( sendCount > 0 )
+        {
+            measSockSentBytes_ += sent;
+            measSockSentBytesCurr_ += sent;
+            measSockSent_++;
+            measSockSentCurr_++;
+        }
+        if (trace_settings & TRACE_MEAS)
+            TraceMeas();
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
@@ -9702,4 +9748,139 @@ int CCluster::SendSock(char *buf, int size, int sockFd, const char *desc)
 
     TRACE_EXIT;
     return error;
+}
+
+void CCluster::TraceMeas( void )
+{
+    const char method_name[] = "CCluster::TraceMeas";
+    enum { MEAS_COUNT = 100 };
+    enum { MEAS_TIME = 10 };
+
+    if ( ( measSockSentCurr_ > MEAS_COUNT ) ||
+         ( measSockAllGatherSentCurr_ > MEAS_COUNT ) )
+    {
+        measSockSentCurr_ = 0;
+        measSockAllGatherSentCurr_ = 0;
+        struct timeval traceTime;
+        gettimeofday( &traceTime, NULL );
+        long elapsed = traceTime.tv_sec * 1000000 + traceTime.tv_usec -
+          measSockTimeSecCurr_ * 1000000 - measSockTimeUsecCurr_;
+        if ( elapsed >= MEAS_TIME )
+        {
+            measSockTimeElapsedUsec_ += elapsed;
+            int elapsedSec = measSockTimeElapsedUsec_ / 1000000;
+            int elapsedUsec = measSockTimeElapsedUsec_ - elapsedSec * 1000000;
+            int elapsedCurrSec = elapsed / 1000000;
+            int elapsedCurrUsec = elapsed - elapsedCurrSec * 1000000;
+            char tAgSent[20];
+            char tAgRcvd[20];
+            char tSent[20];
+            char tRcvd[20];
+            TraceMeasFmt( tAgSent, measSockAllGatherSentBytes_ );
+            TraceMeasFmt( tAgRcvd, measSockAllGatherRcvdBytes_ );
+            TraceMeasFmt( tSent, measSockSentBytes_ );
+            TraceMeasFmt( tRcvd, measSockRcvdBytes_ );
+            trace_printf( "%s@%d - elapsed=%d.%06d, CUMUL-agSent=%ld(%s), agRcvd=%ld(%s), sent=%ld(%s), rcvd=%ld(%s)\n"
+                        , method_name, __LINE__
+                        , elapsedSec
+                        , elapsedUsec
+                        , measSockAllGatherSentBytes_
+                        , tAgSent
+                        , measSockAllGatherRcvdBytes_
+                        , tAgRcvd
+                        , measSockSentBytes_
+                        , tSent
+                        , measSockRcvdBytes_
+                        , tRcvd
+                        );
+            char tAgSentCurr[20];
+            char tAgRcvdCurr[20];
+            char tSentCurr[20];
+            char tRcvdCurr[20];
+            TraceMeasFmt( tAgSentCurr, measSockAllGatherSentBytesCurr_ );
+            TraceMeasFmt( tAgRcvdCurr, measSockAllGatherRcvdBytesCurr_ );
+            TraceMeasFmt( tSentCurr, measSockSentBytesCurr_ );
+            TraceMeasFmt( tRcvdCurr, measSockRcvdBytesCurr_ );
+            char tAgSentRate[20];
+            char tAgRcvdRate[20];
+            char tSentRate[20];
+            char tRcvdRate[20];
+            TraceMeasRateFmt( tAgSentRate, elapsed, measSockAllGatherSentBytesCurr_ );
+            TraceMeasRateFmt( tAgRcvdRate, elapsed, measSockAllGatherRcvdBytesCurr_ );
+            TraceMeasRateFmt( tSentRate, elapsed, measSockSentBytesCurr_ );
+            TraceMeasRateFmt( tRcvdRate, elapsed, measSockRcvdBytesCurr_ );
+            trace_printf( "%s@%d - elapsed=%d.%06d, CUR-agSent=%ld(%s-%s), agRcvd=%ld(%s-%s), sent=%ld(%s-%s), rcvd=%ld(%s-%s)\n"
+                        , method_name, __LINE__
+                        , elapsedCurrSec
+                        , elapsedCurrUsec
+                        , measSockAllGatherSentBytesCurr_
+                        , tAgSentCurr
+                        , tAgSentRate
+                        , measSockAllGatherRcvdBytesCurr_
+                        , tAgRcvdCurr
+                        , tAgRcvdRate
+                        , measSockSentBytesCurr_
+                        , tSentCurr
+                        , tSentRate
+                        , measSockRcvdBytesCurr_
+                        , tRcvdCurr
+                        , tRcvdRate
+                        );
+            measSockTimeSecCurr_ = traceTime.tv_sec;
+            measSockTimeUsecCurr_ = traceTime.tv_usec;
+            measSockAllGatherSentBytesCurr_ = 0;
+            measSockAllGatherRcvdBytesCurr_ = 0;
+            measSockSentBytesCurr_ = 0;
+            measSockRcvdBytesCurr_ = 0;
+        }
+    }
+}
+
+void CCluster::TraceMeasFmt( char *buf, long count )
+{
+    if ( count < 1000 )
+        sprintf( buf, "%ld", count );
+    else if ( count < 1000000 )
+    {
+        long kCount = count / 1000;
+        long kCount10 = count / 100;
+        sprintf( buf, "%ld.%01ldK", kCount, kCount10 - kCount * 10);
+    }
+    else if ( count < 1000000000 )
+    {
+        long mCount = count / 1000000;
+        long mCount10 = count / 100000;
+        sprintf( buf, "%ld.%01ldM", mCount, mCount10 - mCount * 10);
+    }
+    else
+    {
+        long mCount = count / 1000000000;
+        long mCount10 = count / 100000000;
+        sprintf( buf, "%ld.%01ldG", mCount, mCount10 - mCount * 10);
+    }
+}
+
+void CCluster::TraceMeasRateFmt( char *buf, long elapsed, long count )
+{
+    long bps = count * 1000000 / elapsed;
+    if ( bps < 1000 )
+        sprintf( buf, "%ldB/s", bps );
+    else if ( bps < 1000000 )
+    {
+        long kCount = bps / 1000;
+        long kCount10 = bps / 100;
+        sprintf( buf, "%ld.%01ldKB/s", kCount, kCount10 - kCount * 10);
+    }
+    else if ( bps < 1000000000 )
+    {
+        long mCount = bps / 1000000;
+        long mCount10 = bps / 100000;
+        sprintf( buf, "%ld.%01ldMB/s", mCount, mCount10 - mCount * 10);
+    }
+    else
+    {
+        long mCount = bps / 1000000000;
+        long mCount10 = bps / 100000000;
+        sprintf( buf, "%ld.%01ldGB/s", mCount, mCount10 - mCount * 10);
+    }
 }
