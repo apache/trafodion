@@ -150,67 +150,109 @@ See the individual entry for the function.
 == Datetime Functions
 
 These functions use either a datetime value expression as an argument or
-return a result of datetime data type:
+return a result of DATETIME, VALUE or CHAR:
 
-[cols="25%,75%"]
+[caption="Table 7-3 "]
+.Overview of DATETIME Functions
+[cols="25%,50%,25%"]
 |===
+| *Name* | *Description* | *Return Data Type*
 | <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_
 to _datetime_expr_ and normalizes the result.
+| DATE
 | <<converttimestamp_function,CONVERTTIMESTAMP Function>>                   | Converts a Julian timestamp to a TIMESTAMP value.
+| TIMESTAMP
 | <<current_function,CURRENT Function>> | Returns the current timestamp. You can also use the
 <<current_timestamp_function,CURRENT_TIMESTAMP Function>>.
+| TIMESTAMP
 | <<current_date_function,CURRENT_DATE Function>>                           | Returns the current date.
+| DATE
 | <<current_time_function,CURRENT_TIME Function>>                           | Returns the current time.
+| TIME
 | <<current_timestamp_function,CURRENT_TIMESTAMP Function>> | Returns the current timestamp. You can also use the <<current_function,CURRENT Function>>.
+| TIMESTAMP
 | <<date_add_function,DATE_ADD Function>>                                   | Adds the interval specified by _interval_expression_
 to _datetime_expr_.
+| DATE
 | <<date_part_function_of_an_interval,DATE_PART Function (of an Interval)>> | Extracts the datetime field specified by _text_ from the interval value
 specified by interval and returns the result as an exact numeric value.
+| NUMERIC VALUE
 | <<date_part_function_of_a_timestamp,DATE_PART Function (of a Timestamp)>> | Extracts the datetime field specified by _text_ from the datetime value
 specified by timestamp and returns the result as an exact numeric value.
+| NUMERIC VALUE
 | <<date_sub_function,DATE_SUB Function>>                                   | Subtracts the specified _interval_expression_ from
 _datetime_expr._
+| DATE or TIMESTAMP
 | <<date_trunc_function,DATE_TRUNC Function>>                               | Returns the date with the time portion of the day truncated.
+| TIMESTAMP
 | <<dateadd_function,DATEADD Function>>                                     | Adds the interval specified by _datepart_ and _num_expr_
 to _datetime_expr_.
+| DATE or TIMESTAMP
 | <<datediff_function,DATEDIFF Function>>                                   | Returns the integer value for the number of _datepart_ units of time
 between _startdate_ and _enddate_.
+| INTEGER VALUE
 | <<dateformat_function,DATEFORMAT Function>>                               | Formats a datetime value for display purposes.
+| CHAR
 | <<day_function,DAY Function>>                                             | Returns an integer value in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAYOFMONTH.
+| INTEGER VALUE (from 1 to 31)
 | <<dayname_function,DAYNAME Function>>                                     | Returns the name of the day of the week from a date or timestamp
 expression.
+| CHAR
 | <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer value in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAY.
+| INTEGER VALUE (from 1 to 31)
 | <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer value in the range 1 through 7 that represents the
 corresponding day of the week.
+| INTEGER VALUE (from 1 to 7)
 | <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer value in the range 1 through 366 that represents the
 corresponding day of the year.
+| INTEGER VALUE (from 1 to 366)
 | <<extract_function,EXTRACT Function>>                                     | Returns a specified datetime field from a datetime value expression or
 an interval value expression.
+| NUMERIC VALUE
 | <<hour_function,HOUR Function>>                                           | Returns an integer value in the range 0 through 23 that represents the
 corresponding hour of the day.
+| INTEGER VALUE (from 0 to 23)
 | <<juliantimestamp_function,JULIANTIMESTAMP Function>>                     | Converts a datetime value to a Julian timestamp.
+| TIMESTAMP
 | <<minute_function,MINUTE Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
 corresponding minute of the hour.
+| INTEGER VALUE (from 0 to 59)
 | <<month_function,MONTH Function>>                                         | Returns an integer value in the range 1 through 12 that represents the
 corresponding month of the year.
+| INTEGER VALUE (from 1 to 12)
 | <<monthname_function,MONTHNAME Function>>                                 | Returns a character literal that is the name of the month of the year
 (January, February, and so on).
+| CHAR
 | <<quarter_function,QUARTER Function>>                                     | Returns an integer value in the range 1 through 4 that represents the
 corresponding quarter of the year.
+| INTEGER VALUE (from 1 to 4)
 | <<second_function,SECOND Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
 corresponding second of the minute.
+| INTEGER VALUE (from 0 to 59)
+| <<sysdate_function,SYSDATE Function>>                                     | Retrieves the current date of the server rather than the session.
+| DATE
+| <<systimestamp_function,SYSTIMESTAMP Function>>                           | Retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+| TIMESTAMP
 | <<timestampadd_function,TIMESTAMPADD Function>>                           | Adds the interval of time specified by _interval-ind_ and
 _num_expr_ to _datetime_expr_.
+| DATE or TIMESTAMP
 | <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_units of time between _startdate_ and _enddate_.
+| INTEGER VALUE 
 | <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
+| CHAR
 | <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
+| DATE or TIMESTAMP
 | <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
+| TIME
 | <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
+| TIMESTAMP
 | <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
 corresponding week of the year.
+| INTEGER VALUE (from 1 to 54)
 | <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
+| INTEGER VALUE
 |===
 
 See the individual entry for the function.
@@ -2883,7 +2925,7 @@ The DAYNAME function returns the name of the day in ISO88591.
 
 Return the name of the day of the week from the start date column in the
 project table:
-+
+
 ```
 SELECT start_date, ship_timestamp, DAYNAME(start_date)
 FROM persnl.project
