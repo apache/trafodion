@@ -20,23 +20,20 @@
 #
 # @@@ END COPYRIGHT @@@
 
-if [ $# -lt 1 ]; then
-	echo "gohost <line>"
-	exit 1
-fi
-line=$1
-shift
-# showConfigDb -x' outputs something like:
-#   Physical nodes:
-#   pnid=0, node-name=n1, excluded-cores=-1 -1
-#   pnid=1, node-name=n2, excluded-cores=-1 -1
-# first grep trims output to something like:
-#   pnid=0, node-name=n1, excluded-cores=-1 -1
-#   pnid=1, node-name=n2, excluded-cores=-1 -1
-# sed trims output to something like:
-#   pnid=1, node-name=n2, excluded-cores=-1 -1
-# first cut trims output to something like:
-#   node-name=n2
-# second cut trims output to something like:
-#   n2
-showConfigDb -x | grep -v excFirstCore | grep -v Physical | sed -n -e "$line p" | cut -d, -f2|cut -d= -f2
+rm -f core.* sbt*
+maxnodes=8
+for arg in $*; do
+	if [ $maxnodes = x ]; then
+		maxnodes=$arg
+	fi
+	if [ "$arg" = -maxnodes ]; then
+	    maxnodes=x
+	fi
+done
+
+. ./gosetup
+./godb $maxnodes
+go69mon -start
+sleep 4
+t286ms -master $*
+#go69mon -stop
