@@ -20,8 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-rm -f core.* sbt*
-maxnodes=8
+maxnodes=4
 for arg in $*; do
 	if [ $maxnodes = x ]; then
 		maxnodes=$arg
@@ -36,4 +35,4 @@ done
 go69mon -start
 sleep 4
 t286ms -master $*
-#go69mon -stop
+go69mon -stop
