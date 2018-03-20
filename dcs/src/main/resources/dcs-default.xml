@@ -386,4 +386,33 @@
         Timeout minutes between first and max times (6 default) DCS Server startup MXOSRVR.
     </description>
   </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.status</name>
+    <value>enable</value>
+    <description>
+        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.idletime</name>
+    <value>300</value>
+    <description>
+        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.intervaltime</name>
+    <value>5</value>
+    <description>
+        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.retrycount</name>
+    <value>3</value>
+    <description>
+        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+    </description>
+  </property>
+
 </configuration>

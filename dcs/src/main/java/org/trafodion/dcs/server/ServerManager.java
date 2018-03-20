@@ -83,6 +83,10 @@ public final class ServerManager implements Callable {
     private int maxRestartAttempts;
     private int retryIntervalMillis;
     private String nid = null;
+    private static String mxosrvrKeepaliveStatus;
+    private static int mxosrvrKeepaliveIdletime;
+    private static int mxosrvrKeepaliveIntervaltime;
+    private static int mxosrvrKeepaliveRetrycount;
 
     class RegisteredWatcher implements Watcher {
         CountDownLatch startSignal;
@@ -205,6 +209,14 @@ public final class ServerManager implements Callable {
                             "-PORTMAPTOSECS " + userProgPortMapToSecs + " ")
                     .replace("-PORTBINDTOSECS",
                             "-PORTBINDTOSECS " + userProgPortBindToSecs)
+                    .replace("-TCPKEEPALIVESTATUS",
+                            "-TCPKEEPALIVESTATUS " + mxosrvrKeepaliveStatus + " ")
+                    .replace("-TCPKEEPALIVEIDLETIME",
+                            "-TCPKEEPALIVEIDLETIME " + mxosrvrKeepaliveIdletime + " ")
+                    .replace("-TCPKEEPALIVEINTERVAL",
+                            "-TCPKEEPALIVEINTERVAL " + mxosrvrKeepaliveIntervaltime + " ")
+                    .replace("-TCPKEEPALIVERETRYCOUNT",
+                            "-TCPKEEPALIVERETRYCOUNT " + mxosrvrKeepaliveRetrycount + " ")
                     .replace("&lt;", "<").replace("&amp;", "&")
                     .replace("&gt;", ">");
             scriptContext.setCommand(command);
@@ -348,6 +360,18 @@ public final class ServerManager implements Callable {
         this.retryIntervalMillis = conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
+        this.mxosrvrKeepaliveStatus = conf.get(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_STATUS,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_STATUS);
+        this.mxosrvrKeepaliveIdletime = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_IDLETIME,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_IDLETIME);
+        this.mxosrvrKeepaliveIntervaltime = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_INTERVALTIME,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_INTERVALTIME);
+        this.mxosrvrKeepaliveRetrycount = conf.getInt(
+                Constants.DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_RETRYCOUNT,
+                Constants.DCS_SERVER_PROGRAM_KEEPALIVE_RETRYCOUNT);
         serverHandlers = new ServerHandler[this.childServers];
     }
 
