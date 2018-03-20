@@ -1128,9 +1128,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
 
-  ContextCli *currContext =
-    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
-    getStatement()->getContext();
+  ExMasterStmtGlobals *masterGlob = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+  ContextCli *currContext = masterGlob->getStatement()->getContext();
   ExTransaction *ta = currContext->getTransaction();
 
 
@@ -1195,8 +1194,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         return rc;
 
         // Set the parserflag to prevent privilege checks in purgedata
-        ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-        ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
         NABoolean parserFlagSet = FALSE;
         if ((masterGlob->getStatement()->getContext()->getSqlParserFlags() & 0x20000) == 0)
         {
@@ -1406,8 +1403,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
           // If the WITH SAMPLE clause is included, set the internal exe util
           // parser flag to allow it.
-          ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-          ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
           NABoolean parserFlagSet = FALSE;
           if (hblTdb().getUpdateStats() && !ustatNonEmptyTable)
           {
@@ -1708,10 +1703,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       else
         diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
 
-      diagsArea->setRowCount(rowsAffected_);
-
       if (getDiagsArea())
         diagsArea->mergeAfter(*getDiagsArea());
+
+      masterGlob->setRowsAffected(rowsAffected_);
 
       up_entry->setDiagsArea(diagsArea);
 

@@ -274,20 +274,14 @@ short ExDDLTcb::work()
             currContext->exHeap()->deallocateMemory((void*)dummyReply);
           if (cpStatus == ExSqlComp::SUCCESS)
             {
-           // CatSQLObjectCache &catCache = CatProcess.getSQLObjectCache();
-           // catCache.cleanupCache();
-              // clear diagsArea of cli context which may have warnings
-              // set when calling cli inside the embedded compiler
-              if (!currContext->diags().getNumber(DgSqlCode::ERROR_))
-                currContext->diags().clear();
               goto endOfData;
             }
           else
             {
               handleErrors(pentry_down, cpDiagsArea, cpStatus);
               //Don't proceed if its an error.
-              if (cpStatus == ExSqlComp::ERROR)
-                goto endOfData;
+              if (cpStatus == ExSqlComp::ERROR) 
+                 goto endOfData;
             }
         }
       else if (getArkcmp())  // regular arkcmp exists
@@ -384,6 +378,14 @@ short ExDDLTcb::work()
 	  
           diagsArea->mergeAfter (*cpDiagsArea);
           up_entry->setDiagsArea(diagsArea);
+          // For now, copy the warnings to currContext diaga area
+          // because ex_root_tcb::execute returns 0 for warnings
+          if (cpDiagsArea->getNumber(DgSqlCode::WARNING_) > 0)
+          {
+             diagsArea = currContext->getDiagsArea();
+             diagsArea->mergeAfter (*cpDiagsArea);
+          }
+          cpDiagsArea->decrRefCount();
         }
 
       up_entry->upState.parentIndex = 

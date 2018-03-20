@@ -150,11 +150,13 @@ void HandleCLIError(SQLSTMT_ID *stmt, Lng32 &error, SqlciEnv *sqlci_env,
 		    NABoolean displayErr, NABoolean * isEOD,
                                Int32 prepcode)
 {
-  Int64 diagsCondCount = 0;
-  if (error == 100) 
+  Int32 diagsCondCount = 0;
+  if (error == 100)
      diagsCondCount = getDiagsCondCount(stmt); 
-  NABoolean getWarningWithEOF = (diagsCondCount > 0); 
-  HandleCLIError(error, sqlci_env, displayErr, isEOD, prepcode, getWarningWithEOF);
+  // Get Warnings only when there are 2 or more conditions.
+  // One condition is for the error code 100 and the others are the actual warnings
+  NABoolean getWarningsWithEOF = (diagsCondCount > 1); 
+  HandleCLIError(error, sqlci_env, displayErr, isEOD, prepcode, getWarningsWithEOF);
 }
 
 void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
@@ -492,17 +494,17 @@ Int64 getRowsAffected(SQLSTMT_ID *stmt)
       return -1;
 }
 
-Int64 getDiagsCondCount(SQLSTMT_ID *stmt)
+Int32 getDiagsCondCount(SQLSTMT_ID *stmt)
 {
    Int32 rc;
-   Int64 diagsCondCount;
+   Int32 diagsCondCount;
    rc = SQL_EXEC_GetDiagnosticsStmtInfo2(stmt,
                            SQLDIAG_NUMBER, &diagsCondCount,
                            NULL, 0, NULL);
-   if (rc == 0)
-      return 0; 
+   if (rc >= 0)
+      return diagsCondCount; 
    else
-      return diagsCondCount;
+      return 0;
 }
 
 static char * upshiftStr(char * inStr, char * outStr, UInt32 len)

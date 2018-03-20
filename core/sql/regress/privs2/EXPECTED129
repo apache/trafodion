@@ -823,7 +823,7 @@ CREATE TABLE TRAFODION.US4.T4
 
 *** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 2) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>revoke select (b) on t3 from sql_user3;
 
 --- SQL operation complete.
@@ -832,7 +832,7 @@ CREATE TABLE TRAFODION.US4.T4
 
 *** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 2) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>
 >>revoke grant option for select (d) on t3 from sql_user3;
 
@@ -842,12 +842,12 @@ CREATE TABLE TRAFODION.US4.T4
 
 *** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 1) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>revoke grant option for select (b) on t3 from sql_user3 cascade;
 
 *** WARNING[1018] Grant of role or privilege SELECT WITH GRANT OPTION (columm number 1) on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>showddl t3;
 
 CREATE TABLE TRAFODION.US4.T3
