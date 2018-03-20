@@ -127,7 +127,6 @@ public:
         // 3. The DEFAULT clause appears.
   
   inline ItemExpr * getDefaultValueExpr() const;
-  inline Int32 getErrorCode() const;
   
         // returns the default value specified in the DEFAULT
         // clause; returns the NULL pointer value if NO DEFAULT
@@ -313,7 +312,6 @@ private:
 
   NABoolean isColDefaultSpec_;
 
-  Int32 errCode_;
 }; // class ElemDDLColDef
 
 // -----------------------------------------------------------------------
@@ -406,12 +404,6 @@ inline ItemExpr *
 ElemDDLColDef::getDefaultValueExpr() const
 {
   return pDefault_;
-}
-
-inline Int32
-ElemDDLColDef::getErrorCode() const
-{
-  return errCode_;
 }
 
 inline const NAString &
