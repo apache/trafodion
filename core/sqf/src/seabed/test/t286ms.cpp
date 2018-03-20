@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
             server_nid = 0;
             for (pinx = 0; pinx < maxsp; pinx++) {
                 nid = server_nid;
-                sprintf(server_name, "$SRV%02x%02x%03x", cinx, nid, inx % 1000);
+                sprintf(server_name, "$SRVx%02xx%02xx%02xx%03x", cinx, pinx, nid, inx % 1000);
                 ferr = msg_mon_start_process(prog,                   // prog
                                              server_name,            // name
                                              ret_name,               // ret name
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 
             nid = 0;
             for (pinx = 0; pinx < maxsp; pinx++) {
-                sprintf(serv, "$SRV%02x%02x%03x", cinx, nid, inx % 1000);
+                sprintf(serv, "$SRVx%02xx%02xx%02xx%03x", cinx, pinx, nid, inx % 1000);
                 ferr = msg_mon_open_process(serv,
                                             TPT_REF2(server_phandle,pinx),
                                             &oid);
