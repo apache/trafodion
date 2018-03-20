@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
             server_nid = 0;
             for (pinx = 0; pinx < maxsp; pinx++) {
                 nid = server_nid;
+                // SRV x <cinx> x <pinx> x <nid> x <inx>
                 sprintf(server_name, "$SRVx%02xx%02xx%02xx%03x", cinx, pinx, nid, inx % 1000);
                 ferr = msg_mon_start_process(prog,                   // prog
                                              server_name,            // name
