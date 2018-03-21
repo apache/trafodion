@@ -5052,7 +5052,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+2);
+            sprintf(sbuf, "%d,0", col.precision+2); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5076,7 +5076,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+4);
+            sprintf(sbuf, "%d,0", col.precision+4); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5100,7 +5100,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+5);
+            sprintf(sbuf, "%d,0", col.precision+5); // for seconds cast below
             typeName = getIntTypeForInterval(group, 24 * 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
