@@ -487,36 +487,36 @@ void CCommAcceptMon::processMonReqs( int sockFd )
                         , msg.u.request.type
                         , rtype
                         );
-            switch (msg.u.request.type)
-            {
-            case ReqType_DelProcessNs:
-                monReqDeleteProcess(&msg, sockFd);
-                break;
+        }
+        switch (msg.u.request.type)
+        {
+        case ReqType_DelProcessNs:
+            monReqDeleteProcess(&msg, sockFd);
+            break;
 
-            case ReqType_NameServerStop:
-                monReqNameServerStop(&msg, sockFd);
-                break;
+        case ReqType_NameServerStop:
+            monReqNameServerStop(&msg, sockFd);
+            break;
 
-            case ReqType_ProcessInfo:
-                monReqProcessInfo(&msg, sockFd);
-                break;
+        case ReqType_ProcessInfo:
+            monReqProcessInfo(&msg, sockFd);
+            break;
 
-            case ReqType_ProcessInfoCont:
-                monReqProcessInfoCont(&msg, sockFd);
-                break;
+        case ReqType_ProcessInfoCont:
+            monReqProcessInfoCont(&msg, sockFd);
+            break;
 
-            case ReqType_NewProcessNs:
-                monReqNewProcess(&msg, sockFd);
-                break;
+        case ReqType_NewProcessNs:
+            monReqNewProcess(&msg, sockFd);
+            break;
 
-            case ReqType_ShutdownNs:
-                monReqShutdown(&msg, sockFd);
-                break;
+        case ReqType_ShutdownNs:
+            monReqShutdown(&msg, sockFd);
+            break;
 
-            default:
-                monReqUnknown(&msg, sockFd);
-                break;
-            }
+        default:
+            monReqUnknown(&msg, sockFd);
+            break;
         }
     }
 
