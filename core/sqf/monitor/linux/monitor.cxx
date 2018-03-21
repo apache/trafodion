@@ -134,7 +134,7 @@ Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
-int  NameServerEnabled = false;
+bool NameServerEnabled = false;
 #endif
 
 // Lock to manage memory modifications during fork/exec
@@ -2288,6 +2288,9 @@ int main (int argc, char *argv[])
 #endif
 
     CommAccept.shutdownWork();
+#ifdef NAMESERVER_PROCESS
+    CommAcceptMon.shutdownWork();
+#endif
 
 #ifndef NAMESERVER_PROCESS
     // Rename the monitor "port" file

@@ -48,6 +48,7 @@ public:
     void monReqNewProcess( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
     void monReqProcessInfoCont( struct message_def* msg, int sockFd );
+    void monReqShutdown( struct message_def* msg, int sockFd );
     void monReqUnknown( struct message_def* msg, int sockFd );
     void startAccepting( void );
     void stopAccepting( void );
@@ -58,10 +59,7 @@ public:
     int pendingFd_;
 
 private:
-    struct message_def *Notice( const char *msgText );
-
     void commAcceptorSock( void );
-    bool sendNodeInfoSock( int sockFd );
 
     bool accepting_;
     bool shutdown_;

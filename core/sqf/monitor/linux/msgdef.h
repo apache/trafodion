@@ -253,6 +253,7 @@ typedef enum {
     ReqType_ProcessInfoCont,                // process information request (continuation)
     ReqType_Set,                            // add configuration information to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
+    ReqType_ShutdownNs,                     // request nameserver shutdown
     ReqType_Startup,                        // process startup notification
     ReqType_Stfsd,                          // process stfsd request
     ReqType_TmLeader,                       // request to become the TM leader
@@ -990,6 +991,13 @@ struct Shutdown_def
     ShutdownLevel level;                    // 0=normal, 1=fast or 2=crash
 };
 
+struct ShutdownNs_def
+{
+    int  nid;                               // requesting process's node id
+    int  pid;                               // requesting process id
+    ShutdownLevel level;                    // 0=normal, 1=fast or 2=crash
+};
+
 struct SpareUp_def
 {
     int  pnid;
@@ -1185,6 +1193,7 @@ struct request_def
         struct ProcessInfoCont_def   process_info_cont;
         struct Set_def               set;
         struct Shutdown_def          shutdown;
+        struct ShutdownNs_def        shutdown_ns;
         struct Startup_def           startup;
 #ifdef SQ_STFSD
         struct Stfsd_def             stfsd;

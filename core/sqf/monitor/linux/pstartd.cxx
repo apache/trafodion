@@ -50,7 +50,7 @@ int MyPid = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
 int gv_ms_su_pid = -1;          // Local IO pid to make compatible w/ Seabed
 SB_Verif_Type  gv_ms_su_verif = -1;
-bool tracing = false;
+bool tracing = true;
 bool shuttingDown = false;
 
 CClusterConfig ClusterConfig; // Trafodion Configuration objects

@@ -90,7 +90,7 @@ extern sigset_t SigSet;
 extern CLock MemModLock;
 extern CMonitor *Monitor;
 #ifndef NAMESERVER_PROCESS
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 extern CNameServer *NameServer;
 extern CPtpClient *PtpClient;
 #endif

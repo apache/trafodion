@@ -429,6 +429,7 @@ typedef enum {
     MS_ReqType_ProcessInfoCont,
     MS_ReqType_Set,
     MS_ReqType_Shutdown,
+    MS_ReqType_ShutdownNs,
     MS_ReqType_Startup,
     MS_ReqType_Stfsd,
     MS_ReqType_TmLeader,

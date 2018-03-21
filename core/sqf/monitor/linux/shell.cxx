@@ -99,7 +99,7 @@ bool NodeState[MAX_NODES];
 bool MpiInitialized = false;
 bool SpareNodeColdStandby = true;
 bool ElasticityEnabled = true;
-int  NameServerEnabled = false;
+bool NameServerEnabled = false;
 
 int   lastDeathNid = -1;
 int   lastDeathPid = -1;

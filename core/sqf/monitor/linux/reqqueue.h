@@ -679,6 +679,21 @@ private:
 };
 #endif
 
+#ifdef NAMESERVER_PROCESS
+class CExtShutdownNsReq: public CExternalReq
+{
+public:
+    CExtShutdownNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
+                 struct message_def *msg );
+    virtual ~CExtShutdownNsReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
 #ifndef NAMESERVER_PROCESS
 class CExtStartupReq: public CExternalReq
 {

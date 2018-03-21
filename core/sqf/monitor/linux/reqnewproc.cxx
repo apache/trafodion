@@ -39,7 +39,7 @@ extern CDeviceContainer *Devices;
 #ifndef NAMESERVER_PROCESS
 #include "ptpclient.h"
 extern CPtpClient *PtpClient;
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 #endif
 
 extern const char *ProcessTypeString( PROCESSTYPE type );

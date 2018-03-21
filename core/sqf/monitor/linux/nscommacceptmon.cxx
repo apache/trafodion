@@ -69,133 +69,6 @@ CCommAcceptMon::~CCommAcceptMon()
     TRACE_EXIT;
 }
 
-
-struct message_def *CCommAcceptMon::Notice( const char *msgText )
-{
-    struct message_def *msg;
-
-    const char method_name[] = "CCluster::Notice";
-    TRACE_ENTRY;
-
-    msg = new struct message_def;
-    msg->type = MsgType_ReintegrationError;
-    msg->noreply = true;
-    msg->u.request.type = ReqType_Notice;
-    strncpy( msg->u.request.u.reintegrate.msg, msgText,
-             sizeof(msg->u.request.u.reintegrate.msg) );
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Reintegrate notice %s\n",
-                     method_name, __LINE__, msgText );
-
-    TRACE_EXIT;
-
-    return msg;
-}
-
-// Send node names and port numbers for all existing monitors
-// to the new monitor.
-bool CCommAcceptMon::sendNodeInfoSock( int sockFd )
-{
-    const char method_name[] = "CCommAcceptMon::sendNodeInfoSock";
-    TRACE_ENTRY;
-    bool sentData = true;
-
-    int pnodeCount = Nodes->GetPNodesCount();
-
-    nodeId_t *nodeInfo;
-    size_t nodeInfoSize = (sizeof(nodeId_t) * pnodeCount);
-    nodeInfo = (nodeId_t *) new char[nodeInfoSize];
-    int rc;
-
-    CNode *node;
-
-    for (int i=0; i<pnodeCount; ++i)
-    {
-        node = Nodes->GetNodeByMap( i );
-        if ( node->GetState() == State_Up)
-        {
-            strncpy(nodeInfo[i].nodeName, node->GetName(),
-                    sizeof(nodeInfo[i].nodeName));
-            strncpy(nodeInfo[i].commPort, node->GetCommPort(),
-                    sizeof(nodeInfo[i].commPort));
-            strncpy(nodeInfo[i].syncPort, node->GetSyncPort(),
-                    sizeof(nodeInfo[i].syncPort));
-            nodeInfo[i].pnid = node->GetPNid();
-            nodeInfo[i].creatorPNid = (nodeInfo[i].pnid == MyPNID) ? MyPNID : -1;
-
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - Node info for pnid=%d (%s)\n"
-                              "        CommPort=%s\n"
-                              "        SyncPort=%s\n"
-                              "        creatorPNid=%d\n"
-                            , method_name, __LINE__
-                            , nodeInfo[i].pnid
-                            , nodeInfo[i].nodeName
-                            , nodeInfo[i].commPort
-                            , nodeInfo[i].syncPort
-                            , nodeInfo[i].creatorPNid );
-            }
-        }
-        else
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - No nodeInfo[%d] for pnid=%d (%s) node not up!\n"
-                            , method_name, __LINE__
-                            , i, node->GetPNid(), node->GetName());
-            }
-
-            nodeInfo[i].pnid = -1;
-            nodeInfo[i].nodeName[0] = '\0';
-            nodeInfo[i].commPort[0] = '\0';
-            nodeInfo[i].syncPort[0] = '\0';
-            nodeInfo[i].creatorPNid = -1;
-        }
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Sending port info to new monitor\n"
-                    , method_name, __LINE__);
-        for (int i=0; i<pnodeCount; i++)
-        {
-            trace_printf( "Port info for pnid=%d\n"
-                          "        nodeInfo[%d].nodeName=%s\n"
-                          "        nodeInfo[%d].commPort=%s\n"
-                          "        nodeInfo[%d].syncPort=%s\n"
-                          "        nodeInfo[%d].creatorPNid=%d\n"
-                        , nodeInfo[i].pnid
-                        , i, nodeInfo[i].nodeName
-                        , i, nodeInfo[i].commPort
-                        , i, nodeInfo[i].syncPort
-                        , i, nodeInfo[i].creatorPNid );
-        }
-    }
-
-    rc = Monitor->SendSock( (char *) nodeInfo
-                          , nodeInfoSize
-                          , sockFd
-                          , method_name );
-    if ( rc )
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], cannot send node/port info to "
-                 " new monitor process: %s.\n"
-                 , method_name, ErrorMsg(rc));
-        mon_log_write(NS_COMMACCEPT_1, SQ_LOG_ERR, buf);
-
-        sentData = false;
-    }
-
-    delete [] nodeInfo;
-
-    TRACE_EXIT;
-
-    return sentData;
-}
-
 void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqDeleteProcess";
@@ -375,8 +248,8 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                       "        msg.new_process_ns.parent_pid=%d\n"
                       "        msg.new_process_ns.parent_verifier=%d\n"
                       "        msg.new_process_ns.nid=%d\n"
-                      "        msg._nsnew_process.pid=%d\n"
-                      "        msg._nsnew_process.verifier=%d\n"
+                      "        msg.new_process_ns.pid=%d\n"
+                      "        msg.new_process_ns.verifier=%d\n"
                       "        msg.new_process_ns.type=%d\n"
                       "        msg.new_process_ns.priority=%d\n"
                       "        msg.new_process_ns.process_name=%s\n"
@@ -400,6 +273,33 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 
     TRACE_EXIT;
 }
+
+void CCommAcceptMon::monReqShutdown( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqShutdown";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST))
+    {
+        trace_printf( "%s@%d - Received monitor request shutdown data.\n"
+                      "        msg.shutdown.nid=%d\n"
+                      "        msg.shutdown.pid=%d\n"
+                      "        msg.shutdown.level=%d\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.shutdown_ns.nid
+                    , msg->u.request.u.shutdown_ns.pid
+                    , msg->u.request.u.shutdown_ns.level
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    msgType = CExternalReq::NonStartupMsg;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+
+    TRACE_EXIT;
+}
+
 void CCommAcceptMon::monReqUnknown( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqUnknown";
@@ -566,6 +466,9 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             case ReqType_NewProcessNs:
                 rtype = "NewProcessNs";
                 break;
+            case ReqType_ShutdownNs:
+                rtype = "ShutdownNs";
+                break;
             default:
                 rtype = "?";
             }
@@ -604,6 +507,10 @@ void CCommAcceptMon::processMonReqs( int sockFd )
 
             case ReqType_NewProcessNs:
                 monReqNewProcess(&msg, sockFd);
+                break;
+
+            case ReqType_ShutdownNs:
+                monReqShutdown(&msg, sockFd);
                 break;
 
             default:

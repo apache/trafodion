@@ -115,6 +115,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( ProcessInfo_def ),     // ReqType_ProcessInfoPat
    sizeof(REQTYPE) + sizeof( Set_def ),             // ReqType_Set
    sizeof(REQTYPE) + sizeof( Shutdown_def ),        // ReqType_Shutdown
+   sizeof(REQTYPE) + sizeof( ShutdownNs_def ),      // ReqType_ShutdownNs
    sizeof(REQTYPE) + sizeof( Startup_def ),         // ReqType_Startup
    sizeof(REQTYPE) + sizeof( Stfsd_def ),           // ReqType_Stfsd
    sizeof(REQTYPE) + sizeof( TmLeader_def ),        // ReqType_TmLeader

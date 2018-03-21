@@ -43,7 +43,6 @@
 #include "nameserver.h"
 #include "ptpclient.h"
 extern CPtpClient *PtpClient;
-extern int NameServerEnabled;
 #endif
 
 extern int MyPNID;
@@ -61,7 +60,7 @@ extern CHealthCheck HealthCheck;
 #ifdef NAMESERVER_PROCESS
 extern char *ErrorMsg (int error_code);
 #else
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 extern CNameServer *NameServer;
 extern CNameServerConfigContainer *NameServerConfig;
 #endif
@@ -3212,6 +3211,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_ShutdownNs:
+            request = new CExtShutdownNsReq(msgType, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
 #else
         case ReqType_Close:
             // No work to do for "close" (obsolete request).  Reply
@@ -4364,6 +4368,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_ProcessInfoCont
    false,    // ReqType_Set
    false,    // ReqType_Shutdown
+   false,    // ReqType_ShutdownNs
    false,    // ReqType_Startup
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
@@ -4409,6 +4414,7 @@ const char * CReqQueue::svcReqType[] = {
     "ProcessInfoCont",
     "Set",
     "Shutdown",
+    "ShutdownNs",
     "Startup",
     "Stfsd",
     "TmLeader",

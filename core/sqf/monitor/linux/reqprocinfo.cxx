@@ -34,7 +34,7 @@
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 #ifndef NAMESERVER_PROCESS
 extern CNameServer *NameServer;
 #endif

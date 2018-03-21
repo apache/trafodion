@@ -63,6 +63,7 @@ CNameServer::CNameServer( void )
 , nsConfigInx_(-1)
 , nsStartupComplete_(false)
 , seqNum_(0)
+, shutdown_(false)
 {
     const char method_name[] = "CNameServer::CNameServer";
     TRACE_ENTRY;
@@ -119,10 +120,18 @@ int CNameServer::ConnectToNs( bool *retry )
     if ( !mon2nsHost_[0] )
         ChooseNextNs();
 
-    int sock = SockCreate();
-    if ( sock < 0 )
-        err = sock;
-    if ( err == 0)
+    int sock = 0;
+
+    if ( shutdown_ )
+        err = -1;
+
+    if ( err == 0 )
+    {
+        sock = SockCreate();
+        if ( sock < 0 )
+            err = sock;
+    }
+    if ( err == 0 )
     {
         mon2nsSock_ = sock;
         if ( trace_settings & TRACE_NS )
@@ -272,6 +281,16 @@ void CNameServer::GetM2NPort( int PNid )
 void CNameServer::SetLocalHost( void )
 {
     gethostname( mon2nsHost_, MAX_PROCESSOR_NAME );
+}
+
+void CNameServer::SetShutdown( bool shutdown )
+{
+    const char method_name[] = "CNameServer::SetShutdown";
+    TRACE_ENTRY;
+
+    shutdown_ = shutdown;
+
+    TRACE_EXIT;
 }
 
 void CNameServer::SockClose( void )
@@ -553,15 +572,42 @@ int CNameServer::ProcessNew(CProcess* process )
     return error;
 }
 
+int CNameServer::ProcessShutdown( void )
+{
+    const char method_name[] = "CNameServer::ProcessShutdown";
+    TRACE_ENTRY;
+
+    struct message_def msg;
+    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = seqNum_++;
+    msg.u.request.type = ReqType_ShutdownNs;
+    struct ShutdownNs_def *msgshutdown = &msg.u.request.u.shutdown_ns;
+    msgshutdown->nid = -1;
+    msgshutdown->pid = -1;
+    //msgshutdown->level = msgIn->u.request.u.shutdown.level;
+    msgshutdown->level = ShutdownLevel_Abrupt;
+
+    int error = SendReceive(&msg );
+
+    if ( error == 0 )
+        SetShutdown( true );
+
+    TRACE_EXIT;
+    return error;
+}
+
 int CNameServer::SendReceive( struct message_def* msg )
 {
     const char method_name[] = "CNameServer::SendReceive";
     char desc[100];
     char* descp;
-    struct NameServerStart_def *msgstart;
-    struct NameServerStop_def *msgstop;
     struct DelProcessNs_def *msgdel;
     struct NewProcessNs_def *msgnew;
+    struct ShutdownNs_def *msgshutdown;
+    struct NameServerStart_def *msgstart;
+    struct NameServerStop_def *msgstop;
 
     TRACE_ENTRY;
 
@@ -601,6 +647,12 @@ int CNameServer::SendReceive( struct message_def* msg )
         descp = (char *) "process-info-cont";
         size += sizeof(msg->u.request.u.process_info_cont);
         break;
+    case ReqType_ShutdownNs:
+        msgshutdown = &msg->u.request.u.shutdown_ns;
+        sprintf( desc, "shutdown (nid=%d, pid=%d, level=%d)",
+                msgshutdown->nid, msgshutdown->pid, msgshutdown->level );
+        size += sizeof(msg->u.request.u.shutdown_ns);
+        break;
     default:
         abort(); // TODO change
         break;
@@ -613,14 +665,14 @@ int CNameServer::SendReceive( struct message_def* msg )
         error = SockReceive( (char *) msg, size );
     if ( error == 0 )
     {
-        if ( trace_settings & TRACE_NS )
+        if ( trace_settings & ( TRACE_NS | TRACE_PROCESS ) )
         {
             char desc[200];
             char* descp = desc;
             switch ( msg->u.reply.type )
             {
             case ReplyType_DelProcessNs:
-                sprintf( desc, "DelProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                sprintf( desc, "DelProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d",
                          msg->u.reply.u.del_process_ns.nid,
                          msg->u.reply.u.del_process_ns.pid,
                          msg->u.reply.u.del_process_ns.verifier,
@@ -628,7 +680,7 @@ int CNameServer::SendReceive( struct message_def* msg )
                          msg->u.reply.u.del_process_ns.return_code );
                 break;
             case ReplyType_Generic:
-                sprintf( desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                sprintf( desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d",
                          msg->u.reply.u.generic.nid,
                          msg->u.reply.u.generic.pid,
                          msg->u.reply.u.generic.verifier,
@@ -636,7 +688,7 @@ int CNameServer::SendReceive( struct message_def* msg )
                          msg->u.reply.u.generic.return_code );
                 break;
             case ReplyType_NewProcessNs:
-                sprintf( desc, "NewProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d\n",
+                sprintf( desc, "NewProcessNs, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d",
                          msg->u.reply.u.new_process_ns.nid,
                          msg->u.reply.u.new_process_ns.pid,
                          msg->u.reply.u.new_process_ns.verifier,
@@ -644,7 +696,7 @@ int CNameServer::SendReceive( struct message_def* msg )
                          msg->u.reply.u.new_process_ns.return_code );
                 break;
             case ReplyType_ProcessInfo:
-                sprintf( desc, "ProcessInfo, num_processes=%d, rc=%d, more_data=%d\n",
+                sprintf( desc, "ProcessInfo, num_processes=%d, rc=%d, more_data=%d",
                          msg->u.reply.u.process_info.num_processes,
                          msg->u.reply.u.process_info.return_code,
                          msg->u.reply.u.process_info.more_data );
