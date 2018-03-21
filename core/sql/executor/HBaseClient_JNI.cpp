@@ -5166,4 +5166,3 @@ void deleteNAArray(CollHeap *heap, NAArray<HbaseStr> *array)
   }
   NADELETE(array, NAArray, heap);
 }
-                      

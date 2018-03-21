@@ -24,6 +24,7 @@
 #include "JavaObjectInterface.h"
 #include "QRLogger.h"
 #include "Globals.h"
+#include "Context.h"
 #include "ComUser.h"
 #include "LmJavaOptions.h"
 #include "ex_ex.h"
@@ -546,7 +547,7 @@ NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
    if (jenv == NULL)
        jenv = jenv_;
    CliGlobals *cliGlobals = GetCliGlobals();
-   NAString error_msg(heap_);
+   NAString error_msg(cliGlobals->currContext()->exHeap());
    if (jenv == NULL)
    {
       error_msg = "Internal Error - Unable to obtain jenv";

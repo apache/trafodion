@@ -60,7 +60,6 @@
 #include "ComUser.h"
 #include "CmpSeabaseDDLauth.h"
 
-#include "hdfs.h"
 #include "StmtCompilationMode.h"
 
 #include "ExCextdecs.h"
@@ -160,11 +159,13 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     dropInProgress_(FALSE),
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL),
+    prevCmpContext_(NULL),
     ddlStmtsExecuted_(FALSE),
     numCliCalls_(0),
     jniErrorStr_(&exHeap_),
     hbaseClientJNI_(NULL),
     hiveClientJNI_(NULL),
+    hdfsClientJNI_(NULL),
     arkcmpArray_(&exHeap_),
     cmpContextInfo_(&exHeap_),
     cmpContextInUse_(&exHeap_),
@@ -2525,11 +2526,12 @@ void ContextCli::createMxcmpSession()
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect(pMessage,
                                (ULng32) sizeof(userMessage), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::DATABASE_USER,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2544,6 +2546,11 @@ void ContextCli::createMxcmpSession()
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -2725,11 +2732,12 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect((char *) &flags,
                                (ULng32) sizeof(Lng32), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::END_SESSION,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2744,6 +2752,11 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -3033,7 +3046,7 @@ ExSqlComp::ReturnStatus ContextCli::sendXnMsgToArkcmp
            CmpMessageObj::MessageTypeEnum(xnMsgType),
            dummyReply, dummyLength,
            currCtxt->getSqlParserFlags(),
-           NULL, 0);
+           NULL, 0, diagsArea);
       if (cmpRet != 0)
         {
           char emsText[120];
@@ -3116,7 +3129,7 @@ Lng32 ContextCli::setSecInvalidKeys(
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   tempDiagsArea->clear();
  
-  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(
+  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
                                  cliGlobals->myNodeName(), 
                                  cliGlobals->myCpu(), tempDiagsArea);
   if (ssmpServer == NULL)
@@ -3284,7 +3297,7 @@ ExStatisticsArea *ContextCli::getMergedStats(
   }
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
-  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, 
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(exHeap(), nodeName, 
            (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDiagsArea);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_
@@ -4641,22 +4654,31 @@ Int32 ContextCli::switchToCmpContext(void *cmpCntxt)
   return (cmpCntxtInfo->getUseCount() == 1? 0: 1); // success
 }
 
-Int32 ContextCli::switchBackCmpContext(void)
+void ContextCli::copyDiagsAreaToPrevCmpContext()
 {
   ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
 
+  CmpContext *curr = embeddedArkcmpContext_;
+
+  if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+    return; 
+  if (curr->diags()->getNumber() > 0)
+     prevCmpContext_->diags()->mergeAfter(*curr->diags());
+}
+
+Int32 ContextCli::switchBackCmpContext(void)
+{
+  if (prevCmpContext_ == NULL) 
+  {
+     ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
+     if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+        return -1; 
+  }
   // switch back
   CmpContext *curr = embeddedArkcmpContext_;
-  CmpContext *prevCmpCntxt;
 
-  if (cmpContextInUse_.getLast(prevCmpCntxt) == FALSE)
-    return -1;  // failed to get previous CmpContext, should not have happened.
-
-  embeddedArkcmpContext_ = prevCmpCntxt;
-  cmpCurrentContext = prevCmpCntxt;  // restore the thread global
-
-  // merge diags to previous CmpContext
-  prevCmpCntxt->diags()->mergeAfter(*curr->diags());
+  embeddedArkcmpContext_ = prevCmpContext_;
+  cmpCurrentContext = prevCmpContext_;  // restore the thread global
 
   // book keeping
   CmpContextInfo *cmpCntxtInfo;
@@ -4674,6 +4696,7 @@ Int32 ContextCli::switchBackCmpContext(void)
   cmpCurrentContext->switchBackContext();
 
   deinitializeArkcmp();
+  prevCmpContext_ = NULL;
 
   return 0;  // success
 }

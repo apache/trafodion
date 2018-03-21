@@ -104,6 +104,7 @@ using namespace std;
 
 #define ZCLIENT_TRAFODION_ZNODE     "/trafodion"
 #define ZCLIENT_INSTANCE_ZNODE      "/instance"
+#define ZCLIENT_MASTER_ZNODE        "/master"
 
 typedef list<string>    ZNodeList_t;
 
@@ -137,6 +138,7 @@ public:
             , const char *instanceZNode );
     ~CZClient( void );
 
+    int     CreateMasterZNode(  const char *nodeName );
     int     GetSessionTimeout( void) { return( zkSessionTimeout_ ); }
     bool    IsZNodeExpired( const char *nodeName, int &zerr );
     void    MonitorZCluster( void );
@@ -148,8 +150,11 @@ public:
     int     StartWork( void );
     void    StopMonitoring( void );
     void    TriggerCheck( int type, const char *znodePath );
+    const char* WaitForAndReturnMaster( bool doWait );
     int     WatchNode( const char *nodeName );
+    int     WatchMasterNode( const char *nodeName );
     int     WatchNodeDelete( const char *nodeName );
+    int     WatchNodeMasterDelete( const char *nodeName );
 
 private:
     int     ZooExistRetry(zhandle_t *zh, const char *path, int watch, struct Stat *stat);

@@ -175,27 +175,23 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
   return 0;
 }
 
+
 short CmpSeabaseDDL::switchBackCompiler()
 {
-  ComDiagsArea * tempDiags = NULL;
+
   if (cmpSwitched_)
-    {
-      tempDiags = ComDiagsArea::allocate(heap_);
-      tempDiags->mergeAfter(*CmpCommon::diags());
-    }
-  
+  {
+      GetCliGlobals()->currContext()->copyDiagsAreaToPrevCmpContext();
+      CmpCommon::diags()->clear();
+  }
   // do restore here even though switching may not have happened, i.e.
   // when switchToCompiler() was not called by the embedded CI, see above.
   restoreAllControlsAndFlags();
   
   if (cmpSwitched_)
     {
-      // ignore new (?) from restore call but restore old diags
+      // Clear the diagnostics area of the current CmpContext
       CmpCommon::diags()->clear();
-      CmpCommon::diags()->mergeAfter(*tempDiags);
-      tempDiags->clear();
-      tempDiags->deAllocate();
-  
       // switch back to the original commpiler, ignore return error
       SQL_EXEC_SWITCH_BACK_COMPILER();
 
@@ -4657,9 +4653,6 @@ static short AssignColEntry(ExeCliInterface *cliInterface, Lng32 entry,
   Lng32 indOffset = -1;
   Lng32 varOffset = -1;
   
-  cliRC = cliInterface->getAttributes(1, TRUE, fsDatatype, length, 
-                                      &indOffset, &varOffset);
-
   cliRC = cliInterface->getAttributes(entry, TRUE, fsDatatype, length, 
                                       &indOffset, &varOffset);
   if (cliRC < 0)

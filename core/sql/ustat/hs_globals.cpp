@@ -5052,7 +5052,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+2);
+            sprintf(sbuf, "%d,0", col.precision+2); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5076,7 +5076,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+4);
+            sprintf(sbuf, "%d,0", col.precision+4); // for seconds cast below
             typeName = getIntTypeForInterval(group, 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -5100,7 +5100,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           }
         else
           {
-            sprintf(sbuf, "%d", col.precision+5);
+            sprintf(sbuf, "%d,0", col.precision+5); // for seconds cast below
             typeName = getIntTypeForInterval(group, 24 * 60 * 60 * (Int64)pow(10, col.precision));
           }
         group->ISSelectExpn.append("cast(cast(")
@@ -11632,7 +11632,12 @@ Int32 HSGlobalsClass::allocateMemoryForColumns(HSColGroupStruct* group,
          memReduceAllowance();
          break;
        }
-
+     //trafodion-2978
+     //group->mcis_memFreed may be set TRUE in HSColGroupStruct::freeISMemory
+     //so if allocate memory success,set group->mcis_memFreed to FALSE agin.
+     if(group->mcis_memFreed)
+         group->mcis_memFreed = FALSE;
+     //trafodion-2978
      group->nextData = group->data;
      group->mcis_nextData = group->mcis_data;
      numCols++;

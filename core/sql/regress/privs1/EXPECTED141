@@ -703,7 +703,8 @@ CREATE VIEW TRAFODION.T141_USER1.U2V1 AS
 
 *** ERROR[4082] Object TRAFODION.T141_USER1.U2V2 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- these creates should fail
 >>-- user2 has no privs on u1t1

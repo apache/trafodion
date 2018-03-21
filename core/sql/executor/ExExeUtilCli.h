@@ -245,7 +245,7 @@ private:
   Lng32 currentContext(char* contextHandle); // out buf will return context handle
   Lng32 deleteContext(char* contextHandle); // in buf contains context handle
 
-  Lng32 retrieveSQLDiagnostics(ComDiagsArea * toDiags);
+  Lng32 retrieveSQLDiagnostics(ComDiagsArea *toDiags);
 
   CollHeap * getHeap() { return heap_; }
 

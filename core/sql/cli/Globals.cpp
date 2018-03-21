@@ -60,6 +60,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include "HBaseClient_JNI.h"
+#include "HdfsClient_JNI.h"
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "CliSemaphore.h"

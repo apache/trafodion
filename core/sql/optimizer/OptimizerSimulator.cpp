@@ -55,7 +55,6 @@
 #include "HBaseClient_JNI.h"
 
 #include "vproc.h"
-#include "hdfs.h"
 #include "CmpSeabaseDDL.h"
 #include "ExExeUtilCli.h"
 #include "ComUser.h"
@@ -1883,7 +1882,7 @@ short OptimizerSimulator::fetchAllRowsFromMetaContext(Queue * &q, const char* qu
    retcode = cliInterface_->fetchAllRows(queue_, query, 0, FALSE, FALSE, TRUE);
    //retrieve idag area runing the query above,
    //if there's any error, we can get the detail.
-   cliInterface_->retrieveSQLDiagnostics(0);
+   cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
 
    cmpSBD_->switchBackCompiler();
    

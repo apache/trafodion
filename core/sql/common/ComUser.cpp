@@ -72,7 +72,7 @@ Int32 ComUser::getCurrentUser(void)
                                NULL, 0, NULL);
 
   assert(rc >= 0);
-  assert(dbUserID >= SUPER_USER)
+  assert(dbUserID >= SUPER_USER);
 
   return dbUserID;
   

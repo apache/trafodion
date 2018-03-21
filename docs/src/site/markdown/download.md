@@ -24,6 +24,38 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
 
 # Download
 
+## 2.2.0 (March 2018)
+
+* [Release Notes](release-notes-2-2-0.html)
+* [Source Code Release][src220]  -  [PGP][pgp220] [SHA1][sha220]
+* Convenience Binaries
+    * [Python Installer][pins220]  -  [PGP][pinpgp220] [SHA1][pinsha220]
+    * [Server][ser220]  -  [PGP][sepgp220] [SHA1][sesha220]
+    * [Clients][cl220]  -  [PGP][clpgp220] [SHA1][clsha220]
+    * [Ambari RPMs][ar220]  -  [PGP][arpgp220] [SHA1][arsha220]
+    * [Ambari Plugin][ap220]  -  [PGP][appgp220] [SHA1][apsha220]
+* [Documentation](documentation.html#220_Release)
+
+[src220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz
+[pgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz.asc
+[sha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/src/apache-trafodion-2.2.0-src.tar.gz.sha
+[pins220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz
+[pinpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz.asc
+[pinsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_pyinstaller-2.2.0.tar.gz.sha
+[ser220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_server-2.2.0-RH6-x86_64.tar.gz
+[sepgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_server-2.2.0-RH6-x86_64.tar.gz.asc
+[sesha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_server-2.2.0-RH6-x86_64.tar.gz.sha
+[cl220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz
+[clpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz.asc
+[clsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/apache-trafodion_clients-2.2.0-RH6-x86_64.tar.gz.sha
+[ar220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm
+[arpgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.asc
+[arsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/apache-trafodion_server-2.2.0-1.x86_64.rpm.sha
+[ap220]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm
+[appgp220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.asc
+[apsha220]: http://www.apache.org/dist/trafodion/apache-trafodion-2.2.0/bin/traf_ambari_rpms/traf_ambari-2.2.0-1.noarch.rpm.sha
+
+
 ## 2.1.0 (May 2017)
 
 * [Release Notes](release-notes-2-1-0.html)
@@ -37,34 +69,34 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
     * [Ambari Plugin][ap210]  -  [PGP][appgp210] [MD5][apmd5210] [SHA1][apsha210]
 * [Documentation](documentation.html#210_Release)
 
-[src210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz
-[pgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.asc
-[md5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.md5
-[sha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.sha
-[ins210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz
-[inpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.asc
-[inmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.md5
-[insha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.sha
-[pins210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
-[pinpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.asc
-[pinmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.md5
-[pinsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.sha
-[ser210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz
-[sepgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.asc
-[semd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.md5
-[sesha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.sha
-[cl210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz
-[clpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.asc
-[clmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.md5
-[clsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.sha
-[ar210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm
-[arpgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.asc
-[armd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.md5
-[arsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.sha
-[ap210]: http://www.apache.org/dyn/closer.lua/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm
-[appgp210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.asc
-[apmd5210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.md5
-[apsha210]: http://www.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.sha
+[src210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz
+[pgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.asc
+[md5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.md5
+[sha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.sha
+[ins210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz
+[inpgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.asc
+[inmd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.md5
+[insha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_installer-2.1.0-incubating.tar.gz.sha
+[pins210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
+[pinpgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.asc
+[pinmd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.md5
+[pinsha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz.sha
+[ser210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz
+[sepgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.asc
+[semd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.md5
+[sesha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_server-2.1.0-RH6-x86_64-incubating.tar.gz.sha
+[cl210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz
+[clpgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.asc
+[clmd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.md5
+[clsha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/apache-trafodion_clients-2.1.0-RH6-x86_64-incubating.tar.gz.sha
+[ar210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm
+[arpgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.asc
+[armd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.md5
+[arsha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/apache-trafodion_server-2.1.0-1.x86_64.rpm.sha
+[ap210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm
+[appgp210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.asc
+[apmd5210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.md5
+[apsha210]: http://archive.apache.org/dist/trafodion/apache-trafodion-2.1.0-incubating/bin/traf_ambari_rpms/traf_ambari-2.1.0-1.noarch.rpm.sha
 
 ## 2.0.1 (June 2016)
 

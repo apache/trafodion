@@ -44,7 +44,6 @@
 #include  "ComTdb.h"
 #include  "ex_tcb.h"
 #include  "ComSqlId.h"
-
 #include  "ExExeUtil.h"
 #include  "ex_exe_stmt_globals.h"
 #include  "exp_expr.h"

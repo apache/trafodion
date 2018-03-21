@@ -287,11 +287,14 @@ void CExtProcInfoReq::performRequest()
     verifier_ = msg_->u.request.u.process_info.verifier;
     processName_ = msg_->u.request.u.process_info.process_name;
 
+    int       pnid = -1;
     int       target_nid = -1;
     int       target_pid = -1;
     string    target_process_name;
     Verifier_t target_verifier = -1;
-    CProcess *requester = NULL;
+    CClusterConfig *clusterConfig = NULL;
+    CLNodeConfig   *lnodeConfig = NULL; 
+    CProcess       *requester = NULL;
 
     target_nid = msg_->u.request.u.process_info.target_nid;
     target_pid = msg_->u.request.u.process_info.target_pid;
@@ -390,42 +393,54 @@ void CExtProcInfoReq::performRequest()
                             , msg_->u.request.u.process_info.type);
             }
 
-            if (target_pid == -1)
+            clusterConfig = Nodes->GetClusterConfig();
+            if (clusterConfig)
             {
-                // get info for all processes in node
-                if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+                if (clusterConfig->IsConfigReady())
                 {
-                    count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
-                                                   msg_,
-                                                   msg_->u.request.u.process_info.type,
-                                                   false,
-                                                   msg_->u.request.u.process_info.target_process_pattern);
-                }
-            }
-            else
-            {
-                // get info for single process in node
-                if ((requester->GetType() == ProcessType_TSE ||
-                     requester->GetType() == ProcessType_ASE ||
-                     requester->GetType() == ProcessType_AMP)  &&
-                    (requester->GetNid() == target_nid &&
-                     requester->GetPid() == target_pid))
-                {
-                    ProcessInfo_CopyData(requester,
-                                         msg_->u.reply.u.process_info.process[0]);
-                    count = 1;
-                }
-                else if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
-                { // find by nid/pid (check node state, don't check process state, backup is Ok)
-                    CProcess *process = Nodes->GetProcess( target_nid
-                                                         , target_pid
-                                                         , target_verifier
-                                                         , true, false, true );
-                    if (process)
+                    lnodeConfig = clusterConfig->GetLNodeConfig( target_nid );
+                    if (lnodeConfig)
                     {
-                        ProcessInfo_CopyData(process,
-                                             msg_->u.reply.u.process_info.process[0]);
-                        count = 1;
+                        
+                        if (target_pid == -1)
+                        {
+                            // get info for all processes in node
+                            if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+                            {
+                                count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
+                                                               msg_,
+                                                               msg_->u.request.u.process_info.type,
+                                                               false,
+                                                               msg_->u.request.u.process_info.target_process_pattern);
+                            }
+                        }
+                        else
+                        {
+                            // get info for single process in node
+                            if ((requester->GetType() == ProcessType_TSE ||
+                                 requester->GetType() == ProcessType_ASE ||
+                                 requester->GetType() == ProcessType_AMP)  &&
+                                (requester->GetNid() == target_nid &&
+                                 requester->GetPid() == target_pid))
+                            {
+                                ProcessInfo_CopyData(requester,
+                                                     msg_->u.reply.u.process_info.process[0]);
+                                count = 1;
+                            }
+                            else if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
+                            { // find by nid/pid (check node state, don't check process state, backup is Ok)
+                                CProcess *process = Nodes->GetProcess( target_nid
+                                                                     , target_pid
+                                                                     , target_verifier
+                                                                     , true, false, true );
+                                if (process)
+                                {
+                                    ProcessInfo_CopyData(process,
+                                                         msg_->u.reply.u.process_info.process[0]);
+                                    count = 1;
+                                }
+                            }
+                        }
                     }
                 }
             }

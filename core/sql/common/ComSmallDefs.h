@@ -193,6 +193,7 @@ typedef NABoolean               ComBoolean;
 // Procedures are defined in CmpSeabaseDDLroutine.h
 #define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
 #define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+#define SEABASE_LIBMGR_LIBRARY_CPP "DB__LIBMGR_LIB_CPP"
 
 // reserved column names for traf internal system usage
 #define TRAF_SALT_COLNAME "_SALT_"

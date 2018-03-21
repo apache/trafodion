@@ -484,14 +484,6 @@ class ExLob : public NABasicObject
        char  *failedLocBuf,
        Int32 *failedLocBufLen);
 
-  Ex_Lob_Error dataModCheck2(
-       char * dirPath, 
-       Int64  modTS,
-       Lng32  numOfPartLevels,
-       Int64 &failedModTS,
-       char  *failedLocBuf,
-       Int32 *failedLocBufLen);
-
   Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
 
   ExLobStats *getStats() { return &stats_; }

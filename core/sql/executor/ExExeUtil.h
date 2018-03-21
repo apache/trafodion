@@ -3893,7 +3893,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   NABoolean emptyTarget_;
   NABoolean oneFile_;
   ExpHbaseInterface * ehi_;
-  HdfsClient *hdfsClient_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state

@@ -102,7 +102,8 @@ fi
 #
 # Setup test execution
 #
-export PATH=$PATH:$PWD/Linux-x86_64/64/dbg
+ARCH=`arch`
+export PATH=$PATH:$PWD/Linux-${ARCH}/64/dbg
 cd $TRAF_HOME/monitor/test
 echo $PWD
 

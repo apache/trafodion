@@ -824,8 +824,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       goto finally;  // we are done
     }
 
-  if (d->getFormat() >= Describe::CONTROL_FIRST_ &&
-      d->getFormat() <= Describe::CONTROL_LAST_)
+  if (d->getIsControl())
     {
       rc = CmpDescribeControl(d, outbuf, outbuflen, heap);
       goto finally;  // we are done
@@ -865,7 +864,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // For now, schemaName of HIVE indicates a hive table.
   // Need to fix that at a later time when multiple hive schemas are supported.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       (d->getDescribedTableName().isHive()) &&
       (!d->getDescribedTableName().isSpecialTable()))
     {
@@ -886,7 +885,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
   // check if this is an hbase/seabase table. If so, describe using info from NATable.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       ((d->getDescribedTableName().isHbase()) ||
        (d->getDescribedTableName().isSeabase())))
     {

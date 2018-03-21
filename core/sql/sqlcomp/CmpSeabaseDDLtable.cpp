@@ -57,7 +57,6 @@
 
 #include "TrafDDLdesc.h"
 
-#define MAX_HBASE_ROWKEY_LEN 32768
 
 // defined in CmpDescribe.cpp
 extern short CmpDescribeSeabaseTable ( 

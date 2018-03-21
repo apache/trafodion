@@ -21,17 +21,6 @@
 
 package org.trafodion.sql;
 
-// This class implements an efficient mechanism to read hdfs files
-// Trafodion ExHdfsScan operator provides a range of scans to be performed.
-// The range consists of a hdfs filename, offset and length to be read
-// This class takes in two ByteBuffers. These ByteBuffer can be either direct buffers
-// backed up native buffers or indirect buffer backed by java arrays.
-// All the ranges are read alternating between the two buffers using ExecutorService
-// using CachedThreadPool mechanism. 
-// For a given HdfsScan instance, only one thread(IO thread) is scheduled to read
-// the next full or partial buffer while the main thread processes the previously
-// read information from the other buffer
-
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
@@ -54,6 +43,24 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.fs.FileStatus;
 import java.net.URI;
 
+// This class implements an efficient mechanism to read hdfs files
+// Trafodion ExHdfsScan operator provides a range of scans to be performed.
+// The range consists of a hdfs filename, offset and length to be read
+// This class takes in two ByteBuffers. These ByteBuffer can be either direct buffers
+// backed up native buffers or indirect buffer backed by java arrays.
+// All the ranges are read alternating between the two buffers using ExecutorService
+// using CachedThreadPool mechanism.
+
+// For a given HdfsScan instance, only one thread(IO thread) is scheduled to read
+// the next full or partial buffer while the main thread processes the previously
+// read information from the other buffer
+// HdfsScan picks up a range and schedules a read into a next available buffer.
+// If the range is more than the buffer size, then the range is read into multiple
+// chunks and schedules one chunk at a time alternatiing the buffers
+// Once the range is completed, the next range in the HdfsScanRange is picked up
+// for scheduling, till all the ranges assigned to the HdfsScan instance are read.
+
+
 public class HdfsScan 
 {
    static Logger logger_ = Logger.getLogger(HdfsScan.class.getName());
@@ -61,10 +68,13 @@ public class HdfsScan
    private int bufLen_[];
    private HDFSClient hdfsClient_[];
    private int currRange_;
-   private long currPos_;
-   private long lenRemain_;
+   private long currRangePos_;
+   private long currRangeLenRemain_;
    private int lastBufCompleted_ = -1;
    private boolean scanCompleted_;
+ 
+   // Structure to hold the Scan ranges for this HdfsScan instance
+   //
    
    class HdfsScanRange 
    {
@@ -95,6 +105,7 @@ public class HdfsScan
 
    public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, String filename[], long pos[], long len[], int rangeNum[]) throws IOException
    {
+      // Two buffers to hold the data read
       buf_ = new ByteBuffer[2];
       bufLen_ = new int[2];
 
@@ -114,39 +125,47 @@ public class HdfsScan
       }
       if (hdfsScanRanges_.length > 0) {
          currRange_ = 0;
-         currPos_ = hdfsScanRanges_[currRange_].pos_;
-         lenRemain_ = hdfsScanRanges_[currRange_].len_; 
-         hdfsScanRange(0, 0);
+         currRangePos_ = hdfsScanRanges_[currRange_].pos_;
+         currRangeLenRemain_ = hdfsScanRanges_[currRange_].len_; 
+         scheduleHdfsScanRange(0, 0);
       }
       scanCompleted_ = false;
    }
 
-   public void hdfsScanRange(int bufNo, int bytesCompleted) throws IOException
+   public void scheduleHdfsScanRange(int bufNo, int bytesCompleted) throws IOException
    {
-      lenRemain_ -= bytesCompleted;
-      currPos_ += bytesCompleted; 
+      currRangeLenRemain_ -= bytesCompleted;
+      currRangePos_ += bytesCompleted; 
       int readLength;
-      if (lenRemain_ <= 0) {
+      if (currRangeLenRemain_ <= 0) {
          if (currRange_  == (hdfsScanRanges_.length-1)) {
             scanCompleted_ = true;
             return;
          }
          else {
             currRange_++;
-            currPos_ = hdfsScanRanges_[currRange_].pos_;
-            lenRemain_ = hdfsScanRanges_[currRange_].len_; 
+            currRangePos_ = hdfsScanRanges_[currRange_].pos_;
+            currRangeLenRemain_ = hdfsScanRanges_[currRange_].len_; 
          }
       } 
-      if (lenRemain_ > bufLen_[bufNo])
+      if (currRangeLenRemain_ > bufLen_[bufNo])
          readLength = bufLen_[bufNo];
       else
-         readLength = (int)lenRemain_;
+         readLength = (int)currRangeLenRemain_;
       if (! scanCompleted_) {
          if (logger_.isDebugEnabled())
-            logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + lenRemain_ + " BufNo " + bufNo); 
-         hdfsClient_[bufNo] = new HDFSClient(bufNo, hdfsScanRanges_[currRange_].tdbRangeNum_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currPos_, readLength);
+            logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + currRangeLenRemain_ + " BufNo " + bufNo); 
+         hdfsClient_[bufNo] = new HDFSClient(bufNo, hdfsScanRanges_[currRange_].tdbRangeNum_, hdfsScanRanges_[currRange_].filename_, buf_[bufNo], currRangePos_, readLength);
       }
    } 
+  
+/* 
+   Method to wait for completion of the scheduled read of a chunk in a range
+   Returns 4 items, bytes read, buf no, range no, is EOF
+   If there are more chunks to be read in the range, schedules a read into the other buffer
+   If EOF is reached or the full range is read, the next range is picked up for 
+   scheduling
+*/
    
    public int[] trafHdfsRead() throws IOException, InterruptedException, ExecutionException
    {
@@ -164,12 +183,14 @@ public class HdfsScan
       switch (lastBufCompleted_) {
          case -1:
          case 1:
+            // Wait for the read to complete in buffer 0
             bytesRead = hdfsClient_[0].trafHdfsReadBuffer(); 
             bufNo = 0;
             rangeNo = hdfsClient_[0].getRangeNo();
             isEOF = hdfsClient_[0].isEOF();
             break;
          case 0:
+            // Wait for the read to complete in buffer 1
             bytesRead = hdfsClient_[1].trafHdfsReadBuffer(); 
             bufNo = 1;
             rangeNo = hdfsClient_[1].getRangeNo();
@@ -194,18 +215,20 @@ public class HdfsScan
             return retArray;
          } else {
             currRange_++;
-            currPos_ = hdfsScanRanges_[currRange_].pos_;
-            lenRemain_ = hdfsScanRanges_[currRange_].len_;
+            currRangePos_ = hdfsScanRanges_[currRange_].pos_;
+            currRangeLenRemain_ = hdfsScanRanges_[currRange_].len_;
             bytesRead = 0;
          }
       }
       switch (lastBufCompleted_)
       {
          case 0:
-            hdfsScanRange(1, bytesRead);
+            // schedule the next chunk or next range to be read in buffer 1
+            scheduleHdfsScanRange(1, bytesRead);
             break;
          case 1:
-            hdfsScanRange(0, bytesRead);
+            // schedule the next chunk or next range to be read in buffer 0
+            scheduleHdfsScanRange(0, bytesRead);
             break;            
          default:
             break;
@@ -213,10 +236,22 @@ public class HdfsScan
       return retArray;
    } 
    
+   public void stop() throws IOException
+   {
+      if (hdfsClient_[0] != null)
+         hdfsClient_[0].stop();
+      if (hdfsClient_[1] != null)
+         hdfsClient_[1].stop();
+      hdfsClient_[0] = null;
+      hdfsClient_[1] = null;
+      return;
+   }
+
    public static void shutdown() throws InterruptedException
    {
       HDFSClient.shutdown();
    }
+
    public static void main(String[] args) throws Exception
    {
 

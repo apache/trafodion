@@ -1641,6 +1641,11 @@ EOF
 fi
 # end of HBase setup
 
+if [[ ! -z $FAST_LOCAL_HADOOP ]]; then
+    echo "FAST_LOCAL_HADOOP is set. Exiting..."
+    exit 0
+fi
+
 cd $MY_SW_ROOT
 
 if [ $INSTALL_TPCDS -eq 1 ]; then

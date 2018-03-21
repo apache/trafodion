@@ -72,6 +72,9 @@ extern CReqQueue ReqQueue;
 
 #include "replicate.h"
 
+extern bool IsAgentMode;
+extern bool IsMaster;
+
 extern bool PidMap;
 extern int Measure;
 extern int trace_level;
@@ -1651,13 +1654,39 @@ bool CProcess::Create (CProcess *parent, int & result)
     }
 
     string LDpath;
-    if ( ldpathStrId_.nid != -1 )
-        Config->strIdToString(ldpathStrId_, LDpath);
-    if ( !LDpath.empty() )
+    static bool sv_getenv_ld_library_path_done = false;
+    static string sv_ld_library_path;
+    if (IsAgentMode)
     {
-        setEnvStrVal ( childEnv, nextEnv, "LD_LIBRARY_PATH", LDpath.c_str() );
+        if (! sv_getenv_ld_library_path_done)
+        {
+            sv_getenv_ld_library_path_done = true;
+            sv_ld_library_path = getenv( "LD_LIBRARY_PATH" );
+            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+            {
+                trace_printf( "%s@%d" " - LD_LIBRARY_PATH = " "%s" "\n", method_name, __LINE__, sv_ld_library_path.c_str() );
+            }
+        }
+        LDpath = sv_ld_library_path;
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-            trace_printf("%s@%d - LD_LIBRARY_PATH = %s\n", method_name, __LINE__, LDpath.c_str());
+        {
+            trace_printf( "%s@%d" " - LD_LIBRARY_PATH = " "%s" "\n", method_name, __LINE__, LDpath.c_str() );
+        }
+    }
+    else
+    {
+        if (ldpathStrId_.nid != -1)
+        {
+            Config->strIdToString( ldpathStrId_, LDpath );
+        }
+    }
+    if (!LDpath.empty())
+    {
+        setEnvStrVal( childEnv, nextEnv, "LD_LIBRARY_PATH", LDpath.c_str( ) );
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf( "%s@%d - LD_LIBRARY_PATH = %s\n", method_name, __LINE__, LDpath.c_str() );
+        }
     }
 
     setEnvStr ( childEnv, nextEnv, "LD_BIND_NOW=true" );
@@ -1695,15 +1724,39 @@ bool CProcess::Create (CProcess *parent, int & result)
             trace_printf("%s@%d - PWD=%s\n", method_name, __LINE__,
                          pwd.c_str());
     }
-    
-
 
     string path;
-    if ( pathStrId_.nid != -1 )
-        Config->strIdToString( pathStrId_, path);
-    setEnvStrVal ( childEnv, nextEnv, "PATH", path.c_str() );
+    static bool sv_getenv_path_done = false;
+    static string sv_path;
+    if (IsAgentMode)
+    {
+        if (! sv_getenv_path_done)
+        {
+            sv_getenv_path_done = true;
+            sv_path = getenv( "PATH" );
+            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+            {
+                trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, sv_path.c_str() );
+            }
+        }
+        path = sv_path;
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, path.c_str() );
+        }
+    }
+    else
+    {
+        if (pathStrId_.nid != -1)
+        {
+            Config->strIdToString( pathStrId_, path );
+        }
+    }
+    setEnvStrVal( childEnv, nextEnv, "PATH", path.c_str( ) );
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-        trace_printf("%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, path.c_str());
+    {
+        trace_printf( "%s@%d" " - PATH = " "%s" "\n", method_name, __LINE__, path.c_str() );
+    }
 
     // Set values from registry as environment variables
     setEnvFromRegistry ( childEnv, nextEnv );

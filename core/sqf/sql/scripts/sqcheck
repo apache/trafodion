@@ -112,14 +112,12 @@ function fillArray {
 }
 
 function getDcsInfo {
- dcsznode=/$USER/dcs/master
 
  if [ -d $DCS_INSTALL_DIR ];then
 
 ### Get the configured number of DcsMaster's
-  if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
-     let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
-     let cfg_dcsmaster_cnt=$backup_dcsmaster_cnt+1
+  if [ -s ${DCS_INSTALL_DIR}/conf/masters ]; then
+     let cfg_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/masters`
    else
      let cfg_dcsmaster_cnt=1
    fi

@@ -556,6 +556,25 @@ void CCommAccept::processNewSock( int joinFd )
 
     node= Nodes->GetNode( nodeId.nodeName );
 
+    if ( node == NULL )
+    {
+        close( joinFd );
+
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], got connection from unknown "
+                  "node %d (%s). Ignoring it.\n"
+                , method_name
+                , nodeId.pnid
+                , nodeId.nodeName);
+        mon_log_write(MON_COMMACCEPT_9, SQ_LOG_ERR, buf);
+
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
+        return;
+    }
+
     if ( nodeId.ping )
     {
         // Reply with my node info
@@ -595,6 +614,10 @@ void CCommAccept::processNewSock( int joinFd )
                     , method_name, node?node->GetName():"", ErrorMsg(rc));
             mon_log_write(MON_COMMACCEPT_19, SQ_LOG_ERR, buf);    
         }
+
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
         return;
     }
     
@@ -607,53 +630,6 @@ void CCommAccept::processNewSock( int joinFd )
                           , nodeId.creatorShellVerifier );
     }
     
-    int pnid = -1;
-    if ( node != NULL )
-    {   // Store port numbers for the node
-        char commPort[MPI_MAX_PORT_NAME];
-        char syncPort[MPI_MAX_PORT_NAME];
-        strncpy(commPort, nodeId.commPort, MPI_MAX_PORT_NAME);
-        strncpy(syncPort, nodeId.syncPort, MPI_MAX_PORT_NAME);
-        char *pch1;
-        char *pch2;
-        pnid = nodeId.pnid;
-
-        node->SetCommPort( commPort );
-        pch1 = strtok (commPort,":");
-        pch1 = strtok (NULL,":");
-        node->SetCommSocketPort( atoi(pch1) );
-
-        node->SetSyncPort( syncPort );
-        pch2 = strtok (syncPort,":");
-        pch2 = strtok (NULL,":");
-        node->SetSyncSocketPort( atoi(pch2) );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
-                        , method_name, __LINE__
-                        , node->GetPNid()
-                        , node->GetName()
-                        , pch1, atoi(pch1)
-                        , pch2, atoi(pch2) );
-        }
-    }
-    else
-    {
-        close( joinFd );
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], got connection from unknown "
-                  "node %d (%s). Ignoring it.\n"
-                , method_name
-                , nodeId.pnid
-                , nodeId.nodeName);
-        mon_log_write(MON_COMMACCEPT_9, SQ_LOG_ERR, buf);
-
-        return;
-    }
-
     // Sanity check, re-integrating node must be down
     if ( node->GetState() != State_Down )
     {
@@ -672,7 +648,41 @@ void CCommAccept::processNewSock( int joinFd )
                 , StateString(node->GetState()));
         mon_log_write(MON_COMMACCEPT_10, SQ_LOG_ERR, buf);
 
+        // Requests is complete, begin accepting connections again
+        CommAccept.startAccepting();
+
         return;
+    }
+
+    int pnid = -1;
+
+    // Store port numbers for the node
+    char commPort[MPI_MAX_PORT_NAME];
+    char syncPort[MPI_MAX_PORT_NAME];
+    strncpy(commPort, nodeId.commPort, MPI_MAX_PORT_NAME);
+    strncpy(syncPort, nodeId.syncPort, MPI_MAX_PORT_NAME);
+    char *pch1;
+    char *pch2;
+    pnid = nodeId.pnid;
+
+    node->SetCommPort( commPort );
+    pch1 = strtok (commPort,":");
+    pch1 = strtok (NULL,":");
+    node->SetCommSocketPort( atoi(pch1) );
+
+    node->SetSyncPort( syncPort );
+    pch2 = strtok (syncPort,":");
+    pch2 = strtok (NULL,":");
+    node->SetSyncSocketPort( atoi(pch2) );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Setting node %d (%s), commPort=%s(%d), syncPort=%s(%d)\n"
+                    , method_name, __LINE__
+                    , node->GetPNid()
+                    , node->GetName()
+                    , pch1, atoi(pch1)
+                    , pch2, atoi(pch2) );
     }
 
     mem_log_write(CMonLog::MON_CONNTONEWMON_4, pnid);
@@ -916,6 +926,8 @@ void CCommAccept::commAcceptorIB()
             interComm = MPI_COMM_NULL;
             rc = MPI_Comm_accept( MyCommPort, MPI_INFO_NULL, 0, MPI_COMM_SELF,
                                   &interComm );
+            // Stop accepting connections until this request completes
+            CommAccept.stopAccepting();
         }
         else
         {
@@ -988,6 +1000,8 @@ void CCommAccept::commAcceptorSock()
     
             mem_log_write(CMonLog::MON_CONNTONEWMON_1);
             joinFd = Monitor->AcceptCommSock();
+            // Stop accepting connections until this request completes
+            CommAccept.stopAccepting();
         }
         else
         {
