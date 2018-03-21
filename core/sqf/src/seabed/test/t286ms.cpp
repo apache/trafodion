@@ -221,6 +221,8 @@ int main(int argc, char *argv[]) {
         for (inx = 0; inx < loop; inx++) {
             server_nid = 0;
             for (pinx = 0; pinx < maxsp; pinx++) {
+                if (server_nid == cinx)
+                    next_nid(&server_nid);
                 nid = server_nid;
                 // SRV x <cinx> x <pinx> x <nid> x <inx>
                 sprintf(server_name, "$SRVx%02xx%02xx%02xx%03x", cinx, pinx, nid, inx % 1000);
@@ -248,6 +250,8 @@ int main(int argc, char *argv[]) {
 
             nid = 0;
             for (pinx = 0; pinx < maxsp; pinx++) {
+                if (nid == cinx)
+                    next_nid(&nid);
                 sprintf(serv, "$SRVx%02xx%02xx%02xx%03x", cinx, pinx, nid, inx % 1000);
                 ferr = msg_mon_open_process(serv,
                                             TPT_REF2(server_phandle,pinx),
