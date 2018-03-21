@@ -74,7 +74,7 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
     const char method_name[] = "CCommAcceptMon::monReqDeleteProcess";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request delete-process data.\n"
                       "        msg.del_process_ns.nid=%d\n"
@@ -110,7 +110,7 @@ void CCommAcceptMon::monReqExec( CExternalReq * request )
     const char method_name[] = "CCommAcceptMon::monReqExec";
     TRACE_ENTRY;
 
-    if ( trace_settings & TRACE_REQUEST_DETAIL )
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST_DETAIL ) )
     {
         request->populateRequestString();
         trace_printf("%s@%d request = %s\n", method_name, __LINE__, request->requestString());
@@ -127,7 +127,7 @@ void CCommAcceptMon::monReqNameServerStop( struct message_def* msg, int sockFd )
     const char method_name[] = "CCommAcceptMon::monReqNameServerStop";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request down-nameserver data.\n"
                       "        msg.nameserver_stop.nid=%d\n"
@@ -154,7 +154,7 @@ void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
     const char method_name[] = "CCommAcceptMon::monReqProcessInfo";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request process-info data.\n"
                       "        msg.info.nid=%d\n"
@@ -193,7 +193,7 @@ void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd 
     const char method_name[] = "CCommAcceptMon::monReqProcessInfoCont";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request process-info-cont data.\n"
                       "        msg.info_cont.nid=%d\n"
@@ -241,7 +241,7 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqNewProcess";
     TRACE_ENTRY;
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request new-process data.\n"
                       "        msg.new_process_ns.parent_nid=%d\n"
@@ -279,7 +279,7 @@ void CCommAcceptMon::monReqShutdown( struct message_def* msg, int sockFd )
     const char method_name[] = "CCommAcceptMon::monReqShutdown";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request shutdown data.\n"
                       "        msg.shutdown.nid=%d\n"
@@ -304,7 +304,7 @@ void CCommAcceptMon::monReqUnknown( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqUnknown";
     TRACE_ENTRY;
-    if (trace_settings & (TRACE_REQUEST))
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request UNKNOWN data.\n"
                     , method_name, __LINE__
@@ -328,7 +328,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
 
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf( "%s@%d - Accepted connection sock=%d\n"
                     , method_name, __LINE__, sockFd );
@@ -349,7 +349,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         return;
     }
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf( "%s@%d - Accepted connection from pnid=%d\n"
                       "        nodeId.nodeName=%s\n"
@@ -385,7 +385,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
     int pnidNs = processMonReqsGetBestNs();
     nodeId.nsPNid = pnidNs;
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf( "%s@%d - Sending nodeId back\n"
                       "        nodeId.nodeName=%s\n"
@@ -418,7 +418,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
         return;
     }
 
-    while (true)
+    while ( true )
     {
         // Get monitor request (hdr)
         int size;
@@ -443,7 +443,7 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             mon_log_write(NS_COMMACCEPT_5, SQ_LOG_ERR, buf);
             return;
         }
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if ( trace_settings & ( TRACE_NS ) )
         {
             const char *mtype = "?";
             if ( msg.type == MsgType_Service )
@@ -539,7 +539,7 @@ int CCommAcceptMon::processMonReqsGetBestNs( void )
     {
         pnid = Monitor->GetMinMonConnPnid();
     }
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf("%s@%d - myCount=%d, minCount=%d, pnid=%d\n"
                     ,method_name, __LINE__, myCount, myCount, pnid);
@@ -599,17 +599,17 @@ void CCommAcceptMon::commAcceptorSock()
 
     int joinFd = -1;
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
     {
         trace_printf("%s@%d thread %lx starting\n", method_name,
                      __LINE__, thread_id_);
     }
 
-    while (true)
+    while ( true )
     {
-        if (isAccepting())
+        if ( isAccepting() )
         {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            if ( trace_settings & ( TRACE_NS ) )
             {
                 trace_printf("%s@%d - Posting accept\n", method_name, __LINE__);
             }
@@ -619,7 +619,7 @@ void CCommAcceptMon::commAcceptorSock()
         }
         else
         {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            if ( trace_settings & ( TRACE_NS) )
             {
                 trace_printf("%s@%d - Waiting to post accept\n", method_name, __LINE__);
             }
@@ -654,7 +654,7 @@ void CCommAcceptMon::commAcceptorSock()
 
     if ( !(joinFd < 0) ) close( joinFd );
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    if ( trace_settings & ( TRACE_NS ) )
         trace_printf("%s@%d thread %lx exiting\n", method_name,
                      __LINE__, pthread_self());
 
@@ -671,7 +671,7 @@ void CCommAcceptMon::shutdownWork(void)
     Monitor->ConnectToSelf();
     CLock::wakeOne();
 
-    if (trace_settings & TRACE_INIT)
+    if ( trace_settings & ( TRACE_NS ) )
         trace_printf("%s@%d waiting for mon2nsAcceptMon thread %lx to exit.\n",
                      method_name, __LINE__, thread_id_);
 
@@ -772,7 +772,7 @@ void CCommAcceptMon::startAccepting( void )
     if ( !accepting_ )
     {
         accepting_ = true;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if ( trace_settings & ( TRACE_NS ) )
         {
             trace_printf( "%s@%d - Enabling accepting_=%d\n"
                         , method_name, __LINE__, accepting_ );
@@ -793,7 +793,7 @@ void CCommAcceptMon::stopAccepting( void )
     if ( accepting_ )
     {
         accepting_ = false;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if ( trace_settings & ( TRACE_NS ) )
         {
             trace_printf( "%s@%d - Disabling accepting_=%d\n"
                         , method_name, __LINE__, accepting_ );
