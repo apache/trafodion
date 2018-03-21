@@ -34336,7 +34336,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_UCASE
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
-			//                      | TOK_UUID
+                      | TOK_UUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK
