@@ -5552,6 +5552,13 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
         argv[idx+3] = (char *) "1";
         idx+=3;
     }
+    if (NameServerEnabled)
+    {
+        argv[idx+1] = (char *) "-env";
+        argv[idx+2] = (char *) "SQ_NAMESERVER_ENABLED";
+        argv[idx+3] = (char *) "1";
+        idx+=3;
+    }
     argv[idx+1] = (char *) "-env";
     argv[idx+2] = (char *) "MPI_TMPDIR";
     env = getenv ("HOME");

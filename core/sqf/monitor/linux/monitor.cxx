@@ -1813,13 +1813,12 @@ int main (int argc, char *argv[])
         Monitor = new CMonitor (procTermSig);
 #endif
 #ifndef NAMESERVER_PROCESS
-        env = getenv("NAMESERVER_ENABLE");
+        env = getenv("SQ_NAMESERVER_ENABLED");
         if ( env && isdigit(*env) )
             NameServerEnabled = atoi(env);
 
         NameServer = new CNameServer ();
         PtpClient = new CPtpClient ();
-
 #endif
 
         if ( IsAgentMode )
