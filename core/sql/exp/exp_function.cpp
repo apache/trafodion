@@ -2591,16 +2591,22 @@ ex_expr::exp_return_type ex_function_unixtime::eval(char *op_data[],
   //if there is input value
   if( getNumOperands() == 2)
   {
-    struct tm* ptr;
-    char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", ptr);
+    struct tm ptr;
+    if (opData == NULL )
+    {
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
+    }
+    char* r = strptime(opData, "%Y-%m-%d %H:%M:%S", &ptr);
     if( (r == NULL) ||  (*r != '\0') )
     {
-        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
-        *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
-      return ex_expr::EXPR_ERROR;
+       ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+       *(*diagsArea) << DgString0("UNIX_TIMESTAMP");
+       return ex_expr::EXPR_ERROR;
     }
     else
-      *(Int64 *)op_data[0] = mktime(ptr);
+      *(Int64 *)op_data[0] = mktime(&ptr);
 
   }
   else
