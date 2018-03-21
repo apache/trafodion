@@ -288,6 +288,9 @@ void CNameServer::SetShutdown( bool shutdown )
     const char method_name[] = "CNameServer::SetShutdown";
     TRACE_ENTRY;
 
+    if ( trace_settings & TRACE_NS )
+        trace_printf( "%s@%d - set shutdown_=%d\n"
+                    , method_name, __LINE__, shutdown );
     shutdown_ = shutdown;
 
     TRACE_EXIT;
@@ -712,6 +715,32 @@ int CNameServer::SendReceive( struct message_def* msg )
                         );
         }
     }
+    else
+    {
+        // create a synthetic reply
+        msg->u.reply.u.generic.nid = -1;
+        msg->u.reply.u.generic.pid = -1;
+        msg->u.reply.u.generic.verifier = -1;
+        msg->u.reply.u.generic.process_name[0] = '\0';
+        msg->u.reply.u.generic.return_code = MPI_ERR_IO;
+        error = 0;
+
+        if ( trace_settings & ( TRACE_NS | TRACE_PROCESS ) )
+        {
+            char desc[200];
+            sprintf( desc, "Generic, nid=%d, pid=%d, verifier=%d, name=%s, rc=%d",
+                     msg->u.reply.u.generic.nid,
+                     msg->u.reply.u.generic.pid,
+                     msg->u.reply.u.generic.verifier,
+                     msg->u.reply.u.generic.process_name,
+                     msg->u.reply.u.generic.return_code );
+            trace_printf( "%s@%d - msgType=%d, replyType=%d, ReplyType=%s\n"
+                        , method_name, __LINE__
+                        , msg->type, msg->u.reply.type
+                        , desc
+                        );
+        }
+    }
 
     TRACE_EXIT;
     return error;
@@ -724,16 +753,21 @@ int CNameServer::SendToNs( const char *reqType, struct message_def *msg, int siz
 
     if ( trace_settings & TRACE_NS )
     {
-        trace_printf( "%s@%d - sending %s REQ to nameserver=%s:%s, sock=%d\n"
+        trace_printf( "%s@%d - sending %s REQ to nameserver=%s:%s, sock=%d, shutdown=%d\n"
                     , method_name, __LINE__
                     , reqType
                     , mon2nsHost_
                     , mon2nsPort_
-                    , mon2nsSock_ );
+                    , mon2nsSock_ 
+                    , shutdown_ );
     }
 
     int error = 0;
-    if ( mon2nsSock_ < 0 )
+    if ( shutdown_ )
+    {
+        error = -1;
+    }
+    else if ( mon2nsSock_ < 0 )
     {
         bool retry = false;
         error = ConnectToNs( &retry );

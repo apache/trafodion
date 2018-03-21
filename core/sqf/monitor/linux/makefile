@@ -464,7 +464,7 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-.NOTPARALLEL:
+#.NOTPARALLEL:
 
 all: programs examples
 
