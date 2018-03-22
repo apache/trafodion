@@ -39,15 +39,15 @@ extern CDeviceContainer *Devices;
 #ifndef NAMESERVER_PROCESS
 #include "ptpclient.h"
 extern CPtpClient *PtpClient;
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 #endif
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
-CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType, int pid,
-                                int sockFd,
+CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType,
+                                int nid, int pid, int sockFd,
                                 struct message_def *msg )
-    : CExternalReq(msgType, pid, sockFd, msg)
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEI", 4);

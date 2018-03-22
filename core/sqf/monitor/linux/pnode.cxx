@@ -84,6 +84,7 @@ const char *StateString( STATE state);
 const char *SyncStateString( SyncState state);
 extern CNameServer *NameServer;
 extern CProcess *NameServerProcess;
+extern bool NameServerEnabled;
 #endif
 extern CNameServerConfigContainer *NameServerConfig;
 
@@ -553,6 +554,8 @@ void CNode::CheckShutdownProcessing( void )
         sprintf(buf, "Broadcasting shutdown notice, level = %d\n", shutdownLevel_);
         mon_log_write(MON_NODE_SHUTDOWN_1, SQ_LOG_WARNING, buf);
         Bcast (msg);
+        if ( NameServerEnabled )
+            NameServer->ProcessShutdown();
         delete msg;
     }
 #endif

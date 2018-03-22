@@ -78,6 +78,7 @@ using namespace std;
 #include "redirector.h"
 #include "intprocess.h"
 #include "nameserver.h"
+#include "meas.h"
 
 #include "reqqueue.h"
 #include "reqworker.h"
@@ -133,7 +134,7 @@ Verifier_t CreatorShellVerifier = -1;
 bool SpareNodeColdStandby = true;
 bool ZClientEnabled = true;
 #ifndef NAMESERVER_PROCESS
-int  NameServerEnabled = false;
+bool NameServerEnabled = false;
 #endif
 
 // Lock to manage memory modifications during fork/exec
@@ -175,7 +176,7 @@ RobSem * sbDiscSem = NULL;
 #endif
 int monitorArgc = 0;
 char monitorArgv[MAX_ARGS][MAX_ARG_SIZE];
-
+CMeas Meas;
 
 
 #ifdef NAMESERVER_PROCESS
@@ -1812,13 +1813,12 @@ int main (int argc, char *argv[])
         Monitor = new CMonitor (procTermSig);
 #endif
 #ifndef NAMESERVER_PROCESS
-        env = getenv("NAMESERVER_ENABLE");
+        env = getenv("SQ_NAMESERVER_ENABLED");
         if ( env && isdigit(*env) )
             NameServerEnabled = atoi(env);
 
         NameServer = new CNameServer ();
         PtpClient = new CPtpClient ();
-
 #endif
 
         if ( IsAgentMode )
@@ -2288,6 +2288,9 @@ int main (int argc, char *argv[])
 #endif
 
     CommAccept.shutdownWork();
+#ifdef NAMESERVER_PROCESS
+    CommAcceptMon.shutdownWork();
+#endif
 
 #ifndef NAMESERVER_PROCESS
     // Rename the monitor "port" file

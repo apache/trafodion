@@ -168,16 +168,19 @@ public:
                 , int pid
                 , struct message_def *msg)
         : msgType_(msgType)
+        , nid_(-1)
         , pid_(pid)
         , verifier_(-1)
         , sockFd_(-1)
         , msg_(msg)
         , reqType_(msg?msg->u.request.type:ReqType_Invalid) {}
     CExternalReq( reqQueueMsg_t msgType
+                , int nid
                 , int pid
                 , int sockFd
                 , struct message_def *msg)
         : msgType_(msgType)
+        , nid_(nid)
         , pid_(pid)
         , verifier_(-1)
         , sockFd_(sockFd)
@@ -348,7 +351,8 @@ private:
 class CExtNameServerStartNsReq: public CExternalReq
 {
 public:
-    CExtNameServerStartNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
+    CExtNameServerStartNsReq (reqQueueMsg_t msgType,
+                              int nid, int pid, int sockFd,
                               struct message_def *msg );
     virtual ~CExtNameServerStartNsReq();
 
@@ -363,7 +367,8 @@ private:
 class CExtNameServerStopNsReq: public CExternalReq
 {
 public:
-    CExtNameServerStopNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
+    CExtNameServerStopNsReq (reqQueueMsg_t msgType,
+                             int nid, int pid, int sockFd,
                              struct message_def *msg );
     virtual ~CExtNameServerStopNsReq();
 
@@ -378,8 +383,9 @@ private:
 class CExtNewProcNsReq: public CExternalReq
 {
 public:
-    CExtNewProcNsReq (reqQueueMsg_t msgType, int pid, int sockFd,
-                    struct message_def *msg );
+    CExtNewProcNsReq (reqQueueMsg_t msgType,
+                      int nid, int pid, int sockFd,
+                      struct message_def *msg );
     virtual ~CExtNewProcNsReq();
 
     void performRequest();
@@ -393,7 +399,8 @@ private:
 class CExtNewProcReq: public CExternalReq
 {
 public:
-    CExtNewProcReq (reqQueueMsg_t msgType, int pid, int sockFd,
+    CExtNewProcReq (reqQueueMsg_t msgType,
+                    int nid, int pid, int sockFd,
                     struct message_def *msg );
     virtual ~CExtNewProcReq();
 
@@ -572,8 +579,8 @@ private:
 class CExtNullReq: public CExternalReq
 {
 public:
-    CExtNullReq (reqQueueMsg_t msgType, int pid,
-                 int sockFd,
+    CExtNullReq (reqQueueMsg_t msgType,
+                 int nid, int pid, int sockFd,
                  struct message_def *msg );
     virtual ~CExtNullReq();
 
@@ -605,8 +612,10 @@ private:
 class CExtProcInfoBase: public CExternalReq
 {
  public:
-    CExtProcInfoBase(reqQueueMsg_t msgType, int pid, int sockFd, struct message_def *msg)
-        : CExternalReq(msgType, pid, sockFd, msg) {}
+    CExtProcInfoBase (reqQueueMsg_t msgType,
+                      int nid, int pid, int sockFd,
+                      struct message_def *msg )
+        : CExternalReq(msgType, nid, pid, sockFd, msg) {}
     virtual ~CExtProcInfoBase() {}
 
  protected:
@@ -625,8 +634,8 @@ class CExtProcInfoBase: public CExternalReq
 class CExtProcInfoReq: public CExtProcInfoBase
 {
 public:
-    CExtProcInfoReq (reqQueueMsg_t msgType, int pid,
-                     int sockFd,
+    CExtProcInfoReq (reqQueueMsg_t msgType,
+                     int nid, int pid, int sockFd,
                      struct message_def *msg );
     virtual ~CExtProcInfoReq();
 
@@ -639,7 +648,8 @@ private:
 class CExtProcInfoContReq: public CExtProcInfoBase
 {
 public:
-    CExtProcInfoContReq (reqQueueMsg_t msgType, int pid, int sockFd,
+    CExtProcInfoContReq (reqQueueMsg_t msgType,
+                         int nid, int pid, int sockFd,
                          struct message_def *msg );
     virtual ~CExtProcInfoContReq();
 
@@ -671,6 +681,22 @@ public:
     CExtShutdownReq (reqQueueMsg_t msgType, int pid,
                      struct message_def *msg );
     virtual ~CExtShutdownReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+#endif
+
+#ifdef NAMESERVER_PROCESS
+class CExtShutdownNsReq: public CExternalReq
+{
+public:
+    CExtShutdownNsReq (reqQueueMsg_t msgType,
+                       int nid, int pid, int sockFd,
+                       struct message_def *msg );
+    virtual ~CExtShutdownNsReq();
 
     void performRequest();
 
@@ -862,9 +888,9 @@ private:
 class CExtDelProcessNsReq: public CExternalReq
 {
 public:
-    CExtDelProcessNsReq (reqQueueMsg_t msgType, int pid,
-                 int sockFd,
-                 struct message_def *msg );
+    CExtDelProcessNsReq (reqQueueMsg_t msgType,
+                         int nid, int pid, int sockFd,
+                         struct message_def *msg );
     virtual ~CExtDelProcessNsReq();
 
     void performRequest();
@@ -1355,7 +1381,8 @@ class CReqQueue
     CReqQueue();
     virtual ~CReqQueue();
 
-    void enqueueReq(CExternalReq::reqQueueMsg_t msgType, int pid, int sockFd,
+    void enqueueReq(CExternalReq::reqQueueMsg_t msgType,
+                    int nid, int pid, int sockFd,
                     struct message_def *msg);
     void enqueueCloneReq( struct clone_def *cloneDef );
 #ifndef NAMESERVER_PROCESS
@@ -1444,7 +1471,8 @@ class CReqQueue
 
 private:
     CExternalReq * prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
-                                   int pid,int sockFd, struct message_def *msg);
+                                   int nid, int pid, int sockFd,
+                                   struct message_def *msg);
     void enqueueReq(CInternalReq *req, bool reviveOper = false);
 
     bool busyExclusive_;   // true if an exclusive request in progress,

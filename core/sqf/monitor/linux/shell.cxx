@@ -74,6 +74,7 @@ char mpirunErrFileName[MAX_PROCESS_PATH];
 #define MAX_TOKEN   132
 #define MAX_BUFFER  132
 #define MAX_CMDLINE 256
+#define MAX_DEATH_SAVE 10
 
 char *MyName;
 char LDpath[MAX_SEARCH_PATH];
@@ -99,10 +100,10 @@ bool NodeState[MAX_NODES];
 bool MpiInitialized = false;
 bool SpareNodeColdStandby = true;
 bool ElasticityEnabled = true;
-int  NameServerEnabled = false;
+bool NameServerEnabled = false;
 
-int   lastDeathNid = -1;
-int   lastDeathPid = -1;
+int   lastDeathNid[MAX_DEATH_SAVE] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
+int   lastDeathPid[MAX_DEATH_SAVE] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
 bool  waitDeathPending = false;
 int   waitDeathNid;
 int   waitDeathPid;
@@ -1292,8 +1293,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                     recv_msg->u.request.u.death.nid,
                     recv_msg->u.request.u.death.pid);
         }
-        lastDeathNid = recv_msg->u.request.u.death.nid;
-        lastDeathPid = recv_msg->u.request.u.death.pid;
+        for ( int dinx = 0; dinx < MAX_DEATH_SAVE; dinx++ )
+        {
+            if ( lastDeathNid[dinx] == -1 )
+            {
+                lastDeathNid[dinx] = recv_msg->u.request.u.death.nid;
+                lastDeathPid[dinx] = recv_msg->u.request.u.death.pid;
+                break;
+            }
+        }
         if ( waitDeathPending )
         {
             if ( recv_msg->u.request.u.death.nid == waitDeathNid
@@ -2840,21 +2848,24 @@ void get_server_death (int nid, int pid)
         request_notice(nid, pid, transid);
     }
 
-    if ( lastDeathNid == nid
-      && lastDeathPid == pid )
+    for ( int dinx = 0; dinx < MAX_DEATH_SAVE; dinx++ )
     {
-        if ( trace_settings & TRACE_SHELL_CMD )
-            trace_printf("%s@%d [%s] death message already received from nid=%d, "
-                         "pid=%d.\n", method_name, __LINE__, MyName, nid, pid);
+        if ( lastDeathNid[dinx] == nid
+          && lastDeathPid[dinx] == pid )
+        {
+            if ( trace_settings & TRACE_SHELL_CMD )
+                trace_printf("%s@%d [%s] death message already received from nid=%d, "
+                             "pid=%d.\n", method_name, __LINE__, MyName, nid, pid);
 
-        lastDeathNid = -1;
-        lastDeathPid = -1;
+            lastDeathNid[dinx] = -1;
+            lastDeathPid[dinx] = -1;
 
-        if ( trace_settings & TRACE_SHELL_CMD )
-            trace_printf("%s@%d [%s] Exiting wait for process death\n",
-                         method_name, __LINE__, MyName);
+            if ( trace_settings & TRACE_SHELL_CMD )
+                trace_printf("%s@%d [%s] Exiting wait for process death\n",
+                             method_name, __LINE__, MyName);
 
-        return;
+            return;
+        }
     }
 
     if ( trace_settings & TRACE_SHELL_CMD )
@@ -5549,6 +5560,13 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     {
         argv[idx+1] = (char *) "-env";
         argv[idx+2] = (char *) "SQ_SEAMONSTER";
+        argv[idx+3] = (char *) "1";
+        idx+=3;
+    }
+    if (NameServerEnabled)
+    {
+        argv[idx+1] = (char *) "-env";
+        argv[idx+2] = (char *) "SQ_NAMESERVER_ENABLED";
         argv[idx+3] = (char *) "1";
         idx+=3;
     }

@@ -66,7 +66,9 @@ using namespace std;
 // Signal handler
 #define TRACE_SIG_HANDLER     0x080000
 // nameserver
-#define TRACE_NS              0x10000
+#define TRACE_NS              0x100000
+// lightweight measure
+#define TRACE_MEAS            0x200000
 
 
 #define TRACE_ENTRY \

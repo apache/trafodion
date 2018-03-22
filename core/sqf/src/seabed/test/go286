@@ -20,48 +20,19 @@
 #
 # @@@ END COPYRIGHT @@@
 
-xclient=$1
-shift
-if [ "$1" = "-device" ]; then
-	type="type TSE"
-	zone="set {process \$CLI} ZONE=0"
-	nid0="nid 0"
-	device="set {process \$CLI} DEVICE=\$CLI-P"
-	shift
-fi
+maxnodes=4
+for arg in $*; do
+	if [ $maxnodes = x ]; then
+		maxnodes=$arg
+	fi
+	if [ "$arg" = -maxnodes ]; then
+	    maxnodes=x
+	fi
+done
 
-if [ "$1" = "-device2" ]; then
-	type="type TSE"
-	zone="set {process \$CLI} ZONE=0"
-	nid0="nid 0"
-	device="set {process \$CLI} DEVICE=\$CLI-P"
-	devicem="set {process \$CLI} DEVICE-M=\$CLI-M"
-	shift
-fi
-
-# setup
 . ./gosetup
-
-echo "********* TEST `date` $xclient *********"
-tcheck -setup
-. ./goshellsetup
-cat > $TMP <<eof
-node
-! Start the monitor processes across the cluster
-startup
-! Start the client process
-$zone
-$device
-$devicem
-node info
-exec {$nid0 $type name \$CLI} $xclient -client $*
-! Display process status to see new processes
-ps
-! Wait for our processes to stop, then stop the monitor processes and exit.
-delay 1
-shutdown
-exit
-eof
-. ./goshellfilter
-tcheck $xclient
-
+./godb $maxnodes
+go69mon -start
+sleep 4
+t286ms -master $*
+go69mon -stop

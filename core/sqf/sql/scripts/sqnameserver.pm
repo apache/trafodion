@@ -84,19 +84,6 @@ sub parseEq {
     }
 }
 
-sub parseHost {
-    my ($s) =  @_;
-    if ($s =~ /(%zid\+)/) {
-        my $r = $1;
-        $s =~ s:$1::;
-        return (1, $r);
-    } else {
-        displayStmt($g_ok);
-        print "   Error: Expecting host, but saw $s\n"; #T
-        return (0, '');
-    }
-}
-
 sub parseStatement {
     my ($s) = @_;
     if ($g_debugFlag) {

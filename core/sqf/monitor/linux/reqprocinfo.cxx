@@ -32,9 +32,11 @@
 #include "nameserver.h"
 
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CNode *MyNode;
+#endif
 extern CNodeContainer *Nodes;
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 #ifndef NAMESERVER_PROCESS
 extern CNameServer *NameServer;
 #endif
@@ -248,10 +250,10 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
     return count;
 }
 
-CExtProcInfoReq::CExtProcInfoReq (reqQueueMsg_t msgType, int pid,
-                                  int sockFd,
+CExtProcInfoReq::CExtProcInfoReq (reqQueueMsg_t msgType,
+                                  int nid, int pid, int sockFd,
                                   struct message_def *msg )
-    : CExtProcInfoBase(msgType, pid, sockFd, msg)
+    : CExtProcInfoBase(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEO", 4);
@@ -327,8 +329,13 @@ void CExtProcInfoReq::performRequest()
 
         if ( processName_.size() )
         { // find by name
+#ifdef NAMESERVER_PROCESS
+            requester = Nodes->GetProcess( processName_.c_str()
+                                         , verifier_ );
+#else
             requester = MyNode->GetProcess( processName_.c_str()
                                           , verifier_ );
+#endif
         }
         else
         { // find by pid
@@ -382,12 +389,21 @@ void CExtProcInfoReq::performRequest()
                 }
                 else
                 {
+#ifdef NAMESERVER_PROCESS
+                    // find by name (don't check node state, don't check process state, 
+                    //               if verifier is -1, backup is NOT Ok, else is Ok)
+                    CProcess *process = Nodes->GetProcess( target_process_name.c_str()
+                                                         , target_verifier
+                                                         , false, false
+                                                         , target_verifier == -1 ? false : true );
+#else
                     // find by name (check node state, don't check process state, 
                     //               if verifier is -1, backup is NOT Ok, else is Ok)
                     CProcess *process = Nodes->GetProcess( target_process_name.c_str()
                                                          , target_verifier
                                                          , true, false
                                                          , target_verifier == -1 ? false : true );
+#endif
                     if (process)
                     {
                         if ( target_verifier == -1 )
@@ -497,10 +513,10 @@ void CExtProcInfoReq::performRequest()
     TRACE_EXIT;
 }
 
-CExtProcInfoContReq::CExtProcInfoContReq (reqQueueMsg_t msgType, int pid,
-                                          int sockFd,
+CExtProcInfoContReq::CExtProcInfoContReq (reqQueueMsg_t msgType,
+                                          int nid, int pid, int sockFd,
                                           struct message_def *msg )
-    : CExtProcInfoBase(msgType, pid, sockFd, msg)
+    : CExtProcInfoBase(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEP", 4);

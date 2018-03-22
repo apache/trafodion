@@ -31,7 +31,7 @@
 
 #ifndef NAMESERVER_PROCESS
 #include "ptpclient.h"
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 extern CPtpClient *PtpClient;
 #endif
 

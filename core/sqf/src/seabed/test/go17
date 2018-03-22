@@ -36,7 +36,7 @@ node
 startup
 ! Start the test server
 exec {nowait,name \$SRV} $xsrv $*
-exec {nowait,name \$CLI} $xcli $*
+exec {$nid0 nowait,name \$CLI} $xcli $*
 ! Display process status of our processes
 ps
 ! Start the client process

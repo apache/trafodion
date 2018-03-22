@@ -47,7 +47,7 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		                 t253                               \
 		       t261 t262                t266           \
 		                                     t277      t279 \
-		  t280 t281 t282 t284      \
+		  t280 t281 t282      t284      t286 \
 		  tcheck tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -983,6 +983,10 @@ $(OUTDIR)/com_hp_traf_t284cli.h: $(OUTDIR)/com/hp/traf/t284cli.class
 t285: $(CHK) t285fs
 t285fs: $(OUTDIR)/t285fs.o $(TFS)
 	$(LINKITCXX) -o $@ $< $(RFS)
+
+t286: $(CHK) t286ms
+t286ms: $(OUTDIR)/t286ms.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
 
 
 tcheck: $(OUTDIR)/tcheck.o

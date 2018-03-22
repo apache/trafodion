@@ -44,7 +44,7 @@ exec {nowait,name \$Z000009} $xserver -server $*
 ! Display process status of our processes
 ps
 ! Start the client process
-exec {name \$CLI} $xclient -client $*
+exec {$nid0 name \$CLI} $xclient -client $*
 ! Display process status to see new processes
 ps
 ! Wait for our processes to stop, then stop the monitor processes and exit.

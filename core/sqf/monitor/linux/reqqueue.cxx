@@ -43,7 +43,6 @@
 #include "nameserver.h"
 #include "ptpclient.h"
 extern CPtpClient *PtpClient;
-extern int NameServerEnabled;
 #endif
 
 extern int MyPNID;
@@ -61,7 +60,7 @@ extern CHealthCheck HealthCheck;
 #ifdef NAMESERVER_PROCESS
 extern char *ErrorMsg (int error_code);
 #else
-extern int NameServerEnabled;
+extern bool NameServerEnabled;
 extern CNameServer *NameServer;
 extern CNameServerConfigContainer *NameServerConfig;
 #endif
@@ -520,9 +519,9 @@ void CExternalReq::giveupOwnership()
     TRACE_EXIT;
 }
 
-CExtNullReq::CExtNullReq (reqQueueMsg_t msgType, int pid, int sockFd,
+CExtNullReq::CExtNullReq (reqQueueMsg_t msgType, int nid, int pid, int sockFd,
                           struct message_def *msg )
-    : CExternalReq(msgType, pid, sockFd, msg)
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQE_", 4);
@@ -3162,8 +3161,7 @@ CReqQueue::~CReqQueue()
 
 
 CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
-                                         int pid,
-                                         int sockFd,
+                                         int nid, int pid, int sockFd,
                                          struct message_def *msg)
 {
     const char method_name[] = "CReqQueue::prepExternalReq";
@@ -3183,32 +3181,37 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
         {
 #ifdef NAMESERVER_PROCESS
         case ReqType_DelProcessNs:
-            request = new CExtDelProcessNsReq(msgType, pid, sockFd, msg);
+            request = new CExtDelProcessNsReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_NameServerStart:
-            request = new CExtNameServerStartNsReq(msgType, pid, sockFd, msg);
+            request = new CExtNameServerStartNsReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_NameServerStop:
-            request = new CExtNameServerStopNsReq(msgType, pid, sockFd, msg);
+            request = new CExtNameServerStopNsReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_NewProcessNs:
-            request = new CExtNewProcNsReq(msgType, pid, sockFd, msg);
+            request = new CExtNewProcNsReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_ProcessInfo:
-            request = new CExtProcInfoReq(msgType, pid, sockFd, msg);
+            request = new CExtProcInfoReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_ProcessInfoCont:
-            request = new CExtProcInfoContReq(msgType, pid, sockFd, msg);
+            request = new CExtProcInfoContReq(msgType, nid, pid, sockFd, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_ShutdownNs:
+            request = new CExtShutdownNsReq(msgType, nid, pid, sockFd, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3216,7 +3219,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
         case ReqType_Close:
             // No work to do for "close" (obsolete request).  Reply
             // with success.
-            request = new CExtNullReq(msgType, pid, -1, msg);
+            request = new CExtNullReq(msgType, nid, pid, -1, msg);
             request->errorReply( MPI_SUCCESS );
             delete request;
             request = NULL;
@@ -3228,12 +3231,12 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             break;
 
         case ReqType_ProcessInfo:
-            request = new CExtProcInfoReq(msgType, pid, -1, msg);
+            request = new CExtProcInfoReq(msgType, nid, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
         case ReqType_ProcessInfoCont:
-            request = new CExtProcInfoContReq(msgType, pid, -1, msg);
+            request = new CExtProcInfoContReq(msgType, nid, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3258,7 +3261,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             break;
 
         case ReqType_NewProcess:
-            request = new CExtNewProcReq(msgType, pid, -1, msg);
+            request = new CExtNewProcReq(msgType, nid, pid, -1, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3402,7 +3405,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
                 trace_printf("%s@%d invalid request type\n",
                              method_name, __LINE__);
             // Send error reply
-            request = new CExtNullReq(msgType, pid, sockFd, msg);
+            request = new CExtNullReq(msgType, nid, pid, sockFd, msg);
             request->errorReply( MPI_ERR_REQUEST );
             delete request;
             request = NULL;
@@ -3447,7 +3450,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
     else if (msgType == CExternalReq::ShutdownWork)
     {
-        request = new CExtNullReq(msgType, pid, sockFd, msg);
+        request = new CExtNullReq(msgType, nid, pid, sockFd, msg);
         request->setConcurrent(true);
     }
     else
@@ -3458,7 +3461,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
                          ((msg != NULL) ? msg->type : -1));
 
         // Send error reply
-        request = new CExtNullReq(msgType, pid, sockFd, msg);
+        request = new CExtNullReq(msgType, nid, pid, sockFd, msg);
         request->errorReply( MPI_ERR_REQUEST );
         delete request;
         request = NULL;
@@ -3469,8 +3472,8 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 }
 
 // Enqueue an external request
-void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType, int pid,
-                           int sockFd,
+void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType,
+                           int nid, int pid, int sockFd,
                            struct message_def *msg)
 {
     const char method_name[] = "CReqQueue::enqueueReq (ext)";
@@ -3479,7 +3482,7 @@ void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType, int pid,
     MemModLock.lock();
 
     CExternalReq *extReq;
-    extReq = prepExternalReq(msgType, pid, sockFd, msg);
+    extReq = prepExternalReq(msgType, nid, pid, sockFd, msg);
 
     if (extReq)
     {   // Have a valid external request
@@ -4364,6 +4367,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_ProcessInfoCont
    false,    // ReqType_Set
    false,    // ReqType_Shutdown
+   false,    // ReqType_ShutdownNs
    false,    // ReqType_Startup
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
@@ -4409,6 +4413,7 @@ const char * CReqQueue::svcReqType[] = {
     "ProcessInfoCont",
     "Set",
     "Shutdown",
+    "ShutdownNs",
     "Startup",
     "Stfsd",
     "TmLeader",

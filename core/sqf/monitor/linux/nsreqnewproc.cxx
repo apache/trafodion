@@ -29,21 +29,15 @@
 #include "reqqueue.h"
 #include "montrace.h"
 #include "monsonar.h"
-#include "monlogging.h"
-#include "device.h"
-#include "replicate.h"
 
-extern CMonStats *MonStats;
-extern CNode *MyNode;
 extern CNodeContainer *Nodes;
-extern CReplicate Replicator;
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
-CExtNewProcNsReq::CExtNewProcNsReq (reqQueueMsg_t msgType, int pid,
-                                    int sockFd,
+CExtNewProcNsReq::CExtNewProcNsReq (reqQueueMsg_t msgType,
+                                    int nid, int pid, int sockFd,
                                     struct message_def *msg )
-    : CExternalReq(msgType, pid, sockFd, msg)
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RqEB", 4);
@@ -80,14 +74,22 @@ void CExtNewProcNsReq::performRequest()
 
     CLNode *lnode;
     CNode *node;
+    CLNode *parent_lnode;
+    CNode *parent_node;
     int result;
-    lnode = Nodes->GetLNode(msg_->u.request.u.new_process_ns.nid);
+    lnode = Nodes->GetLNode( nid_ );
     node = lnode->GetNode();
-    strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.path );
-    strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
-    strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process_ns.program );
-    CProcess *requester = MyNode->GetProcess( pid_ );
-    CProcess *process = node->CreateProcess ( requester,
+    parent_lnode = Nodes->GetLNode( msg_->u.request.u.new_process_ns.parent_nid );
+    parent_node = NULL;
+    if ( parent_lnode )
+        parent_node = parent_lnode->GetNode();
+    strId_t pathStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.path );
+    strId_t ldpathStrId = node->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
+    strId_t programStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.program );
+    CProcess *parent = NULL;
+    if ( parent_node )
+        parent = parent_node->GetProcess( msg_->u.request.u.new_process_ns.parent_pid );
+    CProcess *process = node->CreateProcess ( parent,
                                               msg_->u.request.u.new_process_ns.nid,
                                               msg_->u.request.u.new_process_ns.pid,
                                               msg_->u.request.u.new_process_ns.verifier,
@@ -107,6 +109,7 @@ void CExtNewProcNsReq::performRequest()
                                               result
                                             );
     process = process; // touch
+    // TODO replicate
 
     msg_->u.reply.type = ReplyType_NewProcessNs;
     msg_->u.reply.u.new_process_ns.nid = msg_->u.request.u.new_process_ns.nid;

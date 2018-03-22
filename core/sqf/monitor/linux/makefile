@@ -228,6 +228,7 @@ MONITOROBJS += $(OUTDIR)/CommonLogger.o
 MONITOROBJS += $(OUTDIR)/zclient.o
 MONITOROBJS += $(OUTDIR)/type2str.o
 MONITOROBJS += $(OUTDIR)/ptpclient.o
+MONITOROBJS += $(OUTDIR)/meas.o
 
 NSOBJS = $(OUTDIR)/versns.o
 NSOBJS += $(OUTDIR)/nsmonitor.o
@@ -266,6 +267,7 @@ NSOBJS += $(OUTDIR)/nsreqstop.o
 NSOBJS += $(OUTDIR)/nsreqnewproc.o
 NSOBJS += $(OUTDIR)/nsreqprocinfo.o
 NSOBJS += $(OUTDIR)/nsreqstart.o
+NSOBJS += $(OUTDIR)/nsreqshutdown.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
     NSOBJS += $(OUTDIR)/rs.o
 endif
@@ -275,6 +277,7 @@ NSOBJS += $(OUTDIR)/monrobsem.o
 NSOBJS += $(OUTDIR)/CommonLogger.o
 NSOBJS += $(OUTDIR)/zclient.o
 NSOBJS += $(OUTDIR)/type2str.o
+NSOBJS += $(OUTDIR)/meas.o
 
 
 SHELLOBJS = $(OUTDIR)/shell.o

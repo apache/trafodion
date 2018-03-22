@@ -45,6 +45,7 @@ public:
     int  ProcessInfo( struct message_def* msg );
     int  ProcessInfoCont( struct message_def* msg );
     int  ProcessNew(CProcess* process );
+    int  ProcessShutdown( void );
     void SetLocalHost( void );
 
 private:
@@ -54,12 +55,14 @@ private:
     int  nsConfigInx_;
     bool nsStartupComplete_;
     int  seqNum_;
+    bool shutdown_;
 
     void ChooseNextNs( void );
     int  ConnectToNs( bool *retry );
     void GetM2NPort( int PNid );
     int  SendReceive( struct message_def* msg );
     int  SendToNs( const char *reqType, struct message_def *msg, int size );
+    void SetShutdown( bool shutdown );
     void SockClose( void );
     int  SockCreate();
     int  SockReceive( char *buf, int size );

@@ -63,6 +63,7 @@ using namespace std;
 #include "reqqueue.h"
 #include "zclient.h"
 #include "commaccept.h"
+#include "meas.h"
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
@@ -107,6 +108,7 @@ extern CMonLog *MonLog;
 extern CHealthCheck HealthCheck;
 extern CCommAccept CommAccept;
 extern CZClient    *ZClient;
+extern CMeas Meas;
 
 extern long next_test_delay;
 extern CReplicate Replicator;
@@ -5497,6 +5499,7 @@ read_again:
                                     , peer->p_n2recv );
                     }
                     nr = recv( fd, r, n2get, 0 );
+                    if ( nr > 0 ) Meas.addSockAllGatherRcvdBytes( nr );
                     if ( nr >= 0 || errno == EINTR ) break;
                 }
                 if ( nr < 0 )
@@ -5621,6 +5624,7 @@ read_again:
                                     , peer->p_n2recv );
                     }
                     ns = send( fd, s, n2send, 0 );
+                    if ( ns > 0 ) Meas.addSockAllGatherSentBytes( ns );
                     if ( ns >= 0 || errno != EINTR ) break;
                 }
                 if ( ns < 0 )
@@ -9578,6 +9582,7 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd, const char *desc)
                               , buf
                               , sizeCount
                               , 0 );
+        if ( readCount > 0 ) Meas.addSockRcvdBytes( readCount );
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
@@ -9653,6 +9658,7 @@ int CCluster::SendSock(char *buf, int size, int sockFd, const char *desc)
                               , buf
                               , size
                               , 0 );
+        if ( sendCount > 0 ) Meas.addSockSentBytes( sendCount );
 
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
