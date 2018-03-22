@@ -1521,7 +1521,10 @@ NATable *BindWA::getNATable(CorrName& corrName,
           ((bindWA->inViewDefinition()) ||
            (bindWA->inMVDefinition())))
       {
-        if (! CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
+        // for Histogram, support to use VOLATILE SCHEMA
+        // or else, don't support
+        if (!corrName.getQualifiedNameObj().isHistogramTable() && 
+            !CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
             (corrName.getQualifiedNameObj()))
         {
           bindWA->setErrStatus();

@@ -302,7 +302,7 @@ void CmpSeabaseDDL::createSeabaseSchema(
    // not reserved
    NAString tableNotCreated;
 
-   if (!createSchemaNode->isVolatile() && !ComIsTrafodionReservedSchemaName(schName))
+   if (!ComIsTrafodionReservedSchemaName(schName))
    {
       if (createHistogramTables(&cliInterface, schemaName.getExternalName(), 
                                 FALSE, tableNotCreated))
@@ -1742,7 +1742,10 @@ Lng32 cliRC = 0;
 
 
 
-   if (isVolatile)
+   if (isVolatile && 
+       strcmp(objectName, HBASE_HIST_NAME) != 0 && 
+       strcmp(objectName, HBASE_HISTINT_NAME) != 0 && 
+       strcmp(objectName, HBASE_PERS_SAMP_NAME) != 0)
       strcpy(volatileString,"VOLATILE");
 
    if (ifExists)

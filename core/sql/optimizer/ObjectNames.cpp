@@ -1441,6 +1441,13 @@ NABoolean QualifiedName::isHistogramIntervals() const
    return (getObjectName() == HBASE_HISTINT_NAME);
 }
 
+NABoolean QualifiedName::isHistogramTable() const
+{
+   const NAString objName = getObjectName();
+   return (objName == HBASE_HIST_NAME || 
+           objName == HBASE_HISTINT_NAME ||
+           objName == HBASE_PERS_SAMP_NAME );
+}
 
 void ExtendedQualName::print(FILE* ofd, const char* indent, const char* title) const
 {
