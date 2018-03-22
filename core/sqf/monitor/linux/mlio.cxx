@@ -919,7 +919,7 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
           }
 
           // Place new request on request queue
-          ReqQueue.enqueueReq(msgType, pid, -1, msg);
+          ReqQueue.enqueueReq(msgType, -1, pid, -1, msg);
       }
 
       break;

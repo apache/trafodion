@@ -40,7 +40,7 @@ extern int MyPNID;
 
 CExtKillReq::CExtKillReq (reqQueueMsg_t msgType, int pid,
                           struct message_def *msg )
-    : CExternalReq(msgType, pid, -1, msg)
+    : CExternalReq(msgType, -1, pid, -1, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEF", 4);

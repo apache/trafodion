@@ -37,13 +37,12 @@ extern CMonitor *Monitor;
 extern CMonStats *MonStats;
 extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
-extern CNode *MyNode;
 extern int MyPNID;
 
-CExtDelProcessNsReq::CExtDelProcessNsReq (reqQueueMsg_t msgType, int pid,
-                          int sockFd,
-                          struct message_def *msg )
-    : CExternalReq(msgType, pid, sockFd, msg)
+CExtDelProcessNsReq::CExtDelProcessNsReq (reqQueueMsg_t msgType,
+                                          int nid, int pid, int sockFd,
+                                          struct message_def *msg )
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RqEA", 4);
@@ -122,10 +121,10 @@ void CExtDelProcessNsReq::performRequest()
     target_verifier  = msg_->u.request.u.del_process_ns.target_verifier;
 
     if ( target_process_name.size() )
-    { // find by name (check node state, don't check process state, not backup)
+    { // find by name (don't check node state, don't check process state, not backup)
         process = Nodes->GetProcess( target_process_name.c_str()
                                    , target_verifier
-                                   , true, false, false );
+                                   , false, false, false );
         if ( process &&
             (msg_->u.request.u.del_process_ns.target_nid == -1 ||
              msg_->u.request.u.del_process_ns.target_pid == -1))
@@ -134,11 +133,11 @@ void CExtDelProcessNsReq::performRequest()
         }
     }
     else
-    { // find by nid (check node state, don't check process state, backup is Ok)
+    { // find by nid (don't check node state, don't check process state, backup is Ok)
         process = Nodes->GetProcess( target_nid
                                    , target_pid
                                    , target_verifier
-                                   , true, false, true );
+                                   , false, false, true );
         backup = NULL;
     }
 

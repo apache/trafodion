@@ -185,7 +185,7 @@ void CReqWorker::shutdownWork()
     TRACE_ENTRY;
 
     // Enqueue a request that will cause request worker threads to exit
-    ReqQueue.enqueueReq(CExternalReq::ShutdownWork, 0, -1, NULL);
+    ReqQueue.enqueueReq(CExternalReq::ShutdownWork, -1, 0, -1, NULL);
 
     for (int i=0; i< NUM_WORKERS; i++)
     {

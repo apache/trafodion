@@ -99,8 +99,10 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.del_process_ns.nid;
+    int pid = msg->u.request.u.del_process_ns.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -142,9 +144,10 @@ void CCommAcceptMon::monReqNameServerStop( struct message_def* msg, int sockFd )
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.nameserver_stop.nid;
     int pid = msg->u.request.u.nameserver_stop.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -181,9 +184,10 @@ void CCommAcceptMon::monReqProcessInfo( struct message_def* msg, int sockFd )
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.process_info.nid;
     int pid = msg->u.request.u.process_info.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -230,9 +234,10 @@ void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd 
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.process_info_cont.nid;
     int pid = msg->u.request.u.process_info_cont.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, pid, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -268,8 +273,10 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.new_process_ns.nid;
+    int pid = msg->u.request.u.new_process_ns.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -294,8 +301,10 @@ void CCommAcceptMon::monReqShutdown( struct message_def* msg, int sockFd )
 
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.shutdown_ns.nid;
+    int pid = msg->u.request.u.shutdown_ns.pid;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
 
     TRACE_EXIT;
 }
@@ -314,7 +323,7 @@ void CCommAcceptMon::monReqUnknown( struct message_def* msg, int sockFd )
     CExternalReq::reqQueueMsg_t msgType;
     msgType = CExternalReq::NonStartupMsg;
     // Place new request on request queue
-    ReqQueue.enqueueReq(msgType, -1, sockFd, msg);
+    ReqQueue.enqueueReq(msgType, -1, -1, sockFd, msg);
 
     TRACE_EXIT;
 }

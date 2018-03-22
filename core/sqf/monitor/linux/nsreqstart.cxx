@@ -37,10 +37,10 @@ extern CNodeContainer *Nodes;
 extern CMonitor *Monitor;
 extern bool IsRealCluster;
 
-CExtNameServerStartNsReq::CExtNameServerStartNsReq (reqQueueMsg_t msgType, int pid,
-                                                    int sockFd,
+CExtNameServerStartNsReq::CExtNameServerStartNsReq (reqQueueMsg_t msgType,
+                                                    int nid, int pid, int sockFd,
                                                     struct message_def *msg )
-    : CExternalReq(msgType, pid, sockFd, msg)
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RqEG", 4);
