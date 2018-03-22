@@ -55,8 +55,11 @@ public:
     void start( void );
     void shutdownWork( void );
 
-    // needs to be public
-    int pendingFd_;
+    typedef struct
+    {
+        CCommAcceptMon *this_;
+        int             pendingFd_;
+    } Context;
 
 private:
     void commAcceptorSock( void );

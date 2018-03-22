@@ -567,8 +567,11 @@ void CCommAcceptMon::processNewSock( int joinFd )
 
     mem_log_write(CMonLog::MON_NSCONNTONEWMON_1);
 
-    pendingFd_ = joinFd;
-    rc = pthread_create(&thread_id_, NULL, mon2nsProcess, this);
+    // need to create context in case back-to-back accept is too fast
+    Context *ctx = new Context();
+    ctx->this_ = this;
+    ctx->pendingFd_ = joinFd;
+    rc = pthread_create(&thread_id_, NULL, mon2nsProcess, ctx);
     if (rc != 0)
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -636,13 +639,13 @@ void CCommAcceptMon::commAcceptorSock()
             CLock::lock();
             CLock::wait();
             CLock::unlock();
-            if (!shutdown_)
+            if ( !shutdown_ )
             {
                 continue; // Ok to accept another connection
             }
         }
 
-        if (shutdown_)
+        if ( shutdown_ )
         {   // We are being notified to exit.
             break;
         }
@@ -725,8 +728,9 @@ static void *mon2nsProcess(void *arg)
     const char method_name[] = "mon2nsProcess";
     TRACE_ENTRY;
 
-    // Parameter passed to the thread is an instance of the CommAcceptMon object
-    CCommAcceptMon *cao = (CCommAcceptMon *) arg;
+    // Parameter passed to the thread is an context
+    CCommAcceptMon::Context *ctx = (CCommAcceptMon::Context *) arg;
+    CCommAcceptMon *cao = ctx->this_;
 
     // Mask all allowed signals
     sigset_t  mask;
@@ -744,7 +748,8 @@ static void *mon2nsProcess(void *arg)
     MyNode->AddMonConnCount(1);
 
     // Enter thread processing loop
-    cao->processMonReqs(cao->pendingFd_);
+    cao->processMonReqs(ctx->pendingFd_);
+    delete ctx;
 
     MyNode->AddMonConnCount(-1);
 
