@@ -830,7 +830,7 @@ A            B                     C
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>alter table t031v1 delete stored descriptor;
 
 --- SQL operation complete.
@@ -856,7 +856,7 @@ A            B                     C
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation complete.
+--- SQL operation completed with warnings.
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
