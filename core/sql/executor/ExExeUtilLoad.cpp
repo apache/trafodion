@@ -1259,7 +1259,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
                           &cliError, NULL,
                           " ",
                           getHbaseErrStr(retcode),
-                          (char *)currContext->getJniErrorStr().data());
+                          (char *)GetCliGlobals()->getJniErrorStr());
         step_ = LOAD_END_ERROR_;
         break;
       }
@@ -1962,7 +1962,7 @@ void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 hdfsClientRetCode)
   ComDiagsArea * diagsArea = NULL;
   char* errorMsg = HdfsClient::getErrorText((HDFS_Client_RetCode)hdfsClientRetCode);
   ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
-                  NULL, NULL, NULL, errorMsg, (char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+                  NULL, NULL, NULL, errorMsg, (char *)GetCliGlobals()->getJniErrorStr());
   ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
   pentry_up->setDiagsArea(diagsArea);
 }

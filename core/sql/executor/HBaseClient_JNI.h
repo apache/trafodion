@@ -282,11 +282,8 @@ public:
   }
 
 private:
-  NAString getLastJavaError();
-
   enum JAVA_METHODS {
-    JM_GET_ERROR
-   ,JM_SCAN_OPEN 
+    JM_SCAN_OPEN 
    ,JM_DELETE    
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
@@ -546,9 +543,6 @@ private:
   NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
-  NAString  getLastJavaError();
-
-private:  
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT
@@ -631,6 +625,8 @@ typedef enum {
  ,HVC_ERROR_GET_ALLSCH_EXCEPTION
  ,HVC_ERROR_GET_ALLTBL_PARAM
  ,HVC_ERROR_GET_ALLTBL_EXCEPTION
+ ,HVC_ERROR_EXECUTE_HIVE_SQL_PARAM
+ ,HVC_ERROR_EXECUTE_HIVE_SQL_EXCEPTION
  ,HVC_LAST
 } HVC_RetCode;
 
@@ -676,13 +672,9 @@ private:
   , isConnected_(FALSE)
   {}
 
-private:
-  NAString getLastJavaError();
-
 private:  
   enum JAVA_METHODS {
     JM_CTOR = 0
-   ,JM_GET_ERROR 
    ,JM_INIT
    ,JM_CLOSE
    ,JM_EXISTS     
@@ -761,9 +753,6 @@ public:
 
 
 private:
-  NAString getLastJavaError();
-
-
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT_HFILE_PARAMS

@@ -997,7 +997,7 @@ void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
     ExRaiseSqlWarning(getHeap(), &newDiags, (ExeErrorCode) (8448), NULL,
         &intParam1, &cliError, NULL, (str ? (char*) str : (char*) " "),
         getHbaseErrStr(retcode),
-        (str2 ? (char*) str2 : (char *) currContext->getJniErrorStr().data()));
+        (str2 ? (char*) str2 : (char *) GetCliGlobals()->getJniErrorStr()));
     diagsArea->mergeAfter(*newDiags);
   }
   ex_assert( 0, "invalid return code value");

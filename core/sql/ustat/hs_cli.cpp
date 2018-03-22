@@ -503,7 +503,7 @@ Lng32 HSClearCLIDiagnostics()
 // Obtain any JNI diagnostic text stored in the CLI
 const char * HSFuncGetJniErrorStr()
 {
-  return GetCliGlobals()->currContext()->getJniErrorStrPtr();
+  return GetCliGlobals()->getJniErrorStr();
 }
 
 // -----------------------------------------------------------------------

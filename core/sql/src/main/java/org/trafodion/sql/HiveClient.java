@@ -167,9 +167,8 @@ public class HiveClient {
     }
 
     public Object[] getAllTables(String schName) 
-        throws MetaException, Exception {
-        //System.out.println("schName = " + schName);
-
+        throws MetaException, TException {
+        try {
         Database db = hmsClient.getDatabase(schName);
         if (db == null)
             return null;
@@ -179,6 +178,9 @@ public class HiveClient {
            return tableList.toArray();
         else
            return null;
+        } catch (NoSuchObjectException e) {
+          return null;
+        }
     }
 
     // Because Hive changed the name of the class containing internal constants changed

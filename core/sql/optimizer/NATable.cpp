@@ -7878,7 +7878,7 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
         << DgString0((char*)"ExpHbaseInterface::init()")
         << DgString1(getHbaseErrStr(-retcode))
         << DgInt0(-retcode)
-        << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       delete ehi;
       return NULL;
     }

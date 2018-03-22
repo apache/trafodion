@@ -569,7 +569,7 @@ NABoolean CmpContext::execHiveSQL(const char* hiveSQL, ComDiagsArea *diags)
 
       if (!result && diags)
         *diags << DgSqlCode(-1214)
-               << DgString0(GetCliGlobals()->getJniErrorStrPtr())
+               << DgString0(GetCliGlobals()->getJniErrorStr())
                << DgString1(hiveSQL);
     }
 

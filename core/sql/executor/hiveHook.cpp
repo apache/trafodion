@@ -212,7 +212,7 @@ NABoolean HiveMetaData::recordError(Int32 errCode,
       if (client_)
         errCodeStr_ = client_->getErrorText((HVC_RetCode)errCode_);
       errMethodName_ = errMethodName;
-      errDetail_ = GetCliGlobals()->getJniErrorStrPtr();
+      errDetail_ = GetCliGlobals()->getJniErrorStr();
       return FALSE;
     }
   return TRUE;
