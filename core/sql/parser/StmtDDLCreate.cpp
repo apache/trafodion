@@ -7210,6 +7210,22 @@ StmtDDLCommentOn  * StmtDDLCommentOn::castToStmtDDLCommentOn()
   return this;
 }
 
+/* add escape quote for single quote */
+NAString StmtDDLCommentOn::getCommentEscaped()
+{
+    NAString ret(comment_);
+    int idx = ret.length() - 1;
+
+    for (; idx >= 0; idx--)
+    {
+        if (ret[idx] == '\'')
+            ret.insert(idx, "'");
+    }
+
+    return ret;
+}
+
+
 //
 // End of File
 //
