@@ -94,6 +94,7 @@ enum OperatorTypeEnum {
                         REL_BINARY_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
+                        REL_TABLE_MAPPING_BUILTIN_SERIES, //series
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ANY_LEAF_TABLE_MAPPING_UDF,
