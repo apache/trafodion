@@ -430,6 +430,7 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
       jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HTC].methodID, j_htc);
       if (jenv_->ExceptionCheck()) {
          getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::releaseHTableClient()");
+         jenv_->PopLocalFrame(NULL);
          return HBC_ERROR_REL_HTC_EXCEPTION;
       }
   }
@@ -902,7 +903,6 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::drop()");
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
@@ -3318,7 +3318,7 @@ HTC_RetCode HTableClient_JNI::setWriteBufferSize(Int64 size)
 
   if (jenv_->ExceptionCheck())
   {
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::setWriteBufferSize()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::setWriteBufferSize()");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION;
   }
@@ -3955,6 +3955,13 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getAllTables()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_ALLTBL_EXCEPTION;
+  }
+
+  if (j_tblNames == NULL) 	
+  {	
+     GetCliGlobals()->setJniErrorStr(getErrorText(HVC_ERROR_EXISTS_EXCEPTION));
+     jenv_->PopLocalFrame(NULL);	
+     return HVC_ERROR_EXISTS_EXCEPTION;	
   }
 
   int numTables = convertStringObjectArrayToList(heap_, j_tblNames,
