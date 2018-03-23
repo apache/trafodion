@@ -378,13 +378,6 @@ short ExDDLTcb::work()
 	  
           diagsArea->mergeAfter (*cpDiagsArea);
           up_entry->setDiagsArea(diagsArea);
-          // For now, copy the warnings to currContext diaga area
-          // because ex_root_tcb::execute returns 0 for warnings
-          if (cpDiagsArea->getNumber(DgSqlCode::WARNING_) > 0)
-          {
-             diagsArea = currContext->getDiagsArea();
-             diagsArea->mergeAfter (*cpDiagsArea);
-          }
           cpDiagsArea->decrRefCount();
         }
 

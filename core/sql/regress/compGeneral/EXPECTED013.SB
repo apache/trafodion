@@ -53,7 +53,7 @@ SCAN
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS11 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>create table orders1 (o_orderkey int not null, o_custkey int, foreign key(o_custkey) references customer(c_custkey) enforced, primary key(o_orderkey)) no partitions;
 
 --- SQL operation complete.
@@ -328,28 +328,28 @@ SCAN
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS2 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>create table fk1 ( a int not null primary key, b int, c int, constraint cons3 foreign key (b) references uk1(a) not enforced) ;
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS3 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>create table fk2 ( a int not null primary key, b int, c int, constraint cons4 foreign key (a,b) references uk2(a,b) not enforced) ;
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS4 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>create table fk3 ( a int not null primary key, b int, c int, constraint cons5 foreign key (a,b,c) references uk3(a,b,c) not enforced) ;
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS5 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>create table ffk0 ( a int not null primary key, b int, c int, constraint cons6 foreign key (b) references fk0(a) not enforced) ;
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.CONS6 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>-- tables for sol: 10-100722-1962 test
 >>create table t_013 ( a int not null, 

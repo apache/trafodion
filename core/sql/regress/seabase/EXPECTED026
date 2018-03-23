@@ -269,7 +269,7 @@
 
 *** WARNING[4255] Provided schema name does not exist in metadata. Cleanup will be performed on objects in this schema, if they exist.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>create schema sch026;
 
 --- SQL operation complete.

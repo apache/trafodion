@@ -3125,7 +3125,7 @@ VCH15            NINT         CH3  NLARGE
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>showddl test020_t34;
 
 CREATE TABLE TRAFODION.SCH.TEST020_T34
@@ -3165,7 +3165,7 @@ ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
 
 *** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>showddl test020_t34;
 
 CREATE TABLE TRAFODION.SCH.TEST020_T34

@@ -531,7 +531,7 @@ ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
 
 *** WARNING[1018] Grant of role or privilege ALL_DML from DB__ROOT to SQL_USER2 not found, revoke request ignored.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>showddl games;
 
 CREATE TABLE TRAFODION.T139SCH.GAMES
@@ -561,7 +561,7 @@ ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
 
 *** WARNING[1018] Grant of role or privilege ALL_DML from DB__ROOT to SQL_USER3 not found, revoke request ignored.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>showddl teams;
 
 CREATE TABLE TRAFODION.T139SCH.TEAMS

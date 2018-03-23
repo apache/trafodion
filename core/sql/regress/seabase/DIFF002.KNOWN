@@ -1,3 +1,0 @@
-1264,1265d1263
-< *** WARNING[8742] GetMetaDataInfo operation could not be completed. Reason: Datatype array<string> for column 'a' in table hive.hive.thivearr is not supported. This table will be ignored.
-< 

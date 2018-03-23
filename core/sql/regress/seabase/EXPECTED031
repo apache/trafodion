@@ -771,7 +771,7 @@ A            B                     C
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>alter table t031t1 delete stored descriptor;
 
@@ -800,7 +800,7 @@ A            B                     C
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
@@ -891,7 +891,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>alter table t031t1 delete stored descriptor;
 
 --- SQL operation complete.
@@ -923,7 +923,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 
 *** WARNING[4493] Stored Descriptor Status: Uptodate and current.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>showddl t031t1;
 
 CREATE TABLE TRAFODION.SCH.T031T1

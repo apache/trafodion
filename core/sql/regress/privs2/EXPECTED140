@@ -618,7 +618,7 @@ Tom                                                 White Socks
 
 *** WARNING[1013] Not all privileges were granted.  You lack grant option for the INSERT privilege.
 
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>-- user3 can propagate insert on table players
 >>grant insert on players to sql_user4;
