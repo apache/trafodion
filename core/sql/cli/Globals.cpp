@@ -921,26 +921,6 @@ void CliGlobals::getUdrErrorFlags(NABoolean &sqlViolation,
                                   xactAborted);
 }
 
-void CliGlobals::setJniErrorStr(NAString errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-void CliGlobals::setJniErrorStr(const char *errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-NAString CliGlobals::getJniErrorStr()
-{
-  return currContext()->getJniErrorStr();
-}
-
-const char* CliGlobals::getJniErrorStrPtr()
-{
-  return currContext()->getJniErrorStrPtr();
-}
-
 void CliGlobals::updateTransMode(TransMode *transMode)
 {
   currContext()->getTransaction()->getTransMode()->

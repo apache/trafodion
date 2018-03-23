@@ -570,7 +570,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                             hdfsStats_, hdfsScanRetCode);
              if (hdfsScanRetCode != HDFS_SCAN_OK) {
                 setupError(EXE_ERROR_HDFS_SCAN, hdfsScanRetCode, "SETUP_HDFS_SCAN", 
-                              currContext->getJniErrorStr(), NULL);              
+                              GetCliGlobals()->getJniErrorStr(), NULL);              
                 step_ = HANDLE_ERROR_AND_DONE;
                 break;
              } 
@@ -594,7 +594,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              }
              else if (hdfsScanRetCode != HDFS_SCAN_OK) {
                 setupError(EXE_ERROR_HDFS_SCAN, hdfsScanRetCode, "SETUP_HDFS_SCAN", 
-                              currContext->getJniErrorStr(), NULL);              
+                              GetCliGlobals()->getJniErrorStr(), NULL);              
                 step_ = HANDLE_ERROR_AND_DONE;
                 break;
              } 
@@ -670,7 +670,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
              hdfsScanRetCode = hdfsScan_->stop();
              if (hdfsScanRetCode != HDFS_SCAN_OK) {
                 setupError(EXE_ERROR_HDFS_SCAN, hdfsScanRetCode, "HdfsScan::stop", 
-                              currContext->getJniErrorStr(), NULL);              
+                              GetCliGlobals()->getJniErrorStr(), NULL);              
                 step_ = HANDLE_ERROR_AND_DONE;
              }    
              step_ = DONE;
@@ -2193,7 +2193,7 @@ logErrorReturn:
      loggingErrorDiags_ = ComDiagsArea::allocate(heap);
      *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
                  << DgString0(loggingFileName_)
-                 << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+                 << DgString1((char *)GetCliGlobals()->getJniErrorStr());
   }
 }
 

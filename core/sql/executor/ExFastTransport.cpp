@@ -1277,7 +1277,7 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                (char *)currContext->getJniErrorStr().data());
+                (char *)GetCliGlobals()->getJniErrorStr());
   //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
   //pentry_down->setDiagsArea(diagsArea);
   updateWorkATPDiagsArea(diagsArea);
@@ -1294,7 +1294,7 @@ void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                  (char *)currContext->getJniErrorStr().data());
+                  (char *)GetCliGlobals()->getJniErrorStr());
   updateWorkATPDiagsArea(diagsArea);
 }
 

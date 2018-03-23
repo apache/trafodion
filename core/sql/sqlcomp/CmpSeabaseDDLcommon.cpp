@@ -1146,7 +1146,7 @@ ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server,
                           << DgString0((char*)"ExpHbaseInterface::init()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       }
 
       deallocEHI(ehi); 
@@ -1425,7 +1425,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -1500,7 +1500,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -2557,7 +2557,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2615,7 +2615,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::create()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2695,7 +2695,7 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::alter()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           retcode = -1;
         } // if
     } // else
@@ -2723,7 +2723,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::drop()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2735,7 +2735,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2758,7 +2758,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::copy()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2770,7 +2770,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::copy()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -8127,7 +8127,7 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
                           << DgString0((char*)"ExpHbaseInterface::dropAll()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       return retcode;
     }
@@ -8638,7 +8638,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                           << DgString0((char*)"ExpHbaseInterface::truncate()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       processReturn();
       return -1;

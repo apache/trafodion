@@ -4820,7 +4820,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
                           << DgString0((char*)"ExpHbaseInterface::copy()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       processReturn();
       
@@ -6264,7 +6264,7 @@ short CmpSeabaseDDL::hbaseFormatTableDropColumn(
                             << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
                             << DgString1(getHbaseErrStr(-cliRC))
                             << DgInt0(-cliRC)
-                            << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                            << DgString2((char*)GetCliGlobals()->getJniErrorStr());
         
         goto label_error;
       }
@@ -10152,7 +10152,7 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
                                   DgString0((char*)"ExpHbaseInterface::revoke()"))
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
           deallocEHI(ehi);
 
@@ -10169,7 +10169,7 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
                           << DgString0((char*)"ExpHbaseInterface::close()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       deallocEHI(ehi);
 
@@ -12592,7 +12592,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
             << DgString0((char*)"ExpHbaseInterface::getLatestSnapshot()")
             << DgString1(getHbaseErrStr(-retcode))
             << DgInt0(-retcode)
-            << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+            << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           delete ehi;
         }
     }

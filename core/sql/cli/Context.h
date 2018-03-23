@@ -630,18 +630,6 @@ public:
     xactAborted = udrXactAborted_;
   }
 
-  inline void setJniErrorStr(NAString errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline void setJniErrorStr(const char *errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline NAString getJniErrorStr()
-  { return jniErrorStr_; }
-
-  inline const char* getJniErrorStrPtr()
-  { return (const char*)jniErrorStr_.data(); }
-
   inline CLISemaphore *getSemaphore()
   { 
      return cliSemaphore_;
