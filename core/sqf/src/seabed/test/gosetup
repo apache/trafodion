@@ -77,6 +77,8 @@ if [ "$clustern" = "-cluster" ]; then
 	if [ $keep = 0 ]; then
 		./godb 6
 		gocleanport
+		nodes=`SQ_CONFIGDB=$PWD/sqconfig.db trafconf -wname`
+		pdcp $nodes sqconfig.db $PWD/sqconfig.db
 	fi
 fi
 if [ "$SQ_VIRTUAL_NODES" != "1" ]; then

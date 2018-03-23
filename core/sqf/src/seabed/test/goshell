@@ -48,7 +48,7 @@ node
 ! Start the monitor processes across the cluster
 startup
 ! Start the test server
-exec {nowait,name \$SRV} $xserver -server $*
+exec {$nid1 nowait,name \$SRV} $xserver -server $*
 delay 1
 ! Display process status of our processes
 ps
