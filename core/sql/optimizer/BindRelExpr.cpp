@@ -10425,7 +10425,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // column. COM_CURRENT_DEFAULT is only used for Datetime
           // columns.
           //
-          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
+          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT || nacol->getDefaultClass() == COM_CURRENT_UT_DEFAULT 
+             || nacol->getDefaultClass() == COM_UUID_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
             omittedCurrentDefaultClassCols = TRUE;
             omittedDefaultCols = TRUE;

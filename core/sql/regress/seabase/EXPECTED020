@@ -3947,31 +3947,103 @@ AAAA                       ?            2
 >>
 >>obey TEST020(trafodion_2335);
 >>--create seqence test020_seq;
+>>cqd traf_upsert_mode 'merge';
+
+--- SQL operation complete.
+>>cqd traf_aligned_row_format 'off' ;
+
+--- SQL operation complete.
 >>create table test020t45(a  largeint not null default unix_timestamp(),
 +>                        b  char(36) not null default uuid(),
 +>                        c  varchar(10) default to_char(sysdate,'YYYYMMDD'),
 +>                        --support sequence as default in next check-in
 +>                        --d  int not null default testi020_seq.nextval,
-+>                        e  int );
++>                        e int not null,
++>                        f int, primary key(e));
 
 --- SQL operation complete.
->>insert into test020t45(e) values(1),(2),(3);
+>>-- check if the timestamp is inserted with the recent timestamp
+>>insert into test020t45(e,f) values(1,1),(2,2),(3,3);
 
 --- 3 row(s) inserted.
->>upsert into test020t45(e) values(4),(5);
+>>select sleep(1) from dual;
 
---- 2 row(s) inserted.
->>upsert using load into test020t45(e) values (6);
-
---- 1 row(s) inserted.
->>select count(*) from test020t45 where c = to_char(sysdate,'YYYYMMDD');
-
-(EXPR)              
+(EXPR) 
 --------------------
 
-                   6
+                   1
 
 --- 1 row(s) selected.
+>>upsert into test020t45(e,f) values(1,4);
+
+--- 1 row(s) inserted.
+>>select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+(EXPR)                (EXPR)                (EXPR)
+--------------------  --------------------  --------------------
+
+                   1                     3                     1
+
+--- 1 row(s) selected.
+>>
+>>cqd traf_upsert_mode 'replace';
+
+--- SQL operation complete.
+>>delete from test020t45;
+
+--- 3 row(s) deleted.
+>>insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+
+--- 3 row(s) inserted.
+>>select sleep(1) from dual;
+
+(EXPR) 
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>upsert into test020t45(e,f) values(1,4);
+
+--- 1 row(s) inserted.
+>>select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+(EXPR)                (EXPR)                (EXPR)
+--------------------  --------------------  --------------------
+
+                   2                     3                     1
+
+--- 1 row(s) selected.
+>>
+>>cqd traf_upsert_mode 'optimal';
+
+--- SQL operation complete.
+>>delete from test020t45;
+
+--- 3 row(s) deleted.
+>>insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+
+--- 3 row(s) inserted.
+>>select sleep(1) from dual;
+
+(EXPR) 
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>upsert into test020t45(e,f) values(1,4);
+
+--- 1 row(s) inserted.
+>>select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+(EXPR)                (EXPR)                (EXPR)
+--------------------  --------------------  --------------------
+
+                   1                     3                     1
+
+--- 1 row(s) selected.
+>>
 >>--negative tests
 >>--the function is not variable-free, so should fail
 >>create table test020t45(a  largeint not null default unix_timestamp(),

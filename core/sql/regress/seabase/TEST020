@@ -933,16 +933,35 @@ select * from test020t44;
 
 ?section trafodion_2335
 --create seqence test020_seq;
+cqd traf_upsert_mode 'merge';
+cqd traf_aligned_row_format 'off' ;
 create table test020t45(a  largeint not null default unix_timestamp(),
                         b  char(36) not null default uuid(),
                         c  varchar(10) default to_char(sysdate,'YYYYMMDD'),
                         --support sequence as default in next check-in
                         --d  int not null default testi020_seq.nextval,
-                        e  int );
-insert into test020t45(e) values(1),(2),(3);
-upsert into test020t45(e) values(4),(5);
-upsert using load into test020t45(e) values (6); 
-select count(*) from test020t45 where c = to_char(sysdate,'YYYYMMDD');
+                        e  int not null,
+                        f  int, primary key(e));
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+cqd traf_upsert_mode 'replace';
+delete from test020t45;
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+cqd traf_upsert_mode 'optimal';
+delete from test020t45;
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
 --negative tests
 --the function is not variable-free, so should fail
 create table test020t45(a  largeint not null default unix_timestamp(),
