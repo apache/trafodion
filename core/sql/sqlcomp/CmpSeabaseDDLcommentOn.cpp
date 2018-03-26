@@ -66,6 +66,37 @@
 #include "ComUser.h"
 
 
+static char *doEscapeComment(char *src, CollHeap *heap)
+{
+  char *ret = NULL;
+  int head = 0;
+  int tail = 0;
+  int src_len = strlen(src);
+
+  if (NULL == src)
+  {
+    NAAssert("invalid comment string fetched", __FILE__ , __LINE__ );
+  }
+
+  ret = new (heap) char[src_len * 2 + 1];
+  ret[0] = '\0';
+  for (; tail <= src_len; tail++)
+  {
+    if (src[tail] == '\'')
+    {
+      strncat(ret, src+head, tail-head+1);
+      strcat(ret, "'");
+      head = tail + 1;
+    }
+    else if (src[tail] == '\0')
+    {
+      strncat(ret, src+head, tail-head+1);
+    }
+  }
+
+  return ret;
+}
+
 short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid, 
                                                     enum ComObjectType object_type, 
                                                     ComTdbVirtObjCommentInfo & comment_info,
@@ -105,7 +136,7 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
     {
       objQueue->position();
       OutputInfo * vi = (OutputInfo*)objQueue->getNext();
-      comment_info.objectComment = (char*)vi->get(0);
+      comment_info.objectComment = doEscapeComment((char*)vi->get(0), heap);
     }
 
   //get index comments of table
@@ -143,7 +174,7 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
 
             // get the index full name
             indexComment.indexFullName = (char*) oi->get(0);
-            indexComment.indexComment = (char*) oi->get(1);
+            indexComment.indexComment = doEscapeComment((char*) oi->get(1), heap);
           }
        }
     }
@@ -180,14 +211,13 @@ short CmpSeabaseDDL::getSeabaseObjectComment(Int64 object_uid,
 
               // get the column name
               colComment.columnName = (char*) oi->get(0);
-              colComment.columnComment = (char*) oi->get(1);
+              colComment.columnComment = doEscapeComment((char*) oi->get(1), heap);
             }
        }
     }
 
   return 0;
 }
-
 
 void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
                                                 NAString &currCatName, 
@@ -290,13 +320,14 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
 
   //check for overflow
-  NAString & comment = (NAString &) commentOnNode->getComment();
-  if (comment.length() > COM_MAXIMUM_LENGTH_OF_COMMENT)
+  if (commentOnNode->getComment().length() > COM_MAXIMUM_LENGTH_OF_COMMENT)
     {
       *CmpCommon::diags() << DgSqlCode(-8402);
       processReturn ();
       return;
     }
+
+  NAString comment = commentOnNode->getCommentEscaped();
 
   // add, remove, change comment of object/column
   enum ComTextType textType = COM_OBJECT_COMMENT_TEXT;
