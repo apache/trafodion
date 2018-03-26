@@ -4623,7 +4623,7 @@ Lng32 SQLCLI_GetDiagnosticsStmtInfo2(
       // Only rowsAffected supported for now, if statement_id is passed in.
 
       if ((!stmt) || 
-	  (what_to_get != SQLDIAG_ROW_COUNT))
+	  ((what_to_get != SQLDIAG_NUMBER) && (what_to_get != SQLDIAG_ROW_COUNT)))
 	{
 	  return -CLI_STMT_NOT_EXISTS;
 	}

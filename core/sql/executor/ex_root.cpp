@@ -932,7 +932,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
       return fatal_error(glob, diagsArea);
     }
 
-
   // Following code is test for soln 10-081104-7061.  A CQD
   // COMP_INT_38 can be used to force various kinds of abends
   // in the master.
@@ -972,9 +971,39 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
         break;
       }
   }
-#endif 
-
-  return 0;
+#endif
+  Int32 retcode = 0;
+// The lines below were added to return proper value
+// for retcode at the time of execute. But it seems to
+// open up more issues. So commented out for now
+/*
+  if (qchild.up->isEmpty())
+     return 0;  
+  ex_queue_entry *centry = qchild.up->getHeadEntry();
+  if (centry == NULL)
+     return 0;
+  if (centry->getDiagsArea()) {
+     if (diagsArea == NULL)     
+        diagsArea = ex_root_tcb::moveDiagsAreaFromEntry (centry);
+     else
+        diagsArea->mergeAfter(*centry->getDiagsArea());
+  }
+  // Copied the diagsArea to be returned as part of the SQL_EXEC_Fetch
+  // But SQL_EXEC_Exec will continue to return 0 to avoid
+  // breaking the implied protocol.
+  if (diagsArea != NULL) {
+     if (retcode == 0 && diagsArea->mainSQLCODE() > 0)
+        // It's a warning. So return 1. That's what the cli expects.
+        retcode = 1;
+     else if (diagsArea->mainSQLCODE() < 0)
+        // It's an error. Return the negative value.
+        retcode = -1;
+     else
+        // It's a Diags Area w/o any Conditions.
+        retcode = 0;
+  }
+*/
+  return retcode;
 }
 
 void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
@@ -2117,6 +2146,7 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
       ipcEnv->getAllConnections()->waitOnAll();
       
     } // while (1)
+
 }
 
 /////////////////////////////////////////////////////////////////////
