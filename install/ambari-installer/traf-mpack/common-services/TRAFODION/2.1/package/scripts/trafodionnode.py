@@ -138,7 +138,7 @@ class Node(Script):
          content = InlineTemplate(params.dcs_log4j_template),
          mode=0644)
 
-    serverlist = '\n'.join(params.dcs_mast_node_list[1:len(params.dcs_mast_node_list)]) + '\n'
+    serverlist = '\n'.join(params.dcs_mast_node_list)) + '\n'
     File(os.path.join(trafhome,"masters"),
          owner = params.traf_user, 
          group = params.traf_group, 

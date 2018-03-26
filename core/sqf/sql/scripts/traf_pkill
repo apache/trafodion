@@ -21,4 +21,4 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-ps -ef | grep $1 | cut -b 10-14 | xargs kill -9
+ps -ef | grep $1 | grep -v grep | awk '{print $2}' | xargs kill -9
