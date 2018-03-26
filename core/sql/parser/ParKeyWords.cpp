@@ -1009,6 +1009,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SLACK",              TOK_SLACK,        NONRESTOKEN_),
   ParKeyWord("SLEEP",              TOK_SLEEP,        NONRESTOKEN_),
   ParKeyWord("SMALLINT",           TOK_SMALLINT,    ANS_|RESWORD_|MPWORD_),
+  ParKeyWord("SMALLTABLE",         TOK_SMALLTABLE,   NONRESTOKEN_),
   ParKeyWord("SNAPSHOT",           TOK_SNAPSHOT,    NONRESTOKEN_),
   ParKeyWord("SOFTWARE",           TOK_SOFTWARE,    NONRESTOKEN_),
   ParKeyWord("SOME",               TOK_SOME,        ANS_|RESWORD_|MPWORD_),

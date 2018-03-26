@@ -1070,6 +1070,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SLACK
 %token <tokval> TOK_SPACE
 %token <tokval> TOK_SMALLINT
+%token <tokval> TOK_SMALLTABLE
 %token <tokval> TOK_SOME
 %token <tokval> TOK_SOUNDEX
 %token <tokval> TOK_SORT                /* Tandem extension non-reserved word */
@@ -27242,6 +27243,11 @@ table_feature : TOK_NOT_DROPPABLE
                 { 
                     $$ = new (PARSERHEAP())
                       ElemDDLTableFeature(COM_NOT_DROPPABLE);
+                }
+                | TOK_SMALLTABLE
+                {
+                    $$ = new (PARSERHEAP())
+                      ElemDDLTableFeature(COM_SMALL_TABLE);
                 }
                 | TOK_DROPPABLE
                 {

@@ -69,6 +69,9 @@ public:
            { return ((tableFeature_ == COM_DROPPABLE_INSERT_ONLY) ||
                      (tableFeature_ == COM_NOT_DROPPABLE_INSERT_ONLY)); }
 
+        const NABoolean isSmallTable() const
+           { return ((tableFeature_ == COM_SMALL_TABLE) ); }
+
 	// methods for tracing
 	virtual const NAString displayLabel1() const;
 	virtual const NAString getText() const;

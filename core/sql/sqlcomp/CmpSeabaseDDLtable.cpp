@@ -2075,6 +2075,30 @@ short CmpSeabaseDDL::createSeabaseTable2(
   Lng32 numSaltPartnsFromCQD = 
     CmpCommon::getDefaultNumeric(TRAF_NUM_OF_SALT_PARTNS);
   
+  if(createTableNode->isSmallTable())
+  {
+    NAString smallColName("_TBLNM_");
+    SQLVarChar * tblNmColType = new(STMTHEAP) SQLVarChar(STMTHEAP, 128, FALSE);
+    NAString tblNmExprText("CAST ( ' ");
+    tblNmExprText += createTableNode->getTableName();
+    tblNmExprText += "' AS VARCHAR(128) ) ";
+    
+    ElemDDLColDefault *tblNmDef = 
+        new(STMTHEAP) ElemDDLColDefault(
+             ElemDDLColDefault::COL_COMPUTED_DEFAULT);
+    tblNmDef->setComputedDefaultExpr(tblNmExprText);
+    ElemDDLColDef * tblNmColDef =
+        new(STMTHEAP) ElemDDLColDef(NULL, &smallColName, tblNmColType , tblNmDef,
+                                    STMTHEAP);
+    ElemDDLColRef * edcrs = 
+        new(STMTHEAP) ElemDDLColRef(smallColName, COM_ASCENDING_ORDER);
+
+    tblNmColDef->setColumnClass(COM_SYSTEM_COLUMN);
+
+    colArray.insert(tblNmColDef);
+    keyArray.insertAt(0, edcrs);
+    numSysCols++;
+  }
   if ((createTableNode->getSaltOptions()) ||
       ((numSaltPartnsFromCQD > 0) &&
        (NOT implicitPK)))
@@ -2213,7 +2237,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
       numSaltCols++;
       numSplits = numSaltPartns - 1;
     }
-  
+
+ 
   // is hbase data stored in varchar format
   if (hbaseMapFormat && hbaseMappedDataFormatIsString)
     {
