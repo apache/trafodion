@@ -395,6 +395,7 @@ const ComResWord ComResWords::resWords_[] = {
   ComResWord("USAGE",            ANS_|RESWORD_),
   ComResWord("USER",             ANS_|RESWORD_),
   ComResWord("USING",            ANS_|RESWORD_),
+  ComResWord("VALUE",           ANS_|RESWORD_|MPWORD_),
   ComResWord("VALUES",           ANS_|RESWORD_|MPWORD_),
   ComResWord("VARCHAR",          ANS_|RESWORD_),
   ComResWord("VARIABLE",         POTANS_|RESWORD_),
