@@ -95,7 +95,10 @@ long initSessMemSize;
 int portMapToSecs = -1;
 int portBindToSecs = -1;
 bool bPlanEnabled = false;
-
+char keepaliveStatus[256];
+int keepaliveIdletime;
+int keepaliveIntervaltime;
+int keepaliveRetrycount;
 void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx);
 bool verifyPortAvailable(const char * idForPort, int portNumber);
 BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, char* strName, char* strValue);
@@ -791,7 +794,14 @@ catch(SB_Fatal_Excep sbfe)
 //LCOV_EXCL_STOP
 		}
 	}
-
+    if( strlen(keepaliveStatus) > 0){
+        strncpy( srvrGlobal->clientKeepaliveStatus, keepaliveStatus, strlen(keepaliveStatus));
+        srvrGlobal->clientKeepaliveIntervaltime = keepaliveIntervaltime;
+        srvrGlobal->clientKeepaliveIdletime = keepaliveIdletime;
+        srvrGlobal->clientKeepaliveRetrycount = keepaliveRetrycount;
+    }else{
+        strncpy( srvrGlobal->clientKeepaliveStatus, "unenable", strlen("unenable"));
+    }
     // TCPADD and RZ are required parameters.
 	// The address is passed in with TCPADD parameter .
 	// The hostname is passed in with RZ parameter.
@@ -1427,7 +1437,74 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 				argEmpty = TRUE;
 				break;
 			}
-		}
+		}else
+        if (strcmp(arg, "-TCPKEEPALIVESTATUS") == 0){
+            if (++count < argc && argv[count][0] != '-')
+            {
+                if (strlen(argv[count]) < sizeof(keepaliveStatus) - 1)
+                {
+                    memset(keepaliveStatus, 0, sizeof(keepaliveStatus) - 1);
+                    strncpy(keepaliveStatus, argv[count], sizeof(keepaliveStatus) - 1);
+                }
+                else
+                {
+                    argWrong = TRUE;
+                }
+            }
+            else
+            {
+                argEmpty = TRUE;
+                break;
+            }
+        }else
+        if (strcmp(arg, "-TCPKEEPALIVEIDLETIME") == 0){
+            if (++count < argc )
+            {
+                if(strspn(argv[count], "0123456789")==strlen(argv[count])){
+                    keepaliveIdletime = atoi(argv[count]);
+                }else
+                {
+                    argWrong = TRUE;
+                }
+			}
+            else
+            {
+                argEmpty = TRUE;
+                break;
+            }
+        }else
+        if (strcmp(arg, "-TCPKEEPALIVEINTERVAL") == 0){
+            if (++count < argc )
+            {
+                if(strspn(argv[count], "0123456789")==strlen(argv[count])){
+                    keepaliveIntervaltime = atoi(argv[count]);
+                }else
+                {
+                    argWrong = TRUE;
+                }
+            }
+            else
+            {
+                argEmpty = TRUE;
+                break;
+            }
+        }else
+        if (strcmp(arg, "-TCPKEEPALIVERETRYCOUNT") == 0){
+            if (++count < argc )
+            {
+                if(strspn(argv[count], "0123456789")==strlen(argv[count])){
+                    keepaliveRetrycount = atoi(argv[count]);
+                }else
+                {
+                    argWrong = TRUE;
+                }
+            }
+            else
+            {
+                argEmpty = TRUE;
+                break;
+            }
+        }
 		count++;
 	}
 

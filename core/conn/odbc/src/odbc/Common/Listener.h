@@ -26,12 +26,19 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
+#include <netinet/tcp.h>
 enum CURR_TCPIP_OPER{
 	CURR_UNDEFINED,
 	CURR_OPEN,
 	CURR_PROCESS,
 	CURR_OTHER
+};
+
+typedef struct KEEPALIVE_OPT{
+    int isKeepalive;
+    int keepaliveIdle;
+    int keepaliveInterval;
+    int keepCount;
 };
 
 #define INITIALIZE_TRACE(TransportTrace) \
