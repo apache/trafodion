@@ -985,7 +985,6 @@ Lng32 ExpLOBInterfaceSelectCursor(ExLobGlobals * exLobGlob,
 		   0,
 		   hdfsDetailError,0,0,0,0,0,0,0,
                    openType
-                   
 		   );
 
   if (err != LOB_OPER_OK)
@@ -1161,7 +1160,6 @@ Lng32 ExpLOBInterfaceGetFileName(ExLobGlobals * exLobGlob,
     {
       return -err;
     }
-  
   
   return LOB_ACCESS_SUCCESS;
 }

@@ -337,8 +337,9 @@ extern "C" void
 odbc_SQLSrvr_ExtractLob_ame_(
     /* In   */ CEE_tag_def objtag_
   , /* In   */ const CEE_handle_def *call_id_
-  , /* In   */ IDL_long    extractLobAPI
+  , /* In   */ IDL_short    extractLobAPI
   , /* In   */ IDL_string  lobHandle
+  , /* In   */ IDL_long_long   extractLen
   );
 
 void

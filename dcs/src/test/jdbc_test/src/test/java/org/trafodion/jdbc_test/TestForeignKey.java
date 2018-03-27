@@ -26,8 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import javax.swing.text.Utilities;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,22 +44,26 @@ public class TestForeignKey {
 	private static final String FK21 = "FK21";
 	private static final String FK22 = "FK22";
 
-	private static final String strCreatePKTABLE1Query = "CREATE TABLE " + Utils.schema + "." + PKTABLE1 + "( "
+    private static final String strCreatePKTABLE1Query = "CREATE TABLE IF NOT EXISTS " + Utils.schema + "." + PKTABLE1
+            + "( "
 			+ PK1 + " INT NOT NULL PRIMARY KEY)";
 	private static final String strDropPKTABLE1Query = "DROP TABLE " + Utils.schema + "." + PKTABLE1;
 
-	private static final String strCreatePKTABLE2Query = "CREATE TABLE " + Utils.schema + "." + PKTABLE2 + "( "
+    private static final String strCreatePKTABLE2Query = "CREATE TABLE IF NOT EXISTS " + Utils.schema + "." + PKTABLE2
+            + "( "
 			+ PK2 + " INT NOT NULL PRIMARY KEY)";
 	private static final String strDropPKTABLE2Query = "DROP TABLE " + Utils.schema + "." + PKTABLE2;
 
-	private static final String strCreateFKTABLE1Query = "CREATE TABLE " + Utils.schema + "." + FKTABLE1 + "( "
+    private static final String strCreateFKTABLE1Query = "CREATE TABLE IF NOT EXISTS " + Utils.schema + "." + FKTABLE1
+            + "( "
 			+ FK1 + " INT NOT NULL, "
 			+ FK2 + " INT NOT NULL, "
 			+ "FOREIGN KEY (" + FK1 + ") REFERENCES " + Utils.schema + "." + PKTABLE1 + "(" + PK1 + "), "
 			+ "FOREIGN KEY (" + FK2 + ") REFERENCES " + Utils.schema + "." + PKTABLE2 + "(" + PK2 + "))";
 	private static final String strDropFKTABLE1Query = "DROP TABLE " + Utils.schema + "." + FKTABLE1;
 
-	private static final String strCreateFKTABLE2Query = "CREATE TABLE " + Utils.schema + "." + FKTABLE2 + "( "
+    private static final String strCreateFKTABLE2Query = "CREATE TABLE IF NOT EXISTS " + Utils.schema + "." + FKTABLE2
+            + "( "
 			+ FK21 + " INT NOT NULL, "
 			+ FK22 + " INT NOT NULL, "
 			+ "FOREIGN KEY (" + FK21 + ") REFERENCES " + Utils.schema + "." + PKTABLE1 + "(" + PK1 + "), "
@@ -69,21 +71,23 @@ public class TestForeignKey {
 	private static final String strDropFKTABLE2Query = "DROP TABLE " + Utils.schema + "." + FKTABLE2;
 
 	private static Connection _conn;
-	
+
 	@BeforeClass
 	public static void doTestSuiteSetup() throws Exception {
-		try{
-			_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
-			Statement stmt = _conn.createStatement();
-			
-			stmt.execute(strCreatePKTABLE1Query);
-			stmt.execute(strCreatePKTABLE2Query);
-			stmt.execute(strCreateFKTABLE1Query);
-			stmt.execute(strCreateFKTABLE2Query);
-		}
+        try {
+            _conn = Utils.getUserConnection();
+        } catch (Exception e) {
+            fail("failed to create connection" + e.getMessage());
+        }
+
+        try (Statement stmt = _conn.createStatement();) {
+            stmt.execute(strCreatePKTABLE1Query);
+            stmt.execute(strCreatePKTABLE2Query);
+            stmt.execute(strCreateFKTABLE1Query);
+            stmt.execute(strCreateFKTABLE2Query);
+        }
 		catch (Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
+            fail("failed to create table: " + e.getMessage());
 		}
 	}
 	
@@ -96,12 +100,19 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getImportedKeys("TRAFODION", Utils.schema, FKTABLE1);
 			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetImportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            try (
+                 ResultSet rs = metaData.getImportedKeys("TRAFODION", Utils.schema, FKTABLE1);
+            )
+            {
+                while(rs.next()) {
+                    compareForeignkeyWithExp("testGetImportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
+                    rowNum += 1;
+                }
+            }
+            catch (Exception e) {
+                fail(e.getMessage());
+            }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,12 +128,16 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getExportedKeys("TRAFODION", Utils.schema, PKTABLE1);
-			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetExportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            int rowNum = 0;
+            try (
+			    ResultSet rs = metaData.getExportedKeys("TRAFODION", Utils.schema, PKTABLE1);
+            )
+            {
+			    while(rs.next()) {
+			    	compareForeignkeyWithExp("testGetExportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
+			    	rowNum += 1;
+			    }
+            }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -137,12 +152,16 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getCrossReference("TRAFODION", Utils.schema, PKTABLE1, "TRAFODION", Utils.schema, FKTABLE1);
 			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetCrossReference", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            try (
+			    ResultSet rs = metaData.getCrossReference("TRAFODION", Utils.schema, PKTABLE1, "TRAFODION", Utils.schema, FKTABLE1);
+            )
+            {
+			    while(rs.next()) {
+			    	compareForeignkeyWithExp("testGetCrossReference", rowNum + 1, rs, expFkInfo[rowNum]);
+			    	rowNum += 1;
+			    }
+            }
 			assertEquals(rowNum, 1);
 		} catch (Exception e) {
 			e.printStackTrace();

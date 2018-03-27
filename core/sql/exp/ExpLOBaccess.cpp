@@ -786,6 +786,7 @@ Ex_Lob_Error ExLob::getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen
       }
   return err;
 }
+
 Ex_Lob_Error ExLob::getOffset(char *handleIn, Int32 handleInLen,Int64 &outLobOffset,LobsSubOper so, Int64 transId)
 {
   char logBuf[4096];

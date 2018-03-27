@@ -2752,7 +2752,6 @@ void ExExeUtilLobExtractTcb::freeResources()
 	       3, // close
                0); // open type not applicable
 
-    
   ExpLOBinterfaceCleanup(exLobGlobals_);
   exLobGlobals_ = NULL;
 }

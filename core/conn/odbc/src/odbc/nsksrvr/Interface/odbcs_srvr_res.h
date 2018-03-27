@@ -346,8 +346,10 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
     /* In    */ CEE_tag_def objtag_
   , /* In    */ const CEE_handle_def *call_id_
   , /* In    */ const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
-  , /* In    */ IDL_long_long lobDataLen
-  , /* In    */ BYTE * lobDataValue
+  , /* In   */ IDL_short  extractLobAPI
+  , /* In   */ IDL_long_long  lobLength
+  , /* In   */ IDL_long_long  extractLen
+  , /* In   */ BYTE   *  extractData
 );
 
 void
