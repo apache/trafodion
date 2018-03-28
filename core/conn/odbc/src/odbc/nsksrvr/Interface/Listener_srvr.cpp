@@ -82,38 +82,22 @@ void CNSKListenerSrvr::TCP_PROCESSNAME_PORT(FILE* fp)
 }
 
 void CNSKListenerSrvr::TCP_SetKeepalive(int socketnum,
-                                        char *keepaliveStatus,
+                                        bool keepaliveStatus,
                                         int idleTime,
                                         int intervalTime,
                                         int retryCount)
 {
     //all need to be configured
-    if(NULL == keepaliveStatus){
-        return;
-    }
-    if(0 == strcmp(keepaliveStatus,"default")){
+    if(!keepaliveStatus){
         keepaliveOpt.isKeepalive = DEFAULT_KEEPALIVE;
         keepaliveOpt.keepaliveIdle = DEFAULT_KEEPALIVE_TIMESEC;
         keepaliveOpt.keepaliveInterval = DEFAULT_KEEPALIVE_INTVL;
         keepaliveOpt.keepCount = DEFAULT_KEEPALIVE_COUNT;
-    }else
-    if(0 == strcmp(keepaliveStatus,"unenable")){
-                keepaliveOpt.isKeepalive = 0;
-                keepaliveOpt.keepaliveIdle = DEFAULT_KEEPALIVE_TIMESEC;
-                keepaliveOpt.keepaliveInterval = DEFAULT_KEEPALIVE_INTVL;
-                keepaliveOpt.keepCount = DEFAULT_KEEPALIVE_COUNT;
-    }else
-    if(0 == strcmp(keepaliveStatus, "enable")){
+    }else{
         keepaliveOpt.isKeepalive = 1;
         keepaliveOpt.keepaliveIdle = idleTime;
         keepaliveOpt.keepaliveInterval = intervalTime;
         keepaliveOpt.keepCount = retryCount;
-
-    }else{
-        keepaliveOpt.isKeepalive = 0;
-        keepaliveOpt.keepaliveIdle = DEFAULT_KEEPALIVE_TIMESEC;
-        keepaliveOpt.keepaliveInterval = DEFAULT_KEEPALIVE_INTVL;
-        keepaliveOpt.keepCount = DEFAULT_KEEPALIVE_COUNT;
     }
 
     int error;

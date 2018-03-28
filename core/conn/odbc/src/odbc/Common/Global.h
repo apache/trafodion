@@ -139,7 +139,7 @@ class ODBCMXTraceMsg;
 #define DEFAULT_REFRESH_RATE_SECS		60
 #define DEFAULT_SRVR_IDLE_TIMEOUT		0
 #define DEFAULT_CONN_IDLE_TIMEOUT		0
-#define DEFAULT_KEEPALIVE               1     //OPEN KEEPALIVE
+#define DEFAULT_KEEPALIVE               0     //OPEN KEEPALIVE
 #define DEFAULT_KEEPALIVE_TIMESEC       3600
 #define DEFAULT_KEEPALIVE_COUNT         3
 #define DEFAULT_KEEPALIVE_INTVL         20
@@ -941,7 +941,7 @@ typedef struct _SRVR_GLOBAL_Def
 		bzero(m_ProcName,sizeof(m_ProcName));
 		m_bNewConnection = false;
 		m_bNewService = false;
-               bzero(clientKeepaliveStatus, sizeof(clientKeepaliveStatus));
+               clientKeepaliveStatus = false;
                clientKeepaliveIdletime = 0;
                clientKeepaliveIntervaltime = 0;
                clientKeepaliveRetrycount = 0;
@@ -1062,10 +1062,10 @@ typedef struct _SRVR_GLOBAL_Def
 
 	tip_handle_t		tip_gateway;
 
-    char    clientKeepaliveStatus[64];
-    int     clientKeepaliveIdletime;
-    int     clientKeepaliveIntervaltime;
-    int     clientKeepaliveRetrycount;
+       BOOL                    clientKeepaliveStatus;
+       int                     clientKeepaliveIdletime;
+       int                     clientKeepaliveIntervaltime;
+       int                     clientKeepaliveRetrycount;
 	char				*pxid_url;
 	IDL_long_long		local_xid;
 	UINT				xid_length;

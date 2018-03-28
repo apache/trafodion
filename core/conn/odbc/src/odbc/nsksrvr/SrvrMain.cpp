@@ -95,7 +95,7 @@ long initSessMemSize;
 int portMapToSecs = -1;
 int portBindToSecs = -1;
 bool bPlanEnabled = false;
-char keepaliveStatus[256];
+bool keepaliveStatus = false;
 int keepaliveIdletime;
 int keepaliveIntervaltime;
 int keepaliveRetrycount;
@@ -794,14 +794,12 @@ catch(SB_Fatal_Excep sbfe)
 //LCOV_EXCL_STOP
 		}
 	}
-    if( strlen(keepaliveStatus) > 0){
-        strncpy( srvrGlobal->clientKeepaliveStatus, keepaliveStatus, strlen(keepaliveStatus));
-        srvrGlobal->clientKeepaliveIntervaltime = keepaliveIntervaltime;
-        srvrGlobal->clientKeepaliveIdletime = keepaliveIdletime;
-        srvrGlobal->clientKeepaliveRetrycount = keepaliveRetrycount;
-    }else{
-        strncpy( srvrGlobal->clientKeepaliveStatus, "unenable", strlen("unenable"));
-    }
+
+    srvrGlobal->clientKeepaliveStatus = keepaliveStatus;
+    srvrGlobal->clientKeepaliveIntervaltime = keepaliveIntervaltime;
+    srvrGlobal->clientKeepaliveIdletime = keepaliveIdletime;
+    srvrGlobal->clientKeepaliveRetrycount = keepaliveRetrycount;
+
     // TCPADD and RZ are required parameters.
 	// The address is passed in with TCPADD parameter .
 	// The hostname is passed in with RZ parameter.
@@ -1441,10 +1439,15 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
         if (strcmp(arg, "-TCPKEEPALIVESTATUS") == 0){
             if (++count < argc && argv[count][0] != '-')
             {
-                if (strlen(argv[count]) < sizeof(keepaliveStatus) - 1)
+                char keepaliveEnable[20];
+                if (strlen(argv[count]) < sizeof(keepaliveEnable) - 1)
                 {
-                    memset(keepaliveStatus, 0, sizeof(keepaliveStatus) - 1);
-                    strncpy(keepaliveStatus, argv[count], sizeof(keepaliveStatus) - 1);
+                    memset(keepaliveEnable, 0, sizeof(keepaliveEnable) - 1);
+                    strncpy(keepaliveEnable, argv[count], sizeof(keepaliveEnable) - 1);
+                    if(stricmp(keepaliveEnable, "true") == 0)
+                        keepaliveStatus = true;
+                    else
+                        keepaliveStatus = false;
                 }
                 else
                 {

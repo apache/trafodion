@@ -116,7 +116,7 @@ public final class Constants {
     public static final String  DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_STATUS= "dcs.server.user.program.tcp.keepalive.status";
 
     /** Default value for DCS server program mxosrvr keepalive STATUS*/
-    public static final String DCS_SERVER_PROGRAM_KEEPALIVE_STATUS = "enable";
+    public static final String DCS_SERVER_PROGRAM_KEEPALIVE_STATUS = "true";
 
     /** Configuration key for DCS server program mxosrvr keepalive IDLETIME*/
     public static final String DEFAULT_DCS_SERVER_PROGRAM_TCP_KEEPALIVE_IDLETIME = "dcs.server.user.program.tcp.keepalive.idletime";

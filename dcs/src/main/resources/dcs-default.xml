@@ -388,30 +388,32 @@
   </property>
   <property>
     <name>dcs.server.user.program.tcp.keepalive.status</name>
-    <value>enable</value>
+    <value>true</value>
     <description>
-        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+        If tcp keepalive is enabled. The default is true. Set false to disable.
     </description>
   </property>
   <property>
     <name>dcs.server.user.program.tcp.keepalive.idletime</name>
     <value>300</value>
     <description>
-        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+        Time in seconds for the interval between the last data packet sent and the first keepalive probe.
+        The default is 300.
     </description>
   </property>
   <property>
     <name>dcs.server.user.program.tcp.keepalive.intervaltime</name>
-    <value>5</value>
+    <value>3</value>
     <description>
-        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+        Time in seconds for interval between two keepalive probes .
+        The default is 3.
     </description>
   </property>
   <property>
     <name>dcs.server.user.program.tcp.keepalive.retrycount</name>
     <value>3</value>
     <description>
-        Used in  mxosrvr keepalive , parameter is ENABLE IDLETIME INTERTIME RETRYCNT.
+        The maximum number of keepalive probes TCP should send before dropping the connection.
     </description>
   </property>
 
