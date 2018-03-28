@@ -1063,7 +1063,20 @@ SQLRETURN CStmt::SendSQLCommand(BOOL SkipProcess, SQLCHAR *StatementText,
             else
                 m_StmtType = TYPE_UNKNOWN;
         }
-
+        else if (strcmp(token, "SET") == 0)
+        {
+            token = strtok(NULL, delimiters);
+            if (token != NULL && strcmp(token, "NAMES") == 0)
+            {
+                token = strtok(NULL, delimiters);
+                if (token != NULL && strcmp(token, "'UTF8'") == 0)
+                {
+                    m_ConnectHandle->m_DSValue.setDSCharSet(1);
+                    return SQL_SUCCESS;
+                }
+            }
+            m_StmtType = TYPE_UNKNOWN;
+        }
         else
         {
             /*
