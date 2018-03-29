@@ -47,11 +47,9 @@ public:
     void start( void );
     void shutdownWork( void );
 
-    void monReqNewProcess( struct message_def* msg, int sockFd );
 private:
 
     void commAcceptorSock( void );
-    bool sendNodeInfoSock( int sockFd );
 
     bool accepting_;
     bool shutdown_;

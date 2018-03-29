@@ -48,6 +48,7 @@ public:
     void monReqNewProcess( struct message_def* msg, int sockFd );
     void monReqProcessInfo( struct message_def* msg, int sockFd );
     void monReqProcessInfoCont( struct message_def* msg, int sockFd );
+    void monReqProcessInfoNs( struct message_def* msg, int sockFd );
     void monReqShutdown( struct message_def* msg, int sockFd );
     void monReqUnknown( struct message_def* msg, int sockFd );
     void startAccepting( void );

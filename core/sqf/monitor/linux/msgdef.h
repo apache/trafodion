@@ -251,6 +251,7 @@ typedef enum {
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
+    ReqType_ProcessInfoNs,                  // process information request (monitor)
     ReqType_Set,                            // add configuration information to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_ShutdownNs,                     // request nameserver shutdown
@@ -286,6 +287,7 @@ typedef enum {
     ReplyType_OpenInfo,                     // reply with list of opens for a process
     ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
     ReplyType_ProcessInfo,                  // reply with info on list of processes
+    ReplyType_ProcessInfoNs,                // reply with info of process
     ReplyType_Stfsd,                        // reply with stfsd info
     ReplyType_Startup,                      // reply with startup info
     ReplyType_TmSync,                       // reply from unsolicited TmSync message
@@ -576,14 +578,16 @@ struct NewProcessNs_def
     bool event_messages;                    // true if want event messages
     bool system_messages;                   // true if want system messages
     long long tag;                          // user defined tag to be sent in completion notice
-    char path[MAX_SEARCH_PATH];             // process's object lookup path to program
-    char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
-    char program[MAX_PROCESS_PATH];         // full path to object file
+    strId_t pathStrId;                      // program lookup path (string id)
+    strId_t ldpathStrId;                    // library load path (string id)
+    strId_t programStrId;                   // full path to object file (string id)
     char process_name[MAX_PROCESS_NAME];    // process name
+    char port_name[MPI_MAX_PORT_NAME];      // mpi port name from MPI_Open_port
     int  argc;                              // number of additional command line argument
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
     char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
     char outfile[MAX_PROCESS_PATH];         // if null then use monitor's outfile
+    struct timespec creation_time;          // creation time
     int  fill1;                             // filler to fill out struct
 };
 
@@ -958,6 +962,36 @@ struct ProcessInfo_reply_def
     bool more_data;                         // true if have additional process data
 };
 
+struct ProcessInfoNs_reply_def
+{
+    int  nid;                               // node id
+    int  pid;                               // process id
+    Verifier_t verifier;                    // process verifier
+    char process_name[MAX_PROCESS_NAME];    // process name
+    PROCESSTYPE type;                       // Identifies the process handling catagory
+    int   parent_nid;                       // parent's node id
+    int   parent_pid;                       // parent's process id
+    Verifier_t parent_verifier;             // parent's process verifier
+    int  priority;                          // Linux system priority
+    int  backup;                            // if non-zero, starts process as backup
+    STATE state;                            // process's current state
+    bool unhooked;                          // if hooked, parent process dies will trigger child process exits
+    bool event_messages;                    // true if want event messages
+    bool system_messages;                   // true if want system messages
+    long long tag;                          // user defined tag to be sent in completion notice
+    char  program[MAX_PROCESS_PATH];        // process's object file name
+    strId_t pathStrId;                      // program lookup path (string id)
+    strId_t ldpathStrId;                    // library load path (string id)
+    strId_t programStrId;                   // full path to object file (string id)
+    char port_name[MPI_MAX_PORT_NAME];      // mpi port name from MPI_Open_port
+    int  argc;                              // number of additional command line argument
+    char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
+    char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
+    char outfile[MAX_PROCESS_PATH];         // if null then use monitor's outfile
+    struct timespec creation_time;          // creation time
+    int  return_code;                       // mpi error code of error
+};
+
 struct ProcessInfoCont_def
 {
     int  nid;                               // requesting process's node id
@@ -1233,6 +1267,7 @@ struct reply_def
         struct OpenInfo_reply_def      open_info;
         struct PNodeInfo_reply_def     pnode_info;
         struct ProcessInfo_reply_def   process_info;
+        struct ProcessInfoNs_reply_def process_info_ns;
         struct Startup_reply_def       startup_info;
 #ifdef SQ_STFSD
         struct Stfsd_reply_def         stfsd;

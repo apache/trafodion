@@ -66,6 +66,7 @@ public:
     ~CNodeContainer( void );
 
     void    AddedNode( CNode *node );
+    CProcess *AddCloneProcess( ProcessInfoNs_reply_def *processInfo );
     CNode  *AddNode( int pnid );
     void    AddNodes( void );
     void    AddToSpareNodesList( int pnid );
@@ -111,6 +112,11 @@ public:
                         , bool checkstate=true
                         , bool backupOk=false );
     CProcess *GetProcessByName( const char *name, bool checkstate=true );
+    CProcess *GetProcessNs( int nid
+                          , int pid
+                          , Verifier_t verifier );
+    CProcess *GetProcessNs( const char *name
+                          , Verifier_t verifier );
     SyncState GetTmState( SyncState check_state );
     CNode  *GetZoneNode( int zid );
 

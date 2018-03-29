@@ -77,6 +77,16 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
                              msg->u.reply.u.process_info.return_code);
             }
             break;
+        case ReplyType_ProcessInfoNs:
+            size += sizeof(struct ProcessInfoNs_reply_def);
+            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d reply type=%d(ProcessInfoNs), size=%d, sock=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd);
+                trace_printf("%s@%d process-info reply. rc=%d\n", method_name, __LINE__,
+                             msg->u.reply.u.process_info.return_code);
+            }
+            break;
         default:
             if (trace_settings & (TRACE_PROCESS_DETAIL))
             {

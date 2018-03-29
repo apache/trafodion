@@ -127,9 +127,11 @@ class CProcessContainer
                              );
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
     void DumpCallback( int nid, pid_t pid, int status );
-    static CProcess *ParentNewProcReply ( CProcess *process, int result );
 #ifndef NAMESERVER_PROCESS
+    static CProcess *ParentNewProcReply ( CProcess *process, int result );
     void Exit_Process( CProcess *process, bool abend, int downNode );
+#else
+    static CProcess *MonReply ( CProcess *process, int result );
 #endif
     CProcess *GetFirstProcess( void ) { return(head_); };
     CProcess *GetLastProcess( void ) { return(tail_); };
@@ -299,6 +301,7 @@ class CProcess
     inline void SetPairParentVerifier( int verifier ) { PairParentVerifier = verifier; }
     inline int GetPriority ( ) { return Priority; }
     inline void SetTag ( long long tag ) { Tag = tag; }
+    inline int GetReplyTag ( ) { return ReplyTag; }
     inline void SetReplyTag ( int tag ) { ReplyTag = tag; }
     inline const char * GetPort ( ) { return Port; }
     inline PROCESSTYPE GetType ( ) { return Type; }
@@ -317,6 +320,8 @@ class CProcess
     inline int GetDumperVerifier ( ) { return DumperVerifier; }
     inline const char * GetDumpFile () { return dumpFile_.c_str(); }
 #ifdef NAMESERVER_PROCESS
+    inline int GetMonSockFd( ) { return monSockFd_; }
+    inline void SetMonSockFd( int sockFd ) { monSockFd_ = sockFd; }
     inline int GetOrigPNidNs( ) { return origPNidNs_; }
     inline void SetOrigPNidNs( int pnid ) { origPNidNs_ = pnid; }
 #endif
@@ -342,9 +347,9 @@ class CProcess
                                       , Verifier_t verifier
                                       , const char *name
                                       , _TM_Txid_External trans_id );
-#endif
     void ReplyNewProcess (struct message_def * reply_msg, CProcess * process,
                           int result);
+#endif
     void SendProcessCreatedNotice(CProcess *parent, int result);
     struct timespec GetCreationTime () { return CreationTime; }
     void SetCreationTime(int os_pid);
@@ -383,13 +388,19 @@ class CProcess
     inline int  decrReplRef() { --replRefCount_; return replRefCount_; }
     inline int replRefCount() { return replRefCount_; }
 
+#ifndef NAMESERVER_PROCESS
     void parentContext (struct message_def * msg) { requestBuf_ = msg; }
     struct message_def * parentContext ( void ) { return requestBuf_; }
+#else
+    void SetMonContext (struct message_def * msg) { requestBuf_ = msg; }
+    struct message_def * GetMonContext ( void ) { return requestBuf_; }
+#endif
 
     void SetHangupTime () { clock_gettime(CLOCK_REALTIME, &hangupTime_); }
     time_t GetHangupTime () { return hangupTime_.tv_sec; }
 
     void childAdd ( int nid, int pid );
+    int childCount ( void );
     void childRemove ( int nid, int pid );
     bool childRemoveFirst ( nidPid_t & child );
 
@@ -545,6 +556,7 @@ private:
     CNotice       *NoticeTail;
 #endif
 #ifdef NAMESERVER_PROCESS
+    int            monSockFd_;
     int            origPNidNs_;
 #endif
 };

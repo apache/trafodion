@@ -293,12 +293,19 @@ void CExtProcInfoReq::performRequest()
     TRACE_ENTRY;
 
 #ifndef NAMESERVER_PROCESS
-    if ( NameServerEnabled )
+    bool    getMonitorInfo = false;
+    if (strcasecmp(msg_->u.request.u.process_info.target_process_name, "MONITOR") == 0)
+    {
+        getMonitorInfo = true;
+        msg_->u.request.u.process_info.target_process_name[0] = 0;
+    }
+
+    if ( NameServerEnabled && !getMonitorInfo )
         NameServer->ProcessInfo(msg_); // in reqQueue thread (CExternalReq)
 #endif
 
 #ifndef NAMESERVER_PROCESS
-    if ( NameServerEnabled )
+    if ( NameServerEnabled && !getMonitorInfo )
     {
         // Send reply to requester
         lioreply(msg_, pid_);
@@ -359,7 +366,11 @@ void CExtProcInfoReq::performRequest()
         }
 #endif
 
+#ifdef NAMESERVER_PROCESS
+        if ( requester || ( nid_ == -1 && pid_ == -1 && verifier_ == -1 ) )
+#else
         if ( requester )
+#endif
         {
             msg_->u.reply.u.process_info.more_data = false;
 
@@ -371,16 +382,16 @@ void CExtProcInfoReq::performRequest()
                     trace_printf( "%s@%d request #%ld: ProcessInfo from %s (%d, %d:%d) "
                                   "by name for %s:%d, process type=%d\n"
                                 , method_name, __LINE__, id_
-                                , requester->GetName()
-                                , requester->GetNid()
-                                , requester->GetPid()
-                                , requester->GetVerifier()
+                                , requester?requester->GetName():""
+                                , requester?requester->GetNid():-1
+                                , requester?requester->GetPid():-1
+                                , requester?requester->GetVerifier():-1
                                 , target_process_name.c_str(), target_verifier
                                 , msg_->u.request.u.process_info.type);
                 }
 
                 //if requester is requesting info for itself, return local process info
-                if ( strcmp( requester->GetName()
+                if ( requester && strcmp( requester->GetName()
                            , msg_->u.request.u.process_info.target_process_name) == 0 )
                 {
                     ProcessInfo_CopyData(requester,
@@ -464,7 +475,8 @@ void CExtProcInfoReq::performRequest()
                 else
                 {
                     // get info for single process in node
-                    if ((requester->GetType() == ProcessType_TSE ||
+                    if (requester &&
+                        (requester->GetType() == ProcessType_TSE ||
                          requester->GetType() == ProcessType_ASE ||
                          requester->GetType() == ProcessType_AMP)  &&
                         (requester->GetNid() == target_nid &&

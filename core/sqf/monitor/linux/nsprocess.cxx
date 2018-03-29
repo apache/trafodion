@@ -95,20 +95,14 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
         trace_printf("%s@%d: process %s (%d, %d), preclone=%d"
-                     ", clone=%d\n",
+                     ", clone=%d, origPNidNs=%d, MyPNID=%d\n",
                      method_name, __LINE__, Name,
-                     Nid, os_pid, preclone, Clone);
+                     Nid, os_pid, preclone, Clone, origPNidNs, MyPNID );
     StartupCompleted = true;
     if (creation_time != NULL)
         CreationTime = *creation_time;
 
-    if ( MyPNID == GetOrigPNidNs() )
-    {
-        // Replicate to other nodes
-        CReplClone *repl = new CReplClone(this);
-        Replicator.addItem(repl);
-    }
-    else
+    if ( MyPNID != GetOrigPNidNs() )
     {
         Clone = true;
     }

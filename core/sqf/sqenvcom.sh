@@ -686,16 +686,18 @@ export SQ_STARTUP=r
 #
 # Uncomment the next three environment variables
 #export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23399
-#export MONITOR_SYNC_PORT=23398
+#export MONITOR_COMM_PORT=23390
+#export MONITOR_SYNC_PORT=23380
 #
 #   NAME-SERVER - to disable process replication and enable name-server
 #
-# Uncomment the next four environment variables
-#export NAMESERVER_ENABLE=1
-#export NS_COMM_PORT=23389
-#export NS_SYNC_PORT=23388
-#export NS_M2N_COMM_PORT=23379
+# Uncomment the next six environment variables
+#export SQ_NAMESERVER_ENABLE=1
+#export NS_COMM_PORT=23370
+#export NS_SYNC_PORT=23360
+#export NS_M2N_COMM_PORT=23350
+#export MON2MON_COMM_PORT=23340
+#export MONITOR_COMM_PORT=23330
 
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0

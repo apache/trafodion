@@ -50,7 +50,7 @@ extern CReqQueue ReqQueue;
 static void *mon2nsProcess(void *arg);
 
 CCommAcceptMon::CCommAcceptMon()
-           : accepting_(true)
+           : accepting_(false)
            , shutdown_(false)
            , thread_id_(0)
 {
@@ -242,6 +242,46 @@ void CCommAcceptMon::monReqProcessInfoCont( struct message_def* msg, int sockFd 
     TRACE_EXIT;
 }
 
+void CCommAcceptMon::monReqProcessInfoNs( struct message_def* msg, int sockFd )
+{
+    const char method_name[] = "CCommAcceptMon::monReqProcessInfoNs";
+    TRACE_ENTRY;
+
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
+    {
+        trace_printf( "%s@%d - Received monitor request process-info-ns data.\n"
+                      "        msg.info.nid=%d\n"
+                      "        msg.info.pid=%d\n"
+                      "        msg.info.verifier=%d\n"
+                      "        msg.info.target_nid=%d\n"
+                      "        msg.info.target_pid=%d\n"
+                      "        msg.info.target_verifier=%d\n"
+                      "        msg.info.target_process_name=%s\n"
+                      "        msg.info.target_process_pattern=%s\n"
+                      "        msg.info.type=%d\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.process_info.nid
+                    , msg->u.request.u.process_info.pid
+                    , msg->u.request.u.process_info.verifier
+                    , msg->u.request.u.process_info.target_nid
+                    , msg->u.request.u.process_info.target_pid
+                    , msg->u.request.u.process_info.target_verifier
+                    , msg->u.request.u.process_info.target_process_name
+                    , msg->u.request.u.process_info.target_process_pattern
+                    , msg->u.request.u.process_info.type
+                    );
+    }
+
+    CExternalReq::reqQueueMsg_t msgType;
+    msgType = CExternalReq::NonStartupMsg;
+    int nid = msg->u.request.u.process_info.nid;
+    int pid = msg->u.request.u.process_info.pid;
+    // Place new request on request queue
+    ReqQueue.enqueueReq(msgType, nid, pid, sockFd, msg);
+
+    TRACE_EXIT;
+}
+
 void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
 {
     const char method_name[] = "CCommAcceptMon::monReqNewProcess";
@@ -249,25 +289,55 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
     if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request new-process data.\n"
-                      "        msg.new_process_ns.parent_nid=%d\n"
-                      "        msg.new_process_ns.parent_pid=%d\n"
-                      "        msg.new_process_ns.parent_verifier=%d\n"
+                      "        msg.new_process_ns.process_name=%s\n"
                       "        msg.new_process_ns.nid=%d\n"
                       "        msg.new_process_ns.pid=%d\n"
                       "        msg.new_process_ns.verifier=%d\n"
                       "        msg.new_process_ns.type=%d\n"
+                      "        msg.new_process_ns.parent_nid=%d\n"
+                      "        msg.new_process_ns.parent_pid=%d\n"
+                      "        msg.new_process_ns.parent_verifier=%d\n"
                       "        msg.new_process_ns.priority=%d\n"
-                      "        msg.new_process_ns.process_name=%s\n"
+                      "        msg.new_process_ns.backup=%d\n"
+                      "        msg.new_process_ns.unhooked=%d\n"
+                      "        msg.new_process_ns.event_messages=%d\n"
+                      "        msg.new_process_ns.system_messages=%d\n"
+                      "        msg.new_process_ns.pathStrId=%d:%d\n"
+                      "        msg.new_process_ns.ldpathStrId=%d:%d\n"
+                      "        msg.new_process_ns.programStrId=%d:%d\n"
+                      "        msg.new_process_ns.port=%s\n"
+                      "        msg.new_process_ns.argc=%d\n"
+                      //"        msg.new_process_ns.argv=%s\n"
+                      "        msg.new_process_ns.infile=%s\n"
+                      "        msg.new_process_ns.outfile=%s\n"
+                      "        msg.new_process_ns.creation_time=%ld(secs):%ld(nsecs)\n"
                     , method_name, __LINE__
-                    , msg->u.request.u.new_process_ns.parent_nid
-                    , msg->u.request.u.new_process_ns.parent_pid
-                    , msg->u.request.u.new_process_ns.parent_verifier
+                    , msg->u.request.u.new_process_ns.process_name
                     , msg->u.request.u.new_process_ns.nid
                     , msg->u.request.u.new_process_ns.pid
                     , msg->u.request.u.new_process_ns.verifier
                     , msg->u.request.u.new_process_ns.type
+                    , msg->u.request.u.new_process_ns.parent_nid
+                    , msg->u.request.u.new_process_ns.parent_pid
+                    , msg->u.request.u.new_process_ns.parent_verifier
                     , msg->u.request.u.new_process_ns.priority
-                    , msg->u.request.u.new_process_ns.process_name
+                    , msg->u.request.u.new_process_ns.backup
+                    , msg->u.request.u.new_process_ns.unhooked
+                    , msg->u.request.u.new_process_ns.event_messages
+                    , msg->u.request.u.new_process_ns.system_messages
+                    , msg->u.request.u.new_process_ns.pathStrId.nid
+                    , msg->u.request.u.new_process_ns.pathStrId.id
+                    , msg->u.request.u.new_process_ns.ldpathStrId.nid
+                    , msg->u.request.u.new_process_ns.ldpathStrId.id
+                    , msg->u.request.u.new_process_ns.programStrId.nid
+                    , msg->u.request.u.new_process_ns.programStrId.id
+                    , msg->u.request.u.new_process_ns.port_name
+                    , msg->u.request.u.new_process_ns.argc
+                    //, msg->u.request.u.new_process_ns.argv
+                    , msg->u.request.u.new_process_ns.infile
+                    , msg->u.request.u.new_process_ns.outfile
+                    , msg->u.request.u.new_process_ns.creation_time.tv_sec
+                    , msg->u.request.u.new_process_ns.creation_time.tv_nsec
                     );
     }
 
@@ -469,6 +539,9 @@ void CCommAcceptMon::processMonReqs( int sockFd )
             case ReqType_ProcessInfoCont:
                 rtype = "ProcessInfoCont";
                 break;
+            case ReqType_ProcessInfoNs:
+                rtype = "ProcessInfoNs";
+                break;
             case ReqType_NameServerStop:
                 rtype = "NameServerStop";
                 break;
@@ -513,6 +586,10 @@ void CCommAcceptMon::processMonReqs( int sockFd )
 
         case ReqType_ProcessInfoCont:
             monReqProcessInfoCont(&msg, sockFd);
+            break;
+
+        case ReqType_ProcessInfoNs:
+            monReqProcessInfoNs(&msg, sockFd);
             break;
 
         case ReqType_NewProcessNs:

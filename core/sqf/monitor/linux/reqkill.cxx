@@ -30,6 +30,7 @@
 #include "monlogging.h"
 #include "replicate.h"
 #include "mlio.h"
+#include "ptpclient.h"
 
 extern CMonitor *Monitor;
 extern CMonStats *MonStats;
@@ -37,6 +38,8 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CNode *MyNode;
 extern int MyPNID;
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
 
 CExtKillReq::CExtKillReq (reqQueueMsg_t msgType, int pid,
                           struct message_def *msg )
@@ -88,12 +91,23 @@ void CExtKillReq::Kill( CProcess *process )
     if ( (node->GetState() == State_Up || 
           node->GetState() == State_Shutdown) && node->GetPNid() != MyPNID )
     {
-        // Replicate the kill to other nodes
-        CReplKill *repl = new CReplKill( process->GetNid()
-                                       , process->GetPid()
-                                       , process->GetVerifier()
-                                       , process->GetAbort());
-        Replicator.addItem(repl);
+        if (NameServerEnabled)
+        {
+            // Forward the process create to the target node
+            PtpClient->ProcessKill( process
+                                  , process->GetAbort()
+                                  , lnode->GetNid()
+                                  , node->GetName());
+        }
+        else
+        {
+            // Replicate the kill to other nodes
+            CReplKill *repl = new CReplKill( process->GetNid()
+                                           , process->GetPid()
+                                           , process->GetVerifier()
+                                           , process->GetAbort());
+            Replicator.addItem(repl);
+        }
     }
     else
     {

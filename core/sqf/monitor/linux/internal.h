@@ -284,12 +284,14 @@ struct node_name_def
 
 struct notify_def
 {
-    int nid;            // Node id of process being notified
-    int pid;            // Process id of process being notified
-    int canceled;                   // If true,  notice request has been canceled
-    int target_nid;         // Node id of process being monitored
-    int target_pid;         // Process id of process being monitored
-    _TM_Txid_External trans_id;             // Associated TransID
+    int nid;                    // Node id of process being notified
+    int pid;                    // Process id of process being notified
+    Verifier_t verifier;        // Verifier of the requesting process
+    int canceled;               // If true,  notice request has been canceled
+    int target_nid;             // Node id of process being monitored
+    int target_pid;             // Process id of process being monitored
+    Verifier_t target_verifier; // Verifier of the requesting process
+    _TM_Txid_External trans_id; // Associated TransID
 };
 
 
@@ -417,6 +419,9 @@ struct uniqstr_def
     char valueData;       // variable length string data
 };
 
+// Define a constant giving the "header" size of the internal_msg_def below
+#define MSG_HDR_SIZE  ( sizeof (InternalType) + sizeof (int) )
+
 struct internal_msg_def
 {
     InternalType type;
@@ -450,12 +455,9 @@ struct internal_msg_def
         struct uniqstr_def uniqstr;
         struct shutdown_def shutdown;
         struct scheddata_def scheddata;
+        char   buffer[MAX_SYNC_SIZE-MSG_HDR_SIZE];  // Limit entire buffer to MAX_SYNC_SIZE
     } u;
 } __attribute__((__may_alias__));
-
-// Define a constant giving the "header" size of the internal_msg_def above
-#define MSG_HDR_SIZE  ( sizeof (InternalType) + sizeof (int) )
-
 
 typedef struct nodeId_s
 {

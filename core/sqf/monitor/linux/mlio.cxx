@@ -104,6 +104,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( NodeDelete_def ),      // ReqType_NodeDelete
    sizeof(REQTYPE) + sizeof( NodeDown_def ),        // ReqType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeInfo_def ),        // ReqType_NodeInfo
+   sizeof(REQTYPE) + sizeof( NodeName_def ),        // ReqType_NodeName
    sizeof(REQTYPE) + sizeof( NodeUp_def ),          // ReqType_NodeUp
    0,                              // ReqType_Notice -- not an actual request
    sizeof(REQTYPE) + sizeof( Notify_def ),          // ReqType_Notify
@@ -122,8 +123,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( TmReady_def ),         // ReqType_TmReady
    sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
    sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
-   sizeof(REQTYPE) + sizeof( ZoneInfo_def ),        // ReqType_ZoneInfo
-   sizeof(REQTYPE) + sizeof( NodeName_def )         // ReqType_NodeName
+   sizeof(REQTYPE) + sizeof( ZoneInfo_def )         // ReqType_ZoneInfo
 };
 
 // The serviceReplySize array holds the size of the request messages for
@@ -137,17 +137,19 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
    sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
    sizeof(REPLYTYPE) + sizeof( NewProcess_reply_def ),  // ReplyType_NewProcess
+   sizeof(REPLYTYPE) + sizeof( NewProcessNs_reply_def ),// ReplyType_NewProcessNs
    sizeof(REPLYTYPE) + sizeof( NodeInfo_reply_def ),    // ReplyType_NodeInfo
+   sizeof(REPLYTYPE) + sizeof( NodeName_reply_def ),    // ReplyType_NodeName
    sizeof(REPLYTYPE) + sizeof( Open_reply_def ),        // ReplyType_Open
    sizeof(REPLYTYPE) + sizeof( OpenInfo_reply_def ),    // ReplyType_OpenInfo
    sizeof(REPLYTYPE) + sizeof( PNodeInfo_reply_def ),   // ReplyType_PNodeInfo
    sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
+   sizeof(REPLYTYPE) + sizeof( ProcessInfoNs_reply_def ),// ReplyType_ProcessInfoNs
    sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
    sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
    sizeof(REPLYTYPE) + sizeof( TmSync_reply_def ),      // ReplyType_TmSync 
    sizeof(REPLYTYPE) + sizeof( TransInfo_reply_def ),   // ReplyType_TransInfo 
-   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def ),    // ReplyType_ZoneInfo
-   sizeof(REPLYTYPE) + sizeof( NodeName_reply_def )     // ReplyType_NodeName
+   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def )     // ReplyType_ZoneInfo
 };
 
 

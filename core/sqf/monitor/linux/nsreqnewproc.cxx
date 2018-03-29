@@ -26,11 +26,14 @@
 #include "nstype.h"
 
 #include <stdio.h>
+#include "replicate.h"
 #include "reqqueue.h"
 #include "montrace.h"
 #include "monsonar.h"
 
+extern int MyPNID;
 extern CNodeContainer *Nodes;
+extern CReplicate Replicator;
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
@@ -76,16 +79,13 @@ void CExtNewProcNsReq::performRequest()
     CNode *node;
     CLNode *parent_lnode;
     CNode *parent_node;
-    int result;
+    int result = MPI_SUCCESS;
     lnode = Nodes->GetLNode( nid_ );
     node = lnode->GetNode();
     parent_lnode = Nodes->GetLNode( msg_->u.request.u.new_process_ns.parent_nid );
     parent_node = NULL;
     if ( parent_lnode )
         parent_node = parent_lnode->GetNode();
-    strId_t pathStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.path );
-    strId_t ldpathStrId = node->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
-    strId_t programStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.program );
     CProcess *parent = NULL;
     if ( parent_node )
         parent = parent_node->GetProcess( msg_->u.request.u.new_process_ns.parent_pid );
@@ -101,25 +101,56 @@ void CExtNewProcNsReq::performRequest()
                                               msg_->u.request.u.new_process_ns.backup,
                                               msg_->u.request.u.new_process_ns.unhooked,
                                               msg_->u.request.u.new_process_ns.process_name,
-                                              pathStrId,
-                                              ldpathStrId,
-                                              programStrId,
+                                              msg_->u.request.u.new_process_ns.pathStrId,
+                                              msg_->u.request.u.new_process_ns.ldpathStrId,
+                                              msg_->u.request.u.new_process_ns.programStrId,
                                               msg_->u.request.u.new_process_ns.infile,
                                               msg_->u.request.u.new_process_ns.outfile,
                                               result
                                             );
-    process = process; // touch
-    // TODO replicate
+    if (process)
+    {
+        if ( MyPNID == process->GetOrigPNidNs() )
+        {
+            process->userArgs (  msg_->u.request.u.new_process_ns.argc,
+                                 msg_->u.request.u.new_process_ns.argv );
 
-    msg_->u.reply.type = ReplyType_NewProcessNs;
-    msg_->u.reply.u.new_process_ns.nid = msg_->u.request.u.new_process_ns.nid;
-    msg_->u.reply.u.new_process_ns.pid = msg_->u.request.u.new_process_ns.pid;
-    msg_->u.reply.u.new_process_ns.verifier = msg_->u.request.u.new_process_ns.verifier;
-    strncpy(msg_->u.reply.u.new_process_ns.process_name, msg_->u.request.u.new_process_ns.process_name, MAX_PROCESS_NAME);
-    msg_->u.reply.u.new_process_ns.return_code = MPI_SUCCESS;
+            process->CompleteProcessStartup( msg_->u.request.u.new_process_ns.port_name
+                                           , msg_->u.request.u.new_process_ns.pid
+                                           , msg_->u.request.u.new_process_ns.event_messages
+                                           , msg_->u.request.u.new_process_ns.system_messages
+                                           , false
+                                           , &msg_->u.request.u.new_process_ns.creation_time
+                                           , process->GetOrigPNidNs() );
 
-    // Send reply to requester
-    monreply(msg_, sockFd_);
+            // Replicate to other nodes
+            CReplClone *repl = new CReplClone(process);
+            if (repl)
+            {
+                // we will not reply at this time ... but wait for 
+                // node add to be processed in CIntNodeAddReq
+    
+                // Retain reference to requester's request buffer so can
+                // send completion message.
+                process->SetMonContext( msg_ );
+                process->SetMonSockFd( sockFd_ );
+                msg_->noreply = true;
+    
+                Replicator.addItem(repl);
+            }
+        }
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        msg_->u.reply.type = ReplyType_NewProcessNs;
+        msg_->u.reply.u.new_process_ns.return_code = MPI_ERR_SPAWN;
+        sprintf(la_buf, "[%s], Unsuccessful!\n", method_name);
+        mon_log_write(NS_EXTNEWPROCNSREQ_1, SQ_LOG_CRIT, la_buf);
+
+        // Send reply to requester
+        monreply(msg_, sockFd_);
+    }
 
     TRACE_EXIT;
 }

@@ -27,7 +27,10 @@
 #define NOTICE_H_
 #ifndef NAMESERVER_PROCESS
 
+#include <queue>
 #include "mlio.h"
+
+typedef queue<int> NidQueue_t;  // (nid)
 
 class CProcess;
 
@@ -60,11 +63,13 @@ public:
                       , _TM_Txid_External trans_id );
     CNotice *Link( CNotice *entry );
     void NotifyAll( void );
+    void NotifyRemote( void );
     bool isCanceled ( void ) { return canceled_; }
 
 protected:
 private:
     void Notify( SQ_LocalIOToClient::bcastPids_t *bcastPids );
+    void NotifyNid( NidQueue_t *nidQueue );
     bool canceled_;             // true if notice request has been canceled
     CProcess *Process;         // process that is being monitored
     CNotice *Next;

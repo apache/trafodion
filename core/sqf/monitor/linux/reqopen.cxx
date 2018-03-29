@@ -78,6 +78,10 @@ void CExtOpenReq::performRequest()
     const char method_name[] = "CExtOpenReq::performRequest";
     TRACE_ENTRY;
 
+    int target_nid = -1;
+    int target_pid = -1;
+    Verifier_t target_verifier = -1;
+    string target_process_name;
 
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
@@ -103,20 +107,63 @@ void CExtOpenReq::performRequest()
     bool status;
     CProcess *opener = ((CReqResourceProc *) resources_[0])->getProcess();
     CProcess *opened = ((CReqResourceProc *) resources_[1])->getProcess();
-    
-//TRK-TODO 
 
+    
     // check for the process object as it could have been deleted by the time this request gets to perform.
     if (opened == NULL) 
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        if (!NameServerEnabled)
         {
-              trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
-                       method_name, __LINE__, id_);
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                  trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
+                           method_name, __LINE__, id_);
+            }
+            errorReply( MPI_ERR_NAME );
+            TRACE_EXIT;
+            return;
         }
-        errorReply( MPI_ERR_NAME );
-        TRACE_EXIT;
-        return;
+        else
+        {
+            target_nid = msg_->u.request.u.open.target_nid;
+            target_pid = msg_->u.request.u.open.target_pid;
+            target_verifier  = msg_->u.request.u.open.target_verifier;
+            target_process_name = (const char *) msg_->u.request.u.open.target_process_name;
+
+            if ( target_process_name.size() )
+            { // Name Server find by name:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                , method_name, __LINE__
+                                , target_process_name.c_str()
+                                , target_verifier );
+                opened = Nodes->GetProcessNs( target_process_name.c_str()
+                                            , target_verifier );
+            }     
+            else
+            { // Name Server find by nid,pid:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , target_nid
+                                , target_pid
+                                , target_verifier );
+                opened = Nodes->GetProcessNs( target_nid
+                                            , target_pid
+                                            , target_verifier );
+            }
+            if (opened == NULL) 
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                      trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
+                               method_name, __LINE__, id_);
+                }
+                errorReply( MPI_ERR_NAME );
+                TRACE_EXIT;
+                return;
+            }
+        }
     }
 
     // check the verifier
@@ -155,7 +202,16 @@ void CExtOpenReq::performRequest()
         msg_->u.reply.u.open.type = opened->GetType();
         msg_->u.reply.u.open.return_code = MPI_SUCCESS;
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            trace_printf("%s@%d - Successful\n", method_name, __LINE__);
+        {
+            trace_printf( "%s@%d - Open successful, opened %s (%d, %d:%d), "
+                          "port=%s\n"
+                        , method_name, __LINE__
+                        , opened->GetName()
+                        , msg_->u.reply.u.open.nid
+                        , msg_->u.reply.u.open.pid
+                        , msg_->u.reply.u.open.verifier
+                        , msg_->u.reply.u.open.port );
+        }
 
         // Send reply to requester
         lioreply(msg_, pid_);

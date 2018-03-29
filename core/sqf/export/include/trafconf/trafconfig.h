@@ -50,7 +50,7 @@
 #define TC_PERSIST_KEY_MAX              64
 #define TC_PERSIST_VALUE_MAX          4096
 #define TC_PERSIST_KEYS_VALUE_MAX     4096
-#define TC_NODES_MAX                   256
+#define TC_NODES_MAX                  1024
 #define TC_SPARE_NODES_MAX             256
 #define TC_UNIQUE_STRING_VALUE_MAX    4096
 

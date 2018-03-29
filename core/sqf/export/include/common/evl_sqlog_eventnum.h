@@ -214,6 +214,8 @@
 #define MON_CLUSTER_INITSERVERSOCK_3        101014203
 #define MON_CLUSTER_INITSERVERSOCK_4        101014204
 #define MON_CLUSTER_INITSERVERSOCK_5        101014205
+#define MON_CLUSTER_INITSERVERSOCK_6        101014206
+#define MON_CLUSTER_INITSERVERSOCK_7        101014207
 
 #define MON_CLUSTER_SOFTNODEDOWN_1          101014301
 #define MON_CLUSTER_SOFTNODEDOWN_2          101014302
@@ -435,6 +437,10 @@
 #define MON_NODE_ADDLNODES_4                101041204
 #define MON_NODE_DELETENODE_1               101041301
 #define MON_NODE_STARTNAMESERVER_1          101041401
+#define MON_NODE_GETPROCESSNS_1             101041501
+#define MON_NODE_GETPROCESSNS_2             101041502
+#define MON_NODE_GETPROCESSNS_3             101041503
+#define MON_NODE_GETPROCESSNS_4             101041504
 
 /* Module: config.cxx = 05 */
 
@@ -687,6 +693,8 @@
 #define MON_REQQUEUE_SNAPSHOT_11            101180411
 #define MON_REQQUEUE_SNAPSHOT_12            101180412
 #define MON_REQQUEUE_SNAPSHOT_13            101180413
+#define MON_REQQUEUE_SNAPSHOT_14            101180414
+#define MON_REQQUEUE_SNAPSHOT_15            101180415
 #define MON_REQQUEUE_REVIVE_1               101180501
 #define MON_REQQUEUE_REVIVE_2               101180502
 #define MON_REQQUEUE_REVIVE_3               101180503
@@ -716,6 +724,16 @@
 #define MON_REQ_NAMESERVER_DELETE_3         101181203
 #define MON_REQ_NAMESERVER_DELETE_4         101181204
 #define MON_REQ_NAMESERVER_INFO_1           101181301
+
+#define MON_REQ_EVALREQ_PERFORMANCE_1       101181501
+#define MON_INTREQ_CLONEPROC_1              101181601
+#define MON_INTREQ_EXIT_1                   101181701
+#define MON_INTREQ_NEWPROC_1                101181801
+#define MON_INTREQ_NOTIFY_1                 101181901
+#define MON_INTREQ_NOTIFY_2                 101181902
+#define MON_INTREQ_NOTIFY_3                 101181903
+#define MON_INTREQ_NOTIFY_4                 101181904
+#define MON_INTREQ_OPEN_1                   101182001
 
 /* Module: clio.cxx = 19 */
 #define MON_CLIO_ACQUIRE_MSG_1              101190101
@@ -975,6 +993,10 @@
 /* Module: reqnodedown.cxx = 41 */
 #define MON_EXT_NAMESERVERDOWN_REQ          101410101
 
+/* Module: nsreqnewproc.cxx = 42 */
+#define NS_EXTNEWPROCNSREQ_1                101420101
+#define NS_EXTNEWPROCNSREQ_2                101420102
+
 /* Module: tcdb.cxx = 90 */
 #define TCDB_TCDB_1                         101900101
 #define TCDB_TCDB_2                         101900102
@@ -994,6 +1016,8 @@
 /* Module: tcdbsqlite.cxx = 92 */
 #define SQLITE_DB_ACCESS_ERROR              101920101
 
+/* Module ptpclient.cxx = 93 */
+#define PTPCLIENT_PTPCLIENT_1               101930101
 
 /**********************************************/
 
