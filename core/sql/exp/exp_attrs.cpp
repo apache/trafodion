@@ -316,15 +316,13 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
   if ((getDatatype() == REC_BLOB) ||
       (getDatatype() == REC_CLOB))
     {
-      Int16 precision = getPrecision();
-      UInt16 scale = getScaleAsUI();
+     
       
-      Lng32 lobLen = (precision << 16);
-      lobLen += scale;
-      
-      Int64 ll = (Int64)lobLen;
+      Int64 ll = getLength();
+      if (isLengthInKB())
+        ll = ll*1024;
       //      Int64 ll = (Int64)getPrecision() * 1000 + (Int64)getScale();
-      str_sprintf(buf, "      LobLength = %ld Mb", ll);
+      str_sprintf(buf, "      LobLength = %ld bytes", ll);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
 

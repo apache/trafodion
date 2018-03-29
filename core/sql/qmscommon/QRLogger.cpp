@@ -266,7 +266,7 @@ const char*  QRLogger::getMyProcessInfo()
   XPROCESSHANDLE_DECOMPOSE_(&myphandle, &mycpu, &mypin, &mynodenumber,NULL,100, NULL, myprocname,100, &myproclength);
   myprocname[myproclength] = '\0';
 
-  snprintf(procInfo, 300, "Node Number: %d, CPU: %d, PIN: %d, Process Name: %s", mynodenumber,mycpu, mypin, myprocname);
+  snprintf(procInfo, 300, "Node Number: %d, CPU: %d, PIN: %d, Process Name: %s", mycpu,mycpu, mypin, myprocname);
 
   processInfo_ = procInfo;
   return processInfo_.data();

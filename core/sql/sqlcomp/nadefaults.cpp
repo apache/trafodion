@@ -1154,7 +1154,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
- SDDui___(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,	"100"),
+ SDDui___(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,	"1024"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
@@ -1741,21 +1741,21 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
- // Size in bytes  used to perform garbage collection  to lob data file 
-  // default size is 5GB   . Change to adjust disk usage. If 0 it means
- // don't do GC
-  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+ // Size in MB  used to perform garbage collection  to lob data file 
+  // Recommended size is 20GB   . Change to adjust disk usage. If -1 it means
+ // don't do GC during insert/update operations. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "-1"),
   
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
- 
-  DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "4096"),
+ // For JDBC/ODBC batch operations, LOB  size limited to 4K bytes
+  DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "16384"),
    // Size of memoryin Megabytes  used to perform I/O to lob data file 
-  // default size is 512MB   . Change to adjust memory usage. 
-  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
-  // default size is 10 G  (10000 M)
-  DDint__(LOB_MAX_SIZE,                         "10000"),
-  // (unused)default size is 32000. Change this to extract more data into memory.
+  // default size is 128MB   . Change to adjust memory usage. 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "128"), 
+  // default size is 5 G  (5120 M)
+  DDint__(LOB_MAX_SIZE,                         "5120"),
+  // default size is 32000bytes. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
   DD_____(LOB_STORAGE_FILE_DIR,                 "/user/trafodion/lobs"), 
@@ -1915,7 +1915,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDui___(MEMORY_LIMIT_QCACHE_UPPER_KB,        "0"),
   // Checked at compile time. Set to -1 to disable check.
   // Value should be >= EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB
-  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "500"),
+  DDint__(MEMORY_LIMIT_ROWSET_IN_MB,         "1024"),
 
   // SQL/MX Compiler/Optimzer Memory Monitor.
   DDkwd__(MEMORY_MONITOR,			"OFF"),
@@ -5427,7 +5427,32 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
          }
      }
      break;
+      case LOB_GC_LIMIT_SIZE:
+        if ((atoi(value.data()) < -1)   ||  (((atoi(value.data()) >0) && (atoi(value.data())) <= 512)))
+          {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
 
+      case LOB_MAX_CHUNK_MEM_SIZE:
+        if (atoi(value.data()) < 0  ||  atoi(value.data()) >  5120)
+	 {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
+
+      case LOB_INPUT_LIMIT_FOR_BATCH:
+        if (atoi(value.data()) <0  && (atoi(value.data())*1024) > INT_MAX )
+          {
+            *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+          }
+        break;
     default:  
     break;
     }
@@ -6466,20 +6491,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         isValid = TRUE;
     break;
 
-    case LOB_OUTPUT_SIZE:
-      if (tok >=0  && tok <= 512000)
-	isValid = TRUE;
-      break;
-
-    case LOB_MAX_CHUNK_MEM_SIZE:
-      if (tok >=0  && tok <= 512000)
-	isValid = TRUE;
-      break;
-
-    case LOB_GC_LIMIT_SIZE:
-      if (tok >= 0 )
-        isValid=TRUE;
-
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
@@ -6782,8 +6793,7 @@ void NADefaults::setSchemaAsLdapUser(const NAString val)
     insert(SCHEMA, schName);
   }
   else
-  {
-		*CmpCommon::diags() << DgSqlCode(-2055)
+  {		*CmpCommon::diags() << DgSqlCode(-2055)
 			<< DgString0(schName)
 			<< DgString1("SCHEMA");
   }

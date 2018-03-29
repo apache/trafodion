@@ -725,9 +725,13 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
 
     //if using special tables e.g. using index as base table
     //select * from table (index_table T018ibc);
-    //then refresh metadata cache
+    //then refresh metadata cache.  Make an exception for internal exeutil
+    // statements that use this parserflag. It causes too many long compiles 
+    // and affects performance - for eg LOB access which uses ghost tables and 
+    // has the SPECIALTABLETYPE flag set..  
     if(Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE) &&
-       CmpCommon::context()->schemaDB_->getNATableDB()->cachingMetaData())
+       CmpCommon::context()->schemaDB_->getNATableDB()->cachingMetaData() &&
+       !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) )
       CmpCommon::context()->schemaDB_->getNATableDB()->refreshCacheInThisStatement();
 
     MonitorMemoryUsage_Enter("Parser");
