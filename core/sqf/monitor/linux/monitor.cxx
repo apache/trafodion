@@ -1622,12 +1622,13 @@ int main (int argc, char *argv[])
                 , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
 #else
     snprintf(buf, sizeof(buf),
-                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s)\n"
+                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s%s)\n"
                 , CALL_COMP_GETVERS2(monitor)
                 , CommTypeString( CommType )
                 , IsRealCluster?"RealCluster":"VirtualCluster"
                 , IsAgentMode?"/AgentMode":""
-                , IsMPIChild?"/MPIChild":"" );
+                , IsMPIChild?"/MPIChild":""
+                , NameServerEnabled?"/NameServerEnabled":"" );
 #endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
 
