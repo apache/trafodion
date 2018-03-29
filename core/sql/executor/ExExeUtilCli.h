@@ -76,7 +76,7 @@ private:
 			 NABoolean nullTerminate = TRUE,
 			 Int64 * rowsAffected = NULL,
 			 NABoolean monitorThis = FALSE,
-			 ComDiagsArea * globalDiags = NULL);
+			 ComDiagsArea *globalDiags = NULL);
 
   Lng32 executeImmediatePrepare(const char * stmt,
 				char * outputBuf = NULL,
@@ -246,6 +246,8 @@ private:
   Lng32 deleteContext(char* contextHandle); // in buf contains context handle
 
   Lng32 retrieveSQLDiagnostics(ComDiagsArea *toDiags);
+  ComDiagsArea *allocAndRetrieveSQLDiagnostics(ComDiagsArea *&toDiags);
+  void retrieveOrSaveSQLDiagnostics(Lng32 cliRetCode, ComDiagsArea *toDiags);
 
   CollHeap * getHeap() { return heap_; }
 
@@ -264,19 +266,19 @@ private:
 
   Lng32 GetRowsAffected(Int64 *rowsAffected);
 
-  Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue, ComDiagsArea * globalDiags = NULL);
-  Lng32 restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
+  Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue, ComDiagsArea *globalDiags = NULL);
+  Lng32 restoreCQD(const char * defaultName, ComDiagsArea *globalDiags = NULL);
 
   Lng32 getCQDval(const char * defaultName,
 		  char * val,
-		  ComDiagsArea * globalDiags = NULL);
+		  ComDiagsArea *globalDiags = NULL);
 
   void setNotExeUtilInternalQuery(NABoolean v)
     {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
   NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
 
-  Lng32 setCQS(const char * shape, ComDiagsArea * globalDiags = NULL);
-  Lng32 resetCQS(ComDiagsArea * globalDiags = NULL);
+  Lng32 setCQS(const char * shape, ComDiagsArea *globalDiags = NULL);
+  Lng32 resetCQS(ComDiagsArea *globalDiags = NULL);
 
   // methods for routine invocation
   Lng32 getRoutine(

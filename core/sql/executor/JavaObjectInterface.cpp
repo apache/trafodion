@@ -499,7 +499,7 @@ JOI_RetCode JavaObjectInterface::init(char *className,
                                                      JavaMethods[i].jm_signature);
         if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck())
         { 
-          getExceptionDetails(__FILE__, __LINE__, "GetMethodId()");
+          jenv_->ExceptionClear();
           JavaMethods[i].methodID = jenv_->GetStaticMethodID(javaClass, 
                                                      JavaMethods[i].jm_name, 
                                                      JavaMethods[i].jm_signature);

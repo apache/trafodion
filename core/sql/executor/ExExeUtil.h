@@ -270,7 +270,7 @@ class ExExeUtilTcb : public ex_tcb
   ExeCliInterface * cliInterface() { return cliInterface_; };
   ExeCliInterface * cliInterface2() { return cliInterface2_; };
 
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
+  ComDiagsArea *&getDiagsArea() { return diagsArea_; }
 
   void setDiagsArea(ComDiagsArea * d) { diagsArea_ = d; }
 
@@ -1020,10 +1020,10 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL,
-                                  ComDiagsArea * diagsArea = NULL);
+                                  ComDiagsArea *&diagsArea,
+                                  ex_globals *globals = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
-  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
+  short dropHiveTempTablesForCSEs();
 
  private:
   enum Step

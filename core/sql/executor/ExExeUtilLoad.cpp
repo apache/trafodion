@@ -139,9 +139,10 @@ short ExExeUtilCreateTableAsTcb::work()
 	    // allow a user transaction if NO LOAD was specified
 	    if (xnAlreadyStarted && !ctaTdb().noLoad())
               {
-                *getDiagsArea() << DgSqlCode(-20123)
-                                << DgString0("This DDL operation");
-                
+                ComDiagsArea *diagsArea = getDiagsArea();
+                ExRaiseSqlError(getHeap(), &diagsArea, -20123, NULL, NULL, NULL,
+                                "This DDL operation");
+                setDiagsArea(diagsArea);
                 step_ = ERROR_;
                 break;
               }
@@ -184,7 +185,7 @@ short ExExeUtilCreateTableAsTcb::work()
 		  }
 		else
 		  {
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+		    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		    
 		    step_ = ERROR_;
 		    break;
@@ -341,7 +342,7 @@ short ExExeUtilCreateTableAsTcb::work()
 		 &rowsAffected);
 	    if (cliRC < 0)
             {
-              cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+              setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
               step_ = HANDLE_ERROR_;
             }
             else
@@ -427,7 +428,7 @@ short ExExeUtilCreateTableAsTcb::work()
               cliInterface()->setIsoMapping(savedIsoMapping);
 	      if (cliRC < 0)
               {
-                cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
                 step_ = HANDLE_ERROR_;
               }
               else
@@ -446,7 +447,7 @@ short ExExeUtilCreateTableAsTcb::work()
 		 &rowsAffected);
 	    if (cliRC < 0)
 	    {
-              cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+              setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
               step_ = HANDLE_ERROR_;
             }
             else
@@ -480,8 +481,7 @@ short ExExeUtilCreateTableAsTcb::work()
 	    NADELETEBASIC(usQuery, getHeap());
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -796,7 +796,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
 
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
           SETSTEP(ERROR_);
         }
         else
@@ -821,7 +821,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
         NADELETEBASIC(query_, getMyHeap());
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
           SETSTEP(ERROR_);
         }
         else
@@ -960,7 +960,7 @@ ExWorkProcRetcode ExExeUtilAqrWnrInsertTcb::work()
         {
         // mjh - tbd - warning or EMS message to give context to error on
         // delete after error on the insert?
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         }
         else
           masterGlob->setAqrWnrInsertCleanedup();
@@ -1114,7 +1114,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   short rc;
   Lng32 errorRowCount = 0;
   int len;
-  ComDiagsArea *diagsArea;
+  ComDiagsArea *diagsArea = NULL;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -1148,8 +1148,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           !hblTdb().getIndexTableOnly())
       {
         //8111 - Transactions are not allowed with Bulk load.
-        ComDiagsArea * da = getDiagsArea();
-        *da << DgSqlCode(-8111);
+        ComDiagsArea * diagsArea = getDiagsArea();
+        ExRaiseSqlError(getHeap(), &diagsArea, -8111);
+        setDiagsArea(diagsArea);
         step_ = LOAD_ERROR_;
           break;
       }
@@ -1221,7 +1222,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       if (cliRC < 0)
       {
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         step_ = LOAD_ERROR_;
         break;
       }
@@ -1257,6 +1258,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
                           " ",
                           getHbaseErrStr(retcode),
                           (char *)GetCliGlobals()->getJniErrorStr());
+        setDiagsArea(diagsArea);
         step_ = LOAD_END_ERROR_;
         break;
       }
@@ -1296,7 +1298,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       clnpQuery = NULL;
       if (cliRC < 0)
       {
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         step_ = LOAD_END_ERROR_;
         break;
       }
@@ -1335,7 +1337,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       diQuery = NULL;
       if (cliRC < 0)
       {
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         step_ = LOAD_END_ERROR_;
         break;
       }
@@ -1413,7 +1415,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             }
           }
         diagsArea = getDiagsArea();
-
+        if (diagsArea == NULL) {
+           diagsArea = ComDiagsArea::allocate(getHeap());
+           setDiagsArea(diagsArea);
+        }
         cliRC = cliInterface()->executeImmediate(loadQuery,
             NULL,
             NULL,
@@ -1421,26 +1426,27 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             &rowsAffected_,
             FALSE,
             diagsArea);
-
         if (parserFlagSet)
             masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
           step_ = LOAD_END_ERROR_;
           break;
         }
         else {
            step_ = COMPLETE_BULK_LOAD_;
-           ComCondition *cond;
-           Lng32 entryNumber;
-           while ((cond = diagsArea->findCondition(EXE_ERROR_ROWS_FOUND, &entryNumber)) != NULL) {
-              if (errorRowCount < cond->getOptionalInteger(0))
-                 errorRowCount = cond->getOptionalInteger(0);
-              diagsArea->deleteWarning(entryNumber);
+           if (diagsArea != NULL) {
+              ComCondition *cond;
+              Lng32 entryNumber;
+              while ((cond = diagsArea->findCondition(EXE_ERROR_ROWS_FOUND, &entryNumber)) != NULL) {
+                 if (errorRowCount < cond->getOptionalInteger(0))
+                    errorRowCount = cond->getOptionalInteger(0);
+                 diagsArea->deleteWarning(entryNumber);
+              }
+              diagsArea->setRowCount(0);
            }
-           diagsArea->setRowCount(0);
         }
         if (rowsAffected_ == 0)
           step_ = LOAD_END_;
@@ -1463,7 +1469,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         upsQuery = NULL;
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
           step_ = LOAD_ERROR_;
           break;
         }
@@ -1522,7 +1528,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           strcat(clQuery, ")");
         strcat(clQuery, ";");
 
-      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE, getDiagsArea());
+      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
 
       NADELETEBASIC(clQuery, getMyHeap());
       clQuery = NULL;
@@ -1533,7 +1539,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       if (cliRC < 0)
       {
         rowsAffected_ = 0;
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         setEndStatusMsg(" COMPLETION", len, TRUE);
         step_ = LOAD_END_ERROR_;
         break;
@@ -1580,7 +1586,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       if (cliRC < 0)
       {
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         step_ = LOAD_END_ERROR_;
         break;
       }
@@ -1640,7 +1646,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
           step_ = LOAD_END_ERROR_;
         }
         else
@@ -2011,12 +2017,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::resetExplainSettings()
 {
   if (cliInterface()->executeImmediate("control session reset 'EXPLAIN';") < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     return -1;
   }
   if (restoreCQD("generate_explain") < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     return -1;
   }
   return 0;
@@ -2037,7 +2043,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
 
   if (holdAndSetCQD("generate_explain", "ON") < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     resetExplainSettings();
     return -1;
   }
@@ -2045,7 +2051,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
   cliRC = cliInterface()->executeImmediate("control session 'EXPLAIN' 'ON';");
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     resetExplainSettings();
     return cliRC;
   }
@@ -2053,7 +2059,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
   cliRC = cliInterface()->allocStuff(module, stmt, sql_src, input_desc, output_desc, "__EXPL_STMT_NAME__");
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     resetExplainSettings();
     return cliRC;
   }
@@ -2062,7 +2068,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
   cliRC = cliInterface()->prepare(stmtStr, module, stmt, sql_src, input_desc, output_desc, NULL);
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
     resetExplainSettings();
     return cliRC;
@@ -2094,7 +2100,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
   cliRC = cliInterface()->fetchAllRows(tbls, (char*)qry_str.data(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
     return cliRC;
   }
@@ -2107,7 +2113,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
       cliRC = cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
       if (cliRC < 0)
       {
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         return cliRC;
       }
     }
@@ -2133,7 +2139,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
   cliRC = cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     return cliRC;
   }
   return snapshotsList_->entries();
@@ -2173,8 +2179,9 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       if (xnAlreadyStarted  )
       {
         //8111 - Transactions are not allowed with Bulk unload.
-        ComDiagsArea * da = getDiagsArea();
-        *da << DgSqlCode(-8111);
+        ComDiagsArea * diagsArea = getDiagsArea();
+        ExRaiseSqlError(getHeap(), &diagsArea, -8111);
+        setDiagsArea(diagsArea);
         step_ = UNLOAD_ERROR_;
         break;
       }
@@ -2201,9 +2208,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         if (exists)
         {
           //EXE_UNLOAD_FILE_EXISTS
-          ComDiagsArea * da = getDiagsArea();
-          *da << DgSqlCode(- EXE_UNLOAD_FILE_EXISTS)
-                      << DgString0(hblTdb().getMergePath());
+          ComDiagsArea * diagsArea = getDiagsArea();
+          ExRaiseSqlError(getHeap(), &diagsArea, -EXE_UNLOAD_FILE_EXISTS,
+                  NULL, NULL, NULL,
+                  hblTdb().getMergePath());
+          setDiagsArea(diagsArea);
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2321,10 +2330,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           hbcRetCode = ehi_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
           if ( hbcRetCode == HBC_OK && !exist)
           {
-            ComDiagsArea * da = getDiagsArea();
-            *da << DgSqlCode(-8112)
-                << DgString0(snapshotsList_->at(i)->snapshotName->data())
-                << DgString1(snapshotsList_->at(i)->fullTableName->data());
+            ComDiagsArea * diagsArea = getDiagsArea();
+            ExRaiseSqlError(getHeap(), &diagsArea, -8112,
+                  NULL, NULL, NULL,
+                  snapshotsList_->at(i)->snapshotName->data(),
+                  snapshotsList_->at(i)->fullTableName->data());
+            setDiagsArea(diagsArea);
             step_ = UNLOAD_END_ERROR_;
             break;
           }
@@ -2363,7 +2374,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       if (cliRC < 0)
       {
         rowsAffected_ = 0;
-        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
         step_ = UNLOAD_END_ERROR_;
         break;
       }
@@ -2906,10 +2917,11 @@ short ExExeUtilLobExtractTcb::work()
 		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 
 		  // invalid state, should not be reached.
-		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		  ExRaiseSqlError(getMyHeap(),
-				  &da,
+				  &diagsArea,
 				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+                  setDiagsArea(diagsArea);
 		  step_ = CANCEL_;
 		}
 		break;
@@ -2988,10 +3000,11 @@ short ExExeUtilLobExtractTcb::work()
 		     lobHandle_,
 		     lobHandleLen_))
 		  {
-		    ComDiagsArea * da = getDiagsArea();
+		    ComDiagsArea * diagsArea = getDiagsArea();
 		    ExRaiseSqlError(getMyHeap(),
-				    &da,
+				    &diagsArea,
 				    (ExeErrorCode)(EXE_INVALID_LOB_HANDLE));
+                    setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -3064,10 +3077,11 @@ short ExExeUtilLobExtractTcb::work()
 		{
 		  // invalid "toType"
 		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		  ExRaiseSqlError(getMyHeap(),
-				  &da,
+				  &diagsArea,
 				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+                  setDiagsArea(diagsArea);
 		  step_ = CANCEL_;
 		
 		break;
@@ -3255,6 +3269,7 @@ short ExExeUtilLobExtractTcb::work()
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
 				    getLobErrStr(intParam1));
+                    setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -3302,6 +3317,7 @@ short ExExeUtilLobExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3356,6 +3372,7 @@ short ExExeUtilLobExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3382,10 +3399,11 @@ short ExExeUtilLobExtractTcb::work()
 	      {
 		// No other "toType" shoudl reach here - i.e TO_FILE_ or TO_STRING
 		ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-		ComDiagsArea * da = up_entry->getDiagsArea();
+		ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		ExRaiseSqlError(getMyHeap(),
-				&da,
+				&diagsArea,
 				(ExeErrorCode)(EXE_INTERNAL_ERROR));
+                setDiagsArea(diagsArea);
 		step_ = CANCEL_;
 		
 		break;
@@ -3427,6 +3445,7 @@ short ExExeUtilLobExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      } 
@@ -3615,10 +3634,11 @@ short ExExeUtilLobUpdateTcb::work()
 		     lobHandle_,
 		     lobHandleLen_))
 		  {
-		    ComDiagsArea * da = getDiagsArea();
+		    ComDiagsArea *diagsArea = getDiagsArea();
 		    ExRaiseSqlError(getMyHeap(),
-				    &da,
+				    &diagsArea,
 				    (ExeErrorCode)(EXE_INVALID_LOB_HANDLE));
+                    setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -3732,6 +3752,7 @@ short ExExeUtilLobUpdateTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3827,7 +3848,8 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-				getLobErrStr(intParam1));
+			 	getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3926,6 +3948,7 @@ short ExExeUtilLobUpdateTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -4093,6 +4116,7 @@ short ExExeUtilFileExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/open",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4140,6 +4164,7 @@ short ExExeUtilFileExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/read",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4196,6 +4221,7 @@ short ExExeUtilFileExtractTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/close",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4332,6 +4358,7 @@ short ExExeUtilFileLoadTcb::work()
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceCreate",
 				    getLobErrStr(intParam1));
+                    setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -4362,6 +4389,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"SourceFile open");
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4405,6 +4433,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"SourceFile read");
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4450,6 +4479,7 @@ short ExExeUtilFileLoadTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceInsert",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4481,6 +4511,7 @@ short ExExeUtilFileLoadTcb::work()
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceCloseFile",
 				getLobErrStr(intParam1));
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }

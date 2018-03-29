@@ -96,6 +96,7 @@
 #include "HBaseClient_JNI.h"
 #include "ComDistribution.h"
 #include "LmRoutine.h"
+#include "HiveClient_JNI.h"
 
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
@@ -294,14 +295,14 @@ ContextCli::~ContextCli()
 
 void ContextCli::deleteMe()
 {
-  ComDiagsArea & diags = cliGlobals_->currContext()->diags();
+  ComDiagsArea *diags = NULL;
 
   if (volatileSchemaCreated())
     {
       // drop volatile schema, if one exists
       short rc =
         ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
-        (this, NULL, exCollHeap());
+        (this, NULL, exCollHeap(), diags);
       SQL_EXEC_ClearDiagnostics(NULL);
       
       rc =
@@ -2902,10 +2903,11 @@ void ContextCli::endSession(NABoolean cleanupEsps,
 void ContextCli::dropSession(NABoolean clearCmpCache)
 {
   short rc = 0;
+  ComDiagsArea *diags = NULL;
   if (volatileSchemaCreated_)
     {
       rc = ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
-        (this, NULL, exHeap());
+        (this, NULL, exHeap(), diags);
       SQL_EXEC_ClearDiagnostics(NULL);
     }
 

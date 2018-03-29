@@ -1552,7 +1552,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	        da = ComDiagsArea::allocate(getHeap());
 	        workAtp_->setDiagsArea(da);
 	      }
-	      *da << DgSqlCode(-EXE_MAX_ERROR_ROWS_EXCEEDED);
+              ExRaiseSqlError(getHeap(), &da,
+                (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
 	      step_ = HANDLE_ERROR_WITH_CLOSE;
 	      break;
 	    }

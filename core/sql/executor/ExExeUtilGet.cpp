@@ -71,6 +71,7 @@
 #include "sql_buffer_size.h"
 
 #include "NAType.h"
+#include "HiveClient_JNI.h"
 
 //******************************************************************************
 //                                                                             *
@@ -688,8 +689,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsingView(Queue * infoList,
 	    cliRC = cliInterface()->fetchRowsPrologue(query);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -703,8 +703,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsingView(Queue * infoList,
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -732,8 +731,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsingView(Queue * infoList,
 	    cliRC = cliInterface()->fetchRowsEpilogue(0);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -847,8 +845,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsedObjects(Queue * infoList,
 	    cliRC = cliInterface()->fetchRowsPrologue(query);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -862,8 +859,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsedObjects(Queue * infoList,
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -891,8 +887,7 @@ Lng32 ExExeUtilGetMetadataInfoTcb::getUsedObjects(Queue * infoList,
 	    cliRC = cliInterface()->fetchRowsEpilogue(0);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		vStep_ = VIEWS_ERROR_;
 		break;
 	      }
@@ -1424,7 +1419,7 @@ Int32 ExExeUtilGetMetadataInfoTcb::getAuthID(
   cliRC = fetchAllRows(infoList_, queryBuf_, numOutputEntries_, FALSE, rc);
   if (cliRC < 0) 
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     return NA_UserIdDefault;
   }
 
@@ -1498,7 +1493,7 @@ char * ExExeUtilGetMetadataInfoTcb::getRoleList(
   cliRC = fetchAllRows(infoList_, queryBuf_, numOutputEntries_, FALSE, rc);
   if (cliRC < 0)
   {
-    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
     return NULL;
   }
 
@@ -1818,8 +1813,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    {
                if (!CmpCommon::context()->isAuthorizationEnabled())
                {
-                  ComDiagsArea * diags = getDiagsArea();
-                  *diags << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
+                  ComDiagsArea * diagsArea = getDiagsArea();
+                  ExRaiseSqlError(getHeap(), &diagsArea, -CAT_AUTHORIZATION_NOT_ENABLED);
+                  setDiagsArea(diagsArea);
                   step_ = HANDLE_ERROR_;
                   break;
                }
@@ -2277,9 +2273,11 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   // easier to just return with an error.
                   if (authID == 0)
                     { 
-                      ComDiagsArea * diags = getDiagsArea();
-                      *diags << DgSqlCode(-8732)
-                             << DgString0(getMItdb().getParam1());
+                      ComDiagsArea * diagsArea = getDiagsArea();
+                      ExRaiseSqlError(getHeap(), &diagsArea, -8732,
+                          NULL, NULL, NULL,
+                          getMItdb().getParam1());
+                      setDiagsArea(diagsArea);
                       step_ = HANDLE_ERROR_;
                       break;
                     }
@@ -2290,9 +2288,11 @@ short ExExeUtilGetMetadataInfoTcb::work()
                        // error if authID is not a role
                        if (!CmpSeabaseDDLauth::isRoleID(authID) && authID != PUBLIC_USER)
                         {
-                          ComDiagsArea * diags = getDiagsArea();
-                          *diags << DgSqlCode(-CAT_IS_NOT_A_ROLE)
-                                 << DgString0(getMItdb().getParam1());
+                          ComDiagsArea * diagsArea = getDiagsArea();
+                          ExRaiseSqlError(getHeap(), &diagsArea, -CAT_IS_NOT_A_ROLE, 
+                              NULL, NULL, NULL,
+                              getMItdb().getParam1());
+                          setDiagsArea(diagsArea);
                           step_ = HANDLE_ERROR_;
                           break;
                         }
@@ -2303,9 +2303,11 @@ short ExExeUtilGetMetadataInfoTcb::work()
                       // Return an error if authID is not a user
                       if (!CmpSeabaseDDLauth::isUserID(authID))
                         {
-                          ComDiagsArea * diags = getDiagsArea();
-                          *diags << DgSqlCode(-CAT_IS_NOT_A_USER)
-                                 << DgString0(getMItdb().getParam1());
+                          ComDiagsArea * diagsArea = getDiagsArea();
+                          ExRaiseSqlError(getHeap(), &diagsArea, -CAT_IS_NOT_A_USER, 
+                              NULL, NULL, NULL,
+                              getMItdb().getParam1());
+                          setDiagsArea(diagsArea);
                           step_ = HANDLE_ERROR_;
                           break;
                         }
@@ -2634,10 +2636,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    if (fetchAllRows(infoList_, queryBuf_, numOutputEntries_,
 			     FALSE, retcode) < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
-
 		break;
 	      }
 
@@ -3227,14 +3227,14 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 	      {
                 // if error is 4222 (command not supported), ignore it.
-                if (getDiagsArea()->mainSQLCODE() != -4222)
-                  {
+                if (getDiagsArea() != NULL) {
+                   if (getDiagsArea()->mainSQLCODE() != -4222)
+                   {
                     step_ = HANDLE_ERROR_;
-                    
                     break;
                   }
-
-                getDiagsArea()->clear();
+                  getDiagsArea()->clear();
+                }
 	      }
 
 	    // insert a NULL entry, this will cause a blank row to be returned
@@ -3252,14 +3252,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 	      {
                 // if error is 4222 (command not supported), ignore it.
-                if (getDiagsArea()->mainSQLCODE() != -4222)
+                if (getDiagsArea() != NULL) {
+                  if (getDiagsArea()->mainSQLCODE() != -4222)
                   {
                     step_ = HANDLE_ERROR_;
                     
                     break;
                   }
-
-                getDiagsArea()->clear();
+                  getDiagsArea()->clear();
+                }
 	      }
 
 	    // insert a NULL entry, this will cause a blank row to be returned
@@ -3380,14 +3381,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
                     if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
                       {
                         // if error is 4222 (command not supported), ignore it.
-                        if (getDiagsArea()->mainSQLCODE() != -4222)
+                        if (getDiagsArea() != NULL) {
+                          if (getDiagsArea()->mainSQLCODE() != -4222)
                           {
                             step_ = HANDLE_ERROR_;
                             
                             break;
                           }
-                        
-                        getDiagsArea()->clear();
+                          getDiagsArea()->clear();
+                        }
                       }
                   }
                 
@@ -3409,14 +3411,14 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
                     if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
                       {
                         // if error is 4222 (command not supported), ignore it.
-                        if (getDiagsArea()->mainSQLCODE() != -4222)
-                          {
-                            step_ = HANDLE_ERROR_;
-                            
-                            break;
-                          }
-                        
-                        getDiagsArea()->clear();
+                        if (getDiagsArea() != NULL) {
+                           if (getDiagsArea()->mainSQLCODE() != -4222)
+                           {
+                             step_ = HANDLE_ERROR_;
+                             break;
+                           }
+                           getDiagsArea()->clear();
+                        }
                       }
                   }
                 
@@ -4237,7 +4239,7 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
 	    retcode = fetchAllHiveRows(infoList_, 1, rc);
 	    if (retcode < 0)
 	      {
-                cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -5067,7 +5069,7 @@ short ExExeUtilLobShowddlTcb::fetchRows(char * query, short &rc)
     fetchAllRows(infoList_, query, 1, FALSE, rc);
   if (cliRC < 0) 
     {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 
       step_ = HANDLE_ERROR_;
 
@@ -5503,8 +5505,6 @@ short ExExeUtilHiveMDaccessTcb::work()
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
   ContextCli * currContext = masterGlob->getStatement()->getContext();
   
-  ComDiagsArea * diags = getDiagsArea();
-
   while (1)
     {
       switch (step_)
@@ -5522,11 +5522,14 @@ short ExExeUtilHiveMDaccessTcb::work()
             retStatus = hiveMD_->init();
             if (!retStatus)
               {
-                *diags << DgSqlCode(-1190)
-                       << DgString0(hiveMD_->getErrMethodName())
-                       << DgString1(hiveMD_->getErrCodeStr())
-                       << DgString2(hiveMD_->getErrDetail())
-                       << DgInt0(hiveMD_->getErrCode());
+                Lng32 intParam1 =  hiveMD_->getErrCode();
+                ComDiagsArea *diagsArea =  getDiagsArea();
+                ExRaiseSqlError(getHeap(), &diagsArea, -1190, 
+                       &intParam1, NULL, NULL,
+                       hiveMD_->getErrMethodName(),
+                       hiveMD_->getErrCodeStr(),
+                       hiveMD_->getErrDetail());
+                setDiagsArea(diagsArea);
                 step_ = HANDLE_ERROR_;
                 break;
               }
@@ -5540,17 +5543,16 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if ((hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_) ||
                 (! hiveMDtdb().getSchema()))
               {
-                HVC_RetCode retCode = hiveMD_->getClient()->
-                  getAllSchemas(schNames_);
+                HVC_RetCode retCode = HiveClient_JNI::getAllSchemas((NAHeap *)getHeap(), schNames_);
                 if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
                   {
-                    *diags << DgSqlCode(-1190)
-                           << DgString0((char*)
-                                        "HiveClient_JNI::getAllSchemas()")
-                           << DgString1(hiveMD_->getClient()->
-                                        getErrorText(retCode))
-                           << DgInt0(retCode)
-                           << DgString2(GetCliGlobals()->getJniErrorStr());
+		    ComDiagsArea * diagsArea = getDiagsArea();
+		    ExRaiseSqlError(getHeap(), &diagsArea, -1190, 
+                           (Lng32 *)&retCode, NULL, NULL, 
+                           (char*)"HiveClient_JNI::getAllSchemas()",
+                           HiveClient_JNI::getErrorText(retCode),
+                           GetCliGlobals()->getJniErrorStr());
+                    setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_;
                     break;
                   }
@@ -5602,24 +5604,26 @@ short ExExeUtilHiveMDaccessTcb::work()
 
             if (! currObj)
               {
-                HVC_RetCode retCode = hiveMD_->getClient()->
-                  getAllTables(currSch, tblNames_);
+                HVC_RetCode retCode = HiveClient_JNI::getAllTables((NAHeap *)getHeap(), currSch, tblNames_);
                 if (retCode == HVC_ERROR_EXISTS_EXCEPTION)
                   {
-                    *diags << DgSqlCode(-1003)
-                           << DgSchemaName(NAString("hive") + "." + currSch);
+		    ComDiagsArea * diagsArea = getDiagsArea();
+		    ExRaiseSqlError(getHeap(), &diagsArea, -1003, 
+                           NULL, NULL, NULL, 
+                           (NAString("hive") + "." + currSch).data());
+                    setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_;
                     break;
                   }
                 else if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
                   {
-                    *diags << DgSqlCode(-1190)
-                           << DgString0((char*)
-                                        "HiveClient_JNI::getAllTables()")
-                           << DgString1(hiveMD_->getClient()->
-                                        getErrorText(retCode))
-                           << DgInt0(retCode)
-                           << DgString2(GetCliGlobals()->getJniErrorStr());
+		    ComDiagsArea * diagsArea = getDiagsArea();
+		    ExRaiseSqlError(getHeap(), &diagsArea, -1190, 
+                           (Lng32 *)&retCode, NULL, NULL, 
+                           (char*)"HiveClient_JNI::getAllTables()",
+                           HiveClient_JNI::getErrorText(retCode),
+                           GetCliGlobals()->getJniErrorStr());
+                    setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_;
                     break;
                   }
@@ -5803,9 +5807,11 @@ short ExExeUtilHiveMDaccessTcb::work()
 		char strP[300];
 		sprintf(strP, "Datatype %s is not supported.", 
                         (hcd ? hcd->type_ : hpd->type_));
-		*diags << DgSqlCode(-CLI_GET_METADATA_INFO_ERROR)
-		       << DgString0(strP);
-		
+                ComDiagsArea *diagsArea = getDiagsArea();
+                ExRaiseSqlError(getHeap(), &diagsArea, -CLI_GET_METADATA_INFO_ERROR,
+                      NULL, NULL, NULL,
+                      strP);
+                setDiagsArea(diagsArea);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -7033,8 +7039,6 @@ short ExExeUtilClusterStatsTcb::work()
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
   ContextCli * currContext = masterGlob->getCliGlobals()->currContext();
 
-  ComDiagsArea * diags = getDiagsArea();
-
   while (1)
     {
       switch (step_)
@@ -7061,8 +7065,9 @@ short ExExeUtilClusterStatsTcb::work()
               }
             else if (retcode < 0)
               {
-		*diags << DgSqlCode(-8451);
-
+                ComDiagsArea *diagsArea = getDiagsArea();
+                ExRaiseSqlError(getHeap(), &diagsArea, -8451);
+                setDiagsArea(diagsArea);
                 step_ = HANDLE_ERROR_;
                 break;
               }

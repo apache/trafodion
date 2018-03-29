@@ -62,6 +62,8 @@
 #include "ItemOther.h"
 #include "ItemExpr.h"
 #include "QRDescGenerator.h"
+#include "HBaseClient_JNI.h"
+#include "HiveClient_JNI.h"
 
 #ifndef TRANSFORM_DEBUG_DECL		// artifact of NSK's OptAll.cpp ...
 #define TRANSFORM_DEBUG_DECL
@@ -9850,8 +9852,7 @@ NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
     if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
       {
         int m = CmpCommon::diags()->mark();
-        if (!CmpCommon::context()->execHiveSQL(tempTableDDL,
-                                               CmpCommon::diags()))
+        if (HiveClient_JNI::executeHiveSQL(tempTableDDL) != HVC_OK)
           {
             if (CmpCommon::statement()->recompiling() ||
                 CmpCommon::statement()->getNumOfCompilationRetries() > 0)

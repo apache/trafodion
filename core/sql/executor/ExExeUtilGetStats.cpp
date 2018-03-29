@@ -979,8 +979,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetchRowsPrologue(statsQuery_);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -995,8 +994,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -1132,8 +1130,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 		step_ = HANDLE_ERROR_;
 		break;
 	      }

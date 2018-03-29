@@ -82,6 +82,15 @@ ComDiagsArea *ExRaiseSqlError(NAMemory * heap, ComDiagsArea** diagsArea,
 			      const char * stringParam2 = NULL,
 			      const char * stringParam3 = NULL);
 
+ComDiagsArea *ExRaiseSqlError(NAMemory * heap, ComDiagsArea** diagsArea,
+                              Lng32 err, 
+                              Lng32 * intParam1 = NULL,
+                              Lng32 * intParam2 = NULL,
+                              Lng32 * intParam3 = NULL,
+                              const char * stringParam1 = NULL,
+                              const char * stringParam2 = NULL,
+                              const char * stringParam3 = NULL);
+
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
 				ExeErrorCode err, ComCondition** cond=NULL);
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,

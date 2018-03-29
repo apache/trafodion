@@ -283,9 +283,6 @@ public :
   
   UInt32 getStatementNum() const { return statementNum_; }
 
-  HiveClient_JNI *getHiveClient(ComDiagsArea *diags = NULL);
-  NABoolean execHiveSQL(const char* hiveSQL, ComDiagsArea *diags = NULL);
-
   // access the NAHeap* for context
   NAHeap* statementHeap();
   NAHeap* heap() { return heap_; }

@@ -202,10 +202,10 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
 					     SQLCHARSETCODE_ISO88591,  // ISO_MAPPING=ISO88591
 					     currContext,
 					     parentQid);
-  
-  //diagsArea_ = NULL;
-  setDiagsArea(ComDiagsArea::allocate(getHeap()));
 
+  diagsArea_ = NULL;
+  //setDiagsArea(ComDiagsArea::allocate(getHeap()));
+  
   pqStep_ = PROLOGUE_;
 
   VersionToString(COM_VERS_MXV, versionStr_);
@@ -462,8 +462,8 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
 }
 
 void ExExeUtilTcb::handleErrors(Lng32 rc)
-{
-  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+{ 
+  setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 }
 
 short ExExeUtilTcb::initializeInfoList(Queue* &infoList)
@@ -669,7 +669,9 @@ short ExExeUtilTcb::executeQuery(char * task,
 	    char * stringParam1 = NULL;
 	    Lng32   intParam1 = ComDiags_UnInitialized_Int;
 
-	    retcode = (short)cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+            setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+            if (getDiagsArea() != NULL)
+	        retcode = 0;
 	    if (moveErrorRow)
 	      {
 		if (retcode == 0)
@@ -770,7 +772,6 @@ short ExExeUtilTcb::holdAndSetCQD(const char * defaultName, const char * default
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -785,7 +786,6 @@ short ExExeUtilTcb::restoreCQD(const char * defaultName, ComDiagsArea * globalDi
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -822,7 +822,6 @@ short ExExeUtilTcb::setCS(const char * csName, char * csValue,
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -837,7 +836,6 @@ short ExExeUtilTcb::resetCS(const char * csName, ComDiagsArea * globalDiags)
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -898,7 +896,6 @@ short ExExeUtilTcb::disableCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -912,7 +909,6 @@ short ExExeUtilTcb::restoreCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -1056,7 +1052,7 @@ short ExExeUtilTcb::setSystemVersion()
 					 sysVersionStr_, &sysVersionStrLen_);
       if (cliRC < 0)
 	{
-	  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
 	  return -1;
 	}
       
@@ -1125,7 +1121,7 @@ short ExExeUtilTcb::getObjectUid(char * catName, char * schName,
 				     uid, &uidLen);
   if (cliRC < 0)
     {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
       return -1;
     }
   uid[uidLen] = 0;

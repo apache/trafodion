@@ -219,7 +219,6 @@ Lng32 ExeCliInterface::allocStuff(SQLMODULE_ID * &module,
   )
 {
   Lng32 retcode = 0;
-
   deallocStuff(module, stmt, sql_src, input_desc, output_desc);
 
   clearGlobalDiags();
@@ -926,6 +925,8 @@ Lng32 ExeCliInterface::close()
   return retcode;
 }
 
+
+
 Lng32 ExeCliInterface::executeImmediatePrepare(const char * stmtStr,
 					       char * outputBuf,
 					       Lng32 * outputBufLen,
@@ -935,7 +936,6 @@ Lng32 ExeCliInterface::executeImmediatePrepare(const char * stmtStr,
 					      )
 {
   Lng32 retcode = 0;
-
   if (outputBufLen)
     *outputBufLen = 0;
 
@@ -993,8 +993,7 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
 					   Lng32 * outputBufLen,
 					   NABoolean nullTerminate,
 					   Int64 * rowsAffected,
-                                           ComDiagsArea *diagsArea
-					   )
+                                           ComDiagsArea *diagsArea)
 {
   Lng32 retcode = 0;
 
@@ -1050,7 +1049,6 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
   }
   if (diagsArea != NULL) 
      retcode = SQL_EXEC_MergeDiagnostics_Internal(*diagsArea);
-
   clearGlobalDiags();
 
   retcode = close();
@@ -1070,35 +1068,31 @@ Lng32 ExeCliInterface::executeImmediate(const char * stmtStr,
 				       NABoolean nullTerminate,
 				       Int64 * rowsAffected,
 				       NABoolean monitorThis,
-				       ComDiagsArea * globalDiags
-				       )
+				       ComDiagsArea *globalDiags)
 {
   Lng32 retcode = 0;
 
   ComDiagsArea * tempDiags = NULL;
   if (globalDiags)
-    {
-      tempDiags = ComDiagsArea::allocate(heap_);
-      tempDiags->mergeAfter(*globalDiags);
-    }
+  {
+     tempDiags = ComDiagsArea::allocate(heap_);
+     tempDiags->mergeAfter(*globalDiags);
+  }
 
   clearGlobalDiags();
-
   outputBuf_ = NULL;
   inputBuf_ = NULL;
   retcode = executeImmediatePrepare(stmtStr, 
 				    (nullTerminate ? outputBuf_ : outputBuf),
 				    outputBufLen,
 				    rowsAffected,monitorThis);
-  if (retcode < 0)
-    goto ExecuteImmediateReturn;
-
+  if (retcode < 0) 
+     goto ExecuteImmediateReturn;
   retcode = executeImmediateExec(stmtStr, 
 				 outputBuf, outputBufLen,
 				 nullTerminate,
 				 rowsAffected,
                                  globalDiags);
-
 ExecuteImmediateReturn:
   if ((globalDiags) && (tempDiags))
     {
@@ -1110,8 +1104,7 @@ ExecuteImmediateReturn:
       tempDiags->clear();
       tempDiags->deAllocate();
     }
-
-  return retcode;
+   return retcode;
 }
 
 short ExeCliInterface::fetchRowsPrologue(const char * sqlStrBuf, 
@@ -1438,6 +1431,7 @@ Lng32 ExeCliInterface::executeImmediateCEFC(const char * stmtStr,
                                             )
 {
   Lng32 retcode = 0;
+
 
   clearGlobalDiags();
 
@@ -1821,7 +1815,6 @@ short ExeCliInterface::prepareAndExecRowsPrologue(const char * sqlInitialStrBuf,
   Lng32 retcode = 0;
   
   SQL_EXEC_ClearDiagnostics(NULL);
-
   retcode = allocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
   if (retcode < 0)
     return (short)retcode;
@@ -2091,27 +2084,57 @@ Lng32 ExeCliInterface::deleteContext(char* contextHandle) // in buf contains con
 Lng32 ExeCliInterface::retrieveSQLDiagnostics(ComDiagsArea *toDiags)
 {
   Lng32 retcode;
+  ex_assert(toDiags != NULL, "ComDiagsArea is null");
+  if (diagsArea_ != NULL)
+    {
+      diagsArea_->clear();
+      diagsArea_->deAllocate();
+    }
+  retcode = SQL_EXEC_MergeDiagnostics_Internal(*toDiags);
+  SQL_EXEC_ClearDiagnostics(NULL);
+  return retcode;
+}
+
+
+ComDiagsArea *ExeCliInterface::allocAndRetrieveSQLDiagnostics(ComDiagsArea *&toDiags)
+{
+  Lng32 retcode;
 
   if (diagsArea_ != NULL)
     {
       diagsArea_->clear();
       diagsArea_->deAllocate();
     }
+  if (toDiags == NULL)
+      toDiags = ComDiagsArea::allocate(heap_);
 
-  if (toDiags != NULL)
-    {
-      retcode = SQL_EXEC_MergeDiagnostics_Internal(*toDiags);
-      SQL_EXEC_ClearDiagnostics(NULL);
-    }
+  retcode = SQL_EXEC_MergeDiagnostics_Internal(*toDiags);
+  SQL_EXEC_ClearDiagnostics(NULL);
+ 
+  if (retcode == 0)
+     return toDiags;
   else
-    {
-      diagsArea_ = ComDiagsArea::allocate(heap_);
-      retcode = SQL_EXEC_MergeDiagnostics_Internal(*diagsArea_);
-    }
-
-  return retcode;
+     return NULL;
 }
 
+void ExeCliInterface::retrieveOrSaveSQLDiagnostics(Lng32 cliRetcode, ComDiagsArea *diagsArea)
+{
+    Int32 rc;
+    Int32 diagsCondCount = 0;
+    rc = SQL_EXEC_GetDiagnosticsStmtInfo2(stmt_,
+                           SQLDIAG_NUMBER, &diagsCondCount,
+                           NULL, 0, NULL);
+    if (cliRetcode == 100)   
+       diagsCondCount--;
+    if (diagsCondCount > 0) { 
+       if (diagsArea == NULL) {
+          if (diagsArea_ == NULL) 
+             diagsArea_ = ComDiagsArea::allocate(heap_);
+          diagsArea = diagsArea_;
+       } 
+       SQL_EXEC_MergeDiagnostics_Internal(*diagsArea);
+    }
+}
 
 Lng32 ExeCliInterface::GetRowsAffected(Int64 *rowsAffected)
 {

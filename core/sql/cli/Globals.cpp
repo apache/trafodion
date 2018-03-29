@@ -61,10 +61,10 @@
 #include <pthread.h>
 #include "HBaseClient_JNI.h"
 #include "HdfsClient_JNI.h"
+#include "HiveClient_JNI.h"
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "CliSemaphore.h"
-
 
 #include "ExCextdecs.h"
 CliGlobals * cli_globals = NULL;

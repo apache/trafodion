@@ -605,102 +605,13 @@ private:
 };
 
 // ===========================================================================
-// ===== The HiveClient_JNI class implements access to the Java 
-// ===== HiveClient class.
-// ===========================================================================
-
-typedef enum {
-  HVC_OK     = JOI_OK
- ,HVC_FIRST  = HBC_LAST
- ,HVC_DONE   = HVC_FIRST
- ,HVC_ERROR_INIT_PARAM
- ,HVC_ERROR_INIT_EXCEPTION
- ,HVC_ERROR_CLOSE_EXCEPTION
- ,HVC_ERROR_EXISTS_PARAM
- ,HVC_ERROR_EXISTS_EXCEPTION
- ,HVC_ERROR_GET_HVT_PARAM
- ,HVC_ERROR_GET_HVT_EXCEPTION
- ,HVC_ERROR_GET_REDEFTIME_PARAM
- ,HVC_ERROR_GET_REDEFTIME_EXCEPTION
- ,HVC_ERROR_GET_ALLSCH_EXCEPTION
- ,HVC_ERROR_GET_ALLTBL_PARAM
- ,HVC_ERROR_GET_ALLTBL_EXCEPTION
- ,HVC_ERROR_EXECUTE_HIVE_SQL_PARAM
- ,HVC_ERROR_EXECUTE_HIVE_SQL_EXCEPTION
- ,HVC_LAST
-} HVC_RetCode;
-
-class HiveClient_JNI : public JavaObjectInterface
-{
-public:
-  
-  static HiveClient_JNI* getInstance();
-  static void deleteInstance();
-
-  // Destructor
-  virtual ~HiveClient_JNI();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  HVC_RetCode init();
-  
-  HVC_RetCode initConnection(const char* metastoreURI); 
-  bool isConnected() 
-  {
-    return isConnected_;
-  }
-
-  HVC_RetCode close();
-  HVC_RetCode exists(const char* schName, const char* tabName);
-  HVC_RetCode getHiveTableStr(const char* schName, const char* tabName, 
-                              Text& hiveTblStr);
-  HVC_RetCode getRedefTime(const char* schName, const char* tabName, 
-                           Int64& redefTime);
-  HVC_RetCode getAllSchemas(LIST(Text *)& schNames);
-  HVC_RetCode getAllTables(const char* schName, LIST(Text *)& tblNames);
-
-  HVC_RetCode executeHiveSQL(const char* hiveSQL);
-  // Get the error description.
-  static char* getErrorText(HVC_RetCode errEnum);
-  
-  static void logIt(const char* str);
-
-private:   
-  // Private Default constructor		
-  HiveClient_JNI(NAHeap *heap)
-  :  JavaObjectInterface(heap)
-  , isConnected_(FALSE)
-  {}
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0
-   ,JM_INIT
-   ,JM_CLOSE
-   ,JM_EXISTS     
-   ,JM_GET_HVT
-   ,JM_GET_RDT
-   ,JM_GET_ASH
-   ,JM_GET_ATL
-   ,JM_EXEC_HIVE_SQL
-   ,JM_LAST
-  };
-  static jclass          javaClass_; 
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-  bool isConnected_;
-};
-
-// ===========================================================================
 // ===== The HBulkLoadClient_JNI class implements access to the Java
 // ===== HBulkLoadClient class.
 // ===========================================================================
 
 typedef enum {
   HBLC_OK     = JOI_OK
- ,HBLC_FIRST  = HVC_LAST
+ ,HBLC_FIRST  = HTC_LAST
  ,HBLC_DONE   = HBLC_FIRST
  ,HBLC_ERROR_INIT_PARAM
  ,HBLC_ERROR_INIT_EXCEPTION
