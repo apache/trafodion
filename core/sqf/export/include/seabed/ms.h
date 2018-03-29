@@ -427,6 +427,7 @@ typedef enum {
     MS_ReqType_PNodeInfo,
     MS_ReqType_ProcessInfo,
     MS_ReqType_ProcessInfoCont,
+    MS_ReqType_ProcessInfoNs,
     MS_ReqType_Set,
     MS_ReqType_Shutdown,
     MS_ReqType_ShutdownNs,
