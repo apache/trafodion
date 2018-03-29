@@ -44,6 +44,7 @@ public:
 	short readDSValues(char *DSName, char* TransError);
 	void CDataSource::updateDSValues(short DSNType, CONNECT_FIELD_ITEMS *connectFieldItems,
 								 CONNECT_KEYWORD_TREE *keywordTree);
+    void setDSCharSet(DWORD charset){ m_DSCharSet = charset; };
 private:
 	short		m_DSLocation;						
 	char		m_DSName[MAX_SQL_IDENTIFIER_LEN + 1];
