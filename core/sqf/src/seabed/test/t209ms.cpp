@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
     bool         shell = false;
     bool         sleepv = false;
     struct stat  statbuf;
+    char        *vn;
     TAD          zargs[] = {
       { "-client",    TA_Bool, TA_NOMAX,    &client    },
       { "-id",        TA_Bool, TA_NOMAX,    &id        },
@@ -82,6 +83,9 @@ int main(int argc, char *argv[]) {
     util_gethostname(my_name, sizeof(my_name));
 
     if (client && !shell) {
+        vn = getenv("SQ_VIRTUAL_NODES");
+        if (vn == NULL)
+            server_nid = 0; // real cluster needs same node
         sprintf(prog, "%s/%s", getenv("PWD"), argv[0]);
         for (arg = 0; arg < argc; arg++)
             if (strcmp(argv[arg], "-client") == 0) // start_process

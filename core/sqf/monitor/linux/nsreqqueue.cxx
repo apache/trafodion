@@ -41,7 +41,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
         {
         case ReplyType_Generic:
             size += sizeof(struct Generic_reply_def);
-            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
                 trace_printf("%s@%d reply type=%d(Generic), size=%d, sock=%d\n", method_name, __LINE__,
                              msg->u.reply.type, size, sockFd);
@@ -51,7 +51,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             break;
         case ReplyType_DelProcessNs:
             size += sizeof(struct DelProcessNs_reply_def);
-            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
                 trace_printf("%s@%d reply type=%d(DelProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
                              msg->u.reply.type, size, sockFd);
@@ -59,7 +59,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             break;
         case ReplyType_NewProcessNs:
             size += sizeof(struct NewProcessNs_reply_def);
-            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
                 trace_printf("%s@%d reply type=%d(NewProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
                              msg->u.reply.type, size, sockFd);
@@ -67,7 +67,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             break;
         case ReplyType_ProcessInfo:
             size += sizeof(struct ProcessInfo_reply_def);
-            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
                 trace_printf("%s@%d reply type=%d(ProcessInfo), size=%d, sock=%d\n", method_name, __LINE__,
                              msg->u.reply.type, size, sockFd);
@@ -88,7 +88,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             }
             break;
         default:
-            if (trace_settings & (TRACE_PROCESS_DETAIL))
+            if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
                 trace_printf("%s@%d reply type=%d(?), size=%d, sock=%d\n", method_name, __LINE__,
                              msg->u.reply.type, size, sockFd);
