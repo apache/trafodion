@@ -245,7 +245,8 @@ public:
     inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
     inline int GetMonConnCount( void ) { return monConnCount_; }
 #else
-    inline const char *GetMon2MonPort( void ) { return mon2MonPort_.c_str(); }
+    inline const char *GetPtPPort( void ) { return ptpPort_.c_str(); }
+    inline int   GetPtPSocketPort( void ) { return( ptpSocketPort_ ); }
 #endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
@@ -315,7 +316,8 @@ public:
 #ifdef NAMESERVER_PROCESS
     inline void SetMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
 #else
-    inline void SetMon2MonPort( char *mon2MonPort) { mon2MonPort_ = mon2MonPort; }  
+    inline void SetPtPPort( char *ptpPort) { ptpPort_ = ptpPort; }  
+    inline void SetPtPSocketPort( int ptpSocketPort) { ptpSocketPort_ = ptpSocketPort; }
 #endif
     //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
     inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
@@ -414,7 +416,8 @@ private:
     string        mon2NsPort_;        // monitor to ns port
     int           monConnCount_;      // monitor connections
 #else
-    string        mon2MonPort_;
+    string        ptpPort_;
+    int           ptpSocketPort_;           // point-2-point socket port
 #endif
     int           commSocketPort_;          // re-integration socket port
     int           syncSocketPort_;          // algather socket port

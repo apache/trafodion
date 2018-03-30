@@ -409,6 +409,7 @@ class CProcess
 
 
     bool procExitReg(CProcess *targetProcess, _TM_Txid_External transId);
+    void procExitNotifierNodes( void );
     void procExitUnregAll( _TM_Txid_External transId );
 
     void validateObj( void );
@@ -549,8 +550,10 @@ private:
     // Container to keep track of the processes for which this process
     // is interested in process death.  deathInterestLock_ is used to
     // protect both the deathInterest_ and CNotice list.
+    typedef set<int> nidSet_t;
     nidPidList_t deathInterest_;
-    CLock       deathInterestLock_;
+    nidSet_t     deathInterestNid_;
+    CLock        deathInterestLock_;
 
     CNotice       *NoticeHead;   // List of processes requesting death notice 
     CNotice       *NoticeTail;

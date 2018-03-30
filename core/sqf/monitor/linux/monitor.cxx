@@ -111,7 +111,7 @@ char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
 #ifdef NAMESERVER_PROCESS
 char MyMon2NsPort[MPI_MAX_PORT_NAME] = {'\0'};
 #else
-char MyMon2MonPort[MPI_MAX_PORT_NAME] = {'\0'};
+char MyPtPPort[MPI_MAX_PORT_NAME] = {'\0'};
 #endif
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;

@@ -24,6 +24,9 @@ _virtualnodes 6
 end node
 
 begin name-server
-nodes=0
+#nodes=0
+nodes=0,1
+#nodes=0,1,2
+#nodes=0,1,2,3
 #nodes=0,1,2,3,4,5
 end name-server

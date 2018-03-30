@@ -269,8 +269,9 @@ void CNotice::Notify( SQ_LocalIOToClient::bcastPids_t *bcastPids )
 
 
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                        trace_printf( "%s@%d - Sending %s (%d, %d:%d) Death "
-                                      "message to %s (%d, %d:%d)\n"
+                    {
+                        trace_printf( "%s@%d - Sending Death message of"
+                                      " %s (%d, %d:%d) to %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
                                     , Process->GetName()
                                     , Process->GetNid()
@@ -280,41 +281,55 @@ void CNotice::Notify( SQ_LocalIOToClient::bcastPids_t *bcastPids )
                                     , notify->GetNid()
                                     , notify->GetPid()
                                     , notify->GetVerifier());
-
-
+                    }
                 }
                 else
                 {
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                        trace_printf( "%s@%d - Process %s (%d, %d:%d)" 
-                                      " doesn't want Death message" "\n"
+                    {
+                        trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                      " not wanted by %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
+                                    , Process->GetName()
+                                    , Process->GetNid()
+                                    , Process->GetPid()
+                                    , Process->GetVerifier()
                                     , notify->GetName()
                                     , notify->GetNid()
                                     , notify->GetPid()
-                                    , notify->GetVerifier() );
+                                    , notify->GetVerifier());
+                    }
                 }
             }
             else
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                    trace_printf( "%s@%d - Not processed for clone Process %s (%d, %d:%d)\n"
+                {
+                    trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                  " not processed for clone %s (%d, %d:%d)\n"
                                 , method_name, __LINE__
+                                , Process->GetName()
+                                , Process->GetNid()
+                                , Process->GetPid()
+                                , Process->GetVerifier()
                                 , notify->GetName()
                                 , notify->GetNid()
                                 , notify->GetPid()
-                                , notify->GetVerifier() );
+                                , notify->GetVerifier());
+                }
             }
         }
         else
         {
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-               trace_printf( "%s@%d - Can't find process %s (%d, %d:%d)\n"
-                           , method_name, __LINE__
-                           , name_.c_str()
-                           , Nid
-                           , Pid
-                           , verifier_ );
+            {
+                trace_printf( "%s@%d - Can't find process %s (%d, %d:%d)\n"
+                            , method_name, __LINE__
+                            , name_.c_str()
+                            , Nid
+                            , Pid
+                            , verifier_ );
+            }
         }
     }
     TRACE_EXIT;
@@ -456,8 +471,8 @@ void CNotice::NotifyNid( NidQueue_t *nidQueue )
                     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
                         CLNode *lnode = Nodes->GetLNode( Nid );
-                        trace_printf( "%s@%d - Sending process %s (%d, %d:%d) "
-                                      "exit message to %s (nid=%d)\n"
+                        trace_printf( "%s@%d - Sending exit message of"
+                                      " %s (%d, %d:%d) to %s (nid=%d)\n"
                                     , method_name, __LINE__
                                     , Process->GetName()
                                     , Process->GetNid()
@@ -471,9 +486,13 @@ void CNotice::NotifyNid( NidQueue_t *nidQueue )
                 {
                     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                     {
-                        trace_printf( "%s@%d - Process %s (%d, %d:%d)" 
-                                      " doesn't want Death message\n"
+                        trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                      " not wanted by %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
+                                    , Process->GetName()
+                                    , Process->GetNid()
+                                    , Process->GetPid()
+                                    , Process->GetVerifier()
                                     , remoteProcess->GetName()
                                     , remoteProcess->GetNid()
                                     , remoteProcess->GetPid()

@@ -57,7 +57,7 @@ extern bool IsRealCluster;
 extern CMeas Meas;
 
 CPtpClient::CPtpClient (void)
-          : mon2monSock_(0)
+          : ptpSock_(0)
           , seqNum_(0)
 {
     const char method_name[] = "CPtpClient::CPtpClient";
@@ -89,13 +89,13 @@ CPtpClient::~CPtpClient (void)
     TRACE_EXIT;
 }
 
-int CPtpClient::InitializePtpClient( char * mon2monPort )
+int CPtpClient::InitializePtpClient( char * ptpPort )
 {
     const char method_name[] = "CPtpClient::InitializePtpClient";
     TRACE_ENTRY;
     int err = 0;
       
-    int sock = Monitor->MkCltSock( mon2monPort );                
+    int sock = Monitor->MkCltSock( ptpPort );                
     if (sock < 0)
     {
         err = sock;
@@ -108,50 +108,16 @@ int CPtpClient::InitializePtpClient( char * mon2monPort )
     }
     else
     {
-        mon2monSock_ = sock;
+        ptpSock_ = sock;
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - connected to monitor node=%s, sock=%d\n"
                         , method_name, __LINE__
-                        , mon2monPort
-                        , mon2monSock_ );
+                        , ptpPort
+                        , ptpSock_ );
         }
     }
-#if 0    
-    // remove
-    if (err == 0)
-    {
-        nodeId_t msg;
-        strcpy(msg.nodeName, MyNode->GetName());
-        strcpy(msg.commPort, MyNode->GetCommPort());
-        strcpy(msg.syncPort, MyNode->GetSyncPort());
-        msg.pnid = MyNode->GetPNid();
-        msg.creatorPNid = -1;
-        msg.creatorShellPid = -1;
-        msg.creatorShellVerifier = -1;
-        msg.creator = false;
-        msg.ping = false;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d - sending node-info to monitor=%s, sock=%d\n"
-                        , method_name, __LINE__
-                        , mon2monPort
-                        , mon2monSock_);
-        }
-        err = SendSock((char *) &msg, sizeof(msg), mon2monSock_);
-        if (err)
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - error sending to monitor=%s, sock=%d, error=%d\n"
-                            , method_name, __LINE__
-                            , mon2monPort
-                            , mon2monSock_
-                            , err );
-            }
-        }
-    }
-#endif
+
     TRACE_EXIT;
     return err;
 }
@@ -807,7 +773,7 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
     TRACE_ENTRY;
     
     char monPortString[MAX_PROCESSOR_NAME];
-    char mon2monPort[MAX_PROCESSOR_NAME];
+    char ptpPort[MAX_PROCESSOR_NAME];
     int tempPort = basePort_;
     
     // For virtual env
@@ -828,16 +794,16 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
                     , basePort_ );
     }
 
-    memset( &mon2monPort, 0, MAX_PROCESSOR_NAME );
-    memset( &mon2monPortBase_, 0, MAX_PROCESSOR_NAME+100 );
+    memset( &ptpPort, 0, MAX_PROCESSOR_NAME );
+    memset( &ptpPortBase_, 0, MAX_PROCESSOR_NAME+100 );
 
-    strcat( mon2monPortBase_, hostName );
-    strcat( mon2monPortBase_, ":" );
+    strcat( ptpPortBase_, hostName );
+    strcat( ptpPortBase_, ":" );
     sprintf( monPortString,"%d", tempPort );
-    strcat( mon2monPort, mon2monPortBase_ );
-    strcat( mon2monPort, monPortString ); 
+    strcat( ptpPort, ptpPortBase_ );
+    strcat( ptpPort, monPortString ); 
 
-    int error = InitializePtpClient( mon2monPort );
+    int error = InitializePtpClient( ptpPort );
     if (error < 0)
     {
         TRACE_EXIT;
@@ -849,37 +815,37 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
         trace_printf( "%s@%d - sending %s REQ to Monitor=%s, sock=%d\n"
                     , method_name, __LINE__
                     , reqType
-                    , mon2monPort
-                    , mon2monSock_);
+                    , ptpPort
+                    , ptpSock_);
     }
 
-    error = SendSock((char *) &size, sizeof(size), mon2monSock_);
+    error = SendSock((char *) &size, sizeof(size), ptpSock_);
     if (error)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - error sending to Monitor=%s, sock=%d, error=%d\n"
                         , method_name, __LINE__
-                        , mon2monPort
-                        , mon2monSock_
+                        , ptpPort
+                        , ptpSock_
                         , error );
         }
     }
     
-    error = SendSock((char *) msg, size, mon2monSock_);
+    error = SendSock((char *) msg, size, ptpSock_);
     if (error)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
             trace_printf( "%s@%d - error sending to nameserver=%s, sock=%d, error=%d\n"
                         , method_name, __LINE__
-                        , mon2monPort
-                        , mon2monSock_
+                        , ptpPort
+                        , ptpSock_
                         , error );
         }
     }
     
-    close( mon2monSock_ );
+    close( ptpSock_ );
 
     TRACE_EXIT;
     return error;

@@ -82,6 +82,7 @@ char Path[MAX_SEARCH_PATH];
 char Wdir[MAX_SEARCH_PATH];
 char prompt[13];
 int VirtualNodes = 0;
+int VirtualNid = -1;
 int NumNodes = 0;
 int NumLNodes = 0;
 int CurNodes = 0;
@@ -848,7 +849,7 @@ void TraceInit( int & argc, char **&argv )
             // line arguments.
             for (int j=i, k=i+2; k < argc; j++, k++)
             {
-                printf ("setting argv[%d] = argv[%d]\n", j, k);
+                //printf ("setting argv[%d] = argv[%d]\n", j, k);
                 argv[j] = argv[k];
             }
             argc -= 2;
@@ -865,6 +866,32 @@ void TraceInit( int & argc, char **&argv )
     if ( trace_settings )
     {
         TraceOpen();
+    }
+}
+
+void VirtualNidInit( int & argc, char **&argv )
+{
+    // Check for trace flags specified on the command line.
+    for (int i = 0; i < argc; i++)
+    {
+        if ( strcmp ( argv[i], "-nid" ) == 0 && (i != argc-1) )
+        {   // <nid> setting specified on command line.
+            VirtualNid = atoi ( argv[i+1] );
+
+            // Remove the virtual nid arguments from the list of command
+            // line arguments.
+            for (int j=i, k=i+2; k < argc; j++, k++)
+            {
+                //printf ("setting argv[%d] = argv[%d]\n", j, k);
+                argv[j] = argv[k];
+            }
+            argc -= 2;
+        }
+    }
+
+    if (VirtualNid != -1)
+    {
+        printf( "Using VirtualNid=%d\n", VirtualNid );
     }
 }
 
@@ -9302,6 +9329,9 @@ int main (int argc, char *argv[])
     // Initialize trace settings
     TraceInit ( argc, argv );
 
+    // Initialize virtual <nid> from command line args
+    VirtualNidInit( argc, argv );
+    
     MyName = new char [MAX_PROCESS_PATH];
     // setup defaults
     strcpy (MyName, "SHELL");
@@ -9338,6 +9368,12 @@ int main (int argc, char *argv[])
     else
     {
         MyNid = 0;
+    }
+
+    if ( VirtualNodes && VirtualNid != -1)
+    {
+        // Override NyNid with the command line nid value
+        MyNid = VirtualNid;
     }
 
     msg = new struct message_def;

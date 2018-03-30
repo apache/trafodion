@@ -169,13 +169,14 @@ shell <<eof
  delay 3
  exec {name \$CTRLR, nid 0, out $TRAF_HOME/monitor/test/childExit.lst} childExitCtrl $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
-shell -c ps 
+shell -nid 0 -c ps
+#shell -nid 0 -c ps;shell -nid 1 -c ps;shell -nid 2 -c ps;shell -nid 3 -c ps;shell -nid 4 -c ps;shell -nid 5 -c ps
+shell -nid 0 -c ps monitor;shell -nid 1 -c ps monitor;shell -nid 2 -c ps monitor;shell -nid 3 -c ps monitor;shell -nid 4 -c ps monitor;shell -nid 5 -c ps monitor
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -211,12 +212,11 @@ shell <<eof
  exec {pri 10,name \$CLIENT,nid 0, out $TRAF_HOME/monitor/test/multiNode.lst} client $trace
  delay 3
  !shutdown
- ps
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -243,13 +243,12 @@ shell <<eof
  delay 3
  exec {name \$CTRLR, nid 0, out $TRAF_HOME/monitor/test/regTest.lst} regTestCtrl $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -287,13 +286,12 @@ shell <<eof
  !
  exec {name \$DEATH, nid 0, out $TRAF_HOME/monitor/test/deathNotice.lst} deathNotice $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -324,13 +322,12 @@ shell <<eof
  delay 15
  exec {name \$PPROC, nid 0, out $TRAF_HOME/monitor/test/persistentProc.lst} persistentProc $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -350,13 +347,12 @@ shell <<eof
  delay 3
  exec {name \$PPROC, nid 0, out $TRAF_HOME/monitor/test/persistentProc.lst} persistentProc $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -382,13 +378,12 @@ shell <<eof
  delay 3
  exec {name \$DTMCTRL, nid 0, out $TRAF_HOME/monitor/test/dtmTest.lst} dtmCtrl $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -420,13 +415,12 @@ shell <<eof
  delay 3
  exec {name \$SPXCTRL, nid 0, out $TRAF_HOME/monitor/test/spxTest.lst} spxCtrl $trace
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -453,13 +447,12 @@ shell <<eof
  delay 3
  exec {name \$PCRE8, nid 0, out $TRAF_HOME/monitor/test/procCreate.lst} procCreate $trace -x
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -488,13 +481,12 @@ shell <<eof
  delay 3
  down 1 !
  delay 10
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -525,13 +517,12 @@ shell <<eof
  exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync.lst} tmSyncCtrl -n 1,3,4,5,6 $trace
  wait $CTRLR
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -551,13 +542,12 @@ shell <<eof
  exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync8.lst} tmSyncCtrl -n 8 $trace
  wait $CTRLR
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -579,13 +569,12 @@ shell <<eof
  exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync10.lst} tmSyncCtrl -n 10 $trace
  wait $CTRLR
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit
@@ -606,13 +595,12 @@ shell <<eof
  exec {nowait, nid 0, name \$CTRLR, out $TRAF_HOME/monitor/test/tmSync.lst} tmSyncCtrl -n 3,4,5,6,7 $trace
  wait $CTRLR
  delay 3
- ps
  !shutdown
  exit
 eof
-if ( [ $test '==' -1 ] ); then
 shell -c ps 
 shell -c ps monitor
+if ( [ $test '==' -1 ] ); then
 shell -a<<eof
  shutdown
  exit

@@ -40,7 +40,7 @@ public:
     CPtpClient( void );
     virtual ~CPtpClient( void );
 
-    int  InitializePtpClient( char * mon2monPort );
+    int  InitializePtpClient( char * ptpPort );
     int  ProcessClone( CProcess *process );
     int  ProcessExit( CProcess* process
                     , int parentNid
@@ -67,8 +67,8 @@ public:
 
 private:
     int  basePort_;
-    char mon2monPortBase_[MAX_PROCESSOR_NAME+100];
-    int  mon2monSock_;
+    char ptpPortBase_[MAX_PROCESSOR_NAME+100];
+    int  ptpSock_;
     int  seqNum_;
 
     int  ReceiveSock(char *buf, int size, int sockFd);

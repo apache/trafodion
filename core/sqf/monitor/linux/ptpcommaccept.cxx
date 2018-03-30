@@ -39,7 +39,7 @@ extern CMonitor *Monitor;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern int MyPNID;
-extern char MyMon2MonPort[MPI_MAX_PORT_NAME];
+extern char MyPtPPort[MPI_MAX_PORT_NAME];
 extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
@@ -235,7 +235,7 @@ void CPtpCommAccept::commAcceptorSock()
             }
     
             mem_log_write(CMonLog::MON_CONNTONEWMON_1);
-            sockFd = Monitor->AcceptMon2MonSock();
+            sockFd = Monitor->AcceptPtPSock();
         }
         else
         {
@@ -287,7 +287,7 @@ void CPtpCommAccept::shutdownWork(void)
 
     // Set flag that tells the PtpCommAccept thread to exit
     shutdown_ = true;   
-    Monitor->ConnectToSelf();
+    Monitor->ConnectToPtPCommSelf();
     CLock::wakeOne();
 
     if (trace_settings & TRACE_INIT)

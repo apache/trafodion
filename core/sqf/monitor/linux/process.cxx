@@ -545,11 +545,14 @@ bool CProcess::procExitReg(CProcess *targetProcess,
     {   // This process is not the parent of the target process (parent
         // processes automatically get process death notifications.)
 
-        // Add entry to list of processes that are being monitored
-        // by this process.
         nidPid_t target = { targetProcess->Nid, targetProcess->Pid };
         deathInterestLock_.lock();
-        deathInterest_.push_back ( target );
+        // Add entry to list of processes that are being monitored
+        // by this process.
+        deathInterest_.push_back( target );
+        // Add entry to set of nids of processes that are being monitored
+        // by this process.
+        deathInterestNid_.insert( targetProcess->Nid );
         deathInterestLock_.unlock();
 
         // Register interest with the target process 
@@ -580,12 +583,54 @@ bool CProcess::procExitReg(CProcess *targetProcess,
 #endif
 
 #ifndef NAMESERVER_PROCESS
+void CProcess::procExitNotifierNodes( void )
+{
+    const char method_name[] = "CProcess::procExitNotifierNodes";
+    TRACE_ENTRY;
+
+    CLNode *targetLNode;
+    CNode  *targetNode;
+    nidSet_t::iterator it;
+
+    // Remove death notice registration for all entries on list
+    deathInterestLock_.lock();
+    for ( it = deathInterestNid_.begin(); it != deathInterestNid_.end(); ++it)
+    {
+        targetLNode = Nodes->GetLNode ( *it );
+        if (targetLNode)
+        {
+            targetNode = targetLNode->GetNode();
+        }
+
+        if ( targetNode )
+        {
+            if (NameServerEnabled && targetNode->GetPNid() != MyPNID)
+            {
+                int rc = -1;
+                // Forward the process exit to the target node
+                rc = PtpClient->ProcessExit( this 
+                                           , targetLNode->GetNid()
+                                           , targetNode->GetName() ); 
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+        }
+    }
+    deathInterestNid_.clear();
+    deathInterestLock_.unlock();
+
+    TRACE_EXIT;
+}
+#endif
+
+#ifndef NAMESERVER_PROCESS
 void CProcess::procExitUnregAll ( _TM_Txid_External transId )
 {
     const char method_name[] = "CProcess::procExitUnregAll";
     TRACE_ENTRY;
 
-    nidPidList_t::iterator iter;
     CLNode *node;
     CProcess *targetProcess = NULL;
     nidPidList_t::iterator it;
@@ -3222,48 +3267,39 @@ void CProcess::Exit( CProcess *parent )
 #ifndef NAMESERVER_PROCESS
     if (NameServerEnabled)
     {
-        if ( parent && parent->IsClone() && Pid != -1 )
+        if ( parent )
         {
-            int targetNid = parent->GetNid();
-            CLNode *targetLNode = Nodes->GetLNode( targetNid );
-            // Send the process exit to the target node
-            int rc = PtpClient->ProcessExit( this
-                                           , targetNid
-                                           , targetLNode->GetNode()->GetName() );
-            if (rc)
+            if ( parent->IsClone() && Pid != -1 )
             {
-                // TODO: Error handling
-            }
-#if 0
-            // TODO: This is not the correct place. It needs to be found!
-            //       When the parent process is in a remote node and
-            //       the local node contains child processes,
-            //       a clone of the parent is created at child creation time,
-            //       when all child processes are deleted, it leaves the
-            //       parent clone process. Need to determine when all
-            //       child process objects which reference the parent clone
-            //       are deleted so the parent clone object can be deleted.
-            //       The symptom is that shutdown never occurs since there
-            //       are object which have not been deleted and the process
-            //       counts prevent the shutdown from completing.
-            if (parent->childCount() == 0)
-            {
-                if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                int targetNid = parent->GetNid();
+                CLNode *targetLNode = Nodes->GetLNode( targetNid );
+                // Send the process exit to the parent node
+                int rc = PtpClient->ProcessExit( this
+                                               , targetNid
+                                               , targetLNode->GetNode()->GetName() );
+                if (rc)
                 {
-                    trace_printf( "%s@%d" " - Deleting parent %s (%d,%d:%d) of last child %s (%d,%d:%d) \n"
-                                , method_name, __LINE__
-                                , parent->GetName(), parent->GetNid()
-                                , parent->GetPid(), parent->GetVerifier()
-                                , GetName(), GetNid(), GetPid(), GetVerifier() );
+                    // TODO: Error handling
                 }
-
-                CNode *parentNode = Nodes->GetLNode(parent->GetNid())->GetNode();
-                parentNode->DelFromNameMap( parent );
-                parentNode->DelFromPidMap( parent );
-                parentNode->DeleteFromList( parent );
             }
-#endif
         }
+        else
+        {
+            if (GetParentNid() != -1)
+            {
+                int targetNid = GetParentNid();
+                CLNode *targetLNode = Nodes->GetLNode( targetNid );
+                // Send the process exit to the parent node
+                int rc = PtpClient->ProcessExit( this
+                                               , targetNid
+                                               , targetLNode->GetNode()->GetName() );
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+        }
+        procExitNotifierNodes();
     }
 #endif
 

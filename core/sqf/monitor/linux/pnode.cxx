@@ -169,6 +169,8 @@ CNode::CNode( char *name, int pnid, int rank )
       ,zid_(pnid)
 #ifdef NAMESERVER_PROCESS
       ,monConnCount_(0)
+#else
+      ,ptpSocketPort_(-1)
 #endif
       ,commSocketPort_(-1)
       ,syncSocketPort_(-1)
