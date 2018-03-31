@@ -3013,7 +3013,10 @@ void Generator::setPlanExpirationTimestamp(Int64 t)
 const NAString GenGetQualifiedName(const CorrName& corr,
 				   NABoolean formatForDisplay)
 {
-  return corr.getQualifiedNameObj().getQualifiedNameAsString(formatForDisplay);
+  if( corr.isSeabaseMD() || corr.isSeabasePrivMgrMD() ) 
+    return corr.getQualifiedNameObj().getQualifiedNameAsString(formatForDisplay);
+  else
+    return  NAString("TRAFODION.SEABASE.SUPER");
 }
 
 

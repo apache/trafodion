@@ -126,7 +126,8 @@ enum SeabaseColumnsFlags {
   SEABASE_COLUMN_IS_SALT       = 0x0000000000000001, // don't rely on this quite yet,
                                                      // since some older tables
                                                      // don't have this flag set
-  SEABASE_COLUMN_IS_DIVISION   = 0x0000000000000002
+  SEABASE_COLUMN_IS_DIVISION   = 0x0000000000000002,
+  SEABASE_COLUMN_IS_TBLNM      = 0x0000000000000004
 };
 
 static const QString seabaseDefaultsDDL[] =

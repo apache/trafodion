@@ -2438,6 +2438,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
+  NABoolean isSmallTable =  getTableDesc()->getNATable()->isSmallTable();
 
   // If CIF is not OFF use aligned format, except when table is
   // not aligned and it has added columns. Support for added columns

@@ -609,7 +609,15 @@ public:
     else
        return getSQLMXAlignedTable();
   }
-
+  
+  NABoolean isSmallTable() const
+  {
+    if(getTableName().isSeabaseMD() || getTableName().isSeabasePrivMgrMD() )
+      return FALSE;
+    else
+    return TRUE;  
+  }
+ 
   NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
   {
     NABoolean isAlignedFormat;

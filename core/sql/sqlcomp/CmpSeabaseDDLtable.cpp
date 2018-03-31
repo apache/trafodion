@@ -2079,9 +2079,9 @@ short CmpSeabaseDDL::createSeabaseTable2(
   {
     NAString smallColName("_TBLNM_");
     SQLVarChar * tblNmColType = new(STMTHEAP) SQLVarChar(STMTHEAP, 128, FALSE);
-    NAString tblNmExprText("CAST ( ' ");
+    NAString tblNmExprText("CAST ( '");
     tblNmExprText += createTableNode->getTableName();
-    tblNmExprText += "' AS VARCHAR(128) ) ";
+    tblNmExprText += "' AS CHAR(128) ) ";
     
     ElemDDLColDefault *tblNmDef = 
         new(STMTHEAP) ElemDDLColDefault(
@@ -11457,6 +11457,10 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
           strcmp(colInfo.colName,
                  ElemDDLSaltOptionsClause::getSaltSysColName()) == 0)
         colInfo.colFlags |=  SEABASE_COLUMN_IS_SALT;
+      if (colInfo.defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT &&
+          strcmp(colInfo.colName,
+                 "_TBLNM_") == 0)
+        colInfo.colFlags |=  SEABASE_COLUMN_IS_TBLNM;
    }
    if (isTableSalted != NULL)
       *isTableSalted = tableIsSalted;
