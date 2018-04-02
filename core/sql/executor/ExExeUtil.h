@@ -3346,9 +3346,15 @@ virtual ex_tcb_private_state *
        Lng32 &pstateLength); // out, length of one element
 
 protected:
-  Lng32 getFSTypeFromHiveColType(const char* hiveType);
-  Lng32 getLengthFromHiveColType(const char* hiveType);
-
+  Lng32 getTypeAttrsFromHiveColType(const char* hiveType,
+                                    NABoolean isORC,
+                                    Lng32 &fstype,
+                                    Lng32 &length,
+                                    Lng32 &precision,
+                                    Lng32 &scale,
+                                    char *sqlType,
+                                    char *displayType,
+                                    char *charset);
   enum Step
   {
     INITIAL_,

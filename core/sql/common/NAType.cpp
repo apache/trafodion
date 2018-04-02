@@ -777,7 +777,8 @@ short NAType::getMyTypeAsHiveText(NAString * outputStr/*out*/) const
 }
 
 short NAType::getMyTypeAsText(NAString * outputStr,  // output
-			      NABoolean addNullability) const
+			      NABoolean addNullability,
+                              NABoolean addCollation) const
 {
   // get the right value for all these
   Lng32		      fs_datatype		= getFSDatatype();
@@ -829,7 +830,8 @@ short NAType::getMyTypeAsText(NAString * outputStr,  // output
       isUpshifted       = charType.isUpshifted();
       isCaseinsensitive = charType.isCaseinsensitive();
       characterSet      = charType.getCharSet();
-      collationSequence = charType.getCollation();
+      if (addCollation)
+        collationSequence = charType.getCollation();
       if ( characterSet == CharInfo::UTF8 /*  || (characterSet == CharInfo::SJIS */ )
       {
          // If byte length limit is EXACTLY (maxBytesPerChar * character limit), then use character limit
@@ -1063,6 +1065,8 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
 
   if ( !strncmp(hiveType, "decimal", 7) )
   {
+    const Int16 DisAmbiguate = 0;
+
     Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
     Int32 hiveTypeLen = strlen(hiveType);
     char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
@@ -1112,7 +1116,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
     {
       if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
-        return new (heap) SQLDecimal(heap, p, s, TRUE, TRUE);
+        return new (heap) SQLNumeric(heap, TRUE, p, s, DisAmbiguate, TRUE);
       else
         return NULL;
     }
@@ -1127,7 +1131,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     else if( ( p == -1 ) && ( s == -1 ) )
     {
       // hive define decimal as decimal ( 10, 0 )
-      return new (heap) SQLDecimal(heap, 10, 0, TRUE, TRUE);
+      return new (heap) SQLNumeric(heap, TRUE, 10, 0, DisAmbiguate, TRUE);
     }
     else
     {

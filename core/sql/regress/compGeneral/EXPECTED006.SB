@@ -296,10 +296,7 @@
 
 >>prepare xx from select char_length(a) from t006t2;
 
-*** ERROR[4043] The operand of function CHARACTER_LENGTH, CHAR_LENGTH, or LENGTH must be character.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>prepare xx from select lower(a) from t006t2;
 
 *** ERROR[4043] The operand of function LOWER or LCASE must be character.
@@ -308,10 +305,7 @@
 
 >>prepare xx from select octet_length(a) from t006t2;
 
-*** ERROR[4043] The operand of function OCTET_LENGTH must be character.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Error 4045
 >>prepare xx from select zeroifnull(a) from t006t1;

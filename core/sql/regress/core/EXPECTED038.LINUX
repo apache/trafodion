@@ -127,10 +127,12 @@ EMPNUM       FIRSTNAME             LASTNAME              AGE          SALARY
 >>select * from T038edat
 +> where {fn locate('ma', {fn concat(first_name, last_name)}, 1)} > 0;
 
-*** ERROR[3131] The statement just entered is currently not supported.
+EMPNUM       FIRST_NAME            LAST_NAME           
+-----------  --------------------  --------------------
 
-*** ERROR[8822] The statement was not prepared.
+        300    ARUN                Thomas              
 
+--- 1 row(s) selected.
 >>
 >>select {fn lcase(first_name)} from T038edat;
 
@@ -243,10 +245,10 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 -----------  ----------  ----------  -----------
 
         100  1997-01-30    13:40:05         1000
-        200  2017-06-05    21:43:42           99
+        200  2018-03-08    04:11:27           99
         300  1996-08-10    10:20:10         6000
-        400  1997-05-12    21:43:42           99
-        500  2017-06-05    21:43:42           99
+        400  1997-05-12    04:11:27           99
+        500  2018-03-08    04:11:27           99
 
 --- 5 row(s) selected.
 >>
@@ -264,7 +266,7 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 T038PART_NUM  ORDER_TIME                
 ------------  --------------------------
 
-         600  2017-06-05 21:43:45.699265
+         600  2018-03-08 04:11:32.295835
 
 --- 1 row(s) selected.
 >>
@@ -661,8 +663,8 @@ GANESAN               DEV                   YOW
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
@@ -674,8 +676,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
@@ -703,8 +705,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>
@@ -730,9 +732,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -743,9 +745,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>

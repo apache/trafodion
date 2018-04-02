@@ -379,5 +379,15 @@ insert into hive.hive.t031hive1 values (2, '2017-01-02 11:11:11', 'a'),
 
 select * from hive.hive.t031hive1;
 
+-- caching of zero length strings
+drop table if exists t031t1 cascade;
+CREATE TABLE t031t1
+  ( 
+    a CHAR(1) not null 
+  , b CHAR(1 BYTE) CHARACTER SET UTF8 not null
+);
+
+-- should not crash
+prepare s from INSERT INTO t031t1 VALUES (DECODE('9', '9', 'F'), '');
 
 log;

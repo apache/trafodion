@@ -1047,7 +1047,7 @@ $1~String1 --------------------------------
 3412 ZZZZZ 99999 BEGINNER MAJOR DBADMIN IDENTITY column $0~ColumnName must be the primary key or must have a unique index on it.
 3413 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The NOT NULL constraint on IDENTITY column $0~ColumnName must be NOT DROPPABLE.
 3414 ZZZZZ 99999 BEGINNER MAJOR DBADMIN For an IDENTITY column $0~ColumnName, the tuple list cannot have mixed user specified and DEFAULT values. Specify values for all or specify DEFAULT for all.
-3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.
+3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.$1~String1
 3416 42000 99999 BEGINNER MAJOR DBADMIN The last operand of function $0~string0 must not be NULL.
 3417 ZZZZZ 99999 BEGINNER MINOR DBADMIN Invalid DISK POOL $0~Int0 as the maximum number of pools allowed is $1~Int1.
 3418 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Local Number of Partitions clause is not allowed with DISK POOL clause.
