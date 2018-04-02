@@ -4450,9 +4450,9 @@ void MVInfoForDDL::processNormalizedInformation(BindWA *bindWA)
   {
     // Find the top most Join node (or the Scan node if there is no Join).
     RelExpr *topJoin = rootNode_;
-    while ( topJoin->getOperatorType() != REL_SCAN     &&
-           !topJoin->getOperator().match(REL_ANY_JOIN) &&
-	    topJoin != NULL)
+    while (topJoin != NULL &&
+           topJoin->getOperatorType() != REL_SCAN &&
+           !topJoin->getOperator().match(REL_ANY_JOIN))
       topJoin = topJoin->child(0);
 
     // Check if the Join tree is left linear.

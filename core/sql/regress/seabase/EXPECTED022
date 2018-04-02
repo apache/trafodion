@@ -801,7 +801,8 @@ a2    ?               ?
 
 *** ERROR[4082] Object TRAFODION.SCH.T022HBM1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>create external table t022hbm1 ("cf".a varchar(4) not null,
 +>            b int)
 +>        primary key (a)

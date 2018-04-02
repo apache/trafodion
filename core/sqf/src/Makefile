@@ -23,6 +23,7 @@ DP2=se
 
 all:
 	cd seabed; $(MAKE)
+	cd trafconf; $(MAKE)
 	cd fs; $(MAKE)
 	cd security; $(MAKE)
 	cd stub; $(MAKE)
@@ -36,18 +37,21 @@ all:
 
 clean:
 	cd seabed; $(MAKE) clean
+	cd trafconf; $(MAKE) clean
 	cd win; $(MAKE) clean
 	cd tm; $(MAKE) clean
 	cd stfs; $(MAKE) -f Makefile.stub clean
 	cd tools; $(MAKE) clean
 cleanall:
 	cd seabed; $(MAKE) cleanall
+	cd trafconf; $(MAKE) cleanall
 	cd win; $(MAKE) cleanall
 	cd tm; $(MAKE) cleanall
 	cd stfs; $(MAKE) -f Makefile.stub cleanall
 	cd tools; $(MAKE) cleanall
 cleaner:
 	cd seabed; $(MAKE) cleaner
+	cd trafconf; $(MAKE) cleaner
 	cd win; $(MAKE) cleaner
 	cd tm; $(MAKE) cleaner
 	cd stfs; $(MAKE) -f Makefile.stub cleaner

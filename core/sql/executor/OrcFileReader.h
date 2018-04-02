@@ -90,7 +90,7 @@ public:
   
   OFR_RetCode				getRowCount(Int64& count);
 
-  virtual char*  getErrorText(OFR_RetCode errEnum);
+  static char*  getErrorText(OFR_RetCode errEnum);
 
 protected:
   jstring getLastError();

@@ -29,16 +29,11 @@ if [ -z ${DCS_INSTALL_DIR} ]; then
    exit 1;
 fi
 
-if [ ! -e ${DCS_STOP_CMD} ]; then
-   echo "${DCS_STOP_CMD} not found."
-   exit 1;
-fi
+echo "Shutting down the DCS environment now"
+${DCS_STOP_CMD}
 
 if [[ $ENABLE_HA == "true" ]]; then
    ${DCS_INSTALL_DIR}/bin/scripts/dcsunbind.sh
 fi
 
-echo "Shutting down the DCS environment now"
-cd ${DCS_INSTALL_DIR}
-${DCS_STOP_CMD}
 cds

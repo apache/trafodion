@@ -69,7 +69,6 @@
 
 #include "ExpHbaseInterface.h"
 #include "sql_buffer_size.h"
-#include "hdfs.h"
 
 #include "NAType.h"
 
@@ -3521,13 +3520,9 @@ ExExeUtilGetHbaseObjectsTcb::ExExeUtilGetHbaseObjectsTcb(
      ex_globals * glob)
      : ExExeUtilGetMetadataInfoTcb( exe_util_tdb, glob)
 {
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)exe_util_tdb.server(), 
-					(char*)exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
+					(char*)exe_util_tdb.zkPort());
 
   hbaseName_ = NULL;
   hbaseNameBuf_ = new(getGlobals()->getDefaultHeap()) 
@@ -6106,10 +6101,7 @@ ExExeUtilRegionStatsTcb::ExExeUtilRegionStatsTcb(
   int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					(char*)"", //exe_util_tdb.server(), 
-					(char*)"", //exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
-
+					(char*)""); //exe_util_tdb.zkPort(),
   regionInfoList_ = NULL;
   
   tableName_ = new(glob->getDefaultHeap()) char[2000];
@@ -6879,14 +6871,9 @@ ExExeUtilClusterStatsTcb::ExExeUtilClusterStatsTcb(
 
   stats_ = (ComTdbClusterStatsVirtTableColumnStruct*)statsBuf_;
 
-  int jniDebugPort = 0;
-  int jniDebugTimeout = 0;
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
-					(char*)"", //exe_util_tdb.server(), 
-					(char*)"", //exe_util_tdb.zkPort(),
-                                        jniDebugPort,
-                                        jniDebugTimeout);
-
+					(char*)"", 
+					(char*)""); 
   regionInfoList_ = NULL;
   
   // get hbase rootdir location. Max linux pathlength is 1024.

@@ -25,8 +25,8 @@
 #
 # Environment Variables
 #
-#   DCS_BACKUP_MASTERS File naming remote hosts.
-#     Default is ${DCS_CONF_DIR}/backup-masters
+#   DCS_MASTERS File for specifying all DcsMaster hosts
+#     Default is ${DCS_CONF_DIR}/masters
 #   DCS_CONF_DIR  Alternate Dcs conf dir. Default is ${DCS_HOME}/conf.
 #   DCS_SLAVE_SLEEP Seconds to sleep between spawning remote commands.
 #   DCS_SSH_OPTS Options passed to ssh when running remote commands.
@@ -46,47 +46,35 @@ bin=`cd "$bin">/dev/null; pwd`
 
 . "$bin"/dcs-config.sh
 
-# If the master backup file is specified in the command line,
-# then it takes precedence over the definition in 
-# dcs-env.sh. Save it here.
-HOSTLIST=$DCS_BACKUP_MASTERS
-
-if [ "$HOSTLIST" = "" ]; then
-  if [ "$DCS_BACKUP_MASTERS" = "" ]; then
-    export HOSTLIST="${DCS_CONF_DIR}/backup-masters"
-  else
-    export HOSTLIST="${DCS_BACKUP_MASTERS}"
-  fi
-fi
-
+activeMaster=$($DCS_INSTALL_DIR/bin/getActiveMaster.sh)
 
 args=${@// /\\ }
 args=${args/master-backup/master}
 
 instance=2
 
-if [ -f $HOSTLIST ]; then
+if [ -f ${DCS_INSTALL_DIR}/conf/masters ]; then
   while read master
   do
-    if [ "$master" == "localhost" ] || [ "$master" == "$HOSTNAME" ] ; then
-      eval $"$args $instance" 2>&1 | sed "s/^/$master: /" &
+    if [[ ! -z $activeMaster && "$master" =~ $activeMaster ]]; then
+      echo "$activeMaster is the current active DcsMaster"
     else
+      L_PDSH="ssh -q -n $DCS_SSH_OPTS"
       if ${DCS_SLAVE_PARALLEL:-true}; then
-        ssh -q -n $DCS_SSH_OPTS $master $"$args $instance"\
+        ${L_PDSH} $master $"$args $instance"\
           2>&1 | sed "s/^/$master: /" &
       else # run each command serially
-        ssh -q -n $DCS_SSH_OPTS $master $"$args $instance" \
-          2>&1 | sed "s/^/$master: /" &
+        ${L_PDSH} $master $"$args $instance" \
+          2>&1 | sed "s/^/$master: /" 
       fi
-    fi
-  
+    fi 
     if [ "$DCS_SLAVE_SLEEP" != "" ]; then
       sleep $DCS_SLAVE_SLEEP
     fi
   
     let instance++
 
-  done < "$HOSTLIST"
+  done < "${DCS_INSTALL_DIR}/conf/masters"
 fi
 
 wait

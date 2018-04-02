@@ -102,7 +102,7 @@ short Describe::codeGen(Generator * generator)
   else if (format_ == SHOWSTATS_) type = ComTdbDescribe::SHOWSTATS_;
   else if (format_ == TRANSACTION_) type = ComTdbDescribe::TRANSACTION_;
   else if (format_ == SHORT_) type = ComTdbDescribe::SHORT_;
-  else if (format_ == LONG_) type = ComTdbDescribe::LONG_;
+  else if (format_ == SHOWDDL_) type = ComTdbDescribe::LONG_;
   else if (format_ == PLAN_) type = ComTdbDescribe::PLAN_;
   else if (format_ == LABEL_) type = ComTdbDescribe::LABEL_;
   else if (format_ == SHAPE_) type = ComTdbDescribe::SHAPE_;
@@ -393,7 +393,8 @@ short FileScan::genForTextAndSeq(Generator * generator,
                                 char* &hdfsHostName,
                                 Int32 &hdfsPort,
                                 NABoolean &useCursorMulti,
-                                NABoolean &doSplitFileOpt)
+                                NABoolean &doSplitFileOpt,
+                                NABoolean &isCompressedFile)
 {
   Space * space          = generator->getSpace();
 
@@ -480,6 +481,9 @@ short FileScan::genForTextAndSeq(Generator * generator,
 	      hfi.bytesToRead_ = span;
 	      hfi.fileName_ = fnameInList;
 	      
+              isCompressedFile = FALSE;
+                  //if (file->getCompressionInfo().getCompressionMethod() != ComCompressionInfo::UNCOMPRESSED)
+                  //   isCompressedFile = TRUE;
 	      char * hfiInList = space->allocateAndCopyToAlignedSpace
 		((char*)&hfi, sizeof(HdfsFileInfo));
 	      
@@ -1144,13 +1148,14 @@ short FileScan::codeGenForHive(Generator * generator)
   }
   NABoolean useCursorMulti = FALSE;
   NABoolean doSplitFileOpt = FALSE;
+  NABoolean isCompressedFile = FALSE;
 
   if ((hTabStats->isTextFile()) || (hTabStats->isSequenceFile()))
     {
       genForTextAndSeq(generator, 
                        hdfsFileInfoList, hdfsFileRangeBeginList, hdfsFileRangeNumList,
                        hdfsHostName, hdfsPort,
-                       useCursorMulti, doSplitFileOpt);
+                       useCursorMulti, doSplitFileOpt, isCompressedFile);
     }
   else if (hTabStats->isOrcFile())
     {
@@ -1277,7 +1282,7 @@ if (hTabStats->isOrcFile())
       (hTabStats->numOfPartCols() <= 0) &&
       (!getCommonSubExpr()))
     {
-      modTS = hTabStats->getModificationTS();
+      modTS = hTabStats->getModificationTSmsec();
       numOfPartLevels = hTabStats->numOfPartCols();
 
       // if specific directories are to checked based on the query struct
@@ -1296,7 +1301,7 @@ if (hTabStats->isOrcFile())
                  tiName,
                  TRUE, // isHive
                  (char*)hTabStats->tableDir().data(), // root dir
-                 hTabStats->getModificationTS(),
+                 modTS,
                  numOfPartLevels,
                  hdfsDirsToCheck,
                  hdfsHostName, hdfsPort);
@@ -1310,8 +1315,6 @@ if (hTabStats->isOrcFile())
             space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
                                                  hTabStats->tableDir().length(),
                                                  0);
-          modTS = hTabStats->getModificationTS();
-          numOfPartLevels = hTabStats->numOfPartCols();
         }
     }
 
@@ -1390,6 +1393,11 @@ if (hTabStats->isOrcFile())
 
   hdfsscan_tdb->setUseCif(useCIF);
   hdfsscan_tdb->setUseCifDefrag(useCIFDegrag);
+
+  if (CmpCommon::getDefault(USE_LIBHDFS_SCAN) == DF_ON)
+     hdfsscan_tdb->setUseLibhdfsScan(TRUE);
+
+  hdfsscan_tdb->setCompressedFile(isCompressedFile);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

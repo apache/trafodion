@@ -1102,15 +1102,16 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     switch (recv_msg->type )
     {
     case MsgType_Change:
-        printf ("[%s] Configuration Change Notice for Group: %s Key: %s\n", 
-                MyName, 
+        printf ("[%s] %s - Configuration Change Notice for Group: %s Key: %s Value: %s\n", 
+                MyName, time_string(),
                 recv_msg->u.request.u.change.group,
-                recv_msg->u.request.u.change.key);
+                recv_msg->u.request.u.change.key,
+                recv_msg->u.request.u.change.value);
         break;
 
     case MsgType_Event:
-        printf("[%s] Event %d received\n",
-               MyName, recv_msg->u.request.u.event_notice.event_id);
+        printf("[%s] %s - Event %d received\n",
+               MyName, time_string(), recv_msg->u.request.u.event_notice.event_id);
         break;
 
     case MsgType_NodeAdded:
@@ -1177,8 +1178,8 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         break;
 
     case MsgType_NodeDown:
-        printf ("[%s] Node %d (%s) is DOWN\n", 
-                MyName, recv_msg->u.request.u.down.nid,
+        printf ("[%s] %s - Node %d (%s) is DOWN\n", 
+                MyName, time_string(), recv_msg->u.request.u.down.nid,
                 recv_msg->u.request.u.down.node_name );
         NodeState[recv_msg->u.request.u.down.nid] = false;
 
@@ -1211,15 +1212,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
 
 
     case MsgType_NodePrepare:
-        printf("[%s] Node %s (%d) node-up preparation, takeover=%s\n",
-               MyName, recv_msg->u.request.u.prepare.node_name,
+        printf("[%s] %s - Node %s (%d) node-up preparation, takeover=%s\n",
+               MyName, time_string(), recv_msg->u.request.u.prepare.node_name,
                recv_msg->u.request.u.prepare.nid,
                ((recv_msg->u.request.u.prepare.takeover)? "true": "false"));
         break;
 
     case MsgType_NodeQuiesce:
-        printf ("[%s] Node %d (%s) is QUIESCEd\n", 
-                MyName, msg->u.request.u.quiesce.nid,
+        printf ("[%s] %s - Node %d (%s) is QUIESCEd\n", 
+                MyName, time_string(), msg->u.request.u.quiesce.nid,
                 msg->u.request.u.quiesce.node_name );
         NodeState[msg->u.request.u.quiesce.nid] = false;
         if ( waitDeathPending )
@@ -1248,15 +1249,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     case MsgType_ProcessCreated:
         if ( recv_msg->u.request.u.process_created.return_code == MPI_SUCCESS )
         {
-            printf ("[%s] Process %s successfully created. Nid=%d, Pid=%d\n",
-                    MyName, recv_msg->u.request.u.process_created.process_name,
+            printf ("[%s] %s - Process %s successfully created. Nid=%d, Pid=%d\n",
+                    MyName, time_string(), recv_msg->u.request.u.process_created.process_name,
                     recv_msg->u.request.u.process_created.nid,
                     recv_msg->u.request.u.process_created.pid);
         }
         else
         {
-            printf ("[%s] Process %s NOT created. Nid=%d, Pid=%d\n",
-                    MyName, recv_msg->u.request.u.process_created.process_name,
+            printf ("[%s] %s - Process %s NOT created. Nid=%d, Pid=%d\n",
+                    MyName, time_string(), recv_msg->u.request.u.process_created.process_name,
                     recv_msg->u.request.u.process_created.nid,
                     recv_msg->u.request.u.process_created.pid);
         }
@@ -1265,15 +1266,15 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     case MsgType_ProcessDeath:
         if ( recv_msg->u.request.u.death.aborted )
         {
-            printf ("[%s] Process %s abnormally terminated. Nid=%d, Pid=%d\n",
-                    MyName, recv_msg->u.request.u.death.process_name, 
+            printf ("[%s] %s - Process %s abnormally terminated. Nid=%d, Pid=%d\n",
+                    MyName, time_string(), recv_msg->u.request.u.death.process_name, 
                     recv_msg->u.request.u.death.nid,
                     recv_msg->u.request.u.death.pid);
         }
         else
         {
-            printf ("[%s] Process %s terminated normally. Nid=%d, Pid=%d\n", 
-                    MyName, recv_msg->u.request.u.death.process_name, 
+            printf ("[%s] %s - Process %s terminated normally. Nid=%d, Pid=%d\n", 
+                    MyName, time_string(), recv_msg->u.request.u.death.process_name, 
                     recv_msg->u.request.u.death.nid,
                     recv_msg->u.request.u.death.pid);
         }
@@ -1298,18 +1299,18 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         break;
 
     case MsgType_Shutdown:
-        printf("[%s] Shutdown notice, level=%d received\n",
-               MyName, recv_msg->u.request.u.shutdown.level);
+        printf("[%s] %s - Shutdown notice, level=%d received\n",
+               MyName, time_string(), recv_msg->u.request.u.shutdown.level);
         nodePendingComplete();
         break;
 
     case MsgType_TmSyncAbort:
-        printf("[%s] TmSync abort notice received\n",
-               MyName);
+        printf("[%s] %s - TmSync abort notice received\n",
+               MyName, time_string());
         break;
     case MsgType_TmSyncCommit:
-        printf("[%s] TmSync commit notice received\n",
-               MyName);
+        printf("[%s] %s - TmSync commit notice received\n",
+               MyName, time_string());
         break;
 
     case MsgType_ReintegrationError:
@@ -1321,8 +1322,8 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         break;
 
     default:
-        printf("[%s] Unexpected notice type(%d) received\n",
-               MyName, recv_msg->type);
+        printf("[%s] %s - Unexpected notice type(%d) received\n",
+               MyName, time_string(), recv_msg->type);
 
     }
 
@@ -3097,7 +3098,8 @@ bool load_configuration( void )
         // It was previously loaded, remove the current configuration
         ClusterConfig.Clear();
     }
-    if ( ClusterConfig.Initialize( traceFileName ) )
+    bool traceEnabled = (trace_settings & TRACE_TRAFCONFIG) ? true : false;
+    if ( ClusterConfig.Initialize( traceEnabled, traceFileName ) )
     {
         if ( ! ClusterConfig.LoadConfig() )
         {
@@ -3211,7 +3213,7 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
                       "   roles      = %s\n"
                     , method_name, __LINE__, MyName
                     , node_name, first_core, last_core, processors
-                    , RoleTypeString( (ZoneType) roles ));
+                    , RoleTypeString( static_cast<ZoneType>(roles) ));
 
     // Check that node_name is not in the configuration
     pnid = get_pnid_by_node_name( node_name );
@@ -3867,7 +3869,7 @@ int node_up( int nid, char *node_name, bool nowait )
     // If this is a real cluster
     if ( nid == -1 )
     {
-        // Get current physical state of target nodes
+        // Get current physical state of all nodes
         if ( !update_node_state( node_name, false ) )
         {
             return( rc ) ;
@@ -4132,7 +4134,8 @@ void persist_config( char *prefix )
     }
     if (!foundConfig)
     {
-        printf ("[%s] Persistent process configuration does not exist\n", MyName);
+        printf("[%s] %s - Persistent process configuration does not exist\n"
+              , MyName, time_string() );
     }
 }
 
@@ -4212,7 +4215,8 @@ void persist_info( char *prefix )
     }
     if (!foundConfig)
     {
-        printf ("[%s] Persistent process configuration does not exist\n", MyName);
+        printf("[%s] %s - Persistent process configuration does not exist\n"
+              , MyName, time_string() );
     }
 }
 
@@ -4267,7 +4271,9 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                           , persistZones );
             if ( !find_process( processName ) )
             {
-                printf( "Persistent process %s does not exist\n", processName);
+                printf( "[%s] %s - Persistent process %s does not exist\n"
+                      , MyName, time_string()
+                      , processName );
                 continue;
             }
             kill_process( -1, -1, processName, true );
@@ -4287,7 +4293,9 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                       , persistZones );
         if ( !find_process( processName ) )
         {
-            printf( "Persistent process %s does not exist\n", processName);
+            printf( "[%s] %s - Persistent process %s does not exist\n"
+                  , MyName, time_string()
+                  , processName );
             break;
         }
         kill_process( -1, -1, processName, true );
@@ -4305,7 +4313,9 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                       , persistZones );
         if ( !find_process( processName ) )
         {
-            printf( "Persistent process %s does not exist\n", processName);
+            printf( "[%s] %s - Persistent process %s does not exist\n"
+                  , MyName, time_string()
+                  , processName );
             break;
         }
         kill_process( -1, -1, processName, true );
@@ -4376,7 +4386,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                           , persistZones );
             if ( find_process( processName ) )
             {
-                printf( "Persistent process %s already exists\n", processName);
+                printf( "[%s] %s - Persistent process %s already exists\n"
+                      , MyName, time_string()
+                      , processName );
                 continue;
             }
             if (programArgc)
@@ -4402,7 +4414,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                //, (char *)persistConfig->GetProgramName() );
             if (pid > 0)
             {
-                printf( "Persistent process %s created\n", processName);
+                printf( "[%s] %s - Persistent process %s created\n"
+                      , MyName, time_string()
+                      , processName );
                 if (process_type == ProcessType_DTM)
                 {
                     DTMexists = true;
@@ -4430,7 +4444,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                       , persistZones );
         if ( find_process( processName ) )
         {
-            printf( "Persistent process %s already exists\n", processName);
+            printf( "[%s] %s - Persistent process %s already exists\n"
+                  , MyName, time_string()
+                  , processName );
             break;
         }
         if (programArgc)
@@ -4455,7 +4471,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , programNameAndArgs );
         if (pid > 0)
         {
-            printf( "Persistent process %s created\n", processName);
+            printf( "[%s] %s - Persistent process %s created\n"
+                  , MyName, time_string()
+                  , processName );
             if (process_type == ProcessType_DTM)
             {
                 DTMexists = true;
@@ -4481,7 +4499,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                       , persistZones );
         if ( find_process( processName ) )
         {
-            printf( "Persistent process %s already exists\n", processName);
+            printf( "[%s] %s - Persistent process %s already exists\n"
+                  , MyName, time_string()
+                  , processName );
             break;
         }
         if (programArgc)
@@ -4506,7 +4526,9 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , programNameAndArgs );
         if (pid > 0)
         {
-            printf( "Persistent process %s created\n", processName);
+            printf( "[%s] %s - Persistent process %s created\n"
+                  , MyName, time_string()
+                  , processName );
             if (process_type == ProcessType_DTM)
             {
                 DTMexists = true;
@@ -4515,8 +4537,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
         else
         {
             if ( trace_settings & TRACE_SHELL_CMD )
-                trace_printf("%s@%d [%s] persistexec failed!\n",
-                             method_name, __LINE__, MyName);
+                trace_printf("%s@%d [%s] persist exec failed!\n"
+                             , method_name, __LINE__, MyName);
         }
         break;
     default:
@@ -6176,7 +6198,7 @@ void help_cmd (void)
     printf ("[%s] -- persist exec <persist-process-prefix>\n", MyName);
     printf ("[%s] -- persist info [<persist-process-prefix>]\n", MyName);
     printf ("[%s] -- persist kill <persist-process-prefix>\n", MyName);
-    printf ("[%s] -- ps [{CS|DTM|GEN|PSD|SMS|SSMP|WDG}] [<process_name>|<nid,pid>]\n", MyName);
+    printf ("[%s] -- ps [{CS|DTM|GEN|PSD|SMS|SSMP|WDG}] [<nid>|<process_name>|<nid,pid>]\n", MyName);
     printf ("[%s] -- pwd\n", MyName);
     printf ("[%s] -- quit\n", MyName);
     printf ("[%s] -- scanbufs\n", MyName);
@@ -6371,6 +6393,7 @@ void monstats_cmd (char *)
 void node_cmd (char *cmd_tail)
 {
     int nid;
+    int pnid;
     char token[MAX_TOKEN];
     char delimiter;
     char *cmd = cmd_tail;
@@ -6422,7 +6445,7 @@ void node_cmd (char *cmd_tail)
                 {
                     sprintf( msgString, "[%s] Node add is not available with Virtual Nodes!",MyName);
                     write_startup_log( msgString );
-                    printf ("[%s] Node add is not available with Virtual Nodes!\n", MyName);    
+                    printf ("%s\n", msgString);
                 }
                 else
                 {
@@ -6473,7 +6496,7 @@ void node_cmd (char *cmd_tail)
                 {
                     sprintf( msgString, "[%s] Node delete is not available with Virtual Nodes!",MyName);
                     write_startup_log( msgString );
-                    printf ("[%s] Node delete is not available with Virtual Nodes!\n", MyName);    
+                    printf ("%s\n", msgString);
                 }
                 else
                 {
@@ -6486,7 +6509,7 @@ void node_cmd (char *cmd_tail)
                     {
                         sprintf( msgString, "[%s] Node delete is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
                         write_startup_log( msgString );
-                        printf ("[%s] Node delete is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                        printf ("%s\n", msgString);
                     }
                 }
             }
@@ -6515,15 +6538,15 @@ void node_cmd (char *cmd_tail)
                 if ( *cmd )
                 {
                     nid = atoi (cmd);
-                    if ((!isNumeric(cmd)) || (nid >= LNodesConfigMax) || (nid < 0))
+                    pnid = get_pnid_by_nid( nid );
+                    if ( pnid == -1 )
                     {
-                        printf ("[%s] Invalid nid\n", MyName);
+                        printf( "[%s] Node id %d does not exist in configuration!\n"
+                              , MyName, nid );
+                        return;
                     }
-                    else
-                    {
-                        node_info(nid);
-                        CurNodes = NumLNodes-NumDown;
-                    }
+                    node_info(nid);
+                    CurNodes = NumLNodes-NumDown;
                 }
                 else
                 {
@@ -6545,7 +6568,7 @@ void node_cmd (char *cmd_tail)
                 {
                     sprintf( msgString, "[%s] Node name is not available with Virtual Nodes!",MyName);
                     write_startup_log( msgString );
-                    printf ("[%s] Node name is not available with Virtual Nodes!\n", MyName);    
+                    printf ("%s\n", msgString);
                 }
                 else
                 {
@@ -6558,7 +6581,7 @@ void node_cmd (char *cmd_tail)
                     {
                         sprintf( msgString, "[%s] Node name is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
                         write_startup_log( msgString );
-                        printf ("[%s] Node name is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                        printf ("%s\n", msgString);
                     }
                 }
             }
@@ -6713,9 +6736,9 @@ void node_config_cmd( char *cmd )
 
     char *cmd_tail = cmd;
     char delim;
-    char msgString[MAX_BUFFER] = { 0 };
     char token[MAX_TOKEN] = { 0 };
     int nid = -1;
+    int pnid = -1;
 
     if ( trace_settings & TRACE_SHELL_CMD )
         trace_printf ("%s@%d [%s] processing node config command.\n",
@@ -6729,33 +6752,22 @@ void node_config_cmd( char *cmd )
         if ( isNumeric( token ) )
         {
             nid = atoi (token);
-            if (nid < 0 || nid > LNodesConfigMax - 1)
+            pnid = get_pnid_by_nid( nid );
+            if ( pnid == -1 )
             {
-                sprintf( msgString, "[%s] Node id is not configured!",MyName);
-                write_startup_log( msgString );
-                printf ("%s\n", msgString);
-               return;
+                printf( "[%s] Node id %d does not exist in configuration!\n"
+                      , MyName, nid );
+                return;
             }
-            snprintf( msgString, sizeof(msgString)
-                    , "[%s] Executing node config. (nid=%s)"
-                    , MyName, token );
-            write_startup_log( msgString );
         }
         else
         {
             if ( get_node_name( token ) != 0 ) 
             {
-                sprintf( msgString, "[%s] Node %s is not configured!"
-                       , MyName, token);
-                write_startup_log( msgString );
-                printf( "[%s] Node %s is not configured!\n"
-                      , MyName, token);
+                printf( "[%s] Node %s does not exist in configuration!\n"
+                      , MyName, token );
                 return;
             }
-            snprintf( msgString, sizeof(msgString)
-                    , "[%s] Executing node config. (node_name=%s)"
-                    , MyName, token );
-            write_startup_log( msgString );
         }
     }
 
@@ -6792,11 +6804,10 @@ void node_delete_cmd( char *cmd )
         {
             if ( get_node_name( token ) != 0 ) 
             {
-                sprintf( msgString, "[%s] Node %s is not configured!"
+                sprintf( msgString, "[%s] Node %s does not exist in configuration!"
                        , MyName, token);
                 write_startup_log( msgString );
-                printf( "[%s] Node %s is not configured!\n"
-                      , MyName, token);
+                printf ("%s\n", msgString);
                 return;
             }
             STRCPY(node_name, token);
@@ -6804,13 +6815,14 @@ void node_delete_cmd( char *cmd )
                     , "[%s] Executing node delete. (node_name=%s)"
                     , MyName, node_name );
             write_startup_log( msgString );
+            printf ("%s\n", msgString);
         }
     }
     else
     {
         sprintf( msgString, "[%s] Invalid node delete options syntax!",MyName);
         write_startup_log( msgString );
-        printf ("[%s] Invalid node delete options syntax!\n", MyName);
+        printf ("%s\n", msgString);
         return;
     }
 
@@ -6823,6 +6835,7 @@ void node_down_cmd( char *cmd )
 
     int numLNodes = -1;
     int nid;
+    int pnid;
     char *cmd_tail = cmd;
     char delim;
     char msgString[MAX_BUFFER] = { 0 };
@@ -6851,20 +6864,38 @@ void node_down_cmd( char *cmd )
         }
         write_startup_log( msgString );
         printf ("%s\n", msgString);
+
         nid = atoi (token);
-        if (nid < 0 || nid > LNodesConfigMax - 1)
+        pnid = get_pnid_by_nid( nid );
+        if ( pnid == -1 )
         {
-            sprintf( msgString, "[%s] Invalid node id!",MyName);
+            sprintf( msgString, "[%s] Node id %d does not exist in configuration!"
+                   , MyName, nid);
             write_startup_log( msgString );
             printf ("%s\n", msgString);
-           return;
+            return;
         }
     }
     else
     {
+        if (cmd_tail[0] != 0)
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (node_name=%s) \"%s\""
+                    , MyName, token, cmd_tail );
+        }
+        else
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (node_name=%s)"
+                    , MyName, token );
+        }
+        write_startup_log( msgString );
+        printf ("%s\n", msgString);
+
         if ( get_node_name( token ) != 0 ) 
         {
-            sprintf( msgString, "[%s] Node %s is not configured!"
+            sprintf( msgString, "[%s] Node %s does not exist in configuration!"
                    , MyName, token);
             write_startup_log( msgString );
             printf ("%s\n", msgString);
@@ -6872,20 +6903,6 @@ void node_down_cmd( char *cmd )
         }
         STRCPY(node_name, token);
         nid = get_first_nid( node_name );
-        if (cmd_tail[0] != 0)
-        {
-            snprintf( msgString, sizeof(msgString)
-                    , "[%s] Executing node down. (node_name=%s) \"%s\""
-                    , MyName, node_name, cmd_tail );
-        }
-        else
-        {
-            snprintf( msgString, sizeof(msgString)
-                    , "[%s] Executing node down. (node_name=%s)"
-                    , MyName, node_name );
-        }
-        write_startup_log( msgString );
-        printf ("%s\n", msgString);
     }
 
     numLNodes = get_lnodes_count( nid );
@@ -6894,7 +6911,6 @@ void node_down_cmd( char *cmd )
         return;
     }
 
-    int pnid;
     int zid = -1;
     STATE state;
 
@@ -6906,7 +6922,7 @@ void node_down_cmd( char *cmd )
     {
         sprintf( msgString, "[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
         write_startup_log( msgString );
-        printf ("[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
+        printf ("%s\n", msgString);
         return;
     }
     else
@@ -6917,7 +6933,7 @@ void node_down_cmd( char *cmd )
             {
                 sprintf( msgString, "[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
                 write_startup_log( msgString );
-                printf ("[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
+                printf ("%s\n", msgString);
                 return;
             }
         }
@@ -7057,7 +7073,7 @@ void node_up_cmd( char *cmd, char delimiter )
             {
                 sprintf( msgString, "[%s] Invalid up options syntax!",MyName);
                 write_startup_log( msgString );
-                printf ("[%s] Invalid up options syntax!\n", MyName);
+                printf ("%s\n", msgString);
                 delimiter = ' ';
                 break;
             }
@@ -7067,7 +7083,7 @@ void node_up_cmd( char *cmd, char delimiter )
         {
             sprintf( msgString, "[%s] Invalid up syntax!",MyName);
             write_startup_log( msgString );
-            printf ("[%s] Invalid up syntax!\n", MyName);
+            printf ("%s\n", msgString);
         }
         else if (delimiter == '}')
         {
@@ -7079,6 +7095,11 @@ void node_up_cmd( char *cmd, char delimiter )
     {
         if ( VirtualNodes )
         {
+            sprintf( msgString, "[%s] Executing node up. (nid=%s)"
+                   , MyName, cmd_tail);
+            write_startup_log( msgString );
+            printf ("%s\n", msgString);
+
             get_token( cmd_tail, token, &delim );
             if ( isNumeric( token ) )
             {
@@ -7087,7 +7108,7 @@ void node_up_cmd( char *cmd, char delimiter )
                 {
                     sprintf( msgString, "[%s] Invalid node id!",MyName);
                     write_startup_log( msgString );
-                    printf ("[%s] Invalid node id!\n", MyName);
+                    printf ("%s\n", msgString);
                 }
                 else
                 {
@@ -7099,27 +7120,47 @@ void node_up_cmd( char *cmd, char delimiter )
             {
                 sprintf( msgString, "[%s] Invalid node id!",MyName);
                 write_startup_log( msgString );
-                printf ("[%s] Invalid node id!\n", MyName);
+                printf ("%s\n", msgString);
             }
         }
         else
         {
-            if ( get_node_name( cmd_tail ) == 0 ) 
+            sprintf( msgString, "[%s] Executing node up. (node=%s)"
+                   , MyName, cmd_tail);
+            write_startup_log( msgString );
+            printf ("%s\n", msgString);
+
+            get_token( cmd_tail, token, &delim );
+            if ( isNumeric( token ) )
             {
-                if ( ClusterConfig.GetStorageType() == TCDBSQLITE)
-                {
-                    if ( copy_config_db( cmd_tail ) == 0 ) 
-                    {
-                        node_up( -1, cmd_tail, nowait );
-                    }
-                }
+                sprintf( msgString, "[%s] Invalid node name (%s)!"
+                       , MyName, token);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+                return;
             }
             else
             {
-                sprintf( msgString, "[%s] Invalid node name!",MyName);
-                write_startup_log( msgString );
-                printf ("[%s] Invalid node name!\n", MyName);
+                if ( get_node_name( token ) == 0 ) 
+                {
+                    if ( ClusterConfig.GetStorageType() == TCDBSQLITE)
+                    {
+                        if ( copy_config_db( cmd_tail ) != 0 )
+                        {
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    sprintf( msgString, "[%s] Node %s does not exist in configuration!"
+                           , MyName, token);
+                    write_startup_log( msgString );
+                    printf ("%s\n", msgString);
+                    return;
+                }
             }
+            node_up( -1, cmd_tail, nowait );
         }
     }
 }
@@ -7484,6 +7525,7 @@ void ps_cmd (char *cmd_tail, char delimiter)
 {
     int nid;
     int pid;
+    int pnid;
     char process_name[MAX_PROCESS_NAME];
     char token[MAX_TOKEN];
     PROCESSTYPE process_type = ProcessType_Undefined;
@@ -7545,7 +7587,7 @@ void ps_cmd (char *cmd_tail, char delimiter)
         }
     }
 
-    // check if we have a process <name> or <nid,pid>
+    // check if we have a process <name> or <nid> or <nid,pid>
     if (isdigit (*cmd_tail))
     {
         cmd_tail = get_token (cmd_tail, token, &delimiter);
@@ -7557,7 +7599,15 @@ void ps_cmd (char *cmd_tail, char delimiter)
         }
         else
         {
-            printf ("[%s] Invalid process Nid,Pid!\n", MyName);
+            nid = atoi (token);
+            pid = -1;
+            //printf ("[%s] Invalid process Nid,Pid!\n", MyName);
+            //return;
+        }
+        pnid = get_pnid_by_nid( nid );
+        if ( pnid == -1 )
+        {
+            printf( "[%s] Invalid node, nid=%d\n", MyName, nid );
             return;
         }
     }
@@ -8250,8 +8300,6 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
     }
     else if (strcmp (token, "up") == 0)
     {
-        sprintf( msgString, "[%s] Executing node up. (node=%s)",MyName,cmd_tail);
-        write_startup_log( msgString );
         if (Started)
         {
             node_up_cmd( cmd_tail, delimiter );

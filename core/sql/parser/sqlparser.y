@@ -1176,6 +1176,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
 %token <tokval> TOK_WITH
+%token <tokval> TOK_SLEEP
+%token <tokval> TOK_UUID_SHORT
+%token <tokval> TOK_UNIX_TIMESTAMP
 // QSTUFF
 %token <tokval> TOK_WITHOUT             /* standard holdable cursor */
 // QSTUFF
@@ -8333,8 +8336,15 @@ user_defined_scalar_function : user_defined_function_name '(' udr_value_expressi
             = ParScannedTokens->getScannedTokenInfo(0);
         Int32 pos = tokInfo.tokenStrPos - tokInfo.tokenStrOffset +
                     tokInfo.tokenStrLen;
-        NAString *input = unicodeToChar(&inputStr[0], pos, (long) SqlParser_ISO_MAPPING,
-                                         PARSERHEAP());
+        //TRAFODION-2931
+	//Chinese character of inputStr will cause core dump
+        //NAString *input = unicodeToChar(&inputStr[0], pos, (long) SqlParser_ISO_MAPPING,
+        //                                 PARSERHEAP());
+        NAString *input = unicodeToChar(&inputStr[0],
+                                        pos,
+                                        (CharInfo::CharSet) (ComGetNameInterfaceCharSet()),
+                                        PARSERHEAP());
+        //TRAFODION-2931
         char *inputC = new (PARSERHEAP()) char[pos+1];
         strncpy(inputC, input->data(), pos+1);
         delete input;
@@ -8689,6 +8699,41 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                   $$ = CurrentTimestamp::construct(PARSERHEAP());
                                 }
 
+    | TOK_UNIX_TIMESTAMP '(' ')'
+                                {
+                                   NAType * type;
+                                   type = new (PARSERHEAP())
+                                      SQLLargeInt(PARSERHEAP() , FALSE , FALSE);
+                                   ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp();
+                                   $$ = new (PARSERHEAP()) Cast(ie, type);
+                                }
+    | TOK_UNIX_TIMESTAMP '(' value_expression ')'
+                                {
+                                   NAType * type;
+                                   type = new (PARSERHEAP())
+                                      SQLLargeInt(PARSERHEAP() , FALSE , FALSE);
+                                   ItemExpr * ie = new (PARSERHEAP()) UnixTimestamp($3);
+                                   $$ = new (PARSERHEAP()) Cast(ie, type);
+				}
+    | TOK_UUID '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
+                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 36, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(uniqueId,type);
+              }
+    | TOK_UUID_SHORT '(' ')'
+              {
+                  ItemExpr * uniqueId =  new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_SHORT_ID, PARSERHEAP());
+                  //ItemExpr *conv = new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
+                  NAType * type;
+                  type = new (PARSERHEAP())
+                       SQLVarChar(PARSERHEAP() , 36, FALSE);
+                  $$ = new (PARSERHEAP()) Cast(uniqueId,type);
+              }
+
 /* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
@@ -8842,6 +8887,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
+    | TOK_SLEEP '(' numeric_literal_exact ')'
+				{
+				 $$ = new (PARSERHEAP()) 
+				   SleepFunction( $3);
+				}
 
 CHAR_FUNC_optional_character_set : ',' CHAR_FUNC_character_set
 	  {
@@ -14804,24 +14854,6 @@ interactive_query_expression:
                                 {
                                   $$ = finalize($1);
                                 }
-              | TOK_SELECT TOK_UUID '(' ')'
-	                        {
-				  NAString * v = new (PARSERHEAP()) NAString("1");
-				  ItemExpr * lit = literalOfNumericNoScale(v);
-				  Tuple * tuple = new (PARSERHEAP()) Tuple(lit);
-				  NAString cn ("x");
-				  RenameTable * rt = 
-				    new(PARSERHEAP()) RenameTable(tuple, cn);
-				  RelRoot * rr1 = new (PARSERHEAP()) RelRoot(rt, REL_ROOT);
-				  ItemExpr * uniqueId = 
-				    new (PARSERHEAP()) BuiltinFunction(ITM_UNIQUE_ID, PARSERHEAP());
-				  ItemExpr * convToHex =
-				    new (PARSERHEAP()) ConvertHex(ITM_CONVERTTOHEX, uniqueId);
-
-				  RelRoot * rr = new (PARSERHEAP())
-				    RelRoot(rr1, REL_ROOT, convToHex);
-				  $$ = finalize(rr);
-				}
 
 dml_query : query_expression order_by_clause access_type
             optional_lock_mode for_update_spec optional_limit_spec
@@ -22663,7 +22695,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_,
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_,
 			          COM_TABLE_NAME, $3/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22679,7 +22711,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, 
 			          COM_TABLE_NAME, $4/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22692,7 +22724,7 @@ show_statement:
                  ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME);
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::SHOWDDL_, 
 			          COM_UDF_NAME, $4/*optional_showddl_options_lsit*/),
 			 REL_ROOT,
 			 new (PARSERHEAP())
@@ -22702,7 +22734,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22711,7 +22743,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::LONG_),
+                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::SHOWDDL_),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))); 
@@ -22721,7 +22753,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::LONG_, $3),
+                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::SHOWDDL_, $3),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22744,7 +22776,7 @@ show_statement:
                    ->getQualifiedNameObj().setObjectNameSpace(COM_LIBRARY_NAME); 
   	         $$ = new (PARSERHEAP())
         		 RelRoot(new (PARSERHEAP()) 
-    	  		 Describe(SQLTEXT(), *$2, Describe::LONG_, COM_LIBRARY_NAME, $3),
+    	  		 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, COM_LIBRARY_NAME, $3),
   	  	           	 REL_ROOT, new (PARSERHEAP())
   			     ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
   	         delete $2; // CorrName * qualified_name
@@ -22754,7 +22786,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, 
 			          COM_SEQUENCE_GENERATOR_NAME, $3),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22771,7 +22803,7 @@ show_statement:
 		 ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME); // SPJ
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, COM_UDF_NAME, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, COM_UDF_NAME, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));

@@ -140,7 +140,7 @@
 1138 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
 1139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in the search condition of a check constraint definition.
 1140 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Row-length $0~int0 exceeds the maximum allowed row-length of $1~int1 for table $2~TableName.
-1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Key length $0~int0 exceeds the maximum allowed key length of $1~int1.
 1142 0A000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1143 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in referencing base table $1~TableName and referenced base table $2~String0.  To display the data that violates the constraint, please use the following DML statement: $3~String1
 1144 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A quoted string was expected in first key clause for column $0~ColumnName on table $1~TableName, but the value detected is ($2~String0).
@@ -1331,6 +1331,7 @@ $1~String1 --------------------------------
 4320 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream access is not allowed on multi-partitioned table or index, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4321 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An embedded update/delete is not allowed on a partitioned table, when flag ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Object in scope: $0~TableName.
 4322 0A000 99999 BEGINNER MAJOR DBADMIN A column with BLOB datatype cannot be used in this clause or function.
+4323 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of predefined UDF $0~String0 is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
 4330 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid audit compression option $0~Int0 was used in the call to INTERPRET_AS_ROW.
 4331 ZZZZZ 99999 BEGINNER MAJOR DBADMIN KEY_RANGE_COMPARISON of partitioning keys on hash partitioned table $1~TableName is not allowed.
 4332 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $1~TableName not exposed. Tables in scope: $2~string0.

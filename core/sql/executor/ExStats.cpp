@@ -8164,7 +8164,7 @@ ExStatisticsArea *ExStatsTcb::sendToSsmp()
     cpu = cliGlobals->myCpu();
   else
     cpu = cpu_;
-  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName_, cpu, diagsArea_);
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer((NAHeap *)getHeap(), nodeName_, cpu, diagsArea_);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_
 
@@ -8239,7 +8239,8 @@ ExStatisticsArea *ExStatsTcb::sendToSsmp()
         rtsQueryId = NULL;
         break;
     }
-    *ssmpMsgStream << *rtsQueryId;
+    if (NULL != rtsQueryId)
+      *ssmpMsgStream << *rtsQueryId;
   }
   if (RtsTimeout != 0)
   {

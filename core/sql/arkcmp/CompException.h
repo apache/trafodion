@@ -85,8 +85,8 @@ public:
   const char * getStackTrace();
   virtual void throwException();
 private:
-  char msg_[EXCEPTION_MSG_SIZE];
-  char stackTrace_[STACK_TRACE_SIZE];
+  char msg_[EXCEPTION_MSG_SIZE + 1];
+  char stackTrace_[STACK_TRACE_SIZE + 1];
 };
 
 // CmpInternalException is a replacement for EH_INTRNAL_EXCEPTION
@@ -113,8 +113,8 @@ public:
   const char * getStackTrace();
   virtual void throwException();
 private:
-  char condition_[EXCEPTION_CONDITION_SIZE];
-  char stackTrace_[STACK_TRACE_SIZE];
+  char condition_[EXCEPTION_CONDITION_SIZE + 1];
+  char stackTrace_[STACK_TRACE_SIZE + 1];
 };
 
 class OsimLogException : public BaseException{

@@ -415,6 +415,7 @@ option is:
   | NO DUPLICATE CHECK
   | NO OUTPUT
   | INDEX TABLE ONLY
+  | REBUILD INDEXES
 ```
 
 [[load_syntax]]
@@ -516,6 +517,18 @@ Bulk Loader is executing.
 +
 specifies that the target table, which is an index, be populated with
 data from the parent table.
+
+** `REBUILD INDEXES`
++
+specifies that indexes of the target table will be updated automatically when the source table 
+is updated. 
++
+This is the default behavior of the LOAD Statement, that is, even if this option is not 
+specified, the LOAD Statement will rebuild indexes unless the
+CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` is turned *ON*. This CQD is turned *OFF* by default. 
+In this case, the elapsed time of using LOAD Statement without options is nearly equal to 
+using LOAD WITH REBUILD INDEXES, and the elapsed time of the former is less than the latter 
+if this CQD is turned ON.
 
 <<<
 [[load_considerations]]
@@ -784,7 +797,7 @@ Task:  COMPLETION      Status: Ended      Time: 2018-01-03 16:23:04.301579
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.381
 --- SQL operation complete.
 
-SQL>select * from target_table1;  
+SQL>SELECT * FROM target_table1;  
 A           B   
 ----------- ----
           4 dd  
@@ -832,8 +845,8 @@ drwxr-xr-x   - trafodion trafodion          0 2018-01-03 17:19
 
 Suppose that we have two same tables (_source_table_ and _target_table1_) as shown in the <<continue_on_error_examples,Examples of `CONTINUE ON ERROR`>>.
 
-* The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
-+
+The examples below illustrate how the LOAD Statement behaves depending on the different `num`. 
+
 ```
 SQL>LOAD WITH STOP AFTER 2 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
@@ -851,7 +864,7 @@ Task:  LOADING DATA    Status: Started    Time: 2018-01-05 10:53:52.45757
 SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
 ```
-+
+
 ```
 SQL>LOAD WITH STOP AFTER 3 ERROR ROWS INTO target_table1 SELECT * FROM source_table;
 
@@ -930,10 +943,10 @@ CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE1
 
 _target_table2_:
 ```
-SQL>select * from target_table2;
+SQL>SELECT * FROM target_table2;
 --- 0 row(s) selected.
 
-SQL>showddl target_table2;
+SQL>SHOWDDL target_table2;
 CREATE TABLE TRAFODION.SEABASE.TARGET_TABLE2
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
@@ -995,10 +1008,10 @@ SQL>SET PARSERFLAGS 1;
 SQL>LOAD WITH INDEX TABLE ONLY INTO TABLE(INDEX_TABLE index_target_table1) SELECT b,a FROM source_table;
 --- SQL operation complete.
 
-SQL>select * from target_table1;
+SQL>SELECT * FROM target_table1;
 --- 0 row(s) selected.
 
-select * from table(index_table index_target_table1);  
+SELECT * FROM table(index_table index_target_table1);  
 B@    A              
 ----  --------------------
 aaaa                     1
@@ -1033,7 +1046,7 @@ A            B
           6  fff 
 --- 6 row(s) selected.
 
-SQL>select * from table(index_table index_target_table1);  
+SQL>SELECT * FROM table(index_table index_target_table1);  
 B@    A              
 ----  --------------------
 aaaa                     1
@@ -1125,7 +1138,7 @@ A@
 ** The _target_table4_ has columns A (index column) and B defined, in this case, populate the index table with column A and syskey from the _source_table_.
 +
 ```
-SQL> create index index_target_table4 on target_table4(a) no populate;
+SQL> CREATE INDEX index_target_table4 ON target_table4(a) NO POPULATE;
 --- SQL operation complete.
 
 SQL>SET PARSERFLAGS 1;
@@ -1173,6 +1186,364 @@ SQL> POPULATE INDEX index_target_table4 ON target_table4;
 SQL> DROP INDEX index_target_table4;
 --- SQL operation complete.
 ```
+
+[[rebuild_indexes_examples]]
+==== Examples of `REBUILD INDEXES`
+
+Suppose that we have following tables:
+
+_source_table_:
+
+```
+SQL>select count(*) from source_table;
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected. 
+```
+
+_target_table1_ and _target_table2_ both have the following structure:
+
+```
+SQL>CREATE TABLE target_table1
+  ( 
+    ID                               INT NO DEFAULT NOT NULL NOT DROPPABLE NOT
+      SERIALIZED
+  , NUM                              INT DEFAULT NULL NOT SERIALIZED
+  , CARD_ID                          LARGEINT DEFAULT NULL NOT SERIALIZED
+  , PRICE                            DECIMAL(11, 3) DEFAULT NULL NOT SERIALIZED
+  , START_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , START_TIME                       TIME(0) DEFAULT NULL NOT SERIALIZED
+  , END_TIME                         TIMESTAMP(6) DEFAULT NULL NOT SERIALIZED
+  , B_YEAR                           INTERVAL YEAR(10) DEFAULT NULL NOT
+      SERIALIZED
+  , B_YM                             INTERVAL YEAR(5) TO MONTH DEFAULT NULL NOT
+      SERIALIZED
+  , B_DS                             INTERVAL DAY(10) TO SECOND(3) DEFAULT NULL
+      NOT SERIALIZED
+  , PRIMARY KEY (ID ASC)
+  )
+  SALT USING 9 PARTITIONS
+  ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_1500000' 
+  HBASE_OPTIONS 
+  ( 
+    MEMSTORE_FLUSH_SIZE = '1073741824' 
+  ) 
+;
+```
+
+* This example compares the execution time of using LOAD Statement without options and 
+using `LOAD WITH REBUILD INDEXES` when the CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` 
+is turned *OFF* by default. These two statements take almost the same time.
+
++
+```
+SQL>CREATE INDEX index_target_table1 ON target_table1(id);
+--- SQL operation complete.
+
+SQL>SET STATISTICS ON;
+
+SQL>LOAD INTO target_table1 SELECT * FROM source_table WHERE id < 301;
+
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                  
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:33:52.310                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:33:52.328
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.019
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:33:52.328                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:34:04.709
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:12.381
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:34:04.709                                                         
+       Rows Processed: 300 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:34:21.629
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:16.919
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:34:21.629                                                         
+       Rows Loaded:    300 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:34:22.436
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.808
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:34:22.436                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:34:31.116   
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:08.680
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:33:51.478782
+End Time               2018/01/18 13:34:31.549491
+Elapsed Time                      00:00:40.070709 
+Compile Time                      00:00:00.510024   
+Execution Time                    00:00:39.559433 
+
+SQL>LOAD INTO target_table1 SELECT * FROM source_table WHERE id > 300;  
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                     
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:35:01.804                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:35:01.823
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.018
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:35:01.823                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:35:13.840
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:12.017
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:35:13.840                                                         
+       Rows Processed: 999700 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:35:19.720
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:05.879
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:35:19.720                                                         
+       Rows Loaded:    999700 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:35:22.436
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:02.717
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:35:22.436                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:35:33.346
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:10.910
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:35:00.624490
+End Time               2018/01/18 13:35:33.779394
+Elapsed Time                      00:00:33.154904
+Compile Time                      00:00:00.825703
+Execution Time                    00:00:32.321890
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SELECT COUNT(*) FROM TABLE(INDEX_TABLE index_target_table1);
+(EXPR)
+--------------------
+             1000000
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>CREATE INDEX index_target_table2 ON target_table2(id);
+--- SQL operation complete.
+
+SQL>SET STATISTICS ON;
+
+SQL>LOAD WITH REBUILD INDEXES INTO target_table2 SELECT * FROM source_table WHERE id < 301;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE2                                                     
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:34:37.836                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:34:37.847
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.011
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:34:37.847                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:34:45.445
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:07.598
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:34:45.445                                                         
+       Rows Processed: 300 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:35:03.576
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:18.131
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:35:03.577                                                         
+       Rows Loaded:    300 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:35:04.873
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.296
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:35:04.873                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:35:12.461
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:07.589
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:34:37.053647
+End Time               2018/01/18 13:35:12.893891
+Elapsed Time                      00:00:35.840244
+Compile Time                      00:00:00.435855
+Execution Time                    00:00:35.402620
+
+SQL>LOAD WITH REBUILD INDEXES INTO target_table2 SELECT * FROM source_table WHERE id > 300;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE2                                                     
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:35:25.480                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:35:25.493
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.013
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:35:25.493                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:35:38.844
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:12.591
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:35:38.845                                                         
+       Rows Processed: 999700 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:35:43.491
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:05.407
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:35:43.491                                                         
+       Rows Loaded:    999700 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:35:45.920
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.601
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:35:45.920                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:35:56.322
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:11.230
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:35:24.693410
+End Time               2018/01/18 13:35:56.754441
+Elapsed Time                      00:00:32.061031
+Compile Time                      00:00:00.449236
+Execution Time                    00:00:31.611112
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SELECT COUNT(*) FROM TABLE(INDEX_TABLE index_target_table2);
+(EXPR)
+--------------------
+             1000000
+
+--- 1 row(s) selected.
+```
+
+* This example compares the execution time of using LOAD Statement without options and 
+using `LOAD WITH REBUILD INDEXES` when the CQD `TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE` 
+is turned *ON*. The former takes less time than the latter.
+
++
+```
+SQL>CQD TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE 'ON';
+--- SQL operation complete.
+
+SQL>CREATE INDEX index_target_table1 ON target_table1(id);
+--- SQL operation complete.
+
+SQL>SET STATISTICS ON;
+
+SQL>LOAD INTO target_table1 SELECT * FROM source_table WHERE id < 301;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                     
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:46:01.730                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:46:01.756
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.027
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:46:01.756                                                         
+       Rows Processed: 300 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:46:22.415
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:20.659
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:46:22.415                                                         
+       Rows Loaded:    300 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:46:26.353
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:03.938
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:46:00.954518
+End Time               2018/01/18 13:46:26.795757
+Elapsed Time                      00:00:25.841239
+Compile Time                      00:00:00.455681
+Execution Time                    00:00:25.384158
+
+SQL>LOAD INTO target_table1 SELECT * FROM source_table WHERE id > 300;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE1                                                     
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:46:57.811                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:46:57.870
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.058
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:46:57.870                                                         
+       Rows Processed: 999700 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:47:12.411
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:14.541
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:47:12.411                                                         
+       Rows Loaded:    999700 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:47:16.292
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:03.881
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:46:57.400422
+End Time               2018/01/18 13:47:16.738970
+Elapsed Time                      00:00:19.338548
+Compile Time                      00:00:00.010545
+Execution Time                    00:00:19.321781
+
+SQL>SET PARSERFLAGS 1;
+--- SQL operation complete.
+
+SQL>SELECT COUNT(*) FROM TABLE(INDEX_TABLE index_target_table1);
+(EXPR)
+--------------------
+             1000000
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>CREATE INDEX index_target_table2 ON target_table2(id);
+--- SQL operation complete.
+
+SQL>SET STATISTICS ON;
+
+SQL>LOAD WITH REBUILD INDEXES INTO target_table2 SELECT * FROM source_table WHERE id < 301;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE2                                                    
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:46:28.303                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:46:28.796
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.049
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:46:28.796                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:46:38.479
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:10.400
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:46:38.479                                                         
+       Rows Processed: 300 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:46:58.143
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:19.665
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:46:58.144                                                         
+       Rows Loaded:    300 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:47:00.186
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:02.043
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:47:00.187                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:47:09.966
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:08.910
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:46:27.063642
+End Time               2018/01/18 13:47:09.529257
+Elapsed Time                      00:00:42.465615
+Compile Time                      00:00:00.532541
+Execution Time                    00:00:41.928812
+
+SQL>LOAD WITH REBUILD INDEXES INTO target_table2 SELECT * FROM source_table WHERE id > 300;
+UTIL_OUTPUT
+---------------------------------------------------------------------------------
+Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TARGET_TABLE2                                                    
+Task:  CLEANUP         Status: Started    Time: 2018-01-18 13:47:18.187                                                         
+Task:  CLEANUP         Status: Ended      Time: 2018-01-18 13:47:18.198
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.011
+Task:  DISABLE INDEXE  Status: Started    Time: 2018-01-18 13:47:18.198                                                         
+Task:  DISABLE INDEXE  Status: Ended      Time: 2018-01-18 13:47:30.670
+Task:  DISABLE INDEXE  Status: Ended      Elapsed Time:    00:00:12.472
+Task:  LOADING DATA    Status: Started    Time: 2018-01-18 13:47:30.670                                                         
+       Rows Processed: 999700 
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2018-01-18 13:47:39.311
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:08.641
+Task:  COMPLETION      Status: Started    Time: 2018-01-18 13:47:39.311                                                         
+       Rows Loaded:    999700 
+Task:  COMPLETION      Status: Ended      Time: 2018-01-18 13:47:40.497
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.186
+Task:  POPULATE INDEX  Status: Started    Time: 2018-01-18 13:47:40.497                                                         
+Task:  POPULATE INDEX  Status: Ended      Time: 2018-01-18 13:47:52.367
+Task:  POPULATE INDEX  Status: Ended      Elapsed Time:    00:00:11.539
+--- SQL operation complete.
+
+Start Time             2018/01/18 13:47:17.447093
+End Time               2018/01/18 13:47:52.469190
+Elapsed Time                      00:00:35.022097
+Compile Time                      00:00:00.412718
+Execution Time                    00:00:34.608571
+ 
+SQL>SET PARSERFLAGES 1;
+--- SQL operation complete.
+
+SQL>SELECT COUNT(*) FROM TABLE(INDEX_TABLE index_target_table2);
+(EXPR)
+--------------------
+             1000000
+--- 1 row(s) selected.
+```
+
+[[loading_data_from_hive_table_examples]]
+==== Examples of Loading data from Hive Table
 
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using

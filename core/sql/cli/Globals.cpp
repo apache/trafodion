@@ -60,6 +60,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include "HBaseClient_JNI.h"
+#include "HdfsClient_JNI.h"
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "CliSemaphore.h"
@@ -764,7 +765,7 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 	  if (NOT reset)
 	    newEnvvarsLen += strlen(name) + strlen("=") + strlen(value) + 1;
 	}
-      else
+      else if (NULL != envvars_)
 	newEnvvarsLen += str_len(envvars_[count])+1;
     } 
   
@@ -800,7 +801,7 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 	      tgtCount++;
 	    }
 	}
-      else
+      else if (NULL != envvars_)
 	{
 	  l = str_len(envvars_[count])+1;
 	  str_cpy_all(newEnvvarsValue, envvars_[count], l);
@@ -918,26 +919,6 @@ void CliGlobals::getUdrErrorFlags(NABoolean &sqlViolation,
 {
     currContext()->getUdrErrorFlags(sqlViolation, xactViolation,
                                   xactAborted);
-}
-
-void CliGlobals::setJniErrorStr(NAString errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-void CliGlobals::setJniErrorStr(const char *errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-NAString CliGlobals::getJniErrorStr()
-{
-  return currContext()->getJniErrorStr();
-}
-
-const char* CliGlobals::getJniErrorStrPtr()
-{
-  return currContext()->getJniErrorStrPtr();
 }
 
 void CliGlobals::updateTransMode(TransMode *transMode)

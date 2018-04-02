@@ -29,6 +29,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "Platform.h"
 #include "ExSMCommon.h"
 #include "ExSMGlobals.h"
 #include "ExSMEvent.h"

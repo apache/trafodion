@@ -48,7 +48,7 @@ INCPATH_64luo = -I/use/include \
 		-I$(JAVA_HOME)/include/linux \
 		-I$(TRAF_HOME)/export/include
 
-LIBS_64luo = -lodbc -lodbcinst -lz -ldl
+LIBS_64luo = -lodbc -lodbcinst -lz -ldl -lpthread
 EXEC_64luo = odb64luo
 ODBBLD_64luo = "\"linux, amd64, gcc generic m64, uodbc, mreadline, dynamic gzip, dynamic libhdfs, dynamic libxml2\""
 vpath %.c src

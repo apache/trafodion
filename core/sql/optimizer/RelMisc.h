@@ -521,7 +521,8 @@ public:
   // defined in generator/GenRelMisc.cpp
   TrafQuerySimilarityInfo * genSimilarityInfo(Generator *generator);
 
-  void addOneRowAggregates(BindWA * bindWA);
+  // returns TRUE if a GroupByAgg node was added
+  NABoolean addOneRowAggregates(BindWA * bindWA, NABoolean forceGroupByAgg);
 
   inline void setNumBMOs(unsigned short num) { numBMOs_ = num; }
   inline unsigned short getNumBMOs() { return numBMOs_; }
@@ -1600,12 +1601,14 @@ class FirstN : public RelExpr
 public:
  FirstN(RelExpr * child,
         Int64 firstNRows,
+        NABoolean isFirstN,
         ItemExpr * firstNRowsParam = NULL,
         CollHeap *oHeap = CmpCommon::statementHeap())
    : RelExpr(REL_FIRST_N, child, NULL, oHeap),
     firstNRows_(firstNRows),
     firstNRowsParam_(firstNRowsParam),
-    canExecuteInDp2_(FALSE)
+    canExecuteInDp2_(FALSE),
+    isFirstN_(isFirstN)
     {
       setNonCacheable();
     };
@@ -1613,6 +1616,12 @@ public:
   // sets the canExecuteInDp2 flag for the [LAST 1] operator
   // of an MTS delete and calls the base class implementation of bindNode.
   virtual RelExpr* bindNode(BindWA* bindWA);
+
+  // takes care of any ordering requirement on the child
+  virtual Context* createContextForAChild(Context* myContext,
+                     PlanWorkSpace* pws,
+                     Lng32& childIndex);
+
   //
   // Physical properties implemented in OptPhysRelExpr.cpp
   //
@@ -1650,11 +1659,20 @@ public:
   NABoolean canExecuteInDp2() const             { return canExecuteInDp2_; }
   virtual NABoolean computeRowsAffected()   const ;
 
+  NABoolean isFirstN()                          { return isFirstN_; }
+
+  ValueIdList & reqdOrder()                     { return reqdOrder_; }
+
 private:
   // Otherwise, return firstNRows_ at runtime.
   Int64 firstNRows_;
   ItemExpr * firstNRowsParam_;
   NABoolean canExecuteInDp2_;
+  NABoolean isFirstN_;  // TRUE if [first n], FALSE if [any n] or [last n]
+
+  // Optional ORDER BY to force ordering before applying First N; populated
+  // at normalizeNode time.
+  ValueIdList reqdOrder_;
 
 }; // class FirstN
 

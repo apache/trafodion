@@ -124,7 +124,7 @@ Upgrade the traf_ambari package and re-start ambari-server service.
 
  $ sudo ambari-server restart
 
-==== Upgrade Entire HDP Stack
+=== Upgrade Entire HDP Stack
 
 Ambari requires version upgrades to be an entire stack, not single components. If you want to
 include a trafodion upgrade in entire stack version upgrade, first upgrade the traf_ambari
@@ -134,7 +134,7 @@ Once that is done, proceed with the upgrade following Ambari instructions. Be su
 define the Trafodion-2.2 URL that points to a repo server with the new apache-trafodion_server
 package.
 
-==== Upgrade Only Trafodion
+=== Upgrade Only Trafodion
 
 In this case, Ambari will not upgrade a single component, so the apache-trafodion_server
 package must be installed on each node directly (via yum command). Once that is done, the

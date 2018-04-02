@@ -1888,7 +1888,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
                              NABoolean isForUpdateOrMergeUpdate,
-                             NABoolean isForMerge, // mergeDelete OR mergeUpdate
+                             NABoolean mergeDeleteWithInsertOrMergeUpdate,
 			     NABoolean isEffUpsert)
 {
    
@@ -1906,7 +1906,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // that correspond to the base table. Hence we introduce 
   // robustDelete below. This flag could also be called 
   // isIMOnAUniqueIndexForMerge
-  NABoolean robustDelete = (isForMerge && index->isUniqueIndex()) || (isEffUpsert && index->isUniqueIndex());
+  NABoolean robustDelete = (mergeDeleteWithInsertOrMergeUpdate && index->isUniqueIndex()) || 
+                           (isEffUpsert && index->isUniqueIndex());
 
   tableCorrName.setCorrName(isIMInsert ?  NEWCorr : OLDCorr);
   
@@ -2127,8 +2128,15 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   if (getOperatorType() == REL_UNARY_DELETE ||
       getOperatorType() == REL_UNARY_UPDATE ||
       isEffUpsert)
-    
-    indexDelete = indexOp = createIMNode(bindWA,
+    {
+      NABoolean mergeDeleteWithInsertOrMergeUpdate = isMerge();
+      if (mergeDeleteWithInsertOrMergeUpdate && 
+          (getOperatorType() == REL_UNARY_DELETE) && 
+          (!insertValues()))
+        // merge delete without an insert
+        mergeDeleteWithInsertOrMergeUpdate = FALSE;
+      
+      indexDelete = indexOp = createIMNode(bindWA,
 					 tableCorrName,
                                          indexCorrName,
 					 index,
@@ -2136,8 +2144,9 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 FALSE,
     			       		 useInternalSyskey,
                                          isForUpdateOrMergeUpdate,
-                                         isMerge(),
+                                         mergeDeleteWithInsertOrMergeUpdate,
 					 isEffUpsert);
+    }
 
   if ((getOperatorType() == REL_UNARY_UPDATE) || isEffUpsert){
     indexOp = new (bindWA->wHeap()) Union(indexDelete, indexInsert, 
@@ -3132,7 +3141,7 @@ RelExpr *GenericUpdate::inlineOnlyRIandIMandMVLogging(BindWA *bindWA,
 	{
 	  // create a firstN node to delete N rows.
 	  FirstN * firstn = new(bindWA->wHeap())
-	    FirstN(topNode, topNode->getFirstNRows());
+	    FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
 	  firstn->bindNode(bindWA);
 	  if (bindWA->errStatus())
 	    return NULL;
@@ -3314,7 +3323,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackbone(BindWA *bindWA,
   {
     // create a firstN node to delete N rows.
     FirstN * firstn = new(bindWA->wHeap())
-      FirstN(topNode, topNode->getFirstNRows());
+      FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
     firstn->bindNode(bindWA);
     if (bindWA->errStatus())
       return NULL;
@@ -3429,7 +3438,7 @@ RelExpr *GenericUpdate::inlineAfterOnlyBackboneForUndo(BindWA *bindWA,
     {
       // create a firstN node to delete N rows.
       FirstN * firstn = new(bindWA->wHeap())
-	FirstN(topNode, topNode->getFirstNRows());
+	FirstN(topNode, topNode->getFirstNRows(), FALSE /* No ordering requirement */);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
 	return NULL;

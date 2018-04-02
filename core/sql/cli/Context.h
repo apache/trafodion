@@ -62,6 +62,7 @@
 #include "ExpSeqGen.h"
 #include "ssmpipc.h"
 #include "hdfs.h"
+#include "HdfsClient_JNI.h"
 
 class CliGlobals;
 class HashQueue;
@@ -200,6 +201,11 @@ public:
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }
+
+  HdfsClient *getHDFSClient() { return hdfsClientJNI_; }
+  void setHDFSClient(HdfsClient *hdfsClientJNI)
+  { hdfsClientJNI_ = hdfsClientJNI; }
+
   //expose cmpContextInfo_ to get HQC info of different contexts
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 
@@ -298,6 +304,8 @@ private:
   // flag and pointer to the embedded arkcmp context
   NABoolean isEmbeddedArkcmpInitialized_;
   CmpContext * embeddedArkcmpContext_;
+
+  CmpContext * prevCmpContext_;
 
   // pointer to the array of server  versions used to communicate with ARKCMP.
   ARRAY(ExSqlComp *) arkcmpArray_;
@@ -512,6 +520,7 @@ private:
   NAString jniErrorStr_; 
   HBaseClient_JNI *hbaseClientJNI_;
   HiveClient_JNI *hiveClientJNI_;
+  HdfsClient *hdfsClientJNI_;
 
   // this points to data used by trafSE (traf storage engine) that is context specific.
   // It points to a list of 'black box' of data allocated by user and is returned
@@ -620,18 +629,6 @@ public:
     xactViolation = udrXactViolation_;
     xactAborted = udrXactAborted_;
   }
-
-  inline void setJniErrorStr(NAString errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline void setJniErrorStr(const char *errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline NAString getJniErrorStr()
-  { return jniErrorStr_; }
-
-  inline const char* getJniErrorStrPtr()
-  { return (const char*)jniErrorStr_.data(); }
 
   inline CLISemaphore *getSemaphore()
   { 
@@ -803,6 +800,7 @@ public:
   Int32 switchToCmpContext(Int32 cmpCntxtType);
   Int32 switchToCmpContext(void *cmpCntxt);
   Int32 switchBackCmpContext(void);
+  void copyDiagsAreaToPrevCmpContext();
   NABoolean isDropInProgress() { return dropInProgress_; }
   void setDropInProgress() { dropInProgress_ = TRUE; };
 

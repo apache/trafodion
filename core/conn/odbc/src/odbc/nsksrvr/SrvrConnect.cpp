@@ -1163,10 +1163,12 @@ ImplInit (
 		srvrGlobal = new SRVR_GLOBAL_Def;
 		if (srvrGlobal == NULL)
 		{
+			IDL_OBJECT_def objRef;
+			memset(&objRef, 0, sizeof(IDL_OBJECT_def));
 //LCOV_EXCL_START
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
-					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-					srvrGlobal->srvrObjRef, 1, "srvrGlobal");
+					GetCurrentProcessId(), ODBCMX_SERVER,
+					objRef, 1, "srvrGlobal");
 			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
@@ -5450,7 +5452,7 @@ bool InsertControls(char* sqlString, odbc_SQLSvc_ExecDirect_exc_ *exception_)
 	SRVR_STMT_HDL	*pSrvrStmt;
 	char			ControlType[32];
 	char			StatementName[128 + 1];
-	char			RequestError[200];
+	char			RequestError[200 + 1];
 
 //
 // skip white spaces and check first parameter //
@@ -5743,7 +5745,7 @@ bool LoadControls(char* sqlString, bool genOrexc, char* genRequestError, odbc_SQ
 
 //
 // skip white spaces and check first parameter //
-	char			VariableValue[200];
+	char			VariableValue[200 + 1];
 	char			seps[]   = " \t\n";
 	char			*token;
 	char			*saveptr;
@@ -6115,7 +6117,7 @@ bool GetHashInfo(char* sqlString, char* genRequestError, char* HashTableInfo)
 
 //
 // skip white spaces and check first parameter //
-	char			VariableValue[200];
+	char			VariableValue[200 + 1];
 	char			seps[]   = " \t\n";
 	char			seps2[]   = " \t\n.;";
 	char			*token;

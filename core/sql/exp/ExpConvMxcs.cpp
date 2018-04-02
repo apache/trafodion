@@ -155,7 +155,7 @@ static short BigNumHelper_ConvBcdToBigNumHelper(Lng32 sourceLength,
 
   // Ignore leading zeros in BCD. If all zeros, return.
   Lng32 zeros = 0;
-  while (!sourceData[zeros] && zeros < sourceLength)
+  while (zeros < sourceLength && !sourceData[zeros])
     zeros++;
   if (zeros == sourceLength)
     return 0;
@@ -710,7 +710,7 @@ static short convAsciiToDecMxcs(char *target,
   };
    
   // skip leading zeros
-  while((source[sourceStart] == '0') && (sourceStart < sourceLen))
+  while((sourceStart < sourceLen) && (source[sourceStart] == '0'))
     sourceStart++;
 
   // only zeros found, target is 0

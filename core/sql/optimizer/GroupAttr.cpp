@@ -1787,12 +1787,15 @@ void GroupAttributes::resolveCharacteristicInputs(const ValueIdSet& externalInpu
 	 {
 	   VEGReference *vegRef = ((VEGReference *)(x.getItemExpr()));
 	   ValueIdSet allValues = vegRef->getVEG()->getAllValues();
-	   // in all these values check for current_user amd current_timestamp
+	   // in all these values check for current_user and current_timestamp
 	   for (ValueId vid = allValues.init(); allValues.next(vid); allValues.advance(vid))
 	   {
 	     ItemExpr * vidExpr = vid.getItemExpr();
 	     if ((vidExpr->getOperatorType() == ITM_CURRENT_USER) ||
-		 (vidExpr->getOperatorType() == ITM_CURRENT_TIMESTAMP))
+		 (vidExpr->getOperatorType() == ITM_CURRENT_TIMESTAMP) ||
+		 (vidExpr->getOperatorType() == ITM_SLEEP) ||
+		 (vidExpr->getOperatorType() == ITM_UNIX_TIMESTAMP))
+
 	       currentConstants += vid;
 	   }
 	 }

@@ -1610,8 +1610,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
                 jarLocation.length() + 100];
 
   // Create the SEABASE_LIBMGR_SCHEMA schema
-  str_sprintf(queryBuf, "create schema if not exists %s.\"%s\" authorization %s ",
-              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create schema if not exists %s.\"%s\" authorization %s ",
+           getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
 
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC < 0)
@@ -1621,9 +1622,10 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
     }
 
   // Create the SEABASE_LIBMGR_LIBRARY library
-  str_sprintf(queryBuf, "create library %s.\"%s\".%s file '%s'",
-                         getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY,
-                         jarLocation.data());
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create library %s.\"%s\".%s file '%s'",
+           getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY,
+           jarLocation.data());
 
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC < 0)
@@ -1631,6 +1633,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
+
+  if (createSeabaseLibmgrCPPLib(cliInterface) < 0)
+    return -1;
 
   return (createLibmgrProcs(cliInterface));
 }
@@ -1647,6 +1652,7 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
 
       const QString * qs = NULL;
       Int32 sizeOfqs = 0;
+      const char *libName = NULL;
 
       qs = prd.newDDL;
       sizeOfqs = prd.sizeOfnewDDL;
@@ -1657,25 +1663,38 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
       glueQueryFragments(qryArraySize,  qs,
                          gluedQuery, gluedQuerySize);
 
+      switch (prd.whichLib)
+        {
+        case LibmgrRoutineInfo::JAVA_LIB:
+          libName = SEABASE_LIBMGR_LIBRARY;
+          break;
+        case LibmgrRoutineInfo::CPP_LIB:
+          libName = SEABASE_LIBMGR_LIBRARY_CPP;
+          break;
+        default:
+          CMPASSERT(0);
+        }
+
       param_[0] = getSystemCatalog();
       param_[1] = SEABASE_LIBMGR_SCHEMA;
       param_[2] = getSystemCatalog();
       param_[3] = SEABASE_LIBMGR_SCHEMA;
-      param_[4] = SEABASE_LIBMGR_LIBRARY;
+      param_[4] = libName;
 
       // Review comment - make sure size of queryBuf is big enough to hold
       // generated text.
       char queryBuf[strlen(getSystemCatalog())*2 + strlen(SEABASE_LIBMGR_SCHEMA)*2 +
                     strlen(SEABASE_LIBMGR_LIBRARY) + gluedQuerySize + 200]; 
 
-      str_sprintf(queryBuf, gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
+      snprintf(queryBuf, sizeof(queryBuf),
+               gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
       NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
         {
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-        return -1;
+          return -1;
         }
     } // for
 
@@ -1690,18 +1709,36 @@ short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
 
   Lng32 cliRC = 0;
   char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
-                strlen(SEABASE_LIBMGR_LIBRARY) + strlen(DB__LIBMGRROLE) + 200];
+                strlen(SEABASE_LIBMGR_LIBRARY) +
+                MAXOF(strlen(DB__LIBMGRROLE), strlen(PUBLIC_AUTH_NAME)) + 200];
   for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
     {
       // Get the next procedure routine details
       const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
+      const char *grantee = NULL;
+      const char *grantOption = "";
 
-      str_sprintf (queryBuf, "grant execute on %s %s.\"%s\".%s to %s with grant option",
-                              prd.udrType,
-                              getSystemCatalog(),
-                              SEABASE_LIBMGR_SCHEMA,
-                              prd.newName,
-                              DB__LIBMGRROLE);
+      switch (prd.whichRole)
+        {
+        case LibmgrRoutineInfo::LIBMGR_ROLE:
+          grantee = DB__LIBMGRROLE;
+          grantOption = " with grant option";
+          break;
+        case LibmgrRoutineInfo::PUBLIC:
+          grantee = PUBLIC_AUTH_NAME;
+          break;
+        default:
+          CMPASSERT(0);
+        }
+
+      snprintf(queryBuf, sizeof(queryBuf),
+               "grant execute on %s %s.\"%s\".%s to %s%s",
+               prd.udrType,
+               getSystemCatalog(),
+               SEABASE_LIBMGR_SCHEMA,
+               prd.newName,
+               grantee,
+               grantOption);
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
         {
@@ -1731,11 +1768,33 @@ short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 
   if (cliRC == 0) // does not exist
     {
+      // give an error if the Java library does not exist, since that is
+      // an indication that we never ran
+      // INITIALIZE TRAFODION, CREATE LIBRARY MANAGEMENT
       NAString libraryName(getSystemCatalog());
       libraryName + ".\"" + SEABASE_LIBMGR_SCHEMA + "\"" + SEABASE_LIBMGR_LIBRARY;
       *CmpCommon::diags() << DgSqlCode(-1389)
                           << DgString0(libraryName.data());
       return -1;
+    }
+
+  // now check for the C++ library, which was added in Trafodion 2.3
+  cliRC = existsInSeabaseMDTable(cliInterface,
+                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA,
+                                 SEABASE_LIBMGR_LIBRARY_CPP,
+                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (cliRC < 0)
+    return -1;
+
+  if (cliRC == 0)
+    {
+      // The Java library exists, but the C++ library does not yet
+      // exist. This means that we last created or upgraded the
+      // library management subsystem in Trafodion 2.2 or earlier.
+      // Create the C++ library, as it is needed for Trafodion 2.3
+      // and higher.
+      if (createSeabaseLibmgrCPPLib(cliInterface) < 0)
+        return -1;
     }
 
   return (createLibmgrProcs(cliInterface));
@@ -1773,6 +1832,31 @@ short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
     }
   return 0;
 }
-
-
   
+short CmpSeabaseDDL::createSeabaseLibmgrCPPLib(ExeCliInterface * cliInterface)
+{
+  Int32 cliRC = 0;
+  NAString dllLocation(getenv("TRAF_HOME"));
+  dllLocation += "/export/lib64";
+  if (strcmp(getenv("SQ_MBTYPE"), "64d") == 0)
+    dllLocation += "d";
+  // for now we use the same DLL as for the predefined UDRs
+  dllLocation += "/libudr_predef.so";
+  char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
+                strlen(SEABASE_LIBMGR_LIBRARY_CPP) +
+                dllLocation.length() + 100];
+
+  // Create the SEABASE_LIBMGR_LIBRARY_CPP library
+  snprintf(queryBuf, sizeof(queryBuf),
+           "create library %s.\"%s\".%s file '%s'",
+           getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY_CPP,
+           dllLocation.data());
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+  return 0;
+}

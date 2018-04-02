@@ -94,6 +94,7 @@ enum OperatorTypeEnum {
                         REL_BINARY_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
+                        REL_TABLE_MAPPING_BUILTIN_SERIES, //series
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ANY_LEAF_TABLE_MAPPING_UDF,
@@ -471,6 +472,9 @@ enum OperatorTypeEnum {
 
                         // Regular Expression
                         ITM_REGEXP = 2178,
+			ITM_UNIX_TIMESTAMP = 2179,
+			ITM_SLEEP = 2180,
+			ITM_UNIQUE_SHORT_ID = 2181,
 
                         // numeric functions
                         ITM_ABS = 2200,

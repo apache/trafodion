@@ -51,6 +51,27 @@
 # May need root or SUDO access to install tools in desired location
 # ----------------------------------------------------------------------------- 
 
+##############################################################################
+# Environment variables - optional
+#
+# MY_LOCAL_SW_DIST - shared location on local network for tar balls for build, etc.
+# - udis
+# - llvm
+# - mpich
+# - bison
+# - icu
+# - zookeeper
+# - thrift
+# - apache-maven
+# - protobuf
+# - apache-log4cxx
+# - hadoop
+# also set http_proxy and ftp_proxy if necessary, to download
+# files from repositories on the Internet
+#
+##############################################################################
+MY_LOCAL_SW_DIST=${MY_LOCAL_SW_DIST-""}
+
 function Usage {
    echo
    echo "Usage: $0 -d <downloaddir> -i <installdir>"
@@ -75,6 +96,13 @@ function downloadSource
   URL="$1"
   SRCDIR="$2"
   TARFILE="${URL##*/}"
+
+  if [ "x${MY_LOCAL_SW_DIST}" != "x" ]; then
+      echo "INFO:   copy file ${TARFILE} from [${MY_LOCAL_SW_DIST}/${TARFILE}]"
+      if [ -f ${MY_LOCAL_SW_DIST}/${TARFILE} ]; then
+	  cp ${MY_LOCAL_SW_DIST}/${TARFILE} ${BASEDIR}/${TARFILE}
+      fi
+  fi
 
   if [ ! -e $BASEDIR/$TARFILE ]; then
     wget $URL  >>$LOGFILE 2>&1

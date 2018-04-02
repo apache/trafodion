@@ -31,6 +31,10 @@ drop schema compgeneral_test023 cascade;
 ?section create_db
 
 log LOG023 clear;
+
+-- keep ULOGs whenever there are severe errors
+update statistics log system;
+
 -- create the database used for the tests
 
 create schema compgeneral_test023;

@@ -400,7 +400,7 @@ void TestPool(void * membase, int length)
    long j, index;
    short error;
    long pass;
-   void * pool_ptrs[256];
+   void * pool_ptrs[256 + 1];
    PPOOL_HEADER pph;
 
    pass = 1;

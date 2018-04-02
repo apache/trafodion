@@ -47,6 +47,15 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
+# Set the Trafodion Configuration store type
+if [[ -n "$CLUSTERNAME" ]]; then
+  # This is a cluster environment, not a workstation
+  #export TRAF_CONFIG_DBSTORE=MySQL
+  export TRAF_CONFIG_DBSTORE=Sqlite
+else
+  export TRAF_CONFIG_DBSTORE=Sqlite
+fi
+
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
 # IBV for infiniband, TCP for tcp
 export SQ_IC=${SQ_IC:-TCP}
@@ -664,6 +673,18 @@ export SQ_LUNMGR_VERBOSITY=1
 # Control SQ default startup behavior (c=cold, w=warm, if removed sqstart will autocheck)
 export SQ_STARTUP=r
 
+# Monitor process creator:
+#   MPIRUN - monitor process is created by mpirun
+# Uncomment SQ_MON_CREATOR when running monitor in AGENT mode
+#export SQ_MON_CREATOR=MPIRUN
+
+# Monitor process run mode:
+#   AGENT - monitor process runs in agent mode versus MPI collective
+# Uncomment the three environment variables below
+#export SQ_MON_RUN_MODE=AGENT
+#export MONITOR_COMM_PORT=23399
+#export MONITOR_SYNC_PORT=23398
+
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0
 
@@ -697,6 +718,13 @@ export SQ_MON_EPOLL_RETRY_COUNT=4
 
 # Trafodion Configuration Zookeeper store
 #export TC_ZCONFIG_SESSION_TIMEOUT=120
+
+# increase SQ_MON,ZCLIENT,WDT timeout only to jenkins env.
+if [[ "$TRAF_HOME" == *"/home/jenkins"* ]]; then
+export SQ_MON_EPOLL_WAIT_TIMEOUT=20
+export SQ_MON_ZCLIENT_SESSION_TIMEOUT=360
+export SQ_WDT_KEEPALIVETIMERVALUE=360
+fi
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1

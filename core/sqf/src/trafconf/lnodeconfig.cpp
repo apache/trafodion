@@ -26,6 +26,7 @@
 using namespace std;
 
 #include <errno.h>
+#include <string.h>
 #include <assert.h>
 #include <sched.h>
 #include <stdlib.h>
@@ -33,11 +34,8 @@ using namespace std;
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <iostream>
-#include <mpi.h>
-#include "msgdef.h"
-#include "seabed/trace.h"
-#include "montrace.h"
-#include "monlogging.h"
+#include "tclog.h"
+#include "tctrace.h"
 #include "pnodeconfig.h"
 #include "lnodeconfig.h"
 
@@ -120,9 +118,9 @@ CLNodeConfigContainer::CLNodeConfigContainer( int lnodesConfigMax )
     if ( ! lnodesConfig_ )
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf(la_buf, "[%s], Error: Can't allocate logical node configuration array - errno=%d (%s)\n", method_name, err, strerror(errno));
-        mon_log_write(MON_LNODECONF_CONSTR_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_LNODECONF_CONSTR_1, TC_LOG_CRIT, la_buf);
     }
     else
     {
@@ -235,10 +233,10 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
     // nid list is NOT sequential from zero
     if ( ! (lnodeConfigInfo.nid >= 0 && lnodeConfigInfo.nid < lnodesConfigMax_) )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf( la_buf, "[%s], Error: Invalid nid=%d - should be >= 0 and < %d)\n"
                , method_name, lnodeConfigInfo.nid, lnodesConfigMax_);
-        mon_log_write(MON_LNODECONF_ADD_LNODE_1, SQ_LOG_CRIT, la_buf);
+        TcLogWrite(MON_LNODECONF_ADD_LNODE_1, TC_LOG_CRIT, la_buf);
         return( NULL );
     }
 
@@ -292,7 +290,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
             }
         }
 
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
         {
             trace_printf( "%s@%d - Added logical node configuration object\n"
                           "        (nid=%d, pnid=%d, nextNid_=%d)\n"
@@ -305,10 +303,10 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
     else
     {
         int err = errno;
-        char la_buf[MON_STRING_BUF_SIZE];
+        char la_buf[TC_LOG_BUF_SIZE];
         sprintf( la_buf, "[%s], Error: Can't allocate logical node configuration object - errno=%d (%s)\n"
                , method_name, err, strerror(errno));
-        mon_log_write(MON_LNODECONF_ADD_LNODE_2, SQ_LOG_ERR, la_buf);
+        TcLogWrite(MON_LNODECONF_ADD_LNODE_2, TC_LOG_ERR, la_buf);
     }
 
     TRACE_EXIT;
@@ -320,7 +318,7 @@ void CLNodeConfigContainer::DeleteLNodeConfig( CLNodeConfig *lnodeConfig )
     const char method_name[] = "CLNodeConfigContainer::DeleteLNodeConfig";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d Deleting nid=%d, nextNid_=%d\n"
                      , method_name, __LINE__
@@ -353,7 +351,7 @@ void CLNodeConfigContainer::DeleteLNodeConfig( CLNodeConfig *lnodeConfig )
         nextNid_ = nid;
     }
 
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+    if (TcTraceSettings & (TC_TRACE_INIT | TC_TRACE_REQUEST))
     {
         trace_printf( "%s@%d - Deleted logical node configuration object\n"
                       "        (nid=%d, nextNid_=%d)\n"

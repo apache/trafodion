@@ -751,7 +751,7 @@ Int32 displayWCHAR(NAWchar* wstr, NAWchar* wend = NULL)	// for debugging
   unsigned char str[2000+1];
   if (wend) *wend = '\0';
   Int32 i=0;
-  for (; wstr[i] && i<2000; i++)
+  for (; i<2000 && wstr[i]; i++)
     str[i] = (unsigned char)wstr[i];
   str[i] = '\0';
   cerr << "{{{" << endl << str << "}}}" << endl;

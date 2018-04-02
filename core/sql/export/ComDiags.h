@@ -837,7 +837,7 @@ public:
 
   // These members provide set and get operations on the data
   // of a ComDiagsArea that is defined in ANSI table 21, in subclause
-  // 18.1.  See also, ``Creating Errors Korrectly.''
+  // 18.1.  See also, ``Creating Errors Correctly.''
 
   Lng32	              getNumber           () const;
   Lng32		      getNumber           (DgSqlCode::ErrorOrWarning) const;
@@ -939,6 +939,8 @@ public:
   void                    clear                      ();
   void                    clearConditionsOnly        ();
   void			  clearErrorConditionsOnly   ();
+
+  void			  clearWarnings();
   // the next 3 methods are called to set a warning, an EOD indication(100),
   // or an error. Useful while debugging to find out when/where an 
   // error/warning/EOD is being set.
@@ -1017,6 +1019,12 @@ public:
  {
    while (getNumber(DgSqlCode::ERROR_))
      negateCondition(0);
+ }
+
+ void negateErrors (Lng32 fromCondition)
+ {
+   while (getNumber(DgSqlCode::ERROR_) > fromCondition)
+        negateCondition(fromCondition);
  }
  
 void negateAllWarnings  ()

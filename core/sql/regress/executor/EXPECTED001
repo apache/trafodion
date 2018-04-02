@@ -50,7 +50,8 @@
 
 *** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>invoke t001t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T2

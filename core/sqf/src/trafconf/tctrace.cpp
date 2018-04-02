@@ -44,6 +44,7 @@ const CTrafConfigTrace::TraceArea_t CTrafConfigTrace::traceAreaList_[] =
     {"TC_TRACE_REQUEST",         TC_TRACE_REQUEST},
     {"TC_TRACE_NODE",            TC_TRACE_NODE},
     {"TC_TRACE_PERSIST",         TC_TRACE_PERSIST},
+    {"TC_TRACE_PROCESS",         TC_TRACE_PROCESS},
     {"TC_TRACE_REGISTRY",        TC_TRACE_REGISTRY},
     {"TC_TRACE_INIT",            TC_TRACE_INIT},
     {"TC_TRACE_LOG_MSG",         TC_TRACE_LOG_MSG},

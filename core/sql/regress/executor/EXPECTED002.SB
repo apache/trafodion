@@ -6670,6 +6670,9 @@ A            B            C            E
 >>insert into student values('s2', 58);
 
 --- 1 row(s) inserted.
+>>insert into student values('学生三',79);
+
+--- 1 row(s) inserted.
 >>
 >>SELECT student_name,
 +>          GROUP_CONCAT(DISTINCT test_score
@@ -6683,8 +6686,9 @@ STUDENT_NAME  (EXPR)
 s1            40-50-60-79-88-100-101                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 s2            18-58-88-188                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 s3            40-90-100                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+学生三     79                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>
 >>SELECT student_name,
 +>          GROUP_CONCAT(test_score
@@ -6698,8 +6702,18 @@ STUDENT_NAME  (EXPR)
 s1            40-50-60-79-88-88-100-101                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 s2            18-58-88-88-188                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 s3            40-40-90-100                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+学生三     79                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
+>>
+>>SELECT GROUP_CONCAT(student_name) from student;
+
+(EXPR)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+s1        ,s1        ,s2        ,s3        ,s1        ,s1        ,s1        ,s1        ,s1        ,s1        ,s3        ,s3        ,s3        ,s2        ,s2        ,s2        ,s2        ,学生三                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+
+--- 1 row(s) selected.
 >>
 >>cqd ATTEMPT_ESP_PARALLELISM 'ON';
 
@@ -6737,8 +6751,9 @@ STUDENT_NAME  (EXPR)
 s1            101-100-88-79-60-50-40                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 s2            188-88-58-18                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 s3            100-90-40                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+学生三     79                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
---- 3 row(s) selected.
+--- 4 row(s) selected.
 >>control query shape cut;
 
 --- SQL operation complete.
@@ -6835,6 +6850,70 @@ C1
 
 --- 0 row(s) selected.
 >>drop table regexp_test;
+
+--- SQL operation complete.
+>>
+>>--create table have 1K rows
+>>create table T002T1K (uniq int not null,
++> c1K int, c100 int,
++> c10 int, c1 int, c0 int  )
++> STORE BY (uniq)
++>  ATTRIBUTES ALIGNED FORMAT
++>  SALT USING 8 PARTITIONS
++>  ;
+
+--- SQL operation complete.
+>>
+>>upsert using load into T002T1K select
++>0 + (1000 * x10) + (100 * x1) + (10 * x1) + (1 * x01),
++>0 + (100 * x10) + (10 * x1) + (1 * x01),
++>0 + (10 * x1) + (1 * x01),
++>0 + (1 * x01),
++>0,
++>X01
++>from (values(0)) t
++>transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>transpose 0,1,2,3,4,5,6,7,8,9 as X01;
+
+--- 1000 row(s) inserted.
+>>
+>>create table t002timert (c0 int, c1 int, c2 largeint);
+
+--- SQL operation complete.
+>>create table t002tmp1 (c1 int);
+
+--- SQL operation complete.
+>>insert into t002tmp1 values(1),(2),(3);
+
+--- 3 row(s) inserted.
+>>
+>>insert into t002timert select 1, sleep(5) , unix_timestamp() from t002tmp1;
+
+--- 3 row(s) inserted.
+>>insert into t002timert select 2, sleep(5) , unix_timestamp() from t002tmp1;
+
+--- 3 row(s) inserted.
+>>select 'sleeptimetest002', di from (select ( max(c2) - min(c2)) as di from t002timert ) where di between 5 and 9;
+
+(EXPR) DI
+----------
+
+good
+
+--- 1 row(s) selected.
+>>select distinct(count(uuid())) from T002T1K;
+
+(EXPR)
+----------
+
+  1000 
+
+--- 1 row(s) selected.
+>>drop table t002timert;
+
+--- SQL operation complete.
+>>drop table t002tmp1;
 
 --- SQL operation complete.
 >>------------------------------------------------------------------------

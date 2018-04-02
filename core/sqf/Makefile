@@ -41,7 +41,7 @@ SQL_W=$(TRAF_HOME)/../sql
     DP2=se
 
 MISC = win misc_sec
-SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools hbase_utilities
+SQ_COMPONENTS := make_sqevlog seabed stfs trafconf $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools hbase_utilities
 
 .PHONY: $(SQ_COMPONENTS)
 
@@ -57,6 +57,8 @@ win: make_sqevlog seabed
 seabed: make_sqevlog
 	cd src/seabed; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
+trafconf: make_sqevlog
+	cd src/trafconf; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 tm: seabed make_sqevlog
 	cd src/tm; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
@@ -72,7 +74,7 @@ make_sql: $(SEAMONSTER_TARGET) win hbase_utilities
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(TRAF_HOME)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
-make_monitor: stfs make_sqevlog seabed
+make_monitor: stfs make_sqevlog seabed trafconf
 	cd monitor/linux; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 stfs: make_sqevlog
@@ -108,6 +110,7 @@ clean: setupdir_clean
 	-cd src/tm; $(MAKE) clean
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) clean
+	-cd src/trafconf; $(MAKE) clean
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
@@ -123,6 +126,7 @@ cleanall: setupdir_clean
 	-cd src/tm; $(MAKE) cleanall
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) cleanall
+	-cd src/trafconf; $(MAKE) cleanall
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
@@ -135,6 +139,7 @@ cleaner:
 	-cd src/stfs; $(MAKE) -f Makefile.stub cleaner
 	-cd src/win; $(MAKE) cleaner
 	-cd src/tm; $(MAKE) cleaner
+	-cd src/trafconf; $(MAKE) cleaner
 	-cd sql; $(MAKE) WROOT=$(SQL_W) cleaner
 	-cd sqevlog; $(MAKE) cleaner
 
@@ -181,6 +186,7 @@ setupdir:
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
 	-cd src/tm; $(MAKE) setup
+	-cd src/trafconf; $(MAKE) setup
 	-cd sqevlog; $(MAKE) setup
 	@# builds/copies 3rd party dependencies as necessary
 	cd sql; $(MAKE) WROOT=$(SQL_W) setup

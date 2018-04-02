@@ -54,6 +54,7 @@ class ExSqlComp;
 class ExProcessStats;
 
 class ExpHbaseInterface;
+class HdfsClient;
 
 //class FILE_STREAM;
 #include "ComAnsiNamePart.h"
@@ -3888,7 +3889,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   Int64 endTime_;
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
-  SequenceFileWriter* sequenceFileWriter_;
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;

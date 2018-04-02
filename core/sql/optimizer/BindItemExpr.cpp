@@ -3472,6 +3472,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   // expression getting translated correctly. 
 
   setReplacementExpr(ie);
+
   return ie;
 }
 
@@ -8110,6 +8111,12 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
     return this;
   }
 
+  if (NULL == xcnmEntry)
+  {
+    bindWA->setErrStatus();
+    return this;
+  }
+
   // Continue with no-error, non-star column reference.
   ValueId valId = xcnmEntry->getValueId();
   setValueId(valId);	// not bound yet, but this makes more informative errmsg
@@ -8411,6 +8418,70 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
   return NULL;
 
 } // DefaultSpecification::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class SleepFunction 
+// -----------------------------------------------------------------------
+
+ItemExpr *SleepFunction::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // SleepFunction::bindNode()
+
+// -----------------------------------------------------------------------
+// member functions for class UnixTimestamp
+// -----------------------------------------------------------------------
+
+ItemExpr *UnixTimestamp::bindNode(BindWA *bindWA)
+{
+
+  if (bindWA->inDDL() && (bindWA->inCheckConstraintDefinition()))
+  {
+	StmtDDLAddConstraintCheck *pCkC = bindWA->getUsageParseNodePtr()
+                                    ->castToElemDDLNode()
+                                    ->castToStmtDDLAddConstraintCheck();
+    *CmpCommon::diags() << DgSqlCode(-4131);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  const NAType *type = synthTypeWithCollateClause(bindWA);
+  if (!type) return this;
+
+  ItemExpr * ie = ItemExpr::bindUserInput(bindWA,type,getText());
+  if (bindWA->errStatus())
+    return this;
+
+  // add this value id to BindWA's input function list.
+  bindWA->inputFunction().insert(getValueId());
+
+  return ie;
+} // UnixTimestamp::bindNode()
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestamp
@@ -12215,7 +12286,7 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
         //                   ...)))
         if (op1->getOperatorType() == ITM_CAST)
           {
-            if (expr->origOpType() == ITM_DATEDIFF_QUARTER &&
+            if (NULL != expr && expr->origOpType() == ITM_DATEDIFF_QUARTER &&
                 op1->child(0)->getOperatorType() == ITM_DIVIDE)
               op1 = op1->child(0)->child(0); // the minus operator
               //    cast   /         -
@@ -12223,7 +12294,7 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
               op1 = op1->child(0); // the minus operator
               //    cast   -
 
-            if (expr->origOpType() == ITM_DATEDIFF_YEAR)
+            if (NULL != expr && expr->origOpType() == ITM_DATEDIFF_YEAR)
               {
                 if (op1->child(0)->getOperatorType() == ITM_EXTRACT ||
                     op1->child(0)->getOperatorType() == ITM_EXTRACT_ODBC)
@@ -12740,7 +12811,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 	  if ((co != hcco->convType()) ||
 	      (! firstType && hcco->naType()) ||
 	      (firstType && ! hcco->naType()) ||
-	      (firstType && (NOT (*firstType == *hcco->naType()))))
+	      (firstType && hcco->naType() && (NOT (*firstType == *hcco->naType()))))
 	    {
 	      *CmpCommon::diags() << DgSqlCode(-4221)
 			       << DgString0("COLUMN_CREATE(list format)")

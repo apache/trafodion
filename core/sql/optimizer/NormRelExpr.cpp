@@ -1464,7 +1464,8 @@ void Join::transformNode(NormWA & normWARef,
   //   reference the left subtree data.
   // 
   // For RoutineJoins/Udfs we also want to convert it to a join if the UDF
-  // does not need any inputs from the left. 
+  // does not need any inputs from the left and if the routine is
+  // deterministic.
   // ---------------------------------------------------------------------
   if (isTSJ())
     {
@@ -1597,18 +1598,21 @@ void Join::transformNode(NormWA & normWARef,
          if (crossReferences2.isEmpty() && 
              !isTSJForWrite()           &&
              !getInliningInfo().isDrivingPipelinedActions() &&
-             !getInliningInfo().isDrivingTempInsert() )// Triggers -
+             !getInliningInfo().isDrivingTempInsert() && // Triggers -
+             !(isRoutineJoin() &&
+               child(1).getGroupAttr()->getHasNonDeterministicUDRs()))
          {
            // Remember we used to be a RoutineJoin. This is used to determine
            // what type of contexts for partitioning we will try in OptPhysRel.
-           if (isRoutineJoin()) setDerivedFromRoutineJoin();
+           if (isRoutineJoin())
+             setDerivedFromRoutineJoin();
            convertToNotTsj();
          }
     
       else
          {
            // We have a TSJ that will be changed to Nested join 
-           // safe to change NOtIn here to non equi-predicate form (NE)
+           // safe to change NotIn here to non equi-predicate form (NE)
            // at this point only the case on single column NotIn can reach here
            // and the either the outer or inner column or both is nullable
            // and may have null values
@@ -2319,17 +2323,20 @@ RelExpr * Join::normalizeNode(NormWA & normWARef)
   // and if a value that is produced by the left subtree is not
   // referenced in the right subtree, 
   // ---------------------------------------------------------------------
-  if (isATSJ AND NOT isTSJForWrite() AND //NOT isRoutineJoin() AND
+  if (isATSJ AND NOT isTSJForWrite() AND
       NOT child(1)->getGroupAttr()->
             getCharacteristicInputs().referencesOneValueFromTheSet
                (child(0)->getGroupAttr()->getCharacteristicOutputs())
       && !getInliningInfo().isDrivingPipelinedActions() 
       && !getInliningInfo().isDrivingTempInsert() // Triggers -
+      && !(isRoutineJoin() &&
+           child(1).getGroupAttr()->getHasNonDeterministicUDRs())
      )
   {
     // Remember we used to be a RoutineJoin. This is used to determine
     // what type of contexts for partitioning we will try in OptPhysRel.
-    if (isRoutineJoin()) setDerivedFromRoutineJoin();
+    if (isRoutineJoin())
+      setDerivedFromRoutineJoin();
 
     convertToNotTsj();
     // ---------------------------------------------------------------
@@ -6925,6 +6932,22 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
   if (normalizedThis->getOperatorType() == REL_LEAF_INSERT)
     return normalizedThis;
 
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
+
   // If the child is not a Tuple node - nothing to do here.
   CMPASSERT(normalizedThis->getArity() > 0);
   if (normalizedThis->child(0)->getOperatorType() != REL_TUPLE)
@@ -7595,6 +7618,24 @@ RelExpr * RelRoot::normalizeNode(NormWA & normWARef)
 
     childGAPtr->addCharacteristicInputs(inputsNeededForOrderBy);
   }
+
+  // ---------------------------------------------------------------------
+  // If there is an ORDER BY + a [first n], copy the ORDER BY ValueIds
+  // down to the FirstN node so we order the rows before taking the first n.
+  // If it is ORDER BY + [any n] we don't do this, as it is sufficient
+  // and more efficient to sort the rows after taking just n of them.
+  // Note: We do this at normalize time instead of bind time because if
+  // there are complex expressions in the ORDER BY, the binder will get
+  // different ValueIds for the non-leaf nodes which screws up coverage
+  // tests. Doing it here the ValueIds have already been uniquely computed.
+  // ---------------------------------------------------------------------
+  if ((reqdOrder().entries() > 0) && 
+      (child(0)->getOperatorType() == REL_FIRST_N))
+    {
+      FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
+      if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
+        firstn->reqdOrder().insert(reqdOrder());
+    }
 
   // ---------------------------------------------------------------------
   // Normalize the child.
@@ -10908,5 +10949,5 @@ NABoolean CqsWA::isMPTable(const NAString &tableName)
     return FALSE;
   }
 } // CqsWA::isMPTable()
- 
+
  

@@ -3382,6 +3382,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         case SQL_WCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpwc;
+            /* FALLTHRU */
         case SQL_CHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpc;
@@ -3399,6 +3400,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         case SQL_WLONGVARCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
                 Ors[j] *= etab[eid].bpwc;
+            /* FALLTHRU */
         case SQL_VARCHAR:
         case SQL_LONGVARCHAR:
             if ( etab[eid].dbt != VERTICA ) /* Vertica's CHAR field length is in bytes (not chars) */
@@ -3984,6 +3986,7 @@ static void *Oruncmd(void *tid)
                         MutexUnlock(&dlbmutex);
                         continue ;
                     }
+                    /* FALLTHRU */
                 default:
                     if ( etab[eid].tbe != 1 ) {
                         MutexUnlock(&dlbmutex);
@@ -4036,7 +4039,8 @@ static void *Oruncmd(void *tid)
                     ret = Oloadbuff( eid );
                     if ( ret ) {
                         if ( f & 020000 ) 
-                            fprintf(stderr, "odb [Oruncmd(%d)] - Oloadbuff[%d] returned %d\n", __LINE__, eid, ret);fflush(stdout);
+                            fprintf(stderr, "odb [Oruncmd(%d)] - Oloadbuff[%d] returned %d\n", __LINE__, eid, ret);
+                        fflush(stdout);
                         /* Disconnect */
                         if (!SQL_SUCCEEDED(Oret=SQLDisconnect(thps[etab[eid].id].Oc)))
                             Oerr(0, 0, __LINE__, thps[etab[eid].id].Oc, SQL_HANDLE_DBC);
@@ -4063,7 +4067,8 @@ static void *Oruncmd(void *tid)
                     ret = Ocopy( eid );
                     if ( ret  && etab[eid].roe ) {
                         if ( f & 020000 ) 
-                            fprintf(stderr, "odb [Oruncmd(%d)] - OCopy returned %d\n", __LINE__, ret);fflush(stdout);
+                            fprintf(stderr, "odb [Oruncmd(%d)] - OCopy returned %d\n", __LINE__, ret);
+                        fflush(stdout);
                         /* Disconnect */
                         if (!SQL_SUCCEEDED(Oret=SQLDisconnect(thps[etab[eid].id].Oc)))
                             Oerr(0, 0, __LINE__, thps[etab[eid].id].Oc, SQL_HANDLE_DBC);
@@ -4310,6 +4315,7 @@ static void gclean(void)
             break;
         case 'F':               /* ...(F) allocated during -S/-P */
             free(etab[i].run);
+            /* FALLTHRU */
         case 'f':
         case 'I':
             if ( etab[i].ns != ns )     /* nullstr allocated */
@@ -5313,7 +5319,7 @@ static void etabadd(char type, char *run, int id)
                     }
                 }
                 if ( etab[no].type == 'e' ) { /* name & create output file */
-                    for ( i = j = 0; etab[no].tgt[i] && i < sizeof(buff); i++ ) {
+                    for ( i = j = 0; i < sizeof(buff) && etab[no].tgt[i]; i++ ) {
                         switch ( etab[no].tgt[i] ) {
                         case '%':
                             switch ( etab[no].tgt[++i] ) {
@@ -5491,9 +5497,11 @@ static void etabadd(char type, char *run, int id)
                     }
                 } else {                            /* not a load job */
                     etab[no].k = no;                /* record grandparent for copy/diff ops */
-                    if ( etab[no].ps ){
+                    if ( etab[no].ps > 1 ){
                         etab[no].TotalMaxRecords = etab[no].mr;
                         etab[no].mr /= etab[no].ps; /* each thread will get a portion of the max record to fetch */
+                        if (etab[0].r > etab[0].mr) /* rowset size should not exceeds the max size */
+                            etab[0].r = etab[0].mr;
                     }
                     strmcpy(tabn, etab[no].src, sizeof(tabn));
                     if ( !SQL_SUCCEEDED(Oret=SQLAllocHandle(SQL_HANDLE_STMT, Oc, &Os))){
@@ -5570,7 +5578,7 @@ static void etabadd(char type, char *run, int id)
                         strmcat ( etab[no].src , (char *)Ostn[2] , ll , 0 );
                         etab[no].Ocso[2] = &Ostn[2][0]; /* update table name pointer with expanded tab name */
                         memset ( buff, 0, sizeof(buff));
-                        for ( i = j = 0; etab[no].tgt[i] && i < sizeof(buff); i++ ) {
+                        for ( i = j = 0; i < sizeof(buff) && etab[no].tgt[i]; i++ ) {
                             switch ( etab[no].tgt[i] ) {
                             case '%':
                                 switch ( etab[no].tgt[++i] ) {
@@ -6356,7 +6364,7 @@ static void Oload(int eid)
             len = 100;                              /* set it to 100 */
         fg |= 0002;                                 /* set nofile flag */
     } else {
-        for ( i = j = 0; etab[eid].src[i] && i < etab[eid].buffsz; i++ ) {
+        for ( i = j = 0; i < etab[eid].buffsz && etab[eid].src[i]; i++ ) {
             switch ( etab[eid].src[i] ) {
             case '%':
                 switch ( etab[eid].src[++i] ) {
@@ -7080,7 +7088,7 @@ static void Oload(int eid)
             mfl = (size_t) etab[eid].td[i].Osize;
 
     /* Allocate field buffer */
-    if ( (str = (char *)malloc (mfl + 128)) == (void *)NULL ) {
+    if ( (str = (char *)calloc (1, etab[eid].buffsz + 1)) == (void *)NULL ) {
         fprintf(stderr, "odb [Oload(%d)] - Error allocating field buffer: [%d] %s\n",
             __LINE__, errno, strerror(errno));
         goto oload_exit;
@@ -8045,7 +8053,7 @@ static void Oload2(int eid)
     if ( !strcmp ( etab[eid].src , "stdin" ) ) {
         fl = stdin ;
     } else {
-        for ( i = j = 0; etab[eid].src[i] && i < etab[eid].buffsz; i++ ) {
+        for ( i = j = 0; i < etab[eid].buffsz && etab[eid].src[i]; i++ ) {
             switch ( etab[eid].src[i] ) {
             case '%':
                 switch ( etab[eid].src[++i] ) {
@@ -8460,7 +8468,20 @@ static void Oload2(int eid)
                     fg &= ~0100;                                /* set escape flag off */
                 }
             }
+
+            if (rl + ifl > (size_t)(etab[eid].td[k].Osize)) { /* prevent Orowsetl[] overflow */
+                char *tmpbuf = (char*)malloc(rl + ifl + 1);
+                strncpy(tmpbuf, (const char*)(Odp - rl), rl);
+                strncpy(tmpbuf + rl, str, ifl);
+                tmpbuf[rl + ifl] = '\0';
+                fprintf(stderr, "odb [Oload2(%d)] - Error: row %lu col %u field truncation. Input "
+                    "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, tmpbuf, ifl);
+                free(tmpbuf);
+                goto oload2_exit;
+            }
+
             if ( fg & 0060 ) {                                  /* field complete */
+                fg &= 0;                                        /* reset flags */
                 if ( ifl ) {
                     MEMCPY(Odp, str, ifl);
                     Odp += etab[eid].td[k].Osize + etab[eid].td[k].pad - rl ;
@@ -8478,9 +8499,10 @@ static void Oload2(int eid)
                     k = 0 ;
                     m++ ;
                     nrf++ ;
+                    Odp = &etab[eid].Orowsetl[m*etab[eid].s];
                 }
             } else {                                            /* field incomplete */
-                rl = ifl;
+                rl += ifl;                                      /* = change to +=, for = may cause potential bug */
                 if ( ifl )
                     MEMCPY(Odp, str, ifl);
                 memset(str, '\0', ifl);
@@ -8754,7 +8776,7 @@ static void OloadX(int eid)
         xdump = 1 ;
 
     /* Open input file */
-    for ( i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++ ) {
+    for ( i = j = 0; i < sizeof(buff) && etab[eid].src[i]; i++ ) {
         switch ( etab[eid].src[i] ) {
         case '%':
             switch ( etab[eid].src[++i] ) {
@@ -9087,6 +9109,11 @@ static void OloadX(int eid)
                 if ( ( xnd - xrtnd ) == 2 ) {
                     xvalue = (char *)(*xmlvalue)(xread);
                     ifl = strlen(xvalue) ;
+                    if (ifl > etab[eid].td[k].Osize) { // prevent Orowsetl[] overflow
+                        fprintf(stderr, "odb [OloadX(%d)] - Error: row %lu col %u field truncation. Input "
+                            "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, xvalue, ifl);
+                        goto oloadX_exit;
+                    }
                     if ( xdump ) {
                         printf("%s: %s\n", xname, xvalue);
                     } else {
@@ -9352,7 +9379,7 @@ static void OloadJson(int eid)
     JsonReader *pJsonReader = 0; /* XML reader */
     int readState = 0; /* 0: look for key, 1: look for array value */
     char keybuf[128];
-    char valuebuf[1024];
+    char *valuebuf;
     /* Check if we have to use another ODBC connection */
     if (thps[tid].cr > 0) {
         thps[tid].Oc = thps[thps[tid].cr].Oc;
@@ -9405,8 +9432,15 @@ static void OloadJson(int eid)
         }
     }
 
+    /* alocate valuebuf */
+    if ((valuebuf = calloc(1, etab[eid].buffsz + 1)) == (void *)NULL) {
+        fprintf(stderr, "odb [OloadJson(%d)] - Error allocating field buffer: [%d] %s\n",
+            __LINE__, errno, strerror(errno));
+        goto oloadJson_exit;
+    }
+
     /* Open input file */
-    for (i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++) {
+    for (i = j = 0; i < sizeof(buff) && etab[eid].src[i]; i++) {
         switch (etab[eid].src[i]) {
         case '%':
             switch (etab[eid].src[++i]) {
@@ -9705,12 +9739,17 @@ static void OloadJson(int eid)
                     jsonReadKey(pJsonReader, keybuf, sizeof(keybuf));
                 }
                 else if (pJsonReader->state == JSON_STATE_MEMBER_VALUE) {
-                    jsonReadMemberValue(pJsonReader, valuebuf, sizeof(valuebuf));
+                    jsonReadMemberValue(pJsonReader, valuebuf, etab[eid].buffsz);
                     ifl = strlen(valuebuf);
 
                     for (k = 0; k < l; k++) {
                         if (!strmicmp((char *)etab[eid].td[k].Oname, keybuf, strlen(keybuf))) {    /* name matches */
                             Odp = etab[eid].Orowsetl + m*etab[eid].s + etab[eid].td[k].start;
+                            if (ifl > etab[eid].td[k].Osize) { // prevent Orowsetl[] overflow
+                                fprintf(stderr, "odb [OloadJson(%d)] - Error: row %lu col %u field truncation. Input "
+                                    "string: >%s< of length %lu.\n", __LINE__, nrf + 1, k + 1, valuebuf, ifl);
+                                goto oloadJson_exit;
+                            }
                             MEMCPY(Odp, valuebuf, ifl);
                             Odp += etab[eid].td[k].Osize + etab[eid].td[k].pad;
                             *((SQLLEN *)(Odp)) = (SQLLEN)(ifl);
@@ -10448,6 +10487,7 @@ static void Oextract(int eid)
                         cmdl += strmcat ( (char *) Ocmd, ")", cl, 0);
                         break;
                     }
+                    /* FALLTHRU */
                 case SQL_VARCHAR:
                 case SQL_WVARCHAR:
                 case SQL_LONGVARCHAR:
@@ -10836,7 +10876,7 @@ static int Ocopy(int eid)
     }
 
     /* Build Extract Command */
-    if ( etab[eid].ps ) {
+    if ( etab[eid].ps > 1 ) {
         if ( etab[eid].flg2 & 040000 ) {    /* custom parallel SQL */
             /* Set initial Ocmd */
             strmcpy((char *)Ocmd, etab[eid].sql, cl);
@@ -13386,27 +13426,36 @@ static int runsql(int tid, int eid, int ten, char *script)
                     line = l ;
                 }
                 strmcpy ( line, (char *)Ocmd, j );
-                if ( !strmicmp(line, "odb ", 4) ) {
-                    snprintf((char *)Ocmd, bs, "%s -u %s -p %s %s%s %s%s %s",
-                        odbcmd, (char *)Ouser, (char *)Opwd, Odsn[0] ? "-d " : "", Odsn[0] ? (char *)Odsn : "",
-                        clca ? "-ca" : "", clca ? clca : "", line + 4 );
+                // eliminate left spaces
+                unsigned int alphaIndex = 0;
+                while (alphaIndex < j && (line[alphaIndex] == ' ' || line[alphaIndex] == '\t')) ++alphaIndex;
+
+                if (alphaIndex != j) { // skip blank line
+                    if (!strmicmp(line, "odb ", 4)) {
+                        snprintf((char *)Ocmd, bs, "%s -u %s -p %s %s%s %s%s %s",
+                            odbcmd, (char *)Ouser, (char *)Opwd, Odsn[0] ? "-d " : "", Odsn[0] ? (char *)Odsn : "",
+                            clca ? "-ca" : "", clca ? clca : "", line + 4);
 #ifdef _WIN32
-                    _spawnlp(_P_WAIT, "cmd.exe", "cmd.exe", "/c", var_exp((char *)Ocmd, &bs, &thps[tid].tva), NULL);
+                        _spawnlp(_P_WAIT, "cmd.exe", "cmd.exe", "/c", var_exp((char *)Ocmd, &bs, &thps[tid].tva), NULL);
 #else
-                    if ( system((const char *)var_exp((char *)Ocmd, &bs, &thps[tid].tva)) < 0 )
-                        fprintf(stderr, "odb [runsql(%d)] - Error running %s\n", __LINE__, &Ocmd[1]);
+                        if (system((const char *)var_exp((char *)Ocmd, &bs, &thps[tid].tva)) < 0)
+                            fprintf(stderr, "odb [runsql(%d)] - Error running %s\n", __LINE__, &Ocmd[1]);
 #endif
-                    j = 0;
-                } else {
-                    nrag = tokenize ( line, j, rag );
-                    if ( nrag && !strmicmp(rag[0], "set", 0) ) {
-                        setan ( eid, tid, nrag, rag, ql );
                         j = 0;
-                    } else if ( !strmicmp(rag[0], "print", 0 ) ) {
-                        var_exp (nrag ? rag[1] : "", 0, &thps[0].tva);
-                        j = 0;
-                    } else {
-                        Ocmd[j++] = (SQLCHAR)ch;
+                    }
+                    else {
+                        nrag = tokenize(line, j, rag);
+                        if (nrag && !strmicmp(rag[0], "set", 0)) {
+                            setan(eid, tid, nrag, rag, ql);
+                            j = 0;
+                        }
+                        else if (!strmicmp(rag[0], "print", 0)) {
+                            var_exp(nrag ? rag[1] : "", 0, &thps[0].tva);
+                            j = 0;
+                        }
+                        else {
+                            Ocmd[j++] = (SQLCHAR)ch;
+                        }
                     }
                 }
             }
@@ -13825,6 +13874,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                 } else {                        /* param with value */
                     o = 1;
                 }
+                /* FALLTHRU */
             case 1: /* looking for value */
                 if ( str[j+1] == '[' ) {
                     j++; 
@@ -13852,6 +13902,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                     str[j]='\0';
                 }
                 o = 2;
+                /* FALLTHRU */
             case 2: /* fill etab structure */
                 if ( str[l] == '=' ) {
                     str[l++] = '\0';
@@ -14340,6 +14391,7 @@ static char *parsehdfs(int eid, char *hdfs)
     switch ( hdfs[i] ) {
     case ',' :
         uf = 1 ;    /* optional user string present */
+        /* FALLTHRU */
     case '.':
         hdfs[i] = '\0' ;        /* replace ',' with NULL to terminate hdfsport */
         etab[eid].hdfsport = (tPort)atoi(s);    /* save hdfsport */

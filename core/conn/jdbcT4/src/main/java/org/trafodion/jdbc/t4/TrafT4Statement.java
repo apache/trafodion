@@ -354,7 +354,6 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 				{};
 			}
 
-			batchRowCount_ = new int[batchCommands_.size()];
 			for (i = 0; i < batchCommands_.size(); i++) {
 				String sql = (String) batchCommands_.get(i);
 
@@ -397,7 +396,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 
 					checkSQLWarningAndClose();
 
-					batchRowCount[i] = batchRowCount_[0]; // the member will
+					batchRowCount[i] = (int)ist_.getRowCount(); // the member will
 					// be set by
 					// execute...keep
 					// them in our local

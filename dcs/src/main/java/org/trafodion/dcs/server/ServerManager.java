@@ -22,7 +22,6 @@
 **********************************************************************/
 package org.trafodion.dcs.server;
 
-import java.net.InetAddress;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -31,9 +30,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.CountDownLatch;
-import java.text.DateFormat;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,7 +44,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
-import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.util.DcsNetworkConfiguration;
 import org.trafodion.dcs.util.RetryCounter;
 import org.trafodion.dcs.util.RetryCounterFactory;
@@ -56,32 +53,32 @@ import org.trafodion.dcs.script.ScriptContext;
 
 public final class ServerManager implements Callable {
     private static final Log LOG = LogFactory.getLog(ServerManager.class);
-    private static Configuration conf;
-    private static ZkClient zkc;
-    private static boolean userProgEnabled;
-    private static String userProgramHome;
-    private static String userProgramCommand;
-    private static String hostName;
-    private static String masterHostName;
-    private static long masterStartTime;
-    private static int port;
-    private static int portRange;
-    private static DcsNetworkConfiguration netConf;
-    private static int instance;
-    private static int childServers;
-    private static String parentZnode;
-    private static int connectingTimeout;
-    private static int zkSessionTimeout;
-    private static int userProgExitAfterDisconnect;
-    private static int infoPort;
-    private static int maxHeapPctExit;
-    private static int statisticsIntervalTime;
-    private static int statisticsLimitTime;
-    private static String statisticsType;
-    private static String statisticsEnable;
-    private static String sqlplanEnable;
-    private static int userProgPortMapToSecs;
-    private static int userProgPortBindToSecs;
+    private Configuration conf;
+    private ZkClient zkc;
+    private boolean userProgEnabled;
+    private String userProgramHome;
+    private String userProgramCommand;
+    private String hostName;
+    private String masterHostName;
+    private long masterStartTime;
+    private int port;
+    private int portRange;
+    private DcsNetworkConfiguration netConf;
+    private int instance;
+    private int childServers;
+    private String parentZnode;
+    private int connectingTimeout;
+    private int zkSessionTimeout;
+    private int userProgExitAfterDisconnect;
+    private int infoPort;
+    private int maxHeapPctExit;
+    private int statisticsIntervalTime;
+    private int statisticsLimitTime;
+    private String statisticsType;
+    private String statisticsEnable;
+    private String sqlplanEnable;
+    private int userProgPortMapToSecs;
+    private int userProgPortBindToSecs;
     private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
@@ -97,7 +94,9 @@ public final class ServerManager implements Callable {
         public void process(WatchedEvent event) {
             if (event.getType() == Event.EventType.NodeDeleted) {
                 String znodePath = event.getPath();
-                LOG.debug("Registered znode deleted [" + znodePath + "]");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Registered znode deleted [" + znodePath + "]");
+                }
                 try {
                     startSignal.countDown();
                 } catch (Exception e) {
@@ -124,12 +123,17 @@ public final class ServerManager implements Callable {
 
         public boolean monitor() {
             try {
-                LOG.debug("registered path [" + registeredPath + "]");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("registered path [" + registeredPath + "]");
+                }
                 stat = zkc.exists(registeredPath, false);
                 if (stat != null) { // User program znode found in
                                     // /registered...check pid
                     isRunning = isPidRunning();
-                    LOG.debug("isRunning [" + isRunning + "]");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("[" + (Integer.parseInt(nid) + 1) + ":" + childInstance + "]." + pid + ".isRunning ["
+                                + isRunning + "]");
+                    }
                 }
             } catch (Exception e) {
                 LOG.warn(e.getMessage(), e);
@@ -208,12 +212,12 @@ public final class ServerManager implements Callable {
 
         public void exec() throws Exception {
             cleanupZk();
-            LOG.info("User program exec [" + scriptContext.getCommand() + "]");
+            LOG.info("Instance : [" + childInstance + "], User program exec [" + scriptContext.getCommand() + "]");
             ScriptManager.getInstance().runScript(scriptContext);// This will
                                                                  // block while
                                                                  // user prog is
                                                                  // running
-            LOG.info("User program exit [" + scriptContext.getExitCode() + "]");
+            LOG.info("Instance : [" + childInstance + "], User program exit [" + scriptContext.getExitCode() + "]");
             StringBuilder sb = new StringBuilder();
             sb.append("exit code [" + scriptContext.getExitCode() + "]");
             if (!scriptContext.getStdOut().toString().isEmpty())
@@ -240,9 +244,9 @@ public final class ServerManager implements Callable {
                 Stat stat = zkc.exists(registeredPath, false);
                 if (stat != null)
                     zkc.delete(registeredPath, -1);
-            } catch (Exception e) {
+            } catch (KeeperException | InterruptedException e) {
                 e.printStackTrace();
-                LOG.debug(e);
+                LOG.error(e.getMessage(), e);
             }
         }
     }
@@ -255,33 +259,17 @@ public final class ServerManager implements Callable {
         CountDownLatch startSignal = new CountDownLatch(1);
         RetryCounter retryCounter;
 
-        public void reset() {
-            startSignal.countDown();
-            startSignal = new CountDownLatch(1);
-            boolean isRunning = this.serverMonitor.monitor();
-            String nid = this.serverMonitor.nid;
-            String pid = this.serverMonitor.pid;
-
-            if (isRunning) {
-                LOG.info("mxosrvr " + nid + "," + pid + " still running");
-                this.retryCounter.resetAttemptTimes();
-            } else {
-                LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting, restart attempt time : "
-                        + this.retryCounter.getAttemptTimes());
-            }
-        }
-
         public ServerHandler(Configuration conf ,int childInstance) {
-            int maxRestartAttempts = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS,
-                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS);
-            int retryIntervalMillis = conf.getInt(
-                    Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
-                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
+            int maxRestartAttempts = conf.getInt(Constants.DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS,
+                    Constants.DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS);
+            int retryTimeoutMinutes = conf.getInt(
+                    Constants.DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES,
+                    Constants.DEFAULT_DCS_SERVER_STARTUP_MXOSRVR_USER_PROGRAM_RESTART_HANDLER_RETRY_TIMEOUT_MINUTES);
             this.childInstance = childInstance;
             this.registeredPath = parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED
                     + "/" + hostName + ":" + instance + ":" + childInstance;
-            retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
+            retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryTimeoutMinutes, TimeUnit.MINUTES);
             serverMonitor = new ServerMonitor(childInstance, registeredPath);
             serverRunner = new ServerRunner(childInstance, registeredPath);
         }
@@ -294,7 +282,9 @@ public final class ServerManager implements Callable {
                 LOG.info("Server handler [" + instance + ":" + childInstance
                         + "] is running");
                 zkc.exists(registeredPath, new RegisteredWatcher(startSignal));
-                LOG.debug("Waiting for start signal");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Waiting for start signal");
+                }
                 startSignal.await();
                 serverRunner.exec();
             } else {
@@ -361,7 +351,7 @@ public final class ServerManager implements Callable {
         serverHandlers = new ServerHandler[this.childServers];
     }
 
-    private static boolean isTrafodionRunning(String nid) {
+    private boolean isTrafodionRunning(String nid) {
 
         // Check if the given Node is up and running
         // return true else return false.
@@ -425,19 +415,23 @@ public final class ServerManager implements Callable {
             for (int childInstance = 1; childInstance <= childServers; childInstance++) {
                 serverHandlers[childInstance-1] = new ServerHandler(conf, childInstance);
                 completionService.submit(serverHandlers[childInstance-1]);
-                LOG.debug("Started server handler [" + instance + ":"
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Started server handler [" + instance + ":"
                         + childInstance + "]");
+                }
             }
 
             while (true) {
-                LOG.debug("Waiting for any server handler to finish");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Waiting for any server handler to finish");
+                }
                 Future<Integer> f = completionService.take();// blocks waiting
                                                              // for any
                                                              // ServerHandler to
                                                              // finish
                 if (f != null) {
                     Integer result = f.get();
-                    LOG.debug("Server handler [" + instance + ":" + result + "] finished");
+                    LOG.info("Server handler [" + instance + ":" + result + "] exit");
 
                     retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
                     while (!isTrafodionRunning(nid)) {
@@ -451,9 +445,7 @@ public final class ServerManager implements Callable {
                     int childInstance = result.intValue();
                     // get the node id
                     ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
-                    previousServerHandler.reset();
-                    if (previousServerHandler.retryCounter.shouldRetry()) {
-                        previousServerHandler.retryCounter.useRetry();
+                    if (previousServerHandler.retryCounter.shouldRetryInnerMinutes()) {
                         serverHandlers[childInstance - 1] = previousServerHandler;
                         completionService.submit(serverHandlers[childInstance - 1]);
                     } else {

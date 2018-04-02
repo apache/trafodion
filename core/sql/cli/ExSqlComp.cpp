@@ -89,7 +89,7 @@ void ExSqlComp::clearDiags()
   if (diagArea_)
     diagArea_->clear();
   else
-    diagArea_ = diagArea_->allocate(h_);
+    diagArea_ = ComDiagsArea::allocate(h_);
 }
 
 inline void ExSqlComp::initRequests(Requests& req)
@@ -634,7 +634,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
                       (ULng32) sizeof(userMessage));
   }
 
-  ComDiagsArea loopDiags(h_);
+  ComDiagsArea *loopDiags = NULL;
   ExControlArea *ca = ctxt->getControlArea();
   Queue *q = ca->getControlList();
 
@@ -797,10 +797,14 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
           }
           else
           {
-            loopDiags.mergeAfter(*diagArea_);
-            diagArea_->clear();
+            if (diagArea_->getNumber() > 0)
+            {
+               if (loopDiags == NULL)
+                   loopDiags = ComDiagsArea::allocate(h_);
+               loopDiags->mergeAfter(*diagArea_);
+               diagArea_->clear();
+            }
           }
-          
           ret = SUCCESS;
         }
         else
@@ -834,10 +838,13 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     } // control list is NOT empty
   } // if (ret != ERROR)
   //
-  if (ret != SUCCESS || diagArea_->getNumber() || loopDiags.getNumber())
+  if (ret != SUCCESS || diagArea_->getNumber() || loopDiags != NULL )
   {
-    diagArea_->mergeAfter(loopDiags);
-    loopDiags.clear();
+    if (loopDiags != NULL)
+    {
+       diagArea_->mergeAfter(*loopDiags);
+       loopDiags->decrRefCount();
+    }
     if (ret != ERROR)
       ret = diagArea_->getNumber(DgSqlCode::ERROR_) ? ERROR : WARNING;
     if (ret == ERROR)

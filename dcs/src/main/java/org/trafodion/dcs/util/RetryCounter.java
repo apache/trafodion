@@ -20,54 +20,94 @@
  */
 package org.trafodion.dcs.util;
 
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class RetryCounter {
-  private static final Log LOG = LogFactory.getLog(RetryCounter.class);
-  private final int maxRetries;
-  private int retriesRemaining;
-  private final int retryIntervalMillis;
-  private final TimeUnit timeUnit;
+    private static final Log LOG = LogFactory.getLog(RetryCounter.class);
+    private final int maxRetries;
+    private int retriesRemaining;
+    private int retryInterval;
+    private Queue<Long> queue;
+    private TimeUnit timeUnit;
 
-  public RetryCounter(int maxRetries, 
-  int retryIntervalMillis, TimeUnit timeUnit) {
-    this.maxRetries = maxRetries;
-    this.retriesRemaining = maxRetries;
-    this.retryIntervalMillis = retryIntervalMillis;
-    this.timeUnit = timeUnit;
-  }
+    public RetryCounter(int maxRetries, int retryInterval, TimeUnit timeUnit) {
+        this.maxRetries = maxRetries;
+        this.retriesRemaining = maxRetries;
+        this.retryInterval = retryInterval;
+        this.queue = new LinkedList<Long>();
+        this.timeUnit = timeUnit;
+    }
 
-  public int getMaxRetries() {
-    return maxRetries;
-  }
+    public int getMaxRetries() {
+        return maxRetries;
+    }
 
-  /**
-   * Sleep for a exponentially back off time
-   * @throws InterruptedException
-   */
-  public void sleepUntilNextRetry() throws InterruptedException {
-    int attempts = getAttemptTimes();
-    long sleepTime = (long) (retryIntervalMillis * Math.log(attempts+15));
-    LOG.info("Sleeping " + sleepTime + "ms before retry #" + attempts + "...");
-    timeUnit.sleep(sleepTime);
-  }
+    /**
+     * Sleep for a exponentially back off time
+     * @throws InterruptedException
+     */
+    public void sleepUntilNextRetry() throws InterruptedException {
+        int attempts = getAttemptTimes();
+        long sleepTime = (long) (retryInterval * Math.log(attempts + 15));
+        LOG.info("Sleeping " + sleepTime + "ms before retry #" + attempts + "...");
+        timeUnit.sleep(sleepTime);
+    }
 
-  public boolean shouldRetry() {
-    return retriesRemaining > 0;
-  }
+    public boolean shouldRetry() {
+        return retriesRemaining > 0;
+    }
 
-  public void useRetry() {
-    retriesRemaining--;
-  }
+    public void useRetry() {
+        retriesRemaining--;
+    }
 
-  public int getAttemptTimes() {
-    return maxRetries-retriesRemaining+1;
-  }
+    public int getAttemptTimes() {
+        return maxRetries - retriesRemaining + 1;
+    }
 
-  public void resetAttemptTimes() {
-      this.retriesRemaining = maxRetries;
-  }
+    public void resetAttemptTimes() {
+        this.retriesRemaining = maxRetries;
+    }
+
+    //this retry is in minutes level
+    public boolean shouldRetryInnerMinutes() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("retryInterval = [" + retryInterval + "]. queue size = [" + queue.size() + "]. max retries = ["
+                    + getMaxRetries() + "]. ");
+        }
+        if (retryInterval == 0) {
+            return true;
+        }
+        if (queue.size() < getMaxRetries()) {
+            queue.offer(System.currentTimeMillis());
+            return true;
+        } else {
+            long currentTime = System.currentTimeMillis();
+            Long firstRetryTime = queue.peek();
+            long delta = calcDelta(currentTime - firstRetryTime);
+            if (delta < 0) {
+                LOG.error("reject!!! attempt to restart mxosrvr in [ "
+                        + TimeUnit.MILLISECONDS.toMinutes(currentTime - firstRetryTime)
+                        + " ] minutes...can't restart mxosrvr large than [ " + getMaxRetries() + " ] times in [ "
+                        + this.retryInterval + " ] minutes");
+                return false;
+            }
+            queue.poll();
+            queue.offer(currentTime);
+            return true;
+        }
+    }
+
+    //give the real millisecond as parameter. use this parameter minus given retryInterval.
+    private long calcDelta(long realMillis) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("realMillis = [" + realMillis + "]. retryInterval = [" + timeUnit.toMillis(retryInterval) + "]");
+        }
+        return realMillis - timeUnit.toMillis(retryInterval);
+    }
 }

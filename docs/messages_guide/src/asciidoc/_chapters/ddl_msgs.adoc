@@ -1526,6 +1526,24 @@ exceeds the maximum allowed row size.
 *Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for row size limit
 calculations. Change the column definitions and reissue the statement.
 
+[[SQL-1141]]
+== SQL 1141
+
+```
+Key length <actual-key-length> exceeds the maximum allowed key length of <maximum-key-length>.
+```
+
+Where <actual-key-length> is the summary length of all the primary key for the given table.
+
+Where <maximum-key-length> is the largest key size allowed according to the underlying storage engine.
+
+*Cause:* On a CREATE TABLE statement, the size of the primary key total size in bytes
+exceeds the maximum allowed key size.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the error message for the maximum allowed key size, change the column definitions and reissue the statement.
+
 <<<
 [[SQL-1143]]
 == SQL 1143

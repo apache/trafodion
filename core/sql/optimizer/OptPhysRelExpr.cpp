@@ -6081,9 +6081,9 @@ NABoolean NestedJoin::OCBJoinIsFeasible(const Context* myContext) const
   if ( (myContext->requiresOrder() AND
         partReq AND 
         partReq->isRequirementExactlyOne() == FALSE) OR
-       partReq == NULL OR
-       (partReq->isRequirementApproximatelyN() AND
-         NOT partReq->partitioningKeyIsSpecified()
+       (partReq AND
+        partReq->isRequirementApproximatelyN() AND
+        NOT partReq->partitioningKeyIsSpecified()
        )
      )
   {
@@ -15499,6 +15499,74 @@ GenericUtilExpr::synthPhysicalProperty(const Context* myContext,
   return sppForMe;
 } //  GenericUtilExpr::synthPhysicalProperty()
 
+// -----------------------------------------------------------------------
+// FirstN::createContextForAChild()
+// The FirstN node may have an order by requirement that it needs to
+// pass to its child context. Other than that, this method is quite
+// similar to the default implementation, RelExpr::createContextForAChild.
+// The arity of FirstN is always 1, so some logic from the default
+// implementation that deals with childIndex > 0 is unnecessary and has
+// been removed.
+// -----------------------------------------------------------------------
+Context * FirstN::createContextForAChild(Context* myContext,
+                                 PlanWorkSpace* pws,
+                                 Lng32& childIndex)
+{
+  const ReqdPhysicalProperty* rppForMe =
+                                    myContext->getReqdPhysicalProperty();
+
+  CMPASSERT(getArity() == 1);
+
+  childIndex = getArity() - pws->getCountOfChildContexts() - 1;
+
+  // return if we are done
+  if (childIndex < 0)
+    return NULL;
+
+  RequirementGenerator rg(child(childIndex), rppForMe);
+
+  if (reqdOrder().entries() > 0)
+    {
+      // add our sort requirement as implied by our ORDER BY clause
+
+      // Shouldn't/Can't add a sort order type requirement
+      // if we are in DP2
+      if (rppForMe->executeInDP2())
+        rg.addSortKey(reqdOrder(),NO_SOT);
+      else
+        rg.addSortKey(reqdOrder(),ESP_SOT);
+    }
+
+  if (NOT rg.checkFeasibility())
+    return NULL;
+
+  Lng32 planNumber = 0;
+
+  // ---------------------------------------------------------------------
+  // Compute the cost limit to be applied to the child.
+  // ---------------------------------------------------------------------
+  CostLimit* costLimit = computeCostLimit(myContext, pws);
+
+  // ---------------------------------------------------------------------
+  // Get a Context for optimizing the child.
+  // Search for an existing Context in the CascadesGroup to which the
+  // child belongs that requires the same properties as myContext.
+  // Reuse it, if found. Otherwise, create a new Context that contains
+  // the same rpp and input log prop as in myContext.
+  // ---------------------------------------------------------------------
+  Context* result = shareContext(childIndex, rg.produceRequirement(),
+                                 myContext->getInputPhysicalProperty(),
+                                 costLimit, myContext,
+                                 myContext->getInputLogProp());
+
+  // ---------------------------------------------------------------------
+  // Store the Context for the child in the PlanWorkSpace.
+  // ---------------------------------------------------------------------
+  pws->storeChildContext(childIndex, planNumber, result);
+
+  return result;
+
+} // FirstN::createContextForAChild()
 
 //<pb>
 //==============================================================================

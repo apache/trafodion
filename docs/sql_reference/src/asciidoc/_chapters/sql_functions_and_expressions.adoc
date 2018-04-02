@@ -59,6 +59,8 @@ values from a group.
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
 evaluation of the expression argument.
+| <<rollup_function,ROLLUP Function>>           | Calculates multiple levels of subtotals aggregating from right to left through the 
+comma-separated list of columns, and provides a grand total.
 | <<stddev_function,STDDEV Function>>           | Computes the statistical standard deviation of a group of numbers
 derived from the evaluation of the expression argument of the function.
 The numbers can be weighted.
@@ -150,65 +152,107 @@ See the individual entry for the function.
 These functions use either a datetime value expression as an argument or
 return a result of datetime data type:
 
-[cols="25%,75%"]
+[caption="Table 7-3 "]
+.Overview of DATETIME Functions
+[cols="25%,50%,25%"]
 |===
+| *Name* | *Description* | *Return Data Type*
 | <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_
 to _datetime_expr_ and normalizes the result.
+| DATE
 | <<converttimestamp_function,CONVERTTIMESTAMP Function>>                   | Converts a Julian timestamp to a TIMESTAMP value.
+| TIMESTAMP
 | <<current_function,CURRENT Function>> | Returns the current timestamp. You can also use the
 <<current_timestamp_function,CURRENT_TIMESTAMP Function>>.
+| TIMESTAMP
 | <<current_date_function,CURRENT_DATE Function>>                           | Returns the current date.
+| DATE
 | <<current_time_function,CURRENT_TIME Function>>                           | Returns the current time.
+| TIME
 | <<current_timestamp_function,CURRENT_TIMESTAMP Function>> | Returns the current timestamp. You can also use the <<current_function,CURRENT Function>>.
+| TIMESTAMP
 | <<date_add_function,DATE_ADD Function>>                                   | Adds the interval specified by _interval_expression_
 to _datetime_expr_.
+| DATE
 | <<date_part_function_of_an_interval,DATE_PART Function (of an Interval)>> | Extracts the datetime field specified by _text_ from the interval value
-specified by interval and returns the result as an exact numeric value.
+specified by interval and returns the result as an exact numeric.
+| NUMERIC 
 | <<date_part_function_of_a_timestamp,DATE_PART Function (of a Timestamp)>> | Extracts the datetime field specified by _text_ from the datetime value
-specified by timestamp and returns the result as an exact numeric value.
+specified by timestamp and returns the result as an exact numeric.
+| NUMERIC 
 | <<date_sub_function,DATE_SUB Function>>                                   | Subtracts the specified _interval_expression_ from
 _datetime_expr._
+| DATE or TIMESTAMP
 | <<date_trunc_function,DATE_TRUNC Function>>                               | Returns the date with the time portion of the day truncated.
+| TIMESTAMP
 | <<dateadd_function,DATEADD Function>>                                     | Adds the interval specified by _datepart_ and _num_expr_
 to _datetime_expr_.
-| <<datediff_function,DATEDIFF Function>>                                   | Returns the integer value for the number of _datepart_ units of time
+| DATE or TIMESTAMP
+| <<datediff_function,DATEDIFF Function>>                                   | Returns the integer for the number of _datepart_ units of time
 between _startdate_ and _enddate_.
+| INTEGER 
 | <<dateformat_function,DATEFORMAT Function>>                               | Formats a datetime value for display purposes.
-| <<day_function,DAY Function>>                                             | Returns an integer value in the range 1 through 31 that represents the
+| CHAR
+| <<day_function,DAY Function>>                                             | Returns an integer in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAYOFMONTH.
+| INTEGER (from 1 to 31)
 | <<dayname_function,DAYNAME Function>>                                     | Returns the name of the day of the week from a date or timestamp
 expression.
-| <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer value in the range 1 through 31 that represents the
+| CHAR
+| <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer in the range 1 through 31 that represents the
 corresponding day of the month. You can also use DAY.
-| <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer value in the range 1 through 7 that represents the
+| INTEGER (from 1 to 31)
+| <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer in the range 1 through 7 that represents the
 corresponding day of the week.
-| <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer value in the range 1 through 366 that represents the
+| INTEGER (from 1 to 7)
+| <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer in the range 1 through 366 that represents the
 corresponding day of the year.
+| INTEGER (from 1 to 366)
 | <<extract_function,EXTRACT Function>>                                     | Returns a specified datetime field from a datetime value expression or
 an interval value expression.
-| <<hour_function,HOUR Function>>                                           | Returns an integer value in the range 0 through 23 that represents the
+| NUMERIC 
+| <<hour_function,HOUR Function>>                                           | Returns an integer in the range 0 through 23 that represents the
 corresponding hour of the day.
+| INTEGER (from 0 to 23)
 | <<juliantimestamp_function,JULIANTIMESTAMP Function>>                     | Converts a datetime value to a Julian timestamp.
-| <<minute_function,MINUTE Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+| TIMESTAMP
+| <<minute_function,MINUTE Function>>                                       | Returns an integer in the range 0 through 59 that represents the
 corresponding minute of the hour.
-| <<month_function,MONTH Function>>                                         | Returns an integer value in the range 1 through 12 that represents the
+| INTEGER (from 0 to 59)
+| <<month_function,MONTH Function>>                                         | Returns an integer in the range 1 through 12 that represents the
 corresponding month of the year.
+| INTEGER (from 1 to 12)
 | <<monthname_function,MONTHNAME Function>>                                 | Returns a character literal that is the name of the month of the year
 (January, February, and so on).
-| <<quarter_function,QUARTER Function>>                                     | Returns an integer value in the range 1 through 4 that represents the
+| CHAR
+| <<quarter_function,QUARTER Function>>                                     | Returns an integer in the range 1 through 4 that represents the
 corresponding quarter of the year.
-| <<second_function,SECOND Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+| INTEGER (from 1 to 4)
+| <<second_function,SECOND Function>>                                       | Returns an integer in the range 0 through 59 that represents the
 corresponding second of the minute.
+| INTEGER (from 0 to 59)
+| <<sysdate_function,SYSDATE Function>>                                     | Retrieves the current date of the server rather than the session.
+| DATE
+| <<systimestamp_function,SYSTIMESTAMP Function>>                           | Retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+| TIMESTAMP
 | <<timestampadd_function,TIMESTAMPADD Function>>                           | Adds the interval of time specified by _interval-ind_ and
 _num_expr_ to _datetime_expr_.
-| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_units of time between _startdate_ and _enddate_.
+| DATE or TIMESTAMP
+| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer for the number of _interval-ind_units of time between _startdate_ and _enddate_.
+| INTEGER  
 | <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
+| CHAR
 | <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
+| DATE or TIMESTAMP
 | <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
+| TIME
 | <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
-| <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
+| TIMESTAMP
+| <<week_function,WEEK Function>>                                           | Returns an integer in the range 1 through 54 that represents the
 corresponding week of the year.
-| <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
+| INTEGER (from 1 to 54)
+| <<year_function,YEAR Function>>                                           | Returns an integer that represents the year.
+| INTEGER 
 |===
 
 See the individual entry for the function.
@@ -1492,7 +1536,7 @@ is a character string.
 
 <<<
 [[concat_function]]
-=== CONCAT Function
+== CONCAT Function
 
 The CONCAT function returns the concatenation of two character value
 expressions as a character string value. You can also use the
@@ -1534,7 +1578,7 @@ An operand can be any SQL value expression of data type CHAR or VARCHAR.
 === Considerations for CONCAT
 
 [[operands]]
-=== Operands
+==== Operands
 
 
 A string value can be specified by any character value expression, such
@@ -1547,7 +1591,7 @@ VARCHAR.
 
 
 [[sql-parameters]]
-=== SQL Parameters
+==== SQL Parameters
 
 You can concatenate an SQL parameter and a character value expression.
 The concatenated parameter takes on the data type attributes of the
@@ -2353,7 +2397,7 @@ DATEADD(DAY, 7, timestamp'2008-02-29 00:00:00')
 [[datediff_function]]
 == DATEDIFF Function
 
-The DATEDIFF function returns the integer value for the number of
+The DATEDIFF function returns the integer for the number of
 _datepart_ units of time between _startdate_ and _enddate_. 
 
 DATEDIFF is a {project-name} SQL extension.
@@ -2881,7 +2925,7 @@ The DAYNAME function returns the name of the day in ISO88591.
 
 Return the name of the day of the week from the start date column in the
 project table:
-+
+
 ```
 SELECT start_date, ship_timestamp, DAYNAME(start_date)
 FROM persnl.project
@@ -2897,7 +2941,7 @@ Start/Date Time/Shipped               (EXPR)
 == DAYOFMONTH Function
 
 The DAYOFMONTH function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 31 that represents the
+INTEGER in the range 1 through 31 that represents the
 corresponding day of the month. The result returned by the DAYOFMONTH
 function is equal to the result returned by the DAY function.
 
@@ -2933,7 +2977,7 @@ Start/Date Time/Shipped               (EXPR)
 == DAYOFWEEK Function
 
 The DAYOFWEEK function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 7 that represents the corresponding
+INTEGER in the range 1 through 7 that represents the corresponding
 day of the week. The value 1 represents Sunday, 2 represents Monday, and
 so forth.
 
@@ -2971,7 +3015,7 @@ The value returned is 5, representing Thursday. The week begins on Sunday.
 == DAYOFYEAR Function
 
 The DAYOFYEAR function converts a DATE or TIMESTAMP expression into an
-INTEGER value in the range 1 through 366 that represents the
+INTEGER in the range 1 through 366 that represents the
 corresponding day of the year.
 
 DAYOFYEAR is a {project-name} SQL extension.
@@ -3952,7 +3996,7 @@ tom              91 77 43
 == HOUR Function
 
 The HOUR function converts a TIME or TIMESTAMP expression into an
-INTEGER value in the range 0 through 23 that represents the
+INTEGER in the range 0 through 23 that represents the
 corresponding hour of the day.
 
 HOUR is a {project-name} SQL extension.
@@ -4873,7 +4917,7 @@ SELECT MIN (salary) FROM persnl.employee;
 == MINUTE Function
 
 The MINUTE function converts a TIME or TIMESTAMP expression into an
-INTEGER value, in the range 0 through 59, that represents the
+INTEGER, in the range 0 through 59, that represents the
 corresponding minute of the hour.
 
 MINUTE is a {project-name} SQL extension.
@@ -6338,6 +6382,301 @@ SET jobdesc = RIGHT (jobdesc, 12);
 ```
 
 <<<
+[[rollup_function]]
+== ROLLUP Function
+
+The ROLLUP function calculates multiple levels of subtotals aggregating from right to left through the comma-separated list of columns, and provides a grand total. 
+
+ROLLUP is an extension to the `GROUP BY` clause. Related features such as the GROUPING function can be used with `ORDER BY` to control the placement of summary results.
+
+```
+SELECT…GROUP BY ROLLUP (column 1, [column 2,]…[column n])
+```
+
+ROLLUP generates n+1 levels of subtotals, including a grand total, where n is the number of the selected column(s).
+
+For example, a query that contains three rollup columns returns the following rows:
+
+* First-level: the usual aggregate values as calculated by GROUP BY clause without using ROLLUP.
+* Second-level: subtotals aggregating across column 3 for each combination of column 1 and column 2.
+* Third-level: subtotals aggregating across column 2 and column 3 for each column 1.
+* Fourth-level: the grand total row.
+
+NOTE: Trafodion does not support CUBE function which works slightly differently from ROLLUP.
+
+[[considerations_for_rollup]]
+=== Considerations for ROLLUP
+
+[[null_in_result_sets]]
+==== NULL in Result Sets
+
+* In super-aggregate rows representing subtotals or the grand total, lower level grouping columns are replaced by NULLs.
+* The NULLs in selected columns are considered equal and sorted into one NULL group in result sets.
+
+[[using_rollup_with_the_column_order_reversed]]
+==== Using ROLLUP with the Column Order Reversed
+
+ROLLUP removes the right-most column at each step, therefore the result sets vary with the column order specified in the comma-separated list. 
+
+[cols="50%,50%"]
+|===
+| If the column order is _country_, _state_, _city_ and _name_, ROLLUP returns following groupings. 
+| If the column order is _name_, _city_, _state_ and _country_, ROLLUP returns following groupings.
+| _country_, _state_, _city_ and _name_      | _name_, _city_, _state_ and _country_
+| _country_, _state_ and _city_              | _name_, _city_ and _state_
+| _country_ and _state_                      | _name_ and _city_
+| _country_                                  | _name_
+| grand total                                | grand total
+|===
+
+[[examples_of_rollup]]
+=== Examples of ROLLUP
+
+[[examples_of_grouping_by_one_or_multiple_rollup_columns]]
+==== Examples of Grouping By One or Multiple Rollup Columns
+
+Suppose that we have a _sales1_ table like this:
+
+```
+SELECT * FROM sales1;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         2016 A      Dress                                    100
+         2016 A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         2017 B      Pullover                                 700
+         2017 B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+* This is an example of grouping by one rollup column.
++
+```
+SELECT delivery_year, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year);
+```
+
++
+```
+DELIVERY_YEAR TOTAL_REVENUE       
+------------- --------------------
+         2016                 1000
+         2017                 2600
+         NULL                 3600
+
+--- 3 row(s) selected.
+```
+
+* This is an example of grouping by two rollup columns.
++ 
+ROLLUP firstly aggregates at the lowest level (_region_) and then rolls up those aggregations to the next
+level (_delivery_year_), finally it produces a grand total across these two levels.
+
++
+```
+SELECT delivery_year, region, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region);
+```
+
++
+```
+DELIVERY_YEAR REGION TOTAL_REVENUE       
+------------- ------ --------------------
+         2016 A                       600
+         2016 B                       400
+         2016 NULL                   1000
+         2017 A                       500
+         2017 B                      2100
+         2017 NULL                   2600
+         NULL NULL                   3600
+
+--- 7 row(s) selected.
+```
++
+* This is an example of grouping by three rollup columns.
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+.Grouping By Three Rollup Columns
+image::grouping-by-three-rollup-columns.jpg[700,700]
+
++
+** First-level: the rows marked in *blue* are the total revenue for each year (_2016_ and _2017_), each region (_A_ and _B_) and each product (_Dress_ and _Pullover_), they are caculated by GROUP BY instead of ROLLUP.
+
++
+** Second-level: the rows marked in *red* provide the total revenue for the given _delivery_year_ and _region_ by _product_.
++ 
+These rows have the _product_ columns set to NULL.
+
++
+** Third-level: the rows marked in *yellow* show the total revenue in each year (_2016_ and _2017_).
++ 
+These rows have the _region_ and _product_ columns set to NULL.
+
++
+** Fourth-level: the row marked in *purple* aggregates over all rows in the _delivery_year_, _region_ and _product_ columns.
++ 
+This row has the _delivery_year_, _region_ and _product_ columns set to NULL. 
+ 
+[[examples_of_null]]
+==== Examples of NULL
+
+The example below demonstrates how ROLLUP treats NULLs in the selected columns and generates NULLs for super-aggregate rows.
+
+Suppose that we have a _sales2_ table like this:
+
+```
+SELECT * FROM sales2;
+
+DELIVERY_YEAR REGION PRODUCT                          REVENUE    
+------------- ------ -------------------------------- -----------
+         NULL A      Dress                                    100
+         NULL A      Dress                                    200
+         2016 A      Pullover                                 300
+         2016 B      Dress                                    400
+         2017 A      Pullover                                 500
+         2017 B      Dress                                    600
+         NULL B      Pullover                                 700
+         NULL B      Pullover                                 800
+
+--- 8 row(s) selected.
+```
+
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue 
+FROM sales2
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              300
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                              700
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      NULL                                              600
+         2017 NULL   NULL                                             1100
+         NULL A      Dress                                             300
+         NULL A      NULL                                              300
+         NULL B      Pullover                                         1500
+         NULL B      NULL                                             1500
+         NULL NULL   NULL                                             1800
+         NULL NULL   NULL                                             3600
+
+--- 16 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_the_column_order_reversed]]
+==== Examples of Using ROLLUP with the Column Order Reversed
+
+Suppose that we have the same _sales1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+* The column order of the example below is _delivery_year_, _region_ and _product_.
+
++
+```
+SELECT delivery_year, region, product, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (delivery_year, region, product);
+```
+
++
+```
+DELIVERY_YEAR REGION PRODUCT                          TOTAL_REVENUE       
+------------- ------ -------------------------------- --------------------
+         2016 A      Dress                                             300
+         2016 A      Pullover                                          300
+         2016 A      NULL                                              600
+         2016 B      Dress                                             400
+         2016 B      NULL                                              400
+         2016 NULL   NULL                                             1000
+         2017 A      Pullover                                          500
+         2017 A      NULL                                              500
+         2017 B      Dress                                             600
+         2017 B      Pullover                                         1500
+         2017 B      NULL                                             2100
+         2017 NULL   NULL                                             2600
+         NULL NULL   NULL                                             3600
+
+--- 13 row(s) selected.
+```
+
+* The column order of the example below is _product_, _region_ and _delivery_year_, the output is different than the result sets above. 
+
++
+```
+SELECT product, region, delivery_year, SUM (revenue) AS total_revenue
+FROM sales1
+GROUP BY ROLLUP (product, region, delivery_year);
+```
+
++
+```
+PRODUCT                          REGION DELIVERY_YEAR TOTAL_REVENUE       
+-------------------------------- ------ ------------- --------------------
+Dress                            A               2016                  300
+Dress                            A               NULL                  300
+Dress                            B               2016                  400
+Dress                            B               2017                  600
+Dress                            B               NULL                 1000
+Dress                            NULL            NULL                 1300
+Pullover                         A               2016                  300
+Pullover                         A               2017                  500
+Pullover                         A               NULL                  800
+Pullover                         B               2017                 1500
+Pullover                         B               NULL                 1500
+Pullover                         NULL            NULL                 2300
+NULL                             NULL            NULL                 3600
+
+--- 13 row(s) selected.
+```
+
+[[examples_of_using_rollup_with_order_by]]
+==== Examples of Using ROLLUP with ORDER BY
+
+Suppose that we have the same _sale1_ table as shown in the <<examples_of_grouping_by_one_or_multiple_rollup_columns,Examples of Grouping By One or Multiple Rollup Columns>>.
+
+This example uses ROLLUP with the ORDER BY clause to sort the results.
+
+```
+SELECT delivery_year, product, SUM (revenue) AS total_revenue 
+FROM sales1 
+GROUP BY ROLLUP (delivery_year, product)
+ORDER BY total_revenue;
+```
+
+```
+DELIVERY_YEAR PRODUCT                          TOTAL_REVENUE       
+------------- -------------------------------- --------------------
+         2016 Pullover                                          300
+         2017 Dress                                             600
+         2016 Dress                                             700
+         2016 NULL                                             1000
+         2017 Pullover                                         2000
+         2017 NULL                                             2600
+         NULL NULL                                             3600
+
+--- 7 row(s) selected.
+```
+
+<<<
 [[round_function]]
 == ROUND Function
 
@@ -7656,6 +7995,211 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 ```
 
 <<<
+[[sysdate_function]]
+== SYSDATE Function
+
+The SYSDATE function, which is equivalent to the `CURRENT_DATE` function, retrieves the current date of the server rather than the session.
+
+The returned value is `DATE` and the default format is `YYYY-MM-DD`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSDATE FROM DUAL;` is 2018-03-13 rather than 2018-03-14.
+
+```
+SYSDATE
+```
+
+[[examples_of_sysdate]]
+=== Examples of SYSDATE
+
+* This example returns the current date.
+
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+
+(EXPR)
+----------
+2018-03-15
+
+--- 1 row(s) selected.
+```
+
+* This example returns the date of yesterday, today and tomorrow.
+
++
+```
+SQL>SELECT SYSDATE -1 AS yesterday, 
+SYSDATE AS today,
+SYSDATE +1 AS tomorrow FROM DUAL;
+ 
+YESTERDAY  TODAY      TOMORROW  
+---------- ---------- ----------
+2018-03-14 2018-03-15 2018-03-16
+ 
+--- 1 row(s) selected.
+```
+
+* The following examples show that the values of `SYSDATE` can be converted to character values.
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE, 'DD-MON-YYYY') FROM DUAL;
+ 
+(EXPR)
+-----------
+15-MAR-2018
+ 
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT TO_CHAR (SYSDATE,'HH:MI:SS') FROM DUAL;
+ 
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a time. [2018-03-15 11:49:22]
+```
+
++
+``` 
+SQL>SELECT TO_CHAR (SYSDATE, 'MM/DD/YYYY HH24:MI:SS') FROM DUAL;
+ 
+(EXPR)
+-------------------
+03/15/2018 00:00:00
+ 
+--- 1 row(s) selected.
+```
+
+* This example converts days to minutes using `SYSDATE`.
++
+```
+SQL>SELECT (SYSDATE-(SYSDATE-7))*1440 FROM DUAL;
+ 
+(EXPR)
+-----------------
+           10080 
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how the SYSDATE function works in SQL statement.
++
+Suppose that we have the following table:
+
++
+```
+SQL>SELECT * FROM orders;
+
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  100210 2018-03-02 2018-04-10      220     127
+  100250 2018-01-23 2018-06-16      220     123
+  101220 2018-02-21 2018-12-15      221     156
+  200300 2018-02-06 2018-07-15      222     126
+  200320 2018-03-08 2018-07-20      223     121
+  200490 2018-02-19 2018-11-01      226     123
+  300350 2018-03-03 2018-08-10      231     123
+  300380 2018-01-19 2018-08-15      226     156
+  400410 2018-01-27 2018-09-14      227     154
+  500450 2018-03-12 2018-09-16      220     124
+  600480 2018-02-12 2018-10-14      226     123
+  700510 2018-02-01 2018-10-16      220     143
+  800660 2018-01-09 2018-11-01      229     100
+
+--- 13 row(s) selected.
+```
+
++
+The SYSDATE is 2018-03-15.
++
+```
+SQL>SELECT SYSDATE FROM DUAL;
+ 
+(EXPR)
+----------
+2018-03-15
+ 
+--- 1 row(s) selected.
+```
+
++
+This statement returns qualified rows using `SYSDATE` function.
++
+```
+SQL>SELECT * FROM orders 
+WHERE DAY(deliv_date) = DAY(sysdate+1) 
+AND ordernum <>100210 
+AND salesrep=220 
+ORDER BY order_date DESC;
+ 
+ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM
+-------- ---------- ---------- -------- -------
+  500450 2018-03-12 2018-09-16      220     124
+  700510 2018-02-01 2018-10-16      220     143
+  100250 2018-01-23 2018-06-16      220     123
+ 
+--- 3 row(s) selected.
+```
+
+<<<
+[[systimestamp_function]]
+== SYSTIMESTAMP Function
+
+The SYSTIMESTAMP function, which is equivalent to the `CURRENT_TIMESTAMP` function, provides much high granularity than the `SYSDATE` function and retrieves the current date and time (including fractional seconds with six-digit precision) of the server rather than the session.
+
+The returned value is `TIMESTAMP` and the default format is `YYYY-MM-DD HH:MM:SS.FFFFFF`.
+
+For example, if you execute a query on your local machine located in Shanghai on 2018-03-14 06:00:00 (UTC+8) against a database server located in Berlin on 2018-03-13 23:00:00 (UTC+1), the result of `SELECT SYSTIMESTAMP FROM DUAL;` is 2018-03-13 23:00:00 rather than 2018-03-14 06:00:00.
+
+```
+SYSTIMESTAMP
+```
+
+[[examples_of_systimestamp]]
+=== Examples of SYSTIMESTAMP
+
+* This example calculates the date and time of anniversary using SYSTIMESTAMP function.
+
++
+```
+SELECT SYSTIMESTAMP AS today, SYSTIMESTAMP + INTERVAL '12' MONTH AS Annisversary FROM DUAL; 
+
+TODAY                      ANNISVERSARY              
+-------------------------- --------------------------
+2018-03-15 11:19:42.400382 2019-03-15 11:19:42.400382
+ 
+--- 1 row(s) selected.
+```
+
+* This example demonstrates how to insert the value of SYSTIMESTAMP into a column.
+
++
+```
+SQL>CREATE TABLE test1 (C1 TIMESTAMP, C2 VARCHAR(40));
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>INSERT INTO test1 VALUES (SYSTIMESTAMP, 'This is the time that I insert values');
+
+--- 1 row(s) inserted.
+```
+
++
+```
+SQL>SELECT * FROM test1;
+
+C1                         C2                                      
+-------------------------- ----------------------------------------
+2018-03-15 11:33:32.091057 This is the time that I insert values        
+
+--- 1 row(s) selected.
+```
+
+
+<<<
 [[tan_function]]
 == TAN Function
 
@@ -7868,7 +8412,7 @@ TIMESTAMPADD (SQL_TSI_SECOND, -5, DATE '2008-07-01')
 [[timestampdiff_function]]
 == TIMESTAMPDIFF Function
 
-The TIMESTAMPDIFF function returns the integer value for the number of
+The TIMESTAMPDIFF function returns the integer for the number of
 _interval-ind_ units of time between _startdate_ and _enddate_. If
 _enddate_ precedes _startdate_, the return value is negative or zero.
 
@@ -8734,7 +9278,7 @@ Start/Date Time/Shipped               (EXPR)
 == YEAR Function
 
 The YEAR function converts a DATE or TIMESTAMP expression into an
-INTEGER value that represents the year.
+INTEGER that represents the year.
 
 YEAR is a {project-name} SQL extension.
 

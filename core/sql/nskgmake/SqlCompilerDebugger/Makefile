@@ -38,7 +38,9 @@ $(CMPGUI_FINAL) : cmpdbg_qt_build
 # optional component, ignore cp return code
 cmpdbg_qt_build :
 	cd ../$(basename $(CMPGUI_OBJ)) && . ./mk.sh
+ifneq ($(QT_TOOLKIT),"")
 	-cp -f ../$(basename $(CMPGUI_OBJ))/$(LIBPREFIX)$(notdir $(obj)) $(CMPGUI_FINAL)
+endif
 
 #when clean, this clean first
 

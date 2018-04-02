@@ -108,7 +108,7 @@ public:
   short convertValue(SqlciEnv *, short targetType, Lng32 &targetLength,
 		     Lng32 targetPrecision, Lng32 targetScale, 
                      Lng32 vcIndLen,
-                     ComDiagsArea* diags = 0);
+                     ComDiagsArea*&diags);
   void setName(const char * name_);
 
   void setValue(const char*, CharInfo::CharSet cs = CharInfo::UnknownCharSet);

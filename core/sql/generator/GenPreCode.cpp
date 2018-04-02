@@ -1154,12 +1154,14 @@ VEGReference::replaceVEGReference(const ValueIdSet &origAvailableValues,
 
   if (VEG_DEBUG)
     {
-      NAString av,iv,vb;
+      NAString av,iv,vb,vr;
       availableValues.unparse(av);
       inputValues.unparse(iv);
       valuesToBeBound.unparse(vb);
+      ValueIdSet thisVegRef(getValueId());
+      thisVegRef.unparse(vr);
       cout << endl;
-	  cout << "VEGReference " << getValueId() << " :" << endl;
+      cout << "VEGReference " << getValueId() << " (" << vr << "):" << endl;
       cout << "AV: " << av << endl;
       cout << "IV: " << iv << endl;
       cout << "VB: " << vb << endl;
@@ -1604,8 +1606,20 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   // can teach optimizer to do this.
   if ((getFirstNRows() != -1) || (getFirstNRowsParam()))
     {
+      // As of JIRA TRAFODION-2840, the binder always adds the FirstN,
+      // except in the case of output rowsets. So, the only time we 
+      // should now be going through this code is a SELECT query using
+      // output rowsets + FirstN + ORDER BY. A follow-on JIRA,
+      // TRAFODION-2924, will take care of that case and delete this code.
+      // (As a matter of design, it is highly undesireable to sometimes
+      // create the FirstN in the Binder and sometimes in the Generator;
+      // that means that any FirstN-related semantic checks in the 
+      // intervening passes will need two completely separate 
+      // implementations.)
+
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
 							getFirstNRows(),
+							needFirstSortedRows(),   
                                                         getFirstNRowsParam());
 
       // move my child's attributes to the firstN node.
@@ -5872,7 +5886,8 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
       && (getFirstNRows() == 1))
     {
       RelExpr * firstnNode = new(generator->wHeap()) FirstN(child(0),
-							    getFirstNRows());
+							    getFirstNRows(),
+							    FALSE /* [any n] is good enough */);
       firstnNode->setEstRowsUsed(getEstRowsUsed());
       firstnNode->setMaxCardEst(getMaxCardEst());
       firstnNode->setInputCardinality(child(0)->getInputCardinality());
@@ -10565,7 +10580,8 @@ RelExpr* PhyPack::preCodeGen(Generator* generator,
   if (getFirstNRows() != -1)
     {
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
-                                                        getFirstNRows());
+                                                        getFirstNRows(),
+                                                        FALSE /* [any n] is good enough */);
 
       // move my child's attributes to the firstN node.
       // Estimated rows will be mine.

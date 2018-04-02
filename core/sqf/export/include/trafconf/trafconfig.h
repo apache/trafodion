@@ -41,9 +41,11 @@
 #define TC_DIAG_DEPRECATED
 #endif
 
+#define TC_PROCESSOR_NAME_MAX          128
+
 #define TC_REGISTRY_KEY_MAX             64
 #define TC_REGISTRY_VALUE_MAX         4096
-#define TC_PERSIST_PROCESSOR_NAME_MAX  128
+#define TC_PERSIST_PROCESSOR_NAME_MAX  TC_PROCESSOR_NAME_MAX
 #define TC_PERSIST_ROLES_MAX           128
 #define TC_PERSIST_KEY_MAX              64
 #define TC_PERSIST_VALUE_MAX          4096
@@ -53,9 +55,8 @@
 #define TC_UNIQUE_STRING_VALUE_MAX    4096
 
 #define TC_STORE_MYSQL             "MYSQL"
-#define TC_STORE_SQLITE            "SQLITE"
 #define TC_STORE_POSTGRESQL        "POSTGRESQL"
-#define TC_STORE_ZOOKEEPER         "ZOOKEEPER"
+#define TC_STORE_SQLITE            "SQLITE"
 
 #define PERSIST_PROCESS_KEYS       "PERSIST_PROCESS_KEYS"
 #define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
@@ -67,26 +68,64 @@
 #define PERSIST_RETRIES_KEY        "PERSIST_RETRIES"
 #define PERSIST_ZONES_KEY          "PERSIST_ZONES"
 
-enum TC_STORAGE_TYPE {
+#define TC_ROOT_NODE               "/trafodion"
+#define TC_INSTANCE_NODE           "/instance"
+
+typedef enum {
+    ProcessType_Undefined=0,                // No process type as been defined
+    ProcessType_TSE,                        // Identifies a Table Storage Engine (DP2)
+    ProcessType_DTM,                        // Identifies a Distributed Transaction Monitor process
+    ProcessType_ASE,                        // Identifies a Audit Storage Engine (ADP)
+    ProcessType_Generic,                    // Identifies a generic process
+    ProcessType_Watchdog,                   // Identifies the monitor's watchdog processes
+    ProcessType_AMP,                        // Identifies a AMP process
+    ProcessType_Backout,                    // Identifies a Backout process
+    ProcessType_VolumeRecovery,             // Identifies a Volume Recovery process
+    ProcessType_MXOSRVR,                    // Identifies a MXOSRVR process
+    ProcessType_SPX,                        // Identifies a SeaPilot ProXy process
+    ProcessType_SSMP,                       // Identifies a SQL Statistics Merge Process (SSMP)
+    ProcessType_PSD,                        // Identifies the monitor's process start daemon processes
+    ProcessType_SMS,                        // Identifies a SeaMonster Service process
+    ProcessType_TMID,                       // Identifies a Transaction Management ID process
+    ProcessType_PERSIST,                    // Identifies a generic persistent process
+
+    ProcessType_Invalid                     // marks the end of the process
+                                            // types, add any new process
+                                            // types before this one
+} TcProcessType_t;
+
+typedef enum {
+    ZoneType_Undefined   = 0x0000,          // No zone type defined
+    ZoneType_Edge        = 0x0001,          // Zone of service only nodes
+    ZoneType_Aggregation = 0x0002,          // Zone of compute only nodes
+    ZoneType_Storage     = 0x0004,          // Zone of storage only nodes
+    ZoneType_Excluded    = 0x0010,          // Excluded cores
+    ZoneType_Any         = ( ZoneType_Edge | ZoneType_Aggregation | ZoneType_Storage ),
+    ZoneType_Frontend    = ( ZoneType_Edge | ZoneType_Aggregation ),
+    ZoneType_Backend     = ( ZoneType_Aggregation | ZoneType_Storage )
+} TcZoneType_t;
+
+typedef enum {
+//enum TC_STORAGE_TYPE {
       TCDBSTOREUNDEFINED = 0     
-    , TCDBMYSQL          = 1 // MySQL Database        [TBD]
+    , TCDBMYSQL          = 1 // MySQL Database
     , TCDBPOSTGRESQL     = 2 // PostgresQL Database   [TBD]
-    , TCDBZOOKEEPER      = 3 // Zookeeper
-    , TCDBSQLITE         = 4 // Sqlite Database       [deprecated]
-};
+    , TCDBSQLITE         = 3 // Sqlite Database       [deprecated]
+} TcStorageType_t;
 
-enum TC_ERRORS {
-  TCSUCCESS = 0,        // Successful operation
-  TCNOTIMPLEMENTED = -1,// Not implemented
-  TCNOTINIT = -2,       // Database not open
-  TCALREADYINIT = -3,   // Database already opened
-  TCDBOPERROR = -4,     // Database operation failed
-  TCDBNOEXIST = -5,     // Database operation yielded non-existent data
-  TCDBTRUNCATE = -6,    // Database operation returned less data than available
-  TCDBCORRUPT = -7,     // Internal processing error or database corruption
-};
+typedef enum {
+//enum TC_ERRORS {
+      TCSUCCESS = 0         // Successful operation
+    , TCNOTIMPLEMENTED = -1 // Not implemented
+    , TCNOTINIT = -2        // Database not open
+    , TCALREADYINIT = -3    // Database already opened
+    , TCDBOPERROR = -4      // Database operation failed
+    , TCDBNOEXIST = -5      // Database operation yielded non-existent data
+    , TCDBTRUNCATE = -6     // Database operation returned less data than available
+    , TCDBCORRUPT = -7      // Internal processing error or database corruption
+} TcError_t;
 
-typedef struct node_configuration_s
+typedef struct TcNodeConfiguration_s
 {
     int  nid;                                   // Node Id (logical)
     int  pnid;                                  // Physical Node ID
@@ -97,9 +136,9 @@ typedef struct node_configuration_s
     int  last_core;                             // Last core assigned or -1
     int  processors;                            // Number logical processors
     int  roles;                                 // Role assigment
-} node_configuration_t;
+} TcNodeConfiguration_t;
 
-typedef struct physical_node_configuration_s
+typedef struct TcPhysicalNodeConfiguration_s
 {
     int  pnid;                                  // Physical Node ID
     char node_name[TC_PERSIST_PROCESSOR_NAME_MAX]; // hostname
@@ -107,16 +146,16 @@ typedef struct physical_node_configuration_s
     int  excluded_last_core;                    // Last core assigned or -1
     int  spare_count;                           // Number of entries in spare_pnid[]
     int  spare_pnid[TC_SPARE_NODES_MAX];           // list of pnids for which this node can be a spare 
-} physical_node_configuration_t;
+} TcPhysicalNodeConfiguration_t;
 
-typedef struct registry_configuration_s
+typedef struct TcRegistryConfiguration_s
 {
     char scope[TC_REGISTRY_KEY_MAX];
     char key[TC_REGISTRY_KEY_MAX];
     char value[TC_REGISTRY_VALUE_MAX];
-} registry_configuration_t;
+} TcRegistryConfiguration_t;
 
-typedef struct persist_configuration_s
+typedef struct TcPersistConfiguration_s
 {
     char persist_prefix[TC_PERSIST_KEY_MAX]; // DTM, TMID, or ... (PERSIST_PROCESS_KEYS)
     char process_name[TC_PERSIST_VALUE_MAX]; // Process name {<prefix>[<format>]}
@@ -128,7 +167,7 @@ typedef struct persist_configuration_s
     int  persist_retries;                    // Process create retries
     int  persist_window;                     // Process create retries window (seconds)
     char persist_zones[TC_PERSIST_VALUE_MAX]; // Process creation zones {<format>}
-} persist_configuration_t;
+} TcPersistConfiguration_t;
 
 
 TC_Export int tc_close( void )
@@ -137,27 +176,32 @@ TC_DIAG_UNUSED;
 TC_Export const char *tc_errmsg( int err )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_initialize( bool traceEnabled, const char *traceFileName = NULL )
+TC_Export int tc_initialize( bool traceEnabled
+                           , const char *traceFileName = NULL
+                           , const char *instanceNode = NULL
+                           , const char *rootNode = NULL )
 TC_DIAG_UNUSED;
 
+TC_Export TcStorageType_t tc_get_storage_type( void )
+TC_DIAG_UNUSED;
 
 TC_Export int tc_delete_node( int nid
                             , const char *node_name )
 TC_DIAG_UNUSED;
 
 TC_Export int tc_get_node( const char *node_name
-                         , node_configuration_t *node_config )
+                         , TcNodeConfiguration_t *node_config )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_put_node( node_configuration_t *node_config )
+TC_Export int tc_put_node( TcNodeConfiguration_t *node_config )
 TC_DIAG_UNUSED;
 
 
 TC_Export int tc_get_pnode( const char *node_name
-                          , physical_node_configuration_t *pnode_config )
+                          , TcPhysicalNodeConfiguration_t *pnode_config )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_put_pnode( physical_node_configuration_t *pnode_config )
+TC_Export int tc_put_pnode( TcPhysicalNodeConfiguration_t *pnode_config )
 TC_DIAG_UNUSED;
 
 //
@@ -173,7 +217,7 @@ TC_DIAG_UNUSED;
 //
 TC_Export int tc_get_nodes( int           *count
                           , int            max
-                          , node_configuration_t *node_config )
+                          , TcNodeConfiguration_t *node_config )
 TC_DIAG_UNUSED;
 
 //
@@ -189,7 +233,7 @@ TC_DIAG_UNUSED;
 //
 TC_Export int tc_get_snodes( int                 *count
                            , int                  max
-                           , physical_node_configuration_t *pnode_config )
+                           , TcPhysicalNodeConfiguration_t *pnode_config )
 TC_DIAG_UNUSED;
 
 
@@ -207,11 +251,11 @@ TC_Export int tc_delete_persist_process( const char *persist_key_prefix )
 TC_DIAG_UNUSED;
 
 TC_Export int tc_get_persist_process( const char *persist_key_prefix
-                                    , persist_configuration_t *persist_config )
+                                    , TcPersistConfiguration_t *persist_config )
 TC_DIAG_UNUSED;
 
 TC_Export int tc_put_persist_process( const char *persist_key_prefix
-                                    , persist_configuration_t *persist_config )
+                                    , TcPersistConfiguration_t *persist_config )
 TC_DIAG_UNUSED;
 
 
@@ -228,7 +272,7 @@ TC_DIAG_UNUSED;
 //
 TC_Export int tc_get_registry_cluster_set( int *count
                                          , int  max
-                                         , registry_configuration_t *registry_config )
+                                         , TcRegistryConfiguration_t *registry_config )
 TC_DIAG_UNUSED;
 
 //
@@ -244,7 +288,7 @@ TC_DIAG_UNUSED;
 //
 TC_Export int tc_get_registry_process_set( int *count
                                          , int  max
-                                         , registry_configuration_t *registry_config )
+                                         , TcRegistryConfiguration_t *registry_config )
 TC_DIAG_UNUSED;
 
 
@@ -282,24 +326,24 @@ TC_Export int tc_put_registry_process_data( const char *process_name
 TC_DIAG_UNUSED;
 
 
-TC_Export TC_STORAGE_TYPE tc_get_storage_type( void )
+TC_Export TcStorageType_t tc_get_storage_type( void )
 TC_DIAG_UNUSED;
 
 
 TC_Export int tc_delete_unique_strings( int nid )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_get_unique_string( int nid, int id, const char *unique_string );
+TC_Export int tc_get_unique_string( int nid, int id, const char *unique_string )
 TC_DIAG_UNUSED;
 
 TC_Export int tc_put_unique_string( int nid, int id, const char *unique_string )
 TC_DIAG_UNUSED;
 
 
-TC_Export int tc_get_unique_string_id( int nid, const char *unique_string, int *id );
+TC_Export int tc_get_unique_string_id( int nid, const char *unique_string, int *id )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_get_unique_string_id_max( int nid, int *id );
+TC_Export int tc_get_unique_string_id_max( int nid, int *id )
 TC_DIAG_UNUSED;
 
 #endif // TRAFCONFIG_H_

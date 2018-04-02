@@ -1815,7 +1815,8 @@ size_t LineBreakSqlText(NAString &sqlText,
 
 	  } // unquoted space
 
-	else if (*s == '.')
+	else if ((*s == '.') &&
+                 (!isDigit8859_1((unsigned char)s[1]))) // ignore dots in numeric constants
 	  {
 	    dot[2] = dot[1];
 	    dot[1] = dot[0];

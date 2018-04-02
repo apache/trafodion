@@ -114,8 +114,8 @@ static const char* const hbcErrorEnumStr[] =
 // 
 //////////////////////////////////////////////////////////////////////////////
 // private default constructor
-HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout)
-                 :  JavaObjectInterface(heap, debugPort, debugTimeout)
+HBaseClient_JNI::HBaseClient_JNI(NAHeap *heap)
+                 :  JavaObjectInterface(heap)
                    ,isConnected_(FALSE)
 {
   for (int i=0; i<NUM_HBASE_WORKER_THREADS; i++) {
@@ -137,7 +137,7 @@ char* HBaseClient_JNI::getErrorText(HBC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
+HBaseClient_JNI* HBaseClient_JNI::getInstance()
 {
    ContextCli *currContext = GetCliGlobals()->currContext();
    HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
@@ -145,8 +145,7 @@ HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
    {
      NAHeap *heap = currContext->exHeap();
     
-     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap,
-                   debugPort, debugTimeout);
+     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap);
      currContext->setHbaseClient(hbaseClient_JNI);
    }
    return hbaseClient_JNI;
@@ -301,7 +300,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_TRUNCATE   ].jm_name      = "truncate";
     JavaMethods_[JM_TRUNCATE   ].jm_signature = "(Ljava/lang/String;ZJ)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -336,9 +336,7 @@ HBC_RetCode HBaseClient_JNI::initConnection(const char* zkServers, const char* z
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::initConnection()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::initConnection()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_INIT_EXCEPTION;
   }
@@ -393,9 +391,7 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHTableClient()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getHTableClient()");
     NADELETE(htc, HTableClient_JNI, heap);
     jenv_->PopLocalFrame(NULL);
     return NULL;
@@ -403,10 +399,9 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
 
   if (j_htc == NULL) 
   {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHTableClient()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getHTableClient()");
     NADELETE(htc, HTableClient_JNI, heap);
     jenv_->PopLocalFrame(NULL);
-    return NULL;
   }
   htc->setJavaObject(j_htc);
   if (htc->init() != HTC_OK)
@@ -434,9 +429,7 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
       tsRecentJMFromJNI = JavaMethods_[JM_REL_HTC].jm_full_name;
       jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HTC].methodID, j_htc);
       if (jenv_->ExceptionCheck()) {
-         getExceptionDetails();
-         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-         logError(CAT_SQL_HBASE, "HBaseClient_JNI::releaseHTableClient()", getLastError());
+         getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::releaseHTableClient()");
          jenv_->PopLocalFrame(NULL);
          return HBC_ERROR_REL_HTC_EXCEPTION;
       }
@@ -465,15 +458,7 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHBulkLoadClient()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return NULL;
-  }
-  if (j_hblc == NULL)
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHBulkLoadClient()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getHBulkLoadClient()");
     jenv_->PopLocalFrame(NULL);
     return NULL;
   }
@@ -505,9 +490,7 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::releaseHBulkLOadClient()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::releaseHBulkLoadClient()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_REL_HBLC_EXCEPTION;
   }
@@ -535,9 +518,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
   jobjectArray j_fams = convertToStringObjectArray(colFamilies);
   if (j_fams == NULL)
   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
+     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CREATE_PARAM));
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_CREATE_PARAM;
   }
@@ -549,9 +530,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::create()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_CREATE_EXCEPTION;
   }
@@ -592,9 +571,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
                    HBASE_MAX_OPTIONS);
   if (j_opts == NULL)
   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
+     getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::create()");
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_CREATE_PARAM;
   }
@@ -605,9 +582,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
      j_keys = convertToByteArrayObjectArray(splitValues, numSplits, keyLength);
      if (j_keys == NULL)
      {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::create()");
         jenv_->PopLocalFrame(NULL);
         return HBC_ERROR_CREATE_PARAM;
      }
@@ -623,9 +598,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::create()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_CREATE_EXCEPTION;
   }
@@ -660,11 +633,9 @@ HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
   }
   jobjectArray j_opts = convertToStringObjectArray(createOptionsArray, 
                    HBASE_MAX_OPTIONS);
-  if (j_opts == NULL)
+  if (jenv_->ExceptionCheck())
   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
+     getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::alter()");
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_ALTER_PARAM;
   }
@@ -677,9 +648,7 @@ HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::alter()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_ALTER_EXCEPTION;
   }
@@ -933,9 +902,7 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::drop()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
@@ -967,9 +934,7 @@ HBC_RetCode HBaseClient_JNI::truncate(const char* fileName, NABoolean preserveSp
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::truncate()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_TRUNCATE_EXCEPTION;
   }
@@ -999,9 +964,7 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 tran
 
   if (jenv->ExceptionCheck())
   {
-    getExceptionDetails(jenv);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::drop()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
@@ -1043,9 +1006,7 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async, Int64 tran
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::dropAll()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::dropAll()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
@@ -1078,9 +1039,7 @@ NAArray<HbaseStr>* HBaseClient_JNI::listAll(NAHeap *heap, const char* pattern)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::listAll()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::listAll()");
     jenv_->PopLocalFrame(NULL);
     return NULL;
   }
@@ -1112,9 +1071,7 @@ Int32 HBaseClient_JNI::getRegionStatsEntries()
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStatsEntries()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getRegionStatsEntries()");
     jenv_->PopLocalFrame(NULL);
     return 0;
   }
@@ -1151,9 +1108,7 @@ NAArray<HbaseStr>* HBaseClient_JNI::getRegionStats(NAHeap *heap, const char* tbl
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStats()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getRegionStats()");
     jenv_->PopLocalFrame(NULL);
     return NULL;
   }
@@ -1209,9 +1164,7 @@ HBC_RetCode HBaseClient_JNI::copy(const char* srcTblName,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::copy()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::copy()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DROP_EXCEPTION;
   }
@@ -1251,9 +1204,7 @@ HBC_RetCode HBaseClient_JNI::exists(const char* fileName, Int64 transID)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::exists()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::exists()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_EXISTS_EXCEPTION;
   }
@@ -1303,9 +1254,7 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
     j_actionCodes = convertToStringObjectArray(actions);
     if (j_actionCodes == NULL)
     {
-       getExceptionDetails();
-       logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-       logError(CAT_SQL_HBASE, "HBaseClient_JNI::grant()", getLastError());
+       getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::grant()");
        jenv_->PopLocalFrame(NULL);
        return HBC_ERROR_GRANT_PARAM;
     }
@@ -1316,9 +1265,7 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::grant()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::grant()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GRANT_EXCEPTION;
   }
@@ -1381,9 +1328,7 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   breadCrumb = 4;
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::estimateRowCount()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
   }
@@ -1418,10 +1363,7 @@ HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& sna
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_LATEST_SNP].methodID,js_tblName);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getLatestSnapshot()", 
-             getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getLatestSnapshot()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
   }
@@ -1457,9 +1399,7 @@ HBC_RetCode HBaseClient_JNI::cleanSnpTmpLocation(const char * path)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::cleanSnpTmpLocation()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::cleanupSnpTmpLocation()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_CLEAN_SNP_TMP_LOC_EXCEPTION;
   }
@@ -1485,10 +1425,7 @@ HBC_RetCode HBaseClient_JNI::setArchivePermissions(const char * tbl)
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_ARC_PERMS].methodID,js_tbl);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::setArchivePermissions()",
-             getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::setArchivePermissions()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_SET_ARC_PERMS_EXCEPTION;
   }
@@ -1509,10 +1446,7 @@ HBC_RetCode HBaseClient_JNI::getBlockCacheFraction(float& frac)
   
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getBlockCacheFraction()", 
-             getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getBlockCacheFraction()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_CACHE_FRAC_EXCEPTION;
   }
@@ -1583,7 +1517,8 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_ADD_TO_HFILE_DB  ].jm_signature = "(SLjava/lang/Object;Ljava/lang/Object;)Z";
 
     rc = (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HBLC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
@@ -1648,9 +1583,7 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
   }
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::initHFileParams() => before calling Java.", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::initHFileParams()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_CREATE_HFILE_EXCEPTION;
   }
@@ -1663,9 +1596,7 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::initHFileParams()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::initHFileParams()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_CREATE_HFILE_EXCEPTION;
   }
@@ -1717,9 +1648,7 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
   }
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::addToHFile()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::addToHFile()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_ADD_TO_HFILE_EXCEPTION;
   }
@@ -1746,9 +1675,7 @@ HBLC_RetCode HBulkLoadClient_JNI::closeHFile(
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::closeHFile()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::closeHFile()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_CLOSE_HFILE_EXCEPTION;
   }
@@ -1790,15 +1717,6 @@ HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
      return HBLC_ERROR_DO_BULKLOAD_PARAM;
    }
 
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::doBulkLoad() => before calling Java.", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HBLC_ERROR_DO_BULKLOAD_EXCEPTION;
-  }
-
   jboolean j_quasiSecure = quasiSecure;
 
   jboolean j_snapshot = snapshot;
@@ -1807,9 +1725,7 @@ HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::doBulkLoad()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::doBulkLoad()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_DO_BULKLOAD_EXCEPTION;
   }
@@ -1833,29 +1749,18 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
      return HBLC_ERROR_INIT_PARAM;
 
   jstring js_location = jenv_->NewStringUTF(location.c_str());
-   if (js_location == NULL)
-   {
+  if (js_location == NULL)
+  {
      GetCliGlobals()->setJniErrorStr(getErrorText(HBLC_ERROR_BULKLOAD_CLEANUP_PARAM));
      jenv_->PopLocalFrame(NULL);
      return HBLC_ERROR_BULKLOAD_CLEANUP_PARAM;
-   }
-
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::bulkLoadCleanup() => before calling Java.", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HBLC_ERROR_BULKLOAD_CLEANUP_PARAM;
   }
+
   tsRecentJMFromJNI = JavaMethods_[JM_BULK_LOAD_CLEANUP].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_BULK_LOAD_CLEANUP].methodID, js_location);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBulkLoadClient_JNI::bulkLoadCleanup()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::bulkLoadCleanup()");
     jenv_->PopLocalFrame(NULL);
     return HBLC_ERROR_BULKLOAD_CLEANUP_PARAM;
   }
@@ -1871,121 +1776,6 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
-HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsCreate(%s) called.", path);
-
-  if (initJNIEnv() != JOI_OK)
-     return HVC_ERROR_INIT_PARAM;
-
-   jstring js_path = jenv_->NewStringUTF(path);
-   if (js_path == NULL) {
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_PARAM;
-   }
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE_FILE].methodID, js_path);
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreate()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreaten()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
-   }
-
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
- HVC_RetCode  HiveClient_JNI::hdfsWrite(const char* data, Int64 len)
- {
-   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsWrite(%ld) called.", len);
-
-   if (initJNIEnv() != JOI_OK)
-     return HVC_ERROR_INIT_PARAM;
-
-   //Write the requisite bytes into the file
-   jbyteArray jbArray = jenv_->NewByteArray( len);
-   if (!jbArray) {
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_PARAM;
-   }
-   jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
-
-   jlong j_len = len;
-   // String write(java.lang.String);
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
-
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
-   }
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
- }
-
- //////////////////////////////////////////////////////////////////////////////
- //
- //////////////////////////////////////////////////////////////////////////////
-HVC_RetCode  HiveClient_JNI::hdfsClose()
-{
-   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
-   if (initJNIEnv() != JOI_OK)
-      return HVC_ERROR_INIT_PARAM;
-   if (javaObj_ == NULL)
-   {
-     // Maybe there was an initialization error.
-     jenv_->PopLocalFrame(NULL);
-     return HVC_OK;
-   }
-
-   // String close();
-   tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLOSE].jm_full_name;
-   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLOSE].methodID);
-
-   if (jenv_->ExceptionCheck())
-   {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
-   }
-
-   if (jresult == false)
-   {
-     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
-     jenv_->PopLocalFrame(NULL);
-     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
-   }
-
-   jenv_->PopLocalFrame(NULL);
-   return HVC_OK;
-}
  //////////////////////////////////////////////////////////////////////////////
  //
  //////////////////////////////////////////////////////////////////////////////
@@ -2026,9 +1816,7 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
    count = jcount;
    if (jenv_->ExceptionCheck())
    {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::incrCounter()", getLastError());
+     getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::incrCounter()");
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_INCR_COUNTER_EXCEPTION;
    }
@@ -2061,9 +1849,7 @@ HVC_RetCode  HiveClient_JNI::hdfsClose()
 
    if (jenv_->ExceptionCheck())
    {
-     getExceptionDetails();
-     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::createCounterTable()", getLastError());
+     getExceptionDetails(__FILE__, __LINE__, "HBulkLoadClient_JNI::createCounterTable()");
      jenv_->PopLocalFrame(NULL);
      return HBC_ERROR_CREATE_COUNTER_EXCEPTION;
    }
@@ -2118,9 +1904,7 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
     j_actionCodes = convertToStringObjectArray(actions);
     if (j_actionCodes == NULL)
     {
-       getExceptionDetails();
-       logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-       logError(CAT_SQL_HBASE, "HBaseClient_JNI::revoke()", getLastError());
+       getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::revoke()");
        jenv_->PopLocalFrame(NULL);
        return HBC_ERROR_REVOKE_PARAM;
     }
@@ -2131,9 +1915,7 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::revoke()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::revoke()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_REVOKE_EXCEPTION;
   }
@@ -2196,9 +1978,7 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
   if (!cols.isEmpty()) {
      j_cols = convertToByteArrayObjectArray(cols);
      if (j_cols == NULL) {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HBaseClient_JNI::startGet()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::startGet()");
         NADELETE(htc, HTableClient_JNI, heap);
         jenv_->PopLocalFrame(NULL);
         return NULL;
@@ -2225,9 +2005,7 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
   }
 
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseCient_JNI::startGet()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::startGet()");
     jenv_->PopLocalFrame(NULL);
     releaseHTableClient(htc);
     return NULL;
@@ -2274,9 +2052,7 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   if (!cols.isEmpty()) {
      j_cols = convertToByteArrayObjectArray(cols);
      if (j_cols == NULL) {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HBaseClient_JNI::startGets()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::startGets()");
         NADELETE(htc, HTableClient_JNI, heap);
         jenv_->PopLocalFrame(NULL);
         return NULL;
@@ -2291,9 +2067,7 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   if (rowIDs != NULL) {
      j_rows = convertToByteArrayObjectArray(*rowIDs);
      if (j_rows == NULL) {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HBaseClient_JNI::startGets()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::startGets()");
         NADELETE(htc, HTableClient_JNI, heap);
         jenv_->PopLocalFrame(NULL);
         return NULL;
@@ -2338,9 +2112,7 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   }
 
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseCient_JNI::startGets()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::startGets()");
     jenv_->PopLocalFrame(NULL);
     releaseHTableClient(htc);
     return NULL;
@@ -2394,9 +2166,7 @@ HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionsNodeName()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getRegionsNodeName()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
@@ -2438,9 +2208,7 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
                                               js_tblName, jHtabInfo);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getHbaseTableInfo()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
@@ -2527,9 +2295,7 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::insertRow()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::insertRow()");
     jenv_->PopLocalFrame(NULL);
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
@@ -2617,9 +2383,7 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::insertRows()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::insertRows()");
     jenv_->PopLocalFrame(NULL);
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
@@ -2732,9 +2496,7 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::checkAndUpdateRow()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::cheakAndUpdateRow()");
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
     jenv_->PopLocalFrame(NULL);
@@ -2805,9 +2567,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   if (cols != NULL && !cols->isEmpty()) {
      j_cols = convertToByteArrayObjectArray(*cols);
      if (j_cols == NULL) {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HBaseClient_JNI::deleteRow()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::deleteRow()");
         if (htc != NULL)
            NADELETE(htc, HTableClient_JNI, heap);
         jenv_->PopLocalFrame(NULL);
@@ -2833,9 +2593,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::deleteRow()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::deleteRow()");
     jenv_->PopLocalFrame(NULL);
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
@@ -2918,9 +2676,7 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::deleteRows()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::deleteRows()");
     jenv_->PopLocalFrame(NULL);
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
@@ -3022,9 +2778,7 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
          hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::checkAndDeleteRow()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::checkAndDeleteRow()");
     jenv_->PopLocalFrame(NULL);
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
@@ -3073,8 +2827,7 @@ NAArray<HbaseStr>* HBaseClient_JNI::getKeys(Int32 funcIndex, NAHeap *heap, const
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getKeys()");
     jenv_->PopLocalFrame(NULL);
     return NULL;
   }
@@ -3113,9 +2866,7 @@ HBC_RetCode HBaseClient_JNI::createSnapshot( const NAString&  tableName, const N
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::createSnapshot()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::createSnapshot()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_CREATE_SNAPSHOT_EXCEPTION;
   }
@@ -3151,9 +2902,7 @@ HBC_RetCode HBaseClient_JNI::verifySnapshot( const NAString&  tableName, const N
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::verifySnapshot()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::verifySnapshot()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
   }
@@ -3184,9 +2933,7 @@ HBC_RetCode HBaseClient_JNI::deleteSnapshot( const NAString&  snapshotName)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::deleteSnapshot()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::deleteSnapshot()");
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_DELETE_SNAPSHOT_EXCEPTION;
   }
@@ -3301,8 +3048,6 @@ HTC_RetCode HTableClient_JNI::init()
       return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
-    JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
-    JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
     JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FFZZILjava/lang/String;Ljava/lang/String;II)Z";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
@@ -3323,18 +3068,11 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HTC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-NAString HTableClient_JNI::getLastJavaError()
-{
-  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3386,9 +3124,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
     j_cols = convertToByteArrayObjectArray(cols);
     if (j_cols == NULL)
     {
-       getExceptionDetails();
-       logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-       logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
+       getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::startScan()");
        jenv_->PopLocalFrame(NULL);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
@@ -3413,9 +3149,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
     j_colnamestofilter = convertToByteArrayObjectArray(*inColNamesToFilter);
     if (j_colnamestofilter == NULL)
     {
-       getExceptionDetails();
-       logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-       logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
+       getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::startScan()");
        jenv_->PopLocalFrame(NULL);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
@@ -3427,9 +3161,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
      j_compareoplist = convertToByteArrayObjectArray(*inCompareOpList);
      if (j_compareoplist == NULL)
      {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::startScan()");
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_SCANOPEN_PARAM;
      }
@@ -3441,9 +3173,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
      j_colvaluestocompare = convertToByteArrayObjectArray(*inColValuesToCompare);
      if (j_colvaluestocompare == NULL)
      {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HTableClient_JNI::startScan()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::startScan()");
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_SCANOPEN_PARAM;
      }
@@ -3492,9 +3222,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::scanOpen()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::scanOpen()");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_SCANOPEN_EXCEPTION;
   }
@@ -3533,9 +3261,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
      j_cols = convertToByteArrayObjectArray(*cols);
      if (j_cols == NULL)
      {
-        getExceptionDetails();
-        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
+        getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::deleteROw()");
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_DELETEROW_PARAM;
      }
@@ -3557,9 +3283,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::deleteROw()");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_DELETEROW_EXCEPTION;
   }
@@ -3594,9 +3318,7 @@ HTC_RetCode HTableClient_JNI::setWriteBufferSize(Int64 size)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::setWriteBufferSize()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::setWriteBufferSize()");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION;
   }
@@ -3627,9 +3349,7 @@ HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::setWriteToWAL()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::setWriteToWAL)");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_WRITETOWAL_EXCEPTION;
   }
@@ -3665,9 +3385,7 @@ std::string* HTableClient_JNI::getHTableName()
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::getHTableName()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::getHTableName()");
     jenv_->PopLocalFrame(NULL);
     return NULL;
   }
@@ -3767,9 +3485,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::coProcAggr()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::coProcAggr()");
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_COPROC_AGGR_EXCEPTION;
   }
@@ -3817,11 +3533,8 @@ static const char* const hvcErrorEnumStr[] =
  ,"Java exception in getAllSchemas()."
  ,"Preparing parameters for getAllTables()."
  ,"Java exception in getAllTables()."
- ,"preparing parameters for hdfsCreateFile()."
- ,"java exception in hdfsCreateFile()."
- ,"preparing parameters for hdfsWrite()."
- ,"java exception in hdfsWrite()."
- ,"java exception in hdfsclose()."
+ ,"Preparing parameters for executeHiveSQL()."
+ ,"Java exception in executeHiveSQL()."
 };
 
 
@@ -3899,8 +3612,6 @@ HVC_RetCode HiveClient_JNI::init()
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR       ].jm_signature = "()V";
-    JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
-    JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_INIT       ].jm_name      = "init";
     JavaMethods_[JM_INIT       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_CLOSE      ].jm_name      = "close";
@@ -3915,27 +3626,14 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_ASH     ].jm_signature = "()[Ljava/lang/Object;";
     JavaMethods_[JM_GET_ATL    ].jm_name      = "getAllTables";
     JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)[Ljava/lang/Object;";
-    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_name      = "hdfsCreateFile";
-    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_HDFS_WRITE       ].jm_name      = "hdfsWrite";
-    JavaMethods_[JM_HDFS_WRITE       ].jm_signature = "([BJ)Z";
-    JavaMethods_[JM_HDFS_CLOSE       ].jm_name      = "hdfsClose";
-    JavaMethods_[JM_HDFS_CLOSE       ].jm_signature = "()Z";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_name = "executeHiveSQL";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_signature = "(Ljava/lang/String;)V";
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
+    if (rc == HVC_OK)
+       javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-NAString HiveClient_JNI::getLastJavaError()
-{
-  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3962,9 +3660,7 @@ HVC_RetCode HiveClient_JNI::initConnection(const char* metastoreURI)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::initConnection()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::initConnection()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_INIT_EXCEPTION;
   }
@@ -3996,9 +3692,7 @@ HVC_RetCode HiveClient_JNI::close()
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::close()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::close()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_CLOSE_EXCEPTION;
   }
@@ -4044,9 +3738,7 @@ HVC_RetCode HiveClient_JNI::exists(const char* schName, const char* tabName)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::exists()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::exists()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_EXISTS_EXCEPTION;
   }
@@ -4093,9 +3785,7 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
                                             js_schName, js_tabName);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::getHiveTableStr()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getHiveTableStr()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_HVT_EXCEPTION;
   }
@@ -4154,9 +3844,7 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::getRedefTime()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getRedefTime()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_REDEFTIME_EXCEPTION;
   }
@@ -4189,9 +3877,7 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::getAllSchemas()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getAllSchemas()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_ALLSCH_EXCEPTION;
   }
@@ -4222,7 +3908,7 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HVC_ERROR_GET_ALLTBL_PARAM));
     jenv_->PopLocalFrame(NULL);
-    return HVC_ERROR_GET_ALLTBL_PARAM;
+    return HVC_ERROR_EXECUTE_HIVE_SQL_PARAM;
   }
   
   tsRecentJMFromJNI = JavaMethods_[JM_EXEC_HIVE_SQL].jm_full_name;
@@ -4230,11 +3916,9 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::executeHiveSQL()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::executeHiveSQL()");
     jenv_->PopLocalFrame(NULL);
-    return HVC_ERROR_GET_ALLSCH_EXCEPTION;
+    return HVC_ERROR_EXECUTE_HIVE_SQL_EXCEPTION;
   }
 
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
@@ -4266,23 +3950,18 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ATL].methodID, 
                             js_schName);
 
-  if (j_tblNames == NULL) 
-    {
-      getExceptionDetails();
-
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HiveClient_JNI::getAllTables()", getLastError());
-      jenv_->PopLocalFrame(NULL);
-      return HVC_ERROR_EXISTS_EXCEPTION;
-    }
-
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::getAllTables()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getAllTables()");
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_GET_ALLTBL_EXCEPTION;
+  }
+
+  if (j_tblNames == NULL) 	
+  {	
+     GetCliGlobals()->setJniErrorStr(getErrorText(HVC_ERROR_EXISTS_EXCEPTION));
+     jenv_->PopLocalFrame(NULL);	
+     return HVC_ERROR_EXISTS_EXCEPTION;	
   }
 
   int numTables = convertStringObjectArrayToList(heap_, j_tblNames,
@@ -4643,17 +4322,13 @@ HTC_RetCode HTableClient_JNI::prepareForNextCell(int idx)
     kvBufferObj = jenv_->GetObjectArrayElement(jKvFamArray_, idx);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jba_kvFamArray_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jenv_->DeleteLocalRef(kvBufferObj);
@@ -4666,17 +4341,13 @@ HTC_RetCode HTableClient_JNI::prepareForNextCell(int idx)
     kvBufferObj = jenv_->GetObjectArrayElement(jKvQualArray_, idx);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jba_kvQualArray_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jenv_->DeleteLocalRef(kvBufferObj);
@@ -4689,17 +4360,13 @@ HTC_RetCode HTableClient_JNI::prepareForNextCell(int idx)
     kvBufferObj = jenv_->GetObjectArrayElement(jKvBuffer_, idx);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jba_kvBuffer_ = (jbyteArray)jenv_->NewGlobalRef(kvBufferObj);
     if (jenv_->ExceptionCheck())
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::prepareForNextCell()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::prepareForNextCell()");
       return HTC_PREPARE_FOR_NEXTCELL_EXCEPTION;
     }
     jenv_->DeleteLocalRef(kvBufferObj);
@@ -4867,9 +4534,7 @@ HTC_RetCode HTableClient_JNI::getRowID(HbaseStr &rowID)
        jba_rowID_ = (jbyteArray)jenv_->NewGlobalRef(rowIDObj);
        if (jenv_->ExceptionCheck())
        {
-          getExceptionDetails();
-          logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-          logError(CAT_SQL_HBASE, "HTableClient_JNI::getRowID()", getLastError());
+          getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::getRowID()");
           return HTC_GET_ROWID_EXCEPTION;
        }
        jenv_->DeleteLocalRef(rowIDObj);
@@ -4903,21 +4568,12 @@ HTC_RetCode HTableClient_JNI::fetchRows()
 
    if (jenv_->ExceptionCheck())
    {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::fetchRows()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::fetchRows()");
       jenv_->PopLocalFrame(NULL);
       return HTC_ERROR_FETCHROWS_EXCEPTION;
    }
 
    numRowsReturned_ = jRowsReturned;
-   if (numRowsReturned_ == -1)
-   {
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::fetchRows()", getLastJavaError());
-      jenv_->PopLocalFrame(NULL);
-      return HTC_ERROR_FETCHROWS_EXCEPTION;
-   }
-   else
    if (numRowsReturned_ == 0) {
       jenv_->PopLocalFrame(NULL);
       return HTC_DONE;
@@ -5002,7 +4658,6 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
   HTC_RetCode retcode;
 
   if (initJNIEnv() != JOI_OK) {
-     getExceptionDetails();
      if (hbs_)
         hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
      return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
@@ -5010,9 +4665,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
   jint jtimeout = timeout;
   jbooleanArray jresultArray =  jenv_->NewBooleanArray(resultArrayLen);
   if (jenv_->ExceptionCheck()) {
-      getExceptionDetails();
-      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-      logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::completeAsyncOperation()");
       jenv_->PopLocalFrame(NULL);
       if (hbs_)
          hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
@@ -5022,9 +4675,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_COMPLETE_PUT].methodID,
                                jtimeout, jresultArray);
   if (jenv_->ExceptionCheck()) {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HTableClient_JNI::completeAsyncOperation()");
     jenv_->PopLocalFrame(NULL);
     if (hbs_)
        hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
@@ -5289,4 +4940,3 @@ void deleteNAArray(CollHeap *heap, NAArray<HbaseStr> *array)
   }
   NADELETE(array, NAArray, heap);
 }
-                      

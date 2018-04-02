@@ -93,9 +93,7 @@ A            B
 >>
 >>update statistics for table t013t1 on every column;
 
-*** ERROR[9247] UPDATE STATISTICS is not supported on volatile tables presently.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>select * from t013_sch.t013t1;
 
@@ -801,7 +799,8 @@ CREATE VOLATILE TABLE T013T1
 
 *** ERROR[4082] Object TRAFODION.T013SCH1.T013T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>
 >>-- store by a, 4 partns

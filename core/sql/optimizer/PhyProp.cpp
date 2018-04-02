@@ -528,12 +528,12 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
   // can't use any plan if the optimization goals are different
   // $$$$ may apply some fuzzy logic in the future for the number of rows
   if ( (perfGoal_ != NULL) AND
-       ( perfGoal_->isOptimizeForLastRow() AND
+       (( perfGoal_->isOptimizeForLastRow() AND
          (NOT other.perfGoal_->isOptimizeForLastRow()) ) OR
-       ( perfGoal_->isOptimizeForFirstRow() AND
+        ( perfGoal_->isOptimizeForFirstRow() AND
          (NOT other.perfGoal_->isOptimizeForFirstRow()) ) OR
-       ( perfGoal_->isOptimizeForResourceConsumption() AND
-         (NOT other.perfGoal_->isOptimizeForResourceConsumption()) ) )
+        ( perfGoal_->isOptimizeForResourceConsumption() AND
+         (NOT other.perfGoal_->isOptimizeForResourceConsumption()) )) )
     return UNDEFINED;
 
   // if the cost weights are different, the optimal solution is no
