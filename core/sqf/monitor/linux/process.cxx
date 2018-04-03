@@ -203,6 +203,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     , NoticeTail(NULL)
 #endif
 #ifdef NAMESERVER_PROCESS
+    , monSockFd_(-1)
     , origPNidNs_(-1)
 #endif
 {
@@ -542,11 +543,14 @@ bool CProcess::procExitReg(CProcess *targetProcess,
     {   // This process is not the parent of the target process (parent
         // processes automatically get process death notifications.)
 
-        // Add entry to list of processes that are being monitored
-        // by this process.
         nidPid_t target = { targetProcess->Nid, targetProcess->Pid };
         deathInterestLock_.lock();
-        deathInterest_.push_back ( target );
+        // Add entry to list of processes that are being monitored
+        // by this process.
+        deathInterest_.push_back( target );
+        // Add entry to set of nids of processes that are being monitored
+        // by this process.
+        deathInterestNid_.insert( targetProcess->Nid );
         deathInterestLock_.unlock();
 
         // Register interest with the target process
@@ -577,12 +581,54 @@ bool CProcess::procExitReg(CProcess *targetProcess,
 #endif
 
 #ifndef NAMESERVER_PROCESS
+void CProcess::procExitNotifierNodes( void )
+{
+    const char method_name[] = "CProcess::procExitNotifierNodes";
+    TRACE_ENTRY;
+
+    CLNode *targetLNode;
+    CNode  *targetNode;
+    nidSet_t::iterator it;
+
+    // Remove death notice registration for all entries on list
+    deathInterestLock_.lock();
+    for ( it = deathInterestNid_.begin(); it != deathInterestNid_.end(); ++it)
+    {
+        targetLNode = Nodes->GetLNode ( *it );
+        if (targetLNode)
+        {
+            targetNode = targetLNode->GetNode();
+        }
+
+        if ( targetNode )
+        {
+            if (NameServerEnabled && targetNode->GetPNid() != MyPNID)
+            {
+                int rc = -1;
+                // Forward the process exit to the target node
+                rc = PtpClient->ProcessExit( this 
+                                           , targetLNode->GetNid()
+                                           , targetNode->GetName() ); 
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+        }
+    }
+    deathInterestNid_.clear();
+    deathInterestLock_.unlock();
+
+    TRACE_EXIT;
+}
+#endif
+
+#ifndef NAMESERVER_PROCESS
 void CProcess::procExitUnregAll ( _TM_Txid_External transId )
 {
     const char method_name[] = "CProcess::procExitUnregAll";
     TRACE_ENTRY;
 
-    nidPidList_t::iterator iter;
     CLNode *node;
     CProcess *targetProcess = NULL;
     nidPidList_t::iterator it;
@@ -593,13 +639,33 @@ void CProcess::procExitUnregAll ( _TM_Txid_External transId )
     {
         node = Nodes->GetLNode ( it->nid );
         targetProcess = NULL;
-        if  (node)
+        if (node)
         {
             targetProcess = node->GetProcessL( it->pid );
         }
 
         if ( targetProcess )
         {
+            if (NameServerEnabled && targetProcess->IsClone())
+            {
+                CLNode *targetLNode = Nodes->GetLNode( targetProcess->GetNid() );
+            
+                int rc = -1;
+                // Forward the process cancel death notification to the target node
+                rc = PtpClient->ProcessNotify( targetProcess->GetNid()
+                                             , targetProcess->GetPid()
+                                             , targetProcess->GetVerifier()
+                                             , transId
+                                             , true // cancel target's death notification
+                                             , this // of this process
+                                             , targetLNode->GetNid()
+                                             , targetLNode->GetNode()->GetName() ); 
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+            
             targetProcess->CancelDeathNotification( Nid
                                                   , Pid
                                                   , Verifier
@@ -626,6 +692,18 @@ void CProcess::childAdd ( int nid, int pid )
     TRACE_EXIT;
 }
 
+int CProcess::childCount ( void )
+{
+    const char method_name[] = "CProcess::childCount";
+    TRACE_ENTRY;
+
+    childrenListLock_.lock();
+    int count = children_.size();
+    childrenListLock_.unlock();
+
+    TRACE_EXIT;
+    return(count);
+}
 
 void CProcess::childRemove ( int nid, int pid )
 {
@@ -732,9 +810,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
     Pid = os_pid;
     Event_messages = event_messages;
     System_messages = system_messages;
-#ifdef NAMESERVER_PROCESS
-    origPNidNs_ = origPNidNs;
-#endif
 
     if (preclone)
     {
@@ -754,12 +829,39 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             if ( MyNode->IsMyNode(Nid) )
             {
                 if ( NameServerEnabled )
-                    NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
+                {
+                    int rc = -1;
+                    // Register process in Name Server
+                    rc = NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
+                    if (rc)
+                    {
+                        // TODO: Error handling
+                    }
 
-//TRK-TODO - ??
-                // Replicate the clone to other nodes
-                CReplClone *repl = new CReplClone(this);
-                Replicator.addItem(repl);
+                    if (Parent_Nid != -1)
+                    {
+                        if (Parent_Nid != Nid)
+                        {
+                            // Tell the parent node the current state of the process
+                            rc = PtpClient->ProcessClone(this);
+                            if (rc)
+                            {
+                                // TODO: Error handling
+                            }
+                        }
+                        else
+                        {
+                            // TODO: Generate internal clone request?
+                            //       to update local parent?  
+                        }
+                    }
+                }
+                else
+                {
+                    // Replicate the clone to other nodes
+                    CReplClone *repl = new CReplClone(this);
+                    Replicator.addItem(repl);
+                }
             }
             else
             {
@@ -768,9 +870,34 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         }
         else
         {
-            // Replicate the clone to other nodes
-            CReplClone *repl = new CReplClone(this);
-            Replicator.addItem(repl);
+            // TODO: What does an os_pid == -1 mean?
+            if ( NameServerEnabled )
+            {
+                if (Parent_Nid != -1)
+                {
+                    if (Parent_Nid != Nid)
+                    {
+                        int rc = -1;
+                        // Tell the parent node the current state of the process
+                        rc = PtpClient->ProcessClone(this);
+                        if (rc)
+                        {
+                            // TODO: Error handling
+                        }
+                    }
+                    else
+                    {
+                        // TODO: Generate internal clone request?
+                        //       to update local parent?  
+                    }
+                }
+            }
+            else
+            {
+                // Replicate the clone to other nodes
+                CReplClone *repl = new CReplClone(this);
+                Replicator.addItem(repl);
+            }
         }
     }
 
@@ -2797,6 +2924,15 @@ void CProcess::Exit( CProcess *parent )
     }
 #endif
 
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+       trace_printf( "%s@%d" " - Process %s (%d,%d:%d) is exiting, parent process %s (%d,%d:%d)\n"
+                   , method_name, __LINE__
+                   , GetName(), GetNid(), GetPid(), GetVerifier()
+                   , parent?parent->GetName():""
+                   , parent?parent->GetNid():-1
+                   , parent?parent->GetPid():-1
+                   , parent?parent->GetVerifier():-1 );
+
     SetState(State_Stopped);
 
     // if the env is set to not deliver death messages upon node down,
@@ -2817,7 +2953,12 @@ void CProcess::Exit( CProcess *parent )
         !(Type == ProcessType_DTM && IsAbended()) &&
         supplyProcessDeathNotices )
     {
-        // Notify all registered processes of this process' death
+        if ( !Clone && NameServerEnabled )
+        {
+            // Notify all remote registered nodes of this process' death
+            NoticeHead->NotifyRemote();
+        }
+        // Notify all local registered processes of this process' death
         NoticeHead->NotifyAll();
     }
 #endif
@@ -3120,6 +3261,46 @@ void CProcess::Exit( CProcess *parent )
                trace_printf("%s@%d" " - Parent doesn't want Death message" "\n", method_name, __LINE__);
         }
     }
+
+#ifndef NAMESERVER_PROCESS
+    if (NameServerEnabled)
+    {
+        if ( parent )
+        {
+            if ( parent->IsClone() && Pid != -1 )
+            {
+                int targetNid = parent->GetNid();
+                CLNode *targetLNode = Nodes->GetLNode( targetNid );
+                // Send the process exit to the parent node
+                int rc = PtpClient->ProcessExit( this
+                                               , targetNid
+                                               , targetLNode->GetNode()->GetName() );
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+        }
+        else
+        {
+            if (GetParentNid() != -1)
+            {
+                int targetNid = GetParentNid();
+                CLNode *targetLNode = Nodes->GetLNode( targetNid );
+                // Send the process exit to the parent node
+                int rc = PtpClient->ProcessExit( this
+                                               , targetNid
+                                               , targetLNode->GetNode()->GetName() );
+                if (rc)
+                {
+                    // TODO: Error handling
+                }
+            }
+        }
+        procExitNotifierNodes();
+    }
+#endif
+
     TRACE_EXIT;
 }
 
@@ -3482,6 +3663,7 @@ CNotice *CProcess::RegisterDeathNotification( int nid
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::ReplyNewProcess (struct message_def * reply_msg,
                                 CProcess * process, int result)
 {
@@ -3505,14 +3687,13 @@ void CProcess::ReplyNewProcess (struct message_def * reply_msg,
                      process->Name, process->Nid, process->Pid, process->Verifier,
                      Name, Nid, Pid, result);
 
-#ifndef NAMESERVER_PROCESS
     // send reply to the parent
     SQ_theLocalIOToClient->sendCtlMsg
         ( Pid, MC_SReady, ((SharedMsgDef*)reply_msg)-> trailer.index );
-#endif
 
     TRACE_EXIT;
 }
+#endif
 
 
 #ifndef NAMESERVER_PROCESS
@@ -4099,7 +4280,7 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
             msg->u.reply.u.generic.return_code = MPI_ERR_NAME;
         }
     }
-    // check if its a attach request, if so setup the process
+    // check if its an attach request, if so setup the process
     else if ((msg->u.request.u.startup.nid == -1) &&
              (msg->u.request.u.startup.pid == -1)   )
     {
@@ -4383,6 +4564,8 @@ bool CProcessContainer::CancelDeathNotification( int nid
 #endif
 
 #ifndef NAMESERVER_PROCESS
+// Child_Exit terminates all child processes created by the parent process
+// unless the child process is Unhooked from the parent process
 void CProcessContainer::Child_Exit ( CProcess * parent )
 {
     CProcess *process;
@@ -4398,14 +4581,14 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
            || (parent->GetType() == ProcessType_SPX) ) )
     {
         CProcess::nidPid_t child;
-        CLNode * childNode;
+        CLNode * childLNode;
 
         while ( parent->childRemoveFirst ( child ))
         {
 
-            childNode = Nodes->GetLNode( child.nid );
-            process = (childNode != NULL )
-                         ? childNode->GetNode()->GetProcess( child.pid ) : NULL;
+            childLNode = Nodes->GetLNode( child.nid );
+            process = (childLNode != NULL )
+                         ? childLNode->GetNode()->GetProcess( child.pid ) : NULL;
 
             if ( process && (!process->IsUnhooked()) )
             {
@@ -4417,7 +4600,7 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                                  process->GetNid(), process->GetPid(),
                                  parent->GetNid(), parent->GetPid());
 
-                childNode->SetProcessState( process, State_Down, true );
+                childLNode->SetProcessState( process, State_Down, true );
                 if ( !process->IsClone() )
                 {
                     if ( parent->GetType() == ProcessType_SPX )
@@ -4429,6 +4612,19 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                         kill (process->GetPid(), Monitor->GetProcTermSig());
                     }
                 }
+                else
+                {
+                    if (NameServerEnabled)
+                    {
+                        CNode  *childNode = childNode->GetNode();
+                        // Forward the process create to the target node
+                        PtpClient->ProcessKill( process
+                                              , process->GetAbort()
+                                              , childLNode->GetNid()
+                                              , childNode->GetName());
+                    }
+                }
+                
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                     trace_printf("%s@%d - Completed kill for child process %s (%d, %d)\n", method_name, __LINE__, process->GetName(), process->GetNid(), process->GetPid());
             }
@@ -4948,6 +5144,7 @@ void CProcessContainer::DumpCallback( int nid, pid_t pid, int status )
 #endif
 
 
+#ifndef NAMESERVER_PROCESS
 CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result )
 {
     const char method_name[] = "CProcessContainer::ParentNewProcReply";
@@ -4964,10 +5161,8 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
     // If we have a parent process then it is expecting a reply
     if (parent && !parent->IsClone() && !parent->IsPaired())
     {
-#ifndef NAMESERVER_PROCESS
         if (!process->IsNowait())
         {   // The new process request was "waited" so send reply now
-#endif
             struct message_def *reply_msg;
             reply_msg = process->parentContext();
 
@@ -4979,19 +5174,18 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
                 // buffer) is no longer valid.
                 process->parentContext( NULL );
             }
-#ifndef NAMESERVER_PROCESS
         }
         else
         {   // The new process request was "no-wait" so send notice now
             process->SendProcessCreatedNotice(parent, result);
         }
-#endif
     }
 
     TRACE_EXIT;
 
     return parent;
 }
+#endif
 
 #ifndef NAMESERVER_PROCESS
 void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNode)
@@ -5030,6 +5224,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
             mon_log_write(MON_PROCESSCONT_EXITPROCESS_1, SQ_LOG_ERR, la_buf);
             abort();
         }
+
         if ( process->GetState() == State_Stopped )
         {
             if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
@@ -5072,9 +5267,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         // Unregister any interest in other process' death
         _TM_Txid_External transid;
         transid = invalid_trans();
-#ifndef NAMESERVER_PROCESS
         process->procExitUnregAll( transid );
-#endif
 
         // Handle the process termination
         process->Exit( parent );
@@ -5097,13 +5290,8 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
                 {
                     // Replicate the exit to other nodes
-//TRK-TODO
-            //        if (NameServerEnabled)
                     {
-                        //message to monitor
-                    }
-            //        else
-                    {
+                        // Replicate the exit to other nodes
                         CReplExit *repl = new CReplExit(process->GetNid(),
                                                     process->GetPid(),
                                                     process->GetVerifier(),

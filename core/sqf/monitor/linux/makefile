@@ -266,6 +266,7 @@ NSOBJS += $(OUTDIR)/nsreqdelproc.o
 NSOBJS += $(OUTDIR)/nsreqstop.o
 NSOBJS += $(OUTDIR)/nsreqnewproc.o
 NSOBJS += $(OUTDIR)/nsreqprocinfo.o
+NSOBJS += $(OUTDIR)/nsreqprocinfons.o
 NSOBJS += $(OUTDIR)/nsreqstart.o
 NSOBJS += $(OUTDIR)/nsreqshutdown.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)

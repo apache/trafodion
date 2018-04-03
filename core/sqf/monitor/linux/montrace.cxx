@@ -61,7 +61,9 @@ const CMonTrace::TraceArea_t CMonTrace::traceAreaList_[] =
   {"MON_TRACE_REDIRECTION",    TRACE_REDIRECTION},
   {"MON_TRACE_TRAFCONFIG",     TRACE_TRAFCONFIG},
   {"MON_TRACE_HEALTH",         TRACE_HEALTH},
-  {"MON_TRACE_SIG_HANDLER",    TRACE_SIG_HANDLER}
+  {"MON_TRACE_SIG_HANDLER",    TRACE_SIG_HANDLER},
+  {"MON_TRACE_NS",             TRACE_NS},
+  {"MON_TRACE_MEAS",           TRACE_MEAS}
 };
 
 // Global trace flags

@@ -701,7 +701,7 @@ bool CReplProcInit::replicate(struct internal_msg_def *&msg)
         trace_printf("%s@%d - Replicating proc init new process %s, result=%d\n",
                      method_name, __LINE__, name_, result_);
 
-    // Build message to replicate process initializationdata other nodes
+    // Build message to replicate process initialization data other nodes
     msg->type = InternalType_ProcessInit;
     msg->u.processInit.nid = nid_;
     msg->u.processInit.pid = pid_;
@@ -739,9 +739,9 @@ CReplClone::CReplClone(CProcess *process) : process_(process)
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplClone::CReplClone";
-        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d:%d)\n",
+        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d:%d), port=%s\n",
                      method_name, __LINE__, process_->GetName(), process_->GetNid(),
-                     process_->GetPid(), process_->GetVerifier());
+                     process_->GetPid(), process_->GetVerifier(), process_->GetPort());
     }
 
     // Increment reference count for process object
@@ -834,8 +834,28 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     // temp trace
     if (trace_settings & TRACE_PROCESS)
     {
-        trace_printf("%s@%d - replSize_=%d, programStrId=(%d,%d), pathStrId=(%d,%d), ldPathStrId=(%d,%d), name=%s, strlen(name)=%d, port=%s, strlen(port)=%d, infile=%s, strlen(infile)=%d, outfile=%s, strlen(outfile)=%d, argc=%d, strlen(total argv)=%d, args=[%.*s]\n",
-                     method_name, __LINE__, replSize_, msg->u.clone.programStrId.nid, msg->u.clone.programStrId.id, msg->u.clone.pathStrId.nid, msg->u.clone.pathStrId.id, msg->u.clone.ldpathStrId.nid, msg->u.clone.ldpathStrId.id, &msg->u.clone.stringData, nameLen_, &msg->u.clone.stringData+nameLen_, portLen_,  &msg->u.clone.stringData+nameLen_+portLen_, infileLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_, msg->u.clone.argc, argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
+        trace_printf( "%s@%d - replSize_=%d\n"
+                      "        msg->u.clone.programStrId=(%d,%d)\n"
+                      "        msg->u.clone.pathStrId=(%d,%d)\n"
+                      "        msg->u.clone.ldPathStrId=(%d,%d)\n"
+                      "        msg->u.clone.name=%s, strlen(name)=%d\n"
+                      "        msg->u.clone.port=%s, strlen(port)=%d\n"
+                      "        msg->u.clone.infile=%s, strlen(infile)=%d\n"
+                      "        msg->u.clone.outfile=%s, strlen(outfile)=%d\n"
+                      "        msg->u.clone.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                    , method_name, __LINE__, replSize_
+                    , msg->u.clone.programStrId.nid
+                    , msg->u.clone.programStrId.id
+                    , msg->u.clone.pathStrId.nid
+                    , msg->u.clone.pathStrId.id
+                    , msg->u.clone.ldpathStrId.nid
+                    , msg->u.clone.ldpathStrId.id
+                    , &msg->u.clone.stringData, nameLen_
+                    , &msg->u.clone.stringData+nameLen_, portLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_, infileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_
+                    , msg->u.clone.argc
+                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
     }
 
     // Advance sync buffer pointer

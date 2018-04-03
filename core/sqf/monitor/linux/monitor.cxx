@@ -111,7 +111,7 @@ char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
 #ifdef NAMESERVER_PROCESS
 char MyMon2NsPort[MPI_MAX_PORT_NAME] = {'\0'};
 #else
-char MyMon2MonPort[MPI_MAX_PORT_NAME] = {'\0'};
+char MyPtPPort[MPI_MAX_PORT_NAME] = {'\0'};
 #endif
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
@@ -565,9 +565,10 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
                          msg->u.request.u.startup.process_name,
                          msg->u.request.u.startup.port_name);
         }
-
+#ifndef NAMESERVER_PROCESS
         CProcessContainer::ParentNewProcReply( process, MPI_SUCCESS);
         status = SUCCESS;
+#endif
     }
     else
     {
@@ -1191,6 +1192,14 @@ int main (int argc, char *argv[])
 #endif
     }
 
+#ifndef NAMESERVER_PROCESS
+    env = getenv("SQ_NAMESERVER_ENABLE");
+    if ( env && isdigit(*env) )
+    {
+        NameServerEnabled = atoi(env);
+    }
+#endif
+
     if ( IsAgentMode || IsNameServer )
     {
         MON_Props xprops( true );
@@ -1613,12 +1622,13 @@ int main (int argc, char *argv[])
                 , CALL_COMP_GETVERS2(trafns), CommTypeString( CommType ));
 #else
     snprintf(buf, sizeof(buf),
-                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s)\n"
+                 "[CMonitor::main], %s, Started! CommType: %s (%s%s%s%s)\n"
                 , CALL_COMP_GETVERS2(monitor)
                 , CommTypeString( CommType )
                 , IsRealCluster?"RealCluster":"VirtualCluster"
                 , IsAgentMode?"/AgentMode":""
-                , IsMPIChild?"/MPIChild":"" );
+                , IsMPIChild?"/MPIChild":""
+                , NameServerEnabled?"/NameServerEnabled":"" );
 #endif
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
 
@@ -1813,12 +1823,11 @@ int main (int argc, char *argv[])
         Monitor = new CMonitor (procTermSig);
 #endif
 #ifndef NAMESERVER_PROCESS
-        env = getenv("SQ_NAMESERVER_ENABLED");
-        if ( env && isdigit(*env) )
-            NameServerEnabled = atoi(env);
-
-        NameServer = new CNameServer ();
-        PtpClient = new CPtpClient ();
+        if (NameServerEnabled)
+        {
+            NameServer = new CNameServer ();
+            PtpClient = new CPtpClient ();
+        }
 #endif
 
         if ( IsAgentMode )
@@ -1937,9 +1946,18 @@ int main (int argc, char *argv[])
         // Create thread to accept connections from other monitors
         CommAccept.start();
 #ifdef NAMESERVER_PROCESS
+        // Create thread to accept connections from other name servers
         CommAcceptMon.start();
+        if (IsMaster)
+        {
+            CommAcceptMon.startAccepting();
+        }
 #else
-        PtpCommAccept.start();
+        if (NameServerEnabled)
+        {
+            // Create thread to accept point-2-point connections from other monitors
+            PtpCommAccept.start();
+        }
 #endif
 #ifndef NAMESERVER_PROCESS
         // Open file used to record process start/end times
@@ -2284,7 +2302,10 @@ int main (int argc, char *argv[])
 #ifndef NAMESERVER_PROCESS
     // Tell the LIO worker threads to exit
     SQ_theLocalIOToClient->shutdownWork();
-    PtpCommAccept.shutdownWork();
+    if (NameServerEnabled)
+    {
+        PtpCommAccept.shutdownWork();
+    }
 #endif
 
     CommAccept.shutdownWork();

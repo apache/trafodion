@@ -23,8 +23,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef PTPSERVER_H_
-#define PTPSERVER_H_
+#ifndef PTPCLIENT_H_
+#define PTPCLIENT_H_
 #ifndef NAMESERVER_PROCESS
 
 #include "process.h"
@@ -40,27 +40,41 @@ public:
     CPtpClient( void );
     virtual ~CPtpClient( void );
 
-    int  InitializePtpClient( char * mon2monPort );
-    int  NewProcess(CProcess* proces, int receiveNode, const char *hostName);
-    int  ProcessInit(CProcess *process, void *tag, int result, int receiveNode, const char *hostName);
-/* //TRK-TODO 
- Need methods for these message types:
-            InternalType_Clone
-            InternalType_Open
-            InternalType_Notify
-            InternalType_Exit
-*/
+    int  InitializePtpClient( char * ptpPort );
+    int  ProcessClone( CProcess *process );
+    int  ProcessExit( CProcess* process
+                    , int parentNid
+                    , const char *targetNodeName );
+    int  ProcessInit( CProcess *process
+                    , void *tag
+                    , int result
+                    , int parentNid );
+    int  ProcessKill( CProcess* process
+                    , bool abort
+                    , int targetNid
+                    , const char *targetNodeName );
+    int  ProcessNew( CProcess* process
+                   , int targetNid
+                   , const char *targetNodeName );
+    int  ProcessNotify( int nid
+                      , int pid
+                      , Verifier_t verifier
+                      , _TM_Txid_External transId
+                      , bool canceled
+                      , CProcess *targetProcess
+                      , int targetNid
+                      , const char *targetNodeName );
+
 private:
     int  basePort_;
-    char mon2monPortBase_[MAX_PROCESSOR_NAME+100];
-    int  mon2monSock_;
+    char ptpPortBase_[MAX_PROCESSOR_NAME+100];
+    int  ptpSock_;
     int  seqNum_;
 
-    int  MkCltSock( const char *portName );
     int  ReceiveSock(char *buf, int size, int sockFd);
     int  SendSock(char *buf, int size, int sockFd);
     int  SendToMon(const char *reqType, internal_msg_def *msg, int size, int receiveNode, const char *hostName);
 };
 
 #endif
-#endif /*PTPSERVER_H_*/
+#endif /*PTPCLIENT_H_*/

@@ -169,6 +169,8 @@ CNode::CNode( char *name, int pnid, int rank )
       ,zid_(pnid)
 #ifdef NAMESERVER_PROCESS
       ,monConnCount_(0)
+#else
+      ,ptpSocketPort_(-1)
 #endif
       ,commSocketPort_(-1)
       ,syncSocketPort_(-1)
@@ -1639,6 +1641,39 @@ void CNodeContainer::AddedNode( CNode *node )
     TRACE_EXIT;
 }
 
+CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo )
+{
+    const char method_name[] = "CNodeContainer::AddNode";
+    TRACE_ENTRY;
+
+    CLNode   *lnode = Nodes->GetLNode(processInfo->nid);
+    CNode    *node = lnode->GetNode();
+    CProcess *process = node->CloneProcess( processInfo->nid
+                                          , processInfo->type
+                                          , processInfo->priority
+                                          , processInfo->backup
+                                          , processInfo->unhooked
+                                          , processInfo->process_name
+                                          , processInfo->port_name
+                                          , processInfo->pid
+                                          , processInfo->verifier
+                                          , processInfo->parent_nid
+                                          , processInfo->parent_pid
+                                          , processInfo->parent_verifier
+                                          , processInfo->event_messages
+                                          , processInfo->system_messages
+                                          , processInfo->pathStrId
+                                          , processInfo->ldpathStrId
+                                          , processInfo->programStrId
+                                          , processInfo->infile
+                                          , processInfo->outfile
+                                          , &processInfo->creation_time
+                                          , -1 );//processInfo->origPNidNs_);
+
+    TRACE_EXIT;
+    return(process);
+}
+
 CNode *CNodeContainer::AddNode( int pnid )
 {
     const char method_name[] = "CNodeContainer::AddNode";
@@ -2914,6 +2949,122 @@ CProcess *CNodeContainer::GetProcessByName( const char *name, bool checkstate )
 }
 
 #ifndef NAMESERVER_PROCESS
+CProcess *CNodeContainer::GetProcessNs( int nid
+                                      , int pid
+                                      , Verifier_t verifier )
+{
+    const char method_name[] = "CNodeContainer::GetProcessNs";
+    TRACE_ENTRY;
+
+    CProcess *process = NULL;
+
+    struct message_def msg;
+    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = REPLY_TAG;
+    msg.u.request.type = ReqType_ProcessInfoNs;
+    struct ProcessInfo_def *processInfo = &msg.u.request.u.process_info;
+    processInfo->nid = -1;
+    processInfo->pid = -1;
+    processInfo->verifier = -1;
+    processInfo->process_name[0] = 0;
+    processInfo->target_nid = nid;
+    processInfo->target_pid = pid;
+    processInfo->target_verifier = verifier;
+    processInfo->target_process_name[0] = 0;
+    
+    int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
+    if (error == 0)
+    {
+        if ( (msg.type == MsgType_Service) &&
+             (msg.u.reply.type == ReplyType_ProcessInfoNs) )
+        {
+            if ( msg.u.reply.u.process_info_ns.return_code == MPI_SUCCESS )
+            {
+                process = AddCloneProcess( &msg.u.reply.u.process_info_ns );
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf),
+                          "[%s] ProcessInfo failed, rc=%d\n"
+                        , method_name, msg.u.reply.u.process_info_ns.return_code );
+                mon_log_write( MON_NODE_GETPROCESSNS_1, SQ_LOG_ERR, buf );
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
+                      "ProcessInfoNs\n"
+                    , method_name, msg.type, msg.u.reply.type );
+            mon_log_write( MON_NODE_GETPROCESSNS_2, SQ_LOG_ERR, buf );
+        }
+    }
+
+    TRACE_EXIT;
+    return( process );
+}
+
+CProcess *CNodeContainer::GetProcessNs( const char *name, Verifier_t verifier )
+{
+    const char method_name[] = "CNodeContainer::GetProcessNs";
+    TRACE_ENTRY;
+
+    CProcess *process = NULL;
+
+    struct message_def msg;
+    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = REPLY_TAG;
+    msg.u.request.type = ReqType_ProcessInfoNs;
+    struct ProcessInfo_def *processInfo = &msg.u.request.u.process_info;
+    processInfo->nid = -1;
+    processInfo->pid = -1;
+    processInfo->verifier = -1;
+    processInfo->process_name[0] = 0;
+    processInfo->target_nid = -1;
+    processInfo->target_pid = -1;
+    processInfo->target_verifier = verifier;
+    STRCPY( processInfo->target_process_name, name);
+
+    int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
+    if (error == 0)
+    {
+        if ( (msg.type == MsgType_Service) &&
+             (msg.u.reply.type == ReplyType_ProcessInfoNs) )
+        {
+            if ( msg.u.reply.u.process_info_ns.return_code == MPI_SUCCESS )
+            {
+                process = AddCloneProcess( &msg.u.reply.u.process_info_ns );
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf),
+                          "[%s] ProcessInfo failed, rc=%d\n"
+                        , method_name, msg.u.reply.u.process_info_ns.return_code );
+                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
+                      "ProcessInfo\n"
+                    , method_name, msg.type, msg.u.reply.type );
+            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+        }
+    }
+
+    TRACE_EXIT;
+    return( process );
+}
+
 SyncState CNodeContainer::GetTmState ( SyncState check_state )
 {
     SyncState state = check_state;

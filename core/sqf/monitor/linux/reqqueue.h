@@ -659,6 +659,24 @@ private:
     void populateRequestString( void );
 };
 
+#ifdef NAMESERVER_PROCESS
+
+class CExtProcInfoNsReq: public CExternalReq
+{
+public:
+    CExtProcInfoNsReq( reqQueueMsg_t msgType,
+                       int nid, int pid, int sockFd,
+                       struct message_def *msg );
+    virtual ~CExtProcInfoNsReq();
+
+    void performRequest();
+
+private:
+    void copyInfo(CProcess *process, ProcessInfoNs_reply_def &procInfo);
+    void populateRequestString( void );
+};
+#endif
+
 #ifndef NAMESERVER_PROCESS
 class CExtSetReq: public CExternalReq
 {
@@ -810,6 +828,7 @@ private:
 };
 
 
+#ifndef NAMESERVER_PROCESS
 class CIntCloneProcReq: public CInternalReq
 {
 public:
@@ -848,6 +867,48 @@ private:
     char * stringData_;
     int origPNidNs_;
 };
+#endif
+
+#ifdef NAMESERVER_PROCESS
+class CIntCloneProcNsReq: public CInternalReq
+{
+public:
+    CIntCloneProcNsReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData, int origPNidNs);
+    virtual ~CIntCloneProcNsReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    bool backup_;
+    bool unhooked_;
+    bool eventMessages_;
+    bool systemMessages_;
+    int nid_;
+    PROCESSTYPE type_;
+    int priority_;
+    int parentNid_;
+    int parentPid_;
+    int parentVerifier_;
+    int osPid_;
+    int verifier_; 
+    pid_t priorPid_;
+    int persistentRetries_;
+    int  argc_;
+    struct timespec creationTime_;
+    strId_t pathStrId_;
+    strId_t ldpathStrId_;
+    strId_t programStrId_;
+    int  nameLen_;
+    int  portLen_;
+    int  infileLen_;
+    int  outfileLen_;
+    int  argvLen_;
+    char * stringData_;
+    int origPNidNs_;
+};
+#endif
 
 #ifndef NAMESERVER_PROCESS
 class CIntDeviceReq: public CInternalReq
@@ -982,6 +1043,28 @@ private:
     int  argvLen_;
     char * stringData_;
 };
+
+class CIntNotifyReq: public CInternalReq
+{
+public:
+    CIntNotifyReq( struct notify_def *notifyDef );
+    virtual ~CIntNotifyReq( );
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    bool canceled_;
+    int targetNid_;
+    int targetPid_;
+    Verifier_t targetVerifier_;
+    _TM_Txid_External transId_;
+};
+
 
 class CIntOpenReq: public CInternalReq
 {
@@ -1397,6 +1480,7 @@ class CReqQueue
 #endif
     void enqueueNewProcReq( struct process_def *procDef );
 #ifndef NAMESERVER_PROCESS
+    void enqueueNotifyReq( struct notify_def *notifyDef );
     void enqueueOpenReq( struct open_def *openDef );
 #endif
     void enqueueProcInitReq( struct process_init_def *procInitDef );

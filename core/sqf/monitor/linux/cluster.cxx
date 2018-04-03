@@ -64,6 +64,9 @@ using namespace std;
 #include "zclient.h"
 #include "commaccept.h"
 #include "meas.h"
+#ifdef NAMESERVER_PROCESS
+#include "nscommacceptmon.h"
+#endif
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
@@ -79,9 +82,11 @@ extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char MyMPICommPort[MPI_MAX_PORT_NAME];
 extern char MySyncPort[MPI_MAX_PORT_NAME];
 #ifdef NAMESERVER_PROCESS
+extern CCommAcceptMon CommAcceptMon;
 extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
 #else
-extern char MyMon2MonPort[MPI_MAX_PORT_NAME];
+extern bool NameServerEnabled;
+extern char MyPtPPort[MPI_MAX_PORT_NAME];
 #endif
 extern bool SMSIntegrating;
 extern int CreatorShellPid;
@@ -250,6 +255,8 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
                     lnode->PrepareForTransactions( downNode->GetPNid() != spareNode->GetPNid() );
                 }
             }
+#else
+            ResetIntegratingPNid();
 #endif
         }
 
@@ -2714,8 +2721,18 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
         break;
 
     case InternalType_Clone:
+#ifndef NAMESERVER_PROCESS
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal clone request, completed replicating process (%d, %d) %s\n", method_name, __LINE__, recv_msg->u.clone.nid, recv_msg->u.clone.os_pid, (recv_msg->u.clone.backup?" Backup":""));
+#else        
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal clone request, process (%d, %d)"
+                         " %s\n", method_name, __LINE__,
+                         recv_msg->u.clone.nid, recv_msg->u.clone.os_pid,
+                         (recv_msg->u.clone.backup?" Backup":""));
+
+        ReqQueue.enqueueCloneReq( &recv_msg->u.clone );
+#endif
         break;
 
 #ifndef NAMESERVER_PROCESS
@@ -4691,6 +4708,20 @@ void CCluster::ResetIntegratingPNid( void )
     }
 
     integratingPNid_ = -1;
+
+#ifdef NAMESERVER_PROCESS
+    if (!CommAcceptMon.isAccepting())
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Triggering commAcceptorMon thread to begin accepting connections\n",
+                          method_name, __LINE__ );
+        }
+
+        // Indicate to the commAcceptor thread to begin accepting connections
+        CommAcceptMon.startAccepting();
+    }
+#endif
 
     if (!CommAccept.isAccepting())
     {
@@ -8284,7 +8315,7 @@ void CCluster::InitServerSock( void )
 #ifdef NAMESERVER_PROCESS
     int mon2nsPort = 0;
 #else
-    int mon2monPort = 0;
+    int ptpPort = 0;
 #endif
 
     unsigned char addr[4];
@@ -8325,7 +8356,11 @@ void CCluster::InitServerSock( void )
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
+#ifdef NAMESERVER_PROCESS
+                , "[%s@%d] MkSrvSock(NS_COMM_PORT=%d) error: %s\n"
+#else
                 , "[%s@%d] MkSrvSock(MONITOR_COMM_PORT=%d) error: %s\n"
+#endif
                 , method_name, __LINE__, serverCommPort
                 , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_2, SQ_LOG_CRIT, buf );
@@ -8373,7 +8408,11 @@ void CCluster::InitServerSock( void )
         char ebuff[256];
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
+#ifdef NAMESERVER_PROCESS
+                , "[%s@%d] MkSrvSock(NS_SYNC_PORT=%d) error: %s\n"
+#else
                 , "[%s@%d] MkSrvSock(MONITOR_SYNC_PORT=%d) error: %s\n"
+#endif
                 , method_name, __LINE__, serverSyncPort
                 , strerror_r( errno, ebuff, 256 ) );
         mon_log_write( MON_CLUSTER_INITSERVERSOCK_3, SQ_LOG_CRIT, buf );
@@ -8443,56 +8482,64 @@ void CCluster::InitServerSock( void )
 
     }
 #else
-    env = getenv("MONITOR_COMM_PORT");
-    if ( env )
+    if (NameServerEnabled)
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( errno == 0) mon2monPort = val;
-    }
-    else
-    {
-       mon2monPort = 23399;
-    }
-
-    // For virtual env, add PNid to the port so we can still test without collisions of port numbers
-    if (!IsRealCluster)
-    {
-        mon2monPort += MyNode->GetPNid();
-    }
-    mon2monSock_ = MkSrvSock( &mon2monPort );
-
-
-    if ( mon2monSock_ < 0 )
-    {
-        char ebuff[256];
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s@%d] MkSrvSock(MON2MONSERVER_COMM_PORT=%d) error: %s\n"
-                , method_name, __LINE__, mon2monPort
-                , strerror_r( errno, ebuff, 256 ) );
-        mon_log_write( MON_CLUSTER_INITSERVERSOCK_4, SQ_LOG_CRIT, buf );
-        abort();
-    }
-    else
-    {
-        snprintf( MyMon2MonPort, sizeof(MyMon2MonPort)
-                , "%d.%d.%d.%d:%d"
-                , (int)((unsigned char *)addr)[0]
-                , (int)((unsigned char *)addr)[1]
-                , (int)((unsigned char *)addr)[2]
-                , (int)((unsigned char *)addr)[3]
-                , mon2monPort );
-        MyNode->SetMon2MonPort( MyMon2MonPort );
-
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            trace_printf( "%s@%d Initialized my mon2mon socket port, "
-                          "pnid=%d (%s:%s) (mon2monPort=%s)\n"
-                        , method_name, __LINE__
-                        , MyPNID, MyNode->GetName(), MyMon2MonPort
-                        , MyNode->GetMon2MonPort() );
-
+        env = getenv("MON2MON_COMM_PORT");
+        if ( env )
+        {
+            int val;
+            errno = 0;
+            val = strtol(env, NULL, 10);
+            if ( errno == 0) ptpPort = val;
+        }
+        else
+        {
+           char buf[MON_STRING_BUF_SIZE];
+           snprintf( buf, sizeof(buf)
+                   , "[%s@%d] MON2MON_COMM_PORT environment variable is not set!\n"
+                   , method_name, __LINE__ );
+           mon_log_write( MON_CLUSTER_INITSERVERSOCK_5, SQ_LOG_CRIT, buf );
+           abort();
+        }
+    
+        // For virtual env, add PNid to the port so we can still test without collisions of port numbers
+        if (!IsRealCluster)
+        {
+            ptpPort += MyNode->GetPNid();
+        }
+    
+        ptpSock_ = MkSrvSock( &ptpPort );
+        if ( ptpSock_ < 0 )
+        {
+            char ebuff[MON_STRING_BUF_SIZE];
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s@%d] MkSrvSock(MON2MON_COMM_PORT=%d) error: %s\n"
+                    , method_name, __LINE__, ptpPort
+                    , strerror_r( errno, ebuff, MON_STRING_BUF_SIZE ) );
+            mon_log_write( MON_CLUSTER_INITSERVERSOCK_6, SQ_LOG_CRIT, buf );
+            abort();
+        }
+        else
+        {
+            snprintf( MyPtPPort, sizeof(MyPtPPort)
+                    , "%d.%d.%d.%d:%d"
+                    , (int)((unsigned char *)addr)[0]
+                    , (int)((unsigned char *)addr)[1]
+                    , (int)((unsigned char *)addr)[2]
+                    , (int)((unsigned char *)addr)[3]
+                    , ptpPort );
+            MyNode->SetPtPPort( MyPtPPort );
+            MyNode->SetPtPSocketPort( ptpPort );
+    
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                trace_printf( "%s@%d Initialized my ptp socket port, "
+                              "pnid=%d (%s:%s) (ptpPort=%s)\n"
+                            , method_name, __LINE__
+                            , MyPNID, MyNode->GetName(), MyPtPPort
+                            , MyNode->GetPtPPort() );
+    
+        }
     }
 #endif
 
@@ -8503,7 +8550,7 @@ void CCluster::InitServerSock( void )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s@%d] epoll_create1() error: %s\n",
             method_name, __LINE__, strerror_r( errno, ebuff, 256 ) );
-        mon_log_write( MON_CLUSTER_INITSERVERSOCK_4, SQ_LOG_CRIT, buf );
+        mon_log_write( MON_CLUSTER_INITSERVERSOCK_7, SQ_LOG_CRIT, buf );
         MPI_Abort( MPI_COMM_SELF,99 );
     }
 
@@ -8533,12 +8580,12 @@ int CCluster::AcceptSyncSock( void )
 }
 
 #ifndef NAMESERVER_PROCESS
-int CCluster::AcceptMon2MonSock( void )
+int CCluster::AcceptPtPSock( void )
 {
-    const char method_name[] = "CCluster::AcceptMon2MonSock";
+    const char method_name[] = "CCluster::AcceptPtPSock";
     TRACE_ENTRY;
 
-    int csock = AcceptSock( mon2monSock_ );
+    int csock = AcceptSock( ptpSock_ );
 
     TRACE_EXIT;
     return( csock  );
@@ -8825,9 +8872,31 @@ int CCluster::Connect( const char *portName )
     return ( sock );
 }
 
+#ifndef NAMESERVER_PROCESS
+void CCluster::ConnectToPtPCommSelf( void )
+{
+    const char method_name[] = "CCluster::ConnectToPtPCommSelf";
+    TRACE_ENTRY;
+
+    Connect( MyNode->GetPtPSocketPort() );
+
+    TRACE_EXIT;
+}
+#endif
+
 void CCluster::ConnectToSelf( void )
 {
     const char method_name[] = "CCluster::ConnectToSelf";
+    TRACE_ENTRY;
+
+    Connect( MyNode->GetCommSocketPort() );
+
+    TRACE_EXIT;
+}
+
+void CCluster::Connect( int socketPort )
+{
+    const char method_name[] = "CCluster::Connect";
     TRACE_ENTRY;
 
     int  sock;     // socket
@@ -8882,7 +8951,7 @@ void CCluster::ConnectToSelf( void )
     memset( (char *) &sockinfo, 0, size );
     memcpy( (char *) &sockinfo.sin_addr, (char *) he->h_addr, 4 );
     sockinfo.sin_family = AF_INET;
-    sockinfo.sin_port = htons( (unsigned short) MyNode->GetCommSocketPort() );
+    sockinfo.sin_port = htons( (unsigned short) socketPort );
 
     connect_failures = 0;
     ret = 1;
@@ -8896,7 +8965,7 @@ void CCluster::ConnectToSelf( void )
                         , (int)((unsigned char *)he->h_addr)[1]
                         , (int)((unsigned char *)he->h_addr)[2]
                         , (int)((unsigned char *)he->h_addr)[3]
-                        , MyNode->GetCommSocketPort()
+                        , socketPort
                         , connect_failures );
         }
 

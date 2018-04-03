@@ -534,6 +534,17 @@ int CNameServer::ProcessInfoCont( struct message_def* msg )
     return error;
 }
 
+int CNameServer::ProcessInfoNs( struct message_def* msg )
+{
+    const char method_name[] = "CNameServer::ProcessInfoNs";
+    TRACE_ENTRY;
+
+    int error = SendReceive( msg );
+
+    TRACE_EXIT;
+    return error;
+}
+
 int CNameServer::ProcessNew(CProcess* process )
 {
     const char method_name[] = "CNameServer::ProcessNew";
@@ -568,10 +579,19 @@ int CNameServer::ProcessNew(CProcess* process )
     msgnew->type = process->GetType();
     msgnew->priority = process->GetPriority();
     msgnew->backup = process->IsBackup();
+    msgnew->unhooked = process->IsUnhooked();
     msgnew->event_messages = process->IsEventMessages();
     msgnew->system_messages = process->IsSystemMessages();
+    msgnew->pathStrId = process->pathStrId();
+    msgnew->ldpathStrId = process->ldPathStrId();
+    msgnew->programStrId = process->programStrId();
     strcpy( msgnew->process_name, process->GetName() );
-    strcpy( msgnew->program, process->program() );
+    strcpy( msgnew->port_name, process->GetPort() );
+    msgnew->argc = process->argc();
+    memcpy(msgnew->argv, process->userArgv(), process->userArgvLen());
+    strcpy( msgnew->infile, process->infile() );
+    strcpy( msgnew->outfile, process->outfile() );
+    msgnew->creation_time = process->GetCreationTime();
 
     int error = SendReceive(&msg );
 
@@ -654,6 +674,10 @@ int CNameServer::SendReceive( struct message_def* msg )
         descp = (char *) "process-info-cont";
         size += sizeof(msg->u.request.u.process_info_cont);
         break;
+    case ReqType_ProcessInfoNs:
+        descp = (char *) "process-info-ns";
+        size += sizeof(msg->u.request.u.process_info);
+        break;
     case ReqType_ShutdownNs:
         msgshutdown = &msg->u.request.u.shutdown_ns;
         sprintf( desc, "shutdown (nid=%d, pid=%d, level=%d)",
@@ -674,7 +698,7 @@ int CNameServer::SendReceive( struct message_def* msg )
     {
         if ( trace_settings & ( TRACE_NS | TRACE_PROCESS ) )
         {
-            char desc[200];
+            char desc[2048];
             char* descp = desc;
             switch ( msg->u.reply.type )
             {
@@ -707,6 +731,70 @@ int CNameServer::SendReceive( struct message_def* msg )
                          msg->u.reply.u.process_info.num_processes,
                          msg->u.reply.u.process_info.return_code,
                          msg->u.reply.u.process_info.more_data );
+                break;
+            case ReplyType_ProcessInfoNs:
+//                int argvLen = sizeof(msg->u.reply.u.process_info_ns.argv);
+                sprintf( desc, 
+                         "process-info-ns reply:\n"
+                         "        process_info_ns.nid=%d\n"
+                         "        process_info_ns.pid=%d\n"
+                         "        process_info_ns.verifier=%d\n"
+                         "        process_info_ns.process_name=%s\n"
+                         "        process_info_ns.type=%d\n"
+                         "        process_info_ns.parent_nid=%d\n"
+                         "        process_info_ns.parent_pid=%d\n"
+                         "        process_info_ns.parent_verifier=%d\n"
+                         "        process_info_ns.priority=%d\n"
+                         "        process_info_ns.backup=%d\n"
+                         "        process_info_ns.state=%d\n"
+                         "        process_info_ns.unhooked=%d\n"
+                         "        process_info_ns.event_messages=%d\n"
+                         "        process_info_ns.system_messages=%d\n"
+                         "        process_info_ns.program=%s\n"
+                         "        process_info_ns.pathStrId=%d:%d\n"
+                         "        process_info_ns.ldpathStrId=%d:%d\n"
+                         "        process_info_ns.programStrId=%d:%d\n"
+                         "        process_info_ns.port_name=%s\n"
+                         "        process_info_ns.argc=%d\n"
+//                         "        process_info_ns.argv=[%.*s]\n"
+                         "        process_info_ns.infile=%s\n"
+                         "        process_info_ns.outfile=%s\n"
+//#if 0
+//                         "        process_info_ns.creation_time=%ld(secs)\n",
+//                         "        process_info_ns.creation_time=%ld(secs):%ld(nsecs)\n",
+//#endif
+                         "        process_info_ns.return_code=%d"
+                         , msg->u.reply.u.process_info_ns.nid
+                         , msg->u.reply.u.process_info_ns.pid
+                         , msg->u.reply.u.process_info_ns.verifier
+                         , msg->u.reply.u.process_info_ns.process_name
+                         , msg->u.reply.u.process_info_ns.type
+                         , msg->u.reply.u.process_info_ns.parent_nid
+                         , msg->u.reply.u.process_info_ns.parent_pid
+                         , msg->u.reply.u.process_info_ns.parent_verifier
+                         , msg->u.reply.u.process_info_ns.priority
+                         , msg->u.reply.u.process_info_ns.backup
+                         , msg->u.reply.u.process_info_ns.state
+                         , msg->u.reply.u.process_info_ns.unhooked
+                         , msg->u.reply.u.process_info_ns.event_messages
+                         , msg->u.reply.u.process_info_ns.system_messages
+                         , msg->u.reply.u.process_info_ns.program
+                         , msg->u.reply.u.process_info_ns.pathStrId.nid
+                         , msg->u.reply.u.process_info_ns.pathStrId.id
+                         , msg->u.reply.u.process_info_ns.ldpathStrId.nid
+                         , msg->u.reply.u.process_info_ns.ldpathStrId.id
+                         , msg->u.reply.u.process_info_ns.programStrId.nid
+                         , msg->u.reply.u.process_info_ns.programStrId.id
+                         , msg->u.reply.u.process_info_ns.port_name
+                         , msg->u.reply.u.process_info_ns.argc
+//                         , &msg->u.reply.u.process_info_ns.argv
+                         , msg->u.reply.u.process_info_ns.infile
+                         , msg->u.reply.u.process_info_ns.outfile
+//#if 0
+//                         , msg->u.reply.u.process_info_ns.creation_time.tv_sec
+//                         , msg->u.reply.u.process_info_ns.creation_time.tv_nsec
+//#endif
+                         , msg->u.reply.u.process_info_ns.return_code );
                 break;
             default:
                 descp = (char *) "UNKNOWN";

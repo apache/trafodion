@@ -44,6 +44,7 @@ public:
     int  ProcessDelete(CProcess* process );
     int  ProcessInfo( struct message_def* msg );
     int  ProcessInfoCont( struct message_def* msg );
+    int  ProcessInfoNs( struct message_def* msg );
     int  ProcessNew(CProcess* process );
     int  ProcessShutdown( void );
     void SetLocalHost( void );

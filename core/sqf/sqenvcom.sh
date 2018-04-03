@@ -674,16 +674,30 @@ export SQ_LUNMGR_VERBOSITY=1
 export SQ_STARTUP=r
 
 # Monitor process creator:
+#
 #   MPIRUN - monitor process is created by mpirun
+#
 # Uncomment SQ_MON_CREATOR when running monitor in AGENT mode
 #export SQ_MON_CREATOR=MPIRUN
 
 # Monitor process run mode:
+#
 #   AGENT - monitor process runs in agent mode versus MPI collective
-# Uncomment the three environment variables below
+#
+# Uncomment the next three environment variables
 #export SQ_MON_RUN_MODE=AGENT
-#export MONITOR_COMM_PORT=23399
-#export MONITOR_SYNC_PORT=23398
+#export MONITOR_COMM_PORT=23390
+#export MONITOR_SYNC_PORT=23380
+#
+#   NAME-SERVER - to disable process replication and enable name-server
+#
+# Uncomment the next six environment variables
+#export SQ_NAMESERVER_ENABLE=1
+#export NS_COMM_PORT=23370
+#export NS_SYNC_PORT=23360
+#export NS_M2N_COMM_PORT=23350
+#export MON2MON_COMM_PORT=23340
+#export MONITOR_COMM_PORT=23330
 
 # Alternative logging capability in monitor
 export SQ_MON_ALTLOG=0

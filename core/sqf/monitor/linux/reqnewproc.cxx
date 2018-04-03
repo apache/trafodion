@@ -527,15 +527,18 @@ void CExtNewProcReq::performRequest()
                 {
                     process->userArgs (  msg_->u.request.u.new_process.argc,
                                          msg_->u.request.u.new_process.argv );
-                    // Replicate the process to other nodes
-                    
-//TRK-TODO 
-         /*           if (NameServerEnabled)
+#ifndef NAMESERVER_PROCESS
+                    if (NameServerEnabled)
                     {
-                        PtpClient->NewProcess(process, lnode->GetNid(), lnode->GetNode()->GetName());
+                        // Forward the process create to the target node
+                        PtpClient->ProcessNew( process
+                                             , lnode->GetNid()
+                                             , lnode->GetNode()->GetName());
                     }
                     else
-         */         {
+#endif
+                    {
+                        // Replicate the process to other nodes
                         CReplProcess *repl = new CReplProcess(process);
                         Replicator.addItem(repl);
                     }
@@ -558,19 +561,6 @@ void CExtNewProcReq::performRequest()
                     strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
                     msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
                 }
-#ifdef QUICK_WAITED_NEWPROCESS_REPLY
-                else if (process->GetPid() != -1)
-                {   // Process was created locally, reply now.  The process
-                    // was created but the process startup message has not yet
-                    // arrived.
-                    msg_->u.reply.type = ReplyType_NewProcess;
-                    msg_->u.reply.u.new_process.nid = process->GetNid();
-                    msg_->u.reply.u.new_process.pid = process->GetPid();
-                    msg_->u.reply.u.new_process.verifier = process->GetVerifier();
-                    strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
-                    msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
-                }
-#endif
                 else
                 {
                     // we will not reply at this time ... but wait for the child process to 

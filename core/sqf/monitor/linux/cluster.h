@@ -109,9 +109,13 @@ public:
 #ifdef NAMESERVER_PROCESS
     int  AcceptMon2NsSock( void );
 #else
-    int  AcceptMon2MonSock( void );
+    int  AcceptPtPSock( void );
 #endif
     int  Connect( const char *portName );
+    void Connect( int socketPort );
+#ifndef NAMESERVER_PROCESS
+    void ConnectToPtPCommSelf( void );
+#endif
     void ConnectToSelf( void );
     int  SetKeepAliveSockOpt( int sock );
     int  MkCltSock( const char *portName );
@@ -231,7 +235,7 @@ protected:
 #ifdef NAMESERVER_PROCESS
     int            mon2nsSock_;
 #else
-    int            mon2monSock_;
+    int            ptpSock_;
 #endif
     int            epollFD_;
     int           *indexToPnid_;
