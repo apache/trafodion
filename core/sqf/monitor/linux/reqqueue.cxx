@@ -269,7 +269,7 @@ CRequest::ReqStatus_t CRequest::okToExecute()
     }
 
     bool ownershipFailure;
-    if ( !isExclusive() 
+    if ( !isExclusive()
       && !takeOwnership( ownershipFailure ) )
     {   // Can't get ownership of needed objects
 
@@ -293,7 +293,7 @@ CRequest::ReqStatus_t CRequest::okToExecute()
             struct timespec now;
             struct timespec tDiff;
             clock_gettime(CLOCK_REALTIME, &now);
-        
+
             CReqQueue::timeDiff ( reqArrival_, now, tDiff );
 
             if ( tDiff.tv_sec > CReqQueue::REQ_MAX_DEFER)
@@ -316,7 +316,7 @@ CRequest::ReqStatus_t CRequest::okToExecute()
                 if ( trace_settings & TRACE_REQUEST )
                     trace_printf("%s@%d cannot take ownership for request "
                                  "#%ld\n", method_name, __LINE__, getId());
-                
+
                 reqStatus = WaitToExec;
             }
         }
@@ -416,7 +416,7 @@ void CRequest::lioreply(struct message_def *msg, int Pid, int *error)
                          method_name, __LINE__, msg, Pid,
                          ((SharedMsgDef*)msg)->trailer.index );
 
-        SQ_theLocalIOToClient->sendCtlMsg ( Pid, 
+        SQ_theLocalIOToClient->sendCtlMsg ( Pid,
                                             MC_SReady,
                                             ((SharedMsgDef*)msg)->trailer.index,
                                             error
@@ -665,7 +665,7 @@ void CIntCloneProcReq::performRequest()
             {
                 trace_printf("%s@%d - For restarted persistent process "
                              " altering (%d, %d) to (%d, %d)\n",
-                             method_name, __LINE__, 
+                             method_name, __LINE__,
                              nid_,
                              priorPid_,
                              nid_,
@@ -692,7 +692,7 @@ void CIntCloneProcReq::performRequest()
             {
                 trace_printf("%s@%d - Unexpectedly could not locate "
                              " restarted persistent process (%d , %d)\n",
-                             method_name, __LINE__, 
+                             method_name, __LINE__,
                              nid_,
                              priorPid_);
             }
@@ -757,7 +757,7 @@ void CIntCloneProcReq::performRequest()
         }
         else
         {
-            // This is a new clone process that needs to be created 
+            // This is a new clone process that needs to be created
             // mirroring another node
             CNode * node = Nodes->GetLNode (nid_)->GetNode();
             CProcess * process;
@@ -893,7 +893,7 @@ void CIntExitReq::performRequest()
 
         if ( ! process )
         {
-            // Could not locate process by process id.  If the exit 
+            // Could not locate process by process id.  If the exit
             // occurred due to an early process termination on another
             // node we won't have the process id.  Try the look up by
             // name instead.
@@ -914,8 +914,8 @@ void CIntExitReq::performRequest()
                             pid_,
                             verifier_,
                             process->GetVerifier());
-            }            
-        } 
+            }
+        }
         else
         {
             lnode->GetNode()->DelFromNameMap ( process );
@@ -926,19 +926,19 @@ void CIntExitReq::performRequest()
 #endif
         }
     }
-    else 
+    else
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Can't find process %s (%d, %d) for processing "
                 "exit.\n", method_name, name_, nid_, pid_);
-        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_5, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_5, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
 }
 
 #ifndef NAMESERVER_PROCESS
-CIntKillReq::CIntKillReq( struct kill_def *killDef ) 
+CIntKillReq::CIntKillReq( struct kill_def *killDef )
             : CInternalReq()
             , nid_( killDef->nid )
             , pid_( killDef->pid )
@@ -983,14 +983,14 @@ void CIntKillReq::performRequest()
                             pid_,
                             verifier_,
                             process->GetVerifier());
-            }            
-        } 
+            }
+        }
         else
         {
             CLNode   *lnode = Nodes->GetLNode( nid_ );
             if ( lnode && process->GetPid() == pid_ )
             {
-        
+
                 // Remove mapping of name to process object.
                 lnode->GetNode()->DelFromNameMap ( process );
             }
@@ -1005,7 +1005,7 @@ void CIntKillReq::performRequest()
             process->SetAbort( abort_ );
 
             if ( !process->IsClone() )
-            {   
+            {
                 // Indicate thate process is down and abended
                 lnode->GetNode()->SetProcessState( process, State_Down, true );
 
@@ -1017,7 +1017,7 @@ void CIntKillReq::performRequest()
                 kill( pid_, Monitor->GetProcTermSig() );
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                     trace_printf("%s@%d - Completed kill(%d) for (%d, %d:%d)\n",
-                                 method_name, __LINE__, Monitor->GetProcTermSig(), 
+                                 method_name, __LINE__, Monitor->GetProcTermSig(),
                                  nid_, pid_, verifier_);
             }
             else
@@ -1029,7 +1029,7 @@ void CIntKillReq::performRequest()
                                  process->GetState() );
             }
 
-            CProcess *parent = Nodes->GetProcess( process->GetParentNid(), 
+            CProcess *parent = Nodes->GetProcess( process->GetParentNid(),
                                                   process->GetParentPid() );
             process->Switch(parent); // switch process pair roles if needed
         }
@@ -1149,11 +1149,11 @@ void CIntNewProcReq::performRequest()
         parentProcess = Nodes->GetProcess( parentNid_, parentPid_ );
         if ( parentProcess )
         {
-            if ( (parentVerifier_ == -1) || 
+            if ( (parentVerifier_ == -1) ||
                  (parentVerifier_ == parentProcess->GetVerifier()) )
             {
-                if ( backup_ && 
-                    (parentProcess->GetPairParentNid() == -1 && 
+                if ( backup_ &&
+                    (parentProcess->GetPairParentNid() == -1 &&
                      parentProcess->GetPairParentPid() == -1))
                 {
                     parentProcess->SetPairParentNid( pairParentNid_ );
@@ -1168,7 +1168,7 @@ void CIntNewProcReq::performRequest()
     {
         CLNode *lnode = Nodes->GetLNode(nid_);
 
-        if ( lnode && 
+        if ( lnode &&
             (lnode->GetState() == State_Up ||
              lnode->GetState() == State_Shutdown ) )
         {   // Create the CProcess object and store the various
@@ -1199,7 +1199,7 @@ void CIntNewProcReq::performRequest()
             if ( newProcess != NULL )
             {
                 newProcess->userArgs ( argc_, argvLen_,
-                                       &stringData_[nameLen_ + infileLen_ 
+                                       &stringData_[nameLen_ + infileLen_
                                                     + outfileLen_] );
 
                 // Create the new process (fork/exec)
@@ -1210,14 +1210,14 @@ void CIntNewProcReq::performRequest()
 
                     // Successfully forked process.  Replicate actual process
                     // id and process name.
-                    
-//TRK-TODO 
+
+//TRK-TODO
               /*      if (NameServerEnabled)
                     {
                         PtpClient->ProcessInit(newProcess, reqTag_, 0, parentNid_, lnode->GetNode()->GetName());
                     }
                     else
-             */       {                    
+             */       {
                         CReplProcInit *repl
                             = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
                         Replicator.addItem(repl);
@@ -1232,7 +1232,7 @@ void CIntNewProcReq::performRequest()
 
 //TRK-TODO
             if (  newProcess == NULL )
-            {  
+            {
                 // Process creation failure, relay error code to node
                 // that requested process creation.
                 CReplProcInit *repl = new CReplProcInit(newProcess, reqTag_,
@@ -1246,16 +1246,16 @@ void CIntNewProcReq::performRequest()
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Can't find parent process nid=%d, pid=%d "
-                "for process create.\n", method_name, 
+                "for process create.\n", method_name,
                 parentNid_, parentPid_ );
-        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_10, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_10, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
 }
 
 #ifndef NAMESERVER_PROCESS
-CIntOpenReq::CIntOpenReq( struct open_def *openDef ) 
+CIntOpenReq::CIntOpenReq( struct open_def *openDef )
             : CInternalReq()
             , openerNid_( openDef->nid )
             , openerPid_( openDef->pid )
@@ -1309,7 +1309,7 @@ void CIntOpenReq::performRequest()
                             openedVerifier_,
                             process->GetVerifier());
             }
-        } 
+        }
         else
         {
             Nodes->GetLNode (openerNid_)->
@@ -1325,14 +1325,14 @@ void CIntOpenReq::performRequest()
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Can't find process nid=%d, pid=%d for "
                 "processing open.\n", method_name, openedNid_, openedPid_ );
-        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_11, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_11, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
 }
 #endif
 
-CIntProcInitReq::CIntProcInitReq( struct process_init_def *procInitDef ) 
+CIntProcInitReq::CIntProcInitReq( struct process_init_def *procInitDef )
                 : CInternalReq()
                 , nid_( procInitDef->nid )
                 , pid_( procInitDef->pid )
@@ -1408,7 +1408,7 @@ void CIntProcInitReq::performRequest()
                                  "parent's Parent_Nid/Parent_Pid="
                                  "(%d, %d).\n",
                                  method_name, __LINE__,  process_->GetNid(),
-                                 process_->GetPid(), parent->GetNid(), 
+                                 process_->GetPid(), parent->GetNid(),
                                  parent->GetPid(),
                                  process_->GetNid(), process_->GetPid());
                 }
@@ -1422,7 +1422,7 @@ void CIntProcInitReq::performRequest()
 // Following allows reply to a "waited" new process request before we
 // get the "startup" message from the process.   This make the process
 // creation appear to complete more quickly.   However there are potential
-// problems if the requester immediately tries to open the new process 
+// problems if the requester immediately tries to open the new process
 // because it is not ready yet.   So need to handle quick "open" of this
 // type before re-enabling this code section.
                 if (!process->IsNowait())
@@ -1439,13 +1439,13 @@ void CIntProcInitReq::performRequest()
                     }
 
                     if (parent)
-                    {   
+                    {
                         reply_msg = process->parentContext();
                         if ( reply_msg )
                         {
                             // the parent gets a new_process reply
                             parent->ReplyNewProcess ( reply_msg, process );
-                            
+
                             process->parentContext (NULL);
                         }
                     }
@@ -1568,7 +1568,7 @@ void CIntChildDeathReq::performRequest()
     const char method_name[] = "CIntChildDeathReq::performRequest";
 
     // process could have been deleted by a previous child death
-    // request. This could happen if child death signal did not arrive 
+    // request. This could happen if child death signal did not arrive
     // in hangupTime + PROCESS_DEATH_MARGIN. So get process ptr again.
     process_ = MyNode->GetProcess( pid_ );
 
@@ -1594,7 +1594,7 @@ void CIntChildDeathReq::performRequest()
         // if state is still Up, then process has not called exit.
         bool abended = (process_->GetState() == State_Up);
         MyNode->SetProcessState(process_, State_Stopped, abended);
-        
+
     }
 }
 
@@ -1667,8 +1667,8 @@ void CIntShutdownReq::performRequest()
     MyNode->SetShutdownLevel( (ShutdownLevel) level_ );
 
     // only abrupt case is supported through this mechanism at present.
-    // modify this assert as more shutdown levels are supported here. 
-    assert(level_ == ShutdownLevel_Abrupt); 
+    // modify this assert as more shutdown levels are supported here.
+    assert(level_ == ShutdownLevel_Abrupt);
 
     if( !getenv("SQ_VIRTUAL_NODES") )
     {
@@ -1720,7 +1720,7 @@ CIntNameServerAddReq::~CIntNameServerAddReq()
 void CIntNameServerAddReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2];
-    snprintf( strBuf, sizeof(strBuf), 
+    snprintf( strBuf, sizeof(strBuf),
               "IntReq(%s) req #=%ld "
               "(node_name=%s)"
             , CReqQueue::intReqType[InternalType_NodeAdd]
@@ -1772,7 +1772,7 @@ void CIntNameServerAddReq::performRequest()
 CIntNameServerDeleteReq::CIntNameServerDeleteReq( int req_nid
                                                 , int req_pid
                                                 , Verifier_t req_verifier
-                                                , const char *nodeName ) 
+                                                , const char *nodeName )
                  : CInternalReq()
                  , req_nid_(req_nid)
                  , req_pid_(req_pid)
@@ -1792,7 +1792,7 @@ CIntNameServerDeleteReq::~CIntNameServerDeleteReq()
 void CIntNameServerDeleteReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2];
-    snprintf( strBuf, sizeof(strBuf), 
+    snprintf( strBuf, sizeof(strBuf),
               "IntReq(%s) req #=%ld "
               "(node=%s)"
             , CReqQueue::intReqType[InternalType_NameServerDelete]
@@ -1848,7 +1848,7 @@ CIntNodeNameReq::CIntNodeNameReq( int req_nid
                                 , int req_pid
                                 , Verifier_t req_verifier
                                 , const char *current_name
-                                , const char *new_name  ) 
+                                , const char *new_name  )
                 : CInternalReq()
                 , req_nid_(req_nid)
                 , req_pid_(req_pid)
@@ -1883,9 +1883,9 @@ void CIntNodeNameReq::performRequest()
     int rc = MPI_SUCCESS;
     char current_n[MPI_MAX_PROCESSOR_NAME];
     char new_n[MPI_MAX_PROCESSOR_NAME];
-    CPNodeConfig   *pnodeConfig = NULL; 
+    CPNodeConfig   *pnodeConfig = NULL;
     CProcess *requester = NULL;
-    
+
     strcpy (current_n, current_name_.c_str());
     strcpy (new_n, new_name_.c_str());
 
@@ -1908,13 +1908,13 @@ void CIntNodeNameReq::performRequest()
                 {
                     Monitor->EnterSyncCycle();
                 }
-        
+
                 // Change node name in monitor's view of cluster
-                CNode    *node = Nodes->GetNode(current_n); 
+                CNode    *node = Nodes->GetNode(current_n);
                 if (node)
                 {
                     node->SetName( new_n );
-                    Nodes->ChangedNode( node ); 
+                    Nodes->ChangedNode( node );
                 }
                 else
                 {
@@ -1926,7 +1926,7 @@ void CIntNodeNameReq::performRequest()
 
                     rc = MPI_ERR_INTERN;
                 }
-            
+
                 // unlock sync thread
                 if ( !Emulate_Down )
                 {
@@ -1945,7 +1945,7 @@ void CIntNodeNameReq::performRequest()
                    , "[%s], Failed to retrieve pnodeConfig object for node %s!\n"
                    ,  method_name, current_n);
             mon_log_write(MON_INTREQ_NODE_NAME_2, SQ_LOG_ERR, buf);
-    
+
             rc = MPI_ERR_INTERN;
         }
     }
@@ -2005,7 +2005,7 @@ CIntNodeAddReq::~CIntNodeAddReq()
 void CIntNodeAddReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2];
-    snprintf( strBuf, sizeof(strBuf), 
+    snprintf( strBuf, sizeof(strBuf),
               "IntReq(%s) req #=%ld "
               "(node_name=%s/first_core=%d/last_core=%d/processors=%d/roles=%d)"
             , CReqQueue::intReqType[InternalType_NodeAdd]
@@ -2048,7 +2048,7 @@ void CIntNodeAddReq::performRequest()
     nid  = clusterConfig->GetNextNid();
     pnid = clusterConfig->GetNextPNid();
 
-    // Insert node in configuration database and 
+    // Insert node in configuration database and
     // add to configuration object in monitor
     if (clusterConfig->SaveNodeConfig( nodeName_
                                      , nid
@@ -2072,7 +2072,7 @@ void CIntNodeAddReq::performRequest()
         {
             rc = MPI_ERR_INTERN;
         }
-    
+
         // unlock sync thread
         if ( !Emulate_Down )
         {
@@ -2099,7 +2099,7 @@ void CIntNodeAddReq::performRequest()
 CIntNodeDeleteReq::CIntNodeDeleteReq( int req_nid
                                     , int req_pid
                                     , Verifier_t req_verifier
-                                    , int pnid ) 
+                                    , int pnid )
                  : CInternalReq()
                  , req_nid_(req_nid)
                  , req_pid_(req_pid)
@@ -2119,7 +2119,7 @@ CIntNodeDeleteReq::~CIntNodeDeleteReq()
 void CIntNodeDeleteReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2];
-    snprintf( strBuf, sizeof(strBuf), 
+    snprintf( strBuf, sizeof(strBuf),
               "IntReq(%s) req #=%ld "
               "(pnid=%d)"
             , CReqQueue::intReqType[InternalType_NodeDelete]
@@ -2184,7 +2184,7 @@ void CIntNodeDeleteReq::performRequest()
     TRACE_EXIT;
 }
 
-CIntDownReq::CIntDownReq( int pnid ) 
+CIntDownReq::CIntDownReq( int pnid )
     : CInternalReq(),
       pnid_ ( pnid )
 {
@@ -2311,7 +2311,7 @@ void CIntSoftNodeUpReq::performRequest()
     TRACE_EXIT;
 }
 
-CIntUpReq::CIntUpReq( int pnid, char *node_name, int merge_lead ) 
+CIntUpReq::CIntUpReq( int pnid, char *node_name, int merge_lead )
     : CInternalReq(),
       nodeName_ ( node_name?node_name:"" ),
       mergeLead_ ( merge_lead ),
@@ -2351,8 +2351,8 @@ void CIntUpReq::performRequest()
     TRACE_EXIT;
 }
 
-CIntActivateSpareReq::CIntActivateSpareReq(CNode *spareNode, CNode *downNode, bool checkHealth) 
-    : CInternalReq(), 
+CIntActivateSpareReq::CIntActivateSpareReq(CNode *spareNode, CNode *downNode, bool checkHealth)
+    : CInternalReq(),
     spareNode_(spareNode),
     downNode_(downNode),
     checkHealth_(checkHealth)
@@ -2396,7 +2396,7 @@ void CIntActivateSpareReq::performRequest()
     return;
 }
 
-CIntReviveReq::CIntReviveReq() 
+CIntReviveReq::CIntReviveReq()
     : CInternalReq()
 {
     // Add eyecatcher sequence as a debugging aid
@@ -2425,14 +2425,14 @@ void CIntReviveReq::performRequest()
     const char method_name[] = "CIntReviveReq::performRequest";
     TRACE_ENTRY;
 
-    int error; 
+    int error;
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Revive request\n", method_name, __LINE__);
 
     mem_log_write(MON_REQQUEUE_REVIVE_1);
 
-    CCluster::snapShotHeader_t header; 
+    CCluster::snapShotHeader_t header;
 
     switch( CommType )
     {
@@ -2468,20 +2468,20 @@ void CIntReviveReq::performRequest()
         return;
     }
 
-    if (header.compressedSize_ == -1) 
+    if (header.compressedSize_ == -1)
     {   // creator monitor ran into compression error, abort.
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Creator monitor compression error. Exiting.", method_name, __LINE__);  
+            trace_printf("%s@%d - Creator monitor compression error. Exiting.", method_name, __LINE__);
 
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "Creator monitor had compression error. Aborting node reintegration.\n");
-        mon_log_write(MON_REQQUEUE_REVIVE_2, SQ_LOG_CRIT, buf);   
-        
-        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed. 
+        mon_log_write(MON_REQQUEUE_REVIVE_2, SQ_LOG_CRIT, buf);
+
+        // exit call below runs desctructors. Stop healthcheck thread so that its lock can be destructed.
         HealthCheck.shutdownWork();
 
         TRACE_EXIT;
-        exit(0); // this will cause other monitors to disconnect from the new monitor.       
+        exit(0); // this will cause other monitors to disconnect from the new monitor.
     }
 
     char *compBuf = (char *) malloc ( header.compressedSize_ );
@@ -2489,7 +2489,7 @@ void CIntReviveReq::performRequest()
     if (!compBuf)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n", 
+            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n",
                           method_name, __LINE__, header.compressedSize_);
         TRACE_EXIT;
         return;
@@ -2536,7 +2536,7 @@ void CIntReviveReq::performRequest()
     if (!buf)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n", 
+            trace_printf("%s@%d - Unable to allocate buffer of size = %ld\n",
                           method_name, __LINE__, header.fullSize_);
 
         free( compBuf );
@@ -2553,7 +2553,7 @@ void CIntReviveReq::performRequest()
         trace_printf("%s@%d - compSize = %ld, fullsize = %ld, uncompress error = %d\n",
                      method_name, __LINE__, header.compressedSize_, header.fullSize_, error);
 
-    free( compBuf ); // don't need anymore. Will work on uncompressed buffer from this point. 
+    free( compBuf ); // don't need anymore. Will work on uncompressed buffer from this point.
 
     char *buffer = buf;
 
@@ -2617,7 +2617,7 @@ void CIntReviveReq::performRequest()
     return;
 }
 
-CIntSnapshotReq::CIntSnapshotReq( unsigned long long seqNum ) 
+CIntSnapshotReq::CIntSnapshotReq( unsigned long long seqNum )
     : CInternalReq(),
       seqNum_( seqNum )
 {
@@ -2657,7 +2657,7 @@ void CIntSnapshotReq::performRequest()
         trace_printf("%s@%d - Snapshot request\n", method_name, __LINE__);
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_1);
-    
+
     // abort this request if join communication is not setup
     switch( CommType )
     {
@@ -2665,11 +2665,11 @@ void CIntSnapshotReq::performRequest()
             if (Monitor->getJoinComm() == MPI_COMM_NULL)
             {
                 mem_log_write(MON_REQQUEUE_SNAPSHOT_2);
-        
+
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s], Join communicator is null, aborting snapshot req.\n", method_name);
                 mon_log_write(MON_REQQUEUE_SNAPSHOT_2, SQ_LOG_ERR, buf);
-              
+
                 TRACE_EXIT;
                 return;
             }
@@ -2678,11 +2678,11 @@ void CIntSnapshotReq::performRequest()
             if (Monitor->getJoinSock() == -1)
             {
                 mem_log_write(MON_REQQUEUE_SNAPSHOT_2);
-        
+
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s], Join socket is -1, aborting snapshot req.\n", method_name);
                 mon_log_write(MON_REQQUEUE_SNAPSHOT_2, SQ_LOG_ERR, buf);
-              
+
                 TRACE_EXIT;
                 return;
             }
@@ -2707,7 +2707,7 @@ void CIntSnapshotReq::performRequest()
 
     snapshotBuf = (char *) malloc (procSize + idsSize);
 
-    if (!snapshotBuf) 
+    if (!snapshotBuf)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
             trace_printf("%s@%d - Unable to allocate snapshot buffer, size = %ld\n",
@@ -2732,7 +2732,7 @@ void CIntSnapshotReq::performRequest()
 #endif
 
     // pack spareNodes pnids
-    header.spareNodesCount_ = Nodes->PackSpareNodesList( (intBuffPtr_t&)buf ); 
+    header.spareNodesCount_ = Nodes->PackSpareNodesList( (intBuffPtr_t&)buf );
 
     // pack logical-to-physical nid mappings
     header.nodeMapCount_ = Nodes->PackNodeMappings( (intBuffPtr_t&)buf );
@@ -2753,17 +2753,17 @@ void CIntSnapshotReq::performRequest()
     header.seqNum_ = seqNum_; // copy the one stored in this request
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - procCount = %ld, fullSize = %ld\n", 
+        trace_printf("%s@%d - procCount = %ld, fullSize = %ld\n",
              method_name, __LINE__, header.procCount_, header.fullSize_);
 
     clock_gettime(CLOCK_REALTIME, &snapShotTime);
 
-    // compress call requires the compression buffer to be little more than the input buffer. 
+    // compress call requires the compression buffer to be little more than the input buffer.
     compSize = compressBound(header.fullSize_);
 
-    compBuf = (char *)malloc(compSize); 
+    compBuf = (char *)malloc(compSize);
 
-    if (!compBuf) 
+    if (!compBuf)
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
             trace_printf("%s@%d - Unable to allocate compression buffer, size = %ld\n",
@@ -2776,18 +2776,18 @@ void CIntSnapshotReq::performRequest()
         TRACE_EXIT;
         return;
     }
-        
+
     memset( compBuf, 0, compSize ); // TODO: WHY?
-    z_result = compress((Bytef *)compBuf, (unsigned long *)&compSize, 
+    z_result = compress((Bytef *)compBuf, (unsigned long *)&compSize,
                         (Bytef *)snapshotBuf, header.fullSize_);
- 
+
     mem_log_write(MON_REQQUEUE_SNAPSHOT_9, z_result, compSize);
-        
+
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - compression result = %d, orig size = %ld, comp size = %ld\n", 
+        trace_printf("%s@%d - compression result = %d, orig size = %ld, comp size = %ld\n",
                      method_name, __LINE__, z_result, header.fullSize_, compSize);
 
-    if (z_result != Z_OK) 
+    if (z_result != Z_OK)
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "Snapshot buffer compression error = %d, aborting node reintegration.\n", z_result);
@@ -2834,8 +2834,8 @@ void CIntSnapshotReq::performRequest()
     clock_gettime(CLOCK_REALTIME, &compressTime);
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - snapshot times, start = %ld.%ld, end = %ld.%ld compressed = %ld.%ld\n", 
-                    method_name, __LINE__, startTime.tv_sec, startTime.tv_nsec, 
+        trace_printf("%s@%d - snapshot times, start = %ld.%ld, end = %ld.%ld compressed = %ld.%ld\n",
+                    method_name, __LINE__, startTime.tv_sec, startTime.tv_nsec,
                     snapShotTime.tv_sec, snapShotTime.tv_nsec, compressTime.tv_sec, compressTime.tv_nsec);
 
     free( snapshotBuf ); // don't need anymore. Will work on compressed buffer from this point.
@@ -2922,7 +2922,7 @@ void CIntSnapshotReq::performRequest()
     return;
 }
 
-CQuiesceReq::CQuiesceReq( ) 
+CQuiesceReq::CQuiesceReq( )
     : CInternalReq()
 {
     // Add eyecatcher sequence as a debugging aid
@@ -2966,11 +2966,11 @@ void CQuiesceReq::performRequest()
     sprintf(buf, "[%s], Quiesce notices sent.\n", method_name);
     mon_log_write(MON_REQQUEUE_QUIESCE_1, SQ_LOG_WARNING, buf);
 
-    // if nothing in exit list, schedule a node down. 
+    // if nothing in exit list, schedule a node down.
     // if not, node down will be scheduled when exit list becomes empty.
 #ifndef NAMESERVER_PROCESS
     if (MyNode->getNumQuiesceExitPids() == 0)
-    {   
+    {
 #endif
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
             trace_printf("%s@%d - Scheduling node down\n", method_name, __LINE__);
@@ -2982,7 +2982,7 @@ void CQuiesceReq::performRequest()
     TRACE_EXIT;
 }
 
-CPostQuiesceReq::CPostQuiesceReq( ) 
+CPostQuiesceReq::CPostQuiesceReq( )
     : CInternalReq()
 {
     // Add eyecatcher sequence as a debugging aid
@@ -3038,7 +3038,7 @@ void CPostQuiesceReq::performRequest()
 }
 
 #ifndef NAMESERVER_PROCESS
-CIntCreatePrimitiveReq::CIntCreatePrimitiveReq( int pnid ) 
+CIntCreatePrimitiveReq::CIntCreatePrimitiveReq( int pnid )
                        :CInternalReq()
                        ,pnid_ ( pnid )
 {
@@ -3105,7 +3105,7 @@ void CIntCreatePrimitiveReq::performRequest()
 #endif
 
 #ifndef NAMESERVER_PROCESS
-CIntTmReadyReq::CIntTmReadyReq( int nid ) 
+CIntTmReadyReq::CIntTmReadyReq( int nid )
                :CInternalReq()
                ,nid_ ( nid )
 {
@@ -3144,7 +3144,7 @@ void CIntTmReadyReq::performRequest()
 #endif
 
 //
-CReqQueue::CReqQueue(): busyExclusive_(false), busyWorkers_(0), syncDependentRequests_(0), maxQueueSize_(0), 
+CReqQueue::CReqQueue(): busyExclusive_(false), busyWorkers_(0), syncDependentRequests_(0), maxQueueSize_(0),
                         maxBusyWorkers_(0), numRequests_(0), execTimeMax_(0)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -3353,7 +3353,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request = new CExtNodeNameReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
-   
+
         case ReqType_NodeUp:
             request = new CExtNodeUpReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3409,7 +3409,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->errorReply( MPI_ERR_REQUEST );
             delete request;
             request = NULL;
-        }        
+        }
     }
 #ifndef NAMESERVER_PROCESS
     else if (msg && msg->type == MsgType_UnsolicitedMessage)
@@ -3555,7 +3555,7 @@ void CReqQueue::enqueueSnapshotReq (unsigned long long seqnum)
 
     request = new CIntSnapshotReq ( seqnum );
 
-    enqueueReq ( request ); 
+    enqueueReq ( request );
 }
 
 void CReqQueue::enqueueQuiesceReq ()
@@ -3586,7 +3586,7 @@ void CReqQueue::enqueueDeviceReq ( char *ldevName )
     CInternalReq * request;
 
     request = new CIntDeviceReq ( ldevName );
-    
+
     enqueueReq ( request );
 }
 #endif
@@ -3908,14 +3908,14 @@ void CReqQueue::processReviveRequests(unsigned long long minSeqNum)
 
         unsigned long long reqSeqNum = request->getSeqNum();
 
-        // move requests whose seq num is above the minSeqNum, discard others. 
+        // move requests whose seq num is above the minSeqNum, discard others.
         if (reqSeqNum > minSeqNum)
         {
             enqueueReq( request, true );
 
             if ( trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY) )
-                 trace_printf("%s@%d Req moved from revive to regular queue. " 
-                              "Req seq num = %llu, Min seq num = %llu\n", 
+                 trace_printf("%s@%d Req moved from revive to regular queue. "
+                              "Req seq num = %llu, Min seq num = %llu\n",
                               method_name, __LINE__, reqSeqNum, minSeqNum);
         }
         else
@@ -3923,8 +3923,8 @@ void CReqQueue::processReviveRequests(unsigned long long minSeqNum)
             delete request;
 
             if ( trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY) )
-                 trace_printf("%s@%d Req discarded from revive queue. " 
-                              "Req seq num = %llu, Min seq num = %llu\n", 
+                 trace_printf("%s@%d Req discarded from revive queue. "
+                              "Req seq num = %llu, Min seq num = %llu\n",
                               method_name, __LINE__, reqSeqNum, minSeqNum);
         }
     }
@@ -3938,12 +3938,12 @@ bool CReqQueue::addToReqReviveQueue( CInternalReq *req )
     const char method_name[] = "CReqQueue::addToReqReviveQueue";
     TRACE_ENTRY;
 
-    bool result = false; // request not added yet. 
+    bool result = false; // request not added yet.
 
     if ( IAmIntegrating )
     {
         reqReviveQueueLock_.lock();
-  
+
         if ( IAmIntegrating ) // check again because it could have gotten turned off while waiting on lock.
         {
             reqReviveQueue_.push_back(req);
@@ -3951,20 +3951,20 @@ bool CReqQueue::addToReqReviveQueue( CInternalReq *req )
             int qsize = reqReviveQueue_.size();
 
             if ( trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY) )
-                 trace_printf("%s@%d Req added to revive queue. Revive queue size = %d\n", 
+                 trace_printf("%s@%d Req added to revive queue. Revive queue size = %d\n",
                       method_name, __LINE__, qsize);
-            
+
             if ( qsize > MAX_REVIVE_QUEUE_SIZE )
             {
                 // remove a request set from the front of the queue.
-                // the set is a group of all requests with the same seq num. 
+                // the set is a group of all requests with the same seq num.
                 unsigned long long seqnum = reqReviveQueue_.front()->getSeqNum();
                 while (seqnum == reqReviveQueue_.front()->getSeqNum())
                 {
                     reqReviveQueue_.pop_front(); // calls destructor
-                    
+
                     if ( trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY) )
-                        trace_printf("%s@%d Req removed from revive queue. Revive queue size = %d\n", 
+                        trace_printf("%s@%d Req removed from revive queue. Revive queue size = %d\n",
                              method_name, __LINE__, qsize);
                 }
             }
@@ -3991,10 +3991,10 @@ void CReqQueue::enqueueReq( CInternalReq *req, bool reviveOper )
 
         if ( IAmIntegrating && !req->GetReviveFlag() )
         {
-            if ( addToReqReviveQueue(req) ) 
+            if ( addToReqReviveQueue(req) )
             {
                 TRACE_EXIT;
-                return; 
+                return;
             }
         }
     }
@@ -4154,7 +4154,7 @@ CRequest* CReqQueue::getRequest()
                        MonStats->ReqQueueDecr();
                 }
                 else
-                {   
+                {
                     // Take request out of request list.  "it" then
                     // points to next element in the queue.
                     it = reqQueue_.erase (it);
@@ -4176,7 +4176,7 @@ CRequest* CReqQueue::getRequest()
             }
         }
         else
-        {   // Wait for a new request to be queued or a currently 
+        {   // Wait for a new request to be queued or a currently
             // executing request to complete.
             if ( trace_settings & TRACE_REQUEST )
                 trace_printf("%s@%d waiting for request\n", method_name,
@@ -4243,7 +4243,7 @@ CRequest* CReqQueue::getRequest()
     }
 
     reqQueueLock_.unlock();
-        
+
     TRACE_EXIT;
 
     return request;
@@ -4270,7 +4270,7 @@ void CReqQueue::finishRequest(CRequest *request)
         if ( trace_settings & TRACE_REQUEST )
             trace_printf("%s@%d busyWorkers now=%d\n", method_name, __LINE__, busyWorkers_);
     }
-    
+
     workerStatusLock_.unlock();
 
     reqQueueLock_.lock();
@@ -4354,7 +4354,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_NodeDelete
    false,    // ReqType_NodeDown
    false,    // ReqType_NodeInfo
-   false,    // ReqType_NodeName 
+   false,    // ReqType_NodeName
    false,    // ReqType_NodeUp
    false,    // ReqType_Notice -- not an actual request
    false,    // ReqType_Notify
@@ -4423,7 +4423,7 @@ const char * CReqQueue::svcReqType[] = {
     "ZoneInfo"
 };
 
-// Must match internal.h:InternalType 
+// Must match internal.h:InternalType
 const char * CReqQueue::intReqType[] = {
       ""
     , "ActivateSpare"

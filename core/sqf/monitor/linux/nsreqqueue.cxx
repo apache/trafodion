@@ -53,16 +53,16 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
             size += sizeof(struct DelProcessNs_reply_def);
             if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
-                trace_printf("%s@%d reply type=%d(DelProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
-                             msg->u.reply.type, size, sockFd);
+                trace_printf("%s@%d reply type=%d(DelProcessNs), size=%d, sock=%d, rc=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd, msg->u.reply.u.del_process_ns.return_code);
             }
             break;
         case ReplyType_NewProcessNs:
             size += sizeof(struct NewProcessNs_reply_def);
             if (trace_settings & (TRACE_NS | TRACE_PROCESS_DETAIL))
             {
-                trace_printf("%s@%d reply type=%d(NewProcessNs), size=%d, sock=%d\n", method_name, __LINE__,
-                             msg->u.reply.type, size, sockFd);
+                trace_printf("%s@%d reply type=%d(NewProcessNs), size=%d, sock=%d, rc=%d\n", method_name, __LINE__,
+                             msg->u.reply.type, size, sockFd, msg->u.reply.u.new_process_ns.return_code);
             }
             break;
         case ReplyType_ProcessInfo:

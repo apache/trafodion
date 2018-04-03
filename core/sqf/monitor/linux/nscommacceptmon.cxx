@@ -252,9 +252,15 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                       "        msg.new_process_ns.parent_nid=%d\n"
                       "        msg.new_process_ns.parent_pid=%d\n"
                       "        msg.new_process_ns.parent_verifier=%d\n"
+                      "        msg.new_process_ns.pair_parent_nid=%d\n"
+                      "        msg.new_process_ns.pair_parent_pid=%d\n"
+                      "        msg.new_process_ns.pair_parent_verifier=%d\n"
                       "        msg.new_process_ns.nid=%d\n"
                       "        msg.new_process_ns.pid=%d\n"
                       "        msg.new_process_ns.verifier=%d\n"
+                      "        msg.new_process_ns.backup=%d\n"
+                      "        msg.new_process_ns.event_messages=%d\n"
+                      "        msg.new_process_ns.system_messages=%d\n"
                       "        msg.new_process_ns.type=%d\n"
                       "        msg.new_process_ns.priority=%d\n"
                       "        msg.new_process_ns.process_name=%s\n"
@@ -262,9 +268,15 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                     , msg->u.request.u.new_process_ns.parent_nid
                     , msg->u.request.u.new_process_ns.parent_pid
                     , msg->u.request.u.new_process_ns.parent_verifier
+                    , msg->u.request.u.new_process_ns.pair_parent_nid
+                    , msg->u.request.u.new_process_ns.pair_parent_pid
+                    , msg->u.request.u.new_process_ns.pair_parent_verifier
                     , msg->u.request.u.new_process_ns.nid
                     , msg->u.request.u.new_process_ns.pid
                     , msg->u.request.u.new_process_ns.verifier
+                    , msg->u.request.u.new_process_ns.backup
+                    , msg->u.request.u.new_process_ns.event_messages
+                    , msg->u.request.u.new_process_ns.system_messages
                     , msg->u.request.u.new_process_ns.type
                     , msg->u.request.u.new_process_ns.priority
                     , msg->u.request.u.new_process_ns.process_name

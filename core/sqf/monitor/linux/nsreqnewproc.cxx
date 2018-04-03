@@ -76,19 +76,39 @@ void CExtNewProcNsReq::performRequest()
     CNode *node;
     CLNode *parent_lnode;
     CNode *parent_node;
+    CProcess *parent;
     int result;
     lnode = Nodes->GetLNode( nid_ );
     node = lnode->GetNode();
     parent_lnode = Nodes->GetLNode( msg_->u.request.u.new_process_ns.parent_nid );
-    parent_node = NULL;
     if ( parent_lnode )
         parent_node = parent_lnode->GetNode();
+    else
+        parent_node = NULL;
     strId_t pathStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.path );
     strId_t ldpathStrId = node->GetStringId (msg_->u.request.u.new_process_ns.ldpath );
     strId_t programStrId = node->GetStringId ( msg_->u.request.u.new_process_ns.program );
-    CProcess *parent = NULL;
     if ( parent_node )
         parent = parent_node->GetProcess( msg_->u.request.u.new_process_ns.parent_pid );
+    else
+        parent = NULL;
+    if ( parent )
+    {
+        int parentVerifier = msg_->u.request.u.new_process_ns.parent_verifier;
+
+        if ( (parentVerifier == -1) || 
+             (parentVerifier == parent->GetVerifier()) )
+        {
+            if ( msg_->u.request.u.new_process_ns.backup && 
+                (parent->GetPairParentNid() == -1 && 
+                 parent->GetPairParentPid() == -1))
+            {
+                parent->SetPairParentNid( msg_->u.request.u.new_process_ns.pair_parent_nid );
+                parent->SetPairParentPid( msg_->u.request.u.new_process_ns.pair_parent_pid );
+                parent->SetPairParentVerifier( msg_->u.request.u.new_process_ns.pair_parent_verifier );
+            }
+        }
+    }
     CProcess *process = node->CreateProcess ( parent,
                                               msg_->u.request.u.new_process_ns.nid,
                                               msg_->u.request.u.new_process_ns.pid,

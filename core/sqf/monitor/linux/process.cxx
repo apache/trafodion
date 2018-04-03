@@ -162,7 +162,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     Parent (parent),
     PairParentNid (-1),
     PairParentPid (-1),
-    PairParentVerifier (-1), 
+    PairParentVerifier (-1),
     ReplyTag (REPLY_TAG),           // will be set again when we have a pending reply
     OpenedCount (0),
     LastNid (nid),
@@ -170,7 +170,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     DumpStatus (Dump_Success),
     DumperNid (-1),
     DumperPid (-1),
-    DumperVerifier (-1), 
+    DumperVerifier (-1),
     priorPid_ (0),
     State_ (State_Unknown),
     next_(NULL),
@@ -477,12 +477,12 @@ bool CProcess::CancelDeathNotification( int nid
 
     while( notice )
     {
-        if ((( notice->Nid == nid    ) && 
-             ( notice->Pid == pid    ) && 
-             ( notice->verifier_ == verifier ) && 
+        if ((( notice->Nid == nid    ) &&
+             ( notice->Pid == pid    ) &&
+             ( notice->verifier_ == verifier ) &&
              ( isInvalid( trans_id ) || isEqual( notice->TransID, trans_id )))
          || (( nid == -1 || pid == -1             ) &&
-             ( isEqual(notice->TransID, trans_id) ) ) ) 
+             ( isEqual(notice->TransID, trans_id) ) ) )
         {
             next = notice->GetNext();
 
@@ -529,7 +529,7 @@ bool CProcess::CancelDeathNotification( int nid
 
 #ifndef NAMESERVER_PROCESS
 // Death notice registration for a process
-bool CProcess::procExitReg(CProcess *targetProcess, 
+bool CProcess::procExitReg(CProcess *targetProcess,
                            _TM_Txid_External transId)
 {
     const char method_name[] = "CProcess::ProcExitReg";
@@ -549,7 +549,7 @@ bool CProcess::procExitReg(CProcess *targetProcess,
         deathInterest_.push_back ( target );
         deathInterestLock_.unlock();
 
-        // Register interest with the target process 
+        // Register interest with the target process
         targetProcess->RegisterDeathNotification( Nid
                                                 , Pid
                                                 , Verifier
@@ -569,7 +569,7 @@ bool CProcess::procExitReg(CProcess *targetProcess,
                          transId.txid[3] );
         }
     }
-    
+
 
     TRACE_EXIT;
     return status;
@@ -712,7 +712,7 @@ void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
                 parentContext( NULL );
             }
         }
-    }                                                                                                     
+    }
 
     DumpState = Dump_Ready;
 
@@ -782,7 +782,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         {
              Devices->CreateDevice( this );
         }
-        
+
         if ((Type == ProcessType_TSE) ||
             (Type == ProcessType_DTM) ||
             (Type == ProcessType_ASE) )
@@ -797,7 +797,7 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             (Type == ProcessType_ASE) )
         {
              MyNode->addToQuiesceExitPids( GetPid(), GetVerifier() );
-            
+
              if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
                  trace_printf("%s%d: pid %d added to quiesce exit list\n", method_name, __LINE__, GetPid());
         }
@@ -823,8 +823,8 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         if ( MyNode->GetShutdownLevel() == ShutdownLevel_Abrupt )
         {
             // killing the process will not remove the process object because
-            // exit processing will get queued until this completes. 
-            kill( Pid, SIGKILL ); 
+            // exit processing will get queued until this completes.
+            kill( Pid, SIGKILL );
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf( "%s@%d - Shutdown abrupt in process, completed kill for %s (%d, %d)\n"
                             , method_name, __LINE__, Name, Nid, os_pid);
@@ -860,22 +860,22 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         ssmpNoticesLock_.unlock();
 
         if ( Type == ProcessType_SMS )
-        {  
+        {
             // let healthcheck thread know that the SMService process is up and running.
-            HealthCheck.setState(HC_UPDATE_SMSERVICE, (long long)this); 
+            HealthCheck.setState(HC_UPDATE_SMSERVICE, (long long)this);
         }
         if ( Type == ProcessType_Watchdog )
-        {  
+        {
             // let healthcheck thread know that the watchdog process is up and running.
-            HealthCheck.setState(HC_UPDATE_WATCHDOG, (long long)this); 
+            HealthCheck.setState(HC_UPDATE_WATCHDOG, (long long)this);
             // start the watchdog timer
             HealthCheck.setState(MON_START_WATCHDOG);
         }
-        if ( Type == ProcessType_PSD && 
+        if ( Type == ProcessType_PSD &&
             (IAmIntegrated || MyNode->IsActivatingSpare() || MyNode->IsSoftNodeDown()) )
         {
              MyNode->StartPStartDPersistent();
-            
+
              if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_INIT))
                  trace_printf("%s%d: Sent start persistent processes event to PSD process %s (pid=%d)\n", method_name, __LINE__, GetName(), GetPid());
         }
@@ -917,7 +917,7 @@ void CProcess::CompleteRequest( int status )
             msg->u.reply.u.generic.verifier = Verifier;
             msg->u.reply.u.generic.process_name[0] = '\0';
             msg->u.reply.u.generic.return_code = status;
-    
+
             CRequest::lioreply (msg, Pid);
             parentContext( NULL );
         }
@@ -974,7 +974,7 @@ bool CProcess::PickStdfile(PickStdFile_t whichStdfile,
         if (node)
         {
             ancestor = node->GetProcessL(nextPid);
-            if ( ancestor  &&  
+            if ( ancestor  &&
                  (( ! MyNode->IsMyNode(ancestor->GetNid())) ||
                   (ancestor->CreationTime.tv_sec  < earlyCreationTime.tv_sec ||
                    (ancestor->CreationTime.tv_sec == earlyCreationTime.tv_sec  &&
@@ -1312,7 +1312,7 @@ void CProcess::SetupPipe(int orig_fd, int unused_pipe_fd, int pipe_fd)
     }
 
     // Duplicate pipe file desciptor to original file descriptor number
-    newfd = dup2(pipe_fd, orig_fd);    
+    newfd = dup2(pipe_fd, orig_fd);
     if (newfd == -1)
     {
         snprintf(buf, sizeof(buf), "[%s], dup2(%d, %d) error, %s.\n",
@@ -1674,7 +1674,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     setEnvStrVal ( childEnv, nextEnv, "MPI_ERROR_LEVEL", mpi_error_level );
 
     setEnvStr ( childEnv, nextEnv, "MPI_RDMA_MSGSIZE=32768,131072,4194304" );
- 
+
     setEnvStr ( childEnv, nextEnv, "HPMP_SQ=1" );
 
     setEnvStr ( childEnv, nextEnv, "MALLOC_ARENA_MAX=1" );
@@ -1998,7 +1998,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     argv[j + 7] = new char[6];
     sprintf (argv[j + 7], "%5.5d", MyNode->GetZone());
 
-    SetVerifier();
+    SetVerifier(); // CProcess::Create
     argv[j + 8] = new char[6];
     sprintf (argv[j + 8], "%5.5d", Verifier);
 
@@ -2098,7 +2098,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     int pipefd[2];
     pipe(pipefd);
     bool childGoAway = false;
-        
+
     SetCreationTime(-1);
     os_pid = fork ();
     if (os_pid == -1)
@@ -2120,11 +2120,11 @@ bool CProcess::Create (CProcess *parent, int & result)
         }
 
         // check if process already exists with the same pid.
-        if (MyNode->GetProcess(os_pid) != NULL) 
+        if (MyNode->GetProcess(os_pid) != NULL)
         {
             rc = result = MPI_ERR_SPAWN;
             // tell the child to go away
-            childGoAway = true; 
+            childGoAway = true;
             snprintf(la_buf, sizeof(la_buf),
                   "[%s], pid already exists, aborting process create: pid = %d\n",
                   method_name, os_pid );
@@ -2133,11 +2133,11 @@ bool CProcess::Create (CProcess *parent, int & result)
 
         // tell the child to stay or go away
         close(pipefd[0]); // close the read-end of the pipe, not going to use
-        write(pipefd[1], &childGoAway, sizeof(childGoAway)); 
-        close(pipefd[1]); // close the write-end of the pipe, sending EOF. 
+        write(pipefd[1], &childGoAway, sizeof(childGoAway));
+        close(pipefd[1]); // close the write-end of the pipe, sending EOF.
 
-        if (childGoAway) 
-        {   // no need to continue connecting with child 
+        if (childGoAway)
+        {   // no need to continue connecting with child
             goto forkExit;
         }
 
@@ -2155,7 +2155,7 @@ bool CProcess::Create (CProcess *parent, int & result)
         //       descriptors monitored.
         if (pfds_stdin[1] != -1)
         {
-            close(pfds_stdin[0]);  
+            close(pfds_stdin[0]);
 
             // Decide on standard input source for the
             // process.  It will either be a filename on this node
@@ -2186,7 +2186,7 @@ bool CProcess::Create (CProcess *parent, int & result)
         //       descriptors monitored.
         if (pfds_stdout[0] != -1)
         {
-            close(pfds_stdout[1]);  
+            close(pfds_stdout[1]);
 
             // Decide on standard output destination for the
             // process.  It will either be a filename on this node
@@ -2259,10 +2259,10 @@ bool CProcess::Create (CProcess *parent, int & result)
         int sem_rc;
         struct timeval logTime;
         struct tm *ltime;
-        
+
         gettimeofday(&logTime, NULL);
         ltime = localtime(&logTime.tv_sec);
-        
+
         struct timespec ts;
         ts.tv_sec  = 1;
         ts.tv_nsec = 0;
@@ -2306,13 +2306,13 @@ bool CProcess::Create (CProcess *parent, int & result)
             write (2, la_buf, strlen(la_buf));
         }
 
-        // check if monitor wanted child to stay or go away 
+        // check if monitor wanted child to stay or go away
         close(pipefd[1]); // close the write-end, not going to use
         // read till EOF
-        while (read(pipefd[0], &childGoAway, sizeof(childGoAway)) > 0); 
+        while (read(pipefd[0], &childGoAway, sizeof(childGoAway)) > 0);
         close(pipefd[0]); // close the read-end of the pipe
 
-        if (childGoAway) 
+        if (childGoAway)
         {
             _exit( ENOEXEC );
         }
@@ -2361,7 +2361,7 @@ bool CProcess::Create (CProcess *parent, int & result)
         size_t len;
         len = strlen(filename) + 1;
 
-        // Allocate space to hold the pathnames + filename 
+        // Allocate space to hold the pathnames + filename
         size_t alloclen;
         alloclen = pathlen + len + 1;
         name = new char[alloclen];
@@ -2398,7 +2398,7 @@ bool CProcess::Create (CProcess *parent, int & result)
 
             // Try to execute this name.  If it works, execve will not return.
             execve( startp, argv, childEnv);
-            
+
             switch  (errno)
             {
             case EACCES:
@@ -2580,7 +2580,7 @@ bool CProcess::Dump (CProcess *dumper, char *core_path)
 #ifndef NAMESERVER_PROCESS
 static void cprocess_dump_cb(void *ctx, pid_t pid, int status)
 {
-    CLNode   *lnode = static_cast<CLNode *>(ctx); 
+    CLNode   *lnode = static_cast<CLNode *>(ctx);
     lnode->DumpCallback( lnode->GetNid(), pid, status );
 }
 #endif
@@ -2639,7 +2639,7 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
                 Pid,
                 cmd);
         corefile_ = core_file;
-        
+
         if (trace_settings & TRACE_PROCESS)
             trace_printf("%s@%d - starting mondump for pid=%d, core-file=%s\n",
                          method_name, __LINE__, Pid, core_file);
@@ -2656,7 +2656,7 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
            argv[4] = getenv("MPI_TMPDIR");
            argv[5] = NULL;
         }
-        CLNode   *lnode = Nodes->GetLNode( Nid ); 
+        CLNode   *lnode = Nodes->GetLNode( Nid );
         err = IntProcess.create(argv[0],
                                 argv,
                                 cprocess_dump_cb, // cb
@@ -2695,7 +2695,7 @@ void CProcess::DumpBegin (int nid, int pid, Verifier_t verifier, char *core_path
 const char *DumpStateString( DUMPSTATE state)
 {
     const char *str;
-    
+
     switch( state )
     {
         case Dump_Unknown:
@@ -2751,7 +2751,7 @@ struct message_def * CProcess::DeathMessage( )
 
     const char method_name[] = "CProcess::DeathMessage";
     TRACE_ENTRY;
-    
+
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->notice_death_Incr();
@@ -2803,7 +2803,7 @@ void CProcess::Exit( CProcess *parent )
     // check the state of the process' node.
     bool supplyProcessDeathNotices = true;
     if (!Monitor->IsNodeDownDeathNotices())
-    { 
+    {
         CNode * node = Nodes->GetLNode(GetNid())->GetNode();
         // if process' node is being killed, do not supply process death notices
         supplyProcessDeathNotices = node->IsSoftNodeDown()
@@ -2821,7 +2821,7 @@ void CProcess::Exit( CProcess *parent )
         NoticeHead->NotifyAll();
     }
 #endif
-    
+
     if ( !Clone && !Paired )
     {
         switch (Type)
@@ -2840,12 +2840,12 @@ void CProcess::Exit( CProcess *parent )
                 {
                     if (MyNode->isQuiesceExitPidsEmpty())
                     {
-                        HealthCheck.setState(MON_SCHED_NODE_DOWN);  // schedule a node down req 
+                        HealthCheck.setState(MON_SCHED_NODE_DOWN);  // schedule a node down req
                     }
                 }
 #endif
                 else
-                {   // unmount volumes only if node is not quiescing. 
+                {   // unmount volumes only if node is not quiescing.
 #ifndef NAMESERVER_PROCESS
                     Devices->UnMountVolume( Name, Backup );
 #endif
@@ -2985,7 +2985,7 @@ void CProcess::Exit( CProcess *parent )
                 // No special handling needed on exit
                 break;
             default:
-             
+
                 snprintf(la_buf, sizeof(la_buf),
                          "[CProcess::Exit], Invalid process type!\n");
                 mon_log_write(MON_PROCESS_EXIT_1, SQ_LOG_ERR, la_buf);
@@ -2996,7 +2996,7 @@ void CProcess::Exit( CProcess *parent )
         {
             parent->childRemove( Nid, Pid);
         }
-    
+
         // Check if we need to output a entry into the process id map log file
         if ( PidMap )
         {
@@ -3007,12 +3007,12 @@ void CProcess::Exit( CProcess *parent )
                                          parent ? parent->GetVerifier() : -1,
                                          program() );
 #endif
-        }    
+        }
     }
     if ( Clone && Pid != -1 )
     {
-        if ( Type == ProcessType_SPX && 
-             MyNode->GetShutdownLevel() == ShutdownLevel_Undefined && 
+        if ( Type == ProcessType_SPX &&
+             MyNode->GetShutdownLevel() == ShutdownLevel_Undefined &&
              supplyProcessDeathNotices )
         {
             // Send local SPX this SPX's death message
@@ -3052,7 +3052,7 @@ void CProcess::Exit( CProcess *parent )
                         , ProcessTypeString(GetType()), NodePhaseString( MyNode->GetPhase() )
                         , supplyProcessDeathNotices );
 
-        if ( Type == ProcessType_DTM && 
+        if ( Type == ProcessType_DTM &&
              MyNode->GetPhase() == Phase_Ready &&
              supplyProcessDeathNotices )
         {
@@ -3090,10 +3090,10 @@ void CProcess::Exit( CProcess *parent )
 
     if ( parent && !parent->IsClone() && Pid != -1 )
     {
-    
+
         // If process and parent are DTMs suppress death
         // message here, it was delivered above
-        if ( parent->IsSystemMessages()   && 
+        if ( parent->IsSystemMessages()   &&
              parent->GetState() == State_Up &&
              !MyNode->IsKillingNode() &&
              !(GetType() == ProcessType_DTM &&
@@ -3127,7 +3127,7 @@ void CProcess::Exit( CProcess *parent )
 void CProcess::GenerateEvent( int event_id, int length, char *data )
 {
     struct message_def *msg;
-    
+
     const char method_name[] = "CProcess::GenerateEvent";
     TRACE_ENTRY;
     if( Clone )
@@ -3202,7 +3202,7 @@ CProcess *CProcess::GetProcessByType( PROCESSTYPE type )
         if (entry->Type == type)
         {
             // Only return entry if it has completed startup
-            if (entry->State_ != State_Up) 
+            if (entry->State_ != State_Up)
             {
                 entry = NULL;
             }
@@ -3228,7 +3228,7 @@ CProcess *CProcess::GetProcessLByType( PROCESSTYPE type )
         if (entry->Type == type)
         {
             // Only return entry if it has completed startup
-            if (entry->State_ != State_Up) 
+            if (entry->State_ != State_Up)
             {
                 entry = NULL;
             }
@@ -3385,7 +3385,7 @@ bool CProcess::Open (CProcess * opened_process, int death_notification)
     if ((opened_process->StartupCompleted) &&
         (opened_process->State_ == State_Up) && (State_ == State_Up))
     {
-        if ( death_notification 
+        if ( death_notification
              && !((opened_process->Parent_Nid == Nid) &&
                   (opened_process->Parent_Pid == Pid)) )
         {
@@ -3405,7 +3405,7 @@ bool CProcess::Open (CProcess * opened_process, int death_notification)
         snprintf(buf, sizeof(buf), "[CProcess::Open], Can't Open Process %s "
                  "has not completed startup protocol!\n", opened_process->Name);
         mon_log_write(MON_PROCESS_OPEN_1, SQ_LOG_ERR, buf);
-       
+
         status = FAILURE;
     }
     TRACE_EXIT;
@@ -3445,10 +3445,10 @@ CNotice *CProcess::RegisterDeathNotification( int nid
                                             , _TM_Txid_External trans_id )
 {
     CNotice *notice = NULL;
-    
+
     const char method_name[] = "CProcess::RegisterDeathNotification";
     TRACE_ENTRY;
-    
+
     deathInterestLock_.lock();
 
     if ( NoticeHead )
@@ -3646,7 +3646,7 @@ CProcessContainer::CProcessContainer (void)
 
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "PCTR", 4);
-    
+
     //create & initialize existing semaphore
     char sem_name[MAX_PROCESS_PATH];
     snprintf(sem_name,sizeof(sem_name), "/monitor.sem.%s", getenv("USER"));
@@ -3661,7 +3661,7 @@ CProcessContainer::CProcessContainer (void)
         sem_unlink(sem_name);
         abort();
     }
-    
+
     TRACE_EXIT;
 }
 
@@ -3675,10 +3675,10 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
 {
     const char method_name[] = "CProcessContainer::CProcessContainer";
     TRACE_ENTRY;
- 
+
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "PCTR", 4);
-   
+
     //create & initialize existing semaphore
     char sem_name[MAX_PROCESS_PATH];
     snprintf(sem_name,sizeof(sem_name), "/monitor.sem.%s", getenv("USER"));
@@ -3701,7 +3701,7 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
         }
         abort();
     }
-    
+
     if ( nodeContainer_ )
     {
         nameMap_ = new nameMap_t;
@@ -3715,7 +3715,7 @@ CProcessContainer::~CProcessContainer (void)
 {
     const char method_name[] = "CProcessContainer::~CProcessContainer";
     TRACE_ENTRY;
-    
+
     if ( nodeContainer_ )
     {
         CleanUpProcesses();
@@ -3736,7 +3736,7 @@ CProcessContainer::~CProcessContainer (void)
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "pctr", 4);
-    
+
     TRACE_EXIT;
 }
 
@@ -3862,7 +3862,7 @@ void CProcessContainer::AddToNameMap( CProcess *process )
             // necessarily an error.  One sceario where this can happen is
             // if a new process request contains a user assigned process
             // name and the process is to be created on another node.
-            // When the InternalType_ProcInit replication message is 
+            // When the InternalType_ProcInit replication message is
             // processed on the originating node we'll attempt to re-add
             // the name (a system generated name will be added for the first
             // time at this point.)
@@ -3904,7 +3904,7 @@ void CProcessContainer::DelFromNameMap( CProcess *process )
         if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
         {
             trace_printf("%s@%d not removing from nameMap %p: %s (%d, %d)."
-                         "  No such mapping\n", 
+                         "  No such mapping\n",
                          method_name, __LINE__, nameMap_,
                          process->GetName(), process->GetNid(), process->GetPid());
         }
@@ -3916,7 +3916,7 @@ void CProcessContainer::DelFromNameMap( CProcess *process )
         if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
         {
             trace_printf("%s@%d not removing from nameMap %p: %s (%d, %d)."
-                         "  Map contains %s (%d, %d)\n", 
+                         "  Map contains %s (%d, %d)\n",
                          method_name, __LINE__, nameMap_,
                          process->GetName(), process->GetNid(), process->GetPid(),
                          p2->GetName(), p2->GetNid(), p2->GetPid());
@@ -3974,7 +3974,7 @@ void CProcessContainer::AddToList(CProcess *process)
         // link it to the CLNode container
         CLNode *lnode = Nodes->GetLNode( process->Nid );
         lnode->AddToListL( process );
-        
+
         if (trace_settings & (TRACE_PROCESS_DETAIL))
         {
             CNode *node = lnode->GetNode();
@@ -3988,7 +3988,7 @@ void CProcessContainer::AddToList(CProcess *process)
         }
 
     }
-    
+
     TRACE_EXIT;
 }
 
@@ -4050,10 +4050,10 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
         mon_log_write(MON_PROCESSCONT_ATTACHPCHECK_1, SQ_LOG_ERR, la_buf);
 
         abort(); // TODO: revisit
-    } else if ((MyNode->GetState() != State_Up && 
-                MyNode->GetState() != State_Shutdown) && 
+    } else if ((MyNode->GetState() != State_Up &&
+                MyNode->GetState() != State_Shutdown) &&
                ( strcmp(msg->u.request.u.startup.program,"shell")!=0 )   )
-    { 
+    {
         // Check if we can accept a connection
         snprintf(la_buf, sizeof(la_buf), "[%s], Can't accept %s because node is logically down\n", method_name, msg->u.request.u.startup.process_name);
         mon_log_write(MON_PROCESSCONT_ATTACHPCHECK_1, SQ_LOG_ERR, la_buf);
@@ -4064,8 +4064,8 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
         msg->u.reply.u.generic.verifier = -1;
         msg->u.reply.u.generic.process_name[0] = '\0';
         msg->u.reply.u.generic.return_code = MPI_ERR_OP;
-    }        
-    
+    }
+
     // shell is trying to attach across all nodes
     else if (msg->u.request.u.startup.paired)
     {
@@ -4140,7 +4140,7 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
                     strId_t progStrId = MyNode->GetStringId( msg->u.request.u.startup.program );
                     strId_t nullStrId = { -1, -1 };
                     process =
-                        new CProcess( NULL, nid, msg->u.request.u.startup.os_pid, ProcessType_Generic, 0, 0, false, true, (char *) "", 
+                        new CProcess( NULL, nid, msg->u.request.u.startup.os_pid, ProcessType_Generic, 0, 0, false, true, (char *) "",
                         nullStrId, nullStrId, progStrId, (char *) "", (char *) "" );
                     if ( process == NULL )
                     {
@@ -4161,15 +4161,15 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
                     }
                     else
                     {
-                        process->SetName( 
+                        process->SetName(
                             MyNode->NormalizeName( msg->u.request.u.startup.process_name ) );
                     }
                     process->SetAttached( true );
                     process->SetupFifo( process->GetNid( ), msg->u.request.u.startup.os_pid );
                     process->SetCreationTime( msg->u.request.u.startup.os_pid );
-                    process->SetVerifier( );
+                    process->SetVerifier( ); // CProcessContainer::AttachProcessCheck
                     AddToList( process );
-                    process->CompleteProcessStartup( msg->u.request.u.startup.port_name,
+                    process->CompleteProcessStartup( msg->u.request.u.startup.port_name, // CProcessContainer::AttachProcessCheck
                                                      msg->u.request.u.startup.os_pid,
                                                      msg->u.request.u.startup.event_messages,
                                                      msg->u.request.u.startup.system_messages,
@@ -4228,7 +4228,7 @@ void CProcessContainer::AttachProcessCheck ( struct message_def *msg )
             msg->u.reply.u.generic.process_name[0] = '\0';
             msg->u.reply.u.generic.return_code = MPI_ERR_NAME;
         }
-    }  
+    }
     // complete a monitor child process startup
     else
     {
@@ -4272,7 +4272,7 @@ void CProcessContainer::Bcast (struct message_def *msg)
                             , process->GetNid()
                             , process->GetPid()
                             , process->GetVerifier() );
- 
+
             if (!shm)
             {   // First process, allocate a buffer for the notice image
                 // and initialize it.
@@ -4319,11 +4319,11 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
     int i;
     int rem;
     int cnt[4];
-    
+
     const char method_name[] = "CProcessContainer::BuildOurName";
     TRACE_ENTRY;
-    
-    // Convert Pid into base 35 acsii 
+
+    // Convert Pid into base 35 acsii
     cnt[0] = pid / 42875;
     rem = pid - ( cnt[0] * 42875 );
     cnt[1] = rem / 1225;
@@ -4355,7 +4355,7 @@ char *CProcessContainer::BuildOurName( int nid, int pid, char *name )
         }
     }
     name[8] = '\0';
-       
+
 
     TRACE_EXIT;
     return name;
@@ -4369,7 +4369,7 @@ bool CProcessContainer::CancelDeathNotification( int nid
 {
     bool status = FAILURE;
     CProcess *process = head_;
-    
+
     // we will loop through all processes on the node ... return FAILURE
     // only if we don't find any notices to cancel.
     while (process)
@@ -4377,7 +4377,7 @@ bool CProcessContainer::CancelDeathNotification( int nid
         status = process->CancelDeathNotification (nid, pid, verifier, trans_id);
         process = process->GetNext ();
     }
-    
+
     return status;
 }
 #endif
@@ -4391,9 +4391,9 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
     TRACE_ENTRY;
     if (trace_settings & TRACE_ENTRY_EXIT)
         trace_printf("%s@%d with parent (%d, %d)\n", method_name, __LINE__, parent->GetNid(), parent->GetPid() );
-    
+
     if ( parent &&
-           ((MyNode->GetState() != State_Shutdown && 
+           ((MyNode->GetState() != State_Shutdown &&
              MyNode->GetShutdownLevel() == ShutdownLevel_Undefined)
            || (parent->GetType() == ProcessType_SPX) ) )
     {
@@ -4416,7 +4416,7 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                                  method_name, __LINE__, process->GetName(),
                                  process->GetNid(), process->GetPid(),
                                  parent->GetNid(), parent->GetPid());
-                
+
                 childNode->SetProcessState( process, State_Down, true );
                 if ( !process->IsClone() )
                 {
@@ -4426,7 +4426,7 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                     }
                     else
                     {
-                        kill (process->GetPid(), Monitor->GetProcTermSig()); 
+                        kill (process->GetPid(), Monitor->GetProcTermSig());
                     }
                 }
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -4573,12 +4573,12 @@ CProcess *CProcessContainer::CloneProcess (int nid,
 
     if (process)
     {
-        process->SetVerifier(verifier);
+        process->SetVerifier(verifier); // CProcessContainer::CloneProcess
         process->SetParentVerifier(parent_verifier);
 
         AddToList( process );
 
-        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, os_pid==-1, creation_time, origPNidNs);
+        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, os_pid==-1, creation_time, origPNidNs); // CProcessContainer::CloneProcess
     }
 
     TRACE_EXIT;
@@ -4612,7 +4612,7 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
     if (process)
     {
         if (process->GetPid() != os_pid)
-        { // Process id changed from when we started the process. 
+        { // Process id changed from when we started the process.
             if ( !process->IsUnhooked() )
             {   // Parent process object keeps track of child processes
                 // created on this node.  Needed in case parent process
@@ -4656,7 +4656,7 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
             }
             AddToPidMap ( os_pid, process );
         }
-        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, false, creation_time, origPNidNs);
+        process->CompleteProcessStartup (port, os_pid, event_messages, system_messages, false, creation_time, origPNidNs); // CProcessContainer::CompleteProcessStartup
     }
     // When using process maps do not log an error if the process is
     // not found.  This method can be called from
@@ -4674,7 +4674,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             int backup,
                                             bool unhooked,
                                             char *process_name,
-                                            strId_t pathStrId, 
+                                            strId_t pathStrId,
                                             strId_t ldpathStrId,
                                             strId_t programStrId,
                                             char *infile,
@@ -4736,14 +4736,14 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
     }
 
     process =
-        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name, 
+        new CProcess (parent, nid, -1, type, priority, backup, debug, unhooked, process_name,
                       pathStrId, ldpathStrId, programStrId, infile, outfile);
     if (process)
     {
         AddToList( process );
-        if (type == ProcessType_NameServer || 
-            type == ProcessType_Watchdog || 
-            type == ProcessType_PSD ||  
+        if (type == ProcessType_NameServer ||
+            type == ProcessType_Watchdog ||
+            type == ProcessType_PSD ||
             type == ProcessType_SMS )
         {
             if (type == ProcessType_NameServer)
@@ -4770,7 +4770,7 @@ void CProcessContainer::DeleteFromList( CProcess *process )
 {
     const char method_name[] = "CProcessContainer::DeleteFromList";
     TRACE_ENTRY;
-    
+
     if ( ! nodeContainer_ )
     {
         // Programmer bonehead :^)
@@ -4811,7 +4811,7 @@ void CProcessContainer::RemoveFromList( CProcess *process )
 {
     const char method_name[] = "CProcessContainer::RemoveFromList";
     TRACE_ENTRY;
-    
+
     if ( ! nodeContainer_ )
     {
         // Programmer bonehead :^)
@@ -4823,7 +4823,7 @@ void CProcessContainer::RemoveFromList( CProcess *process )
     {
         CLNode *lnode = Nodes->GetLNode( process->Nid );
         lnode->RemoveFromListL( process );
-        
+
         if (head_ == process)
             head_ = process->next_;
         if (tail_ == process)
@@ -4848,7 +4848,7 @@ void CProcessContainer::RemoveFromListL( CProcess *process )
 {
     const char method_name[] = "CProcessContainer::RemoveFromListL";
     TRACE_ENTRY;
-    
+
     if ( nodeContainer_ )
     {
         // Programmer bonehead :^)
@@ -4858,7 +4858,7 @@ void CProcessContainer::RemoveFromListL( CProcess *process )
 
     if (process)
     {
-        
+
         if (head_ == process)
             head_ = process->nextL_;
         if (tail_ == process)
@@ -4904,8 +4904,8 @@ void CProcessContainer::DumpCallback( int nid, pid_t pid, int status )
         // This must only be called from CLNode (the logical node)
         abort();
     }
-    
-    CLNode   *lnode = Nodes->GetLNode( nid ); 
+
+    CLNode   *lnode = Nodes->GetLNode( nid );
     CNode    *node = lnode->GetNode();
 
     CProcess *process = node->GetProcess( pid );
@@ -4957,7 +4957,7 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
 
     if (process->GetParentNid() != -1)
     {
-        parent = Nodes->GetProcess( process->GetParentNid(), 
+        parent = Nodes->GetProcess( process->GetParentNid(),
                                     process->GetParentPid() );
     }
 
@@ -4970,7 +4970,7 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
 #endif
             struct message_def *reply_msg;
             reply_msg = process->parentContext();
- 
+
             if ( reply_msg )
             {
                 // send reply to the parent
@@ -4986,7 +4986,7 @@ CProcess * CProcessContainer::ParentNewProcReply ( CProcess *process, int result
             process->SendProcessCreatedNotice(parent, result);
         }
 #endif
-    }  
+    }
 
     TRACE_EXIT;
 
@@ -5049,7 +5049,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                      process->GetPid());
             mon_log_write(MON_PROCESSCONT_EXITPROCESS_2, SQ_LOG_ERR, buf);
         }
-      
+
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
             trace_printf( "%s@%d - Process %s is exiting, persistent=%d, abended=%d\n"
                         , method_name, __LINE__
@@ -5065,7 +5065,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
         if ( parent == NULL)
         {
-            parent = Nodes->GetProcess( process->GetParentNid(), 
+            parent = Nodes->GetProcess( process->GetParentNid(),
                                         process->GetParentPid() );
         }
 
@@ -5078,7 +5078,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
         // Handle the process termination
         process->Exit( parent );
-        
+
         process->Switch( parent ); // switch process pair roles if needed
 
         if ( process->IsPersistent() &&
@@ -5086,8 +5086,8 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
             !MyNode->IsActivatingSpare() &&
             !MyNode->IsKillingNode() &&
              MyNode->GetShutdownLevel() == ShutdownLevel_Undefined &&
-            (process->IsAbended()|| 
-             process->GetNid() == downNode || 
+            (process->IsAbended()||
+             process->GetNid() == downNode ||
              process->GetType() == ProcessType_SPX))
         {
             // see if we can restart the process
@@ -5097,10 +5097,10 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
                 {
                     // Replicate the exit to other nodes
-//TRK-TODO 
+//TRK-TODO
             //        if (NameServerEnabled)
                     {
-                        //message to monitor  
+                        //message to monitor
                     }
             //        else
                     {
@@ -5130,17 +5130,17 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         else
         {
             process->SetState (State_Stopped);
-            if ( !process->IsClone() && 
+            if ( !process->IsClone() &&
                  (!MyNode->IsKillingNode() || MyNode->IsSoftNodeDown()) &&
                  !MyNode->isInQuiesceState() &&
-                 !(process->GetType() == ProcessType_DTM && 
+                 !(process->GetType() == ProcessType_DTM &&
                    process->IsAbended() &&
                    MyNode->GetShutdownLevel() == ShutdownLevel_Undefined) )
             {
-//TRK-TODO 
+//TRK-TODO
       //        if (NameServerEnabled)
                 {
-                    //message to monitor  
+                    //message to monitor
                 }
         //        else
                 {
@@ -5162,13 +5162,13 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
             }
             process->SetDeletePending ( true );
             if (process->IsAbended() || process->GetType() == ProcessType_SPX)
-            { 
+            {
                 Child_Exit(process);
             }
 
             if (!process->IsClone() && process->GetType() == ProcessType_Watchdog)
             {
-                HealthCheck.setState(HC_UPDATE_WATCHDOG, (long long)NULL); 
+                HealthCheck.setState(HC_UPDATE_WATCHDOG, (long long)NULL);
             }
             CNode * node;
             node = Nodes->GetLNode(process->GetNid())->GetNode();
@@ -5304,7 +5304,7 @@ CProcess *CProcessContainer::GetProcess( int pid
     {
         entry = CProcessContainer::GetProcess( pid );
     }
-    
+
     if ( entry )
     {
         if ( (verifier != -1) && (verifier != entry->GetVerifier()) )
@@ -5316,7 +5316,7 @@ CProcess *CProcessContainer::GetProcess( int pid
                           , pid
                           , verifier
                           , entry->GetVerifier() );
-           }            
+           }
            entry = NULL;
         }
     }
@@ -5361,7 +5361,7 @@ CProcess *CProcessContainer::GetProcess( const char *name
     {
         entry = CProcessContainer::GetProcess( name, checkstate );
     }
-    
+
     if ( entry )
     {
         if ( (verifier != -1) && (verifier != entry->GetVerifier()) )
@@ -5373,7 +5373,7 @@ CProcess *CProcessContainer::GetProcess( const char *name
                           , name
                           , verifier
                           , entry->GetVerifier() );
-           }            
+           }
            entry = NULL;
         }
     }
@@ -5478,7 +5478,7 @@ void CProcessContainer::KillAll( STATE node_State, CProcess *requester )
                 {
                     if ( !killedIsClone && killedPid != -1)
                     {
-                        kill (killedPid, SIGKILL); 
+                        kill (killedPid, SIGKILL);
                         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                             trace_printf("%s@%d - Completed kill for (%d, %d)\n", method_name, __LINE__, killedNid, killedPid);
                     }
@@ -5511,7 +5511,7 @@ void CProcessContainer::KillAllDown()
     CProcess *process  = NULL;
     int nid = -1;
     int pid = -1;
-    
+
     const char method_name[] = "CProcessContainer::KillAllDown";
     TRACE_ENTRY;
 
@@ -5548,17 +5548,17 @@ void CProcessContainer::KillAllDown()
         // Delete pid map entry
         DelFromPidMap ( process );
 
-        // valid for virtual cluster only. 
+        // valid for virtual cluster only.
         if ( !process->IsClone() && pid != -1 )
         {
             // killing the process will not remove the process object because
-            // exit processing will get queued until this completes. 
-            kill( pid, SIGKILL ); 
+            // exit processing will get queued until this completes.
+            kill( pid, SIGKILL );
             PROCESSTYPE type = process->GetType();
             if ( type == ProcessType_TSE ||
                  type == ProcessType_ASE )
             {
-                // unmount volume would acquire nameMapLock_ internally. 
+                // unmount volume would acquire nameMapLock_ internally.
                 Devices->UnMountVolume( process->GetName(), process->IsBackup() );
             }
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -5570,7 +5570,7 @@ void CProcessContainer::KillAllDown()
         Exit_Process( process, true, nid );
     }
 
-    // clean up clone processes on this node that do not have entries in 
+    // clean up clone processes on this node that do not have entries in
     // nameMap_ or pidMap_ yet and restart persistent processes
     CProcess *nextProc = NULL;
     process = head_;
@@ -5727,7 +5727,7 @@ bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int
                                 verifier,
                                 opener_process->GetVerifier());
                 }
-            } 
+            }
             else
             {
                 status = opener_process->Open (process,death_notification);
@@ -5823,7 +5823,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
         mon_log_write(MON_PROCESS_PERSIST_2, SQ_LOG_ERR, buf);
         return false;
     }
-    
+
     // if 1st time retrying to restart process
     if (process->GetPersistentCreateTime() == 0)
     {
@@ -5845,7 +5845,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
 
     currentLNode = Nodes->GetLNode( process->GetNid() );
     newLNode     = Nodes->GetLNodeNext( process->GetNid() );
-    
+
     switch (persistConfig->GetProcessNameNidFormat())
     {
     case Nid_ALL:       // one process in each <nid>
@@ -5867,7 +5867,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             // Is this a node down and node going down is process' node?
             if ( downNid != -1 && currentLNode->GetNid() == downNid )
             {
-                if (trace_settings & 
+                if (trace_settings &
                     (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
                                 , method_name, __LINE__
@@ -5878,7 +5878,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             {
                 if ( currentLNode->GetState() == State_Up)
                 {
-                    if (trace_settings & 
+                    if (trace_settings &
                         (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     {
                         trace_printf( "%s@%d - original node is available, nid=%d\n"
@@ -5892,7 +5892,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                 }
                 else
                 {
-                    if (trace_settings & 
+                    if (trace_settings &
                         (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                         trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
                                     , method_name, __LINE__
@@ -5908,20 +5908,20 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
         switch (persistConfig->GetZoneZidFormat())
         {
         case Zid_ALL:       // recreate in current up <nid> or next up <nid>
-            // check if we need to do something because the node is down and 
+            // check if we need to do something because the node is down and
             // spare node is not activating
             if ((downNid != -1 && !currentLNode->GetNode()->IsSpareNode()) ||
                  currentLNode->GetState() == State_Down )
             {
                 nid = (newLNode) ? newLNode->GetNid() : -1;
-                if ( newLNode && 
-                    (newLNode->GetState() == State_Up && 
+                if ( newLNode &&
+                    (newLNode->GetState() == State_Up &&
                      newLNode->GetNid() != downNid ) )
                 {
                     if (MyNode->IsMyNode(nid))
                     {
                         // OK we need to move the process to our node
-                        if (trace_settings & 
+                        if (trace_settings &
                             (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                             trace_printf( "%s@%d - Moving process from nid=%d to new nid=%d\n"
                                         , method_name, __LINE__
@@ -5940,7 +5940,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                     }
                     else
                     {
-                        if (trace_settings & 
+                        if (trace_settings &
                             (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                             trace_printf( "%s@%d - Not moving process from nid=%d to nid=%d""\n"
                                         , method_name, __LINE__
@@ -5949,7 +5949,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                 }
                 else
                 {
-                    if (trace_settings & 
+                    if (trace_settings &
                         (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                        trace_printf( "%s@%d - Next possible node is not available, nid=%d\n"
                                     , method_name, __LINE__, nid);
@@ -5957,7 +5957,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             }
             else
             {
-                if (trace_settings & 
+                if (trace_settings &
                     (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     trace_printf( "%s@%d - original node is available, nid=%d\n"
                                 , method_name, __LINE__, process->GetNid());
@@ -5973,7 +5973,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             // Is this a node down and node going down is process' node?
             if ( downNid != -1 && currentLNode->GetNid() == downNid )
             {
-                if (trace_settings & 
+                if (trace_settings &
                     (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
                                 , method_name, __LINE__
@@ -5984,7 +5984,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             {
                 if ( currentLNode->GetState() == State_Up)
                 {
-                    if (trace_settings & 
+                    if (trace_settings &
                         (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     {
                         trace_printf( "%s@%d - original node is available, nid=%d\n"
@@ -5998,7 +5998,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                 }
                 else
                 {
-                    if (trace_settings & 
+                    if (trace_settings &
                         (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                         trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
                                     , method_name, __LINE__
@@ -6009,7 +6009,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
         }
         break;
     }
-    
+
     if ( Nodes->IsShutdownActive() )
     {
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -6020,8 +6020,8 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
     {
         // Re-initialize process flags
         process->SetState (State_Unknown);
-    
-        if (( restart                    ) && 
+
+        if (( restart                    ) &&
             ( MyNode->IsMyNode(process->GetNid()) ))
         {
             // check if we should retry to create the process
@@ -6043,7 +6043,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
                                      max_retries);
 
                     char buf[MON_STRING_BUF_SIZE];
-    
+
                     snprintf(buf, sizeof(buf), "[%s], Persistent process %s "
                              "not restarted because the maximum retry count "
                              "(%d) has been exceeded.\n",
@@ -6189,7 +6189,7 @@ void CProcessContainer::CheckFdState ( int fd )
     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1)
         && (errno != EEXIST))
     {
-        snprintf(buf, sizeof(buf), 
+        snprintf(buf, sizeof(buf),
                  "[%s], epoll_ctl error, adding fd=%d, %s (%d)\n",
                 method_name, fd, strerror(errno), errno);
         mon_log_write(MON_PROCESS_CHECKFDSTATE_2, SQ_LOG_ERR, buf);
@@ -6212,7 +6212,7 @@ void CProcessContainer::CheckFdState ( int fd )
         for (int n=0; n < ready_fds; n++)
         {
             snprintf(buf, sizeof(buf),
-                     "[%s], for fd=%d, events=%d\n", method_name, 
+                     "[%s], for fd=%d, events=%d\n", method_name,
                      event_list[n].data.fd, event_list[n].events);
             mon_log_write(MON_PROCESS_CHECKFDSTATE_4, SQ_LOG_INFO, buf);
         }
@@ -6294,7 +6294,7 @@ void CProcessContainer::PidHangupCheck ( time_t now )
                 // set state process
                 // Queue request for processing by worker thread
                 ReqQueue.enqueueChildDeathReq ( pid );
-        
+
                 // release buffers
                 // todo
             }
@@ -6389,7 +6389,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                 // Process terminated so handle the exit processing.
                 // Termination detected through a child death signal or
                 // a broken stderr pipe for an attached process.
-                
+
                 // Note: Exit_Process() will delete the process object, so
                 //       save the process information needed before the call
                 PROCESSTYPE processType = process->GetType();
@@ -6412,7 +6412,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                     switch ( processType )
                     {
                     case ProcessType_DTM:
-                        if ( MyNode->GetState() != State_Shutdown && 
+                        if ( MyNode->GetState() != State_Shutdown &&
                              MyNode->IsDTMAborted() )
                         {
                             char buf[MON_STRING_BUF_SIZE];
@@ -6420,18 +6420,18 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                                      "[%s], DTM (%s) aborted, Node %s going down\n",
                                      method_name, processName.c_str(), MyNode->GetName());
                             mon_log_write(MON_PROCESS_SETSTATE_1, SQ_LOG_INFO, buf);
-        
-                            snprintf( buf, sizeof(buf), 
-                                      "DTM (%s) aborted, Node %s going down\n", 
+
+                            snprintf( buf, sizeof(buf),
+                                      "DTM (%s) aborted, Node %s going down\n",
                                       processName.c_str(), MyNode->GetName());
                             genSnmpTrap( buf );
-        
+
                             // DTM just died unexpectedly, so bring the node down
                             Monitor->HardNodeDown(MyPNID, true);
                         }
                         break;
                     case ProcessType_SMS:
-                        if ( MyNode->GetState() != State_Shutdown && 
+                        if ( MyNode->GetState() != State_Shutdown &&
                              MyNode->IsSMSAborted() )
                         {
                             char buf[MON_STRING_BUF_SIZE];
@@ -6439,12 +6439,12 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                                      "[%s], SMS (%s) aborted, Node %s going down\n",
                                      method_name, processName.c_str(), MyNode->GetName());
                             mon_log_write(MON_PROCESS_SETSTATE_2, SQ_LOG_INFO, buf);
-        
-                            snprintf( buf, sizeof(buf), 
-                                      "SMS (%s) aborted, Node %s going down\n", 
+
+                            snprintf( buf, sizeof(buf),
+                                      "SMS (%s) aborted, Node %s going down\n",
                                       processName.c_str(), MyNode->GetName());
                             genSnmpTrap( buf );
-        
+
                             // SMS just died unexpectedly, so bring the node down
                             Monitor->HardNodeDown(MyPNID, true);
                         }

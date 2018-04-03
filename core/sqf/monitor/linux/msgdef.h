@@ -564,6 +564,9 @@ struct NewProcessNs_def
     int   parent_nid;                       // parent's node id
     int   parent_pid;                       // parent's process id
     Verifier_t parent_verifier;             // parent's process verifier
+    int  pair_parent_nid;                   // node id of real process pair parent process
+    int  pair_parent_pid;                   // process id of real process pair parent process
+    Verifier_t pair_parent_verifier;        // process id of real process pair parent process
     int  nid;                               // node id
     int  pid;                               // process id
     Verifier_t verifier;                    // process verifier

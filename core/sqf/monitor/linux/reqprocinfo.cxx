@@ -342,7 +342,7 @@ void CExtProcInfoReq::performRequest()
 #ifdef NAMESERVER_PROCESS
             requester =
                Nodes->GetProcess( nid_ , pid_ , verifier_
-                                , false, false, false );
+                                , false, false, true );
 #else
             requester = MyNode->GetProcess( pid_
                                           , verifier_ );

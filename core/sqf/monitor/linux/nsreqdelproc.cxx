@@ -79,7 +79,6 @@ void CExtDelProcessNsReq::performRequest()
 {
     bool status = FAILURE;
     CProcess *process = NULL;
-    CProcess *backup = NULL;
 
     const char method_name[] = "CExtDelProcessNsReq::performRequest";
     TRACE_ENTRY;
@@ -120,27 +119,11 @@ void CExtDelProcessNsReq::performRequest()
     target_process_name = (const char *) msg_->u.request.u.del_process_ns.target_process_name;
     target_verifier  = msg_->u.request.u.del_process_ns.target_verifier;
 
-    if ( target_process_name.size() )
-    { // find by name (don't check node state, don't check process state, not backup)
-        process = Nodes->GetProcess( target_process_name.c_str()
-                                   , target_verifier
-                                   , false, false, false );
-        if ( process &&
-            (msg_->u.request.u.del_process_ns.target_nid == -1 ||
-             msg_->u.request.u.del_process_ns.target_pid == -1))
-        {
-            backup = process->GetBackup ();
-        }
-    }
-    else
-    { // find by nid (don't check node state, don't check process state, backup is Ok)
-        process = Nodes->GetProcess( target_nid
-                                   , target_pid
-                                   , target_verifier
-                                   , false, false, true );
-        backup = NULL;
-    }
-
+    // find by nid (don't check node state, don't check process state, backup is Ok)
+    process = Nodes->GetProcess( target_nid
+                               , target_pid
+                               , target_verifier
+                               , false, false, true );
 
     if (process)
     {

@@ -559,11 +559,15 @@ int CNameServer::ProcessNew(CProcess* process )
         msgnew->parent_pid = -1;
         msgnew->parent_verifier = -1;
     }
+    msgnew->pair_parent_nid = process-> GetPairParentNid();
+    msgnew->pair_parent_pid = process-> GetPairParentPid();
+    msgnew->pair_parent_verifier = process-> GetPairParentVerifier();
     msgnew->nid = process->GetNid();
     msgnew->pid = process->GetPid();
     msgnew->verifier = process->GetVerifier();
     msgnew->type = process->GetType();
     msgnew->priority = process->GetPriority();
+    msgnew->backup = process->IsBackup();
     msgnew->event_messages = process->IsEventMessages();
     msgnew->system_messages = process->IsSystemMessages();
     strcpy( msgnew->process_name, process->GetName() );
