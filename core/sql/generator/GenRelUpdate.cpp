@@ -1175,6 +1175,12 @@ short HbaseDelete::codeGen(Generator * generator)
       (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+       if(getTableDesc()->getNATable()->isSmallTable())
+       {
+           tablename = new char [ strlen("TRAFODION.SEABASE.SUPER") +1 ];
+           strcpy(tablename, "TRAFODION.SEABASE.SUPER");
+       }
+       else
 	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
     }
   else
@@ -1184,9 +1190,15 @@ short HbaseDelete::codeGen(Generator * generator)
     }
 
   if (! tablename)
+  {
+    if(getTableDesc()->getNATable()->isSmallTable())
+    tablename = 
+      space->AllocateAndCopyToAlignedSpace(NAString("TRAFODION.SEABASE.SUPER"), 0);
+    else
     tablename = 
       space->AllocateAndCopyToAlignedSpace(
 					   GenGetQualifiedName(getTableName()), 0);
+  }
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
@@ -2138,6 +2150,12 @@ short HbaseUpdate::codeGen(Generator * generator)
       (getTableDesc()->getNATable()->isHbaseCellTable()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+    if(getTableDesc()->getNATable()->isSmallTable())
+       {
+           tablename =
+             space->AllocateAndCopyToAlignedSpace(NAString("TRAFODION.SEABASE.SUPER"), 0);
+       }
+      else
 	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
     }
   else
@@ -2147,9 +2165,15 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
 
   if (! tablename)
+  {
+    if(getTableDesc()->getNATable()->isSmallTable())
+    tablename =
+      space->AllocateAndCopyToAlignedSpace(NAString("TRAFODION.SEABASE.SUPER"), 0);
+    else
     tablename = 
       space->AllocateAndCopyToAlignedSpace(
 					   GenGetQualifiedName(getTableName()), 0);
+  }
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
@@ -2772,7 +2796,11 @@ short HbaseInsert::codeGen(Generator *generator)
     }
   else
     {
-      tablename = space->AllocateAndCopyToAlignedSpace(
+      if(getTableDesc()->getNATable()->isSmallTable())
+        tablename =
+        space->AllocateAndCopyToAlignedSpace(NAString("TRAFODION.SEABASE.SUPER"), 0);
+      else
+        tablename = space->AllocateAndCopyToAlignedSpace(
 						       GenGetQualifiedName(getIndexDesc()->getIndexName()), 0);
     }
 

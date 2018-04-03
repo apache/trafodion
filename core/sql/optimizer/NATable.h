@@ -612,10 +612,17 @@ public:
   
   NABoolean isSmallTable() const
   {
+    NAColumn *nac = NULL;
+    for (CollIndex c = 0; c < getColumnCount(); c++)
+    {
+        nac = getNAColumnArray()[c];
+        if (nac->getColName()=="_TBLNM_")
+          return TRUE;
+    }
     if(getTableName().isSeabaseMD() || getTableName().isSeabasePrivMgrMD() )
       return FALSE;
-    else
-    return TRUE;  
+
+    return FALSE;  
   }
  
   NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
