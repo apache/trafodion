@@ -62,7 +62,15 @@ CPtpClient::CPtpClient (void)
 {
     const char method_name[] = "CPtpClient::CPtpClient";
     TRACE_ENTRY;
+
+    ptpHost_[0] = '\0';
+    ptpPortBase_[0] = '\0';
+    if ( !IsRealCluster )
+    {
+        SetLocalHost();
+    }
     
+
     char * p = getenv( "MON2MON_COMM_PORT" );
     if ( p ) 
     {
@@ -702,6 +710,11 @@ int CPtpClient::ReceiveSock(char *buf, int size, int sockFd)
     return error;
 }
 
+void CPtpClient::SetLocalHost( void )
+{
+    gethostname( ptpHost_, MAX_PROCESSOR_NAME );
+}
+
 int CPtpClient::SendSock(char *buf, int size, int sockFd)
 {
     const char method_name[] = "CPtpClient::SendSock";
@@ -773,23 +786,32 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
     TRACE_ENTRY;
     
     char monPortString[MAX_PROCESSOR_NAME];
+    char ptpHost[MAX_PROCESSOR_NAME];
     char ptpPort[MAX_PROCESSOR_NAME];
     int tempPort = basePort_;
     
+    ptpHost[0] = '\0';
+
     // For virtual env
     if (!IsRealCluster)
     {
         tempPort += receiveNode;
+        strcat( ptpHost, ptpHost_ );
+    }
+    else
+    {
+        strcat( ptpHost, hostName );
     }
     
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d - reqType=%s, hostName=%s, receiveNode=%d, "
-                      "tempPort=%d, basePort_=%d\n"
+                      "ptpHost=%s, tempPort=%d, basePort_=%d\n"
                     , method_name, __LINE__
                     , reqType
                     , hostName
                     , receiveNode
+                    , ptpHost
                     , tempPort 
                     , basePort_ );
     }
@@ -797,7 +819,7 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
     memset( &ptpPort, 0, MAX_PROCESSOR_NAME );
     memset( &ptpPortBase_, 0, MAX_PROCESSOR_NAME+100 );
 
-    strcat( ptpPortBase_, hostName );
+    strcat( ptpPortBase_, ptpHost );
     strcat( ptpPortBase_, ":" );
     sprintf( monPortString,"%d", tempPort );
     strcat( ptpPort, ptpPortBase_ );

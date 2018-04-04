@@ -328,6 +328,14 @@ int CNameServer::SockCreate( void )
     strcpy( host, mon2nsHost_ );
     port = atoi( mon2nsPort_ );
     
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d - Connecting to %s:%d\n"
+                    , method_name, __LINE__
+                    , host
+                    , port );
+    }
+
     size = sizeof(sockinfo );
 
     if ( !retries )

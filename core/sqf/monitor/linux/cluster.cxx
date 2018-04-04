@@ -9153,6 +9153,17 @@ int CCluster::MkCltSock( const char *portName )
     host[len] = '\0';
     port = atoi(&colon[1]);
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Connecting to %s:%d\n"
+                        , method_name, __LINE__
+                        , host
+                        , port );
+        }
+    }
+
     size = sizeof(sockinfo);
 
     if ( !retries )

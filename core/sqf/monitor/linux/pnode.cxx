@@ -2825,6 +2825,18 @@ CProcess *CNodeContainer::GetProcess( const char *name
     const char method_name[] = "CNodeContainer::GetProcess(name,verifier)";
     TRACE_ENTRY;
 
+    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d Getting %s:%d, "
+                      "checknode=%d, checkprocess=%d, backupOk=%d\n"
+                    , method_name, __LINE__
+                    , name
+                    , verifier
+                    , checknode
+                    , checkprocess
+                    , backupOk );
+    }
+
     while ( node )
     {
         if ( checknode )

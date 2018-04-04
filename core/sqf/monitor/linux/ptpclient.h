@@ -66,7 +66,9 @@ public:
                       , const char *targetNodeName );
 
 private:
+
     int  basePort_;
+    char ptpHost_[MAX_PROCESSOR_NAME];
     char ptpPortBase_[MAX_PROCESSOR_NAME+100];
     int  ptpSock_;
     int  seqNum_;
@@ -74,6 +76,7 @@ private:
     int  ReceiveSock(char *buf, int size, int sockFd);
     int  SendSock(char *buf, int size, int sockFd);
     int  SendToMon(const char *reqType, internal_msg_def *msg, int size, int receiveNode, const char *hostName);
+    void SetLocalHost( void );
 };
 
 #endif

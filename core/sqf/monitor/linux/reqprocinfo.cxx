@@ -44,7 +44,10 @@ extern CNameServer *NameServer;
 // Copy information for a specific process into the reply message buffer.
 void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState &procState)
 {
+    const char method_name[] = "CNameServer::SendReceive";
     CProcess *parent;
+
+    TRACE_ENTRY;
 
     procState.nid = process->GetNid();
     procState.pid = process->GetPid();
@@ -82,6 +85,58 @@ void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState 
         procState.parent_verifier = -1;
         procState.parent_name[0] = '\0';
     }
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        char desc[2048];
+        char* descp = desc;
+        sprintf( desc, 
+                 "ProcessInfo reply:\n"
+                 "        procState.process_name=%s\n"
+                 "        procState.nid=%d\n"
+                 "        procState.pid=%d\n"
+                 "        procState.verifier=%d\n"
+                 "        procState.type=%d\n"
+                 "        procState.os_pid=%d\n"
+                 "        procState.parent_name=%s\n"
+                 "        procState.parent_nid=%d\n"
+                 "        procState.parent_pid=%d\n"
+                 "        procState.parent_verifier=%d\n"
+                 "        procState.priority=%d\n"
+                 "        procState.state=%d\n"
+                 "        procState.pending_delete=%d\n"
+                 "        procState.event_messages=%d\n"
+                 "        procState.system_messages=%d\n"
+                 "        procState.paired=%d\n"
+                 "        procState.waiting_startup=%d\n"
+                 "        procState.opened=%d\n"
+                 "        procState.backup=%d\n"
+                 "        procState.program=%s\n"
+                 , procState.process_name
+                 , procState.nid
+                 , procState.pid
+                 , procState.verifier
+                 , procState.type
+                 , procState.os_pid
+                 , procState.parent_name
+                 , procState.parent_nid
+                 , procState.parent_pid
+                 , procState.parent_verifier
+                 , procState.priority
+                 , procState.state
+                 , procState.pending_delete
+                 , procState.event_messages
+                 , procState.system_messages
+                 , procState.paired
+                 , procState.waiting_startup
+                 , procState.opened
+                 , procState.backup
+                 , procState.program );
+        trace_printf( "%s@%d - %s\n"
+                    , method_name, __LINE__, descp );
+    }
+
+    TRACE_EXIT;
 }
 
 
@@ -337,6 +392,7 @@ void CExtProcInfoReq::performRequest()
         if ( processName_.size() )
         { // find by name
 #ifdef NAMESERVER_PROCESS
+            //  (check node state, check process state, not backup)
             requester = Nodes->GetProcess( processName_.c_str()
                                          , verifier_ );
 #else
@@ -347,9 +403,13 @@ void CExtProcInfoReq::performRequest()
         else
         { // find by pid
 #ifdef NAMESERVER_PROCESS
+            //  (don't check node state, don't check process state, backup is Ok)
             requester =
                Nodes->GetProcess( nid_ , pid_ , verifier_
                                 , false, false, true );
+//            CLNode *lnode = Nodes->GetLNode( nid_ );
+//            CNode *node = lnode->GetNode();
+//            requester = node->GetProcess( pid_, verifier_ );
 #else
             requester = MyNode->GetProcess( pid_
                                           , verifier_ );
@@ -394,6 +454,11 @@ void CExtProcInfoReq::performRequest()
                 if ( requester && strcmp( requester->GetName()
                            , msg_->u.request.u.process_info.target_process_name) == 0 )
                 {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf("%s@%d request #%ld: ProcessInfo, for "
+                                     "requester\n", method_name, __LINE__, id_);
+                    }
                     ProcessInfo_CopyData(requester,
                                          msg_->u.reply.u.process_info.process[0]);
                     count = 1;
@@ -419,6 +484,11 @@ void CExtProcInfoReq::performRequest()
                     {
                         if ( target_verifier == -1 )
                         { // the name may represent process pair, return primary only
+                            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                            {
+                                trace_printf("%s@%d request #%ld: ProcessInfo, for "
+                                             "process pair\n", method_name, __LINE__, id_);
+                            }
                             ProcessInfo_CopyPairData( process
                                                     , msg_->u.reply.u.process_info.process[0] );
                             count = 1;
@@ -426,6 +496,11 @@ void CExtProcInfoReq::performRequest()
                         }
                         else
                         { 
+                            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                            {
+                                trace_printf("%s@%d request #%ld: ProcessInfo, for "
+                                             "process\n", method_name, __LINE__, id_);
+                            }
                             ProcessInfo_CopyData( process
                                                 , msg_->u.reply.u.process_info.process[0] );
                             count = 1;
