@@ -1193,7 +1193,7 @@ int main (int argc, char *argv[])
     }
 
 #ifndef NAMESERVER_PROCESS
-    env = getenv("SQ_NAMESERVER_ENABLE");
+    env = getenv("SQ_NAMESERVER_ENABLED");
     if ( env && isdigit(*env) )
     {
         NameServerEnabled = atoi(env);
