@@ -3494,9 +3494,25 @@ ItemExpr *Upper::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) return this;
 
   // If our child is already upshifted, we can remove this Upper from the tree.
+  // BuiltinFunction::bindNode might have added a Cast node underneath Upper
+  // with the MATCH_CHILD_TYPE flag set. We need to remove it too
+  // else we can get into trouble with unmapped ValueIds at code generation
+  // time. (e.g. If a hash join equi-join predicate refers to the Cast, the
+  // Cast expression will be in the join child's characteristic outputs but
+  // when we generate the join predicate we skip the Cast looking for the
+  // underlying column. That might not be in the join child's characteristic
+  // outputs.)
   if (boundExpr == this) {
     CMPASSERT(getArity() == 1);
     ValueId opVid = child(0)->getValueId();
+    ItemExpr * child0ie = opVid.getItemExpr();
+    if (child0ie->getOperatorType() == ITM_CAST)
+      {
+        Cast * child0ieCast = (Cast *)child0ie;
+        if (child0ieCast->matchChildType()) 
+          // we need to remove the Cast too
+          opVid = child0ieCast->child(0)->getValueId();
+      }
     const CharType &ct = (const CharType &)opVid.getType();
     CMPASSERT(ct.getTypeQualifier() == NA_CHARACTER_TYPE);
     if (ct.isUpshifted()) setValueId(opVid);
