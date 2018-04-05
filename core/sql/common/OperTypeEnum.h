@@ -587,6 +587,7 @@ enum OperatorTypeEnum {
                         ITM_DAYOFYEAR = 2311,
                         ITM_FIRSTDAYOFYEAR = 2312,
                         ITM_INTERNALTIMESTAMP = 2313, // ++ Triggers,
+                        ITM_DAYOFMONTH = 2314,
 
                         ITM_DATE_TRUNC_YEAR    = 2315,
                         ITM_DATE_TRUNC_MONTH   = 2316,

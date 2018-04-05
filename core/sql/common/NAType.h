@@ -562,7 +562,8 @@ public:
 				 short displayCaseSpecific = 0);
 
   short getMyTypeAsText(NAString * outputStr, 
-			NABoolean addNullability = TRUE) const; // output
+			NABoolean addNullability = TRUE,
+                        NABoolean addCollation = TRUE) const; // output
 
   short getMyTypeAsHiveText(NAString * outputStr) const;  // output
 

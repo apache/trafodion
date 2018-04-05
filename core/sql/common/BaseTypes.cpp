@@ -645,7 +645,8 @@ short convertTypeToText_basic(char * text,	   // OUTPUT
                 CharInfo::getCharSetName(charSet));
   }
 
-  if (addCollate && (collation_name != NULL))
+  if (addCollate && (collation_name != NULL) && 
+      (strcmp(collation_name, SQLCOLLATIONSTRING_UNKNOWN) != 0))
   {
     str_sprintf(&text[str_len(text)],
                 " COLLATE %s",

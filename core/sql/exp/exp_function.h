@@ -359,8 +359,9 @@ public:
 class  ex_function_position : public ex_function_clause {
 public:
   ex_function_position(OperatorTypeEnum oper_type,
-				  Attributes ** attr,
-				  Space * space);
+                       Attributes ** attr,
+                       Space * space,
+                       int in_args_num);
   ex_function_position();
 
 
@@ -403,10 +404,13 @@ public:
                     short charOffsetFlag = 0,
                     CharInfo::CharSet cs = CharInfo::ISO88591);
 
+  static Lng32 errorChecks(Lng32 startPos, Lng32 occurrence,
+                           CollHeap* heap, ComDiagsArea** diagsArea);
+
   ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
-  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
-					   ComDiagsArea** = 0);  
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap* heap, 
+                                ComDiagsArea** = 0);  
   Long pack(void *);
   
   // ---------------------------------------------------------------------
@@ -443,22 +447,23 @@ public:
 private:
   Int16	collation_; 
 
-  char             fillers_[6];  // 
+  Int16 args_num;
 
-
+  char             fillers_[4];  // 
 };
 
 class  ex_function_position_doublebyte : 
 	public ex_function_clause {
 public:
   ex_function_position_doublebyte(OperatorTypeEnum oper_type,
-                                Attributes ** attr,
-                                Space * space);
+                                  Attributes ** attr,
+                                  Space * space,
+                                  int in_args_num);
   ex_function_position_doublebyte();
 
 
-  ex_expr::exp_return_type eval(char *op_data[], CollHeap*,
-                                         ComDiagsArea** = 0);
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap* heap,
+                                ComDiagsArea** = 0);
   Long pack(void *);
 
   // ---------------------------------------------------------------------
@@ -477,6 +482,11 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+
+private:
+  Int16 args_num;
+
+  char             fillers_[6];  // 
 };
 
 class  ex_function_concat : public ex_function_clause {

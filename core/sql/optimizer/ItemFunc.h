@@ -1610,6 +1610,9 @@ public:
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
 
@@ -1632,6 +1635,9 @@ public:
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
+  // a virtual function for performing name binding within the query tree
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   virtual NABoolean protectFromVEGs() { return TRUE; };
@@ -1643,8 +1649,10 @@ public:
 class PositionFunc : public CacheableBuiltinFunction
 {
 public:
-  PositionFunc(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr)
-         : CacheableBuiltinFunction(ITM_POSITION, 3, val1Ptr, val2Ptr, val3Ptr)
+  PositionFunc(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ItemExpr *val3Ptr,
+               ItemExpr *val4Ptr)
+         : CacheableBuiltinFunction(ITM_POSITION, 4, 
+                                    val1Ptr, val2Ptr, val3Ptr, val4Ptr)
 	 { allowsSQLnullArg() = FALSE; }
 
   // virtual destructor
