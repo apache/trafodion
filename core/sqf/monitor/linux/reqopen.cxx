@@ -287,7 +287,7 @@ bool CExtOpenReq::prepare()
                                          , true, false, false );
     }
     else
-    { // find by nid (check node state, don't check process state, backup is Ok)
+    { // find by pid (check node state, don't check process state, backup is Ok)
         openerProcess = Nodes->GetProcess( msg_->u.request.u.open.nid
                                          , msg_->u.request.u.open.pid
                                          , msg_->u.request.u.open.verifier
@@ -315,7 +315,7 @@ bool CExtOpenReq::prepare()
                                          , true, false, false );
     }
     else
-    { // find by nid (check node state, don't check process state, backup is Ok)
+    { // find by pid (check node state, don't check process state, backup is Ok)
         openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_nid
                                          , msg_->u.request.u.open.target_pid
                                          , msg_->u.request.u.open.target_verifier

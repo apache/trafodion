@@ -1372,6 +1372,11 @@ int CTcdbSqlite::Initialize( void )
         snprintf( dbase, sizeof(dbase)
                 , "%s/sql/scripts/sqconfig.db", getenv("TRAF_HOME"));
     }
+    if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+    {
+        trace_printf( "%s@%d Opening SQLite database file %s\n"
+                    , method_name, __LINE__, dbase );
+    }
     int rc = sqlite3_open_v2( dbase, &db_
                             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
                             , NULL);
@@ -1379,6 +1384,11 @@ int CTcdbSqlite::Initialize( void )
     {
         db_ = NULL;
 
+        if (TcTraceSettings & (TC_TRACE_REGISTRY | TC_TRACE_REQUEST | TC_TRACE_INIT))
+        {
+            trace_printf( "%s@%d Opening SQLite database file sqconfig.db in current directory\n"
+                        , method_name, __LINE__ );
+        }
         // See if database is in current directory
         int rc2 = sqlite3_open_v2( "sqconfig.db", &db_
                                  , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX

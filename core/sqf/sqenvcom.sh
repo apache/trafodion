@@ -692,7 +692,7 @@ export SQ_STARTUP=r
 #   NAME-SERVER - to disable process replication and enable name-server
 #
 # Uncomment the next six environment variables
-#export SQ_NAMESERVER_ENABLE=1
+#export SQ_NAMESERVER_ENABLED=1
 #export NS_COMM_PORT=23370
 #export NS_SYNC_PORT=23360
 #export NS_M2N_COMM_PORT=23350
