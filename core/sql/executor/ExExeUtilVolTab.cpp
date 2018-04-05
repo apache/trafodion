@@ -517,9 +517,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      {
 		// cannot have a transaction running.
 		// Return error.
-                ComDiagsArea * diagsArea = getDiagsArea();
-                ExRaiseSqlError(getHeap(), &diagsArea, -EXE_BEGIN_TRANSACTION_ERROR);
-                setDiagsArea(diagsArea);
+                ExRaiseSqlError(getHeap(), &diagsArea_, -EXE_BEGIN_TRANSACTION_ERROR);
 		step_ = ERROR_;
 		break;
 	      }
@@ -592,11 +590,9 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      {
 		// add a warning to indicate that some schemas were not
 		// dropped.
-                ComDiagsArea * diagsArea = getDiagsArea();
-                ExRaiseSqlError(getHeap(), &diagsArea, 1069,
+                ExRaiseSqlError(getHeap(), &diagsArea_, 1069,
                        NULL, NULL, NULL,
                        errorSchemas_);
-                setDiagsArea(diagsArea);
 	      }
 	    step_ = CLEANUP_HIVE_TABLES_;
 	  }

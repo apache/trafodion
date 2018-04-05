@@ -76,7 +76,7 @@ private:
 			 NABoolean nullTerminate = TRUE,
 			 Int64 * rowsAffected = NULL,
 			 NABoolean monitorThis = FALSE,
-			 ComDiagsArea *globalDiags = NULL);
+			 ComDiagsArea **globalDiags = NULL);
 
   Lng32 executeImmediatePrepare(const char * stmt,
 				char * outputBuf = NULL,
@@ -100,7 +100,7 @@ private:
                             Lng32 * outputBufLen = NULL,
                             NABoolean nullTerminate = TRUE,
                             Int64 * rowsAffected = NULL,
-                            ComDiagsArea *diagsArea = NULL);
+                            ComDiagsArea **diagsArea = NULL);
  
   Lng32 prepare(const char * stmtStr,
 		SQLMODULE_ID * module,
@@ -247,11 +247,8 @@ private:
 
   Lng32 retrieveSQLDiagnostics(ComDiagsArea *toDiags);
   ComDiagsArea *allocAndRetrieveSQLDiagnostics(ComDiagsArea *&toDiags);
-  void retrieveOrSaveSQLDiagnostics(Lng32 cliRetCode, ComDiagsArea *toDiags);
 
   CollHeap * getHeap() { return heap_; }
-
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
 
   char * outputBuf() { return outputBuf_; };
   Int32  outputDatalen() { return outputDatalen_; };
@@ -373,8 +370,6 @@ private:
 
   Int32 numQuadFields_;
   struct SQLCLI_QUAD_FIELDS * quadFields_;
-
-  ComDiagsArea * diagsArea_;
 
   CollHeap * heap_;
 

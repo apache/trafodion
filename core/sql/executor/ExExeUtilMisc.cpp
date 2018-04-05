@@ -102,7 +102,7 @@ short ExExeUtilFastDeleteTcb::doPurgedataCat(char * stmt)
   cliRC = holdAndSetCQD("EXE_PARALLEL_PURGEDATA", "OFF");
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       return -1;
     }
 
@@ -111,7 +111,7 @@ short ExExeUtilFastDeleteTcb::doPurgedataCat(char * stmt)
 
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       restoreCQD("EXE_PARALLEL_PURGEDATA");
       return -1;
     }
@@ -156,7 +156,7 @@ short ExExeUtilFastDeleteTcb::doLabelPurgedata(char * objectName,
 
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       retcode = -1;
       goto cleanUpAndReturn;
     }
@@ -214,7 +214,7 @@ short ExExeUtilFastDeleteTcb::doFastDelete(char * objectName,
     executeImmediate("control query shape hold;");
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       retcode = -1;
       goto cleanUpAndReturn;
     }
@@ -223,7 +223,7 @@ short ExExeUtilFastDeleteTcb::doFastDelete(char * objectName,
     cliInterface()->executeImmediate("control query shape esp_exchange(cut);");
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       retcode = -1;
       goto cleanUpAndReturn;
     }
@@ -235,7 +235,7 @@ short ExExeUtilFastDeleteTcb::doFastDelete(char * objectName,
 	executeImmediate("control query default mv_internal_ignore_uninitialized 'ON';");
       if (cliRC < 0)
 	{
-          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  retcode = -1;
 	  goto cleanUpAndReturn;
 	}
@@ -275,7 +275,7 @@ short ExExeUtilFastDeleteTcb::doFastDelete(char * objectName,
 
   if (cliRC < 0)
     {
-      setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       retcode = -1;
       goto cleanUpAndReturn;
     }
@@ -333,11 +333,9 @@ short ExExeUtilFastDeleteTcb::injectError(const char * val)
       ((e2) && (strcmp(e2, val) == 0)))
     {
       Lng32 errNumParam = ((Lng32)str_atoi(val, strlen(val)));
-      ComDiagsArea * diagsArea = getDiagsArea();
-      ExRaiseSqlError(getHeap(), &diagsArea, -EXE_ERROR_INJECTED,
+      ExRaiseSqlError(getHeap(), &diagsArea_, -EXE_ERROR_INJECTED,
           &errNumParam, NULL, NULL,   
 	  (e1 ? "SQLMX_TEST_POINT" : "SQLMX_PPD_ERR_TEST_POINT"));
-      setDiagsArea(diagsArea);
       return -EXE_ERROR_INJECTED;
     }
   return 0;
@@ -408,7 +406,7 @@ short ExExeUtilFastDeleteTcb::work()
 		    cliRC = cliInterface()->beginWork();
 		    if (cliRC < 0)
 		      {
-                        setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                        cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 			step_ = ERROR_;
 			break;
 		      }
@@ -443,7 +441,7 @@ short ExExeUtilFastDeleteTcb::work()
 	      {
 		if (cliRC < 0)
 		  {
-                    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                    cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		    step_ = ERROR_;
 		    break;
 		  }
@@ -456,7 +454,7 @@ short ExExeUtilFastDeleteTcb::work()
 	    cliRC = cliInterface()->beginWork();
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 		break;
 	      }
@@ -506,7 +504,7 @@ short ExExeUtilFastDeleteTcb::work()
 	      rc = injectError("10");
 	    if (rc < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		// could not acquire a ddl lock.
 		// try to purgedata using catman sequential purgedata.
 
@@ -549,7 +547,7 @@ short ExExeUtilFastDeleteTcb::work()
 	      }
 	    if (rc < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		// security validation failed
 		if ((getDiagsArea()->contains(-1017)) ||
 		    (rollbackNoPDErr))
@@ -572,7 +570,7 @@ short ExExeUtilFastDeleteTcb::work()
 	      rc = injectError("12");
 	    if (rc < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ROLLBACK_WORK_AND_ERROR_;
 		break;
 	      }
@@ -588,7 +586,7 @@ short ExExeUtilFastDeleteTcb::work()
 		  {
 		    strcpy(failReason_, "Error during commit work.");
 
-                    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                    cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		    step_ = ROLLBACK_WORK_AND_ERROR_;
 		    break;
 		  }
@@ -603,7 +601,7 @@ short ExExeUtilFastDeleteTcb::work()
 		strcpy(buf, "SELECT TESTEXIT;");
 		cliRC = cliInterface()->executeImmediate(buf);
 		if (cliRC < 0)
-                  setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                  cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		  
 		strcpy(failReason_, " ");
 
@@ -621,7 +619,7 @@ short ExExeUtilFastDeleteTcb::work()
 	    cliRC = cliInterface()->beginWork();
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 		break;
 	      }
@@ -732,10 +730,9 @@ short ExExeUtilFastDeleteTcb::work()
 		ComDiagsArea * diagsArea = getDiagsArea();
 		// convert all errors into warnings
 		NegateAllErrors(diagsArea);
-                ExRaiseSqlError(getHeap(), &diagsArea, -EXE_PARALLEL_PURGEDATA_FAILED,
+                ExRaiseSqlError(getHeap(), &diagsArea_, -EXE_PARALLEL_PURGEDATA_FAILED,
                     NULL, NULL, NULL,
 		    failReason_);
-                setDiagsArea(diagsArea);
 	      }
 
 	    step_ = ERROR_;
@@ -758,7 +755,7 @@ short ExExeUtilFastDeleteTcb::work()
 		strcpy(buf, "SELECT TESTEXIT;");
 		cliInterface()->executeImmediate(buf);
 		if (cliRC < 0)
-                  setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                  cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		
 		step_ = ERROR_;
 		break;
@@ -769,11 +766,9 @@ short ExExeUtilFastDeleteTcb::work()
 		// raise a warning that parallel purgedata was performed.
 		if (fdTdb().returnPurgedataWarn())
 		  {
-		    ComDiagsArea * diagsArea = getDiagsArea();
-                    ExRaiseSqlError(getHeap(), &diagsArea, EXE_PURGEDATA_CAT,
+                    ExRaiseSqlError(getHeap(), &diagsArea_, EXE_PURGEDATA_CAT,
                         NULL, NULL, NULL,
 			"Parallel", "");
-                    setDiagsArea(diagsArea);
 		  }
 		step_ = DONE_;
 	      }
@@ -787,7 +782,7 @@ short ExExeUtilFastDeleteTcb::work()
 	    cliRC = cliInterface()->beginWork();
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 		break;
 	      }
@@ -802,7 +797,7 @@ short ExExeUtilFastDeleteTcb::work()
 
 	    if (rc < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = KILL_MXCMP_AND_ERROR_;
 		break;
 	      }
@@ -819,7 +814,7 @@ short ExExeUtilFastDeleteTcb::work()
 	      rc = injectError("16");
 	    if (rc < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = KILL_MXCMP_AND_ERROR_;
 		break;
 	      }
@@ -838,7 +833,7 @@ short ExExeUtilFastDeleteTcb::work()
 		  rc = injectError("17");
 		if (rc < 0)
 		  {
-                    setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                    cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		    step_ = KILL_MXCMP_AND_ERROR_;
 		    break;
 		  }
@@ -847,7 +842,7 @@ short ExExeUtilFastDeleteTcb::work()
 	    cliRC = cliInterface()->commitWork();
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 		break;
 	      }
@@ -857,11 +852,9 @@ short ExExeUtilFastDeleteTcb::work()
 	    // raise a warning that parallel purgedata was performed.
 	    if (fdTdb().returnPurgedataWarn())
 	      {
-		ComDiagsArea * diagsArea = getDiagsArea();
-                ExRaiseSqlError(getHeap(), &diagsArea, EXE_PURGEDATA_CAT,
+                ExRaiseSqlError(getHeap(), &diagsArea_, EXE_PURGEDATA_CAT,
                     NULL, NULL, NULL,
 		    "Parallel", "");
-                setDiagsArea(diagsArea);
 	      }
 	  }
 	break;
@@ -880,16 +873,14 @@ short ExExeUtilFastDeleteTcb::work()
 	    // for parallel purgedata, or because parallel purgedata failed.
 	    if (fdTdb().returnPurgedataWarn())
 	      {
-		ComDiagsArea * diagsArea = getDiagsArea();
 		if (fdTdb().doPurgedataCat())
-                  ExRaiseSqlError(getHeap(), &diagsArea, EXE_PURGEDATA_CAT,
+                  ExRaiseSqlError(getHeap(), &diagsArea_, EXE_PURGEDATA_CAT,
                      NULL, NULL, NULL,
                      "Regular", "Reason: Query or the object did not meet the criteria for parallel purgedata.");
 		else
-                  ExRaiseSqlError(getHeap(), &diagsArea, EXE_PURGEDATA_CAT,
+                  ExRaiseSqlError(getHeap(), &diagsArea_, EXE_PURGEDATA_CAT,
                      NULL, NULL, NULL,
                      "Regular", "Reason: Parallel purgedata failed.");
-                setDiagsArea(diagsArea);
 	      }
 
 	    rc = doPurgedataCat(fdTdb().purgedataStmt());
@@ -1363,7 +1354,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
         "control query default HIST_ON_DEMAND_STATS_SIZE '0'");
       if (cliRC < 0) 
         {
-          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return cliRC;
         }
       
@@ -1372,7 +1363,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
       short rtc = processInitial(rc);
       if ((rc != 0) && (rc != 100))
         {
-          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
         }
 
       cliRC = 
@@ -1380,7 +1371,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
             "control query default HIST_ON_DEMAND_STATS_SIZE 'RESET'");
       if (cliRC < 0) 
         {
-          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return cliRC;
         }
       
@@ -1416,7 +1407,7 @@ short ExExeUtilLongRunningTcb::executeLongRunningQuery()
       short rtc = processContinuing(rc);
       if ((rc != 0) && (rc != 100))
         {
-          setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
         }
 
 #ifdef _DEBUG
@@ -1978,7 +1969,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2034,7 +2025,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2090,7 +2081,7 @@ short ExExeUtilPopulateInMemStatsTcb::work()
 	    
 	    if (cliRC < 0)
 	      {
-                setDiagsArea(cliInterface()->allocAndRetrieveSQLDiagnostics(getDiagsArea()));
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 	      }
 	    else
@@ -2563,11 +2554,9 @@ short ExExeUtilHiveQueryTcb::work()
           {
             if (HiveClient_JNI::executeHiveSQL(htTdb().getHiveQuery()) != HVC_OK)
             {
-                ComDiagsArea * diagsArea = NULL;
-                ExRaiseSqlError(getHeap(), &diagsArea, -1214,
+                ExRaiseSqlError(getHeap(), &diagsArea_, -1214,
                         NULL, NULL, NULL,
                         getSqlJniErrorStr(), htTdb().getHiveQuery()); 
-                setDiagsArea(diagsArea);
                 step_ = ERROR_;
                 break;
             }
@@ -2579,9 +2568,6 @@ short ExExeUtilHiveQueryTcb::work()
           {
             if (handleError())
               return WORK_OK;
-            if (getDiagsArea() != NULL)
-	       getDiagsArea()->clear();
-            
             step_ = DONE_;
           }
           break;

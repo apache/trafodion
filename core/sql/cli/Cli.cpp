@@ -2375,9 +2375,10 @@ Lng32 SQLCLI_ProcessRetryQuery(
 				      SQLCHARSETCODE_UTF8,
 				      currContext,
 				      NULL);   
+                    ComDiagsArea *tmpDiagsArea = &diags;
 		  retcode =  cliInterface->
 		    executeImmediate( (char *) "SELECT TESTEXIT;", 
-				      NULL, NULL, TRUE, NULL, 0,&diags);
+				      NULL, NULL, TRUE, NULL, 0, &tmpDiagsArea);
 		  //ignore errors from this call.
 		  	    
 		}

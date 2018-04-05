@@ -1604,7 +1604,8 @@ void ContextCli::completeSetAuthID(
       ExeCliInterface *cliInterface = new (exHeap()) ExeCliInterface(exHeap(),
                                                                      SQLCHARSETCODE_UTF8
                                                                      ,this,NULL);   
-      cliInterface->executeImmediate((char *) "control query default * reset;", NULL, NULL, TRUE, NULL, 0,&diagsArea_);
+      ComDiagsArea *tmpDiagsArea = &diagsArea_;
+      cliInterface->executeImmediate((char *) "control query default * reset;", NULL, NULL, TRUE, NULL, 0, &tmpDiagsArea); 
    }
   
    if ((userID != databaseUserID_) ||
