@@ -84,9 +84,14 @@ sqconfigdb::addDbPersistData( "WDG_PERSIST_ZONES", "%zid"  );
 
 my $en = $ENV{'SQ_NAMESERVER_ENABLED'};
 if ($en == '1') {
-	if ($ninx > 0) {
-		sqconfigdb::addDbNameServer( $node_names[0] );
-	} else {
+	open(NSCONF, "<ns.conf");
+	my $nscnt = 0;
+	while (<NSCONF>) {
+		$_ =~ s/\s+$//;
+		sqconfigdb::addDbNameServer( $_ );
+		$nscnt++;
+	}
+	if ($nscnt == 0) {
 		sqconfigdb::addDbNameServer( 'n0' );
 	}
 }
