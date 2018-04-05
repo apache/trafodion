@@ -6678,7 +6678,7 @@ const NAType *LOBoper::synthesizeType()
 {
   // Return blob or clob type
   
-  NAType *result = new HEAP SQLBlob(HEAP, 1000);
+  NAType *result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024));
 
   if (child(0))
     {
@@ -6687,12 +6687,12 @@ const NAType *LOBoper::synthesizeType()
       
       if (typ1.getFSDatatype() == REC_BLOB)
 	{
-	  result = new HEAP SQLBlob(HEAP, 1000, Lob_Local_File,
+	  result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
       else if (typ1.getFSDatatype() == REC_CLOB)
 	{
-	  result = new HEAP SQLClob(HEAP, 1000, Lob_Invalid_Storage,
+	  result = new HEAP SQLClob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
     } 
@@ -6921,7 +6921,7 @@ const NAType *LOBconvertHandle::synthesizeType()
 	  return NULL;
 	}
       
-      result = new HEAP SQLBlob(HEAP, 1000, Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
+     result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
 					FALSE);
       return result;
     }

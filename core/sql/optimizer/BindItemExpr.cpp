@@ -6117,20 +6117,22 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 
               NAType * newType = NULL;
 
-              double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH);
+              double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH)*1024;
                   double lob_size = lobType.getLobLength();
               if (fs_datatype == REC_CLOB) {
-                  newType = new (bindWA->wHeap()) SQLClob(bindWA->wHeap(), (CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
+                newType = new (bindWA->wHeap()) SQLClob(bindWA->wHeap(), lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size,
                          lobType.getLobStorage(),
-                         TRUE, FALSE, TRUE,
+                         TRUE, FALSE, FALSE,
                          lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
               else {
-              newType = new (bindWA->wHeap()) SQLBlob(bindWA->wHeap(), (CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
+                newType = new (bindWA->wHeap()) SQLBlob(bindWA->wHeap(),lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size ,
                                              lobType.getLobStorage(), 
-                                             TRUE, FALSE, TRUE, 
+                                             TRUE, FALSE, FALSE, 
                                              lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
+             
+              CMPASSERT(lob_input_limit_for_batch < INT_MAX);
               vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
                 {
