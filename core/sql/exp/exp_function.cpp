@@ -2238,21 +2238,21 @@ Lng32 ex_function_position::errorChecks(Lng32 startPos, Lng32 occurrence,
   // startPos is 1 based. Cannot be <= 0
   if (startPos < 0)
     {
-      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1572);
+      ExRaiseSqlError(heap, diagsArea, -1572);
       *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
       return -1;
     }
   
   if (startPos == 0)
     {
-      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1571);
+      ExRaiseSqlError(heap, diagsArea, -1571);
       *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
       return -1;
     }
   
   if (occurrence < 0)
     {
-      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1572);
+      ExRaiseSqlError(heap, diagsArea, -1572);
       *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
 
       return -1;
@@ -2260,7 +2260,7 @@ Lng32 ex_function_position::errorChecks(Lng32 startPos, Lng32 occurrence,
   
   if (occurrence == 0)
     {
-      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1571);
+      ExRaiseSqlError(heap, diagsArea, -1571);
       *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
 
       return -1;
