@@ -4553,6 +4553,10 @@ ex_function_position::pCodeGenerate(Space *space, UInt32 f)
   if(cs != CharInfo::ISO88591)
     return ex_clause::pCodeGenerate(space, f);
 
+  // pcode currently doesn't handle non-default start position or n'th occurrence
+  if (getNumOperands() > 3)
+    return ex_clause::pCodeGenerate(space, f);
+
   // We don't support system collations (e.g. czech).  Note, some clauses have
   // the collation defined in the clause.  Others don't - in which case the
   // info needs to be derived from the operand.

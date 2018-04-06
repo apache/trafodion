@@ -5452,22 +5452,58 @@ ExExeUtilHiveMDaccessTcb::~ExExeUtilHiveMDaccessTcb()
 }
 
 // should move this method to common dir.
-Lng32 ExExeUtilHiveMDaccessTcb::getFSTypeFromHiveColType(const char* hiveType)
+Lng32 ExExeUtilHiveMDaccessTcb::getTypeAttrsFromHiveColType(const char* hiveType,
+                                                            NABoolean isORC,
+                                                            Lng32 &fstype,
+                                                            Lng32 &length,
+                                                            Lng32 &precision,
+                                                            Lng32 &scale,
+                                                            char *sqlType,
+                                                            char *displayType,
+                                                            char *charset)
 {
-  Lng32 fstype = -1;
-  NAType * nat = NAType::getNATypeForHive(hiveType, getHeap());
-  fstype = nat->getFSDatatype();
-  delete nat;
-  return fstype;
-}
+  short rc = 0;
 
-Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
-{
-  Lng32 len = -1;
+  fstype = -1;
+  length = -1;
+  precision = -1;
+  scale = -1;
   NAType * nat = NAType::getNATypeForHive(hiveType, getHeap());
-  len = nat->getNominalSize();
-  delete nat;
-  return len;
+  if (nat)
+    {
+      fstype = nat->getFSDatatype();
+      length = nat->getNominalSize();
+      precision = nat->getPrecision();
+      scale = nat->getScale();
+
+      const char * sdtStr = 
+        Descriptor::ansiTypeStrFromFSType(fstype);
+      strcpy(sqlType, sdtStr);
+
+      NAString displayTypeNAS;
+      rc = nat->getMyTypeAsText(&displayTypeNAS, FALSE, FALSE);
+      if (rc)
+        {
+          delete nat;
+          return -1;
+        }
+
+      strcpy(displayType, displayTypeNAS.data());
+
+      charset[0] = 0;
+      CharInfo::CharSet charSetEnum = nat->getCharSet();
+      if (charSetEnum != CharInfo::UnknownCharSet)
+        {
+          const char * charSetName = CharInfo::getCharSetName(charSetEnum);
+          if (charSetName)
+            strcpy(charset, charSetName);
+        }
+
+      delete nat;
+      return 0;
+    }
+
+  return -1;
 }
 
 short ExExeUtilHiveMDaccessTcb::work()
@@ -5528,6 +5564,8 @@ short ExExeUtilHiveMDaccessTcb::work()
 
         case SETUP_SCHEMAS_:
           {
+            schNames_.clear();
+
 	    if ((hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_) ||
                 (! hiveMDtdb().getSchema()))
               {
@@ -5782,40 +5820,51 @@ short ExExeUtilHiveMDaccessTcb::work()
             str_cpy(infoCol->colName, 
                     (hcd ? hcd->name_ : hpd->name_), 256, ' ');
 
-            infoCol->fsDatatype = 
-              getFSTypeFromHiveColType(hcd ? hcd->type_ : hpd->type_);
-
-	    if (infoCol->fsDatatype < 0)
+            Lng32 fstype = -1;
+            Lng32 length = -1;
+            Lng32 precision = -1;
+            Lng32 scale = -1;
+            char sqlType[50];
+            char displayType[100];
+            char charset[50];
+            retcode = 
+              getTypeAttrsFromHiveColType(hcd ? hcd->type_ : hpd->type_,
+                                          htd->getSDs()->isOrcFile(),
+                                          fstype, length, precision, scale,
+                                          sqlType, displayType, charset);
+                 
+	    if (retcode < 0)
 	      {
+                // add a warning and continue.
 		char strP[300];
-		sprintf(strP, "Datatype %s is not supported.", 
-                        (hcd ? hcd->type_ : hpd->type_));
-                ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_GET_METADATA_INFO_ERROR,
+		sprintf(strP, "Datatype %s for column '%s' in table %s.%s.%s is not supported. This table will be ignored.", 
+                        (hcd ? hcd->type_ : hpd->type_),
+                        (hcd ? hcd->name_ : hpd->name_),
+                        hiveCat_, hiveSch_, htd->tblName_);
+		ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_GET_METADATA_INFO_ERROR,
                       NULL, NULL, NULL,
                       strP);
-		step_ = HANDLE_ERROR_;
-		break;
+                step_ = ADVANCE_ROW_;
+                break;
 	      }
 	    
-	    const char * sdtStr = 
-              Descriptor::ansiTypeStrFromFSType(infoCol->fsDatatype);
-	    str_cpy(infoCol->sqlDatatype, sdtStr, 32, ' ');
+            infoCol->fsDatatype = fstype;
+
+	    str_cpy(infoCol->sqlDatatype, sqlType, 32, ' ');
+
+	    str_cpy(infoCol->displayDatatype, displayType, 96, ' ');
 
             str_cpy(infoCol->hiveDatatype, (hcd ? hcd->type_ : hpd->type_), 
                     32, ' ');
 
-	    infoCol->colSize = 
-              getLengthFromHiveColType(hcd ? hcd->type_ : hpd->type_);
-	    infoCol->colScale = 0;
+            infoCol->colSize = length;
+            infoCol->colPrecision = precision;
+            infoCol->colScale = scale;
 
-	    // only iso charset
-	    if ((infoCol->fsDatatype == REC_BYTE_F_ASCII) ||
-		(infoCol->fsDatatype == REC_BYTE_V_ASCII))
-	      str_cpy(infoCol->charSet, "ISO88591", 40, ' ');
-	    else
-	      str_pad(infoCol->charSet, 40, ' ');
+            str_pad(infoCol->charSet, 40, ' ');
+            if (strlen(charset) > 0)
+              str_cpy(infoCol->charSet, charset, 40, ' ');
 
-	    infoCol->colPrecision = 0;
 	    infoCol->nullable = 1;
 
 	    infoCol->dtCode = 0;

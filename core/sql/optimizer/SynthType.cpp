@@ -3548,7 +3548,7 @@ const NAType *BitOperFunc::synthesizeType()
 	// now it's safe to cast the types to numeric type
 	const NumericType &ntyp1 = (NumericType &) child(0)->getValueId().getType();
 	const NumericType &ntyp2 = (NumericType &) child(1)->getValueId().getType();
-	
+
 	if (NOT ntyp1.isExact() OR NOT ntyp2.isExact() OR
 	    ntyp1.isBigNum() OR ntyp2.isBigNum())
 	  {
@@ -3582,7 +3582,7 @@ const NAType *BitOperFunc::synthesizeType()
 
 	// now it's safe to cast the types to numeric type
 	const NumericType &ntyp1 = (NumericType &) child(0)->getValueId().getType();
-	
+
 	if (NOT ntyp1.isExact() OR ntyp1.isBigNum())
 	  {
 	    // 4046 BIT operation is only defined for exact numeric types.
@@ -4878,21 +4878,6 @@ const NAType *OctetLength::synthesizeType()
 
 const NAType *PositionFunc::synthesizeType()
 {
-  NABoolean JDBC = (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON);
-  if ((NOT JDBC) && (getArity() == 3))
-    {
-      // third argument not supported for non-JDBC callers.
-      *CmpCommon::diags() << DgSqlCode(-3131);
-      return NULL;
-    }
-  else
-    {
-      // third argument is only supported for JDBC_PROCESS callers and
-      // is ignored. This is done for WLS/JDBC project who only want
-      // to not get a syntax error if a third argument is passed in.
-      // Go figure.
-      // They need this to get through some certification tests.
-   }
 
   //
   // Type cast any params.
@@ -4907,15 +4892,8 @@ const NAType *PositionFunc::synthesizeType()
   const NAType *operand1 = &vid1.getType();
   const NAType *operand2 = &vid2.getType();
   const NAType *operand3 = NULL;
+  const NAType *operand4 = NULL;
 
-  if (getArity() == 3)
-    {
-      ValueId vid3 = child(2)->getValueId();
-      SQLInt si(NULL);
-
-      vid3.coerceType(si, NA_NUMERIC_TYPE);
-      operand3 = &vid3.getType();
-    }
 
   //
   // Check that the operands are comparable.
@@ -4942,19 +4920,6 @@ const NAType *PositionFunc::synthesizeType()
     return NULL;
   }
 
-  if (operand3) {
-    if (operand3->getTypeQualifier() != NA_NUMERIC_TYPE) {
-      // 4053 The third operand of a POSITION function must be numeric.
-      *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
-      return NULL;
-    }
-
-    if (((NumericType*)operand3)->getScale() != 0) {
-      // 4047 The third operand of a POSITION function must have a scale of 0.
-      *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
-      return NULL;
-    }
-  }
 
 // 1/5/98: make sure position pattern and source types are comparable.
   const CharType *posPat = (CharType*)operand1;
@@ -6713,7 +6678,7 @@ const NAType *LOBoper::synthesizeType()
 {
   // Return blob or clob type
   
-  NAType *result = new HEAP SQLBlob(HEAP, 1000);
+  NAType *result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024));
 
   if (child(0))
     {
@@ -6722,12 +6687,12 @@ const NAType *LOBoper::synthesizeType()
       
       if (typ1.getFSDatatype() == REC_BLOB)
 	{
-	  result = new HEAP SQLBlob(HEAP, 1000, Lob_Local_File,
+	  result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
       else if (typ1.getFSDatatype() == REC_CLOB)
 	{
-	  result = new HEAP SQLClob(HEAP, 1000, Lob_Invalid_Storage,
+	  result = new HEAP SQLClob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
     } 
@@ -6956,7 +6921,7 @@ const NAType *LOBconvertHandle::synthesizeType()
 	  return NULL;
 	}
       
-      result = new HEAP SQLBlob(HEAP, 1000, Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
+     result = new HEAP SQLBlob(HEAP, ((Int64) CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), Lob_Invalid_Storage, typ1.supportsSQLnull(), FALSE, 
 					FALSE);
       return result;
     }

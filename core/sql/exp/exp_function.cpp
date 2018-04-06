@@ -290,14 +290,19 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
 };
 
 ExFunctionAESEncrypt::ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode )
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, 
+                                           Int32 aes_mode )
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
 ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
-                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode)
-     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+                                           Attributes ** attr, Space * space, 
+                                           int in_args_num, Int32 aes_mode)
+     : ex_function_clause(oper_type, in_args_num + 1, attr, space), 
+       args_num(in_args_num), aes_mode(aes_mode)
 {
 };
 
@@ -347,18 +352,21 @@ ex_function_oct_length::ex_function_oct_length(OperatorTypeEnum oper_type,
 };
 
 ex_function_position::ex_function_position(OperatorTypeEnum oper_type,
-					   Attributes ** attr, Space * space)
-: ex_function_clause(oper_type, 3, attr, space)
+					   Attributes ** attr, Space * space,
+                                           int in_args_num)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
 
 ex_function_position_doublebyte::ex_function_position_doublebyte
 (
-	OperatorTypeEnum oper_type,
-        Attributes ** attr, Space * space
+     OperatorTypeEnum oper_type,
+     Attributes ** attr, Space * space, int in_args_num
 )
-: ex_function_clause(oper_type, 3, attr, space)
+     : ex_function_clause(oper_type, in_args_num, attr, space),
+       args_num(in_args_num)
 {
   
 };
@@ -2167,6 +2175,7 @@ Lng32 ex_function_position::findPosition
 
   if (searchLen <= 0)
     return 0;
+
   Int32 position = 1;
   Int32 collPosition = 1;
   Int32 char_count = 1;
@@ -2181,14 +2190,14 @@ Lng32 ex_function_position::findPosition
       } 
       else
       {
-	      number_bytes = Attributes::getFirstCharLength
-	          (&sourceStr[position-1], sourceLen - position + 1, cs);
-
-	      if(number_bytes <= 0)
-	        return (Lng32)-1;
-
-	      ++char_count;
-	      position += number_bytes;
+        number_bytes = Attributes::getFirstCharLength
+          (&sourceStr[position-1], sourceLen - position + 1, cs);
+        
+        if(number_bytes <= 0)
+          return (Lng32)-1;
+        
+        ++char_count;
+        position += number_bytes;
       }
     else
     {
@@ -2198,16 +2207,15 @@ Lng32 ex_function_position::findPosition
       }
       else
       {
-	    if(charOffsetFlag)
-	      return char_count;
-	    else
-	      return position;
+        if(charOffsetFlag)
+          return char_count;
+        else
+          return position;
       }
     }
   }
   return 0;
 }
-
 
 ex_expr::exp_return_type 
 ex_function_char_length_doublebyte::eval(char *op_data[],
@@ -2224,12 +2232,51 @@ ex_function_char_length_doublebyte::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 };
 
+Lng32 ex_function_position::errorChecks(Lng32 startPos, Lng32 occurrence,
+                                        CollHeap* heap, ComDiagsArea** diagsArea)
+{
+  // startPos is 1 based. Cannot be <= 0
+  if (startPos < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1572);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (startPos == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1571);
+      *(*diagsArea) << DgString0("START POSITION") << DgString1("INSTR function"); 
+      return -1;
+    }
+  
+  if (occurrence < 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1572);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  if (occurrence == 0)
+    {
+      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1571);
+      *(*diagsArea) << DgString0("OCCURRENCE") << DgString1("INSTR function"); 
+
+      return -1;
+    }
+  
+  return 0;
+}
+
+
 ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 						    CollHeap* heap,
 						    ComDiagsArea** diagsArea)
 {
   CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
 
+  // return value is 1 based. First character position is 1.
 
   // search for operand 1
   Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
@@ -2247,30 +2294,60 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
      len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
   }
 
-  // If len1 is 0, return a position of 1.
-  Lng32 position;
+  Int32 startPos = 1;
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4) // start position and optional occurrence specified
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (errorChecks(startPos, occurrence, heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  char * srcStr = &op_data[2][startPos-1];
+  len2 -= (startPos-1);
+
+  char * pat = op_data[1];
+
+  Lng32 position = 0;
   if (len1 > 0)
     {
-
       short nPasses = CollationInfo::getCollationNPasses(getCollation());
-      position = findPosition(op_data[2], 
-			      len2, 
-			      op_data[1], 
-			      len1, 
-			      1, 
-			      nPasses, 
-			      getCollation(),
-			      1,
-			      cs);
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          position = findPosition(srcStr,
+                                  len2, 
+                                  pat,
+                                  len1, 
+                                  1, 
+                                  nPasses, 
+                                  getCollation(),
+                                  1,
+                                  cs);
+          
+          if(position < 0)
+            {
+              const char *csname = CharInfo::getCharSetName(cs);
+              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
+              *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
+              return ex_expr::EXPR_ERROR;
+            }
 
-      if(position < 0)
-      {
-        const char *csname = CharInfo::getCharSetName(cs);
-        ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
-        *(*diagsArea) << DgString0(csname) << DgString1("POSITION FUNCTION"); 
-        return ex_expr::EXPR_ERROR;
-      }
- 
+          if ((occ < occurrence) &&
+              (position > 0)) // found a matching string
+            {
+              // skip the current matched string and continue
+              srcStr += (position + len1 - 1);
+              len2 -= (position + len1 - 1);
+              startPos += (position + len1 -1);
+            }
+        } // for occ
+
+      if (position > 0) // found matching string
+        position += (startPos - 1);
     }
   else
     {
@@ -2285,39 +2362,87 @@ ex_expr::exp_return_type ex_function_position::eval(char *op_data[],
 };
 
 ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
-						    CollHeap*,
-						    ComDiagsArea**)
+                                                               CollHeap*heap,
+                                                               ComDiagsArea**diagsArea)
 {
-  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
-  
-  // If len1 is 0, return a position of 1.
-  Lng32 position = 1;
-  if (len1 > 0)
-    {
-      Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
+  // len1 and len2 are character lengths.
 
-      NAWchar* pat = (NAWchar*)op_data[1];
-      NAWchar* source = (NAWchar*)op_data[2];
-      
-      // If len1 > len2 or if operand 1 is not present in operand 2, return 
-      // a position of 0; otherwise return the position of operand 1 in 
-      // operand 2.
-      short found = 0;
-      while (position+len1-1 <= len2 && !found)
-        {
-	  if (wc_str_cmp(pat, &source[position-1], (Int32)len1))
-	    position++;
-	  else
-	    found = 1;
-        }
-      if (!found) position = 0;   
-    } 
+  // len1 is the pattern length to be searched.
+  Lng32 len1 = ( getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]) ) / sizeof(NAWchar);
+
+  // len2 is the length of string to be seached in.
+  Lng32 len2 = ( getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]) ) / sizeof(NAWchar);
   
+  // startPos is character pos and not byte pos
+  Int32 startPos = 1;
+
+  Int32 occurrence = 1;
+  if (getNumOperands() >= 4)
+    {
+      startPos = *(Int32*)op_data[3];
+      if (getNumOperands() == 5)
+        occurrence = *(Int32*)op_data[4];
+
+      if (ex_function_position::errorChecks(startPos, occurrence, 
+                                            heap, diagsArea))
+        return ex_expr::EXPR_ERROR;
+    }
+
+  // operand2/srcStr is the string to be searched in.
+  NAWchar * srcStr = 
+    (NAWchar*)&op_data[2][startPos*sizeof(NAWchar) - sizeof(NAWchar)];
+
+  NAWchar* pat = (NAWchar*)op_data[1];
+
+  // start at specified startPos
+  Lng32 position = startPos;
+
+  // If patter length(len1) > srcStr len(len2), return position of 0
+  if (len1 > len2)
+    position = 0;
+  else if (len1 > 0)
+    {
+      // if pat is not present in srcStr, return  position of 0; 
+      // otherwise return the position of pat in  srcStr for the 
+      // specified occurrence.
+      short found = 0;
+      for (Int32 occ = 1; occ <= occurrence; occ++)
+        {
+          found = 0;
+          while (position+len1-1 <= len2 && !found)
+           {
+              if (wc_str_cmp(pat, srcStr, (Int32)len1))
+                {
+                  position++;
+                  srcStr += 1;
+                }
+              else
+                found = 1;
+            }
+
+          if ((occ < occurrence) &&
+              (found)) // found a matching string
+            {
+              srcStr += len1;
+              position += len1;
+            }
+        } // for occ
+
+     if (! found) // not found matching string, return 0;
+       position = 0;
+    } 
+  else
+    {
+      // if len1 <= 0, return position of 1.
+      position = 1;
+    }
+
   // Now copy the position into result which is a long. 
   *(Lng32 *)op_data[0] = position;
   
   return ex_expr::EXPR_OK;
 };
+
 static Lng32 findTokenPosition(char * sourceStr, Lng32 sourceLen,
 			      char * searchStr, Lng32 searchLen,
 			      short bytesPerChar)

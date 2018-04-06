@@ -8767,7 +8767,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_FIRSTDAYOFYEAR, $3);
 	}  
- 
+
+     | TOK_DAYOFMONTH '(' value_expression ')'
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_DAYOFMONTH, $3);
+        }
      | TOK_MONTHNAME '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_MONTHNAME, $3);
@@ -8800,12 +8804,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 						TRUE);
 				}
      | TOK_DAY '(' value_expression ')'
-                                {
-				  $$ = new(PARSERHEAP())
-				    ExtractOdbc(REC_DATE_DAY, $3,
-						TRUE);
-                                }
-     | TOK_DAYOFMONTH '(' value_expression ')'
                                 {
 				  $$ = new(PARSERHEAP())
 				    ExtractOdbc(REC_DATE_DAY, $3,
@@ -9011,14 +9009,14 @@ string_function :
      /* POSITION(str-exp1 IN str-exp2)                    */
      | TOK_LOCATE '(' value_expression ',' value_expression ')'
         {
-           $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+          $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
         }
 
      /* ODBC extension: map LOCATE(str-exp1, str-exp2, START) to */
      /* POSITION(str-exp1 IN str-exp2)                    */
     | TOK_LOCATE '(' value_expression ',' value_expression ',' value_expression ')'
  	   {
- 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7); 
+ 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7,NULL); 
  	   }
 
      | TOK_LPAD '(' value_expression ',' value_expression ')'
@@ -9059,14 +9057,25 @@ string_function :
 
      | TOK_POSITION '(' value_expression TOK_IN value_expression ')'
                   {
-                     $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
                   }
 
      | TOK_INSTR '(' value_expression TOK_IN value_expression ')'
                   {
-		    CheckModeSpecial4;
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
+                  }
 
-                     $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL);
+     | TOK_INSTR '(' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,$9);
                   }
 
      /* ODBC extension */
@@ -11697,7 +11706,7 @@ blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -11733,7 +11742,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -16785,6 +16794,12 @@ exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE ta
 	       } 
 
 exe_util_hive_query : TOK_PROCESS TOK_HIVE TOK_STATEMENT QUOTED_STRING
+                      {
+                        $$ = new (PARSERHEAP()) 
+                          ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
+                                           PARSERHEAP());
+                      } 
+                    | TOK_PROCESS TOK_HIVE TOK_DDL QUOTED_STRING
                       {
                         $$ = new (PARSERHEAP()) 
                           ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
@@ -34336,7 +34351,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_UCASE
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
-			//                      | TOK_UUID
+                      | TOK_UUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

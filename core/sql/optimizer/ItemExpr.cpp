@@ -7503,6 +7503,8 @@ const NAString BuiltinFunction::getText() const
       return "current_user";
     case ITM_DATEFORMAT:
       return "dateformat";
+    case ITM_DAYOFMONTH:
+      return "dayofmonth";
     case ITM_DAYOFWEEK:
       return "dayofweek";
     case ITM_DO_WHILE:
@@ -7757,6 +7759,9 @@ const NAString BuiltinFunction::getText() const
     
     case ITM_AGGR_GROUPING_FUNC:
       return "aggr_grouping";
+
+    case ITM_TO_TIMESTAMP:
+      return "to_timestamp";
 
     default:
       return "unknown func";
@@ -8212,7 +8217,7 @@ ItemExpr * PositionFunc::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) PositionFunc(child(0), child(1), child(2));
+    result = new (outHeap) PositionFunc(child(0), child(1), child(2), child(3));
   else
     result = derivedNode;
 

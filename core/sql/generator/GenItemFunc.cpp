@@ -445,7 +445,8 @@ short BuiltinFunction::codeGen(Generator * generator)
           case CharInfo::UTF8:
           // case CharInfo::SJIS: // Uncomment this if we ever support SJIS
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position(ITM_POSITION, attr, space);
+             ex_function_position(ITM_POSITION, attr, space,
+                                  (getArity() + 1));
 
 	    ((ex_function_position *)function_clause)->setCollation(((PositionFunc*)this)->getCollation());
 
@@ -453,7 +454,8 @@ short BuiltinFunction::codeGen(Generator * generator)
 
           case CharInfo::UCS2:
 	   function_clause = new(generator->getSpace()) 
-		ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space);
+             ex_function_position_doublebyte(ITM_POSITION_DOUBLEBYTE, attr, space,
+                                             (getArity() + 1));
 
            break;
 

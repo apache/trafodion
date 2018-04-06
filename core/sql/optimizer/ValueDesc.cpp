@@ -6258,7 +6258,6 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
        const NAType *constType = constVal->getType();
 
        NAString val = *constVal->getRawText();
-       //       val = val.strip(NAString::leading, ' ');
        short len = 0;
 
        ///////////////////////////////////////////////////////////////////////
@@ -6381,35 +6380,47 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 	 }
        else
 	 {
-	   short vLen = val.length();
+           short vLen = val.length();
 
 	   if ((constType->getTypeQualifier()  == NA_NUMERIC_TYPE) &&
 	       (((NumericType*)constType)->isExact()) &&
-               (NOT ((NumericType&)type).isBigNum()) &&
+               (NOT ((NumericType*)constType)->isBigNum()) &&
 	       (constType->getScale() > 0))
 	     {
-	       NAString newVal;
-	       if (vLen <= constType->getScale())
-		 {
-		   newVal = "0.";
-		   for (Lng32 i = 0; i < (constType->getScale() - vLen); i++)
-		     {
-		       newVal += "0";
-		     }
-		   newVal += val;
-		 }
-	       else
-		 {
-                   // get digits to the left of scale
-		   newVal = val(0, vLen - constType->getScale() );
+               // See how many positions the result will take in the display
+               Lng32 t = constType->getDisplayLength(constType->getFSDatatype(),
+                                               constType->getNominalSize(),
+                                               constType->getPrecision(),
+                                               constType->getScale(),
+                                               0);
 
-		   newVal += ".";
-		   newVal += val(vLen - constType->getScale(), constType->getScale());
-		 }
+               char strval[100];
+               memset( strval, ' ', t );
 
-	       val = newVal;
+               // Get the ASCII representation
+               ex_expr::exp_return_type retcode =
+                 convDoIt((char*)constVal->getConstValue(),
+                          constVal->getStorageSize(),
+                          (short)constType->getFSDatatype(),
+                          constType->getPrecision(),
+                          constType->getScale(),
+                          strval,
+                          t,                          // target length
+                          REC_BYTE_F_ASCII,           // target type
+                          0,                          // no char limit
+                          SQLCHARSETCODE_ISO88591,    // ISO 8859-1
+                          NULL,                       // no vc length
+                          0);                         // not a varchar
+
+               if ( retcode == ex_expr::EXPR_OK )
+                 {
+                   strval[t] = 0;
+                   val = strval;
+                   val = val.strip(NAString::trailing, ' ');
+                 }
+
 	       vLen = val.length();
-	     }
+	     } // exact numeric
 
 	   len += vLen;
 	   
