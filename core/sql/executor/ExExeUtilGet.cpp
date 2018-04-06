@@ -5841,7 +5841,7 @@ short ExExeUtilHiveMDaccessTcb::work()
                         (hcd ? hcd->type_ : hpd->type_),
                         (hcd ? hcd->name_ : hpd->name_),
                         hiveCat_, hiveSch_, htd->tblName_);
-		ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_GET_METADATA_INFO_ERROR,
+		ExRaiseSqlError(getHeap(), &diagsArea_, CLI_GET_METADATA_INFO_ERROR,
                       NULL, NULL, NULL,
                       strP);
                 step_ = ADVANCE_ROW_;
