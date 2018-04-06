@@ -40,6 +40,11 @@ public:
     CPtpClient( void );
     virtual ~CPtpClient( void );
 
+    int  AddUniqStr( int nid
+                   , int id
+                   , const char *stringValue
+                   , int targetNid
+                   , const char *targetNodeName );
     int  InitializePtpClient( char * ptpPort );
     int  ProcessClone( CProcess *process );
     int  ProcessExit( CProcess* process

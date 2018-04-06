@@ -51,6 +51,9 @@ using namespace std;
 #include "replicate.h"
 #include "reqqueue.h"
 #include "healthcheck.h"
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+#endif
 
 extern CReqQueue ReqQueue;
 extern char MyPath[MAX_PROCESS_PATH];
@@ -82,6 +85,7 @@ extern CClusterConfig *ClusterConfig;
 const char *StateString( STATE state);
 #ifndef NAMESERVER_PROCESS
 const char *SyncStateString( SyncState state);
+extern CPtpClient *PtpClient;
 extern CNameServer *NameServer;
 extern CProcess *NameServerProcess;
 extern bool NameServerEnabled;
@@ -1013,7 +1017,7 @@ bool CNode::GetSchedulingData( void )
 }
 
 
-strId_t CNode::GetStringId(char * candidate)
+strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
 {
     const char method_name[] = "CNode::GetStringId";
     strId_t id;
@@ -1025,10 +1029,37 @@ strId_t CNode::GetStringId(char * candidate)
         id.id  = uniqStrId_++;
         id.nid = pnid_;
 
+        if (trace_settings & TRACE_PROCESS)
+        {
+            trace_printf("%s@%d - Adding unique string id=[%d,%d] (%s), targetLnode=%p\n",
+                         method_name, __LINE__, id.nid, id.id, candidate, targetLNode );
+        }
+
         Config->addUniqueString(id.nid, id.id, candidate);
 
-        CReplUniqStr *repl = new CReplUniqStr ( id.nid, id.id, candidate );
-        Replicator.addItem(repl);
+#ifndef NAMESERVER_PROCESS
+        if (NameServerEnabled)
+        {
+            if (targetLNode != NULL &&
+                !MyNode->IsMyNode(targetLNode->GetNid()))
+            {
+                // Forward the unique string to the target node
+                PtpClient->AddUniqStr( id.nid
+                                     , id.id
+                                     , candidate
+                                     , targetLNode->GetNid()
+                                     , targetLNode->GetNode()->GetName());
+            }
+        }
+        else
+#endif
+        {
+#ifdef NAMESERVER_PROCESS
+            targetLNode = targetLNode;  // Make compiler happy!
+#endif
+            CReplUniqStr *repl = new CReplUniqStr ( id.nid, id.id, candidate );
+            Replicator.addItem(repl);
+        }
     }
     // temp trace
     else

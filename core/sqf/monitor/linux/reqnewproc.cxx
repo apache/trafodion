@@ -441,9 +441,9 @@ void CExtNewProcReq::performRequest()
     
         if (lnode->GetNumProcs() < MAX_PROCESSES)
         {
-            strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.path );
-            strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process.ldpath );
-            strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.program );
+            strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.path, lnode );
+            strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process.ldpath, lnode );
+            strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.program, lnode );
 
             if (MyNode->IsMyNode(lnode->Nid))
             {

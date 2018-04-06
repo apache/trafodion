@@ -104,6 +104,16 @@ void CPtpCommAccept::processNewSock( int sockFd )
     {
         switch ( msg.type )
         {
+            case InternalType_UniqStr:
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                {
+                    trace_printf( "%s@%d" " - Received InternalType_UniqStr\n"
+                                , method_name, __LINE__ );
+                }
+                ReqQueue.enqueueUniqStrReq( &msg.u.uniqstr);
+                break;
+            }
             case InternalType_Process:
             {
                 if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))

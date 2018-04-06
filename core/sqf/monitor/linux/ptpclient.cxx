@@ -97,6 +97,56 @@ CPtpClient::~CPtpClient (void)
     TRACE_EXIT;
 }
 
+int  CPtpClient::AddUniqStr( int nid
+                           , int id
+                           , const char *stringValue
+                           , int targetNid
+                           , const char *targetNodeName )
+{
+    const char method_name[] = "CPtpClient::AddUniqStr";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_UniqStr request to %s, "
+                      "targetNid=%d\n"
+                    , method_name, __LINE__
+                    , targetNodeName
+                    , targetNid );
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_UniqStr;
+    msg.u.uniqstr.nid = nid;
+    msg.u.uniqstr.id  = id;
+
+    char *stringData = & msg.u.uniqstr.valueData;
+    int  stringDataLen = strlen(stringValue) + 1;
+
+    // Copy the string
+    memcpy( stringData, stringValue, stringDataLen );
+
+    int size = offsetof(struct internal_msg_def, u);
+    size += sizeof(msg.u.uniqstr);
+    size += stringDataLen;
+    
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+    {
+        trace_printf( "%s@%d - size_=%d, forwarding unique string [%d, %d] (%s)\n"
+                    , method_name, __LINE__
+                    , size
+                    , msg.u.uniqstr.nid
+                    , msg.u.uniqstr.id
+                    , &msg.u.uniqstr.valueData  );
+    }
+
+    int error = SendToMon("add-unique-string", &msg, size, targetNid, targetNodeName);
+    
+    TRACE_EXIT;
+    return error;
+}
+
 int CPtpClient::InitializePtpClient( char * ptpPort )
 {
     const char method_name[] = "CPtpClient::InitializePtpClient";
