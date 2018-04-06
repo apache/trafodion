@@ -1609,6 +1609,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     char nsCommPort[10];
     char nsSyncPort[10];
     char nsMon2NsPort[10];
+    char nsConfigDb[MAX_PROCESS_PATH];
     MON_Props xprops(true);
     MON_Props xprops_exe(true);
     char *xprops_exe_file;
@@ -1684,6 +1685,8 @@ bool CProcess::Create (CProcess *parent, int & result)
         STRCPY (nsSyncPort, (env?env:""));
         env = getenv ("NS_M2N_COMM_PORT");
         STRCPY (nsMon2NsPort, (env?env:""));
+        env = getenv ("SQ_CONFIGDB");
+        STRCPY (nsConfigDb, (env?env:""));
     }
     if ( Type == ProcessType_Watchdog )
     {
@@ -1866,6 +1869,8 @@ bool CProcess::Create (CProcess *parent, int & result)
             setEnvStrVal ( childEnv, nextEnv, "NS_SYNC_PORT", nsSyncPort );
         if ( nsMon2NsPort[0] )
             setEnvStrVal ( childEnv, nextEnv, "NS_M2N_COMM_PORT", nsMon2NsPort );
+        if (nsConfigDb[0] )
+            setEnvStrVal ( childEnv, nextEnv, "SQ_CONFIGDB", nsConfigDb );
     }
     if ( Type == ProcessType_Watchdog )
     {

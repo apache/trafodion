@@ -313,6 +313,7 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                       "        msg.new_process_ns.pathStrId=%d:%d\n"
                       "        msg.new_process_ns.ldpathStrId=%d:%d\n"
                       "        msg.new_process_ns.programStrId=%d:%d\n"
+                      "        msg.new_process_ns.process_name=%s\n"
                       "        msg.new_process_ns.port=%s\n"
                       "        msg.new_process_ns.argc=%d\n"
                       //"        msg.new_process_ns.argv=%s\n"
@@ -347,6 +348,7 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
                     , msg->u.request.u.new_process_ns.ldpathStrId.id
                     , msg->u.request.u.new_process_ns.programStrId.nid
                     , msg->u.request.u.new_process_ns.programStrId.id
+                    , msg->u.request.u.new_process_ns.process_name
                     , msg->u.request.u.new_process_ns.port_name
                     , msg->u.request.u.new_process_ns.argc
                     //, msg->u.request.u.new_process_ns.argv
