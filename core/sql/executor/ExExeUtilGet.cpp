@@ -5837,9 +5837,11 @@ short ExExeUtilHiveMDaccessTcb::work()
             Lng32 length = -1;
             Lng32 precision = -1;
             Lng32 scale = -1;
-            char sqlType[50];
-            char displayType[100];
-            char charset[50];
+
+            // HIVEMD defines used below are defined in ComTdbExeUtil.h
+            char sqlType[HIVEMD_DATA_TYPE_LEN+1];
+            char displayType[HIVEMD_DISPLAY_DATA_TYPE_LEN+1];
+            char charset[HIVEMD_CHARSET_LEN+1];
             retcode = 
               getTypeAttrsFromHiveColType(hcd ? hcd->type_ : hpd->type_,
                                           htd->getSDs()->isOrcFile(),
@@ -5849,11 +5851,11 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (retcode < 0)
 	      {
                 // add a warning and continue.
-		char strP[300];
-		sprintf(strP, "Datatype %s for column '%s' in table %s.%s.%s is not supported. This table will be ignored.", 
-                        (hcd ? hcd->type_ : hpd->type_),
-                        (hcd ? hcd->name_ : hpd->name_),
-                        hiveCat_, hiveSch_, htd->tblName_);
+		char strP[1001];
+		snprintf(strP, 1000, "Datatype %s for column '%s' in table %s.%s.%s is not supported. This table will be ignored.", 
+                         (hcd ? hcd->type_ : hpd->type_),
+                         (hcd ? hcd->name_ : hpd->name_),
+                         hiveCat_, hiveSch_, htd->tblName_);
 		*diags << DgSqlCode(CLI_GET_METADATA_INFO_ERROR)
 		       << DgString0(strP);
 
@@ -5863,20 +5865,20 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    
             infoCol->fsDatatype = fstype;
 
-	    str_cpy(infoCol->sqlDatatype, sqlType, 32, ' ');
+	    str_cpy(infoCol->sqlDatatype, sqlType, HIVEMD_DATA_TYPE_LEN, ' ');
 
-	    str_cpy(infoCol->displayDatatype, displayType, 96, ' ');
+	    str_cpy(infoCol->displayDatatype, displayType, HIVEMD_DISPLAY_DATA_TYPE_LEN, ' ');
 
             str_cpy(infoCol->hiveDatatype, (hcd ? hcd->type_ : hpd->type_), 
-                    32, ' ');
+                    HIVEMD_DATA_TYPE_LEN, ' ');
 
             infoCol->colSize = length;
             infoCol->colPrecision = precision;
             infoCol->colScale = scale;
 
-            str_pad(infoCol->charSet, 40, ' ');
+            str_pad(infoCol->charSet, HIVEMD_CHARSET_LEN, ' ');
             if (strlen(charset) > 0)
-              str_cpy(infoCol->charSet, charset, 40, ' ');
+              str_cpy(infoCol->charSet, charset, HIVEMD_CHARSET_LEN, ' ');
 
 	    infoCol->nullable = 1;
 
@@ -5898,7 +5900,7 @@ short ExExeUtilHiveMDaccessTcb::work()
               {
 		infoCol->dtCode = SQLDTCODE_DATE;
 		infoCol->colScale = 0;
-	        str_pad(infoCol->dtQualifier, 28, ' ');
+	        str_pad(infoCol->dtQualifier, HIVEMD_DT_QUALIFIER_LEN, ' ');
 		infoCol->dtStartField = 1;
 		infoCol->dtEndField = 3;
               }
