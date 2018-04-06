@@ -1408,11 +1408,7 @@ void CIntNewProcReq::performRequest()
                     MyNode->AddToNameMap( newProcess );
                     MyNode->AddToPidMap( newProcess->GetPid(),  newProcess );
 
-                    // Successfully forked process.  Replicate actual process
-                    // id and process name.
-
-//TRK-TODO
-              /*      if (NameServerEnabled)
+                    if (NameServerEnabled)
                     {
                         // Send actual pid and process name back to parent
                         PtpClient->ProcessInit( newProcess
@@ -1421,7 +1417,9 @@ void CIntNewProcReq::performRequest()
                                               , parentNid_ );
                     }
                     else
-             */       {
+                    {
+                        // Successfully forked process.  Replicate actual process
+                        // id and process name.
                         CReplProcInit *repl
                             = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
                         Replicator.addItem(repl);

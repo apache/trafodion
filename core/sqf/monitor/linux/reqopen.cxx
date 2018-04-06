@@ -78,11 +78,6 @@ void CExtOpenReq::performRequest()
     const char method_name[] = "CExtOpenReq::performRequest";
     TRACE_ENTRY;
 
-    int target_nid = -1;
-    int target_pid = -1;
-    Verifier_t target_verifier = -1;
-    string target_process_name;
-
     // Record statistics (sonar counters)
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_open_Incr();
@@ -108,62 +103,17 @@ void CExtOpenReq::performRequest()
     CProcess *opener = ((CReqResourceProc *) resources_[0])->getProcess();
     CProcess *opened = ((CReqResourceProc *) resources_[1])->getProcess();
 
-    
     // check for the process object as it could have been deleted by the time this request gets to perform.
     if (opened == NULL) 
     {
-        if (!NameServerEnabled)
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            {
-                  trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
-                           method_name, __LINE__, id_);
-            }
-            errorReply( MPI_ERR_NAME );
-            TRACE_EXIT;
-            return;
+              trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
+                       method_name, __LINE__, id_);
         }
-        else
-        {
-            target_nid = msg_->u.request.u.open.target_nid;
-            target_pid = msg_->u.request.u.open.target_pid;
-            target_verifier  = msg_->u.request.u.open.target_verifier;
-            target_process_name = (const char *) msg_->u.request.u.open.target_process_name;
-
-            if ( target_process_name.size() )
-            { // Name Server find by name:verifier
-                if (trace_settings & TRACE_REQUEST)
-                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
-                                , method_name, __LINE__
-                                , target_process_name.c_str()
-                                , target_verifier );
-                opened = Nodes->GetProcessNs( target_process_name.c_str()
-                                            , target_verifier );
-            }     
-            else
-            { // Name Server find by nid,pid:verifier
-                if (trace_settings & TRACE_REQUEST)
-                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
-                                , method_name, __LINE__
-                                , target_nid
-                                , target_pid
-                                , target_verifier );
-                opened = Nodes->GetProcessNs( target_nid
-                                            , target_pid
-                                            , target_verifier );
-            }
-            if (opened == NULL) 
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                      trace_printf("%s@%d request #%ld: Open process failed. Process already exited.",
-                               method_name, __LINE__, id_);
-                }
-                errorReply( MPI_ERR_NAME );
-                TRACE_EXIT;
-                return;
-            }
-        }
+        errorReply( MPI_ERR_NAME );
+        TRACE_EXIT;
+        return;
     }
 
     // check the verifier
@@ -254,6 +204,9 @@ bool CExtOpenReq::prepare()
     TRACE_ENTRY;
 
     int target_nid = -1;
+    int target_pid = -1;
+    Verifier_t target_verifier = -1;
+    string target_process_name;
     CLNode *target_lnode = NULL;
 
     if ( prepared_ == true )
@@ -320,6 +273,41 @@ bool CExtOpenReq::prepare()
                                          , msg_->u.request.u.open.target_pid
                                          , msg_->u.request.u.open.target_verifier
                                          , true, false, true );
+    }
+
+    if ( openedProcess == NULL )
+    {
+        if (NameServerEnabled)
+        {
+            target_nid = msg_->u.request.u.open.target_nid;
+            target_pid = msg_->u.request.u.open.target_pid;
+            target_verifier  = msg_->u.request.u.open.target_verifier;
+            target_process_name = (const char *) msg_->u.request.u.open.target_process_name;
+
+            if ( target_process_name.size() )
+            { // Name Server find by name:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                , method_name, __LINE__
+                                , target_process_name.c_str()
+                                , target_verifier );
+                openedProcess = Nodes->GetProcessNs( target_process_name.c_str()
+                                                   , target_verifier );
+            }     
+            else
+            { // Name Server find by nid,pid:verifier
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , target_nid
+                                , target_pid
+                                , target_verifier );
+                openedProcess = Nodes->GetProcessNs( target_nid
+                                                   , target_pid
+                                                   , target_verifier );
+            }
+        }
+        
     }
 
     if ( openedProcess )

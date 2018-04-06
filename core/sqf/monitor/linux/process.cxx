@@ -5290,6 +5290,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
                 {
                     // Replicate the exit to other nodes
+                    if (!NameServerEnabled)
                     {
                         // Replicate the exit to other nodes
                         CReplExit *repl = new CReplExit(process->GetNid(),
@@ -5325,12 +5326,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
                    process->IsAbended() &&
                    MyNode->GetShutdownLevel() == ShutdownLevel_Undefined) )
             {
-//TRK-TODO
-      //        if (NameServerEnabled)
-                {
-                    //message to monitor
-                }
-        //        else
+                if (!NameServerEnabled)
                 {
                     // Replicate the exit to other nodes
                     CReplExit *repl = new CReplExit(process->GetNid(),

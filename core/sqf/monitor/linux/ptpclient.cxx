@@ -397,7 +397,7 @@ int CPtpClient::ProcessInit( CProcess *process
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-            trace_printf( "%s@%d - Not Sending InternalType_Clone request to parentNid=%d\n"
+            trace_printf( "%s@%d - Not Sending InternalType_Clone request to parentNid=%d"
                           ", process=%s (%d,%d:%d)\n"
                         , method_name, __LINE__
                         , process->GetParentNid()
@@ -411,7 +411,7 @@ int CPtpClient::ProcessInit( CProcess *process
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf( "%s@%d" " - Sending InternalType_ProcessInit to parent node %s, parentNid=%d\n"
+        trace_printf( "%s@%d" " - Sending InternalType_ProcessInit to parent node %s, parentNid=%d"
                     ", for process %s (%d,%d:%d)\n"
                     , method_name, __LINE__
                     , parentLNode->GetNode()->GetName()
