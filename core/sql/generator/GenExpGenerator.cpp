@@ -359,13 +359,8 @@ Attributes * ExpGenerator::convertNATypeToAttributes
       
       else if (naType->getTypeQualifier() == NA_LOB_TYPE)
         {
+          
 	  SQLlob *lobType = (SQLlob *) naType;
-
-	  Lng32 lobLen = (Lng32)lobType->getLobLength();
-	  Int16 precision = (lobLen & 0xFFFF0000) >> 16;
-	  Int16 scale = lobLen & 0xFFFF;
-	  attr->setPrecision(precision);
-	  attr->setScale(scale);
           attr->setCharSet(lobType->getCharSet());
 	}
       

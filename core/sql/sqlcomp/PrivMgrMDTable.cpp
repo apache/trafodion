@@ -322,7 +322,7 @@ ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
    queue = NULL;
    
 // set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+int32_t diagsMark = ((pDiags_ != NULL) ? pDiags_->mark() : -1);
 
 int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
                                           false,false,true);
@@ -333,7 +333,7 @@ int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
       return STATUS_ERROR;
    }
    
-   if (cliRC == 100) // did not find the row
+   if (cliRC == 100 && diagsMark != -1)// did not find the row
    {
       pDiags_->rewind(diagsMark);
       return STATUS_NOTFOUND;

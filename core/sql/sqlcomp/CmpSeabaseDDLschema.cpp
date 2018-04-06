@@ -410,7 +410,8 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
  if (schemaUID < 0)
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(catalogName + "." + schemaName);
+                                  << DgString0(catalogName)
+                                  << DgString1(schemaName);
       cmpSBD.switchBackCompiler();
       return false;
    }
@@ -547,7 +548,8 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.getExternalName().data());
+                                  << DgString0(catName.data())
+                                  << DgString1(schName.data());
       goto label_error;
    }
 
@@ -1107,7 +1109,8 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.getExternalName().data());
+                                  << DgString0(catName.data())
+                                  << DgString1(schName.data());
       goto label_error;
    }
 
@@ -1337,7 +1340,8 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catalogName.data(),
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                          << DgSchemaName(schemaName.data());
+                                  << DgString0(catalogName.data())
+                                  << DgString1(schemaName.data());
       return;
    }
    

@@ -633,8 +633,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
               CmpCommon::diags()->clear();
 
               *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                                  << DgSchemaName(objQualName.getCatalogName() +
-                                                  "." +  objQualName.getSchemaName());
+                                  << DgString0(objQualName.getCatalogName())
+                                  << DgString1(objQualName.getSchemaName());
 
               rc = -1;
               goto finally;

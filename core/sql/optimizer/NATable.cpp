@@ -8554,7 +8554,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         // check if this hive schema exists in hiveMD
         LIST(NAText*) tblNames(naTableHeap);
         HVC_RetCode rc =
-          hiveMetaDB_->getClient()->getAllTables(schemaNameInt, tblNames);
+          HiveClient_JNI::getAllTables((NAHeap *)naTableHeap, schemaNameInt, tblNames);
         if ((rc != HVC_OK) && (rc != HVC_DONE))
           {
             *CmpCommon::diags()

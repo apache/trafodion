@@ -305,15 +305,14 @@ Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operL
       if (fInfo == NULL) {
          return LOB_DATA_FILE_NOT_FOUND_ERROR;
       }
+      if (fdData_)
+      {
+        hdfsCloseFile(fs_, fdData_);
+        fdData_=NULL;
+      }
+      openFlags_ =  O_WRONLY | O_APPEND; 
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
     }
-     hdfsCloseFile(fs_, fdData_);
-     fdData_=NULL;
-     openFlags_ = O_WRONLY | O_APPEND; 
-     fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
-     if (!fdData_) {
-       openFlags_ = -1;
-       return LOB_DATA_FILE_OPEN_ERROR;
-     }
 
      if ((operLen = hdfsWrite(fs_, fdData_, data, size)) == -1) {
        return LOB_DATA_WRITE_ERROR;
@@ -862,6 +861,10 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
        LobInputOutputFileType srcFileType = fileType(source);
        if (srcFileType != HDFS_FILE)
          return  LOB_SOURCE_FILE_READ_ERROR;
+       //Check if external file exists
+       Int64 sourceEOD = 0;
+       if (statSourceFile(source, sourceEOD) != LOB_OPER_OK)
+         return  LOB_SOURCE_FILE_READ_ERROR;
       }
     // Calculate sourceLen for each subOper.
     if ((subOper == Lob_File))
@@ -1172,6 +1175,8 @@ Ex_Lob_Error ExLob::insertSelect(ExLob *srcLobPtr,
       // we have received the external data file name from the descriptor table
       // replace the contents of the lobDataFile with this name      
       str_cpy_all(extFileName, blackBox, blackBoxLen);
+      extFileName[blackBoxLen]= '\0';
+
       extFileNameLen = blackBoxLen;
       // Now insert this into the target lob descriptor
       
@@ -1738,8 +1743,8 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
     if (fInfo)
       dataOffset = fInfo->mSize;
-
-    if ((lobGCLimit != 0) && (dataOffset > lobGCLimit)) // 5 GB default
+    // if -1, don't do GC or if reached the limit do GC
+    if ((lobGCLimit != -1) && (dataOffset > lobGCLimit)) 
       {
         str_sprintf(logBuf,"Starting GC. Current Offset : %ld",dataOffset);
         lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
@@ -1792,7 +1797,7 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   Ex_Lob_Error rc = LOB_OPER_OK;
   char logBuf[4096];
   lobDebugInfo("In ExLob::compactLobDataFile",0,__LINE__,lobTrace_);
-  Int64 maxMemChunk = 1024*1024*1024; //1GB limit for intermediate buffer for transfering data
+  Int64 maxMemChunk = 100*1024*1024; //100 MB limit for intermediate buffer for transfering data
 
   // make some temporary file names
   size_t len = lobDataFile_.length();

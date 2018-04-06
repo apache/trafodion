@@ -710,7 +710,7 @@ NABoolean QualifiedName::isHbaseCellOrRow() const
 
 NABoolean QualifiedName::isLOBDesc() const
 {
-  if (getObjectName().index(LOB_DESC_HANDLE_PREFIX) == 0)
+  if ((getObjectName().index(LOB_DESC_HANDLE_PREFIX) == 0) || (getObjectName().index(LOB_DESC_CHUNK_PREFIX) ==0))
     return TRUE;
       
   else

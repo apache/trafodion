@@ -124,6 +124,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , hdfsScan_(NULL)
   , hdfsStats_(NULL)
   , hdfsFileInfoListAsArray_(glob->getDefaultHeap(), hdfsScanTdb.getHdfsFileInfoList()->numEntries())
+  , errBuf_(NULL)
   
 {
   Space * space = (glob ? glob->getSpace() : 0);
@@ -317,7 +318,10 @@ void ExHdfsScanTcb::freeResources()
      NADELETE(logFileHdfsClient_, HdfsClient, getHeap());
   if (hdfsScan_ != NULL) 
      NADELETE(hdfsScan_, HdfsScan, getHeap());
+  if (errBuf_ != NULL)
+     NADELETEBASIC(errBuf_, getHeap());
 }
+
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -778,14 +782,16 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     ComDiagsArea * diagsArea = NULL;
                     if (hdfsErrorDetail == ENOENT)
                       {
-                        char errBuf[strlen(hdfsScanTdb().tableName()) + 
-                                    strlen(hdfsFileName_) + 100];
-                        snprintf(errBuf, sizeof(errBuf),"%s (fileLoc: %s)",
+                        if (errBuf_ != NULL)
+                           NADELETEBASIC(errBuf_, getHeap());
+                        Lng32 len = strlen(hdfsScanTdb().tableName()) + strlen(hdfsFileName_) + 100;
+                           errBuf_ = new (getHeap()) char[len];
+                        snprintf(errBuf_, len, "%s (fileLoc: %s)",
                                  hdfsScanTdb().tableName(), hdfsFileName_);
                         ExRaiseSqlError(getHeap(), &diagsArea, 
                                       (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
                                       NULL, NULL, NULL,
-                                      errBuf);
+                                      errBuf_);
                       }
                     else
                       ExRaiseSqlError(getHeap(), &diagsArea, 
@@ -1552,7 +1558,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	        da = ComDiagsArea::allocate(getHeap());
 	        workAtp_->setDiagsArea(da);
 	      }
-	      *da << DgSqlCode(-EXE_MAX_ERROR_ROWS_EXCEEDED);
+              ExRaiseSqlError(getHeap(), &da,
+                (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
 	      step_ = HANDLE_ERROR_WITH_CLOSE;
 	      break;
 	    }

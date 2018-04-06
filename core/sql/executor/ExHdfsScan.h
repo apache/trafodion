@@ -376,6 +376,7 @@ protected:
   int prevRangeNum_;
   int extraBytesRead_;
   NABoolean recordSkip_;
+  char *errBuf_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb

@@ -378,6 +378,9 @@ public:
   NABoolean isForceFixed()     { return (flags_ & FORCE_FIXED_) != 0; }
   void setForceFixed()         { flags_ |= FORCE_FIXED_; }
 
+  NABoolean isLengthInKB()     { return (flags_ & LENGTH_IN_KB_) != 0; }
+  void setLengthInKB()         { flags_ |= LENGTH_IN_KB_; }
+
   // Bulk move flags
   void setBulkMoveable( NABoolean flag = TRUE ) { (flag ? flags_ |= BULK_MOVE_ : flags_ &= ~BULK_MOVE_); }
   NABoolean isBulkMoveable()       { return (flags_ & BULK_MOVE_) != 0; }
@@ -584,9 +587,10 @@ private:
 
     CASEINSENSITIVE_ = 0x0400,    // caseinsensitive char/varchar datatype
 
-    FORCE_FIXED_   = 0x0800       // Force this attribute to be treated as fixed
+    FORCE_FIXED_   = 0x0800,       // Force this attribute to be treated as fixed
                                   // in an aligned row.  Used by HashGroupby for
                                   // varchar aggregates
+    LENGTH_IN_KB_ =0x1000 // Indicates length is in KB 
 
   };
  

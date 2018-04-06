@@ -48,7 +48,6 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FSDataOutputStream;
 
 import java.sql.SQLException;
 import java.sql.Connection;
@@ -59,60 +58,43 @@ import java.sql.DriverManager;
 
 public class HiveClient {
     static Logger logger = Logger.getLogger(HiveClient.class.getName());
+    static HiveConf hiveConf = null;
+    static HiveMetaStoreClient hmsClient  ;
     static String ddlTimeConst = null;
-    String lastError;
-    HiveConf hiveConf = null;
-    HiveMetaStoreClient hmsClient  ;
-    FSDataOutputStream fsOut = null;
-
     public HiveClient() {
    
     }
 
-    public String getLastError() {
-        return lastError;
+    static {
+      String confFile = System.getProperty("trafodion.log4j.configFile");
+      System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
+      if (confFile == null) {
+         confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
+      }
+      PropertyConfigurator.configure(confFile);
+      hiveConf = new HiveConf();
+      try {
+          hmsClient = new HiveMetaStoreClient(hiveConf, null);
+          ddlTimeConst = getDDLTimeConstant();
+      } catch (MetaException me)
+      {
+          throw new RuntimeException("Checked MetaException from HiveClient static block");
+      }
     }
 
-    void setLastError(String err) {
-        lastError = err;
-    }
-
-    void setupLog4j() {
-    	String confFile = System.getProperty("trafodion.log4j.configFile");
-    	if (confFile == null) {
-           System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
-           confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
-        }
-        PropertyConfigurator.configure(confFile);
-    }
-
-    public boolean init(String metastoreURI) 
-              throws MetaException {
-         setupLog4j();
-         if (logger.isDebugEnabled()) logger.debug("HiveClient.init(" + metastoreURI + " " + ") called.");
-         ddlTimeConst = getDDLTimeConstant();
-         hiveConf = new HiveConf();
-	 if (metastoreURI.length() > 0) {
-             hiveConf.set("hive.metastore.local", "false");
-             hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, metastoreURI);
-         }
-         hmsClient = new HiveMetaStoreClient(hiveConf, null);
-         return true;
-    }
-
-    public boolean close() {
+    public static boolean close() {
         hmsClient.close();
         return true;
     }
 
-    public boolean exists(String schName, String tblName)  
+    public static boolean exists(String schName, String tblName)  
         throws MetaException, TException, UnknownDBException {
             if (logger.isDebugEnabled()) logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
             boolean result = hmsClient.tableExists(schName, tblName);
             return result;
     }
 
-    public String getHiveTableString(String schName, String tblName)
+    public static String getHiveTableString(String schName, String tblName)
         throws MetaException, TException {
         Table table;
         if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableString(" + schName + " , " + 
@@ -128,7 +110,7 @@ public class HiveClient {
         return table.toString() ;
     }
 
-    public long getRedefTime(String schName, String tblName)
+    public static long getRedefTime(String schName, String tblName)
         throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException {
         Table table;
         if (logger.isDebugEnabled()) logger.debug("HiveClient.getRedefTime(" + schName + " , " + 
@@ -158,7 +140,7 @@ public class HiveClient {
         return redefTime ;
     }
 
-    public Object[] getAllSchemas() throws MetaException {
+    public static Object[] getAllSchemas() throws MetaException {
         List<String> schemaList = (hmsClient.getAllDatabases());
         if (schemaList != null)
            return schemaList.toArray();
@@ -166,7 +148,7 @@ public class HiveClient {
            return null; 
     }
 
-    public Object[] getAllTables(String schName) 
+    public static Object[] getAllTables(String schName) 
         throws MetaException, TException {
         try {
         Database db = hmsClient.getDatabase(schName);
@@ -236,42 +218,21 @@ public class HiveClient {
         }
 
         return fieldVal.toString();
-    }
+  }
 
-  ///////////////////   
-  boolean hdfsCreateFile(String fname) throws IOException
+  public static boolean hdfsCreateFile(String fname) throws IOException
   {
-    HiveConf  config = new HiveConf();
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - started" );
     Path filePath = new Path(fname);
-    FileSystem fs = FileSystem.get(filePath.toUri(),config);
-    fsOut = fs.create(filePath, true);
+    FileSystem fs = FileSystem.get(filePath.toUri(),hiveConf);
+    fs.create(filePath, true);
     
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - file created" );
 
     return true;
   }
   
-  boolean hdfsWrite(byte[] buff, long len) throws IOException
-  {
-
-    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - started" );
-    fsOut.write(buff);
-    fsOut.flush();
-    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - bytes written and flushed:" + len  );
-    
-    return true;
-  }
-  
-  boolean hdfsClose() throws IOException
-  {
-    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - started" );
-    if (fsOut != null)
-       fsOut.close();
-    return true;
-  }
-  
-  public void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
+  public static void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
   {
       Class.forName("org.apache.hive.jdbc.HiveDriver");
       Connection con = DriverManager.getConnection("jdbc:hive2://", "hive", "");

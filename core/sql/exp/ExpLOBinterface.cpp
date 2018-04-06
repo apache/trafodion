@@ -310,8 +310,11 @@ Lng32 ExpLOBinterfaceDataModCheck(ExLobGlobals * exLobGlob,
 
       return 1;
     }
-  else if (err != LOB_OPER_OK)
+  else if (err != LOB_OPER_OK) {
+    failedLocBuf[0] = '\0';
+    failedLocBufLen = 0;
     return -err;
+  }
   else
     return 0;
 }
