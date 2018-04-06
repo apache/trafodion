@@ -4184,6 +4184,7 @@ DateFormat::DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
        wasDateformat_(wasDateformat),
        formatType_(formatType),
        frmt_(-1),
+       origString_(""),
        dateFormat_(DATE_FORMAT_NONE)
 { 
   allowsSQLnullArg() = FALSE; 

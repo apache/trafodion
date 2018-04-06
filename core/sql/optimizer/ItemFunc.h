@@ -1926,6 +1926,9 @@ public:
 
   ItemExpr * bindNode(BindWA * bindWA);
 
+  void setOriginalString(NAString &s) {origString_ = s; }
+  const NAString & getOriginalString() const { return origString_; }
+
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
 
@@ -1962,6 +1965,9 @@ private:
 
   // actual datetime format (defined in class ExpDatetime in exp_datetime.h)
   Lng32 frmt_;
+
+  //original string
+  NAString origString_;
 }; // class DateFormat
 
 class DayOfWeek : public CacheableBuiltinFunction

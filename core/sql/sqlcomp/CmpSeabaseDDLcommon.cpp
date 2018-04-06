@@ -3177,6 +3177,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             else
               CMPASSERT(0);
           }
+      else if (!colNode->getDefaultExprString().isNull())
+        {
+            defaultClass = COM_FUNCTION_DEFINED_DEFAULT;
+            defVal = colNode->getDefaultExprString();
+        }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;
@@ -3185,6 +3190,24 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
                (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_CURRENT_TIMESTAMP))
         {
           defaultClass = COM_CURRENT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIX_TIMESTAMP)
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIX_TIMESTAMP))
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIQUE_ID)
+        {
+          defaultClass = COM_UUID_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIQUE_ID))
+        {
+          defaultClass = COM_UUID_DEFAULT;
         }
       else if ((ie->getOperatorType() == ITM_USER) ||
                (ie->getOperatorType() == ITM_CURRENT_USER) ||

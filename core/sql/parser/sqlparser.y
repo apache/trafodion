@@ -2589,6 +2589,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
+%type <item>      		datetime_misc_function_used_as_default
+%type <item>      	        sequence_as_default	
 %type <stringval>  		format_attributes
 %type <pElemDDL>  		optional_constraint_attributes
 %type <pElemDDL>  		constraint_attributes
@@ -8245,6 +8247,8 @@ value_function :
 
      | datetime_misc_function
 
+     | datetime_misc_function_used_as_default
+
      | datetime_value_function
 
      | math_function
@@ -8735,6 +8739,30 @@ datetime_value_function : TOK_CURDATE '(' ')'
               }
 
 /* type item */
+datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
+                               {
+                                 NAString * ves= unicodeToChar
+                                   (ToTokvalPlusYYText(&$3)->yytext,
+                                   ToTokvalPlusYYText(&$3)->yyleng,
+                                   (CharInfo::CharSet) (
+                                          ComGetNameInterfaceCharSet() // CharInfo::UTF8
+                                          ),
+                                   PARSERHEAP()); 
+                                 //save the original text
+                                 NAString fullstr;
+                                 fullstr  += "TO_CHAR(";
+                                 //Column Reference will not be able to convert to NAString
+                                 //And it is not be allowed bo become default value, so no need to save original text 
+                                 if( ves != NULL) 
+                                 {
+                                   fullstr += *ves + ", '" +  *$5 + "')";
+                                 }
+                                 $$ = new (PARSERHEAP()) 
+                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
+                                 ((DateFormat *)$$)->setOriginalString(fullstr);
+                               }
+
+/* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
 				  $$ = new (PARSERHEAP())
@@ -8849,11 +8877,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 
                                 $$ = new (PARSERHEAP()) Cast ($3, dt);
                                 }
-    | TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
-                               {
-				 $$ = new (PARSERHEAP()) 
-                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
-			       }
     | TOK_TO_CHAR '(' value_expression ')'
                                {
                                  $$ = new (PARSERHEAP()) DateFormat
@@ -25815,6 +25838,15 @@ col_def_default_clause_argument : literal_negatable
                                        $1 /*datetime_value_function*/);
                                 }
 
+                      | datetime_misc_function_used_as_default
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLColDefault(
+                                       ElemDDLColDefault::COL_FUNCTION_DEFAULT);
+
+                                  ((ElemDDLColDefault *)$$)->setDefaultExprString( (const NAString &)((DateFormat*)$1)->getOriginalString());
+                                  ((ElemDDLColDefault *)$$)->setDefaultValueExpr($1);
+                                }
                       | builtin_function_user
                                 {
                                   $$ = new (PARSERHEAP())

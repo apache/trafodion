@@ -313,7 +313,7 @@ ElemDDLColDef::setDefaultAttribute(ElemDDLNode * pColDefaultNode)
         case ElemDDLColDefault::COL_DEFAULT:
           {
             defaultClauseStatus_ = DEFAULT_CLAUSE_SPEC;
-            
+
             if (pColDefault->getSGOptions())
               {
                 isIdentityColumn = TRUE;
@@ -522,6 +522,39 @@ ElemDDLColDef::setDefaultAttribute(ElemDDLNode * pColDefaultNode)
                       isAnErrorAlreadyIssued = TRUE;
                     }
               }
+          }
+          break;
+        case ElemDDLColDefault::COL_FUNCTION_DEFAULT:
+          {
+            defaultClauseStatus_ = DEFAULT_CLAUSE_SPEC;
+            defaultExprString_= pColDefault->getDefaultExprString();
+    
+            ComASSERT(pColDefault->getDefaultValueExpr() NEQ NULL);
+            pDefault_ = pColDefault->getDefaultValueExpr();
+            
+            ItemExpr *itr = pDefault_; 
+            NABoolean valid = TRUE;
+            //Only support to_char(cast (currenttimestamp ))
+            if( pDefault_->getOperatorType() != ITM_DATEFORMAT)
+              valid = FALSE;
+            else 
+            {
+              //next should be CAST
+              itr = pDefault_->child(0)->castToItemExpr();
+              if(itr->getOperatorType() != ITM_CAST)
+                valid = FALSE;
+              else
+              {
+                itr = itr->child(0)->castToItemExpr();
+                if(itr->getOperatorType() !=  ITM_CURRENT_TIMESTAMP)
+                 valid = FALSE;
+              }
+            }
+            if( valid == FALSE )
+            {
+              *SqlParser_Diags << DgSqlCode(-1084)
+                               << DgColumnName(ToAnsiIdentifier(getColumnName()));
+            }
           }
           break;
         case ElemDDLColDefault::COL_COMPUTED_DEFAULT:
@@ -734,7 +767,7 @@ ElemDDLColDef::setColumnAttribute(ElemDDLNode * pColAttr)
 	if(TRUE == isColDefaultSpec_)
 	  {
 	    // Duplicate DEFAULT attrs in column definition.
-            *SqlParser_Diags << DgSqlCode(-3052)
+	    *SqlParser_Diags << DgSqlCode(-3052)
                              << DgString0("DEFAULT")
                              << DgColumnName(ToAnsiIdentifier(getColumnName()));
 	  }
@@ -1046,6 +1079,7 @@ ElemDDLColDefault::displayLabel1() const
   switch (getColumnDefaultType())
   {
   case COL_DEFAULT :
+  case COL_FUNCTION_DEFAULT :
     return NAString("Type: Default");
   case COL_NO_DEFAULT :
     return NAString("Type: No Default");
@@ -1058,7 +1092,8 @@ ElemDDLColDefault::displayLabel1() const
 const NAString
 ElemDDLColDefault::displayLabel2() const
 {
-  if (getColumnDefaultType() EQU COL_DEFAULT)
+  if ((getColumnDefaultType() EQU COL_DEFAULT)
+      || getColumnDefaultType() EQU COL_FUNCTION_DEFAULT)
   {
     return (NAString("Default value: ") +
             getDefaultValueExpr()->getText());

@@ -875,6 +875,7 @@ NABoolean ItemExpr::doesExprEvaluateToConstant(NABoolean strict,
 		case ITM_CURRENT_USER:
 		case ITM_SESSION_USER:
 		case ITM_CURRENT_TIMESTAMP:
+		case ITM_UNIX_TIMESTAMP:
 		case ITM_GET_TRIGGERS_STATUS:
 		case ITM_UNIQUE_EXECUTE_ID:
 		case ITM_CURR_TRANSID:
@@ -967,6 +968,7 @@ NABoolean ItemExpr::referencesAHostVar() const
       case ITM_CURRENT_USER:
       case ITM_SESSION_USER:
       case ITM_CURRENT_TIMESTAMP:
+      case ITM_UNIX_TIMESTAMP:
       case ITM_GET_TRIGGERS_STATUS:
       case ITM_UNIQUE_EXECUTE_ID:
       case ITM_CURR_TRANSID:

@@ -418,6 +418,12 @@ Attributes::DefaultClass ExpGenerator::getDefaultClass(const NAColumn * col)
   {
     case COM_CURRENT_DEFAULT:
       dc = Attributes::DEFAULT_CURRENT; break;
+    case COM_CURRENT_UT_DEFAULT:
+      dc = Attributes::DEFAULT_CURRENT_UT; break;
+    case COM_UUID_DEFAULT:
+      dc = Attributes::DEFAULT_UUID; break;
+    case COM_FUNCTION_DEFINED_DEFAULT:
+      dc = Attributes::DEFAULT_FUNCTION; break;
     case COM_NO_DEFAULT:
     case COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT:
     case COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT:
@@ -477,6 +483,11 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
       // For new rows compiler will produce a node with CURRENT exp
       castStr = new(wHeap()) NAString("CAST(TIMESTAMP '0001-01-01:12:00:00.000000' AS ", wHeap());
       break;
+    case Attributes::DEFAULT_CURRENT_UT:
+      // This value is for the old rows before the alter table with add column
+      // For new rows compiler will produce a node with CURRENT exp
+      castStr = new(wHeap()) NAString("CAST( 0 AS ", wHeap());
+      break;
     case Attributes::DEFAULT_NULL:
       if (attr->getNullFlag())
       {
@@ -522,6 +533,9 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
       // since this is used only for AddColumn and that we don't allow to add
       // IDENTITY column, it is Ok. to cast it to zero.
       castStr = new(wHeap()) NAString("CAST(0 AS ", wHeap());
+      break;
+    case Attributes::DEFAULT_FUNCTION:
+      castStr = new(wHeap()) NAString("CAST( \' \' AS ", wHeap());
       break;
 
     case Attributes::NO_DEFAULT:
