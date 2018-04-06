@@ -2265,27 +2265,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
             }
           else 
             {
-/*
-              // redrive the scheduler.
-              // Fix for CR 6701 - some ExExeUtil operators call back
-              // in to the CLI and explicitly clear the curr context
-              // diags area. It would be nice to have a more general
-              // fix, but meanwhile, we store off the curr context diags 
-              // area before calling scheduler and restore afterwards.
-              Statement *statement = 
-                glob->castToExMasterStmtGlobals()->getStatement();
-              ContextCli *context = statement->getContext();
-              ComDiagsArea *savedContextDiags = context->diags().copy();
-              context->diags().clear();
-*/
-
               schedRetcode = glob->getScheduler()->work();
-/*
-              savedContextDiags->mergeAfter(context->diags());
-              context->diags().clear();
-              context->diags().mergeAfter(*savedContextDiags);
-              savedContextDiags->decrRefCount();
-*/
             }
         }
       if (!getQueueDiags)

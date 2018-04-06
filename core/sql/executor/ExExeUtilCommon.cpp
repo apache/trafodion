@@ -202,10 +202,9 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
 					     SQLCHARSETCODE_ISO88591,  // ISO_MAPPING=ISO88591
 					     currContext,
 					     parentQid);
-  
-  //diagsArea_ = NULL;
-  setDiagsArea(ComDiagsArea::allocate(getHeap()));
 
+  diagsArea_ = NULL;
+  
   pqStep_ = PROLOGUE_;
 
   VersionToString(COM_VERS_MXV, versionStr_);
@@ -441,11 +440,10 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
     strcat(stmt, " no label update");
 
   strcat(stmt, ";");
-
+  ComDiagsArea *diagsArea = getDiagsArea();
   retcode = cliInterface()->executeImmediate
-    (stmt, NULL, NULL, TRUE, NULL, 0,
-     &(masterGlob->getStatement()->getContext()->diags()));
-
+    (stmt, NULL, NULL, TRUE, NULL, 0, &diagsArea); 
+  setDiagsArea(diagsArea);
   masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x400); // ALLOW_AUDIT_CHANGE
   
   if (retcode < 0)
@@ -462,8 +460,8 @@ Lng32 ExExeUtilTcb::changeAuditAttribute(char * tableName,
 }
 
 void ExExeUtilTcb::handleErrors(Lng32 rc)
-{
-  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+{ 
+  cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 }
 
 short ExExeUtilTcb::initializeInfoList(Queue* &infoList)
@@ -669,7 +667,9 @@ short ExExeUtilTcb::executeQuery(char * task,
 	    char * stringParam1 = NULL;
 	    Lng32   intParam1 = ComDiags_UnInitialized_Int;
 
-	    retcode = (short)cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+            cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
+            if (getDiagsArea() != NULL)
+	        retcode = 0;
 	    if (moveErrorRow)
 	      {
 		if (retcode == 0)
@@ -770,7 +770,6 @@ short ExExeUtilTcb::holdAndSetCQD(const char * defaultName, const char * default
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -785,7 +784,6 @@ short ExExeUtilTcb::restoreCQD(const char * defaultName, ComDiagsArea * globalDi
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -822,7 +820,6 @@ short ExExeUtilTcb::setCS(const char * csName, char * csValue,
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -837,7 +834,6 @@ short ExExeUtilTcb::resetCS(const char * csName, ComDiagsArea * globalDiags)
   if (cliRC < 0)
     {
       handleErrors(cliRC);
-
       return -1;
     }
 
@@ -860,7 +856,7 @@ Lng32 ExExeUtilTcb::setCS(const char * csName, char * csValue,
 
   cliRC = 
     cliInterface->executeImmediate(buf, NULL, NULL, TRUE, NULL,FALSE,
-				   globalDiags);
+				   &globalDiags);
   if (cliRC < 0)
     {
       return cliRC;
@@ -881,7 +877,7 @@ Lng32 ExExeUtilTcb::resetCS(const char * csName,
   strcat(buf, csName);
   strcat(buf, "' reset;");
   cliRC = cliInterface->executeImmediate(buf, NULL, NULL, TRUE, NULL,FALSE,
-					 globalDiags);
+					 &globalDiags);
   if (cliRC < 0)
     {
       return cliRC;
@@ -898,7 +894,6 @@ short ExExeUtilTcb::disableCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -912,7 +907,6 @@ short ExExeUtilTcb::restoreCQS()
   if (rc < 0)
     {
       handleErrors(rc);
-
       return -1;
     }
 
@@ -1056,7 +1050,7 @@ short ExExeUtilTcb::setSystemVersion()
 					 sysVersionStr_, &sysVersionStrLen_);
       if (cliRC < 0)
 	{
-	  cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	  return -1;
 	}
       
@@ -1125,7 +1119,7 @@ short ExExeUtilTcb::getObjectUid(char * catName, char * schName,
 				     uid, &uidLen);
   if (cliRC < 0)
     {
-      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+      cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
       return -1;
     }
   uid[uidLen] = 0;
@@ -1463,12 +1457,21 @@ short ExExeUtilTcb::alterAuditFlag(NABoolean audited, char * tableName,
 
 short ExExeUtilTcb::handleError()
 {
-  return ex_tcb::handleError(&qparent_, getDiagsArea());
+  short rc = ex_tcb::handleError(&qparent_, getDiagsArea());
+  diagsArea_->deAllocate();
+  diagsArea_ = NULL;
+  return rc;
 }
 
 short ExExeUtilTcb::handleDone()
 {
-  return ex_tcb::handleDone(&qparent_, getDiagsArea());
+  short rc = ex_tcb::handleDone(&qparent_, getDiagsArea());
+  if (diagsArea_ != NULL)
+  { 
+     diagsArea_->deAllocate();
+     diagsArea_ = NULL;
+  }
+  return rc;
 }
     
 short ExExeUtilTcb::createServer(char *serverName,

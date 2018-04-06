@@ -53,6 +53,7 @@
 #include "ExpHbaseDefs.h"
 
 #include "HBaseClient_JNI.h"
+#include "HiveClient_JNI.h"
 
 #define INLINE_COLNAME_LEN 256
 

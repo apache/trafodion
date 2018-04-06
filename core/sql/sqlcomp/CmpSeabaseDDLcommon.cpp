@@ -4505,7 +4505,8 @@ void CmpSeabaseDDL::handleDDLCreateAuthorizationError(
       case CAT_SCHEMA_DOES_NOT_EXIST_ERROR:
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                             << DgSchemaName(catalogName + "." + schemaName);
+                                  << DgString0(catalogName)
+                                  << DgString1(schemaName);
          break;
       }
       case CAT_NOT_AUTHORIZED:
