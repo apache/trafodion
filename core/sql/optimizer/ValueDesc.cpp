@@ -6394,7 +6394,7 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
                                                constType->getScale(),
                                                0);
 
-               char strval[100];
+               char strval[t+1];
                memset( strval, ' ', t );
 
                // Get the ASCII representation

@@ -8897,12 +8897,14 @@ ItemExpr *PositionFunc::bindNode(BindWA *bindWA)
       if (type3.getTypeQualifier() != NA_NUMERIC_TYPE) {
         // 4053 The third operand of a POSITION function must be numeric.
         *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
         return NULL;
       }
       
       if (((NumericType&)type3).getScale() != 0) {
         // 4047 The third operand of a POSITION function must have a scale of 0.
         *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
         return NULL;
       }
 
@@ -8930,12 +8932,14 @@ ItemExpr *PositionFunc::bindNode(BindWA *bindWA)
       if (type4.getTypeQualifier() != NA_NUMERIC_TYPE) {
         // 4053 The third operand of a POSITION function must be numeric.
         *CmpCommon::diags() << DgSqlCode(-4053) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
         return NULL;
       }
       
       if (((NumericType&)type4).getScale() != 0) {
         // 4047 The third operand of a POSITION function must have a scale of 0.
         *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
+        bindWA->setErrStatus();
         return NULL;
       }
 
