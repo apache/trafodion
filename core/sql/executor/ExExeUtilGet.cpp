@@ -2583,15 +2583,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	      default:
 		{
-		  ExHandleErrors(qparent_,
-				 pentry_down,
-				 0,
-				 getGlobals(),
-				 NULL,
-				 (ExeErrorCode)-4218,
-				 NULL,
-				 "GET"
-				 );
+                  ExRaiseSqlError(getHeap(), &diagsArea_, -4218, 
+                       NULL, NULL, NULL,
+                       "GET");
 		  step_ = HANDLE_ERROR_;
 		}
 		break;
@@ -3116,15 +3110,8 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	      default:
 		{
-		  ExHandleErrors(qparent_,
-				 pentry_down,
-				 0,
-				 getGlobals(),
-				 NULL,
-				 (ExeErrorCode)-4218,
-				 NULL,
-				 "GET"
-				 );
+                  ExRaiseSqlError(getHeap(), &diagsArea_, -4298, 
+                            NULL, NULL, NULL, "GET");
 		  step_ = HANDLE_ERROR_;
 		}
 	      break;
@@ -3930,15 +3917,8 @@ short ExExeUtilGetMetadataInfoVersionTcb::work()
 
 		  default:
 		    {
-		      ExHandleErrors(qparent_,
-				     pentry_down,
-				     0,
-				     getGlobals(),
-				     NULL,
-				     (ExeErrorCode)-4218,
-				     NULL,
-				     "GET"
-				     );
+                      ExRaiseSqlError(getHeap(), &diagsArea_, -4218, 
+                         NULL, NULL, NULL, "GET");
 		      step_ = HANDLE_ERROR_;
 		    }
 		  break;
@@ -4580,26 +4560,7 @@ short ExExeUtilGetUIDTcb::work()
 	    step_ = DONE_;
 	  }
 	break;
-
-	case ERROR_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    ExHandleErrors(qparent_,
-			   pentry_down,
-			   0,
-			   getGlobals(),
-			   NULL,
-			   (ExeErrorCode)cliRC,
-			   NULL,
-			   NULL
-			   );
-	    step_ = DONE_;
-	  }
-	break;
-
-	case DONE_:
+      case DONE_:
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
@@ -4748,15 +4709,7 @@ short ExExeUtilGetQIDTcb::work()
             /* stmt must exist */
             if (!stmt)
               {
-                ExHandleErrors(qparent_,
-                               pentry_down,
-                               0,
-                               getGlobals(),
-                               NULL,
-                               (ExeErrorCode)-CLI_STMT_NOT_EXISTS,
-                               NULL,
-                               NULL
-                               );
+                ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_STMT_NOT_EXISTS);
                 step_ = ERROR_;
                 break;
               }
@@ -4945,24 +4898,6 @@ short ExExeUtilGetErrorInfoTcb::work()
 	    step_ = DONE_;
 	  }
 	  break;
-
-	case ERROR_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    ExHandleErrors(qparent_,
-			   pentry_down,
-			   0,
-			   getGlobals(),
-			   NULL,
-			   (ExeErrorCode)cliRC,
-			   NULL,
-			   NULL
-			   );
-	    step_ = DONE_;
-	  }
-	break;
 
 	case DONE_:
 	  {
@@ -6353,6 +6288,9 @@ short ExExeUtilRegionStatsTcb::work()
           {
             if (collectStats(tableName_))
               {
+                ExRaiseSqlError(getHeap(), &diagsArea_, -8451,
+                     NULL, NULL, NULL,
+                     getSqlJniErrorStr());
                 step_ = HANDLE_ERROR_;
                 break;
               }
@@ -7097,7 +7035,9 @@ short ExExeUtilClusterStatsTcb::work()
               }
             else if (retcode < 0)
               {
-                ExRaiseSqlError(getHeap(), &diagsArea_, -8451);
+                ExRaiseSqlError(getHeap(), &diagsArea_, -8451,
+                     NULL, NULL, NULL,
+                     getSqlJniErrorStr());
                 step_ = HANDLE_ERROR_;
                 break;
               }

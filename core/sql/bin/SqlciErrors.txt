@@ -1587,7 +1587,7 @@ $1~String1 --------------------------------
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
-8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error returned while retrieving region stats from hbase.
+8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
