@@ -826,7 +826,9 @@ B@           B            C            (EXPR)
 >>create index T017TTCIDXb on T017TTC (b) HBASE_OPTIONS (DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ') SALT LIKE TABLE;
 
 --- SQL operation complete.
->>
+>>cqd traf_reload_natable_cache 'ON';
+
+--- SQL operation complete.
 >>select * from table (index_table T017TTCIDXb) order by "_SALT_@","B@","A";
 
 _SALT_@     B@           A          
@@ -960,7 +962,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
->>
+>>cqd traf_reload_natable_cache reset;
+
+--- SQL operation complete.
 >>
 >>drop  index T017TTCIDXb;
 
@@ -969,7 +973,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>create index T017TTCIDXb on T017TTC (b);
 
 --- SQL operation complete.
->>
+>>cqd traf_reload_natable_cache 'ON';
+
+--- SQL operation complete.
 >>select * from table (index_table T017TTCIDXb) order by "B@","_SALT_","A";
 
 B@           _SALT_      A          
@@ -1099,6 +1105,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 1    2    3    tuple_flow                                            1.00E+002
 .    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
 .    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
+
+--- SQL operation complete.
+>>cqd traf_reload_natable_cache reset;
 
 --- SQL operation complete.
 >>
