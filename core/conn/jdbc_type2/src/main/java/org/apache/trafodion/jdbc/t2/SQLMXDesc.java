@@ -424,7 +424,7 @@ class SQLMXDesc
     public static final int SQLCHARSETCODE_GB2312           = 17;
 
 	public static final String SQLCHARSETSTRING_UNKNOWN     = "UNKNOWN";
-	public static final String SQLCHARSETSTRING_ISO88591    = "ISO88591";
+	public static final String SQLCHARSETSTRING_ISO88591    = "ISO-8859-1";
 	public static final String SQLCHARSETSTRING_KANJI       = "KANJI";
 	public static final String SQLCHARSETSTRING_KSC5601     = "KSC5601";
     public static final String SQLCHARSETSTRING_SJIS        = "MS932";
