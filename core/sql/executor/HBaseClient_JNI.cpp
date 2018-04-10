@@ -235,8 +235,6 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)[[B";
     JavaMethods_[JM_GET_REGION_STATS       ].jm_name      = "getRegionStats";
     JavaMethods_[JM_GET_REGION_STATS       ].jm_signature = "(Ljava/lang/String;)[[B";
-    JavaMethods_[JM_GET_REGION_STATS_ENTRIES       ].jm_name      = "getRegionStatsEntries";
-    JavaMethods_[JM_GET_REGION_STATS_ENTRIES       ].jm_signature = "()I";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Z)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -1056,29 +1054,6 @@ NAArray<HbaseStr>* HBaseClient_JNI::listAll(NAHeap *heap, const char* pattern)
      return NULL;
   else
      return hbaseTables;
-}
-
-Int32 HBaseClient_JNI::getRegionStatsEntries()
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStatsEntries() called.");
-
-  if (initJNIEnv() != JOI_OK)
-     return 0;
-
-  tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS_ENTRIES].jm_full_name;
-  jint numEntries = 
-    (jint)jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_GET_REGION_STATS_ENTRIES].methodID);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails(__FILE__, __LINE__, "HBaseClient_JNI::getRegionStatsEntries()");
-    jenv_->PopLocalFrame(NULL);
-    return 0;
-  }
-
-  jenv_->PopLocalFrame(NULL);
-
-  return numEntries;
 }
 
 //////////////////////////////////////////////////////////////////////////////

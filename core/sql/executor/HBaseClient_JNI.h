@@ -460,7 +460,6 @@ public:
                    NABoolean force);
   NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
   NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
-  Int32 getRegionStatsEntries();
 
   HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
@@ -556,7 +555,6 @@ private:
    ,JM_DROP_ALL
    ,JM_LIST_ALL
    ,JM_GET_REGION_STATS
-   ,JM_GET_REGION_STATS_ENTRIES
    ,JM_COPY
    ,JM_EXISTS
    ,JM_GRANT
