@@ -1458,7 +1458,8 @@ short ExExeUtilTcb::alterAuditFlag(NABoolean audited, char * tableName,
 short ExExeUtilTcb::handleError()
 {
   short rc = ex_tcb::handleError(&qparent_, getDiagsArea());
-  diagsArea_->deAllocate();
+  if (diagsArea_ != NULL)
+     diagsArea_->deAllocate();
   diagsArea_ = NULL;
   return rc;
 }

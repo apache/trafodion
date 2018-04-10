@@ -880,7 +880,7 @@ public class HBaseClient {
                     String encodedRegionName = hregInfo.getEncodedName();
                     String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
                     SizeInfo regionSizeInfo  = rsc.getRegionSizeInfo(regionName);
-                    String serverNameStr     = regionSizeInfo.serverName;
+                    String serverNameStr     = "";
                     int  numStores           = 0;
                     int  numStoreFiles       = 0;
                     long storeUncompSize     = 0;
@@ -890,6 +890,7 @@ public class HBaseClient {
                     long writeRequestsCount  = 0;
                     String ppTableName = "";
                     if (regionSizeInfo != null) {
+                       serverNameStr       = regionSizeInfo.serverName;
                        numStores           = regionSizeInfo.numStores;
                        numStoreFiles       = regionSizeInfo.numStoreFiles;
                        storeUncompSize     = regionSizeInfo.storeUncompSize;

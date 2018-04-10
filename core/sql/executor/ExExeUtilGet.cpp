@@ -6550,8 +6550,11 @@ short ExExeUtilRegionStatsFormatTcb::work()
 
         case COLLECT_STATS_:
           {
-            if (collectStats(tableName_))
+            if (collectStats(tableName_) < 0)
               {
+                ExRaiseSqlError(getHeap(), &diagsArea_, -8451,
+                     NULL, NULL, NULL,
+                     getSqlJniErrorStr());
                 step_ = HANDLE_ERROR_;
                 break;
               }
