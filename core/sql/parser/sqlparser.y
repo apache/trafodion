@@ -15381,31 +15381,6 @@ exe_util_get_metadata_info :
            //gmi->setNoHeader(TRUE);
            $$ = gmi;          
         } 
-        | TOK_GET TOK_CURRENT_USER
-          optional_no_header_and_match_pattern_clause
-        {
-           NAString aus("USER");
-           NAString infoType("CURRENT_USER");
-           PtrPlaceHolder * pph = $3;
-           NAString * noHeader = (NAString *)pph->ptr1_;
-           CorrName cn("DUMMY");
-           NAString nas("");
-           ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) ExeUtilGetMetadataInfo
-              ( aus          // NAString &
-              , infoType     // NAString &
-              , nas          // NAString &
-              , nas   // NAString & objectType
-              , cn   // CorrName &
-              , NULL         // NAString * pattern
-              , FALSE        // NABoolean returnFullyQualNames
-              , FALSE        // NABoolean getVersion
-              , NULL         // NAString * param1
-              , PARSERHEAP() // CollHeap * oHeap
-              );
-            if (noHeader)
-              gmi->setNoHeader(TRUE);
-            $$ = gmi;
-          }
         | TOK_GET get_info_aus_clause obj_priv_identifier 
           TOK_FOR user_or_role authorization_identifier  
           optional_no_header_and_match_pattern_clause
@@ -15415,11 +15390,10 @@ exe_util_get_metadata_info :
             if (aus == "NONE")
               aus = "USER";
 
-            if ((*$3 != "CATALOGS"  ) && (*$3 != "INDEXES"   ) && 
-                (*$3 != "MVS"       ) && (*$3 != "MVGROUPS"  ) && 
+            if ((*$3 != "SEQUENCES" ) && (*$3 != "INDEXES"   ) && 
                 (*$3 != "PRIVILEGES") && (*$3 != "PROCEDURES") && 
-                (*$3 != "SCHEMAS"   ) && (*$3 != "SYNONYMS"  ) && 
-                (*$3 != "TABLES"    ) && (*$3 != "TRIGGERS"  ) &&
+                (*$3 != "FUNCTIONS" ) && (*$3 != "TABLE_MAPPING FUNCTIONS") && 
+                (*$3 != "SCHEMAS"   ) && (*$3 != "TABLES"  ) && 
                 (*$3 != "VIEWS"     ) && (*$3 != "USERS"     ) &&
                 (*$3 != "ROLES"     ) && (*$3 != "LIBRARIES"     )) YYERROR;
 
@@ -15430,11 +15404,6 @@ exe_util_get_metadata_info :
             NAString objType("USER");
             if ($5 == TOK_ROLE)
               objType = "ROLE";
-
-            /* Currently just support GET USERS FOR ROLE and GET PRIVILEGES FOR ROLE */
-
-            /* if ((objType == "ROLE") && 
-                (infoType != "USERS" && infoType != "PRIVILEGES")) YYERROR; */
 
             PtrPlaceHolder * pph      = $7;
             NAString * noHeader       = (NAString *)pph->ptr1_;

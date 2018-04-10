@@ -2499,9 +2499,16 @@ private:
     const char *schName,
     const char *objName);
 
+  Int32 colPrivsFrag(
+    const char *authName,
+    const char *catName,
+    const NAString &privWhereClause,
+    NAString &colPrivsStmt);
+
   NAString getGrantedPrivCmd(
     const NAString &roleList,
-    const char * cat);
+    const char * cat,
+    const NAString &inColumn = NAString("object_uid"));
 
   char * getRoleList(
     const Int32 userID,
