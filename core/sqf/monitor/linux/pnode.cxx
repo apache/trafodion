@@ -1031,8 +1031,9 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
 
         if (trace_settings & TRACE_PROCESS)
         {
-            trace_printf("%s@%d - Adding unique string id=[%d,%d] (%s), targetLnode=%p\n",
-                         method_name, __LINE__, id.nid, id.id, candidate, targetLNode );
+            trace_printf("%s@%d - Adding unique string id=[%d,%d] (%s), targetLnode=%p, targetNid=%d\n",
+                         method_name, __LINE__, id.nid, id.id, candidate, 
+                         targetLNode, targetLNode?targetLNode->GetNid():-1 );
         }
 
         Config->addUniqueString(id.nid, id.id, candidate);
@@ -1069,6 +1070,22 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
             trace_printf("%s@%d - unique string id=[%d,%d] (%s)\n",
                          method_name, __LINE__, id.nid, id.id, candidate );
         }
+
+#ifndef NAMESERVER_PROCESS
+        if (NameServerEnabled)
+        {
+            if (targetLNode != NULL &&
+                !MyNode->IsMyNode(targetLNode->GetNid()))
+            {
+                // Forward the unique string to the target node
+                PtpClient->AddUniqStr( id.nid
+                                     , id.id
+                                     , candidate
+                                     , targetLNode->GetNid()
+                                     , targetLNode->GetNode()->GetName());
+            }
+        }
+#endif
     }
 
     TRACE_EXIT;
