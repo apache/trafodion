@@ -21,6 +21,7 @@
 //
 // @@@ END COPYRIGHT @@@
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -48,6 +49,7 @@ public:
     void  read_line();
 
 private:
+    enum { MAX_PEEK = 50 };
     void  set_ok(bool ok_in);
     bool  ts_ok();
     void  ts_set(char *line, long *ts_ret);
@@ -56,7 +58,8 @@ private:
     char *indent;
     char *lp;
     bool  ok;
-    char *peekp;
+    char *peekp[MAX_PEEK];
+    int   peekp_inx;
     long  ts;
 };
 
@@ -64,7 +67,9 @@ CFile::CFile(char *file_str, int indent_col) {
     fp = fopen(file_str, "r");
     lp = NULL;
     ok = (fp != NULL);
-    peekp = NULL;
+    peekp_inx = -1;
+    for (int inx = 0; inx < MAX_PEEK; inx++)
+        peekp[inx] = NULL;
     indent = new char[indent_col+1];
     for (int inx = 0; inx < indent_col; inx++)
         indent[inx] = ' ';
@@ -74,8 +79,9 @@ CFile::CFile(char *file_str, int indent_col) {
 CFile::~CFile() {
     if (lp != NULL)
         free(lp);
-    if (peekp != NULL)
-        free(peekp);
+    for (int inx = 0; inx < MAX_PEEK; inx++)
+        if (peekp[inx] != NULL)
+            free(peekp[inx]);
     if (fp != NULL)
         fclose(fp);
     delete [] indent;
@@ -108,7 +114,8 @@ bool CFile::lt(CFile &f) {
     if (is_ok() && f.is_ok()) {
         if (ts_ok()) {
             ret = (ts < f.ts);
-        }
+        } else
+            ret = true;
     }
     if (verbose)
         printf("lt=%d, ts1=%ld, t2s=%ld\n",
@@ -118,16 +125,31 @@ bool CFile::lt(CFile &f) {
 
 long CFile::peek_ts() {
     long ret = 0;
-    size_t len = 0;
-    ssize_t gl_ret = getline(&peekp, &len, fp);
-    if (gl_ret != -1) {
-        if (gl_ret > 0) {
-            if (peekp[gl_ret - 1] == '\n')
-                peekp[gl_ret - 1] = '\0';
-        }
-        ts_set(peekp, &ret);
-    } else
-        set_ok(false);
+    size_t len;
+    for (int inx = 0; inx <= peekp_inx; inx++) {
+        ts_set(peekp[inx], &ret);
+        if (ret != 0)
+            break;
+    }
+    if (ret == 0) {
+        do {
+            peekp_inx++;
+            assert(peekp_inx < MAX_PEEK);
+            len = 0;
+            ssize_t gl_ret = getline(&peekp[peekp_inx], &len, fp);
+            if (gl_ret != -1) {
+                if (gl_ret > 0) {
+                    if (peekp[peekp_inx][gl_ret - 1] == '\n')
+                        peekp[peekp_inx][gl_ret - 1] = '\0';
+                }
+                ts_set(peekp[peekp_inx], &ret);
+            } else {
+                set_ok(false);
+                ret = 0;
+                break;
+            }
+        } while (ret == 0);
+    }
     return ret;
 }
 
@@ -147,11 +169,13 @@ void CFile::print_line_ts(long delta_ts) {
         else
             sprintf(delta, "(>%8ld)", delta_ts);
         printf("%s%s%s %s\n", indent, lp, delta, &lp[17]);
+    } else if (lp != NULL) {
+        printf("%s%s\n", indent, lp);
     }
 }
 
 void CFile::read_line() {
-    if (peekp == NULL) {
+    if (peekp_inx < 0) {
         if (lp != NULL) {
             free(lp);
             lp = NULL;
@@ -167,8 +191,12 @@ void CFile::read_line() {
         } else
             set_ok(false);
     } else {
-        lp = peekp;
-        peekp = NULL;
+        assert(peekp_inx >= 0);
+        lp = peekp[0];
+        for (int inx = 0; inx < peekp_inx; inx++)
+            peekp[inx] = peekp[inx+1];
+        peekp[peekp_inx] = NULL;
+        peekp_inx--;
         ts_set(lp, NULL);
     }
 }
