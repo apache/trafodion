@@ -210,6 +210,32 @@ private:
     bool abended_;
 };
 
+class CReplExitNs: public CReplObj
+{
+public:
+    CReplExitNs( int nid
+               , int pid
+               , Verifier_t verifier
+               , const char *name
+               , bool abended
+               , struct message_def *msg
+               , int  sockFd
+               , int  origPNid );
+    virtual ~CReplExitNs();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    char name_[MAX_PROCESS_NAME];
+    bool abended_;
+    struct message_def *msg_;
+    int  sockFd_;
+    int  origPNid_;
+};
+
 class CReplKill: public CReplObj
 {
 public:

@@ -2915,6 +2915,7 @@ struct message_def * CProcess::DeathMessage( )
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::Exit( CProcess *parent )
 {
     char la_buf[MON_STRING_BUF_SIZE];
@@ -2922,12 +2923,10 @@ void CProcess::Exit( CProcess *parent )
     const char method_name[] = "CProcess::Exit";
     TRACE_ENTRY;
 
-#ifndef NAMESERVER_PROCESS
     if ( DumpState != Dump_Ready )
     {
         DumpEnd( Dump_Failed, (char *)corefile_.c_str() );
     }
-#endif
 
     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
        trace_printf( "%s@%d" " - Process %s (%d,%d:%d) is exiting, parent process %s (%d,%d:%d)\n"
@@ -2952,7 +2951,6 @@ void CProcess::Exit( CProcess *parent )
                                         : !node->IsKillingNode();
     }
 
-#ifndef NAMESERVER_PROCESS
     if(  NoticeHead &&
         !MyNode->IsKillingNode() &&
         !(Type == ProcessType_DTM && IsAbended()) &&
@@ -2966,7 +2964,6 @@ void CProcess::Exit( CProcess *parent )
         // Notify all local registered processes of this process' death
         NoticeHead->NotifyAll();
     }
-#endif
 
     if ( !Clone && !Paired )
     {
@@ -2974,14 +2971,11 @@ void CProcess::Exit( CProcess *parent )
         {
             case ProcessType_TSE:
             case ProcessType_ASE:
-#ifndef NAMESERVER_PROCESS
                 MyNode->delFromQuiesceExitPids( GetPid(), GetVerifier() );
-#endif
 
                 if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
                     trace_printf("%s%d: pid %d deleted from quiesce exit list\n", method_name, __LINE__, GetPid());
 
-#ifndef NAMESERVER_PROCESS
                 if (MyNode->isInQuiesceState())
                 {
                     if (MyNode->isQuiesceExitPidsEmpty())
@@ -2989,12 +2983,9 @@ void CProcess::Exit( CProcess *parent )
                         HealthCheck.setState(MON_SCHED_NODE_DOWN);  // schedule a node down req
                     }
                 }
-#endif
                 else
                 {   // unmount volumes only if node is not quiescing.
-#ifndef NAMESERVER_PROCESS
                     Devices->UnMountVolume( Name, Backup );
-#endif
                 }
                 break;
             case ProcessType_DTM:
@@ -3022,7 +3013,6 @@ void CProcess::Exit( CProcess *parent )
                     }
                     else
                     {
-#ifndef NAMESERVER_PROCESS
                         if ( Monitor->GetTmLeader() == MyPNID )
                         {
                             // set the clean shutdown condition
@@ -3032,7 +3022,6 @@ void CProcess::Exit( CProcess *parent )
                             strcpy(value,"True");
                             Config->GetClusterGroup()->Set( key, value );
                         }
-#endif
                     }
                 }
                 break;
@@ -3100,12 +3089,10 @@ void CProcess::Exit( CProcess *parent )
                                 trace_printf("%s@%d: Queueing death notice for SSMP process for %s (%d, %d:%d)\n",
                                              method_name, __LINE__, Name, Nid, Pid, Verifier);
 
-#ifndef NAMESERVER_PROCESS
                             ssmpProcess->ssmpNoticesLock_.lock();
                             ssmpProcess->ssmpNotices_.push_back( DeathMessage() );
                             ssmpProcess->ssmpNoticesLock_.unlock();
                             SQ_theLocalIOToClient->nudgeNotifier ();
-#endif
                         }
                         else
                         {
@@ -3146,15 +3133,14 @@ void CProcess::Exit( CProcess *parent )
         // Check if we need to output a entry into the process id map log file
         if ( PidMap )
         {
-#ifndef NAMESERVER_PROCESS
             Monitor->writeProcessMapEnd( Name, Nid, Pid, Verifier,
                                          parent ? parent->GetNid() : -1,
                                          parent ? parent->GetPid() : -1,
                                          parent ? parent->GetVerifier() : -1,
                                          program() );
-#endif
         }
     }
+
     if ( Clone && Pid != -1 )
     {
         if ( Type == ProcessType_SPX &&
@@ -3168,12 +3154,10 @@ void CProcess::Exit( CProcess *parent )
                 CProcess *spxProcess = lnode->GetProcessLByType( ProcessType_SPX );
                 if ( spxProcess && MyNode->GetState() == State_Up )
                 {
-#ifndef NAMESERVER_PROCESS
                     SQ_theLocalIOToClient->putOnNoticeQueue( spxProcess->Pid
                                                            , spxProcess->Verifier
                                                            , DeathMessage()
                                                            , NULL);
-#endif
 
                     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                        trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d)\n"
@@ -3209,12 +3193,10 @@ void CProcess::Exit( CProcess *parent )
                 CProcess *tmProcess = lnode->GetProcessLByType( ProcessType_DTM );
                 if ( tmProcess && MyNode->GetState() == State_Up )
                 {
-#ifndef NAMESERVER_PROCESS
                     SQ_theLocalIOToClient->putOnNoticeQueue( tmProcess->Pid
                                                            , tmProcess->Verifier
                                                            , DeathMessage()
                                                            , NULL);
-#endif
 
                     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                        trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d)\n"
@@ -3246,12 +3228,10 @@ void CProcess::Exit( CProcess *parent )
                parent->GetType()  == ProcessType_DTM) &&
              supplyProcessDeathNotices )
         {
-#ifndef NAMESERVER_PROCESS
             SQ_theLocalIOToClient->putOnNoticeQueue( parent->Pid
                                                    , parent->Verifier
                                                    , DeathMessage()
                                                    , NULL);
-#endif
 
             if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                trace_printf( "%s@%d" " - Sending death message of %s (%d,%d:%d) to %s (%d,%d:%d) \n"
@@ -3267,7 +3247,6 @@ void CProcess::Exit( CProcess *parent )
         }
     }
 
-#ifndef NAMESERVER_PROCESS
     if (NameServerEnabled)
     {
         if ( parent )
@@ -3304,10 +3283,10 @@ void CProcess::Exit( CProcess *parent )
         }
         procExitNotifierNodes();
     }
-#endif
 
     TRACE_EXIT;
 }
+#endif
 
 #ifndef NAMESERVER_PROCESS
 void CProcess::GenerateEvent( int event_id, int length, char *data )
@@ -5371,6 +5350,72 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 }
 #endif
 
+#ifdef NAMESERVER_PROCESS
+void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNode)
+{
+    const char method_name[] = "CProcessContainer::Exit_Process(process)";
+    TRACE_ENTRY;
+
+    char la_buf[MON_STRING_BUF_SIZE];
+    CProcess *parent = NULL;
+
+    if (process)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf( "%s@%d - Process %s (abended=%d) is exiting, abend=%d, downNode=%d\n"
+                        , method_name, __LINE__
+                        , process->GetName()
+                        , process->IsAbended()
+                        , abend
+                        , downNode );
+
+        if ( process->GetState() == State_Down && abend && !process->IsAbended() )
+        {
+            process->SetAbended( abend );
+        }
+        if (process->GetNid() == downNode && !process->IsAbended() )
+        {
+            process->SetAbended( abend );
+        }
+
+        if ( numProcs_ <= 0 )
+        {
+            snprintf(la_buf, sizeof(la_buf),
+                     "[%s], Node's process count is invalid, aborting\n",
+                     method_name);
+            mon_log_write(MON_PROCESSCONT_EXITPROCESS_1, SQ_LOG_ERR, la_buf);
+            abort();
+        }
+
+        if ( process->GetState() == State_Stopped )
+        {
+            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                trace_printf("%s@%d" " - Process " "%s" " already exited." "\n", method_name, __LINE__, process->GetName());
+            return;
+        }
+
+        if ( parent == NULL)
+        {
+            parent = Nodes->GetProcess( process->GetParentNid(),
+                                        process->GetParentPid() );
+        }
+
+        // Handle the process termination
+        process->Switch( parent ); // switch process pair roles if needed
+        process->SetDeletePending ( true );
+
+        CNode *node;
+        node = Nodes->GetLNode(process->GetNid())->GetNode();
+        node->DelFromNameMap ( process );
+        node->DelFromPidMap ( process );
+        node->DeleteFromList( process );
+    }
+    TRACE_EXIT;
+
+    return;
+}
+#endif
+
 CProcess *CProcessContainer::GetProcess (int pid)
 {
     const char method_name[] = "CProcessContainer::GetProcess (pid)";
@@ -5822,7 +5867,7 @@ void CProcessContainer::KillAllDownSoft()
         }
 
         // valid for virtual cluster or soft node down only.
-        if ( type != ProcessType_DTM )
+        if ( type != ProcessType_DTM && type != ProcessType_NameServer )
         {
             // Delete pid map entry
             DelFromPidMap ( process );
@@ -5859,7 +5904,7 @@ void CProcessContainer::KillAllDownSoft()
         nextProc = process->GetNext();
 
         PROCESSTYPE type = process->GetType();
-        if ( type != ProcessType_DTM )
+        if ( type != ProcessType_DTM && type != ProcessType_NameServer )
         {
             // Delete pid map entry
             DelFromPidMap ( process );

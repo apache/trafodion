@@ -1752,6 +1752,7 @@ int CCluster::SoftNodeUpPrepare( int pnid )
     {
         SMSIntegrating = true;
 #ifndef NAMESERVER_PROCESS
+        node->SetSoftNodeUp( );
         Monitor->StartPrimitiveProcesses();
 #endif
         // Let other monitors know this node is preparing to soft up
@@ -2289,7 +2290,11 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
     case InternalType_Exit:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal exit request for %s (%d, %d)\n", method_name, __LINE__, recv_msg->u.exit.name, recv_msg->u.exit.nid, recv_msg->u.exit.pid);
+#ifndef NAMESERVER_PROCESS
         ReqQueue.enqueueExitReq( &recv_msg->u.exit );
+#else
+        ReqQueue.enqueueExitNsReq( &recv_msg->u.exit_ns );
+#endif
         break;
 
 #ifndef NAMESERVER_PROCESS
@@ -2880,6 +2885,11 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
     case InternalType_Exit:
         // Final process exit logic is done in Process_Exit, not here
         // as in the past.
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal exit request for %s (%d, %d)\n", method_name, __LINE__, recv_msg->u.exit_ns.name, recv_msg->u.exit_ns.nid, recv_msg->u.exit_ns.pid);
+#ifdef NAMESERVER_PROCESS
+        ReqQueue.enqueueExitNsReq( &recv_msg->u.exit_ns );
+#endif
         break;
 
 #ifndef NAMESERVER_PROCESS

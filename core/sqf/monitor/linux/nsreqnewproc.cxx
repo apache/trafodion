@@ -148,7 +148,7 @@ void CExtNewProcNsReq::performRequest()
             if (repl)
             {
                 // we will not reply at this time ... but wait for 
-                // node add to be processed in CIntNodeAddReq
+                // new process request to be processed in CIntCloneProcNsReq
     
                 // Retain reference to requester's request buffer so can
                 // send completion message.

@@ -85,6 +85,7 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
                       "        msg.del_process_ns.target_pid=%d\n"
                       "        msg.del_process_ns.target_verifier=%d\n"
                       "        msg.del_process_ns.target_process_name=%s\n"
+                      "        msg.del_process_ns.target_abended=%d\n"
                     , method_name, __LINE__
                     , msg->u.request.u.del_process_ns.nid
                     , msg->u.request.u.del_process_ns.pid
@@ -94,6 +95,7 @@ void CCommAcceptMon::monReqDeleteProcess( struct message_def* msg, int sockFd )
                     , msg->u.request.u.del_process_ns.target_pid
                     , msg->u.request.u.del_process_ns.target_verifier
                     , msg->u.request.u.del_process_ns.target_process_name
+                    , msg->u.request.u.del_process_ns.target_abended
                     );
     }
 

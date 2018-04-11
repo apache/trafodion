@@ -926,6 +926,7 @@ private:
 };
 #endif
 
+#ifndef NAMESERVER_PROCESS
 class CIntExitReq: public CInternalReq
 {
 public:
@@ -944,6 +945,31 @@ private:
     bool abended_;
     char name_[MAX_PROCESS_NAME];
 };
+#endif
+
+#ifdef NAMESERVER_PROCESS
+class CIntExitNsReq: public CInternalReq
+{
+public:
+    CIntExitNsReq();
+    virtual ~CIntExitNsReq();
+
+    void prepRequest( struct exit_ns_def *exitDef );
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    bool abended_;
+    char name_[MAX_PROCESS_NAME];
+    struct message_def *msg_;
+    int  sockFd_;
+    int  origPNid_;
+};
+#endif
 
 #ifdef NAMESERVER_PROCESS
 class CExtDelProcessNsReq: public CExternalReq
@@ -1471,7 +1497,11 @@ class CReqQueue
 #ifndef NAMESERVER_PROCESS
     void enqueueDeviceReq( char *ldevName );
 #endif
+#ifndef NAMESERVER_PROCESS
     void enqueueExitReq( struct exit_def *exitDef );
+#else
+    void enqueueExitNsReq( struct exit_ns_def *exitDef );
+#endif
 #ifdef NAMESERVER_PROCESS
     void enqueueDeleteReq( struct delete_def *deleteDef );
 #endif

@@ -1791,7 +1791,20 @@ int main (int argc, char *argv[])
 #endif
                 if (monitorPort)
                 {
+#ifdef NAMESERVER_PROCESS
+                    if ( IsRealCluster )
+                    {
+                        strcpy( IntegratingMonitorPort, MasterMonitorName);
+                    }
+                    else
+                    {
+                        char localHost[MAX_PROCESSOR_NAME];
+                        gethostname( localHost, MAX_PROCESSOR_NAME );
+                        strcpy( IntegratingMonitorPort, localHost);
+                    }
+#else
                     strcpy( IntegratingMonitorPort, MasterMonitorName);
+#endif
                     strcat( IntegratingMonitorPort, ":");
                     strcat( IntegratingMonitorPort, monitorPort);
                 }

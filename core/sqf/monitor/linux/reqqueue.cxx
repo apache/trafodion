@@ -1017,6 +1017,7 @@ void CIntDeviceReq::performRequest()
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 CIntExitReq::CIntExitReq( )
             : CInternalReq()
             , nid_(0)
@@ -1101,12 +1102,7 @@ void CIntExitReq::performRequest()
         {
             lnode->GetNode()->DelFromNameMap ( process );
             lnode->GetNode()->DelFromPidMap ( process );
-
-#ifdef NAMESERVER_PROCESS
-            lnode->GetNode()->DeleteFromList( process );
-#else
             lnode->GetNode()->Exit_Process (process, abended_, -1);
-#endif
         }
     }
     else
@@ -1119,6 +1115,136 @@ void CIntExitReq::performRequest()
 
     TRACE_EXIT;
 }
+#else
+CIntExitNsReq::CIntExitNsReq( )
+              : CInternalReq()
+              , nid_(0)
+              , pid_(0)
+              , verifier_(-1)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIE", 4);
+
+    name_[0] = '\0';
+}
+
+CIntExitNsReq::~CIntExitNsReq( )
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqie", 4);
+}
+
+void CIntExitNsReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (name=%s/nid=%d/pid=%d/verifier=%d)"
+                     "(msg=%p, sockFd=%d, origPNid=%d)"
+                   , CReqQueue::intReqType[InternalType_Exit]
+                   , getId(), name_, nid_, pid_, verifier_
+                   , msg_, sockFd_, origPNid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntExitNsReq::prepRequest( struct exit_ns_def *exitDef )
+{
+    const char method_name[] = "CIntExitNsReq::prepRequest";
+    TRACE_ENTRY;
+
+    nid_ = exitDef->nid;
+    pid_ = exitDef->pid;
+    verifier_ = exitDef->verifier;
+    strcpy( name_, exitDef->name );
+    abended_ = exitDef->abended;
+    msg_ = exitDef->msg;
+    sockFd_ = exitDef->sockFd;
+    origPNid_ = exitDef->origPNid;
+
+    TRACE_EXIT;
+}
+
+void CIntExitNsReq::performRequest()
+{
+    const char method_name[] = "CIntExitReq::performRequest";
+    TRACE_ENTRY;
+
+    CProcess *process = NULL;
+    CLNode  *lnode;
+
+    // Check if this name server is handling monitor request
+    // from CExtDelProcessNsReq::performRequest()
+    if (origPNid_ == MyPNID)
+    {
+        msg_->noreply = false;
+        msg_->u.reply.type = ReplyType_DelProcessNs;
+        msg_->u.reply.u.del_process_ns.nid = nid_;
+        msg_->u.reply.u.del_process_ns.pid = pid_;
+        msg_->u.reply.u.del_process_ns.verifier = verifier_;
+        strncpy(msg_->u.reply.u.del_process_ns.process_name, name_, MAX_PROCESS_NAME);
+        msg_->u.reply.u.del_process_ns.return_code = MPI_SUCCESS;
+
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+           trace_printf("%s@%d - Replying to monitor sockFd_=%d, msg_=%p, deleted %s (%d, %d:%d)\n",
+                        method_name, __LINE__,
+                        sockFd_,
+                        msg_,
+                        name_,
+                        nid_,
+                        pid_,
+                        verifier_ );
+        }
+
+        // Send reply to requesting monitor
+        monreply( msg_, sockFd_ );
+        return;
+    }
+
+    lnode = Nodes->GetLNode( nid_ );
+    if ( lnode )
+    {
+        process = lnode->GetNode()->GetProcess( pid_ );
+
+        if ( ! process )
+        {
+            // Could not locate process by process id.  If the exit
+            // occurred due to an early process termination on another
+            // node we won't have the process id.  Try the look up by
+            // name instead.
+            process = lnode->GetNode()->GetProcess( name_, false );
+        }
+    }
+
+    if ( process )
+    {
+        if ( (verifier_ != -1) && (verifier_ != process->GetVerifier()) )
+        {
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+               trace_printf("%s@%d - Exit %s (%d, %d:%d) failed -- verifier mismatch (%d)\n",
+                            method_name, __LINE__,
+                            name_,
+                            nid_,
+                            pid_,
+                            verifier_,
+                            process->GetVerifier());
+            }
+        }
+        else
+        {
+            lnode->GetNode()->Exit_Process( process, abended_, -1 );
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "[%s], Can't find process %s (%d, %d) for processing "
+                "exit.\n", method_name, name_, nid_, pid_);
+        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_5, SQ_LOG_ERR, buf);
+    }
+
+    TRACE_EXIT;
+}
+#endif
 
 #ifndef NAMESERVER_PROCESS
 CIntKillReq::CIntKillReq( struct kill_def *killDef )
@@ -3583,10 +3709,17 @@ void CIntCreatePrimitiveReq::performRequest()
             {
                 startNs = true;
             }
-            if ( startNs )
+            if ( !MyNode->IsSoftNodeUp() )
+            {  // Don't restart the name server on a soft node up
+                if ( startNs )
+                {
+                    NameServer->SetLocalHost();
+                    MyNode->StartNameServerProcess();
+                }
+            }
+            else
             {
-                NameServer->SetLocalHost();
-                MyNode->StartNameServerProcess();
+                MyNode->ResetSoftNodeUp();
             }
         }
         MyNode->StartWatchdogProcess();
@@ -4246,6 +4379,7 @@ void CReqQueue::enqueueUpReq( int pnid, char *node_name, int merge_lead )
     enqueueReq ( request );
 }
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueExitReq( struct exit_def *exitDef )
 {
     CIntExitReq * request;
@@ -4255,6 +4389,17 @@ void CReqQueue::enqueueExitReq( struct exit_def *exitDef )
 
     enqueueReq ( request );
 }
+#else
+void CReqQueue::enqueueExitNsReq( struct exit_ns_def *exitDef )
+{
+    CIntExitNsReq * request;
+
+    request = new CIntExitNsReq ( );
+    request->prepRequest( exitDef );
+
+    enqueueReq ( request );
+}
+#endif
 
 #ifndef NAMESERVER_PROCESS
 //void CReqQueue::enqueueKillReq( int nid, int pid, bool abort )

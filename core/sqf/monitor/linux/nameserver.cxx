@@ -513,6 +513,7 @@ int CNameServer::ProcessDelete(CProcess* process )
     msgdel->target_pid = msgdel->pid;
     msgdel->target_verifier = msgdel->verifier;
     strcpy( msgdel->target_process_name, msgdel->process_name );
+    msgdel->target_abended = process->IsAbended();
 
     int error = SendReceive(&msg );
 
@@ -636,13 +637,14 @@ int CNameServer::ProcessShutdown( void )
 int CNameServer::SendReceive( struct message_def* msg )
 {
     const char method_name[] = "CNameServer::SendReceive";
-    char desc[100];
+    char desc[256];
     char* descp;
     struct DelProcessNs_def *msgdel;
     struct NewProcessNs_def *msgnew;
     struct ShutdownNs_def *msgshutdown;
     struct NameServerStart_def *msgstart;
     struct NameServerStop_def *msgstop;
+    struct ProcessInfo_def *msginfo;
 
     TRACE_ENTRY;
 
@@ -675,7 +677,12 @@ int CNameServer::SendReceive( struct message_def* msg )
         size += sizeof(msg->u.request.u.new_process_ns);
         break;
     case ReqType_ProcessInfo:
-        descp = (char *) "process-info";
+        msginfo = &msg->u.request.u.process_info;
+        sprintf( desc, "process-info (nid=%d, pid=%d, verifier=%d, name=%s)\n"
+                       "\ttarget (nid=%d, pid=%d, verifier=%d, name=%s, type=%d)\n",
+                msginfo->nid, msginfo->pid, msginfo->verifier, msginfo->process_name,
+                msginfo->target_nid, msginfo->target_pid, msginfo->target_verifier, 
+                msginfo->target_process_name, msginfo->type );
         size += sizeof(msg->u.request.u.process_info);
         break;
     case ReqType_ProcessInfoCont:

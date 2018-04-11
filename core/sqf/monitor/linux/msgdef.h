@@ -332,6 +332,7 @@ typedef enum {
                                             // types, add any new message types 
                                             // before this one
 } MSGTYPE;
+
 typedef TcProcessType_t PROCESSTYPE;
 
 typedef enum {
@@ -369,6 +370,7 @@ struct DelProcessNs_def
     int  target_pid;                        // Process id of process to delete
     Verifier_t target_verifier;             // Process verifier of processes to delete
     char target_process_name[MAX_PROCESS_NAME];    // Name of process to delete
+    bool target_abended;                    // True if process aborted
 };
 
 struct DelProcessNs_reply_def

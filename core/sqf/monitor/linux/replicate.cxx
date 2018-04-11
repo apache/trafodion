@@ -91,7 +91,7 @@ int CReplObj::calcAllocSize()
                                                 sizeof(CReplExit)),
                                             sizeof(CReplKill)),
 #ifdef NAMESERVER_PROCESS
-                                        sizeof(dummy_sizeof_def)),
+                                        sizeof(CReplExitNs)),
 #else
                                         sizeof(CReplDevice)),
 #endif
@@ -928,6 +928,80 @@ bool CReplExit::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+
+CReplExitNs::CReplExitNs( int nid
+                        , int pid
+                        , Verifier_t verifier
+                        , const char *name
+                        , bool abended
+                        , struct message_def *msg
+                        , int  sockFd
+                        , int  origPNid )
+            : nid_(nid)
+            , pid_(pid)
+            , verifier_(verifier)
+            , abended_(abended)
+            , msg_(msg)
+            , sockFd_(sockFd)
+            , origPNid_(origPNid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLJ", 4);
+
+    strcpy(name_, name);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( exit_ns_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplExitNs::CReplExitNs";
+        trace_printf( "%s@%d  - Queuing replicating process exit %s (%d, %d:%d),"
+                      " abended=%d, msg=%p, sockFd=%d, origPNid=%d\n"
+                    , method_name, __LINE__
+                    , name_, nid_, pid_, verifier_, abended_
+                    , msg_, sockFd_, origPNid_ );
+    }
+}
+
+CReplExitNs::~CReplExitNs()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rplj", 4);
+}
+
+
+bool CReplExitNs::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplExitNs::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf("%s@%d" " - Replicating process exit %s (%d, %d:%d),"
+                     " abended=%d\n", method_name, __LINE__,
+                     name_, nid_, pid_, verifier_, abended_);
+
+    // Build message to replicate this process exit to other nodes
+    msg->type = InternalType_Exit;
+    msg->u.exit_ns.nid = nid_;
+    msg->u.exit_ns.pid = pid_;
+    msg->u.exit_ns.verifier = verifier_;
+    strcpy(msg->u.exit_ns.name, name_);
+    msg->u.exit_ns.abended = abended_;
+    msg->u.exit_ns.msg = msg_;
+    msg->u.exit_ns.sockFd = sockFd_;
+    msg->u.exit_ns.origPNid = origPNid_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
 
 CReplKill::CReplKill( int nid
                     , int pid

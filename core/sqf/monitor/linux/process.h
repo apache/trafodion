@@ -127,9 +127,9 @@ class CProcessContainer
                              );
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
     void DumpCallback( int nid, pid_t pid, int status );
+    void Exit_Process( CProcess *process, bool abend, int downNode );
 #ifndef NAMESERVER_PROCESS
     static CProcess *ParentNewProcReply ( CProcess *process, int result );
-    void Exit_Process( CProcess *process, bool abend, int downNode );
 #else
     static CProcess *MonReply ( CProcess *process, int result );
 #endif

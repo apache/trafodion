@@ -92,6 +92,7 @@ typedef enum {
     State_Default=0,
     State_Quiesce,                  // node quiesce state while going down
     State_SoftDown,                 // node soft down on DTM abort -> restart
+    State_SoftUp,                   // node soft up on DTM restart
     State_Ready_To_Exit
 } IntNodeState; 
 
@@ -174,6 +175,18 @@ struct exit_def
     Verifier_t verifier;            // Verifier of the process exiting
     char name[MAX_PROCESS_NAME];    // Name of process exiting
     bool abended;
+};
+
+struct exit_ns_def
+{
+    int nid;                        // Node id of process exiting
+    int pid;                        // Process id of process exiting
+    Verifier_t verifier;            // Verifier of the process exiting
+    char name[MAX_PROCESS_NAME];    // Name of process exiting
+    bool abended;
+    int sockFd;                     // monitor socket fd to reply
+    int origPNid;                   // pnid of nameserver which processed request
+    struct message_def *msg;        // requester's request buffer to reply
 };
 
 struct event_def
@@ -433,6 +446,7 @@ struct internal_msg_def
         struct down_def    down;
         struct dump_def    dump;
         struct exit_def    exit;
+        struct exit_ns_def exit_ns;
         struct event_def   event;
         ioData_t           iodata;
         struct kill_def    kill;

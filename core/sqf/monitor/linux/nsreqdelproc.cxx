@@ -56,7 +56,7 @@ CExtDelProcessNsReq::~CExtDelProcessNsReq()
 
 void CExtDelProcessNsReq::populateRequestString( void )
 {
-    char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
+    char strBuf[MON_STRING_BUF_SIZE] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
               "ExtReq(%s) req #=%ld "
@@ -93,7 +93,7 @@ void CExtDelProcessNsReq::performRequest()
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d request #%ld: Delete, requester %s (%d, %d:%d), "
-                      "target %s (%d, %d:%d)\n",
+                      "target %s (%d, %d:%d), abended=%d\n",
                       method_name, __LINE__, id_,
                       msg_->u.request.u.del_process_ns.process_name,
                       msg_->u.request.u.del_process_ns.nid,
@@ -102,13 +102,15 @@ void CExtDelProcessNsReq::performRequest()
                       msg_->u.request.u.del_process_ns.target_process_name,
                       msg_->u.request.u.del_process_ns.target_nid,
                       msg_->u.request.u.del_process_ns.target_pid,
-                      msg_->u.request.u.del_process_ns.target_verifier);
+                      msg_->u.request.u.del_process_ns.target_verifier,
+                      msg_->u.request.u.del_process_ns.target_abended);
     }
 
     nid_ = msg_->u.request.u.del_process_ns.nid;
     verifier_ = msg_->u.request.u.del_process_ns.verifier;
     processName_ = msg_->u.request.u.del_process_ns.process_name;
 
+    bool      target_abended = msg_->u.request.u.del_process_ns.target_abended;
     int       target_nid = -1;
     int       target_pid = -1;
     string    target_process_name;
@@ -128,18 +130,28 @@ void CExtDelProcessNsReq::performRequest()
     if (process)
     {
         CNode * node = Nodes->GetLNode (process->GetNid())->GetNode();
-        node->DelFromNameMap ( process );
-        node->DelFromPidMap ( process );
-        process->SetState (State_Stopped);
-        // Replicate the exit to other nodes
-        CReplExit *repl = new CReplExit(process->GetNid(),
-                                        process->GetPid(),
-                                        process->GetVerifier(),
-                                        process->GetName(),
-                                        process->IsAbended());
-        Replicator.addItem(repl);
-        process->SetDeletePending ( true );
-        node->DeleteFromList( process );
+
+        // Note: process object is deletes by Exit_Process, so use 
+        //       target_* values to replicate
+        node->Exit_Process( process, target_abended, -1 );
+        // Replicate the exit to other name servers 
+        CReplExitNs *repl = new CReplExitNs(target_nid,
+                                            target_pid,
+                                            target_verifier,
+                                            target_process_name.c_str(),
+                                            target_abended,
+                                            msg_,
+                                            sockFd_,
+                                            MyPNID );
+        if (repl)
+        {
+            // we will not reply at this time ... but wait for 
+            // exit request to be processed in CIntExitNsReq
+
+            msg_->noreply = true;
+
+            Replicator.addItem(repl);
+        }
 
         msg_->u.reply.type = ReplyType_DelProcessNs;
         msg_->u.reply.u.del_process_ns.nid = msg_->u.request.u.del_process_ns.target_nid;
@@ -172,10 +184,8 @@ void CExtDelProcessNsReq::performRequest()
         msg_->u.reply.u.del_process_ns.return_code = MPI_ERR_NAME;
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
            trace_printf("%s@%d - unsuccessful\n", method_name, __LINE__);
+        monreply(msg_, sockFd_);
     }
-
-    // Send reply to requester
-    monreply(msg_, sockFd_);
 
     TRACE_EXIT;
 }

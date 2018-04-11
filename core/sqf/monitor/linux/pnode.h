@@ -270,12 +270,14 @@ public:
     inline bool  IsRankFailure( void ) { return( rankFailure_ ); }
     inline bool  IsSpareNode( void ) { return( spareNode_ ); }
     inline bool  IsSoftNodeDown( void ) { return( internalState_ == State_SoftDown ); }
+    inline bool  IsSoftNodeUp( void ) { return( internalState_ == State_SoftUp ); }
 
     CNode  *Link( CNode *entry );
     void    MoveLNodes( CNode *targetNode );
     inline void ResetSpareNode( void ) { spareNode_ = false; }
     void    ResetWatchdogTimer( void );
     inline void ResetSoftNodeDown( void ) { internalState_ = State_Default; }
+    inline void ResetSoftNodeUp( void ) { internalState_ = State_Default; }
     inline void SetActivatingSpare( int activatingSpare ) { activatingSpare_ = activatingSpare; }
     void    SetAffinity( int nid, pid_t pid, PROCESSTYPE type );
     void    SetAffinity( CProcess *process );
@@ -306,6 +308,7 @@ public:
     inline void SetNumCores( int numCores ) { numCores_ = numCores; }
     inline void SetPhase( NodePhase phase ) { phase_ = phase; }
     inline void SetSoftNodeDown( void ) { internalState_ = State_SoftDown; }
+    inline void SetSoftNodeUp( void ) { internalState_ = State_SoftUp; }
     inline void SetSparePNids( PNidVector &sparePNids ) { sparePNids_ = sparePNids; }
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
