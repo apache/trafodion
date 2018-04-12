@@ -8426,7 +8426,7 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
   Int32 lActualLen = 0;
   Int16 status = ComUser::getAuthNameFromAuthID( (Int32) schemaOwnerID 
                                                , (char *)&username
-                                               , MAX_USERNAME_LEN
+                                               , MAX_USERNAME_LEN+1
                                                , lActualLen );
   if (status != FEOK)
   {
@@ -8448,7 +8448,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) objOwnerID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {
@@ -8468,7 +8468,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) creatorID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {

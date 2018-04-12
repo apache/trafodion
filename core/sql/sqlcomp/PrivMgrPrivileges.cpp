@@ -2851,7 +2851,7 @@ short retcode = 0;
     char authName[MAX_USERNAME_LEN+1];
     Int32 actualLen = 0;
     retcode = ComUser::getAuthNameFromAuthID(objectOwner,authName,
-                                             MAX_USERNAME_LEN,actualLen);
+                                             MAX_USERNAME_LEN+1,actualLen);
     if (retcode != FEOK)
     {
       *pDiags_ << DgSqlCode(-20235)

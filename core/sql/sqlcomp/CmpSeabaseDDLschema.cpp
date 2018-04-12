@@ -419,7 +419,7 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
 char username[MAX_USERNAME_LEN+1];
 Int32 lActualLen = 0;
 Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username, 
-                                              MAX_USERNAME_LEN,lActualLen);
+                                              MAX_USERNAME_LEN+1,lActualLen);
    if (status != FEOK)
    {
       *CmpCommon::diags() << DgSqlCode(-20235) // Error converting user ID.
