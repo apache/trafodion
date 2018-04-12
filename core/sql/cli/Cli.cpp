@@ -6182,10 +6182,10 @@ Lng32 SQLCLI_GetDatabaseUserName (
   ContextCli &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags = currContext.diags();
 
-  retcode = currContext.getDBUserNameFromID(user_id,
-                                            string_value,
-                                            max_string_len,
-                                            len_of_item);
+  retcode = currContext.getAuthNameFromID(user_id,
+                                          string_value,
+                                          max_string_len,
+                                         *len_of_item);
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }
@@ -6206,8 +6206,8 @@ Lng32 SQLCLI_GetDatabaseUserID (
   ContextCli &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags = currContext.diags();
 
-  retcode = currContext.getDBUserIDFromName(string_value,
-                                            numeric_value);
+  retcode = currContext.getAuthIDFromName(string_value,
+                                          *numeric_value);
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }

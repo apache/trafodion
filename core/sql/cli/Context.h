@@ -125,12 +125,6 @@ public:
      char *authNameBuffer, // OUT
      Int32 maxBufLen,      // IN
      Int32 &requiredLen);   // OUT optional
-  RETCODE getDBUserNameFromID(Int32 userID,         // IN
-                              char *userNameBuffer, // OUT
-                              Int32 maxBufLen,      // IN
-                              Int32 *requiredLen);  // OUT
-  RETCODE getDBUserIDFromName(const char *userName, // IN
-                              Int32 *userID);       // OUT
 
   // Function to be used only in ESPs to establish user identity. This
   // call will update data members and will NOT verify the input

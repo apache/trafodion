@@ -4359,128 +4359,6 @@ RETCODE ContextCli::getAuthNameFromID(
 //******************* End of ContextCli::getAuthNameFromID *********************
 
 
-
-
-
-
-// Public method to map an integer user ID to a user name
-RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
-                                        char *userNameBuffer, // OUT
-                                        Int32 maxBufLen,      // IN
-                                        Int32 *requiredLen)   // OUT optional
-{
-  RETCODE result = SUCCESS;
-  char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
-  Int32 userIDFromUsersTable;
-  std::vector<int32_t> roleIDs;
-  if (requiredLen)
-    *requiredLen = 0;
-  
-  // Cases to consider
-  // * userID is the current user ID
-  // * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-  //   are not registered in the USERS table
-  // * other users
-
-  NABoolean isCurrentUser =
-    (userID == (Int32) databaseUserID_ ? TRUE : FALSE);
-
-  const char *currentUserName = NULL;
-  if (isCurrentUser)
-  {
-    currentUserName = databaseUserName_;
-  }
-  else
-  {
-    // See if the USERS row exists
-    result = authQuery(USERS_QUERY_BY_USER_ID,
-                       NULL,        // IN user name (ignored)
-                       userID,      // IN user ID
-                       usersNameFromUsersTable, //OUT
-                       sizeof(usersNameFromUsersTable),
-                       userIDFromUsersTable,
-                       roleIDs);  // OUT
-    if (result != ERROR)
-      currentUserName = usersNameFromUsersTable;
-  }
-
-  // Return the user name if the lookup was successful
-  if (result != ERROR)
-  {
-    ex_assert(currentUserName, "currentUserName should not be NULL");
-
-    Int32 bytesNeeded = strlen(currentUserName) + 1;
-    
-    if (bytesNeeded > maxBufLen)
-    {
-      diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
-      if (requiredLen)
-        *requiredLen = bytesNeeded;
-      result = ERROR;
-    }
-    else
-    {
-      strcpy(userNameBuffer, currentUserName);
-    }
-  }
-  
-  return result;
-}
-  
-// Public method to map a user name to an integer user ID
-RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
-                                        Int32 *userID)        // OUT
-{
-  
-   if (userName == NULL || userID == NULL)
-      return ERROR;
-
-// Cases to consider
-// * userName is the current user name
-// * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-//   are not registered in the USERS table
-// * other users
-
-   if (databaseUserName_ && strcasecmp(userName,databaseUserName_) == 0)
-   {
-      *userID = databaseUserID_;
-      return SUCCESS;
-   }
-   
-   if (strcasecmp(userName,ComUser::getPublicUserName()) == 0)
-   {
-      *userID = ComUser::getPublicUserID();
-      return SUCCESS;
-   }
-   
-   if (strcasecmp(userName,ComUser::getSystemUserName()) == 0)
-   {
-      *userID = ComUser::getSystemUserID();
-      return SUCCESS;
-   }
-  
-   // See if the AUTHS row exists
-
-   RETCODE result = SUCCESS;
-   char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
-   Int32 userIDFromUsersTable;
-   std::vector<int32_t> roleIDs;
-
-   result = authQuery(USERS_QUERY_BY_USER_NAME,
-                      userName,    // IN user name
-                      0,           // IN user ID (ignored)
-                      usersNameFromUsersTable, //OUT
-                      sizeof(usersNameFromUsersTable),
-                      userIDFromUsersTable,
-                      roleIDs);  // OUT
-   if (result == SUCCESS && userID)
-      *userID = userIDFromUsersTable;
-
-   return result;
-  
-}
-
-// Public method only meant to be called in ESPs. All we do is call
 // the private method to update user ID data members. On platforms
 // other than Linux the method is a no-op.
 void ContextCli::setDatabaseUserInESP(const Int32 &uid, const char *uname,
@@ -4790,7 +4668,10 @@ RETCODE ContextCli::storeName(
 
    actualLength = strlen(src);
    if (actualLength >= maxLength)
+   {
+      diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
       return ERROR;
+   }
    
    memcpy(dest,src,actualLength);
    dest[actualLength] = 0;
