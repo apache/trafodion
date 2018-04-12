@@ -116,7 +116,11 @@ char MyPtPPort[MPI_MAX_PORT_NAME] = {'\0'};
 char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
 bool Emulate_Down = false;
+#ifdef NAMESERVER_PROCESS
+long next_test_delay = 10000; // in usec. (default 10 msec)
+#else
 long next_test_delay = 100000; // in usec. (default 100 msec)
+#endif
 CClusterConfig *ClusterConfig = NULL;
 bool IAmIntegrating = false;
 bool IAmIntegrated = false;
