@@ -2590,7 +2590,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
 %type <item>      		datetime_misc_function_used_as_default
-%type <item>      	        sequence_as_default	
 %type <stringval>  		format_attributes
 %type <pElemDDL>  		optional_constraint_attributes
 %type <pElemDDL>  		constraint_attributes
