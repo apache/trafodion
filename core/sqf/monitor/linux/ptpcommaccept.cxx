@@ -278,6 +278,7 @@ void CPtpCommAccept::commAcceptorSock()
         else
         {
             processNewSock( sockFd );
+            close( sockFd );
         }
     }
 
