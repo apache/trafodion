@@ -6810,7 +6810,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 nodestate[index].nodeMask.upNodes[i] = 0;
             }
 #ifdef NAMESERVER_PROCESS
-            nodestate[index].monConnCount = 0;
+            nodestate[index].monConnCount = -1;
 #endif
 
             continue;
@@ -7017,7 +7017,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                     nodestate[index].nodeMask.upNodes[i] = 0;
                 }
 #ifdef NAMESERVER_PROCESS
-                nodestate[index].monConnCount = 0;
+                nodestate[index].monConnCount = -1;
 #endif
 
                 if ( validateNodeDown_ )
@@ -7211,10 +7211,11 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     int minConnPnid = -1;
     for (int index = 0; index < GetConfigPNodesMax(); index++)
     {
-        if ( nodestate[index].monConnCount < minConnCount )
+        int connCount = nodestate[index].monConnCount;
+        if ( ( connCount >= 0 ) && ( connCount < minConnCount ) )
         {
             minConnPnid = index;
-            minConnCount = nodestate[index].monConnCount;
+            minConnCount = connCount;
         }
     }
     myMonConnCount_ = nodestate[MyPNID].monConnCount;

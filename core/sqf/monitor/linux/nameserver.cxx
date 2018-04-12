@@ -88,6 +88,12 @@ void CNameServer::ChooseNextNs( void )
     TRACE_ENTRY;
 
     static unsigned int seed = 1;
+    static bool fix_seed = true;
+    if ( fix_seed )
+    {
+        seed += MyNode->GetPNid();
+        fix_seed = false;
+    }
     int cnt = NameServerConfig->GetCount();
     int rnd = (int) ((float) (cnt) * (rand_r(&seed) / (RAND_MAX + 1.0)));
     CNameServerConfig *config = NameServerConfig->GetFirstConfig();

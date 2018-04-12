@@ -635,7 +635,7 @@ int CCommAcceptMon::processMonReqsGetBestNs( void )
     TRACE_ENTRY;
     int pnid;
 
-    int myCount = Monitor->GetMyMonConnCount();
+    int myCount = MyNode->GetMonConnCount();
     int minCount = Monitor->GetMinMonConnCount();
     if ( myCount <= (minCount + HEURISTIC_COUNT) )
     {
