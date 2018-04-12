@@ -1499,6 +1499,13 @@ void CIntNewProcReq::performRequest()
              lnode->GetState() == State_Shutdown ) )
         {   // Create the CProcess object and store the various
             // process parameters.
+#ifndef NAMESERVER_PROCESS
+            // cause strings to be forwarded
+            string path;
+            Config->strIdToString( pathStrId_, path );
+            Config->strIdToString( ldpathStrId_, path );
+            Config->strIdToString( programStrId_, path );
+#endif
             CProcess *newProcess ;
             newProcess = lnode->GetNode()->
                 CreateProcess ( parentProcess,
