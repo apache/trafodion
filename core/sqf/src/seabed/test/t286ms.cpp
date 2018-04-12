@@ -329,6 +329,8 @@ int main(int argc, char *argv[]) {
                 t_elapsed_us = (int) (t_elapsed.tv_sec * 1000000 + t_elapsed.tv_usec);
                 if (t_elapsed_us < rate_us * rate_cnt) {
                     rate_usleep = rate_us * rate_cnt - t_elapsed_us;
+                    if (ratev)
+                        printf("%s-sleeping=%d\n", my_name, rate_usleep);
                     usleep(rate_usleep);
                 }
                 rate_cnt++;
@@ -336,7 +338,7 @@ int main(int argc, char *argv[]) {
                     gettimeofday(&t_start, NULL);
                     rate_cnt = 0;
                     if (ratev)
-                        printf("%s-loop=%d\n", my_name, inx);
+                        printf("%s-loop=%d, elapsed=%d us\n", my_name, inx, t_elapsed_us);
                 }
             }
         }
