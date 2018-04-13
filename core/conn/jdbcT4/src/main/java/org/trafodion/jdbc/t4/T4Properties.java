@@ -119,7 +119,10 @@ public class T4Properties {
 	String clobTableName_;
 	String blobTableName_;
 
-	// private short transportBufferSize_;
+    private int lobChunkSize_ = 10; // default 10M
+    private boolean useLobHandle_ = false;
+
+    // private short transportBufferSize_;
 	private boolean useArrayBinding_;
 	private boolean batchRecovery_;
 	private final String propPrefix_ = "t4jdbc.";
@@ -430,6 +433,9 @@ public class T4Properties {
 		setKeepAlive(getProperty("keepAlive"));
 		setTokenAuth(getProperty("tokenAuth"));
         setTcpNoDelay(getProperty("tcpNoDelay"));
+
+        setLobChunkSize(getProperty("lobChunkSize"));
+        setUseLobHandle(getProperty("useLobHandle"));
 	}
 
 	T4Properties getT4Properties() {
@@ -523,6 +529,9 @@ public class T4Properties {
 		props.setProperty("tokenAuth", String.valueOf(_tokenAuth));
         props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
         
+        props.setProperty("lobChunkSize", String.valueOf(lobChunkSize_));
+        props.setProperty("useLobHandle", String.valueOf(useLobHandle_));
+
 		return props;
 	}
 
@@ -1893,6 +1902,43 @@ public class T4Properties {
 	long getReserveDataLocator() {
 		return reserveDataLocator_;
 	}
+
+    public int getLobChunkSize() {
+        return lobChunkSize_;
+    }
+
+    public void setLobChunkSize(int lobChunkSize_) {
+        this.lobChunkSize_ = lobChunkSize_;
+    }
+
+    public void setLobChunkSize(String val) {
+        this.lobChunkSize_ = 10;
+        if (val != null) {
+            try {
+                this.lobChunkSize_ = Integer.parseInt(val);
+            } catch (NumberFormatException ex) {
+                sqlExceptionMessage_ = "Incorrect value for setLobChunkSize set: " + val + ex.getMessage();
+                this.lobChunkSize_ = 10;
+            }
+        }
+    }
+
+    public boolean getUseLobHandle() {
+        return useLobHandle_;
+    }
+
+    public void setUseLobHandle(boolean useLobHandle) {
+        this.useLobHandle_ = useLobHandle;
+    }
+
+    public void setUseLobHandle(String val) {
+        if (val != null) {
+            setUseLobHandle(Boolean.parseBoolean(val));
+        }
+        else {
+            setUseLobHandle(false);
+        }
+    }
 
 	/**
 	 * Returns the rounding mode set for the driver as an Integer value with one

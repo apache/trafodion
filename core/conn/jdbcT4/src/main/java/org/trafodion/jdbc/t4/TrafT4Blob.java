@@ -35,13 +35,11 @@ public class TrafT4Blob extends TrafT4Lob implements Blob
 		super(connection, lobHandle, data, Types.BLOB);
 	}
 
-	@Override
 	public InputStream getBinaryStream() throws SQLException {
 		testAvailability();
 		return new ByteArrayInputStream((byte[]) data_);
 	}
 
-	@Override
 	public InputStream getBinaryStream(long pos, long length) throws SQLException {
 		testAvailability();
 		return new ByteArrayInputStream((byte[]) data_);
@@ -53,7 +51,6 @@ public class TrafT4Blob extends TrafT4Lob implements Blob
 	 * bytes starting at position pos.
 	 *  */
 
-	@Override
 	public byte[] getBytes(long pos, int length) throws SQLException {
 		testAvailability();
 
@@ -75,14 +72,12 @@ public class TrafT4Blob extends TrafT4Lob implements Blob
 		return buf;
 	}
 
-	@Override
 	public int setBytes(long pos, byte[] bytes) throws SQLException {
 		testAvailability();
 
 		return setBytes(pos, bytes, 0, bytes.length);
 	}
 
-	@Override
 	public int setBytes(long pos, byte[] bytes, int offset, int len) throws SQLException {
 		testAvailability();
 		OutputStream out = setBinaryStream(pos);
@@ -102,24 +97,20 @@ public class TrafT4Blob extends TrafT4Lob implements Blob
 		return len;
 	}
 
-	@Override
 	public long position(Blob pattern, long start) throws SQLException {
 		return position(pattern.getBytes(0, (int) pattern.length()), start);
 	}
 
-	@Override
 	public long position(byte[] pattern, long start) throws SQLException {
 		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "position()");
 		return 0;
 	}
 
-	@Override
 	public OutputStream setBinaryStream(long pos) throws SQLException {
 		testAvailability();
 		return setOutputStream(pos);
 	}
 
-	@Override
 	public void truncate(long len) throws SQLException {
 		testAvailability();
 
@@ -145,13 +136,11 @@ public class TrafT4Blob extends TrafT4Lob implements Blob
 	}
 
 
-	@Override
 	public long length() throws SQLException {
 		testAvailability();
 		return data_ == null ? 0 : ((byte[]) data_).length;
 	}
 
-	@Override
 	public void free() throws SQLException {
 		data_ = null;
 		isFreed_ = true;

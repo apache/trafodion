@@ -6478,13 +6478,14 @@ odbc_SQLSrvr_ExtractLob_sme_(
     /* In    */ CEE_tag_def objtag_
   , /* In    */ const CEE_handle_def *call_id_
   , /* Out   */ odbc_SQLsrvr_ExtractLob_exc_ *exception_
-  , /* In    */ IDL_long extractLobAPI
+  , /* In    */ IDL_short extractLobAPI
   , /* In    */ IDL_string lobHandle
-  , /* Out   */ IDL_long_long &lobDataLen
-  , /* Out   */ BYTE *& lobDataValue
+  , /* In    */ IDL_long_long &lobLength
+  , /* Out   */ IDL_long_long &extractLen
+  , /* Out   */ BYTE *& extractData
   )
 {
-    char LobExtractQuery[1000];
+    char LobExtractQuery[1000] = {0};
     char RequestError[200] = {0};
     SRVR_STMT_HDL  *QryLobExtractSrvrStmt = NULL;
 
@@ -6501,8 +6502,29 @@ odbc_SQLSrvr_ExtractLob_sme_(
         exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
     }
+    switch (extractLobAPI) {
+    case 0:
+        extractData = NULL;
+        snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBLENGTH(LOB'%s') LOCATION %Ld", lobHandle, (Int64)&lobLength);
+        break;
+    case 1:
+        extractData = new BYTE[extractLen + 1];
+        if (extractData == NULL)
+        {
+            exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
+            exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED;
+        }
 
-    snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBLENGTH(LOB'%s') LOCATION %Ld", lobHandle, (Int64)&lobDataLen);
+        snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)extractData, &extractLen);
+        break;
+    case 102:
+        extractLen = 0;
+        extractData = NULL;
+        snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)extractData, &extractLen);
+        break;
+    default:
+        return ;
+    }
 
     try
     {
@@ -6536,70 +6558,13 @@ odbc_SQLSrvr_ExtractLob_sme_(
                 ODBCMX_SERVER,
                 srvrGlobal->srvrObjRef,
                 1,
+                    //"Exception in executing EXTRACT LOBTOBUFFER");
                 "Exception in executing EXTRACT LOBLENGTH");
 
         exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
     }
 
-    lobDataValue = new BYTE[lobDataLen + 1];
-    if (lobDataValue == NULL)
-    {
-        exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
-        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_BUFFER_ALLOC_FAILED;
-    }
-
-    memset(lobDataValue, 0, lobDataLen + 1);
-
-    memset(LobExtractQuery, 0, sizeof(LobExtractQuery));
-
-    snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)lobDataValue, &lobDataLen);
-
-    if (exception_->exception_nr == 0)
-    {
-        try
-        {
-            short retcode = QryLobExtractSrvrStmt->ExecDirect(NULL, LobExtractQuery, EXTERNAL_STMT, TYPE_CALL, SQL_ASYNC_ENABLE_OFF, 0);
-            if (retcode == SQL_ERROR)
-            {
-                ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
-                strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
-
-                SendEventMsg(MSG_SQL_ERROR,
-                        EVENTLOG_ERROR_TYPE,
-                        srvrGlobal->nskProcessInfo.processId,
-                         ODBCMX_SERVER,
-                         srvrGlobal->srvrObjRef,
-                         2,
-                         p_buffer->sqlcode,
-                         RequestError);
-
-                exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
-                exception_->u.SQLError.errorList._length = QryLobExtractSrvrStmt->sqlError.errorList._length;
-                exception_->u.SQLError.errorList._buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
-                exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
-            }
-        }
-        catch (...)
-        {
-            SendEventMsg(MSG_PROGRAMMING_ERROR,
-                    EVENTLOG_ERROR_TYPE,
-                    srvrGlobal->nskProcessInfo.processId,
-                    ODBCMX_SERVER,
-                    srvrGlobal->srvrObjRef,
-                    1,
-                    "Exception in executing EXTRACT LOBTOBUFFER");
-
-            exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
-            exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
-        }
-
-        if (exception_->exception_nr != 0) {
-            lobDataLen = 0;
-            delete [] lobDataValue;
-            lobDataValue = NULL;
-        }
-    }
 }
 
 extern "C" void
@@ -6681,6 +6646,9 @@ odbc_SQLSrvr_UpdateLob_sme_(
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
     }
 
+    if (QryLobUpdateSrvrStmt != NULL) {
+        QryLobUpdateSrvrStmt->Close(SQL_DROP);
+    }
 }
 
 //========================================================================

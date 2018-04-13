@@ -22,6 +22,7 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -200,16 +201,20 @@ public class TestClobBatch {
 
 	@BeforeClass
 	public static void doTestSuiteSetup() throws Exception {
-		try {
-			_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
-			Statement stmt = _conn.createStatement();
+        try {
+            _conn = Utils.getUserConnection();
+        } catch (Exception e) {
+            fail("failed to create connection" + e.getMessage());
+        }
 
+        try (
+			Statement stmt = _conn.createStatement();
+        ) {
 			// use CQD to enable BLOB support
 			stmt.execute("CQD TRAF_CLOB_AS_VARCHAR 'OFF'");
 			stmt.execute(strCreateTable);
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
+            fail("failed to set CQD : " + e.getMessage());
 		}
 	}
 
