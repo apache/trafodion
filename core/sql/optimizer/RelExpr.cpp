@@ -6688,7 +6688,7 @@ void Join::rewriteNotInPredicate( ValueIdSet & origVidSet, ValueIdSet & newVidSe
 Intersect::Intersect(RelExpr *leftChild,
 	     RelExpr *rightChild)
 : RelExpr(REL_INTERSECT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Intersect::~Intersect() {}
 
@@ -6705,7 +6705,7 @@ const NAString Intersect::getText() const
 Except::Except(RelExpr *leftChild,
              RelExpr *rightChild)
 : RelExpr(REL_EXCEPT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Except::~Except() {}
 
