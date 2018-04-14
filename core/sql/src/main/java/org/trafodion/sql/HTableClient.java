@@ -114,7 +114,6 @@ public class HTableClient {
 	private ResultScanner scanner = null;
         private ScanHelper scanHelper = null;
 	Result[] getResultSet = null;
-	String lastError;
         RMInterface table = null;
         private boolean writeToWAL = false;
 	int numRowsCached = 1;
@@ -350,16 +349,6 @@ public class HTableClient {
 	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, useTRex: " + this.useTRex + ", useTRexScanner: "
 	              + this.useTRexScanner + ", table object: " + table);
 	    return true;
-	}
-
-	public String getLastError() {
-		String ret = lastError;
-		lastError = null;
-		return ret;
-	}
-
-	void setLastError(String err) {
-		lastError = err;
 	}
 
 	String getTableName() {
@@ -1188,10 +1177,7 @@ public class HTableClient {
 		else
 		{
 			if (scanner == null) {
-				String err = "  fetchRows() called before scanOpen().";
-				logger.error(err);
-				setLastError(err);
-				return -1;
+                                throw new IOException("HTableClient.FetchRows() called before scanOpen().");
 			}
 			Result[] result = null;
 			if (preFetch)

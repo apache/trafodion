@@ -1070,6 +1070,8 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
   else if (funcName == "TIMESERIES")
     return REL_TABLE_MAPPING_BUILTIN_TIMESERIES;
+  else if (funcName == "SERIES")
+    return REL_TABLE_MAPPING_BUILTIN_SERIES;
   else if (funcName == "JDBC")
     return REL_TABLE_MAPPING_BUILTIN_JDBC;
   else
@@ -1085,6 +1087,8 @@ const NAString PredefinedTableMappingFunction::getText() const
       return "event_log_reader";
     case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
       return "timeseries";
+    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+      return "series";
     case REL_TABLE_MAPPING_BUILTIN_JDBC:
       return "jdbc_udf";
 
@@ -1140,6 +1144,11 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
     {
     case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
       externalName = "TRAF_CPP_EVENT_LOG_READER";
+      libraryPath += getenv("SQ_MBTYPE");
+      break;
+
+    case REL_TABLE_MAPPING_BUILTIN_SERIES:
+      externalName = "SERIES";
       libraryPath += getenv("SQ_MBTYPE");
       break;
 

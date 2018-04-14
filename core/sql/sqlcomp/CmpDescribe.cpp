@@ -633,8 +633,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
               CmpCommon::diags()->clear();
 
               *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                                  << DgSchemaName(objQualName.getCatalogName() +
-                                                  "." +  objQualName.getSchemaName());
+                                  << DgString0(objQualName.getCatalogName())
+                                  << DgString1(objQualName.getSchemaName());
 
               rc = -1;
               goto finally;
@@ -2640,9 +2640,13 @@ short cmpDisplayColumn(const NAColumn *nac,
     defVal = "DEFAULT NULL";
   else if (nac->getDefaultClass() == COM_CURRENT_DEFAULT)
     defVal = "DEFAULT CURRENT";
+  else if (nac->getDefaultClass() == COM_CURRENT_UT_DEFAULT)
+    defVal = "DEFAULT CURRENT UNIXTIME";
   else if (nac->getDefaultClass() == COM_USER_FUNCTION_DEFAULT)
     defVal = "DEFAULT USER";
-  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT)
+  else if (nac->getDefaultClass() == COM_UUID_DEFAULT)
+    defVal = "DEFAULT UUID";
+  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT || nac->getDefaultClass() == COM_FUNCTION_DEFINED_DEFAULT)
     {
       defVal = "DEFAULT ";
       

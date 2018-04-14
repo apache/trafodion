@@ -4845,7 +4845,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
                           << DgString0((char*)"ExpHbaseInterface::copy()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       processReturn();
       
@@ -5448,6 +5448,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       if ((pDefVal) &&
           (pDefVal->origOpType() != ITM_CURRENT_USER) &&
           (pDefVal->origOpType() != ITM_CURRENT_TIMESTAMP) &&
+          (pDefVal->origOpType() != ITM_UNIX_TIMESTAMP) &&
+          (pDefVal->origOpType() != ITM_UNIQUE_ID) &&
           (pDefVal->origOpType() != ITM_CAST))
         {
           if (pDefVal->isNull()) 
@@ -6289,7 +6291,7 @@ short CmpSeabaseDDL::hbaseFormatTableDropColumn(
                             << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
                             << DgString1(getHbaseErrStr(-cliRC))
                             << DgInt0(-cliRC)
-                            << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                            << DgString2((char*)GetCliGlobals()->getJniErrorStr());
         
         goto label_error;
       }
@@ -10177,7 +10179,7 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
                                   DgString0((char*)"ExpHbaseInterface::revoke()"))
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
           deallocEHI(ehi);
 
@@ -10194,7 +10196,7 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
                           << DgString0((char*)"ExpHbaseInterface::close()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       deallocEHI(ehi);
 
@@ -11380,6 +11382,11 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                 tableIsSalted = TRUE;
             }
         }
+      else if (colInfo.defaultClass == COM_FUNCTION_DEFINED_DEFAULT)
+        {
+          oi->get(14, data, len);
+          tempDefVal =  data ;
+        }
       else if (colInfo.defaultClass == COM_NULL_DEFAULT)
         {
           tempDefVal = "NULL";
@@ -11391,6 +11398,14 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
       else if (colInfo.defaultClass == COM_CURRENT_DEFAULT)
         {
           tempDefVal = "CURRENT_TIMESTAMP";
+        }
+      else if (colInfo.defaultClass == COM_CURRENT_UT_DEFAULT)
+        {
+          tempDefVal = "UNIX_TIMESTAMP()";
+        }
+      else if (colInfo.defaultClass == COM_UUID_DEFAULT)
+        {
+          tempDefVal = "UUID()";
         }
       else if ((colInfo.defaultClass == COM_IDENTITY_GENERATED_BY_DEFAULT) ||
                (colInfo.defaultClass == COM_IDENTITY_GENERATED_ALWAYS))
@@ -12621,7 +12636,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
             << DgString0((char*)"ExpHbaseInterface::getLatestSnapshot()")
             << DgString1(getHbaseErrStr(-retcode))
             << DgInt0(-retcode)
-            << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+            << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           delete ehi;
         }
     }

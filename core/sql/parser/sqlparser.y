@@ -2590,6 +2590,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
+%type <item>      		datetime_misc_function_used_as_default
 %type <stringval>  		format_attributes
 %type <pElemDDL>  		optional_constraint_attributes
 %type <pElemDDL>  		constraint_attributes
@@ -8246,6 +8247,8 @@ value_function :
 
      | datetime_misc_function
 
+     | datetime_misc_function_used_as_default
+
      | datetime_value_function
 
      | math_function
@@ -8736,6 +8739,30 @@ datetime_value_function : TOK_CURDATE '(' ')'
               }
 
 /* type item */
+datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
+                               {
+                                 NAString * ves= unicodeToChar
+                                   (ToTokvalPlusYYText(&$3)->yytext,
+                                   ToTokvalPlusYYText(&$3)->yyleng,
+                                   (CharInfo::CharSet) (
+                                          ComGetNameInterfaceCharSet() // CharInfo::UTF8
+                                          ),
+                                   PARSERHEAP()); 
+                                 //save the original text
+                                 NAString fullstr;
+                                 fullstr  += "TO_CHAR(";
+                                 //Column Reference will not be able to convert to NAString
+                                 //And it is not be allowed bo become default value, so no need to save original text 
+                                 if( ves != NULL) 
+                                 {
+                                   fullstr += *ves + ", '" +  *$5 + "')";
+                                 }
+                                 $$ = new (PARSERHEAP()) 
+                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
+                                 ((DateFormat *)$$)->setOriginalString(fullstr);
+                               }
+
+/* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
 				  $$ = new (PARSERHEAP())
@@ -8768,7 +8795,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_FIRSTDAYOFYEAR, $3);
 	}  
- 
+
+     | TOK_DAYOFMONTH '(' value_expression ')'
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_DAYOFMONTH, $3);
+        }
      | TOK_MONTHNAME '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_MONTHNAME, $3);
@@ -8801,12 +8832,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 						TRUE);
 				}
      | TOK_DAY '(' value_expression ')'
-                                {
-				  $$ = new(PARSERHEAP())
-				    ExtractOdbc(REC_DATE_DAY, $3,
-						TRUE);
-                                }
-     | TOK_DAYOFMONTH '(' value_expression ')'
                                 {
 				  $$ = new(PARSERHEAP())
 				    ExtractOdbc(REC_DATE_DAY, $3,
@@ -8852,11 +8877,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 
                                 $$ = new (PARSERHEAP()) Cast ($3, dt);
                                 }
-    | TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
-                               {
-				 $$ = new (PARSERHEAP()) 
-                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
-			       }
     | TOK_TO_CHAR '(' value_expression ')'
                                {
                                  $$ = new (PARSERHEAP()) DateFormat
@@ -9012,14 +9032,14 @@ string_function :
      /* POSITION(str-exp1 IN str-exp2)                    */
      | TOK_LOCATE '(' value_expression ',' value_expression ')'
         {
-           $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+          $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
         }
 
      /* ODBC extension: map LOCATE(str-exp1, str-exp2, START) to */
      /* POSITION(str-exp1 IN str-exp2)                    */
     | TOK_LOCATE '(' value_expression ',' value_expression ',' value_expression ')'
  	   {
- 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7); 
+ 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7,NULL); 
  	   }
 
      | TOK_LPAD '(' value_expression ',' value_expression ')'
@@ -9060,14 +9080,25 @@ string_function :
 
      | TOK_POSITION '(' value_expression TOK_IN value_expression ')'
                   {
-                     $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
                   }
 
      | TOK_INSTR '(' value_expression TOK_IN value_expression ')'
                   {
-		    CheckModeSpecial4;
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
+                  }
 
-                     $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL);
+     | TOK_INSTR '(' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,$9);
                   }
 
      /* ODBC extension */
@@ -11698,7 +11729,7 @@ blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -11734,7 +11765,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -15373,31 +15404,6 @@ exe_util_get_metadata_info :
            //gmi->setNoHeader(TRUE);
            $$ = gmi;          
         } 
-        | TOK_GET TOK_CURRENT_USER
-          optional_no_header_and_match_pattern_clause
-        {
-           NAString aus("USER");
-           NAString infoType("CURRENT_USER");
-           PtrPlaceHolder * pph = $3;
-           NAString * noHeader = (NAString *)pph->ptr1_;
-           CorrName cn("DUMMY");
-           NAString nas("");
-           ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) ExeUtilGetMetadataInfo
-              ( aus          // NAString &
-              , infoType     // NAString &
-              , nas          // NAString &
-              , nas   // NAString & objectType
-              , cn   // CorrName &
-              , NULL         // NAString * pattern
-              , FALSE        // NABoolean returnFullyQualNames
-              , FALSE        // NABoolean getVersion
-              , NULL         // NAString * param1
-              , PARSERHEAP() // CollHeap * oHeap
-              );
-            if (noHeader)
-              gmi->setNoHeader(TRUE);
-            $$ = gmi;
-          }
         | TOK_GET get_info_aus_clause obj_priv_identifier 
           TOK_FOR user_or_role authorization_identifier  
           optional_no_header_and_match_pattern_clause
@@ -15407,11 +15413,10 @@ exe_util_get_metadata_info :
             if (aus == "NONE")
               aus = "USER";
 
-            if ((*$3 != "CATALOGS"  ) && (*$3 != "INDEXES"   ) && 
-                (*$3 != "MVS"       ) && (*$3 != "MVGROUPS"  ) && 
+            if ((*$3 != "SEQUENCES" ) && (*$3 != "INDEXES"   ) && 
                 (*$3 != "PRIVILEGES") && (*$3 != "PROCEDURES") && 
-                (*$3 != "SCHEMAS"   ) && (*$3 != "SYNONYMS"  ) && 
-                (*$3 != "TABLES"    ) && (*$3 != "TRIGGERS"  ) &&
+                (*$3 != "FUNCTIONS" ) && (*$3 != "TABLE_MAPPING FUNCTIONS") && 
+                (*$3 != "SCHEMAS"   ) && (*$3 != "TABLES"  ) && 
                 (*$3 != "VIEWS"     ) && (*$3 != "USERS"     ) &&
                 (*$3 != "ROLES"     ) && (*$3 != "LIBRARIES"     )) YYERROR;
 
@@ -15422,11 +15427,6 @@ exe_util_get_metadata_info :
             NAString objType("USER");
             if ($5 == TOK_ROLE)
               objType = "ROLE";
-
-            /* Currently just support GET USERS FOR ROLE and GET PRIVILEGES FOR ROLE */
-
-            /* if ((objType == "ROLE") && 
-                (infoType != "USERS" && infoType != "PRIVILEGES")) YYERROR; */
 
             PtrPlaceHolder * pph      = $7;
             NAString * noHeader       = (NAString *)pph->ptr1_;
@@ -16786,6 +16786,12 @@ exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE ta
 	       } 
 
 exe_util_hive_query : TOK_PROCESS TOK_HIVE TOK_STATEMENT QUOTED_STRING
+                      {
+                        $$ = new (PARSERHEAP()) 
+                          ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
+                                           PARSERHEAP());
+                      } 
+                    | TOK_PROCESS TOK_HIVE TOK_DDL QUOTED_STRING
                       {
                         $$ = new (PARSERHEAP()) 
                           ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
@@ -25801,6 +25807,15 @@ col_def_default_clause_argument : literal_negatable
                                        $1 /*datetime_value_function*/);
                                 }
 
+                      | datetime_misc_function_used_as_default
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLColDefault(
+                                       ElemDDLColDefault::COL_FUNCTION_DEFAULT);
+
+                                  ((ElemDDLColDefault *)$$)->setDefaultExprString( (const NAString &)((DateFormat*)$1)->getOriginalString());
+                                  ((ElemDDLColDefault *)$$)->setDefaultValueExpr($1);
+                                }
                       | builtin_function_user
                                 {
                                   $$ = new (PARSERHEAP())
@@ -34342,7 +34357,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_UCASE
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
-			//                      | TOK_UUID
+                      | TOK_UUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

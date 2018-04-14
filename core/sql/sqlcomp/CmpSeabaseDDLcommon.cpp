@@ -1146,7 +1146,7 @@ ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server,
                           << DgString0((char*)"ExpHbaseInterface::init()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       }
 
       deallocEHI(ehi); 
@@ -1425,7 +1425,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -1500,7 +1500,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -2557,7 +2557,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2615,7 +2615,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::create()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2695,7 +2695,7 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::alter()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           retcode = -1;
         } // if
     } // else
@@ -2723,7 +2723,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::drop()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2735,7 +2735,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2758,7 +2758,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::copy()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2770,7 +2770,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::copy()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -3179,6 +3179,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             else
               CMPASSERT(0);
           }
+      else if (!colNode->getDefaultExprString().isNull())
+        {
+            defaultClass = COM_FUNCTION_DEFINED_DEFAULT;
+            defVal = colNode->getDefaultExprString();
+        }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;
@@ -3187,6 +3192,24 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
                (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_CURRENT_TIMESTAMP))
         {
           defaultClass = COM_CURRENT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIX_TIMESTAMP)
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIX_TIMESTAMP))
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIQUE_ID)
+        {
+          defaultClass = COM_UUID_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIQUE_ID))
+        {
+          defaultClass = COM_UUID_DEFAULT;
         }
       else if ((ie->getOperatorType() == ITM_USER) ||
                (ie->getOperatorType() == ITM_CURRENT_USER) ||
@@ -4507,7 +4530,8 @@ void CmpSeabaseDDL::handleDDLCreateAuthorizationError(
       case CAT_SCHEMA_DOES_NOT_EXIST_ERROR:
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                             << DgSchemaName(catalogName + "." + schemaName);
+                                  << DgString0(catalogName)
+                                  << DgString1(schemaName);
          break;
       }
       case CAT_NOT_AUTHORIZED:
@@ -8129,7 +8153,7 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
                           << DgString0((char*)"ExpHbaseInterface::dropAll()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       return retcode;
     }
@@ -8427,7 +8451,7 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
   Int32 lActualLen = 0;
   Int16 status = ComUser::getAuthNameFromAuthID( (Int32) schemaOwnerID 
                                                , (char *)&username
-                                               , MAX_USERNAME_LEN
+                                               , MAX_USERNAME_LEN+1
                                                , lActualLen );
   if (status != FEOK)
   {
@@ -8449,7 +8473,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) objOwnerID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {
@@ -8469,7 +8493,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) creatorID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {
@@ -8640,7 +8664,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                           << DgString0((char*)"ExpHbaseInterface::truncate()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       processReturn();
       return -1;

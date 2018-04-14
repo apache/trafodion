@@ -70,6 +70,8 @@
 #include "ComExeTrace.h"
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
+#include "JavaObjectInterface.h"
+
 class ContextCli;
 class Statement;  
 class ComDiagsArea; 
@@ -238,10 +240,9 @@ public:
   inline void setUncProcess() { isUncProcess_ = TRUE; }
   inline NABoolean isUncProcess() {return isUncProcess_;}
   NAHeap *getCurrContextHeap();
-  void setJniErrorStr(NAString errorStr); 
-  void setJniErrorStr(const char *errorStr); 
-  NAString getJniErrorStr();
-  const char* getJniErrorStrPtr();
+  void setJniErrorStr(NAString errorStr) { setSqlJniErrorStr(errorStr);  }
+  void setJniErrorStr(const char *errorStr)  { setSqlJniErrorStr(errorStr); }
+  const char* getJniErrorStr() { return getSqlJniErrorStr(); }
   void updateTransMode(TransMode *transMode);
 
 

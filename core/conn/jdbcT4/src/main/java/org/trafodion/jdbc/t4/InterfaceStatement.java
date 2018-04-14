@@ -161,28 +161,29 @@ class InterfaceStatement {
 				// line,
 				// because the array is already initialized to 0.
 				Bytes.insertShort(values, noNullValue, (short) 0, this.ic_.getByteSwap());
-			} else if (paramValue instanceof byte[]) {
-				tmpBarray = (byte[]) paramValue;
-			} else if (paramValue instanceof String) {
-				String charSet = "";
+            } else if (paramValue instanceof byte[] || paramValue instanceof String) {
+                String charSet = "";
 
-				try {
-					if (this.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
-							&& !this.ic_.getEnforceISO() && dataCharSet == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
-						charSet = ic_.t4props_.getISO88591();
-					else
-					{
-						if(dataCharSet == InterfaceUtilities.SQLCHARSETCODE_UNICODE && this.ic_.getByteSwap())
-							charSet = "UTF-16LE";
-						else
-							charSet = InterfaceUtilities.getCharsetName(dataCharSet);
-					}
-					tmpBarray = ((String) paramValue).getBytes(charSet);
-				} catch (Exception e) {
-					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
-							charSet);
-				}
-			} // end if (paramValue instanceof String)
+                try {
+                    if (this.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
+                            && !this.ic_.getEnforceISO() && dataCharSet == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
+                        charSet = ic_.t4props_.getISO88591();
+                    else {
+                        if (dataCharSet == InterfaceUtilities.SQLCHARSETCODE_UNICODE && this.ic_.getByteSwap())
+                            charSet = "UTF-16LE";
+                        else
+                            charSet = InterfaceUtilities.getCharsetName(dataCharSet);
+                    }
+                    if (paramValue instanceof byte[]) {
+                        tmpBarray = (new String((byte[]) paramValue)).getBytes(charSet);
+                    } else {
+                        tmpBarray = (((String) paramValue)).getBytes(charSet);
+                    }
+                } catch (Exception e) {
+                    throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+                            charSet);
+                }
+            } // end if (paramValue instanceof String)
 			else {
 				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"CHAR data should be either bytes or String for column: " + paramNumber);

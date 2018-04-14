@@ -647,8 +647,10 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
     /* In   */ CEE_tag_def    objtag_
   , /* In   */ const CEE_handle_def *call_id_
   , /* In   */ const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
-  , /* In   */ IDL_long_long  lobDataLen
-  , /* In   */ BYTE       *lobDataValue
+  , /* In   */ IDL_short extractLobAPI
+  , /* In   */ IDL_long_long  lobLength
+  , /* In   */ IDL_long_long  extractLen
+  , /* In   */ BYTE   *  extractData
   )
 {
     CInterface* pnode = (CInterface *)objtag_;
@@ -666,17 +668,19 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
             , buffer
             , message_length
             , exception_
-            , lobDataLen
-            , lobDataValue
+            , extractLobAPI
+            , lobLength
+            , extractLen
+            , extractData
             );
 
     if (sts == CEE_SUCCESS)
         sts = pnode->send_response(buffer, message_length, call_id_);
 
-    if (lobDataValue != NULL)
+    if (extractData != NULL)
     {
-        delete [] lobDataValue;
-        lobDataValue = NULL;
+        delete [] extractData;
+        extractData = NULL;
     }
     return sts;
 }

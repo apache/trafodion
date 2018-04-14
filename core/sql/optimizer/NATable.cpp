@@ -7878,7 +7878,7 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
         << DgString0((char*)"ExpHbaseInterface::init()")
         << DgString1(getHbaseErrStr(-retcode))
         << DgInt0(-retcode)
-        << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       delete ehi;
       return NULL;
     }
@@ -8554,7 +8554,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         // check if this hive schema exists in hiveMD
         LIST(NAText*) tblNames(naTableHeap);
         HVC_RetCode rc =
-          hiveMetaDB_->getClient()->getAllTables(schemaNameInt, tblNames);
+          HiveClient_JNI::getAllTables((NAHeap *)naTableHeap, schemaNameInt, tblNames);
         if ((rc != HVC_OK) && (rc != HVC_DONE))
           {
             *CmpCommon::diags()

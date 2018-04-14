@@ -1521,7 +1521,10 @@ NATable *BindWA::getNATable(CorrName& corrName,
           ((bindWA->inViewDefinition()) ||
            (bindWA->inMVDefinition())))
       {
-        if (! CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
+        // for Histogram, support to use VOLATILE SCHEMA
+        // or else, don't support
+        if (!corrName.getQualifiedNameObj().isHistogramTable() && 
+            !CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
             (corrName.getQualifiedNameObj()))
         {
           bindWA->setErrStatus();
@@ -10472,7 +10475,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // column. COM_CURRENT_DEFAULT is only used for Datetime
           // columns.
           //
-          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
+          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT || nacol->getDefaultClass() == COM_CURRENT_UT_DEFAULT 
+             || nacol->getDefaultClass() == COM_UUID_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
             omittedCurrentDefaultClassCols = TRUE;
             omittedDefaultCols = TRUE;
@@ -10491,7 +10495,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
           Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
           Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
           defaultValueExpr = parser.getItemExprTree(defaultValueStr);
           CMPASSERT(defaultValueExpr);
 
@@ -10547,6 +10550,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
           if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_CURRENT_UT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_FUNCTION_DEFINED_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_UUID_DEFAULT) &&
               (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);

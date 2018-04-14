@@ -825,11 +825,11 @@ public class HBaseClient {
                         
                         int  numStores           = regionSizeInfo.numStores;
                         int  numStoreFiles       = regionSizeInfo.numStoreFiles;
-                        Long storeUncompSize     = regionSizeInfo.storeUncompSize;
-                        Long storeFileSize       = regionSizeInfo.storeFileSize;
-                        Long memStoreSize        = regionSizeInfo.memStoreSize;
-                        Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                        Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                        long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                        long storeFileSize       = regionSizeInfo.storeFileSize;
+                        long memStoreSize        = regionSizeInfo.memStoreSize;
+                        long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                        long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
                         
                         String oneRegion = "";
                         oneRegion += serverName + "|";
@@ -850,12 +850,6 @@ public class HBaseClient {
                 } // switch
             }
 
-    }
-
-    // number of regionInfo entries returned by getRegionStats.
-    public int getRegionStatsEntries() {
- 
-        return regionStatsEntries;
     }
 
     public byte[][]  getRegionStats(String tableName) 
@@ -882,21 +876,31 @@ public class HBaseClient {
                 
                     hregInfo = entry.getKey();                    
                     ServerName serverName = entry.getValue();
-                     byte[] regionName = hregInfo.getRegionName();
+                    byte[] regionName = hregInfo.getRegionName();
                     String encodedRegionName = hregInfo.getEncodedName();
                     String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
                     SizeInfo regionSizeInfo  = rsc.getRegionSizeInfo(regionName);
-                    String serverNameStr     = regionSizeInfo.serverName;
-                    int  numStores           = regionSizeInfo.numStores;
-                    int  numStoreFiles       = regionSizeInfo.numStoreFiles;
-                    Long storeUncompSize     = regionSizeInfo.storeUncompSize;
-                    Long storeFileSize       = regionSizeInfo.storeFileSize;
-                    Long memStoreSize        = regionSizeInfo.memStoreSize;
-                    Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                    Long writeRequestsCount  = regionSizeInfo.writeRequestsCount;
-
-                    String ppTableName = regionSizeInfo.tableName;
-                    ppRegionName = regionSizeInfo.regionName;
+                    String serverNameStr     = "";
+                    int  numStores           = 0;
+                    int  numStoreFiles       = 0;
+                    long storeUncompSize     = 0;
+                    long storeFileSize       = 0;
+                    long memStoreSize        = 0;
+                    long readRequestsCount   = 0;
+                    long writeRequestsCount  = 0;
+                    String ppTableName = "";
+                    if (regionSizeInfo != null) {
+                       serverNameStr       = regionSizeInfo.serverName;
+                       numStores           = regionSizeInfo.numStores;
+                       numStoreFiles       = regionSizeInfo.numStoreFiles;
+                       storeUncompSize     = regionSizeInfo.storeUncompSize;
+                       storeFileSize       = regionSizeInfo.storeFileSize;
+                       memStoreSize        = regionSizeInfo.memStoreSize;
+                       readRequestsCount   = regionSizeInfo.readRequestsCount;
+                       writeRequestsCount  = regionSizeInfo.writeRequestsCount;
+                       ppTableName = regionSizeInfo.tableName;
+                       ppRegionName = regionSizeInfo.regionName;
+                    }
                     String oneRegion;
                     oneRegion = serverNameStr + "|";
                     oneRegion += ppTableName + "/" + ppRegionName + "|";

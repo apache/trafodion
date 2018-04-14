@@ -1708,6 +1708,8 @@ ColStatDesc::selForRelativeRange (const OperatorTypeEnum op,
 	   OR (operand->getOperatorType() == ITM_CACHE_PARAM)
 	   OR (operand->getOperatorType() == ITM_CURRENT_USER)
 	   OR (operand->getOperatorType() == ITM_CURRENT_TIMESTAMP)
+	   OR (operand->getOperatorType() == ITM_UNIQUE_ID)
+	   OR (operand->getOperatorType() == ITM_UNIX_TIMESTAMP)
 	   OR (operand->getOperatorType() == ITM_SESSION_USER)
 	   OR (operand->getOperatorType() == ITM_GET_TRIGGERS_STATUS)
 	   OR (operand->getOperatorType() == ITM_UNIQUE_EXECUTE_ID))
@@ -8580,6 +8582,8 @@ ColStatDescList::getColStatsPtrForVEGGroup(const ValueIdSet& VEGGroup) const
 	case ITM_CURRENT_USER:
 	case ITM_SESSION_USER:
         case ITM_CURRENT_TIMESTAMP:
+        case ITM_UNIX_TIMESTAMP:
+	case ITM_UNIQUE_ID:
 	case ITM_GET_TRIGGERS_STATUS:
 	case ITM_UNIQUE_EXECUTE_ID:
 	  continue;

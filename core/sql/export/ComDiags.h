@@ -939,6 +939,8 @@ public:
   void                    clear                      ();
   void                    clearConditionsOnly        ();
   void			  clearErrorConditionsOnly   ();
+
+  void			  clearWarnings();
   // the next 3 methods are called to set a warning, an EOD indication(100),
   // or an error. Useful while debugging to find out when/where an 
   // error/warning/EOD is being set.

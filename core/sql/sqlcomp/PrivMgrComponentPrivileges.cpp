@@ -1299,7 +1299,7 @@ int64_t rowCount = 0;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 // set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+int32_t diagsMark = (pDiags_ != NULL ? pDiags_->mark() : -1);
 
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
@@ -1307,7 +1307,8 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->rewind(diagsMark);
+   if (diagsMark != -1)
+      pDiags_->rewind(diagsMark);
 
    return false;
 

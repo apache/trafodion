@@ -722,7 +722,7 @@ short ExHbaseAccessTcb::setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 r
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
                       (str2 ? (char*)str2 : 
-                      (char *)currContext->getJniErrorStr().data())); 
+                      (char *)GetCliGlobals()->getJniErrorStr())); 
       pentry_down->setDiagsArea(diagsArea);
       return -1;
     }
@@ -752,7 +752,7 @@ short ExHbaseAccessTcb::setupError(Lng32 retcode, const char * str, const char *
 		      (str ? (char*)str : (char*)" "),
 		      getHbaseErrStr(retcode),
                       (str2 ? (char*)str2 : 
-                      (char *)currContext->getJniErrorStr().data())); 
+                      (char *)GetCliGlobals()->getJniErrorStr())); 
       pentry_down->setDiagsArea(diagsArea);
       return -1;
     }
@@ -3295,7 +3295,7 @@ logErrorReturn:
      loggingErrorDiags_ = ComDiagsArea::allocate(heap);
      *loggingErrorDiags_ << DgSqlCode(EXE_ERROR_WHILE_LOGGING)
                  << DgString0(loggingFileName_)
-                 << DgString1((char *)GetCliGlobals()->currContext()->getJniErrorStr().data());
+                 << DgString1((char *)GetCliGlobals()->getJniErrorStr());
   }
   return;
 }

@@ -94,6 +94,7 @@ enum OperatorTypeEnum {
                         REL_BINARY_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
+                        REL_TABLE_MAPPING_BUILTIN_SERIES, //series
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ANY_LEAF_TABLE_MAPPING_UDF,
@@ -586,6 +587,7 @@ enum OperatorTypeEnum {
                         ITM_DAYOFYEAR = 2311,
                         ITM_FIRSTDAYOFYEAR = 2312,
                         ITM_INTERNALTIMESTAMP = 2313, // ++ Triggers,
+                        ITM_DAYOFMONTH = 2314,
 
                         ITM_DATE_TRUNC_YEAR    = 2315,
                         ITM_DATE_TRUNC_MONTH   = 2316,

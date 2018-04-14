@@ -100,6 +100,7 @@ public:
   inline const enum COMMENT_ON_TYPES getObjectType() { return type_; }
   inline const NAString getObjectName() const;
   inline const NAString &getComment() const { return comment_; }
+  NAString getCommentEscaped();
   inline const NAString &getColName() const { return colRef_->getColRefNameObj().getColName(); }
   inline NABoolean getIsViewCol() { return isViewCol_; }
   inline Lng32 getColNum() { return colNum_; }

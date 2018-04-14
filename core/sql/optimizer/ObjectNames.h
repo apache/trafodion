@@ -332,6 +332,7 @@ public:
 
   NABoolean isHistograms() const;
   NABoolean isHistogramIntervals() const;
+  NABoolean isHistogramTable() const;
   NABoolean isLOBDesc() const;
   void setObjectName(const NAString &objName)   { objectName_ = objName; }
   void setObjectNameSpace(ComAnsiNameSpace objNameSpace)   { objectNameSpace_ = objNameSpace; }

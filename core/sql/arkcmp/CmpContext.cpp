@@ -524,58 +524,6 @@ NABoolean CmpContext::isAuthorizationEnabled( NABoolean errIfNotReady)
   return FALSE;
 }
 
-HiveClient_JNI * CmpContext::getHiveClient(ComDiagsArea *diags)
-{
-  if(NULL == hiveClient_)
-    {
-        hiveClient_ = HiveClient_JNI::getInstance();
-        if ( hiveClient_->isInitialized() == FALSE ||
-             hiveClient_->isConnected() == FALSE)
-        {
-            HVC_RetCode retCode = hiveClient_->init();
-            if (retCode != HVC_OK)
-            {
-              hiveClient_ = NULL;
-            }
-        }  
-    }
-
-  if (hiveClient_ == NULL && diags)
-    *diags << DgSqlCode(-1213);
-
-  return hiveClient_;
-}
-
-NABoolean CmpContext::execHiveSQL(const char* hiveSQL, ComDiagsArea *diags)
-{
-  NABoolean result = FALSE;
-
-  if (!hiveClient_)
-    getHiveClient(diags);
-
-  if (hiveClient_)
-    {
-      HVC_RetCode retcode = hiveClient_->executeHiveSQL(hiveSQL);
-
-      switch (retcode)
-        {
-        case HVC_OK:
-          result = TRUE;
-          break;
-
-        default:
-          result = FALSE;
-        }
-
-      if (!result && diags)
-        *diags << DgSqlCode(-1214)
-               << DgString0(GetCliGlobals()->getJniErrorStrPtr())
-               << DgString1(hiveSQL);
-    }
-
-  return result;
-}
-
 // -----------------------------------------------------------------------
 // The CmpStatement related methods
 // -----------------------------------------------------------------------

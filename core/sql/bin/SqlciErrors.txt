@@ -2,7 +2,7 @@
 1000 42000 99999 BEGINNER INFRM LOGONLY A syntax error occurred.
 1001 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in module $0~String0 on line $1~Int0. Details($2~String1).
 1002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not exist.
-1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName does not exist.
+1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~String0.$1~String1 does not exist.
 1004 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist or object type is invalid for the current operation.
 1005 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~ConstraintName does not exist.
 1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN Skipping authorization ID $0~Int0.
@@ -1047,7 +1047,7 @@ $1~String1 --------------------------------
 3412 ZZZZZ 99999 BEGINNER MAJOR DBADMIN IDENTITY column $0~ColumnName must be the primary key or must have a unique index on it.
 3413 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The NOT NULL constraint on IDENTITY column $0~ColumnName must be NOT DROPPABLE.
 3414 ZZZZZ 99999 BEGINNER MAJOR DBADMIN For an IDENTITY column $0~ColumnName, the tuple list cannot have mixed user specified and DEFAULT values. Specify values for all or specify DEFAULT for all.
-3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.
+3415 42000 99999 BEGINNER MAJOR DBADMIN The first operand of function $0~string0 is not valid.$1~String1
 3416 42000 99999 BEGINNER MAJOR DBADMIN The last operand of function $0~string0 must not be NULL.
 3417 ZZZZZ 99999 BEGINNER MINOR DBADMIN Invalid DISK POOL $0~Int0 as the maximum number of pools allowed is $1~Int1.
 3418 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Local Number of Partitions clause is not allowed with DISK POOL clause.
@@ -1587,7 +1587,7 @@ $1~String1 --------------------------------
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
-8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error returned while retrieving region stats from hbase.
+8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.

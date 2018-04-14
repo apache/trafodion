@@ -243,19 +243,6 @@ Lng32 AddTableName( const hs_table_type type
           }
         else 
           {
-            // This is for UPDATE STATISTICS; the volatile schema name exists.
-            // For now, UPDATE STATISTICS is not supported. (See also JIRA Trafodion-2004.)
-
-            HSFuncMergeDiags(-UERR_VOLATILE_TABLES_NOT_SUPPORTED);
-            retcode = -1;
-            HSHandleError(retcode); // causes a return from this function
-
-            // The code below is old code that will be needed once we turn on
-            // support for UPDATE STATISTICS on volatile tables. We leave it here
-            // until the code changes described in JIRA Trafodion-2004 are complete.
-            // The code below is never reached because of the HSHandleError call
-            // above.
-
             // if schema name was specified, validate that it is the
             // current username.
             if (schema)
