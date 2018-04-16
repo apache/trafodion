@@ -736,7 +736,13 @@ TEAM_NUMBER  NUM_PLAYERS
 
 End of MXCI Session
 
+>>
+>>-- queries s/b recompiled
 >>execute select_games;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
 
 GAME_NUMBER
 -----------
@@ -752,6 +758,10 @@ GAME_NUMBER
 
 --- 8 row(s) selected.
 >>execute select_teams;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
 
 TEAM_NUMBER  TEAM_NAME           
 -----------  --------------------
@@ -993,6 +1003,10 @@ GAME_NUMBER
 --- 8 row(s) selected.
 >>execute select_teams;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
 TEAM_NUMBER  TEAM_NAME           
 -----------  --------------------
 
@@ -1006,6 +1020,10 @@ TEAM_NUMBER  TEAM_NAME
 --- 6 row(s) selected.
 >>execute select_standings;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
 TEAM_NUMBER  (EXPR)              
 -----------  --------------------
 
@@ -1016,10 +1034,11 @@ TEAM_NUMBER  (EXPR)
           5                    80
 
 --- 5 row(s) selected.
->>
->>-- still have privs, no query recompilation message because no invalidation
->>-- key for roles exist
 >>execute select_players;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
 
 (EXPR)              
 --------------------
@@ -1171,6 +1190,10 @@ End of MXCI Session
 --- 0 row(s) selected.
 >>execute select_teams;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
 TEAM_NUMBER  TEAM_NAME           
 -----------  --------------------
 
@@ -1183,6 +1206,10 @@ TEAM_NUMBER  TEAM_NAME
 
 --- 6 row(s) selected.
 >>execute select_players;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
 
 (EXPR)              
 --------------------
