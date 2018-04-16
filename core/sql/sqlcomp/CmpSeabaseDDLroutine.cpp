@@ -1778,6 +1778,71 @@ short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
       return -1;
     }
 
+  // Update the jar locations for system procedures and functions.  This should 
+  // be done before adding any new jar's since we use a system procedure to add
+  // procedures.
+  NAString jarLocation(getenv("TRAF_HOME"));
+  jarLocation += "/export/lib";
+
+  char queryBuf[1000];
+
+  // trafodion-sql_currversion.jar 
+  Int32 stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/trafodion-sql-currversion.jar' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, jarLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_VALIDATE_LIBRARY);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  // lib_mgmt.jar
+  stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/lib_mgmt.jar' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, jarLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_LIBMGR_LIBRARY);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  // libudr_predef.so
+  NAString dllLocation(getenv("TRAF_HOME"));
+  dllLocation += "/export/lib64";
+  if (strcmp(getenv("SQ_MBTYPE"), "64d") == 0)
+    dllLocation += "d";
+
+  stmtSize = snprintf(queryBuf, sizeof(queryBuf), "update %s.\"%s\".%s  "
+           "set library_filename = '%s/libudr_predef.so' "
+           "where library_uid = "
+           "(select object_uid from %s.\"%s\".%s "
+           " where object_name = '%s'  and object_type = 'LB')",
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, dllLocation.data(),
+           getSystemCatalog(),SEABASE_MD_SCHEMA, SEABASE_OBJECTS, SEABASE_LIBMGR_LIBRARY_CPP);
+  CMPASSERT(stmtSize < sizeof(queryBuf));
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+
   // now check for the C++ library, which was added in Trafodion 2.3
   cliRC = existsInSeabaseMDTable(cliInterface,
                                  getSystemCatalog(), SEABASE_LIBMGR_SCHEMA,
