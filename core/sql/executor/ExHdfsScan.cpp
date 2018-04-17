@@ -255,6 +255,8 @@ ExHdfsScanTcb::~ExHdfsScanTcb()
 
 void ExHdfsScanTcb::freeResources()
 {
+  if (hdfsScan_ != NULL)
+     hdfsScan_->stop();
   if (loggingFileName_ != NULL) {
      NADELETEBASIC(loggingFileName_, getHeap());
      loggingFileName_ = NULL;

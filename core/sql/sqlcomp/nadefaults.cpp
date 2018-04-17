@@ -3033,7 +3033,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
-  DDkwd__(USE_LIBHDFS_SCAN,                     "ON"),
+  DDkwd__(USE_LIBHDFS_SCAN,                     "OFF"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
 

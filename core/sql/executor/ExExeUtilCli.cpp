@@ -1094,7 +1094,7 @@ Lng32 ExeCliInterface::executeImmediate(const char * stmtStr,
   Lng32 retcode = 0;
 
   ComDiagsArea * tempDiags = NULL;
-  if (globalDiags != NULL && *globalDiags != NULL)
+  if (globalDiags != NULL && *globalDiags != NULL && (*globalDiags)->getNumber() > 0)
   {
      tempDiags = ComDiagsArea::allocate(heap_);
      tempDiags->mergeAfter(**globalDiags);
@@ -1119,7 +1119,7 @@ ExecuteImmediateReturn:
     {
       // Allocate the diagnostics area if needed
       // and populate the diagnostics conditions
-      if (*globalDiags == NULL && retcode != 0) {
+      if (*globalDiags == NULL && retcode != 0 && retcode != 100) {
          *globalDiags = ComDiagsArea::allocate(getHeap());
          SQL_EXEC_MergeDiagnostics_Internal(**globalDiags);
       }
