@@ -1609,6 +1609,7 @@ ex_expr::exp_return_type ex_function_lower::eval(char *op_data[],
     {
       op_data[0][len0] = TOLOWER(op_data[1][len0]);
       ++len0;
+      ++total_bytes_out;
     }
   }
   else 
