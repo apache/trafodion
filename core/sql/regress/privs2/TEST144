@@ -212,6 +212,7 @@ revoke execute on function gen_phone from sql_user2;
 revoke execute on function gen_random from sql_user2;
 revoke execute on function gen_time from sql_user2;
 revoke execute on procedure "_LIBMGR_".help from sql_user2;
+obey TEST144(set_up);
 execute get_privs;
 
 

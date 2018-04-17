@@ -1735,9 +1735,9 @@ Int32 ExExeUtilGetMetadataInfoTcb::colPrivsFrag(
   OutputInfo * vi = (OutputInfo*)infoList_->getCurr();
   if (vi && vi->get(0))
   {
-    if (*(Lng32*)vi->get(0) > 0)
+    if (*(Int64*)vi->get(0) > 0)
       hasHive = true;
-    if(*(Lng32*)vi->get(1) > 0)
+    if(*(Int64*)vi->get(1) > 0)
       hasGrants = true;
   }
 

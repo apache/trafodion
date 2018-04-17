@@ -911,7 +911,7 @@ _TRAFODION_T144                                                                 
 >>
 >>drop role t144role1;
 
-*** ERROR[1348] Cannot drop role.  Role is granted to one or more users.
+*** ERROR[1348] Cannot drop role. Role is granted to one or more users.
 
 --- SQL operation failed with errors.
 >>revoke role t144role1 from sql_user4;
@@ -919,7 +919,7 @@ _TRAFODION_T144                                                                 
 --- SQL operation complete.
 >>drop role t144role1;
 
-*** ERROR[1228] Cannot drop role.  Role T144ROLE1 has been granted privileges on TRAFODION.T144USER1.GEN_RANDOM.
+*** ERROR[1228] Cannot drop role. Role T144ROLE1 has been granted privileges on TRAFODION.T144USER1.GEN_RANDOM.
 
 --- SQL operation failed with errors.
 >>revoke execute on function gen_random from t144role1;
@@ -957,6 +957,28 @@ _TRAFODION_T144                                                                 
 >>revoke execute on procedure "_LIBMGR_".help from sql_user2;
 
 --- SQL operation complete.
+>>obey TEST144(set_up);
+>>set schema "_PRIVMGR_MD_";
+
+--- SQL operation complete.
+>>prepare get_privs from
++>select distinct
++>   trim(substring (o.object_name,1,15)) as object_name,
++>   grantor_id, grantee_id,
++>   t144user1.t144_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t144user1.t144_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>from object_privileges p, "_MD_".objects o 
++>where p.object_uid in 
++>  (select object_uid
++>   from "_MD_".objects
++>     where schema_name like 'T144USER%'
++>       and object_name not like 'SB_%')
++>  and p.object_uid = o.object_uid
++>order by 1, 2, 3, 4
++>;
+
+--- SQL command prepared.
+>>
 >>execute get_privs;
 
 OBJECT_NAME                                                   GRANTOR_ID            GRANTEE_ID            GRANTED_PRIVS         GRANTABLE_PRIVS

@@ -853,9 +853,14 @@ PrivStatus PrivMgrRoles::grantRole(
    const int32_t grantDepth) 
      
 {
+   NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
 
 bool roleWasGranted = false;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+   int32_t numKeys = roleIDs.size() * granteeIDs.size();
+   SQL_QIKEY siKeyList[numKeys];
+   size_t siIndex = 0;
 
    for (size_t r = 0; r < roleIDs.size(); r++)
    {
@@ -958,8 +963,29 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
                PRIVMGR_INTERNAL_ERROR("I/O error granting role");
             return STATUS_ERROR;
          }
+
+         // Add a special secKey to indicate a role grant.  This forces the role
+         // list in cache to be regenerated
+         ComSecurityKey secKey(granteeIDs[g],roleIDs[r],ComSecurityKey::SUBJECT_IS_GRANT_ROLE);
+
+         siKeyList[siIndex].revokeKey.subject = secKey.getSubjectHashValue();
+         siKeyList[siIndex].revokeKey.object = secKey.getObjectHashValue();
+         std::string actionString;
+         secKey.getSecurityKeyTypeAsLit(actionString);
+         strncpy(siKeyList[siIndex].operation, actionString.c_str(),2);
+         if (doDebug)
+         {
+            NAString msg (secKey.print(granteeIDs[g], roleIDs[r]));
+            printf("[DBUSER:%d] grant role %s\n",
+                   (int) getpid(), msg.data());
+            fflush(stdout);
+         }
+         siIndex++;
       }//grantees
    }//roles
+
+   // Call the CLI to send details to RMS
+   SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
 
 //TODO: if we didn't have any errors, but no roles were granted, then all
 // grants are already performed.  Should issue some message.
@@ -1671,6 +1697,7 @@ PrivStatus PrivMgrRoles::revokeRole(
 {
 
 //TODO: Currently only RESTRICT behavior is supported.
+   NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
 
    if (dropBehavior == PrivDropBehavior::CASCADE)
    {
@@ -1818,6 +1845,13 @@ PrivStatus PrivMgrRoles::revokeRole(
          std::string actionString;
          secKey.getSecurityKeyTypeAsLit(actionString);
          strncpy(siKeyList[siIndex].operation, actionString.c_str(),2);
+         if (doDebug)
+         {
+            NAString msg (secKey.print(granteeIDs[g2], roleIDs[r2]));
+            printf("[DBUSER:%d] revoke role %s\n",
+                   (int) getpid(), msg.data());
+            fflush(stdout);
+         }
          siIndex++;                          
       }
    }  

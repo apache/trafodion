@@ -1308,6 +1308,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_USER_GRANT_SPECIAL_ROLE
                      , COM_QI_OBJECT_REDEF
                      , COM_QI_STATS_UPDATED
+                     , COM_QI_GRANT_ROLE
                      } ;
 
 #define COM_QI_INVALID_ACTIONTYPE_LIT  "  "
@@ -1330,7 +1331,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_USER_GRANT_SPECIAL_ROLE_LIT     "UZ"
 #define COM_QI_OBJECT_REDEF_LIT        "OR"
 #define COM_QI_STATS_UPDATED_LIT       "US"
-
+#define COM_QI_GRANT_ROLE_LIT          "GG"
 
 
 

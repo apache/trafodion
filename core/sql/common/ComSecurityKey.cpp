@@ -165,11 +165,26 @@ bool buildSecurityKeys( const int32_t userID,
   if (privs.isNull())
     return true;
 
+  NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
+  std::string  msg ("Method: buildSecurityKeys: ");
+  if (doDebug)
+  {
+    printf("[DBUSER:%d] %s\n", (int) getpid(), msg.c_str());
+    fflush(stdout);
+  }
+
   // If public is the grantee, generate special security key
   // A user cannot be revoked from public
   if (ComUser::isPublicUserID(granteeID))
   {
     ComSecurityKey key(granteeID, ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
+    if (doDebug)
+    {
+      NAString msg (key.print(granteeID, objectUID));
+      printf("[DBUSER:%d]  (public) %s\n", (int) getpid(), msg.data());
+      fflush(stdout);
+    }
+
     if (key.isValid())
       secKeySet.insert(key);
     else
@@ -181,6 +196,14 @@ bool buildSecurityKeys( const int32_t userID,
   if (PrivMgr::isRoleID(granteeID))
   {
     ComSecurityKey key (userID, granteeID, ComSecurityKey::SUBJECT_IS_USER);
+    if (doDebug)
+    {
+      NAString msg = key.print(userID, granteeID);
+      printf("[DBUSER:%d]   (role) %s\n",
+             (int) getpid(), msg.data());
+      fflush(stdout);
+    }
+
     if (key.isValid())
      secKeySet.insert(key);
     else
@@ -195,6 +218,14 @@ bool buildSecurityKeys( const int32_t userID,
     {
       ComSecurityKey key (granteeID, objectUID, PrivType(i), 
                           ComSecurityKey::OBJECT_IS_OBJECT);
+      if (doDebug)
+      {
+        NAString msg = key.print(granteeID, objectUID);
+        printf("[DBUSER:%d]   (DML)%s\n",
+               (int) getpid(), msg.data());
+        fflush(stdout);
+      }
+
       if (key.isValid())
        secKeySet.insert(key);
       else
@@ -223,6 +254,9 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
                          bool &resetRoleList,
                          bool &updateCaches)
 {
+  NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
+  char buf[100];
+
   resetRoleList = false;
   updateCaches = false;
   ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
@@ -233,7 +267,16 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
   // Perhaps a new constructor would be good (also done in RelRoot::checkPrivileges)
   uint32_t userHashValue = ComSecurityKey::generateHash(userID);
 
-  for ( Int32 i = 0; i < numInvalidationKeys && !resetRoleList && !updateCaches; i++ )
+  if (doDebug)
+  {
+    sprintf(buf, ": num keys(%d)", numInvalidationKeys);
+    printf("[DBUSER:%d] Method: qiInvalidationType%s\n",
+           (int) getpid(), buf);
+    fflush(stdout);
+    sprintf(buf, "Not applicable");
+  }
+
+  for ( Int32 i = 0; i < numInvalidationKeys; i++ )
   {
     invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
     switch (invalidationKeyType)
@@ -241,6 +284,12 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
       // Object changed, need to update caches
       case COM_QI_OBJECT_REDEF:
       case COM_QI_STATS_UPDATED:
+        if (doDebug)
+          sprintf(buf, "object/stats, operation: %c%c, objectUID: %ld",
+                  invalidationKeys[i].operation[0],
+                  invalidationKeys[i].operation[1],
+                  invalidationKeys[i].ddlObjectUID);
+
         updateCaches = true;
         break;
 
@@ -255,17 +304,37 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
       case COM_QI_OBJECT_EXECUTE:
         // If the current user matches the revoke subject, update
         if (invalidationKeys[i].revokeKey.subject == userHashValue)
+        {
+          if (doDebug)
+            sprintf(buf, "user: %d, operation: %c%c, subject: %u, object: %u", userID,
+                    invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                    invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
+
           updateCaches = true;
+        }
 
         // If one of the users roles matches the revokes subject, update
         else if (qiSubjectMatchesRole(invalidationKeys[i].revokeKey.subject))
+        {
+          if (doDebug)
+            sprintf(buf, "role: %d, operation: %c%c, subject: %u, object: %u", userID,
+                    invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                    invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
+
           updateCaches = true;
+       }
         break;
 
       // For public user (SPECIAL_ROLE), the subject is a special hash
       case COM_QI_USER_GRANT_SPECIAL_ROLE:
         if (invalidationKeys[i].revokeKey.subject == ComSecurityKey::SPECIAL_SUBJECT_HASH)
+        {
+          if (doDebug)
+            sprintf(buf, "user: %d, operation: %c%c, subject: %u, object: %u", userID,
+                    invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                    invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
           updateCaches = true;
+        }
         break;
 
       // A revoke role from a user was performed.  Need to reset role list
@@ -274,16 +343,41 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
       case COM_QI_USER_GRANT_ROLE:
         if (invalidationKeys[i].revokeKey.subject == userHashValue)
         {
+          if (doDebug)
+            sprintf(buf, "user: %d, operation: %c%c, subject: %u, object: %u", userID,
+                    invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                    invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
+
           resetRoleList = true;
           updateCaches = true;
         }
         break;
 
+      // If a role was granted, refresh the active role llist
+      case COM_QI_GRANT_ROLE:
+       if (doDebug)
+          sprintf(buf, "operation: %c%c, subject: %u, object: %u",
+                  invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                  invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
+
+        resetRoleList = true;
+        break;
+
       // unknown key type, search and update cache (should not happen)
       default:
+       if (doDebug)
+          sprintf(buf, "user: %d, operation: %c%c, subject: %u, object: %u", userID,
+                  invalidationKeys[i].operation[0], invalidationKeys[i].operation[1],
+                  invalidationKeys[i].revokeKey.subject, invalidationKeys[i].revokeKey.object);
         resetRoleList = true;
         updateCaches = true;
         break;
+    }
+    if (doDebug)
+    {
+      printf("[DBUSER:%d]   %s\n",
+             (int) getpid(), buf);
+      fflush(stdout);
     }
   } 
 }
@@ -328,6 +422,8 @@ ComSecurityKey::ComSecurityKey(
   {
     if (typeOfSubject == SUBJECT_IS_USER)
       actionType_ = COM_QI_USER_GRANT_ROLE;  // revoke role <object> from <user subject>
+    else if (typeOfSubject == SUBJECT_IS_GRANT_ROLE)
+      actionType_ = COM_QI_GRANT_ROLE;
     else
       actionType_ = COM_QI_ROLE_GRANT_ROLE;  
 
@@ -455,6 +551,9 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
 { 
   switch(actionType_)
   { 
+    case COM_QI_GRANT_ROLE:
+      actionString = COM_QI_GRANT_ROLE_LIT;
+      break;
     case COM_QI_USER_GRANT_ROLE:
       actionString = COM_QI_USER_GRANT_ROLE_LIT;
       break;
@@ -505,11 +604,14 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
     }
 }
 
-void ComSecurityKey::print() const
+NAString ComSecurityKey::print(Int32 subjectID, Int64 objectID)
 {
   std::string typeString;
   switch(actionType_)
   {
+    case COM_QI_GRANT_ROLE:
+      typeString = "GRANT_ROLE";
+      break;
     case COM_QI_USER_GRANT_ROLE:
       typeString = "USER_GRANT_ROLE";
       break;
@@ -550,7 +652,13 @@ void ComSecurityKey::print() const
       typeString = "INVALID_ACTIONTYPE";
       break;
   };
-  cout << subjectHash_  << " : " << objectHash_ << " : " << typeString << endl;
+  char buf[200];
+  sprintf (buf, " - subjectHash: %u (%d), objectHash: %u (%ld), type: %s",
+           subjectHash_, subjectID,
+           objectHash_, objectID,
+           typeString.data());
+  NAString keyDetails = buf;
+  return keyDetails;
 }
 
 
