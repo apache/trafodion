@@ -187,6 +187,11 @@ fi
 #-------------------------------------------------------
 skipTheseTests=""
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST2" == "1" ]; then
+    skipTheseTests="$skipTheseTests $privs2CT"
+fi
+
 testfiles="$prettyfiles"
 prettyfiles=
 skippedfiles=

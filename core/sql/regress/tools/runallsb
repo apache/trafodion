@@ -41,6 +41,7 @@ export SQLMX_REGRESS=1
 
 export SEABASE_REGRESS=2
 
+#TEST_SUBDIRS="checktest1 checktest2 core compGeneral executor seabase hive fullstack2 charsets qat privs1 privs2 udr" 
 TEST_SUBDIRS="core compGeneral executor seabase hive fullstack2 charsets qat privs1 privs2 udr" 
 BASE_SUBDIRS="core compGeneral executor seabase hive"
 OTHER_SUBDIRS="fullstack2 charsets qat privs1 privs2 udr"
@@ -145,10 +146,26 @@ if [[ $? -ne 0 ]]; then
    exit 1
 fi
 
+#checktests runs tests from multiple test subdirs.
+#if runallsb is being used to run checktests along with other tests, 
+#then set a flag so those tests will be skipped by individual test suites.
+export CHECK_TEST1=0
+export CHECK_TEST2=0
+for dir in $TEST_SUBDIRS; do
+    if [ "$dir" == "checktest1" ]; then
+        export CHECK_TEST1=1
+    elif [ "$dir" == "checktest2" ]; then
+        export CHECK_TEST2=1
+    fi
+done
+
 #
 # Make sure we have the rundir setup correctly for the tests and run 'em!
 #
 
+if [ $diffOnly -eq 0 ]; then
+    $TRAF_HOME/sql/scripts/ilh_regrinit
+fi
 for dir in $TEST_SUBDIRS; do
    if [[ ! -d $rundir/$dir ]]; then
       echo "Making $rundir/$dir - continuing with tests"
@@ -162,6 +179,16 @@ for dir in $TEST_SUBDIRS; do
    fi
 
    case $dir in
+      checktest1)
+         pushd $rundir/checktest1
+         $scriptsdir/tools/runregr -sb $diffStr
+         popd
+         ;;
+      checktest2)
+         pushd $rundir/checktest2
+         $scriptsdir/tools/runregr -sb $diffStr
+         popd
+         ;;
       core)
          pushd core
          ./runregr -sb $diffStr

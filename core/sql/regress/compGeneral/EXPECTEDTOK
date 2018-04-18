@@ -1,4 +1,4 @@
-sqlparser.y: warning: 73 shift/reduce conflicts [-Wconflicts-sr]
+sqlparser.y: warning: 62 shift/reduce conflicts [-Wconflicts-sr]
 sqlparser.y: warning: 12 reduce/reduce conflicts [-Wconflicts-rr]
  
 nnnn conflicts: 1 shift/reduce nnnn olap_sequence_function: set_function_specification . TOK_OVER '(' opt_olap_part_clause opt_olap_order_clause ')'
@@ -22,14 +22,14 @@ nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_PROCEDURES .
 nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_FUNCTIONS .
 nnnn conflicts: 1 shift/reduce nnnn drop_catalog_statement: TOK_DROP TOK_CATALOG . catalog_name extension_drop_behavior
 nnnn conflicts: 1 reduce/reduce nnnn procedure_or_function: TOK_TABLE_MAPPING TOK_FUNCTIONS .
-nnnn conflicts: 13 shift/reduce nnnn query_spec_body: query_select_list table_expression . access_type optional_lock_mode
+nnnn conflicts: 8 shift/reduce nnnn query_spec_body: query_select_list table_expression . access_type optional_lock_mode
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 reduce/reduce nnnn primary: row_subquery .
 nnnn conflicts: 1 shift/reduce nnnn query_shape_control: shape_identifier .
 nnnn conflicts: 2 shift/reduce, 1 reduce/reduce nnnn query_exp_for_cursor: query_expression . for_update_spec
-nnnn conflicts: 13 shift/reduce nnnn query_spec_body: query_select_list into_clause table_expression . access_type optional_lock_mode
+nnnn conflicts: 8 shift/reduce nnnn query_spec_body: query_select_list into_clause table_expression . access_type optional_lock_mode
 nnnn conflicts: 1 shift/reduce nnnn query_spec_body: query_select_list table_expression access_type . optional_lock_mode
 nnnn conflicts: 1 shift/reduce nnnn mv_definition: create_mv_keywords ddl_qualified_name optional_view_column_list refresh_type . create_mv_attribute_table_lists mv_initialization_clause optional_query_rewrite optional_create_mv_file_options optional_in_memory_clause as_token query_expression
 nnnn conflicts: 1 shift/reduce nnnn table_name_and_hint: table_name . optimizer_hint hbase_access_options
@@ -42,5 +42,4 @@ nnnn conflicts: 1 shift/reduce nnnn file_attribute_clause: file_attribute_keywor
 nnnn conflicts: 1 shift/reduce nnnn id_group: '(' identifier . ')' TOK_TO identifier
 nnnn conflicts: 1 reduce/reduce nnnn table_reference: '(' Front_Of_Insert . Rest_Of_insert_statement ')' as_clause
 nnnn conflicts: 1 shift/reduce nnnn transpose_list: transpose_set .
-nnnn conflicts: 1 shift/reduce nnnn salt_by_clause: TOK_SALT TOK_USING NUMERIC_LITERAL_EXACT_NO_SCALE TOK_PARTITIONS . optional_salt_num_regions optional_salt_column_list
 nnnn conflicts: 1 shift/reduce nnnn pipeline_clause: TOK_PIPELINE '(' pipeline_mv_name_list ')' . pipeline_def_list

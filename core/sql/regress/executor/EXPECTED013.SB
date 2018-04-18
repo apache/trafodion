@@ -493,7 +493,7 @@ CONTROL QUERY DEFAULT
 
 --- SQL operation failed with errors.
 >>
->>create schema trafodion.t013sch1;
+>>create schema if not exists trafodion.t013sch1;
 
 --- SQL operation complete.
 >>set schema trafodion.t013sch1;

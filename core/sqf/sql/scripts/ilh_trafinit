@@ -53,6 +53,7 @@ echo ' - Delete the env file: $TRAF_HOME/etc/ms.env'
 echo ' - sqgen'
 echo ' - sqstart'
 echo ' - sqlci -> initialize trafodion'
+echo ' - initializes auth, registers users, creates regr schema and namespace'
 
 if [[ -z $1 ]]; then
     read -p 'Do you want to proceed? y/n : ' lv_ans
@@ -96,10 +97,7 @@ sqlci <<EOF
 initialize trafodion;
 EOF
 
-echo "executing: sqlci -> get schemas"
-sqlci <<EOF
-get schemas;
-EOF
+ilh_regrinit
 
 echo "done"
 lv_endtime=`date`
