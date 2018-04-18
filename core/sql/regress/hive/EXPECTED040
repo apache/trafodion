@@ -47,8 +47,69 @@
 >>obey TEST040(tests);
 >>--------------------------------------------------------------------------
 >>-- PARQUET file metadata info
+<<<<<<< HEAD
 >>--invoke hive.hive.store_parquet;
 >>--
+=======
+>>invoke hive.hive.store_parquet;
+
+-- Definition of hive table STORE_PARQUET
+-- Definition current  Sun Jun 11 11:28:44 2017
+
+  (
+    S_STORE_SK                       INT
+  , S_STORE_ID                       VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_REC_START_DATE                 TIMESTAMP(6)
+  , S_REC_END_DATE                   TIMESTAMP(6)
+  , S_CLOSED_DATE_SK                 INT
+  , S_STORE_NAME                     VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_NUMBER_EMPLOYEES               INT
+  , S_FLOOR_SPACE                    INT
+  , S_HOURS                          VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MANAGER                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_ID                      INT
+  , S_GEOGRAPHY_CLASS                VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_DESC                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_MANAGER                 VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_DIVISION_ID                    INT
+  , S_DIVISION_NAME                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COMPANY_ID                     INT
+  , S_COMPANY_NAME                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_NUMBER                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_NAME                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_TYPE                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_SUITE_NUMBER                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_CITY                           VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COUNTY                         VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STATE                          VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_ZIP                            VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COUNTRY                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_GMT_OFFSET                     REAL
+  , S_TAX_PRECENTAGE                 REAL
+  )
+  /* stored as parquet */
+
+--- SQL operation complete.
+>>
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 >>-- select one row from PARQUET table
 >>select [first 1] * from hive.hive.store_parquet;
 
@@ -197,7 +258,11 @@ Suite 100             College
 MASTER Executor fragment
 ========================
 
+<<<<<<< HEAD
 Fragment ID: 0, Length: 58712
+=======
+Fragment ID: 0, Length: 17152
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Contents of EX_ROOT [2]:
 ------------------------
@@ -221,7 +286,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3112
+=======
+explain_plan_size = 3208
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -296,8 +365,13 @@ ColNumber: 26, ColName: S_ZIP
 ColNumber: 27, ColName: S_COUNTRY
 ColNumber: 28, ColName: S_GMT_OFFSET
 ColNumber: 29, ColName: S_TAX_PRECENTAGE
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_parquet
 modTSforDir_ = 1511634536, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_parquet
+modTSforDir_ = 1496437675, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -359,7 +433,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3104
+=======
+explain_plan_size = 3208
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -406,8 +484,13 @@ ESP    0 reads               3681 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_parquet
 modTSforDir_ = 1511634536, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_parquet
+modTSforDir_ = 1496437675, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -515,7 +598,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3208
+=======
+explain_plan_size = 3320
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -562,8 +649,13 @@ ESP    0 reads               3681 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_parquet
 modTSforDir_ = 1511634536, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_parquet
+modTSforDir_ = 1496437675, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -627,7 +719,11 @@ S_STORE_SK
 MASTER Executor fragment
 ========================
 
+<<<<<<< HEAD
 Fragment ID: 0, Length: 17104
+=======
+Fragment ID: 0, Length: 15584
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Contents of EX_ROOT [2]:
 ------------------------
@@ -651,7 +747,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3240
+=======
+explain_plan_size = 3352
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -696,10 +796,16 @@ Summary of bytes read per ESP (3681 = 100 percent):
 
 ESP    0 reads               3681 bytes ( 100 percent of avg)
 
+<<<<<<< HEAD
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_parquet
 modTSforDir_ = 1511634536, numOfPartCols_ = 0
+=======
+Number of columns to retrieve: 0
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_parquet
+modTSforDir_ = 1496437675, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Number of PPI entries: 3
 PPI: #1
@@ -729,9 +835,15 @@ Expression: extOperExpr_ is not NULL
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
+<<<<<<< HEAD
 PLAN_ID .................. 212378573691398125
 ROWS_OUT ......... 1,440,202
 EST_TOTAL_COST ......... 234.75
+=======
+PLAN_ID .................. 212363940580483637
+ROWS_OUT ........ 81,136,280
+EST_TOTAL_COST ...... 13,852.32
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 STATEMENT ................ select *
                            from store_sales_parquet
                            where ss_sold_date_sk = ss_item_sk;
@@ -762,9 +874,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -851,7 +974,11 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
+<<<<<<< HEAD
 PLAN_ID .................. 212378573691753629
+=======
+PLAN_ID .................. 212363940580884702
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select * from store_sales_parquet where 1=2;
@@ -881,9 +1008,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -1174,7 +1312,11 @@ NUM_HITS    NUM_PARAMS
 >>invoke hive.hive.store_sales_parquet;
 
 -- Definition of hive table STORE_SALES_PARQUET
+<<<<<<< HEAD
 -- Definition current  Mon Nov 27 20:15:06 2017
+=======
+-- Definition current  Sun Jun 11 11:30:31 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -1216,9 +1358,15 @@ NUM_HITS    NUM_PARAMS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378573706907158
 ROWS_OUT ............. 1,698
 EST_TOTAL_COST ......... 234.71
+=======
+PLAN_ID .................. 212363940631673658
+ROWS_OUT ............ 12,739
+EST_TOTAL_COST ...... 13,850.42
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 STATEMENT ................ select *
                            from store_sales_parquet
                            where ss_item_sk = 1;
@@ -1249,9 +1397,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_PARQUET_FOR  ON
@@ -1432,7 +1591,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke hive.hive.date_dim_parquet;
 
 -- Definition of hive table DATE_DIM_PARQUET
+<<<<<<< HEAD
 -- Definition current  Mon Nov 27 20:15:11 2017
+=======
+-- Definition current  Sun Jun 11 11:30:49 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     D_DATE_SK                        INT
@@ -1515,6 +1678,12 @@ CREATE TABLE DEFAULT.DATE_DIM_PARQUET
   stored as parquet
 ;
 
+<<<<<<< HEAD
+=======
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_PARQUET;
+/* ObjectUID = 563644711473585265 */
+
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_PARQUET;
@@ -1574,9 +1743,15 @@ CREATE EXTERNAL TABLE DATE_DIM_PARQUET
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378573717690486
 ROWS_OUT ............... 271
 EST_TOTAL_COST ......... 244.13
+=======
+PLAN_ID .................. 212363940664424812
+ROWS_OUT ............. 1,978
+EST_TOTAL_COST ......... 477.06
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 STATEMENT ................ select *
                            from hive.hive.date_dim_parquet
                            where d_date = date '2016-01-27';
@@ -1606,9 +1781,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_PARQUET_FOR  ON
@@ -1687,7 +1873,11 @@ DESCRIPTION
 >>invoke hive.hive.date_dim_parquet;
 
 -- Definition of hive table DATE_DIM_PARQUET
+<<<<<<< HEAD
 -- Definition current  Mon Nov 27 20:15:28 2017
+=======
+-- Definition current  Sun Jun 11 11:31:24 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     D_DATE_SK                        INT
@@ -1770,6 +1960,12 @@ CREATE TABLE DEFAULT.DATE_DIM_PARQUET
   stored as parquet
 ;
 
+<<<<<<< HEAD
+=======
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_PARQUET;
+/* ObjectUID = 563644711473585265 */
+
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_PARQUET;
@@ -1829,9 +2025,15 @@ CREATE EXTERNAL TABLE DATE_DIM_PARQUET
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378573717690486
 ROWS_OUT ............... 271
 EST_TOTAL_COST ......... 244.13
+=======
+PLAN_ID .................. 212363940698868891
+ROWS_OUT ............. 1,978
+EST_TOTAL_COST ......... 477.06
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 STATEMENT ................ select *
                            from hive.hive.date_dim_parquet
                            where d_date = date '2016-01-27';
@@ -1861,9 +2063,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_PARQUET_FOR  ON
@@ -2122,7 +2335,11 @@ and( and( and( and( and( not( HIVE.STORE2_SALES_PARQUET.SS_SOLD_DATE_SK is null 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
+<<<<<<< HEAD
 PLAN_ID .................. 212378573801436592
+=======
+PLAN_ID .................. 212363940801861384
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ................. 1
 EST_TOTAL_COST .......... 23.94
 STATEMENT ................ select count(*)
@@ -2158,9 +2375,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_PARQUET_FOR  ON

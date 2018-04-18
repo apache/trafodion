@@ -1,4 +1,3 @@
--- Test: TEST000 (Core)
 -- @@@ START COPYRIGHT @@@
 --
 -- Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +18,4 @@
 -- under the License.
 --
 -- @@@ END COPYRIGHT @@@
---
-
-log LOG000 clear;
--- not logging since setup operations may already have been done
-log;
-
-obey $$TRAF_HOME$$/sql/scripts/regrinit.sql;
+sh $REGRTSTDIR/TESTTOK.sh $REGRTSTDIR/../..;

@@ -50,7 +50,11 @@
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
+<<<<<<< HEAD
 -- Definition current  Wed Nov 29 02:19:58 2017
+=======
+-- Definition current  Sun Jun 11 11:09:19 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     S_STORE_SK                       INT
@@ -247,7 +251,11 @@ Suite 100             College
 MASTER Executor fragment
 ========================
 
+<<<<<<< HEAD
 Fragment ID: 0, Length: 58688
+=======
+Fragment ID: 0, Length: 17144
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Contents of EX_ROOT [2]:
 ------------------------
@@ -271,7 +279,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3088
+=======
+explain_plan_size = 3184
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -346,8 +358,13 @@ ColNumber: 26, ColName: S_ZIP
 ColNumber: 27, ColName: S_COUNTRY
 ColNumber: 28, ColName: S_GMT_OFFSET
 ColNumber: 29, ColName: S_TAX_PRECENTAGE
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
 modTSforDir_ = 1511634123, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1496437232, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -409,7 +426,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3080
+=======
+explain_plan_size = 3176
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -456,8 +477,13 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
 modTSforDir_ = 1511634123, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1496437232, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -565,7 +591,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3176
+=======
+explain_plan_size = 3272
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -612,8 +642,13 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
 modTSforDir_ = 1511634123, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1496437232, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 6
 
@@ -677,7 +712,11 @@ S_STORE_SK
 MASTER Executor fragment
 ========================
 
+<<<<<<< HEAD
 Fragment ID: 0, Length: 19144
+=======
+Fragment ID: 0, Length: 19984
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Contents of EX_ROOT [2]:
 ------------------------
@@ -701,7 +740,11 @@ rtFlags5_ = 0
 queryType_ = 2
 inputVarsSize_ = 0
 querySimilarityInfo()->siList()->numEntries() = 1
+<<<<<<< HEAD
 explain_plan_size = 3264
+=======
+explain_plan_size = 3368
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 # of Expressions = 4
 
@@ -748,8 +791,13 @@ ESP    0 reads               2853 bytes ( 100 percent of avg)
 
 Number of columns to retrieve: 1
 ColNumber: 1, ColName: S_STORE_SK
+<<<<<<< HEAD
 hdfsRootDir: hdfs://localhost:36000/user/trafodion/hive/tpcds/store_orc
 modTSforDir_ = 1511634123, numOfPartCols_ = 0
+=======
+hdfsRootDir: hdfs://localhost:24200/user/trafodion/hive/tpcds/store_orc
+modTSforDir_ = 1496437232, numOfPartCols_ = 0
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
 Number of PPI entries: 3
 PPI: #1
@@ -779,7 +827,11 @@ Expression: extOperExpr_ is not NULL
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
+<<<<<<< HEAD
 PLAN_ID .................. 212378682018129421
+=======
+PLAN_ID .................. 212363939384659273
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ......... 1,440,202
 EST_TOTAL_COST ......... 191.55
 STATEMENT ................ select *
@@ -811,9 +863,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -900,7 +963,11 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
+<<<<<<< HEAD
 PLAN_ID .................. 212378682018429456
+=======
+PLAN_ID .................. 212363939386438156
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select * from store_sales_orc where 1=2;
@@ -929,9 +996,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   SCHEMA ................. HIVE.HIVE
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
@@ -1221,7 +1299,11 @@ NUM_HITS    NUM_PARAMS
 >>invoke hive.hive.store_sales_orc;
 
 -- Definition of hive table STORE_SALES_ORC
+<<<<<<< HEAD
 -- Definition current  Wed Nov 29 02:20:31 2017
+=======
+-- Definition current  Sun Jun 11 11:10:08 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -1263,7 +1345,11 @@ NUM_HITS    NUM_PARAMS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378682032138196
+=======
+PLAN_ID .................. 212363939411863426
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ............. 1,698
 EST_TOTAL_COST ......... 191.52
 STATEMENT ................ select * from store_sales_orc where ss_item_sk = 1;
@@ -1293,9 +1379,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1405,7 +1502,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378682032886873
+=======
+PLAN_ID .................. 212363939416859647
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ......... 2,880,404
 EST_TOTAL_COST    23,225,420
 STATEMENT ................ select *
@@ -1438,9 +1539,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1660,7 +1772,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke hive.hive.date_dim_orc;
 
 -- Definition of hive table DATE_DIM_ORC
+<<<<<<< HEAD
 -- Definition current  Wed Nov 29 02:20:37 2017
+=======
+-- Definition current  Sun Jun 11 11:10:29 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     D_DATE_SK                        INT
@@ -1743,6 +1859,12 @@ CREATE TABLE DEFAULT.DATE_DIM_ORC
   stored as orc
 ;
 
+<<<<<<< HEAD
+=======
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
+/* ObjectUID = 3064268403396931736 */
+
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
@@ -1802,7 +1924,11 @@ CREATE EXTERNAL TABLE DATE_DIM_ORC
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378682040442348
+=======
+PLAN_ID .................. 212363939435356144
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ............... 271
 EST_TOTAL_COST ........... 0.66
 STATEMENT ................ select *
@@ -1833,9 +1959,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -1913,7 +2050,11 @@ DESCRIPTION
 >>invoke hive.hive.date_dim_orc;
 
 -- Definition of hive table DATE_DIM_ORC
+<<<<<<< HEAD
 -- Definition current  Wed Nov 29 02:20:44 2017
+=======
+-- Definition current  Sun Jun 11 11:10:50 2017
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 
   (
     D_DATE_SK                        INT
@@ -1996,6 +2137,12 @@ CREATE TABLE DEFAULT.DATE_DIM_ORC
   stored as orc
 ;
 
+<<<<<<< HEAD
+=======
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
+/* ObjectUID = 3064268403396931736 */
+
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM_ORC;
@@ -2055,7 +2202,11 @@ CREATE EXTERNAL TABLE DATE_DIM_ORC
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
+<<<<<<< HEAD
 PLAN_ID .................. 212378682040442348
+=======
+PLAN_ID .................. 212363939456056239
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 ROWS_OUT ............... 271
 EST_TOTAL_COST ........... 0.66
 STATEMENT ................ select *
@@ -2086,9 +2237,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -2346,9 +2508,15 @@ and( and( and( and( and( not( HIVE.STORE2_SALES_ORC.SS_SOLD_DATE_SK is null ) no
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
+<<<<<<< HEAD
 PLAN_ID .................. 212378682095271698
 ROWS_OUT ................. 1
 EST_TOTAL_COST .......... 17.46
+=======
+PLAN_ID .................. 212363939559855112
+ROWS_OUT ................. 1
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 STATEMENT ................ select count(*)
                            from hive.hive.customer_orc,
                              hive.hive.store_sales_sorted_orc
@@ -2361,7 +2529,11 @@ ROOT ======================================  SEQ_NO 8        ONLY CHILD 7
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
+<<<<<<< HEAD
 EST_TOTAL_COST .......... 17.46
+=======
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 DESCRIPTION
   est_memory_per_node .... 10240.00(Limit), 0.13(BMOs), 0.00(nBMOs) MB
   max_card_est ........... 1
@@ -2381,9 +2553,20 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME .......... NOT AVAILABLE
+<<<<<<< HEAD
   HBASE_FILTER_PREDS ..... 2
   TRAF_INDEX_CREATE_OPT    ON
   TRAF_USE_REGION_XN ..... ON
+=======
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
   HIVE_MAX_STRING_LENGTH  20
   MODE_SEAHIVE ........... ON
   TRAF_ENABLE_ORC_FORMAT   ON
@@ -2408,7 +2591,11 @@ SORT_PARTIAL_AGGR_ROOT ====================  SEQ_NO 7        ONLY CHILD 6
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
+<<<<<<< HEAD
 EST_TOTAL_COST .......... 17.46
+=======
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -2422,7 +2609,11 @@ ESP_EXCHANGE ==============================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
+<<<<<<< HEAD
 EST_TOTAL_COST .......... 17.46
+=======
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -2440,7 +2631,11 @@ SORT_PARTIAL_AGGR_LEAF ====================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
+<<<<<<< HEAD
 EST_TOTAL_COST .......... 17.46
+=======
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -2454,7 +2649,11 @@ HYBRID_HASH_JOIN ==========================  SEQ_NO 4        CHILDREN 3, 2
 REQUESTS_IN .............. 1
 ROWS_OUT ......... 2,880,404
 EST_OPER_COST ............ 0.02
+<<<<<<< HEAD
 EST_TOTAL_COST .......... 17.46
+=======
+EST_TOTAL_COST .......... 18.16
+>>>>>>> 1830668... Enhanced checktests changes. Jenkins usage not yet enabled.
 DESCRIPTION
   memory_quota_per_instan  800 MB
   max_card_est ........... 2.8804e+06
@@ -2510,7 +2709,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 317
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.7
+EST_TOTAL_COST ........... 1.4
 DESCRIPTION
   max_card_est ...... 95,001
   fragment_id ............ 3
@@ -2529,8 +2728,8 @@ ORC_SCAN ==================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.CUSTOMER_ORC
 REQUESTS_IN .............. 1
 ROWS_OUT ............... 317
-EST_OPER_COST ............ 0.7
-EST_TOTAL_COST ........... 0.7
+EST_OPER_COST ............ 1.4
+EST_TOTAL_COST ........... 1.4
 DESCRIPTION
   max_card_est ...... 95,001
   fragment_id ............ 3

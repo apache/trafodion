@@ -213,7 +213,7 @@ drop volatile table t013t1;
 create volatile index tempi on t013t1(a);
 drop volatile index tempi;
 
-create schema trafodion.t013sch1;
+create schema if not exists trafodion.t013sch1;
 set schema trafodion.t013sch1;
 
 create volatile table t013t1 (a int);

@@ -108,6 +108,8 @@ revoke role library_ckout_clerks from sql_user3, sql_user4, sql_user5;
 drop role library_ckout_clerks;
 
 revoke component privilege lib_view_checkouts on library_books from lib_role_test;
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
 revoke role lib_role_test from sql_user5;
 revoke role db__rootrole from sql_user5;
 drop role lib_role_test;
@@ -120,6 +122,8 @@ revoke select on "_PRIVMGR_MD_".component_privileges from md_access;
 drop role md_access;
 
 ?section set_up
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+
 prepare get_roles from
 select substring (auth_db_name,1,20) as role_name
 from "_MD_".AUTHS

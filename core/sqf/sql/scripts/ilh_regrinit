@@ -1,0 +1,5 @@
+echo "executing: sqlci -> regrinit.sql"
+sqlci <<EOF
+obey $TRAF_HOME/sql/scripts/regrinit.sql;
+EOF
+

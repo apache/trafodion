@@ -48,6 +48,7 @@
 -- returns unordered results because of a parallel plan. Until we can resolve
 -- this issue, let's run test063 using robust_query_optimization minimum
 control query default robust_query_optimization 'minimum';
+cqd traf_object_encryption '';
 
 ?section cleanup
 #ifMX
