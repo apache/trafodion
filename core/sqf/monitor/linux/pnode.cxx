@@ -169,15 +169,22 @@ CNode::CNode( char *name, int pnid, int rank )
       ,tmSyncState_(SyncState_Null)
 #endif
       ,shutdownLevel_(ShutdownLevel_Undefined)
+      ,shutdownNameServer_(false)
       ,wdtKeepAliveTimerValue_(WDT_KeepAliveTimerDefault)
       ,zid_(pnid)
+      ,commPort_("")
+      ,syncPort_("")
 #ifdef NAMESERVER_PROCESS
+      ,mon2NsPort_("")
+      ,mon2NsSocketPort_(-1)
       ,monConnCount_(0)
 #else
+      ,ptpPort_("")
       ,ptpSocketPort_(-1)
 #endif
       ,commSocketPort_(-1)
       ,syncSocketPort_(-1)
+      ,uniqStrId_(-1)
       ,procStatFile_(NULL)
       ,procMeminfoFile_(-1)
 {
@@ -302,8 +309,22 @@ CNode::CNode( char *name
       ,tmSyncNid_(-1)
       ,tmSyncState_(SyncState_Suspended)
       ,shutdownLevel_(ShutdownLevel_Undefined)
+      ,shutdownNameServer_(false)
       ,wdtKeepAliveTimerValue_(WDT_KeepAliveTimerDefault)
       ,zid_(-1)
+      ,commPort_("")
+      ,syncPort_("")
+#ifdef NAMESERVER_PROCESS
+      ,mon2NsPort_("")
+      ,mon2NsSocketPort_(-1)
+      ,monConnCount_(-1)
+#else
+      ,ptpPort_("")
+      ,ptpSocketPort_(-1)
+#endif
+      ,commSocketPort_(-1)
+      ,syncSocketPort_(-1)
+      ,uniqStrId_(-1)
       ,procStatFile_(NULL)
       ,procMeminfoFile_(-1)
 {
@@ -560,8 +581,6 @@ void CNode::CheckShutdownProcessing( void )
         sprintf(buf, "Broadcasting shutdown notice, level = %d\n", shutdownLevel_);
         mon_log_write(MON_NODE_SHUTDOWN_1, SQ_LOG_WARNING, buf);
         Bcast (msg);
-        if ( NameServerEnabled )
-            NameServer->ProcessShutdown();
         delete msg;
     }
 #endif
@@ -2458,6 +2477,20 @@ void CNodeContainer::CancelDeathNotification( int nid
 }
 #endif
    
+void CNodeContainer::DeleteCloneProcess( CProcess *process )
+{
+    const char method_name[] = "CNodeContainer::DeleteCloneProcess";
+    TRACE_ENTRY;
+
+    CNode *node;
+    node = Nodes->GetLNode(process->GetNid())->GetNode();
+    node->DelFromNameMap ( process );
+    node->DelFromPidMap ( process );
+    node->DeleteFromList( process );
+
+    TRACE_EXIT;
+}
+
 void CNodeContainer::DeletedNode( CNode *node )
 {
     const char method_name[] = "CNodeContainer::DeletedNode";
@@ -3009,6 +3042,200 @@ CProcess *CNodeContainer::GetProcessByName( const char *name, bool checkstate )
 }
 
 #ifndef NAMESERVER_PROCESS
+int CNodeContainer::GetProcessInfoNs( int nid
+                                    , int pid
+                                    , Verifier_t verifier
+                                    , ProcessInfoNs_reply_def *processInfo )
+{
+    const char method_name[] = "CNodeContainer::GetProcessInfoNs";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+
+    struct message_def msg;
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = REPLY_TAG;
+    msg.u.request.type = ReqType_ProcessInfoNs;
+
+    struct ProcessInfo_def *process_info = &msg.u.request.u.process_info;
+    process_info->nid = -1;
+    process_info->pid = -1;
+    process_info->verifier = -1;
+    process_info->process_name[0] = 0;
+    process_info->target_nid = nid;
+    process_info->target_pid = pid;
+    process_info->target_verifier = verifier;
+    process_info->target_process_name[0] = 0;
+    process_info->target_process_pattern[0] = 0;
+    process_info->type = ProcessType_Undefined;
+    
+    int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
+    if (error == 0)
+    {
+        if ( (msg.type == MsgType_Service) &&
+             (msg.u.reply.type == ReplyType_ProcessInfoNs) )
+        {
+            if ( msg.u.reply.u.process_info_ns.return_code == MPI_SUCCESS )
+            {
+                *processInfo = msg.u.reply.u.process_info_ns;
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf),
+                          "[%s] ProcessInfo failed, rc=%d\n"
+                        , method_name, msg.u.reply.u.process_info_ns.return_code );
+                mon_log_write( MON_NODE_GETPROCESSNS_1, SQ_LOG_ERR, buf );
+            }
+            rc = msg.u.reply.u.process_info_ns.return_code;
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
+                      "ProcessInfoNs\n"
+                    , method_name, msg.type, msg.u.reply.type );
+            mon_log_write( MON_NODE_GETPROCESSNS_2, SQ_LOG_ERR, buf );
+            rc = MPI_ERR_OP;
+        }
+    }
+    else
+    {
+        rc = MPI_ERR_OP;
+    }
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+int CNodeContainer::GetProcessInfoNs( const char *name
+                                    , Verifier_t verifier
+                                    , ProcessInfoNs_reply_def *processInfo )
+{
+    const char method_name[] = "CNodeContainer::GetProcessInfoNs";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+
+    struct message_def msg;
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = REPLY_TAG;
+    msg.u.request.type = ReqType_ProcessInfoNs;
+
+    struct ProcessInfo_def *process_info = &msg.u.request.u.process_info;
+    process_info->nid = -1;
+    process_info->pid = -1;
+    process_info->verifier = -1;
+    process_info->process_name[0] = 0;
+    process_info->target_nid = -1;
+    process_info->target_pid = -1;
+    process_info->target_verifier = verifier;
+    STRCPY( process_info->target_process_name, name);
+    process_info->target_process_pattern[0] = 0;
+    process_info->type = ProcessType_Undefined;
+
+    int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
+    if (error == 0)
+    {
+        if ( (msg.type == MsgType_Service) &&
+             (msg.u.reply.type == ReplyType_ProcessInfoNs) )
+        {
+            if ( msg.u.reply.u.process_info_ns.return_code == MPI_SUCCESS )
+            {
+                *processInfo = msg.u.reply.u.process_info_ns;
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf),
+                          "[%s] ProcessInfo failed, rc=%d\n"
+                        , method_name, msg.u.reply.u.process_info_ns.return_code );
+                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+            }
+            rc = msg.u.reply.u.process_info_ns.return_code;
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
+                      "ProcessInfo\n"
+                    , method_name, msg.type, msg.u.reply.type );
+            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+            rc = MPI_ERR_OP;
+        }
+    }
+    else
+    {
+        rc = MPI_ERR_OP;
+    }
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+CProcess *CNodeContainer::GetProcessLByTypeNs( int nid, PROCESSTYPE type )
+{
+    const char method_name[] = "CNodeContainer::GetProcessLByTypeNs";
+    TRACE_ENTRY;
+
+    CProcess *process = NULL;
+
+    struct message_def msg;
+    msg.type = MsgType_Service;
+    msg.noreply = false;
+    msg.reply_tag = REPLY_TAG;
+    msg.u.request.type = ReqType_ProcessInfoNs;
+
+    struct ProcessInfo_def *processInfo = &msg.u.request.u.process_info;
+    processInfo->nid = -1;
+    processInfo->pid = -1;
+    processInfo->verifier = -1;
+    processInfo->process_name[0] = 0;
+    processInfo->target_nid = nid;
+    processInfo->target_pid = -1;
+    processInfo->target_verifier = -1;
+    processInfo->target_process_name[0] = 0;
+    processInfo->target_process_pattern[0] = 0;
+    processInfo->type = type;
+
+    int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
+    if (error == 0)
+    {
+        if ( (msg.type == MsgType_Service) &&
+             (msg.u.reply.type == ReplyType_ProcessInfoNs) )
+        {
+            if ( msg.u.reply.u.process_info_ns.return_code == MPI_SUCCESS )
+            {
+                process = AddCloneProcess( &msg.u.reply.u.process_info_ns );
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf),
+                          "[%s] ProcessInfo failed, rc=%d\n"
+                        , method_name, msg.u.reply.u.process_info_ns.return_code );
+                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf),
+                      "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
+                      "ProcessInfo\n"
+                    , method_name, msg.type, msg.u.reply.type );
+            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+        }
+    }
+
+    TRACE_EXIT;
+    return( process );
+}
+
 CProcess *CNodeContainer::GetProcessNs( int nid
                                       , int pid
                                       , Verifier_t verifier )
@@ -3019,11 +3246,11 @@ CProcess *CNodeContainer::GetProcessNs( int nid
     CProcess *process = NULL;
 
     struct message_def msg;
-    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
     msg.type = MsgType_Service;
     msg.noreply = false;
     msg.reply_tag = REPLY_TAG;
     msg.u.request.type = ReqType_ProcessInfoNs;
+
     struct ProcessInfo_def *processInfo = &msg.u.request.u.process_info;
     processInfo->nid = -1;
     processInfo->pid = -1;
@@ -3033,6 +3260,8 @@ CProcess *CNodeContainer::GetProcessNs( int nid
     processInfo->target_pid = pid;
     processInfo->target_verifier = verifier;
     processInfo->target_process_name[0] = 0;
+    processInfo->target_process_pattern[0] = 0;
+    processInfo->type = ProcessType_Undefined;
     
     int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
     if (error == 0)
@@ -3076,11 +3305,11 @@ CProcess *CNodeContainer::GetProcessNs( const char *name, Verifier_t verifier )
     CProcess *process = NULL;
 
     struct message_def msg;
-    memset(&msg, 0, sizeof(msg) ); // TODO: remove!
     msg.type = MsgType_Service;
     msg.noreply = false;
     msg.reply_tag = REPLY_TAG;
     msg.u.request.type = ReqType_ProcessInfoNs;
+
     struct ProcessInfo_def *processInfo = &msg.u.request.u.process_info;
     processInfo->nid = -1;
     processInfo->pid = -1;
@@ -3090,6 +3319,8 @@ CProcess *CNodeContainer::GetProcessNs( const char *name, Verifier_t verifier )
     processInfo->target_pid = -1;
     processInfo->target_verifier = verifier;
     STRCPY( processInfo->target_process_name, name);
+    processInfo->target_process_pattern[0] = 0;
+    processInfo->type = ProcessType_Undefined;
 
     int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
     if (error == 0)

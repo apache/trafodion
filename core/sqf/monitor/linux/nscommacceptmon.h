@@ -70,6 +70,8 @@ private:
 
     // commAccept thread's id
     pthread_t                      thread_id_;
+    // commAccept thread's id
+    pthread_t                      process_thread_id_;
 
     enum { HEURISTIC_COUNT = 10 };
 };

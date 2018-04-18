@@ -2939,6 +2939,30 @@ void CProcess::Exit( CProcess *parent )
 
     SetState(State_Stopped);
 
+    if (parent && NameServerEnabled)
+    {
+        ProcessInfoNs_reply_def processInfo;
+        int rc = Nodes->GetProcessInfoNs( parent->GetNid()
+                                        , parent->GetPid()
+                                        , parent->GetVerifier()
+                                        , &processInfo);
+        if (rc == MPI_ERR_NAME)
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+            {
+                trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                            , method_name, __LINE__
+                            , parent->GetName()
+                            , parent->GetNid()
+                            , parent->GetPid()
+                            , parent->GetVerifier() );
+            }
+            Nodes->DeleteCloneProcess( parent );
+            parent = NULL;
+        }
+    
+    }
+
     // if the env is set to not deliver death messages upon node down,
     // check the state of the process' node.
     bool supplyProcessDeathNotices = true;

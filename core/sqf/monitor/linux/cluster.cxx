@@ -66,6 +66,8 @@ using namespace std;
 #include "meas.h"
 #ifdef NAMESERVER_PROCESS
 #include "nscommacceptmon.h"
+#else
+#include "nameserver.h"
 #endif
 
 extern bool IAmIntegrating;
@@ -85,6 +87,7 @@ extern char MySyncPort[MPI_MAX_PORT_NAME];
 extern CCommAcceptMon CommAcceptMon;
 extern char MyMon2NsPort[MPI_MAX_PORT_NAME];
 #else
+extern CNameServer *NameServer;
 extern bool NameServerEnabled;
 extern char MyPtPPort[MPI_MAX_PORT_NAME];
 #endif
@@ -119,6 +122,8 @@ extern long next_test_delay;
 extern CReplicate Replicator;
 
 extern char *ErrorMsg (int error_code);
+
+extern const char *ProcessTypeString( PROCESSTYPE type );
 
 const char *JoiningPhaseString( JOINING_PHASE phase);
 const char *StateString( STATE state);
@@ -538,6 +543,13 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
 
     int TmLeaderPNid = LNode[tmLeaderNid_]->GetNode()->GetPNid();
 
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+    {
+        trace_printf( "%s@%d - pnid=%d, checkProcess=%d, tmLeaderNid_=%d, TmLeaderPNid=%d\n"
+                    , method_name, __LINE__
+                    , pnid, checkProcess, tmLeaderNid_, TmLeaderPNid );
+    }
+
     if (TmLeaderPNid != pnid)
     {
         node = LNode[tmLeaderNid_]->GetNode();
@@ -560,6 +572,36 @@ void CCluster::AssignTmLeader( int pnid, bool checkProcess )
                                     , checkProcess );
                 }
                 return;
+            }
+            else
+            {
+                if (NameServerEnabled)
+                {
+                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                    {
+                        trace_printf( "%s@%d - Getting process from Name Server, nid=%d, type%s\n"
+                                    , method_name, __LINE__
+                                    , tmLeaderNid_, ProcessTypeString(ProcessType_DTM) );
+                    }
+                
+                    process = Nodes->GetProcessLByTypeNs( tmLeaderNid_, ProcessType_DTM );
+                    if (process)
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                        {
+                            if (node)
+                                trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, "
+                                              "isSoftNodeDown=%d, checkProcess=%d\n"
+                                            , method_name, __LINE__
+                                            , node->GetPNid()
+                                            , node->GetName()
+                                            , NodePhaseString(node->GetPhase())
+                                            , node->IsSoftNodeDown()
+                                            , checkProcess );
+                        }
+                        return;
+                    }
+                }
             }
         }
         else
@@ -698,6 +740,7 @@ CCluster::CCluster (void)
       reconnectSeqNum_(0),
       seqNum_(1),
       waitForWatchdogExit_(false)
+      ,waitForNameServerExit_(false)
       ,checkSeqNum_(false)
       ,validateNodeDown_(false)
       ,enqueuedDown_(false)
@@ -1455,8 +1498,8 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-       trace_printf( "%s@%d - pnid=%d, name=%s (MyPNID = %d)\n"
-                   , method_name, __LINE__, pnid, node_name, MyPNID );
+       trace_printf( "%s@%d - pnid=%d, name=%s (MyPNID = %d), currentNodes_=%d\n"
+                   , method_name, __LINE__, pnid, node_name, MyPNID, currentNodes_ );
 
     if ( pnid == -1 )
     {
@@ -3170,13 +3213,19 @@ void CCluster::InitializeConfigCluster( void )
         char *nodes = getenv( "SQ_VIRTUAL_NODES" );
         worldSize = atoi(nodes);
         if ( worldSize <= 0 )
+        {
             worldSize = 1;
+        }
     }
 #endif
     int rankToPnid[worldSize];
     CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
 
+#ifdef NAMESERVER_PROCESS
+    currentNodes_ = 1;  // non-master Name Servers join set through master Name Server
+#else
     currentNodes_ = worldSize;
+#endif
 
     if ( IsRealCluster )
     {
@@ -7361,7 +7410,38 @@ bool CCluster::checkIfDone (  )
     const char method_name[] = "CCluster::checkIfDone";
     TRACE_ENTRY;
 
-    if (trace_settings & TRACE_SYNC_DETAIL)
+#ifdef NAMESERVER_PROCESS
+    int nameServerCount = 0;
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    CNameServerConfigContainer *nameServerConfig = NULL;
+
+    if (clusterConfig)
+    {
+        nameServerConfig = Nodes->GetNameServerConfig();
+        if (nameServerConfig)
+        {
+            nameServerCount = nameServerConfig->GetCount();
+        }
+    }
+
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+        trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Process "
+                     "count=%d, internal state=%d, currentNodes_=%d, "
+                     "local process count=%d, shutdownNameServer=%d, "
+                     "nameServerCount=%d\n",
+                     method_name, __LINE__, 
+                     MyNode->GetPNid(),
+                     MyNode->GetShutdownLevel(),
+                     StateString(MyNode->GetState()),
+                     Nodes->ProcessCount(),
+                     MyNode->getInternalState(),
+                     currentNodes_, 
+                     MyNode->GetNumProcs(),
+                     MyNode->IsShutdownNameServer(),
+                     nameServerCount );
+
+#else
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
         trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Process "
                      "count=%d, internal state=%d, currentNodes_=%d, "
                      "local process count=%d\n",
@@ -7372,45 +7452,117 @@ bool CCluster::checkIfDone (  )
                      MyNode->getInternalState(),
                      currentNodes_, MyNode->GetNumProcs());
 
+#endif            
     // Check if we are also done
     if (( MyNode->GetState() != State_Down    ) &&
         ( MyNode->GetState() != State_Stopped )   )
     {
         if ( MyNode->GetShutdownLevel() != ShutdownLevel_Undefined )
         {
-            if ( Nodes->ProcessCount() == 0 )  // all WDTs exited
+#ifdef NAMESERVER_PROCESS
+            if ( (Nodes->ProcessCount() <= nameServerCount )   // only Name Servers alive
+                 && (MyNode->GetNumProcs() <= MAX_PRIMITIVES ) // only My Name Server alive
+                 && MyNode->IsShutdownNameServer()   // monitor shutdown Name Server received
+                 && !MyNode->isInQuiesceState() )    // post-quiescing will
+                                                     // expire WDG (cluster)
             {
-                if (trace_settings & TRACE_SYNC)
-                   trace_printf("%s@%d - Monitor signaled to exit.\n", method_name, __LINE__);
+                if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                   trace_printf("%s@%d - Name Server signaled to exit.\n", method_name, __LINE__);
                 MyNode->SetState( State_Stopped );
                 MyNode->SetInternalState(State_Ready_To_Exit);
 
                 // we need to sync one more time so other nodes see our state
                 return false;
             }
-            else if ( (Nodes->ProcessCount() <=
-                      (currentNodes_*MAX_PRIMITIVES))        // only WDGs alive
-                      && !MyNode->isInQuiesceState()    // post-quiescing will
-                                                        // expire WDG (cluster)
-                      && !waitForWatchdogExit_ )        // WDG not yet exiting
+#else
+            if ( NameServerEnabled )
             {
-                if (trace_settings & TRACE_SYNC)
-                   trace_printf("%s@%d - Stopping watchdog process.\n",
-                                method_name, __LINE__);
-
-                waitForWatchdogExit_ = true;
-                // stop the watchdog timer first
-                HealthCheck.setState(MON_STOP_WATCHDOG);
-                // let the watchdog process exit
-                HealthCheck.setState(MON_EXIT_PRIMITIVES);
+                
+                if ( Nodes->ProcessCount() == 0 )  // all Name Servers exited
+                {
+                    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                       trace_printf("%s@%d - Monitor signaled to exit.\n", method_name, __LINE__);
+                    MyNode->SetState( State_Stopped );
+                    MyNode->SetInternalState(State_Ready_To_Exit);
+    
+                    // we need to sync one more time so other nodes see our state
+                    return false;
+                }
+                else if ( (Nodes->ProcessCount() <= 
+                            (currentNodes_ * (MAX_PRIMITIVES+1)) ) // only WDGs and Name Servers alive
+                          && (MyNode->GetNumProcs() <=
+                            (MAX_PRIMITIVES+1) )                   // only WDGs and Name Servers alive
+                          && !MyNode->isInQuiesceState()    // post-quiescing will
+                                                            // expire WDG (cluster)
+                          && !waitForWatchdogExit_ )        // WDG not yet exiting
+                {
+                    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                       trace_printf("%s@%d - Stopping watchdog process. "
+                                    "(process count: cluster=%d, MyNode=%d)\n",
+                                    method_name, __LINE__,
+                                    Nodes->ProcessCount(), MyNode->ProcessCount());
+    
+                    waitForWatchdogExit_ = true;
+                    // stop the watchdog timer first
+                    HealthCheck.setState(MON_STOP_WATCHDOG);
+                    // let the watchdog process exit
+                    HealthCheck.setState(MON_EXIT_PRIMITIVES);
+                }
+                else if ( (Nodes->ProcessCount() <= 
+                            (currentNodes_ * (MAX_PRIMITIVES)) ) // only Name Servers alive
+                          && (MyNode->GetNumProcs() <=
+                            (MAX_PRIMITIVES) )                   // only Name Servers alive
+                          && !MyNode->isInQuiesceState()    // post-quiescing will
+                                                            // expire WDG (cluster)
+                          && !waitForNameServerExit_ )      // Name Server not yet exiting
+                {
+                    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                       trace_printf("%s@%d - Stopping Name Server process. "
+                                    "(process count: cluster=%d, MyNode=%d)\n",
+                                    method_name, __LINE__,
+                                    Nodes->ProcessCount(), MyNode->ProcessCount());
+    
+                    waitForNameServerExit_ = true;
+                    NameServer->ProcessShutdown();
+                }
             }
+            else
+            {
+                if ( Nodes->ProcessCount() == 0 )  // all WDTs exited
+                {
+                    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                       trace_printf("%s@%d - Monitor signaled to exit.\n", method_name, __LINE__);
+                    MyNode->SetState( State_Stopped );
+                    MyNode->SetInternalState(State_Ready_To_Exit);
+    
+                    // we need to sync one more time so other nodes see our state
+                    return false;
+                }
+                else if ( (Nodes->ProcessCount() <=
+                          (currentNodes_*MAX_PRIMITIVES))        // only WDGs alive
+                          && !MyNode->isInQuiesceState()    // post-quiescing will
+                                                            // expire WDG (cluster)
+                          && !waitForWatchdogExit_ )        // WDG not yet exiting
+                {
+                    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+                       trace_printf("%s@%d - Stopping watchdog process.\n",
+                                    method_name, __LINE__);
+    
+                    waitForWatchdogExit_ = true;
+                    // stop the watchdog timer first
+                    HealthCheck.setState(MON_STOP_WATCHDOG);
+                    // let the watchdog process exit
+                    HealthCheck.setState(MON_EXIT_PRIMITIVES);
+                }
+            }
+#endif
         }
     }
     else if ( MyNode->GetShutdownLevel() != ShutdownLevel_Undefined
               && MyNode->GetState() == State_Down
               && MyNode->GetNumProcs() == 0)
     {
-        if (trace_settings & TRACE_SYNC)
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
             trace_printf("%s@%d - No processes remaining, monitor exiting.\n",
                          method_name, __LINE__);
 
@@ -8483,13 +8635,15 @@ void CCluster::InitServerSock( void )
                 , (int)((unsigned char *)addr)[3]
                 , mon2nsPort );
         MyNode->SetMon2NsPort( MyMon2NsPort );
+        MyNode->SetMon2NsSocketPort( mon2nsPort );
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             trace_printf( "%s@%d Initialized my mon2ns comm socket port, "
-                          "pnid=%d (%s:%s) (Mon2NsCommPort=%s)\n"
+                          "pnid=%d (%s:%s) (Mon2NsPort=%s, Mon2NsSocketPort=%d)\n"
                         , method_name, __LINE__
                         , MyPNID, MyNode->GetName(), MyMon2NsPort
-                        , MyNode->GetMon2NsPort() );
+                        , MyNode->GetMon2NsPort()
+                        , MyNode->GetMon2NsSocketPort() );
 
     }
 #else
@@ -8883,7 +9037,17 @@ int CCluster::Connect( const char *portName )
     return ( sock );
 }
 
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+void CCluster::ConnectToMon2NsCommSelf( void )
+{
+    const char method_name[] = "CCluster::ConnectToMon2NsCommSelf";
+    TRACE_ENTRY;
+
+    Connect( MyNode->GetMon2NsSocketPort() );
+
+    TRACE_EXIT;
+}
+#else
 void CCluster::ConnectToPtPCommSelf( void )
 {
     const char method_name[] = "CCluster::ConnectToPtPCommSelf";

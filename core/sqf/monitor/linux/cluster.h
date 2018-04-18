@@ -113,8 +113,13 @@ public:
 #endif
     int  Connect( const char *portName );
     void Connect( int socketPort );
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+    void ConnectToMon2NsCommSelf( void );
+#else
     void ConnectToPtPCommSelf( void );
+#endif
+#ifdef NAMESERVER_PROCESS
+    void ConnectToMonCommSelf( void );
 #endif
     void ConnectToSelf( void );
     int  SetKeepAliveSockOpt( int sock );
@@ -318,6 +323,7 @@ private:
     int cumulativeDelaySec_;
 
     bool waitForWatchdogExit_;    // set when watchdog exit has already been issued
+    bool waitForNameServerExit_;  // set when Name Server exit has already been issued
 
     typedef struct state_def
     {

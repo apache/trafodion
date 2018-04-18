@@ -84,22 +84,12 @@ void CExtShutdownNsReq::performRequest()
                      msg_->u.request.u.shutdown.level);
     }
 
-    if ( msg_->u.request.u.shutdown.level == ShutdownLevel_Abrupt )
+    if (( MyNode->GetState() != State_Down    ) &&
+        ( MyNode->GetState() != State_Stopped )   )
     {
-        // Replicate a shutdown request so that all nodes begin to shutdown locally.
-        CReplShutdown *repl = new CReplShutdown(msg_->u.request.u.shutdown.level);
-        Replicator.addItem(repl);
-    }
-    else
-    {
-        // normal shutdown
-        // propagate the shutdown level before killing any processes.
+        MyNode->SetShutdownNameServer( true );
         MyNode->SetShutdownLevel( msg_->u.request.u.shutdown.level );
-
-        if (MyNode->GetState() == State_Up)
-        {
-            MyNode->SetState( State_Shutdown );
-        }
+        MyNode->SetState( State_Shutdown );
     }
 
     msg_->u.reply.u.generic.return_code = MPI_SUCCESS;

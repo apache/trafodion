@@ -53,6 +53,7 @@ CCommAcceptMon::CCommAcceptMon()
            : accepting_(false)
            , shutdown_(false)
            , thread_id_(0)
+           , process_thread_id_(0)
 {
     const char method_name[] = "CCommAcceptMon::CCommAcceptMon";
     TRACE_ENTRY;
@@ -668,7 +669,7 @@ void CCommAcceptMon::processNewSock( int joinFd )
     Context *ctx = new Context();
     ctx->this_ = this;
     ctx->pendingFd_ = joinFd;
-    rc = pthread_create(&thread_id_, NULL, mon2nsProcess, ctx);
+    rc = pthread_create(&process_thread_id_, NULL, mon2nsProcess, ctx);
     if (rc != 0)
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -777,7 +778,7 @@ void CCommAcceptMon::shutdownWork(void)
 
     // Set flag that tells the commAcceptor thread to exit
     shutdown_ = true;
-    Monitor->ConnectToSelf();
+    Monitor->ConnectToMon2NsCommSelf();
     CLock::wakeOne();
 
     if ( trace_settings & ( TRACE_NS ) )

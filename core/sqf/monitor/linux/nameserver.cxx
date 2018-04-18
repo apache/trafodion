@@ -629,7 +629,7 @@ int CNameServer::ProcessShutdown( void )
     msgshutdown->nid = -1;
     msgshutdown->pid = -1;
     //msgshutdown->level = msgIn->u.request.u.shutdown.level;
-    msgshutdown->level = ShutdownLevel_Abrupt;
+    msgshutdown->level = ShutdownLevel_Normal;
 
     int error = SendReceive(&msg );
 

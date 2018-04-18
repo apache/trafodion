@@ -39,6 +39,8 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern int MyPNID;
 
+extern const char *ProcessTypeString( PROCESSTYPE type );
+
 CExtProcInfoNsReq::CExtProcInfoNsReq( reqQueueMsg_t msgType,
                                       int nid, int pid, int sockFd,
                                       struct message_def *msg )
@@ -55,48 +57,110 @@ CExtProcInfoNsReq::~CExtProcInfoNsReq()
 }
 
 // Copy information for a specific process into the reply message buffer.
-void CExtProcInfoNsReq::copyInfo(CProcess *process, ProcessInfoNs_reply_def &processInfo)
+void CExtProcInfoNsReq::copyInfo(CProcess *process, ProcessInfoNs_reply_def &process_info_ns)
 {
+    const char method_name[] = "CNameServer::SendReceive";
+    TRACE_ENTRY;
+
     CProcess *parent;
 
-    processInfo.nid = process->GetNid();
-    processInfo.pid = process->GetPid();
-    processInfo.verifier = process->GetVerifier();
-    strncpy( processInfo.process_name, process->GetName(), MAX_PROCESS_NAME );
-    processInfo.type = process->GetType();
-
-    parent = process->GetParent();
+    process_info_ns.nid = process->GetNid();
+    process_info_ns.pid = process->GetPid();
+    process_info_ns.verifier = process->GetVerifier();
+    strncpy( process_info_ns.process_name, process->GetName(), MAX_PROCESS_NAME );
+    process_info_ns.type = process->GetType();
+    parent = (process->GetParentNid() == -1 ? 
+              NULL : 
+              Nodes->GetLNode(process->GetParentNid())
+                 ->GetProcessL(process->GetParentPid()));
     if (parent)
     {
-        processInfo.parent_nid = parent->GetNid();
-        processInfo.parent_pid = parent->GetPid();
-        processInfo.parent_verifier = parent->GetVerifier();
-//        strncpy(processInfo.parent_name, parent->GetName(), MAX_PROCESS_NAME );
+        process_info_ns.parent_nid = parent->GetNid();
+        process_info_ns.parent_pid = parent->GetPid();
+        process_info_ns.parent_verifier = parent->GetVerifier();
     }
     else
     {
-        processInfo.parent_nid = -1;
-        processInfo.parent_pid = -1;
-        processInfo.parent_verifier = -1;
-//        processInfo.parent_name[0] = '\0';
+        process_info_ns.parent_nid = -1;
+        process_info_ns.parent_pid = -1;
+        process_info_ns.parent_verifier = -1;
     }
 
-    processInfo.priority = process->GetPriority();
-    processInfo.backup = process->IsBackup();
-    processInfo.state = process->GetState();
-    processInfo.unhooked = process->IsUnhooked();
-    processInfo.event_messages = process->IsEventMessages();
-    processInfo.system_messages = process->IsSystemMessages();
-    strncpy( processInfo.program, process->program(), MAX_PROCESS_PATH );
-    processInfo.pathStrId = process->pathStrId();
-    processInfo.ldpathStrId = process->ldPathStrId();
-    processInfo.programStrId = process->programStrId();
-    strncpy( processInfo.port_name, process->GetPort(), MPI_MAX_PORT_NAME );
-    processInfo.argc = process->argc();
-    memcpy( processInfo.argv, process->userArgv(), process->userArgvLen() );
-    strncpy( processInfo.infile, process->infile(), MAX_PROCESS_PATH );
-    strncpy( processInfo.outfile, process->outfile(), MAX_PROCESS_PATH );
-    processInfo.creation_time = process->GetCreationTime();
+    process_info_ns.priority = process->GetPriority();
+    process_info_ns.backup = process->IsBackup();
+    process_info_ns.state = process->GetState();
+    process_info_ns.unhooked = process->IsUnhooked();
+    process_info_ns.event_messages = process->IsEventMessages();
+    process_info_ns.system_messages = process->IsSystemMessages();
+    strncpy( process_info_ns.program, process->program(), MAX_PROCESS_PATH );
+    process_info_ns.pathStrId = process->pathStrId();
+    process_info_ns.ldpathStrId = process->ldPathStrId();
+    process_info_ns.programStrId = process->programStrId();
+    strncpy( process_info_ns.port_name, process->GetPort(), MPI_MAX_PORT_NAME );
+    process_info_ns.argc = process->argc();
+    memcpy( process_info_ns.argv, process->userArgv(), process->userArgvLen() );
+    strncpy( process_info_ns.infile, process->infile(), MAX_PROCESS_PATH );
+    strncpy( process_info_ns.outfile, process->outfile(), MAX_PROCESS_PATH );
+    process_info_ns.creation_time = process->GetCreationTime();
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        char desc[2048];
+        char* descp = desc;
+        sprintf( desc, 
+                 "process-info-ns reply:\n"
+                 "        process_info_ns.nid=%d\n"
+                 "        process_info_ns.pid=%d\n"
+                 "        process_info_ns.verifier=%d\n"
+                 "        process_info_ns.process_name=%s\n"
+                 "        process_info_ns.type=%d\n"
+                 "        process_info_ns.parent_nid=%d\n"
+                 "        process_info_ns.parent_pid=%d\n"
+                 "        process_info_ns.parent_verifier=%d\n"
+                 "        process_info_ns.priority=%d\n"
+                 "        process_info_ns.backup=%d\n"
+                 "        process_info_ns.state=%d\n"
+                 "        process_info_ns.unhooked=%d\n"
+                 "        process_info_ns.event_messages=%d\n"
+                 "        process_info_ns.system_messages=%d\n"
+                 "        process_info_ns.program=%s\n"
+                 "        process_info_ns.pathStrId=%d:%d\n"
+                 "        process_info_ns.ldpathStrId=%d:%d\n"
+                 "        process_info_ns.programStrId=%d:%d\n"
+                 "        process_info_ns.port_name=%s\n"
+                 "        process_info_ns.argc=%d\n"
+                 "        process_info_ns.infile=%s\n"
+                 "        process_info_ns.outfile=%s\n"
+                 "        process_info_ns.return_code=%d"
+                 , process_info_ns.nid
+                 , process_info_ns.pid
+                 , process_info_ns.verifier
+                 , process_info_ns.process_name
+                 , process_info_ns.type
+                 , process_info_ns.parent_nid
+                 , process_info_ns.parent_pid
+                 , process_info_ns.parent_verifier
+                 , process_info_ns.priority
+                 , process_info_ns.backup
+                 , process_info_ns.state
+                 , process_info_ns.unhooked
+                 , process_info_ns.event_messages
+                 , process_info_ns.system_messages
+                 , process_info_ns.program
+                 , process_info_ns.pathStrId.nid
+                 , process_info_ns.pathStrId.id
+                 , process_info_ns.ldpathStrId.nid
+                 , process_info_ns.ldpathStrId.id
+                 , process_info_ns.programStrId.nid
+                 , process_info_ns.programStrId.id
+                 , process_info_ns.port_name
+                 , process_info_ns.argc
+                 , process_info_ns.infile
+                 , process_info_ns.outfile
+                 , process_info_ns.return_code );
+        trace_printf( "%s@%d - %s\n"
+                    , method_name, __LINE__, descp );
+    }
+    TRACE_EXIT;
 }
 
 void CExtProcInfoNsReq::populateRequestString( void )
@@ -148,29 +212,41 @@ void CExtProcInfoNsReq::performRequest()
     target_process_name = (const char *) msg_->u.request.u.process_info.target_process_name;
     target_verifier  = msg_->u.request.u.process_info.target_verifier;
 
+    PROCESSTYPE target_type  = msg_->u.request.u.process_info.type;
+
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d request #%ld: ProcessInfoNs, for (%d, %d:%d), "
-                      "process type=%d\n"
+                      "process type=%s\n"
                     , method_name, __LINE__, id_
                     , target_nid, target_pid, target_verifier
-                    , msg_->u.request.u.process_info.type);
+                    , ProcessTypeString(target_type));
     }
 
-    if ( target_process_name.size() )
+    if (target_process_name.size())
     { // find by name (don't check node state, don't check process state, not backup)
         process = Nodes->GetProcess( target_process_name.c_str()
                                    , target_verifier
                                    , false, false, false );
     }
     else
-    { // find by nid (don't check node state, don't check process state, backup is Ok)
-        process = Nodes->GetProcess( target_nid
-                                   , target_pid
-                                   , target_verifier
-                                   , false, false, true );
+    {
+        if (target_pid != -1)
+        { // find by nid,pid (don't check node state, don't check process state, backup is Ok)
+            process = Nodes->GetProcess( target_nid
+                                       , target_pid
+                                       , target_verifier
+                                       , false, false, true );
+        }
+        else
+        {
+            CLNode *lnode = Nodes->GetLNode( target_nid );
+            if (lnode)
+            {
+                process = lnode->GetProcessLByType( target_type );
+            }
+        }
     }
-
 
     if (process)
     {
@@ -182,7 +258,7 @@ void CExtProcInfoNsReq::performRequest()
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-           trace_printf( "%s@%d - Kill %s (%d, %d:%d) -- can't find target process\n"
+           trace_printf( "%s@%d - ProcessInfoNs %s (%d, %d:%d) -- can't find target process\n"
                        , method_name, __LINE__
                        , msg_->u.request.u.process_info.target_process_name
                        , msg_->u.request.u.process_info.target_nid
