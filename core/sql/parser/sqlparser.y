@@ -21798,6 +21798,11 @@ query_shape_control : shape_identifier
 				    {
 				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_LEAF_TABLE_MAPPING_UDF);
 				    }
+				  else if (*$1 == "FAST_EXTRACT" ||
+                                           *$1 == "HIVE_INSERT")
+				    {
+				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_EXTRACT);
+				    }
 				  else if (*$1 == "FORWARD")
 				    {
 				      $$ = new (PARSERHEAP()) ScanForceWildCard();

@@ -2268,6 +2268,7 @@ Int32 WildCardOp::getArity() const
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
     case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+    case REL_ANY_EXTRACT:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2345,6 +2346,8 @@ const NAString WildCardOp::getText() const
       return "REL_ANY_HASH_JOIN";
     case REL_ANY_MERGE_JOIN:
       return "REL_ANY_MERGE_JOIN";
+    case REL_ANY_EXTRACT:
+      return "REL_ANY_EXTRACT";
     case REL_FORCE_ANY_SCAN:
       return "REL_FORCE_ANY_SCAN";
     case REL_FORCE_EXCHANGE:
