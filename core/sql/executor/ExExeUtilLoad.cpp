@@ -124,9 +124,7 @@ short ExExeUtilCreateTableAsTcb::work()
   ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
   ContextCli *currContext = masterGlob->getStatement()->getContext();
-  
-  ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
-    castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
+  ExTransaction *ta = currContext->getTransaction();
   
   while (1)
     {
@@ -535,69 +533,24 @@ short ExExeUtilCreateTableAsTcb::work()
 
 	case DONE_:
 	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
-	    // insert into parent
-	    qparent_.up->insert();
-	    
+	    retcode = handleDone();
+	    if (retcode == 1)
+	       return WORK_OK;
 	    step_ = INITIAL_;
-	    qparent_.down->removeHead();
-	    
 	    return WORK_OK;
 	  }
 	break;
 
 	case ERROR_:
 	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-	    ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	    
-	    if (diagsArea == NULL)
-	      diagsArea = 
-		ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-            else
-              diagsArea->incrRefCount (); // setDiagsArea call below will decr ref count
-	    
-	    if (getDiagsArea())
-	      diagsArea->mergeAfter(*getDiagsArea());
-	    
-	    up_entry->setDiagsArea (diagsArea);
-	    
-	    // insert into parent
-	    qparent_.up->insert();
-	    
-	    pstate.matches_ = 0;
-
+	    retcode = handleError();
+	    if (retcode == 1)
+	       return WORK_OK;
 	    step_ = DONE_;
 	  }
 	break;
-
-
 	} // switch
     } // while
-
-  
   
   return WORK_OK;
 
@@ -1679,74 +1632,20 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
     case DONE_:
     {
-      if (qparent_.up->isFull())
-        return WORK_OK;
-
-      // Return EOF.
-      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-      up_entry->upState.setMatchNo(0);
-      up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-      if (diagsArea == NULL)
-        diagsArea = ComDiagsArea::allocate(getMyHeap());
-      else
-        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-      if (getDiagsArea())
-        diagsArea->mergeAfter(*getDiagsArea());
-
+      retcode = handleDone();
+      if (retcode == 1)
+         return WORK_OK;
       masterGlob->setRowsAffected(rowsAffected_);
-
-      up_entry->setDiagsArea(diagsArea);
-
-      // insert into parent
-      qparent_.up->insert();
       step_ = INITIAL_;
-      qparent_.down->removeHead();
       return WORK_OK;
     }
     break;
 
     case LOAD_ERROR_:
     {
-      if (qparent_.up->isFull())
-        return WORK_OK;
-
-      // Return EOF.
-      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-      up_entry->upState.setMatchNo(0);
-      up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-      if (diagsArea == NULL)
-        diagsArea = ComDiagsArea::allocate(getMyHeap());
-      else
-        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-      if (getDiagsArea())
-        {
-        diagsArea->mergeAfter(*getDiagsArea());
-          diagsArea->setRowCount(rowsAffected_);
-        }
-
-      up_entry->setDiagsArea(diagsArea);
-
-      // insert into parent
-      qparent_.up->insert();
-
-      pstate.matches_ = 0;
-
-
-
+      retcode = handleError();
+      if (retcode == 1)
+         return WORK_OK;
       step_ = DONE_;
     }
     break;
@@ -2153,9 +2052,8 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
-
-  ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
-      castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
+  ExMasterStmtGlobals *masterGlob = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+  ExTransaction *ta = masterGlob->getStatement()->getContext()->getTransaction();
 
   while (1)
   {
@@ -2177,7 +2075,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       {
          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
                 "ExpHbaseInterface_JNI::init"); 
-         handleError();
          step_ = UNLOAD_END_ERROR_;
          break;
       }
@@ -2327,7 +2224,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, hbcRetCode, 
                 "HBaseClient_JNI::createSnapshot/verifySnapshot", 
                 snapshotsList_->at(i)->snapshotName->data() );
-          handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2389,7 +2285,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, hbcRetCode, 
                 "HBaseClient_JNI::createSnapshot/verifySnapshot", 
                 snapshotsList_->at(i)->snapshotName->data() );
-          handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2477,36 +2372,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
     case DONE_:
     {
-      if (qparent_.up->isFull())
+      retcode = handleDone();
+      if (retcode == 1)
         return WORK_OK;
-
-      // Return EOF.
-      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-      up_entry->upState.setMatchNo(0);
-      up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-      if (diagsArea == NULL)
-        diagsArea = ComDiagsArea::allocate(getMyHeap());
-      else
-        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-      diagsArea->setRowCount(rowsAffected_);
-
-      if (getDiagsArea())
-        diagsArea->mergeAfter(*getDiagsArea());
-
-      up_entry->setDiagsArea(diagsArea);
-
-      // insert into parent
-      qparent_.up->insert();
+      masterGlob->setRowsAffected(rowsAffected_);
       step_ = INITIAL_;
-      qparent_.down->removeHead();
-
       freeResources();
       return WORK_OK;
     }
@@ -2514,36 +2384,9 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 
     case UNLOAD_ERROR_:
     {
-      if (qparent_.up->isFull())
-        return WORK_OK;
-
-      // Return EOF.
-      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-      up_entry->upState.setMatchNo(0);
-      up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-      if (diagsArea == NULL)
-        diagsArea = ComDiagsArea::allocate(getMyHeap());
-      else
-        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-      if (getDiagsArea())
-        diagsArea->mergeAfter(*getDiagsArea());
-
-      up_entry->setDiagsArea(diagsArea);
-
-      // insert into parent
-      qparent_.up->insert();
-
-      pstate.matches_ = 0;
-
-
-
+      retcode = handleError();
+      if (retcode == 1)
+         return WORK_OK;
       step_ = DONE_;
     }
     break;
@@ -2552,7 +2395,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
   } // while
 
   return WORK_OK;
-
 }
 
 short ExExeUtilHBaseBulkUnLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
@@ -3447,7 +3289,6 @@ short ExExeUtilLobExtractTcb::work()
 	    retcode = handleError();
 	    if (retcode == 1)
 	      return WORK_OK;
-
 	    step_ = DONE_;
 	  }
 	  break;
@@ -3457,7 +3298,6 @@ short ExExeUtilLobExtractTcb::work()
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;
-
 	    step_ = EMPTY_;
 	    return WORK_OK;
 	  }

@@ -470,7 +470,7 @@ public class HDFSClient
    {
       if (future_ != null) {
          try {
-           future_.get(200, TimeUnit.MILLISECONDS);
+           future_.get(30, TimeUnit.SECONDS);
          } catch(TimeoutException e) {
             logger_.error("Asynchronous Thread of HdfsScan is Cancelled (timeout), ", e);
             future_.cancel(true);
