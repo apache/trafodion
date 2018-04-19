@@ -739,6 +739,16 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	      return FALSE;
 	    }
 
+        case REL_ANY_EXTRACT:
+	  switch (op_)
+	    {
+	    case REL_FAST_EXTRACT:
+	    case REL_HIVE_INSERT:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
 	case ANY_REL_OR_ITM_OP:
 	  ABORT("internal error in OperatorType::match()");
 
@@ -775,6 +785,7 @@ NABoolean OperatorType::isWildcard() const
     case REL_FORCE_ANY_SCAN:
     case REL_ANY_ROUTINE:
     case REL_ANY_SCALAR_UDF_ROUTINE:
+    case REL_ANY_EXTRACT:
       return TRUE;
 
     default:
