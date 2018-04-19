@@ -1621,7 +1621,7 @@ Lng32 ExExeUtilTcb::extractParts
   if ((rc = extractedPartsObj_->extractParts(numParts, parts)) != 0 ||
       (numParts != 3))
     {
-      *getDiagsArea() << DgSqlCode(-CLI_INTERNAL_ERROR);
+      ExRaiseSqlError(getHeap(), &diagsArea_, -CLI_INTERNAL_ERROR);
       return -1;
     }
 

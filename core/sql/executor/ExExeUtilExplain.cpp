@@ -399,8 +399,7 @@ short ExExeUtilDisplayExplainTcb::work()
 		// no rows found.
 		// Either no explain information was available or statement
 		// was not found.
-		ComDiagsArea * da = getDiagsArea();
-		ExRaiseSqlError(getMyHeap(), &da,
+		ExRaiseSqlError(getMyHeap(), &diagsArea_,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
 				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
@@ -472,13 +471,11 @@ short ExExeUtilDisplayExplainTcb::work()
 	    if (rc != 0)	//means we got an EXE_EXPLAIN_BAD_DATA
 	      //or an error from getPtrAndLen()
 	      {
-		ComDiagsArea * da = getDiagsArea();
-		ExRaiseSqlError(getMyHeap(), &da,
+		ExRaiseSqlError(getMyHeap(), &diagsArea_,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
 				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
 				 (ExeErrorCode)EXE_NO_EXPLAIN_INFO));
-
 		pstate.step_ = HANDLE_ERROR_;
 	      }
 	    else
@@ -3928,8 +3925,7 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 		    // Return error.
 		    // Do not do 'DROP_AND_ERROR' as we don't want to drop
 		    // an existing table.
-		    ComDiagsArea * da = getDiagsArea();
-		    ExRaiseSqlError(getHeap(), &da,
+		    ExRaiseSqlError(getHeap(), &diagsArea_,
 				    EXE_NO_EXPLAIN_INFO, NULL);
 
 		    step_ = ERROR_;

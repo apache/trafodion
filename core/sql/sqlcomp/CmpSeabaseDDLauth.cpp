@@ -2093,4 +2093,3 @@ CmpSeabaseDDLauth::AuthStatus authStatus = getAuthDetails(roleName,false);
     return true;
     
 }
-

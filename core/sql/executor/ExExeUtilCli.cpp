@@ -2211,6 +2211,7 @@ Lng32 ExeCliInterface::holdAndSetCQD(const char * defaultName, const char * defa
   return 0;
 }
 
+
 Lng32 ExeCliInterface::restoreCQD(const char * defaultName, ComDiagsArea *globalDiags)
 {
   Lng32 cliRC;
@@ -2243,6 +2244,7 @@ Lng32 ExeCliInterface::restoreCQD(const char * defaultName, ComDiagsArea *global
 Lng32 ExeCliInterface::getCQDval(const char * defaultName, 
 				 char * val,
 				 ComDiagsArea *globalDiags)
+
 {
   Lng32 cliRC;
 

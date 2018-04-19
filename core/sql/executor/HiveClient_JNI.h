@@ -28,6 +28,7 @@
 #ifndef HIVE_CLIENT_H
 #define HIVE_CLIENT_H
 
+#include <list>
 #include "JavaObjectInterface.h"
 
 typedef enum {
@@ -40,6 +41,8 @@ typedef enum {
  ,HVC_ERROR_EXISTS_EXCEPTION
  ,HVC_ERROR_GET_HVT_PARAM
  ,HVC_ERROR_GET_HVT_EXCEPTION
+ ,HVC_ERROR_GET_HVP_PARAM
+ ,HVC_ERROR_GET_HVP_EXCEPTION
  ,HVC_ERROR_GET_REDEFTIME_PARAM
  ,HVC_ERROR_GET_REDEFTIME_EXCEPTION
  ,HVC_ERROR_GET_ALLSCH_EXCEPTION
@@ -53,7 +56,6 @@ typedef enum {
 class HiveClient_JNI : public JavaObjectInterface
 {
 public:
-  
   static HiveClient_JNI* getInstance();
   static void deleteInstance();
 
@@ -63,11 +65,13 @@ public:
   // Initialize JVM and all the JNI configuration.
   // Must be called.
   HVC_RetCode init();
-  
+
   HVC_RetCode close();
   static HVC_RetCode exists(const char* schName, const char* tabName);
   static HVC_RetCode getHiveTableStr(const char* schName, const char* tabName, 
                               Text& hiveTblStr);
+  static HVC_RetCode getHiveTableParameters(const char *schName, const char *tabName, 
+                              Text& hiveParamsStr);
   static HVC_RetCode getRedefTime(const char* schName, const char* tabName, 
                            Int64& redefTime);
   static HVC_RetCode getAllSchemas(NAHeap *heap, LIST(Text *)& schNames);
@@ -83,6 +87,7 @@ private:
   // Private Default constructor		
   HiveClient_JNI(NAHeap *heap)
   :  JavaObjectInterface(heap)
+  , isConnected_(FALSE)
   {}
 
 private:  
@@ -91,6 +96,7 @@ private:
    ,JM_CLOSE
    ,JM_EXISTS     
    ,JM_GET_HVT
+   ,JM_GET_HVP
    ,JM_GET_RDT
    ,JM_GET_ASH
    ,JM_GET_ATL
@@ -102,5 +108,6 @@ private:
   static bool javaMethodsInitialized_;
   // this mutex protects both JaveMethods_ and javaClass_ initialization
   static pthread_mutex_t javaMethodsInitMutex_;
+  bool isConnected_;
 };
 #endif

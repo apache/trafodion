@@ -280,6 +280,7 @@ class ExExeUtilTcb : public ex_tcb
 
   short holdAndSetCQD(const char * defaultName, const char * defaultValue,
                       ComDiagsArea * globalDiags = NULL);
+
   short restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
 
   short setCS(const char * csName, char * csValue,
@@ -290,8 +291,9 @@ class ExExeUtilTcb : public ex_tcb
   void restoreMaintainControlTableTimeout(char * catalog);
 
   static Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue,
-                            ExeCliInterface * cliInterface,
-                            ComDiagsArea * globalDiags = NULL);
+                         ExeCliInterface * cliInterface,
+                         ComDiagsArea * globalDiags = NULL);
+
   static Lng32 restoreCQD(const char * defaultName,
                          ExeCliInterface * cliInterface,
                          ComDiagsArea * globalDiags = NULL);
