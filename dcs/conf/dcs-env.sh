@@ -67,6 +67,10 @@ export DCS_OPTS="-XX:+UseConcMarkSweepGC"
 # export DCS_OPTS="$DCS_OPTS -XX:MaxDirectMemorySize="
 # Set dcs.offheapcache.percentage in dcs-site.xml to a nonzero value.
 
+export DCS_MASTER_OPTS=
+export DCS_SERVER_OPTS=
+export DCS_RESET_OPTS=
+export DCS_ZOOKEEPER_OPTS=
 # Uncomment and adjust to enable JMX exporting
 # See jmxremote.password and jmxremote.access in $JRE_HOME/lib/management to configure remote password access.
 # More details at: http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html
