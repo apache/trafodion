@@ -57,46 +57,47 @@ import java.sql.DriverManager;
 
 
 public class HiveClient {
-    static Logger logger = Logger.getLogger(HiveClient.class.getName());
-    static HiveConf hiveConf = null;
-    static HiveMetaStoreClient hmsClient  ;
-    static String ddlTimeConst = null;
-    public HiveClient() {
-   
-    }
+    private static Logger logger = Logger.getLogger(HiveClient.class.getName());
+    private final String lockPath="/trafodion/traflock";
 
+    private static HiveConf hiveConf = null;
+    private static HiveMetaStoreClient hmsClient  ;
+    private static String ddlTimeConst = null;
     static {
-      String confFile = System.getProperty("trafodion.log4j.configFile");
-      System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
-      if (confFile == null) {
+         String confFile = System.getProperty("trafodion.log4j.configFile");
+         System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
+         if (confFile == null) 
          confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
-      }
-      PropertyConfigurator.configure(confFile);
-      hiveConf = new HiveConf();
-      try {
-          hmsClient = new HiveMetaStoreClient(hiveConf, null);
-          ddlTimeConst = getDDLTimeConstant();
-      } catch (MetaException me)
-      {
-          throw new RuntimeException("Checked MetaException from HiveClient static block");
-      }
+         PropertyConfigurator.configure(confFile);
+         hiveConf = new HiveConf();
+         try {
+             hmsClient = new HiveMetaStoreClient(hiveConf, null);
+             ddlTimeConst = getDDLTimeConstant();
+         } catch (MetaException me)
+         {
+             throw new RuntimeException("Checked MetaException from HiveClient static block");
+         }
     }
 
-    public static boolean close() {
-        hmsClient.close();
-        return true;
+    public static boolean close() 
+    {	
+        hmsClient.close();	
+        return true;	
     }
-
+ 
     public static boolean exists(String schName, String tblName)  
-        throws MetaException, TException, UnknownDBException {
-            if (logger.isDebugEnabled()) logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
-            boolean result = hmsClient.tableExists(schName, tblName);
-            return result;
+        throws MetaException, TException, UnknownDBException 
+    {
+        if (logger.isDebugEnabled()) logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
+        boolean result = hmsClient.tableExists(schName, tblName);
+        return result;
     }
 
     public static String getHiveTableString(String schName, String tblName)
-        throws MetaException, TException {
+        throws MetaException, TException 
+    {
         Table table;
+
         if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableString(" + schName + " , " + 
                      tblName + ") called.");
         try {
@@ -107,11 +108,29 @@ public class HiveClient {
             return new String("");
         }
         if (logger.isDebugEnabled()) logger.debug("HiveTable is " + table.toString());
-        return table.toString() ;
+        return table.toString();
     }
 
+    public static String getHiveTableParameters(String schName, String tblName)
+        throws MetaException, TException 
+    {
+        Table table;
+        if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableParameters(" + schName + " , " + 
+                     tblName + ") called.");
+        try {
+            table = hmsClient.getTable(schName, tblName);
+        }
+        catch (NoSuchObjectException x) {
+            if (logger.isDebugEnabled()) logger.debug("HiveTable not found");
+            return new String("");
+        }
+        String tableParams = new String();
+        return tableParams.toString();
+    }
+    
     public static long getRedefTime(String schName, String tblName)
-        throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException {
+        throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException 
+    {
         Table table;
         if (logger.isDebugEnabled()) logger.debug("HiveClient.getRedefTime(" + schName + " , " + 
                      tblName + ") called.");
@@ -140,7 +159,8 @@ public class HiveClient {
         return redefTime ;
     }
 
-    public static Object[] getAllSchemas() throws MetaException {
+    public static Object[] getAllSchemas() throws MetaException 
+    {
         List<String> schemaList = (hmsClient.getAllDatabases());
         if (schemaList != null)
            return schemaList.toArray();
@@ -149,7 +169,8 @@ public class HiveClient {
     }
 
     public static Object[] getAllTables(String schName) 
-        throws MetaException, TException {
+        throws MetaException, TException 
+    {
         try {
         Database db = hmsClient.getDatabase(schName);
         if (db == null)
@@ -220,23 +241,24 @@ public class HiveClient {
         return fieldVal.toString();
   }
 
-  public static boolean hdfsCreateFile(String fname) throws IOException
-  {
-    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - started" );
-    Path filePath = new Path(fname);
-    FileSystem fs = FileSystem.get(filePath.toUri(),hiveConf);
-    fs.create(filePath, true);
-    
-    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - file created" );
-
-    return true;
-  }
-  
   public static void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
   {
       Class.forName("org.apache.hive.jdbc.HiveDriver");
-      Connection con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      Connection con = null;
+      String isSecureHadoop = System.getenv("SECURE_HADOOP");
+      //If Kerberos is enabled, then we need to connect to remote hiveserver2 using hive principal
+      if(isSecureHadoop != null && isSecureHadoop.equalsIgnoreCase("Y")){
+         String hiveServer2Url = System.getenv("HIVESERVER2_URL");
+         if(hiveServer2Url == null || hiveServer2Url.isEmpty()){
+            hiveServer2Url = "localhost:10000";
+         }
+         String hivePrincipal = System.getenv("HIVE_PRINCIPAL");
+         con = DriverManager.getConnection("jdbc:hive2://" + hiveServer2Url+"/;principal=" + hivePrincipal, "hive", "");
+      }else{
+         con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      }
       Statement stmt = con.createStatement();
       stmt.execute(ddl);
   }
+
 }

@@ -264,6 +264,7 @@ private:
   Lng32 GetRowsAffected(Int64 *rowsAffected);
 
   Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue, ComDiagsArea *globalDiags = NULL);
+
   Lng32 restoreCQD(const char * defaultName, ComDiagsArea *globalDiags = NULL);
 
   Lng32 getCQDval(const char * defaultName,

@@ -38,12 +38,14 @@ pthread_mutex_t HiveClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZE
 
 static const char* const hvcErrorEnumStr[] = 
 {
-  "Java exception while initializing HiveClient"
+  "Preparing parameters for HiveClient."
  ,"Java exception in close()."
  ,"Preparing parameters for exists()."
  ,"Java exception in exists()."
  ,"Preparing parameters for getHiveTableStr()."
  ,"Java exception in getHiveTableStr()."
+ ,"Preparing parameters for getHiveTableParameters()."
+ ,"Java exception in getHiveTableParameters()."
  ,"Preparing parameters for getRedefTime()."
  ,"Java exception in getRedefTime()."
  ,"Java exception in getAllSchemas()."
@@ -106,8 +108,8 @@ void HiveClient_JNI::deleteInstance()
 //////////////////////////////////////////////////////////////////////////////
 HiveClient_JNI::~HiveClient_JNI()
 {
-   if (isInitialized())
-      close(); // error handling?
+   if (isInitialized())	
+      close(); // error handling
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -135,12 +137,14 @@ HVC_RetCode HiveClient_JNI::init()
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR       ].jm_signature = "()V";
-    JavaMethods_[JM_CLOSE      ].jm_name      = "close";
+    JavaMethods_[JM_CLOSE      ].jm_name      = "close";	
     JavaMethods_[JM_CLOSE      ].jm_signature = "()Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
     JavaMethods_[JM_EXISTS     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_GET_HVT    ].jm_name      = "getHiveTableString";
     JavaMethods_[JM_GET_HVT    ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+    JavaMethods_[JM_GET_HVP    ].jm_name      = "getHiveTableParameters";
+    JavaMethods_[JM_GET_HVP    ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
     JavaMethods_[JM_GET_RDT    ].jm_name      = "getRedefTime";
     JavaMethods_[JM_GET_RDT    ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)J";
     JavaMethods_[JM_GET_ASH     ].jm_name      = "getAllSchemas";
@@ -149,43 +153,13 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)[Ljava/lang/Object;";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_name = "executeHiveSQL";
     JavaMethods_[JM_EXEC_HIVE_SQL].jm_signature = "(Ljava/lang/String;)V";
+
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     if (rc == HVC_OK)
        javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
   return rc;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HVC_RetCode HiveClient_JNI::close()
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
-
-  if (initJNIEnv() != JOI_OK)
-     return HVC_ERROR_INIT_PARAM;
-
-  // boolean close();
-  tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
-  jboolean jresult = jenv_->CallStaticBooleanMethod(javaClass_, JavaMethods_[JM_CLOSE].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::close()");
-    jenv_->PopLocalFrame(NULL);
-    return HVC_ERROR_CLOSE_EXCEPTION;
-  }
-  
-  if (jresult == false) 
-  {
-    logError(CAT_SQL_HBASE, "HiveClient_JNI::close()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HVC_ERROR_CLOSE_EXCEPTION;
-  }
-
-  jenv_->PopLocalFrame(NULL);
-  return HVC_OK;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -291,6 +265,64 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
   jenv_->PopLocalFrame(NULL);
   return HVC_OK;  // Table exists.
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HVC_RetCode HiveClient_JNI::getHiveTableParameters(const char *schName, const char *tabName, Text& hiveParamsStr)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getHiveTableParameters(%s).", hiveParamsStr.data());
+  if (initJNIEnv() != JOI_OK)
+     return HVC_ERROR_INIT_PARAM;
+  if (getInstance() == NULL)
+     return HVC_ERROR_INIT_PARAM;
+  jstring js_schName = jenv_->NewStringUTF(schName);
+  if (js_schName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HVC_ERROR_GET_HVT_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HVC_ERROR_GET_HVP_PARAM;
+  }
+  jstring js_tabName = jenv_->NewStringUTF(tabName);
+  if (js_tabName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HVC_ERROR_GET_HVT_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HVC_ERROR_GET_HVP_PARAM;
+  }
+
+  // java.lang.String getHiveTableParameters();
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_HVP].jm_full_name;
+  jstring jresult = (jstring)jenv_->CallStaticObjectMethod(javaClass_, 
+                                                     JavaMethods_[JM_GET_HVP].methodID, js_schName, js_tabName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::getHiveTableParameters()");
+    jenv_->PopLocalFrame(NULL);
+    return HVC_ERROR_GET_HVT_EXCEPTION;
+  }
+ 
+  if (jresult == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HVC_DONE;
+  }
+  if (jenv_->GetStringLength(jresult) <= 0)
+  { 
+     jenv_->PopLocalFrame(NULL);
+     return HVC_DONE; // Table does not exist
+  }
+    
+  // Not using UFTchars and NAWString for now.
+  const char* char_result = jenv_->GetStringUTFChars(jresult, 0);
+  hiveParamsStr += char_result ; // deep copy. hiveParamsStr is assumed to be empty.
+  jenv_->ReleaseStringUTFChars(jresult, char_result);
+
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getHiveTableParameters(%s).", hiveParamsStr.data());
+  jenv_->PopLocalFrame(NULL);
+  return HVC_OK;  // Table exists.
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -462,6 +494,37 @@ HVC_RetCode HiveClient_JNI::getAllTables(NAHeap *heap, const char* schName,
   }
   jenv_->PopLocalFrame(NULL);
   return HVC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////	
+// 	
+//////////////////////////////////////////////////////////////////////////////	
+HVC_RetCode HiveClient_JNI::close()	
+{	
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");	
+	
+  if (initJNIEnv() != JOI_OK)	
+     return HVC_ERROR_INIT_PARAM;	
+	
+  // boolean close();	
+  tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;	
+  jboolean jresult = jenv_->CallStaticBooleanMethod(javaClass_, JavaMethods_[JM_CLOSE].methodID);	
+  if (jenv_->ExceptionCheck())	
+  {	
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::close()");	
+    jenv_->PopLocalFrame(NULL);	
+    return HVC_ERROR_CLOSE_EXCEPTION;	
+  }	
+  	
+  if (jresult == false) 	
+  {	
+    logError(CAT_SQL_HBASE, "HiveClient_JNI::close()", getLastError());	
+    jenv_->PopLocalFrame(NULL);	
+    return HVC_ERROR_CLOSE_EXCEPTION;	
+  }	
+	
+  jenv_->PopLocalFrame(NULL);	
+  return HVC_OK;	
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -4768,5 +4768,4 @@ void ContextCli::disconnectHdfsConnections()
           hdfsDisconnect(entry->hdfsHandle_);         
         }
     }
-  
 }

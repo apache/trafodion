@@ -1515,7 +1515,6 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblNam
   NAArray<HbaseStr>* regionStats = client_->getRegionStats((NAHeap *)heap_, tblName.val);
   if (regionStats == NULL)
     return NULL;
-
   return regionStats;
 }
 

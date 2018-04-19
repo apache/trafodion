@@ -2323,8 +2323,7 @@ short ExExeUtilHiveTruncateTcb::work()
           Lng32 cliError = 0;
           
           Lng32 intParam1 = -cliRC;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
                           NULL, &intParam1, 
                           &cliError, 
@@ -2332,7 +2331,6 @@ short ExExeUtilHiveTruncateTcb::work()
                           "HDFS",
                           (char*)"ExpLOBInterfaceEmptyDirectory",
                           getLobErrStr(intParam1));
-          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
           break;
         }
@@ -2343,13 +2341,10 @@ short ExExeUtilHiveTruncateTcb::work()
           str_sprintf(errStr, "genModTS = %ld, failedModTS = %ld", 
                       htTdb().getModTS(), failedModTS);
           
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
                           NULL, NULL, NULL,
                           errStr);
-          pentry_down->setDiagsArea(diagsArea);
-          
           step_ = ERROR_;
           break;
         }
@@ -2377,8 +2372,7 @@ short ExExeUtilHiveTruncateTcb::work()
           Lng32 cliError = 0;
           
           Lng32 intParam1 = -cliRC;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
                           NULL, &intParam1, 
                           &cliError, 
@@ -2402,12 +2396,11 @@ short ExExeUtilHiveTruncateTcb::work()
               strcpy(reason, "Reason: error occurred during deletion of one or more files at the specified location");
             }
           
-          ExRaiseSqlError(getHeap(), &diagsArea, 
+          ExRaiseSqlError(getHeap(), &diagsArea_, 
                           (ExeErrorCode)(EXE_HIVE_TRUNCATE_ERROR), NULL,
                           NULL, NULL, NULL,
                           reason,
                           NULL, NULL);
-          pentry_down->setDiagsArea(diagsArea);
           step_ = ERROR_;
         }
         else
@@ -2419,48 +2412,21 @@ short ExExeUtilHiveTruncateTcb::work()
 
       case ERROR_:
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return Error 
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-        up_entry->copyAtp(pentry_down);
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-        // insert into parent
-        qparent_.up->insert();
-
+        if (handleError())
+           return WORK_OK;
         step_ = DONE_;
       }
       break;
 
       case DONE_:
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        // insert into parent
-        qparent_.up->insert();
-
-        //pstate.matches_ = 0;
+        if (handleDone())
+           return WORK_OK;
         step_ = INITIAL_;
-        qparent_.down->removeHead();
 
         return WORK_OK;
       }
-        break;
+      break;
 
     } // switch
   } // while

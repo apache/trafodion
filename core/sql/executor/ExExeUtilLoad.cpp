@@ -2705,8 +2705,7 @@ short ExExeUtilLobExtractTcb::work()
 		      
 		      Lng32 intParam1 = 0;
 		      ExRaiseSqlError(getHeap(), &diagsArea_, 
-				      (ExeErrorCode)(8444), NULL, &intParam1, 
-				      &cliError, NULL, NULL);
+				      -8448, &intParam1, &cliError, NULL, NULL);
 		      step_ = HANDLE_ERROR_;
 		    }
 		}
@@ -2738,11 +2737,9 @@ short ExExeUtilLobExtractTcb::work()
 		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 
 		  // invalid state, should not be reached.
-		  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		  ExRaiseSqlError(getMyHeap(),
-				  &diagsArea,
+				  &diagsArea_,
 				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
-                  setDiagsArea(diagsArea);
 		  step_ = CANCEL_;
 		}
 		break;
@@ -2895,12 +2892,9 @@ short ExExeUtilLobExtractTcb::work()
 	      else
 		{
 		  // invalid "toType"
-		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-		  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		  ExRaiseSqlError(getMyHeap(),
-				  &diagsArea,
+				  &diagsArea_,
 				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
-                  setDiagsArea(diagsArea);
 		  step_ = CANCEL_;
 		
 		break;
@@ -3211,12 +3205,9 @@ short ExExeUtilLobExtractTcb::work()
 	    else
 	      {
 		// No other "toType" shoudl reach here - i.e TO_FILE_ or TO_STRING
-		ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-		ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 		ExRaiseSqlError(getMyHeap(),
-				&diagsArea,
+				&diagsArea_,
 				(ExeErrorCode)(EXE_INTERNAL_ERROR));
-                setDiagsArea(diagsArea);
 		step_ = CANCEL_;
 		
 		break;
@@ -3462,10 +3453,8 @@ short ExExeUtilLobUpdateTcb::work()
             else
 		{
 		  // invalid "fromType"
-		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-		  ComDiagsArea * da = up_entry->getDiagsArea();
 		  ExRaiseSqlError(getMyHeap(),
-				  &da,
+				  &diagsArea_,
 				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
 		  step_ = CANCEL_;
 		
