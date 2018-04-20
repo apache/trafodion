@@ -9035,9 +9035,11 @@ WHERE UPSHIFT(D1.deptname) = UPSHIFT(D2.deptname);
 [[rand_function]]
 == RAND Function
 
-The RAND Function generates pseudo-random numbers that are uniformly distributed 
+The RAND function generates pseudo-random numbers that are uniformly distributed 
 in the range between 0 and 2^32^ (=4294967296), 
 using an integer as an optional seed value.
+
+NOTE: the RAND function does not always behaves in predictive ways.
 
 ```
 RAND ([numeric-expression])
@@ -9115,19 +9117,6 @@ SQL>SELECT POWER(RAND(1)*10,3) FROM DUAL;
 
 [[rand_function_example]]
 === Examples of RAND Function
-
-* This example returns random values using 0, 1, 10, 100 and 1000 as seed values.
-
-+
-```
-SQL>SELECT RAND(0), RAND(1), RAND(10), RAND(100), RAND(1000) FROM DUAL;
- 
-(EXPR)     (EXPR)     (EXPR)     (EXPR)     (EXPR)    
----------- ---------- ---------- ---------- ----------
-2147483647      16807     168070    1680700   16807000 
-
---- 1 row(s) selected.
-```
 
 * This example demostrates how to use the RAND function with built-in function (ABS function).
 
