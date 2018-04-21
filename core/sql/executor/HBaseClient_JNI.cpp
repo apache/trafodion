@@ -535,13 +535,10 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
 
   if (jresult == false) 
   {
-printf("LMDBG: jresult is false\n");
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::create()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_CREATE_EXCEPTION;
   }
-  else
-printf("LMDBG: jresult is true\n");
 
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;
