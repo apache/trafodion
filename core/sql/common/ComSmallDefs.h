@@ -1771,13 +1771,16 @@ enum ComTableFeature  { COM_UNKNOWN_TABLE_FEATURE
                       , COM_DROPPABLE
                       , COM_DROPPABLE_INSERT_ONLY
                       , COM_NOT_DROPPABLE
-                      , COM_NOT_DROPPABLE_INSERT_ONLY };
+                      , COM_NOT_DROPPABLE_INSERT_ONLY 
+                      , COM_SMALL_TABLE 
+                      };
 
 #define COM_UNKNOWN_TABLE_FEATURE_LIT        "  "
 #define COM_DROPPABLE_LIT                    "Y "
 #define COM_DROPPABLE_INSERT_ONLY_LIT        "YI"
 #define COM_NOT_DROPPABLE_LIT                "N "
 #define COM_NOT_DROPPABLE_INSERT_ONLY_LIT    "NI"
+#define COM_SMALL_TABLE_LIT                "N "
 
 
 enum ComDiskFileFormat { UNKNOWN = 0,

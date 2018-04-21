@@ -820,6 +820,11 @@ protected:
        const char * pivHiName,
        ItemExpr   * partNumExpr = NULL,
        NABoolean    useHash2Split = FALSE);
+public:
+  void createSmallTableKeyPredicates(
+       const char * tblName,ItemExpr   * partNumExpr = NULL
+       );
+
 
 private:
 
@@ -959,6 +964,10 @@ public:
   virtual PartitioningFunction* copy() const;
 
   virtual void createPartitioningKeyPredicates();
+
+  virtual SearchKey * createSearchKey(const IndexDesc *indexDesc,
+                                               ValueIdSet availInputs,
+                                               ValueIdSet additionalPreds) const;
 
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.

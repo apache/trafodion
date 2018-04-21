@@ -3172,6 +3172,8 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             defVal = colNode->getComputedDefaultExpr();
             if (colNode->isDivisionColumn())
               colFlags |= SEABASE_COLUMN_IS_DIVISION;
+            else if (colName == "_TBLNM_")
+              colFlags |= SEABASE_COLUMN_IS_TBLNM;
             else if (colName == ElemDDLSaltOptionsClause::getSaltSysColName())
               colFlags |= SEABASE_COLUMN_IS_SALT;
             else

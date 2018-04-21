@@ -530,6 +530,7 @@ public:
   void setTableFeature(ElemDDLTableFeature * pFeature);
   NABoolean isDroppable();
   NABoolean isInsertOnly();
+  NABoolean isSmallTable();
 
   // explain support for tables created without the LIKE clause.
   virtual NABoolean explainSupported() { return (getIsLikeOptionSpecified() ? FALSE : TRUE); }
@@ -850,6 +851,7 @@ private:
   NABoolean isTableFeatureSpecified_;
   NABoolean isDroppable_;
   NABoolean isInsertOnly_;
+  NABoolean isSmallTable_;
 
   ElemDDLSGOptions * pSGOptions_;
 
@@ -1601,6 +1603,10 @@ inline void StmtDDLCreateTable::setTableFeature(ElemDDLTableFeature * pFeature)
       isDroppable_ = FALSE;
       isInsertOnly_ = TRUE;
       break;
+    case COM_SMALL_TABLE:
+      isSmallTable_ = TRUE;
+      isInsertOnly_ = FALSE;
+      break;
     default:
       NAAbort("StmtDDLCreateTable", __LINE__, "internal logic error");
       break;
@@ -1610,6 +1616,10 @@ inline void StmtDDLCreateTable::setTableFeature(ElemDDLTableFeature * pFeature)
 inline NABoolean StmtDDLCreateTable::isDroppable()
 {
   return isDroppable_;
+}
+inline NABoolean StmtDDLCreateTable::isSmallTable()
+{
+  return isSmallTable_;
 }
 inline NABoolean StmtDDLCreateTable::isInsertOnly()
 {
