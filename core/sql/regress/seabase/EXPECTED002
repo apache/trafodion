@@ -1313,6 +1313,7 @@ FS_DATA_TYPE  SQL_DATA_TYPE         DISPLAY_DATA_TYPE                           
 +>memstore_flush_size = '2000000',
 +>split_policy = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
 +>CACHE_DATA_IN_L1 = 'false',
++>HDFS_STORAGE_POLICY = 'hot' ,
 +>prefetch_blocks_on_open = 'false'
 +>);
 
@@ -1350,6 +1351,7 @@ CREATE TABLE TRAFODION.T002SCH.CREATEOPTIONS
     MEMSTORE_FLUSH_SIZE = '2000000',
     SPLIT_POLICY = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
     CACHE_DATA_IN_L1 = 'false',
+    HDFS_STORAGE_POLICY = 'hot',
     PREFETCH_BLOCKS_ON_OPEN = 'false'
   )
 ;

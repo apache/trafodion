@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Arrays;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
@@ -93,6 +95,8 @@ import java.util.TreeSet;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.permission.AclEntry;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -161,6 +165,7 @@ public class HBaseClient {
     public static final int HBASE_SPLIT_POLICY = 22;
     public static final int HBASE_CACHE_DATA_IN_L1 = 23;
     public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+    public static final int HBASE_HDFS_STORAGE_POLICY= 25;
 
 
     private static Connection connection; 
@@ -237,10 +242,12 @@ public class HBaseClient {
    private class ChangeFlags {
        boolean tableDescriptorChanged;
        boolean columnDescriptorChanged;
+       boolean storagePolicyChanged;
 
        ChangeFlags() {
            tableDescriptorChanged = false;
            columnDescriptorChanged = false;
+           storagePolicyChanged = false;
        }
 
        void setTableDescriptorChanged() {
@@ -258,6 +265,19 @@ public class HBaseClient {
        boolean columnDescriptorChanged() {
            return columnDescriptorChanged;
        }
+
+       void setStoragePolicyChanged(String str) {
+           storagePolicy_ = str;
+           storagePolicyChanged = true;
+       }
+
+       boolean storagePolicyChanged()    {
+           return storagePolicyChanged;
+       }
+
+       String storagePolicy_;
+
+
    }
 
    private ChangeFlags setDescriptors(Object[] tableOptions,
@@ -477,6 +497,11 @@ public class HBaseClient {
 		  colDesc.setPrefetchBlocksOnOpen(false); 
 	      returnStatus.setColumnDescriptorChanged();
 	      break ;
+           case HBASE_HDFS_STORAGE_POLICY:
+               //TODO HBase 2.0 support this
+               //So when come to HBase 2.0, no need to do this via HDFS, just set here
+             returnStatus.setStoragePolicyChanged(tableOption);
+             break ;
            case HBASE_SPLIT_POLICY:
                // This method not yet available in earlier versions
                // desc.setRegionSplitPolicyClassName(tableOption));
@@ -498,6 +523,7 @@ public class HBaseClient {
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
+            ChangeFlags setDescRet = null;
             HTableDescriptor desc = new HTableDescriptor(tblName);
             addCoprocessor(desc);
             int defaultVersionsValue = 0;
@@ -518,7 +544,7 @@ public class HBaseClient {
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
 
                 // change the descriptors based on the tableOptions; 
-                setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+                setDescRet = setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
                 
                 desc.addFamily(colDesc);
             }
@@ -552,8 +578,82 @@ public class HBaseClient {
                      admin.createTable(desc);
                   }
                }
-            admin.close();
+
+            if(setDescRet!= null)
+              if(setDescRet.storagePolicyChanged())
+              {
+                 //change the HDFS storage policy
+                 //get the HBase table path
+                 String hbaseRoot = config.get("hbase.rootdir");
+                 FileSystem fs = FileSystem.get(config);
+                 //Construct the HDFS dir
+                 //find out if namespace is there
+                 String[] parts = tblName.split(":");
+                 String namespacestr="";
+
+                 //guess the path pattern
+                 //different HBase version may have different path pattern
+                 //There is no interface to get this information using HBase User API
+                 //Since it is HBase internal behavior
+                 //At present, before HBase 2.0 release and before HBASE-19858 released in HBase 1.5.0
+                 //Trafodion here need a trick to guess
+                 String fullPath = hbaseRoot + "/data/" ;
+                 String fullPath2 = hbaseRoot + "/data/default/";
+
+                 //check if fullPath2 exist
+                 if(fs.exists(new Path(fullPath2)))
+                    fullPath = fullPath2;
+
+                 if(parts.length >1) //have namespace
+                   fullPath = fullPath + parts[0] + "/" + parts[1];
+                 else
+                   fullPath = fullPath + tblName;
+
+                 if (logger.isDebugEnabled()) logger.debug("createk table fullPath is " + fullPath);
+
+                 String invokeret = invokeSetStoragePolicy(fs, fullPath, setDescRet.storagePolicy_ ) ;
+
+                 if( invokeret != null)
+                 {
+                   //error handling
+                   admin.close();
+                   throw new IOException(invokeret);
+                 }
+              }
+
+        admin.close();
         return true;
+    }
+
+    private static String invokeSetStoragePolicy(final FileSystem fs, final String pathstr,
+      final String storagePolicy) {
+        String ret = null;
+        Path path = new Path(pathstr);
+        Method m = null;
+        try {
+            m = fs.getClass().getDeclaredMethod("setStoragePolicy",
+            new Class<?>[] { Path.class, String.class });
+            m.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            ret = "FileSystem doesn't support setStoragePolicy";
+            m = null;
+        } catch (SecurityException e) {
+          ret = "No access to setStoragePolicy on FileSystem from the SecurityManager";
+          m = null; // could happen on setAccessible() or getDeclaredMethod()
+        }
+        if (m != null) {
+          try {
+            m.invoke(fs, path, storagePolicy);
+            if (logger.isDebugEnabled()) {
+              logger.debug("Set storagePolicy=" + storagePolicy + " for path=" + path);
+            }
+          } catch (Exception e) {
+               logger.error("invoke set storage policy error : " + e);
+               ret = "invoke set storage policy error : " + e.getMessage();
+          }
+        }
+
+       return ret;
     }
 
     public boolean registerTruncateOnAbort(String tblName, long transID)
