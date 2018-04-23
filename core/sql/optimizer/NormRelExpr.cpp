@@ -2855,11 +2855,14 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
         haveSignificantReduction = TRUE;
       CostScalar innerAllowance =
         ((ActiveSchemaDB()->getDefaults()).getAsDouble(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE));
+      NABoolean haveSmallInner = FALSE;
+      if ((innerRowCount < innerAllowance) && (!noInnerStats))
+        haveSmallInner = TRUE;
 
       if (preds.isEmpty() && 
 	  ((child(1)->getGroupAttr()->getNumBaseTables() == 0) ||
            haveSignificantReduction ||
-           (innerRowCount < innerAllowance) ||
+           haveSmallInner ||
 	    (CmpCommon::getDefault(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION) == DF_ON)))
   {                     
     CollHeap *stmtHeap = CmpCommon::statementHeap() ;
