@@ -2778,6 +2778,8 @@ as the join's right child. This transformation is enabled by default
 only if the right side is an IN list or if the groupby's reduction 
 ratio is greater than 5.0, otherwise a CQD has to be used.
 
+Examples:
+
 select t1.a
 from t1
 where t1.b in (1,2,3,4,...,101) ;
@@ -2790,6 +2792,19 @@ Scan t1   TupleList                 Scan t1   GroupBy {group cols: InList.col}
                                                   |
                                                   |
                                                 TupleList
+
+select t1.a
+from t1
+where t1.b in (select t2.c from t2 where whatever) ;
+
+
+  Semi Join {pred : t1.b = t2.c }       Join {pred : t1.b = t2.c}
+ /         \                   ------->  /    \
+/           \                           /      \
+Scan t1   Scan t2                   Scan t1   GroupBy {group cols: t2.c}
+                                                  |
+                                                  |
+                                                Scan t2
 
 */
 
