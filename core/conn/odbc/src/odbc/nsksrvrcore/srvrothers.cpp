@@ -6533,6 +6533,8 @@ odbc_SQLSrvr_ExtractLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+            char             errNumStr[128];
+            sprintf(errNumStr, "%d", p_buffer->sqlcode);
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6541,7 +6543,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
 
             exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
@@ -6616,6 +6618,9 @@ odbc_SQLSrvr_UpdateLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def * p_buffer = QryLobUpdateSrvrStmt->sqlError.errorList._buffer;
+            char             errNumStr[128];
+            sprintf(errNumStr, "%d", p_buffer->sqlcode);
+
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6624,7 +6629,7 @@ odbc_SQLSrvr_UpdateLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
             exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
             exception_->u.SQLError.errorList._length = QryLobUpdateSrvrStmt->sqlError.errorList._length;
