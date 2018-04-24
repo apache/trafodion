@@ -4068,31 +4068,23 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
       strcpy(handle, h.data());
     }
 
-  // when handle is null and extract is from a file that is specified, then the params are:
-  //  stringParam1: file name
-  //  stringParam2: file dir
-  //  stringParam3: other info (like port num for hadoop)
+  // Use stringParam1 to pass in target file .
   char * stringParam1 = NULL;
   if (NOT stringParam_.isNull())
     {
-    stringParam1 =  space->allocateAlignedSpace(stringParam_.length() + 1);
-    strcpy(stringParam1, stringParam_.data());
+      stringParam1 = space->allocateAlignedSpace(stringParam_.length() + 1);
+      strcpy(stringParam1, stringParam_.data());
     }
 
   char * stringParam2 = NULL;
-  if (NOT stringParam2_.isNull())
-    {
-    stringParam2 = space->allocateAlignedSpace(stringParam2_.length() + 1);
-    strcpy(stringParam2, stringParam2_.data());
-    }
-  else if (handle_ == NULL)
-    {
-      const char* f = ActiveSchemaDB()->getDefaults().
-	getValue(LOB_STORAGE_FILE_DIR);
+  //use StringParam2 to pass in LOB storage dir  
+   const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
 
-      stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
-      strcpy(stringParam2, f);
-    }
+   stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
+   strcpy(stringParam2, f);
+    
+  
 
   char * stringParam3 = NULL;
   if (NOT stringParam3_.isNull())
@@ -4139,19 +4131,15 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 				   &input_expr);
     }
 
-  Lng32 lst = 0;
-  if (handle_ == NULL)
-    {
-      // extract from a file
-      lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
-    }
-
+  Lng32 lst = 0; 
+  lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
   
+
   ComTdbExeUtilLobExtract * exe_util_tdb = new(space) 
     ComTdbExeUtilLobExtract
     (
@@ -4341,11 +4329,15 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
 
 
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
-  
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
+
+  char *lobLoc = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(lobLoc, f);
   ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
     ComTdbExeUtilLobUpdate
     (
@@ -4360,6 +4352,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      lst,
      hdfsServer,
      hdfsPort,
+     lobLoc,
      input_expr,
      inputRowLen,
      workCriDesc,
