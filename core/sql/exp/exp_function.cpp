@@ -5977,6 +5977,14 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 
       seed_ = x + fraction;
 
+      // Go through one step of a linear congruential random generator.
+      // (https://en.wikipedia.org/wiki/Linear_congruential_generator).
+      // This is to avoid seed values that are close to each other when
+      // we call this method again within a short time. The eval() method
+      // below doesn't handle seed values that are close to each other
+      // very well.
+      seed_ = (((Int64) seed_) * 1664525L + 1664525L) % 2147483648;
+
       if (seed_<0)
         seed_ += 2147483647;
       if ( seed_ < 1 ) seed_ = 1;
