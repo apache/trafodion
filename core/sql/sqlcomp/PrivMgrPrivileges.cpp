@@ -4531,7 +4531,7 @@ PrivStatus PrivMgrPrivileges::getRolesToCheck(
     {
       // just return what getAuthNameFromAuthID returns
       ComUser::getAuthNameFromAuthID(roleIDs[r],roleName, sizeof(roleName),length);
-      if (r > 0)
+      if (rolesWithPrivs.size() > 0)
         rolesWithPrivs += ", ";
       rolesWithPrivs += roleName;
     }
