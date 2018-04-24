@@ -424,6 +424,9 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
   DDkwd__(ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS, "OFF"),
 
+  // Allow users to grant privileges to role using the with grant option
+  DDkwd__(ALLOW_WGO_FOR_ROLES,                  "ON"),
+
   DDSkwd__(ALTPRI_ESP,                          ""),
   DDSkwd__(ALTPRI_MASTER,	                ""),
 

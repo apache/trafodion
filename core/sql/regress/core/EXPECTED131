@@ -320,9 +320,9 @@ SQL_USER7
 >>
 >>-- expect error 8031 since the query is not running.
 >>obey cancel_cmd;
->>control query cancel qid MXID11000007219212324915937583329000000000206U3335600_52_S1;
+>>control query cancel qid MXID11000007322212391194409553273000000000206U3334000_56_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000007219212324915937583329000000000206U3335600_52_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000007322212391194409553273000000000206U3334000_56_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -482,7 +482,7 @@ SQL_USER3
 >>
 >>-- grant privs to user3, now user3 can execute dml
 >>sh sqlci -i"TEST131(grant_hive_privs)" -u"SQL_User4"  ;
->>grant select on hive.hive.item to sql_user3;
+>>grant select on hive.hive.item to sql_user3 by DB__HIVEROLE;
 
 --- SQL operation complete.
 >>
@@ -502,7 +502,7 @@ End of MXCI Session
 >>-- revoke privs from user3, user3 can no longer perform dml
 >>-- verify that query invalidate works as designed
 >>sh sqlci -i"TEST131(revoke_hive_privs)" -u"SQL_User4"  ;
->>revoke select on hive.hive.item from sql_user3;
+>>revoke select on hive.hive.item from sql_user3 by DB__HIVEROLE;
 
 --- SQL operation complete.
 >>

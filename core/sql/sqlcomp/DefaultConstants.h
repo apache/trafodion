@@ -3306,6 +3306,9 @@ enum DefaultConstants
 
   SUPPRESS_CHAR_LIMIT_CHECK,
  
+  // Allow users to grant privileges to roles using the With Grant Option
+  ALLOW_WGO_FOR_ROLES,
+
   BMO_MEMORY_ESTIMATE_OUTLIER_FACTOR,
 
   // Use the earlier implementation of HdfsScan via libhdfs
