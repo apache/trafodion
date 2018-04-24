@@ -2702,6 +2702,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // SQ_SEAMONSTER which will have a value of 0 or 1.
   DDkwd__(SEAMONSTER,                  "SYSTEM"),
 
+  // If the inner table of a semi-join has fewer rows than this,
+  // we'll allow it to be transformed to a join.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE,  "100.0"),
+ // Ratio of right child cardinality to uec above which semijoin 
+ // trans. is favored.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO,  "5.0"),
  SDDkwd__(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION, "SYSTEM"),
   // Disallow/Allow semi and anti-semi joins in MultiJoin framework
   DDkwd__(SEMI_JOINS_SPOIL_JBB,        "OFF"),

@@ -8795,10 +8795,12 @@ void Scan::addIndexInfo()
               for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
                   NABoolean isASupersetIndex =
-                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex) &&
+                      possibleIndexJoins_[i]->indexPredicates_.contains(newIndexPredicates);
 
                   NABoolean isASubsetIndex =
-                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) &&
+                      newIndexPredicates.contains(possibleIndexJoins_[i]->indexPredicates_);
 
                   NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
 
