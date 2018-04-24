@@ -3012,37 +3012,9 @@ short ExExeUtilLobExtractTcb::work()
 
             //Retrieve the lobLocation for this lobNum which will be used 
             //in the other steps_ which open and read lob data file.
-            short *lobNumList = new (getHeap()) short[1];
-	    short *lobTypList = new (getHeap()) short[1];
-	    char  **lobLocList = new (getHeap()) char*[1];
-             char  **lobColNameList = new (getHeap()) char*[1];
-	    lobLocList[0] = new (getHeap()) char[1024];
-	    lobColNameList[0] = new (getHeap()) char[256];
-
-	    Lng32 numLobs = lobNum;
-	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
-	      (
-	       schName,
-	       schNameLen,
-	       uid,
-	       numLobs,
-	       LOB_CLI_SELECT_UNIQUE,
-	       lobNumList,
-	       lobTypList,
-	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort(),0,FALSE);
-	    if (cliRC < 0)
-	      {
-		getDiagsArea()->mergeAfter(diags);
-
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    strcpy(lobLoc_, lobLocList[0]);
-            NADELETEBASIC(lobColNameList[0],getHeap());
-            NADELETEBASIC(lobNumList,getHeap());
-            NADELETEBASIC(lobTypList,getHeap());
+           
+	    strcpy(lobLoc_, lobTdb().getStringParam2());
+           
             if (lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_HDFSFILENAME_)
 	      step_ = EXTRACT_HDFSFILENAME_;
             else if (lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_OFFSET_)
@@ -3653,38 +3625,9 @@ short ExExeUtilLobUpdateTcb::work()
 	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
 
 	    lobDataLen_ = lobTdb().totalBufSize_; 
-            short *lobNumList = new (getHeap()) short[1];
-	    short *lobTypList = new (getHeap()) short[1];
-	    char  **lobLocList = new (getHeap()) char*[1];
-            char  **lobColNameList = new (getHeap()) char*[1];
-	    lobLocList[0] = new (getHeap()) char[1024];
-	    lobColNameList[0] = new (getHeap()) char[256];
-          
-	    Lng32 numLobs = lobNum;
-	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
-	      (
-	       schName,
-	       schNameLen,
-	       uid,
-	       numLobs,
-	       LOB_CLI_SELECT_UNIQUE,
-	       lobNumList,
-	       lobTypList,
-	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort(),0,FALSE);
-	    if (cliRC < 0)
-	      {
-		getDiagsArea()->mergeAfter(diags);
-
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    strcpy(lobLoc_, lobLocList[0]);
-            NADELETEBASIC(lobLocList[0],getHeap());
-            NADELETEBASIC(lobColNameList[0],getHeap());
-            NADELETEBASIC(lobNumList,getHeap());
-            NADELETEBASIC(lobTypList,getHeap());
+           
+            strcpy(lobLoc_, lobTdb().getLobLocation());
+	    
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
@@ -3748,38 +3691,8 @@ short ExExeUtilLobUpdateTcb::work()
 	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
 
 	    lobDataLen_ = lobTdb().totalBufSize_; 
-            short *lobNumList = new (getHeap()) short[1];
-	    short *lobTypList = new (getHeap()) short[1];
-	    char  **lobLocList = new (getHeap()) char*[1];
-            char  **lobColNameList = new (getHeap()) char*[1];
-	    lobLocList[0] = new (getHeap()) char[1024];
-            lobColNameList[0] = new (getHeap()) char[256];
-	    
-	    Lng32 numLobs = lobNum;
-	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
-	      (
-	       schName,
-	       schNameLen,
-	       uid,
-	       numLobs,
-	       LOB_CLI_SELECT_UNIQUE,
-	       lobNumList,
-	       lobTypList,
-	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort(),0,FALSE);
-	    if (cliRC < 0)
-	      {
-		getDiagsArea()->mergeAfter(diags);
-
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    strcpy(lobLoc_, lobLocList[0]);
-            NADELETEBASIC(lobLocList[0],getHeap());
-            NADELETEBASIC(lobColNameList[0],getHeap());
-            NADELETEBASIC(lobNumList,getHeap());
-            NADELETEBASIC(lobTypList,getHeap());
+            strcpy(lobLoc_, lobTdb().getLobLocation());
+           
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
@@ -3844,37 +3757,8 @@ short ExExeUtilLobUpdateTcb::work()
 	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
 
 	    lobDataLen_ = lobTdb().totalBufSize_; 
-            short *lobNumList = new (getHeap()) short[1];
-	    short *lobTypList = new (getHeap()) short[1];
-	    char  **lobLocList = new (getHeap()) char*[1];
-            char  **lobColNameList = new (getHeap()) char*[1];
-	    lobLocList[0] = new (getHeap()) char[1024];
-	    lobColNameList[0] = new (getHeap()) char[256];
-	    Lng32 numLobs = lobNum;
-	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
-	      (
-	       schName,
-	       schNameLen,
-	       uid,
-	       numLobs,
-	       LOB_CLI_SELECT_UNIQUE,
-	       lobNumList,
-	       lobTypList,
-	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort(),0,FALSE);
-	    if (cliRC < 0)
-	      {
-		getDiagsArea()->mergeAfter(diags);
-
-		step_ = HANDLE_ERROR_;
-		break;
-	      }
-
-	    strcpy(lobLoc_, lobLocList[0]);
-            NADELETEBASIC(lobLocList[0],getHeap());
-            NADELETEBASIC(lobColNameList[0],getHeap());
-            NADELETEBASIC(lobNumList,getHeap());
-            NADELETEBASIC(lobTypList,getHeap());
+            strcpy(lobLoc_, lobTdb().getLobLocation());
+           
            
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;

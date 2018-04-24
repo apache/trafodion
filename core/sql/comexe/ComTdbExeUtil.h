@@ -2972,6 +2972,7 @@ public:
      Int32 lobStorageType,
      char * lobHdfsServer,
      Lng32 lobHdfsPort,
+     char *loc,
      ex_expr * input_expr,
      ULng32 input_rowlen,
      ex_cri_desc * work_cri_desc,
@@ -2990,6 +2991,7 @@ public:
   Lng32 getHandleLen() { return handleLen_; }
   char * getLobHdfsServer() { return lobHdfsServer_; }
   Lng32 getLobHdfsPort() { return lobHdfsPort_; }
+  char * getLobLocation() { return lobLoc_;}
 
   UpdateFromType getFromType() { return (UpdateFromType)fromType_; }
  
@@ -3053,6 +3055,7 @@ private:
   Lng32 lobStorageType_;
   Lng32 lobHdfsPort_;
   NABasicPtr lobHdfsServer_;
+  NABasicPtr lobLoc_;
   Int64 lobMaxSize_;
   Int64 lobMaxChunkSize_;
   Int64 lobGCLimit_;
