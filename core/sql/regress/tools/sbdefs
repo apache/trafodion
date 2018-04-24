@@ -22,7 +22,7 @@
 -- defs included during seabase regr run
 
 #ifdef SEABASE_REGRESS
-cqd mode_seabase 'ON';
+--cqd mode_seabase 'ON';
 cqd seabase_volatile_tables 'ON';
 cqd hbase_async_drop_table 'OFF';
 cqd hbase_serialization 'ON';

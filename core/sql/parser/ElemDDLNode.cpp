@@ -429,6 +429,12 @@ ElemDDLNode::castToElemDDLFileAttrColFam()
   return NULL;
 }
 
+ElemDDLFileAttrSuperTable*
+ElemDDLNode::castToElemDDLFileAttrSuperTable()
+{
+  return NULL;
+}
+
 //++ MV
 ElemDDLFileAttrRangeLog *
 ElemDDLNode::castToElemDDLFileAttrRangeLog()

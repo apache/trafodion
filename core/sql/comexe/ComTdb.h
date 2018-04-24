@@ -821,6 +821,7 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   const char * allColFams;
   Int64 objectFlags;  // flags from OBJECTS table
   Int64 tablesFlags;  // flags from TABLES table
+  const char * superTable;
 };
 
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase

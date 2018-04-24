@@ -3777,6 +3777,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
      myPartFunc->isPartitioned() &&
      !myPartFunc->isAReplicationPartitioningFunction());
 
+  NABoolean isSmallTable =  getTableDesc()->getNATable()->isSmallTable();
+
   if (isRewrittenMV())
     generator->setNonCacheableMVQRplan(TRUE);
 
@@ -3816,6 +3818,31 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
   VEGRewritePairs  vegPairs(generator->wHeap());
   ValueIdSet partKeyPredsHBase;
 
+  if (isSmallTable)
+  {
+      ValueId saltCol;
+      const ValueIdList &keyCols = getIndexDesc()->getIndexKey();
+ 
+      for (CollIndex i=0; i<keyCols.entries(); i++)
+      {
+        if (keyCols[i].isSaltColumn() )
+          {
+            continue;
+          }
+        else
+          {
+            saltCol = keyCols[i];
+            break;
+          }
+      }
+      if (saltCol != NULL_VALUE_ID)
+      {
+        ((PartitioningFunction*)myPartFunc)->createSmallTableKeyPredicates(getTableDesc()->getNATable()->getTableName().getQualifiedNameAsString().data(), saltCol.getItemExpr());
+      }
+      partKeyPredsHBase = myPartFunc->getPartitioningKeyPredicates();
+  }
+
+
   if (usePartKeyPreds)
     {
       // add the partitioning key predicates to this scan node,
@@ -3844,7 +3871,7 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
               createPartitioningKeyPredicatesForSaltedTable(saltCol);
         }
 
-      partKeyPredsHBase = myPartFunc->getPartitioningKeyPredicates();
+      partKeyPredsHBase += myPartFunc->getPartitioningKeyPredicates();
     }
 
   if (getMdamKeyPtr() != NULL)
@@ -3918,7 +3945,10 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 
           if (getSearchKey()) 
             existingKeyPreds += getSearchKey()->getKeyPredicates();
-   
+  
+          if (isSmallTable)
+            existingKeyPreds += myPartFunc->getPartitioningKeyPredicates();
+ 
           // create a new search key that has the partitioning key preds
           SearchKey * partKeySearchKey = 
             myPartFunc->createSearchKey(getIndexDesc(),

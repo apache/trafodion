@@ -2075,6 +2075,32 @@ short CmpSeabaseDDL::createSeabaseTable2(
   Lng32 numSaltPartnsFromCQD = 
     CmpCommon::getDefaultNumeric(TRAF_NUM_OF_SALT_PARTNS);
   
+  // create table in seabase
+
+  if(createTableNode->getFileAttributes().isSuperTableSpecified()) //TODO
+  {
+    NAString smallColName("_TBLNM_");
+    SQLVarChar * tblNmColType = new(STMTHEAP) SQLVarChar(STMTHEAP, 128, FALSE);
+    NAString tblNmExprText("CAST ( '");
+    tblNmExprText += createTableNode->getTableName();
+    tblNmExprText += "' AS CHAR(128) ) ";
+    ElemDDLColDefault *tblNmDef = 
+        new(STMTHEAP) ElemDDLColDefault(
+             ElemDDLColDefault::COL_COMPUTED_DEFAULT);
+    tblNmDef->setComputedDefaultExpr(tblNmExprText);
+    ElemDDLColDef * tblNmColDef =
+        new(STMTHEAP) ElemDDLColDef(NULL, &smallColName, tblNmColType , tblNmDef,
+                                    STMTHEAP);
+    ElemDDLColRef * edcrs = 
+        new(STMTHEAP) ElemDDLColRef(smallColName, COM_ASCENDING_ORDER);
+
+    tblNmColDef->setColumnClass(COM_SYSTEM_COLUMN);
+
+    colArray.insert(tblNmColDef);
+    keyArray.insertAt(0, edcrs);
+    numSysCols++;
+  }
+
   if ((createTableNode->getSaltOptions()) ||
       ((numSaltPartnsFromCQD > 0) &&
        (NOT implicitPK)))
@@ -2249,7 +2275,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
     }
 
-  // create table in seabase
+
   ParDDLFileAttrsCreateTable &fileAttribs =
     createTableNode->getFileAttributes();
 
@@ -2606,7 +2632,13 @@ short CmpSeabaseDDL::createSeabaseTable2(
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->objectFlags = 0;
   tableInfo->tablesFlags = 0;
-  
+ 
+  if (fileAttribs.isSuperTableSpecified())
+    {
+      tableInfo->tablesFlags |= MD_TABLES_SUPER_TABLE_ATTRS;
+      tableInfo->superTable = fileAttribs.getSuperTable().data();
+    }
+ 
   if (fileAttribs.isOwnerSpecified())
     {
       // Fixed bug:  if BY CLAUSE specified an unregistered user, then the object
@@ -2834,7 +2866,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
     }
   
   NABoolean ddlXns = createTableNode->ddlXns();
-  if (NOT extNameForHbase.isNull())
+  if (NOT extNameForHbase.isNull() && (createTableNode->getFileAttributes().isSuperTableSpecified() == FALSE) )
     {
       HbaseStr hbaseTable;
       hbaseTable.val = (char*)extNameForHbase.data();
@@ -3042,7 +3074,7 @@ void CmpSeabaseDDL::createSeabaseTable(
   if (retObjUID)
     *retObjUID = objUID;
 
-  if (NOT isCompound)
+  if (NOT isCompound && createTableNode->getFileAttributes().isSuperTableSpecified() == FALSE)
     {
       if (updateObjectRedefTime(&cliInterface, 
                                 catalogNamePart, schemaNamePart, objectNamePart,
@@ -3605,7 +3637,14 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       volTabName = tableName;
       isVolatile = TRUE;
     }
-  
+
+  NAString superTable;
+  short hasSuperTable = getSuperTableText(cliInterface,
+                             tableName.getCatalogNamePartAsAnsiString().data(),
+                             tableName.getSchemaNamePartAsAnsiString().data(),
+                             tableName.getObjectNamePartAsAnsiString().data(),
+                             COM_BASE_TABLE_OBJECT_LIT,superTable);
+ 
   if ((NOT dropTableNode->isVolatile()) &&
       (CmpCommon::context()->sqlSession()->volatileSchemaInUse()))
     {
@@ -3720,7 +3759,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   // This is an internal inconsistency which needs to be fixed by running cleanup.
 
   // If this is an external (native HIVE or HBASE) table, then skip
-  if (!isSeabaseExternalSchema(catalogNamePart, schemaNamePart))
+  if (!isSeabaseExternalSchema(catalogNamePart, schemaNamePart) && hasSuperTable != 1 ) //dropTableNode->isSmallTable() == FALSE 
     {
       HbaseStr hbaseTable;
       hbaseTable.val = (char*)extNameForHbase.data();
@@ -11907,6 +11946,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   NABoolean alignedFormat = FALSE;
   NABoolean hbaseStrDataFormat = FALSE;
   NAString *  hbaseCreateOptions = new(STMTHEAP) NAString();
+  NAString *  superTable= new(STMTHEAP) NAString();
   NAString colFamStr;
   if (cliRC == 0) // read some rows
     {
@@ -11929,6 +11969,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       hbaseStrDataFormat = (memcmp(format, COM_HBASE_STR_FORMAT_LIT, 2) == 0);
       
       tablesFlags = *(Int64*)vi->get(3);
+
       if (getTextFromMD(&cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0,
                         *hbaseCreateOptions))
         {
@@ -11936,6 +11977,12 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           return NULL;
         }
 
+      if (getTextFromMD(&cliInterface, objUID, COM_SUPER_TABLE_TEXT, 0,
+                        *superTable))
+        {
+          processReturn();
+          return NULL;
+        }
       if (getTextFromMD(&cliInterface, objUID, COM_HBASE_COL_FAMILY_TEXT, 0,
                         colFamStr))
         {
@@ -12561,6 +12608,8 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   tableInfo->numSaltPartns = numSaltPartns;
   tableInfo->hbaseCreateOptions = 
     (hbaseCreateOptions->isNull() ? NULL : hbaseCreateOptions->data());
+  tableInfo->superTable = 
+    (superTable->isNull() ? NULL : superTable->data());
   if (alignedFormat)
     tableInfo->rowFormat = COM_ALIGNED_FORMAT_TYPE;
   else if (hbaseStrDataFormat)

@@ -964,7 +964,8 @@ public:
       VOLATILE          = 0x0040,
       IN_MEM_OBJ        = 0x0080,
       DROPPABLE         = 0x0100,
-      INSERT_ONLY       = 0x0200
+      INSERT_ONLY       = 0x0200,
+      HAS_SUPER_TABLE   = 0x0400
     };
 
   void setSystemTableCode(NABoolean v) 
@@ -994,6 +995,19 @@ public:
   void setVolatileTable(NABoolean v) 
   {(v ? tableDescFlags |= VOLATILE : tableDescFlags &= ~VOLATILE); };
   NABoolean isVolatileTable() { return (tableDescFlags & VOLATILE) != 0; };
+
+  void setSuperTable(const char *v)
+  { 
+    if ( v = NULL )
+      tableDescFlags &= ~HAS_SUPER_TABLE;
+    else
+      tableDescFlags |= HAS_SUPER_TABLE;
+  }
+
+  NABoolean hasSuperTable() 
+  {
+    return (tableDescFlags & HAS_SUPER_TABLE) != 0  ; 
+  }
 
   void setInMemoryObject(NABoolean v) 
   {(v ? tableDescFlags |= IN_MEM_OBJ : tableDescFlags &= ~IN_MEM_OBJ); };
@@ -1068,6 +1082,8 @@ public:
   // for hbase's region keys
   DescStructPtr hbase_regionkey_desc;
   DescStructPtr sequence_generator_desc;
+
+  char * superTable_;
 
   char filler[32];
 };

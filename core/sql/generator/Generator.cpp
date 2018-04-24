@@ -2001,6 +2001,15 @@ TrafDesc * Generator::createVirtualTableDesc
         new GENHEAP(space) char[strlen(tableInfo->allColFams)+1];
       strcpy(table_desc->tableDesc()->all_col_fams, tableInfo->allColFams);
     }
+  if (tableInfo)
+   if (tableInfo->superTable != NULL) 
+    {
+      table_desc->tableDesc()->superTable_=
+        new GENHEAP(space) char[strlen(tableInfo->superTable)+1];
+      strcpy(table_desc->tableDesc()->superTable_, tableInfo->superTable);
+
+       table_desc->tableDesc()->setSuperTable(tableInfo->superTable);
+    }
 
   table_desc->tableDesc()->objectFlags = (tableInfo ? tableInfo->objectFlags : 0);
   table_desc->tableDesc()->tablesFlags = (tableInfo ? tableInfo->tablesFlags : 0);

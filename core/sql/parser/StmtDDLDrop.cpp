@@ -755,6 +755,7 @@ StmtDDLDropTable::StmtDDLDropTable(const QualifiedName & tableQualName,
 	  isCleanupSpec_(FALSE),
 	  isValidateSpec_(FALSE),
 	  pLogFile_(NULL),
+	  smallTable_(FALSE),
 	  dropIfExists_(FALSE)
 {
 }
@@ -776,6 +777,7 @@ StmtDDLDropTable::StmtDDLDropTable(const QualifiedName & tableQualName,
 	  isCleanupSpec_(cleanupSpec),
 	  isValidateSpec_(validateSpec),
 	  pLogFile_(pLogFile),
+	  smallTable_(FALSE),
 	  dropIfExists_(FALSE)
 {
 }

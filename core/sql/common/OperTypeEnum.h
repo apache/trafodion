@@ -1244,7 +1244,8 @@ enum OperatorTypeEnum {
                         // Unpublished attributes
                         ELM_FILE_ATTR_EXTENT_ELEM,
                         ELM_FILE_ATTR_MAXEXTENTS_ELEM,
-                        ELM_FILE_ATTR_UID_ELEM
+                        ELM_FILE_ATTR_UID_ELEM,
+                        ELM_FILE_ATTR_SUPER_TABLE_ELEM
                       };
 
 #endif // OPERTYPEENUM_H

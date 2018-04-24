@@ -2039,6 +2039,8 @@ ParDDLFileAttrsCreateTable::resetAllIsSpecDataMembers()
 
   isColFamSpec_                     = FALSE;
 
+  isSuperTableSpec_                     = FALSE;
+
   // [ NO ] AUDITCOMPRESS
   //   inherits from class ParDDLFileAttrsCreateIndex
 
@@ -2230,7 +2232,14 @@ ParDDLFileAttrsCreateTable::setFileAttr(ElemDDLFileAttr * pFileAttr)
     *SqlParser_Diags << DgSqlCode(-3097);
     break;
 
-
+  case ELM_FILE_ATTR_SUPER_TABLE_ELEM:
+    if (isSuperTableSpec_)
+      *SqlParser_Diags << DgSqlCode(-3082);
+    ComASSERT(pFileAttr->castToElemDDLFileAttrSuperTable() NEQ NULL);
+    superTable_ = pFileAttr->castToElemDDLFileAttrSuperTable()->getSuperTable();
+    isSuperTableSpec_ = TRUE;
+    
+    break;
   default :
     NAAbort("ParDDLFileAttrs.C", __LINE__, "internal logic error");
     break;
