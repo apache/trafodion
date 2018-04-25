@@ -348,6 +348,12 @@ private:
      int32_t userID,
      std::vector<int32_t> & roleIDs);
      
+  PrivStatus getRolesToCheck(
+    const int32_t grantorID,
+    const std::vector<int32_t> & roleIDs,
+    const ComObjectType schemaType,
+    std::string &rolesToCheck);
+
   PrivStatus getRowsForGrantee(
     const int64_t objectUID,
     const int32_t granteeID,
@@ -373,6 +379,7 @@ private:
   PrivStatus initGrantRevoke(
     const ComObjectType objectType,
     const int32_t granteeID,
+    const std::string &grantorName,
     const std::vector<PrivType> &privList,
     const std::vector<ColPrivSpec> & colPrivsArray,
     const bool isAllSpecified,

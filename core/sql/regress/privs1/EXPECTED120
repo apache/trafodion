@@ -364,19 +364,19 @@ SQL_USER3
 
 --- SQL operation complete.
 >>
->>grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2;
+>>grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2 by t120role1;
 
 --- SQL operation complete.
->>grant select on teams to sql_user6;
+>>grant select on teams to sql_user6 by t120role1;
 
 --- SQL operation complete.
->>grant select (game_number, game_time) on games to t120role2;
+>>grant select (game_number, game_time) on games to t120role2 by t120role1;
 
 --- SQL operation complete.
->>grant select (game_number, game_time) on games to t120role3;
+>>grant select (game_number, game_time) on games to t120role3 by t120role1;
 
 --- SQL operation complete.
->>grant all on players to sql_user6;
+>>grant all on players to sql_user6 by t120role1;
 
 --- SQL operation complete.
 >>grant role t120role2, t120role3, t120role4 to sql_user6;
@@ -385,13 +385,13 @@ SQL_USER3
 >>grant role t120role3 to sql_user9;
 
 --- SQL operation complete.
->>grant select on standings to sql_user6;
+>>grant select on standings to sql_user6 by t120role1;
 
 --- SQL operation complete.
->>grant usage on sequence team_seq to t120role3;
+>>grant usage on sequence team_seq to t120role3 by t120role1;
 
 --- SQL operation complete.
->>grant select (team_number, num_players) on stats to "PUBLIC";
+>>grant select (team_number, num_players) on stats to "PUBLIC" by t120role1;
 
 --- SQL operation complete.
 >>showddl games;
@@ -415,10 +415,8 @@ ALTER TABLE TRAFODION.T120SCH.GAMES ADD CONSTRAINT
   (TRAFODION.T120SCH.GAMES.GAME_NUMBER > 0)
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.GAMES TO T120ROLE1 WITH GRANT OPTION;
-  GRANT SELECT(GAME_NUMBER, GAME_TIME) ON TRAFODION.T120SCH.GAMES TO T120ROLE2
-  GRANTED BY SQL_USER3;
-GRANT SELECT(GAME_NUMBER, GAME_TIME) ON
-  TRAFODION.T120SCH.GAMES TO T120ROLE3 GRANTED BY SQL_USER3;
+  GRANT SELECT(GAME_NUMBER, GAME_TIME) ON TRAFODION.T120SCH.GAMES TO T120ROLE2;
+  GRANT SELECT(GAME_NUMBER, GAME_TIME) ON TRAFODION.T120SCH.GAMES TO T120ROLE3;
 
 --- SQL operation complete.
 >>showddl teams;
@@ -442,11 +440,11 @@ ALTER TABLE TRAFODION.T120SCH.TEAMS ADD CONSTRAINT
   0)
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.TEAMS TO T120ROLE1 WITH GRANT OPTION;
-  GRANT SELECT ON TRAFODION.T120SCH.TEAMS TO SQL_USER6 GRANTED BY SQL_USER3;
-  GRANT INSERT, DELETE ON TRAFODION.T120SCH.TEAMS TO T120ROLE2 GRANTED BY
-  SQL_USER3;
-GRANT UPDATE(TEAM_CONTACT, TEAM_CONTACT_NUMBER) ON
-  TRAFODION.T120SCH.TEAMS TO T120ROLE2 GRANTED BY SQL_USER3;
+  GRANT SELECT ON TRAFODION.T120SCH.TEAMS TO SQL_USER6;
+GRANT INSERT, DELETE ON
+  TRAFODION.T120SCH.TEAMS TO T120ROLE2;
+GRANT UPDATE(TEAM_CONTACT,
+  TEAM_CONTACT_NUMBER) ON TRAFODION.T120SCH.TEAMS TO T120ROLE2;
 
 --- SQL operation complete.
 >>showddl players;
@@ -472,7 +470,7 @@ ALTER TABLE TRAFODION.T120SCH.PLAYERS ADD CONSTRAINT
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.PLAYERS TO T120ROLE1 WITH GRANT OPTION;
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.PLAYERS
-  TO SQL_USER6 GRANTED BY SQL_USER3;
+  TO SQL_USER6;
 
 --- SQL operation complete.
 >>showddl standings;
@@ -489,8 +487,7 @@ CREATE TABLE TRAFODION.T120SCH.STANDINGS
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T120SCH.STANDINGS TO T120ROLE1 WITH GRANT OPTION;
-  GRANT SELECT ON TRAFODION.T120SCH.STANDINGS TO SQL_USER6 GRANTED BY
-  SQL_USER3;
+  GRANT SELECT ON TRAFODION.T120SCH.STANDINGS TO SQL_USER6;
 
 --- SQL operation complete.
 >>showddl sequence team_seq;
@@ -506,8 +503,7 @@ CREATE SEQUENCE TRAFODION.T120SCH.TEAM_SEQ
 ;
 
 -- GRANT USAGE ON SEQUENCE TRAFODION.T120SCH.TEAM_SEQ TO T120ROLE1 WITH GRANT OPTION;
-  GRANT USAGE ON SEQUENCE TRAFODION.T120SCH.TEAM_SEQ TO T120ROLE3 GRANTED BY
-  SQL_USER3;
+  GRANT USAGE ON SEQUENCE TRAFODION.T120SCH.TEAM_SEQ TO T120ROLE3;
 
 --- SQL operation complete.
 >>showddl role t120role1;
@@ -555,6 +551,7 @@ GRANT ROLE "T120ROLE4" TO
 
 End of MXCI Session
 
+>>
 >>
 >>-- Prepare a bunch of queries, all successful
 >>prepare select_games from select game_number from games;
@@ -794,7 +791,7 @@ SQL_USER3
 
 --- SQL operation complete.
 >>
->>revoke insert, delete on teams from t120role2;
+>>revoke insert, delete on teams from t120role2 by t120role1;
 
 --- SQL operation complete.
 >>
@@ -848,7 +845,7 @@ SQL_USER3
 
 --- SQL operation complete.
 >>
->>grant insert, delete on teams to t120role2;
+>>grant insert, delete on teams to t120role2 by t120role1;
 
 --- SQL operation complete.
 >>
@@ -1313,7 +1310,7 @@ SQL_USER3
 
 --- SQL operation complete.
 >>
->>revoke select (team_number, num_players) on stats from "PUBLIC";
+>>revoke select (team_number, num_players) on stats from "PUBLIC" by t120role1;
 
 --- SQL operation complete.
 >>showddl stats;

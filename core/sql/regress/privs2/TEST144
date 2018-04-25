@@ -1,5 +1,5 @@
 -- ============================================================================
--- TEST144 - tests grant and revoke privileges for RI constraints
+-- TEST144 - tests grant and revoke privileges for UDRs
 --
 -- @@@ START COPYRIGHT @@@
 --

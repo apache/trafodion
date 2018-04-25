@@ -840,11 +840,12 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
       // more items in the list fail and in cases of "ALL".                                             
       if (!componentOperations.nameExists(componentUID,operationName))
       {
-         *pDiags_ << DgSqlCode(-CAT_TABLE_DOES_NOT_EXIST_ERROR)
-                  << DgTableName(operationName.c_str());
+         *pDiags_ << DgSqlCode(-CAT_INVALID_COMPONENT_PRIVILEGE)
+                  << DgString0(operationName.c_str())
+                  << DgString1(componentName.c_str());
          return STATUS_ERROR;
       }
-      
+
       std::string operationCode;
       bool isSystemOperation = FALSE;
       std::string operationDescription;
