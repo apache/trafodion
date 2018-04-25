@@ -9039,7 +9039,9 @@ The RAND function generates pseudo-random numbers that are uniformly distributed
 in the range between 0 and 2^32^ (=4294967296), 
 using an integer as an optional seed value.
 
-NOTE: the RAND function does not always behaves in predictive ways.
+NOTE: The RAND function does not always behaves in predictive ways. It is non-deterministic 
+and may cause unexpected side effect. It evaluates only once or per row depending on the optimizer. 
+So it can only be used in very few places, please do not use it in a predicate.
 
 ```
 RAND ([numeric-expression])
