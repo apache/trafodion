@@ -4207,7 +4207,7 @@ short CmpSeabaseDDL::getSuperTableText(
   if (superTable.isNull())
     superTable= defaultValue;
 
-  CMPASSERT(!superTable.isNull());
+  //CMPASSERT(!superTable.isNull());
 
   return 1;
 }
