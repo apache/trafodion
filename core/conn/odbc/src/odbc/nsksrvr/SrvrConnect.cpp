@@ -559,14 +559,16 @@ static void* SessionWatchDog(void* arg)
         int time_limit = aggrInterval;
         //0:None 1:update 2:insert/upsert cache limit 3:achieve timeline
         int execute_flag = REPOS_EXECUTE_NONE;
-        clock_t time_start = clock();
-        clock_t time_end= clock();
+        int sleep_count = 0;
 
         REPOS_STATS repos_stats;
         while(!record_session_done && okToGo)
         {
-            time_start = clock();
-            while(repos_queue.isEmpty() && (((time_end = clock()) - time_start) / 1000000 < time_limit));
+            sleep_count = 0;
+            while(repos_queue.isEmpty() && (sleep_count < time_limit)){
+                sleep(1);
+                sleep_count++;
+            }
 
             if(!repos_queue.isEmpty()){
                 repos_stats = repos_queue.get_task();
