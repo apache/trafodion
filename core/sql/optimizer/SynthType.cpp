@@ -4429,6 +4429,14 @@ const NAType *Extract::synthesizeType()
         extractEndField = REC_DATE_DAY; // extracting week requires the day
       else
         extractEndField = REC_DATE_MONTH; // months/quarters need only the month
+
+      if (type == NA_INTERVAL_TYPE)  // YEARQUARTER etc. are not supported on intervals
+        {
+          *CmpCommon::diags() << DgSqlCode(-4037)
+            << DgString0(dti.getFieldName(getExtractField()))
+            << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
+          return NULL;
+        }
     }
 
   if (dti.getStartField() > extractStartField ||
