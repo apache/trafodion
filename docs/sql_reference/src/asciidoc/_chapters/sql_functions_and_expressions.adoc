@@ -2608,7 +2608,7 @@ FROM DUAL;
 ```
 
 [[date_difference_in_year]]
-=== Date Difference in YEAR
+==== Date Difference in YEAR
 
 * This function returns the value of 0.
 +
@@ -2633,7 +2633,7 @@ FROM DUAL;
 
 <<<
 [[dateformat_function]]
-=== DATEFORMAT Function
+== DATEFORMAT Function
 
 The DATEFORMAT function returns a datetime value as a character string
 literal in the DEFAULT, USA, or EUROPEAN format. The data type of the

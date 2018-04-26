@@ -379,6 +379,10 @@ ALTER TABLE table-name alter-action
 alter-action is:
      ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
+   | ENABLE ALL [UNIQUE] INDEXES
+   | ENABLE INDEX index-name 
+   | DISABLE ALL [UNIQUE] INDEXES
+   | DISABLE INDEX index-name 
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name
    | DROP COLUMN [IF EXISTS] column-name
@@ -442,6 +446,10 @@ ref-spec is:
 
 column-list is:
    column-name[, column-name]...
+
+index-name is:
+     normal-index-name
+   | unique-index-name
 ```
 
 <<<
@@ -575,6 +583,59 @@ clause. however, because not enforced is specified, this relationship is not che
 the two columns or sets of columns must have the same characteristics (data type, length, scale, precision). without the foreign key clause,
 the foreign key in _table_ is the column being defined; with the foreign key clause, the foreign key is the column or set of columns specified in
 the foreign key clause. for information about _ref-spec_, see references _ref-spec_ not enforced.
+
+<<<
+* ENABLE ALL [UNIQUE] INDEXES
+
+** ENABLE ALL UNIQUE INDEXES
++
+enables all unique indexes on the table.
+
+** ENABLE ALL INDEXES
++
+enables all indexes (including normal indexes and unique indexes) on the table.
+
+* _index-name_
+** _normal-index-name_
++
+is equal to _index-name_, which is an SQL identifier that specifies the simple name for the index. You cannot qualify index-name with its schema name. 
+Indexes have their own name space within a schema, 
+so an index name might be the same as a table or constraint name. However, no two indexes in a schema can have the same name.
+
+** _unique-index-name_
++
+is the name of the unique index.
+
+* ENABLE INDEX _normal-index-name_ 
++
+enables a normal index on the table.
+
+* ENALBE INDEX _unique-index-name_
++
+enables an unique index on the table.
+
+* DISABLE ALL [UNIQUE] INDEXES
+** DISABLE ALL UNIQUE INDEXES
++
+disables all unique indexes on the table.
+
+** DISABLE ALL INDEXES
++
+disables all indexes (including normal indexes and unique indexes) on the table.
+
+* DISABLE INDEX _index-name_
+
+** DISABLE INDEX _normal-index-name_
++
+disables a normal index on the table.
+The index still exists in the data, but it will not 
+be chosen by the optimizer as an access path.
+
+** DISABLE INDEX _unique-index-name_
++
+disables an unique index on the table. 
+The unique index still exists in the data, but it will not 
+be chosen by the optimizer as an access path.
 
 <<<
 * `drop constraint _constraint-name_ [restrict]`
@@ -714,6 +775,222 @@ ALTER TABLE persnl.project
 ```
 Alter TABLE PRODUCT 
 ALTER COLUMN vend_id RENAME TO cstm_id;
+```
+
+* The following table _orders_ has two normal indexes 
+(_index_orders1_ and _index_orders2_) and 
+two unique indexes (_unique_index_orders1_ and _unique_index_orders2_).
+
++
+```
+SQL>SHOWDDL orders;
+CREATE TABLE TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDERNUM                         NUMERIC(6, 0) DEFAULT NULL NOT SERIALIZED
+  , ORDER_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , DELIV_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , SALESREP                         NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  , CUSTNUM                          NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS1 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDER_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    DELIV_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS1 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    SALESREP ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    CUSTNUM ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.ORDERS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Disable one unique index (_unique_index_orders1_) and verify that all normal indexes (_index_orders1_ and _index_orders2_)
+and the rest unique index (_unique_index_orders2_) are still enabled.
+
++
+```
+SQL>ALTER TABLE ORDERS DISABLE INDEX unique_index_orders1;
+--- SQL operation complete.
+
+SQL>SHOWDDL orders;
+CREATE TABLE TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDERNUM                         NUMERIC(6, 0) DEFAULT NULL NOT SERIALIZED
+  , ORDER_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , DELIV_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , SALESREP                         NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  , CUSTNUM                          NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS1 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDER_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    DELIV_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    CUSTNUM ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.ORDERS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Disable one normal index (_index_orders1_) and verify that the rest normal index (_index_orders2_) 
+and the rest unique index (_unique_index_orders2_) are still enabled.
+
++
+```
+SQL>ALTER TABLE ORDERS DISABLE INDEX index_orders1;
+--- SQL operation complete.
+
+SQL>SHOWDDL orders;
+CREATE TABLE TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDERNUM                         NUMERIC(6, 0) DEFAULT NULL NOT SERIALIZED
+  , ORDER_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , DELIV_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , SALESREP                         NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  , CUSTNUM                          NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    DELIV_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    CUSTNUM ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.ORDERS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Disable all indexes and verify that all indexes (including normal indexes and unique indexes) are disabled.
+
++
+```
+SQL>ALTER TABLE ORDERS DISABLE ALL INDEXES;
+--- SQL operation complete.
+
+SQL>SHOWDDL orders;
+CREATE TABLE TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDERNUM                         NUMERIC(6, 0) DEFAULT NULL NOT SERIALIZED
+  , ORDER_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , DELIV_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , SALESREP                         NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  , CUSTNUM                          NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.ORDERS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Enable all indexes on the table _orders_ and verify the result.
+
++
+```
+SQL>ALTER TABLE orders ENABLE ALL INDEXES;
+--- SQL operation complete.
+
+SQL>SHOWDDL orders;
+CREATE TABLE TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDERNUM                         NUMERIC(6, 0) DEFAULT NULL NOT SERIALIZED
+  , ORDER_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , DELIV_DATE                       DATE DEFAULT NULL NOT SERIALIZED
+  , SALESREP                         NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  , CUSTNUM                          NUMERIC(4, 0) DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS1 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    ORDER_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE INDEX INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    DELIV_DATE ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS1 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    SALESREP ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
+  ( 
+    CUSTNUM ASC
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.ORDERS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
 ```
 
 <<<
@@ -5272,7 +5549,7 @@ to running a list command from an HBase shell, but without having to start and c
 GET HBASE OBJECTS is a {project-name} SQL extension.
 
 ```
-GET [ USER | SYSTEM | EXTERNAL | ALL } HBASE OBJECTS
+GET { USER | SYSTEM | EXTERNAL | ALL } HBASE OBJECTS
 ```
 
 [[get_hbase_objects_syntax]]
