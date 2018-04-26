@@ -1855,7 +1855,7 @@ COSH (1.25)
 
 <<<
 [[count_function]]
-=== COUNT Function
+== COUNT Function
 
 The COUNT function counts the number of rows that result from a query or
 the number of rows that contain a distinct value in a specific column.
@@ -4659,7 +4659,7 @@ See <<upper_function,UPPER Function>>.
 
 <<<
 [[lpad_function]]
-=== LPAD Function
+== LPAD Function
 
 The LPAD function pads the left side of a string with the specified
 string. Every character in the string, including multi-byte characters,
@@ -9029,6 +9029,178 @@ have the same value regardless of case:
 SELECT *
 FROM persnl.dept1 D1, persnl.dept2 D2
 WHERE UPSHIFT(D1.deptname) = UPSHIFT(D2.deptname);
+```
+
+<<<
+[[rand_function]]
+== RAND Function
+
+The RAND function generates pseudo-random numbers that are uniformly distributed 
+in the range between 0 and 2^32^ (=4294967296), 
+using an integer as an optional seed value.
+
+NOTE: The RAND function does not always behaves in predictive ways. It is non-deterministic 
+and may cause unexpected side effect. It evaluates only once or per row depending on the optimizer. 
+So it can only be used in very few places, please do not use it in a predicate.
+
+```
+RAND ([numeric-expression])
+```
+
+[[rand_function_syntax]]
+=== Syntax Descriptions of RAND Function
+
+* _numeric-expression_
+
++
+is an SQL numeric value expression that specifies the value for the argument of the RAND function. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[rand_function_considerations]]
+=== Considerations for RAND Function
+
+* When invoked with a seed value,
+
+** the seed value should be an integer greater than or equal to 0, and cannot be NULL.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(1-100) FROM DUAL;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-99 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW. [2018-04-18 04:44:37]
+
+
+SQL>SELECT RAND(NULL) FROM DUAL;
+
+*** ERROR[4097] A NULL operand is not allowed in function (RANDOMNUM(NULL)). [2018-04-18 04:44:48]
+```
+
+** the RAND function will use the value to seed the random number generator.
+
+** the RAND function will produce same series of numbers each time you seed the generator with an equal argument value 
+for each run of the program.
+
+* When invoked with no seed value,
+
+** the RAND function is automatically seeded with a value of system clock.
+** the RAND function will produce different series of numbers even it is called consecutively within a query.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(), RAND(), RAND() FROM DUAL;
+
+(EXPR)     (EXPR)     (EXPR)    
+---------- ---------- ----------
+1958129868 1958398780 1958482815
+
+--- 1 row(s) selected. 
+```
+
+* To get desired numbers within a specified range, you can use a combination of built-in functions, operators and clauses.
+
++
+For example,
+
++
+```
+SQL>SELECT POWER(RAND(1)*10,3) FROM DUAL;
+
+(EXPR)
+------------------------
+       4.747561509943E15
+
+--- 1 row(s) selected.
+```
+
+[[rand_function_example]]
+=== Examples of RAND Function
+
+* This example demostrates how to use the RAND function with built-in function (ABS function).
+
++
+```
+SQL>SELECT RAND(ABS(1-100)) FROM DUAL;
+
+(EXPR)
+----------
+   1663893
+
+--- 1 row(s) selected.
+```
+
+* This example shows that the RAND function works with builts-in function (MOD function) to generate the number from 1 to 5 and gets
+the randomized results sorted by ORDER BY clause. The 100,000 rows of c1 are neary evenly distributed for each number.
+
++
+```
+SQL>SELECT COUNT(*) FROM t1;
+ 
+(EXPR)
+--------------------
+              100000
+ 
+--- 1 row(s) selected.
+```
++
+```
+SQL>SHOWDDL t1;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T1
+  ( 
+    IDX                              INT DEFAULT NULL NOT SERIALIZED
+  )
+ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- SQL operation complete.
+```
++
+```
+SQL>CREATE TABLE t2(idx int,c1 int);
+ 
+--- SQL operation complete.
+ 
+```
++
+```
+SQL>UPSERT USING LOAD INTO t2 SELECT idx, MOD(RAND(),5)+1 FROM t1;
+ 
+--- 100000 row(s) inserted.
+```
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1;
+ 
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+          4                19913
+          5                20276
+ 
+--- 5 row(s) selected.
+```
+
++
+At this point, the RAND function can also be used in the ORDER BY clause in conjunction with the LIMIT clause 
+to output rows.
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1 LIMIT 3;
+
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+ 
+--- 3 row(s) selected.
 ```
 
 <<<
