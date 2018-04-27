@@ -580,6 +580,7 @@ public class HBaseClient {
                }
 
             if(setDescRet!= null)
+            {
               if(setDescRet.storagePolicyChanged())
               {
                  //change the HDFS storage policy
@@ -611,23 +612,19 @@ public class HBaseClient {
 
                  if (logger.isDebugEnabled()) logger.debug("createk table fullPath is " + fullPath);
 
-                 String invokeret = invokeSetStoragePolicy(fs, fullPath, setDescRet.storagePolicy_ ) ;
+                 admin.close(); //close here, invokeSetStoragePolicy may throw exception
 
-                 if( invokeret != null)
-                 {
-                   //error handling
-                   admin.close();
-                   throw new IOException(invokeret);
-                 }
+                 invokeSetStoragePolicy(fs, fullPath, setDescRet.storagePolicy_ ) ;
               }
-
-        admin.close();
+            }
+            else
+              admin.close();
         return true;
     }
 
-    private static String invokeSetStoragePolicy(final FileSystem fs, final String pathstr,
-      final String storagePolicy) {
-        String ret = null;
+    private static void invokeSetStoragePolicy(final FileSystem fs, final String pathstr,
+      final String storagePolicy) 
+       throws IOException {
         Path path = new Path(pathstr);
         Method m = null;
         try {
@@ -635,11 +632,11 @@ public class HBaseClient {
             new Class<?>[] { Path.class, String.class });
             m.setAccessible(true);
         } catch (NoSuchMethodException e) {
-            ret = "FileSystem doesn't support setStoragePolicy";
             m = null;
+            throw new IOException("FileSystem doesn't support setStoragePolicy");
         } catch (SecurityException e) {
-          ret = "No access to setStoragePolicy on FileSystem from the SecurityManager";
-          m = null; // could happen on setAccessible() or getDeclaredMethod()
+          m = null; 
+          throw new IOException("No access to setStoragePolicy on FileSystem from the SecurityManager");
         }
         if (m != null) {
           try {
@@ -649,11 +646,9 @@ public class HBaseClient {
             }
           } catch (Exception e) {
                logger.error("invoke set storage policy error : " + e);
-               ret = "invoke set storage policy error : " + e.getMessage();
+               throw new IOException(e);
           }
         }
-
-       return ret;
     }
 
     public boolean registerTruncateOnAbort(String tblName, long transID)
