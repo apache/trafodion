@@ -446,10 +446,6 @@ ref-spec is:
 
 column-list is:
    column-name[, column-name]...
-
-index-name is:
-     normal-index-name
-   | unique-index-name
 ```
 
 <<<
@@ -593,26 +589,17 @@ enables all unique indexes on the table.
 
 ** ENABLE ALL INDEXES
 +
-enables all indexes (including normal indexes and unique indexes) on the table.
+enables all indexes (including both non-unique and unique indexes) on the table.
 
 * _index-name_
-** _normal-index-name_
 +
-is equal to _index-name_, which is an SQL identifier that specifies the simple name for the index. You cannot qualify index-name with its schema name. 
+is an SQL identifier that specifies the simple name for the index. You cannot qualify index-name with its schema name. 
 Indexes have their own name space within a schema, 
 so an index name might be the same as a table or constraint name. However, no two indexes in a schema can have the same name.
 
-** _unique-index-name_
+* ENABLE INDEX _index-name_ 
 +
-is the name of the unique index.
-
-* ENABLE INDEX _normal-index-name_ 
-+
-enables a normal index on the table.
-
-* ENALBE INDEX _unique-index-name_
-+
-enables an unique index on the table.
+enables an index on the table.
 
 * DISABLE ALL [UNIQUE] INDEXES
 ** DISABLE ALL UNIQUE INDEXES
@@ -621,20 +608,12 @@ disables all unique indexes on the table.
 
 ** DISABLE ALL INDEXES
 +
-disables all indexes (including normal indexes and unique indexes) on the table.
+disables all indexes (including both non-unique and unique indexes) on the table.
 
 * DISABLE INDEX _index-name_
-
-** DISABLE INDEX _normal-index-name_
 +
-disables a normal index on the table.
+disables an index on the table.
 The index still exists in the data, but it will not 
-be chosen by the optimizer as an access path.
-
-** DISABLE INDEX _unique-index-name_
-+
-disables an unique index on the table. 
-The unique index still exists in the data, but it will not 
 be chosen by the optimizer as an access path.
 
 <<<
@@ -777,7 +756,7 @@ Alter TABLE PRODUCT
 ALTER COLUMN vend_id RENAME TO cstm_id;
 ```
 
-* The following table _orders_ has two normal indexes 
+* The following table _orders_ has two non-unique indexes 
 (_index_orders1_ and _index_orders2_) and 
 two unique indexes (_unique_index_orders1_ and _unique_index_orders2_).
 
@@ -829,7 +808,7 @@ CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
 ```
 
 +
-Disable one unique index (_unique_index_orders1_) and verify that all normal indexes (_index_orders1_ and _index_orders2_)
+Disable one unique index (_unique_index_orders1_) and verify that all non-unique indexes (_index_orders1_ and _index_orders2_)
 and the rest unique index (_unique_index_orders2_) are still enabled.
 
 +
@@ -876,7 +855,7 @@ CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
 ```
 
 +
-Disable one normal index (_index_orders1_) and verify that the rest normal index (_index_orders2_) 
+Disable one non-unique index (_index_orders1_) and verify that the rest non-unique index (_index_orders2_) 
 and the rest unique index (_unique_index_orders2_) are still enabled.
 
 +
@@ -916,7 +895,7 @@ CREATE UNIQUE INDEX UNIQUE_INDEX_ORDERS2 ON TRAFODION.SEABASE.ORDERS
 ```
 
 +
-Disable all indexes and verify that all indexes (including normal indexes and unique indexes) are disabled.
+Disable all indexes and verify that all of them (including both non-unique and unique indexes) are disabled.
 
 +
 ```
@@ -941,7 +920,7 @@ CREATE TABLE TRAFODION.SEABASE.ORDERS
 ```
 
 +
-Enable all indexes on the table _orders_ and verify the result.
+Enable all indexes and verify the result.
 
 +
 ```
