@@ -150,7 +150,7 @@ public final class Constants {
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = "dcs.server.user.program.statistics.cache.size";
 
     /** Default value for DCS server user program statistics cache size */
-    public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = 60;
+    public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = 1;
 
     /** Configuration key for DCS server user program statistics interval time */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = "dcs.server.user.program.statistics.interval.time";

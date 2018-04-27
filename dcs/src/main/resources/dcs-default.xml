@@ -335,7 +335,7 @@
   </property>
   <property>
     <name>dcs.server.user.program.statistics.cache.size</name>
-    <value>60</value>
+    <value>1</value>
     <description>
         Size of cache data to be published.
         The default is 60.
