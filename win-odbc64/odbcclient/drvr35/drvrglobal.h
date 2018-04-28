@@ -470,6 +470,7 @@ extern char* trimInterval(char *string, SQLINTEGER length);
 extern char* rSup(char* string);
 extern bool double_to_char (double number, int precision, char* string, short size);
 extern bool ctoi64(char* buff, __int64& out, bool* truncation);
+extern bool ctoui64(char* buff, unsigned __int64& out, bool* truncation);
 extern bool ctoi64(char* buff, __int64& out);
 extern __int64 pow(short base, short scale);
 
