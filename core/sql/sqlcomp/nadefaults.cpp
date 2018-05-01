@@ -629,7 +629,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_154,      "OFF"),
   DDkwd__(COMP_BOOL_155,      "OFF"),
   DDkwd__(COMP_BOOL_156,      "ON"),  // Used by RTS to turn on RTS Stats collection for ROOT operators
-  DDkwd__(COMP_BOOL_158,      "OFF"),
+  DDkwd__(COMP_BOOL_158,      "ON"),  // ON --> allows equijoins on VARCHAR/VARCHAR and CHAR/VARCHAR to be rewritten as VEGPreds
   DDkwd__(COMP_BOOL_159,      "OFF"),
 
   DDkwd__(COMP_BOOL_160,      "OFF"),
