@@ -74,6 +74,7 @@ public final class ServerManager implements Callable {
     private int maxHeapPctExit;
     private int statisticsIntervalTime;
     private int statisticsLimitTime;
+    private int statisticsCacheSize;
     private String statisticsType;
     private String statisticsEnable;
     private String sqlplanEnable;
@@ -200,6 +201,8 @@ public final class ServerManager implements Callable {
                                     + " ")
                     .replace("-STATISTICSLIMIT",
                             "-STATISTICSLIMIT " + statisticsLimitTime + " ")
+                    .replace("-STATISTICSCACHESIZE",
+                            "-STATISTICSCACHESIZE " + statisticsCacheSize + " ")
                     .replace("-STATISTICSTYPE",
                             "-STATISTICSTYPE " + statisticsType + " ")
                     .replace("-STATISTICSENABLE",
@@ -339,6 +342,9 @@ public final class ServerManager implements Callable {
         this.statisticsLimitTime = this.conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME);
+        this.statisticsCacheSize = this.conf
+                .getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE,
+                        Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE);
         this.statisticsType = this.conf.get(
                 Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE,
                 Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE);

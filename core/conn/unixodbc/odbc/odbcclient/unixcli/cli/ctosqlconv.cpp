@@ -354,8 +354,8 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 	if (errorMsg)
 		*errorMsg = '\0';
 	//if (targetPrecision < 19)
-	if( !(((SQLDataType == SQLTYPECODE_NUMERIC) && (targetPrecision > 18)) ||
-		((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (targetPrecision > 9))))
+    if(((SQLDataType == SQLTYPECODE_NUMERIC) && (targetPrecision <= 18)) ||
+       ((SQLDataType == SQLTYPECODE_NUMERIC_UNSIGNED) && (targetPrecision <= 9)))
 	getMaxNum(targetPrecision, targetScale, integralMax, decimalMax);
 
 	switch (ODBCDataType)

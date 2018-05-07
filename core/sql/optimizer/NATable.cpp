@@ -2299,10 +2299,10 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
          NAColumn* ncol = partColArray[c];
          const NAType* nt = ncol->getType();
          
-         if (rangePartBoundValues->getOperatorType() == ITM_ITEM_LIST ) 
-            val = (ItemExpr*) (*list) [c];
-          else
-            val = (ItemExpr*) (*list) [0];
+         val = (ItemExpr*) (*list) [c];
+
+         // make sure the value is the same type as the column
+         val = new(heap) Cast(val, nt->newCopy(heap));
 
          if (nt->isEncodingNeeded())
             encodeExpr = new(heap) CompEncode(val, !(partColArray.isAscending(c)));
@@ -2327,7 +2327,7 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                     (CmpCommon::diags()));
 
          totalEncodedKeyLength += encodedKeyLength;
-         totalEncodedKeyBuf += encodedKeyBuffer;
+         totalEncodedKeyBuf.append(encodedKeyBuffer, encodedKeyLength);
 
          if ( ok != 0 ) 
             return NULL;

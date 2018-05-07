@@ -51,6 +51,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <uuid/uuid.h>
+#include <time.h>
 
 #include "NLSConversion.h"
 #include "nawstring.h"
@@ -6069,45 +6070,22 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 
       // Pick an initial seed.  According to the reference given below
       // (in the eval function), all initial seeds between 1 and
-      // 2147483646 are equally valid.  So, we just need to pick one
+      // 2147483647 are equally valid.  So, we just need to pick one
       // in this range.  Do this based on a timestamp.
+      struct timespec seedTime;
 
-      // Use ex_function_current to get timestamp.
-      //
-      char currBuff[32];
-      char *opData[1];
-      opData[0] = currBuff;
-      ex_function_current currentFun;
-      currentFun.eval(&opData[0], 0, 0);
+      clock_gettime(CLOCK_REALTIME, &seedTime);
 
-      // Extract year, month, etc.
-      //
-      char *p = currBuff;
-      short year = *((short*) p);
-      p += sizeof(short);
-      char month = *p++;
-      char day = *p++;
-      char hour = *p++;
-      char minute = *p++;
-      char second = *p++;
-      Lng32 fraction = *((Lng32*) p);
+      seed_  = (Int32) (seedTime.tv_sec  % 2147483648);
+      seed_ ^= (Int32) (seedTime.tv_nsec % 2147483648L);
 
-      // Local variables year, ..., fraction are now initialized.
-      // From the values of these variables, generate a seed in the
-      // desired range.
-
-      Lng32 x = year * month * day;
-      if (hour) x *= hour;
-      p = (char*) &x;
-
-      assert(sizeof(Lng32)==4);
-
-      p[0] |= (second<<1);
-      p[1] |= (minute<<1);
-      p[2] |= (minute<<2);
-      p[3] |= second;
-
-      seed_ = x + fraction;
+      // Go through one step of a linear congruential random generator.
+      // (https://en.wikipedia.org/wiki/Linear_congruential_generator).
+      // This is to avoid seed values that are close to each other when
+      // we call this method again within a short time. The eval() method
+      // below doesn't handle seed values that are close to each other
+      // very well.
+      seed_ = (((Int64) seed_) * 1664525L + 1013904223L) % 2147483648;
 
       if (seed_<0)
         seed_ += 2147483647;

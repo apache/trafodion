@@ -11,7 +11,7 @@
 1009 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName does not exist in the specified table.
 1010 0A000 99999 ADVANCED MINOR DBADMIN The statement just entered is currently not supported.
 1011 ZZZZZ 99999 ADVANCED MINOR DBADMIN Only one grantee per grant or revoke is allowed.
-1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  You lack grant option on the specified privileges.
+1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  $0~String0 lacks grant option on the specified privileges. $1~String1
 1013 01007 99999 BEGINNER MAJOR DBADMIN Not all privileges were granted.  You lack grant option for the $0~string0 privilege.
 1014 2B000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1015 01006 99999 BEGINNER MAJOR DBADMIN Not all privileges were revoked. You lack the grant option for the $0~string0 privilege.
@@ -193,7 +193,7 @@
 1191 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SERIALIZE option is not yet supported for $0~string0 datatype.
 1192 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to retrieve data from Hive metastore.  Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 1193 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The $0~string0 specified in the $1~string1 clause must be identical to the primary key for a Trafodion table.
-1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
+1194 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Component operation $0~string0 does not exist for component $1~string1
 1195 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~ColumnName is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
 1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1 inclusive.
 1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The location $0~string0 for $1~string1 does not match with another location $2~string2 specified. All location specifications must be identical.

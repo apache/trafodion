@@ -9969,6 +9969,14 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       Int32 grantee;
       if (pGranteeArray[j]->isPublic())
         {
+          // don't allow WGO for public auth ID
+          if (isWGOSpecified)
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
+              processReturn();
+              return;
+            }
+
           grantee = PUBLIC_USER;
           authName = PUBLIC_AUTH_NAME;
         }
@@ -9991,6 +9999,31 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                   << DgString1("verifying grantee");
                processReturn();
                return;
+            }
+
+          // Don't allow WGO for roles
+          if (CmpSeabaseDDLauth::isRoleID(grantee) && isWGOSpecified &&
+              CmpCommon::getDefault(ALLOW_WGO_FOR_ROLES) == DF_OFF)
+            {
+              // If grantee is system role, allow grant
+              Int32 numberRoles = sizeof(systemRoles)/sizeof(SystemAuthsStruct);
+              NABoolean isSystemRole = FALSE;
+              for (Int32 i = 0; i < numberRoles; i++)
+                {
+                  const SystemAuthsStruct &roleDefinition = systemRoles[i];
+                  NAString systemRole = roleDefinition.authName;
+                  if (systemRole == authName)
+                    {
+                      isSystemRole = TRUE;
+                      break;
+                    }
+                }
+              if (!isSystemRole)
+                {
+                  *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
+                  processReturn();
+                  return;
+                }
             }
         }
 

@@ -424,6 +424,9 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
   DDkwd__(ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS, "OFF"),
 
+  // Allow users to grant privileges to role using the with grant option
+  DDkwd__(ALLOW_WGO_FOR_ROLES,                  "ON"),
+
   DDSkwd__(ALTPRI_ESP,                          ""),
   DDSkwd__(ALTPRI_MASTER,	                ""),
 
@@ -626,7 +629,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_154,      "OFF"),
   DDkwd__(COMP_BOOL_155,      "OFF"),
   DDkwd__(COMP_BOOL_156,      "ON"),  // Used by RTS to turn on RTS Stats collection for ROOT operators
-  DDkwd__(COMP_BOOL_158,      "OFF"),
+  DDkwd__(COMP_BOOL_158,      "ON"),  // ON --> allows equijoins on VARCHAR/VARCHAR and CHAR/VARCHAR to be rewritten as VEGPreds
   DDkwd__(COMP_BOOL_159,      "OFF"),
 
   DDkwd__(COMP_BOOL_160,      "OFF"),
@@ -2702,6 +2705,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // SQ_SEAMONSTER which will have a value of 0 or 1.
   DDkwd__(SEAMONSTER,                  "SYSTEM"),
 
+  // If the inner table of a semi-join has fewer rows than this,
+  // we'll allow it to be transformed to a join.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE,  "100.0"),
+ // Ratio of right child cardinality to uec above which semijoin 
+ // trans. is favored.
+  DDflt1_(SEMIJOIN_TO_INNERJOIN_REDUCTION_RATIO,  "5.0"),
  SDDkwd__(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION, "SYSTEM"),
   // Disallow/Allow semi and anti-semi joins in MultiJoin framework
   DDkwd__(SEMI_JOINS_SPOIL_JBB,        "OFF"),

@@ -221,6 +221,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_RI_CIRCULAR_DEPENDENCY                    = 1188
                   // unused                                       = 1189
 
+                  , CAT_INVALID_COMPONENT_PRIVILEGE               = 1194
                   , CAT_INVALID_NUM_OF_SALT_PARTNS                = 1196
                   , CAT_INVALID_SALTED_UNIQUE_IDX                 = 1201
                   , CAT_INVALID_SALT_LIKE_CLAUSE                  = 1202
