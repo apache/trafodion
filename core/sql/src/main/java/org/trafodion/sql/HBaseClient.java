@@ -583,72 +583,17 @@ public class HBaseClient {
             {
               if(setDescRet.storagePolicyChanged())
               {
-                 //change the HDFS storage policy
-                 //get the HBase table path
-                 String hbaseRoot = config.get("hbase.rootdir");
-                 FileSystem fs = FileSystem.get(config);
-                 //Construct the HDFS dir
-                 //find out if namespace is there
-                 String[] parts = tblName.split(":");
-                 String namespacestr="";
-
-                 //guess the path pattern
-                 //different HBase version may have different path pattern
-                 //There is no interface to get this information using HBase User API
-                 //Since it is HBase internal behavior
-                 //At present, before HBase 2.0 release and before HBASE-19858 released in HBase 1.5.0
-                 //Trafodion here need a trick to guess
-                 String fullPath = hbaseRoot + "/data/" ;
-                 String fullPath2 = hbaseRoot + "/data/default/";
-
-                 //check if fullPath2 exist
-                 if(fs.exists(new Path(fullPath2)))
-                    fullPath = fullPath2;
-
-                 if(parts.length >1) //have namespace
-                   fullPath = fullPath + parts[0] + "/" + parts[1];
-                 else
-                   fullPath = fullPath + tblName;
-
-                 if (logger.isDebugEnabled()) logger.debug("createk table fullPath is " + fullPath);
-
-                 admin.close(); //close here, invokeSetStoragePolicy may throw exception
-
-                 invokeSetStoragePolicy(fs, fullPath, setDescRet.storagePolicy_ ) ;
+                 Object tableOptionsStoragePolicy[] = new Object[HBASE_HDFS_STORAGE_POLICY+1];
+                 for(int i=0; i<HBASE_HDFS_STORAGE_POLICY; i++)
+                   tableOptionsStoragePolicy[i]="";
+                 tableOptionsStoragePolicy[HBASE_HDFS_STORAGE_POLICY]=(String)setDescRet.storagePolicy_ ;
+                 tableOptionsStoragePolicy[HBASE_NAME]=(String)tblName;
+                 alter(tblName,tableOptionsStoragePolicy,transID);
               }
             }
             else
               admin.close();
         return true;
-    }
-
-    private static void invokeSetStoragePolicy(final FileSystem fs, final String pathstr,
-      final String storagePolicy) 
-       throws IOException {
-        Path path = new Path(pathstr);
-        Method m = null;
-        try {
-            m = fs.getClass().getDeclaredMethod("setStoragePolicy",
-            new Class<?>[] { Path.class, String.class });
-            m.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            m = null;
-            throw new IOException("FileSystem doesn't support setStoragePolicy");
-        } catch (SecurityException e) {
-          m = null; 
-          throw new IOException("No access to setStoragePolicy on FileSystem from the SecurityManager");
-        }
-        if (m != null) {
-          try {
-            m.invoke(fs, path, storagePolicy);
-            if (logger.isDebugEnabled()) {
-              logger.debug("Set storagePolicy=" + storagePolicy + " for path=" + path);
-            }
-          } catch (Exception e) {
-               logger.error("invoke set storage policy error : " + e);
-               throw new IOException(e);
-          }
-        }
     }
 
     public boolean registerTruncateOnAbort(String tblName, long transID)
@@ -688,7 +633,6 @@ public class HBaseClient {
         Admin admin = getConnection().getAdmin();
         HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
-
         String colFam = (String)tableOptions[HBASE_NAME];
         if (colFam == null)
             return true; // must have col fam name
@@ -720,13 +664,18 @@ public class HBaseClient {
                 return true; // col fam already exists
         }
         else {
-            if (colDesc == null)
+            if (colDesc == null )
+            {
+               if( (String)tableOptions[HBASE_HDFS_STORAGE_POLICY] == null || (String)tableOptions[HBASE_HDFS_STORAGE_POLICY]=="" )
                 return true; // colDesc must exist
+            }
+            else {
 
-            int defaultVersionsValue = colDesc.getMaxVersions(); 
+              int defaultVersionsValue = colDesc.getMaxVersions(); 
 
-            status = 
+              status = 
                 setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+           }
         }
 
             if (transID != 0) {

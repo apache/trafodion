@@ -248,6 +248,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
 #ifdef CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.regionserver.MultiVersionConcurrencyControl.WriteEntry;
@@ -269,6 +271,10 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import com.google.protobuf.ServiceException;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 
 
 @InterfaceAudience.LimitedPrivate(HBaseInterfaceAudience.COPROC)
@@ -2403,6 +2409,72 @@ CoprocessorService, Coprocessor {
     TlogDeleteResponse TlogDel_response = deleteResponseBuilder.build();
     done.run(TlogDel_response);
  }
+
+  public void setStoragePolicy(RpcController controller,
+                                             TrafSetStoragePolicyRequest request,
+                                             RpcCallback<TrafSetStoragePolicyResponse> done) {
+    String path = request.getPath();
+    String policy = request.getPolicy();
+    if (LOG.isTraceEnabled()) LOG.trace("setStoragePolicy ENTRY. path " +  path + " policy " + policy );
+
+    IOException t=null;
+    try {
+      invokeSetStoragePolicy(fs, path, policy);
+    }
+    catch (IOException e) {
+      t = e; 
+    }
+  
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse.Builder setStoragePolicyResponseBuilder =
+      org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse.newBuilder();
+
+    if(t != null)
+    {
+      LOG.error("setStoragePolicy error : " + t.toString() );
+      setStoragePolicyResponseBuilder.setStatus(false);
+      setStoragePolicyResponseBuilder.setException(t.toString());
+    }
+    else
+    {
+      setStoragePolicyResponseBuilder.setStatus(true);
+      setStoragePolicyResponseBuilder.setException("");
+    }
+   
+    TrafSetStoragePolicyResponse resp = setStoragePolicyResponseBuilder.build();
+
+    done.run(resp);
+    
+  }
+
+  private static void invokeSetStoragePolicy(final FileSystem fs, final String pathstr,
+      final String storagePolicy)
+       throws IOException {
+        Path path = new Path(pathstr);
+        Method m = null;
+        try {
+            m = fs.getClass().getDeclaredMethod("setStoragePolicy",
+            new Class<?>[] { Path.class, String.class });
+            m.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            m = null;
+            throw new IOException("FileSystem doesn't support setStoragePolicy");
+        } catch (SecurityException e) {
+          m = null;
+          throw new IOException("No access to setStoragePolicy on FileSystem from the SecurityManager");
+        }
+        if (m != null) {
+          try {
+            m.invoke(fs, path, storagePolicy);
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Set storagePolicy=" + storagePolicy + " for path=" + path);
+            }
+          } catch (Exception e) {
+               LOG.error("invoke set storage policy error : " + e);
+               throw new IOException(e);
+          }
+        }
+    }
+
 
   public void getTransactionStatesPriorToAsn(RpcController controller,
                                              TlogTransactionStatesFromIntervalRequest request,
