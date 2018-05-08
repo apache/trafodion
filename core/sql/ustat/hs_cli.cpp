@@ -5754,6 +5754,7 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
     SQLSTMT_ID* ppStmtId = ppCursor.getStmt();
     SQLDESC_ID* ppOutputDesc = ppCursor.getOutDesc();
     retcode = ppCursor.open();
+    HSFilterWarning(retcode);
     HSHandleError(retcode);
 
     printPlanHeader(LM);
