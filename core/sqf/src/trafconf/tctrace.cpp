@@ -60,7 +60,7 @@ CTrafConfigTrace::CTrafConfigTrace()
                 , traceFileFb_(0)
                 , traceFileBase_(NULL)
 {
-    numTraceAreas_ = sizeof(traceAreaList_)/sizeof(TraceArea_t);
+    numTraceAreas_ = (int)(sizeof(traceAreaList_)/sizeof(TraceArea_t));
 }
 
 const char *CTrafConfigTrace::GetEnvStr(const char *key)
