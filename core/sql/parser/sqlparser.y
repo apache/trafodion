@@ -23397,12 +23397,20 @@ set_table_statement: TOK_SET TOK_TABLE set_table_name
                    {
 		     $$ = new (PARSERHEAP())   // a RESET 
 		       RelSetTimeout( *$3, NULL, $4, TRUE );
+                     *SqlParser_Diags << DgSqlCode(-4222)
+                                      << DgString0("SET TABLE TIMEOUT");
+                     yyerror("");
+                     YYABORT;
 		   }
                   |  TOK_SET TOK_TABLE set_table_name  // a timeout value
                      optional_stream TOK_TIMEOUT  timeout_value
                    {
 		     $$ = new (PARSERHEAP()) 
 		       RelSetTimeout( *$3, (ItemExpr *) $6 , $4);
+                     *SqlParser_Diags << DgSqlCode(-4222)
+                                      << DgString0("SET TABLE TIMEOUT");
+                     yyerror("");
+                     YYABORT;
 		   }
                      
 
