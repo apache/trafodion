@@ -55,6 +55,16 @@ LIBSBUTIL	= $(LIBEXPDIR)/libsbutil.so
 LIBSQSTATESB	= $(LIBEXPDIR)/libsqstatesb.so
 # neet -lrt for clock_gettime
 LIBSX	       += -lrt
+#
+# the order of these objects have to be swapped based on the GCC version
+MS_MPITMSG_O	= $(OUTDIR)/mpitmsg.o \
+		  $(OUTDIR)/ms.o 
+ifeq ($(GCC_MAJOR_VERSION_GT_3),1)
+ifeq ($(GCC_MINOR_VERSION_GT_4),1)
+MS_MPITMSG_O	= $(OUTDIR)/ms.o \
+		  $(OUTDIR)/mpitmsg.o
+endif
+endif
 
 
 OBJSBFS		= $(OUTDIR)/fs.o \
@@ -78,8 +88,7 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/mapmd.o \
 		  $(OUTDIR)/mapstats.o \
 		  $(OUTDIR)/monclio.o \
-		  $(OUTDIR)/mpitmsg.o \
-		  $(OUTDIR)/ms.o \
+		  $(MS_MPITMSG_O) \
 		  $(OUTDIR)/mserr.o \
 		  $(OUTDIR)/mseventmgr.o \
 		  $(OUTDIR)/msic.o \
