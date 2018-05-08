@@ -7152,7 +7152,8 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
         return -1;
     }
 
-  if (dropFromHbase && hasSuperTable!=1)
+  //if (dropFromHbase && hasSuperTable !=1 )
+  if (dropFromHbase ) 
     {
       if (objType != COM_VIEW_OBJECT)
         {
