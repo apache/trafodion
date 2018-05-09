@@ -2888,6 +2888,8 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 				child(1)->castToRelExpr()) ;
 	newGrby->setGroupAttr(new (stmtHeap) 
 	  GroupAttributes(*(child(1)->getGroupAttr())));
+	// must reset numJoinedTables_; we might be copying GroupAttributes from a join
+	newGrby->getGroupAttr()->resetNumJoinedTables(1);
 	newGrby->getGroupAttr()->clearLogProperties();
 	  
 	newGrby->setGroupExpr(equiJoinCols1);
