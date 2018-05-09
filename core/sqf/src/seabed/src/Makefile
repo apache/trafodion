@@ -59,7 +59,7 @@ LIBSX	       += -lrt
 # the order of these objects have to be swapped based on the GCC version
 MS_MPITMSG_O	= $(OUTDIR)/mpitmsg.o \
 		  $(OUTDIR)/ms.o 
-ifeq ($(GCC_MAJOR_VERSION_GT_3),1)
+ifeq ($(GCC_MAJOR_VERSION_EQ_4),1)
 ifeq ($(GCC_MINOR_VERSION_GT_4),1)
 MS_MPITMSG_O	= $(OUTDIR)/ms.o \
 		  $(OUTDIR)/mpitmsg.o
