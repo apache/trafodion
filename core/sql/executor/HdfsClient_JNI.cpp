@@ -26,6 +26,7 @@
 #include "Context.h"
 #include "jni.h"
 #include "HdfsClient_JNI.h"
+#include "org_trafodion_sql_HDFSClient.h"
 
 // ===========================================================================
 // ===== Class HdfsScan
@@ -83,7 +84,7 @@ HDFS_Scan_RetCode HdfsScan::init()
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR      ].jm_signature = "()V";
     JavaMethods_[JM_SET_SCAN_RANGES].jm_name      = "setScanRanges";
-    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[Ljava/lang/String;[J[J[I)V";
+    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;S[Ljava/lang/String;[J[J[I[S)V";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_name      = "trafHdfsRead";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_signature = "()[I";
     JavaMethods_[JM_STOP].jm_name      = "stop";
@@ -106,7 +107,7 @@ char* HdfsScan::getErrorText(HDFS_Scan_RetCode errEnum)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
+HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize, short hdfsIoByteArraySize,
       HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::setScanRanges() called.");
@@ -138,10 +139,12 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
    }
+   jshort j_hdfsIoByteArraySize = hdfsIoByteArraySize;
    jobjectArray j_filenames = NULL;
    jlongArray j_offsets = NULL;
    jlongArray j_lens = NULL;  
    jintArray j_rangenums = NULL;
+   jshortArray j_compress = NULL;
    HdfsFileInfo *hdfo;
    jstring j_obj;
 
@@ -184,7 +187,11 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
              return hdfsScanRetCode;
           }
        }
-       long len = hdfo->getBytesToRead()+rangeTailIOSize;
+       long len;
+       if (hdfo->getBytesToRead() > (LONG_MAX-rangeTailIOSize))
+           len  = LONG_MAX;
+       else
+           len  = hdfo->getBytesToRead()+rangeTailIOSize;
        jenv_->SetLongArrayRegion(j_lens, rangeCount, 1, &len);
 
        if (j_rangenums == NULL) {
@@ -196,12 +203,24 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
        }
        jint tdbRangeNum = i;
        jenv_->SetIntArrayRegion(j_rangenums, rangeCount, 1, &tdbRangeNum);
+
+       if (j_compress == NULL) {
+          j_compress = jenv_->NewShortArray(numRanges);
+          if (jenv_->ExceptionCheck()) {
+             jenv_->PopLocalFrame(NULL);
+             return hdfsScanRetCode;
+          }
+       }
+       short compressionMethod = (short)hdfo->getCompressionMethod();
+       //ex_assert(compressionMethod >= 0 && compressionMethod <= ComCompressionInfo::LZOP, "Illegal CompressionMethod Value");
+       jenv_->SetShortArrayRegion(j_compress, rangeCount, 1, &compressionMethod);
    } 
 
    if (hdfsStats_ != NULL)
        hdfsStats_->getHdfsTimer().start();
    tsRecentJMFromJNI = JavaMethods_[JM_SET_SCAN_RANGES].jm_full_name;
-   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_filenames, j_offsets, j_lens, j_rangenums);
+   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_hdfsIoByteArraySize, 
+                      j_filenames, j_offsets, j_lens, j_rangenums, j_compress);
    if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
       hdfsStats_->incHdfsCalls();
@@ -216,7 +235,7 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
 }
 
 HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
-      HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
+      short hdfsIoByteArraySize, HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
       ExHdfsScanStats *hdfsStats, HDFS_Scan_RetCode &hdfsScanRetCode)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::newInstance() called.");
@@ -228,7 +247,7 @@ HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfs
    if (hdfsScan != NULL) {
        hdfsScanRetCode = hdfsScan->init();
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
-          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, 
+          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, hdfsIoByteArraySize,  
                     hdfsFileInfoArray, beginRangeNum, numRanges, rangeTailIOSize); 
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
           hdfsScan->setHdfsStats(hdfsStats);
@@ -359,7 +378,7 @@ void HdfsClient::deleteHdfsFileInfo()
    hdfsFileInfo_ = NULL;
 }
 
-HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode)
+HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, short hdfsIoByteArraySize)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::newInstance() called.");
 
@@ -369,8 +388,10 @@ HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HD
    HdfsClient *hdfsClient = new (heap) HdfsClient(heap);
    if (hdfsClient != NULL) {
        retCode = hdfsClient->init();
-       if (retCode == HDFS_CLIENT_OK) 
+       if (retCode == HDFS_CLIENT_OK) {
           hdfsClient->setHdfsStats(hdfsStats);
+          hdfsClient->setIoByteArraySize(hdfsIoByteArraySize);
+       }
        else {
           NADELETE(hdfsClient, HdfsClient, heap);
           hdfsClient = NULL;
@@ -574,41 +595,50 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
      hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
      return 0;
   }
-
-  //Write the requisite bytes into the file
-  jbyteArray jbArray = jenv_->NewByteArray( len);
-  if (!jbArray) {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM));
-    jenv_->PopLocalFrame(NULL);
-    hdfsClientRetcode =  HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM;
-    return 0;
-  }
-  jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
-
-  if (hdfsStats_ != NULL)
-     hdfsStats_->getHdfsTimer().start();
-
-  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
-  // Java method returns the cumulative bytes written
-  jint totalBytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
-
-  if (hdfsStats_ != NULL) {
-      hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
-      hdfsStats_->incHdfsCalls();
-  }
-  if (jenv_->ExceptionCheck())
+  Int64 lenRemain = len;
+  Int64 writeLen;
+  Int64 chunkLen = (ioByteArraySize_ > 0 ? ioByteArraySize_ * 1024 : 0);
+  Int64 offset = 0;
+  do 
   {
-    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsWrite()");
-    jenv_->PopLocalFrame(NULL);
-    hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
-    return 0;
-  }
+     if ((chunkLen > 0) && (lenRemain > chunkLen))
+        writeLen = chunkLen; 
+     else
+        writeLen = lenRemain;
+     //Write the requisite bytes into the file
+     jbyteArray jbArray = jenv_->NewByteArray(writeLen);
+     if (!jbArray) {
+        GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM));
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode =  HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM;
+        return 0;
+     }
+     jenv_->SetByteArrayRegion(jbArray, 0, writeLen, (const jbyte*)(data+offset));
 
+     if (hdfsStats_ != NULL)
+         hdfsStats_->getHdfsTimer().start();
+
+     tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
+     // Java method returns the cumulative bytes written
+     jint totalBytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
+
+     if (hdfsStats_ != NULL) {
+         hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
+         hdfsStats_->incHdfsCalls();
+     }
+     if (jenv_->ExceptionCheck())
+     {
+        getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsWrite()");
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
+        return 0;
+     }
+     lenRemain -= writeLen;
+     offset += writeLen;
+  } while (lenRemain > 0);
   jenv_->PopLocalFrame(NULL);
   hdfsClientRetcode = HDFS_CLIENT_OK;
-  Int32 bytesWritten = totalBytesWritten - totalBytesWritten_;
-  totalBytesWritten_ = totalBytesWritten;
-  return bytesWritten; 
+  return len; 
 }
 
 Int32 HdfsClient::hdfsRead(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode)
@@ -1016,6 +1046,22 @@ jint JNICALL Java_org_trafodion_sql_HDFSClient_sendFileStatus
    retcode =  hdfsClient->setHdfsFileInfo(jenv, numFiles, fileNo, isDir, filename, modTime, len, numReplicas, blockSize, owner,
             group, permissions, accessTime);
    return (jint) retcode;
+}
+
+JNIEXPORT jint JNICALL Java_org_trafodion_sql_HDFSClient_copyToByteBuffer
+  (JNIEnv *jenv, jobject j_obj, jobject j_buf, jint offset, jbyteArray j_bufArray, jint copyLen)
+{
+   void *bufBacking;
+   
+   bufBacking =  jenv->GetDirectBufferAddress(j_buf);
+   if (bufBacking == NULL)
+      return -1;
+   jlong capacity = jenv->GetDirectBufferCapacity(j_buf);
+   jbyte *byteBufferAddr = (jbyte *)bufBacking + offset; 
+   if ((offset + copyLen) > capacity)
+      return -2; 
+   jenv->GetByteArrayRegion(j_bufArray, 0, copyLen, byteBufferAddr);
+   return 0;
 }
 
 #ifdef __cplusplus

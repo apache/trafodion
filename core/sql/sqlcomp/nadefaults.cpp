@@ -1496,6 +1496,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDui1__(HDFS_IO_BUFFERSIZE,                            "65536"),
   DDui___(HDFS_IO_BUFFERSIZE_BYTES,               "0"),
+  DDui___(HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,    "1024"),
   // The value 0 denotes RangeTail = max record length of table.
   DDui___(HDFS_IO_RANGE_TAIL,                     "0"),
   DDkwd__(HDFS_PREFETCH,                           "ON"),

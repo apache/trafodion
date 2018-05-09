@@ -136,6 +136,7 @@ class ComTdbHdfsScan : public ComTdb
   UInt16 origTuppIndex_;                                      // 188 - 189
   char fillersComTdbHdfsScan1_[2];                            // 190 - 191
   NABasicPtr nullFormat_;                                     // 192 - 199
+  UInt16 hdfsIoByteArraySize_;                                // 198 - 199
 
   // next 4 params are used to check if data under hdfsFileDir
   // was modified after query was compiled.
@@ -362,6 +363,10 @@ public:
   Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
  
   char *hdfsRootDir() { return hdfsRootDir_; }
+  void setHdfsIoByteArraySize(int size)
+    { hdfsIoByteArraySize_ = size; }
+  UInt16 getHdfsIoByteArraySize() 
+    { return hdfsIoByteArraySize_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()
