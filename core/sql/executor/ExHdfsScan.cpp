@@ -569,7 +569,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 break;
              } 
              hdfsScan_ = HdfsScan::newInstance((NAHeap *)getHeap(), hdfsScanBuf_, hdfsScanBufMaxSize_, 
-                            hdfsScanTdb().hdfsIoByteArraySize_, 
+                            hdfsScanTdb().hdfsIoByteArraySizeInKB_, 
                             &hdfsFileInfoListAsArray_, beginRangeNum_, numRanges_, hdfsScanTdb().rangeTailIOSize_, 
                             hdfsStats_, hdfsScanRetCode);
              if (hdfsScanRetCode != HDFS_SCAN_OK) {

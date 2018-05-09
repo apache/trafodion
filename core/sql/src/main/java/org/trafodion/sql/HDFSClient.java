@@ -110,7 +110,7 @@ public class HDFSClient
    boolean compressed_ = false;
    private CompressionCodec codec_ = null;
    private short compressionType_;
-   private short ioByteArraySize_;
+   private int ioByteArraySizeInKB_;
    static {
       String confFile = System.getProperty("trafodion.log4j.configFile");
       System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
@@ -148,7 +148,7 @@ public class HDFSClient
          int bytesRead;
          int totalBytesRead = 0;
          if (compressed_) {
-            bufArray_ = new byte[ioByteArraySize_ * 1024];
+            bufArray_ = new byte[ioByteArraySizeInKB_ * 1024];
          } else 
          if (! buf_.hasArray()) {
             try {
@@ -223,13 +223,13 @@ public class HDFSClient
    // The passed in length can never be more than the size of the buffer
    // If the range has a length more than the buffer length, the range is chunked
    // in HdfsScan
-   public HDFSClient(int bufNo, short ioByteArraySize, int rangeNo, String filename, ByteBuffer buffer, long position, 
+   public HDFSClient(int bufNo, int ioByteArraySizeInKB, int rangeNo, String filename, ByteBuffer buffer, long position, 
                 int length, short compressionType, CompressionInputStream inStream) throws IOException
    {
       bufNo_ = bufNo; 
       rangeNo_ = rangeNo;
       filename_ = filename;
-      ioByteArraySize_ = ioByteArraySize;
+      ioByteArraySizeInKB_ = ioByteArraySizeInKB;
       filepath_ = new Path(filename_);
       fs_ = FileSystem.get(filepath_.toUri(),config_);
       compressionType_ = compressionType;
@@ -384,7 +384,7 @@ public class HDFSClient
       int bufLen;
       int bufOffset = 0;
       if (compressed_ && bufArray_ != null) 
-         bufArray_ = new byte[ioByteArraySize_ * 1024];
+         bufArray_ = new byte[ioByteArraySizeInKB_ * 1024];
       if (buffer.hasArray())
          bufLen = buffer.array().length;
       else

@@ -27,6 +27,7 @@
 #include "jni.h"
 #include "HdfsClient_JNI.h"
 #include "org_trafodion_sql_HDFSClient.h"
+#include "ComCompressionInfo.h"
 
 // ===========================================================================
 // ===== Class HdfsScan
@@ -84,7 +85,7 @@ HDFS_Scan_RetCode HdfsScan::init()
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR      ].jm_signature = "()V";
     JavaMethods_[JM_SET_SCAN_RANGES].jm_name      = "setScanRanges";
-    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;S[Ljava/lang/String;[J[J[I[S)V";
+    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;I[Ljava/lang/String;[J[J[I[S)V";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_name      = "trafHdfsRead";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_signature = "()[I";
     JavaMethods_[JM_STOP].jm_name      = "stop";
@@ -107,7 +108,7 @@ char* HdfsScan::getErrorText(HDFS_Scan_RetCode errEnum)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize, short hdfsIoByteArraySize,
+HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize, int hdfsIoByteArraySizeInKB,
       HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::setScanRanges() called.");
@@ -139,7 +140,7 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
    }
-   jshort j_hdfsIoByteArraySize = hdfsIoByteArraySize;
+   jint j_hdfsIoByteArraySizeInKB = hdfsIoByteArraySizeInKB;
    jobjectArray j_filenames = NULL;
    jlongArray j_offsets = NULL;
    jlongArray j_lens = NULL;  
@@ -212,14 +213,14 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
           }
        }
        short compressionMethod = (short)hdfo->getCompressionMethod();
-       //ex_assert(compressionMethod >= 0 && compressionMethod <= ComCompressionInfo::LZOP, "Illegal CompressionMethod Value");
+       ex_assert(compressionMethod >= 0 && compressionMethod < ComCompressionInfo::SUPPORTED_COMPRESSIONS, "Illegal CompressionMethod Value");
        jenv_->SetShortArrayRegion(j_compress, rangeCount, 1, &compressionMethod);
    } 
 
    if (hdfsStats_ != NULL)
        hdfsStats_->getHdfsTimer().start();
    tsRecentJMFromJNI = JavaMethods_[JM_SET_SCAN_RANGES].jm_full_name;
-   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_hdfsIoByteArraySize, 
+   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_hdfsIoByteArraySizeInKB, 
                       j_filenames, j_offsets, j_lens, j_rangenums, j_compress);
    if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
@@ -235,7 +236,7 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
 }
 
 HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
-      short hdfsIoByteArraySize, HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
+      int hdfsIoByteArraySizeInKB, HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
       ExHdfsScanStats *hdfsStats, HDFS_Scan_RetCode &hdfsScanRetCode)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::newInstance() called.");
@@ -247,7 +248,7 @@ HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfs
    if (hdfsScan != NULL) {
        hdfsScanRetCode = hdfsScan->init();
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
-          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, hdfsIoByteArraySize,  
+          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, hdfsIoByteArraySizeInKB,  
                     hdfsFileInfoArray, beginRangeNum, numRanges, rangeTailIOSize); 
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
           hdfsScan->setHdfsStats(hdfsStats);
@@ -378,7 +379,7 @@ void HdfsClient::deleteHdfsFileInfo()
    hdfsFileInfo_ = NULL;
 }
 
-HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, short hdfsIoByteArraySize)
+HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, int hdfsIoByteArraySizeInKB)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::newInstance() called.");
 
@@ -390,7 +391,7 @@ HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HD
        retCode = hdfsClient->init();
        if (retCode == HDFS_CLIENT_OK) {
           hdfsClient->setHdfsStats(hdfsStats);
-          hdfsClient->setIoByteArraySize(hdfsIoByteArraySize);
+          hdfsClient->setIoByteArraySize(hdfsIoByteArraySizeInKB);
        }
        else {
           NADELETE(hdfsClient, HdfsClient, heap);
@@ -597,7 +598,7 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
   }
   Int64 lenRemain = len;
   Int64 writeLen;
-  Int64 chunkLen = (ioByteArraySize_ > 0 ? ioByteArraySize_ * 1024 : 0);
+  Int64 chunkLen = (ioByteArraySizeInKB_ > 0 ? ioByteArraySizeInKB_ * 1024 : 0);
   Int64 offset = 0;
   do 
   {

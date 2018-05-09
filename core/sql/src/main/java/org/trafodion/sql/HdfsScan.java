@@ -74,12 +74,11 @@ public class HdfsScan
    private int lastBufCompleted_ = -1;
    private boolean scanCompleted_;
    private CompressionInputStream currInStream_;
-   private short ioByteArraySize_;
+   private int ioByteArraySizeInKB_;
  
  
    // Structure to hold the Scan ranges for this HdfsScan instance
    //
-   
    class HdfsScanRange 
    {
       String filename_;
@@ -109,7 +108,7 @@ public class HdfsScan
    {
    }
 
-   public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, short ioByteArraySize, String filename[], long pos[], 
+   public void setScanRanges(ByteBuffer buf1, ByteBuffer buf2, int ioByteArraySizeInKB, String filename[], long pos[], 
             long len[], int rangeNum[], short compressionType[]) throws IOException
    {
       // Two buffers to hold the data read
@@ -118,7 +117,7 @@ public class HdfsScan
 
       buf_[0] = buf1;
       buf_[1] = buf2;
-      ioByteArraySize_ = ioByteArraySize;
+      ioByteArraySizeInKB_ = ioByteArraySizeInKB;
       for (int i = 0; i < 2 ; i++) {
           if (buf_[i].hasArray())
              bufLen_[i] = buf_[i].array().length;
@@ -166,7 +165,7 @@ public class HdfsScan
       if (! scanCompleted_) {
          if (logger_.isDebugEnabled())
             logger_.debug(" CurrentRange " + hdfsScanRanges_[currRange_].tdbRangeNum_ + " LenRemain " + currRangeLenRemain_ + " BufNo " + bufNo); 
-         hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySize_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
+         hdfsClient_[bufNo] = new HDFSClient(bufNo, ioByteArraySizeInKB_, hdfsScanRanges_[currRange_].tdbRangeNum_, 
 			hdfsScanRanges_[currRange_].filename_, 
                         buf_[bufNo], currRangePos_, readLength, 
                         hdfsScanRanges_[currRange_].compressionType_, currInStream_);

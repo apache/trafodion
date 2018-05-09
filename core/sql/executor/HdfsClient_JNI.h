@@ -66,11 +66,11 @@ public:
   // Get the error description.
   static char* getErrorText(HDFS_Scan_RetCode errEnum);
 
-  static HdfsScan *newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, short hdfsIoByteArraySize, 
+  static HdfsScan *newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, int hdfsIoByteArraySizeInKB, 
             HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize,
             ExHdfsScanStats *hdfsStats, HDFS_Scan_RetCode &hdfsScanRetCode);
 
-  HDFS_Scan_RetCode setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, short hdfsIoByteArraySize, 
+  HDFS_Scan_RetCode setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf, int scanBufSize, int hdfsIoByteArraySizeInKB, 
             HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, 
             int rangeTailIOSize);
 
@@ -169,11 +169,11 @@ public:
   }
  
   ~HdfsClient();
-  static HdfsClient *newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, short hdfsIoByteArraySize = 0);
+  static HdfsClient *newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, int hdfsIoByteArraySizeInKB = 0);
   static HdfsClient *getInstance();
   static void deleteInstance();
-  void setIoByteArraySize(short size)
-      { ioByteArraySize_ = size; }
+  void setIoByteArraySize(int size)
+      { ioByteArraySizeInKB_ = size; }
 
   // Get the error description.
   static char* getErrorText(HDFS_Client_RetCode errEnum);
@@ -226,7 +226,7 @@ private:
   int numFiles_;
   char *path_;
   Int64 totalBytesWritten_;
-  short ioByteArraySize_;
+  Int32 ioByteArraySizeInKB_;
   ExHdfsScanStats *hdfsStats_;
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
