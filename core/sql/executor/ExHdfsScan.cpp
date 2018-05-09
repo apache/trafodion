@@ -2093,7 +2093,6 @@ short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len,
 	*rc = WORK_POOL_BLOCKED;
       return -1;
     }
-  
   char * dp = p.getDataPointer();
   if (isVarchar)
     {

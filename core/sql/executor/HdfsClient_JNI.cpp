@@ -982,16 +982,22 @@ HDFS_Client_RetCode HdfsClient::setHdfsFileInfo(JNIEnv *jenv, jint numFiles, jin
    hdfsFileInfo->mLastAccess = accessTime;
    jint tempLen = jenv->GetStringUTFLength(filename);
    hdfsFileInfo->mName = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mName, jenv->GetStringUTFChars(filename, NULL), tempLen);
+   const char *temp = jenv->GetStringUTFChars(filename, NULL); 
+   strncpy(hdfsFileInfo->mName, temp, tempLen);
    hdfsFileInfo->mName[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(filename, temp); 
    tempLen = jenv->GetStringUTFLength(owner);
    hdfsFileInfo->mOwner = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mOwner, jenv->GetStringUTFChars(owner, NULL), tempLen);
+   temp = jenv->GetStringUTFChars(owner, NULL);
+   strncpy(hdfsFileInfo->mOwner, temp, tempLen);
    hdfsFileInfo->mOwner[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(owner, temp); 
    tempLen = jenv->GetStringUTFLength(group);
    hdfsFileInfo->mGroup = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mGroup, jenv->GetStringUTFChars(group, NULL), tempLen);
+   temp = jenv->GetStringUTFChars(group, NULL); 
+   strncpy(hdfsFileInfo->mGroup, temp, tempLen);
    hdfsFileInfo->mGroup[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(group, temp); 
    return HDFS_CLIENT_OK;
 }
 
