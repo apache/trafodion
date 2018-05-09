@@ -2142,7 +2142,6 @@ int CTcdbSqlite::GetSNodeData( int pnid
         }
     }
 
-    int  spnid;
     int  sparedpnid;
     int  spareCount = 0;
 
@@ -2165,7 +2164,6 @@ int CTcdbSqlite::GetSNodeData( int pnid
                 }
             }
 
-            spnid = sqlite3_column_int(prepStmt, 0);
             sparedpnid = sqlite3_column_int(prepStmt, 1);
             spareNodeConfig.spare_pnid[spareCount] = sparedpnid;
             spareCount++;

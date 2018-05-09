@@ -8530,6 +8530,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
                                       (void *)&colNum, (void *)&colCount
                                       );
           // Don't read any more (break out of loop) if fetch did not succeed.
+          HSFilterWarning(retcode);
           if (retcode)
             break;
           // If EXISTING keyword specified and REASON field is EMPTY, skip.
@@ -10457,6 +10458,7 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
 
     // Go ahead to write information for intervals of this histogram if DETAIL
     // option was specified, else return now.
+    HSFilterWarning(retcode);  // clean up any warnings before possible return
     if (!(optFlags & DETAIL_OPT))
         return 0;
 
@@ -10582,6 +10584,8 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
     }
     intData.close();
     displayData += "\n";
+
+    HSFilterWarning(retcode);  // filter out any warnings so HSErrorCatcher doesn't act up
 
     return 0;
 }
