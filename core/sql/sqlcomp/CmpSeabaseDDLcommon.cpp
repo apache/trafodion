@@ -4204,10 +4204,8 @@ short CmpSeabaseDDL::getSuperTableText(
       return -1;
     }
 
-  if (superTable.isNull())
-    superTable= defaultValue;
-
-  //CMPASSERT(!superTable.isNull());
+  if (superTable.isNull() || superTable == "")
+    return 0;
 
   return 1;
 }
@@ -7152,8 +7150,7 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
         return -1;
     }
 
-  //if (dropFromHbase && hasSuperTable !=1 )
-  if (dropFromHbase ) 
+  if (dropFromHbase && hasSuperTable !=1 )
     {
       if (objType != COM_VIEW_OBJECT)
         {
