@@ -1406,12 +1406,14 @@ protected:
   
 
  void createNativeHbaseTable(
-			     StmtDDLCreateHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLCreateHbaseTable * createTableNode,
+                             NAString &currCatName, NAString &currSchName);
 
  void dropNativeHbaseTable(
-			     StmtDDLDropHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLDropHbaseTable * dropTableNode,
+                             NAString &currCatName, NAString &currSchName);
   
   void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);

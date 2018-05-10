@@ -5081,7 +5081,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        setHbaseDataFormatString(TRUE);
        break;
      }
-
    if (table_desc->tableDesc()->isInMemoryObject())
      {
        setInMemoryObjectDefn( TRUE );
@@ -6771,10 +6770,11 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
- if ((!isSeabaseTable() && !isHiveTable()) ||
-       !CmpCommon::context()->isAuthorizationEnabled() ||
-       isVolatileTable() ||
-       (ComUser::isRootUserID() && !isHiveTable()) )
+ if (!CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable() ||
+      (ComUser::isRootUserID() && 
+        (!isHiveTable() && !isHbaseCellTable() && 
+         !isHbaseRowTable() && !isHbaseMapTable()) ))
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6794,7 +6794,8 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
   {
-    if (isHiveTable())
+    if (isHiveTable() || isHbaseCellTable() ||
+        isHbaseRowTable() || isHbaseMapTable())
       readPrivileges();
     else
       privInfo_ = NULL;
@@ -9149,6 +9150,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
     NABoolean toRemove = FALSE;
     if ((currTable->isSeabaseTable()) ||
         (currTable->isHiveTable()) ||
+        (currTable->isHbaseCellTable()) ||
+        (currTable->isHbaseRowTable()) ||
         (currTable->hasExternalTable()))
       toRemove = TRUE;
     if (! toRemove)
