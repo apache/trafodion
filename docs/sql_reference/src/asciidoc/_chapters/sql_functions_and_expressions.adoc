@@ -583,7 +583,7 @@ For more information, see <<character_value_expressions,Character Value Expressi
 [[considerations_for_ascii]]
 === Considerations For ASCII
 
-ASCII function handles string and column differently:
+The ASCII function handles string literals and columns differently:
 
 * For a string, the value of the character or *the value of each character* in the string cannot be greater than 255, or else it returns the following error:
 +
