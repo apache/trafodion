@@ -524,6 +524,7 @@ drop hbase table t022hbt1;
 drop hbase table t022hbt2;
 drop hbase table t022hbm1;
 drop hbase table t022hbm11;
+drop hbase table t022hbm2;
 drop table t022hbm1_like;
 drop table t022hbm1_ctas;
 drop table t022t1;
