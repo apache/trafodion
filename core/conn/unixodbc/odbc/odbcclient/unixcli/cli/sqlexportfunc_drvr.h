@@ -48,6 +48,373 @@ SQLRETURN  SQL_API SQLFreeHandle(SQLSMALLINT HandleType,
 }
 
 
+//Ansi Function
+extern "C"
+{
+SQLRETURN SQL_API SQLGetDiagRecA(SQLSMALLINT HandleType,
+                SQLHANDLE Handle,
+                SQLSMALLINT RecNumber,
+                SQLCHAR *Sqlstate,
+                SQLINTEGER *NativeError,
+                SQLCHAR *MessageText,
+                SQLSMALLINT BufferLength,
+                SQLSMALLINT *TextLength);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLGetDiagFieldA(SQLSMALLINT HandleType,
+                SQLHANDLE Handle,
+                SQLSMALLINT RecNumber,
+                SQLSMALLINT DiagIdentifier,
+                SQLPOINTER DiagInfo,
+                SQLSMALLINT BufferLength,
+                SQLSMALLINT *StringLength);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLConnectA(SQLHDBC ConnectionHandle,
+           SQLCHAR *ServerName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *UserName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *Authentication,
+           SQLSMALLINT NameLength3);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetConnectAttrA(SQLHDBC ConnectionHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER StringLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetConnectAttrA(SQLHDBC ConnectionHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetStmtAttrA(SQLHSTMT StatementHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER StringLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetStmtAttrA(SQLHSTMT StatementHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetInfoA(SQLHDBC ConnectionHandle,
+           SQLUSMALLINT InfoType,
+           SQLPOINTER InfoValuePtr,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *StringLengthPtr);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetDescFieldA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER ValuePtr,
+           SQLINTEGER BufferLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetDescFieldA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER ValuePtr,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLengthPtr);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetDescRecA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLCHAR *Name,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *StringLengthPtr,
+           SQLSMALLINT *TypePtr,
+           SQLSMALLINT *SubTypePtr,
+           SQLLEN     *LengthPtr,
+           SQLSMALLINT *PrecisionPtr,
+           SQLSMALLINT *ScalePtr,
+           SQLSMALLINT *NullablePtr);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLBrowseConnectA(
+    SQLHDBC            ConnectionHandle,
+    SQLCHAR           *InConnectionString,
+    SQLSMALLINT        StringLength1,
+    SQLCHAR           *OutConnectionString,
+    SQLSMALLINT        BufferLength,
+    SQLSMALLINT       *StringLength2Ptr);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLDriverConnectA(SQLHDBC  ConnectionHandle,
+    SQLHWND            WindowHandle,
+    SQLCHAR           *InConnectionString,
+    SQLSMALLINT        StringLength1,
+    SQLCHAR           *OutConnectionString,
+    SQLSMALLINT        BufferLength,
+    SQLSMALLINT       *StringLength2Ptr,
+    SQLUSMALLINT       DriverCompletion);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLPrepareA(SQLHSTMT StatementHandle,
+           SQLCHAR *StatementText,
+           SQLINTEGER TextLength);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLExecDirectA(SQLHSTMT StatementHandle,
+           SQLCHAR *StatementText,
+           SQLINTEGER TextLength);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLDescribeColA(SQLHSTMT StatementHandle,
+           SQLUSMALLINT ColumnNumber,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *NameLengthPtr,
+           SQLSMALLINT *DataTypePtr,
+           SQLULEN *ColumnSizePtr,
+           SQLSMALLINT *DecimalDigitsPtr,
+           SQLSMALLINT *NullablePtr);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLTablesA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *TableType,
+           SQLSMALLINT NameLength4);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLColumnsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT NameLength4);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSpecialColumnsA(SQLHSTMT StatementHandle,
+           SQLUSMALLINT IdentifierType,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLUSMALLINT Scope,
+           SQLUSMALLINT Nullable);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetTypeInfoA(SQLHSTMT StatementHandle,
+           SQLSMALLINT DataType);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLPrimaryKeysA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLStatisticsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLUSMALLINT Unique,
+           SQLUSMALLINT Reserved);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetCursorNameA(SQLHSTMT StatementHandle,
+           SQLCHAR *CursorName,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *NameLengthPtr);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetCursorNameA(SQLHSTMT StatementHandle,
+           SQLCHAR *CursorName,
+           SQLSMALLINT NameLength);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLNativeSqlA(
+    SQLHDBC            ConnectionHandle,
+    SQLCHAR           *InStatementText,
+    SQLINTEGER         TextLength1,
+    SQLCHAR           *OutStatementText,
+    SQLINTEGER         BufferLength,
+    SQLINTEGER           *TextLength2Ptr);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLColAttributeA(SQLHSTMT StatementHandle,
+           SQLSMALLINT ColumnNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER   CharacterAttributePtr,
+           SQLSMALLINT  BufferLength,
+           SQLSMALLINT *StringLengthPtr,
+           SQLLEN      *NumericAttributePtr);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLProceduresA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *ProcName,
+           SQLSMALLINT NameLength3);
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLProcedureColumnsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *ProcName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT NameLength4);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLColumnPrivilegesA(SQLHSTMT StatementHandle,
+     SQLCHAR* CatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR* SchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR* TableName,
+     SQLSMALLINT NameLength3,
+     SQLCHAR* ColumnName,
+     SQLSMALLINT NameLength4);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLForeignKeysA(SQLHSTMT StatementHandle,
+     SQLCHAR *PKCatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR *PKSchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR *PKTableName,
+     SQLSMALLINT NameLength3,
+     SQLCHAR *FKCatalogName,
+     SQLSMALLINT NameLength4,
+     SQLCHAR *FKSchemaName,
+     SQLSMALLINT NameLength5,
+     SQLCHAR *FKTableName,
+     SQLSMALLINT NameLength6);
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLTablePrivilegesA(
+     SQLHSTMT StatementHandle,
+     SQLCHAR *CatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR *SchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR *TableName,
+     SQLSMALLINT NameLength3);
+}
+
+
+//Unicode Function
 extern "C"
 {
 SQLRETURN SQL_API SQLGetDiagRecW(SQLSMALLINT HandleType, 
