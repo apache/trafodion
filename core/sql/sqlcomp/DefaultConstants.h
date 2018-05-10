@@ -3319,6 +3319,11 @@ enum DefaultConstants
   
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
+  // Size of byte[] in java when direct byteBuffer can't be used
+  // Used to read compressed hdfs text files and to write
+  // both compressed and uncompressed hdfs files
+  HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,
+
   __NUM_DEFAULT_ATTRIBUTES
 };
 
