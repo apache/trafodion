@@ -920,6 +920,15 @@ ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
 //********************* End of PrivMgr::ObjectLitToEnum ************************
 
 
+static void translateObjectName(
+  const std::string inputName,
+  std::string &outputName)
+{
+  char prefix[inputName.length()];
+  snprintf(prefix, sizeof(prefix), "%s.\"%s\"",
+     HBASE_SYSTEM_CATALOG, HBASE_EXT_MAP_SCHEMA);
+}
+
 // ----------------------------------------------------------------------------
 // method: isAuthorizationEnabled
 //

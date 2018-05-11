@@ -9915,6 +9915,20 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 
   std::string objectName (extTableName.data());
 
+  // Map hbase map table to external name
+  if (ComIsHBaseMappedIntFormat(catalogNamePart, schemaNamePart))
+  {
+    NAString newCatName;
+    NAString newSchName;
+    ComConvertHBaseMappedIntToExt(catalogNamePart, schemaNamePart,
+                                  newCatName, newSchName);
+    objectName = newCatName.data() + std::string(".\"");
+    objectName += newSchName.data() + std::string("\".");
+    objectName += tableName.getObjectNamePart().getExternalName();
+  }
+  else
+    objectName = extTableName.data();
+
   // For now, only support one grantee per request
   // TBD:  support multiple grantees - a testing effort?
   if (pGranteeArray.entries() > 1)
@@ -10221,11 +10235,23 @@ void CmpSeabaseDDL::hbaseGrantRevoke(
 }
 
 void CmpSeabaseDDL::createNativeHbaseTable(
+                                       ExeCliInterface *cliInterface,
                                        StmtDDLCreateHbaseTable * createTableNode,
                                        NAString &currCatName, NAString &currSchName)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
+
+  // Verify that user has privilege to create HBase tables - must be DB__ROOT 
+  // or granted the DB__HBASEROLE
+  if (isAuthorizationEnabled() && 
+      !ComUser::isRootUserID() && 
+      !ComUser::currentUserHasRole(HBASE_ROLE_ID))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      processReturn();
+      return;
+    }
 
   ComObjectName tableName(createTableNode->getTableName());
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
@@ -10239,6 +10265,17 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       return;
     }
 
+  // If table already exists, return
+  retcode =  existsInHbase(objectNamePart, ehi);
+  if (retcode)
+    {
+      *CmpCommon::diags() << DgSqlCode(CAT_TABLE_ALREADY_EXISTS)
+                          << DgTableName(objectNamePart.data());
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+ 
   std::vector<NAString> colFamVec;
   for (Lng32 i = 0; i < createTableNode->csl()->entries(); i++)
     {
@@ -10273,23 +10310,44 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       return;
     }
 
+  // Register the table
+  char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN) + 100];
+  snprintf(query, sizeof(query),
+           "register internal hbase table if not exists \"%s\"",
+           objectNamePart.data());
+   cliRC = cliInterface->executeImmediate(query);
+   if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
 }
 
 void CmpSeabaseDDL::dropNativeHbaseTable(
+                                       ExeCliInterface *cliInterface,
                                        StmtDDLDropHbaseTable * dropTableNode,
                                        NAString &currCatName, NAString &currSchName)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
+  // Verify that user has privilege to drop HBase tables - must be DB__ROOT 
+  // or granted the DB__HBASEROLE
+  if (isAuthorizationEnabled() && 
+      !ComUser::isRootUserID() &&
+      !ComUser::currentUserHasRole(HBASE_ROLE_ID))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      processReturn();
+      return;
+    }
+
   ComObjectName tableName(dropTableNode->getTableName());
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   
-  // TDB - add a check to see if there is an external HBASE table that should be
-  // removed
-
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     {
@@ -10297,6 +10355,71 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
       return;
     }
 
+  // If table does not exist, return
+  retcode =  existsInHbase(objectNamePart, ehi);
+  if (retcode == 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(CAT_TABLE_DOES_NOT_EXIST_ERROR)
+                          << DgTableName(objectNamePart.data());
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+ 
+  // Load definitions into cache
+  BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
+  CorrName cnCell(objectNamePart,STMTHEAP, HBASE_CELL_SCHEMA, HBASE_SYSTEM_CATALOG);
+  NATable *naCellTable = bindWA.getNATableInternal(cnCell);
+  CorrName cnRow(objectNamePart,STMTHEAP, HBASE_ROW_SCHEMA, HBASE_SYSTEM_CATALOG);
+  NATable *naRowTable = bindWA.getNATableInternal(cnRow);
+
+  // unregister tables 
+  char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
+  snprintf(query, sizeof(query), 
+           "unregister hbase table %s", tableName.getObjectNamePart().getExternalName().data());
+  cliRC = cliInterface->executeImmediate(query);
+  if (cliRC < 0 && cliRC != -CAT_REG_UNREG_OBJECTS && cliRC != -3251)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // Drop external mapping table
+  //ComObjectName externalName(objectNamePart);
+  snprintf(query, sizeof(query),
+           "drop external table if exists %s ", 
+           tableName.getObjectNamePart().getExternalName().data());
+  cliRC = cliInterface->executeImmediate(query);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // Remove cell and row tables from cache.
+  if (naCellTable)
+    {
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cnCell,
+         ComQiScope::REMOVE_FROM_ALL_USERS,
+         COM_BASE_TABLE_OBJECT,
+         dropTableNode->ddlXns(), FALSE);
+    }
+
+  if (naRowTable)
+    {
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cnRow,
+         ComQiScope::REMOVE_FROM_ALL_USERS,
+         COM_BASE_TABLE_OBJECT,
+         dropTableNode->ddlXns(), FALSE);
+    }
+
+  // Remove table from HBase
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)objectNamePart.data();
   hbaseTable.len = objectNamePart.length();
@@ -10304,12 +10427,9 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   if (retcode < 0)
     {
       deallocEHI(ehi); 
-      
       processReturn();
-      
       return;
     }
-  
 }
 
 short CmpSeabaseDDL::registerNativeTable

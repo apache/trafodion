@@ -48,6 +48,8 @@ public:
 // -------------------------------------------------------------------
 // Constructors and destructors:
 // -------------------------------------------------------------------
+   PrivMgrComponentPrivileges();
+
    PrivMgrComponentPrivileges( 
       const std::string & metadataLocation,
       ComDiagsArea * pDiags = NULL);
@@ -140,8 +142,6 @@ public:
       PrivDropBehavior dropBehavior); 
      
 private: 
-   PrivMgrComponentPrivileges();
-
    bool grantExists(
       const std::string componentUIDString,
       const std::string operationCode,
