@@ -57,15 +57,22 @@ LIBSQSTATESB	= $(LIBEXPDIR)/libsqstatesb.so
 LIBSX	       += -lrt
 #
 # the order of these objects have to be swapped based on the GCC version
-MS_MPITMSG_O	= $(OUTDIR)/mpitmsg.o \
-		  $(OUTDIR)/ms.o 
-ifeq ($(GCC_MAJOR_VERSION_EQ_4),1)
-ifeq ($(GCC_MINOR_VERSION_GT_4),1)
 MS_MPITMSG_O	= $(OUTDIR)/ms.o \
-		  $(OUTDIR)/mpitmsg.o
+		  $(OUTDIR)/mpitmsg.o 
+
+#if major version is 4, check minor version, if minor version < 5, it is old CentOS
+ifeq ($(GCC_MAJOR_VERSION_EQ_4),1)
+ifeq ($(GCC_MINOR_VERSION_LT_5),1)
+MS_MPITMSG_O	= $(OUTDIR)/mpitmsg.o \
+		  $(OUTDIR)/ms.o
 endif
 endif
 
+#if major version is less than 4, it must be older CentOS version
+ifeq ($(GCC_MAJOR_VERSION_LT_4),1)
+MS_MPITMSG_O	= $(OUTDIR)/mpitmsg.o \
+		  $(OUTDIR)/ms.o
+endif
 
 OBJSBFS		= $(OUTDIR)/fs.o \
 		  $(OUTDIR)/fsfname.o \
