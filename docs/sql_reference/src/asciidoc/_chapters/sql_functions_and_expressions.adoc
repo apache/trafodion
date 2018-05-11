@@ -564,7 +564,7 @@ ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
 == ASCII Function
 
 The ASCII function returns the integer that is the ASCII code of the
-first character in a character string expression associated with either
+first character in a character string expression associated with 
 the ISO88591 character set or the UTF8 character set.
 
 ASCII is a {project-name} SQL extension.
@@ -573,21 +573,577 @@ ASCII is a {project-name} SQL extension.
 ASCII (character-expression)
 ```
 
-* `_character-expression`
+* `_character-expression_`
 +
 is an SQL character value expression that specifies a string of
-characters. See <<character_value_expressions,Character Value Expressions>>.
+characters. 
++
+For more information, see <<character_value_expressions,Character Value Expressions>>.
 
 [[considerations_for_ascii]]
 === Considerations For ASCII
 
-For a string expression in the UTF8 character set, if the value of the
-first byte in the string is greater than 127, {project-name} SQL returns this
-error message:
+The ASCII function handles string literals and columns differently:
 
+* For a string, the value of the character or *the value of each character* in the string cannot be greater than 255, or else it returns the following error:
++
 ```
-ERROR[8428] The argument to function ASCII is not valid.
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591
 ```
+
++
+*Example*
+
++
+```
+SQL>SELECT ASCII('ÿ') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('u') FROM DUAL;
+
+(EXPR)
+----------
+       117
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('ÿu') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-07 06:01:55]
+```
+
++
+```
+SQL>SELECT ASCII('ÿu昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-08 08:21:34]
+```
+
+* For a column, the string expression(s) in this column can be only single-byte, or else it returns the following error:
+
++
+```
+*** ERROR[8428] The argument to function ASCII is not valid.
+```
+
++
+** For a string in a column with definition of UTF8, the value of the first byte in the string cannot be greater than 127.
+** For a string in a column with definition of ISO88591, the value of the first byte in the string can be all characters in the ISO88591 character set.
+
++
+*Example*
+
++
+.UTF8 (with and without error) -- Table with One Row
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t25;
+
+CREATE TABLE TRAFODION.SEABASE.T25
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T25 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t24;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T24
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T24 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t25;
+
+C1
+
+----
+
+昱u    
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t24;
+
+C1
+
+----
+
+u昱   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t25;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:14:08]`
+|
+`SQL>SELECT ASCII(c1) FROM t24;
+
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+
+|===
+
+
++
+.UTF8 (with and without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t26;
+
+CREATE TABLE TRAFODION.SEABASE.T26
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T26 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t27;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T27
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T27 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t26;
+
+C1
+
+----
+
+u昱 
+
+昱u    
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t27;
+
+C1
+
+----
+
+u昱 
+
+u昱   
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t26;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:29:03]`
+|
+`SQL>SELECT ASCII(c1) FROM t27;
+
+
+(EXPR)
+
+----------
+
+       117
+
+       117
+
+--- 2 row(s) selected.`
+
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t11;
+
+CREATE TABLE TRAFODION.SEABASE.T11
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T11 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t12;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T12
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T12 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t11;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t12;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t1;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-07 02:13:42]`
+|
+`SQL>SELECT ASCII(c1) FROM t2;
+
+(EXPR)
+
+----------
+
+       255
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t17;
+
+CREATE TABLE TRAFODION.SEABASE.T17
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T17 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t18;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T18
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T18 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t17;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t18;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t17;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t18;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with Two Rows 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t22;
+
+CREATE TABLE TRAFODION.SEABASE.T22
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T22 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t23;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T23
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T23 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t22;
+
+C1
+
+----
+
+uÿ
+
+ÿu
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t23;
+
+C1
+
+----
+
+uÿ
+
+ÿu 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t22;
+
+*** ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:01:29]`
+|
+`SQL>SELECT ASCII(c1) FROM t23;
+
+(EXPR)
+
+----------
+
+       117
+       
+       255
+
+--- 2 row(s) selected.`
+|===
+
+
+
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t20;
+
+CREATE TABLE TRAFODION.SEABASE.T20
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T20 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t21;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T21
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T21 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t20;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t21;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t20;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t21;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|===
 
 [[examples_of_ascii]]
 === Examples of ASCII
@@ -1855,7 +2411,7 @@ COSH (1.25)
 
 <<<
 [[count_function]]
-=== COUNT Function
+== COUNT Function
 
 The COUNT function counts the number of rows that result from a query or
 the number of rows that contain a distinct value in a specific column.
@@ -2608,7 +3164,7 @@ FROM DUAL;
 ```
 
 [[date_difference_in_year]]
-=== Date Difference in YEAR
+==== Date Difference in YEAR
 
 * This function returns the value of 0.
 +
@@ -2633,7 +3189,7 @@ FROM DUAL;
 
 <<<
 [[dateformat_function]]
-=== DATEFORMAT Function
+== DATEFORMAT Function
 
 The DATEFORMAT function returns a datetime value as a character string
 literal in the DEFAULT, USA, or EUROPEAN format. The data type of the
@@ -4659,7 +5215,7 @@ See <<upper_function,UPPER Function>>.
 
 <<<
 [[lpad_function]]
-=== LPAD Function
+== LPAD Function
 
 The LPAD function pads the left side of a string with the specified
 string. Every character in the string, including multi-byte characters,
@@ -9029,6 +9585,178 @@ have the same value regardless of case:
 SELECT *
 FROM persnl.dept1 D1, persnl.dept2 D2
 WHERE UPSHIFT(D1.deptname) = UPSHIFT(D2.deptname);
+```
+
+<<<
+[[rand_function]]
+== RAND Function
+
+The RAND function generates pseudo-random numbers that are uniformly distributed 
+in the range between 0 and 2^32^ (=4294967296), 
+using an integer as an optional seed value.
+
+NOTE: The RAND function does not always behaves in predictive ways. It is non-deterministic 
+and may cause unexpected side effect. It evaluates only once or per row depending on the optimizer. 
+So it can only be used in very few places, please do not use it in a predicate.
+
+```
+RAND ([numeric-expression])
+```
+
+[[rand_function_syntax]]
+=== Syntax Descriptions of RAND Function
+
+* _numeric-expression_
+
++
+is an SQL numeric value expression that specifies the value for the argument of the RAND function. For more information, see <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[rand_function_considerations]]
+=== Considerations for RAND Function
+
+* When invoked with a seed value,
+
+** the seed value should be an integer greater than or equal to 0, and cannot be NULL.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(1-100) FROM DUAL;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-99 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW. [2018-04-18 04:44:37]
+
+
+SQL>SELECT RAND(NULL) FROM DUAL;
+
+*** ERROR[4097] A NULL operand is not allowed in function (RANDOMNUM(NULL)). [2018-04-18 04:44:48]
+```
+
+** the RAND function will use the value to seed the random number generator.
+
+** the RAND function will produce same series of numbers each time you seed the generator with an equal argument value 
+for each run of the program.
+
+* When invoked with no seed value,
+
+** the RAND function is automatically seeded with a value of system clock.
+** the RAND function will produce different series of numbers even it is called consecutively within a query.
+
++
+For example,
+
++
+```
+SQL>SELECT RAND(), RAND(), RAND() FROM DUAL;
+
+(EXPR)     (EXPR)     (EXPR)    
+---------- ---------- ----------
+1958129868 1958398780 1958482815
+
+--- 1 row(s) selected. 
+```
+
+* To get desired numbers within a specified range, you can use a combination of built-in functions, operators and clauses.
+
++
+For example,
+
++
+```
+SQL>SELECT POWER(RAND(1)*10,3) FROM DUAL;
+
+(EXPR)
+------------------------
+       4.747561509943E15
+
+--- 1 row(s) selected.
+```
+
+[[rand_function_example]]
+=== Examples of RAND Function
+
+* This example demostrates how to use the RAND function with built-in function (ABS function).
+
++
+```
+SQL>SELECT RAND(ABS(1-100)) FROM DUAL;
+
+(EXPR)
+----------
+   1663893
+
+--- 1 row(s) selected.
+```
+
+* This example shows that the RAND function works with builts-in function (MOD function) to generate the number from 1 to 5 and gets
+the randomized results sorted by ORDER BY clause. The 100,000 rows of c1 are neary evenly distributed for each number.
+
++
+```
+SQL>SELECT COUNT(*) FROM t1;
+ 
+(EXPR)
+--------------------
+              100000
+ 
+--- 1 row(s) selected.
+```
++
+```
+SQL>SHOWDDL t1;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T1
+  ( 
+    IDX                              INT DEFAULT NULL NOT SERIALIZED
+  )
+ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- SQL operation complete.
+```
++
+```
+SQL>CREATE TABLE t2(idx int,c1 int);
+ 
+--- SQL operation complete.
+ 
+```
++
+```
+SQL>UPSERT USING LOAD INTO t2 SELECT idx, MOD(RAND(),5)+1 FROM t1;
+ 
+--- 100000 row(s) inserted.
+```
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1;
+ 
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+          4                19913
+          5                20276
+ 
+--- 5 row(s) selected.
+```
+
++
+At this point, the RAND function can also be used in the ORDER BY clause in conjunction with the LIMIT clause 
+to output rows.
++
+```
+SQL>SELECT c1, COUNT(*) FROM t2 GROUP BY c1 ORDER BY c1 LIMIT 3;
+
+C1          (EXPR)              
+----------- --------------------
+          1                19837
+          2                19951
+          3                20023
+ 
+--- 3 row(s) selected.
 ```
 
 <<<

@@ -1492,7 +1492,7 @@ S   OPERATOR              LC  RC  TAB_NAME
 CONTEXT   NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 --------  -----------  --------------  -----------  --------------
 
-NONE              171             140           16        20971520
+NONE              173             142           16        20971520
 
 --- 1 row(s) selected.
 >>
@@ -1567,7 +1567,7 @@ NONE              171             140           16        20971520
 NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 -----------  --------------  -----------  --------------
 
-        176             141            0        20971520
+        178             143            0        20971520
 
 --- 1 row(s) selected.
 >>

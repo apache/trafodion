@@ -6691,7 +6691,7 @@ void Join::rewriteNotInPredicate( ValueIdSet & origVidSet, ValueIdSet & newVidSe
 Intersect::Intersect(RelExpr *leftChild,
 	     RelExpr *rightChild)
 : RelExpr(REL_INTERSECT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Intersect::~Intersect() {}
 
@@ -6708,7 +6708,7 @@ const NAString Intersect::getText() const
 Except::Except(RelExpr *leftChild,
              RelExpr *rightChild)
 : RelExpr(REL_EXCEPT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Except::~Except() {}
 
@@ -7880,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the
@@ -8795,10 +8801,12 @@ void Scan::addIndexInfo()
               for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
                   NABoolean isASupersetIndex =
-                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex) &&
+                      possibleIndexJoins_[i]->indexPredicates_.contains(newIndexPredicates);
 
                   NABoolean isASubsetIndex =
-                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) &&
+                      newIndexPredicates.contains(possibleIndexJoins_[i]->indexPredicates_);
 
                   NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
 

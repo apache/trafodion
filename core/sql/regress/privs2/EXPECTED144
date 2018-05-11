@@ -637,7 +637,7 @@ End of MXCI Session
 >>-- user2 does not have WGO on gen_time
 >>grant execute on function gen_time to sql_user3 by sql_user2;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER2 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>execute get_privs;
@@ -745,7 +745,7 @@ End of MXCI Session
 --- SQL operation complete.
 >>grant execute on procedure "_LIBMGR_".help to sql_user5 by sql_user3;
 
-*** ERROR[1012] No privileges were granted.  You lack grant option on the specified privileges.
+*** ERROR[1012] No privileges were granted.  SQL_USER3 lacks grant option on the specified privileges.
 
 --- SQL operation failed with errors.
 >>

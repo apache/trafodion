@@ -176,7 +176,7 @@ public:
 	OperatorTypeEnum otype = REL_UNION,
 	CollHeap *outHeap = CmpCommon::statementHeap(),
     NABoolean sysGenerated = FALSE,
-    NABoolean mayBeCacheable = FALSE
+    NABoolean mayBeCacheable = TRUE
   );
 
   // copy ctor

@@ -29,6 +29,13 @@
 class HdfsFileInfo
 {
  public:
+  HdfsFileInfo() {
+     entryNum_ = -1;
+     startOffset_ = -1;
+     bytesToRead_ = 0;
+     compressionMethod_ = 0;
+     flags_ = 0;
+  }
   char * fileName() { return fileName_; }
 
   // used for text/seq file access
@@ -38,6 +45,8 @@ class HdfsFileInfo
   // used for ORC access
   Int64 getStartRow() { return startOffset_; }
   Int64 getNumRows() { return bytesToRead_; }
+
+  Int16 getCompressionMethod() const { return compressionMethod_; }
 
   Lng32 getFlags() { return flags_; }
 
@@ -64,6 +73,7 @@ class HdfsFileInfo
   NABasicPtr  fileName_;
   Int64 startOffset_;
   Int64 bytesToRead_;
+  Int16 compressionMethod_;
 };
 
 typedef HdfsFileInfo* HdfsFileInfoPtr;

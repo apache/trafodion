@@ -1,0 +1,14 @@
+359,360c359,362
+< (EXPR)
+< ----------
+---
+> *** ERROR[8447] An error occurred during hdfs access. Error Detail: SETUP_HDFS_SCAN java.io.IOException: LZOP compression codec is not configured in Hadoop
+> stackTraceRemoved
+> stackTraceRemoved
+> stackTraceRemoved
+362,364c364
+<  73049
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.

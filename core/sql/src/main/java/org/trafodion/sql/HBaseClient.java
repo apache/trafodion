@@ -224,13 +224,6 @@ public class HBaseClient {
                   colDesc.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                 desc.addFamily(colDesc);
             }
-            HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            if (isMVCC)
-              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
-            else
-              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
-            metaColDesc.setInMemory(true);
-            desc.addFamily(metaColDesc);
             Admin admin = getConnection().getAdmin();
             admin.createTable(desc);
             admin.close();
@@ -549,13 +542,6 @@ public class HBaseClient {
                 desc.addFamily(colDesc);
             }
 
-            HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            if (isMVCC)
-              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
-            else
-              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
-            metaColDesc.setInMemory(true);
-            desc.addFamily(metaColDesc);
             Admin admin = getConnection().getAdmin();
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {

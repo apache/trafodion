@@ -28,6 +28,7 @@
 -- ============================================================================
 
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd ALLOW_WGO_FOR_ROLES 'OFF'; 
 cqd traf_store_object_desc 'ON';
 cqd traf_read_object_desc 'ON';
 obey TEST143(clean_up);
@@ -243,6 +244,7 @@ execute get_col_privs;
 ?section test_view_role_priv_propagation
 -- ============================================================================
 values (user);
+cqd ALLOW_WGO_FOR_ROLES 'on';
 
 -- remove schemas
 drop schema if exists t143_user1 cascade;
@@ -318,6 +320,7 @@ execute get_col_privs;
 -- u3v2 -> u3v1 -> u2v1 -> u1v1 -> u1t1
 
 values (user);
+cqd ALLOW_WGO_FOR_ROLES 'on';
 
 -- remove schemas
 drop schema if exists t143_user1 cascade;

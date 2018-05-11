@@ -24,6 +24,10 @@ upsert into TRAFODION."_MD_".DEFAULTS
      values
      ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run', 0);
 
+create shared schema trafodion.sch;
+
+alter user DB__ROOT set external name trafodion;
+
 initialize authorization;
 
 register user sql_user1 as sql_user1;

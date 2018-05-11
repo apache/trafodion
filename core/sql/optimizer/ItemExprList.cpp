@@ -222,6 +222,17 @@ void ItemExprList::unparse(NAString &result, PhaseEnum phase,
 //----------------------------------------------------------------------------
 void ItemExprList::print(FILE* ofd, const char* indent, const char* title) const
 {
+  if (entries() > 0)
+    {
+#pragma nowarn(1506)   // warning elimination
+      BUMP_INDENT(indent);
+#pragma warn(1506)  // warning elimination
+
+      NAString unparsed;
+
+      unparse(unparsed, DEFAULT_PHASE, EXPLAIN_FORMAT);
+      fprintf(ofd, "%s%s%s\n", NEW_INDENT, title, unparsed.data());
+    }
 } // ItemExprList::print()
 
 // To be called from the debugger.
