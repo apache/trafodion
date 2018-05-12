@@ -23,9 +23,14 @@ package org.trafodion.jdbc.t4;
 
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.sql.Statement;
 
 public abstract class TrafT4Handle {
 	SQLWarning sqlWarning_;
+
+    // work for situations when allow multi-queries,
+    // resultSet.getStatement() should return Statement object that produced this ResultSet object
+    protected Statement multiQueriesStmt;
 
 	public void clearWarnings() throws SQLException {
 		sqlWarning_ = null;

@@ -2067,150 +2067,134 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	}
 
+    public TrafT4PreparedStatement() {
+        if (T4Properties.t4GlobalLogger.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(null);
+            T4Properties.t4GlobalLogger.logp(Level.FINE, "TrafT4PreparedStatement", "<init>", "", p);
+        }
+    }
 
-	TrafT4PreparedStatement(TrafT4Connection connection, String sql, String stmtLabel) throws SQLException {
-		this(connection, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, connection.holdability_,
-				stmtLabel);
-		connection.ic_.t4props_.setUseArrayBinding(false);
-		connection.ic_.t4props_.setBatchRecovery(false);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
-					"Note, this call is before previous constructor call.", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4PreparedStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-	}
+    TrafT4PreparedStatement(TrafT4Connection connection, String sql, String stmtLabel) throws SQLException {
+        this(connection, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, connection.holdability_,
+                stmtLabel);
+        connection.ic_.t4props_.setUseArrayBinding(false);
+        connection.ic_.t4props_.setBatchRecovery(false);
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, stmtLabel);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
+                    "Note, this call is before previous constructor call.", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4PreparedStatement");
+            lr.setSourceMethodName("");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+    }
 
-	// Constructors with access specifier as "default"
-	TrafT4PreparedStatement(TrafT4Connection connection, String sql) throws SQLException {
-		this(connection, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, connection.holdability_);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
-					"Note, this call is before previous constructor call.", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4PreparedStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-	}
+    // Constructors with access specifier as "default"
+    TrafT4PreparedStatement(TrafT4Connection connection, String sql) throws SQLException {
+        this(connection, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, connection.holdability_, null);
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
+                    "Note, this call is before previous constructor call.", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4PreparedStatement");
+            lr.setSourceMethodName("");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+    }
 
-	TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency)
-			throws SQLException {
-		this(connection, sql, resultSetType, resultSetConcurrency, connection.holdability_);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
-					"Note, this call is before previous constructor call.", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4PreparedStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
+    TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency)
+            throws SQLException {
+        this(connection, sql, resultSetType, resultSetConcurrency, connection.holdability_, null);
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
+                    "Note, this call is before previous constructor call.", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4PreparedStatement");
+            lr.setSourceMethodName("");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+    }
 
-	}
-	TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency,
-			int resultSetHoldability, String stmtLabel) throws SQLException {
-		super(connection, resultSetType, resultSetConcurrency, resultSetHoldability, stmtLabel);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency, resultSetHoldability);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
-					"Note, this call is before previous constructor call.", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency, resultSetHoldability);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4PreparedStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-		// connection_.getServerHandle().isConnectionOpen();
-		connection_.isConnectionOpen();
-		sqlStmtType_ = ist_.getSqlStmtType(sql);
-		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"infostats_invalid_error", null);
-		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"config_cmd_invalid_error", null);
-		}
-		ist_.setTransactionStatus(connection_, sql);
-		sql_ = sql;
+    TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency,
+            int resultSetHoldability) throws SQLException {
+        this(connection, sql, resultSetType, resultSetConcurrency, resultSetHoldability, null);
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency, resultSetHoldability);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
+                    "Note, this call is before previous constructor call.", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency, resultSetHoldability);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4PreparedStatement");
+            lr.setSourceMethodName("");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+    }
 
+    TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency,
+            int resultSetHoldability, String stmtLabel) throws SQLException {
+        super(connection, resultSetType, resultSetConcurrency, resultSetHoldability, stmtLabel);
+        if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency, resultSetHoldability, stmtLabel);
+            connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
+                    "Note, this call is before previous constructor call.", p);
+        }
+        if (connection_.props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
+                    resultSetConcurrency, resultSetHoldability);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4PreparedStatement");
+            lr.setSourceMethodName("");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            connection_.props_.getLogWriter().println(temp);
+        }
+        // connection_.getServerHandle().isConnectionOpen();
+        connection_.isConnectionOpen();
+        sqlStmtType_ = ist_.getSqlStmtType(sql);
+        if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "infostats_invalid_error", null);
+        } else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
+            throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+                    "config_cmd_invalid_error", null);
+        }
+        ist_.setTransactionStatus(connection_, sql);
+        sql_ = sql;
 
-		// stmtLabel_ = generateStmtLabel();
-		stmtLabel_ = stmtLabel;
-		// System.out.println("TrafT4PreparedStatement stmtLabel_ " + stmtLabel_);
-
-		usingRawRowset_ = false;
-	}
-
-	TrafT4PreparedStatement(TrafT4Connection connection, String sql, int resultSetType, int resultSetConcurrency,
-			int resultSetHoldability) throws SQLException {
-		super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency, resultSetHoldability);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "",
-					"Note, this call is before previous constructor call.", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, sql, resultSetType,
-					resultSetConcurrency, resultSetHoldability);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4PreparedStatement");
-			lr.setSourceMethodName("");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-		// connection_.getServerHandle().isConnectionOpen();
-		connection_.isConnectionOpen();
-		sqlStmtType_ = ist_.getSqlStmtType(sql);
-		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"infostats_invalid_error", null);
-		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"config_cmd_invalid_error", null);
-		}
-		ist_.setTransactionStatus(connection_, sql);
-		sql_ = sql;
-
-
-		//stmtLabel_ = generateStmtLabel();
-
-		usingRawRowset_ = false;
-	}
+        usingRawRowset_ = false;
+    }
 
 	TrafT4PreparedStatement(TrafT4Connection connection, String moduleName, int moduleVersion, long moduleTimestamp,
 			String stmtName, boolean isSelect, int holdability) {
@@ -2249,7 +2233,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		queryTimeout_ = connection_.getServerHandle().getQueryTimeout();
 		resultSetType_ = ResultSet.TYPE_FORWARD_ONLY;
 		resultSetHoldability_ = holdability;
-		usingRawRowset_ = false;
 	}
 
 	// Interface methods

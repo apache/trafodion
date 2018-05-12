@@ -1802,7 +1802,11 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
-		return stmt_;
+        if (connection_.props_.isAllowMultiQueries()) {
+            return stmt_.multiQueriesStmt;
+        } else {
+            return stmt_;
+        }
 	}
 
 	public String getString(int columnIndex) throws SQLException {
