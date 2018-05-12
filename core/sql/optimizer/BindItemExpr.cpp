@@ -2260,7 +2260,6 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       conversion = 1;
       if(type2.getPrecision() > 18)
       {
-        //*CmpCommon::diags() << DgSqlCode(-4041)<<DgString0()<<DgString1();
         emitDyadicTypeSQLnameMsg(-4041, type1, type2);
         bindWA->setErrStatus();
         return NULL;  // error
@@ -2276,7 +2275,6 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       conversion = 1;
       if(type1.getPrecision() > 18)
       {
-        //*CmpCommon::diags() << DgSqlCode(-4041)<<DgString0()<<DgString1();
         emitDyadicTypeSQLnameMsg(-4041, type1, type2);
         bindWA->setErrStatus();
         return NULL;  // error
