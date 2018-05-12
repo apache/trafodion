@@ -2258,6 +2258,13 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       srcOpIndex = 0;
       tgtOpIndex = 1;
       conversion = 1;
+      if(type2.getPrecision() > 18)
+      {
+        //*CmpCommon::diags() << DgSqlCode(-4041)<<DgString0()<<DgString1();
+        emitDyadicTypeSQLnameMsg(-4041, type1, type2);
+        bindWA->setErrStatus();
+        return NULL;  // error
+      }
     }
     else
     if ((type1.getTypeQualifier() == NA_NUMERIC_TYPE) &&
@@ -2267,6 +2274,13 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       srcOpIndex = 1;
       tgtOpIndex = 0;
       conversion = 1;
+      if(type1.getPrecision() > 18)
+      {
+        //*CmpCommon::diags() << DgSqlCode(-4041)<<DgString0()<<DgString1();
+        emitDyadicTypeSQLnameMsg(-4041, type1, type2);
+        bindWA->setErrStatus();
+        return NULL;  // error
+      }
     }
 
     //check for date to character literal comparison
