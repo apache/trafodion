@@ -2249,11 +2249,17 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
     //3. Comparing date to numeric
     //4. Comparing interval to numeric
     //6. Comparing date to char of form: DD-MON-YYYY
-
+    NAString LiteralNumeric("NUMERIC");
     //check for numeric to character comparison
     if ((type1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	(type2.getTypeQualifier() == NA_NUMERIC_TYPE))
     {
+      if(type2.getPrecision() > 18 && type2.getTypeName()==LiteralNumeric)
+      {
+        emitDyadicTypeSQLnameMsg(-4041, type1, type2);
+        bindWA->setErrStatus();
+        return NULL;  // error
+      }
       // convert op1(char) to numeric type
       srcOpIndex = 0;
       tgtOpIndex = 1;
@@ -2263,6 +2269,12 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
     if ((type1.getTypeQualifier() == NA_NUMERIC_TYPE) &&
         (type2.getTypeQualifier() == NA_CHARACTER_TYPE))
     {
+      if(type1.getPrecision() > 18 && type1.getTypeName()==LiteralNumeric)
+      {
+        emitDyadicTypeSQLnameMsg(-4041, type1, type2);
+        bindWA->setErrStatus();
+        return NULL;  // error
+      }
       // convert op2(character) to numeric type
       srcOpIndex = 1;
       tgtOpIndex = 0;
