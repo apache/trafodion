@@ -2869,8 +2869,8 @@ int TMLIB::initJNI()
           fflush(stderr);
           abort();
        }
+       initMutex_->unlock();
     }
-    initMutex_->unlock();
     if (localBegin()) {
         lv_err = initConnection(iv_my_nid);
         if (lv_err)
