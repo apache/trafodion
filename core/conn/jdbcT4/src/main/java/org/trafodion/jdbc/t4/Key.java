@@ -85,11 +85,11 @@ public class Key {
                                                        (privKeySpec);
 
       }catch (FileNotFoundException fnf) {
-         throw new SecurityException(SecClientMsgKeys.FILE_NOTFOUND, new Object[]{inFile});
+         throw new SecurityException(fnf, SecClientMsgKeys.FILE_NOTFOUND, new Object[]{inFile});
       }catch (IOException io) {
-         throw new SecurityException(SecClientMsgKeys.ERR_OPEN_INPUT_FILE, new Object[]{inFile});
+         throw new SecurityException(io, SecClientMsgKeys.ERR_OPEN_INPUT_FILE, new Object[]{inFile});
       }catch (Exception e) {
-         throw new SecurityException(SecClientMsgKeys.ERR_RETRIEVE_KEY_FROM_FILE, new Object[]{inFile});
+         throw new SecurityException(e, SecClientMsgKeys.ERR_RETRIEVE_KEY_FROM_FILE, new Object[]{inFile});
       }finally {
          try {
             if (inStream != null)
@@ -124,7 +124,7 @@ public class Key {
 
          return skey;
 	  }catch (NoSuchAlgorithmException nae) {
-		  throw new SecurityException(SecClientMsgKeys.ERR_CREATE_SYMMETRIC_KEY, null);
+		  throw new SecurityException(nae, SecClientMsgKeys.ERR_CREATE_SYMMETRIC_KEY, null);
 	  }
    }
 
