@@ -58,6 +58,7 @@ using namespace std;
 #include "replicate.h"
 #include "monsonar.h"
 #include "reqqueue.h"
+#include "ptpclient.h"
 #endif
 
 #ifndef NAMESERVER_PROCESS
@@ -70,6 +71,8 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
 #endif
 
 const char *EpollEventString( __uint32_t events )
@@ -662,10 +665,23 @@ int CRedirectAncestorStdin::handleInput()
             reqType = STDIN_FLOW_ON;
         }
 
-    CReplStdinReq *repl
-        = new CReplStdinReq(MyPNID, pid_, reqType, ancestorNid_, ancestorPid_ );
-    Replicator.addItem(repl);
-
+        if (NameServerEnabled)
+        {
+            PtpClient->StdInReq( MyPNID
+                               , pid_
+                               , reqType
+                               , ancestorNid_
+                               , ancestorPid_  );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( MyPNID
+                                                   , pid_
+                                                   , reqType
+                                                   , ancestorNid_
+                                                   , ancestorPid_ );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -856,9 +872,24 @@ void CRedirectStdinRemote::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(requesterNid_, pid_, STDIN_DATA, count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->StdIoData( requesterNid_
+                            , pid_
+                            , STDIN_DATA
+                            , count
+                            , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( requesterNid_
+                                                 , pid_
+                                                 , STDIN_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdinRemoteDataReplIncr();
 
@@ -1144,10 +1175,24 @@ void CRedirectAncestorStdout::handleOutput(ssize_t count, char *buffer)
                      (int)count);
     }
 
-    CReplStdioData *repl
-        = new CReplStdioData(ancestor_nid_, ancestor_pid_, STDOUT_DATA, 
-                              count, buffer );
-    Replicator.addItem(repl);
+    if (NameServerEnabled)
+    {
+        PtpClient->StdIoData( ancestor_nid_
+                            , ancestor_pid_
+                            , STDOUT_DATA
+                            , count
+                            , buffer );
+    }
+    else
+    {
+        CReplStdioData *repl = new CReplStdioData( ancestor_nid_
+                                                 , ancestor_pid_
+                                                 , STDOUT_DATA
+                                                 , count
+                                                 , buffer );
+        Replicator.addItem(repl);
+    }
+
     if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdioDataReplIncr();
 
@@ -1607,10 +1652,23 @@ void CRedirector::stdinFd(int nid, int pid, int &pipeFd, char filename[],
         fdMap_.insert(std::make_pair(pipeFd, redirect));
         fdMapLock_.unlock();
 
-        CReplStdinReq *repl
-            = new CReplStdinReq(nid, pid, STDIN_REQ_DATA, ancestor_nid,
-                                ancestor_pid );
-        Replicator.addItem(repl);
+        if (NameServerEnabled)
+        {
+            PtpClient->StdInReq( nid
+                               , pid
+                               , STDIN_REQ_DATA
+                               , ancestor_nid
+                               , ancestor_pid );
+        }
+        else
+        {
+            CReplStdinReq *repl = new CReplStdinReq( nid
+                                                   , pid
+                                                   , STDIN_REQ_DATA
+                                                   , ancestor_nid
+                                                   , ancestor_pid );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;

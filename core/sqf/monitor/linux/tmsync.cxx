@@ -42,7 +42,9 @@ using namespace std;
 #include "tmsync.h"
 #include "mlio.h"
 #include "reqqueue.h"
+#include "nameserver.h"
 
+extern bool NameServerEnabled;
 extern int trace_level;
 extern int MyPNID;
 extern sigset_t SigSet;
@@ -925,6 +927,16 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
             { 
                 // Get the TM that initiated the sync request
                 tm = LNode[req->Nid]->GetProcessLByType( ProcessType_DTM );
+            }
+            if (!tm && NameServerEnabled)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Getting process from Name Server, nid=%d, type=ProcessType_DTM\n"
+                                , method_name, __LINE__, req->Nid );
+                }
+            
+                tm = Nodes->GetProcessLByTypeNs( req->Nid, ProcessType_DTM );
             }
             if ( tm )
             {

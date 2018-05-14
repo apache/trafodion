@@ -988,6 +988,27 @@ private:
 #endif
 
 #ifndef NAMESERVER_PROCESS
+class CIntIoDataReq: public CInternalReq
+{
+public:
+    CIntIoDataReq( ioData_t *ioData );
+    virtual ~CIntIoDataReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    StdIoType ioType_;
+    int  length_;                     // Length in bytes of Data buffer used
+    char data_[MAX_SYNC_DATA];
+};
+#endif
+
+#ifndef NAMESERVER_PROCESS
 class CIntKillReq: public CInternalReq
 {
 public:
@@ -1149,6 +1170,27 @@ private:
     char key_[MAX_KEY_NAME];
     char value_[MAX_VALUE_SIZE_INT];
 };
+
+#ifndef NAMESERVER_PROCESS
+class CIntStdInReq: public CInternalReq
+{
+public:
+    CIntStdInReq( struct stdin_req_def *stdin_req );
+    virtual ~CIntStdInReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    StdinReqType reqType_;
+    int supplierNid_;       // Node id of process supplying stdin data
+    int supplierPid_;       // Process id of process to supplying stdin data
+};
+#endif
 
 class CIntUniqStrReq: public CInternalReq
 {
@@ -1506,6 +1548,7 @@ class CReqQueue
     void enqueueDeleteReq( struct delete_def *deleteDef );
 #endif
 #ifndef NAMESERVER_PROCESS
+    void enqueueIoDataReq( ioData_t *ioData );
     void enqueueKillReq( struct kill_def *killDef );
 #endif
     void enqueueNewProcReq( struct process_def *procDef );
@@ -1515,6 +1558,9 @@ class CReqQueue
 #endif
     void enqueueProcInitReq( struct process_init_def *procInitDef );
     void enqueueSetReq( struct set_def *setDef );
+#ifndef NAMESERVER_PROCESS
+    void enqueueStdInReq( struct stdin_req_def *stdin_req );
+#endif
     void enqueueUniqStrReq( struct uniqstr_def *uniqStrDef );
 #ifndef NAMESERVER_PROCESS
     void enqueueChildDeathReq ( pid_t pid );
@@ -1637,6 +1683,7 @@ private:
       RQIH   CIntShutdownReq
       RQII   CIntProcInitReq
       RQIJ   CIntNodeAddReq
+      RqIK   CIntIoDataReq
       RQIK   CIntKillReq
       RQIL   CIntCloneProcReq
       RQIM   CIntActivateSpareReq
@@ -1646,6 +1693,7 @@ private:
       RQIQ   CIntUpReq
       RQIR   CIntReviveReq
       RQIS   CIntSetReq
+      RqIS   CIntStdInReq
       RQIT   CIntNodeDeleteReq
       RQIU   CQuiesceReq
       RQIV   CIntTmReadyReq

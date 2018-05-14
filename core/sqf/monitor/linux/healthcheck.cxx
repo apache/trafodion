@@ -115,6 +115,18 @@ CHealthCheck::CHealthCheck()
         quiesceTimeoutSec_     = atoi(quiesceTimeoutC);
     }
 
+#ifdef NAMESERVER_PROCESS
+    cpuSchedulingDataEnabled_ = false;
+#else
+    cpuSchedulingDataEnabled_ = true;
+    char *env;
+    env = getenv("SQ_CPUSCHEDULINGDATA_ENABLED");
+    if ( env && isdigit(*env) )
+    {
+        cpuSchedulingDataEnabled_ = atoi(env);
+    }
+#endif
+
     if (trace_settings & TRACE_HEALTH)
         trace_printf("%s@%d quiesceTimeoutSec_ = %d, syncTimeoutSec_ = %d, workerTimeoutSec_ = %d\n", method_name, __LINE__, quiesceTimeoutSec_, CMonitor::SYNC_MAX_RESPONSIVE, CReqQueue::REQ_MAX_RESPONSIVE);
 
@@ -242,9 +254,16 @@ void CHealthCheck::healthCheckThread()
             mem_log_write(MON_HEALTHCHECK_WAKEUP_2, (int)(currTime_.tv_sec - wakeupTimeSaved_));
         }
 
-        // Replicate the clone to other nodes
-        CReplSchedData *repl = new CReplSchedData();
-        Replicator.addItem(repl);
+#ifndef NAMESERVER_PROCESS
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
+        if (cpuSchedulingDataEnabled_)
+        {
+            // Replicate this host's CPU scheduling data to other nodes
+            CReplSchedData *repl = new CReplSchedData();
+            Replicator.addItem(repl);
+        }
+#endif
+#endif
 
         state = state_;
 

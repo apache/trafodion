@@ -55,6 +55,14 @@ int MyPid = -1;
 CZClient    *ZClient = NULL;
 CMonLog     *MonLog =  NULL;
 
+void HandleAssignMonitorLeader ( const char* failedMaster )
+{
+    const char method_name[] = "HandleAssignMonitorLeader";
+    TRACE_ENTRY;
+    failedMaster = failedMaster;
+    TRACE_EXIT;
+}
+
 void HandleMyNodeExpiration( void )
 {
     const char method_name[] = "HandleMyNodeExpiration";

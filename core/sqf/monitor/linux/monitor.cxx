@@ -742,37 +742,42 @@ int CMonitor::PackProcObjs( char *&buffer )
 
     char *bufPtr = buffer;
 
-    // first copy all primary and generic processes
-    lnode = Nodes->GetFirstLNode();
-    for ( ; lnode ; lnode = lnode->GetNext() )
+#ifndef NAMESERVER_PROCESS
+    if (!NameServerEnabled)
+#endif
     {
-        process = lnode->GetFirstProcess();
-        while (process)
+        // first copy all primary and generic processes
+        lnode = Nodes->GetFirstLNode();
+        for ( ; lnode ; lnode = lnode->GetNext() )
         {
-            if (!process->IsBackup())
+            process = lnode->GetFirstProcess();
+            while (process)
             {
-                buffer = ProcCopy(buffer, process);
-                ++procCount;
+                if (!process->IsBackup())
+                {
+                    buffer = ProcCopy(buffer, process);
+                    ++procCount;
+                }
+    
+                process = process->GetNext();
             }
-
-            process = process->GetNext();
         }
-    }
-
-    // copy all the backup processes
-    lnode = Nodes->GetFirstLNode();
-    for ( ; lnode ; lnode = lnode->GetNext() )
-    {
-        process = lnode->GetFirstProcess();
-        while (process)
+    
+        // copy all the backup processes
+        lnode = Nodes->GetFirstLNode();
+        for ( ; lnode ; lnode = lnode->GetNext() )
         {
-            if (process->IsBackup())
+            process = lnode->GetFirstProcess();
+            while (process)
             {
-                buffer = ProcCopy(buffer, process);
-                ++procCount;
+                if (process->IsBackup())
+                {
+                    buffer = ProcCopy(buffer, process);
+                    ++procCount;
+                }
+    
+                process = process->GetNext();
             }
-
-            process = process->GetNext();
         }
     }
 
@@ -926,6 +931,24 @@ void CMonitor::StartPrimitiveProcesses( void )
     TRACE_EXIT;
 }
 #endif
+
+void HandleAssignMonitorLeader ( const char *failedMaster )
+{
+    const char method_name[] = "HandleAssignMonitorLeader";
+    TRACE_ENTRY;
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf("%s@%d HandleAssignMonitorLeader called for %s\n"
+                            , method_name, __LINE__, failedMaster);
+    }
+    // only relevant in AgentMode
+     if (IsAgentMode)
+     {
+         Monitor->AssignMonitorLeader(failedMaster);
+     }
+    
+    TRACE_EXIT;
+}
 
 void HandleMyNodeExpiration( void )
 {
@@ -1126,7 +1149,9 @@ int main (int argc, char *argv[])
     char temp_fname[MAX_PROCESS_PATH];
 #endif
     char buf[MON_STRING_BUF_SIZE];
+#ifndef NAMESERVER_PROCESS
     unsigned int initSleepTime = 1; // 1 second
+#endif
 
     mallopt(M_ARENA_MAX, 4); // call to limit the number of arena's of  monitor to 4.This call doesn't seem to have any effect !
 
@@ -1337,11 +1362,13 @@ int main (int argc, char *argv[])
         genSnmpTrapEnabled = true;
     }
 
+#ifndef NAMESERVER_PROCESS
     env = getenv("MON_INIT_SLEEP");
     if ( env && isdigit(*env) )
     {
         initSleepTime = atoi(env);
     }
+#endif
 
     env = getenv("SQ_COLD_STANDBY_SPARE");
     if ( env && isdigit(*env) )
@@ -1527,6 +1554,10 @@ int main (int argc, char *argv[])
 
     if (IsAgentMode)
     {
+        if ( IsRealCluster )
+        {
+            MyPNID = -1;
+        }
         CreatorShellPid = 1000; // per monitor.sh
         CreatorShellVerifier = 0;
     }
@@ -1610,6 +1641,7 @@ int main (int argc, char *argv[])
             }
         }
     }
+
     if (trace_settings & TRACE_INIT)
     {
         trace_printf("%s@%d Using signal %d for normal processes "
@@ -1691,6 +1723,12 @@ int main (int argc, char *argv[])
            abort();
         }
 
+        //Moved creation of the below to later on
+        //Nodes = new CNodeContainer (); 
+        //Config = new CConfigContainer ();
+        //Monitor = new CMonitor (procTermSig);
+        
+
         // Set up zookeeper and determine the master
         if ( IsAgentMode || IsRealCluster )
         {
@@ -1728,6 +1766,16 @@ int main (int argc, char *argv[])
                 if (masterMonitor)
                 {
                     strcpy (MasterMonitorName, masterMonitor);
+
+                    if (trace_settings & TRACE_INIT)
+                    {
+                        trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, masterMonitor from ZK: %s, Node_name: %s\n"
+                                     , method_name
+                                     , __LINE__
+                                     , MasterMonitorName
+                                     , Node_name);
+                    }
+
                     // unfortunately, we have to do this to see if we are the master before
                     // other things are set up.   This is how we must do that
                     if (strcmp(Node_name, masterMonitor) == 0)
@@ -1742,6 +1790,16 @@ int main (int argc, char *argv[])
                 else
                 {
                     strcpy (MasterMonitorName, ClusterConfig->GetConfigMasterByName());
+
+                    if (trace_settings & TRACE_INIT)
+                    {
+                        trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, ConfigMasterMonitor: %s, Node_name:%s \n"
+                                     , method_name
+                                     , __LINE__
+                                     , MasterMonitorName
+                                     , Node_name);
+                    }
+
                     if (strcmp (Node_name,  ClusterConfig->GetConfigMasterByName()) == 0)
                     {
                         IsMaster = true;
@@ -1751,12 +1809,21 @@ int main (int argc, char *argv[])
                         IsMaster = false;
                     }
                 }
-
              }
 #ifdef NAMESERVER_PROCESS
              else
              {
                 strcpy (MasterMonitorName, ClusterConfig->GetConfigMasterByName());
+
+                if (trace_settings & TRACE_INIT)
+                {
+                    trace_printf("%s@%d (MasterMonitor) IsAgentMode = TRUE, ConfigMasterMonitor: %s, Node_name:%s \n"
+                                 , method_name
+                                 , __LINE__
+                                 , MasterMonitorName
+                                 , Node_name);
+                }
+
                 if ( IsRealCluster )
                 {
                     if (strcmp (Node_name,  ClusterConfig->GetConfigMasterByName()) == 0)
@@ -1774,7 +1841,6 @@ int main (int argc, char *argv[])
                  }
              }
 #endif
-
          }
 
          if (IsAgentMode)
@@ -1783,7 +1849,9 @@ int main (int argc, char *argv[])
             {
 #ifdef NAMESERVER_PROCESS
                 if ( IsRealCluster )
+                {
                     MyPNID = -1;
+                }
 #else
                 MyPNID = -1;
 #endif
@@ -1859,6 +1927,7 @@ int main (int argc, char *argv[])
 
         if (IsAgentMode)
         {
+            int monitorLead = -1;
             CNode *myNode = Nodes->GetNode(MyPNID);
             const char *masterMonitor = NULL;
             if (myNode == NULL)
@@ -1894,11 +1963,13 @@ int main (int argc, char *argv[])
                           trace_printf("%s@%d (MasterMonitor) IsMaster=%d, masterNode=%s\n", method_name, __LINE__, IsMaster, masterNode->GetName() );
                     }
                 }
-                Monitor->SetMonitorLeader( masterNode->GetPNid() );
-                if (MyPNID == masterNode->GetPNid())
+                monitorLead = masterNode->GetPNid();
+                if (MyPNID == monitorLead)
                 {
+                     ZClient->WatchNodeMasterDelete (myNode->GetName() ); // just in case of stale info
                      ZClient->CreateMasterZNode ( myNode->GetName() );
                      strcpy (MasterMonitorName, myNode->GetName());
+                     ZClient->WatchMasterNode( MasterMonitorName );
                      if (trace_settings & TRACE_INIT)
                      {
                          trace_printf("%s@%d (MasterMonitor) IsMaster=%d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, MyPNID);
@@ -1920,7 +1991,8 @@ int main (int argc, char *argv[])
                           {
                               trace_printf("%s@%d (MasterMonitor) IsMaster=%d, set monitor lead to %d\n", method_name, __LINE__, IsMaster, masterNode->GetPNid());
                           }
-                          Monitor->SetMonitorLeader( masterNode->GetPNid() );
+                          monitorLead = masterNode->GetPNid();
+                          ZClient->WatchMasterNode( MasterMonitorName ); 
                      }
                      else
                      {
@@ -1936,6 +2008,20 @@ int main (int argc, char *argv[])
                      }
                 }
             }
+#ifdef NAMESERVER_PROCESS
+            else
+            {
+                if ( !IsRealCluster )
+                {
+                    monitorLead = 0;
+                }
+            }
+#endif
+            char    buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                           , "[%s], Master Monitor is on node %d\n"
+                           , method_name, monitorLead);
+            mon_log_write(MON_MONITOR_MAIN_18, SQ_LOG_INFO, buf);
         }
         if (!IAmIntegrating)
         {
@@ -2158,6 +2244,7 @@ int main (int argc, char *argv[])
             // Programmer bonehead!
             abort();
     }
+
     if (port != NULL)
     {
         int myPortNum;

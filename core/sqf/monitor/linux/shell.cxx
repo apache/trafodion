@@ -323,7 +323,7 @@ const char *StateString( STATE state )
         str = "Shutdown";
         break;
     case State_Initializing:
-        str = "Initing";
+        str = "Initializing";
         break;
     case State_Merged:
         str = "Merged";
@@ -3045,7 +3045,6 @@ void listZoneInfo( int nid, int zid )
 {
     int i;
     int count;
-    int  last_nid = 0;
     MPI_Status status;
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -3098,7 +3097,6 @@ void listZoneInfo( int nid, int zid )
                             if ( msg->u.reply.u.zone_info.node[i].nid != -1 )
                             {
                                 // Display zone node info
-                                last_nid = msg->u.reply.u.zone_info.node[i].nid;
                                 //      "[%s] ZID PNID State    Name\n", MyName);
                                 //      "[%s] --- ---- -------- --------\n", MyName);
                                 printf ("[%s] %3.3d  %3.3d %-8s %s\n",
@@ -5333,7 +5331,7 @@ int start_process (int *nid, PROCESSTYPE type, char *name, bool debug, int prior
     count = 0;
     while (*cmd_tail && count < MAX_ARGS)
     {
-        cmd_tail = get_token (cmd_tail, token, &delimiter, MAX_TOKEN,
+        cmd_tail = get_token (cmd_tail, token, &delimiter, (MAX_ARG_SIZE - 1),
                               false /* equal is not a delim */);
         strncpy (msg->u.request.u.new_process.argv[count], token,
                  MAX_ARG_SIZE - 1);
@@ -7309,6 +7307,9 @@ void node_cmd (char *cmd_tail)
                     sprintf( msgString, "[%s] Node delete is not available with Virtual Nodes!",MyName);
                     write_startup_log( msgString );
                     printf ("%s\n", msgString);
+                }
+                else
+                {
                     if (ElasticityEnabled)
                     {
                         // <nid> | <node-name>
@@ -8152,7 +8153,6 @@ void persist_exec_cmd( char *cmd )
     const char method_name[] = "persist_exec_cmd";
     char *cmd_tail = cmd;
     char delimiter;
-    char *ptr;
     char token[MAX_TOKEN];
     CPersistConfig *persistConfig;
 
@@ -8181,7 +8181,7 @@ void persist_exec_cmd( char *cmd )
     if (ClusterConfig.IsConfigReady())
     {
         // Parse cmd to get persist-process-prefix
-        ptr = get_token (cmd_tail, token, &delimiter);
+        get_token (cmd_tail, token, &delimiter);
         if (*token != '\0')
         {
             // Get persist process configuration
@@ -8266,7 +8266,6 @@ void persist_kill_cmd( char *cmd )
     const char method_name[] = "persist_kill_cmd";
     char *cmd_tail = cmd;
     char delimiter;
-    char *ptr;
     char token[MAX_TOKEN];
     CPersistConfig *persistConfig;
 
@@ -8286,7 +8285,7 @@ void persist_kill_cmd( char *cmd )
     if (ClusterConfig.IsConfigReady())
     {
         // Parse cmd to get persist-process-prefix
-        ptr = get_token (cmd_tail, token, &delimiter);
+        get_token (cmd_tail, token, &delimiter);
         if (*token != '\0')
         {
             // Get persist process configuration

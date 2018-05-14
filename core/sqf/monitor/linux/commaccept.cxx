@@ -664,9 +664,9 @@ void CCommAccept::processNewSock( int joinFd )
 
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], got connection from node %s. "
+                , "[%s], got connection from node %s (pnid=%d). "
                   "Node not down, node state=%s\n"
-                , method_name, nodeId.nodeName
+                , method_name, nodeId.nodeName, nodeId.pnid
                 , StateString(node->GetState()));
         mon_log_write(MON_COMMACCEPT_10, SQ_LOG_ERR, buf);
 

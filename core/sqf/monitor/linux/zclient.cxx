@@ -577,11 +577,18 @@ const char* CZClient::WaitForAndReturnMaster( bool doWait )
     {
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d (MasterMonitor) Master Monitor found (%s)\n"
-                        , method_name, __LINE__, masterMonitor.c_str() );
+            trace_printf( "%s@%d (MasterMonitor) Master Monitor found (%s/%s)\n"
+                        , method_name, __LINE__, masterMonitor.c_str(), nodes.data[0] );
         }
         TRACE_EXIT;
         return nodes.data[0];
+    }
+    else
+    {
+      if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d (MasterMonitor) Master Monitor NOT found\n" , method_name, __LINE__);
+        }
     }
 
     TRACE_EXIT;
@@ -734,6 +741,59 @@ int CZClient::GetZNodeData( string &monZnode, string &nodeName, int &pnid )
     return( rc );
 }
 
+void CZClient::HandleMasterZNode ( void )
+{
+     const char method_name[] = "CZClient::HandleMasterZNode";
+    TRACE_ENTRY;
+
+    char  pathStr[MAX_PROCESSOR_NAME] = { 0 };
+    char  nodeName[MAX_PROCESSOR_NAME] = { 0 };
+    char *tkn = NULL;
+    char *tknStart = pathStr;
+    char *tknLast = NULL;
+    string monZnode;
+    
+    monZnode.assign( znodeQueue_.front() );
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf("%s@%d" " - znodePath=%s, znodeQueue_.size=%ld\n"
+                        , method_name, __LINE__
+                        , monZnode.c_str(), znodeQueue_.size() );
+    }
+
+    znodeQueue_.pop_front();
+       
+    strcpy( pathStr, monZnode.c_str() );
+    tknStart++; // skip the first '/'
+    tkn = strtok( tknStart, "/" );
+    do
+    {
+        tknLast = tkn;
+        tkn = strtok( NULL, "/" );
+    }
+    while( tkn != NULL );
+    
+    strcpy( nodeName, tknLast );
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d nodeName=%s\n"
+                    , method_name, __LINE__
+                    , strlen(nodeName) ? nodeName : "" );
+    }
+       
+    string masterpath = zkRootNode_ + zkRootNodeInstance_ + ZCLIENT_MASTER_ZNODE;
+    std::size_t found = monZnode.find(masterpath);
+    // if it is the master node, then call HandleAssignMonitorLeader
+    if (found!=std::string::npos)
+    // zookeeper node, assume stale
+    {
+        HandleAssignMonitorLeader(nodeName);
+    }
+    
+    TRACE_EXIT; 
+}
+
 void CZClient::HandleExpiredZNode( void )
 {
     const char method_name[] = "CZClient::HandleExpiredZNode";
@@ -778,13 +838,23 @@ void CZClient::HandleExpiredZNode( void )
                         , strlen(nodeName) ? nodeName : "" );
         }
 
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
+        string masterpath = zkRootNode_ + zkRootNodeInstance_ + ZCLIENT_MASTER_ZNODE;
+        std::size_t found = monZnode.find(masterpath);
+        // if it is not the master node, then call HandleNodeExpiration
+        if (found==std::string::npos)
+        {    
+             char buf[MON_STRING_BUF_SIZE];
+             snprintf( buf, sizeof(buf)
                 , "[%s], %s was deleted, handling node (%s) as a down node!\n"
                 ,  method_name, monZnode.c_str(), nodeName );
-        mon_log_write(MON_ZCLIENT_CHECKZNODE_1, SQ_LOG_ERR, buf);
-
-        HandleNodeExpiration( nodeName );
+              mon_log_write(MON_ZCLIENT_CHECKZNODE_1, SQ_LOG_ERR, buf);
+         
+             HandleNodeExpiration( nodeName );
+        }
+        else // zookeeper node, assume stale
+        {
+             HandleAssignMonitorLeader(nodeName);
+        }
     }
     else
     {
@@ -1210,6 +1280,11 @@ void CZClient::MonitorZCluster()
                     HandleExpiredZNode();
                     SetState( ZC_MYZNODE );
                 }
+                // we still need to check if the master went down
+                else
+                {
+                    HandleMasterZNode(); 
+                }
                 break;
             case ZC_STOP:
                 StopClusterMonitoring();
@@ -1580,7 +1655,34 @@ void CZClient::TriggerCheck( int type, const char *znodePath )
                     , ZooConnectionTypeStr( type ) );
     }
 
-    if ( type == ZOO_CREATED_EVENT )
+    // Leader stuff only relevant in agenMode
+    string masterpath = zkRootNode_ + zkRootNodeInstance_ + ZCLIENT_MASTER_ZNODE;
+    std::string monZnode(znodePath);
+    std::size_t found = monZnode.find(masterpath);
+    // if it is not the master node, then call HandleNodeExpiration
+
+    if (found!=std::string::npos)
+    // zookeeper node, assume stale
+    {
+        char  nodeName[MAX_PROCESSOR_NAME] = { 0 };
+        char  tempName[MAX_PROCESSOR_NAME] = { 0 };
+        char *tkn = NULL;
+        const char *tknStart = znodePath;
+        char *tknLast = NULL;
+        tknStart++; // skip the first '/'
+        strcpy (tempName, tknStart);
+        tkn = strtok( tempName, "/" );
+        strcpy (tempName, tknStart);
+        do
+        {
+            tknLast = tkn;
+            tkn = strtok( NULL, "/" );
+        }
+        while( tkn != NULL );
+        strcpy( nodeName, tknLast );
+        HandleAssignMonitorLeader (nodeName);
+    }
+    else if ( type == ZOO_CREATED_EVENT )
     {
         SetState( ZC_ZNODE, znodePath );
     }
@@ -1778,7 +1880,7 @@ int CZClient::WatchNodeMasterDelete( const char *nodeName )
     newpath.str( "" );
     newpath << zkRootNode_.c_str() 
             << zkRootNodeInstance_.c_str() 
-            << ZCLIENT_MASTER_ZNODE
+            << ZCLIENT_MASTER_ZNODE <<"/"
             << nodeName;
            
     string monZnode = newpath.str( );

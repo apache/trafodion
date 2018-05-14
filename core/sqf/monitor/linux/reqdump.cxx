@@ -75,7 +75,7 @@ void CExtDumpReq::performRequest()
 
     CProcess *target;
     CProcess *requester;
-    CLNode   *node;
+    CLNode   *lnode;
     string    target_process_name;
     int       target_nid = -1;
     int       target_pid = -1;
@@ -144,9 +144,10 @@ void CExtDumpReq::performRequest()
                              method_name, __LINE__, target->GetName(),
                              target->GetNid(), target->GetPid());
             target->parentContext(msg_);
-            if (node->Dump_Process(requester,
-                                   target,
-                                   msg_->u.request.u.dump.path) != SUCCESS)
+            lnode = Nodes->GetLNode(target_nid);
+            if (lnode->Dump_Process(requester,
+                                    target,
+                                    msg_->u.request.u.dump.path) != SUCCESS)
                 rc = MPI_ERR_SPAWN;
         }
         else

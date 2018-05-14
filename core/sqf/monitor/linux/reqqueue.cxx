@@ -23,6 +23,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <stddef.h>
 #include <stdio.h>
 #include <zlib.h>
 #include "reqqueue.h"
@@ -40,6 +41,7 @@
 #include "internal.h"
 #include "healthcheck.h"
 #ifndef NAMESERVER_PROCESS
+#include "redirector.h"
 #include "nameserver.h"
 #include "ptpclient.h"
 #endif
@@ -59,6 +61,7 @@ extern CHealthCheck HealthCheck;
 #ifdef NAMESERVER_PROCESS
 extern char *ErrorMsg (int error_code);
 #else
+extern CRedirector Redirector;
 extern bool NameServerEnabled;
 extern CPtpClient *PtpClient;
 extern CNameServer *NameServer;
@@ -69,6 +72,10 @@ extern int req_type_startup;
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
+extern bool IsRealCluster;
+extern bool IsAgentMode;
+extern bool IsMaster;
+extern bool ZClientEnabled;
 
 extern CommType_t CommType;
 extern bool IsRealCluster;
@@ -1247,6 +1254,93 @@ void CIntExitNsReq::performRequest()
 #endif
 
 #ifndef NAMESERVER_PROCESS
+CIntIoDataReq::CIntIoDataReq( ioData_t *ioData )
+             : CInternalReq()
+             , nid_( ioData->nid )
+             , pid_( ioData->pid )
+             , verifier_( ioData->verifier )
+             , ioType_( ioData->ioType )
+             , length_( ioData->length )
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RqIK", 4);
+    memcpy(data_, ioData->data, (length_<=MAX_SYNC_DATA)?length_:MAX_SYNC_DATA);
+}
+
+CIntIoDataReq::~CIntIoDataReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rQik", 4);
+}
+
+void CIntIoDataReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (nid=%d/pid=%d/verifier=%d), type=%d, length=%d"
+                   , CReqQueue::intReqType[InternalType_IoData]
+                   , getId(), nid_, pid_, verifier_, ioType_, length_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntIoDataReq::performRequest()
+{
+    const char method_name[] = "CIntIoDataReq::performRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d" " - IO data "
+                      "to (%d,%d:%d), count=%d\n(%s)"
+                    , method_name, __LINE__
+                    , nid_
+                    , pid_
+                    , verifier_
+                    , length_
+                    , length_?data_:"\n" );
+    }
+    if ( MyNode->IsMyNode( nid_ ) )
+    {
+        if (trace_settings & (TRACE_SYNC | TRACE_REDIRECTION))
+            trace_printf( "%s@%d - processing IO Data for (%d, %d:%d)\n"
+                        , method_name, __LINE__
+                        , nid_, pid_, verifier_ );
+
+        CLNode  *lnode;
+        lnode = Nodes->GetLNode( nid_ );
+        if ( lnode )
+        {
+            CProcess *process;
+            process = lnode->GetProcessL( pid_ );
+            if (process)
+            {
+                int fd;
+                if (ioType_ == STDIN_DATA)
+                {
+                    fd = process->FdStdin();
+                }
+                else
+                {
+                    fd = process->FdStdout();
+                }
+                Redirector.disposeIoData( fd, length_, data_ );
+            }
+            else
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf( buf, sizeof(buf)
+                        , "[%s], Can't find process nid"
+                          "=%d, pid=%d for processing IO Data.\n"
+                        , method_name, nid_, pid_ );
+                mon_log_write(MON_REQ_IODATA_1, SQ_LOG_ERR, buf);
+            }
+        }
+    }
+
+    TRACE_EXIT;
+}
+#endif
+
+#ifndef NAMESERVER_PROCESS
 CIntKillReq::CIntKillReq( struct kill_def *killDef )
             : CInternalReq()
             , nid_( killDef->nid )
@@ -1527,8 +1621,17 @@ void CIntNewProcReq::performRequest()
                                 programStrId_,
                                 &stringData_[nameLen_],  // infile
                                 &stringData_[nameLen_ + infileLen_], // outfile
+                                reqTag_,
                                 result);
-#ifndef NAMESERVER_PROCESS
+#ifdef NAMESERVER_PROCESS
+            if (  newProcess == NULL )
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                sprintf( buf, "[%s], Can't create process %s (%d,%d:%d)\n"
+                       , method_name, &stringData_[0],nid_, pid_, verifier_ );
+                mon_log_write(MON_INTREQ_NEWPROC_1, SQ_LOG_ERR, buf);
+            }
+#else
             if ( newProcess != NULL )
             {
                 newProcess->userArgs ( argc_, argvLen_,
@@ -1536,27 +1639,19 @@ void CIntNewProcReq::performRequest()
                                                     + outfileLen_] );
 
                 // Create the new process (fork/exec)
-                if (newProcess->Create(newProcess->GetParent(), result))
+                if (newProcess->Create(newProcess->GetParent(), reqTag_, result))
                 {
                     MyNode->AddToNameMap( newProcess );
                     MyNode->AddToPidMap( newProcess->GetPid(),  newProcess );
 
-                    if (NameServerEnabled)
-                    {
-                        // Send actual pid and process name back to parent
-                        PtpClient->ProcessInit( newProcess
-                                              , reqTag_
-                                              , 0
-                                              , parentNid_ );
-                    }
-                    else
+                    if (!NameServerEnabled)
                     {
                         // Successfully forked process.  Replicate actual process
                         // id and process name.
                         CReplProcInit *repl
                             = new CReplProcInit(newProcess, reqTag_, 0, parentNid_);
                         Replicator.addItem(repl);
-                   }
+                    }
                 }
                 else
                 {
@@ -1592,7 +1687,7 @@ void CIntNewProcReq::performRequest()
         sprintf(buf, "[%s], Can't find parent process nid=%d, pid=%d "
                 "for process create.\n", method_name,
                 parentNid_, parentPid_ );
-        mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_10, SQ_LOG_ERR, buf);
+        mon_log_write(MON_INTREQ_NEWPROC_2, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
@@ -1998,8 +2093,10 @@ void CIntProcInitReq::performRequest()
     const char method_name[] = "CIntProcInitReq::performRequest";
     TRACE_ENTRY;
 
-    if (trace_settings & TRACE_SYNC)
-        trace_printf("%s@%d - processing process init %s (%d, %d), tag %p\n", method_name, __LINE__, name_, nid_, pid_, process_);
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf( "%s@%d - processing process init %s (%d, %d), result=%d, tag=%p\n"
+                    , method_name, __LINE__
+                    , name_, nid_, pid_, result_, static_cast<void*>(process_) );
 
     if ( result_ != 0 )
     {  // Was unable to create the process, send response to requester
@@ -2020,9 +2117,8 @@ void CIntProcInitReq::performRequest()
         process_->SetName ( name_ );
 
         // Add to pid and name maps
-        Nodes->GetLNode (process_->GetNid())->GetNode()->
-            AddToPidMap(process_->GetPid(), process_);
-        Nodes->GetLNode (process_->GetNid())->GetNode()->AddToNameMap(process_);
+        Nodes->GetLNode( process_->GetNid() )->GetNode()->AddToPidMap(process_->GetPid(), process_);
+        Nodes->GetLNode( process_->GetNid() )->GetNode()->AddToNameMap(process_);
 
         if (process_->IsBackup())
         {
@@ -2032,7 +2128,7 @@ void CIntProcInitReq::performRequest()
             if (parent)
             {   // Set link from primary process object to
                 // this backup process object.
-                if (trace_settings & TRACE_SYNC)
+                if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
                 {
                     trace_printf("%s@%d - For backup process (%d, %d)"
                                  ", for parent (%d, %d) setting "
@@ -2124,6 +2220,127 @@ void CIntSetReq::performRequest()
 
     TRACE_EXIT;
 }
+
+#ifndef NAMESERVER_PROCESS
+CIntStdInReq::CIntStdInReq( struct stdin_req_def *stdin_req )
+             : CInternalReq()
+             , nid_( stdin_req->nid )
+             , pid_( stdin_req->pid )
+             , verifier_( stdin_req->verifier )
+             , reqType_( stdin_req->reqType )
+             , supplierNid_( stdin_req->supplier_nid )
+             , supplierPid_( stdin_req->supplier_pid )
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RqIS", 4);
+}
+
+CIntStdInReq::~CIntStdInReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rQis", 4);
+}
+
+void CIntStdInReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (nid=%d/pid=%d/verifier=%d), "
+                     "type=%d, supplier (%d,%d)"
+                   , CReqQueue::intReqType[InternalType_StdinReq]
+                   , getId(), nid_, pid_, verifier_, reqType_
+                   , supplierNid_, supplierPid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntStdInReq::performRequest()
+{
+    const char method_name[] = "CIntStdInReq::performRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf("%s@%d - stdin request from (%d,%d:%d)"
+                     ", type=%d, for supplier (%d,%d)\n"
+                    , method_name, __LINE__
+                    , nid_
+                    , pid_
+                    , verifier_
+                    , reqType_
+                    , supplierNid_
+                    , supplierPid_ );
+    }
+
+    if ( !MyNode->IsMyNode( supplierNid_ ) )
+    {
+        return;
+    }
+
+    CLNode  *lnode;
+    lnode = Nodes->GetLNode( nid_ );
+    if ( lnode == NULL )
+    {
+        return;
+    }
+
+    CProcess *process;
+    process = lnode->GetProcessL( pid_ );
+    if (process)
+    {
+        if (reqType_ == STDIN_REQ_DATA)
+        {
+            // Set up to forward stdin data to requester.
+            // Save file descriptor associated with stdin
+            // so can find the redirector object later.
+            CProcess *supProcess;
+            lnode = Nodes->GetLNode( supplierNid_ );
+            if ( lnode )
+            {
+                supProcess = lnode->GetProcessL ( supplierPid_ );
+                if (supProcess)
+                {
+                    int fd;
+                    fd = Redirector.stdinRemote( supProcess->infile()
+                                               , supplierNid_
+                                               , supplierPid_ );
+                    process->FdStdin(fd);
+                }
+                else
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf( buf, sizeof(buf), 
+                              "[%s], Can't find supplier process "
+                              "nid=%d, pid=%d for stdin data request.\n"
+                            , method_name
+                            , supplierNid_
+                            , supplierPid_);
+                    mon_log_write(MON_REQ_STDIN_1, SQ_LOG_ERR, buf);
+                }
+            }
+        }
+        else if (reqType_ == STDIN_FLOW_OFF)
+        {
+            Redirector.stdinOff(process->FdStdin());
+        }
+        else if (reqType_ == STDIN_FLOW_ON)
+        {
+            Redirector.stdinOn(process->FdStdin());
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find process nid=%d, "
+                  "pid=%d for stdin data request.\n"
+                , method_name
+                , nid_
+                , pid_ );
+        mon_log_write(MON_REQ_STDIN_2, SQ_LOG_ERR, buf);
+    }
+
+    TRACE_EXIT;
+}
+#endif
 
 CIntUniqStrReq::CIntUniqStrReq( int nid, int id, const char *value )
     : CInternalReq(), nid_(nid), id_(id)
@@ -3191,9 +3408,7 @@ void CIntReviveReq::performRequest()
 #ifndef NAMESERVER_PROCESS
     // unpack the current TM leader
     Monitor->SetTmLeader( header.tmLeader_ );
-#endif
 
-#ifndef NAMESERVER_PROCESS
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf( "%s@%d - TM leader (%d) unpacked\n", method_name, __LINE__
                     , Monitor->GetTmLeader() );
@@ -4409,7 +4624,17 @@ void CReqQueue::enqueueExitNsReq( struct exit_ns_def *exitDef )
 #endif
 
 #ifndef NAMESERVER_PROCESS
-//void CReqQueue::enqueueKillReq( int nid, int pid, bool abort )
+void CReqQueue::enqueueIoDataReq( ioData_t *ioData )
+{
+    CInternalReq * request;
+
+    request = new CIntIoDataReq ( ioData );
+
+    enqueueReq ( request );
+}
+#endif
+
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueKillReq( struct kill_def *killDef )
 {
     CInternalReq * request;
@@ -4495,6 +4720,17 @@ void CReqQueue::enqueueSetReq( struct set_def *setDef )
     enqueueReq ( request );
 }
 
+#ifndef NAMESERVER_PROCESS
+void CReqQueue::enqueueStdInReq( struct stdin_req_def *stdin_req )
+{
+    CInternalReq * request;
+
+    request = new CIntStdInReq ( stdin_req );
+
+    enqueueReq ( request );
+}
+#endif
+
 void CReqQueue::enqueueUniqStrReq( struct uniqstr_def *uniqStrDef )
 {
     CIntUniqStrReq * request;
@@ -4549,7 +4785,7 @@ void CReqQueue::enqueueTmReadyReq( int nid )
 }
 #endif
 
-// this function moves the queued requests from revieve queue to the main request queue.
+// this function moves the queued requests from revive queue to the main request queue.
 // it will skip the requests whose seq num is less than the given one.
 void CReqQueue::processReviveRequests(unsigned long long minSeqNum)
 {

@@ -44,13 +44,15 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             strId_t programStrId,
                                             char *infile,
                                             char *outfile,
+                                            void *tag,
                                             int &result)
 {
-    CProcess *process = NULL;
-
     const char method_name[] = "CProcessContainer::CreateProcess";
     TRACE_ENTRY;
 
+    CProcess *process = NULL;
+
+    tag = tag; // Satisfy compiler
     result = MPI_SUCCESS;
 
     // load & normalize process name

@@ -634,99 +634,118 @@ void CExtProcInfoContReq::performRequest()
     TRACE_ENTRY;
 
 #ifndef NAMESERVER_PROCESS
-    if ( NameServerEnabled )
+    bool    getMonitorInfo = false;
+    if (strcasecmp(msg_->u.request.u.process_info.target_process_name, "MONITOR") == 0)
+    {
+        getMonitorInfo = true;
+        msg_->u.request.u.process_info.target_process_name[0] = 0;
+    }
+
+    if ( NameServerEnabled && !getMonitorInfo )
         NameServer->ProcessInfoCont(msg_); // in reqQueue thread (CExternalReq)
 #endif
 
-    int count = 0;
-    int nid;
-    int pid;
-
-    // Record statistics (sonar counters)
-    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
-       MonStats->req_type_processinfocont_Incr();
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+#ifndef NAMESERVER_PROCESS
+    if ( NameServerEnabled && !getMonitorInfo )
     {
-        trace_printf("%s@%d request #%ld: ProcessInfoCont, context (%d, %d), "
-                     "process type=%d, allnodes=%d\n", method_name, __LINE__,
-                     id_,
-                     msg_->u.request.u.process_info_cont.context[0].nid,
-                     msg_->u.request.u.process_info_cont.context[0].pid,
-                     msg_->u.request.u.process_info_cont.type,
-                     msg_->u.request.u.process_info_cont.allNodes);
+        // Send reply to requester
+        lioreply(msg_, pid_);
     }
-
-    msg_->u.reply.u.process_info.more_data = false;
-
-    // Using context from the last reply, locate next process.
-    // Generally the final process in the last reply will still exist
-    // so we locate its CProcess object for continuation.  If that
-    // process no longer exists we try to find other processes in the
-    // context list until we find the CProcess object or run out of
-    // context.
-    int i = -1;
-    CProcess *process = 0;
-
-    while (!process && ++i < MAX_PROC_CONTEXT)
+    else
     {
-        nid = msg_->u.request.u.process_info_cont.context[i].nid;
-        pid = msg_->u.request.u.process_info_cont.context[i].pid;
-        if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
+#endif
+        int count = 0;
+        int nid;
+        int pid;
+
+        // Record statistics (sonar counters)
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+           MonStats->req_type_processinfocont_Incr();
+
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-            process = Nodes->GetLNode(nid)->GetProcessL(pid);
+            trace_printf("%s@%d request #%ld: ProcessInfoCont, context (%d, %d), "
+                         "process type=%d, allnodes=%d\n", method_name, __LINE__,
+                         id_,
+                         msg_->u.request.u.process_info_cont.context[0].nid,
+                         msg_->u.request.u.process_info_cont.context[0].pid,
+                         msg_->u.request.u.process_info_cont.type,
+                         msg_->u.request.u.process_info_cont.allNodes);
         }
-    }
 
+        msg_->u.reply.u.process_info.more_data = false;
 
-    if (!process)
-    {   // Could not locate any process in the context list.  So
-        // begin with the first process in the node.
-        nid = msg_->u.request.u.process_info_cont.context[0].nid;
-        if (trace_settings & TRACE_REQUEST)
-           trace_printf("%s@%d" " could not find context process, restarting for node="  "%d" "\n", method_name, __LINE__, nid);
-        if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
+        // Using context from the last reply, locate next process.
+        // Generally the final process in the last reply will still exist
+        // so we locate its CProcess object for continuation.  If that
+        // process no longer exists we try to find other processes in the
+        // context list until we find the CProcess object or run out of
+        // context.
+        int i = -1;
+        CProcess *process = 0;
+
+        while (!process && ++i < MAX_PROC_CONTEXT)
         {
-            process = ProcessInfo_GetProcess (nid, msg_->u.request.u.process_info_cont.allNodes);
-        }
-    }
-
-    // Assuming we found a CProcess object resume returning data with
-    // the subsequent process.
-    if (process)
-    {
-        process = process->GetNextL();
-        if (!process)
-        {   // We were at the last process on the node.  Get first process
-            // on the next node (if there is a next node).
-            if (++nid < Nodes->GetLNodesConfigMax())
+            nid = msg_->u.request.u.process_info_cont.context[i].nid;
+            pid = msg_->u.request.u.process_info_cont.context[i].pid;
+            if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
             {
-                process = ProcessInfo_GetProcess(nid,
-                                msg_->u.request.u.process_info_cont.allNodes);
+                process = Nodes->GetLNode(nid)->GetProcessL(pid);
             }
         }
 
+
+        if (!process)
+        {   // Could not locate any process in the context list.  So
+            // begin with the first process in the node.
+            nid = msg_->u.request.u.process_info_cont.context[0].nid;
+            if (trace_settings & TRACE_REQUEST)
+               trace_printf("%s@%d" " could not find context process, restarting for node="  "%d" "\n", method_name, __LINE__, nid);
+            if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
+            {
+                process = ProcessInfo_GetProcess (nid, msg_->u.request.u.process_info_cont.allNodes);
+            }
+        }
+
+        // Assuming we found a CProcess object resume returning data with
+        // the subsequent process.
         if (process)
         {
-            count = ProcessInfo_BuildReply(
-                                process,
-                                msg_,
-                                msg_->u.request.u.process_info_cont.type,
-                                msg_->u.request.u.process_info_cont.allNodes,
-                                (char *) "");
+            process = process->GetNextL();
+            if (!process)
+            {   // We were at the last process on the node.  Get first process
+                // on the next node (if there is a next node).
+                if (++nid < Nodes->GetLNodesConfigMax())
+                {
+                    process = ProcessInfo_GetProcess(nid,
+                                    msg_->u.request.u.process_info_cont.allNodes);
+                }
+            }
 
+            if (process)
+            {
+                count = ProcessInfo_BuildReply(
+                                    process,
+                                    msg_,
+                                    msg_->u.request.u.process_info_cont.type,
+                                    msg_->u.request.u.process_info_cont.allNodes,
+                                    (char *) "");
+
+            }
         }
-    }
 
-    msg_->u.reply.type = ReplyType_ProcessInfo;
-    msg_->u.reply.u.process_info.num_processes = count;
-    msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
+        msg_->u.reply.type = ReplyType_ProcessInfo;
+        msg_->u.reply.u.process_info.num_processes = count;
+        msg_->u.reply.u.process_info.return_code = MPI_SUCCESS;
 
 #ifdef NAMESERVER_PROCESS
-    monreply(msg_, sockFd_);
+        monreply(msg_, sockFd_);
 #else
-    // Send reply to requester
-    lioreply(msg_, pid_);
+        // Send reply to requester
+        lioreply(msg_, pid_);
+#endif
+#ifndef NAMESERVER_PROCESS
+    }
 #endif
 
     TRACE_EXIT;

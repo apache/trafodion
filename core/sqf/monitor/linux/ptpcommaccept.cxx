@@ -23,9 +23,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 using namespace std;
 
+#include <stdio.h>
+#include "redirector.h"
 #include "ptpcommaccept.h"
 #include "monlogging.h"
 #include "montrace.h"
@@ -33,11 +34,13 @@ using namespace std;
 
 #include "reqqueue.h"
 
+extern CRedirector Redirector;
 extern CReqQueue ReqQueue;
 extern CPtpCommAccept PtpCommAccept;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+extern CRedirector Redirector;
 extern int MyPNID;
 extern char MyPtPPort[MPI_MAX_PORT_NAME];
 extern char *ErrorMsg (int error_code);
@@ -46,9 +49,9 @@ extern CommType_t CommType;
 
 
 CPtpCommAccept::CPtpCommAccept()
-           : accepting_(true)
-           , shutdown_(false)
-           , thread_id_(0)
+               : accepting_(true)
+               , shutdown_(false)
+               , thread_id_(0)
 {
     const char method_name[] = "CPtpCommAccept::CPtpCommAccept";
     TRACE_ENTRY;
@@ -82,7 +85,7 @@ void CPtpCommAccept::processNewSock( int sockFd )
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                      "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_COMMACCEPT_8, SQ_LOG_ERR, buf);    
+        mon_log_write(PTP_COMMACCEPT_1, SQ_LOG_ERR, buf);    
         return;
     }
     // Get info about connecting monitor
@@ -97,7 +100,7 @@ void CPtpCommAccept::processNewSock( int sockFd )
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], unable to obtain node id from new "
                  "monitor: %s.\n", method_name, ErrorMsg(rc));
-        mon_log_write(MON_COMMACCEPT_8, SQ_LOG_ERR, buf);    
+        mon_log_write(PTP_COMMACCEPT_2, SQ_LOG_ERR, buf);    
         return;
     }
     else
@@ -191,6 +194,26 @@ void CPtpCommAccept::processNewSock( int sockFd )
                 ReqQueue.enqueueKillReq( &msg.u.kill );
                 break;
             }
+            case InternalType_IoData:
+            {
+                if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+                {
+                    trace_printf( "%s@%d" " - Received InternalType_IoData\n"
+                                , method_name, __LINE__ );
+                }
+                ReqQueue.enqueueIoDataReq( &msg.u.iodata );
+                break;
+            }
+            case InternalType_StdinReq:
+            {
+                if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+                {
+                    trace_printf( "%s@%d" " - Received InternalType_StdinReq\n"
+                                , method_name, __LINE__ );
+                }
+                ReqQueue.enqueueStdInReq( &msg.u.stdin_req );
+                break;
+            }
             default:
             {
                 abort();
@@ -273,7 +296,7 @@ void CPtpCommAccept::commAcceptorSock()
             char buf[MON_STRING_BUF_SIZE];
             snprintf(buf, sizeof(buf), "[%s], cannot accept new monitor: %s.\n",
                      method_name, strerror(errno));
-            mon_log_write(MON_COMMACCEPT_16, SQ_LOG_ERR, buf);
+            mon_log_write(PTP_COMMACCEPT_6, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -330,7 +353,7 @@ static void *ptpCommAccept(void *arg)
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], pthread_sigmask error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_COMMACCEPT_17, SQ_LOG_ERR, buf);
+        mon_log_write(PTP_COMMACCEPT_7, SQ_LOG_ERR, buf);
     }
 
     // Enter thread processing loop
@@ -353,7 +376,7 @@ void CPtpCommAccept::start()
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[%s], thread create error=%d\n",
                  method_name, rc);
-        mon_log_write(MON_COMMACCEPT_18, SQ_LOG_ERR, buf);
+        mon_log_write(PTP_COMMACCEPT_8, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;

@@ -34,6 +34,7 @@
 // Compile options
 //#define DEBUGGING
 #define NO_OPEN_CLOSE_NOTICES
+#define EXCHANGE_CPU_SCHEDULING_DATA
 
 #define SERVICE_TAG      1
 #define INTERNAL_TAG     2

@@ -27,6 +27,7 @@
 
 using namespace std;
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,7 @@ using namespace std;
 #include <sys/resource.h>
 #include <errno.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "lnode.h"
 #include "pnode.h"
@@ -696,7 +698,12 @@ int CNameServer::SendReceive( struct message_def* msg )
         size += sizeof(msg->u.request.u.process_info_cont);
         break;
     case ReqType_ProcessInfoNs:
-        descp = (char *) "process-info-ns";
+        msginfo = &msg->u.request.u.process_info;
+        sprintf( desc, "process-info-ns (nid=%d, pid=%d, verifier=%d, name=%s)\n"
+                       "\ttarget (nid=%d, pid=%d, verifier=%d, name=%s, type=%d)\n",
+                msginfo->nid, msginfo->pid, msginfo->verifier, msginfo->process_name,
+                msginfo->target_nid, msginfo->target_pid, msginfo->target_verifier, 
+                msginfo->target_process_name, msginfo->type );
         size += sizeof(msg->u.request.u.process_info);
         break;
     case ReqType_ShutdownNs:

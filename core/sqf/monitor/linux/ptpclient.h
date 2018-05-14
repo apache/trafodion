@@ -69,6 +69,16 @@ public:
                       , CProcess *targetProcess
                       , int targetNid
                       , const char *targetNodeName );
+    int  StdInReq( int nid
+                 , int pid
+                 , StdinReqType type
+                 , int supplierNid
+                 , int supplierPid );
+    int  StdIoData( int nid
+                  , int pid
+                  , StdIoType type
+                  , ssize_t count
+                  , char *data );
 
 private:
 

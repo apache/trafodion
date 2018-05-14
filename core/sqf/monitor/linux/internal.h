@@ -209,7 +209,8 @@ typedef struct
 {
     int  nid;                        // Nid id of process to receive io data
     int  pid;                        // Process id of process to receive io data
-    StdIoType   ioType;
+    Verifier_t verifier;             // Verifier of the process to receive io data
+    StdIoType  ioType;
     int  length;                     // Length in byte of Data buffer used
     char data[MAX_SYNC_DATA];        // Data to be replicated across cluster
 } ioData_t;
@@ -225,9 +226,10 @@ struct stdin_req_def
 {
     int nid;                         // Node id of process requesting stdin data
     int pid;                         // Process id of process requesting stdin data
+    Verifier_t verifier;
     StdinReqType reqType;
     int supplier_nid;                // Node id of process supplying stdin data
-    int supplier_pid;              // Process id of process to supplying stdin data
+    int supplier_pid;                // Process id of process to supplying stdin data
 };
 
 struct kill_def
@@ -375,6 +377,7 @@ typedef struct
     long long  cpu_soft_irq;        // Time in software interrupt
 } ProcStat_t;
 
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
 struct scheddata_def
 {
     int PNid;                           // Node ID of scheduling data
@@ -391,6 +394,7 @@ struct scheddata_def
     ProcStat_t   proc_stats[MAX_LNODES_PER_NODE]; // Per logical node processor statistics
     unsigned int btime;                 // Node boot time
 };
+#endif
 
 
 struct set_def
@@ -468,7 +472,9 @@ struct internal_msg_def
         struct spare_def   activate_spare;
         struct uniqstr_def uniqstr;
         struct shutdown_def shutdown;
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
         struct scheddata_def scheddata;
+#endif
         char   buffer[MAX_SYNC_SIZE-MSG_HDR_SIZE];  // Limit entire buffer to MAX_SYNC_SIZE
     } u;
 } __attribute__((__may_alias__));

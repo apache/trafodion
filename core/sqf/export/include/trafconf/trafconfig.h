@@ -50,7 +50,11 @@
 #define TC_PERSIST_KEY_MAX              64
 #define TC_PERSIST_VALUE_MAX          4096
 #define TC_PERSIST_KEYS_VALUE_MAX     4096
-#define TC_NODES_MAX                  1024
+#define TC_NODES_MAX                  1024 // This can be higher when needed and
+                                           // will have performance implications
+                                           // in the monitor process.
+                                           // NOTE: Must increment by 64, see
+                                           //       monitor's msgdef.h MAX_NODES
 #define TC_SPARE_NODES_MAX             256
 #define TC_UNIQUE_STRING_VALUE_MAX    4096
 
@@ -111,7 +115,7 @@ typedef enum {
       TCDBSTOREUNDEFINED = 0     
     , TCDBMYSQL          = 1 // MySQL Database
     , TCDBPOSTGRESQL     = 2 // PostgresQL Database   [TBD]
-    , TCDBSQLITE         = 3 // Sqlite Database       [deprecated]
+    , TCDBSQLITE         = 3 // Sqlite Database
 } TcStorageType_t;
 
 typedef enum {

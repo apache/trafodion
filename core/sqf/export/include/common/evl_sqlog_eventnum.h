@@ -85,7 +85,8 @@
 #define MON_CLUSTER_MARKDOWN_2              101011102
 #define MON_CLUSTER_MARKDOWN_3              101011103
 //#define MON_CLUSTER_MARKUP                  101011201
-#define MON_CLUSTER_NODE_TM_READY           101011300
+#define MON_CLUSTER_NODE_TM_READY_1         101011301
+#define MON_CLUSTER_NODE_TM_READY_2         101011302
 #define MON_CLUSTER_FORCEDOWN_1             101011401
 #define MON_CLUSTER_FORCEDOWN_2             101011402
 #define MON_CLUSTER_CLUSTER_MANAGER         101011501
@@ -245,6 +246,13 @@
 
 #define MON_PINGSOCKPEER_1                  101015201
 #define MON_PINGSOCKPEER_2                  101015202
+#define MON_PINGSOCKPEER_3                  101015203
+#define MON_PINGSOCKPEER_4                  101015204
+
+#define MON_CLUSTER_ASSIGNMONITORLEADER_1   101015301
+#define MON_CLUSTER_ASSIGNMONITORLEADER_2   101015302
+#define MON_CLUSTER_ASSIGNMONITORLEADER_3   101015303
+#define MON_CLUSTER_ASSIGNMONITORLEADER_4   101015304
 
 /* Module: monitor.cxx = 02 */
 
@@ -265,6 +273,7 @@
 #define MON_MONITOR_MAIN_15                 101020115
 #define MON_MONITOR_MAIN_16                 101020116
 #define MON_MONITOR_MAIN_17                 101020117
+#define MON_MONITOR_MAIN_18                 101020118
 #define MON_MONITOR_TMLEADER_1              101020201
 #define MON_MONITOR_TMLEADER_2              101020202
 #define MON_MONITOR_DEATH_HANDLER_1         101020301
@@ -724,16 +733,19 @@
 #define MON_REQ_NAMESERVER_DELETE_3         101181203
 #define MON_REQ_NAMESERVER_DELETE_4         101181204
 #define MON_REQ_NAMESERVER_INFO_1           101181301
-
 #define MON_REQ_EVALREQ_PERFORMANCE_1       101181501
 #define MON_INTREQ_CLONEPROC_1              101181601
 #define MON_INTREQ_EXIT_1                   101181701
 #define MON_INTREQ_NEWPROC_1                101181801
+#define MON_INTREQ_NEWPROC_2                101181802
 #define MON_INTREQ_NOTIFY_1                 101181901
 #define MON_INTREQ_NOTIFY_2                 101181902
 #define MON_INTREQ_NOTIFY_3                 101181903
 #define MON_INTREQ_NOTIFY_4                 101181904
 #define MON_INTREQ_OPEN_1                   101182001
+#define MON_REQ_IODATA_1                    101182201
+#define MON_REQ_STDIN_1                     101182301
+#define MON_REQ_STDIN_2                     101182302
 
 /* Module: clio.cxx = 19 */
 #define MON_CLIO_ACQUIRE_MSG_1              101190101
@@ -785,7 +797,8 @@
 #define MON_HEALTHCHECK_WAKEUP_1            101230401
 #define MON_HEALTHCHECK_WAKEUP_2            101230402
 #define MON_HEALTHCHECK_Q_BLOCK             101230501
-#define MON_HEALTHCHECK_STOP_NS_1           101230601
+
+#define MON_HEALTHCHECK_STOP_NS_1           101230701
 
 /* Module: sdtimer.cxx = 24 */
 #define MON_SDTIMER_SOFTDOG_TH_1            101240101
@@ -945,6 +958,7 @@
 #define MON_ZCLIENT_WATCHMASTERNODEDELETE_2 101372106
 #define MON_ZCLIENT_WATCHMASTERNODEDELETE_3 101372107
 #define MON_ZCLIENT_CREATEORSETMASTERWATCH  101372108
+#define MON_ZCLIENT_CREATEORSETMASTERINFO   101372109
 
 /* Module: zconfig.cxx = 38 */
 #define ZCONFIG_ZCONFIG_1                   101380101
@@ -1018,6 +1032,20 @@
 
 /* Module ptpclient.cxx = 93 */
 #define PTPCLIENT_PTPCLIENT_1               101930101
+#define PTPCLIENT_STDINREQ_1                101930201
+#define PTPCLIENT_STDINREQ_2                101930202
+#define PTPCLIENT_STDIODATA_1               101930301
+#define PTPCLIENT_STDIODATA_2               101930302
+
+/* Module ptpcommaccept.cxx = 94 */
+#define PTP_COMMACCEPT_1                    101940101
+#define PTP_COMMACCEPT_2                    101940102
+#define PTP_COMMACCEPT_3                    101940103
+#define PTP_COMMACCEPT_4                    101940104
+#define PTP_COMMACCEPT_5                    101940105
+#define PTP_COMMACCEPT_6                    101940106
+#define PTP_COMMACCEPT_7                    101940107
+#define PTP_COMMACCEPT_8                    101940108
 
 /**********************************************/
 

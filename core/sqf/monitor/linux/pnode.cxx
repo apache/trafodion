@@ -78,7 +78,6 @@ extern CHealthCheck HealthCheck;
 extern CMonTrace *MonTrace;
 extern bool IsAgentMode;
 extern bool IAmIntegrating;
-extern char MasterMonitorName[MAX_PROCESS_PATH];
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern CClusterConfig *ClusterConfig;
 
@@ -115,8 +114,8 @@ extern CNameServerConfigContainer *NameServerConfig;
 
 // The following defines specify the default values for the HA
 // timers if the timer related environment variables are not defined.
-// Defaults to 5 second Watchdog process timer expiration
-#define WDT_KeepAliveTimerDefault 5
+// Defaults to 60 second Watchdog process timer expiration
+#define WDT_KeepAliveTimerDefault 60
 
 // Default interval used by GetSchedulingData (in milliseconds)
 unsigned long int CNode::minSchedDataInterval_ = 500;
@@ -1251,6 +1250,7 @@ void CNode::StartNameServerProcess( void )
                                         programStrId,
                                         (char *) "", //infile,
                                         stdout, //outfile,
+                                        0, //tag
                                         result
                                         );
     if ( NameServerProcess )
@@ -1331,6 +1331,7 @@ void CNode::StartWatchdogProcess( void )
                                       programStrId,
                                       (char *) "", //infile,
                                       stdout, //outfile,
+                                      0, //tag
                                       result
                                       );
     if ( watchdogProcess )
@@ -1388,6 +1389,7 @@ void CNode::StartPStartDProcess( void )
                                       programStrId,
                                       (char *) "", //infile,
                                       stdout, //outfile,
+                                      0, //tag
                                       result
                                       );
     if ( pstartdProcess )
@@ -1564,6 +1566,7 @@ void CNode::StartSMServiceProcess( void )
                                  programStrId,
                                  (char *) "", //infile,
                                  stdout, //outfile,
+                                 0, //tag
                                  result
                                  );
     if ( smsProcess )
@@ -1652,6 +1655,7 @@ CNodeContainer::~CNodeContainer( void )
     if (clusterConfig_)
     {
         delete clusterConfig_;
+        clusterConfig_ = NULL;
     }
     if (nameServerConfig_)
     {
@@ -3201,6 +3205,31 @@ CProcess *CNodeContainer::GetProcessLByTypeNs( int nid, PROCESSTYPE type )
     processInfo->target_process_name[0] = 0;
     processInfo->target_process_pattern[0] = 0;
     processInfo->type = type;
+
+    if ( trace_settings & ( TRACE_PROCESS | TRACE_REQUEST) )
+    {
+        trace_printf( "%s@%d - Received monitor request process-info-ns data.\n"
+                      "        process_info.nid=%d\n"
+                      "        process_info.pid=%d\n"
+                      "        process_info.verifier=%d\n"
+                      "        process_info.target_nid=%d\n"
+                      "        process_info.target_pid=%d\n"
+                      "        process_info.target_verifier=%d\n"
+                      "        process_info.target_process_name=%s\n"
+                      "        process_info.target_process_pattern=%s\n"
+                      "        process_info.type=%d\n"
+                    , method_name, __LINE__
+                    , processInfo->nid
+                    , processInfo->pid
+                    , processInfo->verifier
+                    , processInfo->target_nid
+                    , processInfo->target_pid
+                    , processInfo->target_verifier
+                    , processInfo->target_process_name
+                    , processInfo->target_process_pattern
+                    , processInfo->type
+                    );
+    }
 
     int error = NameServer->ProcessInfoNs(&msg); // in reqQueue thread (CExternalReq)
     if (error == 0)

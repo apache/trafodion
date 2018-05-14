@@ -111,7 +111,7 @@ public:
 #else
     int  AcceptPtPSock( void );
 #endif
-    int  Connect( const char *portName );
+    int  Connect( const char *portName, bool doRetries = true );
     void Connect( int socketPort );
 #ifdef NAMESERVER_PROCESS
     void ConnectToMon2NsCommSelf( void );
@@ -127,11 +127,12 @@ public:
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
-    void AssignLeaders( int pnid, bool checkProcess );
+    void AssignLeaders( int pnid, const char *failedMaster,  bool checkProcess );
 #ifndef NAMESERVER_PROCESS
     void AssignTmLeader( int pnid, bool checkProcess );
 #endif
-    void AssignMonitorLeader( int pnid );
+    void AssignMonitorLeader( const char* failedMaster );
+    void UpdateMonitorPort (const char* newMaster);
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -146,8 +147,6 @@ public:
     inline int  GetTmLeader( void ) { return( tmLeaderNid_ ); }
     inline void SetTmLeader( int tmLeaderNid ) { tmLeaderNid_ = tmLeaderNid; } 
 #endif
-    inline int  GetMonitorLeader( void ) { return( monitorLeaderPNid_); }
-    inline void SetMonitorLeader( int monitorLeaderPNid ) { monitorLeaderPNid_ = monitorLeaderPNid; } 
     int  GetDownedNid( void );
 #ifndef NAMESERVER_PROCESS
     inline int GetTmSyncPNid( void ) { return( tmSyncPNid_ ); } // Physical Node ID of current TmSync operations master
@@ -196,7 +195,9 @@ public:
     void NodeTmReady( int nid );
 #endif
     bool isMonSyncResponsive() { return monSyncResponsive_; }
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
     void SaveSchedData( struct internal_msg_def *recv_msg );
+#endif
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
 
     int  ReceiveMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
@@ -275,7 +276,6 @@ private:
     int     configPNodesCount_; // # of physical nodes configured
     int     configPNodesMax_;   // max # of physical nodes that can be configured
     int    *nodeMap_;           // Mapping of Node ranks to COMM_WORLD ranks
-    int     monitorLeaderPNid_; // PNid of currently assigned Monitor leader node
 #ifndef NAMESERVER_PROCESS
     int     tmLeaderNid_;       // Nid of currently assigned TM Leader node
     int     tmReadyCount_;      // # of DTM processes ready for transactions

@@ -586,8 +586,8 @@ void CProcess::procExitNotifierNodes( void )
     const char method_name[] = "CProcess::procExitNotifierNodes";
     TRACE_ENTRY;
 
-    CLNode *targetLNode;
-    CNode  *targetNode;
+    CLNode *targetLNode = NULL;
+    CNode  *targetNode = NULL;
     nidSet_t::iterator it;
 
     // Remove death notice registration for all entries on list
@@ -1545,7 +1545,7 @@ void CProcess::setEnvFromRegistry ( char **envp, int &countEnv )
 }
 
 #ifndef NAMESERVER_PROCESS
-bool CProcess::Create (CProcess *parent, int & result)
+bool CProcess::Create (CProcess *parent, void* tag, int & result)
 {
     bool monAltLogEnabled = false;
     bool seamonsterEnabled = false;
@@ -2276,6 +2276,28 @@ bool CProcess::Create (CProcess *parent, int & result)
         // I'm the monitor ... connect to child
         rc = MPI_SUCCESS;
 
+        // Save process id and build process name if not already named
+        Pid = os_pid;
+        if (Name[0] == '\0')
+        {   // No name assigned to the process so generate one based on
+            // the node-id and process-id.
+            MyNode->BuildOurName(Nid, os_pid, Name);
+
+            if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+                trace_printf("%s@%d - No process name specified, generated name=%s for process (%d, %d)\n", method_name, __LINE__, Name, Nid, os_pid);
+        }
+
+        if (NameServerEnabled && tag != NULL)
+        {
+            // Send actual pid and process name back to parent
+            // STDIO Redirection requires that clone process in parent node
+            // have the actual pid
+            PtpClient->ProcessInit( this
+                                  , tag
+                                  , 0
+                                  , parent->Nid );
+        }
+
         if (trace_settings & (TRACE_PROCESS | TRACE_REDIRECTION))
             trace_printf("%s@%d Process=%s, Infile=[%s], Outfile=[%s]\n",
                          method_name, __LINE__, Name, infile_.c_str(),
@@ -2342,14 +2364,6 @@ bool CProcess::Create (CProcess *parent, int & result)
             fd_stdout_ = pfds_stdout[0];
         }
 
-        if (Name[0] == '\0')
-        {   // No name assigned to the process so generate one based on
-            // the node-id and process-id.
-            MyNode->BuildOurName(Nid, os_pid, Name);
-
-            if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                trace_printf("%s@%d - No process name specified, generated name=%s for process (%d, %d)\n", method_name, __LINE__, Name, Nid, os_pid);
-        }
         // stderr pipe to child:
         //    We don't need write end of pipe.
         //    Add the read end of file descriptor to list of file
@@ -2579,7 +2593,6 @@ bool CProcess::Create (CProcess *parent, int & result)
     if (rc == MPI_SUCCESS && result == MPI_SUCCESS)
     {
         successful = true;
-        Pid = os_pid;
         PidAtFork_  = os_pid;
 
         // Indicate that process exists but has not yet completed initialization.
@@ -2939,28 +2952,47 @@ void CProcess::Exit( CProcess *parent )
 
     SetState(State_Stopped);
 
-    if (parent && NameServerEnabled)
+    if (!Clone && parent && NameServerEnabled)
     {
-        ProcessInfoNs_reply_def processInfo;
-        int rc = Nodes->GetProcessInfoNs( parent->GetNid()
-                                        , parent->GetPid()
-                                        , parent->GetVerifier()
-                                        , &processInfo);
-        if (rc == MPI_ERR_NAME)
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
-            {
-                trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
-                            , method_name, __LINE__
-                            , parent->GetName()
-                            , parent->GetNid()
-                            , parent->GetPid()
-                            , parent->GetVerifier() );
+        if (parent->GetNid() != GetNid())
+        { // parent is remote
+            if (parent->childCount() == 0)
+            { // process is parent's last child
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Parent's last child, deleting clone process %s, (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , parent->GetName()
+                                , parent->GetNid()
+                                , parent->GetPid()
+                                , parent->GetVerifier() );
+                }
+                Nodes->DeleteCloneProcess( parent );
+                parent = NULL;
             }
-            Nodes->DeleteCloneProcess( parent );
-            parent = NULL;
+            else
+            {
+                ProcessInfoNs_reply_def processInfo;
+                int rc = Nodes->GetProcessInfoNs( parent->GetNid()
+                                                , parent->GetPid()
+                                                , parent->GetVerifier()
+                                                , &processInfo);
+                if (rc == MPI_ERR_NAME)
+                { // parent exited
+                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                    {
+                        trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , parent->GetName()
+                                    , parent->GetNid()
+                                    , parent->GetPid()
+                                    , parent->GetVerifier() );
+                    }
+                    Nodes->DeleteCloneProcess( parent );
+                    parent = NULL;
+                }
+            }
         }
-    
     }
 
     // if the env is set to not deliver death messages upon node down,
@@ -4624,7 +4656,8 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                 {
                     if (NameServerEnabled)
                     {
-                        CNode  *childNode = childNode->GetNode();
+                        CNode  *childNode = NULL;
+                        childNode = childNode->GetNode();
                         // Forward the process create to the target node
                         PtpClient->ProcessKill( process
                                               , process->GetAbort()
@@ -4883,6 +4916,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             strId_t programStrId,
                                             char *infile,
                                             char *outfile,
+                                            void *tag,
                                             int &result)
 {
     CProcess *process = NULL;
@@ -4954,7 +4988,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
             {
                 process->userArgs ( monitorArgc, monitorArgv );
             }
-            if (process->Create (parent, result)) // monitor
+            if (process->Create (parent, tag, result)) // monitor
             {
                 AddToPidMap(process->GetPid(), process);
             }
@@ -6356,7 +6390,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid
             process->SetPriorPid( !MyNode->IsSpareNode() ? process->GetPid() : 0 );
             process->SetClone( false );
             int result;
-            successful = process->Create(parent, result);
+            successful = process->Create(parent, 0, result);
             if (successful)
             {
                 process->SetAbended( false );

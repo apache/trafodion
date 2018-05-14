@@ -23,9 +23,9 @@ begin node
 _virtualnodes 2
 end node
 
-#begin name-server
-#nodes=0,1
-#end name-server
+begin name-server
+nodes=0,1
+end name-server
 
 ###############################################################################
 #

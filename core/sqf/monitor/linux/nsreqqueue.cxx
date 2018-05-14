@@ -36,7 +36,7 @@ void CRequest::monreply(struct message_def *msg, int sockFd, int *error)
         *error = 0;
     if (!msg->noreply) // send reply
     {
-        int size = offsetof(message_def, u.reply.u);
+        int size = offsetof(struct message_def, u.reply.u);
         switch (msg->u.reply.type)
         {
         case ReplyType_Generic:

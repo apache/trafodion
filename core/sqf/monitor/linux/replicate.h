@@ -424,6 +424,7 @@ private:
 };
 
 
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
 class CReplSchedData: public CReplObj
 {
 public:
@@ -435,6 +436,7 @@ public:
 private:
 
 };
+#endif
 
 #ifndef NAMESERVER_PROCESS
 class CReplStdioData: public CReplObj

@@ -123,6 +123,7 @@ class CProcessContainer
                              strId_t programStrId,
                              char *infile,
                              char *outfile
+                             , void *tag
                              , int & result
                              );
     bool Dump_Process( CProcess *dumper, CProcess *process, char *core_path );
@@ -237,7 +238,7 @@ class CProcess
     void CompleteDump(DUMPSTATUS status, char *core_file);
     void CompleteProcessStartup( char *port, int os_pid, bool event_messages, bool system_messages, bool preclone, struct timespec *creation_time, int origPNidNs );
     void CompleteRequest( int status );
-    bool Create (CProcess *parent, int & result);
+    bool Create (CProcess *parent, void* tag, int & result);
     bool Dump (CProcess *dumper, char *core_path);
     void DumpBegin(int nid, int pid, Verifier_t verifier, char *core_path);
     void DumpEnd(DUMPSTATUS status, char *core_file);

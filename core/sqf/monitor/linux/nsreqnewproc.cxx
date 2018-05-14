@@ -126,6 +126,7 @@ void CExtNewProcNsReq::performRequest()
                                               msg_->u.request.u.new_process_ns.programStrId,
                                               msg_->u.request.u.new_process_ns.infile,
                                               msg_->u.request.u.new_process_ns.outfile,
+                                              0, // tag
                                               result
                                             );
     if (process)

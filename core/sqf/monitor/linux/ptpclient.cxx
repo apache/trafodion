@@ -27,6 +27,7 @@
 
 using namespace std;
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,7 @@ using namespace std;
 #include <sys/resource.h>
 #include <errno.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "lnode.h"
 #include "pnode.h"
@@ -195,7 +197,7 @@ int CPtpClient::ProcessClone( CProcess *process )
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-            trace_printf( "%s@%d - Not Sending InternalType_Clone request to parentNid=%d\n"
+            trace_printf( "%s@%d - Not Sending InternalType_Clone request to parentNid=%d"
                           ", process=%s (%d:%d:%d)\n"
                         , method_name, __LINE__
                         , process->GetParentNid()
@@ -209,7 +211,7 @@ int CPtpClient::ProcessClone( CProcess *process )
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf( "%s@%d - Sending InternalType_Clone request to %s, parentNid=%d\n"
+        trace_printf( "%s@%d - Sending InternalType_Clone request to %s, parentNid=%d"
                       ", process=%s (%d:%d:%d)\n"
                     , method_name, __LINE__
                     , parentLNode->GetNode()->GetName()
@@ -397,7 +399,7 @@ int CPtpClient::ProcessInit( CProcess *process
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
         {
-            trace_printf( "%s@%d - Not Sending InternalType_Clone request to parentNid=%d"
+            trace_printf( "%s@%d - Not Sending InternalType_ProcessInit request to parentNid=%d"
                           ", process=%s (%d,%d:%d)\n"
                         , method_name, __LINE__
                         , process->GetParentNid()
@@ -412,14 +414,16 @@ int CPtpClient::ProcessInit( CProcess *process
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
         trace_printf( "%s@%d" " - Sending InternalType_ProcessInit to parent node %s, parentNid=%d"
-                    ", for process %s (%d,%d:%d)\n"
+                    ", for process %s (%d,%d:%d), result=%d, tag=%p\n"
                     , method_name, __LINE__
                     , parentLNode->GetNode()->GetName()
                     , parentNid
                     , process->GetName()
                     , process->GetNid()
                     , process->GetPid()
-                    , process->GetVerifier() );
+                    , process->GetVerifier()
+                    , result
+                    , tag );
     }
 
     struct internal_msg_def msg;
@@ -919,6 +923,179 @@ int CPtpClient::SendToMon(const char *reqType, internal_msg_def *msg, int size,
     
     close( ptpSock_ );
 
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::StdInReq( int nid
+                        , int pid
+                        , StdinReqType type
+                        , int supplierNid
+                        , int supplierPid )
+{
+    const char method_name[] = "CPtpClient::StdInReq";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_StdinReq request type =%d "
+                      "from (%d,%d), for supplier (%d,%d)\n"
+                    , method_name, __LINE__
+                    , type
+                    , nid
+                    , pid
+                    , supplierNid
+                    , supplierPid );
+    }
+
+    CLNode  *lnode = Nodes->GetLNode( supplierNid );
+    if (lnode == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find supplier node nid=%d "
+                  "for stdin data request.\n"
+                , method_name
+                , supplierNid );
+        mon_log_write(PTPCLIENT_STDINREQ_1, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    CProcess *process = lnode->GetProcessL( supplierPid );
+    if (process == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find process nid=%d, "
+                  "pid=%d for stdin data request.\n"
+                , method_name
+                , supplierNid
+                , supplierPid );
+        mon_log_write(PTPCLIENT_STDINREQ_2, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_StdinReq;
+    msg.u.stdin_req.nid = nid;
+    msg.u.stdin_req.pid = pid;
+    msg.u.stdin_req.reqType = type;
+    msg.u.stdin_req.supplier_nid = supplierNid;
+    msg.u.stdin_req.supplier_pid = supplierPid;
+
+    int size = offsetof(struct internal_msg_def, u);
+    size += sizeof(msg.u.stdin_req);
+    
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - size_=%d, type =%d "
+                      "from (%d,%d), for supplier (%d,%d)\n"
+                    , method_name, __LINE__
+                    , size
+                    , msg.u.stdin_req.reqType
+                    , msg.u.stdin_req.nid
+                    , msg.u.stdin_req.pid
+                    , msg.u.stdin_req.supplier_nid
+                    , msg.u.stdin_req.supplier_pid );
+    }
+
+    int error = SendToMon("stdin"
+                         , &msg
+                         , size
+                         , process->GetNid()
+                         , lnode->GetNode()->GetName());
+    
+    TRACE_EXIT;
+    return error;
+}
+
+int CPtpClient::StdIoData( int nid
+                         , int pid
+                         , StdIoType type
+                         , ssize_t count
+                         , char *data )
+{
+    const char method_name[] = "CPtpClient::StdIoData";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d - Sending InternalType_IoData request type =%d "
+                      "to (%d,%d), count=%ld\n"
+                    , method_name, __LINE__
+                    , type
+                    , nid
+                    , pid
+                    , count );
+    }
+
+    CLNode  *lnode = Nodes->GetLNode( nid );
+    if (lnode == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find supplier node nid=%d "
+                  "for stdin data request.\n"
+                , method_name
+                , nid );
+        mon_log_write(PTPCLIENT_STDIODATA_1, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    CProcess *process = lnode->GetProcessL( pid );
+    if (process == NULL)
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], Can't find process nid=%d, "
+                  "pid=%d for stdin data request.\n"
+                , method_name
+                , nid
+                , pid );
+        mon_log_write(PTPCLIENT_STDIODATA_2, SQ_LOG_ERR, buf);
+
+        TRACE_EXIT;
+        return -1;
+    }
+
+    struct internal_msg_def msg;
+    memset(&msg, 0, sizeof(msg)); 
+    msg.type = InternalType_IoData;
+    msg.u.iodata.nid = nid ;
+    msg.u.iodata.pid = pid ;
+    msg.u.iodata.ioType = type ;
+    msg.u.iodata.length = count;
+    memcpy(&msg.u.iodata.data, data, count);
+
+    int size = offsetof(struct internal_msg_def, u);
+    size += sizeof(msg.u.iodata);
+    
+    if (trace_settings & (TRACE_REDIRECTION | TRACE_PROCESS_DETAIL))
+    {
+        trace_printf( "%s@%d - size_=%d, type =%d "
+                      "to (%d,%d), count=%d\n(%s)"
+                    , method_name, __LINE__
+                    , size
+                    , msg.u.iodata.ioType
+                    , msg.u.iodata.nid
+                    , msg.u.iodata.pid
+                    , msg.u.iodata.length
+                    , msg.u.iodata.length?msg.u.iodata.data:"\n" );
+    }
+
+    int error = SendToMon("stdio-data"
+                         , &msg
+                         , size
+                         , process->GetNid()
+                         , lnode->GetNode()->GetName());
+    
     TRACE_EXIT;
     return error;
 }

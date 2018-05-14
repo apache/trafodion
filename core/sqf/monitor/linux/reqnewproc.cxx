@@ -461,6 +461,7 @@ void CExtNewProcReq::performRequest()
                                                 programStrId,
                                                 msg_->u.request.u.new_process.infile,
                                                 msg_->u.request.u.new_process.outfile
+                                                , 0 // tag
                                                 , result
                                                 );
                 if ( process )
@@ -468,7 +469,7 @@ void CExtNewProcReq::performRequest()
                     process->userArgs (  msg_->u.request.u.new_process.argc,
                                          msg_->u.request.u.new_process.argv );
                 }
-                if ( process && process->Create(process->GetParent(), result))
+                if ( process && process->Create(process->GetParent(), 0, result))
                 {
                     MyNode->AddToNameMap(process);
                     MyNode->AddToPidMap(process->GetPid(), process);

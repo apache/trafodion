@@ -71,6 +71,9 @@ void CReplObj::validateObj()
 #ifdef NAMESERVER_PROCESS
 struct dummy_sizeof_def {};
 #endif
+#ifndef EXCHANGE_CPU_SCHEDULING_DATA
+struct dummy1_sizeof_def {};
+#endif
 
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
@@ -81,7 +84,11 @@ int CReplObj::calcAllocSize()
                                                                                         sizeof(CReplNodeDelete)),
                                                                                     sizeof(CReplSoftNodeUp)),
                                                                                 sizeof(CReplSoftNodeDown)),
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
                                                                             sizeof(CReplSchedData)),
+#else
+                                                                            sizeof(dummy1_sizeof_def)),
+#endif
                                                                         sizeof(CReplActivateSpare)),
                                                                     sizeof(CReplConfigData)),
                                                                 sizeof(CReplOpen)),
@@ -1789,6 +1796,7 @@ bool CReplNodeName::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
 CReplSchedData::CReplSchedData()
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1865,6 +1873,7 @@ bool CReplSchedData::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
 
 CReplNodeUp::CReplNodeUp(int pnid) : pnid_(pnid)

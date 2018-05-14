@@ -107,6 +107,7 @@ private:
     bool checkReqResponsive_;           // should req thread be checked for responsiveness or not
     int  monSyncTimeout_;               // timeout (in secs) for sync thread responsiveness
     int  refreshCounter_;               // monitor heartbeats, updated every second.
+    bool cpuSchedulingDataEnabled_;     // monitors exchange CPU scheduling data when enabled
 };
 
 #endif
