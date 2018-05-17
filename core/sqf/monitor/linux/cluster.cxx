@@ -863,6 +863,8 @@ CCluster::CCluster (void)
       ,myMonConnCount_(0)
       ,minMonConnCount_(0)
       ,minMonConnPnid_(-1)
+#else
+      ,clusterProcCount_(0)
 #endif
 {
     int i;
@@ -2644,7 +2646,12 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         if ( MyNode->IsMyNode(recv_msg->u.process.nid) )
         {   // Need to create process on this node.
             // Queue process creation request for handling by worker thread
+#ifdef NAMESERVER_PROCESS
+            ReqQueue.enqueueNewProcNsReq( &recv_msg->u.process );
+#endif
+#ifndef NAMESERVER_PROCESS
             ReqQueue.enqueueNewProcReq( &recv_msg->u.process );
+#endif
         }
         break;
 
@@ -7056,6 +7063,8 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             }
 #ifdef NAMESERVER_PROCESS
             nodestate[index].monConnCount = -1;
+#else
+            nodestate[index].monProcCount = 0;
 #endif
 
             continue;
@@ -7081,6 +7090,8 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         nodestate[index].nodeMask    = recvBuf->nodeInfo.nodeMask;
 #ifdef NAMESERVER_PROCESS
         nodestate[index].monConnCount = recvBuf->nodeInfo.monConnCount;
+#else
+        nodestate[index].monProcCount = recvBuf->nodeInfo.monProcCount;
 #endif
 
         for ( int i =0; i < MAX_NODE_MASKS ; i++ )
@@ -7199,6 +7210,8 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     nodestate[MyPNID].nodeMask = upNodes_;
 #ifdef NAMESERVER_PROCESS
     nodestate[MyPNID].monConnCount = Node[MyPNID]->GetMonConnCount();
+#else
+    nodestate[MyPNID].monProcCount = Node[MyPNID]->GetNumProcs();
 #endif
 
     // Examine status returned from MPI receive requests
@@ -7263,6 +7276,8 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 }
 #ifdef NAMESERVER_PROCESS
                 nodestate[index].monConnCount = -1;
+#else
+                nodestate[index].monProcCount = 0;
 #endif
 
                 if ( validateNodeDown_ )
@@ -7466,6 +7481,15 @@ void CCluster::UpdateClusterState( bool &doShutdown,
     myMonConnCount_ = nodestate[MyPNID].monConnCount;
     minMonConnCount_ = minConnCount;
     minMonConnPnid_ = minConnPnid;
+#else
+    if (NameServerEnabled)
+    {
+        clusterProcCount_ = 0;
+        for (int index = 0; index < GetConfigPNodesMax(); index++)
+        {
+            clusterProcCount_ += nodestate[index].monProcCount;
+        }
+    }
 #endif
 
     TRACE_EXIT;
@@ -7667,17 +7691,32 @@ bool CCluster::checkIfDone (  )
                      nameServerCount );
 
 #else
-    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
-        trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Process "
-                     "count=%d, internal state=%d, currentNodes_=%d, "
-                     "local process count=%d\n",
-                     method_name, __LINE__, MyNode->GetPNid(),
-                     MyNode->GetShutdownLevel(),
-                     StateString(MyNode->GetState()),
-                     Nodes->ProcessCount(),
-                     MyNode->getInternalState(),
-                     currentNodes_, MyNode->GetNumProcs());
-
+    if (NameServerEnabled)
+    {
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+            trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Cluster process "
+                         "count=%d, internal state=%d, currentNodes_=%d, "
+                         "local process count=%d\n",
+                         method_name, __LINE__, MyNode->GetPNid(),
+                         MyNode->GetShutdownLevel(),
+                         StateString(MyNode->GetState()),
+                         clusterProcCount_,
+                         MyNode->getInternalState(),
+                         currentNodes_, MyNode->GetNumProcs());
+    }
+    else
+    {
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
+            trace_printf("%s@%d - Node %d shutdown level=%d, state=%s.  Process "
+                         "count=%d, internal state=%d, currentNodes_=%d, "
+                         "local process count=%d\n",
+                         method_name, __LINE__, MyNode->GetPNid(),
+                         MyNode->GetShutdownLevel(),
+                         StateString(MyNode->GetState()),
+                         Nodes->ProcessCount(),
+                         MyNode->getInternalState(),
+                         currentNodes_, MyNode->GetNumProcs());
+    }
 #endif            
     // Check if we are also done
     if (( MyNode->GetState() != State_Down    ) &&
@@ -7704,7 +7743,7 @@ bool CCluster::checkIfDone (  )
             if ( NameServerEnabled )
             {
                 
-                if ( Nodes->ProcessCount() == 0 )  // all Name Servers exited
+                if ( clusterProcCount_ == 0 )  // all Name Servers exited
                 {
                     if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL | TRACE_SYNC))
                        trace_printf("%s@%d - Monitor signaled to exit.\n", method_name, __LINE__);
@@ -7714,7 +7753,7 @@ bool CCluster::checkIfDone (  )
                     // we need to sync one more time so other nodes see our state
                     return false;
                 }
-                else if ( (Nodes->ProcessCount() <= 
+                else if ( (clusterProcCount_ <= 
                             (currentNodes_ * (MAX_PRIMITIVES+1)) ) // only WDGs and Name Servers alive
                           && (MyNode->GetNumProcs() <=
                             (MAX_PRIMITIVES+1) )                   // only WDGs and Name Servers alive

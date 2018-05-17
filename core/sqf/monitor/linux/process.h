@@ -89,9 +89,15 @@ class CProcessContainer
                             int parent_verifier,
                             bool event_messages,
                             bool system_messages,
+#ifdef NAMESERVER_PROCESS
+                            char *path, 
+                            char *ldpath, 
+                            char *program, 
+#else
                             strId_t pathStrId,
                             strId_t ldpathStrId,
                             strId_t programStrId,
+#endif
                             char *infile,
                             char *outfile,
                             struct timespec *creation_time,
@@ -118,9 +124,15 @@ class CProcessContainer
                              int backup,
                              bool unhooked,
                              char *process_name, 
+#ifdef NAMESERVER_PROCESS
+                            char *path, 
+                            char *ldpath, 
+                            char *program, 
+#else
                              strId_t pathStrId,
                              strId_t ldpathStrId,
                              strId_t programStrId,
+#endif
                              char *infile,
                              char *outfile
                              , void *tag
@@ -222,9 +234,15 @@ class CProcess
               bool debug,
               bool unhooked, 
               char *name, 
+#ifdef NAMESERVER_PROCESS
+              char *path,
+              char *ldpath,
+              char *program,
+#else
               strId_t  pathStrId, 
               strId_t  ldpathStrId, 
               strId_t  programStrId,
+#endif
               char *infile,
               char *outfile);
     ~CProcess( void );
@@ -367,15 +385,25 @@ class CProcess
 
     void userArgs ( int argc, int argvLen, const char * argvList );
     void userArgs ( int argc, char user_argv[MAX_ARGS][MAX_ARG_SIZE] );
+    int getUserArgs( char user_argv[MAX_ARGS][MAX_ARG_SIZE] );
 
-    strId_t programStrId()    { return programStrId_; }
-    const char * program()    { return program_.c_str(); };
+#ifdef NAMESERVER_PROCESS
+    const char* path()        { return path_.c_str(); };
+    const char* ldpath()      { return ldpath_.c_str(); };
+#else
+    const char* path();
+    const char* ldpath();
+#endif
+    const char* program()     { return program_.c_str(); };
     bool isCmpOrEsp()         { return cmpOrEsp_; }
     const char *infile()      { return infile_.c_str(); };
     const char *outfile()     { return outfile_.c_str(); };
 
+#ifndef NAMESERVER_PROCESS
     strId_t pathStrId()       { return pathStrId_; };
     strId_t ldPathStrId()     { return ldpathStrId_; };
+    strId_t programStrId()    { return programStrId_; }
+#endif
 
     const char *fifo_stdin()  { return fifo_stdin_.c_str(); };
     const char *fifo_stdout() { return fifo_stdout_.c_str(); };
@@ -494,8 +522,10 @@ private:
     int          userArgvLen_;
     char         *userArgv_;
 
+    string       path_;          // process's object lookup path to program
+    string       ldpath_;        // process's library load path for program
+    string       program_;       // program file name
     strId_t      programStrId_;
-    string       program_;   // object file name
     strId_t      pathStrId_;
     strId_t      ldpathStrId_;
     bool         firstInstance_; // reset on persistent process re-creation

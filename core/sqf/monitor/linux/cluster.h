@@ -388,6 +388,8 @@ private:
     int myMonConnCount_;
     int minMonConnCount_;
     int minMonConnPnid_;
+#else
+    int clusterProcCount_;
 #endif
 
     int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);

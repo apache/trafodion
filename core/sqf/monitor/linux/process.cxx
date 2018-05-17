@@ -130,8 +130,15 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
 #endif
                     PROCESSTYPE type,
                     int priority, int backup, bool debug, bool unhooked,
-                    char *name, strId_t pathStrId, strId_t ldpathStrId,
-                    strId_t programStrId, char *infile, char *outfile)
+                    char *name,
+#ifdef NAMESERVER_PROCESS
+                    char *path,
+                    char *ldpath,
+                    char *program,
+#else
+                    strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, 
+#endif
+                    char *infile, char *outfile)
   :
     Nid (nid),
     Pid (pid),
@@ -182,10 +189,18 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     , argc_(0)
     , userArgvLen_ (0)
     , userArgv_ (NULL)
-    , programStrId_ (programStrId)
+#ifdef NAMESERVER_PROCESS
+    , path_(path)
+    , ldpath_(ldpath)
+    , program_(program)
+#else
+    , path_()
+    , ldpath_()
     , program_()
+    , programStrId_(programStrId)
     , pathStrId_(pathStrId)
     , ldpathStrId_(ldpathStrId)
+#endif
     , firstInstance_(true)
     , cmpOrEsp_(false)
     , trafConf_()
@@ -227,7 +242,9 @@ CProcess::CProcess (CProcess * parent, int nid, int pid,
     if ( outfile && strcmp(outfile,"#default") != 0)
         outfile_ = outfile;
 
+#ifndef NAMESERVER_PROCESS
     Config->strIdToString(programStrId_, program_ );
+#endif
 
     switch (Type)
     {
@@ -401,6 +418,36 @@ CProcess::~CProcess (void)
     memcpy(&eyecatcher_, "proc", 4);
 
     TRACE_EXIT;
+}
+
+#ifndef NAMESERVER_PROCESS
+const char* CProcess::path()
+{
+    Config->strIdToString(pathStrId_, path_ );
+    return( path_.c_str() );
+}
+#endif
+
+#ifndef NAMESERVER_PROCESS
+const char* CProcess::ldpath()
+{
+    Config->strIdToString(ldpathStrId_, ldpath_ );
+    return( ldpath_.c_str() );
+}
+#endif
+
+int CProcess::getUserArgs( char user_argv[MAX_ARGS][MAX_ARG_SIZE] )
+{
+    const char *pUserArgv = userArgv_;
+    int i, arglen;
+    for (i = 0; i < argc_; i++)
+    {
+        arglen = strlen (pUserArgv) + 1;
+        strcpy( user_argv[i], pUserArgv );
+        pUserArgv += arglen;
+    }
+    strcpy( user_argv[i], "" );
+    return(argc_);
 }
 
 void CProcess::userArgs ( int argc, int argvLen, const char * argvList )
@@ -4728,9 +4775,15 @@ CProcess *CProcessContainer::CloneProcess (int nid,
                                            int parent_verifier,
                                            bool event_messages,
                                            bool system_messages,
+#ifdef NAMESERVER_PROCESS
+                                           char *path, 
+                                           char *ldpath, 
+                                           char *program, 
+#else
                                            strId_t pathStrId,
                                            strId_t ldpathStrId,
                                            strId_t programStrId,
+#endif
                                            char *infile,
                                            char *outfile,
                                            struct timespec *creation_time,
@@ -4800,8 +4853,21 @@ CProcess *CProcessContainer::CloneProcess (int nid,
 
 #ifdef NAMESERVER_PROCESS
     process =
-        new CProcess (parent, nid, os_pid, verifier, type, priority, backup, false, unhooked, pname, pathStrId, ldpathStrId,
-                      programStrId, infile, outfile);
+        new CProcess( parent
+                    , nid
+                    , os_pid
+                    , verifier
+                    , type
+                    , priority
+                    , backup
+                    , false
+                    , unhooked
+                    , pname
+                    , path
+                    , ldpath
+                    , program
+                    , infile
+                    , outfile);
 #else
     process =
         new CProcess (parent, nid, os_pid, type, priority, backup, false, unhooked, pname, pathStrId, ldpathStrId,

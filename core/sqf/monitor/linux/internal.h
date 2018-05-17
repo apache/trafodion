@@ -127,9 +127,15 @@ struct clone_def
     int  argc;             // number of command line arguments
     struct timespec creation_time;      // process creation time
 
+#ifdef NAMESERVER_PROCESS
+    int  pathLen;
+    int  ldpathLen;
+    int  programLen;
+#else
     strId_t pathStrId;     // program lookup path (string id)
     strId_t ldpathStrId;   // library load path (string id)
     strId_t programStrId;  // full path to object file (string id)
+#endif
 
     int  nameLen;
     int  portLen;
@@ -296,7 +302,6 @@ struct node_name_def
     char new_name[MPI_MAX_PROCESSOR_NAME];
 };
 
-
 struct notify_def
 {
     int nid;                    // Node id of process being notified
@@ -308,7 +313,6 @@ struct notify_def
     Verifier_t target_verifier; // Verifier of the requesting process
     _TM_Txid_External trans_id; // Associated TransID
 };
-
 
 struct process_def
 {
@@ -328,20 +332,22 @@ struct process_def
     int pair_parent_pid;   // process id of real process pair parent process
     Verifier_t pair_parent_verifier; // process id of real process pair parent process
     int  argc;             // number of command line arguments
-
+    void *tag;             // process tag
+#ifdef NAMESERVER_PROCESS
+    int  pathLen;
+    int  ldpathLen;
+    int  programLen;
+#else
     strId_t pathStrId;     // program lookup path (string id)
     strId_t ldpathStrId;   // library load path (string id)
     strId_t programStrId;  // full path to object file (string id)
-
-    void *tag;             // process tag
+#endif
     int  nameLen;
     int  argvLen;
     int  infileLen;
     int  outfileLen;
     char stringData;       // variable length string data
 };
-
-
 
 struct process_init_def
 {
@@ -513,6 +519,8 @@ typedef struct cluster_state_def
     upNodes_t nodeMask;                 // Set of nodes currently "up"
 #ifdef NAMESERVER_PROCESS
     int monConnCount;                   // monitor connections
+#else
+    int monProcCount;                   // number of processes
 #endif
 } cluster_state_def_t;
 

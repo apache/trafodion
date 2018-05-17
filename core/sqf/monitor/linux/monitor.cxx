@@ -606,9 +606,11 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
     procObj->priority = process->GetPriority();
     procObj->backup = process->IsBackup();
     procObj->unhooked = process->IsUnhooked();
+#ifndef NAMESERVER_PROCESS
     procObj->pathStrId = process->pathStrId();
     procObj->ldpathStrId = process->ldPathStrId();
     procObj->programStrId = process->programStrId();
+#endif
     procObj->os_pid = process->GetPid();
     procObj->verifier = process->GetVerifier();
     procObj->prior_pid = process->GetPriorPid ();
@@ -658,6 +660,47 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
         procObj->portLen = 0;
     }
 
+#ifdef NAMESERVER_PROCESS
+    if (strlen(process->path()))
+    {
+        // Copy the path
+        procObj->pathLen = strlen(process->path()) + 1;
+        memcpy(stringData, process->path(),  procObj->pathLen );
+        stringData += procObj->pathLen;
+        stringDataLen = procObj->pathLen;
+    }
+    else
+    {
+        procObj->pathLen = 0;
+    }
+
+    if (strlen(process->ldpath()))
+    {
+        // Copy the ldpath
+        procObj->ldpathLen = strlen(process->ldpath()) + 1;
+        memcpy(stringData, process->ldpath(),  procObj->ldpathLen );
+        stringData += procObj->ldpathLen;
+        stringDataLen = procObj->ldpathLen;
+    }
+    else
+    {
+        procObj->ldpathLen = 0;
+    }
+
+    if (strlen(process->program()))
+    {
+        // Copy the program
+        procObj->programLen = strlen(process->program()) + 1;
+        memcpy(stringData, process->program(),  procObj->programLen );
+        stringData += procObj->programLen;
+        stringDataLen = procObj->programLen;
+    }
+    else
+    {
+        procObj->programLen = 0;
+    }
+#endif
+    
     if (process->IsPersistent())
     {
         if (strlen(process->infile()))
@@ -696,28 +739,6 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
         }
 
         procObj->persistent = true;
-
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-                trace_printf( "%s@%d - Packing process string data:\n"
-                              "        name(%d)       =%s\n"
-                              "        port(%d)       =%s\n"
-                              "        infile(%d)     =%s\n"
-                              "        outfile(%d)    =%s\n"
-                              "        userArgv(%d)   =%s\n"
-                              "        stringData(%d) =%s\n"
-                            , method_name, __LINE__
-                            , procObj->nameLen
-                            , process->GetName()
-                            , procObj->portLen
-                            , process->GetPort()
-                            , procObj->infileLen
-                            , process->infile()
-                            , procObj->outfileLen
-                            , process->outfile()
-                            , procObj->argvLen
-                            , procObj->argvLen?process->userArgv():""
-                            , stringDataLen
-                            , stringDataLen?&procObj->stringData:"" );
     }
     else
     {
@@ -726,6 +747,61 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
         procObj->argvLen = 0;
         procObj->persistent = false;
     }
+
+#ifdef NAMESERVER_PROCESS
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Packing process string data:\n"
+                          "        name(%d)       =%s\n"
+                          "        port(%d)       =%s\n"
+                          "        path(%d)       =%s\n"
+                          "        ldpath(%d)     =%s\n"
+                          "        program(%d)    =%s\n"
+                          "        infile(%d)     =%s\n"
+                          "        outfile(%d)    =%s\n"
+                          "        userArgv(%d)   =%s\n"
+                          "        stringData(%d) =%s\n"
+                        , method_name, __LINE__
+                        , procObj->nameLen
+                        , process->GetName()
+                        , procObj->portLen
+                        , process->GetPort()
+                        , procObj->pathLen
+                        , process->path()
+                        , procObj->ldpathLen
+                        , process->ldpath()
+                        , procObj->programLen
+                        , process->program()
+                        , procObj->infileLen
+                        , process->infile()
+                        , procObj->outfileLen
+                        , process->outfile()
+                        , procObj->argvLen
+                        , procObj->argvLen?process->userArgv():""
+                        , stringDataLen
+                        , stringDataLen?&procObj->stringData:"" );
+#else
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Packing process string data:\n"
+                          "        name(%d)       =%s\n"
+                          "        port(%d)       =%s\n"
+                          "        infile(%d)     =%s\n"
+                          "        outfile(%d)    =%s\n"
+                          "        userArgv(%d)   =%s\n"
+                          "        stringData(%d) =%s\n"
+                        , method_name, __LINE__
+                        , procObj->nameLen
+                        , process->GetName()
+                        , procObj->portLen
+                        , process->GetPort()
+                        , procObj->infileLen
+                        , process->infile()
+                        , procObj->outfileLen
+                        , process->outfile()
+                        , procObj->argvLen
+                        , procObj->argvLen?process->userArgv():""
+                        , stringDataLen
+                        , stringDataLen?&procObj->stringData:"" );
+#endif
 
     TRACE_EXIT;
     return stringData;
@@ -802,6 +878,11 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
     CNode * node = NULL;
     CProcess * process = NULL;
     int  stringDataLen;
+#ifdef NAMESERVER_PROCESS
+    char *path = NULL;
+    char *ldpath = NULL;
+    char *program = NULL;
+#endif
     char *name = NULL;
     char *port = NULL;
     char *infile = NULL;
@@ -824,7 +905,7 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
 
         if (procObj->nameLen)
         {
-            name = &procObj->stringData;
+            name = &stringData[stringDataLen];
             stringDataLen += procObj->nameLen;
         }
 
@@ -833,6 +914,26 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
             port = &stringData[stringDataLen];
             stringDataLen += procObj->portLen;
         }
+
+#ifdef NAMESERVER_PROCESS
+        if (procObj->pathLen)
+        {
+            path = &stringData[stringDataLen];
+            stringDataLen += procObj->pathLen;
+        }
+
+        if (procObj->ldpathLen)
+        {
+            ldpath = &stringData[stringDataLen];
+            stringDataLen += procObj->ldpathLen;
+        }
+
+        if (procObj->programLen)
+        {
+            program = &stringData[stringDataLen];
+            stringDataLen += procObj->programLen;
+        }
+#endif
 
         if (procObj->infileLen)
         {
@@ -852,6 +953,40 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
             stringDataLen += procObj->argvLen;
         }
 
+#ifdef NAMESERVER_PROCESS
+        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+                trace_printf( "%s@%d - Unpacking process string data:\n"
+                              "        stringData(%d) =%s\n"
+                              "        name(%d)       =%s\n"
+                              "        port(%d)       =%s\n"
+                              "        path(%d)       =%s\n"
+                              "        ldpath(%d)     =%s\n"
+                              "        program(%d)    =%s\n"
+                              "        infile(%d)     =%s\n"
+                              "        outfile(%d)    =%s\n"
+                              "        userArgc       =%d\n"
+                              "        userArgv(%d)   =%s\n"
+                            , method_name, __LINE__
+                            , stringDataLen
+                            , stringDataLen?&procObj->stringData:""
+                            , procObj->nameLen
+                            , procObj->nameLen?name:""
+                            , procObj->portLen
+                            , procObj->portLen?port:""
+                            , procObj->pathLen
+                            , procObj->pathLen?path:""
+                            , procObj->ldpathLen
+                            , procObj->ldpathLen?ldpath:""
+                            , procObj->programLen
+                            , procObj->programLen?program:""
+                            , procObj->infileLen
+                            , procObj->infileLen?infile:""
+                            , procObj->outfileLen
+                            , procObj->outfileLen?outfile:""
+                            , procObj->argc
+                            , procObj->argvLen
+                            , procObj->argvLen?userargv:"" );
+#else
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
                 trace_printf( "%s@%d - Unpacking process string data:\n"
                               "        stringData(%d) =%s\n"
@@ -875,6 +1010,7 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
                             , procObj->argc
                             , procObj->argvLen
                             , procObj->argvLen?userargv:"" );
+#endif
 
         process = node->CloneProcess (procObj->nid,
                                       procObj->type,
@@ -890,9 +1026,15 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
                                       procObj->parent_verifier,
                                       procObj->event_messages,
                                       procObj->system_messages,
+#ifdef NAMESERVER_PROCESS
+                                      path,
+                                      ldpath,
+                                      program,
+#else
                                       procObj->pathStrId,
                                       procObj->ldpathStrId,
                                       procObj->programStrId,
+#endif
                                       procObj->infileLen?infile:(char *)"",
                                       procObj->outfileLen?outfile:(char *)"",
                                       &procObj->creation_time,

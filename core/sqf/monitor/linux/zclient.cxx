@@ -70,7 +70,6 @@ extern CNodeContainer *Nodes;
 extern CReqQueue ReqQueue;
 extern CZClient    *ZClient;
 extern CMonLog     *MonLog;
-
 extern bool debugFlag;
 
 static zhandle_t *ZHandle;
@@ -1648,6 +1647,7 @@ void CZClient::TriggerCheck( int type, const char *znodePath )
 {
     const char method_name[] = "CZClient::TriggerCheck";
     TRACE_ENTRY;
+
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
         trace_printf( "%s@%d" " - state = %s\n"
@@ -1702,6 +1702,7 @@ void CZClient::TriggerCheck( int type, const char *znodePath )
     {
         SetState( ZC_CLUSTER );
     }
+
     CLock::wakeOne();
     TRACE_EXIT;
 }
@@ -1884,7 +1885,7 @@ int CZClient::WatchNodeMasterDelete( const char *nodeName )
             << nodeName;
            
     string monZnode = newpath.str( );
-    
+
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
         trace_printf( "%s@%d zoo_delete(%s)\n"

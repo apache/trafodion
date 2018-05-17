@@ -873,7 +873,33 @@ private:
 class CIntCloneProcNsReq: public CInternalReq
 {
 public:
-    CIntCloneProcNsReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData, int origPNidNs);
+    CIntCloneProcNsReq( bool backup
+                      , bool unhooked
+                      , bool eventMessages
+                      , bool systemMessages
+                      , int nid
+                      , PROCESSTYPE type
+                      , int priority
+                      , int parentNid
+                      , int parentPid
+                      , int parentVerifier
+                      , int osPid
+                      , int verifier
+                      , pid_t priorPid
+                      , int persistentRetries
+                      , int argc
+                      , struct timespec creationTime
+                      , int pathLen
+                      , int ldpathLen
+                      , int programLen
+                      , int nameLen
+                      , int portLen
+                      , int infileLen
+                      , int outfileLen
+                      , int argvLen
+                      , const char * stringData
+                      , int origPNidNs);
+//    CIntCloneProcNsReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData, int origPNidNs);
     virtual ~CIntCloneProcNsReq();
 
     void performRequest();
@@ -897,9 +923,12 @@ private:
     int persistentRetries_;
     int  argc_;
     struct timespec creationTime_;
-    strId_t pathStrId_;
-    strId_t ldpathStrId_;
-    strId_t programStrId_;
+    int  pathLen_;
+    int  ldpathLen_;
+    int  programLen_;
+//    strId_t pathStrId_;
+//    strId_t ldpathStrId_;
+//    strId_t programStrId_;
     int  nameLen_;
     int  portLen_;
     int  infileLen_;
@@ -1027,15 +1056,11 @@ private:
 };
 #endif
 
+#ifndef NAMESERVER_PROCESS
 class CIntNewProcReq: public CInternalReq
 {
 public:
     CIntNewProcReq( int nid
-#ifndef NAMESERVER_PROCESS
-#else
-                  , int pid
-                  , Verifier_t verifier
-#endif
                   , PROCESSTYPE type
                   , int priority
                   , int backup
@@ -1055,8 +1080,7 @@ public:
                   , int infileLen
                   , int outfileLen
                   , int argvLen
-                  , const char * stringData );
-
+                  , const char* stringData );
     virtual ~CIntNewProcReq ( );
 
     void performRequest();
@@ -1065,10 +1089,6 @@ private:
     void populateRequestString( void );
 
     int nid_;
-#ifdef NAMESERVER_PROCESS
-    int pid_;
-    Verifier_t verifier_;
-#endif
     PROCESSTYPE type_;
     int priority_;
     int backup_;
@@ -1078,18 +1098,79 @@ private:
     int pairParentNid_;
     int pairParentPid_;
     Verifier_t pairParentVerifier_;
-    int  argc_;
+    int argc_;
     bool unhooked_;
     void *reqTag_;
     strId_t pathStrId_;
     strId_t ldpathStrId_;
     strId_t programStrId_;
-    int  nameLen_;
-    int  infileLen_;
-    int  outfileLen_;
-    int  argvLen_;
-    char * stringData_;
+    int nameLen_;
+    int infileLen_;
+    int outfileLen_;
+    int argvLen_;
+    char* stringData_;
 };
+#endif
+
+#ifdef NAMESERVER_PROCESS
+class CIntNewProcNsReq: public CInternalReq
+{
+public:
+    CIntNewProcNsReq( int nid
+                    , int pid
+                    , Verifier_t verifier
+                    , PROCESSTYPE type
+                    , int priority
+                    , int backup
+                    , int parentNid
+                    , int parentPid
+                    , Verifier_t parentVerifier
+                    , int pairParentNid
+                    , int pairParentPid
+                    , Verifier_t pairParentVerifier
+                    , int argc
+                    , bool unhooked
+                    , void* reqTag
+                    , int pathLen
+                    , int ldpathLen
+                    , int programLen
+                    , int nameLen
+                    , int infileLen
+                    , int outfileLen
+                    , int argvLen
+                    , const char* stringData );
+    virtual ~CIntNewProcNsReq ( );
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    PROCESSTYPE type_;
+    int priority_;
+    int backup_;
+    int parentNid_;
+    int parentPid_;
+    Verifier_t parentVerifier_;
+    int pairParentNid_;
+    int pairParentPid_;
+    Verifier_t pairParentVerifier_;
+    int argc_;
+    bool unhooked_;
+    void *reqTag_;
+    int pathLen_;
+    int ldpathLen_;
+    int programLen_;
+    int nameLen_;
+    int infileLen_;
+    int outfileLen_;
+    int argvLen_;
+    char* stringData_;
+};
+#endif
 
 class CIntNotifyReq: public CInternalReq
 {
@@ -1550,8 +1631,11 @@ class CReqQueue
 #ifndef NAMESERVER_PROCESS
     void enqueueIoDataReq( ioData_t *ioData );
     void enqueueKillReq( struct kill_def *killDef );
-#endif
     void enqueueNewProcReq( struct process_def *procDef );
+#endif
+#ifdef NAMESERVER_PROCESS
+    void enqueueNewProcNsReq( struct process_def *procDef );
+#endif
 #ifndef NAMESERVER_PROCESS
     void enqueueNotifyReq( struct notify_def *notifyDef );
     void enqueueOpenReq( struct open_def *openDef );

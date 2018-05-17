@@ -92,10 +92,12 @@ void CExtProcInfoNsReq::copyInfo(CProcess *process, ProcessInfoNs_reply_def &pro
     process_info_ns.unhooked = process->IsUnhooked();
     process_info_ns.event_messages = process->IsEventMessages();
     process_info_ns.system_messages = process->IsSystemMessages();
+    strncpy( process_info_ns.path, process->path(), MAX_PROCESS_PATH );
+    strncpy( process_info_ns.ldpath, process->ldpath(), MAX_PROCESS_PATH );
     strncpy( process_info_ns.program, process->program(), MAX_PROCESS_PATH );
-    process_info_ns.pathStrId = process->pathStrId();
-    process_info_ns.ldpathStrId = process->ldPathStrId();
-    process_info_ns.programStrId = process->programStrId();
+//    process_info_ns.pathStrId = process->pathStrId();
+//    process_info_ns.ldpathStrId = process->ldPathStrId();
+//    process_info_ns.programStrId = process->programStrId();
     strncpy( process_info_ns.port_name, process->GetPort(), MPI_MAX_PORT_NAME );
     process_info_ns.argc = process->argc();
     memcpy( process_info_ns.argv, process->userArgv(), process->userArgvLen() );
@@ -122,10 +124,12 @@ void CExtProcInfoNsReq::copyInfo(CProcess *process, ProcessInfoNs_reply_def &pro
                  "        process_info_ns.unhooked=%d\n"
                  "        process_info_ns.event_messages=%d\n"
                  "        process_info_ns.system_messages=%d\n"
+                 "        process_info_ns.path=%s\n"
+                 "        process_info_ns.ldpath=%s\n"
                  "        process_info_ns.program=%s\n"
-                 "        process_info_ns.pathStrId=%d:%d\n"
-                 "        process_info_ns.ldpathStrId=%d:%d\n"
-                 "        process_info_ns.programStrId=%d:%d\n"
+//                 "        process_info_ns.pathStrId=%d:%d\n"
+//                 "        process_info_ns.ldpathStrId=%d:%d\n"
+//                 "        process_info_ns.programStrId=%d:%d\n"
                  "        process_info_ns.port_name=%s\n"
                  "        process_info_ns.argc=%d\n"
                  "        process_info_ns.infile=%s\n"
@@ -145,13 +149,15 @@ void CExtProcInfoNsReq::copyInfo(CProcess *process, ProcessInfoNs_reply_def &pro
                  , process_info_ns.unhooked
                  , process_info_ns.event_messages
                  , process_info_ns.system_messages
+                 , process_info_ns.path
+                 , process_info_ns.ldpath
                  , process_info_ns.program
-                 , process_info_ns.pathStrId.nid
-                 , process_info_ns.pathStrId.id
-                 , process_info_ns.ldpathStrId.nid
-                 , process_info_ns.ldpathStrId.id
-                 , process_info_ns.programStrId.nid
-                 , process_info_ns.programStrId.id
+//                 , process_info_ns.pathStrId.nid
+//                 , process_info_ns.pathStrId.id
+//                 , process_info_ns.ldpathStrId.nid
+//                 , process_info_ns.ldpathStrId.id
+//                 , process_info_ns.programStrId.nid
+//                 , process_info_ns.programStrId.id
                  , process_info_ns.port_name
                  , process_info_ns.argc
                  , process_info_ns.infile

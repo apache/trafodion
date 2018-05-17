@@ -588,6 +588,9 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         msg->type = InternalType_Process;
         msg->u.process.nid = process_->GetNid();
         msg->u.process.pid = process_->GetPid();
+#ifdef NAMESERVER_PROCESS
+        msg->u.process.verifier = process_->GetVerifier();
+#endif
         msg->u.process.type = process_->GetType();
         msg->u.process.priority = process_->GetPriority();
         msg->u.process.backup = process_->IsBackup();
@@ -599,16 +602,18 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         msg->u.process.pair_parent_nid = process_->GetPairParentNid();
         msg->u.process.pair_parent_pid = process_->GetPairParentPid();
         msg->u.process.pair_parent_verifier = process_->GetPairParentVerifier();
+#ifndef NAMESERVER_PROCESS
         msg->u.process.pathStrId =  process_->pathStrId();
         msg->u.process.ldpathStrId = process_->ldPathStrId();
         msg->u.process.programStrId = process_->programStrId();
+#endif
         msg->u.process.argc = process_->argc();
 
         char * stringData = & msg->u.process.stringData;
 
         // Copy the process name
         msg->u.process.nameLen = nameLen_;
-        memcpy(stringData, process_->GetName(),  nameLen_ );
+        memcpy(stringData, process_->GetName(), nameLen_ );
         stringData += nameLen_;
 
         // Copy the standard in file name
@@ -618,9 +623,25 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
         // Copy the standard out file name
         msg->u.process.outfileLen = outfileLen_;
-        memcpy(stringData, process_->outfile(),  outfileLen_ );
+        memcpy(stringData, process_->outfile(), outfileLen_ );
         stringData += outfileLen_;
 
+#ifdef NAMESERVER_PROCESS
+        // Copy the path
+        msg->u.process.pathLen = pathLen_;
+        memcpy(stringData, process_->path(), pathLen_ );
+        stringData += pathLen_;
+
+        // Copy the ldpath
+        msg->u.process.ldpathLen = ldpathLen_;
+        memcpy(stringData, process_->ldpath(), ldpathLen_ );
+        stringData += ldpathLen_;
+
+        // Copy the program
+        msg->u.process.programLen = programLen_;
+        memcpy(stringData, process_->program(), programLen_ );
+        stringData += programLen_;
+#endif
         // Copy the program argument strings
         msg->u.process.argvLen =  argvLen_;
         memcpy(stringData, process_->userArgv(), argvLen_);
@@ -628,8 +649,42 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         // temp trace
         if (trace_settings & TRACE_PROCESS)
         {
-            trace_printf("%s@%d - replSize_=%d, programStrId=(%d,%d), pathStrId=(%d,%d), ldPathStrId=(%d,%d), name=%s, strlen(name)=%d, infile=%s, strlen(infile)=%d, outfile=%s, strlen(outfile)=%d, argc=%d, strlen(total argv)=%d, args=[%.*s]\n",
-                         method_name, __LINE__, replSize_, msg->u.process.programStrId.nid, msg->u.process.programStrId.id, msg->u.process.pathStrId.nid, msg->u.process.pathStrId.id, msg->u.process.ldpathStrId.nid, msg->u.process.ldpathStrId.id, &msg->u.process.stringData, nameLen_, &msg->u.process.stringData+nameLen_, infileLen_, &msg->u.process.stringData+nameLen_+infileLen_, outfileLen_, msg->u.process.argc, argvLen_, argvLen_, &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_);
+            trace_printf( "%s@%d - replSize_=%d\n"
+                          "        msg->u.process.name=%s, strlen(name)=%d\n"
+                          "        msg->u.process.infile=%s, strlen(infile)=%d\n"
+                          "        msg->u.process.outfile=%s, strlen(outfile)=%d\n"
+#ifdef NAMESERVER_PROCESS
+                          "        msg->u.process.path=%s, strlen(path)=%d\n"
+                          "        msg->u.process.ldpath=%s, strlen(ldpath)=%d\n"
+                          "        msg->u.process.program=%s, strlen(program)=%d\n"
+#else
+                          "        msg->u.process.programStrId=(%d,%d)\n"
+                          "        msg->u.process.pathStrId=(%d,%d)\n"
+                          "        msg->u.process.ldPathStrId=(%d,%d)\n"
+#endif
+                          "        msg->u.process.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                        , method_name, __LINE__, replSize_
+                        , &msg->u.process.stringData, nameLen_
+                        , &msg->u.process.stringData+nameLen_, infileLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_, outfileLen_
+#ifdef NAMESERVER_PROCESS
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_, pathLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_+pathLen_, ldpathLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_, programLen_
+#else
+                        , msg->u.process.programStrId.nid
+                        , msg->u.process.programStrId.id
+                        , msg->u.process.pathStrId.nid
+                        , msg->u.process.pathStrId.id
+                        , msg->u.process.ldpathStrId.nid
+                        , msg->u.process.ldpathStrId.id
+#endif
+                        , msg->u.process.argc
+#ifdef NAMESERVER_PROCESS
+                        , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_+programLen_);
+#else
+                        , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+infileLen_+outfileLen_);
+#endif
         }
 
         // Advance sync buffer pointer
@@ -645,8 +700,6 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
-
-
 
 CReplProcInit::CReplProcInit( CProcess *process
                             , void *tag
@@ -737,11 +790,23 @@ CReplClone::CReplClone(CProcess *process) : process_(process)
     infileLen_ = strlen(process->infile()) + 1;
     outfileLen_ = strlen(process->outfile()) + 1;
     argvLen_ = process->userArgvLen();
+#ifdef NAMESERVER_PROCESS
+    pathLen_ = strlen(process_->path()) + 1;
+    ldpathLen_ = strlen(process_->ldpath()) + 1;
+    programLen_ = strlen(process_->program()) + 1;
+#endif
     // Compute message size (adjust if needed to conform to
     // internal_msg_def structure alignment).
+#ifdef NAMESERVER_PROCESS
+    replSize_ = (MSG_HDR_SIZE + sizeof( clone_def ) + nameLen_ + portLen_
+                 + infileLen_ + outfileLen_ + argvLen_
+                 + pathLen_ + ldpathLen_ + programLen_ + msgAlignment_
+                 ) & ~msgAlignment_;
+#else
     replSize_ = (MSG_HDR_SIZE + sizeof( clone_def ) + nameLen_ + portLen_
                  + infileLen_ + outfileLen_ + argvLen_ + msgAlignment_
                  ) & ~msgAlignment_;
+#endif
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
@@ -792,9 +857,11 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     msg->u.clone.priority = process_->GetPriority();
     msg->u.clone.backup = process_->IsBackup();
     msg->u.clone.unhooked = process_->IsUnhooked();
+#ifndef NAMESERVER_PROCESS
     msg->u.clone.pathStrId = process_->pathStrId();
     msg->u.clone.ldpathStrId = process_->ldPathStrId();
     msg->u.clone.programStrId = process_->programStrId();
+#endif
     msg->u.clone.os_pid = process_->GetPid();
     msg->u.clone.verifier = process_->GetVerifier();
     msg->u.clone.prior_pid = process_->GetPriorPid ();
@@ -834,37 +901,78 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     memcpy(stringData, process_->outfile(),  outfileLen_ );
     stringData += outfileLen_;
 
+#ifdef NAMESERVER_PROCESS
+    // Copy the path
+    msg->u.clone.pathLen = pathLen_;
+    memcpy(stringData, process_->path(),  pathLen_ );
+    stringData += pathLen_;
+
+    // Copy the ldpath
+    msg->u.clone.ldpathLen = ldpathLen_;
+    memcpy(stringData, process_->ldpath(),  ldpathLen_ );
+    stringData += ldpathLen_;
+
+    // Copy the program
+    msg->u.clone.programLen = programLen_;
+    memcpy(stringData, process_->program(),  programLen_ );
+    stringData += programLen_;
+#endif
+
     // Copy the program argument strings
     msg->u.clone.argvLen =  argvLen_;
     memcpy(stringData, process_->userArgv(), argvLen_);
 
     // temp trace
+#ifndef NAMESERVER_PROCESS
     if (trace_settings & TRACE_PROCESS)
     {
         trace_printf( "%s@%d - replSize_=%d\n"
-                      "        msg->u.clone.programStrId=(%d,%d)\n"
-                      "        msg->u.clone.pathStrId=(%d,%d)\n"
-                      "        msg->u.clone.ldPathStrId=(%d,%d)\n"
                       "        msg->u.clone.name=%s, strlen(name)=%d\n"
                       "        msg->u.clone.port=%s, strlen(port)=%d\n"
                       "        msg->u.clone.infile=%s, strlen(infile)=%d\n"
                       "        msg->u.clone.outfile=%s, strlen(outfile)=%d\n"
+                      "        msg->u.clone.programStrId=(%d,%d)\n"
+                      "        msg->u.clone.pathStrId=(%d,%d)\n"
+                      "        msg->u.clone.ldPathStrId=(%d,%d)\n"
                       "        msg->u.clone.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
                     , method_name, __LINE__, replSize_
+                    , &msg->u.clone.stringData, nameLen_
+                    , &msg->u.clone.stringData+nameLen_, portLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_, infileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_
                     , msg->u.clone.programStrId.nid
                     , msg->u.clone.programStrId.id
                     , msg->u.clone.pathStrId.nid
                     , msg->u.clone.pathStrId.id
                     , msg->u.clone.ldpathStrId.nid
                     , msg->u.clone.ldpathStrId.id
+                    , msg->u.clone.argc
+                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
+    }
+#else
+    if (trace_settings & TRACE_PROCESS)
+    {
+        trace_printf( "%s@%d - replSize_=%d\n"
+                      "        msg->u.clone.name=%s, strlen(name)=%d\n"
+                      "        msg->u.clone.port=%s, strlen(port)=%d\n"
+                      "        msg->u.clone.infile=%s, strlen(infile)=%d\n"
+                      "        msg->u.clone.outfile=%s, strlen(outfile)=%d\n"
+                      "        msg->u.clone.path=%s, strlen(path)=%d\n"
+                      "        msg->u.clone.ldpath=%s, strlen(ldpath)=%d\n"
+                      "        msg->u.clone.program=%s, strlen(program)=%d\n"
+                      "        msg->u.clone.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                    , method_name, __LINE__, replSize_
                     , &msg->u.clone.stringData, nameLen_
                     , &msg->u.clone.stringData+nameLen_, portLen_
                     , &msg->u.clone.stringData+nameLen_+portLen_, infileLen_
                     , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_, pathLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_, ldpathLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_, programLen_
                     , msg->u.clone.argc
-                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
+                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_+programLen_);
     }
-
+#endif
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );
 

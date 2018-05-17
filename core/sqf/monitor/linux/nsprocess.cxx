@@ -39,9 +39,12 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
                                             int backup,
                                             bool unhooked,
                                             char *process_name,
-                                            strId_t pathStrId, 
-                                            strId_t ldpathStrId,
-                                            strId_t programStrId,
+                                            char *path, 
+                                            char *ldpath, 
+                                            char *program, 
+//                                            strId_t pathStrId, 
+//                                            strId_t ldpathStrId,
+//                                            strId_t programStrId,
                                             char *infile,
                                             char *outfile,
                                             void *tag,
@@ -62,8 +65,24 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
     }
 
     process =
-        new CProcess (parent, nid, pid, verifier, type, priority, backup, debug, unhooked, process_name, 
-                      pathStrId, ldpathStrId, programStrId, infile, outfile);
+        new CProcess( parent
+                    , nid
+                    , pid
+                    , verifier
+                    , type
+                    , priority
+                    , backup
+                    , debug
+                    , unhooked
+                    , process_name
+                    , path
+                    , ldpath
+                    , program
+//                    , pathStrId
+//                    , ldpathStrId
+//                    , programStrId
+                    , infile
+                    , outfile);
     if (process)
     {
         AddToList( process );

@@ -738,6 +738,7 @@
 #define MON_INTREQ_EXIT_1                   101181701
 #define MON_INTREQ_NEWPROC_1                101181801
 #define MON_INTREQ_NEWPROC_2                101181802
+#define MON_INTREQ_NEWPROC_3                101181803
 #define MON_INTREQ_NOTIFY_1                 101181901
 #define MON_INTREQ_NOTIFY_2                 101181902
 #define MON_INTREQ_NOTIFY_3                 101181903

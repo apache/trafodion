@@ -292,74 +292,64 @@ void CCommAcceptMon::monReqNewProcess( struct message_def* msg, int sockFd )
     if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
     {
         trace_printf( "%s@%d - Received monitor request new-process data.\n"
+                      "        msg.new_process_ns.nid=%d\n"
+                      "        msg.new_process_ns.pid=%d\n"
+                      "        msg.new_process_ns.verifier=%d\n"
+                      "        msg.new_process_ns.process_name=%s\n"
+                      "        msg.new_process_ns.type=%d\n"
                       "        msg.new_process_ns.parent_nid=%d\n"
                       "        msg.new_process_ns.parent_pid=%d\n"
                       "        msg.new_process_ns.parent_verifier=%d\n"
                       "        msg.new_process_ns.pair_parent_nid=%d\n"
                       "        msg.new_process_ns.pair_parent_pid=%d\n"
                       "        msg.new_process_ns.pair_parent_verifier=%d\n"
-                      "        msg.new_process_ns.nid=%d\n"
-                      "        msg.new_process_ns.pid=%d\n"
-                      "        msg.new_process_ns.verifier=%d\n"
-                      "        msg.new_process_ns.backup=%d\n"
-                      "        msg.new_process_ns.event_messages=%d\n"
-                      "        msg.new_process_ns.system_messages=%d\n"
-                      "        msg.new_process_ns.type=%d\n"
-                      "        msg.new_process_ns.parent_nid=%d\n"
-                      "        msg.new_process_ns.parent_pid=%d\n"
-                      "        msg.new_process_ns.parent_verifier=%d\n"
                       "        msg.new_process_ns.priority=%d\n"
                       "        msg.new_process_ns.backup=%d\n"
                       "        msg.new_process_ns.unhooked=%d\n"
                       "        msg.new_process_ns.event_messages=%d\n"
                       "        msg.new_process_ns.system_messages=%d\n"
-                      "        msg.new_process_ns.pathStrId=%d:%d\n"
-                      "        msg.new_process_ns.ldpathStrId=%d:%d\n"
-                      "        msg.new_process_ns.programStrId=%d:%d\n"
-                      "        msg.new_process_ns.process_name=%s\n"
+                      "        msg.new_process_ns.path=%s\n"
+                      "        msg.new_process_ns.ldpath=%s\n"
+                      "        msg.new_process_ns.program=%s\n"
                       "        msg.new_process_ns.port=%s\n"
-                      "        msg.new_process_ns.argc=%d\n"
-                      //"        msg.new_process_ns.argv=%s\n"
                       "        msg.new_process_ns.infile=%s\n"
                       "        msg.new_process_ns.outfile=%s\n"
                       "        msg.new_process_ns.creation_time=%ld(secs):%ld(nsecs)\n"
                     , method_name, __LINE__
+                    , msg->u.request.u.new_process_ns.nid
+                    , msg->u.request.u.new_process_ns.pid
+                    , msg->u.request.u.new_process_ns.verifier
+                    , msg->u.request.u.new_process_ns.process_name
+                    , msg->u.request.u.new_process_ns.type
                     , msg->u.request.u.new_process_ns.parent_nid
                     , msg->u.request.u.new_process_ns.parent_pid
                     , msg->u.request.u.new_process_ns.parent_verifier
                     , msg->u.request.u.new_process_ns.pair_parent_nid
                     , msg->u.request.u.new_process_ns.pair_parent_pid
                     , msg->u.request.u.new_process_ns.pair_parent_verifier
-                    , msg->u.request.u.new_process_ns.nid
-                    , msg->u.request.u.new_process_ns.pid
-                    , msg->u.request.u.new_process_ns.verifier
-                    , msg->u.request.u.new_process_ns.backup
-                    , msg->u.request.u.new_process_ns.event_messages
-                    , msg->u.request.u.new_process_ns.system_messages
-                    , msg->u.request.u.new_process_ns.type
-                    , msg->u.request.u.new_process_ns.parent_nid
-                    , msg->u.request.u.new_process_ns.parent_pid
-                    , msg->u.request.u.new_process_ns.parent_verifier
                     , msg->u.request.u.new_process_ns.priority
                     , msg->u.request.u.new_process_ns.backup
                     , msg->u.request.u.new_process_ns.unhooked
                     , msg->u.request.u.new_process_ns.event_messages
                     , msg->u.request.u.new_process_ns.system_messages
-                    , msg->u.request.u.new_process_ns.pathStrId.nid
-                    , msg->u.request.u.new_process_ns.pathStrId.id
-                    , msg->u.request.u.new_process_ns.ldpathStrId.nid
-                    , msg->u.request.u.new_process_ns.ldpathStrId.id
-                    , msg->u.request.u.new_process_ns.programStrId.nid
-                    , msg->u.request.u.new_process_ns.programStrId.id
-                    , msg->u.request.u.new_process_ns.process_name
+                    , msg->u.request.u.new_process_ns.path
+                    , msg->u.request.u.new_process_ns.ldpath
+                    , msg->u.request.u.new_process_ns.program
                     , msg->u.request.u.new_process_ns.port_name
-                    , msg->u.request.u.new_process_ns.argc
-                    //, msg->u.request.u.new_process_ns.argv
                     , msg->u.request.u.new_process_ns.infile
                     , msg->u.request.u.new_process_ns.outfile
                     , msg->u.request.u.new_process_ns.creation_time.tv_sec
                     , msg->u.request.u.new_process_ns.creation_time.tv_nsec
                     );
+        trace_printf("%s@%d - msg.new_process_ns.argc=%d\n"
+                    , method_name, __LINE__
+                    , msg->u.request.u.new_process_ns.argc );
+        for (int i=0; i < msg->u.request.u.new_process_ns.argc; i++)
+        {
+            trace_printf("%s@%d - msg.new_process_ns.argv[%d]=%s\n"
+                        , method_name, __LINE__
+                        , i, msg->u.request.u.new_process_ns.argv[i]);
+        }
     }
 
     CExternalReq::reqQueueMsg_t msgType;

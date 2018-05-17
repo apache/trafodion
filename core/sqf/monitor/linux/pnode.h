@@ -66,7 +66,9 @@ public:
     ~CNodeContainer( void );
 
     void    AddedNode( CNode *node );
+#ifndef NAMESERVER_PROCESS
     CProcess *AddCloneProcess( ProcessInfoNs_reply_def *processInfo );
+#endif
     CNode  *AddNode( int pnid );
     void    AddNodes( void );
     void    AddToSpareNodesList( int pnid );

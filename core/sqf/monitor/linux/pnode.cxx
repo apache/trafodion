@@ -543,7 +543,7 @@ void CNode::CheckActivationPhase( void )
         }
         tmReady = (tmCount == GetLNodesCount()) ? true : false;
     }
-    
+
     if ( tmReady )
     {
         if (trace_settings & (TRACE_INIT | TRACE_SYNC | TRACE_TMSYNC))
@@ -1712,6 +1712,7 @@ void CNodeContainer::AddedNode( CNode *node )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo )
 {
     const char method_name[] = "CNodeContainer::AddNode";
@@ -1719,6 +1720,11 @@ CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo 
 
     CLNode   *lnode = Nodes->GetLNode(processInfo->nid);
     CNode    *node = lnode->GetNode();
+
+    strId_t pathStrId = MyNode->GetStringId ( processInfo->path, lnode );
+    strId_t ldpathStrId = MyNode->GetStringId (processInfo->ldpath, lnode );
+    strId_t programStrId = MyNode->GetStringId ( processInfo->program, lnode );
+
     CProcess *process = node->CloneProcess( processInfo->nid
                                           , processInfo->type
                                           , processInfo->priority
@@ -1733,9 +1739,12 @@ CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo 
                                           , processInfo->parent_verifier
                                           , processInfo->event_messages
                                           , processInfo->system_messages
-                                          , processInfo->pathStrId
-                                          , processInfo->ldpathStrId
-                                          , processInfo->programStrId
+                                          , pathStrId
+                                          , ldpathStrId
+                                          , programStrId
+//                                          , processInfo->pathStrId
+//                                          , processInfo->ldpathStrId
+//                                          , processInfo->programStrId
                                           , processInfo->infile
                                           , processInfo->outfile
                                           , &processInfo->creation_time
@@ -1744,6 +1753,7 @@ CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo 
     TRACE_EXIT;
     return(process);
 }
+#endif
 
 CNode *CNodeContainer::AddNode( int pnid )
 {
@@ -3489,6 +3499,8 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
     syncBuf->nodeInfo.nodeMask      = upNodes;
 #ifdef NAMESERVER_PROCESS
     syncBuf->nodeInfo.monConnCount  = MyNode->GetMonConnCount();
+#else
+    syncBuf->nodeInfo.monProcCount  = MyNode->GetNumProcs();
 #endif
 
     for (int i = 0; i < GetPNodesCount(); i++)
@@ -3515,7 +3527,7 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
                     , syncBuf->nodeInfo.seq_num
                     , syncBuf->nodeInfo.monConnCount);
 #else
-        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, TmSyncState=(%d)(%s), change_nid=%d, seqNum_=%lld\n"
+        trace_printf( "%s@%d - Node %s (pnid=%d) node_state=(%d)(%s), internalState=%d, TmSyncState=(%d)(%s), change_nid=%d, seqNum_=%lld, monProcCount=%d\n"
                     , method_name, __LINE__
                     , MyNode->GetName()
                     , MyPNID
@@ -3525,7 +3537,8 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
                     , syncBuf->nodeInfo.tmSyncState
                     , SyncStateString( syncBuf->nodeInfo.tmSyncState )
                     , syncBuf->nodeInfo.change_nid
-                    , syncBuf->nodeInfo.seq_num);
+                    , syncBuf->nodeInfo.seq_num
+                    , syncBuf->nodeInfo.monProcCount);
 #endif
     }
 

@@ -155,6 +155,11 @@ private:
     int nameLen_;
     int infileLen_;
     int outfileLen_;
+#ifdef NAMESERVER_PROCESS
+    int pathLen_;
+    int ldpathLen_;
+    int programLen_;
+#endif
     int argvLen_;
 };
 
@@ -192,6 +197,11 @@ private:
     int infileLen_;
     int outfileLen_;
     int argvLen_;
+#ifdef NAMESERVER_PROCESS
+    int pathLen_;
+    int ldpathLen_;
+    int programLen_;
+#endif
 };
 
 class CReplExit: public CReplObj

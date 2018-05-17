@@ -566,16 +566,17 @@ struct NewProcess_def
 
 struct NewProcessNs_def
 {
-    int   parent_nid;                       // parent's node id
-    int   parent_pid;                       // parent's process id
+    int  nid;                               // node id
+    int  pid;                               // process id
+    Verifier_t verifier;                    // process verifier
+    char process_name[MAX_PROCESS_NAME];    // process name
+    PROCESSTYPE type;                       // Identifies the process handling catagory
+    int  parent_nid;                        // parent's node id
+    int  parent_pid;                        // parent's process id
     Verifier_t parent_verifier;             // parent's process verifier
     int  pair_parent_nid;                   // node id of real process pair parent process
     int  pair_parent_pid;                   // process id of real process pair parent process
     Verifier_t pair_parent_verifier;        // process id of real process pair parent process
-    int  nid;                               // node id
-    int  pid;                               // process id
-    Verifier_t verifier;                    // process verifier
-    PROCESSTYPE type;                       // Identifies the process handling catagory
     int  priority;                          // Linux system priority
     int  debug;                             // if non-zero, starts processing using GDB
     int  backup;                            // if non-zero, starts process as backup
@@ -584,10 +585,12 @@ struct NewProcessNs_def
     bool event_messages;                    // true if want event messages
     bool system_messages;                   // true if want system messages
     long long tag;                          // user defined tag to be sent in completion notice
-    strId_t pathStrId;                      // program lookup path (string id)
-    strId_t ldpathStrId;                    // library load path (string id)
-    strId_t programStrId;                   // full path to object file (string id)
-    char process_name[MAX_PROCESS_NAME];    // process name
+//    strId_t pathStrId;                      // program lookup path (string id)
+//    strId_t ldpathStrId;                    // library load path (string id)
+//    strId_t programStrId;                   // full path to object file (string id)
+    char path[MAX_SEARCH_PATH];             // process's object lookup path to program
+    char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
+    char program[MAX_PROCESS_PATH];         // full path to object file
     char port_name[MPI_MAX_PORT_NAME];      // mpi port name from MPI_Open_port
     int  argc;                              // number of additional command line argument
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
@@ -978,6 +981,9 @@ struct ProcessInfoNs_reply_def
     int   parent_nid;                       // parent's node id
     int   parent_pid;                       // parent's process id
     Verifier_t parent_verifier;             // parent's process verifier
+    int  pair_parent_nid;                   // node id of real process pair parent process
+    int  pair_parent_pid;                   // process id of real process pair parent process
+    Verifier_t pair_parent_verifier;        // process id of real process pair parent process
     int  priority;                          // Linux system priority
     int  backup;                            // if non-zero, starts process as backup
     STATE state;                            // process's current state
@@ -985,10 +991,12 @@ struct ProcessInfoNs_reply_def
     bool event_messages;                    // true if want event messages
     bool system_messages;                   // true if want system messages
     long long tag;                          // user defined tag to be sent in completion notice
-    char  program[MAX_PROCESS_PATH];        // process's object file name
-    strId_t pathStrId;                      // program lookup path (string id)
-    strId_t ldpathStrId;                    // library load path (string id)
-    strId_t programStrId;                   // full path to object file (string id)
+//    strId_t pathStrId;                      // program lookup path (string id)
+//    strId_t ldpathStrId;                    // library load path (string id)
+//    strId_t programStrId;                   // full path to object file (string id)
+    char path[MAX_SEARCH_PATH];             // process's object lookup path to program
+    char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
+    char program[MAX_PROCESS_PATH];         // program file name
     char port_name[MPI_MAX_PORT_NAME];      // mpi port name from MPI_Open_port
     int  argc;                              // number of additional command line argument
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments

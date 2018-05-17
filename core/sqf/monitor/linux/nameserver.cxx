@@ -599,16 +599,82 @@ int CNameServer::ProcessNew(CProcess* process )
     msgnew->unhooked = process->IsUnhooked();
     msgnew->event_messages = process->IsEventMessages();
     msgnew->system_messages = process->IsSystemMessages();
-    msgnew->pathStrId = process->pathStrId();
-    msgnew->ldpathStrId = process->ldPathStrId();
-    msgnew->programStrId = process->programStrId();
+//    msgnew->pathStrId = process->pathStrId();
+//    msgnew->ldpathStrId = process->ldPathStrId();
+//    msgnew->programStrId = process->programStrId();
+    strcpy( msgnew->path, process->path() );
+    strcpy( msgnew->ldpath, process->ldpath() );
+    strcpy( msgnew->program, process->program() );
     strcpy( msgnew->process_name, process->GetName() );
     strcpy( msgnew->port_name, process->GetPort() );
     msgnew->argc = process->argc();
-    memcpy(msgnew->argv, process->userArgv(), process->userArgvLen());
+    process->getUserArgs(msgnew->argv);
     strcpy( msgnew->infile, process->infile() );
     strcpy( msgnew->outfile, process->outfile() );
     msgnew->creation_time = process->GetCreationTime();
+
+    if ( trace_settings & ( TRACE_NS | TRACE_REQUEST) )
+    {
+        trace_printf( "%s@%d - Received monitor request new-process data.\n"
+                      "        msg.new_process_ns.nid=%d\n"
+                      "        msg.new_process_ns.pid=%d\n"
+                      "        msg.new_process_ns.verifier=%d\n"
+                      "        msg.new_process_ns.process_name=%s\n"
+                      "        msg.new_process_ns.type=%d\n"
+                      "        msg.new_process_ns.parent_nid=%d\n"
+                      "        msg.new_process_ns.parent_pid=%d\n"
+                      "        msg.new_process_ns.parent_verifier=%d\n"
+                      "        msg.new_process_ns.pair_parent_nid=%d\n"
+                      "        msg.new_process_ns.pair_parent_pid=%d\n"
+                      "        msg.new_process_ns.pair_parent_verifier=%d\n"
+                      "        msg.new_process_ns.priority=%d\n"
+                      "        msg.new_process_ns.backup=%d\n"
+                      "        msg.new_process_ns.unhooked=%d\n"
+                      "        msg.new_process_ns.event_messages=%d\n"
+                      "        msg.new_process_ns.system_messages=%d\n"
+                      "        msg.new_process_ns.path=%s\n"
+                      "        msg.new_process_ns.ldpath=%s\n"
+                      "        msg.new_process_ns.program=%s\n"
+                      "        msg.new_process_ns.port=%s\n"
+                      "        msg.new_process_ns.infile=%s\n"
+                      "        msg.new_process_ns.outfile=%s\n"
+                      "        msg.new_process_ns.creation_time=%ld(secs):%ld(nsecs)\n"
+                    , method_name, __LINE__
+                    , msgnew->nid
+                    , msgnew->pid
+                    , msgnew->verifier
+                    , msgnew->process_name
+                    , msgnew->type
+                    , msgnew->parent_nid
+                    , msgnew->parent_pid
+                    , msgnew->parent_verifier
+                    , msgnew->pair_parent_nid
+                    , msgnew->pair_parent_pid
+                    , msgnew->pair_parent_verifier
+                    , msgnew->priority
+                    , msgnew->backup
+                    , msgnew->unhooked
+                    , msgnew->event_messages
+                    , msgnew->system_messages
+                    , msgnew->path
+                    , msgnew->ldpath
+                    , msgnew->program
+                    , msgnew->port_name
+                    , msgnew->infile
+                    , msgnew->outfile
+                    , msgnew->creation_time.tv_sec
+                    , msgnew->creation_time.tv_nsec
+                    );
+        trace_printf("%s@%d - msg.new_process_ns.argc=%d\n"
+                    , method_name, __LINE__
+                    , msgnew->argc );
+        for (int i=0; i < msgnew->argc; i++)
+        {
+            trace_printf("%s@%d - msg.new_process_ns.argv[%d]=%s\n"
+                        , method_name, __LINE__
+                        , i, msgnew->argv[i]);
+        }
+    }
 
     int error = SendReceive(&msg );
 
@@ -778,10 +844,12 @@ int CNameServer::SendReceive( struct message_def* msg )
                          "        process_info_ns.unhooked=%d\n"
                          "        process_info_ns.event_messages=%d\n"
                          "        process_info_ns.system_messages=%d\n"
+                         "        process_info_ns.path=%s\n"
+                         "        process_info_ns.ldpath=%s\n"
                          "        process_info_ns.program=%s\n"
-                         "        process_info_ns.pathStrId=%d:%d\n"
-                         "        process_info_ns.ldpathStrId=%d:%d\n"
-                         "        process_info_ns.programStrId=%d:%d\n"
+//                         "        process_info_ns.pathStrId=%d:%d\n"
+//                         "        process_info_ns.ldpathStrId=%d:%d\n"
+//                         "        process_info_ns.programStrId=%d:%d\n"
                          "        process_info_ns.port_name=%s\n"
                          "        process_info_ns.argc=%d\n"
 //                         "        process_info_ns.argv=[%.*s]\n"
@@ -806,13 +874,15 @@ int CNameServer::SendReceive( struct message_def* msg )
                          , msg->u.reply.u.process_info_ns.unhooked
                          , msg->u.reply.u.process_info_ns.event_messages
                          , msg->u.reply.u.process_info_ns.system_messages
+                         , msg->u.reply.u.process_info_ns.path
+                         , msg->u.reply.u.process_info_ns.ldpath
                          , msg->u.reply.u.process_info_ns.program
-                         , msg->u.reply.u.process_info_ns.pathStrId.nid
-                         , msg->u.reply.u.process_info_ns.pathStrId.id
-                         , msg->u.reply.u.process_info_ns.ldpathStrId.nid
-                         , msg->u.reply.u.process_info_ns.ldpathStrId.id
-                         , msg->u.reply.u.process_info_ns.programStrId.nid
-                         , msg->u.reply.u.process_info_ns.programStrId.id
+//                         , msg->u.reply.u.process_info_ns.pathStrId.nid
+//                         , msg->u.reply.u.process_info_ns.pathStrId.id
+//                         , msg->u.reply.u.process_info_ns.ldpathStrId.nid
+//                         , msg->u.reply.u.process_info_ns.ldpathStrId.id
+//                         , msg->u.reply.u.process_info_ns.programStrId.nid
+//                         , msg->u.reply.u.process_info_ns.programStrId.id
                          , msg->u.reply.u.process_info_ns.port_name
                          , msg->u.reply.u.process_info_ns.argc
 //                         , &msg->u.reply.u.process_info_ns.argv

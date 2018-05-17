@@ -821,9 +821,12 @@ CIntCloneProcNsReq::CIntCloneProcNsReq( bool backup
                                       , int persistentRetries
                                       , int  argc
                                       , struct timespec creationTime
-                                      , strId_t pathStrId
-                                      , strId_t ldpathStrId
-                                      , strId_t programStrId
+                                      , int pathLen
+                                      , int ldpathLen
+                                      , int programLen
+//                                      , strId_t pathStrId
+//                                      , strId_t ldpathStrId
+//                                      , strId_t programStrId
                                       , int nameLen
                                       , int portLen
                                       , int infileLen
@@ -847,9 +850,12 @@ CIntCloneProcNsReq::CIntCloneProcNsReq( bool backup
                    , priorPid_( priorPid )
                    , persistentRetries_( persistentRetries )
                    , argc_( argc )
-                   , pathStrId_( pathStrId )
-                   , ldpathStrId_( ldpathStrId )
-                   , programStrId_( programStrId )
+                   , pathLen_( pathLen )
+                   , ldpathLen_( ldpathLen )
+                   , programLen_( programLen )
+//                   , pathStrId_( pathStrId )
+//                   , ldpathStrId_( ldpathStrId )
+//                   , programStrId_( programStrId )
                    , nameLen_( nameLen )
                    , portLen_( portLen )
                    , infileLen_( infileLen )
@@ -864,6 +870,7 @@ CIntCloneProcNsReq::CIntCloneProcNsReq( bool backup
     creationTime_.tv_nsec = creationTime.tv_nsec;
 
     int stringDataLen = nameLen_ + portLen_+ infileLen_ + outfileLen_
+                      + pathLen_ + ldpathLen_ + programLen_
                       + argvLen_;
     stringData_ = new char [stringDataLen];
     memcpy ( stringData_, stringData, stringDataLen );
@@ -948,9 +955,9 @@ void CIntCloneProcNsReq::performRequest()
     {
         // This is a new clone process that needs to be created 
         // mirroring another node
-        CNode * node = Nodes->GetLNode (nid_)->GetNode();
+        CNode * node = Nodes->GetLNode(nid_)->GetNode();
         CProcess * process;
-        process = node->CloneProcess (nid_,
+        process = node->CloneProcess( nid_,
                             type_,
                             priority_,
                             backup_,
@@ -964,18 +971,27 @@ void CIntCloneProcNsReq::performRequest()
                             parentVerifier_,
                             eventMessages_,
                             systemMessages_,
-                            pathStrId_,
-                            ldpathStrId_,
-                            programStrId_,
+//                            pathStrId_,
+//                            ldpathStrId_,
+//                            programStrId_,
+                            &stringData_[nameLen_ + portLen_ + infileLen_ + outfileLen_],  // path
+                            &stringData_[nameLen_ + portLen_ + infileLen_ + outfileLen_ + pathLen_],  // ldpath
+                            &stringData_[nameLen_ + portLen_ + infileLen_ + outfileLen_ + pathLen_ + ldpathLen_],  // program
                             &stringData_[nameLen_ + portLen_],  // infile
                             &stringData_[nameLen_ + portLen_ + infileLen_], // outfile
                             &creationTime_,
                             origPNidNs_);
         if ( process )
         {
-            process->userArgs ( argc_, argvLen_,
-                                &stringData_[nameLen_ + portLen_
-                                             +infileLen_ + outfileLen_] );
+            process->userArgs( argc_
+                             , argvLen_
+                             , &stringData_[ nameLen_ 
+                                          + portLen_
+                                          + infileLen_ 
+                                          + outfileLen_
+                                          + pathLen_ 
+                                          + ldpathLen_
+                                          + programLen_] );
         }
     }
 
@@ -1449,11 +1465,8 @@ void CIntKillReq::performRequest()
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 CIntNewProcReq::CIntNewProcReq( int nid
-#ifdef NAMESERVER_PROCESS
-                              , int pid
-                              , Verifier_t verifier
-#endif
                               , PROCESSTYPE type
                               , int priority
                               , int backup
@@ -1476,10 +1489,6 @@ CIntNewProcReq::CIntNewProcReq( int nid
                               , const char * stringData )
     : CInternalReq(),
       nid_ ( nid ),
-#ifdef NAMESERVER_PROCESS
-      pid_ ( pid ),
-      verifier_ ( verifier ),
-#endif
       type_( type ),
       priority_( priority ),
       backup_( backup ),
@@ -1565,7 +1574,6 @@ void CIntNewProcReq::performRequest()
                 }
             }
         }
-#ifndef NAMESERVER_PROCESS
         else
         {
             if (NameServerEnabled)
@@ -1581,7 +1589,6 @@ void CIntNewProcReq::performRequest()
                                                    , parentVerifier_ );
             }
         }
-#endif
     }
 
     if (parentProcess || unhooked_ )
@@ -1593,23 +1600,17 @@ void CIntNewProcReq::performRequest()
              lnode->GetState() == State_Shutdown ) )
         {   // Create the CProcess object and store the various
             // process parameters.
-#ifndef NAMESERVER_PROCESS
             // cause strings to be forwarded
             string path;
+            string ldpath;
+            string program;
             Config->strIdToString( pathStrId_, path );
-            Config->strIdToString( ldpathStrId_, path );
-            Config->strIdToString( programStrId_, path );
-#endif
+            Config->strIdToString( ldpathStrId_, ldpath );
+            Config->strIdToString( programStrId_, program );
             CProcess *newProcess ;
             newProcess = lnode->GetNode()->
                 CreateProcess ( parentProcess,
                                 nid_,
-#ifdef NAMESERVER_PROCESS
-                                pid_,
-                                verifier_,
-                                false,
-                                false,
-#endif
                                 type_,
                                 0,
                                 priority_,
@@ -1623,15 +1624,6 @@ void CIntNewProcReq::performRequest()
                                 &stringData_[nameLen_ + infileLen_], // outfile
                                 reqTag_,
                                 result);
-#ifdef NAMESERVER_PROCESS
-            if (  newProcess == NULL )
-            {
-                char buf[MON_STRING_BUF_SIZE];
-                sprintf( buf, "[%s], Can't create process %s (%d,%d:%d)\n"
-                       , method_name, &stringData_[0],nid_, pid_, verifier_ );
-                mon_log_write(MON_INTREQ_NEWPROC_1, SQ_LOG_ERR, buf);
-            }
-#else
             if ( newProcess != NULL )
             {
                 newProcess->userArgs ( argc_, argvLen_,
@@ -1678,7 +1670,6 @@ void CIntNewProcReq::performRequest()
                     Replicator.addItem(repl);
                 }
             }
-#endif
         }
     }
     else if ( parentProcess == NULL )
@@ -1692,6 +1683,180 @@ void CIntNewProcReq::performRequest()
 
     TRACE_EXIT;
 }
+#endif
+
+#ifdef NAMESERVER_PROCESS
+CIntNewProcNsReq::CIntNewProcNsReq( int nid
+                                  , int pid
+                                  , Verifier_t verifier
+                                  , PROCESSTYPE type
+                                  , int priority
+                                  , int backup
+                                  , int parentNid
+                                  , int parentPid
+                                  , Verifier_t parentVerifier
+                                  , int pairParentNid
+                                  , int pairParentPid
+                                  , Verifier_t pairParentVerifier
+                                  , int argc
+                                  , bool unhooked
+                                  , void* reqTag
+                                  , int pathLen
+                                  , int ldpathLen
+                                  , int programLen
+                                  , int nameLen
+                                  , int infileLen
+                                  , int outfileLen
+                                  , int argvLen
+                                  , const char* stringData )
+                : CInternalReq()
+                , nid_( nid )
+                , pid_( pid )
+                , verifier_( verifier )
+                , type_( type )
+                , priority_( priority )
+                , backup_( backup )
+                , parentNid_( parentNid )
+                , parentPid_( parentPid )
+                , parentVerifier_( parentVerifier )
+                , pairParentNid_( pairParentNid )
+                , pairParentPid_( pairParentPid )
+                , pairParentVerifier_( pairParentVerifier )
+                , argc_( argc )
+                , unhooked_( unhooked )
+                , reqTag_( reqTag )
+                , pathLen_( pathLen )
+                , ldpathLen_( ldpathLen )
+                , programLen_( programLen )
+                , nameLen_( nameLen )
+                , infileLen_( infileLen )
+                , outfileLen_( outfileLen )
+                , argvLen_( argvLen )
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RqIN", 4);
+
+    int stringDataLen = pathLen_ 
+                      + ldpathLen_
+                      + programLen_
+                      + nameLen_
+                      + infileLen_
+                      + outfileLen_
+                      + argvLen_;
+    stringData_ = new char [stringDataLen];
+    memcpy ( stringData_, stringData, stringDataLen );
+}
+
+CIntNewProcNsReq::~CIntNewProcNsReq( )
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rQin", 4);
+
+    delete [] stringData_;
+}
+
+void CIntNewProcNsReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (name=%s/nid=%d) parent(nid=%d/pid=%d)"
+                   , CReqQueue::intReqType[InternalType_Process]
+                   , getId(),
+                   stringData_,
+                   nid_, parentNid_, parentPid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntNewProcNsReq::performRequest()
+{
+    const char method_name[] = "CIntNewProcNsReq::performRequest";
+    TRACE_ENTRY;
+
+    CProcess *parentProcess = NULL;
+    int result = 0;
+
+    if (trace_settings & TRACE_SYNC)
+    {
+        trace_printf("%s@%d - processing new process %s (%d, tbd) %s "
+                     "(tag %p)\n", method_name, __LINE__,
+                     stringData_,
+                     nid_, (backup_?" Backup":""), reqTag_);
+    }
+
+    if (parentNid_ == -1)
+    {
+        parentProcess = NULL;
+    }
+    else
+    {
+        parentProcess = Nodes->GetProcess( parentNid_, parentPid_ );
+        if ( parentProcess )
+        {
+            if ( (parentVerifier_ == -1) ||
+                 (parentVerifier_ == parentProcess->GetVerifier()) )
+            {
+                if ( backup_ &&
+                    (parentProcess->GetPairParentNid() == -1 &&
+                     parentProcess->GetPairParentPid() == -1))
+                {
+                    parentProcess->SetPairParentNid( pairParentNid_ );
+                    parentProcess->SetPairParentPid( pairParentPid_ );
+                    parentProcess->SetPairParentVerifier( pairParentVerifier_ );
+                }
+            }
+        }
+    }
+
+    if (parentProcess || unhooked_ )
+    {
+        CProcess *newProcess = NULL;
+        CLNode *lnode = Nodes->GetLNode(nid_);
+
+        if ( lnode &&
+            (lnode->GetState() == State_Up ||
+             lnode->GetState() == State_Shutdown ) )
+        {   // Create the CProcess object and store the various
+            // process parameters.
+            newProcess = lnode->GetNode()->
+                CreateProcess ( parentProcess,
+                                nid_,
+                                pid_,
+                                verifier_,
+                                false,
+                                false,
+                                type_,
+                                0,
+                                priority_,
+                                backup_,
+                                unhooked_,
+                                &stringData_[0], // process name
+                                &stringData_[nameLen_ + infileLen_ + outfileLen_],  // path
+                                &stringData_[nameLen_ + infileLen_ + outfileLen_ + pathLen_],  // ldpath
+                                &stringData_[nameLen_ + infileLen_ + outfileLen_ + pathLen_ + ldpathLen_],  // program
+                                &stringData_[nameLen_],  // infile
+                                &stringData_[nameLen_ + infileLen_], // outfile
+                                reqTag_,
+                                result);
+        }
+        if (  newProcess == NULL )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            sprintf( buf, "[%s], Can't create process %s (%d,%d:%d)\n"
+                   , method_name, &stringData_[0],nid_, pid_, verifier_ );
+            mon_log_write(MON_INTREQ_NEWPROC_1, SQ_LOG_ERR, buf);
+        }
+    }
+    else if ( parentProcess == NULL )
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "[%s], Can't find parent process nid=%d, pid=%d "
+                "for process create.\n", method_name,
+                parentNid_, parentPid_ );
+        mon_log_write(MON_INTREQ_NEWPROC_3, SQ_LOG_ERR, buf);
+    }
+
+    TRACE_EXIT;
+}
+#endif
 
 #ifndef NAMESERVER_PROCESS
 CIntNotifyReq::CIntNotifyReq( struct notify_def *notifyDef ) 
@@ -4378,17 +4543,75 @@ void CReqQueue::enqueueReq(CExternalReq::reqQueueMsg_t msgType,
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueCloneReq ( struct clone_def *cloneDef )
 {
     CInternalReq * request;
 
-#ifndef NAMESERVER_PROCESS
-    request = new CIntCloneProcReq ( cloneDef->backup, cloneDef->unhooked, cloneDef->event_messages, cloneDef->system_messages, cloneDef->nid, cloneDef->type, cloneDef->priority, cloneDef->parent_nid, cloneDef->parent_pid, cloneDef->parent_verifier, cloneDef->os_pid, cloneDef->verifier, cloneDef->prior_pid, cloneDef->persistent_retries, cloneDef->argc, cloneDef->creation_time, cloneDef->pathStrId, cloneDef->ldpathStrId, cloneDef->programStrId, cloneDef->nameLen, cloneDef->portLen, cloneDef->infileLen, cloneDef->outfileLen, cloneDef->argvLen, &cloneDef->stringData, cloneDef->origPNidNs);
-#else
-    request = new CIntCloneProcNsReq ( cloneDef->backup, cloneDef->unhooked, cloneDef->event_messages, cloneDef->system_messages, cloneDef->nid, cloneDef->type, cloneDef->priority, cloneDef->parent_nid, cloneDef->parent_pid, cloneDef->parent_verifier, cloneDef->os_pid, cloneDef->verifier, cloneDef->prior_pid, cloneDef->persistent_retries, cloneDef->argc, cloneDef->creation_time, cloneDef->pathStrId, cloneDef->ldpathStrId, cloneDef->programStrId, cloneDef->nameLen, cloneDef->portLen, cloneDef->infileLen, cloneDef->outfileLen, cloneDef->argvLen, &cloneDef->stringData, cloneDef->origPNidNs);
-#endif
+    request = new CIntCloneProcReq( cloneDef->backup
+                                  , cloneDef->unhooked
+                                  , cloneDef->event_messages
+                                  , cloneDef->system_messages
+                                  , cloneDef->nid
+                                  , cloneDef->type
+                                  , cloneDef->priority
+                                  , cloneDef->parent_nid
+                                  , cloneDef->parent_pid
+                                  , cloneDef->parent_verifier
+                                  , cloneDef->os_pid
+                                  , cloneDef->verifier
+                                  , cloneDef->prior_pid
+                                  , cloneDef->persistent_retries
+                                  , cloneDef->argc
+                                  , cloneDef->creation_time
+                                  , cloneDef->pathStrId
+                                  , cloneDef->ldpathStrId
+                                  , cloneDef->programStrId
+                                  , cloneDef->nameLen
+                                  , cloneDef->portLen
+                                  , cloneDef->infileLen
+                                  , cloneDef->outfileLen
+                                  , cloneDef->argvLen
+                                  , &cloneDef->stringData
+                                  , cloneDef->origPNidNs);
     enqueueReq ( request );
 }
+#endif
+
+#ifdef NAMESERVER_PROCESS
+void CReqQueue::enqueueCloneReq ( struct clone_def *cloneDef )
+{
+    CInternalReq * request;
+
+    request = new CIntCloneProcNsReq( cloneDef->backup
+                                    , cloneDef->unhooked
+                                    , cloneDef->event_messages
+                                    , cloneDef->system_messages
+                                    , cloneDef->nid
+                                    , cloneDef->type
+                                    , cloneDef->priority
+                                    , cloneDef->parent_nid
+                                    , cloneDef->parent_pid
+                                    , cloneDef->parent_verifier
+                                    , cloneDef->os_pid
+                                    , cloneDef->verifier
+                                    , cloneDef->prior_pid
+                                    , cloneDef->persistent_retries
+                                    , cloneDef->argc
+                                    , cloneDef->creation_time
+                                    , cloneDef->pathLen
+                                    , cloneDef->ldpathLen
+                                    , cloneDef->programLen
+                                    , cloneDef->nameLen
+                                    , cloneDef->portLen
+                                    , cloneDef->infileLen
+                                    , cloneDef->outfileLen
+                                    , cloneDef->argvLen
+                                    , &cloneDef->stringData
+                                    , cloneDef->origPNidNs);
+    enqueueReq ( request );
+}
+#endif
 
 void CReqQueue::enqueueActivateSpareReq (CNode *spareNode, CNode *downNode, bool checkHealth )
 {
@@ -4645,15 +4868,12 @@ void CReqQueue::enqueueKillReq( struct kill_def *killDef )
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueNewProcReq( struct process_def *procDef )
 {
     CIntNewProcReq * request;
 
     request = new CIntNewProcReq( procDef->nid
-#ifdef NAMESERVER_PROCESS
-                                , procDef->pid
-                                , procDef->verifier
-#endif
                                 , procDef->type
                                 , procDef->priority
                                 , procDef->backup
@@ -4677,7 +4897,40 @@ void CReqQueue::enqueueNewProcReq( struct process_def *procDef )
 
     enqueueReq ( request );
 }
+#endif
 
+#ifdef NAMESERVER_PROCESS
+void CReqQueue::enqueueNewProcNsReq( struct process_def *procDef )
+{
+    CIntNewProcNsReq* request;
+
+    request = new CIntNewProcNsReq( procDef->nid
+                                , procDef->pid
+                                , procDef->verifier
+                                , procDef->type
+                                , procDef->priority
+                                , procDef->backup
+                                , procDef->parent_nid
+                                , procDef->parent_pid
+                                , procDef->parent_verifier
+                                , procDef->pair_parent_nid
+                                , procDef->pair_parent_pid
+                                , procDef->pair_parent_verifier
+                                , procDef->argc
+                                , procDef->unhooked
+                                , procDef->tag
+                                , procDef->pathLen
+                                , procDef->ldpathLen
+                                , procDef->programLen
+                                , procDef->nameLen
+                                , procDef->infileLen
+                                , procDef->outfileLen
+                                , procDef->argvLen
+                                , &procDef->stringData );
+
+    enqueueReq ( request );
+}
+#endif
 
 #ifndef NAMESERVER_PROCESS
 void CReqQueue::enqueueNotifyReq( struct notify_def *notifyDef )

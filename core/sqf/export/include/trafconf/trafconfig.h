@@ -111,7 +111,6 @@ typedef enum {
 } TcZoneType_t;
 
 typedef enum {
-//enum TC_STORAGE_TYPE {
       TCDBSTOREUNDEFINED = 0     
     , TCDBMYSQL          = 1 // MySQL Database
     , TCDBPOSTGRESQL     = 2 // PostgresQL Database   [TBD]
@@ -119,7 +118,6 @@ typedef enum {
 } TcStorageType_t;
 
 typedef enum {
-//enum TC_ERRORS {
       TCSUCCESS = 0         // Successful operation
     , TCNOTIMPLEMENTED = -1 // Not implemented
     , TCNOTINIT = -2        // Database not open
