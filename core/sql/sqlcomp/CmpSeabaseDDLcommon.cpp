@@ -6302,10 +6302,7 @@ short CmpSeabaseDDL::buildKeyInfoArray(
           (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
           (NOT allowNullableUniqueConstr))
         {
-          *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)
-                              << DgColumnName(keyInfoArray[index].colName);
-          
-          return -1;
+          colInfoArray[keyInfoArray[index].tableColNum].nullable = 0;
         }
 
       keyInfoArray[index].hbaseColFam = NULL;
