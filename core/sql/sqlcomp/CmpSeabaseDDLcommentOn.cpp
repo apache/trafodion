@@ -338,6 +338,14 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       textType = COM_COLUMN_COMMENT_TEXT;
       subID = commentOnNode->getColNum();
     }
+  
+  // HBASE native table comment 
+  if (strncasecmp(catalogNamePart.data(), "HBASE", 5) == 0)
+	{
+	  *CmpCommon::diags() << DgSqlCode(-30051);
+	  processReturn();
+	  return;
+	}
 
   /* Not using function updateTextTable(), because can not insert Chinese properly by function updateTextTable().
      * For storing COMMENT in TEXT table is a temp solution, so updating TEXT table directly here.

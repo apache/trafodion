@@ -3954,3 +3954,4 @@ $3~String1.
 30048 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load failed. Number of error rows($0~Int0) inserted into the exception table exceeded the max allowed($1~Int1).
 30049 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Fast Load succeeded. Number of error rows inserted into the exception table is $0~Int0
 30050 ZZZZZ 99999  BEGINNER MAJOR DBADMIN Memory required by input rowset buffer is $0~Int0 MB, exceeding specified limit of $1~Int1. Row length is $2~Int2 bytes and rowset has a maximum of $3~Int3 elements. 
+30051 ZZZZZ 99999  BEGINNER MAJOR DBADMIN You can not set comment to HBASE table. 
