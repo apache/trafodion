@@ -135,6 +135,20 @@ ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
 			intParam1, intParam2, intParam3, 
 			stringParam1, stringParam2, stringParam3);
 }
+ 
+ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
+              Lng32 err,
+              Lng32 * intParam1,
+              Lng32 * intParam2,
+              Lng32 * intParam3,
+              const char * stringParam1,
+              const char * stringParam2,
+              const char * stringParam3)
+{
+  return ExAddCondition(heap, diagsArea, err, NULL,
+             intParam1, intParam2, intParam3, 
+             stringParam1, stringParam2, stringParam3);
+}
 
 ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,
                               ExeErrorCode err, ComCondition** cond,

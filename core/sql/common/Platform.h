@@ -35,6 +35,8 @@
  *
  *****************************************************************************
  */
+#define __STDC_LIMIT_MACROS
+#define __STDC_FORMAT_MACROS
 
 /*
 // On Linux, either NA_BIG_ENDIAN or NA_LITTLE_ENDIAN may have already

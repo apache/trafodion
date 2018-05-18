@@ -1580,6 +1580,7 @@ public:
   // Helpers for the special ONLJ queue sizing defaults.
   NABoolean const getMakeOnljLeftQueuesBig() 
                                     { return makeOnljLeftQueuesBig_; }
+  void setMakeOnljLeftQueuesBig(NABoolean x) {makeOnljLeftQueuesBig_ = x;}
   ULng32 const getOnljLeftUpQueue() { return onljLeftUpQueue_; }
   ULng32 const getOnljLeftDownQueue() {return onljLeftDownQueue_; }
 

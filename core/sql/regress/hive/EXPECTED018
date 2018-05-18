@@ -2376,7 +2376,7 @@ C_FIRST_NAME                                                                    
 Task: UNLOAD           Status: Started
 Task:  EXTRACT         Status: Started    Time: 2018-02-15 18:12:42.125129
 
-*** ERROR[8447] An error occurred during hdfs access. Error Detail: Java exception in hdfsCreate(). java.io.IOException: No FileSystem for scheme: null
+*** ERROR[8447] An error occurred during hdfs access. Error Detail: Java exception in HdfsClient::hdfsOpen(). java.io.IOException: No FileSystem for scheme: null
 org.apache.hadoop.fs.FileSystem.getFileSystemClass(FileSystem.java:2584)
 org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:2591)
 org.apache.hadoop.fs.FileSystem.access$200(FileSystem.java:91)

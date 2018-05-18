@@ -77,7 +77,7 @@ public class MessageDigest
 
          return tmpMd.length;
       }catch (Exception ex) {
-          throw new SecurityException(SecClientMsgKeys.HMAC_FAILED, null);
+          throw new SecurityException(ex, SecClientMsgKeys.HMAC_FAILED, null);
       }
 
    }

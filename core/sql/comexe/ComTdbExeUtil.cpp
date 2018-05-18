@@ -2485,6 +2485,7 @@ ComTdbExeUtilLobUpdate::ComTdbExeUtilLobUpdate
      Int32 lobStorageType,
      char * lobHdfsServer,
      Lng32 lobHdfsPort,
+     char *lobLoc,
      ex_expr * input_expr,
      ULng32 input_rowlen,
      ex_cri_desc * work_cri_desc,
@@ -2505,16 +2506,17 @@ ComTdbExeUtilLobUpdate::ComTdbExeUtilLobUpdate
                    given_cri_desc, returned_cri_desc,
                    down, up, 
                    num_buffers, buffer_size),
-     handle_(handle),
-     handleLen_(handleLen),
-     fromType_((short)fromType),
-     bufAddr_(bufAddr),
-     updateSize_(updateSize),
-     lobStorageType_(lobStorageType),
-     lobHdfsServer_(lobHdfsServer),
-     lobHdfsPort_(lobHdfsPort),
-     totalBufSize_(0),
-     flags_(0)
+    handle_(handle),
+    handleLen_(handleLen),
+    fromType_((short)fromType),
+    bufAddr_(bufAddr),
+    updateSize_(updateSize),
+    lobStorageType_(lobStorageType),
+    lobHdfsServer_(lobHdfsServer),
+    lobHdfsPort_(lobHdfsPort),
+    lobLoc_(lobLoc),
+    totalBufSize_(0),
+    flags_(0)
 {
   setNodeType(ComTdb::ex_LOB_UPDATE_UTIL);
 }
@@ -2524,6 +2526,8 @@ Long ComTdbExeUtilLobUpdate::pack(void * space)
     handle_.pack(space);
   if (lobHdfsServer_)
     lobHdfsServer_.pack(space);
+  if (lobLoc_)
+    lobLoc_.pack(space);
   return ComTdbExeUtil::pack(space);
 }
 Lng32 ComTdbExeUtilLobUpdate::unpack(void * base, void * reallocator)
@@ -2531,6 +2535,8 @@ Lng32 ComTdbExeUtilLobUpdate::unpack(void * base, void * reallocator)
   if (handle_.unpack(base))
     return -1;
   if (lobHdfsServer_.unpack(base))
+    return -1;
+  if(lobLoc_.unpack(base))
     return -1;
  return ComTdbExeUtil::unpack(base, reallocator);
 }

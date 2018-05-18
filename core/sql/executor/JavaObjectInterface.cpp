@@ -24,6 +24,7 @@
 #include "JavaObjectInterface.h"
 #include "QRLogger.h"
 #include "Globals.h"
+#include "Context.h"
 #include "ComUser.h"
 #include "LmJavaOptions.h"
 #include "ex_ex.h"
@@ -45,6 +46,7 @@ int JavaObjectInterface::debugTimeout_ = 0;
 
 __thread JNIEnv* jenv_ = NULL;
 __thread NAString *tsRecentJMFromJNI = NULL;
+__thread NAString *tsSqlJniErrorStr = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
 jclass JavaObjectInterface::gStackTraceClass = NULL;
 jmethodID JavaObjectInterface::gGetStackTraceMethodID = NULL;
@@ -52,6 +54,27 @@ jmethodID JavaObjectInterface::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gStackFrameToStringMethodID = NULL;
 jmethodID JavaObjectInterface::gGetCauseMethodID = NULL;
 
+void setSqlJniErrorStr(NAString &errorMsg)
+{
+  if (tsSqlJniErrorStr != NULL)
+     delete tsSqlJniErrorStr;
+  tsSqlJniErrorStr = new NAString(errorMsg); 
+}
+
+void setSqlJniErrorStr(const char *errorMsg)
+{
+  if (tsSqlJniErrorStr != NULL)
+     delete tsSqlJniErrorStr;
+  tsSqlJniErrorStr = new NAString(errorMsg); 
+}
+
+const char *getSqlJniErrorStr()
+{
+   if (tsSqlJniErrorStr == NULL)
+      return "";
+   else
+      return tsSqlJniErrorStr->data();
+}
   
 static const char* const joiErrorEnumStr[] = 
 {
@@ -450,8 +473,9 @@ JOI_RetCode JavaObjectInterface::init(char *className,
        lJavaClass = jenv_->FindClass(className); 
        if (jenv_->ExceptionCheck()) 
        {
-          getExceptionDetails();
-          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Exception in FindClass(%s).", className);
+          char errMsg[200];
+          snprintf(errMsg, sizeof(errMsg), "Exception in FindClass(%s)", className);
+          getExceptionDetails(__FILE__, __LINE__, errMsg);
           return JOI_ERROR_FINDCLASS;
        }
        if (lJavaClass == 0) 
@@ -475,13 +499,12 @@ JOI_RetCode JavaObjectInterface::init(char *className,
                                                      JavaMethods[i].jm_signature);
         if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck())
         { 
-          getExceptionDetails();
+          jenv_->ExceptionClear();
           JavaMethods[i].methodID = jenv_->GetStaticMethodID(javaClass, 
                                                      JavaMethods[i].jm_name, 
                                                      JavaMethods[i].jm_signature);
           if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck()) {
-             getExceptionDetails();
-             QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in GetMethod(%s).", JavaMethods[i].jm_name);
+             getExceptionDetails(__FILE__, __LINE__, "GetMethodId()");
              return JOI_ERROR_GETMETHOD;
           }
         }      
@@ -495,8 +518,9 @@ JOI_RetCode JavaObjectInterface::init(char *className,
       jobject jObj = jenv_->NewObject(javaClass, JavaMethods[0].methodID);
       if (jObj == 0 || jenv_->ExceptionCheck())
       { 
-        getExceptionDetails();
-        QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in NewObject() for class %s.", className);
+        char errMsg[200];
+        snprintf(errMsg, sizeof(errMsg), "Error in NewObject() for class %s.", className);
+        getExceptionDetails(__FILE__, __LINE__, errMsg);
         return JOI_ERROR_NEWOBJ;
       }
       javaObj_ = jenv_->NewGlobalRef(jObj);
@@ -541,50 +565,46 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
   QRLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
 }
 
-NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)
+NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
+                       const char *methodName)  
 {
-   if (jenv == NULL)
-       jenv = jenv_;
+   JNIEnv *jenv = jenv_;
    CliGlobals *cliGlobals = GetCliGlobals();
-   NAString error_msg(heap_);
-   if (jenv == NULL)
-   {
-      error_msg = "Internal Error - Unable to obtain jenv";
-      cli_globals->setJniErrorStr(error_msg);
-      return FALSE;
-   } 
+   NAString error_msg;
    if (gThrowableClass == NULL)
    {
       jenv->ExceptionDescribe();
       error_msg = "Internal Error - Unable to find Throwable class";
-      cli_globals->setJniErrorStr(error_msg);
+      setSqlJniErrorStr(error_msg); 
       return FALSE; 
    }
    jthrowable a_exception = jenv->ExceptionOccurred();
    if (a_exception == NULL)
    {
        error_msg = "No java exception was thrown";
-       cli_globals->setJniErrorStr(error_msg);
+       setSqlJniErrorStr(error_msg); 
        return FALSE;
    }
-   appendExceptionMessages(jenv, a_exception, error_msg);
-   cli_globals->setJniErrorStr(error_msg);
+   appendExceptionMessages(a_exception, error_msg);
+   setSqlJniErrorStr(error_msg); 
+   logError(CAT_SQL_EXE, fileName, lineNo); 
+   logError(CAT_SQL_EXE, methodName, error_msg); 
    jenv->ExceptionClear();
    return TRUE;
 }
 
-void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg)
+void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAString &error_msg)
 {
     jstring msg_obj =
-       (jstring) jenv->CallObjectMethod(a_exception,
+       (jstring) jenv_->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
     const char *msg_str;
     if (msg_obj != NULL)
     {
-       msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+       msg_str = jenv_->GetStringUTFChars(msg_obj, 0);
        error_msg += msg_str;
-       jenv->ReleaseStringUTFChars(msg_obj, msg_str);
-       jenv->DeleteLocalRef(msg_obj);
+       jenv_->ReleaseStringUTFChars(msg_obj, msg_str);
+       jenv_->DeleteLocalRef(msg_obj);
     }
     else
        msg_str = "Exception is thrown, but tostring is null";
@@ -592,56 +612,36 @@ void JavaObjectInterface::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exc
 
     // Get the stack trace
     jobjectArray frames =
-        (jobjectArray) jenv->CallObjectMethod(
+        (jobjectArray) jenv_->CallObjectMethod(
                                         a_exception,
                                         gGetStackTraceMethodID);
     if (frames == NULL)
        return;
-    jsize frames_length = jenv->GetArrayLength(frames);
+    jsize frames_length = jenv_->GetArrayLength(frames);
 
     jsize i = 0;
     for (i = 0; i < frames_length; i++)
     {
-       jobject frame = jenv->GetObjectArrayElement(frames, i);
-       msg_obj = (jstring) jenv->CallObjectMethod(frame,
+       jobject frame = jenv_->GetObjectArrayElement(frames, i);
+       msg_obj = (jstring) jenv_->CallObjectMethod(frame,
                                             gStackFrameToStringMethodID);
        if (msg_obj != NULL)
        {
-          msg_str = jenv->GetStringUTFChars(msg_obj, 0);
+          msg_str = jenv_->GetStringUTFChars(msg_obj, 0);
           error_msg += "\n";
           error_msg += msg_str;
-          jenv->ReleaseStringUTFChars(msg_obj, msg_str);
-          jenv->DeleteLocalRef(msg_obj);
-          jenv->DeleteLocalRef(frame);
+          jenv_->ReleaseStringUTFChars(msg_obj, msg_str);
+          jenv_->DeleteLocalRef(msg_obj);
+          jenv_->DeleteLocalRef(frame);
        }
     }
-    jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
+    jthrowable j_cause = (jthrowable)jenv_->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
        error_msg += " Caused by \n";
-       appendExceptionMessages(jenv, j_cause, error_msg);
+       appendExceptionMessages(j_cause, error_msg);
     }
-    jenv->DeleteLocalRef(a_exception);
+    jenv_->DeleteLocalRef(a_exception);
 } 
-
-NAString JavaObjectInterface::getLastError()
-{
-  return cli_globals->getJniErrorStr();
-}
-
-NAString JavaObjectInterface::getLastJavaError(jmethodID methodID)
-{
-  if (javaObj_ == NULL)
-    return "";
-  jstring j_error = (jstring)jenv_->CallObjectMethod(javaObj_,
-               methodID);
-  if (j_error == NULL)
-      return "";
-  const char *error_str = jenv_->GetStringUTFChars(j_error, NULL);
-  cli_globals->setJniErrorStr(error_str);
-  jenv_->ReleaseStringUTFChars(j_error, error_str);
-  return cli_globals->getJniErrorStr();
-}
-
 
 JOI_RetCode JavaObjectInterface::initJNIEnv()
 {

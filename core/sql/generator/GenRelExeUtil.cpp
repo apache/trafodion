@@ -1551,8 +1551,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "SYSTEM", "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
 
-    {  "USER",   "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
-    {  "ALL",    "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "USER",   "SEQUENCES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "ALL",    "SEQUENCES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -1567,7 +1567,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "ROLES",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_ },
   
     {  "USER",   "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
-    {  "USER",   "CURRENT_USER","",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CURRENT_USER_ },
     {  "SYSTEM", "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
     {  "ALL",    "USERS",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_ },
   
@@ -1576,116 +1575,114 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "LIBRARIES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "USER",   "FUNCTIONS", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
     {  "USER",   "TABLE_FUNCTIONS", "","",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "USER",   "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "USER",   "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "USER",   "PROCEDURES","",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "USER",   "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
     {  "USER",   "OBJECTS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
+//    {  "USER",   "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "USER",   "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "USER",   "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "ALL",    "INDEXES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "ALL",    "VIEWS",     "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
     {  "ALL",    "LIBRARIES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
-    {  "ALL",    "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "ALL",    "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "ALL",    "PROCEDURES","",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "ALL",    "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
     {  "ALL",    "OBJECTS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
+//    {  "ALL",    "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "ALL",    "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "ALL",    "SYNONYMS",  "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "USER",   "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "SYSTEM", "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
+
     {  "ALL",    "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
     {  "USER",   "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
-    {  "ALL",    "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
+
     {  "USER",   "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
     {  "ALL",    "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+
     {  "USER",   "TABLES",    "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_ },
     {  "USER",   "OBJECTS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_ },
+
     {  "USER",   "HIVE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_VIEWS", "IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_SCHEMAS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_OBJECTS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_ },
     {  "USER",   "HIVE_EXT_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_ },
     {  "USER",   "HBASE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_ },
+//    {  "ALL",    "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "ALL",    "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
 
     {  "ALL",    "SEQUENCES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
-    {  "USER",    "SEQUENCES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
+    {  "USER",   "SEQUENCES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_ },
 
     {  "USER",   "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
     {  "SYSTEM", "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
     {  "ALL",    "OBJECTS",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_ },
-    {  "ALL",   "INVALID_VIEWS",   "IN",      "SCHEMA",         1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_SCHEMA_ },
+//    {  "ALL",   "INVALID_VIEWS",   "IN",      "SCHEMA",         1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_SCHEMA_ },
 
     {  "USER",   "INDEXES",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "USER",   "VIEWS",     "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
-    {  "USER",   "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "USER",   "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "USER",   "PRIVILEGES","ON",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SCHEMA_ },
     {  "USER",   "LIBRARIES", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "USER",   "PROCEDURES","IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
     {  "USER",   "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
     {  "USER",   "TABLE_FUNCTIONS", "IN","SCHEMA",  1,     2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "USER",   "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
+//    {  "USER",   "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "USER",   "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "USER",   "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
 
     {  "ALL",    "INDEXES",   "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "ALL",    "VIEWS",     "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
-    {  "ALL",    "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
-    {  "ALL",    "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "ALL",    "LIBRARIES", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
     {  "ALL",    "PROCEDURES","IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
-    {  "ALL",   "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
-    {  "ALL",   "TABLE_FUNCTIONS", "IN","SCHEMA",  1,     2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
-    {  "ALL",    "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
-    {  "IUDLOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLES_IN_SCHEMA_ },
-
-    {  "RANGELOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLES_IN_SCHEMA_ },
-    {  "TRIGTEMP",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLES_IN_SCHEMA_ },
+    {  "ALL",    "FUNCTIONS", "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
+    {  "ALL",    "TABLE_FUNCTIONS", "IN","SCHEMA",  1,     2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
+//    {  "ALL",    "MVS",       "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
+//    {  "ALL",    "MVGROUPS",  "IN",    "SCHEMA",   0,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
+//    {  "ALL",    "SYNONYMS",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_ },
+//    {  "IUDLOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLES_IN_SCHEMA_ },
+//    {  "RANGELOG",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLES_IN_SCHEMA_ },
+//    {  "TRIGTEMP",    "TABLES",  "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLES_IN_SCHEMA_ },
 
     {  "USER",   "INDEXES",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_ },
-    {  "USER",   "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
-    {  "USER",   "MVS",       "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
-    {  "USER",   "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
+    {  "USER",   "VIEWS",     "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_ },
     {  "USER",   "OBJECTS",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_ },
     {  "USER",   "PRIVILEGES","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_ },
     {  "USER",   "PRIVILEGES","ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_ },
-    {  "USER",   "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
-    {  "USER",   "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
-    {  "USER",   "VIEWS",     "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_ },
-
+//    {  "USER",   "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
+//    {  "USER",   "MVS",       "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
+//    {  "USER",   "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
+//    {  "USER",   "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
+//    {  "USER",   "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
 
     {  "ALL",    "INDEXES",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_TABLE_ },
-    {  "ALL",    "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
     {  "ALL",    "VIEWS",     "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_ },
-    {  "ALL",    "MVS",       "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
-    {  "ALL",    "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
-    {  "ALL",    "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
     {  "ALL",    "OBJECTS",   "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_ON_TABLE_ },
     {  "ALL",    "PRIVILEGES","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_ },
     {  "ALL",    "PRIVILEGES","ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_ },
-    {  "IUDLOG",    "TABLES",   "ON",    "TABLE",    0,    3,        0,      0,       ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_TABLE_ },
-    {  "RANGELOG",    "TABLES",   "ON",    "TABLE",    0,  3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_TABLE_ },
-    {  "TRIGTEMP",    "TABLES",   "ON",    "TABLE",    0,  3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ },
+//    {  "ALL",    "INDEXES",   "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_ON_MV_ },
+//    {  "ALL",    "MVS",       "ON",    "TABLE",    0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_TABLE_ },
+//    {  "ALL",    "MVGROUPS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_ON_TABLE_ },
+//    {  "ALL",    "SYNONYMS",  "ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_ON_TABLE_ },
+//
+//    {  "IUDLOG",    "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_TABLE_ },
+//    {  "RANGELOG",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_TABLE_ },
+//    {  "TRIGTEMP",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ },
+//    {  "IUDLOG",    "TABLES",   "ON",  "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_MV_ },
+//    {  "RANGELOG",  "TABLES",   "ON",  "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_MV_ },
+//    {  "TRIGTEMP",  "TABLES",   "ON",  "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ },
+//    {  "ALL",    "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
+//    {  "USER",   "MVS",       "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
+//    {  "ALL",    "MVS",       "ON",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
 
-    {  "IUDLOG",    "TABLES",   "ON",    "MV",    0,       3,        0,      0,            ComTdbExeUtilGetMetadataInfo::IUDLOG_TABLE_ON_MV_ },
-    {  "RANGELOG",    "TABLES",   "ON",    "MV",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::RANGELOG_TABLE_ON_MV_ },
-    //  {  "TRIGTEMP",    "TABLES",   "ON",    "TABLE",  0,   3,        0,      0,    ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ },
 
-   
-    {  "ALL",    "PRIVILEGES","ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_MV_ },
-
-    {  "USER",   "MVS",       "ON",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
-    {  "ALL",    "MVS",       "ON",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_ON_MV_ },
-
-
-    {  "USER",   "PARTITIONS","FOR",   "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
-    {  "USER",   "PARTITIONS","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
-
-    {  "USER",   "PARTITIONS","FOR",   "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
-    {  "USER",   "PARTITIONS","ON",    "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
+//    {  "USER",   "PARTITIONS","FOR",   "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
+//    {  "USER",   "PARTITIONS","ON",    "TABLE",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_ },
+//    {  "USER",   "PARTITIONS","FOR",   "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
+//    {  "USER",   "PARTITIONS","ON",    "INDEX",    0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_ },
 
     {  "USER",   "VIEWS",     "ON",    "VIEW",     0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_ },
     {  "ALL",    "VIEWS",     "ON",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_ },
@@ -1698,13 +1695,13 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "VIEWS",     "IN",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_ },
     {  "ALL",    "OBJECTS",   "IN",    "VIEW",     0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_ },
 
-    {  "USER",   "TABLES",    "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
-    {  "USER",   "MVS",       "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
-    {  "USER",   "OBJECTS",   "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
+//    {  "USER",   "TABLES",    "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
+//    {  "USER",   "MVS",       "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
+//    {  "USER",   "OBJECTS",   "IN",    "MV",       0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
 
-    {  "ALL",    "TABLES",    "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
-    {  "ALL",    "MVS",       "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
-    {  "ALL",    "OBJECTS",   "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
+//    {  "ALL",    "TABLES",    "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_MV_ },
+//    {  "ALL",    "MVS",       "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_ },
+//    {  "ALL",    "OBJECTS",   "IN",    "MV",       0,      3,        1,      1,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_MV_ },
 
     {  "ALL",    "USERS",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_ },
     {  "ALL",    "ROLES",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_ },
@@ -1715,62 +1712,59 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "USERS",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_ },
     {  "USER",   "ROLES",     "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_ROLE_ },
 
-    {  "ALL",    "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
-    {  "USER",   "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
-    {  "ALL",   "FUNCTIONS", "FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_ },
-    {  "ALL",   "TABLE_FUNCTIONS","FOR","LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_ },
+    {  "ALL",    "PROCEDURES","FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
+    {  "USER",   "PROCEDURES","FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
+    {  "ALL",    "FUNCTIONS", "FOR",   "LIBRARY",    0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_ },
+    {  "ALL",    "TABLE_FUNCTIONS","FOR","LIBRARY",  0,    3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_ },
  
-    {  "ALL",    "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
     {  "ALL",    "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
     {  "ALL",    "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
-    {  "ALL",    "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
-    {  "ALL",    "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "ALL",    "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
     {  "ALL",    "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "ALL",    "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "ALL",    "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "ALL",    "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
     {  "ALL",    "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "ALL",    "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
     {  "ALL",    "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
-    {  "ALL",    "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
     {  "ALL",    "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
+//    {  "ALL",    "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
+//    {  "ALL",    "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
+//    {  "ALL",    "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
+//    {  "ALL",    "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 
-    {  "SYSTEM", "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
+    {  "SYSTEM", "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
+    {  "SYSTEM", "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
+    {  "SYSTEM", "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
+    {  "SYSTEM", "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
 //  {  "SYSTEM", "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
 //  {  "SYSTEM", "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
 //  {  "SYSTEM", "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
 //  {  "SYSTEM", "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
 //  {  "SYSTEM", "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
 //  {  "SYSTEM", "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
-    {  "SYSTEM", "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
-    {  "SYSTEM", "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "SYSTEM", "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
 //  {  "SYSTEM", "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
-    {  "SYSTEM", "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
 //  {  "SYSTEM", "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 //  {  "SYSTEM", "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
 
-    {  "USER",   "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
     {  "USER",   "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
     {  "USER",   "LIBRARIES", "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_FOR_USER_ },
-    {  "USER",   "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
-    {  "USER",   "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "USER",   "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
     {  "USER",   "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "USER",   "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "USER",   "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "USER",   "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
     {  "USER",   "SCHEMAS",   "FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
-    {  "USER",   "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
     {  "USER",   "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
-    {  "USER",   "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
     {  "USER",   "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
+//    {  "USER",   "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
+//    {  "USER",   "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
+//    {  "USER",   "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
+//    {  "USER",   "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
 
-    {  "USER",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "ALL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "SYSTEM",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
-    {  "EXTERNAL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ }
+    {  "USER",    "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "ALL",     "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "SYSTEM",  "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "EXTERNAL","HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ }
 
 //==================================================================================================================================
    // AUSStr   InfoType     IOFStr   ObjectType  Version MaxParts  GroupBy OrderBy QueryType
@@ -4074,31 +4068,23 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
       strcpy(handle, h.data());
     }
 
-  // when handle is null and extract is from a file that is specified, then the params are:
-  //  stringParam1: file name
-  //  stringParam2: file dir
-  //  stringParam3: other info (like port num for hadoop)
+  // Use stringParam1 to pass in target file .
   char * stringParam1 = NULL;
   if (NOT stringParam_.isNull())
     {
-    stringParam1 =  space->allocateAlignedSpace(stringParam_.length() + 1);
-    strcpy(stringParam1, stringParam_.data());
+      stringParam1 = space->allocateAlignedSpace(stringParam_.length() + 1);
+      strcpy(stringParam1, stringParam_.data());
     }
 
   char * stringParam2 = NULL;
-  if (NOT stringParam2_.isNull())
-    {
-    stringParam2 = space->allocateAlignedSpace(stringParam2_.length() + 1);
-    strcpy(stringParam2, stringParam2_.data());
-    }
-  else if (handle_ == NULL)
-    {
-      const char* f = ActiveSchemaDB()->getDefaults().
-	getValue(LOB_STORAGE_FILE_DIR);
+  //use StringParam2 to pass in LOB storage dir  
+   const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
 
-      stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
-      strcpy(stringParam2, f);
-    }
+   stringParam2 = space->allocateAlignedSpace(strlen(f) + 1);
+   strcpy(stringParam2, f);
+    
+  
 
   char * stringParam3 = NULL;
   if (NOT stringParam3_.isNull())
@@ -4145,19 +4131,15 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 				   &input_expr);
     }
 
-  Lng32 lst = 0;
-  if (handle_ == NULL)
-    {
-      // extract from a file
-      lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
-    }
-
+  Lng32 lst = 0; 
+  lst = (Lng32)(CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE));
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
   
+
   ComTdbExeUtilLobExtract * exe_util_tdb = new(space) 
     ComTdbExeUtilLobExtract
     (
@@ -4347,11 +4329,15 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
 
 
   Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  const char* f = ActiveSchemaDB()->getDefaults().
+  const char* hs = ActiveSchemaDB()->getDefaults().
     getValue(LOB_HDFS_SERVER);
-  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
-  strcpy(hdfsServer, f);
-  
+  char * hdfsServer = space->allocateAlignedSpace(strlen(hs) + 1);
+  strcpy(hdfsServer, hs);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_STORAGE_FILE_DIR);
+
+  char *lobLoc = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(lobLoc, f);
   ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
     ComTdbExeUtilLobUpdate
     (
@@ -4366,6 +4352,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
      lst,
      hdfsServer,
      hdfsPort,
+     lobLoc,
      input_expr,
      inputRowLen,
      workCriDesc,
@@ -4410,7 +4397,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
   exe_util_lobupdate_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
   exe_util_lobupdate_tdb->setLobMaxSize( CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024);
   exe_util_lobupdate_tdb->setLobMaxChunkSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
-  exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)*1024*1024);
+  if ((CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE) >=0))
+    exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)*1024*1024);
+  else
+    exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE));
                                            
                                         
   generator->setCriDesc(givenDesc, Generator::DOWN);

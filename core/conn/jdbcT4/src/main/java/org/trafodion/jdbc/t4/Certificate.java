@@ -68,12 +68,12 @@ public class Certificate
 		}
 		catch (CertificateException cex)
 		{
-			throw new SecurityException(SecClientMsgKeys.FILE_CORRUPTION, new Object[]{certFile.getName()} );
+			throw new SecurityException(cex, SecClientMsgKeys.FILE_CORRUPTION, new Object[]{certFile.getName()} );
 		}
 		catch (Exception ex)
 		{
 			// This should never happen
-			throw new SecurityException(SecClientMsgKeys.FILE_NOTFOUND, new Object[]{certFile.getName()} );
+			throw new SecurityException(ex, SecClientMsgKeys.FILE_NOTFOUND, new Object[]{certFile.getName()} );
 		}
 		finally
 		{

@@ -270,7 +270,7 @@ class ExExeUtilTcb : public ex_tcb
   ExeCliInterface * cliInterface() { return cliInterface_; };
   ExeCliInterface * cliInterface2() { return cliInterface2_; };
 
-  ComDiagsArea * getDiagsArea() { return diagsArea_; }
+  ComDiagsArea *&getDiagsArea() { return diagsArea_; }
 
   void setDiagsArea(ComDiagsArea * d) { diagsArea_ = d; }
 
@@ -280,6 +280,7 @@ class ExExeUtilTcb : public ex_tcb
 
   short holdAndSetCQD(const char * defaultName, const char * defaultValue,
                       ComDiagsArea * globalDiags = NULL);
+
   short restoreCQD(const char * defaultName, ComDiagsArea * globalDiags = NULL);
 
   short setCS(const char * csName, char * csValue,
@@ -290,8 +291,9 @@ class ExExeUtilTcb : public ex_tcb
   void restoreMaintainControlTableTimeout(char * catalog);
 
   static Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue,
-                            ExeCliInterface * cliInterface,
-                            ComDiagsArea * globalDiags = NULL);
+                         ExeCliInterface * cliInterface,
+                         ComDiagsArea * globalDiags = NULL);
+
   static Lng32 restoreCQD(const char * defaultName,
                          ExeCliInterface * cliInterface,
                          ComDiagsArea * globalDiags = NULL);
@@ -1020,10 +1022,10 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL,
-                                  ComDiagsArea * diagsArea = NULL);
+                                  ComDiagsArea *&diagsArea,
+                                  ex_globals *globals = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
-  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
+  short dropHiveTempTablesForCSEs();
 
  private:
   enum Step
@@ -2499,9 +2501,16 @@ private:
     const char *schName,
     const char *objName);
 
+  Int32 colPrivsFrag(
+    const char *authName,
+    const char *catName,
+    const NAString &privWhereClause,
+    NAString &colPrivsStmt);
+
   NAString getGrantedPrivCmd(
     const NAString &roleList,
-    const char * cat);
+    const char * cat,
+    const NAString &inColumn = NAString("object_uid"));
 
   char * getRoleList(
     const Int32 userID,
@@ -3346,9 +3355,15 @@ virtual ex_tcb_private_state *
        Lng32 &pstateLength); // out, length of one element
 
 protected:
-  Lng32 getFSTypeFromHiveColType(const char* hiveType);
-  Lng32 getLengthFromHiveColType(const char* hiveType);
-
+  Lng32 getTypeAttrsFromHiveColType(const char* hiveType,
+                                    NABoolean isORC,
+                                    Lng32 &fstype,
+                                    Lng32 &length,
+                                    Lng32 &precision,
+                                    Lng32 &scale,
+                                    char *sqlType,
+                                    char *displayType,
+                                    char *charset);
   enum Step
   {
     INITIAL_,
@@ -3893,7 +3908,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   NABoolean emptyTarget_;
   NABoolean oneFile_;
   ExpHbaseInterface * ehi_;
-  HdfsClient *hdfsClient_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state

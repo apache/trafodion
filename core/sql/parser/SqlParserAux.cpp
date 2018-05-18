@@ -3231,7 +3231,7 @@ SqlParserAux_buildDescribeForFunctionAndAction
     pDescribe = new (PARSERHEAP())
       Describe ( SQLTEXT()
                , *optional_showddl_action_name_clause // in - const CorrName & - deep copy
-               , Describe::LONG_
+               , Describe::SHOWDDL_
                , COM_UUDF_ACTION_NAME                 // in - ComAnsiNameSpace labelAnsiNameSpace_
                , optional_showddlroutine_options      // in - long optional_showddlroutine_options
                );
@@ -3242,7 +3242,7 @@ SqlParserAux_buildDescribeForFunctionAndAction
     pDescribe = new (PARSERHEAP())
       Describe ( SQLTEXT()
                , *actual_routine_name_of_udf_or_uudf // in - const CorrName & - deep copy
-               , Describe::LONG_
+               , Describe::SHOWDDL_
                , COM_UDF_NAME                        // in - ComAnsiNameSpace labelAnsiNameSpace_
                , optional_showddlroutine_options     // in - long optional_showddlroutine_options
                );

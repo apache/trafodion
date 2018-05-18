@@ -26,7 +26,7 @@
 #include "Platform.h"
 #include "NABasicObject.h"
 
-enum {
+enum SortErrorEnum {
        EMissErrTxt              =    10001 // internal error, missing error text
       ,EFromEOF                 =    10002 // from file eof
       ,EScrEOF                  =    10003 // scratch file eof

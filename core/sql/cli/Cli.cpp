@@ -2375,9 +2375,10 @@ Lng32 SQLCLI_ProcessRetryQuery(
 				      SQLCHARSETCODE_UTF8,
 				      currContext,
 				      NULL);   
+                    ComDiagsArea *tmpDiagsArea = &diags;
 		  retcode =  cliInterface->
 		    executeImmediate( (char *) "SELECT TESTEXIT;", 
-				      NULL, NULL, TRUE, NULL, 0,&diags);
+				      NULL, NULL, TRUE, NULL, 0, &tmpDiagsArea);
 		  //ignore errors from this call.
 		  	    
 		}
@@ -4623,7 +4624,7 @@ Lng32 SQLCLI_GetDiagnosticsStmtInfo2(
       // Only rowsAffected supported for now, if statement_id is passed in.
 
       if ((!stmt) || 
-	  (what_to_get != SQLDIAG_ROW_COUNT))
+	  ((what_to_get != SQLDIAG_NUMBER) && (what_to_get != SQLDIAG_ROW_COUNT)))
 	{
 	  return -CLI_STMT_NOT_EXISTS;
 	}
@@ -6181,10 +6182,10 @@ Lng32 SQLCLI_GetDatabaseUserName (
   ContextCli &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags = currContext.diags();
 
-  retcode = currContext.getDBUserNameFromID(user_id,
-                                            string_value,
-                                            max_string_len,
-                                            len_of_item);
+  retcode = currContext.getAuthNameFromID(user_id,
+                                          string_value,
+                                          max_string_len,
+                                         *len_of_item);
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }
@@ -6205,8 +6206,8 @@ Lng32 SQLCLI_GetDatabaseUserID (
   ContextCli &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags = currContext.diags();
 
-  retcode = currContext.getDBUserIDFromName(string_value,
-                                            numeric_value);
+  retcode = currContext.getAuthIDFromName(string_value,
+                                          *numeric_value);
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }
@@ -8314,7 +8315,7 @@ Lng32 SQLCLI_LOBcliInterface
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
+  ComDiagsArea * myDiags = NULL;
 
   ExeCliInterface *cliInterface = NULL;
   if (inCliInterface && (*inCliInterface))
@@ -8413,11 +8414,7 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	cliRC = 0;
       }
@@ -8439,12 +8436,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
            	// create lob descriptor chunks table salted
        	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, dataOffset largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) salt using 8 partitions",
@@ -8459,13 +8451,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
-	
 	cliRC = 0;
       }
       break;
@@ -8483,11 +8469,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	str_sprintf(query, "drop ghost table %s",
 		    lobDescChunksName);
@@ -8501,14 +8483,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
-
-	  
-	
 	cliRC = 0;
       }
       break;
@@ -8526,10 +8501,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    goto error_return;
-	  }
 
 	str_sprintf(query, "cleanup table %s",
 		    lobDescChunksName);
@@ -8542,10 +8514,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    goto error_return;
-	  }	   
 	cliRC = 0;
       }
       break;
@@ -8567,10 +8536,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);	    
 	    goto error_return;
-	  }
 
         
         // insert into lob descriptor chunks table
@@ -8601,11 +8567,7 @@ Lng32 SQLCLI_LOBcliInterface
         currContext.resetSqlParserFlags(0x1);
 
         if (cliRC < 0)
-          {
-            cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-            goto error_return;
-          }
+	    goto error_return;
         
 	if (inoutDescPartnKey)
 	  *inoutDescPartnKey = descPartnKey;
@@ -8650,11 +8612,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	str_sprintf(query, "select numChunks from table(ghost table %s) h where h.descPartnKey = %ld and h.syskey = %ld for read committed access",
 		    lobDescHandleName,  
@@ -8670,11 +8628,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 	
 	// insert into lob descriptor chunks table
 	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
@@ -8704,11 +8658,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
       	if (inoutDescPartnKey)
 	  *inoutDescPartnKey = descPartnKey;
 
@@ -8741,11 +8691,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 
 
@@ -8761,11 +8707,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
         if ((lobType != Lob_External_HDFS_File) && blackBox)
           {
@@ -8801,11 +8743,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-	    goto error_return;
-	  }
+	   goto error_return;
        
 	// update lob handle with the returned values
 	if (outLobHandle)
@@ -8839,11 +8777,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-	    goto error_return;
-	  }
+	   goto error_return;
 
 	// delete from lob descriptor chunks table
 	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %ld and descSysKey = %ld",
@@ -8857,11 +8791,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
         
       }
       break;
@@ -8882,16 +8812,11 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
+
         cliRC = cliInterface->fetch();
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-
 	    cliInterface->fetchRowsEpilogue(0);
 	    goto error_return;
 	  }
@@ -8922,10 +8847,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  {	    
 	    cliRC = cliInterface->fetchRowsEpilogue(0);
 	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);	    
 		goto error_return;	 	  
-	      }
 	  }
 	
 	// This lob has only one chunk. Read and return the single descriptor.
@@ -8943,16 +8865,11 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	cliRC = cliInterface->fetch();
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
 
 	    cliInterface->fetchRowsEpilogue(0);
 
@@ -9007,11 +8924,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	cliRC = cliInterface->fetchRowsEpilogue(0);
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	cliRC = saveCliErr;
       }
@@ -9030,11 +8943,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	if (inCliInterface)
 	  *inCliInterface = cliInterface;
@@ -9046,8 +8955,6 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->fetch();
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-
 	    cliInterface->fetchRowsEpilogue(0);
 
 	    if (inCliInterface)
@@ -9093,7 +9000,6 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->fetchRowsEpilogue(0);
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    if (inCliInterface)
 	      *inCliInterface = NULL;
@@ -9121,11 +9027,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	// delete data from the chunks desc table
 	str_sprintf(query, "delete from table(ghost table %s)",
@@ -9139,11 +9041,7 @@ Lng32 SQLCLI_LOBcliInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-	    goto error_return;
-	  }
+           goto error_return;
 
       }
       break;
@@ -9208,11 +9106,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	cliRC = saveCliErr;
       }
@@ -9241,20 +9135,19 @@ Lng32 SQLCLI_LOBcliInterface
 
   NADELETEBASIC(query, currContext.exHeap());
 
+  if (cliRC < 0)
+    {
+      if (myDiags == NULL)
+         myDiags = ComDiagsArea::allocate(currContext.exHeap());
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+      diags.mergeAfter(*myDiags);
+      myDiags->decrRefCount();
+    }
   if (NOT (inCliInterface && (*inCliInterface)))
     {
       delete cliInterface;
       cliInterface = NULL;
     }
-
-  if (cliRC < 0)
-    {
-      if (myDiags->getNumber() > 0)
-	{
-	  diags.mergeAfter(*myDiags);
-	}
-    }
-  myDiags->deAllocate();
   if (cliRC < 0)
      return cliRC;
   else if (cliRC == 100)
@@ -9297,7 +9190,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
+  ComDiagsArea * myDiags = NULL;
 
   ExeCliInterface *cliInterface = NULL;
   cliInterface = new (currContext.exHeap()) 
@@ -9360,11 +9253,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   currContext.resetSqlParserFlags(0x1);
 
   if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
       goto error_return;
-    }  
   {     
   //Allocate an inmemory array of numEntries.
   ExLobInMemoryDescChunksEntry *dcInMemoryArray = new ExLobInMemoryDescChunksEntry[numEntries];
@@ -9381,18 +9270,11 @@ Lng32 SQLCLI_LOB_GC_Interface
   currContext.resetSqlParserFlags(0x1);
 
   if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
       goto error_return;
-    }
   cliRC = cliInterface->fetch();
   if (cliRC < 0)
     {
-      cliInterface->retrieveSQLDiagnostics(myDiags);
-
       cliInterface->fetchRowsEpilogue(0);
-
       goto error_return;
     }
   
@@ -9436,21 +9318,14 @@ Lng32 SQLCLI_LOB_GC_Interface
       i++;
       if (cliRC < 0)
         {
-          cliInterface->retrieveSQLDiagnostics(myDiags);
-
           cliInterface->fetchRowsEpilogue(0);
-
           goto error_return;
         }
     }
 	
   cliRC = cliInterface->fetchRowsEpilogue(0);
   if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
       goto error_return;
-    }
  
   // adjust in memory array to calculate holes and new offsets.
   ExpLOBoper::calculateNewOffsets(dcInMemoryArray,numEntries);
@@ -9486,8 +9361,6 @@ Lng32 SQLCLI_LOB_GC_Interface
 
           if (cliRC < 0)
             {
-              cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
               //tbd Give warning and rollback just these updates  and return with warning. For now return error and abort the iud operation itself since there is no support for nested transactions or SUSPEND and RESUME. 
               goto error_return;
             }
@@ -9539,12 +9412,12 @@ Lng32 SQLCLI_LOB_GC_Interface
 
   if (cliRC < 0)
     {
-      if (myDiags->getNumber() > 0)
-	{
-	  diags.mergeAfter(*myDiags);
-	}
+      if (myDiags == NULL)
+         myDiags = ComDiagsArea::allocate(currContext.exHeap());
+      diags.mergeAfter(*myDiags);
+      myDiags->decrRefCount();
+    	
     }
-  myDiags->deAllocate();
   if (cliRC < 0)
      return cliRC;
   else if (cliRC == 100)
@@ -9577,7 +9450,8 @@ Lng32 SQLCLI_LOBddlInterface
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
+  ComDiagsArea * myDiags = NULL;
+
   char logBuf[4096];
   lobDebugInfo("In LOBddlInterface",0,__LINE__,lobTrace);
   ExeCliInterface *cliInterface = NULL;
@@ -9612,11 +9486,7 @@ Lng32 SQLCLI_LOBddlInterface
 	currContext.resetSqlParserFlags(0x1);
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 	
 	// populate the lob metadata table
 	for (Lng32 i = 0; i < numLOBs; i++)
@@ -9634,11 +9504,7 @@ Lng32 SQLCLI_LOBddlInterface
 	    currContext.resetSqlParserFlags(0x1);
 	    
 	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
-		
-		goto error_return;
-	      }
+	       goto error_return;
 	    
 	  } // for
 
@@ -9654,7 +9520,7 @@ Lng32 SQLCLI_LOBddlInterface
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
 
 			    getLobErrStr(rc));
-            goto error_return;
+            goto non_cli_error_return;
           }
           
 	for (Lng32 i = 0; i < numLOBs; i++)
@@ -9674,7 +9540,7 @@ Lng32 SQLCLI_LOBddlInterface
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
 
 			    getLobErrStr(rc));
-		goto error_return;
+		goto non_cli_error_return;
 	      }
 	    
 	    // create LOB descriptor and LOB header tables
@@ -9701,11 +9567,7 @@ Lng32 SQLCLI_LOBddlInterface
 					     NULL,
 					     0,lobTrace);
 	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
-		
-		goto error_return;
-	      }
+	       goto error_return;
 	    
 	  } // for
 	
@@ -9726,11 +9588,7 @@ Lng32 SQLCLI_LOBddlInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(&diags);
-	    
-	    goto error_return;
-	  }
+           goto error_return;
 	
 	// drop descriptor table
 	for (Lng32 i = 0; i < numLOBs; i++)
@@ -9760,11 +9618,7 @@ Lng32 SQLCLI_LOBddlInterface
 					     NULL,
 					     0,lobTrace);
 	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
-		
 		goto error_return;
-	      }
 	    
 	  } // for
         //If all the descriptor tables got dropped correctly, drop the hdfs 
@@ -9782,7 +9636,7 @@ Lng32 SQLCLI_LOBddlInterface
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
 			    getLobErrStr(rc));
-            goto error_return;
+            goto non_cli_error_return;
 	      
           }
         for (Lng32 i = 0; i < numLOBs; i++)
@@ -9800,8 +9654,8 @@ Lng32 SQLCLI_LOBddlInterface
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
 			    getLobErrStr(rc));
-		goto error_return;
-                }
+		goto non_cli_error_return;
+              }
           }//for
       }
       break;
@@ -9819,11 +9673,8 @@ Lng32 SQLCLI_LOBddlInterface
 	currContext.resetSqlParserFlags(0x1);
 	
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(&diags);
-	    
-	    goto error_return;
-	  }
+           goto error_return;
+
 	//Initialize LOB interface 
         
         Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
@@ -9835,7 +9686,7 @@ Lng32 SQLCLI_LOBddlInterface
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
                             &rc, NULL, (char*)"ExpLOBInterfaceCreate",
                             getLobErrStr(rc));
-            goto error_return;	      
+            goto non_cli_error_return;	      
           }
 	// drop descriptor table
 	for (Lng32 i = 0; i < numLOBs; i++)
@@ -9853,7 +9704,7 @@ Lng32 SQLCLI_LOBddlInterface
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
 			    getLobErrStr(rc));
-		goto error_return;
+		goto non_cli_error_return;
 	      }
 	    
 	    // drop LOB descriptor and LOB header tables
@@ -9880,11 +9731,7 @@ Lng32 SQLCLI_LOBddlInterface
 					     NULL,
 					     0,lobTrace);
 	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
-		
 		goto error_return;
-	      }
 	    
 	  } // for
 	
@@ -9911,11 +9758,7 @@ Lng32 SQLCLI_LOBddlInterface
 	currContext.resetSqlParserFlags(0x1);
 
 	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
 
 	cliRC = 0;
 	Lng32 j = 0;
@@ -9925,7 +9768,6 @@ Lng32 SQLCLI_LOBddlInterface
 	    cliRC = cliInterface->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
 		
 		cliInterface->fetchRowsEpilogue(0);
 		
@@ -9971,7 +9813,6 @@ Lng32 SQLCLI_LOBddlInterface
 		if (ccliRC < 0)
 		  {
 		    cliRC = ccliRC;
-		    cliInterface->retrieveSQLDiagnostics(myDiags);
 		    goto error_return;
 		  }
 	      }
@@ -9990,19 +9831,19 @@ Lng32 SQLCLI_LOBddlInterface
     } // switch
 
  error_return:
+  if (cliRC < 0)
+    {
+      if (myDiags == NULL)
+         myDiags = ComDiagsArea::allocate(currContext.exHeap());
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+      diags.mergeAfter(*myDiags);
+      myDiags->decrRefCount();
+    }
+ non_cli_error_return:
   ExpLOBinterfaceCleanup(exLobGlob);
   NADELETEBASIC(query, currContext.exHeap());
   NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;
- 
-  if (cliRC < 0)
-    {
-      if (myDiags->getNumber() > 0)
-	{
-	  diags.mergeAfter(*myDiags);
-	}
-    }
-  myDiags->deAllocate();
   if (cliRC < 0)
      return cliRC;
   else if (cliRC == 100)
@@ -10358,7 +10199,6 @@ static Lng32 SeqGenCliInterfacePrepQry(
 				       const char * qryName,
 				       ExeCliInterface ** cliInterfaceArr,
 				       SequenceGeneratorAttributes* sga,
-				       ComDiagsArea * myDiags,
 				       ContextCli &currContext,
 				       ComDiagsArea & diags,
 				       NAHeap *exHeap)
@@ -10369,6 +10209,8 @@ static Lng32 SeqGenCliInterfacePrepQry(
   char stmtName[200];
 
   Int64 rowsAffected = 0;
+
+  ComDiagsArea *myDiags = NULL;
 
   ExeCliInterface * cliInterface = NULL;
   ExeCliInterface * cqdCliInterface = NULL;
@@ -10406,9 +10248,11 @@ static Lng32 SeqGenCliInterfacePrepQry(
       cliRC = cqdCliInterface->holdAndSetCQD("limit_max_numeric_precision", "ON");
       if (cliRC < 0)
 	{
+         if (myDiags == NULL)
+             myDiags = ComDiagsArea::allocate(exHeap);
 	  cqdCliInterface->retrieveSQLDiagnostics(myDiags);
 	  diags.mergeAfter(*myDiags);
-	  
+          myDiags->decrRefCount();
 	  return cliRC;
 	}
 
@@ -10418,11 +10262,12 @@ static Lng32 SeqGenCliInterfacePrepQry(
 						    stmtName);
       if (cliRC < 0)
 	{
+          if (myDiags == NULL)
+             myDiags = ComDiagsArea::allocate(exHeap);
 	  cliInterface->retrieveSQLDiagnostics(myDiags);
 	  diags.mergeAfter(*myDiags);
-	  
+          myDiags->decrRefCount();
 	  cqdCliInterface->restoreCQD("limit_max_numeric_precision");
-
 	  return cliRC;
 	}
 
@@ -10438,7 +10283,6 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
 					      SequenceGeneratorAttributes* sga,
 					      NABoolean recycleQry,
                                               NABoolean startLocalXn,
-					      ComDiagsArea * myDiags,
 					      ContextCli &currContext,
 					      ComDiagsArea & diags,
 					      NAHeap *exHeap,
@@ -10456,6 +10300,8 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
   Int64 rowsAffected = 0;
 
   ExeCliInterface * cliInterface = NULL;
+
+  ComDiagsArea *myDiags = NULL;
   
   char queryBuf[2000];
 
@@ -10469,7 +10315,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
                                             "update %s.\"%s\".%s set upd_ts = cast(? as largeint not null) where seq_uid = %ld",
                                             SEQ_UPD_TS_QRY_IDX,
                                             "SEQ_UPD_TS_QRY_IDX",
-                                            cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+                                            cliInterfaceArr, sga, currContext, diags, exHeap);
           if (cliRC < 0)
             return cliRC;
         }
@@ -10487,9 +10333,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
         ((char*)inputValues, inputValuesLen, NULL, NULL, &rowsAffected);
       if (cliRC < 0)
         {
+         if (myDiags == NULL)
+             myDiags = ComDiagsArea::allocate(exHeap);
           cliInterface->retrieveSQLDiagnostics(myDiags);
           diags.mergeAfter(*myDiags);
-          
+          myDiags->decrRefCount();
           return cliRC;
         }
       
@@ -10510,7 +10358,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
                                         "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextValue end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextValue, redefTS);",
                                         SEQ_PROCESS_QRY_IDX,
                                         "SEQ_PROCESS_QRY_IDX",
-                                        cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+                                        cliInterfaceArr, sga, currContext, diags, exHeap);
       if (cliRC < 0)
         return cliRC;
     }
@@ -10532,9 +10380,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
      &rowsAffected);
   if (cliRC < 0)
     {
+      if (myDiags == NULL)
+         myDiags = ComDiagsArea::allocate(exHeap);
       cliInterface->retrieveSQLDiagnostics(myDiags);
       diags.mergeAfter(*myDiags);
-
+      myDiags->decrRefCount();
       if (diags.mainSQLCODE() == -EXE_NUMERIC_OVERFLOW)
         {
           cliRC = -EXE_SG_MAXVALUE_EXCEEDED;
@@ -10575,7 +10425,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
                                             "select upd_ts from %s.\"%s\".%s where seq_uid = %ld",
                                             SEQ_SEL_TS_QRY_IDX,
                                             "SEQ_SEL_TS_QRY_IDX",
-                                            cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+                                            cliInterfaceArr, sga, currContext, diags, exHeap);
           if (cliRC < 0)
             return cliRC;
         }
@@ -10585,9 +10435,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
         (NULL, 0, (char*)outputValues, &outputValuesLen, &rowsAffected);
       if (cliRC < 0)
         {
+          if (myDiags == NULL)
+             myDiags = ComDiagsArea::allocate(exHeap);
           cliInterface->retrieveSQLDiagnostics(myDiags);
           diags.mergeAfter(*myDiags);
-          
+          myDiags->decrRefCount();
           return cliRC;
         }
       
@@ -10620,7 +10472,6 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
 						   ExeCliInterface ** cliInterfaceArr,
 						   SequenceGeneratorAttributes* sga,
 						   NABoolean recycleQry,
-						   ComDiagsArea * myDiags,
 						   ContextCli &currContext,
 						   ComDiagsArea & diags,
 						   NAHeap *exHeap,
@@ -10629,6 +10480,7 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
 {
   Lng32 cliRC = 0;
   Lng32 retCliRC = 0;
+  ComDiagsArea *myDiags = NULL;
 
   if (! cliInterfaceArr[SEQ_CQD_IDX])
     cliInterfaceArr[SEQ_CQD_IDX] = new (currContext.exHeap()) 
@@ -10661,9 +10513,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
           cliRC = cqdCliInterface->beginWork();
           if (cliRC < 0)
             {
+              if (myDiags != NULL)
+                 myDiags = ComDiagsArea::allocate(exHeap);
               cqdCliInterface->retrieveSQLDiagnostics(myDiags);
               diags.mergeAfter(*myDiags);
-
+              myDiags->decrRefCount();
               retCliRC = cliRC;
               goto label_return;
             }
@@ -10674,7 +10528,6 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
 					       sga,
 					       recycleQry,
                                                startLocalXn,
-					       myDiags,
 					       currContext,
 					       diags,
 					       exHeap,
@@ -10753,8 +10606,6 @@ Lng32 SQLCLI_SeqGenCliInterface
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
-
   ExeCliInterface ** cliInterfaceArr = NULL;
   if (inCliInterfaceArr && (*inCliInterfaceArr))
     {
@@ -10782,14 +10633,12 @@ Lng32 SQLCLI_SeqGenCliInterface
 						cliInterfaceArr,
 						sga,
 						FALSE,
-						myDiags,
 						currContext,
 						diags,
 						currContext.exHeap(),
 						nextValue,
 						endValue);
   if (cliRC < 0) {
-     myDiags->deAllocate();     
      return cliRC;
   }
   
@@ -10800,19 +10649,15 @@ Lng32 SQLCLI_SeqGenCliInterface
 						    cliInterfaceArr,
 						    sga,
 						    TRUE,
-						    myDiags,
 						    currContext,
 						    diags,
 						    currContext.exHeap(),
 						    nextValue,
 						    endValue);
       if (cliRC < 0) {
-         myDiags->deAllocate();     
 	 return cliRC;
       }
     }
-
-  myDiags->deAllocate();     
   sga->setSGNextValue(nextValue);
   sga->setSGEndValue(endValue);
 

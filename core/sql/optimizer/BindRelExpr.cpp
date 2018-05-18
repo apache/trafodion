@@ -1521,7 +1521,10 @@ NATable *BindWA::getNATable(CorrName& corrName,
           ((bindWA->inViewDefinition()) ||
            (bindWA->inMVDefinition())))
       {
-        if (! CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
+        // for Histogram, support to use VOLATILE SCHEMA
+        // or else, don't support
+        if (!corrName.getQualifiedNameObj().isHistogramTable() && 
+            !CmpCommon::context()->sqlSession()->validateVolatileQualifiedSchemaName
             (corrName.getQualifiedNameObj()))
         {
           bindWA->setErrStatus();
@@ -10425,7 +10428,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // column. COM_CURRENT_DEFAULT is only used for Datetime
           // columns.
           //
-          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
+          if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT || nacol->getDefaultClass() == COM_CURRENT_UT_DEFAULT 
+             || nacol->getDefaultClass() == COM_UUID_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
             omittedCurrentDefaultClassCols = TRUE;
             omittedDefaultCols = TRUE;
@@ -10444,7 +10448,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
           Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
           Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
           defaultValueExpr = parser.getItemExprTree(defaultValueStr);
           CMPASSERT(defaultValueExpr);
 
@@ -10500,6 +10503,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             Assign(target.getItemExpr(), defaultValueExpr,
                     FALSE /*Not user Specified */);
           if ((nacol->getDefaultClass() != COM_CURRENT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_CURRENT_UT_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_FUNCTION_DEFINED_DEFAULT) &&
+              (nacol->getDefaultClass() != COM_UUID_DEFAULT) &&
               (nacol->getDefaultClass() != COM_USER_FUNCTION_DEFAULT))
              assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
@@ -14698,12 +14704,9 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
 
   if (! describedTableName_.getQualifiedNameObj().getObjectName().isNull())
     {
-      if ((getFormat() >= CONTROL_FIRST_) &&
-          (getFormat() <= CONTROL_LAST_))
-        {
+       if (getIsControl())
           describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
-        }
-      else
+        if (NOT getIsControl())
         {
           // do not override schema for showddl
           bindWA->setToOverrideSchema(FALSE);  
@@ -14712,27 +14715,20 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
           // describedTableName_ is qualified by getNATable
           if (describedTableName_.getQualifiedNameObj().getSchemaName().isNull())
             setToTryPublicSchema(TRUE);
-      
-          bindWA->getNATable(describedTableName_);
-          if (bindWA->errStatus()) 
+
+          if ((getFormat() == Describe::INVOKE_) ||
+              (getFormat() == Describe::SHOWDDL_) &&
+              (getLabelAnsiNameSpace() == COM_TABLE_NAME) &&
+              (NOT getIsSchema()))
             {
-              // if volatile related error, return it.
-              // Otherwise, clear diags and let this error be caught
-              // when describe is executed.
-              if ((CmpCommon::diags()->mainSQLCODE() == -4190) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4191) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4192) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4193) ||
-                  (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
-                  (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
-                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
-                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
-                    return this;
-      
-              CmpCommon::diags()->clear();
-              bindWA->resetErrStatus();
+              bindWA->getNATableInternal(describedTableName_);
+              if (bindWA->errStatus())
+                {
+                  return this;
+                }
             }
+          else
+            describedTableName_.applyDefaults(bindWA, bindWA->getDefaultSchema());
         }
       if (pUUDFName_ NEQ NULL AND NOT pUUDFName_->getObjectName().isNull())
       {
@@ -17271,6 +17267,18 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           result->setArity(getArity());
           for (int i=0; i<getArity(); i++)
             result->child(i) = child(i);
+
+          if (opType == REL_TABLE_MAPPING_BUILTIN_LOG_READER ||
+              opType == REL_TABLE_MAPPING_BUILTIN_JDBC)
+            {
+              // The event log reader and JDBC TMUDFs are being migrated
+              // to real UDFs, use of the predefined UDFs is deprecated.
+              // Issue a warning. Eventually these predefined functions
+              // will be removed.
+              (*CmpCommon::diags())
+                << DgSqlCode(4323)
+                << DgString0(tmfuncName.getExposedNameAsAnsiString());
+            }
 
           // Abandon the current node and return the bound new node.
           // Next time it will reach this method it will call an

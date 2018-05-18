@@ -133,6 +133,7 @@ public:
         // clause appears or the DEFAULT clause does not appear.
   
   inline const NAString & getComputedDefaultExpr() const;
+  inline const NAString & getDefaultExprString() const;
   inline const NAString & getHeading() const;
   inline const NABoolean getIsConstraintNotNullSpecified() const;
   inline const NABoolean getIsConstraintPKSpecified() const;
@@ -239,6 +240,7 @@ private:
   NABoolean  isNewAdjustedDefaultConstValueNode_;
   ItemExpr * pDefault_; // points to a ConstValue parse node
   NAString   computedDefaultExpr_;
+  NAString   defaultExprString_;
   ElemDDLSGOptions * pSGOptions_;
   NAString * pSGLocation_;
 
@@ -309,6 +311,7 @@ private:
   NABoolean seabaseSerialized_;
 
   NABoolean isColDefaultSpec_;
+
 }; // class ElemDDLColDef
 
 // -----------------------------------------------------------------------
@@ -407,6 +410,12 @@ inline const NAString &
 ElemDDLColDef::getComputedDefaultExpr() const
 {
   return computedDefaultExpr_;
+}
+
+inline const NAString &
+ElemDDLColDef::getDefaultExprString() const
+{
+  return defaultExprString_;
 }
 
 inline const NAString &

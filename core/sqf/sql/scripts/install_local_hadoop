@@ -594,6 +594,7 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
+    HADOOP_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/hadoop-2.6.0/
     HADOOP_TAR=hadoop-2.6.0.tar.gz
 fi
 
@@ -624,7 +625,7 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
-    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/${HBASE_DEP_VER_APACHE}
     HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
 fi
 
@@ -1640,6 +1641,11 @@ EOF
 
 fi
 # end of HBase setup
+
+if [[ ! -z $FAST_LOCAL_HADOOP ]]; then
+    echo "FAST_LOCAL_HADOOP is set. Exiting..."
+    exit 0
+fi
 
 cd $MY_SW_ROOT
 

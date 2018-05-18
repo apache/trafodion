@@ -60,10 +60,11 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include "HBaseClient_JNI.h"
+#include "HdfsClient_JNI.h"
+#include "HiveClient_JNI.h"
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "CliSemaphore.h"
-
 
 #include "ExCextdecs.h"
 CliGlobals * cli_globals = NULL;
@@ -918,26 +919,6 @@ void CliGlobals::getUdrErrorFlags(NABoolean &sqlViolation,
 {
     currContext()->getUdrErrorFlags(sqlViolation, xactViolation,
                                   xactAborted);
-}
-
-void CliGlobals::setJniErrorStr(NAString errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-void CliGlobals::setJniErrorStr(const char *errorStr)
-{
-   currContext()->setJniErrorStr(errorStr);
-}
-
-NAString CliGlobals::getJniErrorStr()
-{
-  return currContext()->getJniErrorStr();
-}
-
-const char* CliGlobals::getJniErrorStrPtr()
-{
-  return currContext()->getJniErrorStrPtr();
 }
 
 void CliGlobals::updateTransMode(TransMode *transMode)

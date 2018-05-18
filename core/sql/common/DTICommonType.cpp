@@ -61,6 +61,18 @@ const char* DatetimeIntervalCommonType::getFieldName(rec_datetime_field field)
     return "SECOND";
   case REC_DATE_FRACTION_MP:
     return "FRACTION";
+  case REC_DATE_YEARQUARTER_EXTRACT:
+    return "YEARQUARTER";
+  case REC_DATE_YEARMONTH_EXTRACT:
+    return "YEARMONTH";
+  case REC_DATE_YEARWEEK_EXTRACT:
+    return "YEARWEEK";
+  case REC_DATE_YEARQUARTER_D_EXTRACT:
+    return "YEARQUARTERD";
+  case REC_DATE_YEARMONTH_D_EXTRACT:
+    return "YEARMONTHD";
+  case REC_DATE_YEARWEEK_D_EXTRACT:
+    return "YEARWEEKD";
   default:
     return NULL;
   }

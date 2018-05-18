@@ -2945,6 +2945,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	// without code change
 	if (loadFlushSizeinRows >= USHRT_MAX/2)
 	  loadFlushSizeinRows = ((USHRT_MAX/2)-1);
+	else if (loadFlushSizeinRows < 1)  // make sure we don't fall to zero on really long rows
+	  loadFlushSizeinRows = 1;
 	hbasescan_tdb->setTrafLoadFlushSize(loadFlushSizeinRows);
 
         // For sample file, set the sample location in HDFS and the sampling rate.

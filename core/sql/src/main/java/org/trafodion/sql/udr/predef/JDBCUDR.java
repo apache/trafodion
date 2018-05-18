@@ -17,6 +17,22 @@ specific language governing permissions and limitations
 under the License.
 **********************************************************************/
 
+//*************************************************
+//
+//   ##    ##   ######   ########  ########
+//   ###   ##  ########  ########  ########
+//   ####  ##  ##    ##     ##     ##
+//   ## ## ##  ##    ##     ##     #####
+//   ##  ####  ##    ##     ##     ##
+//   ##   ###  ########     ##     ########
+//   ##    ##   ######      ##     ########
+//
+//**************************************************
+//
+// This file is deprecated. Please update file
+// core/sql/lib_mgmt/src/main/java/org/trafodion/sql/libmgmt/JDBCUDR.java
+// instead!!
+
 /***************************************************
  * A TMUDF that executes a generic JDBC query
  * and returns the result of the one SQL statement
@@ -114,6 +130,20 @@ class JDBCUDR extends UDR
               driverJarPath = LmUtility.getExternalLibsDirForUser(null).resolve(
                     driverJarPath);
 
+            // for security reasons we also reject the Trafodion T2
+            // driver (check both class name and URL)
+            if (driverClassName_.equals("org.apache.trafodion.jdbc.t2.T2Driver"))
+                throw new UDRException(
+                    38012,
+                    "This UDF does not support the Trafodion T2 driver class %s",
+                    driverClassName_);
+
+            if (LmT2Driver.checkURL(connectionString_))
+                throw new UDRException(
+                    38013,
+                    "This UDF does not support the Trafodion T2 driver URL %s",
+                    connectionString_);
+ 
             // Create a class loader that can access the jar file
             // specified by the caller. Note that this is only needed
             // because the JDBC UDR is a predefined UDR and is loaded
@@ -139,8 +169,9 @@ class JDBCUDR extends UDR
           catch (ClassNotFoundException cnf) {
               throw new UDRException(
                 38020,
-                "JDBC driver class %s not found. Please make sure the JDBC driver jar is stored in %s. Message: %s",
+                "JDBC driver class %s not found. Please make sure the JDBC driver jar %s is stored in %s. Message: %s",
                 driverClassName_,
+                driverJar_,
                 LmUtility.getSandboxRootForUser(null).toString(),
                 cnf.getMessage());
           }

@@ -113,6 +113,7 @@ CPPSRC := Allocator.cpp \
         SequenceFileReader.cpp \
         OrcFileReader.cpp \
         HdfsClient_JNI.cpp \
+        HiveClient_JNI.cpp \
         HBaseClient_JNI.cpp
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \

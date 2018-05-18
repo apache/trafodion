@@ -2958,6 +2958,16 @@ void ComDiagsArea::clearErrorConditionsOnly()
    }
 }
 
+void ComDiagsArea::clearWarnings()
+{
+   DiagsCondition  *ptr;
+   while (warnings_.getFirst(ptr)) 
+   {
+     ptr->deAllocate();
+     --maxDiagsId_;
+   }
+}
+
 // Returnes the SQLSTATE value of the last SIGNAL statement.
 // Assumes the SIGNAL condition is the highest priority error.
 const char *ComDiagsArea::getSignalSQLSTATE() const

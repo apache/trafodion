@@ -47,12 +47,23 @@ public class TestGetIndexInfo {
 
 	@BeforeClass
     public static void doTestSuiteSetup() throws Exception {
-    	try {
-    		_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
+        try {
+            _conn = Utils.getUserConnection();
+        } catch (Exception e) {
+            fail("failed to create connection" + e.getMessage());
+        }
+
+        try (Statement stmt = _conn.createStatement()
+        ) {
+            stmt.execute(strCreateTableQuery);
+        }
+        catch (Exception e) {
+            fail("failed to create the table : " + e.getMessage());
+        }
+        try (
     		Statement stmt = _conn.createStatement();
-    		stmt.execute(strCreateTableQuery);
-    		
-    		PreparedStatement pstmt = _conn.prepareStatement(strInsertQuery);
+                PreparedStatement pstmt = _conn.prepareStatement(strInsertQuery);
+        ) {
     		int[][] testValues = {
     				{1, 2},
     				{10, 3},
@@ -65,8 +76,7 @@ public class TestGetIndexInfo {
     			pstmt.addBatch();
     		}
     		pstmt.executeBatch();
-    		pstmt.close();
-    		
+
     		// create index
     		stmt.execute(strCreateIndexQuery);
     		

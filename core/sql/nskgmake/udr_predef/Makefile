@@ -25,6 +25,7 @@ SRCPATH := sqludr
 
 CPPSRC := SqlUdrPredefLogReader.cpp \
 	  SqlUdrPredefTimeSeries.cpp \
+	  SqlUdrPredefSeries.cpp \
 	  vers_libudr_predef.cpp
 
 # Define the correct compilation and linking flags depending on whether

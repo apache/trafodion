@@ -2889,3 +2889,16 @@ the flag ATTEMPT_ASYNCHRONOUS_ACCESS was set to OFF.
 
 *Recovery:* Set the ATTEMPT_ASYNCHRONOUS_ACCESS flag to ON and resubmit.
 
+[[SQL-4323]]
+== SQL 4323
+
+```
+Use of predefined UDF <name> is deprecated and this function will be removed in a future release. Please use the function with the same name in schema TRAFODION."_LIBMGR_" instead. You may need to issue this command first: INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT.
+```
+
+*Cause:* See message.
+
+*Effect:* The operation succeeds - this is only a warning.
+
+*Recovery:* See message.
+

@@ -404,6 +404,11 @@ if [ $LINUX -eq 1 ]; then
   SKIPFILES="$SKIPFILES TEST150 TEST400 TEST402 TEST505 TEST508 TEST750 TEST982"
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST2" == "1" ]; then
+    SKIPFILES="$SKIPFILES $udrCT"
+fi
+
 # 3/26/12 Security scrum:  Skip all tests on NT for now.  Changes for Secure JARs not compatible
 #                          with the existing testware on NT.
 if [ $LINUX -eq 0 ]; then

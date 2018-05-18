@@ -60,7 +60,6 @@
 #include "ComUser.h"
 #include "CmpSeabaseDDLauth.h"
 
-#include "hdfs.h"
 #include "StmtCompilationMode.h"
 
 #include "ExCextdecs.h"
@@ -97,6 +96,7 @@
 #include "HBaseClient_JNI.h"
 #include "ComDistribution.h"
 #include "LmRoutine.h"
+#include "HiveClient_JNI.h"
 
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
@@ -160,11 +160,13 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     dropInProgress_(FALSE),
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL),
+    prevCmpContext_(NULL),
     ddlStmtsExecuted_(FALSE),
     numCliCalls_(0),
     jniErrorStr_(&exHeap_),
     hbaseClientJNI_(NULL),
     hiveClientJNI_(NULL),
+    hdfsClientJNI_(NULL),
     arkcmpArray_(&exHeap_),
     cmpContextInfo_(&exHeap_),
     cmpContextInUse_(&exHeap_),
@@ -293,14 +295,14 @@ ContextCli::~ContextCli()
 
 void ContextCli::deleteMe()
 {
-  ComDiagsArea & diags = cliGlobals_->currContext()->diags();
+  ComDiagsArea *diags = NULL;
 
   if (volatileSchemaCreated())
     {
       // drop volatile schema, if one exists
       short rc =
         ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
-        (this, NULL, exCollHeap());
+        (this, NULL, exCollHeap(), diags);
       SQL_EXEC_ClearDiagnostics(NULL);
       
       rc =
@@ -1602,7 +1604,8 @@ void ContextCli::completeSetAuthID(
       ExeCliInterface *cliInterface = new (exHeap()) ExeCliInterface(exHeap(),
                                                                      SQLCHARSETCODE_UTF8
                                                                      ,this,NULL);   
-      cliInterface->executeImmediate((char *) "control query default * reset;", NULL, NULL, TRUE, NULL, 0,&diagsArea_);
+      ComDiagsArea *tmpDiagsArea = &diagsArea_;
+      cliInterface->executeImmediate((char *) "control query default * reset;", NULL, NULL, TRUE, NULL, 0, &tmpDiagsArea); 
    }
   
    if ((userID != databaseUserID_) ||
@@ -2525,11 +2528,12 @@ void ContextCli::createMxcmpSession()
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect(pMessage,
                                (ULng32) sizeof(userMessage), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::DATABASE_USER,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2544,6 +2548,11 @@ void ContextCli::createMxcmpSession()
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -2725,11 +2734,12 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
+      ComDiagsArea *diagsArea = NULL;
       cmpStatus = CmpCommon::context()->compileDirect((char *) &flags,
                                (ULng32) sizeof(Lng32), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::END_SESSION,
                                dummyReply, dummyLen, getSqlParserFlags(),
-                               NULL, 0);
+                               NULL, 0, diagsArea);
       if (cmpStatus != 0)
         {
           char emsText[120];
@@ -2744,6 +2754,11 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
           exHeap_.deallocateMemory((void*)dummyReply);
           dummyReply = NULL;
         }
+      if (diagsArea != NULL)
+      {
+         diagsArea->decrRefCount();
+         diagsArea = NULL;
+      }
     }
 
   // if there is an error using embedded compiler or we are already in the 
@@ -2889,10 +2904,11 @@ void ContextCli::endSession(NABoolean cleanupEsps,
 void ContextCli::dropSession(NABoolean clearCmpCache)
 {
   short rc = 0;
+  ComDiagsArea *diags = NULL;
   if (volatileSchemaCreated_)
     {
       rc = ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
-        (this, NULL, exHeap());
+        (this, NULL, exHeap(), diags);
       SQL_EXEC_ClearDiagnostics(NULL);
     }
 
@@ -3033,7 +3049,7 @@ ExSqlComp::ReturnStatus ContextCli::sendXnMsgToArkcmp
            CmpMessageObj::MessageTypeEnum(xnMsgType),
            dummyReply, dummyLength,
            currCtxt->getSqlParserFlags(),
-           NULL, 0);
+           NULL, 0, diagsArea);
       if (cmpRet != 0)
         {
           char emsText[120];
@@ -3116,7 +3132,7 @@ Lng32 ContextCli::setSecInvalidKeys(
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   tempDiagsArea->clear();
  
-  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(
+  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
                                  cliGlobals->myNodeName(), 
                                  cliGlobals->myCpu(), tempDiagsArea);
   if (ssmpServer == NULL)
@@ -3284,7 +3300,7 @@ ExStatisticsArea *ContextCli::getMergedStats(
   }
   ComDiagsArea *tempDiagsArea = &diagsArea_;
   ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
-  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, 
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(exHeap(), nodeName, 
            (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDiagsArea);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_
@@ -4343,128 +4359,6 @@ RETCODE ContextCli::getAuthNameFromID(
 //******************* End of ContextCli::getAuthNameFromID *********************
 
 
-
-
-
-
-// Public method to map an integer user ID to a user name
-RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
-                                        char *userNameBuffer, // OUT
-                                        Int32 maxBufLen,      // IN
-                                        Int32 *requiredLen)   // OUT optional
-{
-  RETCODE result = SUCCESS;
-  char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
-  Int32 userIDFromUsersTable;
-  std::vector<int32_t> roleIDs;
-  if (requiredLen)
-    *requiredLen = 0;
-  
-  // Cases to consider
-  // * userID is the current user ID
-  // * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-  //   are not registered in the USERS table
-  // * other users
-
-  NABoolean isCurrentUser =
-    (userID == (Int32) databaseUserID_ ? TRUE : FALSE);
-
-  const char *currentUserName = NULL;
-  if (isCurrentUser)
-  {
-    currentUserName = databaseUserName_;
-  }
-  else
-  {
-    // See if the USERS row exists
-    result = authQuery(USERS_QUERY_BY_USER_ID,
-                       NULL,        // IN user name (ignored)
-                       userID,      // IN user ID
-                       usersNameFromUsersTable, //OUT
-                       sizeof(usersNameFromUsersTable),
-                       userIDFromUsersTable,
-                       roleIDs);  // OUT
-    if (result != ERROR)
-      currentUserName = usersNameFromUsersTable;
-  }
-
-  // Return the user name if the lookup was successful
-  if (result != ERROR)
-  {
-    ex_assert(currentUserName, "currentUserName should not be NULL");
-
-    Int32 bytesNeeded = strlen(currentUserName) + 1;
-    
-    if (bytesNeeded > maxBufLen)
-    {
-      diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
-      if (requiredLen)
-        *requiredLen = bytesNeeded;
-      result = ERROR;
-    }
-    else
-    {
-      strcpy(userNameBuffer, currentUserName);
-    }
-  }
-  
-  return result;
-}
-  
-// Public method to map a user name to an integer user ID
-RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
-                                        Int32 *userID)        // OUT
-{
-  
-   if (userName == NULL || userID == NULL)
-      return ERROR;
-
-// Cases to consider
-// * userName is the current user name
-// * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-//   are not registered in the USERS table
-// * other users
-
-   if (databaseUserName_ && strcasecmp(userName,databaseUserName_) == 0)
-   {
-      *userID = databaseUserID_;
-      return SUCCESS;
-   }
-   
-   if (strcasecmp(userName,ComUser::getPublicUserName()) == 0)
-   {
-      *userID = ComUser::getPublicUserID();
-      return SUCCESS;
-   }
-   
-   if (strcasecmp(userName,ComUser::getSystemUserName()) == 0)
-   {
-      *userID = ComUser::getSystemUserID();
-      return SUCCESS;
-   }
-  
-   // See if the AUTHS row exists
-
-   RETCODE result = SUCCESS;
-   char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
-   Int32 userIDFromUsersTable;
-   std::vector<int32_t> roleIDs;
-
-   result = authQuery(USERS_QUERY_BY_USER_NAME,
-                      userName,    // IN user name
-                      0,           // IN user ID (ignored)
-                      usersNameFromUsersTable, //OUT
-                      sizeof(usersNameFromUsersTable),
-                      userIDFromUsersTable,
-                      roleIDs);  // OUT
-   if (result == SUCCESS && userID)
-      *userID = userIDFromUsersTable;
-
-   return result;
-  
-}
-
-// Public method only meant to be called in ESPs. All we do is call
 // the private method to update user ID data members. On platforms
 // other than Linux the method is a no-op.
 void ContextCli::setDatabaseUserInESP(const Int32 &uid, const char *uname,
@@ -4641,22 +4535,31 @@ Int32 ContextCli::switchToCmpContext(void *cmpCntxt)
   return (cmpCntxtInfo->getUseCount() == 1? 0: 1); // success
 }
 
-Int32 ContextCli::switchBackCmpContext(void)
+void ContextCli::copyDiagsAreaToPrevCmpContext()
 {
   ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
 
+  CmpContext *curr = embeddedArkcmpContext_;
+
+  if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+    return; 
+  if (curr->diags()->getNumber() > 0)
+     prevCmpContext_->diags()->mergeAfter(*curr->diags());
+}
+
+Int32 ContextCli::switchBackCmpContext(void)
+{
+  if (prevCmpContext_ == NULL) 
+  {
+     ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
+     if (cmpContextInUse_.getLast(prevCmpContext_) == FALSE)
+        return -1; 
+  }
   // switch back
   CmpContext *curr = embeddedArkcmpContext_;
-  CmpContext *prevCmpCntxt;
 
-  if (cmpContextInUse_.getLast(prevCmpCntxt) == FALSE)
-    return -1;  // failed to get previous CmpContext, should not have happened.
-
-  embeddedArkcmpContext_ = prevCmpCntxt;
-  cmpCurrentContext = prevCmpCntxt;  // restore the thread global
-
-  // merge diags to previous CmpContext
-  prevCmpCntxt->diags()->mergeAfter(*curr->diags());
+  embeddedArkcmpContext_ = prevCmpContext_;
+  cmpCurrentContext = prevCmpContext_;  // restore the thread global
 
   // book keeping
   CmpContextInfo *cmpCntxtInfo;
@@ -4674,6 +4577,7 @@ Int32 ContextCli::switchBackCmpContext(void)
   cmpCurrentContext->switchBackContext();
 
   deinitializeArkcmp();
+  prevCmpContext_ = NULL;
 
   return 0;  // success
 }
@@ -4764,7 +4668,10 @@ RETCODE ContextCli::storeName(
 
    actualLength = strlen(src);
    if (actualLength >= maxLength)
+   {
+      diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
       return ERROR;
+   }
    
    memcpy(dest,src,actualLength);
    dest[actualLength] = 0;
@@ -4861,5 +4768,4 @@ void ContextCli::disconnectHdfsConnections()
           hdfsDisconnect(entry->hdfsHandle_);         
         }
     }
-  
 }

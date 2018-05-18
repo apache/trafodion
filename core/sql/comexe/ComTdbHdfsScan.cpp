@@ -121,6 +121,7 @@ ComTdbHdfsScan::ComTdbHdfsScan(
   hdfsRootDir_(hdfsRootDir),
   modTSforDir_(modTSforDir),
   numOfPartCols_(numOfPartCols),
+  hdfsIoByteArraySizeInKB_(0),
   hdfsDirsToCheck_(hdfsDirsToCheck)
 {};
 

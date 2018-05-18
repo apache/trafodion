@@ -31,6 +31,7 @@
 #include <sys/syscall.h>
 #include "jni.h"
 #include "Platform.h"
+#include "NAString.h"
 
 class LmJavaOptions;
 
@@ -40,7 +41,11 @@ class LmJavaOptions;
 
 extern __thread JNIEnv *jenv_;
 extern __thread NAString *tsRecentJMFromJNI;
+extern __thread NAString *tsSqlJniErrorStr;
 
+void setSqlJniErrorStr(NAString &errorMsg);
+void setSqlJniErrorStr(const char *errorMsg);
+const char *getSqlJniErrorStr();
 
 // This structure defines the information needed for each java method used.
 struct JavaMethodInit {
@@ -74,8 +79,6 @@ class JavaObjectInterface
   : public ExGod
 #endif
 {
-public:
-  NAString getLastJavaError(jmethodID methodID);
 protected:
 
   // Default constructor - for creating a new JVM		
@@ -119,12 +122,13 @@ protected:
   // Get the error description.
   static char* getErrorText(JOI_RetCode errEnum);
  
-  NAString getLastError();
+  static const char *getLastError() 
+    { return getSqlJniErrorStr(); }
 
   // Write the description of a Java error to the log file.
-  void logError(std::string &cat, const char* methodName, const char *result);
-  void logError(std::string &cat, const char* methodName, jstring jresult);
-  void logError(std::string &cat, const char* file, int line);
+  static void logError(std::string &cat, const char* methodName, const char *result);
+  static void logError(std::string &cat, const char* methodName, jstring jresult);
+  static void logError(std::string &cat, const char* file, int line);
 
   static JOI_RetCode initJNIEnv();
   static char* buildClassPath();  
@@ -143,11 +147,10 @@ public:
   {
     return isInitialized_;
   }
-  // Pass in jenv if the thread where the object is created is different than
-  // the thread where exception occurred
-  NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
+  static NABoolean getExceptionDetails(const char *fileName, int lineNo,
+                       const char *methodName);  
 
-  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
+  static void appendExceptionMessages(jthrowable a_exception, NAString &error_msg);
   
   NAHeap *getHeap() { return heap_; }
 protected:

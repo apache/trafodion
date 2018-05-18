@@ -32,6 +32,7 @@
 #include "str.h"
 #include "NAStringDef.h"
 #include "HBaseClient_JNI.h"
+#include "HiveClient_JNI.h"
 #include "Globals.h"
 
 struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID, 
@@ -64,25 +65,17 @@ HiveMetaData::HiveMetaData() : tbl_(NULL),
                                errCode_(0) ,
                                errDetail_(NULL),
                                errMethodName_(NULL),
-                               errCodeStr_(NULL),
-                               client_(NULL)
+                               errCodeStr_(NULL)
 {
 }
 
 HiveMetaData::~HiveMetaData()
 {
   clear();
-  disconnect();
 }
 
 NABoolean HiveMetaData::init()
 {
-  CollHeap *h = CmpCommon::contextHeap();
-
-  /* Create a connection */
-  if (!connect())
-    return FALSE; // errCode_ should be set
-
   return TRUE;
 }
 
@@ -136,38 +129,6 @@ static NABoolean splitURL(const char *url,
   return result;
 }
 
-NABoolean HiveMetaData::connect()
-{
-  if (!client_)
-    {
-      HiveClient_JNI* hiveClient = HiveClient_JNI::getInstance();
-      if (hiveClient->isInitialized() == FALSE)
-        {
-          HVC_RetCode retCode = hiveClient->init();
-          if (retCode != HVC_OK)
-            return recordError((Int32)retCode, "HiveClient_JNI::init()");
-        }
-      
-      if (hiveClient->isConnected() == FALSE)
-        {
-          Text metastoreURI("");
-          HVC_RetCode retCode = 
-            hiveClient->initConnection(metastoreURI.c_str());
-          if (retCode != HVC_OK)
-            return recordError((Int32)retCode, 
-                               "HiveClient_JNI::initConnection()");
-        }
-      client_ = hiveClient;
-    } // client_ exists
-  return TRUE;
-}
-
-NABoolean HiveMetaData::disconnect()
-{
-  client_ = NULL; // client connection is owned by CliGlobals. 
-  return TRUE;
-}
-
 void HiveMetaData::position()
 {
   currDesc_ = tbl_;
@@ -209,10 +170,9 @@ NABoolean HiveMetaData::recordError(Int32 errCode,
   if (errCode != HVC_OK)
     {
       errCode_ = errCode;
-      if (client_)
-        errCodeStr_ = client_->getErrorText((HVC_RetCode)errCode_);
+      errCodeStr_ = HiveClient_JNI::getErrorText((HVC_RetCode)errCode_);
       errMethodName_ = errMethodName;
-      errDetail_ = GetCliGlobals()->getJniErrorStrPtr();
+      errDetail_ = GetCliGlobals()->getJniErrorStr();
       return FALSE;
     }
   return TRUE;
@@ -722,19 +682,12 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
    // table not found in cache, try to read it from metadata
    hive_tbl_desc * result = NULL;
    Int64 creationTS;
-   NABoolean needToConnect ;
-   needToConnect = (client_ == NULL);
-
-   /* Create a connection */
-   if (needToConnect)
-     if (!connect())
-       return NULL;
 
    NAText* tblStr = new (CmpCommon::statementHeap()) string();
    if (!tblStr)
      return NULL;
 
-   HVC_RetCode retCode = client_->getHiveTableStr(schemaName, 
+   HVC_RetCode retCode = HiveClient_JNI::getHiveTableStr(schemaName, 
                                                   tblName, *tblStr);
    if ((retCode != HVC_OK) && (retCode != HVC_DONE)) {
      recordError((Int32)retCode, "HiveClient_JNI::getTableStr()");
@@ -827,11 +780,8 @@ NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS,
 
    // validate creation timestamp
 
-   if (!connect())
-     return FALSE;
-
    Int64 currentRedefTime = 0;
-   HVC_RetCode retCode = client_->getRedefTime(schName, tblName, 
+   HVC_RetCode retCode = HiveClient_JNI::getRedefTime(schName, tblName, 
                                                  currentRedefTime);
    if ((retCode != HVC_OK) && (retCode != HVC_DONE)) {
      return recordError((Int32)retCode, "HiveClient_JNI::getRedefTime()");

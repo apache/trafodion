@@ -81,8 +81,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -213,8 +213,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -345,8 +345,8 @@
 >>
 >>create view games_by_player as
 +>  select player_name, game_time
-+>  from teams t, games g, players p
-+>  where p.player_team_number = t.team_number and
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
 +>        t.team_number = g.home_team_number
 +>  order by player_name, team_number;
 
@@ -482,6 +482,8 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER1
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 ----G--    TRAFODION.T125SCH2.PLAYERS_SEQUENCE
 ------E    TRAFODION.T125SCH2.TESTHIVE
 -I-----    TRAFODION.T125SCH3.GAMES
@@ -494,6 +496,8 @@ S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER <Column> PLAYER_NAME
 Privileges for User SQL_USER2
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 SIDU-R-    TRAFODION.T125SCH1.GAMES
 S------    TRAFODION.T125SCH1.GAMES_BY_PLAYER
 SIDU-R-    TRAFODION.T125SCH2.GAMES
@@ -511,6 +515,8 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER7
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
 S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
 SIDU-R-    TRAFODION.T125SCH3.PLAYERS
@@ -522,6 +528,8 @@ SIDU-R-    TRAFODION.T125SCH3.PLAYERS
 Privileges for User SQL_USER8
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 SIDU-R-    TRAFODION.T125SCH3.GAMES
 S----R-    TRAFODION.T125SCH3.GAMES_BY_PLAYER
 S----R-    TRAFODION.T125SCH3.HOME_TEAMS_GAMES
@@ -608,7 +616,7 @@ T125SCH2.PLAYERS_SEQUENCE
 T125SCH3.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH1
 ======================================
@@ -631,6 +639,59 @@ Procedures in Schema TRAFODION.T125SCH1
 =======================================
 
 TESTHIVE
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+Indexes on Table T125SCH1.PLAYERS
+=================================
+
+PLAYERS_TEAMS
+
+--- SQL operation complete.
+>>get views on table players;
+
+Views on Table T125SCH1.PLAYERS
+===============================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+Views ON View T125SCH1.PLAYERS_ON_TEAM
+======================================
+
+TRAFODION.T125SCH1.GAMES_BY_PLAYER
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+Tables in View T125SCH1.GAMES_BY_PLAYER
+=======================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.TEAMS
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+Views in View T125SCH1.GAMES_BY_PLAYER
+======================================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
+
+Objects in View T125SCH1.GAMES_BY_PLAYER
+========================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+TRAFODION.T125SCH1.TEAMS
 
 --- SQL operation complete.
 >>
@@ -752,7 +813,7 @@ T125SCH2.PLAYERS_SEQUENCE
 T125SCH3.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH3
 ======================================
@@ -777,6 +838,24 @@ Procedures in Schema TRAFODION.T125SCH3
 TESTHIVE
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+Procedures for Library T125SCH3.T125_L2
+=======================================
+
+T125SCH3.TESTHIVE
+
+--- SQL operation complete.
+>>
 >>
 >>
 >>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
@@ -825,13 +904,33 @@ Sequences in catalog TRAFODION
 T125SCH3.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -897,7 +996,7 @@ Sequences in catalog TRAFODION
 T125SCH3.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 Libraries in Schema TRAFODION.T125SCH3
 ======================================
@@ -922,6 +1021,24 @@ Procedures in Schema TRAFODION.T125SCH3
 TESTHIVE
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+Procedures for Library T125SCH3.T125_L2
+=======================================
+
+T125SCH3.TESTHIVE
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -971,13 +1088,33 @@ Sequences in catalog TRAFODION
 T125SCH2.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -1002,6 +1139,11 @@ PLAYERS_SEQUENCE
 
 --- SQL operation complete.
 >>get libraries in schema t125sch2;
+
+Libraries in Schema TRAFODION.T125SCH2
+======================================
+
+T125_L2
 
 --- SQL operation complete.
 >>get functions in schema t125sch2;
@@ -1046,7 +1188,7 @@ Sequences in catalog TRAFODION
 T125SCH2.PLAYERS_SEQUENCE
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1055,6 +1197,14 @@ T125SCH2.PLAYERS_SEQUENCE
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -1110,13 +1260,51 @@ GAMES_BY_PLAYER
 >>get sequences, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+Tables in View T125SCH1.GAMES_BY_PLAYER
+=======================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.TEAMS
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+Views in View T125SCH1.GAMES_BY_PLAYER
+======================================
+
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
+
+Objects in View T125SCH1.GAMES_BY_PLAYER
+========================================
+
+TRAFODION.T125SCH1.GAMES
+TRAFODION.T125SCH1.PLAYERS_ON_TEAM
+TRAFODION.T125SCH1.TEAMS
 
 --- SQL operation complete.
 >>
@@ -1184,7 +1372,12 @@ T125SCH3.GAMES_BY_PLAYER
 >>get sequences in catalog trafodion, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1198,6 +1391,19 @@ TRANSLATEBITMAP
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 
@@ -1243,13 +1449,33 @@ T125SCH3
 >>get sequences, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
 
 --- SQL operation complete.
 >>get functions;
 
 --- SQL operation complete.
 >>get procedures;
+
+--- SQL operation complete.
+>>
+>>get indexes on table players;
+
+--- SQL operation complete.
+>>get views on table players;
+
+--- SQL operation complete.
+>>get views on view players_on_team;
+
+--- SQL operation complete.
+>>
+>>get tables in view games_by_player;
+
+--- SQL operation complete.
+>>get views in view games_by_player;
+
+--- SQL operation complete.
+>>get objects in view games_by_player;
 
 --- SQL operation complete.
 >>
@@ -1304,7 +1530,12 @@ PLAYERS
 >>get sequences in catalog trafodion, match 'T125SCH%';
 
 --- SQL operation complete.
->>get libraries;
+>>get libraries, match 'T125%';
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
 
 --- SQL operation complete.
 >>get functions in schema t125sch3;
@@ -1318,6 +1549,19 @@ TRANSLATEBITMAP
 >>get procedures;
 
 --- SQL operation complete.
+>>
+>>get functions for library t125_l1;
+
+Functions for Library T125SCH3.T125_L1
+======================================
+
+T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures for library t125_l2;
+
+--- SQL operation complete.
+>>
 >>
 >>exit;
 

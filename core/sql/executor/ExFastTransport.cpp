@@ -790,7 +790,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           }
           else if (!isSequenceFile() && hdfsClient_ == NULL)
           {
-             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), hdfsClientRetCode);
+             hdfsClient_ = HdfsClient::newInstance((NAHeap *)getHeap(), NULL, hdfsClientRetCode);
              if (hdfsClientRetCode != HDFS_CLIENT_OK)
              {
                 createHdfsClientFileError(hdfsClientRetCode);
@@ -813,25 +813,29 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           }
           else
           {
-            hdfsClientRetCode = hdfsClient_->hdfsCreate(targetLocation_, isHdfsCompressed());
-            if (hdfsClientRetCode != HDFS_CLIENT_OK)
-            {
-              createHdfsClientFileError(hdfsClientRetCode);
-              pstate.step_ = EXTRACT_ERROR;
-              break;
-            }
-          }  
-          if (feStats)
-          {
-            feStats->setPartitionNumber(fileNum);
-          }
-        }
-      else
-        {
-          updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
-          pstate.step_ = EXTRACT_ERROR;
-          break;
-        }
+             hdfsClientRetCode = hdfsClient_->hdfsOpen(targetLocation_, isHdfsCompressed());
+             if (hdfsClientRetCode != HDFS_CLIENT_OK)
+             {
+                createHdfsClientFileError(hdfsClientRetCode);
+                NADELETE(hdfsClient_,
+                       HdfsClient,
+                       heap_);
+                hdfsClient_ = NULL;
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+             }
+           }
+           if (feStats)
+           {
+             feStats->setPartitionNumber(fileNum);
+           }
+       }
+       else
+       {
+           updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
+           pstate.step_ = EXTRACT_ERROR;
+           break;
+       }
 
       for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
       {
@@ -1042,7 +1046,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         }
       else
         {
-          hdfsClientRetCode = hdfsClient_->hdfsWrite(currBuffer_->data_, bytesToWrite);
+          hdfsClient_->hdfsWrite(currBuffer_->data_, bytesToWrite, hdfsClientRetCode);
           if (hdfsClientRetCode != HDFS_CLIENT_OK)
           {
             createSequenceFileError(hdfsClientRetCode);
@@ -1273,7 +1277,7 @@ void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                (char *)currContext->getJniErrorStr().data());
+                (char *)GetCliGlobals()->getJniErrorStr());
   //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
   //pentry_down->setDiagsArea(diagsArea);
   updateWorkATPDiagsArea(diagsArea);
@@ -1290,7 +1294,7 @@ void ExHdfsFastExtractTcb::createHdfsClientFileError(Int32 hdfsClientRetCode)
                   (ExeErrorCode)(8447),
                   NULL, NULL, NULL, NULL,
                   errorMsg,
-                (char *)currContext->getJniErrorStr().data());
+                  (char *)GetCliGlobals()->getJniErrorStr());
   updateWorkATPDiagsArea(diagsArea);
 }
 

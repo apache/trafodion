@@ -1133,6 +1133,7 @@ public class SessionInterface implements SessionDefaults
       driver.getMajorVersion();
       driver.getMinorVersion();
 
+      connProp.put("useLobHandle", String.valueOf(true));
       connProp.put("user",sessObj.getSessionUser());
       connProp.put("password",sessObj.getSessionPass());
 
@@ -1238,6 +1239,7 @@ public class SessionInterface implements SessionDefaults
       driver.getMajorVersion();
       driver.getMinorVersion();
 
+      connProp.put("useLobHandle", String.valueOf(true));
       connProp.put("user", (user==null?sessObj.getSessionUser():user) );
       connProp.put("password",(password==null?sessObj.getSessionPass():password));
       connProp.put("roleName", (null==role?"":role));

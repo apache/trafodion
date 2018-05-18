@@ -193,6 +193,7 @@ typedef NABoolean               ComBoolean;
 // Procedures are defined in CmpSeabaseDDLroutine.h
 #define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
 #define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+#define SEABASE_LIBMGR_LIBRARY_CPP "DB__LIBMGR_LIB_CPP"
 
 // reserved column names for traf internal system usage
 #define TRAF_SALT_COLNAME "_SALT_"
@@ -608,27 +609,41 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
 #define COM_MV_SYSTEM_ADDED_COLUMN_LIT      "M "
 #define COM_ALTERED_USER_COLUMN_LIT         "C "
 
-enum ComColumnDefaultClass { COM_CURRENT_DEFAULT
-                           , COM_NO_DEFAULT
-                           , COM_NULL_DEFAULT
-                           , COM_USER_DEFINED_DEFAULT
-                           , COM_USER_FUNCTION_DEFAULT
-                           , COM_IDENTITY_GENERATED_BY_DEFAULT
-                           , COM_IDENTITY_GENERATED_ALWAYS
-                           , COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT
-                           , COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT
+/* This enum will be saved as integer in metadata tables
+ * If you change it, that will affect the existing values
+ * Make sure to add new values at the end
+ */
+enum ComColumnDefaultClass { COM_CURRENT_DEFAULT = 0
+                           , COM_NO_DEFAULT = 1
+                           , COM_NULL_DEFAULT = 2
+                           , COM_USER_DEFINED_DEFAULT = 3
+                           , COM_USER_FUNCTION_DEFAULT = 4
+                           , COM_IDENTITY_GENERATED_BY_DEFAULT = 5
+                           , COM_IDENTITY_GENERATED_ALWAYS =6
+                           , COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT = 7
+                           , COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT = 8
+                           , COM_UUID_DEFAULT = 9 
+                           , COM_CURRENT_UT_DEFAULT = 10
+                           , COM_FUNCTION_DEFINED_DEFAULT = 11
                            };
 
 #define COM_CURRENT_DEFAULT_LIT                     "CD"
+#define COM_CURRENT_UT_DEFAULT_LIT                  "UT"
+#define COM_FUNCTION_DEFINED_DEFAULT_LIT            "FD"
 #define COM_NO_DEFAULT_LIT                          "  "
 #define COM_NULL_DEFAULT_LIT                        "ND"
 #define COM_USER_DEFINED_DEFAULT_LIT                "UD"
 #define COM_USER_FUNCTION_DEFAULT_LIT               "UF"
+#define COM_UUID_DEFAULT_LIT                        "UI"
 #define COM_IDENTITY_GENERATED_BY_DEFAULT_LIT       "ID"
 #define COM_IDENTITY_GENERATED_ALWAYS_LIT           "IA"
 #define COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT_LIT "AC"
 #define COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT_LIT "AD"
 
+/* This enum will be saved as integer in metadata tables
+ * If you change it, that will affect the existing values
+ * Make sure to add new values at the end
+ */
 enum ComParamDefaultClass { COM_CURRENT_PARAM_DEFAULT        = COM_CURRENT_DEFAULT
                           , COM_NO_PARAM_DEFAULT 
                                                              = COM_NO_DEFAULT
@@ -641,15 +656,21 @@ enum ComParamDefaultClass { COM_CURRENT_PARAM_DEFAULT        = COM_CURRENT_DEFAU
                                                              = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT
                           , COM_ALWAYS_DEFAULT_COMPUTED_PARAM_DEFAULT // for future internal use only
                                                              = COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT
+                          , COM_UUID_PARAM_DEAULT            = COM_UUID_DEFAULT
+                          , COM_CURRENT_UT_PARAM_DEFAULT     = COM_CURRENT_UT_DEFAULT
+                          , COM_FUNCTION_DEFINED_PARAM_DEFAULT
+                                                             = COM_FUNCTION_DEFINED_DEFAULT
                           };
 
 #define COM_NO_PARAM_DEFAULT_LIT                      "  "
 #define COM_CURRENT_PARAM_DEFAULT_LIT                 "CD"
+#define COM_CURRENT_UT_PARAM_DEFAULT_LIT              "UT"
 #define COM_NULL_PARAM_DEFAULT_LIT                    "ND"
 #define COM_USER_DEFINED_PARAM_DEFAULT_LIT            "UD"
 #define COM_USER_FUNCTION_PARAM_DEFAULT_LIT           "UF"
 #define COM_ALWAYS_COMPUTE_COMPUTED_PARAM_DEFAULT_LIT "AC"
 #define COM_ALWAYS_DEFAULT_COMPUTED_PARAM_DEFAULT_LIT "AD"
+#define COM_FUNCTION_DEFINED_PARAM_DEFAULT_LIT        "FD"
 
 // Represents the kind of string value stored in TEXT table.  Note
 // that changing existing values will require an UPGRADE of the
@@ -1287,6 +1308,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_USER_GRANT_SPECIAL_ROLE
                      , COM_QI_OBJECT_REDEF
                      , COM_QI_STATS_UPDATED
+                     , COM_QI_GRANT_ROLE
                      } ;
 
 #define COM_QI_INVALID_ACTIONTYPE_LIT  "  "
@@ -1309,7 +1331,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_USER_GRANT_SPECIAL_ROLE_LIT     "UZ"
 #define COM_QI_OBJECT_REDEF_LIT        "OR"
 #define COM_QI_STATS_UPDATED_LIT       "US"
-
+#define COM_QI_GRANT_ROLE_LIT          "GG"
 
 
 

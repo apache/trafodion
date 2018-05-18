@@ -289,12 +289,12 @@ if [ "$BUILD_FLAVOR" = "RELEASE" ]; then
 fi
 
 if [ `uname` = "Linux" ]; then 
-  # previously executed tests:
-  #skipTheseTests="$skipTheseTests"
-  # embedded tests
-  #skipTheseTests="$skipTheseTests"
-  # tests that hang
-  skipTheseTests="$skipTheseTests TEST070 TESTTOK TEST066"
+  skipTheseTests="$skipTheseTests TEST070 TEST066"
+fi
+
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $compGeneralCT"
 fi
 
 for i in $testfiles; do 
@@ -546,9 +546,9 @@ for i in $prettyfiles; do
        cp -f $REGRTSTDIR/$test $REGRRUNDIR/$test 2>$NULL
     fi
 
-    if [ $tnum = "TOK" ]; then
-      $wDir/toolbin/parserToks.ksh $wDir/parser/SqlParser.y NO-POPUP 2>&1 | tee LOGTOK;
-    elif [ $tnum = "TOK2" -a `uname` = "Windows_NT" ]; then
+#    if [ $tnum = "TOK" ]; then
+#      $wDir/toolbin/parserToks.ksh $wDir/parser/SqlParser.y NO-POPUP 2>&1 | tee LOGTOK;
+    if [ $tnum = "TOK2" -a `uname` = "Windows_NT" ]; then
       $REGRTSTDIR/tok2.ksh 2>&1 | tee LOGTOK2;
     else
     # special case for TEST002, where we want mxci to be licensed

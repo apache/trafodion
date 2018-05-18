@@ -848,6 +848,14 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
               }
             }
           }
+
+          // If a role is granted or revoked from a user do checks next time query is executed
+          else if (siKeyType == COM_QI_USER_GRANT_ROLE)
+          {
+             keysAreInvalid = true;
+             masterStats->setValidPrivs(false);
+          }
+
           else if (siKeyType != COM_QI_STATS_UPDATED)
           {
             // compare the new REVOKE invalidation key to each key in the 

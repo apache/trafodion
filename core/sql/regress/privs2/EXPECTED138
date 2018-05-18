@@ -67,7 +67,8 @@ SB_PERSISTENT_SAMPLES
 
 *** ERROR[4082] Object TRAFODION.T138SCH.USER1_T1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>create table user1_t2 (c1 int, c2 int);
 
@@ -90,7 +91,8 @@ SB_PERSISTENT_SAMPLES
 
 *** ERROR[4082] Object TRAFODION.T138SCH.USER1_T2 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>exit;
 

@@ -40,33 +40,30 @@
 
 #define MAXERRTEXT  255
 
-#define UDR_ERR_UNKNOWN_MSG_TYPE          11101  // udrserv
-#define UDR_ERR_MISSING_UDRHANDLE         11102  // udrunload, udrcontext, udrinvoke
-#define UDR_ERR_MISSING_LMROUTINE         11103  // udrunload, udrinvoke
-#define UDR_ERR_CLI_ERROR                 11104  // udrcancel, udrcommit, udrload
+enum UdrErrorEnum {
+        UDR_ERR_UNKNOWN_MSG_TYPE        = 11101, // udrserv
+        UDR_ERR_MISSING_UDRHANDLE       = 11102, // udrunload, udrcontext, udrinvoke
+        UDR_ERR_MISSING_LMROUTINE       = 11103, // udrunload, udrinvoke
+        UDR_ERR_CLI_ERROR               = 11104, // udrcancel, udrcommit, udrload
                                                  // spinfo, udrinvoke
-#define UDR_ERR_INVALID_LM_PARAMMODE      11105  // udrinvoke
-#define UDR_ERR_UNABLE_TO_ALLOCATE_MEMORY 11108  // udrload
-#define UDR_ERR_TOO_MANY_OPENERS          11109  // udrserv
-#define UDR_ERR_MESSAGE_PROCESSING        11110  // udrcancel, udrcommint,
+        UDR_ERR_INVALID_LM_PARAMMODE    = 11105, // udrinvoke
+        UDR_ERR_UNABLE_TO_ALLOCATE_MEMORY=11108, // udrload
+        UDR_ERR_TOO_MANY_OPENERS        = 11109, // udrserv
+        UDR_ERR_MESSAGE_PROCESSING      = 11110, // udrcancel, udrcommint,
                                                  // udrimok, rsload, rsfetch
                                                  // rscontinue, rsunload
-#define UDR_ERR_INTERNAL_ERROR            11111  // spinfo
-#define UDR_ERR_DUPLICATE_LOADS           11112
-#define UDR_ERR_UNEXPECTED_UNLOAD         11113
+        UDR_ERR_INTERNAL_ERROR          = 11111, // spinfo
+        UDR_ERR_DUPLICATE_LOADS         = 11112,
+        UDR_ERR_UNEXPECTED_UNLOAD       = 11113,
 
 // RS related messages
-#define UDR_ERR_MISSING_RSHANDLE	  11114  // RS handle missing
-#define UDR_ERR_INTERNAL_CLI_ERROR   	  11115  // RS Internal CLI error
-#define UDR_ERR_INVALID_RS_INDEX     	  11116  // RS Invalid index in RS_LOAD
-#define UDR_ERR_INVALID_RS_STATE    	  11117  // RS is in invalid state for
+        UDR_ERR_MISSING_RSHANDLE	= 11114, // RS handle missing
+        UDR_ERR_INTERNAL_CLI_ERROR   	= 11115, // RS Internal CLI error
+        UDR_ERR_INVALID_RS_INDEX     	= 11116, // RS Invalid index in RS_LOAD
+        UDR_ERR_INVALID_RS_STATE    	= 11117, // RS is in invalid state for
                                                  //  current operation
-#define UDR_ERR_INVALID_RS_COLUMN_COUNT   11118  // RS column count is <= 0
-
-
-#define UDR_ERR_TRANSACTION_WAS_ABORTED    8839  // udrinvoke
-#define UDR_ERR_SQL_ACCESS_VIOLATION       8882  // udrinvoke
-#define UDR_ERR_NO_TRANSACTION_VIOLATION   8884  // udrinvoke
+        UDR_ERR_INVALID_RS_COLUMN_COUNT = 11118  // RS column count is <= 0
+};
 
 #define INVOKE_ERR_NO_REQUEST_BUFFER          1
 #define INVOKE_ERR_NO_INPUT_ROW               2

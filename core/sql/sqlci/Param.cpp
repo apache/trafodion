@@ -50,6 +50,8 @@
 #include "NLSConversion.h"
 #include "nawstring.h"
 
+extern NAHeap sqlci_Heap;
+
 short convDoItMxcs(char * source,
 		   Lng32 sourceLen,
 		   short sourceType,
@@ -242,7 +244,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 			  Lng32 targetPrecision,
 			  Lng32 targetScale,
                           Lng32 vcIndLen,
-   			  ComDiagsArea* diags) {
+   			  ComDiagsArea *&diags) {
 
   // get rid of the old converted value
   if (converted_value) {
@@ -418,7 +420,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 		  targetScale,
 		  VCLen,
 		  VCLenSize,
-		  0,
+		  &sqlci_Heap,
 		  &diags);
     
     if ( ok != ex_expr::EXPR_OK)
@@ -454,7 +456,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 					   targetScale,
 					   VCLen,
 					   VCLenSize,
-					   0,
+					   &sqlci_Heap,
 					   &diags,
                                            CONV_UNKNOWN,
                                            NULL,

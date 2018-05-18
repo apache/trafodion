@@ -204,6 +204,12 @@ using namespace ComponentPrivileges;
 // -----------------------------------------------------------------------
 // Construct a PrivMgrComponentPrivileges object for a new component operation.
 // -----------------------------------------------------------------------
+PrivMgrComponentPrivileges::PrivMgrComponentPrivileges()
+: PrivMgr(),
+  fullTableName_(metadataLocation_ + "." + PRIVMGR_COMPONENT_PRIVILEGES),
+  myTable_(*new MyTable(fullTableName_,pDiags_)) 
+{ };
+
 PrivMgrComponentPrivileges::PrivMgrComponentPrivileges(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)
@@ -840,11 +846,12 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
       // more items in the list fail and in cases of "ALL".                                             
       if (!componentOperations.nameExists(componentUID,operationName))
       {
-         *pDiags_ << DgSqlCode(-CAT_TABLE_DOES_NOT_EXIST_ERROR)
-                  << DgTableName(operationName.c_str());
+         *pDiags_ << DgSqlCode(-CAT_INVALID_COMPONENT_PRIVILEGE)
+                  << DgString0(operationName.c_str())
+                  << DgString1(componentName.c_str());
          return STATUS_ERROR;
       }
-      
+
       std::string operationCode;
       bool isSystemOperation = FALSE;
       std::string operationDescription;
@@ -1299,7 +1306,7 @@ int64_t rowCount = 0;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 // set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+int32_t diagsMark = (pDiags_ != NULL ? pDiags_->mark() : -1);
 
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
@@ -1307,7 +1314,8 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->rewind(diagsMark);
+   if (diagsMark != -1)
+      pDiags_->rewind(diagsMark);
 
    return false;
 

@@ -258,8 +258,6 @@ short ExDDLTcb::work()
           const char *parentQid = masterGlob->getStatement()->
             getUniqueStmtId();
           CmpCommon::context()->sqlSession()->setParentQid(parentQid);
-          if (cpDiagsArea == NULL)
-	    cpDiagsArea = ComDiagsArea::allocate(getHeap());
           // Despite its name, the compileDirect method is where 
           // the DDL is actually performed. 
           Int32 cpStatus = CmpCommon::context()->compileDirect(
@@ -276,20 +274,14 @@ short ExDDLTcb::work()
             currContext->exHeap()->deallocateMemory((void*)dummyReply);
           if (cpStatus == ExSqlComp::SUCCESS)
             {
-           // CatSQLObjectCache &catCache = CatProcess.getSQLObjectCache();
-           // catCache.cleanupCache();
-              // clear diagsArea of cli context which may have warnings
-              // set when calling cli inside the embedded compiler
-              if (!currContext->diags().getNumber(DgSqlCode::ERROR_))
-                currContext->diags().clear();
               goto endOfData;
             }
           else
             {
               handleErrors(pentry_down, cpDiagsArea, cpStatus);
               //Don't proceed if its an error.
-              if (cpStatus == ExSqlComp::ERROR)
-                goto endOfData;
+              if (cpStatus == ExSqlComp::ERROR) 
+                 goto endOfData;
             }
         }
       else if (getArkcmp())  // regular arkcmp exists
@@ -386,6 +378,7 @@ short ExDDLTcb::work()
 	  
           diagsArea->mergeAfter (*cpDiagsArea);
           up_entry->setDiagsArea(diagsArea);
+          cpDiagsArea->decrRefCount();
         }
 
       up_entry->upState.parentIndex = 
@@ -606,8 +599,6 @@ short ExDDLwithStatusTcb::work()
               getUniqueStmtId();
             CmpCommon::context()->sqlSession()->setParentQid(parentQid);
             
-            if (cpDiagsArea == NULL)
-              cpDiagsArea = ComDiagsArea::allocate(getHeap());
             cmpStatus = CmpCommon::context()->compileDirect(
                data_, dataLen_,
                currContext->exHeap(),
@@ -951,6 +942,7 @@ short ExDescribeTcb::work()
   ComDiagsArea *da = NULL;  
   ComDiagsArea *diagsArea;  
   NAHeap *arkcmpHeap = currContext()->exHeap(); // same heap, see cli/Context.h
+  NABoolean deleteTmpDa = FALSE;
   while (1)
     {
       switch (pstate.step_)
@@ -987,8 +979,6 @@ short ExDescribeTcb::work()
                   getUniqueStmtId();
                 CmpCommon::context()->sqlSession()->setParentQid(parentQid);
 
-                if (da == NULL)
-                  da = ComDiagsArea::allocate(arkcmpHeap);
                 compStatus = CmpCommon::context()->compileDirect(
                                  describeTdb().query_,
                                  describeTdb().queryLen_,
@@ -1021,6 +1011,9 @@ short ExDescribeTcb::work()
                   {
                     pstate.step_ = HANDLE_ERROR_;
                   }
+                  // ComDiagsDa is allocated in compileDirect, needs to be deallocated
+                  if (da != NULL)
+                    deleteTmpDa = TRUE; 
               }
             else if (getArkcmp())  // regular arkcmp exists
               {
@@ -1150,6 +1143,8 @@ short ExDescribeTcb::work()
  	        up_entry->setDiagsArea(da);
 	        up_entry->getAtp()->getDiagsArea()->incrRefCount();
                 // Reset the da for the next error/warning.
+                if (deleteTmpDa)
+                   da->decrRefCount();
                 da = NULL;
               }
 
@@ -1194,6 +1189,8 @@ short ExDescribeTcb::work()
  	    // insert into parent
 	    qparent_.up->insert();
 	    
+            if (deleteTmpDa)
+               da->decrRefCount();
  	    // reset the diagsArea for the next error to be set properly.
  	    da = NULL;
  	    pstate.step_ = DONE_;

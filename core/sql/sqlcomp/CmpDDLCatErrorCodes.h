@@ -58,7 +58,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // unused                                       = 1023
                   // unused                                       = 1024
                   , CAT_DEPENDENT_OBJECTS_EXIST                   = 1025
-                  // unused                                       = 1026
+                  , CAT_REG_UNREG_OBJECTS                         = 1026
                   , CAT_COLUMN_PRIVILEGE_NOT_ALLOWED              = 1027
                   , CAT_SCHEMA_IS_NOT_EMPTY                       = 1028
                   , CAT_UNABLE_TO_CREATE_OBJECT                   = 1029
@@ -221,6 +221,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_RI_CIRCULAR_DEPENDENCY                    = 1188
                   // unused                                       = 1189
 
+                  , CAT_INVALID_COMPONENT_PRIVILEGE               = 1194
                   , CAT_INVALID_NUM_OF_SALT_PARTNS                = 1196
                   , CAT_INVALID_SALTED_UNIQUE_IDX                 = 1201
                   , CAT_INVALID_SALT_LIKE_CLAUSE                  = 1202

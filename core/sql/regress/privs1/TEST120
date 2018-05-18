@@ -207,6 +207,7 @@ sh sqlci -i "TEST120(select_queries)" -u sql_user9;
 -- grant privileges
 sh sqlci -i "TEST120(grant_all_privs)" -u sql_user3;
 
+
 -- Prepare a bunch of queries, all successful
 prepare select_games from select game_number from games;
 prepare select_teams from select team_number, team_name from teams;
@@ -243,6 +244,8 @@ sh sqlci -i "TEST120(select_queries)" -u sql_user9;
 
 -- revoke t120role4 from sql_user6
 sh sqlci -i "TEST120(revoke_t120role4)" -u sql_user3;
+
+-- queries s/b recompiled
 execute select_games;
 execute select_teams;
 
@@ -266,9 +269,6 @@ sh sqlci -i "TEST120(revoke_t120role2)" -u sql_user3;
 execute select_games;
 execute select_teams;
 execute select_standings;
-
--- still have privs, no query recompilation message because no invalidation
--- key for roles exist
 execute select_players;
 
 -- no longer has privilege (4481) and query attempted recompilation
@@ -316,16 +316,16 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 set schema t120sch;
 
-grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2;
-grant select on teams to sql_user6;
-grant select (game_number, game_time) on games to t120role2;
-grant select (game_number, game_time) on games to t120role3; 
-grant all on players to sql_user6;
+grant insert, delete, update(team_contact, team_contact_number) on teams to t120role2 by t120role1;
+grant select on teams to sql_user6 by t120role1;
+grant select (game_number, game_time) on games to t120role2 by t120role1;
+grant select (game_number, game_time) on games to t120role3 by t120role1; 
+grant all on players to sql_user6 by t120role1;
 grant role t120role2, t120role3, t120role4 to sql_user6;
 grant role t120role3 to sql_user9;
-grant select on standings to sql_user6;
-grant usage on sequence team_seq to t120role3;
-grant select (team_number, num_players) on stats to "PUBLIC";
+grant select on standings to sql_user6 by t120role1;
+grant usage on sequence team_seq to t120role3 by t120role1;
+grant select (team_number, num_players) on stats to "PUBLIC" by t120role1;
 showddl games;
 showddl teams;
 showddl players;
@@ -343,7 +343,7 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 set schema t120sch;
 
-revoke insert, delete on teams from t120role2;
+revoke insert, delete on teams from t120role2 by t120role1;
 
 ?section grant_t120role2p
 log LOG120;
@@ -352,7 +352,7 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 set schema t120sch;
 
-grant insert, delete on teams to t120role2;
+grant insert, delete on teams to t120role2 by t120role1;
 
 ?section revoke_t120role2
 log LOG120;
@@ -397,7 +397,7 @@ cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 set schema t120sch;
 
-revoke select (team_number, num_players) on stats from "PUBLIC";
+revoke select (team_number, num_players) on stats from "PUBLIC" by t120role1;
 showddl stats;
 select team_number, num_players from stats;
 

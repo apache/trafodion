@@ -195,8 +195,13 @@ This is currently not supported.
 == SQL 1012
 
 ```
-No privileges were granted. You lack grant option on the specified privileges.
+No privileges were granted.  <auth_id> lacks grant option on the specified privileges. <details>.
 ```
+
+Where <auth-id> is a {project-name} user name.
+
+Where <details> suggests roles you can specify in order for the grant to succeed.
+If <auth_id> has not been granted any relevant roles, <details> is omitted.
 
 *Cause:* You attempted to grant privileges for which you do not have
 grant options.
@@ -1889,6 +1894,26 @@ overlap in meaning. {project-name} requires the former construct to match the la
 
 *Recovery:* Either remove the <clause-name> clause (as it is redundant) or change it to match the primary key. Then resubmit.
 
+[[SQL-1194]]
+== SQL 1194
+
+```
+Component operation <operation> does not exist for component <component-name>.
+```
+
+Where <operation> is the operation assigned to a component.
+
+Where <component-name> is the name of a valid component.
+
+*Cause:* Components are assigned a set of operations that can be granted privileges.  The requested <operation>
+is not assigned to component <component-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Perform "get privileges on component <component-name>" to get the list of valid operations (privileges) for the 
+component and retry the request.
+
+<<<
 [[SQL-1195]]
 == SQL 1195
 
@@ -1904,7 +1929,6 @@ Where <column-name> is the name of a column specified in a SALT clause.
 
 *Recovery:* Correct the column name then resubmit.
 
-<<<
 [[SQL-1196]]
 == SQL 1196
 
@@ -1923,6 +1947,7 @@ Where <upper-bound> is the largest allowable number of salt partitions supported
 
 *Recovery:* Correct the SALT clause then resubmit.
 
+<<<
 [[SQL-1197]]
 == SQL 1197
 
@@ -1941,7 +1966,6 @@ Where <stored-procedure-name> is the name of an internal stored procedure.
 *Recovery:* None. Report this error and the associated SQL
 operation to the {project-name} User Distribution List.
 
-<<<
 [[SQL-1199]]
 == SQL 1199
 
@@ -1955,6 +1979,7 @@ The PARTITION BY clause is not allowed for a Trafodion table.
 
 *Recovery:* Remove the PARTITION BY clause from the DDL statement and resubmit.
 
+<<<
 [[SQL-1200]]
 == SQL 1200
 
@@ -1973,7 +1998,6 @@ A failure occurred at the HDFS or Hive level. The diagnostics contain more infor
 
 *Recovery:* Address the indicated issue at the HDFS or Hive level, then resubmit.
 
-<<<
 [[SQL-1201]]
 == SQL 1201
 
@@ -1990,6 +2014,7 @@ SALT LIKE TABLE is not allowed for unique indexes.
 
 *Recovery:* Remove either the UNIQUE keyword or the SALT LIKE TABLE clause and resubmit.
 
+<<<
 [[SQL-1202]]
 == SQL 1202
 
@@ -2008,7 +2033,6 @@ a table that is not salted.
 
 *Recovery:* Remove the SALT LIKE TABLE clause and resubmit.
 
-<<<
 [[SQL-1203]]
 == SQL 1203
 
@@ -2025,6 +2049,7 @@ characters of HBase options, exceeding the length limit that {project-name} supp
 
 *Recovery:* Shorten the set of options specified in HBASE_OPTIONS and resubmit.
 
+<<<
 [[SQL-1204]]
 == SQL 1204
 
@@ -2041,7 +2066,6 @@ that {project-name} does not support.
 
 *Recovery:* If the wrong Hive table was referenced, correct the reference and resubmit.
 
-<<<
 [[SQL-1214]]
 == SQL 1214
 
@@ -2060,6 +2084,7 @@ and Hive detected errors in that statement.
 
 *Recovery:* Determine the proper recovery action from the <Hive-exception-info> then resubmit.
 
+<<<
 [[SQL-1215]]
 == SQL 1215
 
@@ -2078,7 +2103,6 @@ about that object.
 
 *Recovery:* Determine the proper recovery action from the <diagnostics> then resubmit.
 
-<<<
 [[SQL-1220]]
 == SQL 1220
 

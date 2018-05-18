@@ -66,13 +66,22 @@ For information on specific functions and expressions, see:
 
 You can use {project-name} SQL statements to read, update, and create HBase tables.
 
-* <<initializing_the_trafodion_metadata,Initializing the {project-name} Metadata>>
+* <<initializing_the_trafodion_metadata,Initializing the Trafodion Metadata>>
 * <<ways_to_access_hbase_tables,Ways to Access HBase Tables>>
 * <<trafodion_sql_tables_versus_native_hbase_tables,{project-name} SQL Tables Versus Native HBase Tables>>
 * <<supported_sql_statements_with_hbase_tables,Supported SQL Statements With HBase Tables>>
 
 For a list of Control Query Default (CQD) settings for the HBase environment, see the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
+
+[[initializing_the_trafodion_metadata]]
+=== Initializing the Trafodion Metadata
+Before using SQL statements for the first time to access HBase tables, you will need to initialize the Trafodion metadata. 
+To initialize the Trafodion metadata, run this command:
+
+```
+initialize trafodion;
+```
 
 [[ways_to_access_hbase_tables]]
 === Ways to Access HBase Tables

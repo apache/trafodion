@@ -695,6 +695,7 @@ A           B                               C                               D
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: -DEC-2016
 
 --- 0 row(s) selected.
+>>
 >>select to_time('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 
 *** ERROR[4065] The format, "YYYY-MM-DD", specified in the TO_TIME function is not supported.
@@ -712,6 +713,19 @@ A           B                               C                               D
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 01:61:01
 
 --- 0 row(s) selected.
+>>select to_time(1, 'HH:MI:SS') from dual;
+
+*** ERROR[3415] The first operand of function TO_TIME is not valid. It must be a datetime datatype containing the time field or a character datatype.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_time(date '2018-04-02', 'HH:MI:SS') from dual;
+
+*** ERROR[3415] The first operand of function TO_TIME is not valid. It must be a datetime datatype containing the time field or a character datatype.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
 >>select to_date('2016-04-33 01:01:01','YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-04-33 01:01:01

@@ -1477,7 +1477,7 @@ SQLlob::SQLlob(NAMemory *h,
 		)
   : NAType(h, (ev == NA_LOB_TYPE ? LiteralLOB : LiteralLOB)
 	    , ev
-	    , (externalFormat ? extFormatLen : 512)
+	    , extFormatLen
 	    , allowSQLnull
 	    , allowSQLnull ? SQL_NULL_HDR_SIZE : 0
 	    , TRUE
