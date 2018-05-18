@@ -10246,6 +10246,7 @@ void CmpSeabaseDDL::createNativeHbaseTable(
   // or granted the DB__HBASEROLE
   if (isAuthorizationEnabled() && 
       !ComUser::isRootUserID() && 
+      !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
       !ComUser::currentUserHasRole(HBASE_ROLE_ID))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
@@ -10336,6 +10337,7 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   // or granted the DB__HBASEROLE
   if (isAuthorizationEnabled() && 
       !ComUser::isRootUserID() &&
+      !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
       !ComUser::currentUserHasRole(HBASE_ROLE_ID))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);

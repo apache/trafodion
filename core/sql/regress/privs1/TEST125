@@ -33,6 +33,10 @@
 --  get functions, procedures, table mapping functions, libraries (in schema)
 --  get privileges on table
 --  get privileges on view
+--  get privileges on sequence
+--  get privileges on library
+--  (tests for get privileges on functions, table_mapping functions, and
+--   procedures is part of privs2/TEST144)
 --
 -- ============================================================================
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
@@ -104,6 +108,13 @@ get privileges for user sql_user2;
 get privileges for user sql_user7;
 get privileges for user sql_user8;
 
+set schema t125sch1;
+obey TEST125(get_privs);
+set schema t125sch2;
+obey TEST125(get_privs);
+set schema t125sch3;
+obey TEST125(get_privs);
+
 obey TEST125(get_tests);
 
 ?section create_db
@@ -167,6 +178,7 @@ set pattern $$DLL$$ etest141.dll;
 set pattern $$QUOTE$$ '''';
 
 create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+grant usage on library t125_l1 to t125_role1;
 create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
 language c parameter style sql external name 'translateBitmap'
 library t125_l1
@@ -179,6 +191,7 @@ set pattern $$JARF$$ TEST125_procs.jar;
 
 create library t125_l2
    file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+grant all on library t125_l2 to sql_user8; 
 
 create procedure TestHive(
   IN operation char(20),
@@ -191,6 +204,36 @@ create procedure TestHive(
   NO TRANSACTION REQUIRED
   ISOLATE
   ;
+
+?section get_privs
+get privileges on table games;
+get privileges on table games for sql_user1;
+get privileges on table games for sql_user2;
+get privileges on table games for sql_user7;
+get privileges on table games for sql_user8;
+get privileges on table games for t125_role1;
+get privileges on table games for t125_adminrole;
+get privileges on view games_by_player;
+get privileges on view games_by_player for sql_user1;
+get privileges on view games_by_player for sql_user2;
+get privileges on view games_by_player for sql_user7;
+get privileges on view games_by_player for sql_user8;
+get privileges on view games_by_player for t125_role1;
+get privileges on view games_by_player for t125_adminrole;
+get privileges on library t125_l1;
+get privileges on library t125_l1 for sql_user1;
+get privileges on library t125_l1 for sql_user2;
+get privileges on library t125_l1 for sql_user7;
+get privileges on library t125_l1 for sql_user8;
+get privileges on library t125_l1 for t125_role1;
+get privileges on library t125_l1 for t125_adminrole;
+get privileges on sequence players_sequence;
+get privileges on sequence players_sequence for sql_user1;
+get privileges on sequence players_sequence for sql_user2;
+get privileges on sequence players_sequence for sql_user7;
+get privileges on sequence players_sequence for sql_user8;
+get privileges on sequence players_sequence for t125_role1;
+get privileges on sequence players_sequence for t125_adminrole;
 
 ?section clean_up
 drop schema t125sch1 cascade;
@@ -243,10 +286,18 @@ get procedures in schema t125sch2;
 
 set schema t125sch3;
 get tables;
+get privileges on table games;
+get privileges on table games for t125_role1;
 get views in catalog trafodion, match 'T125SCH%';
+get privileges on view games_by_player;
+get privileges on view games_by_player for user sql_user8;
 get indexes in schema t125sch3;
 get sequences in catalog trafodion, match 'T125SCH%';
+get privileges on sequence players_sequence;
+get privileges on sequence players_sequence for t125_role1;
 get libraries, match 'T125%';
+get privileges on library t125_l1;
+get privileges on library t125_l1 for user sql_user8;
 get functions in schema t125sch3;
 get procedures;
  

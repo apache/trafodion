@@ -1,4 +1,4 @@
-sqlparser.y: warning: 62 shift/reduce conflicts [-Wconflicts-sr]
+sqlparser.y: warning: 61 shift/reduce conflicts [-Wconflicts-sr]
 sqlparser.y: warning: 12 reduce/reduce conflicts [-Wconflicts-rr]
  
 nnnn conflicts: 1 shift/reduce nnnn olap_sequence_function: set_function_specification . TOK_OVER '(' opt_olap_part_clause opt_olap_order_clause ')'
@@ -9,7 +9,6 @@ nnnn conflicts: 9 shift/reduce nnnn row_subquery: '(' row_subquery . ')'
 nnnn conflicts: 1 reduce/reduce nnnn row_subquery: rel_subquery .
 nnnn conflicts: 1 reduce/reduce nnnn transaction_statement: TOK_BEGIN .
 nnnn conflicts: 1 shift/reduce nnnn show_statement: TOK_SHOWCONTROL showcontrol_type . optional_control_identifier optional_comma_match_clause
-nnnn conflicts: 1 shift/reduce nnnn extended_label_name: TOK_INDEX . label_name
 nnnn conflicts: 1 shift/reduce nnnn table_as_stream_any: table_as_stream .
 nnnn conflicts: 1 shift/reduce nnnn row_subquery: '(' row_subquery . ')'
 nnnn conflicts: 1 shift/reduce nnnn input_hostvar_expression: HOSTVAR .
