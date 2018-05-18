@@ -32,6 +32,7 @@
 extern CMonStats *MonStats;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
+extern bool NameServerEnabled;
 
 CExtDumpReq::CExtDumpReq (reqQueueMsg_t msgType, int pid,
                           struct message_def *msg )
@@ -73,8 +74,9 @@ void CExtDumpReq::performRequest()
     const char method_name[] = "CExtDumpReq::performRequest";
     TRACE_ENTRY;
 
-    CProcess *target;
-    CProcess *requester;
+    CProcess *cloneProcess = NULL;
+    CProcess *targetProcess = NULL;
+    CProcess *requester = NULL;
     CLNode   *lnode;
     string    target_process_name;
     int       target_nid = -1;
@@ -127,28 +129,76 @@ void CExtDumpReq::performRequest()
     {
         if ( target_process_name.size() )
         { // find by name
-            target = Nodes->GetProcess( target_process_name.c_str()
-                                      , target_verifier );
+            targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                             , target_verifier );
         }
         else
         { // find by nid, pid
-            target = Nodes->GetProcess( target_nid
-                                      , target_pid
-                                      , target_verifier );
+            targetProcess = Nodes->GetProcess( target_nid
+                                             , target_pid
+                                             , target_verifier );
         }
 
-        if ( target )
+        if ( !targetProcess )
+        {
+            if (NameServerEnabled)
+            {
+                if ( target_process_name.size() )
+                { // Name Server find by name:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                    , method_name, __LINE__
+                                    , target_process_name.c_str()
+                                    , target_verifier );
+                    }
+                    cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                        , target_verifier );
+                    targetProcess = cloneProcess;
+                }     
+                else
+                { // Name Server find by nid,pid:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , target_nid
+                                    , target_pid
+                                    , target_verifier );
+                    }
+                    cloneProcess = Nodes->CloneProcessNs( target_nid
+                                                        , target_pid
+                                                        , target_verifier );
+                    targetProcess = cloneProcess;
+                }
+                if (targetProcess)
+                {
+                    if (trace_settings & TRACE_REQUEST)
+                        trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                                    , method_name, __LINE__
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier()
+                                    , targetProcess->IsClone() );
+                }
+            }
+        }
+
+        if ( targetProcess )
         {
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Dump Process name=%s, nid=%d, pid=%d\n",
-                             method_name, __LINE__, target->GetName(),
-                             target->GetNid(), target->GetPid());
-            target->parentContext(msg_);
+                             method_name, __LINE__, targetProcess->GetName(),
+                             targetProcess->GetNid(), targetProcess->GetPid());
+            targetProcess->parentContext(msg_);
             lnode = Nodes->GetLNode(target_nid);
             if (lnode->Dump_Process(requester,
-                                    target,
+                                    targetProcess,
                                     msg_->u.request.u.dump.path) != SUCCESS)
+            {
                 rc = MPI_ERR_SPAWN;
+            }
         }
         else
         {
@@ -162,6 +212,20 @@ void CExtDumpReq::performRequest()
             //
             // Otherwise the dump has been initiated and reply will be sent
             // upon completion.
+
+            if (NameServerEnabled && cloneProcess)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , cloneProcess->GetName()
+                                , cloneProcess->GetNid()
+                                , cloneProcess->GetPid()
+                                , cloneProcess->GetVerifier() );
+                }
+                Nodes->DeleteCloneProcess( cloneProcess );
+            }
 
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Unsuccessful rc=%d\n", method_name, __LINE__, rc);

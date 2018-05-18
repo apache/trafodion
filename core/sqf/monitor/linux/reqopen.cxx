@@ -291,8 +291,8 @@ bool CExtOpenReq::prepare()
                                 , method_name, __LINE__
                                 , target_process_name.c_str()
                                 , target_verifier );
-                openedProcess = Nodes->GetProcessNs( target_process_name.c_str()
-                                                   , target_verifier );
+                openedProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                     , target_verifier );
             }     
             else
             { // Name Server find by nid,pid:verifier
@@ -302,9 +302,9 @@ bool CExtOpenReq::prepare()
                                 , target_nid
                                 , target_pid
                                 , target_verifier );
-                openedProcess = Nodes->GetProcessNs( target_nid
-                                                   , target_pid
-                                                   , target_verifier );
+                openedProcess = Nodes->CloneProcessNs( target_nid
+                                                     , target_pid
+                                                     , target_verifier );
             }
         }
         

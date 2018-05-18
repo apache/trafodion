@@ -1584,9 +1584,9 @@ void CIntNewProcReq::performRequest()
                                 , parentNid_
                                 , parentPid_
                                 , parentVerifier_ );
-                parentProcess = Nodes->GetProcessNs( parentNid_
-                                                   , parentPid_
-                                                   , parentVerifier_ );
+                parentProcess = Nodes->CloneProcessNs( parentNid_
+                                                     , parentPid_
+                                                     , parentVerifier_ );
             }
         }
     }
@@ -1964,9 +1964,9 @@ void CIntNotifyReq::performRequest()
                             , pid_
                             , verifier_ );
             }
-            sourceProcess = Nodes->GetProcessNs( nid_
-                                               , pid_
-                                               , verifier_ );
+            sourceProcess = Nodes->CloneProcessNs( nid_
+                                                 , pid_
+                                                 , verifier_ );
             if (sourceProcess)
             {
                 if (trace_settings & TRACE_REQUEST)
@@ -2037,9 +2037,9 @@ void CIntNotifyReq::performRequest()
                                 , targetPid_
                                 , targetVerifier_ );
                 }
-                targetProcess = Nodes->GetProcessNs( targetNid_
-                                                   , targetPid_
-                                                   , targetVerifier_ );
+                targetProcess = Nodes->CloneProcessNs( targetNid_
+                                                     , targetPid_
+                                                     , targetVerifier_ );
                 if (targetProcess)
                 {
                     if (trace_settings & TRACE_REQUEST)

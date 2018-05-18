@@ -246,7 +246,7 @@ void CConfigGroup::NormalizeName (string &name)
 
 void CConfigGroup::SendChangeNotification (CConfigKey *key)
 {
-    CProcess *process;
+    CProcess *targetProcess;
     struct message_def *msg;
 
     const char method_name[] = "CConfigGroup::SendChangeNotification";
@@ -357,16 +357,16 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
         
     case ConfigType_Process:
         // check if we need to associate a process
-        Nodes->GetLNode ((char *)name_.c_str(), &process);
-        if ( process )
+        Nodes->GetLNode ((char *)name_.c_str(), &targetProcess);
+        if ( targetProcess )
         {
-            if ( process->IsSystemMessages() && !process->IsClone() )
+            if ( targetProcess->IsSystemMessages() && !targetProcess->IsClone() )
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
-                    trace_printf("%s@%d - Sending Configuration Change message to %s\n", method_name, __LINE__, process->GetName());
+                    trace_printf("%s@%d - Sending Configuration Change message to %s\n", method_name, __LINE__, targetProcess->GetName());
 #ifndef NAMESERVER_PROCESS
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
-                                                       , process->GetVerifier()
+                SQ_theLocalIOToClient->putOnNoticeQueue( targetProcess->GetPid()
+                                                       , targetProcess->GetVerifier()
                                                        , msg
                                                        , NULL);
 #endif
@@ -374,7 +374,11 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
             else
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_INIT))
-                    trace_printf("%s@%d - Not sending Configuration Change message to %s, system_messages=%d, isClone=%d\n", method_name, __LINE__, process->GetName(), process->IsSystemMessages(), process->IsClone());
+                    trace_printf("%s@%d - Not sending Configuration Change message to %s, system_messages=%d, isClone=%d\n"
+                                , method_name, __LINE__
+                                , targetProcess->GetName()
+                                , targetProcess->IsSystemMessages()
+                                , targetProcess->IsClone());
 
                 delete msg;
             }

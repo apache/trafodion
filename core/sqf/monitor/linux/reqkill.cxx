@@ -138,7 +138,8 @@ void CExtKillReq::Kill( CProcess *process )
 void CExtKillReq::performRequest()
 {
     bool status = FAILURE;
-    CProcess *process = NULL;
+    CProcess *cloneProcess = NULL;
+    CProcess *targetProcess = NULL;
     CProcess *backup = NULL;
 
     const char method_name[] = "CExtKillReq::performRequest";
@@ -195,41 +196,113 @@ void CExtKillReq::performRequest()
     {
         if ( target_process_name.size() )
         { // find by name (check node state, don't check process state, not backup)
-            process = Nodes->GetProcess( target_process_name.c_str()
-                                       , target_verifier
-                                       , true, false, false );
-            if ( process &&
+            targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                              , target_verifier
+                                              , true, false, false );
+            if ( targetProcess &&
                 (msg_->u.request.u.kill.target_nid == -1 ||
                  msg_->u.request.u.kill.target_pid == -1))
             {
-                backup = process->GetBackup ();
+                backup = targetProcess->GetBackup ();
             }
         }
         else
         { // find by nid (check node state, don't check process state, backup is Ok)
-            process = Nodes->GetProcess( target_nid
-                                       , target_pid
-                                       , target_verifier
-                                       , true, false, true );
+            targetProcess = Nodes->GetProcess( target_nid
+                                             , target_pid
+                                             , target_verifier
+                                             , true, false, true );
             backup = NULL;
         }
 
-
-        if (process)
+        if ( targetProcess )
         {
-            process->SetAbort( msg_->u.request.u.kill.persistent_abort );
+            if (trace_settings & TRACE_REQUEST)
+            {
+                trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                            , method_name, __LINE__
+                            , targetProcess->GetName()
+                            , targetProcess->GetNid()
+                            , targetProcess->GetPid()
+                            , targetProcess->GetVerifier()
+                            , targetProcess->IsClone() );
+            }
+        }
+        else
+        {
+            if (NameServerEnabled)
+            {
+                if ( target_process_name.size() )
+                { // Name Server find by name:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%s:%d)" "\n"
+                                    , method_name, __LINE__
+                                    , target_process_name.c_str()
+                                    , target_verifier );
+                    }
+                    cloneProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                        , target_verifier );
+                    targetProcess = cloneProcess;
+                }     
+                else
+                { // Name Server find by nid,pid:verifier
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d" " - Getting targetProcess from Name Server (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , target_nid
+                                    , target_pid
+                                    , target_verifier );
+                    }
+                    cloneProcess = Nodes->CloneProcessNs( target_nid
+                                                        , target_pid
+                                                        , target_verifier );
+                    targetProcess = cloneProcess;
+                }
+                if (targetProcess)
+                {
+                    if (trace_settings & TRACE_REQUEST)
+                        trace_printf( "%s@%d - Found targetProcess %s (%d,%d:%d), clone=%d\n"
+                                    , method_name, __LINE__
+                                    , targetProcess->GetName()
+                                    , targetProcess->GetNid()
+                                    , targetProcess->GetPid()
+                                    , targetProcess->GetVerifier()
+                                    , targetProcess->IsClone() );
+                }
+            }
+        }
+
+        if (targetProcess)
+        {
+            targetProcess->SetAbort( msg_->u.request.u.kill.persistent_abort );
             if (backup)
             {
                 // We are killing both the primary and backup processes
                 Kill( backup );
             }
-            Kill( process );
+            Kill( targetProcess );
+
+            if (NameServerEnabled && cloneProcess)
+            {
+                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                {
+                    trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , cloneProcess->GetName()
+                                , cloneProcess->GetNid()
+                                , cloneProcess->GetPid()
+                                , cloneProcess->GetVerifier() );
+                }
+                Nodes->DeleteCloneProcess( cloneProcess );
+            }
 
             msg_->u.reply.type = ReplyType_Generic;
-            msg_->u.reply.u.generic.nid = process->GetNid();
-            msg_->u.reply.u.generic.pid = process->GetPid();
-            msg_->u.reply.u.generic.verifier = process->GetVerifier();
-            strcpy (msg_->u.reply.u.generic.process_name, process->GetName());
+            msg_->u.reply.u.generic.nid = targetProcess->GetNid();
+            msg_->u.reply.u.generic.pid = targetProcess->GetPid();
+            msg_->u.reply.u.generic.verifier = targetProcess->GetVerifier();
+            strcpy (msg_->u.reply.u.generic.process_name, targetProcess->GetName());
             msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
             status = SUCCESS;
         }

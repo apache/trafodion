@@ -78,6 +78,11 @@ public:
                                    , int verifier
                                    , _TM_Txid_External trans_id );
     void    ChangedNode( CNode *node );
+    CProcess *CloneProcessNs( int nid
+                            , int pid
+                            , Verifier_t verifier );
+    CProcess *CloneProcessNs( const char *name
+                            , Verifier_t verifier );
     void    DeleteCloneProcess( CProcess *process );
     void    DeletedNode( CNode *node );
     bool    DeleteNode( int pnid );
@@ -124,11 +129,6 @@ public:
                             , ProcessInfoNs_reply_def *processInfo );
     CProcess *GetProcessLByTypeNs( int nid
                                  , PROCESSTYPE type );
-    CProcess *GetProcessNs( int nid
-                          , int pid
-                          , Verifier_t verifier );
-    CProcess *GetProcessNs( const char *name
-                          , Verifier_t verifier );
     SyncState GetTmState( SyncState check_state );
     CNode  *GetZoneNode( int zid );
 

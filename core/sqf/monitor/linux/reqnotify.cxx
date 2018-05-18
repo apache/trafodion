@@ -215,14 +215,7 @@ void CExtNotifyReq::performRequest()
             }
             else
             {
-                if (!NameServerEnabled)
-                {
-                    if (trace_settings & TRACE_REQUEST)
-                    {
-                        trace_printf("%s@%d - Can't find targetProcess\n", method_name, __LINE__);
-                    }
-                }
-                else
+                if (NameServerEnabled)
                 {
                     if ( target_process_name.size() )
                     { // Name Server find by name:verifier
@@ -233,8 +226,8 @@ void CExtNotifyReq::performRequest()
                                         , target_process_name.c_str()
                                         , target_verifier );
                         }
-                        targetProcess = Nodes->GetProcessNs( target_process_name.c_str()
-                                                           , target_verifier );
+                        targetProcess = Nodes->CloneProcessNs( target_process_name.c_str()
+                                                             , target_verifier );
                     }     
                     else
                     { // Name Server find by nid,pid:verifier
@@ -246,9 +239,9 @@ void CExtNotifyReq::performRequest()
                                         , target_pid
                                         , target_verifier );
                         }
-                        targetProcess = Nodes->GetProcessNs( target_nid
-                                                           , target_pid
-                                                           , target_verifier );
+                        targetProcess = Nodes->CloneProcessNs( target_nid
+                                                             , target_pid
+                                                             , target_verifier );
                     }
                     if (targetProcess)
                     {
@@ -260,14 +253,6 @@ void CExtNotifyReq::performRequest()
                                         , targetProcess->GetPid()
                                         , targetProcess->GetVerifier()
                                         , targetProcess->IsClone() );
-                    }
-                    else
-                    {
-                        trace_printf( "%s@%d" " - Can't find targetProcess (%d,%d:%d)\n"
-                                    , method_name, __LINE__
-                                    , target_nid
-                                    , target_pid
-                                    , target_verifier );
                     }
                 }
             }
