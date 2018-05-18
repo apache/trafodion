@@ -294,6 +294,18 @@ fi
 
 checkUlimit
 
+let nameserver_configured=`trafconf -ns | grep nodes | wc -l`
+
+if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
+   if [ $nameserver_configured '<' 1 ]; then
+     echoLog
+     echoLog "SQ_NAMESERVER_ENABLED is enabled and the Name Server is not configured."
+     echoLog "Please ensure the name-server section is in the 'sqconfig' file, and re-run 'sqgen'."
+     echoLog
+     exit 1;
+   fi
+fi
+
 # Check SeaMonster kernel module if SeaMonster is enabled
 if [[ $SQ_SEAMONSTER == "1" ]]; then
     echoLog
