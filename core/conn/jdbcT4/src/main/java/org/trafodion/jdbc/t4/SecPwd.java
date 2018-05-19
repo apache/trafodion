@@ -240,7 +240,7 @@ public class SecPwd {
 			outChannel = new FileOutputStream(certFile).getChannel();
 			outChannel.write(ByteBuffer.wrap(buf));
 		} catch (Exception e) {
-			throw new SecurityException(SecClientMsgKeys.ERR_WRITE_CERT_FILE, new Object[]{certFile});
+			throw new SecurityException(e, SecClientMsgKeys.ERR_WRITE_CERT_FILE, new Object[]{certFile});
 		} finally {
 			try {
 				if (outChannel != null)

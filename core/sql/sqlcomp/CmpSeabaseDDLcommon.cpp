@@ -9143,7 +9143,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           StmtDDLCreateHbaseTable * createTableParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLCreateHbaseTable();
           
-          createNativeHbaseTable(createTableParseNode, currCatName, currSchName);
+          createNativeHbaseTable(&cliInterface, createTableParseNode, currCatName, currSchName);
         }
       else if (ddlNode->getOperatorType() == DDL_DROP_TABLE)
         {
@@ -9159,7 +9159,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           StmtDDLDropHbaseTable * dropTableParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLDropHbaseTable();
           
-          dropNativeHbaseTable(dropTableParseNode, currCatName, currSchName);
+          dropNativeHbaseTable(&cliInterface, dropTableParseNode, currCatName, currSchName);
         }
        else if (ddlNode->getOperatorType() == DDL_CREATE_INDEX)
         {

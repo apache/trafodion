@@ -3688,10 +3688,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
   if (!CmpCommon::context()->isAuthorizationEnabled())
     return TRUE;
 
-   // no privilege support available for hbase and hive tables
-   HS_ASSERT (objDef->getNATable());
-   if (CmpSeabaseDDL::isHbase(objDef->getCatName()))
-     return TRUE;
+  HS_ASSERT (objDef->getNATable());
 
   // Let keep track of how long authorization takes
   HSLogMan *LM = HSLogMan::Instance();

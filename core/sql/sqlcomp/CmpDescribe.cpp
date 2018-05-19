@@ -3007,6 +3007,16 @@ short CmpDescribeSeabaseTable (
   {
     if (type != 3)
       {
+        // For native HBase tables that have no objectUID, we can't check 
+        // user privileges so only allow operation for privileged users
+        if (isHbaseCellOrRowTable && 
+            !ComUser::isRootUserID() && !ComUser::currentUserHasRole(HBASE_ROLE_ID) &&
+            naTable->objectUid().get_value() == 0) 
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
         PrivMgrUserPrivs privs; 
         PrivMgrUserPrivs *pPrivInfo = NULL;
     
@@ -3028,7 +3038,7 @@ short CmpDescribeSeabaseTable (
                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
                return -1;
             }
- 
+           
             PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                              naTable->getObjectType(),
                                                              ComUser::getCurrentUser(),
@@ -3047,11 +3057,15 @@ short CmpDescribeSeabaseTable (
         else
           pPrivInfo = naTable->getPrivInfo();
 
-
-        if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
-                                     pPrivInfo,
-                                     COM_BASE_TABLE_OBJECT))
-          return -1;
+        // Allow object owners to perform showddl operation
+        if ((naTable->getOwner() != ComUser::getCurrentUser()) &&
+            !ComUser::currentUserHasRole(naTable->getOwner()))
+        {
+          if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                                       pPrivInfo,
+                                       COM_BASE_TABLE_OBJECT))
+            return -1;
+        }
       }
     }
   
