@@ -657,8 +657,15 @@ short BigNum::castFrom (Attributes * source,
       Lng32 scaleBy = getScale() + exponent;
       if (scaleBy < 0)
 	{
+          Int8 roundMe= 0;
 	  for (i = 0; i < -scaleBy; i++)
+	  {
+	    roundMe = ( mantissa %10 ) > 4? 1:0;
 	    mantissa /= 10;
+	  }
+
+	  if(roundMe == 1) //round it
+	    mantissa++;
 
 	  scaleBy = 0;
 	}
@@ -761,8 +768,15 @@ short BigNum::castFrom (Attributes * source,
       Lng32 scaleBy = getScale() + exponent;
       if (scaleBy < 0)
 	{
+	  Int8 roundMe = 0;
 	  for (i = 0; i < -scaleBy; i++)
+	  {
+	    roundMe = ( mantissa %10 ) > 4? 1:0;
 	    mantissa /= 10;
+	  }
+
+	  if(roundMe == 1)
+	    mantissa++;
 
 	  scaleBy = 0;
 	}
