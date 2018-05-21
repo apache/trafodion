@@ -2408,6 +2408,58 @@ odbc_SQLSvc_ExecuteCall(
   , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
   );
 
+/***************************************
+* Operation 'odbc_SQLsrvr_ExtractLob'
+* *************************************/
+
+/*
+* Exception number constants for
+* operation 'odbc_SQLsrvr_ExtractLob'
+*/
+#define odbc_SQLSvc_ExtractLob_ParamError_exn_          1
+#define odbc_SQLSvc_ExtractLob_InvalidConnection_exn_   2
+#define odbc_SQLSvc_ExtractLob_SQLError_exn_            3
+#define odbc_SQLSvc_ExtractLob_SQLInvalidhandle_exn_    4
+#define obdc_SQLSvc_ExtractLob_AllocLOBDataError_exn_   5
+
+/*
+* Exception struct for
+* Operation "odbc_SQLSrvr_ExtractLob"
+*/
+struct odbc_SQLsvc_ExtractLob_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError SQLError;
+    } u;
+};
+
+/***************************************
+* Operation 'odbc_SQLsvc_UpdateLob'
+***************************************/
+/*
+* Exceptoin number constants for
+* operation 'odbc_SQLSvc_UpdateLob'
+*/
+#define odbc_SQLSvc_UpdateLob_ParamError_exn_        1
+#define odbc_SQLSvc_UpdateLob_InvalidConnect_exn_    2
+#define odbc_SQLSvc_UpdateLob_SQLError_exn_          3
+#define odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_  4
+
+/*
+* Exception struct for
+* Operation "odbc_SQLSvc_UpdateLob"
+*/
+struct odbc_SQLSvc_UpdateLob_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError   SQLError;
+    } u;
+};
+
 /*
  * CIN description of interface 'odbc_SQLSvc'
  */

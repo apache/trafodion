@@ -30,6 +30,7 @@
 #include "DiagFunctions.h" 
 #include <errno.h>
 #include "StaticLocking.h"
+#include "DrvrSrvr.h"
 
 // Declare the global variable
 
@@ -48,7 +49,9 @@ DWORD gTlsIndex_ErrorBuffer = TLS_OUT_OF_INDEXES;
 DATATYPE_TABLE gSQLDatatypeMap[] = 
 {
 //   conciseType,					verboseType,		datetimeIntervalCode,		columnSizeAttr,		decimalDigitsAttr,	displaySizeAttr,	octetLength,					defaultType,					typeName		
-	{SQL_CHAR,						SQL_CHAR,			0,							SQL_DESC_LENGTH,	0,					SQL_DESC_LENGTH,	SQL_DESC_LENGTH,				SQL_C_CHAR,						"CHAR"},
+    {TYPE_BLOB,                     SQL_CHAR,           0,                          SQL_DESC_LENGTH,    0,                  SQL_DESC_LENGTH,    SQL_DESC_LENGTH,                SQL_C_CHAR,                         "BLOB" },
+    {TYPE_CLOB,                     SQL_CHAR,           0,                          SQL_DESC_LENGTH,    0,                  SQL_DESC_LENGTH,    SQL_DESC_LENGTH,                SQL_C_CHAR,                         "CLOB" },
+    {SQL_CHAR,						SQL_CHAR,			0,							SQL_DESC_LENGTH,	0,					SQL_DESC_LENGTH,	SQL_DESC_LENGTH,				SQL_C_CHAR,						"CHAR"},
 	{SQL_VARCHAR,					SQL_VARCHAR,		0,							SQL_DESC_LENGTH,	0,					SQL_DESC_LENGTH,	SQL_DESC_LENGTH,				SQL_C_CHAR,						"VARCHAR"},
 	{SQL_LONGVARCHAR,				SQL_LONGVARCHAR,	0,							SQL_DESC_LENGTH,	0,					SQL_DESC_LENGTH,	SQL_DESC_LENGTH,				SQL_C_CHAR,						"LONG VARCHAR"},
 	{SQL_DECIMAL,					SQL_DECIMAL,		0,							SQL_DESC_PRECISION,	SQL_DESC_SCALE,		SQL_DESC_PRECISION, SQL_DESC_PRECISION,				SQL_C_CHAR,						"DECIMAL"},

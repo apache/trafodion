@@ -2743,7 +2743,130 @@ odbc_SQLDrvr_Execute_param_pst_(
 
 } /* odbc_SQLDrvr_Execute_param_pst_() */
 
+CEE_status
+odbc_SQLDrvr_ExtractLob_param_pst_(
+    /* In    */ CInterface * pSystem
+  , /* In    */ IDL_char * & buffer
+  , /* In    */ long        & message_length
+  , /* In    */ IDL_long     extractType
+  , /* In    */ IDL_string   lobHandle
+  , /* In    */ IDL_long     lobHandleLen
+  , /* In    */ IDL_long     lobHandleCharset
+  , /* In    */ IDL_long     extractlen
+ )
+{
+    IDL_char  *curptr = NULL;
+    IDL_long  wlength = 0;
+    IDL_long  charSet = 0;
 
+    //extractType
+    wlength += sizeof(IDL_short);
+
+    //lobHandleLen
+    wlength += sizeof(IDL_long);
+    if (lobHandle != NULL)
+    {
+        wlength += lobHandleLen;
+        wlength += sizeof(IDL_long);
+    }
+
+    wlength += sizeof(IDL_long);
+
+    message_length = wlength;
+    buffer = pSystem->w_allocate(message_length);
+    if (buffer == NULL)
+    {
+        return CEE_ALLOCFAIL;
+    }
+    curptr = buffer;
+
+    if (pSystem->swap() == SWAP_YES)
+    {
+        LONG_swap(&extractType);
+        LONG_swap(&lobHandleLen);
+        LONG_swap(&charSet);
+        LONG_swap(&extractlen);
+    }
+
+    IDL_long_copy(&extractType, curptr);
+
+    IDL_long_copy(&lobHandleLen, curptr);
+    if (lobHandle != NULL)
+    {
+        IDL_charArray_copy(lobHandle, curptr);
+        IDL_long_copy(&charSet, curptr);
+    }
+
+    IDL_long_copy(&extractlen, curptr);
+
+    return CEE_SUCCESS;
+}
+
+CEE_status
+odbc_SQLDrvr_UpdateLob_param_pst_(
+    /* In    */ CInterface * pSystem
+  , /* In    */ IDL_char * & buffer
+  , /* In    */ long        & message_length
+  , /* In    */ IDL_long     updataType
+  , /* In    */ IDL_string   lobHandle
+  , /* In    */ IDL_long     lobHandleLen
+  , /* In    */ IDL_long     lobHandleCharset
+  , /* In    */ IDL_long_long     totalLength
+  , /* In    */ IDL_long_long     offset
+  , /* In    */ BYTE *        data
+  , /* In    */ IDL_long_long pos
+  , /* In    */ IDL_long_long length
+)
+{
+    IDL_char  *curptr = NULL;
+    IDL_long   wlength = 0;
+    IDL_long   lobHandleLength = 0;
+
+    wlength += sizeof(IDL_long);
+
+    wlength += sizeof(lobHandleLength);
+    if (lobHandle != NULL)
+    {
+        lobHandleLength = strlen(lobHandle) + 1;
+        wlength += lobHandleLength;
+        wlength += sizeof(lobHandleCharset);
+    }
+
+    wlength += sizeof(IDL_long_long) * 3;
+    wlength += length;
+
+    message_length = wlength;
+    buffer = pSystem->w_allocate(message_length);
+    if (buffer == NULL)
+    {
+        return CEE_ALLOCFAIL;
+    }
+
+    curptr = buffer;
+
+    if (pSystem->swap() == SWAP_YES)
+    {
+        LONGLONG_swap(&totalLength);
+        LONGLONG_swap(&offset);
+        LONGLONG_swap(&length);
+    }
+
+    IDL_long_copy(&updataType, curptr);
+    IDL_long_copy(&lobHandleLength, curptr);
+    if (lobHandle != NULL)
+    {
+        IDL_charArray_copy(lobHandle, curptr);
+        IDL_long_copy(&lobHandleCharset, curptr);
+    }
+
+    IDL_long_long_copy(&totalLength, curptr);
+    IDL_long_long_copy(&offset, curptr);
+    IDL_long_long_copy(&length, curptr);
+
+    IDL_byteArray_copy(data, length, curptr);
+
+    return CEE_SUCCESS;
+}
 /************************************************************************************************************
  *                                                                                                          *
  * Keeping these functions around for the collapsed driver - get rid of these when it is not needed anymore *

@@ -275,6 +275,18 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 
 	if (errorMsg)
 		*errorMsg = '\0';
+
+    if (SQLDataType == SQLTYPECODE_BLOB || SQLDataType == SQLTYPECODE_CLOB)
+    {
+        SQLINTEGER lob_len;
+        if (srcLength == SQL_NTS)
+            lob_len = strlen((const char *)srcDataPtr);
+        else
+            lob_len = srcLength;
+        memcpy((char *)targetDataPtr, &lob_len, sizeof(lob_len));
+        memcpy((char *)targetDataPtr + 4, (const char *)srcDataPtr, targetLength > srcLength ? srcLength : targetLength);
+        return SQL_SUCCESS;
+    }
 	
 	//if (targetPrecision < 19)
     if (((SQLDataType == SQLTYPECODE_NUMERIC) && (targetPrecision <= 18)) ||
