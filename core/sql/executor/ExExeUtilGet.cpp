@@ -558,8 +558,7 @@ static const QueryString getTrafPrivsOnObject[] =
   {"   case when bitextract(privileges_bitmap,58,1) = 1 then 'R' else '-' end || "},
   {"   case when bitextract(privileges_bitmap,57,1) = 1 then 'E' else '-' end as privs "},
   {" from %s.\"%s\".%s "},
-  {" where grantor_id <> -2 "},
-  {"  and object_uid = "},
+  {" where object_uid = "},
   {"  (select object_uid from %s.\"%s\".%s "},
   {"   where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' "},
   {"     and object_type = '%s') %s "},
@@ -573,11 +572,11 @@ static const QueryString getTrafPrivsOnObject[] =
   {"  case when bitextract(privileges_bitmap,58,1) = 1 then 'R' else '-' end || "},
   {"  case when bitextract(privileges_bitmap,57,1) = 1 then 'E' else '-' end as privs "},
   {" from %s.\"%s\".%s "},
-  {" where grantor_id <> -2 "},
-  {"  and object_uid = "},
+  {" where object_uid = "},
   {"  (select object_uid from %s.\"%s\".%s "},
   {"   where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' "},
   {"     and object_type = '%s') %s )"},
+  {" order by 1 "},
   {" ; "}
 };
 
@@ -599,9 +598,9 @@ static const QueryString getHiveRegObjectsInCatalogQuery[] =
   {"  (select object_type, case when object_type = 'SS' "      },
   {"   then lower(trim(catalog_name) || '.' || trim(schema_name)) "},
   {"   else lower(trim(catalog_name) || '.' || "               },
-  {"    trim(schema_name) || '.' || trim(object_name)) end "       },
+  {"    trim(schema_name) || '.' || trim(object_name)) end "   },
   {"   from %s.\"%s\".%s where catalog_name = 'HIVE' and "     },
-  {"                           %s) O(t, a) "                   },
+  {"                           %s %s) O(t, a) "                },
   {"  left join "                                              },
   {"   (select '%s' || '.' || trim(y) from "                   },
   {"    (get %s in catalog %s, no header) x(y)) G(b)"          },
@@ -617,7 +616,7 @@ static const QueryString getHBaseRegTablesInCatalogQuery[] =
   {" from "                                                    },
   {"  (select trim(schema_name), trim(object_name)            "},
   {"   from %s.\"%s\".%s where catalog_name = 'HBASE'     "    },
-  {"      and object_type = 'BT') O(s, o) "                    },
+  {"      and object_type = 'BT' %s) O(s, o) "                 },
   {"  left join "                                              },
   {"   (select trim(y) from "                                  },
   {"    (get external hbase objects) x(y)) G(b)"               },
@@ -636,7 +635,7 @@ static const QueryString getHiveExtTablesInCatalogQuery[] =
   {"                char_length(schema_name)-5))) "            },
   {"    || '.' || lower(trim(object_name)) "                   },
   {"   from %s.\"%s\".%s where object_type = '%s' "            },
-  {"    and schema_name like '|_HV|_%%|_' escape '|') O(a)   " },
+  {"    and schema_name like '|_HV|_%%|_' escape '|' %s) O(a)" },
   {"  left join "                                              },
   {"   (select '%s' || '.' || trim(y) from "                   },
   {"    (get %s in catalog %s, no header) x(y)) G(b) "         },
@@ -1013,6 +1012,12 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
+    case ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_:
+      {
+	str_sprintf(headingBuf_, "External HBase objects");
+      }
+    break;
+
     case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Hive Registered Views in Catalog %s",
@@ -1157,6 +1162,27 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       {
 	str_sprintf(headingBuf_, "Privileges on View %s.%s",
 		    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_:
+      {
+        str_sprintf(headingBuf_, "Privileges on Sequence %s.%s",
+                    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_:
+      {
+        str_sprintf(headingBuf_, "Privileges on Sequence %s.%s",
+                    getMItdb().getSch(), getMItdb().getObj());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_:
+      {
+        str_sprintf(headingBuf_, "Privileges on Routine %s.%s",
+                    getMItdb().getSch(), getMItdb().getObj());
       }
     break;
 
@@ -1954,7 +1980,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_
-              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_)
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_)
 	    {
                if (!CmpCommon::context()->isAuthorizationEnabled())
                {
@@ -2028,22 +2056,22 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		}
 	      break;
 	      
-	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
-	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
-	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
-	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
-		{
-		  qs = getHiveRegObjectsInCatalogQuery;
-		  sizeOfqs = sizeof(getHiveRegObjectsInCatalogQuery);
+              case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
+              case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
+              case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
+              case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
+              {
+                qs = getHiveRegObjectsInCatalogQuery;
+                sizeOfqs = sizeof(getHiveRegObjectsInCatalogQuery);
 
-                  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_)
-                    {
-                      strcpy(hiveGetType, "tables");
-                      str_sprintf(hiveObjType, " (object_type = '%s') ",
-                                  COM_BASE_TABLE_OBJECT_LIT);
+                if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_)
+                {
+                   strcpy(hiveGetType, "tables");
+                   str_sprintf(hiveObjType, " (object_type = '%s') ",
+                                COM_BASE_TABLE_OBJECT_LIT);
                     }
                   else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_)
-                    {
+                   {
                       strcpy(hiveGetType, "views");
                       str_sprintf(hiveObjType, " (object_type = '%s') ",
                                   COM_VIEW_OBJECT_LIT);
@@ -2063,46 +2091,57 @@ short ExExeUtilGetMetadataInfoTcb::work()
                                   COM_SHARED_SCHEMA_OBJECT_LIT);
                     }
                     
-		  param_[0] = cat;
-		  param_[1] = sch;
-		  param_[2] = tab;
-		  param_[3] = hiveObjType;
-		  param_[4] = hiveSysCat;
-                  param_[5] = hiveGetType, 
-		  param_[6] = hiveSysCat;
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
+                param_[0] = cat;
+                param_[1] = sch;
+                param_[2] = tab;
+                param_[3] = hiveObjType;
+                param_[4] = (char *)privWhereClause.data();
+                param_[5] = hiveSysCat;
+                param_[6] = hiveGetType, 
+                param_[7] = hiveSysCat;
 		}
 	      break;
 
-	      case ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_:
-		{
-		  qs = getHBaseRegTablesInCatalogQuery;
-		  sizeOfqs = sizeof(getHBaseRegTablesInCatalogQuery);
+	     case ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_:
+               {
+                 qs = getHBaseRegTablesInCatalogQuery;
+                 sizeOfqs = sizeof(getHBaseRegTablesInCatalogQuery);
 
-		  param_[0] = cat;
-		  param_[1] = sch;
-		  param_[2] = tab;
-		}
+                 if (doPrivCheck)
+                   privWhereClause = getGrantedPrivCmd(authList, cat);
+
+                 param_[0] = cat;
+                 param_[1] = sch;
+                 param_[2] = tab;
+                 param_[3] = (char *)privWhereClause.data();
+               }
 	      break;
 	      
-	      case ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_:
-		{
-		  qs = getHiveExtTablesInCatalogQuery;
-		  sizeOfqs = sizeof(getHiveExtTablesInCatalogQuery);
+              case ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_:
+                {
+                  qs = getHiveExtTablesInCatalogQuery;
+                  sizeOfqs = sizeof(getHiveExtTablesInCatalogQuery);
+
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
 
                   strcpy(hiveObjType, COM_BASE_TABLE_OBJECT_LIT);
                   strcpy(hiveGetType, "tables");
 
-		  param_[0] = hiveSysCat;
-		  param_[1] = cat;
-		  param_[2] = sch;
-		  param_[3] = tab;
-		  param_[4] = hiveObjType;
-		  param_[5] = hiveSysCat;
-                  param_[6] = hiveGetType, 
-		  param_[7] = hiveSysCat;
-
-		}
-	      break;
+                  param_[0] = hiveSysCat;
+                  param_[1] = cat;
+                  param_[2] = sch;
+                  param_[3] = tab;
+                  param_[4] = hiveObjType;
+                  param_[5] = (char *)privWhereClause.data();
+                  param_[6] = hiveSysCat;
+                  param_[7] = hiveGetType, 
+                  param_[8] = hiveSysCat;
+                }
+              break;
 	      
 	      case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_:
 		{
@@ -2560,22 +2599,58 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
               case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_:
               case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_:
+              case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_:
+              case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_:
+              case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_:
               {
                 qs = getTrafPrivsOnObject;
                 sizeOfqs = sizeof(getTrafPrivsOnObject);
 
+                // Determine the type of object
                 NAString objType;
                 if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_)
                   objType = COM_BASE_TABLE_OBJECT_LIT;
-                else
+                else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_)
                   objType = COM_VIEW_OBJECT_LIT;
+                else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_)
+                  objType = COM_SEQUENCE_GENERATOR_OBJECT_LIT;
+                else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_)
+                  objType = COM_LIBRARY_OBJECT_LIT;
+                else
+                  objType = COM_USER_DEFINED_ROUTINE_OBJECT_LIT;
 
+                char buf[authList.length() + 100];
                 if (doPrivCheck)
-                {
-                   char buf[authList.length() + 100];
-                   str_sprintf(buf, "and grantee_id in %s ", authList.data());
-                   privWhereClause = buf;
-                }
+                  {
+                    if (getMItdb().getParam1() && 
+                        (strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) != 0))
+                          str_sprintf(buf, "and grantee_id = -2 ");
+                    else
+                        str_sprintf(buf, " and grantee_id in %s ", authList.data());
+                    privWhereClause = buf;
+                  }
+                else
+                  {
+                    if (getMItdb().getParam1())
+                      {
+                        if (strcmp(getMItdb().getParam1(), currContext->getDatabaseUserName()) == 0)
+                          str_sprintf(buf, " and grantee_id in %s ", authList.data());
+                        else
+                          {
+                            Int32 authID = getAuthID(getMItdb().getParam1(), cat, sch, auths);
+                            char *userRoleList = getRoleList(authID, cat, pmsch, role_usage);
+                            if (userRoleList)
+                              {
+                                str_sprintf(buf, " and grantee_id in %s ", userRoleList);
+                                NADELETEBASIC(userRoleList, getHeap());
+                              }
+                            else
+                              str_sprintf(buf, " = %d ", authID);
+                          }
+                        privWhereClause = buf;
+                      }
+                  }
+
                 param_[0] = cat;
                 param_[1] = pmsch;
                 param_[2] = objPrivs;
@@ -2956,7 +3031,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
-
+ 
 	    if (fetchAllRows(infoList_, queryBuf_, numOutputEntries_,
 			     FALSE, retcode) < 0)
 	      {
@@ -2992,7 +3067,10 @@ short ExExeUtilGetMetadataInfoTcb::work()
             if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_) ||
                 (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_) ||
                 (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_) ||
-                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_))
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_) || 
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_SEQUENCE_) || 
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_LIBRARY_) || 
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_ROUTINE_))
 
             {
               // output:  privileges<4spaces>object name
@@ -3909,6 +3987,16 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
         case SETUP_HBASE_QUERY_:
           {
+            // Since HBase tables are native and Trafodion does not manage them
+            // limit who can view these objects
+            if (((currContext->getSqlParserFlags() & 0x20000) == 0) &&
+                !ComUser::isRootUserID() && 
+                !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+                !ComUser::currentUserHasRole(HBASE_ROLE_ID))
+              {
+                step_ = DONE_;
+                break;
+              }
             hbaseTables_ = ehi_->listAll("");
             if (! hbaseTables_)
               {
@@ -3918,9 +4006,32 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
             currIndex_ = 0;
 
-            step_ = PROCESS_NEXT_ROW_;
+            if (currIndex_ == hbaseTables_->entries())
+              {
+                step_ = DONE_;
+                break;
+              }
+
+            step_ = DISPLAY_HEADING_;
           }
           break;
+
+        case DISPLAY_HEADING_:
+          {
+            retcode = displayHeading();
+            if (retcode == 1)
+              return WORK_OK;
+            else if (retcode < 0)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            headingReturned_ = TRUE;
+
+            step_ = PROCESS_NEXT_ROW_;
+          }
+        break;
 
         case PROCESS_NEXT_ROW_:
           {
@@ -4545,6 +4656,17 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
 		break;
 	      }
 	    
+            // Since Hive tables are native and Trafodion does not manage them
+            // limit the users that can see the data.
+            if (((currContext->getSqlParserFlags() & 0x20000) == 0) &&
+                !ComUser::isRootUserID() && 
+                !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+                !ComUser::currentUserHasRole(HIVE_ROLE_ID))
+              {
+                step_ = DONE_;
+                break;
+              }
+
 	    short rc = 0;
 	    retcode = fetchAllHiveRows(infoList_, 1, rc);
 	    if (retcode < 0)
