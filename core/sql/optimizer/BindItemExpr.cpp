@@ -10800,6 +10800,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     {
     case ITM_DATE_TRUNC_YEAR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Cast to DATETIME YEAR first to pick up only the year.
         strcpy(buf, "CAST(CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP) ;");
       }
@@ -10807,6 +10810,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_MONTH:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Get first day of year and then add in the months.
         strcpy(buf, "CAST(CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP) + "
                     "CAST(MONTH(@A1)-1 AS INTERVAL MONTH);");
@@ -10815,6 +10821,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_DAY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Note: Cast to DATE first to zero out all time fields
         strcpy(buf, "CAST(CAST(@A1 AS DATE) AS TIMESTAMP);");
       }
@@ -10822,6 +10831,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_HOUR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         //Note: Cast to DATE to zero out all time fields.  Cast to TIMESTAMP in case DATE was supplied.
         strcpy(buf,
                "CAST( CAST(@A1 AS DATE) AS TIMESTAMP) + "
@@ -10831,6 +10843,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_MINUTE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         strcpy(buf, "DATE_TRUNC('HOUR',@A1) + "
                     "CAST(MINUTE(CAST(@A1 AS TIMESTAMP)) AS INTERVAL MINUTE);");
       }
@@ -10838,6 +10853,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_SECOND:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+
         strcpy(buf, "DATE_TRUNC('MINUTE',@A1) + "
                     "CAST( CAST( SECOND(CAST(@A1 AS TIMESTAMP)) AS SMALLINT) "
                     "AS INTERVAL SECOND);");
@@ -10846,6 +10864,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_CENTURY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2)) 
+          return this;
+
         strcpy(buf, "CAST( CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP ) - "
                     "CAST( MOD(YEAR(@A1),100) AS INTERVAL YEAR(4)  );");
       }
@@ -10853,6 +10874,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_DATE_TRUNC_DECADE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2)) 
+          return this;
+
         strcpy(buf, "CAST( CAST(@A1 AS DATETIME YEAR) AS TIMESTAMP ) - "
                     "CAST( MOD(YEAR(@A1),10) AS INTERVAL YEAR(4)   );");
       }
@@ -10861,6 +10885,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_YEAR:
     case ITM_TSI_YEAR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( YEAR(@A2) - YEAR(@A1) AS INT) ;");
       }
       break;
@@ -10868,6 +10896,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_MONTH:
     case ITM_TSI_MONTH:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( (YEAR(@A2)*12 + MONTH(@A2)) - "
                           "(YEAR(@A1)*12 + MONTH(@A1)) AS INT) ;");
       }
@@ -10875,6 +10907,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_MONTHS_BETWEEN:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,2))
+          return this;
 	strcpy(buf, "CASE WHEN DAY (@A1) = DAY (@A2) THEN (YEAR(@A1)*12 + MONTH(@A1) - (YEAR(@A2)*12 + MONTH(@A2))) ELSE CAST((CAST(@A1 AS DATE) - CAST(@A2 AS DATE)) AS NUMERIC(18,6))/31 END");
       }
       break;
@@ -10882,6 +10918,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_DAY:
     case ITM_TSI_DAY:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( CAST(@A2 AS DATE) - CAST(@A1 AS DATE) AS INT );");
       }
       break;
@@ -10889,6 +10929,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_HOUR:
     case ITM_TSI_HOUR:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf,
               "CAST( (JULIANTIMESTAMP(DATE_TRUNC('HOUR',@A2)) - "
                     " JULIANTIMESTAMP(DATE_TRUNC('HOUR',@A1))) / (1000000*3600) "
@@ -10899,6 +10943,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_MINUTE:
     case ITM_TSI_MINUTE:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf,
                "CAST( (JULIANTIMESTAMP(DATE_TRUNC('MINUTE',@A2)) - "
                      " JULIANTIMESTAMP(DATE_TRUNC('MINUTE',@A1))) / (1000000*60)"
@@ -10909,6 +10957,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_SECOND:
     case ITM_TSI_SECOND:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( "
                     "(JULIANTIMESTAMP(DATE_TRUNC('SECOND',@A2)) - "
                     " JULIANTIMESTAMP(DATE_TRUNC('SECOND',@A1))) / 1000000"
@@ -10919,6 +10971,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_QUARTER:
     case ITM_TSI_QUARTER:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST( ("
                     "((YEAR(@A2)*12) + ((QUARTER(@A2)-1)*3)) - "
                     "((YEAR(@A1)*12) + ((QUARTER(@A1)-1)*3)) ) / 3 AS INT);");
@@ -10928,6 +10984,10 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_DATEDIFF_WEEK:
     case ITM_TSI_WEEK:
       {
+        if (enforceDateOrTimestampDatatype(bindWA,0,2))
+          return this;
+        if (enforceDateOrTimestampDatatype(bindWA,1,3))
+          return this;
         strcpy(buf, "CAST(("
                     "(CAST(@A2 AS DATE) - CAST(DAYOFWEEK(@A2)-1 AS INTERVAL DAY)) - "
                     "(CAST(@A1 AS DATE) - CAST(DAYOFWEEK(@A1)-1 AS INTERVAL DAY))"
@@ -10937,32 +10997,8 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_LAST_DAY:
       {
-	// Make sure that the child is of date datatype.
-	ItemExpr * tempBoundTree =
-	  child(0)->castToItemExpr()->bindNode(bindWA);
-	if (bindWA->errStatus()) return this;
-
-	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
-	    NA_DATETIME_TYPE)
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	DatetimeType *dtOper = 
-	  &(DatetimeType&)tempBoundTree->getValueId().getType();
-	if ((dtOper->getPrecision() != SQLDTCODE_TIMESTAMP) &&
-	    (dtOper->getPrecision() != SQLDTCODE_DATE))
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	setChild(0, tempBoundTree);
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
 
         strcpy(buf, "@A1 - CAST( DAY(@A1) -1 AS INTERVAL DAY) + INTERVAL '1' MONTH - INTERVAL '1' DAY;");
       }
@@ -10970,36 +11006,12 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
     case ITM_NEXT_DAY:
       {
-	// Make sure that the child is of date datatype.
-	ItemExpr * tempBoundTree =
-	  child(0)->castToItemExpr()->bindNode(bindWA);
-	if (bindWA->errStatus()) 
-	  return this;
-
-	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
-	    NA_DATETIME_TYPE)
-	  {
-	    // 4071 The operand of a NEXT_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	DatetimeType *dtOper = 
-	  &(DatetimeType&)tempBoundTree->getValueId().getType();
-	if ((dtOper->getPrecision() != SQLDTCODE_DATE) &&
-	    (dtOper->getPrecision() != SQLDTCODE_TIMESTAMP))
-	  {
-	    // 4071 The operand of a LAST_DAY function must be a datetime.
-	    *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(getTextUpper());
-	    bindWA->setErrStatus();
-	    return this;
-	  }
-
-	setChild(0, tempBoundTree);
+	// Make sure that child(0) is of date or timestamp datatype.
+        if (enforceDateOrTimestampDatatype(bindWA,0,1))
+          return this;
 
 	// make sure child(1) is of string type
-	tempBoundTree =
+	ItemExpr * tempBoundTree =
 	  child(1)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) 
 	  return this;
@@ -11909,6 +11921,9 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	//Processing of first operand.
 	ItemExpr * tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus()) return this;
+
+	if (tempBoundTree->getValueId().getType().getTypeQualifier() == NA_UNKNOWN_TYPE)
+	  child(0)->getValueId().coerceType(NA_NUMERIC_TYPE);
 	
 	if (tempBoundTree->getValueId().getType().getTypeQualifier() != NA_NUMERIC_TYPE)
 	  {
@@ -12577,6 +12592,40 @@ ItemExpr *ZZZBinderFunction::tryToUndoBindTransformation(ItemExpr *expr)
     }
 
   return result;  
+}
+
+// returns true if there is an error
+bool ZZZBinderFunction::enforceDateOrTimestampDatatype(BindWA * bindWA, CollIndex childIndex, int operand)
+{
+  // Make sure that the child is of date or timestamp datatype.
+  ItemExpr * tempBoundTree =
+    child(childIndex)->castToItemExpr()->bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return true;
+
+  bool error = (tempBoundTree->getValueId().getType().getTypeQualifier() !=
+                NA_DATETIME_TYPE);
+  if (!error)
+    {
+      DatetimeType *dtOper = 
+	  &(DatetimeType&)tempBoundTree->getValueId().getType();
+      error = ((dtOper->getPrecision() != SQLDTCODE_TIMESTAMP) &&
+	       (dtOper->getPrecision() != SQLDTCODE_DATE));
+    }
+
+  if (error)
+    {
+      // 4182 Function $0~String0 operand $0~Int0 must be of type $1~String1.
+      *CmpCommon::diags() << DgSqlCode(-4182) 
+                          << DgString0(getTextUpper())
+                          << DgInt0(operand)
+                          << DgString1("DATE or TIMESTAMP");
+      bindWA->setErrStatus();
+      return true;
+    }
+
+  setChild(childIndex, tempBoundTree);
+  return false;  // no error
 }
 
 //-------------------------------------------------------------------------
