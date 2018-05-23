@@ -1714,6 +1714,10 @@ CREATE [VOLATILE | UNIQUE] INDEX index-name ON table
    [HBASE_OPTIONS (hbase-options-list)]
    [SALT LIKE TABLE]
 
+populate-option is:
+  POPULATE
+| NO POPULATE
+
 hbase-options-list is:
    hbase-option = 'value'[, hbase-option = 'value']...
 ```
