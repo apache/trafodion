@@ -229,6 +229,16 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   enum ComObjectType enMDObjType = COM_UNKNOWN_OBJECT;
 
   ComObjectName objectName(commentOnNode->getObjectName());
+  //we can not comment on native hive table.
+  if (str_cmp(toUpper(currCatName.data()), "HIVE", 4) == 0)
+   {
+       CmpCommon::diags()->clear();
+       *CmpCommon::diags()<<DgSqlCode(-1721)
+           <<DgString0(objectName.getExternalName(TRUE));
+       processReturn();                                     
+       return;
+   }
+
   ComAnsiNamePart currCatAnsiName(currCatName);
   ComAnsiNamePart currSchAnsiName(currSchName);
   objectName.applyDefaults(currCatAnsiName, currSchAnsiName);

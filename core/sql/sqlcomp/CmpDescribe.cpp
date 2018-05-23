@@ -2465,10 +2465,10 @@ short CmpDescribeHiveTable (
                                          NULL, 
                                          TRUE, FALSE, FALSE, FALSE, 
                                          FALSE,
-                                         UINT_MAX, TRUE,
+                                         UINT_MAX, FALSE,
                                          NULL, 0, NULL, NULL, &space);
 
-      outputShortLine(space, ";");
+      //outputShortLine(space, ";");
     }
 
   // If SHOWDDL and authorization is enabled, display GRANTS
