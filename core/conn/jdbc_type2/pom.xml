@@ -26,9 +26,67 @@
   <groupId>org.apache.trafodion.jdbc</groupId>
   <artifactId>trafjdbcT2</artifactId>
   <packaging>jar</packaging>
-  <version>${env.TRAFODION_VER}</version> 
+  <version>${INTERNAL_VERSION}</version>
   <name>jdbcT2</name>
   <url>http://maven.apache.org</url>
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>production</id>
+            <properties>
+                <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <version>1.0.0</version>
+                        <executions>
+                            <execution>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>read-project-properties</goal>
+                                </goals>
+                                <configuration>
+                                    <files>
+                                        <file>${basedir}/../../sqf/export/include/SCMBuildMan.mf</file>
+                                        <file>${basedir}/buildId</file>
+                                    </files>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+                        <executions>
+                            <execution>
+                                <phase>generate-sources</phase>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="${basedir}/LICENSE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
+                                        <copy file="${basedir}/NOTICE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
+                                    </tasks>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -39,25 +97,6 @@
   </dependencies>
 <build>
 <plugins>
-<plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>properties-maven-plugin</artifactId>
-    <version>1.0.0</version>
-    <executions>
-        <execution>
-        <phase>initialize</phase>
-        <goals>
-            <goal>read-project-properties</goal>
-        </goals>
-    <configuration>
-    <files>
-        <file>${basedir}/../../sqf/export/include/SCMBuildMan.mf</file>
-        <file>${basedir}/buildId</file>
-    </files>
-    </configuration>
-    </execution>
-    </executions>
-  </plugin>
   <plugin>
     <artifactId>maven-antrun-plugin</artifactId>
     <version>1.8</version>
@@ -69,8 +108,6 @@
         <copy file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
         <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java">
         </replace>
-        <copy file="${basedir}/LICENSE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
-        <copy file="${basedir}/NOTICE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
         </tasks>
         </configuration>
         <goals>
@@ -104,4 +141,10 @@
     </plugin>
   </plugins>
    </build>
+    <repositories>
+        <repository>
+            <id>mvnrepository</id>
+            <url>https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-resources-plugin</url>
+        </repository>
+    </repositories>
 </project>

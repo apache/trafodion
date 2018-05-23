@@ -34,10 +34,10 @@
   <groupId>org.trafodion</groupId>
   <artifactId>dcs</artifactId>
   <packaging>jar</packaging>
-  <version>${env.TRAFODION_VER}</version>
+  <version>${INTERNAL_VERSION}</version>
   <name>Trafodion Database Connectivity Services</name>
   <url>http://wiki.trafodion.org</url>
-  
+
   <developers>
     <developer>
       <id>matbrown</id>
@@ -305,7 +305,7 @@
           </dependencies>
           <configuration>
             <additionalClasspathElements>
-               <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4-${TRAFODION_VER}.jar</additionalClasspathElement>
+               <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4-${project.version}.jar</additionalClasspathElement>
             </additionalClasspathElements>
             <includes>
               <include>${integrationtest.include}</include>
@@ -471,7 +471,7 @@
   	<compileSource>1.6</compileSource>
     
   	<!-- Dependencies -->
-        <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
+        <hadoop.version>${HADOOP_DEP_VER}</hadoop.version>
   	<commons-cli.version>1.2</commons-cli.version>
   	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>
@@ -650,32 +650,45 @@
       <artifactId>jamon-runtime</artifactId>
       <version>${jamon.runtime.version}</version>
     </dependency>
+    <!-- JDBCT4 dependencies -->
+    <dependency>
+      <groupId>org.apache.trafodion.jdbc.t4</groupId>
+      <artifactId>jdbcT4</artifactId>
+      <version>${jdbct4.version}</version>
+    </dependency>
+    <!-- JDBCT2 dependencies -->
+    <dependency>
+      <groupId>org.apache.trafodion.jdbc</groupId>
+      <artifactId>trafjdbcT2</artifactId>
+      <version>${jdbct2.version}</version>
+    </dependency>
   </dependencies>
   <profiles>
-    <!-- JDBC drivers needed for compile, but not site docs 
-	 This allows turning off dependency on command line (-P '!jdbc') -->
     <profile>
-      <id>jdbc</id>
+      <id>dev</id>
+      <properties>
+        <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>2.6.0</HADOOP_DEP_VER>
+      </properties>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <dependencies>
-         <!-- JDBCT4 dependencies -->    
-         <dependency>    
-          <groupId>org.apache.trafodion.jdbc.t4</groupId>
-          <artifactId>jdbcT4</artifactId>
-          <version>${jdbct4.version}</version>
-         </dependency>
-         <!-- JDBCT2 dependencies -->    
-         <dependency>    
-            <groupId>org.apache.trafodion.jdbc</groupId>
-            <artifactId>trafjdbcT2</artifactId>
-            <version>${jdbct2.version}</version>
-         </dependency>
-      </dependencies>
+    </profile>
+    <!-- JDBC drivers needed for compile, but not site docs
+	 This allows turning off dependency on command line (-P '!jdbc') -->
+    <profile>
+      <id>production</id>
+      <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
+      </properties>
     </profile>
     <profile>
       <id>runSmallTests</id>
+      <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
+      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
@@ -688,6 +701,10 @@
     </profile>
     <profile>
       <id>runMediumTests</id>
+      <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
+      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
@@ -700,6 +717,10 @@
     </profile>
     <profile>
       <id>runLargeTests</id>
+      <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
+      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
@@ -712,6 +733,10 @@
     </profile>
     <profile>
       <id>runAllTests</id>
+      <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
+      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
