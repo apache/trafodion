@@ -22,7 +22,7 @@
 INSTALL_LIBDIR := ${TRAF_HOME}/export/lib
 CP :=/bin/cp -f
 all:
-	@$(MAVEN) package -DskipTests
+	@$(MAVEN) package -DskipTests 2>&1 | sed -e "s/$$/  ##(lib_mgmt)/";exit $${PIPESTATUS[0]}
 	mkdir -p ${INSTALL_LIBDIR}
 	${CP} target/lib_mgmt-${TRAFODION_VER}.jar ${INSTALL_LIBDIR}/lib_mgmt.jar
 clean:

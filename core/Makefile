@@ -259,4 +259,4 @@ trafinstall:
 	cd $(TRAF_HOME)/sql/scripts && install_traf_components
 
 lib_mgmt: foundation
-	cd sql/lib_mgmt && $(MAKE) all
+	cd sql/lib_mgmt && $(MAKE) all | sed -e "s/$$/  ##(lib_mgmt)/";exit $${PIPESTATUS[0]}
