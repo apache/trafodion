@@ -34047,6 +34047,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_CONVERTTOHX_INTN
                       | TOK_COS
                       | TOK_COSH
+                      | TOK_CRC32
                       | TOK_CURDATE
                       | TOK_CURTIME
                       | TOK_D_RANK 
@@ -34096,6 +34097,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LTRIM
                       | TOK_MAVG
                       | TOK_MCOUNT
+                      | TOK_MD5
                       | TOK_MMAX
                       | TOK_MMIN
                       | TOK_MOD
@@ -34140,6 +34142,9 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RTRIM
                       | TOK_RVARIANCE
                       | TOK_SEQNUM
+                      | TOK_SHA
+                      | TOK_SHA1
+                      | TOK_SHA2
                       | TOK_SIGN
                       | TOK_SIN
                       | TOK_SINH

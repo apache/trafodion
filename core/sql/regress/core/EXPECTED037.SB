@@ -38,6 +38,7 @@
 +>, CONSTRAINT_SCHEMA int not null 
 +>, CONTROL int not null 
 +>, CURSOR_NAME int not null 
++>, CRC32 int not null
 +>, DATA int not null 
 +>--,DATETIME int not null 
 +>, DATETIME_CODE int not null 
@@ -75,7 +76,7 @@
 >>invoke table_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.TABLE_NAME
--- Definition current  Thu Dec  7 05:50:27 2017
+-- Definition current  Tue May 22 16:42:26 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -115,6 +116,7 @@
   , CONSTRAINT_SCHEMA                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , CONTROL                          INT NO DEFAULT NOT NULL NOT DROPPABLE
   , CURSOR_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CRC32                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , DATA                             INT NO DEFAULT NOT NULL NOT DROPPABLE
   , DATETIME_CODE                    INT NO DEFAULT NOT NULL NOT DROPPABLE
   , DCOMPRESS                        INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -160,6 +162,7 @@
 +>, LOW_VALUE int not null 
 +>, MAXSIZE int not null 
 +>, MBYTES int not null 
++>, MD5 int not null
 +>, MESSAGE_LEN int not null 
 +>, MESSAGE_OCTET_LEN int not null 
 +>, MESSAGE_TEXT int not null 
@@ -192,6 +195,9 @@
 +>, SERIALIZABLE int not null 
 +>, SERIALWRITES int not null 
 +>, SERVER_NAME int not null 
++>, SHA int not null
++>, SHA1 int not null
++>, SHA2 int not null
 +>, SHAPE int not null 
 +>, SHARE int not null 
 +>, SIDEINSERTS int not null 
@@ -224,7 +230,7 @@
 >>invoke system_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.SYSTEM_NAME
--- Definition current  Thu Dec  7 05:50:32 2017
+-- Definition current  Tue May 22 16:42:31 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -240,6 +246,7 @@
   , LOW_VALUE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
   , MAXSIZE                          INT NO DEFAULT NOT NULL NOT DROPPABLE
   , MBYTES                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MD5                              INT NO DEFAULT NOT NULL NOT DROPPABLE
   , MESSAGE_LEN                      INT NO DEFAULT NOT NULL NOT DROPPABLE
   , MESSAGE_OCTET_LEN                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , MESSAGE_TEXT                     INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -272,6 +279,9 @@
   , SERIALIZABLE                     INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SERIALWRITES                     INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SERVER_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SHA                              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SHA1                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SHA2                             INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SHAPE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SHARE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SIDEINSERTS                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3241,6 +3251,11 @@ SELECT WORK WORK from (values(0)) WORK(WORK);
 --- SQL command prepared.
 >>
 >>-- Expect success
+>>prepare s1 from SELECT CRC32 CRC32 from (values(0)) CRC32(CRC32);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
 >>prepare s1 from SELECT CURDATE CURDATE from (values(0)) CURDATE(CURDATE);
 
 --- SQL command prepared.
@@ -3676,6 +3691,11 @@ SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 --- SQL command prepared.
 >>
 >>-- Expect success
+>>prepare s1 from SELECT MD5 MD5 from (values(0)) MD5(MD5);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
 >>prepare s1 from SELECT MAXSIZE MAXSIZE from (values(0)) MAXSIZE(MAXSIZE);
 
 --- SQL command prepared.
@@ -4072,6 +4092,21 @@ SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 >>
 >>-- Expect success
 >>prepare s1 from SELECT SERVER_NAME SERVER_NAME from (values(0)) SERVER_NAME(SERVER_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHA SHA from (values(0)) SHA(SHA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHA1 SHA1 from (values(0)) SHA1(SHA1);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHA2 SHA2 from (values(0)) SHA2(SHA2);
 
 --- SQL command prepared.
 >>

@@ -1242,7 +1242,7 @@ $1~String1 --------------------------------
 4179 0A000 99999 BEGINNER MAJOR DBADMIN SEQUENCE BY is not supported for stream expressions.
 4180 0A000 99999 BEGINNER MAJOR DBADMIN Stream expression is not supported for top level DELETE statement. 
 4181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
-4182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
+4182 42000 99999 BEGINNER MAJOR DBADMIN Function $0~String0 operand $0~Int0 must be of type $1~String1.
 4183 0A000 99999 BEGINNER MAJOR DBADMIN Embedded DELETE statements are not allowed on referenced tables.
 4184 0A000 99999 BEGINNER MAJOR DBADMIN Columns that are part of a referential constraint cannot be updated using embedded UPDATE statements. 
 4185 42000 99999 BEGINNER MAJOR DBADMIN Select list index is not allowed to be specified in the GROUP BY clause for this query.

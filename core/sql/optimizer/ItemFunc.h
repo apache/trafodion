@@ -4681,6 +4681,9 @@ public:
 
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
+  
+  // helper function used by bindNode; returns true if there is an error
+  bool enforceDateOrTimestampDatatype(BindWA *bindWA, CollIndex child, int operand);
 
   // the synthesizeType method is needed only when we process an item
   // expression at DDL time, for DML the function gets transformed into
