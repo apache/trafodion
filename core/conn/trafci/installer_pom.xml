@@ -22,12 +22,12 @@
     <groupId>org.trafodion</groupId>
     <artifactId>trafciInstaller</artifactId>
     <packaging>jar</packaging>
-    <version>${TRAFODION_VER}</version>
+    <version>${INTERNAL_VERSION}</version>
     <name>Trafodion Trafci</name>
     <properties>
         <basedir>.</basedir>
-        <traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
-        <trafci-version>${TRAFODION_VER}</trafci-version>
+        <traf-jdbc-version>${project.version}</traf-jdbc-version>
+        <trafci-version>${project.version}</trafci-version>
     </properties>
     <dependencies>
         <dependency>
@@ -38,7 +38,7 @@
         <dependency>
             <groupId>org.apache.trafodion.jdbc.t4</groupId>
             <artifactId>jdbcT4</artifactId>
-            <version>${TRAFODION_VER}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -116,4 +116,21 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>production</id>
+            <properties>
+                <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+            </properties>
+        </profile>
+    </profiles>
 </project>

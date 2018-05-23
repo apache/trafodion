@@ -27,15 +27,15 @@ all:Trafci_deploy
 Trafci_deploy:Trafci_installer
 Trafci_installer:Trafci_jar
 Trafci_jar:
-	mvn clean install -DskipTests$
+	mvn -Pproduction install -DskipTests$
 Trafci_installer:
 	./getBuildInfo
 	export buildId=`head -n 1 buildId`
-	mvn -f installer_pom.xml -DbldId=${buildId} clean package -DskipTests
+	mvn -Pproduction -f installer_pom.xml -DbldId=${buildId} package -DskipTests
 Trafci_deploy:
 	zip -r ../clients/trafci.zip -j target/trafciInstaller.jar utils/README
 	java -jar target/trafciInstaller.jar -silent -installDir ${TRAF_HOME}
 
 clean:
-	mvn -f installer_pom.xml clean
-	mvn -f pom.xml clean
+	mvn -Pproduction -f installer_pom.xml clean
+	mvn -Pproduction -f pom.xml clean

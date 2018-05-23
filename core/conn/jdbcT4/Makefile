@@ -27,7 +27,7 @@ all: build_all
 
 build_all: LICENSE NOTICE 
 	echo "$(MAVEN) package -DskipTests"
-	set -o pipefail && $(MAVEN) package -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	set -o pipefail && $(MAVEN) -Pproduction package -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
 	mkdir -p ../clients
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
@@ -35,7 +35,7 @@ build_all: LICENSE NOTICE
 	`cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar`
 
 clean:
-	-$(MAVEN) clean | grep ERROR
+	-$(MAVEN) -Pproduction clean | grep ERROR
 	$(RM) build_jdbct4.log ${TRAF_HOME}/export/lib/jdbcT4*.jar
 
 LICENSE: ../../../licenses/LICENSE-clients
