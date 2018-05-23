@@ -1707,9 +1707,10 @@ inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOM
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-CREATE [VOLATILE | UNIQUE] INDEX index ON table
+CREATE [VOLATILE | UNIQUE] INDEX index-name ON table
    (column-name [ASC[ENDING] | DESC[ENDING]]
    [,column-name [ASC[ENDING] | DESC[ENDING]]]...)
+   [populate-option]
    [HBASE_OPTIONS (hbase-options-list)]
    [SALT LIKE TABLE]
 
@@ -1733,7 +1734,7 @@ Unique index not only improves the query performance, but also provides data int
 +
 NOTE: Multiple NULL values are treated as duplicate values for a column which can contain only one NULL value.
 
-* `_index_`
+* `_index-name_`
 +
 is an SQL identifier that specifies the simple name for the new index. You cannot qualify _index_ with its schema
 name. Indexes have their own name space within a schema, so an index name might be the same as a table or constraint
@@ -1754,6 +1755,23 @@ Rows are ordered by values in the first column specified for the index. If multi
 for the first column, the values in the second column are used to order the rows, and so forth. If duplicate index
 rows occur in a non-unique index, their order is based on the sequence specified for the columns of the key of the
 underlying table. For ordering (but not for other purposes), nulls are greater than other values.
+
+* `populate-option`
+
+** `NO POPULATE`
++
+specifies that the index is not to be populated when it is created. 
++
+The index’s partition(s) are created, but no data is written to the index, and it is marked “offline”. You can drop an offline index with the DROP INDEX statement. 
+The DROP TABLE statement also drops offline indexes of the specified table. 
+DML statements have no effect on offline indexes. 
++
+If an index is created with the intention of using it for a constraint, it must be populated before creating the constraint. 
+You can populate an offline index and remove its offline designation by using the POPULATE INDEX utility.
+
+** `POPULATE`
++
+specifies that the index is to be created and populated. 
 
 * `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
 +
@@ -1936,6 +1954,14 @@ SQL>create unique index idx_t25 on t25(b);
 *** ERROR[1053] Unique index TRAFODION.SEABASE.IDX_T25 could not be created because the specified column(s) contain duplicate data. [2017-01-12 17:17:51]
 ```
 
+* This exmaple creates the index _index_test_ which is not to be populated on the column _c1_ of the table _test_.
++
+```
+SQL>create index index_test on test (c1) no populate;
+
+--- SQL operation complete.
+```
+
 <<<
 [[create_library_statement]]
 == CREATE LIBRARY Statement
@@ -1972,7 +1998,7 @@ and <<database_object_names,database object names>>.
 +
 specifies the full path of a deployed library file, which either an SPJ's jar file or a UDF's library file.
 +
-note: make sure to upload the library file to the trafodion cluster and then copy the library file to the
+NOTE: Make sure to upload the library file to the trafodion cluster and then copy the library file to the
 same directory on all the nodes in the cluster before running the create library statement. otherwise, you
 will see an error message indicating that the jar or dll file was not found.
 
