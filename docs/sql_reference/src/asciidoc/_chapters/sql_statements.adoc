@@ -1776,6 +1776,8 @@ You can populate an offline index and remove its offline designation by using th
 ** `POPULATE`
 +
 specifies that the index is to be created and populated. 
++
+The default is `POPULATE`.
 
 * `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
 +
