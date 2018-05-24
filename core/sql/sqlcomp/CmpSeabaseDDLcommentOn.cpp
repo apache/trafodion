@@ -338,7 +338,8 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       textType = COM_COLUMN_COMMENT_TEXT;
       subID = commentOnNode->getColNum();
     }
-	
+  
+  // cannot set comment on hbase native table
   if (str_cmp(toUpper(catalogNamePart.data()), "HBASE", 5) == 0)
 	{
 	  CmpCommon::diags()->clear();
