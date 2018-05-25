@@ -515,7 +515,7 @@
 1718 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1719 ZZZZZ 99999 BEGINNER MINOR DBADMIN Access Type '$0~string0' is not supported.
 1720 ZZZZZ 99999 BEGINNER MINOR DBADMIN Isolation Level '$0~string0' is not supported.
-1722 ZZZZZ 99999 BEGINNER MINOR DBADMIN cannot set comment on '$0~string0' if the target table is native hbase table.
+1722 ZZZZZ 99999 BEGINNER MINOR DBADMIN cannot set comment on native HBASE table.
 1999 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- Last Catalog Manager error ---
 2000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
 2001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Error or warning $0~Int0 occurred while opening or reading from DEFAULTS table $1~TableName.  Using $2~String0 values.
