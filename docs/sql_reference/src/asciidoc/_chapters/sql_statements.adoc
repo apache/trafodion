@@ -1491,12 +1491,20 @@ SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS '2';
 
 --- SQL operation complete.
 ```
-
-* This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
++
+This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
 In this case, the compiler calculates the number of ESPs to be used.
 +
 ```
 SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS 'system';
+
+--- SQL operation complete.
+```
+
+* This example allows the optimizer to generate an execution using hash join.
++
+```
+SQL>CONTROL QUERY DEFAULT HASH_JOIN 'ON';
 
 --- SQL operation complete.
 ```
@@ -6461,7 +6469,7 @@ The ON predicate must select a unique row if the MERGE has a _when-not-matched-c
 === Considerations for MERGE
 
 [[merge_upsert_using_single_row]]
-=== Upsert Using Single Row
+==== Upsert Using Single Row
 
 A MERGE statement allows you to specify a set of column values that should be updated if the row is found, and another 
 row to be inserted if the row is not found. The ON predicate must select exactly one row that is to be updated if the 
