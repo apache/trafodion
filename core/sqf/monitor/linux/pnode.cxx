@@ -1035,7 +1035,7 @@ bool CNode::GetSchedulingData( void )
 }
 
 
-strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
+strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode, bool clone )
 {
     const char method_name[] = "CNode::GetStringId";
     strId_t id;
@@ -1059,21 +1059,33 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
 #ifndef NAMESERVER_PROCESS
         if (NameServerEnabled)
         {
-            if (targetLNode != NULL &&
+            if (targetLNode != NULL && !clone &&
                 !MyNode->IsMyNode(targetLNode->GetNid()))
             {
                 // Forward the unique string to the target node
-                PtpClient->AddUniqStr( id.nid
-                                     , id.id
-                                     , candidate
-                                     , targetLNode->GetNid()
-                                     , targetLNode->GetNode()->GetName());
+                int rc = PtpClient->AddUniqStr( id.nid
+                                              , id.id
+                                              , candidate
+                                              , targetLNode->GetNid()
+                                              , targetLNode->GetNode()->GetName() );
+                if (rc)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send unique string "
+                              "to target node %s, nid=%d\n"
+                            , method_name
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_NODE_GETSTRINGID_1, SQ_LOG_ERR, la_buf);
+                }
             }
         }
         else
 #endif
         {
 #ifdef NAMESERVER_PROCESS
+            clone = clone;  // Make compiler happy!
             targetLNode = targetLNode;  // Make compiler happy!
 #endif
             CReplUniqStr *repl = new CReplUniqStr ( id.nid, id.id, candidate );
@@ -1092,15 +1104,26 @@ strId_t CNode::GetStringId( char *candidate, CLNode *targetLNode )
 #ifndef NAMESERVER_PROCESS
         if (NameServerEnabled)
         {
-            if (targetLNode != NULL &&
+            if (targetLNode != NULL && !clone &&
                 !MyNode->IsMyNode(targetLNode->GetNid()))
             {
                 // Forward the unique string to the target node
-                PtpClient->AddUniqStr( id.nid
-                                     , id.id
-                                     , candidate
-                                     , targetLNode->GetNid()
-                                     , targetLNode->GetNode()->GetName());
+                int rc = PtpClient->AddUniqStr( id.nid
+                                              , id.id
+                                              , candidate
+                                              , targetLNode->GetNid()
+                                              , targetLNode->GetNode()->GetName());
+                if (rc)
+                {
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send unique string "
+                              "to target node %s, nid=%d\n"
+                            , method_name
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_NODE_GETSTRINGID_2, SQ_LOG_ERR, la_buf);
+                }
             }
         }
 #endif
@@ -1721,9 +1744,9 @@ CProcess *CNodeContainer::AddCloneProcess( ProcessInfoNs_reply_def *processInfo 
     CLNode   *lnode = Nodes->GetLNode(processInfo->nid);
     CNode    *node = lnode->GetNode();
 
-    strId_t pathStrId = MyNode->GetStringId ( processInfo->path, lnode );
-    strId_t ldpathStrId = MyNode->GetStringId (processInfo->ldpath, lnode );
-    strId_t programStrId = MyNode->GetStringId ( processInfo->program, lnode );
+    strId_t pathStrId = MyNode->GetStringId ( processInfo->path, lnode, true );
+    strId_t ldpathStrId = MyNode->GetStringId (processInfo->ldpath, lnode, true );
+    strId_t programStrId = MyNode->GetStringId ( processInfo->program, lnode, true );
 
     CProcess *process = node->CloneProcess( processInfo->nid
                                           , processInfo->type
@@ -2535,7 +2558,7 @@ CProcess *CNodeContainer::CloneProcessNs( int nid
                 snprintf( buf, sizeof(buf),
                           "[%s] ProcessInfo failed, rc=%d\n"
                         , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_GETPROCESSNS_1, SQ_LOG_ERR, buf );
+                mon_log_write( MON_NODE_CLONEPROCESSNS_1, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -2545,8 +2568,16 @@ CProcess *CNodeContainer::CloneProcessNs( int nid
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
                       "ProcessInfoNs\n"
                     , method_name, msg.type, msg.u.reply.type );
-            mon_log_write( MON_NODE_GETPROCESSNS_2, SQ_LOG_ERR, buf );
+            mon_log_write( MON_NODE_CLONEPROCESSNS_2, SQ_LOG_ERR, buf );
         }
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] - Process info request to Name Server failed\n"
+                , method_name );
+        mon_log_write( MON_NODE_CLONEPROCESSNS_3, SQ_LOG_ERR, la_buf );
     }
 
     TRACE_EXIT;
@@ -2596,7 +2627,7 @@ CProcess *CNodeContainer::CloneProcessNs( const char *name, Verifier_t verifier 
                 snprintf( buf, sizeof(buf),
                           "[%s] ProcessInfo failed, rc=%d\n"
                         , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+                mon_log_write( MON_NODE_CLONEPROCESSNS_4, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -2606,8 +2637,16 @@ CProcess *CNodeContainer::CloneProcessNs( const char *name, Verifier_t verifier 
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
                       "ProcessInfo\n"
                     , method_name, msg.type, msg.u.reply.type );
-            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+            mon_log_write( MON_NODE_CLONEPROCESSNS_5, SQ_LOG_ERR, buf );
         }
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] - Process info request to Name Server failed\n"
+                , method_name );
+        mon_log_write( MON_NODE_CLONEPROCESSNS_6, SQ_LOG_ERR, la_buf );
     }
 
     TRACE_EXIT;
@@ -3243,6 +3282,11 @@ int CNodeContainer::GetProcessInfoNs( int nid
     }
     else
     {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] - Process info request to Name Server failed\n"
+                , method_name );
+        mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, la_buf );
         rc = MPI_ERR_OP;
     }
 
@@ -3293,7 +3337,7 @@ int CNodeContainer::GetProcessInfoNs( const char *name
                 snprintf( buf, sizeof(buf),
                           "[%s] ProcessInfo failed, rc=%d\n"
                         , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+                mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
             }
             rc = msg.u.reply.u.process_info_ns.return_code;
         }
@@ -3304,12 +3348,17 @@ int CNodeContainer::GetProcessInfoNs( const char *name
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
                       "ProcessInfo\n"
                     , method_name, msg.type, msg.u.reply.type );
-            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+            mon_log_write( MON_NODE_GETPROCESSNS_5, SQ_LOG_ERR, buf );
             rc = MPI_ERR_OP;
         }
     }
     else
     {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] - Process info request to Name Server failed\n"
+                , method_name );
+        mon_log_write( MON_NODE_GETPROCESSNS_6, SQ_LOG_ERR, la_buf );
         rc = MPI_ERR_OP;
     }
 
@@ -3383,7 +3432,7 @@ CProcess *CNodeContainer::GetProcessLByTypeNs( int nid, PROCESSTYPE type )
                 snprintf( buf, sizeof(buf),
                           "[%s] ProcessInfo failed, rc=%d\n"
                         , method_name, msg.u.reply.u.process_info_ns.return_code );
-                mon_log_write( MON_NODE_GETPROCESSNS_3, SQ_LOG_ERR, buf );
+                mon_log_write( MON_NODE_GETPROCESSLBYTYPENS_1, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -3393,8 +3442,16 @@ CProcess *CNodeContainer::GetProcessLByTypeNs( int nid, PROCESSTYPE type )
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
                       "ProcessInfo\n"
                     , method_name, msg.type, msg.u.reply.type );
-            mon_log_write( MON_NODE_GETPROCESSNS_4, SQ_LOG_ERR, buf );
+            mon_log_write( MON_NODE_GETPROCESSLBYTYPENS_2, SQ_LOG_ERR, buf );
         }
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] - Process info request to Name Server failed\n"
+                , method_name );
+        mon_log_write( MON_NODE_GETPROCESSLBYTYPENS_3, SQ_LOG_ERR, la_buf );
     }
 
     TRACE_EXIT;

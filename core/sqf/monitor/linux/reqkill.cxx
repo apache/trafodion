@@ -94,10 +94,25 @@ void CExtKillReq::Kill( CProcess *process )
         if (NameServerEnabled)
         {
             // Forward the process create to the target node
-            PtpClient->ProcessKill( process
-                                  , process->GetAbort()
-                                  , lnode->GetNid()
-                                  , node->GetName());
+            int rc = PtpClient->ProcessKill( process
+                                           , process->GetAbort()
+                                           , lnode->GetNid()
+                                           , node->GetName());
+            if (rc)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Can't send process kill "
+                          "request for child process %s (%d, %d) "
+                          "to child node %s, nid=%d\n"
+                        , method_name
+                        , process->GetName()
+                        , process->GetNid()
+                        , process->GetPid()
+                        , node->GetName()
+                        , lnode->GetNid() );
+                mon_log_write(MON_REQ_KILL_1, SQ_LOG_ERR, la_buf);
+            }
         }
         else
         {

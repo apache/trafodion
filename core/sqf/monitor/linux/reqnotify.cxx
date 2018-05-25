@@ -274,16 +274,6 @@ void CExtNotifyReq::performRequest()
                 } 
                 else
                 {
-#if 0
-                    if ( msg_->u.request.u.notify.cancel )
-                    {   // Unregister interest in death of target process 
-                        status = targetProcess->CancelDeathNotification( nid_
-                                                                       , pid
-                                                                       , verifier_
-                                                                       , msg_->u.request.u.notify.trans_id);
-                    }
-                    else if (sourceProcess)
-#endif
                     if (sourceProcess)
                     {   // Register interest in death of target process 
                         if (NameServerEnabled && targetProcess->IsClone())
@@ -304,7 +294,18 @@ void CExtNotifyReq::performRequest()
                                                          , targetLNode->GetNode()->GetName() );
                             if (rc)
                             {
-                                // TODO: Error handling
+                                char la_buf[MON_STRING_BUF_SIZE];
+                                snprintf( la_buf, sizeof(la_buf)
+                                        , "[%s] - Can't send process notify request "
+                                          "for process %s (%d, %d) "
+                                          "to target node %s, nid=%d\n"
+                                        , method_name
+                                        , sourceProcess->GetName()
+                                        , sourceProcess->GetNid()
+                                        , sourceProcess->GetPid()
+                                        , targetLNode->GetNode()->GetName()
+                                        , targetLNode->GetNid() );
+                                mon_log_write(MON_REQ_NOTIFY_1, SQ_LOG_ERR, la_buf);
                             }
                         }
                         

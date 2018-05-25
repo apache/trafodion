@@ -1010,6 +1010,23 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                     delete msg;
                     msg = NULL;
                 }
+                if (NameServerEnabled)
+                {
+                    if (!MyNode->IsMyNode( tm->GetNid() ))
+                    {
+                        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+                        {
+                            trace_printf( "%s@%d - Deleting clone process %s, (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , tm->GetName()
+                                        , tm->GetNid()
+                                        , tm->GetPid()
+                                        , tm->GetVerifier() );
+                        }
+                        Nodes->DeleteCloneProcess( tm );
+                    }
+                
+                }
             }
             else
             {

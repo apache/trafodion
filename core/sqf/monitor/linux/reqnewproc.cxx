@@ -532,9 +532,24 @@ void CExtNewProcReq::performRequest()
                     if (NameServerEnabled)
                     {
                         // Forward the process create to the target node
-                        PtpClient->ProcessNew( process
-                                             , lnode->GetNid()
-                                             , lnode->GetNode()->GetName());
+                        int rc = PtpClient->ProcessNew( process
+                                                      , lnode->GetNid()
+                                                      , lnode->GetNode()->GetName());
+                        if (rc)
+                        {
+                            char la_buf[MON_STRING_BUF_SIZE];
+                            snprintf( la_buf, sizeof(la_buf)
+                                    , "[%s] - Can't send process create "
+                                      "request for process %s (%d, %d) "
+                                      "to target node %s, nid=%d\n"
+                                    , method_name
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , lnode->GetNode()->GetName()
+                                    , lnode->GetNid() );
+                            mon_log_write(MON_MONITOR_STARTPROCESS_15, SQ_LOG_ERR, la_buf);
+                        }
                     }
                     else
 #endif

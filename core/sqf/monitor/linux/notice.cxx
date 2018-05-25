@@ -421,7 +421,18 @@ void CNotice::NotifyRemote( void )
                                    , targetLNode->GetNode()->GetName() );
         if (rc)
         {
-            // TODO: Error handling
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] - Can't send process exit "
+                      "for process %s (%d, %d) "
+                      "to target node %s, nid=%d\n"
+                    , method_name
+                    , Process->GetName()
+                    , Process->GetNid()
+                    , Process->GetPid()
+                    , targetLNode->GetNode()->GetName()
+                    , targetLNode->GetNid() );
+            mon_log_write(NOTICE_NOTIFYREMOTE_1, SQ_LOG_ERR, la_buf);
         }
         nidQueue->pop();
     }

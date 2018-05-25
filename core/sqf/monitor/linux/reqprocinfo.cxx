@@ -44,7 +44,7 @@ extern CNameServer *NameServer;
 // Copy information for a specific process into the reply message buffer.
 void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState &procState)
 {
-    const char method_name[] = "CNameServer::SendReceive";
+    const char method_name[] = "CExtProcInfoBase::ProcessInfo_CopyData";
     CProcess *parent;
 
     TRACE_ENTRY;
@@ -356,7 +356,17 @@ void CExtProcInfoReq::performRequest()
     }
 
     if ( NameServerEnabled && !getMonitorInfo )
-        NameServer->ProcessInfo(msg_); // in reqQueue thread (CExternalReq)
+    {
+        int rc = NameServer->ProcessInfo(msg_); // in reqQueue thread (CExternalReq)
+        if (rc)
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] - Process info request to Name Server failed\n"
+                    , method_name );
+            mon_log_write(MON_REQ_PROCINFO_1, SQ_LOG_ERR, la_buf);
+        }
+    }
 #endif
 
 #ifndef NAMESERVER_PROCESS
@@ -642,7 +652,17 @@ void CExtProcInfoContReq::performRequest()
     }
 
     if ( NameServerEnabled && !getMonitorInfo )
-        NameServer->ProcessInfoCont(msg_); // in reqQueue thread (CExternalReq)
+    {
+        int rc = NameServer->ProcessInfoCont(msg_); // in reqQueue thread (CExternalReq)
+        if (rc)
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] - Process info continue request to Name Server failed\n"
+                    , method_name );
+            mon_log_write(MON_REQ_PROCINFOCONT_1, SQ_LOG_ERR, la_buf);
+        }
+    }
 #endif
 
 #ifndef NAMESERVER_PROCESS

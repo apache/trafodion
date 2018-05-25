@@ -7786,7 +7786,16 @@ bool CCluster::checkIfDone (  )
                                     Nodes->ProcessCount(), MyNode->ProcessCount());
     
                     waitForNameServerExit_ = true;
-                    NameServer->ProcessShutdown();
+                    int rc = NameServer->ProcessShutdown();
+                    if (rc)
+                    {
+                        char la_buf[MON_STRING_BUF_SIZE];
+                        snprintf( la_buf, sizeof(la_buf)
+                                , "[%s] - Shutdown request to Name Server failed, node going down\n"
+                                , method_name );
+                        mon_log_write( MON_CLUSTER_CHECKIFDONE_1, SQ_LOG_ERR, la_buf );
+                        ReqQueue.enqueueDownReq( MyPNID );
+                    }
                 }
             }
             else

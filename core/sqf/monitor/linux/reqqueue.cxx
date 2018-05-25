@@ -1577,7 +1577,7 @@ void CIntNewProcReq::performRequest()
         else
         {
             if (NameServerEnabled)
-            { // Name Server find by nid,pid:verifier
+            {
                 if (trace_settings & TRACE_REQUEST)
                     trace_printf( "%s@%d" " - Getting parent process from Name Server (%d,%d:%d)\n"
                                 , method_name, __LINE__
@@ -1656,14 +1656,7 @@ void CIntNewProcReq::performRequest()
             {
                 // Process creation failure, relay error code to node
                 // that requested process creation.
-                if (NameServerEnabled)
-                {
-                    PtpClient->ProcessInit( newProcess
-                                          , reqTag_
-                                          , result
-                                          , parentNid_ );
-                }
-                else
+                if (!NameServerEnabled)
                 {
                     CReplProcInit *repl = new CReplProcInit(newProcess, reqTag_,
                                                             result, parentNid_);
@@ -2285,9 +2278,10 @@ void CIntProcInitReq::performRequest()
         Nodes->GetLNode( process_->GetNid() )->GetNode()->AddToPidMap(process_->GetPid(), process_);
         Nodes->GetLNode( process_->GetNid() )->GetNode()->AddToNameMap(process_);
 
+        CProcess* parent;
+
         if (process_->IsBackup())
         {
-            CProcess * parent;
             parent = Nodes->GetProcess(process_->GetParentNid(),
                                        process_->GetParentPid(), false);
             if (parent)
@@ -2295,53 +2289,59 @@ void CIntProcInitReq::performRequest()
                 // this backup process object.
                 if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
                 {
-                    trace_printf("%s@%d - For backup process (%d, %d)"
-                                 ", for parent (%d, %d) setting "
-                                 "parent's Parent_Nid/Parent_Pid="
-                                 "(%d, %d).\n",
-                                 method_name, __LINE__,  process_->GetNid(),
-                                 process_->GetPid(), parent->GetNid(),
-                                 parent->GetPid(),
-                                 process_->GetNid(), process_->GetPid());
+                    trace_printf( "%s@%d - For backup process %s (%d,%d:%d)"
+                                  ", for parent %s (%d,%d:%d) setting "
+                                  "parent's Parent_Nid/Parent_Pid="
+                                  "(%d,%d).\n"
+                                , method_name, __LINE__
+                                , process_->GetName()
+                                , process_->GetNid()
+                                , process_->GetPid()
+                                , process_->GetVerifier()
+                                , parent->GetName()
+                                , parent->GetNid()
+                                , parent->GetPid()
+                                , parent->GetVerifier()
+                                , process_->GetNid()
+                                , process_->GetPid());
                 }
                 parent->SetParentNid ( process_->GetNid() );
                 parent->SetParentPid ( process_->GetPid() );
             }
         }
-
-
-#ifdef QUICK_WAITED_NEWPROCESS_REPLY
-// Following allows reply to a "waited" new process request before we
-// get the "startup" message from the process.   This make the process
-// creation appear to complete more quickly.   However there are potential
-// problems if the requester immediately tries to open the new process
-// because it is not ready yet.   So need to handle quick "open" of this
-// type before re-enabling this code section.
-                if (!process->IsNowait())
-                {   // new process request was a "waited" request
-                    if (process->GetParentNid() == -1)
-                    {
-                        parent = NULL;
-                    }
-                    else
-                    {
-                        parent =
-                            LNode[process->GetParentNid()]->
-                            GetProcessL(process->GetParentPid());
-                    }
-
-                    if (parent)
-                    {
-                        reply_msg = process->parentContext();
-                        if ( reply_msg )
-                        {
-                            // the parent gets a new_process reply
-                            parent->ReplyNewProcess ( reply_msg, process );
-
-                            process->parentContext (NULL);
-                        }
+#ifndef NAMESERVER_PROCESS
+        if (NameServerEnabled)
+        {
+            if (process_->IsUnhooked())
+            {
+                if ( process_->GetParentNid() != -1 && process_->GetParentPid() != -1 )
+                {
+                    parent = Nodes->GetProcess(process_->GetParentNid(),
+                                               process_->GetParentPid(), false);
+                    if (parent && !parent->IsClone())
+                    {   // Parent process object keeps track of child processes
+                        // created. Needed when parent process exits to clean up
+                        // parent clone process object in remote nodes.
+                        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL
+                                              | TRACE_PROCESS_DETAIL))
+                            trace_printf( "%s@%d - Adding unhooked child process %s (%d,%d:%d) to "
+                                          "parent %s (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , process_->GetName()
+                                        , process_->GetNid()
+                                        , process_->GetPid()
+                                        , process_->GetVerifier()
+                                        , parent->GetName()
+                                        , parent->GetNid()
+                                        , parent->GetPid()
+                                        , parent->GetVerifier() );
+            
+                        parent->childUnHookedAdd( process_->GetNid()
+                                                , process_->GetPid() );
                     }
                 }
+            }
+        }
 #endif
     }
 
@@ -2599,7 +2599,22 @@ void CIntChildDeathReq::performRequest()
         }
 #ifndef NAMESERVER_PROCESS
         if ( NameServerEnabled )
-            NameServer->ProcessDelete(process_); // in reqQueue thread (CIntChildDeathReq)
+        {
+            int rc = NameServer->ProcessDelete(process_); // in reqQueue thread (CIntChildDeathReq)
+            if (rc)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Process delete request to Name Server failed"
+                          "for child process %s (%d, %d:%d)\n"
+                        , method_name
+                        , process_->GetName()
+                        , process_->GetNid()
+                        , process_->GetPid()
+                        , process_->GetVerifier() );
+                mon_log_write(MON_INTREQ_CHILDDEATH_1, SQ_LOG_ERR, la_buf);
+            }
+        }
 #endif
         MyNode->DelFromNameMap ( process_ );
         MyNode->DelFromPidMap ( process_ );

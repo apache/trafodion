@@ -73,6 +73,7 @@ class CProcessContainer
                                 , _TM_Txid_External trans_id );
 #ifndef NAMESERVER_PROCESS
     void Child_Exit ( CProcess * parent );
+    void ChildUnHooked_Exit ( CProcess * parent );
 #endif
     void CleanUpProcesses( void );
     CProcess *CloneProcess( int nid, 
@@ -428,10 +429,17 @@ class CProcess
     void SetHangupTime () { clock_gettime(CLOCK_REALTIME, &hangupTime_); }
     time_t GetHangupTime () { return hangupTime_.tv_sec; }
 
+#ifndef NAMESERVER_PROCESS
     void childAdd ( int nid, int pid );
     int childCount ( void );
     void childRemove ( int nid, int pid );
     bool childRemoveFirst ( nidPid_t & child );
+
+    void childUnHookedAdd( int nid, int pid );
+    int childUnHookedCount( void );
+    void childUnHookedRemove( int nid, int pid );
+    bool childUnHookedRemoveFirst( nidPid_t & child );
+#endif
 
     struct message_def * GetDeathNotice ( void );
     void PutDeathNotice( struct message_def * );
@@ -558,17 +566,20 @@ private:
 
     enum  { MAX_CHILD_ENV_VARS = 300 };
 
+#ifndef NAMESERVER_PROCESS
     // Container to keep track of this process' children created on
     // the local node.  Needed because if this process abornmally terminates
     // the children will be terminated too.
     typedef list<nidPid_t> nidPidList_t;
     nidPidList_t children_;
+    nidPidList_t childrenUnHooked_;   // only used with Name Server enabled
 
     // Lock for children_ list.   Temporarily using a lock but should 
     // be able to eliminate for better performance.   Once lioCleanupThread
     // and syncThread uniformly queue requests to be processed by worker
     // thread this lock should not be necessary.
     CLock       childrenListLock_;
+#endif
 
     // Container to hold dead process info to be sent as death notices
     // to an ssmp process.   This is a NULL list except when the CProcess

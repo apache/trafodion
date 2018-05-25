@@ -269,7 +269,7 @@ public:
     // If candidate string has not been seen before assign a unique
     // id and store it in the config database.   In either case return
     // the unique id as the value of the method.
-    strId_t GetStringId( char *candidate, CLNode *targetLNode = NULL );
+    strId_t GetStringId( char *candidate, CLNode *targetLNode = NULL, bool clone = false );
 
     inline int   GetTmSyncNid( void ) { return( tmSyncNid_ ); }
     inline SyncState GetTmSyncState( void ) { return( tmSyncState_ ); }

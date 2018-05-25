@@ -651,14 +651,24 @@ void CProcess::procExitNotifierNodes( void )
         {
             if (NameServerEnabled && targetNode->GetPNid() != MyPNID)
             {
-                int rc = -1;
                 // Forward the process exit to the target node
-                rc = PtpClient->ProcessExit( this 
-                                           , targetLNode->GetNid()
-                                           , targetNode->GetName() ); 
+                int rc = PtpClient->ProcessExit( this 
+                                               , targetLNode->GetNid()
+                                               , targetNode->GetName() ); 
                 if (rc)
                 {
-                    // TODO: Error handling
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send process exit "
+                              "for process %s (%d, %d) "
+                              "to target node %s, nid=%d\n"
+                            , method_name
+                            , GetName()
+                            , GetNid()
+                            , GetPid()
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_PROCESS_PROCEXITNOTIFIERNODES_1, SQ_LOG_ERR, la_buf);
                 }
             }
         }
@@ -709,7 +719,18 @@ void CProcess::procExitUnregAll ( _TM_Txid_External transId )
                                              , targetLNode->GetNode()->GetName() ); 
                 if (rc)
                 {
-                    // TODO: Error handling
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send process notify request "
+                              "for process %s (%d, %d) "
+                              "to target node %s, nid=%d\n"
+                            , method_name
+                            , targetProcess->GetName()
+                            , targetProcess->GetNid()
+                            , targetProcess->GetPid()
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_PROCESS_PROCEXITUNREGALL_1, SQ_LOG_ERR, la_buf);
                 }
             }
             
@@ -726,6 +747,7 @@ void CProcess::procExitUnregAll ( _TM_Txid_External transId )
 }
 #endif
 
+#ifndef NAMESERVER_PROCESS
 void CProcess::childAdd ( int nid, int pid )
 {
     const char method_name[] = "CProcess::childAdd";
@@ -794,6 +816,81 @@ bool CProcess::childRemoveFirst ( nidPid_t & child)
 
     return result;
 }
+
+void CProcess::childUnHookedAdd( int nid, int pid )
+{
+    const char method_name[] = "CProcess::childUnHookedAdd";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+        trace_printf( "%s@%d adding unhooked child (%d:%d)\n"
+                    , method_name, __LINE__
+                    , nid, pid );
+
+    nidPid_t child = { nid, pid };
+    childrenListLock_.lock();
+    childrenUnHooked_.push_back ( child );
+    childrenListLock_.unlock();
+
+    TRACE_EXIT;
+}
+
+int CProcess::childUnHookedCount( void )
+{
+    const char method_name[] = "CProcess::childUnHookedCount";
+    TRACE_ENTRY;
+
+    childrenListLock_.lock();
+    int count = childrenUnHooked_.size();
+    childrenListLock_.unlock();
+
+    TRACE_EXIT;
+    return(count);
+}
+
+void CProcess::childUnHookedRemove( int nid, int pid )
+{
+    const char method_name[] = "CProcess::childUnHookedRemove";
+    TRACE_ENTRY;
+
+    nidPidList_t::iterator it;
+
+    childrenListLock_.lock();
+    for ( it = childrenUnHooked_.begin(); it != childrenUnHooked_.end(); ++it)
+    {
+        if (it->nid == nid && it->pid == pid )
+        {
+            childrenUnHooked_.erase ( it );
+            break;
+        }
+    }
+    childrenListLock_.unlock();
+
+    TRACE_EXIT;
+}
+
+bool CProcess::childUnHookedRemoveFirst( nidPid_t & child)
+{
+    const char method_name[] = "CProcess::childUnHookedRemoveFirst";
+    TRACE_ENTRY;
+
+    bool result = false;
+
+    childrenListLock_.lock();
+    if ( !childrenUnHooked_.empty() )
+    {
+        child = childrenUnHooked_.front ();
+        childrenUnHooked_.pop_front ();
+        result = true;
+
+    }
+    childrenListLock_.unlock();
+
+    TRACE_EXIT;
+
+    return result;
+}
+#endif
 
 #ifndef NAMESERVER_PROCESS
 void CProcess::CompleteDump(DUMPSTATUS status, char *core_file)
@@ -882,7 +979,16 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                     rc = NameServer->ProcessNew(this); // in reqQueue thread (CExtStartupReq)
                     if (rc)
                     {
-                        // TODO: Error handling
+                        char la_buf[MON_STRING_BUF_SIZE];
+                        snprintf( la_buf, sizeof(la_buf)
+                                , "[%s] - Can't register new process "
+                                  "%s (%d, %d) "
+                                  "to Name Server process\n"
+                                , method_name
+                                , GetName()
+                                , GetNid()
+                                , GetPid() );
+                        mon_log_write(MON_PROCESS_COMPLETESTARTUP_1, SQ_LOG_ERR, la_buf);
                     }
 
                     if (Parent_Nid != -1)
@@ -893,13 +999,21 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                             rc = PtpClient->ProcessClone(this);
                             if (rc)
                             {
-                                // TODO: Error handling
+                                char la_buf[MON_STRING_BUF_SIZE];
+                                CLNode *parentLNode = NULL;
+                                parentLNode = Nodes->GetLNode( GetParentNid() );
+                                snprintf( la_buf, sizeof(la_buf)
+                                        , "[%s] - Can't send process clone request"
+                                          "for process %s (%d, %d) "
+                                          "to parent node %s, nid=%d\n"
+                                        , method_name
+                                        , GetName()
+                                        , GetNid()
+                                        , GetPid()
+                                        , parentLNode->GetNode()->GetName()
+                                        , parentLNode->GetNid() );
+                                mon_log_write(MON_PROCESS_COMPLETESTARTUP_2, SQ_LOG_ERR, la_buf);
                             }
-                        }
-                        else
-                        {
-                            // TODO: Generate internal clone request?
-                            //       to update local parent?  
                         }
                     }
                 }
@@ -929,13 +1043,21 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                         rc = PtpClient->ProcessClone(this);
                         if (rc)
                         {
-                            // TODO: Error handling
+                            char la_buf[MON_STRING_BUF_SIZE];
+                            CLNode *parentLNode = NULL;
+                            parentLNode = Nodes->GetLNode( GetParentNid() );
+                            snprintf( la_buf, sizeof(la_buf)
+                                    , "[%s] - Can't send process clone request"
+                                      "for process %s (%d, %d) "
+                                      "to parent node %s, nid=%d\n"
+                                    , method_name
+                                    , GetName()
+                                    , GetNid()
+                                    , GetPid()
+                                    , parentLNode->GetNode()->GetName()
+                                    , parentLNode->GetNid() );
+                            mon_log_write(MON_PROCESS_COMPLETESTARTUP_3, SQ_LOG_ERR, la_buf);
                         }
-                    }
-                    else
-                    {
-                        // TODO: Generate internal clone request?
-                        //       to update local parent?  
                     }
                 }
             }
@@ -1616,6 +1738,7 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     int i;
     int j;
     int rc = -1;
+    int rc2 = -1;
     char *env;
     char **argv;
     char *childEnv[MAX_CHILD_ENV_VARS + 1];
@@ -2339,10 +2462,27 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
             // Send actual pid and process name back to parent
             // STDIO Redirection requires that clone process in parent node
             // have the actual pid
-            PtpClient->ProcessInit( this
-                                  , tag
-                                  , 0
-                                  , parent->Nid );
+            rc2 = PtpClient->ProcessInit( this
+                                        , tag
+                                        , 0
+                                        , parent->Nid );
+            if (rc2)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                CLNode *parentLNode = NULL;
+                parentLNode = Nodes->GetLNode( parent->Nid );
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Can't send process create success "
+                          "for process %s (%d, %d) "
+                          "to parent node %s, nid=%d\n"
+                        , method_name
+                        , GetName()
+                        , GetNid()
+                        , GetPid()
+                        , parentLNode->GetNode()->GetName()
+                        , parentLNode->GetNid() );
+                mon_log_write(MON_PROCESS_CREATE_12, SQ_LOG_ERR, la_buf);
+            }
         }
 
         if (trace_settings & (TRACE_PROCESS | TRACE_REDIRECTION))
@@ -2707,6 +2847,31 @@ bool CProcess::Create (CProcess *parent, void* tag, int & result)
     {
         successful = false;
         result = MPI_ERR_SPAWN;
+
+        if (NameServerEnabled)
+        {
+            rc2 = PtpClient->ProcessInit( this
+                                        , tag
+                                        , result
+                                        , parent->Nid );
+            if (rc2)
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                CLNode *parentLNode = NULL;
+                parentLNode = Nodes->GetLNode( parent->Nid );
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s] - Can't send process create failure "
+                          "for process %s (%d, %d) "
+                          "result to parent node %s, nid=%d, result=%d\n"
+                        , method_name
+                        , GetName()
+                        , GetNid()
+                        , GetPid()
+                        , parentLNode->GetNode()->GetName()
+                        , parentLNode->GetNid(), result );
+                mon_log_write(MON_PROCESS_CREATE_13, SQ_LOG_ERR, la_buf);
+            }
+        }
 
         char buf[MON_STRING_BUF_SIZE];
         snprintf(buf, sizeof(buf), "[CProcess::Create], Failed to start process %s path= %s.\n", Name, path.c_str());
@@ -3231,6 +3396,10 @@ void CProcess::Exit( CProcess *parent )
         if ( (parent != NULL) && (parent->GetState() == State_Up) )
         {
             parent->childRemove( Nid, Pid);
+            if (NameServerEnabled)
+            {
+                parent->childUnHookedRemove( Nid, Pid);
+            }
         }
 
         // Check if we need to output a entry into the process id map log file
@@ -3364,7 +3533,18 @@ void CProcess::Exit( CProcess *parent )
                                                , targetLNode->GetNode()->GetName() );
                 if (rc)
                 {
-                    // TODO: Error handling
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send process exit "
+                              "for process %s (%d, %d) "
+                              "to parent node %s, nid=%d\n"
+                            , method_name
+                            , GetName()
+                            , GetNid()
+                            , GetPid()
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_PROCESS_PROCEXIT_1, SQ_LOG_ERR, la_buf);
                 }
             }
         }
@@ -3380,7 +3560,18 @@ void CProcess::Exit( CProcess *parent )
                                                , targetLNode->GetNode()->GetName() );
                 if (rc)
                 {
-                    // TODO: Error handling
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    snprintf( la_buf, sizeof(la_buf)
+                            , "[%s] - Can't send process exit "
+                              "for process %s (%d, %d) "
+                              "to parent node %s, nid=%d\n"
+                            , method_name
+                            , GetName()
+                            , GetNid()
+                            , GetPid()
+                            , targetLNode->GetNode()->GetName()
+                            , targetLNode->GetNid() );
+                    mon_log_write(MON_PROCESS_PROCEXIT_2, SQ_LOG_ERR, la_buf);
                 }
             }
         }
@@ -4703,18 +4894,36 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                 {
                     if (NameServerEnabled)
                     {
-                        CNode  *childNode = NULL;
-                        childNode = childNode->GetNode();
-                        // Forward the process create to the target node
-                        PtpClient->ProcessKill( process
-                                              , process->GetAbort()
-                                              , childLNode->GetNid()
-                                              , childNode->GetName());
+                        CNode* childNode = childLNode->GetNode();
+                        // Forward the process kill to the target node
+                        int rc = PtpClient->ProcessKill( process
+                                                       , process->GetAbort()
+                                                       , childLNode->GetNid()
+                                                       , childNode->GetName() );
+                        if (rc)
+                        {
+                            char la_buf[MON_STRING_BUF_SIZE];
+                            snprintf( la_buf, sizeof(la_buf)
+                                    , "[%s] - Can't send process kill "
+                                      "request for child process %s (%d, %d) "
+                                      "to child node %s, nid=%d\n"
+                                    , method_name
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , childNode->GetName()
+                                    , childLNode->GetNid() );
+                            mon_log_write(MON_PROCESSCONT_CHILDEXIT_1, SQ_LOG_ERR, la_buf);
+                        }
                     }
                 }
                 
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                    trace_printf("%s@%d - Completed kill for child process %s (%d, %d)\n", method_name, __LINE__, process->GetName(), process->GetNid(), process->GetPid());
+                    trace_printf( "%s@%d - Completed kill for child process %s (%d, %d)\n"
+                                , method_name, __LINE__
+                                , process->GetName()
+                                , process->GetNid()
+                                , process->GetPid());
             }
             else
             {
@@ -4731,6 +4940,90 @@ void CProcessContainer::Child_Exit ( CProcess * parent )
                     }
                 }
 
+            }
+        }
+    }
+    TRACE_EXIT;
+}
+
+void CProcessContainer::ChildUnHooked_Exit( CProcess* parent )
+{
+    const char method_name[] = "CProcessContainer::ChildUnHooked_Exit";
+    TRACE_ENTRY;
+
+    CProcess *process;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        trace_printf( "%s@%d with parent %s (%d,%d:%d)\n"
+                    , method_name, __LINE__
+                    , parent->GetName()
+                    , parent->GetNid()
+                    , parent->GetPid()
+                    , parent->GetVerifier() );
+
+    if (NameServerEnabled)
+    {
+        if ( parent && !parent->IsClone()
+           && ((MyNode->GetState() != State_Shutdown
+             && MyNode->GetShutdownLevel() == ShutdownLevel_Undefined)) )
+        {
+            CProcess::nidPid_t child;
+            CLNode* childLNode;
+
+            while ( parent->childUnHookedRemoveFirst( child ))
+            {
+                childLNode = Nodes->GetLNode( child.nid );
+                process = (childLNode != NULL )
+                             ? childLNode->GetNode()->GetProcess( child.pid ) : NULL;
+                if (process)
+                {
+                    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d - Telling unhooked child process %s (%d,%d:%d) "
+                                      "of parent death %s (%d,%d:%d)\n"
+                                    , method_name, __LINE__
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , process->GetVerifier()
+                                    , parent->GetName()
+                                    , parent->GetNid()
+                                    , parent->GetPid()
+                                    , parent->GetVerifier() );
+                    }
+    
+                    CNode* childNode = childLNode->GetNode();
+                    // Forward the parent's process exit to the child's node
+                    int rc = PtpClient->ProcessExit( parent
+                                                   , childLNode->GetNid()
+                                                   , childNode->GetName() );
+                    if (rc)
+                    {
+                        char la_buf[MON_STRING_BUF_SIZE];
+                        snprintf( la_buf, sizeof(la_buf)
+                                , "[%s] - Can't send process exit "
+                                  "request for parent process %s (%d,%d:%d) "
+                                  "to child's node %s, nid=%d\n"
+                                , method_name
+                                , parent->GetName()
+                                , parent->GetNid()
+                                , parent->GetPid()
+                                , parent->GetVerifier()
+                                , childNode->GetName()
+                                , childLNode->GetNid() );
+                        mon_log_write(MON_PROCESSCONT_CHILDEXIT_1, SQ_LOG_ERR, la_buf);
+                    }
+                    else
+                    {
+                        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+                            trace_printf( "%s@%d - Completed kill for parent process %s (%d,%d:%d)\n"
+                                        , method_name, __LINE__
+                                        , parent->GetName()
+                                        , parent->GetNid()
+                                        , parent->GetPid()
+                                        , parent->GetVerifier() );
+                    }
+                }
             }
         }
     }
@@ -4922,7 +5215,6 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                 // exits abnormally.
                 int parentNid;
                 int parentPid;
-                CProcess * parent;
                 if ( ! process->IsBackup() )
                 {
                     parentNid = process->GetParentNid();
@@ -4934,8 +5226,10 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                     parentPid = process->GetPairParentPid();
                 }
 
+#ifndef NAMESERVER_PROCESS
                 if ( parentNid != -1 && parentPid != -1 )
                 {
+                    CProcess* parent;
                     parent = Nodes->GetLNode ( parentNid )
                                 ->GetProcessL( parentPid );
                     if ( parent && !process->IsBackup() )
@@ -4945,7 +5239,43 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                         parent->childAdd ( process->GetNid(), os_pid );
                     }
                 }
+#endif
             }
+#ifndef NAMESERVER_PROCESS
+            if (NameServerEnabled)
+            {
+                if (process->IsUnhooked())
+                {   // Parent process object keeps track of child processes
+                    // created. Needed when parent process exits to clean up
+                    // parent clone process object in remote nodes.
+                    int parentNid;
+                    int parentPid;
+                    CProcess* parent;
+                    if ( !process->IsBackup() )
+                    {
+                        parentNid = process->GetParentNid();
+                        parentPid = process->GetParentPid();
+                    }
+                    else
+                    {
+                        parentNid = process->GetPairParentNid();
+                        parentPid = process->GetPairParentPid();
+                    }
+    
+                    if ( parentNid != -1 && parentPid != -1 )
+                    {
+                        parent = Nodes->GetLNode(parentNid)->GetProcessL(parentPid);
+                        if ( parent && !parent->IsClone() && !process->IsBackup() )
+                        {
+                            parent->childUnHookedRemove( process->GetNid()
+                                                       , process->GetPid() );
+                            parent->childUnHookedAdd( process->GetNid()
+                                                    , os_pid );
+                        }
+                    }
+                }
+            }
+#endif
             // Process id changed from when we started the process.  So
             // remap using the new pid.  [This could happen if, for example,
             // a shell script was the originally started process and it
@@ -5366,6 +5696,14 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
             Child_Exit(process);
         }
 
+        if (!process->IsClone() && NameServerEnabled)
+        {
+            if (process->childUnHookedCount() > 0)
+            {
+                ChildUnHooked_Exit(process);
+            }
+        }
+    
         if ( parent == NULL)
         {
             parent = Nodes->GetProcess( process->GetParentNid(),
