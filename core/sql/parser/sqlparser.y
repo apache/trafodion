@@ -1038,6 +1038,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHAPE
 %token <tokval> TOK_SHARE               /* Tandem extension non-reserved word */
 %token <tokval> TOK_SHARED              /* Tandem extension non-reserved word */
+%token <tokval> TOK_SUPER
 %token <tokval> TOK_SUSPEND
 %token <tokval> TOK_SHOW
 %token <tokval> TOK_SHOWCONTROL         /* Tandem extension     reserved word */
@@ -2634,6 +2635,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		file_attribute_icompress_clause
 %type <pElemDDL>  		file_attribute_list
 %type <pElemDDL>                file_attribute_compression_clause
+%type <pElemDDL>                file_attribute_super_table_clause
 %type <pElemDDL>  		file_attribute_extent_clause
 %type <pElemDDL>  		file_attribute_maxextent_clause
 %type <pElemDDL>  		file_attribute_uid_clause
@@ -26530,6 +26532,7 @@ file_attribute :        file_attribute_allocate_clause
                       | file_attribute_no_label_update_clause
                       | file_attribute_owner_clause
                       | file_attribute_default_col_fam
+                      | file_attribute_super_table_clause
 
 /* type pElemDDL */           
 file_attribute_allocate_clause : TOK_ALLOCATE unsigned_smallint
@@ -26918,6 +26921,20 @@ file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::eHBASE);
 				}
+
+/* type pElemDDL */
+file_attribute_super_table_clause : TOK_SUPER TOK_TABLE TOK_SYSTEM
+                                  {
+                                  NAString defaultSuperTable("TRAFODION._SUPER_.SYSTEM");
+                                  $$ = new (PARSERHEAP()) ElemDDLFileAttrSuperTable
+                                   (defaultSuperTable);
+                                  }
+                                |   TOK_SUPER TOK_TABLE QUOTED_STRING
+                                  {
+				YYERROR;
+                                  $$ = new (PARSERHEAP()) ElemDDLFileAttrSuperTable
+                                   (*$3);
+                                  }
 
 /* type pElemDDL */
 file_attribute_default_col_fam : TOK_DEFAULT TOK_COLUMN TOK_FAMILY QUOTED_STRING
@@ -34171,6 +34188,7 @@ nonreserved_func_word:  TOK_ABS
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
                       | TOK_UUID
+                      | TOK_SUPER
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

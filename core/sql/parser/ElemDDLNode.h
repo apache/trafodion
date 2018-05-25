@@ -106,6 +106,7 @@ class ElemDDLFileAttrMaxExtents;
 class ElemDDLFileAttrUID;
 class ElemDDLFileAttrRowFormat;
 class ElemDDLFileAttrColFam;
+class ElemDDLFileAttrSuperTable;
 class ElemDDLFileAttrNoLabelUpdate;
 class ElemDDLFileAttrOwner;
 //++ MV
@@ -432,6 +433,7 @@ public:
   virtual ElemDDLFileAttrUID		* castToElemDDLFileAttrUID();
   virtual ElemDDLFileAttrRowFormat	* castToElemDDLFileAttrRowFormat();
   virtual ElemDDLFileAttrColFam	* castToElemDDLFileAttrColFam();
+  virtual ElemDDLFileAttrSuperTable* castToElemDDLFileAttrSuperTable();
   virtual ElemDDLFileAttrNoLabelUpdate  * castToElemDDLFileAttrNoLabelUpdate();
   virtual ElemDDLFileAttrOwner          * castToElemDDLFileAttrOwner();
 

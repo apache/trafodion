@@ -8189,6 +8189,53 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
         }
     }
 
+  if (naTable->isSmallTable())
+   {
+     //go through all columns and find out the tblnm
+     NAColumn *nac = NULL;
+     for (CollIndex c = 0; c < naTable->getColumnCount(); c++) {
+        nac = naTable->getNAColumnArray()[c];
+        if (nac->getColName()=="_TBLNM_")
+          break;       
+     } 
+     
+     ItemExpr *partPred = NULL;
+     ColReference *tnmColRef = new(bindWA->wHeap()) ColReference(
+                   new(bindWA->wHeap()) ColRefName(
+                        nac->getFullColRefName(), bindWA->wHeap())); 
+
+     NAString tb=naTable->getTableName().getQualifiedNameAsAnsiString();
+     
+     ConstValue *tblnmpart= new (CmpCommon::statementHeap())
+            ConstValue(
+                      tb, CharInfo::UTF8, CharInfo::DefaultCollation, CharInfo::COERCIBLE ,
+                      CmpCommon::statementHeap()
+                      );
+    ItemExpr * dataConversionErrorFlag = new(bindWA->wHeap())
+    HostVar("_sys_dataConversionErrorFlag",
+           new(CmpCommon::statementHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE), // int not null
+            TRUE);
+    NAType * paramType = new (bindWA->wHeap())
+             SQLChar(bindWA->wHeap(), 128, FALSE, FALSE);
+
+     ItemExpr *n = new(bindWA->wHeap()) Narrow( tblnmpart, dataConversionErrorFlag, paramType, ITM_NARROW  , FALSE);
+     partPred = new(bindWA->wHeap()) BiRelat
+                    (ITM_EQUAL,
+                     tnmColRef,
+                     n);
+     ItemExpr *newSelPred = removeSelPredTree();
+
+     if (newSelPred)
+          newSelPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+                                                    newSelPred,
+                                                    partPred);
+     else
+          newSelPred = partPred;
+  
+     addSelPredTree(newSelPred->bindNode(bindWA));
+
+   }
+ 
    if (naTable->isHiveTable() && 
        !(naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile() ||
 	 naTable->getClusteringIndex()->getHHDFSTableStats()

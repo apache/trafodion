@@ -5169,6 +5169,18 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    if (table_desc->tableDesc()->default_col_fam)
      defaultColFam_ = table_desc->tableDesc()->default_col_fam;
 
+   if (table_desc->tableDesc()->hasSuperTable() )
+   {
+     if( table_desc->tableDesc()->superTable_ != NULL)
+     {
+     superTable_ = new(heap_) char[strlen(table_desc->tableDesc()->superTable_) + 1];
+     strcpy(superTable_,table_desc->tableDesc()->superTable_);
+     setHasSuperTable(TRUE);
+     }
+     else
+       printf("LMDBG: Oops!\n");
+   }
+
    if (table_desc->tableDesc()->all_col_fams)
      {
        // Space delimited col families.

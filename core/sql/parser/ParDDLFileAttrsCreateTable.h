@@ -158,6 +158,10 @@ public:
 
   inline NAString getColFam() const;
 
+  inline NABoolean isSuperTableSpecified() const;
+
+  NAString getSuperTable() const;
+
   //
   // mutators
   //
@@ -245,6 +249,10 @@ private:
   // COLUMN FAMILY
   NABoolean       isColFamSpec_;
   NAString colFam_;
+
+  // SMALL TABLE
+  NABoolean isSuperTableSpec_;
+  NAString superTable_;
 
 //-- MV
 
@@ -423,6 +431,17 @@ ParDDLFileAttrsCreateTable::getCompressionType() const
 }
 //-- MV
 //----------------------------------------------------------------------------
+
+inline NABoolean
+ParDDLFileAttrsCreateTable::isSuperTableSpecified() const
+{
+  return isSuperTableSpec_;
+}
+
+inline NAString ParDDLFileAttrsCreateTable::getSuperTable() const
+{
+  return superTable_;
+}
 
 // is the Col Family phrase specified?
 inline NABoolean

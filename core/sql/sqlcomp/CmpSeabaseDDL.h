@@ -294,6 +294,13 @@ class CmpSeabaseDDL
                               ComObjectType & objectType,
                               Int32 & objectOwner);
                               
+  short getSuperTableText(ExeCliInterface *cliInterface,
+                    const char * catName,
+                    const char * schName,
+                    const char * objName,
+                    const char * inObjType,
+                    NAString& superTable) ;
+
   short getSaltText(ExeCliInterface *cliInterface,
                     const char * catName,
                     const char * schName,

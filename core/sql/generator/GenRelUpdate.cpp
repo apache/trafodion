@@ -1175,7 +1175,9 @@ short HbaseDelete::codeGen(Generator * generator)
       (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+      {
+          tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+      }
     }
   else
     {
@@ -1184,9 +1186,14 @@ short HbaseDelete::codeGen(Generator * generator)
     }
 
   if (! tablename)
-    tablename = 
-      space->AllocateAndCopyToAlignedSpace(
+  {
+      tablename = 
+        space->AllocateAndCopyToAlignedSpace(
 					   GenGetQualifiedName(getTableName()), 0);
+  }
+
+  if(getTableDesc()->getNATable()->isSmallTable())
+      strcpy(tablename, NAString(getTableDesc()->getNATable()->superTable()) );
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
@@ -2138,18 +2145,25 @@ short HbaseUpdate::codeGen(Generator * generator)
       (getTableDesc()->getNATable()->isHbaseCellTable()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+      {
+  	  tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+      }
     }
   else
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+	  tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
     }
 
   if (! tablename)
+  {
     tablename = 
       space->AllocateAndCopyToAlignedSpace(
 					   GenGetQualifiedName(getTableName()), 0);
+  }
+
+  if(getTableDesc()->getNATable()->isSmallTable())
+      strcpy(tablename, NAString(getTableDesc()->getNATable()->superTable()) );
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
@@ -2164,7 +2178,6 @@ short HbaseUpdate::codeGen(Generator * generator)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
   generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
-
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -2768,13 +2781,16 @@ short HbaseInsert::codeGen(Generator *generator)
       (getTableDesc()->getNATable()->isHbaseCellTable()) ||
       (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
-      tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getIndexName().getObjectName()), 0);
+        tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getIndexName().getObjectName()), 0);
     }
   else
     {
-      tablename = space->AllocateAndCopyToAlignedSpace(
+        tablename = space->AllocateAndCopyToAlignedSpace(
 						       GenGetQualifiedName(getIndexDesc()->getIndexName()), 0);
     }
+
+  if(getTableDesc()->getNATable()->isSmallTable())
+      strcpy(tablename, NAString(getTableDesc()->getNATable()->superTable()) );
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);

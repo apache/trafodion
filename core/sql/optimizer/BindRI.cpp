@@ -416,6 +416,8 @@ static NABoolean isHiddenColumn(const char *colname)
   int len = strlen(colname);
   if(strcmp(colname , "_SALT_") ==0) 
     return TRUE;
+  if(strcmp(colname , "_TBLNM_") ==0) 
+    return TRUE;
   //check for DIVISION column
   //pattern _DIVISION_%d_
   //must longer than 12

@@ -1065,6 +1065,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SUFFIX",             TOK_SUFFIX,       NONRESTOKEN_),
   ParKeyWord("SUM",                TOK_SUM,         ANS_|RESWORD_|MPWORD_),
   ParKeyWord("SUMMARY",            TOK_SUMMARY,     NONRESTOKEN_),
+  ParKeyWord("SUPER",              TOK_SUPER,       NONRESTOKEN_),
   ParKeyWord("SUSPEND",            TOK_SUSPEND,     NONRESTOKEN_),
   ParKeyWord("SYNONYM",            TOK_SYNONYM,     POTANS_|RESWORD_),
   ParKeyWord("SYNONYMS",           TOK_SYNONYMS,    NONRESTOKEN_),

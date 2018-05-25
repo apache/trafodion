@@ -96,6 +96,8 @@ public:
 
   const NABoolean dropIfExists() const { return dropIfExists_; }
 
+  const NABoolean isSmallTable() const { return smallTable_; }
+
   // for binding
   ExprNode * bindNode(BindWA *bindWAPtr);
 
@@ -108,6 +110,8 @@ public:
   inline void setTableType(ExtendedQualName::SpecialTableType tableType); // ++ MV
 
   void setDropIfExists(NABoolean v) { dropIfExists_ = v; }
+
+  void setSmallTable(NABoolean v) { smallTable_= v; }
 
 private:
   // the tablename specified by user in the drop stmt.
@@ -127,6 +131,8 @@ private:
 
   // drop only if table exists. Otherwise just return.
   NABoolean dropIfExists_;
+
+  NABoolean smallTable_;
 }; // class StmtDDLDropTable
 
 // -----------------------------------------------------------------------

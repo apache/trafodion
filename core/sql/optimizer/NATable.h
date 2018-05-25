@@ -609,7 +609,12 @@ public:
     else
        return getSQLMXAlignedTable();
   }
-
+  
+  NABoolean isSmallTable() const
+  {
+    return hasSuperTable();
+  }
+ 
   NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
   {
     NABoolean isAlignedFormat;
@@ -781,6 +786,16 @@ public:
   NABoolean isInternalRegistered() const
   {  return (flags_ & IS_INTERNAL_REGISTERED) != 0; }
  
+  void setHasSuperTable( NABoolean value )
+  {
+    value ? flags_ |= HAS_SUPER_TABLE: flags_ &= ~HAS_SUPER_TABLE;
+  }
+
+  NABoolean hasSuperTable() const
+  { 
+    return (flags_ & HAS_SUPER_TABLE) != 0; 
+  }
+
   const CheckConstraintList &getCheckConstraints() const
                                                 { return checkConstraints_; }
   const AbstractRIConstraintList &getUniqueConstraints() const
@@ -919,6 +934,8 @@ public:
   static NAArray<HbaseStr>* getRegionsBeginKey(const char* extHBaseName);
 
   NAString &defaultColFam() { return defaultColFam_; }
+  char *superTable() const { 
+                   return superTable_; }
   NAList<NAString> &allColFams() { return allColFams_; }
 
 private:
@@ -1007,7 +1024,8 @@ private:
     HIVE_EXT_KEY_ATTRS        = 0x04000000,
     IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000,
     IS_REGISTERED             = 0x10000000,
-    IS_INTERNAL_REGISTERED    = 0x20000000
+    IS_INTERNAL_REGISTERED    = 0x20000000,
+    HAS_SUPER_TABLE          = 0x40000000
   };
     
   UInt32 flags_;
@@ -1232,6 +1250,9 @@ private:
   NAColumnArray newColumns_;
 
   NAString defaultColFam_;
+
+  char *superTable_;
+
   NAList<NAString> allColFams_;
 }; // class NATable
 

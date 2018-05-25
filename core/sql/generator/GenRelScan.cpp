@@ -2439,6 +2439,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
+  NABoolean isSmallTable =  getTableDesc()->getNATable()->isSmallTable();
 
   // If CIF is not OFF use aligned format, except when table is
   // not aligned and it has added columns. Support for added columns
@@ -2482,7 +2483,14 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
       {
-         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+         if(getTableDesc()->getNATable()->isSmallTable())
+         {
+           NAString st("");
+           st = getTableDesc()->getNATable()->superTable() ;
+           tablename = space->AllocateAndCopyToAlignedSpace(st, 0);
+         }
+         else
+           tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
          if (getIndexDesc()->isClusteringIndex())
          {
             //base table
@@ -2496,9 +2504,15 @@ short HbaseAccess::codeGen(Generator * generator)
     }
 
   if (! tablename) 
-     tablename =
+  {
+     if(getTableDesc()->getNATable()->isSmallTable())
+       tablename = 
+        space->AllocateAndCopyToAlignedSpace( NAString(getTableDesc()->getNATable()->superTable()), 0);
+     else
+       tablename =
         space->AllocateAndCopyToAlignedSpace(
                                            GenGetQualifiedName(getTableName()), 0);
+  }
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -3411,7 +3425,11 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
     }
   else
     {
-      tablename = 
+      if (getTableDesc()->getNATable()->isSmallTable())
+        tablename = 
+        space->AllocateAndCopyToAlignedSpace( NAString(getTableDesc()->getNATable()->superTable()), 0);
+      else
+        tablename = 
         space->AllocateAndCopyToAlignedSpace(
              GenGetQualifiedName(getTableName()), 0);
     }

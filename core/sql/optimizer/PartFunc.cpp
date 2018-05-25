@@ -743,6 +743,29 @@ SinglePartitionPartitioningFunction::copy() const
     SinglePartitionPartitioningFunction(*this, CmpCommon::statementHeap());
 }
 
+SearchKey *SinglePartitionPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
+                                               ValueIdSet availInputs,
+                                               ValueIdSet additionalPreds) const
+{
+  ValueIdSet preds(getPartitioningKeyPredicates());
+  ValueIdSet nonKeyColumnSet; // empty set
+  SearchKey *partSearchKey = NULL;
+
+  availInputs += getPartitionInputValues();
+  preds += additionalPreds;
+
+  partSearchKey = new (CmpCommon::statementHeap())
+        SearchKey(indexDesc->getIndexKey(),
+                  indexDesc->getOrderOfKeyValues(),
+                  availInputs,
+                  TRUE,
+                  preds,
+                  nonKeyColumnSet,
+                  indexDesc);
+
+  return partSearchKey;
+}
+
 void SinglePartitionPartitioningFunction::createPartitioningKeyPredicates()
 {
   // do nothing, there aren't any partitioning key preds for a single
@@ -1061,6 +1084,74 @@ HashPartitioningFunction::copy() const
 {
   return new (CmpCommon::statementHeap())
     HashPartitioningFunction(*this, CmpCommon::statementHeap());
+}
+
+void PartitioningFunction::createSmallTableKeyPredicates(
+       const char * tblName,
+       ItemExpr   * partNumExpr
+       )
+{
+    ItemExpr * rootPtr;
+    ItemExpr * loPart;
+    ItemExpr * hiPart;
+    ValueIdSet setOfPartKeyPredicates;
+    NAString tb;
+    char tmpbuf[128];
+    memset(tmpbuf,0,128);
+    //strcpy(tmpbuf," ");
+   
+    int lenn=strlen(tblName);
+    {
+      strcat(tmpbuf,tblName);
+      tb=tmpbuf;
+      tmpbuf[lenn]++;
+    }
+    NAString tb1=tmpbuf;
+
+
+    ConstValue *tblnmpart= new (CmpCommon::statementHeap())
+            ConstValue( 
+                      tb, CharInfo::UTF8, CharInfo::DefaultCollation, CharInfo::COERCIBLE ,
+                      CmpCommon::statementHeap()
+                      ); 
+
+    NAType * paramType = new (CmpCommon::statementHeap())
+             SQLChar(CmpCommon::statementHeap(), 128, FALSE, FALSE);
+
+    ItemExpr * dataConversionErrorFlag = new(CmpCommon::statementHeap())
+    HostVar("_sys_dataConversionErrorFlag",
+            new(CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE), // int not null
+            TRUE);
+
+    ItemExpr * lop = new (CmpCommon::statementHeap())
+            Narrow( tblnmpart, dataConversionErrorFlag, paramType, ITM_NARROW  , FALSE);
+
+    rootPtr = new (CmpCommon::statementHeap())
+        BiRelat(ITM_EQUAL,
+                partNumExpr,
+                (ItemExpr*)lop,
+                TRUE);
+
+    rootPtr->synthTypeAndValueId();
+    setOfPartKeyPredicates += rootPtr->getValueId();
+    ConstValue *tblnmpart1= new (CmpCommon::statementHeap())
+            ConstValue( 
+                      tb, CharInfo::UTF8, CharInfo::DefaultCollation, CharInfo::COERCIBLE ,
+                      CmpCommon::statementHeap()
+                      ); 
+
+    ItemExpr * hop  = new (CmpCommon::statementHeap())
+            Narrow( tblnmpart1, dataConversionErrorFlag, paramType, ITM_NARROW  , FALSE);
+
+    rootPtr = new (CmpCommon::statementHeap())
+        BiRelat(ITM_EQUAL,
+                partNumExpr,
+                (ItemExpr*)hop,
+                TRUE);
+      rootPtr->synthTypeAndValueId();
+      setOfPartKeyPredicates += rootPtr->getValueId();
+      storePartitioningKeyPredicates(setOfPartKeyPredicates);
+
 }
 
 // -----------------------------------------------------------------------

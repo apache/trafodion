@@ -126,7 +126,8 @@ enum SeabaseColumnsFlags {
   SEABASE_COLUMN_IS_SALT       = 0x0000000000000001, // don't rely on this quite yet,
                                                      // since some older tables
                                                      // don't have this flag set
-  SEABASE_COLUMN_IS_DIVISION   = 0x0000000000000002
+  SEABASE_COLUMN_IS_DIVISION   = 0x0000000000000002,
+  SEABASE_COLUMN_IS_TBLNM      = 0x0000000000000004
 };
 
 static const QString seabaseDefaultsDDL[] =
@@ -375,7 +376,8 @@ enum SeabaseTablesFlags
     MD_TABLES_RESERVED1            = 0x0001,
     MD_TABLES_RESERVED2            = 0x0002,
     MD_TABLES_HIVE_EXT_COL_ATTRS   = 0x0004,
-    MD_TABLES_HIVE_EXT_KEY_ATTRS   = 0x0008
+    MD_TABLES_HIVE_EXT_KEY_ATTRS   = 0x0008,
+    MD_TABLES_SUPER_TABLE_ATTRS    = 0x0040
   };
 
 static const QString seabaseTableConstraintsDDL[] =

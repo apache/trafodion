@@ -3174,6 +3174,8 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
               colFlags |= SEABASE_COLUMN_IS_DIVISION;
             else if (colName == ElemDDLSaltOptionsClause::getSaltSysColName())
               colFlags |= SEABASE_COLUMN_IS_SALT;
+           else if (colName == "_TBLNM_")
+              colFlags |= SEABASE_COLUMN_IS_TBLNM;
             else
               CMPASSERT(0);
           }
@@ -4138,6 +4140,77 @@ short CmpSeabaseDDL::getAllUsingViews(ExeCliInterface *cliInterface,
 }
 
 /* 
+Get the super table name
+Returns 0 for object does not have super table
+Returns 1 for object has super table returned in superTable
+Returns -1 for error, which for now is ignored as we have an alternate code path.
+ */
+
+short CmpSeabaseDDL::getSuperTableText(
+                                   ExeCliInterface *cliInterface,
+                                   const char * catName,
+                                   const char * schName,
+                                   const char * objName,
+                                   const char * inObjType,
+                                   NAString& superTable)
+{
+  Lng32 cliRC = 0;
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+  Int64 objUID;
+  Lng32 colNum;
+  NAString defaultValue;
+
+  char buf[4000];
+  char *data;
+  Lng32 len;
+
+  // determine object UID 
+  str_sprintf(buf, "select object_uid  from %s.\"%s\".%s o where o.catalog_name = '%s' and o.schema_name = '%s' and o.object_name = '%s'  and o.object_type = '%s'  ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName, quotedSchName.data(), quotedObjName.data(),
+              inObjType
+              );
+
+  Queue * sQueue = NULL;
+  cliRC = cliInterface->fetchAllRows(sQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+ 
+  // did not find row
+  if (sQueue->numEntries() == 0)
+    return 0;
+
+  sQueue->position();
+  OutputInfo * vi = (OutputInfo*)sQueue->getNext(); 
+  objUID = *(Int64 *)vi->get(0);
+
+  // this should be the normal case, salt text is stored in the TEXT table,
+  // not the default value
+  cliRC = getTextFromMD(cliInterface,
+                        objUID,
+                        COM_SUPER_TABLE_TEXT,
+                        0,
+                        superTable);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  if (superTable.isNull() || superTable == "")
+    return 0;
+
+  return 1;
+}
+
+/* 
 Get the salt column text for a given table or index.
 Returns 0 for object does not have salt column
 Returns 1 for object has salt column and it is being returned in saltText
@@ -5047,6 +5120,15 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         {
           NAString nas(hbaseCreateOptions);
           if (updateTextTable(cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0, nas))
+            {
+              return -1;
+            }
+        }
+
+      if (CmpSeabaseDDL::isMDflagsSet(tablesFlags, MD_TABLES_SUPER_TABLE_ATTRS))
+        {
+          NAString nas(tableInfo->superTable); 
+          if (updateTextTable(cliInterface, objUID, COM_SUPER_TABLE_TEXT , 0, nas))
             {
               return -1;
             }
@@ -6975,6 +7057,13 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
 
   ExeCliInterface cliInterface(STMTHEAP, 0, NULL,
    CmpCommon::context()->sqlSession()->getParentQid() );
+  
+  NAString superTable;
+  short hasSuperTable = getSuperTableText(&cliInterface, 
+                             tableName.getCatalogNamePartAsAnsiString().data(),
+                             tableName.getSchemaNamePartAsAnsiString().data(),
+                             tableName.getObjectNamePartAsAnsiString().data(),
+                             COM_BASE_TABLE_OBJECT_LIT,superTable);
 
   if (dropFromMD)
     {
@@ -7044,13 +7133,24 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
               return -1;
             }
         }
-      
+      if (hasSuperTable == 1) // this table is embedded in super table, so do a delete first
+        {
+          char buf[4000];
+          Lng32 cliRC = 0;
+          str_sprintf(buf, "DELETE FROM %s.%s.%s;", catalogNamePart.data(), schemaNamePart.data(),objectNamePart.data() );
+          cliRC = cliInterface.executeImmediate(buf);
+          if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+            return -1;
+          }
+        } 
       if (deleteFromSeabaseMDTable(&cliInterface, 
                                    catalogNamePart, schemaNamePart, objectNamePart, objType ))
         return -1;
     }
 
-  if (dropFromHbase)
+  if (dropFromHbase && hasSuperTable !=1 )
     {
       if (objType != COM_VIEW_OBJECT)
         {
@@ -7294,6 +7394,22 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
     {
       ehi->truncate(tddlTable, TRUE, TRUE);
     }
+  // create default system super table
+  HbaseStr sysSuperTable;
+  const NAString sysSTNAS("TRAFODION._SUPER_.SYSTEM");
+  sysSuperTable.val = (char *)sysSTNAS.data();
+  sysSuperTable.len = sysSTNAS.length();
+
+  if (ehi->exists(sysSuperTable) == 0 ) //not exists
+  {
+    if (createHbaseTable(ehi, &sysSuperTable, SEABASE_DEFAULT_COL_FAMILY, NULL,
+                         0, 0, NULL,
+                         FALSE, ddlXns) == -1)
+    {
+      deallocEHI(ehi); 
+      return;
+    }
+  }
 
   // create hbase physical objects
   for (Lng32 i = 0; i < numTables; i++)
