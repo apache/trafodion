@@ -1492,8 +1492,8 @@ SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS '2';
 --- SQL operation complete.
 ```
 
-* This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process, 
-in this case, the compiler calculates the number of ESPs to be used.
+* This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
+In this case, the compiler calculates the number of ESPs to be used.
 +
 ```
 SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS 'system';
