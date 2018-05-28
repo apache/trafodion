@@ -13331,6 +13331,10 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
     localExprs += *setOfValuesReqdByParent ;
   localExprs += exprsInDerivedClasses_;
 
+  ValueIdSet original_output;
+  if (avoidHalloween() && child(0) && child(0)->getGroupAttr())
+    original_output = child(0)->getGroupAttr()->getCharacteristicOutputs();
+
   // ---------------------------------------------------------------------
   // Check which expressions can be evaluated by my child.
   // Modify the Group Attributes of those children who inherit some of
@@ -13341,6 +13345,33 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
 				newExternalInputs,
 				predicatesOnParent,
 				&localExprs);
+
+  if (avoidHalloween() && child(0) && child(0)->getGroupAttr())
+    {
+      ValueIdSet cur_output = child(0)->getGroupAttr()->getCharacteristicOutputs();
+      if (cur_output.isEmpty())
+        {
+          ValueId exprId;
+          ValueId atLeastOne;
+
+          for (exprId = original_output.init();
+               original_output.next(exprId);
+               original_output.advance(exprId))
+            {
+              atLeastOne = exprId;
+              if (!(exprId.getItemExpr()->doesExprEvaluateToConstant(FALSE, TRUE)))
+                {
+                  child(0)->getGroupAttr()->addCharacteristicOutputs(exprId);
+                  break;
+                }
+            }
+         cur_output = child(0)->getGroupAttr()->getCharacteristicOutputs();
+         if (cur_output.isEmpty())
+           {
+             child(0)->getGroupAttr()->addCharacteristicOutputs(atLeastOne);
+           }
+        }
+    }	
 }
 
 /*
