@@ -6398,7 +6398,7 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 	           if (end > 0)
 	             {
 	               val = val(start+1, (end-start-1));
-	               if (minus > 0)
+	               if ((minus > 0) && (minus < start))  // '-' before the string part
 	                 {
 	                   // prepend '-' to the output
 	                   val.prepend('-', 1);
