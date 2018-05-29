@@ -68,7 +68,7 @@ foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
-	cd conn/jdbcT4 && $(MAKE) 2>&1 && $(MAVEN) install | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	cd conn/jdbcT4 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
