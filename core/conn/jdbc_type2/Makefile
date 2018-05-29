@@ -86,7 +86,7 @@ all: LICENSE NOTICE $(LIBEXPDIR)/libjdbcT2.so
 
 $(EXPROOT)/lib/jdbcT2.jar:
 	./getBuildInfo
-	$(MAVEN) -Pproduction install -DskipTests
+	$(MAVEN) -Pproduction install -DskipTests|echo "";exit $${PIPESTATUS}
 	$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib
 	`cd ${TRAF_HOME}/export/lib;$(LN) trafjdbcT2-${TRAFODION_VER}.jar jdbcT2.jar` 
 	$(JAVAH) -cp $(EXPROOT)/lib/jdbcT2.jar -d native $(CSES)

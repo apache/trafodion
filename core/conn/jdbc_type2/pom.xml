@@ -29,6 +29,9 @@
   <version>${INTERNAL_VERSION}</version>
   <name>jdbcT2</name>
   <url>http://maven.apache.org</url>
+  <properties>
+    <ANTRUN_VER>1.8</ANTRUN_VER>
+  </properties>
     <profiles>
         <profile>
             <id>dev</id>
@@ -67,14 +70,14 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.8</version>
+                        <version>${ANTRUN_VER}</version>
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
                                 <configuration>
                                     <tasks>
-                                        <copy file="${basedir}/LICENSE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
-                                        <copy file="${basedir}/NOTICE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
+                                        <copy file="${basedir}/LICENSE" tofile="${basedir}/src/main/resources/META-INF/LICENSE" overwrite="true"/>
+                                        <copy file="${basedir}/NOTICE" tofile="${basedir}/src/main/resources/META-INF/NOTICE" overwrite="true"/>
                                     </tasks>
                                 </configuration>
                                 <goals>
@@ -99,7 +102,7 @@
 <plugins>
   <plugin>
     <artifactId>maven-antrun-plugin</artifactId>
-    <version>1.8</version>
+    <version>${ANTRUN_VER}</version>
     <executions>
         <execution>
         <phase>generate-sources</phase>
