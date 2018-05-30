@@ -99,7 +99,7 @@ clean:
 	$(RM) *.gcda *.gcno *.gcov
 	$(RM) -f  $(OUTDIR)/*.o
 	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-dtm-*.jar
-	-$(MAVEN) -f pom.xml clean
+	-$(MAVEN) -f pom.xml -Pproduction clean
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)

@@ -144,6 +144,8 @@ all:  $(LIBEXPDIR)/libstmlib.so cp_trx_jar
 
 cp_trx_jar:
 	cd $(HBASE_TRX_LOC); make
+trafodion_sql_build: cp_trx_jar
+	cd ../../../sql/java_src/trafodion_sql && $(MAKE) 2>&1
 
 all:  $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libstmlib.so $(PROGS) $(LIBEXPDIR)/libxarm.so
 	cd tools; $(MAKE)
@@ -167,7 +169,7 @@ $(LIBEXPDIR)/libstmlib.so: $(LIBSTMOBJS)
 $(LIBEXPDIR)/libsxatmlib.so: $(LIBSXATMOBJS) 
 	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -llog4cxx
 
-$(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) cp_trx_jar
+$(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) trafodion_sql_build cp_trx_jar
 	cd $(HBASETMLIB); $(MAKE)
 
 
@@ -197,6 +199,7 @@ clean:
 	$(RM)  $(ALLOBJS)
 	$(RM)  $(CDEPFILES)
 	cd $(HBASE_TRX_LOC); make clean
+	cd ../../../sql/java_src/trafodion_sql && $(MAKE) clean
 	@echo "PWD = " `pwd`
 	cd tools; $(MAKE) clean
 	@echo "PWD = " `pwd`

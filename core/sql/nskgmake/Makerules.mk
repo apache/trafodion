@@ -271,11 +271,8 @@ endif
 # DLLs should be built before executables, so we are adding this dependency here.
 # $(FINAL_EXES): $(FINAL_DLLS)
 
-mavenbuild:
-	cd ../java_src/trafodion_sql && $(MAKE) 2>&1 | exit $${PIPESTATUS[0]}
-
 # This is where the top-level is declared to build everything.
-buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild
+buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES)
 
 clean:
 	@echo "Removing intermediate objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"
@@ -289,4 +286,3 @@ clean:
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
 	@cd ..; $(MAVEN) clean
-	cd ../java_src/trafodion_sql && $(MAKE) clean

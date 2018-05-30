@@ -109,11 +109,9 @@
       <version>${hbase.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.hbase.client.transactional</groupId>
+      <groupId>org.apache</groupId>
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
-      <scope>system</scope>
-      <systemPath>${env.TRAF_HOME}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
