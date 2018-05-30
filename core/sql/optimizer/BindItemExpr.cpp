@@ -8622,7 +8622,12 @@ ItemExpr *CurrentTimestampRunning::bindNode(BindWA *bindWA)
 ItemExpr *Parameter::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
+  {
+    OperatorTypeEnum opTyp = getOperatorType();
+    // All user inputs are treated as outer references in the current scope.
+    bindWA->getCurrentScope()->addOuterRef(getValueId());
     return getValueId().getItemExpr();
+  }
   if (bindWA->getCurrentScope()->context()->inTDFunction())
   {
     //Paramaters and outer references are not supported with rank function.
