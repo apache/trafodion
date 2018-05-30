@@ -71,7 +71,7 @@
               <configuration>
                 <archive>
                   <manifestFile>
-                    ${basedir}/../../sqf/export/include/SCMBuildMan.mf
+                    ${env.TRAF_HOME}/export/include/SCMBuildMan.mf
                   </manifestFile>
                 </archive>
               </configuration>
