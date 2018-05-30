@@ -43,9 +43,9 @@ all: build_all
 jdk_1_7_cdh54: build_chk_cdh54
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) CDH5.4
-	echo "$(MAVEN) package -DskipTests"
+	echo "$(MAVEN) install -DskipTests"
 	echo "### For full Maven output, see file build_trx.log"
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh54 package install -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Pcdh5_4 install -DskipTests | tee -a build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_CDH54_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -53,7 +53,7 @@ jdk_1_7_cdh54: build_chk_cdh54
 jdk_1_7_cdh55: build_chk_cdh55
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) CDH5.5
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh55 package install -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Pcdh5_5 install -DskipTests | tee -a build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_CDH55_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -61,13 +61,13 @@ jdk_1_7_cdh55: build_chk_cdh55
 jdk_1_7_cdh57: build_chk_cdh57
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) CDH5.7
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh57 package install -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Pcdh5_7 install -DskipTests | tee -a build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_CDH57_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
 
 jdk_1_7_mapr: build_chk_mapr
-	set -o pipefail && $(MAVEN) -f pom.xml.mapr package -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Pmapr install -DskipTests | tee -a build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_MAPR_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -75,7 +75,7 @@ jdk_1_7_mapr: build_chk_mapr
 jdk_1_7_hdp: build_chk_hdp
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) HDP2.3 
-	set -o pipefail && $(MAVEN) -f pom.xml.hdp package -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Phdp2_3 install -DskipTests | tee -a build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_HDP_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -83,7 +83,7 @@ jdk_1_7_hdp: build_chk_hdp
 jdk_1_7_apache10: build_chk_apache10
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) APACHE1.0
-	set -o pipefail && $(MAVEN) -f pom.xml.apache10 package -DskipTests | tee build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Papache1_0 install -DskipTests | tee build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE10_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -91,7 +91,7 @@ jdk_1_7_apache10: build_chk_apache10
 jdk_1_7_apache11: build_chk_apache11
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) APACHE1.1
-	set -o pipefail && $(MAVEN) -f pom.xml.apache11 package -DskipTests | tee build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Papache1_1 install -DskipTests | tee build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE11_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -99,7 +99,7 @@ jdk_1_7_apache11: build_chk_apache11
 jdk_1_7_apache12: build_chk_apache12
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) APACHE1.2
-	set -o pipefail && $(MAVEN) -f pom.xml.apache12 package -DskipTests | tee build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml -Papache1_2 install -DskipTests | tee build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
 	mkdir -p $(TRAF_HOME)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE12_TRX_JARNAME) $(TRAF_HOME)/export/lib
 	$(RM) $(VFILE)
@@ -147,22 +147,22 @@ build_chk_hdp:
 	@if [ $(TRAF_HOME)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_HDP_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP_TRX_JARNAME); fi
 
 clean:
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE10_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE11_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE12_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH54_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH55_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH57_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_MAPR_TRX_JARNAME)
-	$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_HDP_TRX_JARNAME)
-	$(REINSTATE_ORIG)
-	-$(MAVEN) -f pom.xml.apache10 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache11 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.apache12 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh54 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh55 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.cdh57 clean | grep ERROR
-	-$(MAVEN) -f pom.xml.mapr clean | grep ERROR
-	-$(MAVEN) -f pom.xml.hdp clean | grep ERROR
-	$(RM) build_trx.log
-	$(RM) $(VFILE)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE10_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE11_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_APACHE12_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH54_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH55_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_CDH57_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_MAPR_TRX_JARNAME)
+	-$(RM) $(TRAF_HOME)/export/lib/$(BLD_HBASE_HDP_TRX_JARNAME)
+	-$(REINSTATE_ORIG)
+	-$(MAVEN) -f pom.xml -Papache1_0 clean | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	-$(MAVEN) -f pom.xml -Papache1_1 clean | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
+	-$(MAVEN) -f pom.xml -Papache1_2 clean | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]}
+	-$(MAVEN) -f pom.xml -Pcdh5_4 clean |grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	-$(MAVEN) -f pom.xml -Pcdh5_5 clean |grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	-$(MAVEN) -f pom.xml -Pcdh5_7 clean |grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	#-$(MAVEN) -f pom.xml -Pmapr clean  |grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	-$(MAVEN) -f pom.xml -Phdp2_3 clean   |grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'; exit $${PIPESTATUS[0]} 
+	-$(RM) build_trx.log
+	-$(RM) $(VFILE)

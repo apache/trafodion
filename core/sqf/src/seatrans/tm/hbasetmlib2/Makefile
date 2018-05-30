@@ -65,13 +65,12 @@ all:  $(PROGS) mavenbuild
 
 mavenbuild:
 	# create a jar manifest file with the correct version information
-	mkdir -p src/main/resources
-	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
 	# run maven
-	set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	set -o pipefail; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build_apache.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	set -o pipefail; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build_hdp.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'	
-	cp -pf target/trafodion-dtm-*.jar $(TRAF_HOME)/export/lib
+	set -o pipefail; $(MAVEN) -Pproduction install -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'; exit $${PIPESTATUS}
+	cp -pf target/trafodion-dtm-$(TRAFODION_VER).jar $(TRAF_HOME)/export/lib
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-dtm-$(TRAFODION_VER).jar trafodion-dtm-apache-$(TRAFODION_VER).jar
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-dtm-$(TRAFODION_VER).jar trafodion-dtm-cdh-$(TRAFODION_VER).jar 
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-dtm-$(TRAFODION_VER).jar trafodion-dtm-hdp-$(TRAFODION_VER).jar
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
