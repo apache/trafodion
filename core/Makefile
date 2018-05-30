@@ -220,7 +220,7 @@ rpmbuild: rpmpackage
 	mv $(RPMROOT)/RPMS/$(ARCH)/$(PKG_PROD)*.rpm ../distribution/${OS_TYPE}${OS_MAJOR}/
 
 
-eclipse: rest/.project dcs/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
+eclipse: rest/.project dcs/.project sql/java_src/trafodion_sql/.project sqf/src/seatrans/hbase-trx/.project .project
 	@echo
 	@echo
 	@echo "  Now you can import 5 projects in Eclipse:"
@@ -238,8 +238,8 @@ rest/.project:
 dcs/.project:
 	cd ../dcs && $(MAVEN) eclipse:eclipse
 
-sql/.project:
-	cd sql  && $(MAVEN) eclipse:eclipse
+sql/java_src/trafodion_sql/.project:
+	cd sql/java_src/trafodion_sql  && $(MAVEN) eclipse:eclipse
 
 sqf/src/seatrans/hbase-trx/.project:
 	cd sqf/src/seatrans/hbase-trx && $(MAVEN) eclipse:eclipse
@@ -251,7 +251,7 @@ sqf/src/seatrans/hbase-trx/.project:
 eclipseclean:
 	$(RM) rest/.classpath rest/.project
 	$(RM) ../dcs/.classpath ../dcs/.project
-	$(RM) sql/.classpath sql/.project
+	$(RM) sql/java_src/trafodion_sql/.classpath sql/java_src/trafodion_sql/.project
 	$(RM) sqf/src/seatrans/hbase-trx/.classpath sqf/src/seatrans/hbase-trx/.project
 	$(RM) .cproject .project
 
