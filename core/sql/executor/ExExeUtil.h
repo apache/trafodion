@@ -3083,6 +3083,7 @@ public:
   ExLobStats lobStats_;
   char statusString_[200];
   fstream indata_;
+  char lobLockId_[12];
   ExLobGlobals *exLobGlobals_;
 };
 // -----------------------------------------------------------------------

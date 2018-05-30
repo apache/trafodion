@@ -1187,6 +1187,9 @@ void SsmpNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
   case SECURITY_INVALID_KEY_REQ:
     actOnSecInvalidKeyReq(connection);
     break;
+  case LOB_LOCK_REQ:
+    actOnLobLockReq(connection);
+    break;
   default:
     ex_assert(FALSE,"Invalid request from client");
   }
@@ -1618,7 +1621,32 @@ void SsmpNewIncomingConnectionStream::actOnActivateQueryReq(
       "expected an RTS_QUERY_ID following a SuspendQueryRequest");
 
 }
+void SsmpNewIncomingConnectionStream::actOnLobLockReq(
+                                               IpcConnection *connection)
+{
+  IpcMessageObjVersion msgVer = getNextObjVersion();
+  ex_assert(msgVer <= CurrLobLockVersionNumber,
+            "Up-rev message received.");
+  LobLockRequest *llReq= new (getHeap()) LobLockRequest(getHeap());
+  *this >> *llReq;
+  setHandle(llReq->getHandle());
+  ex_assert(!moreObjects(),"Unexpected objects following LobLockRequest");
+  clearAllObjects();
+// Forward request to all mxsscps.
+  ssmpGlobals_->allocateServers();
+  SscpClientMsgStream *sscpMsgStream = new (heap_)
+  SscpClientMsgStream(heap_, getIpcEnv(), ssmpGlobals_, this);
+  sscpMsgStream->setUsedToSendLLMsgs();
+  ssmpGlobals_->addRecipients(sscpMsgStream);
+  sscpMsgStream->clearAllObjects();
+  *sscpMsgStream << *llReq;
+  llReq->decrRefCount();
+  sscpMsgStream->send(FALSE);
 
+  // Reply to client when the msgs to mxsscp have all completed.  The reply
+  // is made from the sscpMsgStream's callback.
+
+}
 void SsmpNewIncomingConnectionStream::actOnSecInvalidKeyReq(
                                                IpcConnection *connection)
 {
@@ -2322,6 +2350,11 @@ void SscpClientMsgStream::actOnReceiveAllComplete()
           replySik();
           break;
         }
+        case LL:
+        {
+          replyLL();
+          break;
+        }
         default:
         {
           ex_assert(FALSE, "Unknown completionProcessing_ flag.");
@@ -2335,6 +2368,25 @@ void SscpClientMsgStream::actOnReceiveAllComplete()
 }
 
 void SscpClientMsgStream::replySik()
+{
+  RmsGenericReply *reply = new(getHeap())
+    RmsGenericReply(getHeap());
+
+  *ssmpStream_ << *reply;
+
+  if (ssmpStream_->getSscpDiagsArea())
+  {
+    // Pass errors from communication w/ SSCPs back to the
+    // client.
+    *ssmpStream_ << *(ssmpStream_->getSscpDiagsArea());
+    ssmpStream_->clearSscpDiagsArea();
+  }
+
+  ssmpStream_->send(FALSE);
+  reply->decrRefCount();
+}
+
+void SscpClientMsgStream::replyLL()
 {
   RmsGenericReply *reply = new(getHeap())
     RmsGenericReply(getHeap());

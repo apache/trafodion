@@ -3163,6 +3163,59 @@ Lng32 ContextCli::setSecInvalidKeys(
 
 }
 
+Int32 ContextCli::checkLobLock(char *inLobLockId, NABoolean *found)
+{
+  Int32 retcode = 0;
+  *found = FALSE;
+  CliGlobals *cliGlobals = getCliGlobals();
+  StatsGlobals *statsGlobals = GetCliGlobals()->getStatsGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return diagsArea_.mainSQLCODE();
+  }
+  statsGlobals->checkLobLock(cliGlobals,inLobLockId);
+  if (inLobLockId != NULL)
+    *found = TRUE;
+  return retcode;
+}
+Lng32 ContextCli::setLobLock(
+     /* IN */    char *lobLockId // objID+column number
+                             )
+{
+  CliGlobals *cliGlobals = getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return diagsArea_.mainSQLCODE();
+  }
+  ComDiagsArea *tempDiagsArea = &diagsArea_;
+  tempDiagsArea->clear();
+ 
+  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
+                                 cliGlobals->myNodeName(), 
+                                 cliGlobals->myCpu(), tempDiagsArea);
+  if (ssmpServer == NULL)
+    return diagsArea_.mainSQLCODE();
+
+  SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), 
+                            ssmpManager_, tempDiagsArea);
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+  LobLockRequest *llMsg = 
+    new (cliGlobals->getIpcHeap()) LobLockRequest(
+                                      cliGlobals->getIpcHeap(), 
+                                      lobLockId);
+  *ssmpMsgStream << *llMsg;
+  // Call send with no timeout.  
+  ssmpMsgStream->send(); 
+  // I/O is now complete.  
+  llMsg->decrRefCount();
+  cliGlobals->getEnvironment()->deleteCompletedMessages();
+  ssmpManager_->cleanupDeletedSsmpServers();
+  return diagsArea_.mainSQLCODE();
+
+}
 ExStatisticsArea *ContextCli::getMergedStats(
             /* IN */    short statsReqType,
             /* IN */    char *statsReqStr,

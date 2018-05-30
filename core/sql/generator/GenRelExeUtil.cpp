@@ -4336,6 +4336,8 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
   const char* f = ActiveSchemaDB()->getDefaults().
     getValue(LOB_STORAGE_FILE_DIR);
 
+    
+
   char *lobLoc = space->allocateAlignedSpace(strlen(f) + 1);
   strcpy(lobLoc, f);
   ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
@@ -4383,6 +4385,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
     exe_util_lobupdate_tdb->setAppend(TRUE);
   else
     exe_util_lobupdate_tdb->setAppend(FALSE);
+  if((ActiveSchemaDB()->getDefaults()).getToken(LOB_LOCKING) == DF_ON)
+    exe_util_lobupdate_tdb->setLobLocking(TRUE);
+  else
+    exe_util_lobupdate_tdb->setLobLocking(FALSE);
 
   generator->initTdbFields(exe_util_lobupdate_tdb);
 

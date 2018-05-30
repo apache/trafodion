@@ -8088,6 +8088,21 @@ Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
   return retcode;
 }
 
+Lng32 SQLCLI_SetLobLock(CliGlobals *cliGlobals,
+                        /* IN */    char *lobLockId
+                        )
+{
+  return cliGlobals->currContext()->setLobLock(lobLockId);
+}
+Lng32 SQLCLI_CheckLobLock(CliGlobals *cliGlobals,
+                        /* IN */    char *lobLockId,
+                        /*OUT */ NABoolean *found
+                        )
+{  
+  Int32 retcode = 0;
+  retcode = cliGlobals->currContext()->checkLobLock(lobLockId, found);
+  return retcode;
+}
 Lng32 SQLCLI_GetStatistics2(CliGlobals *cliGlobals,
             /* IN */  	short statsReqType,
 	    /* IN */  	char *statsReqStr,
