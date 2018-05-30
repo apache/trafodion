@@ -272,7 +272,7 @@ endif
 # $(FINAL_EXES): $(FINAL_DLLS)
 
 mavenbuild:
-	cd ../sqlmid && $(MAKE) 2>&1 | exit $${PIPESTATUS[0]}
+	cd ../java_src/trafodion_sql && $(MAKE) 2>&1 | exit $${PIPESTATUS[0]}
 
 # This is where the top-level is declared to build everything.
 buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild
@@ -289,4 +289,4 @@ clean:
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
 	@cd ..; $(MAVEN) clean
-	cd ../sqlmid && $(MAKE) clean
+	cd ../java_src/trafodion_sql && $(MAKE) clean
