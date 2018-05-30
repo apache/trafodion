@@ -175,27 +175,23 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
   return 0;
 }
 
+
 short CmpSeabaseDDL::switchBackCompiler()
 {
-  ComDiagsArea * tempDiags = NULL;
+
   if (cmpSwitched_)
-    {
-      tempDiags = ComDiagsArea::allocate(heap_);
-      tempDiags->mergeAfter(*CmpCommon::diags());
-    }
-  
+  {
+      GetCliGlobals()->currContext()->copyDiagsAreaToPrevCmpContext();
+      CmpCommon::diags()->clear();
+  }
   // do restore here even though switching may not have happened, i.e.
   // when switchToCompiler() was not called by the embedded CI, see above.
   restoreAllControlsAndFlags();
   
   if (cmpSwitched_)
     {
-      // ignore new (?) from restore call but restore old diags
+      // Clear the diagnostics area of the current CmpContext
       CmpCommon::diags()->clear();
-      CmpCommon::diags()->mergeAfter(*tempDiags);
-      tempDiags->clear();
-      tempDiags->deAllocate();
-  
       // switch back to the original commpiler, ignore return error
       SQL_EXEC_SWITCH_BACK_COMPILER();
 
@@ -1150,7 +1146,7 @@ ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server,
                           << DgString0((char*)"ExpHbaseInterface::init()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       }
 
       deallocEHI(ehi); 
@@ -1429,7 +1425,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -1504,7 +1500,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         *hbaseErrNum = retcode;
 
       if (hbaseErrStr)
-        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr();
 
       retcode = -1398;
       goto label_return;
@@ -2561,7 +2557,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2619,7 +2615,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::create()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2699,7 +2695,7 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::alter()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           retcode = -1;
         } // if
     } // else
@@ -2727,7 +2723,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::drop()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2739,7 +2735,7 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::exists()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -2762,7 +2758,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                               << DgString0((char*)"ExpHbaseInterface::copy()")
                               << DgString1(getHbaseErrStr(-retcode))
                               << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr());
           
           return -1;
         }
@@ -2774,7 +2770,7 @@ short CmpSeabaseDDL::copyHbaseTable(ExpHbaseInterface *ehi,
                           << DgString0((char*)"ExpHbaseInterface::copy()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       
       return -1;
     }
@@ -3181,6 +3177,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             else
               CMPASSERT(0);
           }
+      else if (!colNode->getDefaultExprString().isNull())
+        {
+            defaultClass = COM_FUNCTION_DEFINED_DEFAULT;
+            defVal = colNode->getDefaultExprString();
+        }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;
@@ -3189,6 +3190,24 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
                (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_CURRENT_TIMESTAMP))
         {
           defaultClass = COM_CURRENT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIX_TIMESTAMP)
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIX_TIMESTAMP))
+        {
+          defaultClass = COM_CURRENT_UT_DEFAULT;
+        }
+      else if (ie->getOperatorType() == ITM_UNIQUE_ID)
+        {
+          defaultClass = COM_UUID_DEFAULT;
+        }
+      else if ((ie->getOperatorType() == ITM_CAST) &&
+               (ie->getChild(0)->castToItemExpr()->getOperatorType() == ITM_UNIQUE_ID))
+        {
+          defaultClass = COM_UUID_DEFAULT;
         }
       else if ((ie->getOperatorType() == ITM_USER) ||
                (ie->getOperatorType() == ITM_CURRENT_USER) ||
@@ -4509,7 +4528,8 @@ void CmpSeabaseDDL::handleDDLCreateAuthorizationError(
       case CAT_SCHEMA_DOES_NOT_EXIST_ERROR:
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                             << DgSchemaName(catalogName + "." + schemaName);
+                                  << DgString0(catalogName)
+                                  << DgString1(schemaName);
          break;
       }
       case CAT_NOT_AUTHORIZED:
@@ -4634,9 +4654,6 @@ static short AssignColEntry(ExeCliInterface *cliInterface, Lng32 entry,
   Lng32 indOffset = -1;
   Lng32 varOffset = -1;
   
-  cliRC = cliInterface->getAttributes(1, TRUE, fsDatatype, length, 
-                                      &indOffset, &varOffset);
-
   cliRC = cliInterface->getAttributes(entry, TRUE, fsDatatype, length, 
                                       &indOffset, &varOffset);
   if (cliRC < 0)
@@ -8134,7 +8151,7 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
                           << DgString0((char*)"ExpHbaseInterface::dropAll()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       return retcode;
     }
@@ -8432,7 +8449,7 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
   Int32 lActualLen = 0;
   Int16 status = ComUser::getAuthNameFromAuthID( (Int32) schemaOwnerID 
                                                , (char *)&username
-                                               , MAX_USERNAME_LEN
+                                               , MAX_USERNAME_LEN+1
                                                , lActualLen );
   if (status != FEOK)
   {
@@ -8454,7 +8471,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) objOwnerID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {
@@ -8474,7 +8491,7 @@ std::string creatorGrantee;
       Int32 lActualLen = 0;
       Int16 status = ComUser::getAuthNameFromAuthID( (Int32) creatorID 
                                                    , (char *)&username
-                                                   , MAX_USERNAME_LEN
+                                                   , MAX_USERNAME_LEN+1
                                                    , lActualLen );
       if (status != FEOK)
       {
@@ -8645,7 +8662,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                           << DgString0((char*)"ExpHbaseInterface::truncate()")
                           << DgString1(getHbaseErrStr(-retcode))
                           << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr());
 
       processReturn();
       return -1;
@@ -9121,7 +9138,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           StmtDDLCreateHbaseTable * createTableParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLCreateHbaseTable();
           
-          createNativeHbaseTable(createTableParseNode, currCatName, currSchName);
+          createNativeHbaseTable(&cliInterface, createTableParseNode, currCatName, currSchName);
         }
       else if (ddlNode->getOperatorType() == DDL_DROP_TABLE)
         {
@@ -9137,7 +9154,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           StmtDDLDropHbaseTable * dropTableParseNode =
             ddlNode->castToStmtDDLNode()->castToStmtDDLDropHbaseTable();
           
-          dropNativeHbaseTable(dropTableParseNode, currCatName, currSchName);
+          dropNativeHbaseTable(&cliInterface, dropTableParseNode, currCatName, currSchName);
         }
        else if (ddlNode->getOperatorType() == DDL_CREATE_INDEX)
         {
@@ -10228,18 +10245,14 @@ static void grantRevokeSeabaseRole(
    StmtDDLRoleGrant *pParseNode)
    
 {
-
-NAString trafMDLocation;
-
-  CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
-  
-NAString privMgrMDLoc;
-
-  CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
+   NAString trafMDLocation;
+   CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
+   NAString privMgrMDLoc;
+   CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrCommands roleCommand(std::string(trafMDLocation.data()),
-                            std::string(privMgrMDLoc.data()),
-                            CmpCommon::diags());
+   PrivMgrCommands roleCommand(std::string(trafMDLocation.data()),
+                               std::string(privMgrMDLoc.data()),
+                               CmpCommon::diags());
 
    if (!CmpCommon::context()->isAuthorizationEnabled())
    {
@@ -10247,38 +10260,29 @@ PrivMgrCommands roleCommand(std::string(trafMDLocation.data()),
       return;
    }
       
-// *****************************************************************************
-// *                                                                           *
-// *   The GRANT ROLE and REVOKE ROLE commands each take a list of roles       *
-// * and a list of grantees (authorization names to grant the role to).        *
-// * All items on both lists need to be verified for existence and no          *
-// * duplication.  The results are stored in two parallel name/ID vectors.     *
-// *                                                                           *
-// *   Currently roles may only be granted to users, and may not be granted    *
-// * to PUBLIC, so some code takes shortcuts and assumes users, while other    *
-// * code is prepared for eventually supporting all authorization types.       *
-// *                                                                           *
-// *****************************************************************************
-      
-// *****************************************************************************
-// *                                                                           *
-// *  By default, the user issuing the GRANT or REVOKE ROLE command is         *
-// * the grantor.  However, if the GRANTED BY clause is specified,             *
-// * that authorization ID is the grantor.                                     *
-// *                                                                           *
-// *    If the GRANTED BY clause is NOT specified, and the user is             *
-// * DB__ROOT, then the GRANT/REVOKE is assumed to have been                   *
-// * issued by the owner/creator of the role.  So if no GRANTED BY             *
-// * clause and grantor is DB__ROOT, note it, so we can look for the           *
-// * role creator later.                                                       *
-// *                                                                           *
-// *****************************************************************************
+   //   The GRANT ROLE and REVOKE ROLE commands each take a list of roles       
+   // and a list of grantees (authorization names to grant the role to).        
+   // All items on both lists need to be verified for existence and no         
+   // duplication.  The results are stored in two parallel name/ID vectors.     
+   //                                                                           
+   //   Currently roles may only be granted to users, and may not be granted    
+   // to PUBLIC, so some code takes shortcuts and assumes users, while other    
+   // code is prepared for eventually supporting all authorization types.       
+     
+   //  By default, the user issuing the GRANT or REVOKE ROLE command is         
+   // the grantor.  However, if the GRANTED BY clause is specified,             
+   // that authorization ID is the grantor.                                     
+   //                                                                           
+   //    If the GRANTED BY clause is NOT specified, and the user is             
+   // DB__ROOT, then the GRANT/REVOKE is assumed to have been                   
+   // issued by the owner/creator of the role.  So if no GRANTED BY             
+   // clause and grantor is DB__ROOT, note it, so we can look for the           
+   // role creator later.                                                       
+   int32_t grantorID = ComUser::getCurrentUser();
+   std::string grantorName;
+   bool grantorIsRoot = false;
 
-int32_t grantorID = ComUser::getCurrentUser();
-std::string grantorName;
-bool grantorIsRoot = false;
-
-ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
+   ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
@@ -10298,10 +10302,10 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
+
       //TODO: will need to update this if grant role to role is supported,
       // i.e., the granted by could be a role. getUserIDFromUserName() only
       // supports users.       
-
       if (ComUser::getUserIDFromUserName(grantedByName.data(),grantorID) != 0)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
@@ -10317,21 +10321,16 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
          grantorIsRoot = true;
    }
       
-// *****************************************************************************
-// *                                                                           *
-// *   Next, walk through the list of roles being granted, making sure         *
-// * each one exists and none appear more than once.  For each role,           *
-// * if the grantor is DB__ROOT, determine the creator of the role and         *
-// * use that data for the entries in the grantor vectors.                     *
-// *                                                                           *
-// *****************************************************************************
+   //   Next, walk through the list of roles being granted, making sure         
+   // each one exists and none appear more than once.  For each role,           
+   // if the grantor is DB__ROOT, determine the creator of the role and         
+   // use that data for the entries in the grantor vectors.                     
+   ElemDDLGranteeArray & roles = pParseNode->getRolesArray();
 
-ElemDDLGranteeArray & roles = pParseNode->getRolesArray();
-
-std::vector<int32_t> grantorIDs;
-std::vector<std::string> grantorNames;
-std::vector<int32_t> roleIDs;
-std::vector<std::string> roleNames;
+   std::vector<int32_t> grantorIDs;
+   std::vector<std::string> grantorNames;
+   std::vector<int32_t> roleIDs;
+   std::vector<std::string> roleNames;
 
    for (size_t r = 0; r < roles.entries(); r++)
    {
@@ -10383,18 +10382,12 @@ std::vector<std::string> roleNames;
       }
    }
    
-// *****************************************************************************
-// *                                                                           *
-// *   Now, walk throught the list of grantees, making sure they all exist     *
-// * and none appear more than once.                                           *
-// *                                                                           *
-// *****************************************************************************
-
-ElemDDLGranteeArray & grantees = pParseNode->getGranteeArray();
-std::vector<int32_t> granteeIDs;
-std::vector<std::string> granteeNames;
-std::vector<PrivAuthClass> granteeClasses;
-
+   //   Now, walk throught the list of grantees, making sure they all exist     
+   //  and none appear more than once.                                         
+   ElemDDLGranteeArray & grantees = pParseNode->getGranteeArray();
+   std::vector<int32_t> granteeIDs;
+   std::vector<std::string> granteeNames;
+   std::vector<PrivAuthClass> granteeClasses;
    for (size_t g = 0; g < grantees.entries(); g++)
    {
       int32_t granteeID;
@@ -10438,17 +10431,12 @@ std::vector<PrivAuthClass> granteeClasses;
       granteeNames.push_back(granteeName.data());
       granteeClasses.push_back(PrivAuthClass::USER);
    }
-   
-// *****************************************************************************
-// *                                                                           *
-// *   The WITH ADMIN option means the grantee can grant the role to another   *
-// * authorization ID.  In the case of REVOKE, this ability (but not the role  *
-// * itself) is being taken from the grantee.                                  *
-// *                                                                           *
-// *****************************************************************************
 
-int32_t grantDepth = 0;
-bool withAdminOptionSpecified = false;
+   //   The WITH ADMIN option means the grantee can grant the role to another   
+   // authorization ID.  In the case of REVOKE, this ability (but not the role  
+   // itself) is being taken from the grantee.                                  
+   int32_t grantDepth = 0;
+   bool withAdminOptionSpecified = false;
 
    if (pParseNode->isWithAdminOptionSpecified())
    {
@@ -10457,23 +10445,18 @@ bool withAdminOptionSpecified = false;
       withAdminOptionSpecified = true;
    }
    
-// *****************************************************************************
-// *                                                                           *
-// *   For REVOKE ROLE, the operation can either be RESTRICT, i.e. restrict    *
-// * the command if any dependencies exist or CASCADE, in which case any       *
-// * dependencies are silently removed.  Currently only RESTRICT is supported. *
-// *                                                                           *
-// *****************************************************************************
-
-PrivDropBehavior privDropBehavior = PrivDropBehavior::RESTRICT;
+   //   For REVOKE ROLE, the operation can either be RESTRICT, i.e. restrict    
+   // the command if any dependencies exist or CASCADE, in which case any       
+   // dependencies are silently removed.  Currently only RESTRICT is supported. 
+   PrivDropBehavior privDropBehavior = PrivDropBehavior::RESTRICT;
 
    if (pParseNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
       privDropBehavior = PrivDropBehavior::CASCADE;
    else
       privDropBehavior = PrivDropBehavior::RESTRICT;
       
-PrivStatus privStatus = STATUS_GOOD;
-std::string commandString;
+   PrivStatus privStatus = STATUS_GOOD;
+   std::string commandString;
 
    if (pParseNode->isGrantRole())
    {
@@ -10557,11 +10540,10 @@ static void grantSeabaseComponentPrivilege(
    StmtDDLGrantComponentPrivilege *pParseNode)
    
 {
-
-NAString privMgrMDLoc;
+  NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc, systemCatalog.c_str(), SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+  PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
    if (!CmpCommon::context()->isAuthorizationEnabled())
    {
@@ -10569,11 +10551,11 @@ PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::
       return;
    }
   
-const std::string componentName = pParseNode->getComponentName().data();
-const ConstStringList & privList = pParseNode->getComponentPrivilegeNameList();
+  const std::string componentName = pParseNode->getComponentName().data();
+  const ConstStringList & privList = pParseNode->getComponentPrivilegeNameList();
 
-const NAString & granteeName = pParseNode->getUserRoleName(); 
-int32_t granteeID;
+  const NAString & granteeName = pParseNode->getUserRoleName(); 
+  int32_t granteeID;
 
    if (ComUser::getAuthIDFromAuthName(granteeName.data(),granteeID) != 0)
    {
@@ -10582,10 +10564,10 @@ int32_t granteeID;
       return;
    }
 
-int32_t grantorID = ComUser::getCurrentUser();
-std::string grantorName;
+  int32_t grantorID = ComUser::getCurrentUser();
+  std::string grantorName;
 
-ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
+  ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
@@ -10619,12 +10601,21 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    else	// Grantor is the current user.
       grantorName = ComUser::getCurrentUsername();
 
-int32_t grantDepth = 0;
+  int32_t grantDepth = 0;
 
    if (pParseNode->isWithGrantOptionSpecified())
+   {
+      // Don't allow WGO for roles
+      if (CmpSeabaseDDLauth::isRoleID(granteeID) &&
+          (CmpCommon::getDefault(ALLOW_WGO_FOR_ROLES) == DF_OFF))
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
+        return;
+      }
       grantDepth = -1;
-      
-vector<std::string> operationNamesList;
+   }
+
+  vector<std::string> operationNamesList;
 
    for (size_t i = 0; i < privList.entries(); i++)
    {
@@ -10632,7 +10623,7 @@ vector<std::string> operationNamesList;
       operationNamesList.push_back(operationName->data());
    }   
 
-PrivStatus retcode = STATUS_GOOD;
+  PrivStatus retcode = STATUS_GOOD;
 
    retcode = componentPrivileges.grantComponentPrivilege(componentName,
                                                          operationNamesList,

@@ -1790,6 +1790,16 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
       result = new (heap) MapValueIds(
 	   args->at(0)->castToRelExpr());
     }
+  else if (fname == "FAST_EXTRACT" ||
+           fname == "HIVE_INSERT")
+    {
+      if (badSingleArg(fname,args,diags))
+	return NULL;
+      result = new (heap) WildCardOp(
+	   REL_ANY_EXTRACT,
+	   0,
+	   args->at(0)->castToRelExpr());
+    }
   else if (fname == "SORT")
     {
       if (badSingleArg(fname,args,diags))

@@ -125,12 +125,6 @@ public:
      char *authNameBuffer, // OUT
      Int32 maxBufLen,      // IN
      Int32 &requiredLen);   // OUT optional
-  RETCODE getDBUserNameFromID(Int32 userID,         // IN
-                              char *userNameBuffer, // OUT
-                              Int32 maxBufLen,      // IN
-                              Int32 *requiredLen);  // OUT
-  RETCODE getDBUserIDFromName(const char *userName, // IN
-                              Int32 *userID);       // OUT
 
   // Function to be used only in ESPs to establish user identity. This
   // call will update data members and will NOT verify the input
@@ -304,6 +298,8 @@ private:
   // flag and pointer to the embedded arkcmp context
   NABoolean isEmbeddedArkcmpInitialized_;
   CmpContext * embeddedArkcmpContext_;
+
+  CmpContext * prevCmpContext_;
 
   // pointer to the array of server  versions used to communicate with ARKCMP.
   ARRAY(ExSqlComp *) arkcmpArray_;
@@ -628,18 +624,6 @@ public:
     xactAborted = udrXactAborted_;
   }
 
-  inline void setJniErrorStr(NAString errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline void setJniErrorStr(const char *errorStr)
-  {  jniErrorStr_ = errorStr; }
-
-  inline NAString getJniErrorStr()
-  { return jniErrorStr_; }
-
-  inline const char* getJniErrorStrPtr()
-  { return (const char*)jniErrorStr_.data(); }
-
   inline CLISemaphore *getSemaphore()
   { 
      return cliSemaphore_;
@@ -810,6 +794,7 @@ public:
   Int32 switchToCmpContext(Int32 cmpCntxtType);
   Int32 switchToCmpContext(void *cmpCntxt);
   Int32 switchBackCmpContext(void);
+  void copyDiagsAreaToPrevCmpContext();
   NABoolean isDropInProgress() { return dropInProgress_; }
   void setDropInProgress() { dropInProgress_ = TRUE; };
 

@@ -166,8 +166,7 @@ OFR_RetCode OrcFileReader::open(const char* path)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::open()", jresult);
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::open()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_OPEN_EXCEPTION;
   }
@@ -191,9 +190,7 @@ OFR_RetCode OrcFileReader::getPosition(Int64& pos)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::getPosition()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::getPosition()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_GETPOS_EXCEPTION;
   }
@@ -230,8 +227,7 @@ OFR_RetCode OrcFileReader::seeknSync(Int64 pos)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::seeknSync()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_SYNC_EXCEPTION;
   }
@@ -270,8 +266,7 @@ OFR_RetCode OrcFileReader::isEOF(bool& isEOF)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::isEOF()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_ISEOF_EXCEPTION;
   }
@@ -318,9 +313,7 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
 	jobject jresult = (jobject)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID);
     if (jenv_->ExceptionCheck()) 
     {
-      getExceptionDetails();
-      logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
-      logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::fetchNextRow()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::fetchNextRow()");
       jenv_->PopLocalFrame(NULL);
       return OFR_ERROR_FETCHROW_EXCEPTION;
     }
@@ -399,8 +392,7 @@ OFR_RetCode OrcFileReader::close()
 
   if (jenv_->ExceptionCheck()) 
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::close()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_CLOSE_EXCEPTION;
   }
@@ -432,8 +424,7 @@ OFR_RetCode OrcFileReader::getRowCount(Int64& count)
   
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS_ORC_FILE_READER, __FILE__, __LINE__);
+    getExceptionDetails(__FILE__, __LINE__, "OrcFileReader::getRowCount()");
     jenv_->PopLocalFrame(NULL);
     return OFR_ERROR_GETNUMROWS_EXCEPTION;
   }

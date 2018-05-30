@@ -214,7 +214,7 @@ A            B            C
 >>invoke t009hivecust1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST1
--- Definition current  Tue Sep  5 08:23:44 2017
+-- Definition current  Tue Apr 10 12:50:07 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -263,7 +263,7 @@ A            B            C
 >>invoke t009hivecust2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST2
--- Definition current  Tue Sep  5 08:23:55 2017
+-- Definition current  Tue Apr 10 12:50:20 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -434,7 +434,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Tue Sep  5 08:25:19 2017
+-- Definition current  Tue Apr 10 12:51:54 2018
 
   (
     A                                INT
@@ -516,7 +516,7 @@ ROW_ID      COLS
 >>invoke bblike1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE1
--- Definition current  Tue Sep  5 08:25:34 2017
+-- Definition current  Tue Apr 10 12:52:10 2018
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -533,7 +533,7 @@ ROW_ID      COLS
 >>invoke bblike2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE2
--- Definition current  Tue Sep  5 08:25:40 2017
+-- Definition current  Tue Apr 10 12:52:16 2018
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -572,7 +572,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Tue Sep  5 08:25:49 2017
+-- Definition current  Tue Apr 10 12:52:22 2018
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -616,7 +616,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ 212356315820604834
+PLAN_ID ................ ###
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -629,7 +629,7 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
-  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
+  est_memory_per_node    ###
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -643,6 +643,14 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
   HIVE_MAX_STRING_LENGTH  20
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. HIVE.HIVE
@@ -761,6 +769,14 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
   HIVE_MAX_STRING_LENGTH  20
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. HIVE.HIVE
@@ -916,7 +932,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Sep  5 08:25:55 2017
+-- Definition current  Tue Apr 10 12:52:29 2018
 
   (
     D_DATE_SK                        INT
@@ -1060,7 +1076,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ 212356315833683208
+PLAN_ID ................ ###
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
@@ -1075,7 +1091,7 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
-  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
+  est_memory_per_node    ###
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1089,6 +1105,14 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
   HIVE_MAX_STRING_LENGTH  20
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. TRAFODION.SCH
@@ -1150,7 +1174,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Sep  5 08:26:10 2017
+-- Definition current  Tue Apr 10 12:52:50 2018
 
   (
     D_DATE_SK                        INT
@@ -1307,6 +1331,14 @@ DESCRIPTION
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
   HIVE_MAX_STRING_LENGTH  20
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. TRAFODION.SCH

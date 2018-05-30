@@ -44,6 +44,7 @@ drop table t012t1 cascade;
 drop table t012ut1 cascade;
 ?ifMX
 drop table t012t3 cascade;
+drop table t012t4 cascade;
 
 ?section crdb
 log LOG012 clear;
@@ -217,7 +218,6 @@ select * from t012t1 where position('b' in b) >= 2;
 -- * select * from t012t1 where position('b' in b) < 3;
 -- * select * from t012t1 where position('b' in b) <= 2;
 
-?ifMX
 select b, position(N'ab' in b) from t012ut1;
 select b, position(N'xy' in b) from t012ut1;
 select b, position(N'ef' in b) from t012ut1;
@@ -231,7 +231,28 @@ select * from t012ut1 where position(N'b' in b) > 1;
 select * from t012ut1 where position(N'b' in b) >= 2;
 select * from t012ut1 where position(N'b' in b) < 3;
 select * from t012ut1 where position(N'b' in b) <= 2;
-?ifMX
+
+-- test INSTR function
+select instr('heelplo', 'l', 2, 2) from dual;
+select instr('heelplo', 'l', 2) from dual;
+select instr('heelplo', 'l', 1) from dual;
+select instr('heelplo', 'l', 5) from dual;
+select instr('heelplo', 'l', 10) from dual;
+SELECT INSTR('CORPORATE FLOOR','OR', 3, 1) FROM DUAL;
+SELECT INSTR('CORPORATE FLOOR','OR', 3, 2) FROM DUAL;
+SELECT INSTR('CORPORATE FLOOR','OR', -3, 2) FROM DUAL;
+SELECT INSTR('CORPORATE FLOOR','OR', 3, -2) FROM DUAL;
+
+select instr(_ucs2 x'c231 c232 c232 c233 c234 c233 c235', _ucs2 x'c233', 2, 2) from dual;
+select instr(_ucs2 x'c231 c232 c232 c233 c234 c233 c235', _ucs2 x'c233', 2) from dual;
+select instr(_ucs2 x'c231 c232 c232 c233 c234 c233 c235', _ucs2 x'c233', 1) from dual;
+select instr(_ucs2 x'c231 c232 c232 c233 c234 c233 c235', _ucs2 x'c233', 5) from dual;
+select instr(_ucs2 x'c231 c232 c232 c233 c234 c233 c235', _ucs2 x'c233', 10) from dual;
+
+select instr(_ucs2 x'c231 c232 c233 c234 c232 c233 c235 c236 c237 c331 c332 c333 c232 c232 c233', _ucs2 x'c232 c233', 3, 1) from dual;
+select instr(_ucs2 x'c231 c232 c233 c234 c232 c233 c235 c236 c237 c331 c332 c333 c232 c232 c233', _ucs2 x'c232 c233', 3, 2) from dual;
+select instr(_ucs2 x'c231 c232 c233 c234 c232 c233 c235 c236 c237 c331 c332 c333 c232 c232 c233', _ucs2 x'c232 c233', -3, 2) from dual;
+
 
 -- testing SUBSTRING function
 select b,substring(b from 2 for 1) as u,char_length(substring(b from 2 for 1)) len from t012t1;
@@ -341,7 +362,6 @@ select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012t1;
 select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012t1;
 select * from t012t1 where trim(b)||trim(c) = 'abcdef';
 
-?ifMX
 select b||b,char_length(b||b) from t012ut1;
 select b||trim(b),char_length(b||trim(b)) from t012ut1;
 select trim(b)||trim(b),char_length(trim(b)||trim(b)) from t012ut1;
@@ -361,7 +381,6 @@ select b||c,char_length(b||c) from t012ut1;
 select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012ut1;
 select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012ut1;
 select * from t012ut1 where trim(b)||trim(c) = N'abcdef';
-?ifMX
 
 -- test BIT functions
 select bitand(1,1), bitor(1,1), bitxor(1,1), bitnot(1) from (values(1)) x(a);
@@ -456,6 +475,81 @@ select bitand(a,a) + bitor(a,a) + bitxor(a,a) from t012t3;
 select converttobits(bitand(a,a) + bitor(a,a) + bitxor(a,a)) from t012t3;
 select converttobits(bitnot(bitand(a,a) + bitor(a,a) + bitxor(a,a))) from t012t3;
 
+-- various operations involving number datatypes and string functions.
+select '1 ' || 12.34e3 from dual;
+select 12 || '1 ' || 12.34e3 from dual;
+select concat(_ucs2'2233', 12.34e3) from dual;
+select case when 1 = 1 then 12.3e34 else '1' end from dual;
+
+drop table if exists t012t4;
+
+create table t012t4 (
+c1 float,
+c2 numeric,
+c3 numeric(128),
+c4 numeric(10,5),
+c5 decimal,
+c6 decimal(18),
+c7 decimal(10,5)
+);
+insert into t012t4 values (1.23, 1.23, 1.23, 1.23, 1.23, 1.23, 1.23);
+select * from t012t4;
+
+select CONCAT(c1,'ZZZ') from t012t4;
+select CONCAT(c2,'ZZZ') from t012t4;
+select CONCAT(c3,'ZZZ') from t012t4;
+select CONCAT(c4,'ZZZ') from t012t4;
+select CONCAT(c5,'ZZZ') from t012t4;
+select CONCAT(c6,'ZZZ') from t012t4;
+select CONCAT(c7,'ZZZ') from t012t4;
+
+select LPAD(c1,2,'ZZZ') from t012t4;
+select LPAD(c2,2,'ZZZ') from t012t4;
+select LPAD(c3,2,'ZZZ') from t012t4;
+select LPAD(c4,2,'ZZZ') from t012t4;
+select LPAD(c5,2,'ZZZ') from t012t4;
+select LPAD(c6,2,'ZZZ') from t012t4;
+select LPAD(c7,2,'ZZZ') from t012t4;
+
+select LTRIM(c1) from t012t4;
+select LTRIM(c2) from t012t4;
+select LTRIM(c3) from t012t4;
+select LTRIM(c4) from t012t4;
+select LTRIM(c5) from t012t4;
+select LTRIM(c6) from t012t4;
+select LTRIM(c7) from t012t4;
+
+select OCTET_LENGTH(c1) from t012t4;
+select OCTET_LENGTH(c2) from t012t4;
+select OCTET_LENGTH(c3) from t012t4;
+select OCTET_LENGTH(c4) from t012t4;
+select OCTET_LENGTH(c5) from t012t4;
+select OCTET_LENGTH(c6) from t012t4;
+select OCTET_LENGTH(c7) from t012t4;
+
+select RPAD(c1,2,'ZZZ') from t012t4;
+select RPAD(c2,2,'ZZZ') from t012t4;
+select RPAD(c3,2,'ZZZ') from t012t4;
+select RPAD(c4,2,'ZZZ') from t012t4;
+select RPAD(c5,2,'ZZZ') from t012t4;
+select RPAD(c6,2,'ZZZ') from t012t4;
+select RPAD(c7,2,'ZZZ') from t012t4;
+
+select RTRIM(c1) from t012t4;
+select RTRIM(c2) from t012t4;
+select RTRIM(c3) from t012t4;
+select RTRIM(c4) from t012t4;
+select RTRIM(c5) from t012t4;
+select RTRIM(c6) from t012t4;
+select RTRIM(c7) from t012t4;
+
+select TRIM(c1) from t012t4;
+select TRIM(c2) from t012t4;
+select TRIM(c3) from t012t4;
+select TRIM(c4) from t012t4;
+select TRIM(c5) from t012t4;
+select TRIM(c6) from t012t4;
+select TRIM(c7) from t012t4;
 
 -- negative BIT function tests
 select bitand(1, 1.0) from (values(1)) x(a);
@@ -522,6 +616,7 @@ drop table t012ut1;
 ?ifMX
 
 drop table t012t3;
+drop table t012t4;
 
 log;
 

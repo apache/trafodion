@@ -23,7 +23,7 @@
 #
 
 #Check if Trafodion is up and operational
-sqcheck -f
+sqcheck -f > /dev/null
 sq_stat=$?
 if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
    DCS_START_CMD=${DCS_INSTALL_DIR}/bin/start-dcs.sh
@@ -33,13 +33,7 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
       exit 1;
    fi
 
-   if [ ! -e ${DCS_START_CMD} ]; then
-     echo "${DCS_START_CMD} not found."
-     exit 1;
-   fi
-
    echo "Starting the DCS environment now"
-   cd ${DCS_INSTALL_DIR}
    ${DCS_START_CMD}
    cds
 else

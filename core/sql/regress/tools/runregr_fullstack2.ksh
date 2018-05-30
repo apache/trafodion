@@ -291,6 +291,11 @@ if [ "$seabase" -ne 0 ]; then
   skipTheseTexts=
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST1" == "1" ]; then
+    skipTheseTests="$skipTheseTests $fullstack2CT"
+fi
+
 for i in $testfiles; do 
   skipthis=0
   for j in $skipTheseTests; do

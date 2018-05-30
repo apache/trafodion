@@ -426,10 +426,11 @@ PhysUnPackRows::codeGen(Generator *generator)
       ULng32 rowsetSize = 
           getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
       double  memoryLimitPerInstance =
-              ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB) * 1024 * 1024;
+        (ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB) * 1024 * 1024)/2; // At runtime (ExUnpackRowsTcb::ExUnpackRowsTcb) we allocate twice the size of the queue. So ensure it fits in to half the specified limit.
 
       rowsetSize = (rowsetSize < 1024 ? 1024 : rowsetSize);
-      double estimatedMemory = rowsetSize * unPackColsTupleLen;
+     
+      double estimatedMemory = (Int64)rowsetSize * (Int64)unPackColsTupleLen;
  
       if (estimatedMemory > memoryLimitPerInstance)
       {
@@ -466,6 +467,8 @@ PhysUnPackRows::codeGen(Generator *generator)
   //
   generator->removeAll(localMapTable);
 
+  //Turn off override of queue sizes for unpack. Once set they should remain.
+  generator->setMakeOnljLeftQueuesBig(FALSE);
   // Add the explain Information for this node to the EXPLAIN
   // Fragment.  Set the explainTuple pointer in the generator so
   // the parent of this node can get a handle on this explainTuple.

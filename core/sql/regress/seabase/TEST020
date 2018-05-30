@@ -41,6 +41,7 @@ obey TEST020(test_10_030916_9668);
 obey TEST020(test_LP_1360493);
 obey TEST020(trafodion_1700_and_1847);
 obey TEST020(trafodion_2247);
+obey TEST020(trafodion_2335);
 log;
 obey TEST020(clean_up);
 exit;
@@ -93,6 +94,7 @@ drop table test020t41 cascade;
 drop table test020t42 cascade;
 drop table test020t43 cascade;
 drop table test020t44;
+drop table test020t45;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -929,3 +931,39 @@ cqd traf_upsert_mode 'merge';
 upsert into test020t44 (a,c) values ('AAAA', 2);
 select * from test020t44;
 
+?section trafodion_2335
+--create seqence test020_seq;
+cqd traf_upsert_mode 'merge';
+cqd traf_aligned_row_format 'off' ;
+create table test020t45(a  largeint not null default unix_timestamp(),
+                        b  char(36) not null default uuid(),
+                        c  varchar(10) default to_char(sysdate,'YYYYMMDD'),
+                        --support sequence as default in next check-in
+                        --d  int not null default testi020_seq.nextval,
+                        e  int not null,
+                        f  int, primary key(e));
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+cqd traf_upsert_mode 'replace';
+delete from test020t45;
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+cqd traf_upsert_mode 'optimal';
+delete from test020t45;
+insert into test020t45(e,f) values(1,1),(2,2),(3,3);
+select sleep(1) from dual;
+upsert into test020t45(e,f) values(1,4);
+select count(distinct(a)),count(distinct(b)),count(distinct(c)) from test020t45 ;
+
+--negative tests
+--the function is not variable-free, so should fail
+create table test020t45(a  largeint not null default unix_timestamp(),
+                        b  varchar(10) default to_char(test020t45.c,'YYYYMMDD'),
+                        e  int );

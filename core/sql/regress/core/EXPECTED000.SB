@@ -1,8 +1,2 @@
->>
->>upsert into TRAFODION."_MD_".DEFAULTS
-+>     values
-+>     ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run', 0);
-
---- 1 row(s) inserted.
->>
+>>-- not logging since setup operations may already have been done
 >>log;

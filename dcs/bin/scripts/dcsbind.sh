@@ -95,10 +95,10 @@ fi
 
 function check_node {
 	 dcsEcho "checking node $1"
-    for myinterface in `pdsh -N -w $1 /sbin/ip link show|awk -F': ' '/^[0-9]+:.*/ {print $2;}'`; do
-		  ip_output=$(pdsh -N -w $1 /sbin/ip addr show $myinterface)
+    for myinterface in `$L_PDSH -w $1 /sbin/ip link show|cut -d: -f2- | cut -c2- | awk -F': ' '/^[0-9]+:.*/ {print $2;}'`; do
+		  ip_output=$($L_PDSH -w $1 /sbin/ip addr show $myinterface | cut -d: -f2-)
 		  if [ $gv_externalip_set -eq 1 -a $external_only -eq 1 ]; then
-				myifport=`echo "$ip_output" | grep $gv_float_external_ip`
+				myifport=`echo "$ip_output" | grep $gv_float_external_ip/`
 				status=$?
 				if [ $status -eq 0 ]; then
 					 tempinterface=`echo $gv_float_external_interface:$gv_port`
@@ -109,8 +109,8 @@ function check_node {
 						  unbindip=`echo "$myifport"|awk '{print $2}'`
 						  unbindlb=`echo "$myifport"|awk '{print $NF}'`
 						  dcsEcho "external ip $gv_float_external_ip is already in use on node $1 bound to interface $myinterface($unbindlb) - unbind..."
-						  dcsEcho "pdsh -S -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface label $unbindlb"
-						  pdsh -S -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface label $unbindlb
+						  dcsEcho "$L_PDSH -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface"
+						  $L_PDSH -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface
 
 						  status=$?
 						  if [ $status -ne 0 ]; then
@@ -132,7 +132,7 @@ function Check_VirtualIP_InUse_Unbind {
 	 
 	#check if external ip is in use
     dcsEcho "check all nodes $allMyNodes"
-    externalNodes=`pdsh $allMyNodes /sbin/ip addr show | grep $gv_float_external_ip | awk -F' ' '/^.+:[[:space:]]+.*/ {print $1;}' | cut -d':' -f1 | sed '/^$/d'`
+    externalNodes=`$L_PDSH $allMyNodes /sbin/ip addr show | grep -w $gv_float_external_ip | awk -F' ' '/^.+:[[:space:]]+.*/ {print $1;}' | cut -d':' -f1 | sed '/^$/d'`
     if [ ! -z "$externalNodes" ]; then
 		  dcsEcho "find possible node `echo $externalNodes`"
 		  external_only=1
@@ -153,7 +153,7 @@ if [ $gv_externalip_set -eq 1 ]; then
    bcast=`/sbin/ip addr show $gv_float_external_interface | grep "inet .*$gv_float_external_interface\$" | awk '{print $4}'`
    mask=`/sbin/ip addr show $gv_float_external_interface | grep "inet .*$gv_float_external_interface\$" | awk '{print $2}' | cut -d'/' -f2`
 	
-   /sbin/ip addr show| grep 'inet [^[:space:]]\+ '| awk '{print $2}'| sed -e 's/\/.*//'|grep $gv_float_external_ip > /dev/null
+   /sbin/ip addr show| grep 'inet [^[:space:]]\+ '| awk '{print $2}'| sed -e 's/\/.*//'|grep -w $gv_float_external_ip > /dev/null
    status=$?
    if [ $status -eq 0 ]; then
       dcsEcho "external ip is already bound on node $gv_myhostname - skip bind step"
@@ -231,7 +231,7 @@ fi
 }
 
 function configure_route_tables {
-    gv_default_interface=eth0
+    gv_default_interface=$(/sbin/route | grep default | awk '{print $(NF)}')
     bcast=`/sbin/ip addr show $gv_default_interface | grep "inet .*$gv_default_interface\$" | awk '{print $4}'`
     status=$?
     if [ $status -ne 0 ]; then
@@ -356,35 +356,65 @@ gv_float_internal_ip=`echo $gv_float_external_ip`
 dcsEcho "gv_float_external_ip :" $gv_float_external_ip
 dcsEcho "gv_float_internal_ip :" $gv_float_internal_ip
 
-#Check if AWS_CLOUD environment variable defined
-if [[ $AWS_CLOUD != "true" ]]; then
+if ! grep -q ^ec2 /sys/hypervisor/uuid 2>/dev/null ; then
+    # Non-AWS system
+    L_PDSH="pdsh -S"
     Check_VirtualIP_InUse_Unbind
     BindFloatIp
 else
-    awscmd="/usr/local/bin/aws ec2 --output text "
-    device_index_to_use=`echo $gv_float_external_interface | sed -e "s@eth\([0-9][0-9]*\)@\1@"`
+    # AWS system
+    awscmd="/usr/bin/aws ec2 --output text "
+    device_index_to_use=`echo $gv_float_external_interface | sed 's/[^0-9]//g'`
     dcsEcho "Using device index $device_index_to_use for $gv_float_external_interface"
 
+    # Test if .aws file exists on this node 
+    awstmp=`mktemp -t`
+    if [[ $? != 0 ]]; then
+       dcsEcho "Error while getting a temporary file for $awstmp. Exiting."
+       exit $gv_error
+    fi
+
+    $awscmd describe-instances --query 'Reservations[*].Instances[*].[InstanceId,PrivateDnsName]' >$awstmp 2>/dev/null
+    if [[ $? != 0 ]]; then
+       dcsEcho "Missing .aws config files on node $gv_myhostname"
+       rm -f $awstmp
+       exit $gv_error
+    fi
+     
+    rm -f $awstmp
     # Get instance Id of the instance
-    INSTANCEID=`$awscmd describe-instances |grep -i instances |grep -i $gv_myhostname |cut -f8`
+    INSTANCEID=`$awscmd describe-instances --query 'Reservations[*].Instances[*].[InstanceId,PrivateDnsName]' |grep -i -w $gv_myhostname |cut -f1`
     dcsEcho "Using Instance id $INSTANCEID"
 
     # Get the network interface configured for the vpc
-    NETWORKINTERFACE=`$awscmd describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
+    NETWORKINTERFACE=`$awscmd describe-network-interfaces --query 'NetworkInterfaces[*].[NetworkInterfaceId,PrivateIpAddress]' |grep -i -w $gv_float_internal_ip |cut -f1`
     dcsEcho "Using network interface $NETWORKINTERFACE"
 
     # Get the attachment id for the network interface
-    ATTACH_ID=`$awscmd describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
+    ATTACH_ID=`$awscmd describe-network-interfaces --network-interface-ids $NETWORKINTERFACE --filters Name=attachment.device-index,Values=$device_index_to_use --query 'NetworkInterfaces[*].[Attachment.AttachmentId]'`
     if [ ! -z "$ATTACH_ID" ]; then
         dcsEcho "Detaching attachment Id:" $ATTACH_ID
         $awscmd detach-network-interface --attachment-id $ATTACH_ID
+        network_interface_status=`$awscmd describe-network-interfaces --filters Name=attachment.attachment-id,Values=$ATTACH_ID --query NetworkInterfaces[*].[Status]`
+        while [[ "$network_interface_status" = "in-use" ]] 
+        do
+           dcsEcho "Attachment Status ... " $network_interface_status
+           sleep 10
+           network_interface_status=`$awscmd describe-network-interfaces --filters Name=attachment.attachment-id,Values=$ATTACH_ID --query NetworkInterfaces[*].[Status]`
+        done
     fi
 
     dcsEcho "Going to attach network interface $NETWORKINTERFACE to the another instance"
-    sleep 10
     NEWATTACH_ID=`$awscmd attach-network-interface --network-interface-id $NETWORKINTERFACE --instance-id $INSTANCEID --device-index $device_index_to_use`
     dcsEcho "New attachment Id " $NEWATTACH_ID
-    sleep 10
+    newattachment_status=`$awscmd describe-network-interfaces --filters Name=attachment.attachment-id,Values=$NEWATTACH_ID --query NetworkInterfaces[*].[Attachment.Status]`
+    while [[ "$newattachment_status" != "attached" ]] 
+    do
+     dcsEcho "New Attachment Status ... " $newattachment_status
+     sleep 10
+     newattachment_status=`$awscmd describe-network-interfaces --filters Name=attachment.attachment-id,Values=$NEWATTACH_ID --query NetworkInterfaces[*].[Attachment.Status]`
+    done
+
     configure_route_tables
 fi
 

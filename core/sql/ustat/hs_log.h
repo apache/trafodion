@@ -175,6 +175,7 @@ void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
               (retcode == 6007) || \
               (retcode == 4030) || \
               (retcode == 2053) || \
+              (retcode == 2024) || \
               (retcode == HS_WARNING)) \
             retcode = 0; \
         }

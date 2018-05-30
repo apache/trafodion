@@ -32,6 +32,9 @@
 //   perform initialize trafodion, upgrade library management
 // recommend that new procedures are added in alphabetic order
 
+// If adding a new library, be sure to update upgradeSeabaseLibmgr to
+// update jar/dll locations to the new version.
+
 // At this time there is no support to drop or change the signature of an
 // existing procedure.  Since customers may be using the procedures, it is
 // recommended that they not be dropped or changed - instead add new ones

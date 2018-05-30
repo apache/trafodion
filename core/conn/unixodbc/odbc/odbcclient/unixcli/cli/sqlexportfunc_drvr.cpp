@@ -45,7 +45,6 @@ SQLRETURN  SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
 } // extern "C"
 
 
-
 extern "C" 
 {
 SQLRETURN  SQL_API SQLFreeHandle(SQLSMALLINT HandleType, 
@@ -56,6 +55,475 @@ SQLRETURN  SQL_API SQLFreeHandle(SQLSMALLINT HandleType,
 }
 
 
+//Ansi Function
+extern "C"
+{
+SQLRETURN SQL_API SQLGetDiagRecA(SQLSMALLINT HandleType,
+                SQLHANDLE Handle,
+                SQLSMALLINT RecNumber,
+                SQLCHAR *Sqlstate,
+                SQLINTEGER *NativeError,
+                SQLCHAR *MessageText,
+                SQLSMALLINT BufferLength,
+                SQLSMALLINT *TextLength)
+{
+    return NeoGetDiagRec(HandleType, Handle, RecNumber, (SQLCHAR*)Sqlstate, NativeError, (SQLCHAR*)MessageText, BufferLength, TextLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLGetDiagFieldA(SQLSMALLINT HandleType,
+                SQLHANDLE Handle,
+                SQLSMALLINT RecNumber,
+                SQLSMALLINT DiagIdentifier,
+                SQLPOINTER DiagInfo,
+                SQLSMALLINT BufferLength,
+                SQLSMALLINT *StringLength)
+{
+    return NeoGetDiagField(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLConnectA(SQLHDBC ConnectionHandle,
+           SQLCHAR *ServerName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *UserName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *Authentication,
+           SQLSMALLINT NameLength3)
+{
+    return NeoConnect(ConnectionHandle, (SQLCHAR*)ServerName, NameLength1, (SQLCHAR*)UserName, NameLength2, (SQLCHAR*)Authentication, NameLength3, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetConnectAttrA(SQLHDBC ConnectionHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER StringLength)
+{
+    return NeoSetConnectAttr(ConnectionHandle, Attribute, Value, StringLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetConnectAttrA(SQLHDBC ConnectionHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLength)
+{
+    return NeoGetConnectAttr(ConnectionHandle, Attribute, Value, BufferLength, StringLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetStmtAttrA(SQLHSTMT StatementHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER StringLength)
+{
+    return NeoSetStmtAttr(StatementHandle, Attribute, Value, StringLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetStmtAttrA(SQLHSTMT StatementHandle,
+           SQLINTEGER Attribute,
+           SQLPOINTER Value,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLength)
+{
+    return NeoGetStmtAttr(StatementHandle, Attribute, Value, BufferLength, StringLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetInfoA(SQLHDBC ConnectionHandle,
+           SQLUSMALLINT InfoType,
+           SQLPOINTER InfoValuePtr,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *StringLengthPtr)
+{
+    return NeoGetInfo(ConnectionHandle, InfoType, InfoValuePtr, BufferLength, StringLengthPtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetDescFieldA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER ValuePtr,
+           SQLINTEGER BufferLength)
+{
+    return NeoSetDescField(DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetDescFieldA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER ValuePtr,
+           SQLINTEGER BufferLength,
+           SQLINTEGER *StringLengthPtr)
+{
+    return NeoGetDescField(DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength, StringLengthPtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetDescRecA(SQLHDESC DescriptorHandle,
+           SQLSMALLINT RecNumber,
+           SQLCHAR *Name,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *StringLengthPtr,
+           SQLSMALLINT *TypePtr,
+           SQLSMALLINT *SubTypePtr,
+           SQLLEN     *LengthPtr,
+           SQLSMALLINT *PrecisionPtr,
+           SQLSMALLINT *ScalePtr,
+           SQLSMALLINT *NullablePtr)
+{
+    return NeoGetDescRec(DescriptorHandle, RecNumber, Name, BufferLength, StringLengthPtr, TypePtr, SubTypePtr, LengthPtr,
+        PrecisionPtr, ScalePtr, NullablePtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLBrowseConnectA(
+    SQLHDBC            ConnectionHandle,
+    SQLCHAR           *InConnectionString,
+    SQLSMALLINT        StringLength1,
+    SQLCHAR           *OutConnectionString,
+    SQLSMALLINT        BufferLength,
+    SQLSMALLINT       *StringLength2Ptr)
+{
+    return NeoBrowseConnect(ConnectionHandle, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLDriverConnectA(SQLHDBC  ConnectionHandle,
+    SQLHWND            WindowHandle,
+    SQLCHAR           *InConnectionString,
+    SQLSMALLINT        StringLength1,
+    SQLCHAR           *OutConnectionString,
+    SQLSMALLINT        BufferLength,
+    SQLSMALLINT       *StringLength2Ptr,
+    SQLUSMALLINT       DriverCompletion)
+{
+    return NeoDriverConnect(ConnectionHandle, WindowHandle, InConnectionString, StringLength1,
+        OutConnectionString, BufferLength, StringLength2Ptr, DriverCompletion, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLPrepareA(SQLHSTMT StatementHandle,
+           SQLCHAR *StatementText,
+           SQLINTEGER TextLength)
+{
+    return NeoPrepare(StatementHandle, StatementText, TextLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLExecDirectA(SQLHSTMT StatementHandle,
+           SQLCHAR *StatementText,
+           SQLINTEGER TextLength)
+{
+    return NeoExecDirect(StatementHandle, (SQLCHAR*)StatementText, TextLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLDescribeColA(SQLHSTMT StatementHandle,
+           SQLUSMALLINT ColumnNumber,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *NameLengthPtr,
+           SQLSMALLINT *DataTypePtr,
+           SQLULEN *ColumnSizePtr,
+           SQLSMALLINT *DecimalDigitsPtr,
+           SQLSMALLINT *NullablePtr)
+{
+    return NeoDescribeCol(StatementHandle, ColumnNumber, ColumnName, BufferLength, NameLengthPtr, DataTypePtr,
+        ColumnSizePtr, DecimalDigitsPtr, NullablePtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLTablesA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *TableType,
+           SQLSMALLINT NameLength4)
+{
+    return NeoTables(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, TableName, NameLength3, TableType, NameLength4, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLColumnsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT NameLength4)
+{
+    return NeoColumns(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, TableName, NameLength3, ColumnName, NameLength4, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSpecialColumnsA(SQLHSTMT StatementHandle,
+           SQLUSMALLINT IdentifierType,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLUSMALLINT Scope,
+           SQLUSMALLINT Nullable)
+{
+    return NeoSpecialColumns(StatementHandle, IdentifierType, CatalogName, NameLength1, SchemaName, NameLength2, TableName, 
+           NameLength3, Scope, Nullable, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetTypeInfoA(SQLHSTMT StatementHandle,
+           SQLSMALLINT DataType)
+{
+    return NeoGetTypeInfo(StatementHandle, DataType, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLPrimaryKeysA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3)
+{
+    return NeoPrimaryKeys(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, TableName, NameLength3, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLStatisticsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *TableName,
+           SQLSMALLINT NameLength3,
+           SQLUSMALLINT Unique,
+           SQLUSMALLINT Reserved)
+{
+    return NeoStatistics(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, TableName, NameLength3,
+           Unique, Reserved, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLGetCursorNameA(SQLHSTMT StatementHandle,
+           SQLCHAR *CursorName,
+           SQLSMALLINT BufferLength,
+           SQLSMALLINT *NameLengthPtr)
+{
+    return NeoGetCursorName(StatementHandle, CursorName, BufferLength, NameLengthPtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLSetCursorNameA(SQLHSTMT StatementHandle,
+           SQLCHAR *CursorName,
+           SQLSMALLINT NameLength)
+{
+    return NeoSetCursorName(StatementHandle, CursorName, NameLength, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLNativeSqlA(
+    SQLHDBC            ConnectionHandle,
+    SQLCHAR           *InStatementText,
+    SQLINTEGER         TextLength1,
+    SQLCHAR           *OutStatementText,
+    SQLINTEGER         BufferLength,
+    SQLINTEGER           *TextLength2Ptr)
+{
+    return NeoNativeSql(ConnectionHandle, InStatementText, TextLength1, OutStatementText, BufferLength, TextLength2Ptr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLColAttributeA(SQLHSTMT StatementHandle,
+           SQLSMALLINT ColumnNumber,
+           SQLSMALLINT FieldIdentifier,
+           SQLPOINTER   CharacterAttributePtr,
+           SQLSMALLINT  BufferLength,
+           SQLSMALLINT *StringLengthPtr,
+           SQLLEN      *NumericAttributePtr)
+{
+    return NeoColAttribute(StatementHandle, ColumnNumber, FieldIdentifier, CharacterAttributePtr,
+           BufferLength, StringLengthPtr, NumericAttributePtr, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLProceduresA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *ProcName,
+           SQLSMALLINT NameLength3)
+{
+    return NeoProcedures(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, ProcName, NameLength3, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN  SQL_API SQLProcedureColumnsA(SQLHSTMT StatementHandle,
+           SQLCHAR *CatalogName,
+           SQLSMALLINT NameLength1,
+           SQLCHAR *SchemaName,
+           SQLSMALLINT NameLength2,
+           SQLCHAR *ProcName,
+           SQLSMALLINT NameLength3,
+           SQLCHAR *ColumnName,
+           SQLSMALLINT NameLength4)
+{
+    return NeoProcedureColumns(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2,
+               ProcName, NameLength3, ColumnName, NameLength4, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLColumnPrivilegesA(SQLHSTMT StatementHandle,
+     SQLCHAR* CatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR* SchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR* TableName,
+     SQLSMALLINT NameLength3,
+     SQLCHAR* ColumnName,
+     SQLSMALLINT NameLength4)
+{
+    return NeoColumnPrivileges(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2,
+            TableName, NameLength3, ColumnName, NameLength4, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLForeignKeysA(SQLHSTMT StatementHandle,
+     SQLCHAR *PKCatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR *PKSchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR *PKTableName,
+     SQLSMALLINT NameLength3,
+     SQLCHAR *FKCatalogName,
+     SQLSMALLINT NameLength4,
+     SQLCHAR *FKSchemaName,
+     SQLSMALLINT NameLength5,
+     SQLCHAR *FKTableName,
+     SQLSMALLINT NameLength6)
+{
+    return NeoForeignKeys(StatementHandle, PKCatalogName, NameLength1, PKSchemaName, NameLength2,
+                 PKTableName, NameLength3, FKCatalogName, NameLength4, FKSchemaName, NameLength5, FKTableName, NameLength6, false);
+}
+}
+
+
+extern "C"
+{
+SQLRETURN SQL_API SQLTablePrivilegesA(
+     SQLHSTMT StatementHandle,
+     SQLCHAR *CatalogName,
+     SQLSMALLINT NameLength1,
+     SQLCHAR *SchemaName,
+     SQLSMALLINT NameLength2,
+     SQLCHAR *TableName,
+     SQLSMALLINT NameLength3)
+{
+    return NeoTablePrivileges(StatementHandle, CatalogName, NameLength1, SchemaName, NameLength2, TableName, NameLength3, false);
+}
+}
+
+
+//Unicode Function
 extern "C" 
 {
 SQLRETURN SQL_API SQLGetDiagRecW(SQLSMALLINT HandleType, 

@@ -36,7 +36,7 @@ then
   exit $errCode
 fi
 
-"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_BACKUP_MASTERS}" stop master-backup
+"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_MASTERS}" stop master-backup
 
 master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master|tail -n 1`
 errCode=$?
@@ -49,12 +49,16 @@ then
   exit $errCode
 fi
 
-if [ "$master" == "" ] || [ "$master" == "$(hostname -f)" ] ; then
-  "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 
-else
+    activeMaster=$($DCS_INSTALL_DIR/bin/getActiveMaster.sh)
+
     remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} stop master"
-    ssh -q -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
-fi
+    L_PDSH="ssh -q -n $DCS_SSH_OPTS"
+
+    if [[ ! -z $activeMaster ]]; then
+        ${L_PDSH} $activeMaster $remote_cmd 2>&1 | sed "s/^/$activeMaster: /"
+    else
+        ${L_PDSH} $master $remote_cmd 2>&1 | sed "s/^/$master: /"
+    fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" stop server 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" stop zookeeper

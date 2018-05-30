@@ -65,9 +65,6 @@ class TMLIB : public JavaObjectInterfaceTM
         bool iv_localBegin;
         
         // JNI interface
-        char rminterface_classname[1024];
-        char hbasetxclient_classname[1024];
-
         enum JAVA_METHODS {
                //
                JM_CTOR= 0,
@@ -80,13 +77,19 @@ class TMLIB : public JavaObjectInterfaceTM
                JM_LAST
         };
 
-        JavaMethodInit TMLibJavaMethods_[JM_LAST];
-        static jclass  javaClass_;
-        jclass  iv_RMInterface_class;
-        bool iv_enableCleanupRMInterface;
+        static const char *hbasetxclient_classname;
+        static const char *rminterface_classname;
 
+        static jclass hbasetxclient_class;
+        static jclass RMInterface_class;
+
+        static JavaMethodInit *TMLibJavaMethods_;
+ 
+        static bool javaMethodsInitialized_; 
+        static bool enableCleanupRMInterface_;
+        // this mutex protects this class and JaveMethods_ initialization
+        static TM_Mutex *initMutex_;
         short setupJNI();
-
     public:
         TMLIB();
         ~TMLIB(){}  
@@ -110,18 +113,16 @@ class TMLIB : public JavaObjectInterfaceTM
         bool reinstate_tx(TM_Transid *pv_transid, bool pv_settx = false);
 
         void initialize();
-        bool is_initialized() {return iv_initialized;}
-        void is_initialized(bool pv_init) {iv_initialized = pv_init;}
 
-        void initJNI(); // Used only when a JNI connection is needed
+        int initJNI(); // Used only when a JNI connection is needed
 
         CtmSeqNum *seqNum() {return ip_seqNum;}
         bool localBegin() {return iv_localBegin;}
         void localBegin(bool pv_localBegin) {iv_localBegin=pv_localBegin;}
         int32 seqNum_blockSize() {return iv_seqNum_blockSize;}
         void seqNum_blockSize(int32 pv_blockSize) {iv_seqNum_blockSize=pv_blockSize;}
-        bool enableCleanupRMInterface() {return iv_enableCleanupRMInterface;}
-        void enableCleanupRMInterface(bool pv_bool) {iv_enableCleanupRMInterface=pv_bool;}
+        bool enableCleanupRMInterface() {return enableCleanupRMInterface_;}
+        void enableCleanupRMInterface(bool pv_bool) {enableCleanupRMInterface_=pv_bool;}
 
         bool open_tm(int pv_node, bool pv_startup = false);
         short send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp, 

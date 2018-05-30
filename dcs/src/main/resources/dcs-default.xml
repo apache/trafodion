@@ -334,6 +334,14 @@
     </description>
   </property>
   <property>
+    <name>dcs.server.user.program.statistics.cache.size</name>
+    <value>1</value>
+    <description>
+        Size of cache data to be published.
+        The default is 60.
+    </description>
+  </property>
+  <property>
     <name>dcs.server.user.program.statistics.limit.time</name>
     <value>60</value>
     <description>
@@ -386,4 +394,35 @@
         Timeout minutes between first and max times (6 default) DCS Server startup MXOSRVR.
     </description>
   </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.status</name>
+    <value>true</value>
+    <description>
+        If tcp keepalive is enabled. The default is true. Set false to disable.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.idletime</name>
+    <value>300</value>
+    <description>
+        Time in seconds for the interval between the last data packet sent and the first keepalive probe.
+        The default is 300.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.intervaltime</name>
+    <value>3</value>
+    <description>
+        Time in seconds for interval between two keepalive probes .
+        The default is 3.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.tcp.keepalive.retrycount</name>
+    <value>3</value>
+    <description>
+        The maximum number of keepalive probes TCP should send before dropping the connection.
+    </description>
+  </property>
+
 </configuration>

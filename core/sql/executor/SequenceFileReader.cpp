@@ -189,6 +189,13 @@ SFR_RetCode SequenceFileReader::open(const char* path)
   tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path);
 
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::open()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_OPEN_EXCEPTION;
+  }
+
   if (jresult != NULL)
   {
     logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::open()", jresult);
@@ -213,6 +220,13 @@ SFR_RetCode SequenceFileReader::getPosition(Int64& pos)
   tsRecentJMFromJNI = JavaMethods_[JM_GETPOS].jm_full_name;
   Int64 result = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_GETPOS].methodID);
 
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::getPosition()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_GETPOS_EXCEPTION;
+  }
+
   if (result == -1) 
   {
     logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::getPosition()", getLastError());
@@ -233,11 +247,18 @@ SFR_RetCode SequenceFileReader::seeknSync(Int64 pos)
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::seeknSync(%ld) called.", pos);
 
   if (initJNIEnv() != JOI_OK)
-     return SFR_ERROR_GETPOS_EXCEPTION;
+     return SFR_ERROR_SYNC_EXCEPTION;
 
   // String seeknSync(long);
   tsRecentJMFromJNI = JavaMethods_[JM_SYNC].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_SYNC].methodID, pos);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::seeknSync()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_SYNC_EXCEPTION;
+  }
 
   if (jresult != NULL)
   {
@@ -263,6 +284,13 @@ SFR_RetCode SequenceFileReader::isEOF(bool& isEOF)
   tsRecentJMFromJNI = JavaMethods_[JM_ISEOF].jm_full_name;
   bool result = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_ISEOF].methodID);
 
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::seeknSync()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_ISEOF_EXCEPTION;
+  }
+
   jenv_->PopLocalFrame(NULL);
   isEOF = result;
   return SFR_OK;
@@ -279,6 +307,12 @@ SFR_RetCode SequenceFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
   // java.lang.String fetchNextRow(long stopOffset);
   tsRecentJMFromJNI = JavaMethods_[JM_FETCHROW2].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID, stopOffset);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::fetchNextRow()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_FETCHROW_EXCEPTION;
+  }
   if (jresult==NULL && getLastError()) 
   {
     logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::fetchNextRow()", getLastError());
@@ -312,6 +346,12 @@ SFR_RetCode SequenceFileReader::close()
   // String close();
   tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileReader::close()");
+    jenv_->PopLocalFrame(NULL);
+    return SFR_ERROR_CLOSE_EXCEPTION;
+  }
 
   if (jresult!=NULL) 
   {
@@ -466,6 +506,13 @@ SFW_RetCode SequenceFileWriter::open(const char* path, SFW_CompType compression)
   tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path, compression);
 
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileWriter::open()");
+    jenv_->PopLocalFrame(NULL);
+    return SFW_ERROR_OPEN_EXCEPTION;
+  }
+
   if (jresult != NULL)
   {
     logError(CAT_SQL_HDFS_SEQ_FILE_WRITER, "SequenceFileWriter::open()", jresult);
@@ -495,6 +542,12 @@ SFW_RetCode SequenceFileWriter::write(const char* data)
   // String write(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_WRITE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_WRITE].methodID, js_data);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileWriter::write()");
+    jenv_->PopLocalFrame(NULL);
+    return SFW_ERROR_WRITE_EXCEPTION;
+  }
 
   if (jresult != NULL)
   {
@@ -551,6 +604,12 @@ SFW_RetCode SequenceFileWriter::close()
   // String close();
   tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(__FILE__, __LINE__, "SequenceFileWriter::close()");
+    jenv_->PopLocalFrame(NULL);
+    return SFW_ERROR_CLOSE_EXCEPTION;
+  }
 
   if (jresult != NULL)
   {

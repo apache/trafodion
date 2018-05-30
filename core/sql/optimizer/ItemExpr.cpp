@@ -875,6 +875,7 @@ NABoolean ItemExpr::doesExprEvaluateToConstant(NABoolean strict,
 		case ITM_CURRENT_USER:
 		case ITM_SESSION_USER:
 		case ITM_CURRENT_TIMESTAMP:
+		case ITM_UNIX_TIMESTAMP:
 		case ITM_GET_TRIGGERS_STATUS:
 		case ITM_UNIQUE_EXECUTE_ID:
 		case ITM_CURR_TRANSID:
@@ -967,6 +968,7 @@ NABoolean ItemExpr::referencesAHostVar() const
       case ITM_CURRENT_USER:
       case ITM_SESSION_USER:
       case ITM_CURRENT_TIMESTAMP:
+      case ITM_UNIX_TIMESTAMP:
       case ITM_GET_TRIGGERS_STATUS:
       case ITM_UNIQUE_EXECUTE_ID:
       case ITM_CURR_TRANSID:
@@ -7503,6 +7505,8 @@ const NAString BuiltinFunction::getText() const
       return "current_user";
     case ITM_DATEFORMAT:
       return "dateformat";
+    case ITM_DAYOFMONTH:
+      return "dayofmonth";
     case ITM_DAYOFWEEK:
       return "dayofweek";
     case ITM_DO_WHILE:
@@ -7757,6 +7761,9 @@ const NAString BuiltinFunction::getText() const
     
     case ITM_AGGR_GROUPING_FUNC:
       return "aggr_grouping";
+
+    case ITM_TO_TIMESTAMP:
+      return "to_timestamp";
 
     default:
       return "unknown func";
@@ -8212,7 +8219,7 @@ ItemExpr * PositionFunc::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) PositionFunc(child(0), child(1), child(2));
+    result = new (outHeap) PositionFunc(child(0), child(1), child(2), child(3));
   else
     result = derivedNode;
 

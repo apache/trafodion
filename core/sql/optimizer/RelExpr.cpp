@@ -2268,6 +2268,7 @@ Int32 WildCardOp::getArity() const
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
     case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+    case REL_ANY_EXTRACT:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2345,6 +2346,8 @@ const NAString WildCardOp::getText() const
       return "REL_ANY_HASH_JOIN";
     case REL_ANY_MERGE_JOIN:
       return "REL_ANY_MERGE_JOIN";
+    case REL_ANY_EXTRACT:
+      return "REL_ANY_EXTRACT";
     case REL_FORCE_ANY_SCAN:
       return "REL_FORCE_ANY_SCAN";
     case REL_FORCE_EXCHANGE:
@@ -6688,7 +6691,7 @@ void Join::rewriteNotInPredicate( ValueIdSet & origVidSet, ValueIdSet & newVidSe
 Intersect::Intersect(RelExpr *leftChild,
 	     RelExpr *rightChild)
 : RelExpr(REL_INTERSECT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Intersect::~Intersect() {}
 
@@ -6705,7 +6708,7 @@ const NAString Intersect::getText() const
 Except::Except(RelExpr *leftChild,
              RelExpr *rightChild)
 : RelExpr(REL_EXCEPT, leftChild, rightChild)
-{ setNonCacheable(); }
+{ }
 
 Except::~Except() {}
 
@@ -7812,6 +7815,8 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
   myLocalExpr += child(0).getGroupAttr()->getCharacteristicInputs();
   myLocalExpr += groupExpr();
   myLocalExpr += aggregateExpr();
+  // make sure we can still produce our characteristic outputs too
+  myLocalExpr += getGroupAttr()->getCharacteristicOutputs();
           
   // consider only preds that we can evaluate in the parent
   if (optionalMap)
@@ -7875,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the
@@ -8790,10 +8801,12 @@ void Scan::addIndexInfo()
               for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
                   NABoolean isASupersetIndex =
-                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex) &&
+                      possibleIndexJoins_[i]->indexPredicates_.contains(newIndexPredicates);
 
                   NABoolean isASubsetIndex =
-                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) &&
+                      newIndexPredicates.contains(possibleIndexJoins_[i]->indexPredicates_);
 
                   NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
 

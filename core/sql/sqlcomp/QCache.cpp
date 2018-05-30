@@ -2618,6 +2618,23 @@ void QCache::free_entries_with_QI_keys( Int32 pNumKeys, SQL_QIKEY * pSiKeyEntry 
             }
           }
         }
+
+       else if (siKeyType == COM_QI_USER_GRANT_ROLE)
+        {
+          for ( CollIndex ii = 0; ii < numPlanSecKeys && !found; ii ++ )
+          {
+            // If user ID's (subjects match)
+            if ( ((pSiKeyEntry[jj]).revokeKey.subject == planSet[ii].getSubjectHashValue()) ||
+                  qiSubjectMatchesRole(planSet[ii].getSubjectHashValue()) )
+            {
+               if ( ( pSiKeyEntry[jj]).revokeKey.object ==
+                       planSet[ii].getObjectHashValue() &&
+                    ( siKeyType == planSet[ii].getSecurityKeyType() ) )
+                 found = TRUE;
+            }
+          }
+        }
+
         else if (siKeyType != COM_QI_STATS_UPDATED)
         {
           // this key passed in as a param is for REVOKE so look

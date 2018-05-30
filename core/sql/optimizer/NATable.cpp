@@ -2299,10 +2299,10 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
          NAColumn* ncol = partColArray[c];
          const NAType* nt = ncol->getType();
          
-         if (rangePartBoundValues->getOperatorType() == ITM_ITEM_LIST ) 
-            val = (ItemExpr*) (*list) [c];
-          else
-            val = (ItemExpr*) (*list) [0];
+         val = (ItemExpr*) (*list) [c];
+
+         // make sure the value is the same type as the column
+         val = new(heap) Cast(val, nt->newCopy(heap));
 
          if (nt->isEncodingNeeded())
             encodeExpr = new(heap) CompEncode(val, !(partColArray.isAscending(c)));
@@ -2327,7 +2327,7 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                     (CmpCommon::diags()));
 
          totalEncodedKeyLength += encodedKeyLength;
-         totalEncodedKeyBuf += encodedKeyBuffer;
+         totalEncodedKeyBuf.append(encodedKeyBuffer, encodedKeyLength);
 
          if ( ok != 0 ) 
             return NULL;
@@ -5081,7 +5081,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        setHbaseDataFormatString(TRUE);
        break;
      }
-
    if (table_desc->tableDesc()->isInMemoryObject())
      {
        setInMemoryObjectDefn( TRUE );
@@ -6771,10 +6770,11 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
- if ((!isSeabaseTable() && !isHiveTable()) ||
-       !CmpCommon::context()->isAuthorizationEnabled() ||
-       isVolatileTable() ||
-       (ComUser::isRootUserID() && !isHiveTable()) )
+ if (!CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable() ||
+      (ComUser::isRootUserID() && 
+        (!isHiveTable() && !isHbaseCellTable() && 
+         !isHbaseRowTable() && !isHbaseMapTable()) ))
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6794,7 +6794,8 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
   {
-    if (isHiveTable())
+    if (isHiveTable() || isHbaseCellTable() ||
+        isHbaseRowTable() || isHbaseMapTable())
       readPrivileges();
     else
       privInfo_ = NULL;
@@ -7878,7 +7879,7 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
         << DgString0((char*)"ExpHbaseInterface::init()")
         << DgString1(getHbaseErrStr(-retcode))
         << DgInt0(-retcode)
-        << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr());
       delete ehi;
       return NULL;
     }
@@ -8554,7 +8555,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         // check if this hive schema exists in hiveMD
         LIST(NAText*) tblNames(naTableHeap);
         HVC_RetCode rc =
-          hiveMetaDB_->getClient()->getAllTables(schemaNameInt, tblNames);
+          HiveClient_JNI::getAllTables((NAHeap *)naTableHeap, schemaNameInt, tblNames);
         if ((rc != HVC_OK) && (rc != HVC_DONE))
           {
             *CmpCommon::diags()
@@ -9149,6 +9150,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
     NABoolean toRemove = FALSE;
     if ((currTable->isSeabaseTable()) ||
         (currTable->isHiveTable()) ||
+        (currTable->isHbaseCellTable()) ||
+        (currTable->isHbaseRowTable()) ||
         (currTable->hasExternalTable()))
       toRemove = TRUE;
     if (! toRemove)

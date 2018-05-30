@@ -80,7 +80,8 @@ public:
     OBJECT_IS_COLUMN,
     SUBJECT_IS_USER,
     SUBJECT_IS_ROLE,
-    OBJECT_IS_SPECIAL_ROLE
+    OBJECT_IS_SPECIAL_ROLE,
+    SUBJECT_IS_GRANT_ROLE
   };
 
   // QISpecialHashValues are used for security keys for special roles
@@ -136,7 +137,7 @@ public:
   static uint32_t generateHash(int32_t hashID);
 
   // For debugging purposes
-  void print() const ;
+  NAString print(Int32 subject, Int64 object);
 
 private:
   uint32_t subjectHash_ ;

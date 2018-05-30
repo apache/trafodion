@@ -237,8 +237,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	      executeImmediate("control session 'EXPLAIN' 'ON';");
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -250,8 +249,7 @@ short ExExeUtilDisplayExplainTcb::work()
 					 "__EXPL_STMT_NAME__");
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -274,8 +272,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	    
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -365,8 +362,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	    retcode = cliInterface()->fetchRowsPrologue(explainQuery_);
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -393,8 +389,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	    retcode = cliInterface()->fetch();
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -404,8 +399,7 @@ short ExExeUtilDisplayExplainTcb::work()
 		// no rows found.
 		// Either no explain information was available or statement
 		// was not found.
-		ComDiagsArea * da = getDiagsArea();
-		ExRaiseSqlError(getMyHeap(), &da,
+		ExRaiseSqlError(getMyHeap(), &diagsArea_,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
 				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
@@ -457,8 +451,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	    retcode = cliInterface()->fetch();
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -478,13 +471,11 @@ short ExExeUtilDisplayExplainTcb::work()
 	    if (rc != 0)	//means we got an EXE_EXPLAIN_BAD_DATA
 	      //or an error from getPtrAndLen()
 	      {
-		ComDiagsArea * da = getDiagsArea();
-		ExRaiseSqlError(getMyHeap(), &da,
+		ExRaiseSqlError(getMyHeap(), &diagsArea_,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
 				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
 				 (ExeErrorCode)EXE_NO_EXPLAIN_INFO));
-
 		pstate.step_ = HANDLE_ERROR_;
 	      }
 	    else
@@ -573,7 +564,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	    retcode = cliInterface()->fetchRowsEpilogue(explainQuery_);
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	      }
 	    
 	    retcode = 
@@ -581,7 +572,7 @@ short ExExeUtilDisplayExplainTcb::work()
 					   input_desc_, output_desc_);
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	      }
 
 	    if (exeUtilTdb().getStmtName() == NULL)
@@ -599,7 +590,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	      executeImmediate("control session reset 'EXPLAIN';");
 	    if (retcode < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 	      }
 	    
 	    if (pstate.step_ == FETCH_EPILOGUE_AND_RETURN_ERROR_)
@@ -3922,7 +3913,7 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 		// Explain will return 'info not available' in its
 		// description field.
 		// All other errors are reported.
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		if (exeUtilTdb().loadIfExists() &&
 		     getDiagsArea()->contains(-1055))
 		  {
@@ -3934,8 +3925,7 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 		    // Return error.
 		    // Do not do 'DROP_AND_ERROR' as we don't want to drop
 		    // an existing table.
-		    ComDiagsArea * da = getDiagsArea();
-		    ExRaiseSqlError(getHeap(), &da,
+		    ExRaiseSqlError(getHeap(), &diagsArea_,
 				    EXE_NO_EXPLAIN_INFO, NULL);
 
 		    step_ = ERROR_;
@@ -3992,8 +3982,7 @@ short ExExeUtilDisplayExplainComplexTcb::work()
 					 FALSE, exeUtilTdb().isVolatile());
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = DROP_AND_ERROR_;
 		break;
 	      }
@@ -4217,8 +4206,7 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 
 		if (cliRC < 0)
 		  {
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		    
+                    cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		    step_ = ERROR_;
 		    break;
 		  }
@@ -4234,8 +4222,7 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 
 		if (cliRC < 0)
 		  {
-		    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-		    
+                    cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		    step_ = ERROR_;
 		    break;
 		  }
@@ -4260,8 +4247,7 @@ short ExExeUtilDisplayExplainShowddlTcb::work()
 
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = ERROR_;
 		break;
 	      }

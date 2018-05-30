@@ -52,9 +52,17 @@ def run():
         if meta_current != "1":
             print 'Initialize trafodion, upgrade'
             run_cmd('echo "initialize trafodion, upgrade;" | sqlci > %s' % tmp_file)
+
+        # update system library procedures and functions
+        run_cmd('echo "initialize trafodion, upgrade library management;" | sqlci > %s' %tmp_file)
+        library_output = cmd_output('cat %s' % tmp_file)
+        if 'ERROR' in library_output:
+           err('Failed to initialize trafodion, upgrade library management:\n %s' % library_output)
+
     # other errors
     elif 'ERROR' in init_output:
         err('Failed to initialize trafodion:\n %s' % init_output)
+
 
     run_cmd('rm -rf %s' % tmp_file)
     if dbcfgs['ldap_security'] == 'Y':

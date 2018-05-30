@@ -266,7 +266,8 @@ CREATE VIEW TRAFODION.T135SCH.T135_V2_T1 AS
 
 *** ERROR[4082] Object TRAFODION.T135SCH.USER1_V1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>drop view user1_v1;
 
 *** ERROR[1389] Object TRAFODION.T135SCH.USER1_V1 does not exist in Trafodion.
@@ -347,7 +348,8 @@ End of MXCI Session
 
 *** ERROR[4082] Object TRAFODION.T135SCH.USER2_V1 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>drop view user2_v1;
 
 *** ERROR[1389] Object TRAFODION.T135SCH.USER2_V1 does not exist in Trafodion.
@@ -518,7 +520,8 @@ End of MXCI Session
 
 *** ERROR[4082] Object TRAFODION.T135SCH_USER3.T135_V1_USER3 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>exit;
 
@@ -691,7 +694,8 @@ CREATE TABLE TRAFODION.T135SCH.T135_T3
 
 *** ERROR[4082] Object TRAFODION.T135SCH_USER5.T135_V1_USER5 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>select * from t135_v1_user5;
 
 *** ERROR[4082] Object TRAFODION.T135SCH_USER5.T135_V1_USER5 does not exist or is inaccessible.
@@ -710,7 +714,8 @@ CREATE TABLE TRAFODION.T135SCH.T135_T3
 
 *** ERROR[4082] Object TRAFODION.T135SCH.T135_V1_USER5 does not exist or is inaccessible.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>select * from t135_v1_user5;
 
 *** ERROR[4082] Object TRAFODION.T135SCH.T135_V1_USER5 does not exist or is inaccessible.

@@ -29,6 +29,7 @@
 --  get roles for user
 --  get privileges for role
 --  get privileges for user
+--  get [tables | indexes | libraries | views] for user
 --
 -- Users and roles used
 --   t123_adminrole:   granted update and delete on games/teams
@@ -99,6 +100,7 @@ create table games
      game_time timestamp not null,
      game_location varchar(50) not null)
   ;
+create index games_visitor on games(visitor_team_number) no populate;
 
 create table players
   (player_number int not null,
@@ -110,6 +112,26 @@ create table players
   no partition;
 
 create sequence players_sequence;
+
+create view home_teams_games as
+  select t.team_number, g.game_number, g.game_time
+  from "TEAMS" t,
+       "GAMES" g
+  where t.team_number = g.home_team_number
+  order by 1, game_number, game_time;
+
+create view players_on_team as
+  select player_name, team_name
+  from teams t, players p
+  where p.player_team_number = t.team_number
+  order by t.team_name;
+
+create view games_by_player as
+  select player_name, game_time
+  from players_on_team p, games g, teams t
+  where p.player_name = t.team_name and
+        t.team_number = g.home_team_number
+  order by player_name, team_number;
 
 grant select on games to sql_user4;
 grant select on teams to sql_user4;
@@ -169,6 +191,30 @@ get privileges for role t123_plannerrole;
 get privileges for role t123_dummyrole;
 get privileges for role t123_ownerrole;
 get privileges for role "PUBLIC";
+
+get tables for user sql_user1;
+get tables for user sql_user2;
+get tables for user sql_user3;
+get tables for user sql_user4;
+get tables for user sql_user5;
+
+get indexes for user sql_user1;
+get indexes for user sql_user2;
+get indexes for user sql_user3;
+get indexes for user sql_user4;
+get indexes for user sql_user5;
+
+get views for user sql_user1;
+get views for user sql_user2;
+get views for user sql_user3;
+get views for user sql_user4;
+get views for user sql_user5;
+
+get libraries for user sql_user1;
+get libraries for user sql_user2;
+get libraries for user sql_user3;
+get libraries for user sql_user4;
+get libraries for user sql_user5;
 
 ?section other
 get privileges for user "PUBLIC";

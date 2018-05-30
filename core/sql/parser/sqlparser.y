@@ -1046,8 +1046,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_LIBRARY
 %token <tokval> TOK_SHOWDDL_SEQUENCE
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
-%token <tokval> TOK_SHOWLABEL           /* Tandem extension     reserved word */
-%token <tokval> TOK_SHOWLEAKS           /* Tandem extension non-reserved word*/
 %token <tokval> TOK_SYSDATE
 %token <tokval> TOK_SYSTIMESTAMP
 %token <tokval> TOK_TARGET
@@ -1908,8 +1906,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <tokval>    		sign
 %type <corrName>  		table_name
 %type <corrName>		special_table_name
-%type <corrName>  		label_name
-%type <corrName>  		extended_label_name
 %type <corrName>  		actual_table_name
 %type <corrName>  		actual_table_name2
 %type <corrName>		exception_table_name
@@ -2223,10 +2219,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <corrName>                optional_showddl_action_name_clause
 %type <longint>                 showddl_options_list
 %type <longint>                 showddl_options
-%type <longint>                 showlabel_options
 %type <describeType>            showcontrol_type
-%type <uint>                    showleaks_process
-%type <uint>                    showleaks_session
 //%type <uint>      		returning_clause
 %type <item>      		input_hostvar_expression
 %type <item>      		hostvar_expression
@@ -2589,6 +2582,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
+%type <item>      		datetime_misc_function_used_as_default
 %type <stringval>  		format_attributes
 %type <pElemDDL>  		optional_constraint_attributes
 %type <pElemDDL>  		constraint_attributes
@@ -5532,34 +5526,6 @@ actual_routine_action_name : routine_action_name
 		     $$->getQualifiedNameObj().setObjectNameSpace(COM_UUDF_ACTION_NAME);
 		  }
 
-/* type corrName */
-label_name : qualified_name
-		  {
-		     //
-		     // note that corrNameFromStrings()
-		     // contains code that deletes $1
-		     //
-		     $$ = corrNameFromStrings($1);
-		     if ($$ == NULL) YYABORT;
-		  }
-              | guardian_location_name
-	          {
-		    ComLocationName locName(*$1,
-		      ComLocationName::GUARDIAN_LOCATION_NAME_FORMAT);
-		    if (NOT locName.isValid())
-		      {
-			// The format of the specified location name
-			// $0~string0 is invalid.
-			*SqlParser_Diags << DgSqlCode(-3061)
-			  << DgString0($1->data());
-		      }
-		    delete $1;
-		    CorrName *result = new (PARSERHEAP()) CorrName();
-		    result->setLocationName(locName.
-		      getGuardianFullyQualifiedName());
-		    $$ = result;
-		  }
-
 /* 100% identical to "actual_table_name", actual_table_name2 is provided only
  * for use in the "select_list_item" productions.  By doing so, it
  * provides a way to get around a reduce/reduce problem that would
@@ -8245,6 +8211,8 @@ value_function :
 
      | datetime_misc_function
 
+     | datetime_misc_function_used_as_default
+
      | datetime_value_function
 
      | math_function
@@ -8735,6 +8703,30 @@ datetime_value_function : TOK_CURDATE '(' ')'
               }
 
 /* type item */
+datetime_misc_function_used_as_default:      TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
+                               {
+                                 NAString * ves= unicodeToChar
+                                   (ToTokvalPlusYYText(&$3)->yytext,
+                                   ToTokvalPlusYYText(&$3)->yyleng,
+                                   (CharInfo::CharSet) (
+                                          ComGetNameInterfaceCharSet() // CharInfo::UTF8
+                                          ),
+                                   PARSERHEAP()); 
+                                 //save the original text
+                                 NAString fullstr;
+                                 fullstr  += "TO_CHAR(";
+                                 //Column Reference will not be able to convert to NAString
+                                 //And it is not be allowed bo become default value, so no need to save original text 
+                                 if( ves != NULL) 
+                                 {
+                                   fullstr += *ves + ", '" +  *$5 + "')";
+                                 }
+                                 $$ = new (PARSERHEAP()) 
+                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
+                                 ((DateFormat *)$$)->setOriginalString(fullstr);
+                               }
+
+/* type item */
 datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				{
 				  $$ = new (PARSERHEAP())
@@ -8767,7 +8759,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_FIRSTDAYOFYEAR, $3);
 	}  
- 
+
+     | TOK_DAYOFMONTH '(' value_expression ')'
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_DAYOFMONTH, $3);
+        }
      | TOK_MONTHNAME '(' value_expression ')'
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_MONTHNAME, $3);
@@ -8800,12 +8796,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 						TRUE);
 				}
      | TOK_DAY '(' value_expression ')'
-                                {
-				  $$ = new(PARSERHEAP())
-				    ExtractOdbc(REC_DATE_DAY, $3,
-						TRUE);
-                                }
-     | TOK_DAYOFMONTH '(' value_expression ')'
                                 {
 				  $$ = new(PARSERHEAP())
 				    ExtractOdbc(REC_DATE_DAY, $3,
@@ -8851,11 +8841,6 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 
                                 $$ = new (PARSERHEAP()) Cast ($3, dt);
                                 }
-    | TOK_TO_CHAR '(' value_expression ',' character_string_literal ')'
-                               {
-				 $$ = new (PARSERHEAP()) 
-                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_CHAR);
-			       }
     | TOK_TO_CHAR '(' value_expression ')'
                                {
                                  $$ = new (PARSERHEAP()) DateFormat
@@ -9011,14 +8996,14 @@ string_function :
      /* POSITION(str-exp1 IN str-exp2)                    */
      | TOK_LOCATE '(' value_expression ',' value_expression ')'
         {
-           $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+          $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
         }
 
      /* ODBC extension: map LOCATE(str-exp1, str-exp2, START) to */
      /* POSITION(str-exp1 IN str-exp2)                    */
     | TOK_LOCATE '(' value_expression ',' value_expression ',' value_expression ')'
  	   {
- 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7); 
+ 	     $$ = new (PARSERHEAP()) PositionFunc($3,$5,$7,NULL); 
  	   }
 
      | TOK_LPAD '(' value_expression ',' value_expression ')'
@@ -9059,14 +9044,25 @@ string_function :
 
      | TOK_POSITION '(' value_expression TOK_IN value_expression ')'
                   {
-                     $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL);
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
                   }
 
      | TOK_INSTR '(' value_expression TOK_IN value_expression ')'
                   {
-		    CheckModeSpecial4;
+                    $$ = new (PARSERHEAP()) PositionFunc($3,$5,NULL,NULL);
+                  }
 
-                     $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL);
+     | TOK_INSTR '(' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,NULL,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,NULL);
+                  }
+     | TOK_INSTR '(' value_expression ',' value_expression ',' value_expression ',' value_expression ')'
+                  {
+                    $$ = new (PARSERHEAP()) PositionFunc($5,$3,$7,$9);
                   }
 
      /* ODBC extension */
@@ -11697,7 +11693,7 @@ blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -11733,7 +11729,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)100000;
+	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -15372,31 +15368,6 @@ exe_util_get_metadata_info :
            //gmi->setNoHeader(TRUE);
            $$ = gmi;          
         } 
-        | TOK_GET TOK_CURRENT_USER
-          optional_no_header_and_match_pattern_clause
-        {
-           NAString aus("USER");
-           NAString infoType("CURRENT_USER");
-           PtrPlaceHolder * pph = $3;
-           NAString * noHeader = (NAString *)pph->ptr1_;
-           CorrName cn("DUMMY");
-           NAString nas("");
-           ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) ExeUtilGetMetadataInfo
-              ( aus          // NAString &
-              , infoType     // NAString &
-              , nas          // NAString &
-              , nas   // NAString & objectType
-              , cn   // CorrName &
-              , NULL         // NAString * pattern
-              , FALSE        // NABoolean returnFullyQualNames
-              , FALSE        // NABoolean getVersion
-              , NULL         // NAString * param1
-              , PARSERHEAP() // CollHeap * oHeap
-              );
-            if (noHeader)
-              gmi->setNoHeader(TRUE);
-            $$ = gmi;
-          }
         | TOK_GET get_info_aus_clause obj_priv_identifier 
           TOK_FOR user_or_role authorization_identifier  
           optional_no_header_and_match_pattern_clause
@@ -15406,11 +15377,10 @@ exe_util_get_metadata_info :
             if (aus == "NONE")
               aus = "USER";
 
-            if ((*$3 != "CATALOGS"  ) && (*$3 != "INDEXES"   ) && 
-                (*$3 != "MVS"       ) && (*$3 != "MVGROUPS"  ) && 
+            if ((*$3 != "SEQUENCES" ) && (*$3 != "INDEXES"   ) && 
                 (*$3 != "PRIVILEGES") && (*$3 != "PROCEDURES") && 
-                (*$3 != "SCHEMAS"   ) && (*$3 != "SYNONYMS"  ) && 
-                (*$3 != "TABLES"    ) && (*$3 != "TRIGGERS"  ) &&
+                (*$3 != "FUNCTIONS" ) && (*$3 != "TABLE_MAPPING FUNCTIONS") && 
+                (*$3 != "SCHEMAS"   ) && (*$3 != "TABLES"  ) && 
                 (*$3 != "VIEWS"     ) && (*$3 != "USERS"     ) &&
                 (*$3 != "ROLES"     ) && (*$3 != "LIBRARIES"     )) YYERROR;
 
@@ -15421,11 +15391,6 @@ exe_util_get_metadata_info :
             NAString objType("USER");
             if ($5 == TOK_ROLE)
               objType = "ROLE";
-
-            /* Currently just support GET USERS FOR ROLE and GET PRIVILEGES FOR ROLE */
-
-            /* if ((objType == "ROLE") && 
-                (infoType != "USERS" && infoType != "PRIVILEGES")) YYERROR; */
 
             PtrPlaceHolder * pph      = $7;
             NAString * noHeader       = (NAString *)pph->ptr1_;
@@ -15448,68 +15413,82 @@ exe_util_get_metadata_info :
             $$ = gmi;
           }
 
-user_or_role : TOK_USER | TOK_ROLE
-
-exe_util_get_metadata_info :   
-          TOK_GET get_info_aus_clause 
-          TOK_PRIVILEGES TOK_ON object_identifier table_name 
-          optional_for_user_clause 
+        | TOK_GET get_info_aus_clause TOK_PRIVILEGES TOK_ON object_identifier 
+          table_name optional_for_user_clause 
           optional_no_header_and_match_pattern_clause
           {
-				 if ((*$5 != "TABLE") && (*$5 != "SCHEMA") &&
-				     (*$5 != "VIEW" ) && (*$5 != "MV") &&
-                                     (*$5 != "USER" ) && (*$5 != "ROLE"))
-				   {
-				     YYERROR;
-				   }
+            NAString aus("ALL");
 
-				 NAString aus(*$2);
-				 if (*$2 == "ALL")
-				   aus = "ALL";
-				 else if (*$2 == "USER")
-				   aus = "USER";
-                                 else if (*$2 == "NONE")
-                                   aus = "USER";
-				 else
-				   YYERROR;
+            NAString infoType("PRIVILEGES");
+            NABoolean getVersion = FALSE;
+            PtrPlaceHolder * pph = $8;
+            NAString * noHeader = (NAString *)pph->ptr1_;
+            NAString * pattern = (NAString *)pph->ptr2_;
+            NAString * fullyQualNames = (NAString *)pph->ptr3_;
 
-				 NAString infoType("PRIVILEGES");
-				 NABoolean getVersion = FALSE;
-				 PtrPlaceHolder * pph = $8;
-				 NAString * noHeader =
-				   (NAString *)pph->ptr1_;
-				 NAString * pattern =
-				   (NAString *)pph->ptr2_;
-				 NAString * fullyQualNames =
-				   (NAString *)pph->ptr3_;
+            NAString iof("ON");
+            NAString nas("");
+            ExeUtilGetMetadataInfo * gmi =
+              new (PARSERHEAP ()) ExeUtilGetMetadataInfo
+              (aus, infoType, iof, *$5, 
+               *$6, pattern,
+               (fullyQualNames ? TRUE : FALSE),
+               getVersion,
+               $7,
+               PARSERHEAP ());
+		 
+            if (noHeader)
+              gmi->setNoHeader(TRUE);
+            else if (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
+                 (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)))
+              {
+               gmi->setNoHeader(TRUE);
+              }
 
-				 NAString iof("ON");
-				 NAString nas("");
-				 ExeUtilGetMetadataInfo * gmi =
-				   new (PARSERHEAP ()) ExeUtilGetMetadataInfo
-				   (aus, infoType, iof, *$5, 
-				    *$6, pattern,
-				    (fullyQualNames ? TRUE : FALSE),
-				    getVersion,
-				    $7,
-				    PARSERHEAP ());
-				 
-				 if (noHeader)
-				   gmi->setNoHeader(TRUE);
-				 else if (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
-					       (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)))
-				   {
-				     gmi->setNoHeader(TRUE);
-				   }
+            $$ = gmi;
+          }
+    
+      // Created a special production for getting privileges on procedures
+      // TOK_PROCEDURE as an object_identifier causes lots of parser conflicts
+      | TOK_GET get_info_aus_clause TOK_PRIVILEGES TOK_ON TOK_PROCEDURE
+        table_name optional_for_user_clause
+        optional_no_header_and_match_pattern_clause
+        {
+          NAString aus("ALL");
+          NAString infoType("PRIVILEGES");
+          NABoolean getVersion = FALSE;
+          PtrPlaceHolder * pph = $8;
+          NAString * noHeader = (NAString *)pph->ptr1_;
+          NAString * pattern = (NAString *)pph->ptr2_;
+          NAString * fullyQualNames = (NAString *)pph->ptr3_;
 
-				 $$ = gmi;
-			       }
-     
+          NAString iof("ON");
+          NAString nas("");
+          NAString ptype("PROCEDURE");
+          ExeUtilGetMetadataInfo * gmi =
+            new (PARSERHEAP ()) ExeUtilGetMetadataInfo
+            (aus, infoType, iof, ptype,
+             *$6, pattern,
+             (fullyQualNames ? TRUE : FALSE),
+             getVersion,
+             $7,
+             PARSERHEAP ());
+
+          if (noHeader)
+            gmi->setNoHeader(TRUE);
+          else if (NOT ((CmpCommon::getDefault(IS_SQLCI) == DF_ON) ||
+                        (CmpCommon::getDefault(NVCI_PROCESS) == DF_ON)))
+            {
+              gmi->setNoHeader(TRUE);
+            }
+
+          $$ = gmi;
+        }
+
       | TOK_GET get_info_aus_clause TOK_COMPONENTS 
           optional_no_header_and_match_pattern_clause
           // GET COMPONENTS
           {
-            // exe_util_get_metadata_info ::= TOK_GET TOK_COMPONENTS
             NAString aus(*$2);
             if (*$2 == "ALL")
               aus = "ALL";
@@ -15551,8 +15530,6 @@ exe_util_get_metadata_info :
         | TOK_GET get_info_aus_clause TOK_COMPONENT TOK_PRIVILEGES 
           TOK_ON component_name optional_authid_clause 
           optional_drop_behavior optional_no_header_and_match_pattern_clause 
-          // GET [CURRENT_USER] COMPONENT PRIVILEGES ON <name> or
-          // GET [CURRENT_USER] COMPONENT PRIVILEGES ON <name> FOR <authid>
           {
             NAString aus(*$2);
             if (*$2 == "ALL")
@@ -15711,10 +15688,16 @@ exe_util_get_metadata_info :
            $$ = gmi;
          }
 
+user_or_role : TOK_USER | TOK_ROLE
+
 optional_for_user_clause : empty { $$ = NULL; }
+                         | TOK_FOR authorization_identifier
+                         {
+                           $$ = new(PARSERHEAP()) NAString(*$2);
+                         }
                          | TOK_FOR TOK_USER authorization_identifier
                          {
-			                  $$ = new(PARSERHEAP()) NAString(*$3);
+                           $$ = new(PARSERHEAP()) NAString(*$3);
                          }
 
 optional_authid_clause : empty { $$ = NULL; }
@@ -15732,16 +15715,14 @@ get_info_aus_clause :  empty { $$ = new (PARSERHEAP()) NAString("NONE"); }
                      | TOK_TEMP_TABLE   { $$ = new (PARSERHEAP()) NAString("TRIGTEMP");}
                      | TOK_SYSTEM { $$ = new (PARSERHEAP()) NAString("SYSTEM"); }
                      | TOK_EXTERNAL { $$ = new (PARSERHEAP()) NAString("EXTERNAL"); }
-                     | TOK_VERSION TOK_OF { $$ = new (PARSERHEAP()) NAString("VERSION_USER"); }
-                     | TOK_VERSION TOK_OF TOK_ALL { $$ = new (PARSERHEAP()) NAString("VERSION_ALL"); }
-                     | TOK_VERSION TOK_OF TOK_USER { $$ = new (PARSERHEAP()) NAString("VERSION_USER"); }
-                     | TOK_VERSION TOK_OF TOK_SYSTEM { $$ = new (PARSERHEAP()) NAString("VERSION_SYSTEM"); }
 
 object_identifier : 
                     TOK_CATALOG  { $$ = new (PARSERHEAP()) NAString("CATALOG"); }
                   | TOK_CONSTRAINT{ $$ = new (PARSERHEAP()) NAString("CONSTRAINT"); }
                   | TOK_INDEX    { $$ = new (PARSERHEAP()) NAString("INDEX"); }
                   | TOK_LIBRARY  { $$ = new (PARSERHEAP()) NAString("LIBRARY"); }
+                  | TOK_TABLE_MAPPING TOK_FUNCTION  { $$ = new (PARSERHEAP()) NAString("ROUTINE"); }
+                  | TOK_FUNCTION  { $$ = new (PARSERHEAP()) NAString("ROUTINE"); }
                   | TOK_MV       { $$ = new (PARSERHEAP()) NAString("MV"); }
                   | TOK_SCHEMA   { $$ = new (PARSERHEAP()) NAString("SCHEMA"); }
                   | TOK_SYNONYM  { $$ = new (PARSERHEAP()) NAString("SYNONYM"); }
@@ -16785,6 +16766,12 @@ exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE ta
 	       } 
 
 exe_util_hive_query : TOK_PROCESS TOK_HIVE TOK_STATEMENT QUOTED_STRING
+                      {
+                        $$ = new (PARSERHEAP()) 
+                          ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
+                                           PARSERHEAP());
+                      } 
+                    | TOK_PROCESS TOK_HIVE TOK_DDL QUOTED_STRING
                       {
                         $$ = new (PARSERHEAP()) 
                           ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
@@ -21798,6 +21785,11 @@ query_shape_control : shape_identifier
 				    {
 				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_LEAF_TABLE_MAPPING_UDF);
 				    }
+				  else if (*$1 == "FAST_EXTRACT" ||
+                                           *$1 == "HIVE_INSERT")
+				    {
+				      $$ = new (PARSERHEAP()) WildCardOp(REL_ANY_EXTRACT);
+				    }
 				  else if (*$1 == "FORWARD")
 				    {
 				      $$ = new (PARSERHEAP()) ScanForceWildCard();
@@ -22548,19 +22540,6 @@ showcontrol_type:
           | TOK_TABLE			{ $$ = Describe::CONTROL_TABLE_; }
           | TOK_SESSION			{ $$ = Describe::CONTROL_SESSION_; }
 
-/*showleaks process*/
-showleaks_process:
-	    TOK_ARKCMP                  { $$ = LeakDescribe::FLAG_ARKCMP; }
-          | TOK_BOTH                    { $$ = LeakDescribe::FLAG_BOTH; }
-          |                             { $$ = LeakDescribe::FLAG_SQLCI; }  
-
-/*session control*/
-showleaks_session:
-	    TOK_CONTINUE                { $$ = LeakDescribe::FLAG_CONTINUE; }
-          | TOK_OFF                     { $$ = LeakDescribe::FLAG_OFF; }
-          | TOK_PROMPT                  { $$ = LeakDescribe::FLAG_PROMPT; }
-	  |                             { $$ = 0; }
-	  
 /* type relx */
 show_statement:
 	     TOK_SHOWCONTROL showcontrol_type 
@@ -22695,7 +22674,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_,
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_,
 			          COM_TABLE_NAME, $3/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22711,7 +22690,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, 
 			          COM_TABLE_NAME, $4/*optional_sqlmp_option*/),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22724,7 +22703,7 @@ show_statement:
                  ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME);
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::SHOWDDL_, 
 			          COM_UDF_NAME, $4/*optional_showddl_options_lsit*/),
 			 REL_ROOT,
 			 new (PARSERHEAP())
@@ -22734,7 +22713,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22743,7 +22722,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::LONG_),
+                  Describe(SQLTEXT(), COM_USER_CLASS, *$3, Describe::SHOWDDL_),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP()))); 
@@ -22753,7 +22732,7 @@ show_statement:
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::LONG_, $3),
+                  Describe(SQLTEXT(), COM_ROLE_CLASS, *$2, Describe::SHOWDDL_, $3),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22776,7 +22755,7 @@ show_statement:
                    ->getQualifiedNameObj().setObjectNameSpace(COM_LIBRARY_NAME); 
   	         $$ = new (PARSERHEAP())
         		 RelRoot(new (PARSERHEAP()) 
-    	  		 Describe(SQLTEXT(), *$2, Describe::LONG_, COM_LIBRARY_NAME, $3),
+    	  		 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, COM_LIBRARY_NAME, $3),
   	  	           	 REL_ROOT, new (PARSERHEAP())
   			     ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
   	         delete $2; // CorrName * qualified_name
@@ -22786,7 +22765,7 @@ show_statement:
 	     {
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$2, Describe::LONG_, 
+			 Describe(SQLTEXT(), *$2, Describe::SHOWDDL_, 
 			          COM_SEQUENCE_GENERATOR_NAME, $3),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
@@ -22803,7 +22782,7 @@ show_statement:
 		 ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME); // SPJ
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, COM_UDF_NAME, $4),
+			 Describe(SQLTEXT(), *$3, Describe::SHOWDDL_, COM_UDF_NAME, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22820,72 +22799,6 @@ show_statement:
                delete $3; // CorrName * actual_routine_name of UDF or UUDF
                delete $4; // CorrName * actual_routine_name of routine action
              }
-         | TOK_SHOWLABEL extended_label_name showlabel_options
-             {
-               // Determine the ANSI namespace.
-               ExtendedQualName::SpecialTableType stt = $2->getSpecialType();
-               ComAnsiNameSpace labelAnsiNameSpace = COM_UNKNOWN_NAME;
-               switch (stt) 
-               {
-               case ExtendedQualName::NORMAL_TABLE:
-                 labelAnsiNameSpace = COM_TABLE_NAME;
-                 break;
-               case ExtendedQualName::INDEX_TABLE:
-                 labelAnsiNameSpace = COM_INDEX_NAME;
-                 break;
-               case ExtendedQualName::GHOST_TABLE:
-                 labelAnsiNameSpace = COM_GHOST_TABLE_NAME;
-                 break;
-               case ExtendedQualName::GHOST_INDEX_TABLE:
-                 labelAnsiNameSpace = COM_GHOST_INDEX_NAME;
-                 break;
-               case ExtendedQualName::ISP_TABLE:
-                 labelAnsiNameSpace = COM_TABLE_NAME;
-                 break;
-               case ExtendedQualName::IUD_LOG_TABLE:
-                 labelAnsiNameSpace = COM_IUD_LOG_TABLE_NAME;
-                 break;
-               case ExtendedQualName::RANGE_LOG_TABLE:
-                 labelAnsiNameSpace = COM_RANGE_LOG_TABLE_NAME;
-                 break;
-               case ExtendedQualName::TRIGTEMP_TABLE:
-                 labelAnsiNameSpace = COM_TRIGTEMP_TABLE_NAME;
-                 break;
-               default :
-                 // There should be a case for every special type that
-                 // is specified by the production extended_label_name.
-                 ABORT("internal logic error");
-                 break;
-               }
-
-	       $$ = new (PARSERHEAP())
-		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(),
-				  *$2/*label_name*/,
-				  Describe::LABEL_,
-				  labelAnsiNameSpace,
-				  $3 /*showlabel_options*/),
-			 REL_ROOT,	
-			 new (PARSERHEAP())
-			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
-	     }
-  //ACH        TOK_SHOWLIBRARY label_name 
-             
-	  | TOK_SHOWLEAKS showleaks_process showleaks_session
-	     {
-	       HEAPLOG_CONTROL(LOG_DELETE_ONLY);  
-	       CorrName c;
-	       $$ = new (PARSERHEAP())
-		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(),
-				  c,
-				  Describe::LEAKS_,
-				  COM_TABLE_NAME,
-				  ($2 | $3)),
-			 REL_ROOT,	
-			 new (PARSERHEAP())
-			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
-	     }  
 	   | TOK_INVOKE table_name
 	     {
 	       $$ = new (PARSERHEAP())
@@ -23392,12 +23305,20 @@ set_table_statement: TOK_SET TOK_TABLE set_table_name
                    {
 		     $$ = new (PARSERHEAP())   // a RESET 
 		       RelSetTimeout( *$3, NULL, $4, TRUE );
+                     *SqlParser_Diags << DgSqlCode(-4222)
+                                      << DgString0("SET TABLE TIMEOUT");
+                     yyerror("");
+                     YYABORT;
 		   }
                   |  TOK_SET TOK_TABLE set_table_name  // a timeout value
                      optional_stream TOK_TIMEOUT  timeout_value
                    {
 		     $$ = new (PARSERHEAP()) 
 		       RelSetTimeout( *$3, (ItemExpr *) $6 , $4);
+                     *SqlParser_Diags << DgSqlCode(-4222)
+                                      << DgString0("SET TABLE TIMEOUT");
+                     yyerror("");
+                     YYABORT;
 		   }
                      
 
@@ -23824,105 +23745,6 @@ optional_showddl_role_option : empty
      | ',' TOK_PRIVILEGES
            {
              $$ = 16;
-           }
-
-/* type longint */
-showlabel_options : empty
-           {
-              $$ = 0;
-           }
-     |  ',' TOK_DETAIL
-           {
-             $$ = 1;
-           }
-     |  ',' TOK_DETAIL ',' TOK_PRIVILEGES
-           {
-             $$ = 17;
-           }
-     |  ',' TOK_PRIVILEGES ',' TOK_DETAIL
-           {
-             $$ = 17;
-           }
-     |  ',' TOK_PRIVILEGES
-           {
-             $$ = 16;
-           }
-
-/* type corrName */
-// With the introduction of ghost objects we now use extended_label_name 
-// where we used to use two productions: optional_ansi_name_space label_name
-// Two productions is neater, but we do this to avoid introducing a 
-// shift/reduce conflict.
-extended_label_name : label_name
-           {
-             $$ = $1 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::NORMAL_TABLE);
-           }
-
-     |  TOK_INDEX label_name
-           {
-             $$ = $2 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::INDEX_TABLE);
-           }
-
-     |  TOK_TABLE label_name
-           {
-             $$ = $2 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::NORMAL_TABLE);
-           }
-
-     |  ghost TOK_INDEX label_name
-           {
-             $$ = $3 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::GHOST_INDEX_TABLE);
-           }
-  
-     |  ghost TOK_TABLE label_name
-           {
-             $$ = $3 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::GHOST_TABLE);
-           }
-  
-     |  TOK_PROCEDURE label_name
-           {
-             $$ = $2 /* label_name */;
-             $$->setSpecialType(ExtendedQualName::ISP_TABLE);
-           }
-     |  TOK_IUDLOG TOK_TABLE label_name
-           {
-              if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-              {
-                 $$ = $3 /* label_name */;
-                 $$->setSpecialType(ExtendedQualName::IUD_LOG_TABLE);
-              }
-              else
-              { 
-                 yyerror(""); YYERROR; /*internal syntax only!*/
-              }
-           }
-     |  TOK_RANGELOG TOK_TABLE label_name
-           {
-              if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-              {
-                 $$ = $3 /* label_name */;
-                 $$->setSpecialType(ExtendedQualName::RANGE_LOG_TABLE);
-              }
-              else
-              { 
-                 yyerror(""); YYERROR; /*internal syntax only!*/
-              }
-           }
-     |  TOK_TEMP_TABLE TOK_TABLE label_name
-           {
-              if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-              {
-                 $$ = $3 /* label_name */;
-                 $$->setSpecialType(ExtendedQualName::TRIGTEMP_TABLE);
-              }
-              else
-              { 
-                 yyerror(""); YYERROR; /*internal syntax only!*/
-              }
            }
 
 /* type pStmtDDL */
@@ -25800,6 +25622,15 @@ col_def_default_clause_argument : literal_negatable
                                        $1 /*datetime_value_function*/);
                                 }
 
+                      | datetime_misc_function_used_as_default
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLColDefault(
+                                       ElemDDLColDefault::COL_FUNCTION_DEFAULT);
+
+                                  ((ElemDDLColDefault *)$$)->setDefaultExprString( (const NAString &)((DateFormat*)$1)->getOriginalString());
+                                  ((ElemDDLColDefault *)$$)->setDefaultValueExpr($1);
+                                }
                       | builtin_function_user
                                 {
                                   $$ = new (PARSERHEAP())
@@ -34018,7 +33849,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SHAPE
                       | TOK_SHARE
                       | TOK_SHARED
-	              | TOK_SHOWLEAKS                  
                       | TOK_SIGNED
 		      | TOK_SINGLEDELTA // MV
 //                      | TOK_SIZE
@@ -34104,7 +33934,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_INVOKE
 		      | TOK_SHOWCONTROL
 		      | TOK_SHOWDDL
-		      | TOK_SHOWLABEL
 		      | TOK_SHOWPLAN
 		      | TOK_SHOWSHAPE
                       | TOK_SHOWSET 		      
@@ -34218,6 +34047,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_CONVERTTOHX_INTN
                       | TOK_COS
                       | TOK_COSH
+                      | TOK_CRC32
                       | TOK_CURDATE
                       | TOK_CURTIME
                       | TOK_D_RANK 
@@ -34267,6 +34097,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LTRIM
                       | TOK_MAVG
                       | TOK_MCOUNT
+                      | TOK_MD5
                       | TOK_MMAX
                       | TOK_MMIN
                       | TOK_MOD
@@ -34311,6 +34142,9 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RTRIM
                       | TOK_RVARIANCE
                       | TOK_SEQNUM
+                      | TOK_SHA
+                      | TOK_SHA1
+                      | TOK_SHA2
                       | TOK_SIGN
                       | TOK_SIN
                       | TOK_SINH
@@ -34336,7 +34170,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_UCASE
 			//                      | TOK_UPSERT
                       | TOK_UNIQUE_ID
-			//                      | TOK_UUID
+                      | TOK_UUID
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK

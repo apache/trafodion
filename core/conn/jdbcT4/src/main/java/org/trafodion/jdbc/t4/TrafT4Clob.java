@@ -42,13 +42,11 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 			this.data_ = "";
 	}
 
-	@Override
 	public void free() throws SQLException {
 		data_ = null;
 		isFreed_ = true;
 	}
 
-	@Override
 	public InputStream getAsciiStream() throws SQLException {
 		testAvailability();
 		if (data_ != null) {
@@ -58,7 +56,6 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return null;
 	}
 
-	@Override
 	public Reader getCharacterStream() throws SQLException {
 		testAvailability();
 
@@ -69,14 +66,12 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return null;
 	}
 
-	@Override
 	public Reader getCharacterStream(long pos, long length) throws SQLException {
 		testAvailability();
 
 		return new StringReader(getSubString(pos, (int) length));
 	}
 
-	@Override
 	public String getSubString(long pos, int length) throws SQLException {
 		testAvailability();
 
@@ -94,7 +89,6 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return ((String) data_).substring(beginIndex, endIndex);
 	}
 
-	@Override
 	public long length() throws SQLException {
 		testAvailability();
 		if (data_ != null) {
@@ -104,7 +98,6 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return 0;
 	}
 
-	@Override
 	public long position(String searchstr, long start) throws SQLException {
 		testAvailability();
 		//start--;
@@ -123,12 +116,10 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return pos;
 	}
 
-	@Override
 	public long position(Clob searchstr, long start) throws SQLException {
 		return position(searchstr.getSubString(1L, (int) searchstr.length()), start);
 	}
 
-	@Override
 	public OutputStream setAsciiStream(long pos) throws SQLException {
 		testAvailability();
 		if (pos < 1) {
@@ -139,14 +130,12 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return setOutputStream(pos);
 	}
 
-	@Override
 	public Writer setCharacterStream(long pos) throws SQLException {
 		testAvailability();
 		TrafT4Writer writer = new TrafT4Writer(this, pos);
 		return writer;
 	}
 
-	@Override
 	public int setString(long pos, String str) throws SQLException {
 		testAvailability();
 		int startIndex = (int) pos - 1;
@@ -168,7 +157,6 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return len;
 	}
 
-	@Override
 	public int setString(long pos, String str, int offset, int len) throws SQLException {
 		testAvailability();
 		int start = (int) pos - 1;
@@ -183,7 +171,6 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 		return len;
 	}
 
-	@Override
 	public void truncate(long len) throws SQLException {
 		testAvailability();
 		if (len > ((String) data_).length()) {

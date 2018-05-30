@@ -47,8 +47,8 @@ public:
 	long getPort() { return m_port; };
 
 	void closeTCPIPSession(int fnum);
-
-
+       KEEPALIVE_OPT keepaliveOpt;
+       void TCP_SetKeepalive(int socketnum, bool keepaliveStatus, int idleTime, int intervalTime, int retryCount);
 protected:
 	long m_port;
 	CURR_TCPIP_OPER m_tcpip_operation;

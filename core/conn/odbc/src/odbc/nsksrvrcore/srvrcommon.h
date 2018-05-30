@@ -385,8 +385,9 @@ odbc_SQLSrvr_ExtractLob_sme_(
   , /* In    */ odbc_SQLsrvr_ExtractLob_exc_ *exception_
   , /* In    */ IDL_long extractLobAPI
   , /* In    */ IDL_string lobHandle
-  , /* In    */ IDL_long_long &lobDataLen
-  , /* In    */ BYTE* &lobDataValue);
+  , /* In    */ IDL_long_long &lobLength
+  , /* Out   */ IDL_long_long &extractLen
+  , /* Out   */ BYTE *& extractData);
 
 extern "C" void
 odbc_SQLSrvr_UpdateLob_sme_(

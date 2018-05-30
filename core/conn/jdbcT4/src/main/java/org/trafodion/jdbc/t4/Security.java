@@ -161,7 +161,7 @@ class Security
          }catch (SecurityException se) {
              throw se;
          }catch (Exception e) {
-        	 throw new SecurityException(SecClientMsgKeys.FAILED_BUILDING_PWDKEY, null);
+            throw new SecurityException(e, SecClientMsgKeys.FAILED_BUILDING_PWDKEY, null);
          }finally {
             if (to_digest != null)
                to_digest = null;

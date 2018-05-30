@@ -106,9 +106,9 @@ image:{images}/winodbc_install_finished.jpg[Windows ODBC Install Finished Screen
 == Set Up ODBC Data Source
 
 1.  Start the Microsoft ODBC Administrator:
-* On Windows 7: *Start>All Programs>{project-name} ODBC _version_>MS ODBC Administrator*
-* On Windows 8: Right-click the *{project-name} ODBC _version_* icon on the desktop and select MS ODBC Administrator.
-* On Windows 10: Click the Windows icon in the menu bar. Type *Set up ODBC data sources (64-bit)*. Click on the found item. 
+* On Windows 7: *Start > All Programs>{project-name} ODBC _version_ > MS ODBC Administrator*
+* On Windows 8: *Start > Control Panel > System and Security > Administrative Tool > ODBC Data Sources (64-bit)*
+* On Windows 10: Click the Windows icon in the menu bar. Select *Control Panel*. Search for *Set up ODBC data sources (64-bit)*. Click on the found item. 
 +
 image:{images}/winodbc_admin_intro.jpg[Windows ODBC Admin Intro Screen]
 +
@@ -167,9 +167,9 @@ the {project-name} Database Connectivity Services (DCS) server over a TCP/IP net
 To enable compression in the ODBC driver or to change the compression setting, follow these steps:
 
 1.  Launch the MS ODBC Administrator. 
-* On Windows 7: *Start>All Programs>{project-name} ODBC _version_>MS ODBC Administrator*
-* On Windows 8: Right-click the *{project-name} ODBC _version_* icon on the desktop and select MS ODBC Administrator.
-* On Windows 10: Right-click the Windows icon in the menu bar. Select *Settings*. Search for *Set up ODBC data sources (64-bit)*. Click on the found item. 
+* On Windows 7: *Start > All Programs > {project-name} ODBC _version_ > MS ODBC Administrator*
+* On Windows 8: *Start > Control Panel > System and Security > Administrative Tools > ODBC Data Sources (64-bit)*
+* On Windows 10: Right-click the Windows icon in the menu bar. Select *Control Panel*. Search for *Set up ODBC data sources (64-bit)*. Click on the found item. 
 
 2.  In the *ODBC Data Source Administrator* dialog box, select the *User DSN* tab, select the name of your data source under 
 *User Data Sources*, and click *Configure*. If you did not create a data source, please refer to 
@@ -233,9 +233,9 @@ To reinstall the driver, we recommend that you fully remove your ODBC driver and
 [[win_odbc_uninstall]]
 == Uninstalling Windows ODBC Driver
 1.  Start to remove the ODBC driver:
-* On Windows 7: *Start>All Programs>{project-name} ODBC _version_>Remove TRAF ODBC _version_*
-* On Windows 8: Right-click the *{project-name} ODBC _version_* icon on the desktop and select *Remove TRAF ODBC _version_*.
-* On Windows 10: Right-click the Windows icon in the menu bar. Select *Control Panel*. Click on *Uninstall a program*. Locate *{project-name} ODBC64 _version_* and select it. Click on *Uninstall*.
+* On Windows 7: *Start > All Programs>{project-name} ODBC _version_ > Remove TRAF ODBC _version_*
+* On Windows 8: *Start* > *Control Panel* > *Uninstall a program* > Locate *{project-name} ODBC64 _version_* > *Uninstall {project-name} ODBC64 _version_*
+* On Windows 10: Right-click the Windows icon in the menu bar. Select *Control Panel*. Click on *Apps and features*. Locate *{project-name} ODBC64 _version_* and right-click it. Select *Uninstall*.
 
 2.  When the *Windows Installer* dialog box asks you if you want to uninstall this product, click *Yes*.
 3.  The *{project-name} ODBC _version_* dialog box displays the status and asks you to wait while `Windows configures {project-name} ODBC _version_` (that is, removes

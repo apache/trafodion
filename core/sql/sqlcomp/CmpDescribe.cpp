@@ -633,8 +633,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
               CmpCommon::diags()->clear();
 
               *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
-                                  << DgSchemaName(objQualName.getCatalogName() +
-                                                  "." +  objQualName.getSchemaName());
+                                  << DgString0(objQualName.getCatalogName())
+                                  << DgString1(objQualName.getSchemaName());
 
               rc = -1;
               goto finally;
@@ -824,8 +824,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       goto finally;  // we are done
     }
 
-  if (d->getFormat() >= Describe::CONTROL_FIRST_ &&
-      d->getFormat() <= Describe::CONTROL_LAST_)
+  if (d->getIsControl())
     {
       rc = CmpDescribeControl(d, outbuf, outbuflen, heap);
       goto finally;  // we are done
@@ -865,7 +864,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // For now, schemaName of HIVE indicates a hive table.
   // Need to fix that at a later time when multiple hive schemas are supported.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       (d->getDescribedTableName().isHive()) &&
       (!d->getDescribedTableName().isSpecialTable()))
     {
@@ -886,7 +885,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
   // check if this is an hbase/seabase table. If so, describe using info from NATable.
   if (((d->getFormat() == Describe::INVOKE_) ||
-       (d->getFormat() == Describe::LONG_)) &&
+       (d->getFormat() == Describe::SHOWDDL_)) &&
       ((d->getDescribedTableName().isHbase()) ||
        (d->getDescribedTableName().isSeabase())))
     {
@@ -2641,9 +2640,13 @@ short cmpDisplayColumn(const NAColumn *nac,
     defVal = "DEFAULT NULL";
   else if (nac->getDefaultClass() == COM_CURRENT_DEFAULT)
     defVal = "DEFAULT CURRENT";
+  else if (nac->getDefaultClass() == COM_CURRENT_UT_DEFAULT)
+    defVal = "DEFAULT CURRENT UNIXTIME";
   else if (nac->getDefaultClass() == COM_USER_FUNCTION_DEFAULT)
     defVal = "DEFAULT USER";
-  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT)
+  else if (nac->getDefaultClass() == COM_UUID_DEFAULT)
+    defVal = "DEFAULT UUID";
+  else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT || nac->getDefaultClass() == COM_FUNCTION_DEFINED_DEFAULT)
     {
       defVal = "DEFAULT ";
       
@@ -3004,6 +3007,16 @@ short CmpDescribeSeabaseTable (
   {
     if (type != 3)
       {
+        // For native HBase tables that have no objectUID, we can't check 
+        // user privileges so only allow operation for privileged users
+        if (isHbaseCellOrRowTable && 
+            !ComUser::isRootUserID() && !ComUser::currentUserHasRole(HBASE_ROLE_ID) &&
+            naTable->objectUid().get_value() == 0) 
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
         PrivMgrUserPrivs privs; 
         PrivMgrUserPrivs *pPrivInfo = NULL;
     
@@ -3025,7 +3038,7 @@ short CmpDescribeSeabaseTable (
                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
                return -1;
             }
- 
+           
             PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                              naTable->getObjectType(),
                                                              ComUser::getCurrentUser(),
@@ -3044,11 +3057,15 @@ short CmpDescribeSeabaseTable (
         else
           pPrivInfo = naTable->getPrivInfo();
 
-
-        if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
-                                     pPrivInfo,
-                                     COM_BASE_TABLE_OBJECT))
-          return -1;
+        // Allow object owners to perform showddl operation
+        if ((naTable->getOwner() != ComUser::getCurrentUser()) &&
+            !ComUser::currentUserHasRole(naTable->getOwner()))
+        {
+          if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                                       pPrivInfo,
+                                       COM_BASE_TABLE_OBJECT))
+            return -1;
+        }
       }
     }
   

@@ -26,6 +26,8 @@
 #include "Context.h"
 #include "jni.h"
 #include "HdfsClient_JNI.h"
+#include "org_trafodion_sql_HDFSClient.h"
+#include "ComCompressionInfo.h"
 
 // ===========================================================================
 // ===== Class HdfsScan
@@ -83,7 +85,7 @@ HDFS_Scan_RetCode HdfsScan::init()
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
     JavaMethods_[JM_CTOR      ].jm_signature = "()V";
     JavaMethods_[JM_SET_SCAN_RANGES].jm_name      = "setScanRanges";
-    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[Ljava/lang/String;[J[J[I)V";
+    JavaMethods_[JM_SET_SCAN_RANGES].jm_signature = "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;I[Ljava/lang/String;[J[J[I[S)V";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_name      = "trafHdfsRead";
     JavaMethods_[JM_TRAF_HDFS_READ].jm_signature = "()[I";
     JavaMethods_[JM_STOP].jm_name      = "stop";
@@ -106,7 +108,7 @@ char* HdfsScan::getErrorText(HDFS_Scan_RetCode errEnum)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
+HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize, int hdfsIoByteArraySizeInKB,
       HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::setScanRanges() called.");
@@ -138,10 +140,12 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_SET_SCAN_RANGES_PARAM;
    }
+   jint j_hdfsIoByteArraySizeInKB = hdfsIoByteArraySizeInKB;
    jobjectArray j_filenames = NULL;
    jlongArray j_offsets = NULL;
    jlongArray j_lens = NULL;  
    jintArray j_rangenums = NULL;
+   jshortArray j_compress = NULL;
    HdfsFileInfo *hdfo;
    jstring j_obj;
 
@@ -184,7 +188,11 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
              return hdfsScanRetCode;
           }
        }
-       long len = hdfo->getBytesToRead()+rangeTailIOSize;
+       long len;
+       if (hdfo->getBytesToRead() > (LONG_MAX-rangeTailIOSize))
+           len  = LONG_MAX;
+       else
+           len  = hdfo->getBytesToRead()+rangeTailIOSize;
        jenv_->SetLongArrayRegion(j_lens, rangeCount, 1, &len);
 
        if (j_rangenums == NULL) {
@@ -196,21 +204,31 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
        }
        jint tdbRangeNum = i;
        jenv_->SetIntArrayRegion(j_rangenums, rangeCount, 1, &tdbRangeNum);
+
+       if (j_compress == NULL) {
+          j_compress = jenv_->NewShortArray(numRanges);
+          if (jenv_->ExceptionCheck()) {
+             jenv_->PopLocalFrame(NULL);
+             return hdfsScanRetCode;
+          }
+       }
+       short compressionMethod = (short)hdfo->getCompressionMethod();
+       ex_assert(compressionMethod >= 0 && compressionMethod < ComCompressionInfo::SUPPORTED_COMPRESSIONS, "Illegal CompressionMethod Value");
+       jenv_->SetShortArrayRegion(j_compress, rangeCount, 1, &compressionMethod);
    } 
 
    if (hdfsStats_ != NULL)
        hdfsStats_->getHdfsTimer().start();
    tsRecentJMFromJNI = JavaMethods_[JM_SET_SCAN_RANGES].jm_full_name;
-   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_filenames, j_offsets, j_lens, j_rangenums);
+   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_SCAN_RANGES].methodID, j_buf1, j_buf2, j_hdfsIoByteArraySizeInKB, 
+                      j_filenames, j_offsets, j_lens, j_rangenums, j_compress);
    if (hdfsStats_ != NULL) {
       hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
       hdfsStats_->incHdfsCalls();
    }
 
    if (jenv_->ExceptionCheck()) {
-      getExceptionDetails();
-      logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-      logError(CAT_SQL_HDFS, "HdfsScan::setScanRanges()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HdfsScan::setScanRanges()");
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_SET_SCAN_RANGES_EXCEPTION;
    }
@@ -218,7 +236,7 @@ HDFS_Scan_RetCode HdfsScan::setScanRanges(ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScan
 }
 
 HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfsScanBuf,  int scanBufSize,
-      HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
+      int hdfsIoByteArraySizeInKB, HdfsFileInfoArray *hdfsFileInfoArray, Int32 beginRangeNum, Int32 numRanges, int rangeTailIOSize, 
       ExHdfsScanStats *hdfsStats, HDFS_Scan_RetCode &hdfsScanRetCode)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsScan::newInstance() called.");
@@ -230,7 +248,7 @@ HdfsScan *HdfsScan::newInstance(NAHeap *heap, ExHdfsScanTcb::HDFS_SCAN_BUF *hdfs
    if (hdfsScan != NULL) {
        hdfsScanRetCode = hdfsScan->init();
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
-          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, 
+          hdfsScanRetCode = hdfsScan->setScanRanges(hdfsScanBuf, scanBufSize, hdfsIoByteArraySizeInKB,  
                     hdfsFileInfoArray, beginRangeNum, numRanges, rangeTailIOSize); 
        if (hdfsScanRetCode == HDFS_SCAN_OK) 
           hdfsScan->setHdfsStats(hdfsStats);
@@ -260,9 +278,7 @@ HDFS_Scan_RetCode HdfsScan::trafHdfsRead(int retArray[], short arrayLen)
    }
 
    if (jenv_->ExceptionCheck()) {
-      getExceptionDetails();
-      logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-      logError(CAT_SQL_HDFS, "HdfsScan::setScanRanges()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HdfsScan::setScanRanges()");
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_TRAF_HDFS_READ_EXCEPTION;
    }
@@ -292,9 +308,7 @@ HDFS_Scan_RetCode HdfsScan::stop()
    }
 
    if (jenv_->ExceptionCheck()) {
-      getExceptionDetails();
-      logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-      logError(CAT_SQL_HDFS, "HdfsScan::stop()", getLastError());
+      getExceptionDetails(__FILE__, __LINE__, "HdfsScan::stop()");
       jenv_->PopLocalFrame(NULL);
       return HDFS_SCAN_ERROR_STOP_EXCEPTION;
    }
@@ -365,18 +379,20 @@ void HdfsClient::deleteHdfsFileInfo()
    hdfsFileInfo_ = NULL;
 }
 
-HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode)
+HdfsClient *HdfsClient::newInstance(NAHeap *heap, ExHdfsScanStats *hdfsStats, HDFS_Client_RetCode &retCode, int hdfsIoByteArraySizeInKB)
 {
    QRLogger::log(CAT_SQL_HDFS, LL_DEBUG, "HdfsClient::newInstance() called.");
 
-      if (initJNIEnv() != JOI_OK)
+   if (initJNIEnv() != JOI_OK)
      return NULL;
    retCode = HDFS_CLIENT_OK;
    HdfsClient *hdfsClient = new (heap) HdfsClient(heap);
    if (hdfsClient != NULL) {
        retCode = hdfsClient->init();
-       if (retCode == HDFS_CLIENT_OK) 
+       if (retCode == HDFS_CLIENT_OK) {
           hdfsClient->setHdfsStats(hdfsStats);
+          hdfsClient->setIoByteArraySize(hdfsIoByteArraySizeInKB);
+       }
        else {
           NADELETE(hdfsClient, HdfsClient, heap);
           hdfsClient = NULL;
@@ -513,9 +529,7 @@ HDFS_Client_RetCode HdfsClient::hdfsCreate(const char* path, NABoolean overwrite
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsCreate()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsCreate()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CREATE_EXCEPTION;
   }
@@ -557,9 +571,7 @@ HDFS_Client_RetCode HdfsClient::hdfsOpen(const char* path, NABoolean compress)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsOpen()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsOpen()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_OPEN_EXCEPTION;
   }
@@ -584,43 +596,50 @@ Int32 HdfsClient::hdfsWrite(const char* data, Int64 len, HDFS_Client_RetCode &hd
      hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
      return 0;
   }
-
-  //Write the requisite bytes into the file
-  jbyteArray jbArray = jenv_->NewByteArray( len);
-  if (!jbArray) {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM));
-    jenv_->PopLocalFrame(NULL);
-    hdfsClientRetcode =  HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM;
-    return 0;
-  }
-  jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
-
-  if (hdfsStats_ != NULL)
-     hdfsStats_->getHdfsTimer().start();
-
-  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
-  // Java method returns the cumulative bytes written
-  jint totalBytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
-
-  if (hdfsStats_ != NULL) {
-      hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
-      hdfsStats_->incHdfsCalls();
-  }
-  if (jenv_->ExceptionCheck())
+  Int64 lenRemain = len;
+  Int64 writeLen;
+  Int64 chunkLen = (ioByteArraySizeInKB_ > 0 ? ioByteArraySizeInKB_ * 1024 : 0);
+  Int64 offset = 0;
+  do 
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsWrite()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
-    return 0;
-  }
+     if ((chunkLen > 0) && (lenRemain > chunkLen))
+        writeLen = chunkLen; 
+     else
+        writeLen = lenRemain;
+     //Write the requisite bytes into the file
+     jbyteArray jbArray = jenv_->NewByteArray(writeLen);
+     if (!jbArray) {
+        GetCliGlobals()->setJniErrorStr(getErrorText(HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM));
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode =  HDFS_CLIENT_ERROR_HDFS_WRITE_PARAM;
+        return 0;
+     }
+     jenv_->SetByteArrayRegion(jbArray, 0, writeLen, (const jbyte*)(data+offset));
 
+     if (hdfsStats_ != NULL)
+         hdfsStats_->getHdfsTimer().start();
+
+     tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
+     // Java method returns the cumulative bytes written
+     jint totalBytesWritten = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, jbArray);
+
+     if (hdfsStats_ != NULL) {
+         hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
+         hdfsStats_->incHdfsCalls();
+     }
+     if (jenv_->ExceptionCheck())
+     {
+        getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsWrite()");
+        jenv_->PopLocalFrame(NULL);
+        hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_WRITE_EXCEPTION;
+        return 0;
+     }
+     lenRemain -= writeLen;
+     offset += writeLen;
+  } while (lenRemain > 0);
   jenv_->PopLocalFrame(NULL);
   hdfsClientRetcode = HDFS_CLIENT_OK;
-  Int32 bytesWritten = totalBytesWritten - totalBytesWritten_;
-  totalBytesWritten_ = totalBytesWritten;
-  return bytesWritten; 
+  return len; 
 }
 
 Int32 HdfsClient::hdfsRead(const char* data, Int64 len, HDFS_Client_RetCode &hdfsClientRetcode)
@@ -650,9 +669,7 @@ Int32 HdfsClient::hdfsRead(const char* data, Int64 len, HDFS_Client_RetCode &hdf
   }
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsRead()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsRead()");
     jenv_->PopLocalFrame(NULL);
     hdfsClientRetcode = HDFS_CLIENT_ERROR_HDFS_READ_EXCEPTION;
     return 0;
@@ -681,9 +698,7 @@ HDFS_Client_RetCode HdfsClient::hdfsClose()
   }
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsClose()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsClose()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CLOSE_EXCEPTION;
   }
@@ -719,9 +734,7 @@ HDFS_Client_RetCode HdfsClient::hdfsCleanUnloadPath( const NAString& uldPath)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsCleanUnloadPath()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsCleanUnloadPath()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
@@ -760,9 +773,7 @@ HDFS_Client_RetCode HdfsClient::hdfsMergeFiles( const NAString& srcPath,
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsMergeFiles()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsMergeFiles()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
@@ -799,9 +810,7 @@ HDFS_Client_RetCode HdfsClient::hdfsDeletePath( const NAString& delPath)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsDeletePath()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsDeletePath()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_DELETE_PATH_EXCEPTION;
   }
@@ -836,9 +845,7 @@ HDFS_Client_RetCode HdfsClient::hdfsListDirectory(const char *pathStr, HDFS_File
           js_pathStr, jniObj);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsListDirectory()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsListDirectory()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_LIST_DIR_EXCEPTION;
   } 
@@ -868,9 +875,7 @@ HDFS_Client_RetCode HdfsClient::hdfsExists( const NAString& uldPath, NABoolean &
   exist = jresult;
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails();
-    logError(CAT_SQL_HDFS, __FILE__, __LINE__);
-    logError(CAT_SQL_HDFS, "HdfsClient::hdfsExists()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsExists()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HDFS_EXISTS_EXCEPTION;
   } 
@@ -901,9 +906,7 @@ HDFS_Client_RetCode HdfsClient::getHiveTableMaxModificationTs( Int64& maxModific
   jenv_->DeleteLocalRef(js_tableDirPaths);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HDFSClientI::getHiveTableMaxModificationTs()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::getHiveTableMaxModificationTS()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_HIVE_TBL_MAX_MODIFICATION_TS_EXCEPTION;
   }
@@ -929,9 +932,7 @@ HDFS_Client_RetCode HdfsClient::getFsDefaultName(char* buf, int buf_len)
                               JavaMethods_[JM_GET_FS_DEFAULT_NAME].methodID);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HDFSClient_JNI::getFsDefaultName()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::getFsDefaultName()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_GET_FS_DEFAULT_NAME_EXCEPTION;
   }
@@ -969,9 +970,7 @@ HDFS_Client_RetCode HdfsClient::hdfsCreateDirectory(const NAString &dirName)
                               JavaMethods_[JM_HDFS_CREATE_DIRECTORY].methodID, js_dirName);
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(jenv_);
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HDFSClient_JNI::hdfsCreateDirectory()", getLastError());
+    getExceptionDetails(__FILE__, __LINE__, "HdfsClient::hdfsCreateDirectory()");
     jenv_->PopLocalFrame(NULL);
     return HDFS_CLIENT_ERROR_CREATE_DIRECTORY_EXCEPTION;
   }
@@ -1014,16 +1013,22 @@ HDFS_Client_RetCode HdfsClient::setHdfsFileInfo(JNIEnv *jenv, jint numFiles, jin
    hdfsFileInfo->mLastAccess = accessTime;
    jint tempLen = jenv->GetStringUTFLength(filename);
    hdfsFileInfo->mName = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mName, jenv->GetStringUTFChars(filename, NULL), tempLen);
+   const char *temp = jenv->GetStringUTFChars(filename, NULL); 
+   strncpy(hdfsFileInfo->mName, temp, tempLen);
    hdfsFileInfo->mName[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(filename, temp); 
    tempLen = jenv->GetStringUTFLength(owner);
    hdfsFileInfo->mOwner = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mOwner, jenv->GetStringUTFChars(owner, NULL), tempLen);
+   temp = jenv->GetStringUTFChars(owner, NULL);
+   strncpy(hdfsFileInfo->mOwner, temp, tempLen);
    hdfsFileInfo->mOwner[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(owner, temp); 
    tempLen = jenv->GetStringUTFLength(group);
    hdfsFileInfo->mGroup = new (getHeap()) char[tempLen+1];   
-   strncpy(hdfsFileInfo->mGroup, jenv->GetStringUTFChars(group, NULL), tempLen);
+   temp = jenv->GetStringUTFChars(group, NULL); 
+   strncpy(hdfsFileInfo->mGroup, temp, tempLen);
    hdfsFileInfo->mGroup[tempLen] = '\0';
+   jenv_->ReleaseStringUTFChars(group, temp); 
    return HDFS_CLIENT_OK;
 }
 
@@ -1042,6 +1047,22 @@ jint JNICALL Java_org_trafodion_sql_HDFSClient_sendFileStatus
    retcode =  hdfsClient->setHdfsFileInfo(jenv, numFiles, fileNo, isDir, filename, modTime, len, numReplicas, blockSize, owner,
             group, permissions, accessTime);
    return (jint) retcode;
+}
+
+JNIEXPORT jint JNICALL Java_org_trafodion_sql_HDFSClient_copyToByteBuffer
+  (JNIEnv *jenv, jobject j_obj, jobject j_buf, jint offset, jbyteArray j_bufArray, jint copyLen)
+{
+   void *bufBacking;
+   
+   bufBacking =  jenv->GetDirectBufferAddress(j_buf);
+   if (bufBacking == NULL)
+      return -1;
+   jlong capacity = jenv->GetDirectBufferCapacity(j_buf);
+   jbyte *byteBufferAddr = (jbyte *)bufBacking + offset; 
+   if ((offset + copyLen) > capacity)
+      return -2; 
+   jenv->GetByteArrayRegion(j_bufArray, 0, copyLen, byteBufferAddr);
+   return 0;
 }
 
 #ifdef __cplusplus

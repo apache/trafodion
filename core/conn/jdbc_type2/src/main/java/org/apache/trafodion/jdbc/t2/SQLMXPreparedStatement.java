@@ -26,6 +26,7 @@ package org.apache.trafodion.jdbc.t2;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1953,11 +1954,12 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			}
 
 
-			byte[] tmpArray = new byte[x.length];
-			System.arraycopy(x, 0, tmpArray, 0, x.length);
+			//byte[] tmpArray = new byte[x.length];
+			//System.arraycopy(x, 0, tmpArray, 0, x.length);
 
 			validateSetInvocation(parameterIndex);
 			dataType = inputDesc_[parameterIndex - 1].dataType_;
+            int dataCharSet = inputDesc_[parameterIndex - 1].sqlCharset_;
 			switch (dataType) {
 			case Types.BLOB:
 				long dataLocator = connection_.getDataLocator(
@@ -1969,12 +1971,24 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				isAnyLob_ = true;
 				paramContainer_.setLong(parameterIndex, dataLocator);
 				break;
+            case Types.CHAR:
+            case Types.VARCHAR:
+            case Types.LONGVARCHAR:
+                String charSet = SQLMXDesc.SQLCHARSETSTRING_ISO88591;
+                if (dataCharSet == SQLMXDesc.SQLCHARSETCODE_UCS2)
+                    charSet = "UTF-16LE";
+                try {
+                    x = (new String(x)).getBytes(charSet);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                    throw Messages.createSQLException(connection_.locale_, "unsupported_encoding",
+                            new Object[] { charSet });
+                }
+                paramContainer_.setObject(parameterIndex, x);
+                break;
 			case Types.DATE:
 			case Types.TIME:
 			case Types.TIMESTAMP:
-			case Types.CHAR:
-			case Types.VARCHAR:
-			case Types.LONGVARCHAR:
 			case Types.BINARY:
 			case Types.VARBINARY:
 			case Types.LONGVARBINARY:

@@ -63,6 +63,9 @@ drop role t141_role1;
 drop role t141_role2;
 drop role t141_role3;
 
+--revoke component privilege "CREATE" on sql_operations from user2_role;
+--revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
 revoke select on "_PRIVMGR_MD_".object_Privileges from t141_role_md;
 revoke select on "_PRIVMGR_MD_".column_Privileges from t141_role_md;
 revoke select on "_MD_".objects from t141_role_md;

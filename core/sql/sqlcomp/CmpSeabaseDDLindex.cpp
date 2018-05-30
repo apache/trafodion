@@ -388,6 +388,14 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       i++;
     }
 
+  if (keyLength > MAX_HBASE_ROWKEY_LEN )
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ROWKEY_LEN_TOO_LARGE)
+                              << DgInt0(keyLength)
+                              << DgInt1(MAX_HBASE_ROWKEY_LEN);
+      return -1;
+    }
+
   return 0;
 }
 

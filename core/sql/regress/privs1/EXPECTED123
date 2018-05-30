@@ -93,6 +93,9 @@ SHOW
 +>  ;
 
 --- SQL operation complete.
+>>create index games_visitor on games(visitor_team_number) no populate;
+
+--- SQL operation complete.
 >>
 >>create table players
 +>  (player_number int not null,
@@ -106,6 +109,32 @@ SHOW
 --- SQL operation complete.
 >>
 >>create sequence players_sequence;
+
+--- SQL operation complete.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from players_on_team p, games g, teams t
++>  where p.player_name = t.team_name and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
 
 --- SQL operation complete.
 >>
@@ -262,6 +291,8 @@ SQL_USER5
 Privileges for User SQL_USER1
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 --DU---    TRAFODION.T123SCH.GAMES
 -I-----    TRAFODION.T123SCH.GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
@@ -280,6 +311,8 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for User SQL_USER2
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 -I-----    TRAFODION.T123SCH.GAMES
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
@@ -295,6 +328,8 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for User SQL_USER3
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -307,6 +342,8 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for User SQL_USER4
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.GAMES
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
@@ -321,11 +358,16 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for User SQL_USER5
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 SIDU-R-    TRAFODION.T123SCH.GAMES
+S----R-    TRAFODION.T123SCH.GAMES_BY_PLAYER
+S----R-    TRAFODION.T123SCH.HOME_TEAMS_GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S----R-    TRAFODION.T123SCH.PLAYERS_ON_TEAM
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
@@ -364,7 +406,10 @@ Privileges for Role T123_OWNERROLE
 ==================================
 
 SIDU-R-    TRAFODION.T123SCH.GAMES
+S----R-    TRAFODION.T123SCH.GAMES_BY_PLAYER
+S----R-    TRAFODION.T123SCH.HOME_TEAMS_GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S----R-    TRAFODION.T123SCH.PLAYERS_ON_TEAM
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
@@ -377,11 +422,171 @@ SIDU-R-    TRAFODION.T123SCH.TEAMS
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+Tables for User SQL_USER1
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user2;
+
+Tables for User SQL_USER2
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user3;
+
+Tables for User SQL_USER3
+=========================
+
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user4;
+
+Tables for User SQL_USER4
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user5;
+
+Tables for User SQL_USER5
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".SB_HISTOGRAMS
+TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
+TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>
+>>get indexes for user sql_user1;
+
+Indexes for User SQL_USER1
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user2;
+
+Indexes for User SQL_USER2
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user3;
+
+--- SQL operation complete.
+>>get indexes for user sql_user4;
+
+Indexes for User SQL_USER4
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user5;
+
+Indexes for User SQL_USER5
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>
+>>get views for user sql_user1;
+
+--- SQL operation complete.
+>>get views for user sql_user2;
+
+--- SQL operation complete.
+>>get views for user sql_user3;
+
+--- SQL operation complete.
+>>get views for user sql_user4;
+
+--- SQL operation complete.
+>>get views for user sql_user5;
+
+Views for User SQL_USER5
+========================
+
+TRAFODION."T123SCH".GAMES_BY_PLAYER
+TRAFODION."T123SCH".HOME_TEAMS_GAMES
+TRAFODION."T123SCH".PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>
+>>get libraries for user sql_user1;
+
+Libraries for User SQL_USER1
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user3;
+
+Libraries for User SQL_USER3
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+Libraries for User SQL_USER4
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user5;
+
+Libraries for User SQL_USER5
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
 
 --- SQL operation complete.
 >>
@@ -488,6 +693,8 @@ SQL_USER1
 Privileges for User SQL_USER1
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 --DU---    TRAFODION.T123SCH.GAMES
 -I-----    TRAFODION.T123SCH.GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
@@ -544,6 +751,8 @@ Privileges for Role T123_PLANNERROLE
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -551,6 +760,120 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
 --- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+Tables for User SQL_USER1
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get indexes for user sql_user1;
+
+Indexes for User SQL_USER1
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get views for user sql_user1;
+
+--- SQL operation complete.
+>>get views for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get libraries for user sql_user1;
+
+Libraries for User SQL_USER1
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>
 >>exit;
@@ -655,6 +978,8 @@ SQL_USER2
 Privileges for User SQL_USER2
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 -I-----    TRAFODION.T123SCH.GAMES
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
@@ -699,6 +1024,8 @@ Privileges for Role T123_PLANNERROLE
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -706,6 +1033,120 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
 --- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user2;
+
+Tables for User SQL_USER2
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get indexes for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user2;
+
+Indexes for User SQL_USER2
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get views for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user2;
+
+--- SQL operation complete.
+>>get views for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get libraries for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user2;
+
+Libraries for User SQL_USER2
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>
 >>exit;
@@ -806,6 +1247,8 @@ PUBLIC
 Privileges for User SQL_USER3
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -837,6 +1280,8 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -844,6 +1289,114 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
 --- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user3;
+
+Tables for User SQL_USER3
+=========================
+
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get indexes for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user3;
+
+--- SQL operation complete.
+>>get indexes for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get views for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user3;
+
+--- SQL operation complete.
+>>get views for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get libraries for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+Libraries for User SQL_USER3
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>
 >>exit;
@@ -947,6 +1500,8 @@ PUBLIC
 Privileges for User SQL_USER4
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.GAMES
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
@@ -977,6 +1532,8 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
@@ -984,6 +1541,120 @@ S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
 
 --- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user4;
+
+Tables for User SQL_USER4
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>get tables for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get indexes for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user4;
+
+Indexes for User SQL_USER4
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>get indexes for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get views for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user4;
+
+--- SQL operation complete.
+>>get views for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>get libraries for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user4;
+
+Libraries for User SQL_USER4
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
+
+--- SQL operation complete.
+>>get libraries for user sql_user5;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>
 >>
 >>exit;
@@ -1097,11 +1768,16 @@ SQL_USER5
 Privileges for User SQL_USER5
 =============================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 SIDU-R-    TRAFODION.T123SCH.GAMES
+S----R-    TRAFODION.T123SCH.GAMES_BY_PLAYER
+S----R-    TRAFODION.T123SCH.HOME_TEAMS_GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S----R-    TRAFODION.T123SCH.PLAYERS_ON_TEAM
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
@@ -1127,7 +1803,10 @@ Privileges for Role T123_OWNERROLE
 ==================================
 
 SIDU-R-    TRAFODION.T123SCH.GAMES
+S----R-    TRAFODION.T123SCH.GAMES_BY_PLAYER
+S----R-    TRAFODION.T123SCH.HOME_TEAMS_GAMES
 SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S----R-    TRAFODION.T123SCH.PLAYERS_ON_TEAM
 ----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
 SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
@@ -1140,11 +1819,137 @@ SIDU-R-    TRAFODION.T123SCH.TEAMS
 Privileges for Role PUBLIC
 ==========================
 
+------E    TRAFODION."_LIBMGR_".EVENT_LOG_READER
+------E    TRAFODION."_LIBMGR_".JDBC
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
 S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
 S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>get tables for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get tables for user sql_user5;
+
+Tables for User SQL_USER5
+=========================
+
+TRAFODION."T123SCH".GAMES
+TRAFODION."T123SCH".PLAYERS
+TRAFODION."T123SCH".SB_HISTOGRAMS
+TRAFODION."T123SCH".SB_HISTOGRAM_INTERVALS
+TRAFODION."T123SCH".SB_PERSISTENT_SAMPLES
+TRAFODION."T123SCH".TEAMS
+
+--- SQL operation complete.
+>>
+>>get indexes for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get indexes for user sql_user5;
+
+Indexes for User SQL_USER5
+==========================
+
+TRAFODION."T123SCH".GAMES_VISITOR
+
+--- SQL operation complete.
+>>
+>>get views for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get views for user sql_user5;
+
+Views for User SQL_USER5
+========================
+
+TRAFODION."T123SCH".GAMES_BY_PLAYER
+TRAFODION."T123SCH".HOME_TEAMS_GAMES
+TRAFODION."T123SCH".PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>
+>>get libraries for user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user3;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user4;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get libraries for user sql_user5;
+
+Libraries for User SQL_USER5
+============================
+
+DB__LIBMGRNAME
+DB__LIBMGR_LIB_CPP
 
 --- SQL operation complete.
 >>

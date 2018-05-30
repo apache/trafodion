@@ -988,8 +988,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SHOW",               TOK_SHOW,        NONRESTOKEN_),
   ParKeyWord("SHOWCONTROL",        TOK_SHOWCONTROL, NONRESTOKEN_),
   ParKeyWord("SHOWDDL",            TOK_SHOWDDL,     NONRESTOKEN_|FIRST_),
-  ParKeyWord("SHOWLABEL",          TOK_SHOWLABEL,   NONRESTOKEN_),
-  ParKeyWord("SHOWLEAKS",          TOK_SHOWLEAKS,   NONRESTOKEN_),
   ParKeyWord("SHOWPLAN",           TOK_SHOWPLAN,    NONRESTOKEN_),
   ParKeyWord("SHOWSET",            TOK_SHOWSET,     NONRESTOKEN_),
   ParKeyWord("SHOWSHAPE",          TOK_SHOWSHAPE,   NONRESTOKEN_),

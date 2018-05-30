@@ -141,3 +141,12 @@ CDEPFLAGS	= -Wp,-MD,$(CDEP_FILE) -Wp,-MT,$@
 CDEPFILES	= $(CDEP_DIR)/*.dep
 CDEP_DIR	= $(OUTDIR)/depend
 CDEP_FILE	= $(CDEP_DIR)/$<.dep
+
+GCC_FULL_VERSION := $(shell gcc -dumpversion)
+GCC_MAJOR_VERSION := $(shell echo $(GCC_FULL_VERSION) | cut -d. -f 1)
+GCC_MINOR_VERSION := $(shell echo $(GCC_FULL_VERSION) | cut -d. -f 2)
+GCC_MAJOR_VERSION_GT_3 := $(shell expr $(GCC_MAJOR_VERSION) \> 3)
+GCC_MAJOR_VERSION_EQ_4 := $(shell expr $(GCC_MAJOR_VERSION) \= 4)
+GCC_MAJOR_VERSION_LT_4 := $(shell expr $(GCC_MAJOR_VERSION) \< 4)
+GCC_MINOR_VERSION_GT_4 := $(shell expr $(GCC_MINOR_VERSION) \> 4)
+GCC_MINOR_VERSION_LT_5 := $(shell expr $(GCC_MINOR_VERSION) \< 5)

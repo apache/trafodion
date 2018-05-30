@@ -102,7 +102,7 @@ short Describe::codeGen(Generator * generator)
   else if (format_ == SHOWSTATS_) type = ComTdbDescribe::SHOWSTATS_;
   else if (format_ == TRANSACTION_) type = ComTdbDescribe::TRANSACTION_;
   else if (format_ == SHORT_) type = ComTdbDescribe::SHORT_;
-  else if (format_ == LONG_) type = ComTdbDescribe::LONG_;
+  else if (format_ == SHOWDDL_) type = ComTdbDescribe::LONG_;
   else if (format_ == PLAN_) type = ComTdbDescribe::PLAN_;
   else if (format_ == LABEL_) type = ComTdbDescribe::LABEL_;
   else if (format_ == SHAPE_) type = ComTdbDescribe::SHAPE_;
@@ -1234,7 +1234,8 @@ if (hTabStats->isOrcFile())
      if (hdfsBufSizeTesting)
        hdfsBufSize = hdfsBufSizeTesting;
    }
-
+  UInt16 hdfsIoByteArraySize = (UInt16)
+      CmpCommon::getDefaultNumeric(HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB);
   UInt32 rangeTailIOSize = (UInt32)
       CmpCommon::getDefaultNumeric(HDFS_IO_RANGE_TAIL);
   if (rangeTailIOSize == 0) 
@@ -1362,7 +1363,7 @@ if (hTabStats->isOrcFile())
 
                    hdfsRootDir, modTS, numOfPartLevels, hdfsDirsToCheck
 		   );
-
+  hdfsscan_tdb->setHdfsIoByteArraySize(hdfsIoByteArraySize);
   generator->initTdbFields(hdfsscan_tdb);
 
   hdfsscan_tdb->setUseCursorMulti(useCursorMulti);

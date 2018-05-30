@@ -932,7 +932,6 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
       return fatal_error(glob, diagsArea);
     }
 
-
   // Following code is test for soln 10-081104-7061.  A CQD
   // COMP_INT_38 can be used to force various kinds of abends
   // in the master.
@@ -972,9 +971,39 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
         break;
       }
   }
-#endif 
-
-  return 0;
+#endif
+  Int32 retcode = 0;
+// The lines below were added to return proper value
+// for retcode at the time of execute. But it seems to
+// open up more issues. So commented out for now
+/*
+  if (qchild.up->isEmpty())
+     return 0;  
+  ex_queue_entry *centry = qchild.up->getHeadEntry();
+  if (centry == NULL)
+     return 0;
+  if (centry->getDiagsArea()) {
+     if (diagsArea == NULL)     
+        diagsArea = ex_root_tcb::moveDiagsAreaFromEntry (centry);
+     else
+        diagsArea->mergeAfter(*centry->getDiagsArea());
+  }
+  // Copied the diagsArea to be returned as part of the SQL_EXEC_Fetch
+  // But SQL_EXEC_Exec will continue to return 0 to avoid
+  // breaking the implied protocol.
+  if (diagsArea != NULL) {
+     if (retcode == 0 && diagsArea->mainSQLCODE() > 0)
+        // It's a warning. So return 1. That's what the cli expects.
+        retcode = 1;
+     else if (diagsArea->mainSQLCODE() < 0)
+        // It's an error. Return the negative value.
+        retcode = -1;
+     else
+        // It's a Diags Area w/o any Conditions.
+        retcode = 0;
+  }
+*/
+  return retcode;
 }
 
 void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
@@ -997,7 +1026,7 @@ void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
     ExRaiseSqlWarning(getHeap(), &newDiags, (ExeErrorCode) (8448), NULL,
         &intParam1, &cliError, NULL, (str ? (char*) str : (char*) " "),
         getHbaseErrStr(retcode),
-        (str2 ? (char*) str2 : (char *) currContext->getJniErrorStr().data()));
+        (str2 ? (char*) str2 : (char *) GetCliGlobals()->getJniErrorStr()));
     diagsArea->mergeAfter(*newDiags);
   }
   ex_assert( 0, "invalid return code value");
@@ -2117,6 +2146,7 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
       ipcEnv->getAllConnections()->waitOnAll();
       
     } // while (1)
+
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -2235,24 +2265,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
             }
           else 
             {
-              // redrive the scheduler.
-              // Fix for CR 6701 - some ExExeUtil operators call back
-              // in to the CLI and explicitly clear the curr context
-              // diags area. It would be nice to have a more general
-              // fix, but meanwhile, we store off the curr context diags 
-              // area before calling scheduler and restore afterwards.
-              Statement *statement = 
-                glob->castToExMasterStmtGlobals()->getStatement();
-              ContextCli *context = statement->getContext();
-              ComDiagsArea *savedContextDiags = context->diags().copy();
-              context->diags().clear();
-
               schedRetcode = glob->getScheduler()->work();
-
-              savedContextDiags->mergeAfter(context->diags());
-              context->diags().clear();
-              context->diags().mergeAfter(*savedContextDiags);
-              savedContextDiags->decrRefCount();
             }
         }
       if (!getQueueDiags)
@@ -2641,6 +2654,7 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
   SessionDefaults *sessionDefaults = context->getSessionDefaults();
   if (sessionDefaults)
   {
+  
     // Note that it will be required that if a session does not
     // allow queries to be canceled, then it also will not be 
     // possible to suspend the queries.
@@ -2659,15 +2673,11 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       return;
     }
   }
-  NABoolean diagsAreaAllocated = FALSE;
-
-  if (diagsArea == NULL)
-  {
-     diagsAreaAllocated = TRUE;
-     diagsArea = ComDiagsArea::allocate(getHeap());
-  }
+  Lng32 fromCond = 0;
+  if (diagsArea != NULL)
+      fromCond = diagsArea->mark();
   ExSsmpManager *ssmpManager = context->getSsmpManager();
-  cbServer_ = ssmpManager->getSsmpServer(
+  cbServer_ = ssmpManager->getSsmpServer((NAHeap *)getHeap(),
                                  cliGlobals->myNodeName(), 
                                  cliGlobals->myCpu(), diagsArea);
   if (cbServer_ == NULL || cbServer_->getControlConnection() == NULL)		
@@ -2675,16 +2685,8 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       // We could not get a phandle for the cancel broker.  However,		
       // let the query run (on the assumption that it will not need to 		
       // be canceled) and convert any error conditions to warnings.		
-
-      // tbd - figure a way retry registration later, as the query progresses.		
-      if (diagsArea != NULL)		
-         NegateAllErrors(diagsArea);		
+      diagsArea->negateErrors(fromCond); 
       return;
-  }
-  else if (diagsAreaAllocated)
-  {
-     diagsArea->decrRefCount();
-     diagsArea = NULL;
   }
 
   // The stream's actOnSend method will delete (or call decrRefCount()) 

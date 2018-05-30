@@ -1515,9 +1515,6 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblNam
   NAArray<HbaseStr>* regionStats = client_->getRegionStats((NAHeap *)heap_, tblName.val);
   if (regionStats == NULL)
     return NULL;
-
-  Int32 numEntries = client_->getRegionStatsEntries();
-
   return regionStats;
 }
 
@@ -1534,7 +1531,7 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getClusterStats(Int32 &numEntries)
   if (regionStats == NULL)
     return NULL;
   
-  numEntries = client_->getRegionStatsEntries();
+  numEntries = regionStats->entries();
 
   return regionStats;
 }

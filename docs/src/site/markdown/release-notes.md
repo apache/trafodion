@@ -16,6 +16,7 @@ The following releases have been created for Trafodion.
 
 Release                               | Description                                                           | Date
 --------------------------------------|-----------------------------------------------------------------------|--------------
+**[2.2.0](release-notes-2-2-0.html)** | First Apache Trafodion top level project release.                     | March 2018
 **[2.1.0](release-notes-2-1-0.html)** | Major feature enhancements.                                           | May 2017
 **[2.0.1](release-notes-2-0-1.html)** | Patch release. Client package added to convenience binaries.          | June 2016
 **[2.0.0](release-notes-2-0-0.html)** | Major feature enhancements.                                           | June 2016

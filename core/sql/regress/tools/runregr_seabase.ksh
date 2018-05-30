@@ -241,6 +241,11 @@ if [ "$REGRCONCURRENT" -ne 0 ]; then
   skipTheseTests="$skipTheseTests $exclusiveTests"
 fi
 
+#skip checkTest tests if they have already been run
+if [ "$CHECK_TEST2" == "1" ]; then
+    skipTheseTests="$skipTheseTests $seabaseCT"
+fi
+
 for i in $testfiles; do
   skipthis=0
   for j in $skipTheseTests; do

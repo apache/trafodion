@@ -369,6 +369,10 @@ public:
   void setModTSforDir(Int64 v) { modTSforDir_ = v; }
   Int64 getModTSforDir() const { return modTSforDir_; }
 
+  void setHdfsIoByteArraySize(int size)             
+    { hdfsIoByteArraySizeInKB_ = size; }                          
+  Lng32 getHdfsIoByteArraySize()                             
+    { return hdfsIoByteArraySizeInKB_; }
 protected:
   NABasicPtr   targetName_;                                  // 00 - 07
   NABasicPtr   delimiter_;                                   // 08 - 15
@@ -395,9 +399,10 @@ protected:
   UInt16       filler_;                                      // 130 - 131
   UInt32       childDataRowLen_;                             // 132 - 135
   Int64        modTSforDir_;                                 // 136 - 143
+  Lng32        hdfsIoByteArraySizeInKB_;                     // 144 - 147 
 
   // Make sure class size is a multiple of 8
-  char fillerComTdbFastTransport_[8];                        // 144 - 151
+  char fillerComTdbFastTransport_[4];                        // 148 - 151
 
 };
 

@@ -979,8 +979,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetchRowsPrologue(statsQuery_);
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -995,8 +994,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -1132,8 +1130,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    cliRC = cliInterface()->fetch();
 	    if (cliRC < 0)
 	      {
-		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-
+                cliInterface()->allocAndRetrieveSQLDiagnostics(diagsArea_);
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4024,15 +4021,23 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       break;
     case HANDLE_ERROR_:
       {
+        // SQL_EXEC_GetStatistics2 CLI call populates the diagnostics area
+        // in context directly. However, ExHandleErrors will push this
+        // into queue entry. CLI layer populates from queue into context
+        // causing the errors to be displayed twice. Hence clear
+        // Context diagnostics area here
+        ComDiagsArea *diagsArea = currContext->getDiagsArea();
         ExHandleErrors(qparent_,
 			        pentry_down,
 			        0,
 			        getGlobals(),
-			        NULL,
+			        (diagsArea->getNumber() > 0 ? diagsArea : NULL),
 			        (ExeErrorCode)cliRC,
 			        NULL,
 			        NULL
 			        );
+        if (diagsArea->getNumber() > 0)
+           diagsArea->clear();
         step_ = DONE_;
       }
       break;

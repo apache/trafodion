@@ -129,6 +129,22 @@ class CmpDDLwithStatusInfo;
 
 #include "CmpSeabaseDDLmd.h"
 
+// The define below gives the maximum rowID length that we will permit
+// for Trafodion tables and indexes. The actual HBase limit is more 
+// complicated: For Puts, HBase compares the key length to 
+// HConstants.MAX_ROW_LENGTH (= Short.MAX_VALUE = 32767). It raises an
+// exception if the key length is greater than that. But there are also
+// some internal data structures that HBase uses (the WAL perhaps?) that
+// are keyed. Experiments show that a Trafodion key of length n causes
+// a hang if n + strlen(Trafodion object name) + 16 > 32767. The HBase
+// log in these cases shows an IllegalArgumentException Row > 32767 in
+// this case. So it seems best to limit Trafodion key lengths to something
+// sufficiently smaller than 32767 so we don't hit these hangs. A value
+// of 32000 seems safe, since the longest Trafodion table name will be
+// TRAFODION.something.something, with each of the somethings topping out
+// at 256 bytes.
+#define MAX_HBASE_ROWKEY_LEN 32000
+
 #define SEABASEDDL_INTERNAL_ERROR(text)                                   \
    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR) 	  \
                        << DgString0(__FILE__)   		   	  \
@@ -1390,12 +1406,14 @@ protected:
   
 
  void createNativeHbaseTable(
-			     StmtDDLCreateHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLCreateHbaseTable * createTableNode,
+                             NAString &currCatName, NAString &currSchName);
 
  void dropNativeHbaseTable(
-			     StmtDDLDropHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLDropHbaseTable * dropTableNode,
+                             NAString &currCatName, NAString &currSchName);
   
   void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);

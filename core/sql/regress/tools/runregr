@@ -153,6 +153,7 @@ export REGRBASDIR=$(basename $PWD)
 export REGRRUNDIR=$rundir/$REGRBASDIR
 export REGRTSTDIR=$scriptsdir/$REGRBASDIR
 export rgrlog=$REGRRUNDIR/runregr-${table_format}${log_qualifier}.log
+export rgrStats=$REGRRUNDIR/runregr-${table_format}${log_qualifier}.stats
 export REGRTOOLSDIR=$scriptsdir/tools
 
 export REGRCONCURRENT="$concurrent_execution"
@@ -167,6 +168,34 @@ export REGRRUNDIR_Q="'$REGRRUNDIR'"
 export REGRTSTDIR_Q="'$REGRTSTDIR'"
 export REGRRUNDIR_QCleanup="'$REGRRUNDIR/cleanup'"
 export REGRRUNDIR_QAB="'$REGRRUNDIR/A/B'"
+
+######################################################
+#these tests are run as part of checktests. Used by runregr_checktest*.ksh
+#They are skipped by individual tests if 'runallsb' script is used to
+#run multiple suites and checktests is part of it.
+#That way we avoid running the same tests multiple times: once as part of
+#checktests and then as part of individual test.
+
+# "orig" tests are the original tests that need to be run.
+# non-orig are the ones currently being run due to existing issues with
+# some tests in the orig list.
+export coreCT="TEST000 TEST001 TEST002 TEST005 TEST032 TEST056 TEST116 TESTRTS"
+export compGeneralCT="TEST006 TEST015 TEST042 TESTTOK"
+export charsetsCT="TEST001 TEST311"
+export executorCT="TEST013 TEST015 TEST022 TEST107"
+export fullstack2CT="TEST062"
+
+export hiveCTorig="TEST001 TEST005 TEST009 TEST015 TEST021 TEST031 TEST041 TEST046 TEST055"
+export hiveCT="TEST001 TEST005 TEST009 TEST015 TEST017 TEST021"
+
+export seabaseCT="TEST002 TEST003 TEST010 TEST011 TEST022 TEST025 TEST030 TEST031"
+export udrCT="TEST002"
+export privs1CT="TEST120 TEST137"
+
+export privs2CTorig="TEST145"
+#export privs2CT="TEST145"
+export privs2CT=""
+####################################
 
 tmplocal=$TMP/`basename $0 .ksh`.tmp
 

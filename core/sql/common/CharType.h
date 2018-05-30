@@ -735,16 +735,21 @@ public:
 
   SQLlob(NAMemory *h,
          NABuiltInTypeEnum  ev,
-	 Int64 lobLength, 
-	 LobsStorage lobStorage,
+	 Int64 lobLength=1024, 
+	 LobsStorage lobStorage=Lob_Invalid_Storage,
 	 NABoolean allowSQLnull	= TRUE,
 	 NABoolean inlineIfPossible = FALSE,
 	 NABoolean externalFormat = FALSE,
-	 Lng32 extFormatLen = 100);
+	 Lng32 extFormatLen=1024 );
  SQLlob(const SQLlob & aLob,NAMemory * heap)
-   :NAType(aLob,heap),
-    charSet_(CharInfo::UnknownCharSet)
-    {}
+   :NAType(aLob,heap)
+    {
+      lobLength_ = aLob.lobLength_;
+      lobStorage_ = aLob.lobStorage_;
+      externalFormat_ = aLob.externalFormat_;
+      extFormatLen_ = aLob.extFormatLen_;     
+      setCharSet(CharInfo::ISO88591);//lobhandle can only be in ISO format
+    }
   
  //is this type a blob/clob
  virtual NABoolean isLob() const {return TRUE;};
@@ -798,14 +803,14 @@ class SQLBlob : public SQLlob
 public: 
 
   SQLBlob(NAMemory *h,
-          Int64 blobLength, 
+          Int64 blobLength=1024, 
 	  LobsStorage lobStorage = Lob_Invalid_Storage,
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
 	  Lng32 extFormatLen = 1024);
  SQLBlob(const SQLBlob & aBlob,NAMemory * heap)
-   :SQLlob(aBlob,heap)
+      :SQLlob(aBlob,heap)
     {}
   virtual short getFSDatatype() const
   {return REC_BLOB;}
@@ -838,14 +843,14 @@ class SQLClob : public SQLlob
 public: 
 
   SQLClob(NAMemory *h,
-          Int64 blobLength, 
+          Int64 blobLength=1024, 
 	  LobsStorage lobStorage = Lob_Invalid_Storage,
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
 	  Lng32 extFormatLen = 1024);
  SQLClob(const SQLClob & aClob,NAMemory * heap)
-   :SQLlob(aClob,heap)
+      :SQLlob(aClob,heap)
     {}
   virtual short getFSDatatype() const
   {return REC_CLOB;}
@@ -864,6 +869,6 @@ public:
 private:
 
 }; // class SQLClob
-// sss #endif
+
 
 #endif /* CHARTYPE_H */
