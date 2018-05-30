@@ -41,6 +41,29 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                      <artifactId>maven-antrun-plugin</artifactId>
+                      <version>${ANTRUN_VER}</version>
+                      <executions>
+                          <execution>
+                          <phase>initialize</phase>
+                          <configuration>
+                          <tasks>
+                          <copy file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
+                          <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java">
+                          </replace>
+                          </tasks>
+                          </configuration>
+                          <goals>
+                              <goal>run</goal>
+                          </goals>
+                          </execution>
+                      </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>production</id>
@@ -78,6 +101,9 @@
                                     <tasks>
                                         <copy file="${basedir}/LICENSE" tofile="${basedir}/src/main/resources/META-INF/LICENSE" overwrite="true"/>
                                         <copy file="${basedir}/NOTICE" tofile="${basedir}/src/main/resources/META-INF/NOTICE" overwrite="true"/>
+                                        <copy file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
+                                        <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java">
+                                        </replace>
                                     </tasks>
                                 </configuration>
                                 <goals>
@@ -100,25 +126,6 @@
   </dependencies>
 <build>
 <plugins>
-  <plugin>
-    <artifactId>maven-antrun-plugin</artifactId>
-    <version>${ANTRUN_VER}</version>
-    <executions>
-        <execution>
-        <phase>generate-sources</phase>
-        <configuration>
-        <tasks>
-        <copy file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
-        <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java">
-        </replace>
-        </tasks>
-        </configuration>
-        <goals>
-            <goal>run</goal>
-        </goals>
-        </execution>
-    </executions>
-  </plugin>
   <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>

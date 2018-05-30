@@ -104,6 +104,7 @@ clean:
 	$(RM) -f $(EXPROOT)/lib/jdbcT2*.jar
 	$(RM) -rf $(OUTDIR)
 	$(RM) -rf $(BUILD_PLAT)
+	$(RM) -rf src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java 
 	echo '$(CSES)'|sed -e 's/\./_/g' -e 's/[[:space:]]/\n/g' |xargs -i rm -f 'native/{}.h'
 
 cleanall: clean
