@@ -1515,10 +1515,10 @@ CREATE FUNCTION function-ref ([parameter-declaration[, parameter-declaration]...
        (return-parameter-declaration[, return-parameter-declaration]...)
     EXTERNAL NAME 'character-string-literal'
     LIBRARY [[catalog-name.]schema-name.]library-name
-    [language c]
+    [LANGUAGE c]
     [parameter style sql]
     [no sql]
-    [not deterministic | deterministic]
+    [NOT DETERMINISTIC | DETERMINISTIC]
     [final call | no final call]
     [no state area | state area size]
     [no parallelism | allow any parallelism]
@@ -1607,7 +1607,7 @@ specifies the case-sensitive name of the external function’s method.
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
 
-* `language c`
+* `LANGUAGE c`
 +
 specifies that the external function is written in the c language. this clause is optional.
 
@@ -1620,7 +1620,7 @@ language. this clause is optional.
 +
 specifies that the function does not perform sql operations. this clause is optional.
 
-* `deterministic | not deterministic`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the function always returns the same values for out parameters for a given set of argument
 values (deterministic, the default behavior) or does not return the same values (not deterministic). if the
@@ -2079,7 +2079,7 @@ CREATE PROCEDURE procedure-ref([sql-parameter-list])
    [no sql | contains sql | modifies sql data | reads sql data]
    [dynamic result sets integer]
    [TRANSACTION REQUIRED | NO TRANSACTION REQUIRED]
-   [DETERMINISTIRC | NOT DETERMINISTRIC]
+   [DETERMINISTIC | NOT DETERMINISTIC]
    [NO ISOLATE| ISOLATE]
 
 procedure-ref is:
@@ -2299,10 +2299,10 @@ procedure’s transaction attribute to `NO TRANSACTION REQUIRED`. For more infor
 <<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on SPJs>>.
 
 <<<
-* `DETERMINISTRIC | NOT DETERMINISTRIC`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
-(`DETERMINISTRIC`) or does not return the same values (`NOT DETERMINISTRIC`, the default option). If you specify `DETERMINISTRIC`,
+(`DETERMINISTIC`) or does not return the same values (`NOT DETERMINISTIC`, the default option). If you specify `DETERMINISTIC`,
 {project-name} is not required to call the SPJ each time to produce results; instead, {project-name} caches the results and
 reuses them during subsequent calls, thus optimizing the CALL statement.
 
