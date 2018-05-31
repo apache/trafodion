@@ -616,6 +616,9 @@ SQLCONNECT_IOMessage(
 	else
 		inContext.clientUserName = NULL;
 
+	inContext.clipVarchar = *(IDL_long *)(curptr+inputPosition);
+	inputPosition += sizeof(inContext.clipVarchar);
+
 	odbc_SQLSvc_InitializeDialogue_ame_(
 		  objtag_
 		, call_id_

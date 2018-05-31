@@ -228,6 +228,7 @@ class InterfaceConnection {
 
 		inContext.queryTimeoutSec = t4props.getQueryTimeout();
 		inContext.idleTimeoutSec = (short) t4props.getConnectionTimeout();
+		inContext.clipVarchar = (short) t4props.getClipVarchar();
 		inContext.loginTimeoutSec = (short) t4props.getLoginTimeout();
 		inContext.txnIsolationLevel = (short) SQL_TXN_READ_COMMITTED;
 		inContext.rowSetSize = t4props.getFetchBufferSize();
@@ -387,6 +388,9 @@ class InterfaceConnection {
 
 	int getConnectionTimeout() {
 		return inContext.idleTimeoutSec;
+	}
+	short getClipVarchar() {
+		return inContext.clipVarchar;
 	}
 
 	String getCatalog() {

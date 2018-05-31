@@ -898,6 +898,7 @@ typedef struct _SRVR_GLOBAL_Def
 		bAutoCommitOn = FALSE;
 		bAutoCommitSet = FALSE;
 		javaConnIdleTimeout = JDBC_DATASOURCE_CONN_IDLE_TIMEOUT;
+        clipVarchar  = 0;
 		bSpjEnableProxy = FALSE;
 		lastCQDAdaptiveSegment = -1;
 		bWMS_AdaptiveSegment = false;
@@ -982,6 +983,7 @@ typedef struct _SRVR_GLOBAL_Def
 
 	long			odbcConnIdleTimeout;		//For ODBC Client timeout value
 
+    IDL_long            clipVarchar ;
 	//	BOOL				validTimerHandle;
 	char				ASProcessName[MAX_PROCESS_NAME_LEN];
 	PROCESS_ID_def		nskASProcessInfo;
