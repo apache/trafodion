@@ -229,16 +229,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   enum ComObjectType enMDObjType = COM_UNKNOWN_OBJECT;
 
   ComObjectName objectName(commentOnNode->getObjectName());
-  //we can not comment on native hive table.
-  if (str_cmp(toUpper(currCatName.data()), "HIVE", 4) == 0)
-   {
-       CmpCommon::diags()->clear();
-       *CmpCommon::diags()<<DgSqlCode(-1721)
-           <<DgString0(objectName.getExternalName(TRUE));
-       processReturn();                                     
-       return;
-   }
-
   ComAnsiNamePart currCatAnsiName(currCatName);
   ComAnsiNamePart currSchAnsiName(currSchName);
   objectName.applyDefaults(currCatAnsiName, currSchAnsiName);
@@ -299,6 +289,30 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
                                        CmpCommon::context()->sqlSession()->getParentQid());
+
+  //if is a native HIVE table, we must register it before add comments on them. 									   
+  if (QualifiedName::isHive(catalogNamePart))
+  {
+    if (CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF)
+      {
+        CmpCommon::diags()->clear();
+        *CmpCommon::diags() << DgSqlCode(-1721)
+                            << DgString0(extObjName);
+        processReturn();
+        return;
+      }
+    char buf[2000]; 
+    str_sprintf(buf, "register internal hive table if not exists %s", extObjName);
+    Lng32 cliRC = cliInterface.executeImmediate(buf);
+    if (cliRC < 0) 
+    {
+        cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+        processReturn();
+        return;
+    }
+  }
+
+  
   Int64 objUID = 0;
   Int32 objectOwnerID = ROOT_USER_ID;
   Int32 schemaOwnerID = ROOT_USER_ID;
