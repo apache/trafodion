@@ -293,7 +293,18 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   Int32 objectOwnerID = ROOT_USER_ID;
   Int32 schemaOwnerID = ROOT_USER_ID;
   Int64 objectFlags = 0;
+  
+  
+  // cannot set comment on HBASE native table
+  if (str_cmp(toUpper(catalogNamePart.data()), HBASE_SYSTEM_CATALOG, strlen(HBASE_SYSTEM_CATALOG)) == 0)
+    {
+      CmpCommon::diags()->clear();
+      *CmpCommon::diags() << DgSqlCode(-1722);
+      processReturn();
+      return;
+    }
 
+  // Verify that the requester has COMMENT privilege.
   //get UID of object
   objUID = getObjectInfo(&cliInterface,
                               catalogNamePart.data(), schemaNamePart.data(), objNamePart.data(), 
@@ -339,15 +350,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       subID = commentOnNode->getColNum();
     }
   
-  // cannot set comment on HBASE native table
-  if (str_cmp(toUpper(catalogNamePart.data()), HBASE_SYSTEM_CATALOG, 5) == 0)
-    {
-      CmpCommon::diags()->clear();
-      *CmpCommon::diags() << DgSqlCode(-1722);
-      processReturn();
-      return;
-    }
-
   /* Not using function updateTextTable(), because can not insert Chinese properly by function updateTextTable().
      * For storing COMMENT in TEXT table is a temp solution, so updating TEXT table directly here.
      * Will change this implementation until next upgrade of MD.
