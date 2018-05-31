@@ -294,7 +294,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   Int32 schemaOwnerID = ROOT_USER_ID;
   Int64 objectFlags = 0;
   
-  
   // cannot set comment on HBASE native table
   if (str_cmp(toUpper(catalogNamePart.data()), HBASE_SYSTEM_CATALOG, strlen(HBASE_SYSTEM_CATALOG)) == 0)
     {
@@ -349,7 +348,6 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       textType = COM_COLUMN_COMMENT_TEXT;
       subID = commentOnNode->getColNum();
     }
-  
   /* Not using function updateTextTable(), because can not insert Chinese properly by function updateTextTable().
      * For storing COMMENT in TEXT table is a temp solution, so updating TEXT table directly here.
      * Will change this implementation until next upgrade of MD.
