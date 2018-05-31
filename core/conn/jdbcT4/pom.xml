@@ -213,6 +213,15 @@
    </plugins>
   </build>
 <profiles>
+    <profile>
+        <id>disable-javadoc-doclint</id>
+        <activation>
+            <jdk>[1.8,)</jdk>
+        </activation>
+        <properties>
+            <javadoc.opts>-Xdoclint:none</javadoc.opts>
+        </properties>
+    </profile>
 	<profile>
       <id>apache-release</id>
       <activation>
@@ -262,7 +271,7 @@
                 <version>2.9</version>
                 <configuration>
                   <docfilessubdirs>true</docfilessubdirs>
-                  <additionalparam>-Xdoclint:none</additionalparam>
+                  <additionalparam>${javadoc.opts}</additionalparam>
                 </configuration>
                 <executions>
                     <execution>
