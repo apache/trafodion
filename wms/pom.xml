@@ -726,6 +726,7 @@
         <version>2.6.1</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>

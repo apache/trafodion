@@ -500,7 +500,7 @@
     
     <!-- Plugin Dependencies -->
     <maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
-    <maven.site.plugin.version>3.3</maven.site.plugin.version>
+    <maven.site.plugin.version>3.6</maven.site.plugin.version>
     <maven.javadoc.plugin.version>2.9.1</maven.javadoc.plugin.version>
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.jxr.plugin.version>2.3</maven.jxr.plugin.version>
@@ -742,6 +742,7 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>
