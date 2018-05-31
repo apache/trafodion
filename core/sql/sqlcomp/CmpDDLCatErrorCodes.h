@@ -434,7 +434,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // unused                                       = 1599
                   // unused                                       = 1600
                   // unused                                       = 1601
-
+                  , CAN_NOT_SET_COMMENT_ON_NATIVE_HBASE_TABLE     = 1722
                   // Method validation failures
                   , CAT_CLASS_NOT_FOUND                           = 11205
                   , CAT_CLASS_DEFINITION_NOT_FOUND                = 11206
