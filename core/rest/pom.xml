@@ -640,6 +640,7 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>
