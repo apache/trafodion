@@ -4308,6 +4308,21 @@ public:
 protected:
 };
 
+class ExExeUtilConnectbyTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilConnectbyTdb;
+
+public:
+  ExExeUtilConnectbyTcb(const ComTdbExeUtil & exe_util_tdb,
+                            ex_globals * glob = 0);
+
+  virtual ~ExExeUtilConnectbyTcb()
+   {}
+
+  virtual short work();
+
+};
+
 #endif
 
 

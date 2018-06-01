@@ -4587,11 +4587,19 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   // make sure child of root is a groupby node or a sequence node 
   // whose child is a group by node
-  if (child(0)->getOperatorType() != REL_GROUPBY && 
-       (child(0)->getOperatorType() != REL_SEQUENCE || 
-         (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)))
+  if(child(0))
+{
+  if (child(0)->getOperatorType() != REL_GROUPBY)
+  {
+    
+    if (child(0)->getOperatorType() != REL_SEQUENCE ) return this;
+    if (child(0)->child(0) )
+        if (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)
     return this;
-
+  }
+}
+  else
+    return this;
   GroupByAgg * grby;
   RelSequence * seqNode=NULL;
 

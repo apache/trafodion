@@ -5331,6 +5331,11 @@ short ExeUtilOrcFastAggr::codeGen(Generator * generator)
 
 
 
+short ExeUtilConnectby::codeGen(Generator * generator)
+{
+  return 0;
+}
+
 /////////////////////////////////////////////////////////
 //
 // ExeUtilHbaseLoad::codeGen()

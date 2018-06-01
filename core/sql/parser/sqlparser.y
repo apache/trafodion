@@ -931,6 +931,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PREFER_FOR_SCAN_KEY
 %token <tokval> TOK_PREPARE
 %token <tokval> TOK_PRESERVE            /* TD extension that HP wants to ignore */
+%token <tokval> TOK_PRIOR
 %token <tokval> TOK_PRIORITY
 %token <tokval> TOK_PRIORITY_DELTA
 %token <tokval> TOK_PROCEDURE
@@ -1237,6 +1238,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COMPONENTS
 %token <tokval> TOK_COMPRESSION
 %token <tokval> TOK_CONFIG              /* Tandem extension */
+%token <tokval> TOK_CONNECT              /* Tandem extension */
 %token <tokval> TOK_CONSTRAINT
 %token <tokval> TOK_CONSTRAINTS
 %token <tokval> TOK_COPY
@@ -2125,6 +2127,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		rel_subquery
 %type <item>      		row_subquery
 %type <item>      		predicate
+%type <item>                    connectby_expression
+%type <item>                    connect_by
+%type <item>                    startwith
 %type <item>                    dml_column_reference
 %type <item>      		null_predicate
 %type <boolean>                 scan_key_hint
@@ -13091,6 +13096,19 @@ list_of_values : '(' insert_value_expression_list ')'
 
 // end of fix: left recursion for insert statement values.		  
 
+connectby_expression: TOK_PRIOR qualified_name '=' qualified_name
+                    {
+                    }
+               | qualified_name '=' TOK_PRIOR qualified_name
+                    {
+                    }
+connect_by : TOK_CONNECT TOK_BY connectby_expression
+                    {
+                    }
+startwith : empty |
+             TOK_START TOK_WITH  
+                    {
+                    }
 		  
 table_expression : from_clause where_clause sample_clause
                    cond_transpose_clause_list sequence_by_clause
@@ -13630,7 +13648,18 @@ query_specification :select_token set_quantifier query_spec_body
          ((RelRoot*)$$)->setAnalyzeOnly();
 
     }
-
+/*
+query_specification : select_token select_list from_clause connect_by 
+    {
+       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                      , PARSERHEAP() // in  - NAMemory * 
+                                                      );
+      ExeUtilConnectby *euc = new (PARSERHEAP()) ExeUtilConnectby(CorrName( ((Scan*)$3)->getTableName(), PARSERHEAP()),  NULL,
+                                        stmtCharSet,PARSERHEAP());
+      $$ = finalize(euc);
+    }
+*/
 query_specification : exe_util_maintain_object 
                                 {
 				  RelRoot *root = new (PARSERHEAP())
@@ -13781,6 +13810,18 @@ query_spec_body : query_select_list table_expression access_type  optional_lock_
 			  AssignmentHostVars->clear();
 			  $$ = temp;
 			}
+               | query_select_list from_clause connect_by
+{
+       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                      , PARSERHEAP() // in  - NAMemory *
+                                                      );
+      ExeUtilConnectby *euc = new (PARSERHEAP()) ExeUtilConnectby(CorrName( ((Scan*)$2)->getTableName(), PARSERHEAP()),  NULL,
+                                        stmtCharSet,PARSERHEAP());
+  			  RelRoot *temp = new (PARSERHEAP())
+			    RelRoot(euc, REL_ROOT , $1);
+      $$ = temp;
+}
 
 //++ MV OZ
 // type item 

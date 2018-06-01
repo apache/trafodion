@@ -6174,6 +6174,36 @@ RelExpr * ExeUtilMetadataUpgrade::copyTopNode(RelExpr *derivedNode, CollHeap* ou
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
+
+RelExpr * ExeUtilConnectby::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilConnectby* result;
+  if (derivedNode == NULL)
+    result = new (outHeap)
+      ExeUtilConnectby(getTableName(),
+                      NULL, CharInfo::UnknownCharSet, outHeap);
+  else
+    result = (ExeUtilConnectby*) derivedNode;
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilConnectby::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+  return NULL;
+}
+const NAString ExeUtilConnectby::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  result = "CONNECT BY STATEMENT";
+
+  return result;
+}
+
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilHbaseLoad
 // -----------------------------------------------------------------------

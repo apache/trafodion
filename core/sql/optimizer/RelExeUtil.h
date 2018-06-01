@@ -513,7 +513,8 @@ public:
     GET_QID_                  = 38,
     HIVE_TRUNCATE_            = 39,
     LOB_UPDATE_UTIL_          = 40,
-    HIVE_QUERY_               = 41
+    HIVE_QUERY_               = 41,
+    CONNECT_BY_               = 42
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -1077,6 +1078,32 @@ private:
   // if there are LOB columns.
   Lng32 numLOBs_; // number of LOB columns
   NAList<short> lobNumArray_; // array of shorts. Each short is the lob num
+};
+
+class ExeUtilConnectby : public ExeUtilExpr
+{
+public:
+  ExeUtilConnectby( const CorrName &TableName,
+                   char * stmtText,
+                   CharInfo::CharSet stmtTextCharSet,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+    : ExeUtilExpr(CONNECT_BY_, TableName, NULL, NULL,
+                 stmtText, stmtTextCharSet, oHeap)
+ {}
+  virtual const NAString getText() const;
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+                                CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual short codeGen(Generator*);
+ 
+private:
+  //connect by
+  //start with
+  //table
+  int fake_;
 };
 
 class ExeUtilHiveTruncate : public ExeUtilExpr

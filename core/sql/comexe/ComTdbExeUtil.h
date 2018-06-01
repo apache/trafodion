@@ -92,7 +92,8 @@ public:
     GET_QID_                 = 35,
     HIVE_TRUNCATE_           = 36,
     LOB_UPDATE_UTIL_         = 37,
-    HIVE_QUERY_              = 38
+    HIVE_QUERY_              = 38,
+    CONNECT_BY_              = 39
   };
 
   ComTdbExeUtil()
@@ -4103,7 +4104,58 @@ private:
   NABoolean tableFormat_;
   
 };
+
+
+class ComTdbExeUtilConnectby : public ComTdbExeUtil
+{
+  friend class ExExeUtilConnectbyTcb;
+
+public:
+  ComTdbExeUtilConnectby()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilConnectby(char * tableName,
+                             ULng32 tableNameLen
+                             );
+
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilConnectby);}
+
+  virtual const char *getNodeName() const
+  {
+    return "CONNECT_BY";
+  };
+};
+
+#if 0
+class ExExeUtilConnectbyTcb : public ExExeUtilTcb
+{
+  //friend class ExExeUtilConnectbyTdb;
+
+public:
+  ExExeUtilConnectbyTcb(const ComTdbExeUtil & exe_util_tdb,
+                            ex_globals * glob = 0);
+
+  virtual ~ExExeUtilConnectbyTcb() 
+   {}
+
+  virtual short work();
+
+};
+#endif 
+class ExExeUtilConnectbyTdb : public ComTdbExeUtilConnectby
+{
+public:
+  ExExeUtilConnectbyTdb()
+    {}
+  virtual ~ExExeUtilConnectbyTdb()
+    {}
+
+  virtual ex_tcb *build(ex_globals *globals);
+
+};
+
 #endif
-
-
-
