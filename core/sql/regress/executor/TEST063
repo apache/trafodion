@@ -217,7 +217,7 @@ SELECT a, RUNNINGMAX(b), (SELECT MAX(B) from t063t1 where (a <= S.a)) from t063t
 
 SELECT a, (SELECT SUM(B) from t063t1 where (a <= S.a)), y  
 FROM t063t1 S, (SELECT a, RUNNINGSUM(B) from t063t1 sequence by a) AS T(x, y) 
-where a = x;
+where a = x order by a;
 
 -- MOVINGMIN/MOVINGMAX
 
