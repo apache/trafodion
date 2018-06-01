@@ -2409,11 +2409,83 @@ short CmpDescribeHiveTable (
         }
     }
 
+  // Used for context switches
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
   if (type == 2)
     {
       outputShortLine(space, ";");
+     
+     //display comments for native HIVE XXX. 
+      if (naTable->isRegistered()) 
+        {
+          Int64 objectUID = (Int64)naTable->objectUid().get_value();
+          enum ComObjectType objType =COM_BASE_TABLE_OBJECT;
 
-      outputShortLine(space," ");
+          if (isView)
+              objType = COM_VIEW_OBJECT;
+
+          if (cmpSBD.switchCompiler())
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              return -1;                                                           
+            } 
+
+          ComTdbVirtObjCommentInfo objCommentInfo;
+          if (cmpSBD.getSeabaseObjectComment(objectUID, objType, objCommentInfo, heap))
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_COMMENTS);
+              cmpSBD.switchBackCompiler();
+              return -1;
+            }
+           
+          //display Table COMMENT statements
+          if (objCommentInfo.objectComment != NULL)
+            {
+                //new line
+                outputShortLine(space, "", 0);
+
+                sprintf(buf, "COMMENT ON %s %s IS '%s' ;",
+                        objType ==COM_BASE_TABLE_OBJECT? "TABLE" : "VIEW",
+                        tableName.data(),
+                        objCommentInfo.objectComment);
+                outputShortLine(space, buf, 0);
+            }
+
+          //display Column COMMENT statements
+          if (objCommentInfo.numColumnComment > 0 && objCommentInfo.columnCommentArray != NULL)
+            {
+              outputShortLine(space, "", 0);
+              for (int idx = 0; idx < objCommentInfo.numColumnComment; idx++)
+                {
+                  sprintf(buf,  "COMMENT ON COLUMN %s.%s IS '%s' ;",
+                           tableName.data(),
+                           objCommentInfo.columnCommentArray[idx].columnName,
+                           objCommentInfo.columnCommentArray[idx].columnComment);
+                  outputShortLine(space, buf, 0);
+                }
+            }
+
+          //display Index COMMENT statements
+          if (objCommentInfo.numIndexComment > 0 && objCommentInfo.indexCommentArray != NULL)
+            {
+              outputShortLine(space, "", 0);
+              for (int idx = 0; idx < objCommentInfo.numIndexComment; idx++)
+                {
+                  sprintf(buf,  "COMMENT ON INDEX %s IS '%s' ;",
+                           objCommentInfo.indexCommentArray[idx].indexFullName,
+                           objCommentInfo.indexCommentArray[idx].indexComment);
+                  outputShortLine(space, buf, 0);
+                }
+            }
+
+          //do a comment info memory clean
+          NADELETEARRAY(objCommentInfo.columnCommentArray, objCommentInfo.numColumnComment, ComTdbVirtColumnCommentInfo, heap);
+          NADELETEARRAY(objCommentInfo.indexCommentArray, objCommentInfo.numIndexComment, ComTdbVirtIndexCommentInfo, heap);
+
+          cmpSBD.switchBackCompiler();
+        }  
+	  outputShortLine(space," ");
       outputShortLine(space,"/* Trafodion DDL */");
     }
 

@@ -290,29 +290,22 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
                                        CmpCommon::context()->sqlSession()->getParentQid());
 
-  //if is a native HIVE table, we must register it before add comments on them. 									   
-  if (QualifiedName::isHive(catalogNamePart))
-  {
-    if (CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF)
-      {
-        CmpCommon::diags()->clear();
-        *CmpCommon::diags() << DgSqlCode(-1721)
-                            << DgString0(extObjName);
-        processReturn();
-        return;
-      }
-    char buf[2000]; 
-    str_sprintf(buf, "register internal hive table if not exists %s", extObjName);
-    Lng32 cliRC = cliInterface.executeImmediate(buf);
-    if (cliRC < 0) 
+  //If is a native HIVE table and not already registered, we should register it 
+  //in traf metadata before do 'comment' operations.
+  if (QualifiedName::isHive(catalogNamePart)
+          && CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF)
     {
-        cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-        processReturn();
-        return;
+      char buf[2000]; 
+      str_sprintf(buf, "register internal hive table if not exists %s", extObjName.data());
+      Lng32 cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0) 
+      {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          processReturn();
+          return;
+      }
     }
-  }
 
-  
   Int64 objUID = 0;
   Int32 objectOwnerID = ROOT_USER_ID;
   Int32 schemaOwnerID = ROOT_USER_ID;
