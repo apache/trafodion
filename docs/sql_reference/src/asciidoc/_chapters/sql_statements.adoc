@@ -4257,9 +4257,12 @@ read committed
 names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
 table or view, use the ANSI logical name. See <<database_object_names,Database Object Names>>.
 
-* `WITHOUT NO ROLLBACK`
+* `WITH NO ROLLBACK`
 +
-performs non-transactional delete.
+performs a non-transactional delete.
++
+A non-transactional delete is one that happens outside a transaction. It means that if the 
+statement is interrupted, any deletes that have been done are still permanent.
 +
 NOTE: This option is only supported if there is no index on the table.
 
