@@ -40,7 +40,6 @@ class InitializeDialogueMessage {
 		wlength += TRANSPORT.size_int; // dialogueId
 		wlength += TRANSPORT.size_int; // optionFlags1
 		wlength += TRANSPORT.size_int; // optionFlags2
-		wlength += TRANSPORT.size_int; // clipVarchar
 		wlength += sessionBytes.length;
 		wlength += clientUserBytes.length;
 
@@ -61,7 +60,6 @@ class InitializeDialogueMessage {
 		{
 			buf.insertString(clientUserBytes);
 		}
-		buf.insertInt(inContext.clipVarchar);
 		return buf;
 	}
 }

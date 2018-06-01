@@ -913,6 +913,7 @@ class InterfaceConnection {
 			this.oldEncryptPassword();
 			this.initDiag(false,false);
 		}
+        this.setConnectionAttr(this._t4Conn, TRANSPORT.SQL_ATTR_CLIPVARCHAR, this.inContext.clipVarchar, String.valueOf(this.inContext.clipVarchar));
 	}
 
 	// @deprecated

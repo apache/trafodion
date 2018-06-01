@@ -216,6 +216,7 @@ class ODBCMXTraceMsg;
 #define RES_ESTIMATEDCOST			0
 
 #define	SQL_ATTR_ROWSET_RECOVERY	2000
+#define SQL_ATTR_CLIPVARCHAR        2001
 
 // session statistics values range from 0x00000001 thru 0x00000128
 #define SESSTAT_LOGINFO				1

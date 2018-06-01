@@ -5692,6 +5692,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 
 	switch (connectionOption) {
 //Special Case//
+   
 	case SQL_ACCESSMODE_AND_ISOLATION:
 			switch (optionValueNum) {
 		case SQL_TXN_READ_UNCOMMITTED:
@@ -6156,6 +6157,10 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	case WMS_QUERY_MONITORING:
 		strcpy(sqlString, "CONTROL QUERY DEFAULT WMS_QUERY_MONITORING 'OFF'");
 		break;
+    case SQL_ATTR_CLIPVARCHAR:
+        srvrGlobal->clipVarchar = optionValueNum;
+		sqlStringNeedsExecution = false;
+        break;
 	default:
 		exception_->exception_nr = odbc_SQLSvc_SetConnectionOption_ParamError_exn_;
 		exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_CONNECTION_OPTION;
