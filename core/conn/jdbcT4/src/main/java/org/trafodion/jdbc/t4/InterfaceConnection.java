@@ -700,7 +700,7 @@ class InterfaceConnection {
 			_security.openCertificate();
 			this.encryptPassword();
 		}catch(SecurityException se) {	
-			if(se.getErrorCode() != 29713) {
+			if(se.getErrorCode() != 29713 && se.getErrorCode() != 29721) {
 				throw se; //we have a fatal error
 			}
 				
