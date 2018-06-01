@@ -13331,10 +13331,6 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
     localExprs += *setOfValuesReqdByParent ;
   localExprs += exprsInDerivedClasses_;
 
-  ValueIdSet original_output;
-  if (avoidHalloween() && child(0) && child(0)->getGroupAttr())
-    original_output = child(0)->getGroupAttr()->getCharacteristicOutputs();
-
   // ---------------------------------------------------------------------
   // Check which expressions can be evaluated by my child.
   // Modify the Group Attributes of those children who inherit some of
@@ -13354,9 +13350,10 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
           ValueId exprId;
           ValueId atLeastOne;
 
-          for (exprId = original_output.init();
-               original_output.next(exprId);
-               original_output.advance(exprId))
+          ValueIdSet output_source = child(0)->getTableDescForExpr()->getColumnList();
+          for (exprId = output_source.init();
+               output_source.next(exprId);
+               output_source.advance(exprId))
             {
               atLeastOne = exprId;
               if (!(exprId.getItemExpr()->doesExprEvaluateToConstant(FALSE, TRUE)))
