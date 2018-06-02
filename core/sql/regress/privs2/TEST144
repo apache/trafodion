@@ -48,6 +48,7 @@ revoke execute on procedure "_LIBMGR_".help from sql_user5 by sql_user3;
 revoke execute on procedure "_LIBMGR_".help from sql_user3 by sql_user2;
 revoke execute on procedure "_LIBMGR_".help from sql_user2;
 
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
 ?section create_db
 create schema t144user1 authorization sql_user1;
 set schema t144user1;
@@ -114,6 +115,9 @@ grant select, insert on customers to "PUBLIC";
 showddl customers;
 create role t144role1;
 
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+
 ?section set_up
 set schema "_PRIVMGR_MD_";
 prepare get_privs from
@@ -138,8 +142,17 @@ order by 1, 2, 3, 4
 -- =================================================================
 set schema t144user1;
 execute get_privs;
+get privileges on function gen_phone;
+get privileges on function gen_random;
+get privileges on function gen_time;
+get privileges on procedure "_LIBMGR_".help;
+get privileges on table_mapping function "_LIBMGR_".event_log_reader;
 
--- user1 owns the udfs but does not have execute on procedure help
+-- user1 can execute udfs (as owner), but cannot execute procedure help,
+-- can execute table_mapping function event_log_reader through public grant
+get privileges on function gen_phone for sql_user1;
+get privileges on procedure "_LIBMGR_".help for sql_user1;
+get privileges on table_mapping function "_LIBMGR_".event_log_reader for sql_user1;
 sh sqlci -i "TEST144(cmds)" -u sql_user1;
 
 -- no other user or role has privileges
@@ -152,7 +165,12 @@ grant execute on function gen_phone to sql_user2 with grant option;
 grant execute on function gen_random to sql_user2 with grant option;
 grant execute on function gen_time to sql_user2;
 grant execute on procedure "_LIBMGR_".help to sql_user2 with grant option;
+get privileges on function gen_phone for sql_user2;
+get privileges on function gen_random for sql_user2;
+get privileges on function gen_time for user sql_user2;
+get privileges on procedure "_LIBMGR_".help for user sql_user2;
 execute get_privs;
+
 
 -- user2 can execute
 sh sqlci -i "TEST144(cmds)" -u sql_user2;
@@ -167,6 +185,10 @@ grant execute on procedure "_LIBMGR_".help to sql_user3 by sql_user2;
 
 -- user2 does not have WGO on gen_time
 grant execute on function gen_time to sql_user3 by sql_user2;
+get privileges on function gen_phone for user sql_user3;
+get privileges on function gen_random for user sql_user3;
+get privileges on function gen_time for user sql_user3;
+get privileges on procedure "_LIBMGR_".help for user sql_user3;
 execute get_privs;
 
 -- user 3 can execute gen_phone, gen_random, and help but not gen_time
@@ -179,11 +201,20 @@ grant execute on function gen_random to t144role1;
 grant execute on function gen_time to t144role1;
 grant execute on procedure "_LIBMGR_".help to t144role1;
 grant role t144role1 to sql_user4;
+get privileges on function gen_phone for user sql_user4;
+get privileges on function gen_random for user sql_user4;
+get privileges on function gen_time for user sql_user4;
+get privileges on procedure "_LIBMGR_".help for user sql_user4;
+get privileges on function gen_random for t144role1;
 execute get_privs;
 
 -- user4 can execute through role t144role1
 sh sqlci -i "TEST144(cmds)" -u sql_user4;
 
+get privileges on function gen_phone;
+get privileges on function gen_random;
+get privileges on function gen_time;
+get privileges on procedure "_LIBMGR_".help;
 ?section test_revokes
 -- ============================================================================
 -- verify that revoking privileges handle EXECUTE privilege correctly
@@ -223,6 +254,10 @@ execute get_privs;
 log LOG144;
 values (user);
 set schema t144user1;
+-- should return privileges only for users that have execute privilege
+get privileges on function gen_time;
+-- should return no rows for users other than sql_user1
+get privileges on function gen_random for sql_user1;
 select customer_id, 
        'PHONE: ' || gen_phone(customer_id, customer_areacode) as phone,
        customer_areacode 

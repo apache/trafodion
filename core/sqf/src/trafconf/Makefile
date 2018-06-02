@@ -46,6 +46,9 @@ LIBSX	+= -lrt
 # need -lsqlite3 for SQLite
 LIBSX	+=  -lsqlite3
 
+# need -lpthread starting on CentOS7
+LIBSX	+=  -lpthread  
+
 PROGS		= $(TRAFCONF)
 
 OBJTRAFCONFIG		= $(OUTDIR)/trafconfig.o \
