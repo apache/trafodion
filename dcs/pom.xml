@@ -665,6 +665,15 @@
   </dependencies>
   <profiles>
     <profile>
+       <id>disable-javadoc-doclint</id>
+       <activation>
+           <jdk>[1.8,)</jdk>
+       </activation>
+       <properties>
+           <javadoc.opts>-Xdoclint:none</javadoc.opts>
+       </properties>
+   </profile>
+    <profile>
       <id>dev</id>
       <properties>
         <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
@@ -685,14 +694,12 @@
     </profile>
     <profile>
       <id>runSmallTests</id>
-      <properties>
-        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
-        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
-      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
         <surefire.skipFirstPart>false</surefire.skipFirstPart>
         <surefire.skipSecondPart>true</surefire.skipSecondPart>
         <surefire.firstPartGroups>org.trafodion.dcs.SmallTests</surefire.firstPartGroups>
@@ -701,14 +708,12 @@
     </profile>
     <profile>
       <id>runMediumTests</id>
-      <properties>
-        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
-        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
-      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
         <surefire.skipFirstPart>false</surefire.skipFirstPart>
         <surefire.skipSecondPart>true</surefire.skipSecondPart>
         <surefire.firstPartGroups>org.trafodion.dcs.MediumTests</surefire.firstPartGroups>
@@ -717,14 +722,12 @@
     </profile>
     <profile>
       <id>runLargeTests</id>
-      <properties>
-        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
-        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
-      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
         <surefire.skipFirstPart>false</surefire.skipFirstPart>
         <surefire.skipSecondPart>true</surefire.skipSecondPart>
         <surefire.firstPartGroups>org.trafodion.dcs.LargeTests</surefire.firstPartGroups>
@@ -733,14 +736,12 @@
     </profile>
     <profile>
       <id>runAllTests</id>
-      <properties>
-        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
-        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
-      </properties>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
+        <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+        <HADOOP_DEP_VER>${env.HADOOP_DEP_VER}</HADOOP_DEP_VER>
         <surefire.skipFirstPart>false</surefire.skipFirstPart>
         <surefire.skipSecondPart>false</surefire.skipSecondPart>
         <surefire.firstPartGroups>org.trafodion.dcs.SmallTests</surefire.firstPartGroups>
@@ -767,6 +768,7 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
+          <additionalparam>${javadoc.opts}</additionalparam>
         </configuration>
         <reportSets>
           <reportSet>
