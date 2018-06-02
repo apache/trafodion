@@ -7692,7 +7692,6 @@ RelExpr * RelRoot::normalizeNode(NormWA & normWARef)
   if ((reqdOrder().entries() > 0) && 
       (child(0)->getOperatorType() == REL_FIRST_N))
     {
-printf("LMDBG root push order by to firstn\n");
       FirstN * firstn = (FirstN *)child(0)->castToRelExpr();
       if (firstn->isFirstN())  // that is, [first n], not [any n] or [last n]
         firstn->reqdOrder().insert(reqdOrder());

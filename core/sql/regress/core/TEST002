@@ -480,8 +480,10 @@ create table t002ZZ (x int);
 create table t002ZZI(x int);
 create table t002FU (x int);
 create table t002FUI(x int);
+create table t002sol(x int);
 insert into  t002FU  values(3),(4);
 insert into  t002FUI values(13);
+insert into  t002sol values(2),(5),(4),(3),(7);
 
 -- Tables t002ZZ and t002ZZI are empty (have zero rows), tables t002FU and t002FUI are full.
 --
@@ -586,6 +588,8 @@ select
 (select [last 0] x from t002sub) as result_value
 from t002main;
 
+-- Should return 7
+select x from (select [first 1] x from t002sol order by x desc );
 log;
 obey TEST002(clnup);
 exit;
@@ -601,6 +605,7 @@ drop table t002ZZ;
 drop table t002ZZI;
 drop table t002FU;
 drop table t002FUI;
+drop table t002sol;
 
 #ifMX
 drop table t002ut1;
