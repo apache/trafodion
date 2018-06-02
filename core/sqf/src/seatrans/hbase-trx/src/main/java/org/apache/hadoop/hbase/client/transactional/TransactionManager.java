@@ -3264,53 +3264,61 @@ public class TransactionManager {
     public void setStoragePolicy(String tblName, String policy)
       throws IOException {
 
-      try{
+      int retryCount = 0;
+      int retrySleep = TM_SLEEP;
+      boolean retry = false;
+      try {
         Table tbl = connection.getTable(TableName.valueOf(tblName));
         String rowkey = "0";
         CoprocessorRpcChannel channel = tbl.coprocessorService(rowkey.getBytes());
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService.BlockingInterface service =
-            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService.newBlockingStub(channel);
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService.newBlockingStub(channel);
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest.Builder request =
          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyRequest.newBuilder();
         String hbaseRoot = config.get("hbase.rootdir");
         FileSystem fs = FileSystem.get(config);
+      //Construct the HDFS dir
+      //find out if namespace is there
+      String[] parts = tblName.split(":");
+      String namespacestr="";
+      String fullPath = hbaseRoot + "/data/" ;
+      String fullPath2 = hbaseRoot + "/data/default/";
+      if(fs.exists(new Path(fullPath2)))
+        fullPath = fullPath2;
 
-        //Construct the HDFS dir
-        //find out if namespace is there
-        String[] parts = tblName.split(":");
-        String namespacestr="";
-        String fullPath = hbaseRoot + "/data/" ;
-        String fullPath2 = hbaseRoot + "/data/default/";
-        if(fs.exists(new Path(fullPath2)))
-          fullPath = fullPath2;
+      if(parts.length >1) //have namespace
+        fullPath = fullPath + parts[0] + "/" + parts[1];
+      else
+        fullPath = fullPath + tblName;
 
-        if(parts.length >1) //have namespace
-          fullPath = fullPath + parts[0] + "/" + parts[1];
-        else
-          fullPath = fullPath + tblName;
+      request.setPath(fullPath);
+      request.setPolicy(policy);
+        
+      do {
+          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse ret =
+            service.setStoragePolicy(null,request.build());
 
-        request.setPath(fullPath);
-        request.setPolicy(policy);
-
-        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafSetStoragePolicyResponse ret =
-          service.setStoragePolicy(null,request.build());
-
-        //handle result and error
-        if( ret == null)
-        {
-          LOG.error("setStoragePolicy Response ret null ");
-          throw new IOException("coprocessor not response");
-        }
-        else if (ret.getStatus() == false)
-        {
-          LOG.error("setStoragePolicy Response ret false: " + ret.getException());
-          throw new IOException(ret.getException());
-        }
+          //handle result and error
+          if( ret == null)
+          {
+            LOG.error("setStoragePolicy Response ret null ");
+          }
+          else if (ret.getStatus() == false)
+          {
+            LOG.error("setStoragePolicy Response ret false: " + ret.getException());
+            throw new IOException(ret.getException());
+          }
+          if(retryCount == RETRY_ATTEMPTS)
+          {
+            throw new IOException("coprocessor not response");
+          }
+          if (retry) 
+              retrySleep = retry(retrySleep);
+        } while (retry && retryCount++ < RETRY_ATTEMPTS);
       }
       catch (Exception e) {
-        throw new IOException(e);
+         throw new IOException(e);
       }
-
-    }
+  }
 }
 
