@@ -3316,7 +3316,23 @@ enum DefaultConstants
 
   // Use the earlier implementation of HdfsScan via libhdfs
   USE_LIBHDFS_SCAN,
-  
+
+  // if set, make primary key columns non-nullable. ANSI specification.
+  // Default is ON.
+  TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,
+
+  // if ON and there are dependent objects on the table, then
+  // create unique constraint instead of clustered primary key.
+  //
+  // Otherwise return error. Users will need to drop dependent objects and
+  // then recreate them after adding the primary key.
+  // Default is OFF.
+  TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT,
+
+  // if set, do not drop or create hbase objects.
+  // Internal cqd. Used during pkey alter/add
+  TRAF_NO_HBASE_DROP_CREATE,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   // Size of byte[] in java when direct byteBuffer can't be used

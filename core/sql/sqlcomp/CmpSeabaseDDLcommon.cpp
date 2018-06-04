@@ -4093,7 +4093,6 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objectUID);
-              
 
   cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
@@ -6297,6 +6296,10 @@ short CmpSeabaseDDL::buildKeyInfoArray(
           ComTdbVirtTableKeyInfo::ASCENDING_ORDERING : 
           ComTdbVirtTableKeyInfo::DESCENDING_ORDERING);
       keyInfoArray[index].nonKeyCol = 0;
+
+      ElemDDLColDef *colDef = (*colArray)[keyInfoArray[index].tableColNum];
+      if (colDef && colDef->getConstraintPK() && colDef->getConstraintPK()->isNullableSpecified())
+        allowNullableUniqueConstr = TRUE;
 
       if ((colInfoArray) &&
           (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
@@ -8639,7 +8642,7 @@ void CmpSeabaseDDL::updateVersion()
 short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart, 
                                         const NAString &schemaNamePart, 
                                         const NAString &objectNamePart,
-                                        NATable * naTable,
+                                        const NABoolean hasSaltedColumn,
                                         ExpHbaseInterface * ehi)
 {
   Lng32 retcode = 0;
@@ -8652,7 +8655,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   hbaseTable.len = extNameForHbase.length();
 
   // if salted table, preserve splits.
-  if (naTable->hasSaltedColumn())
+  if (hasSaltedColumn)
     retcode = ehi->truncate(hbaseTable, TRUE, TRUE);
   else
     retcode = ehi->truncate(hbaseTable, FALSE, TRUE);
@@ -8836,7 +8839,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
                                  
   NABoolean ddlXns = ddlExpr->ddlXns();
   if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
-                         naTable, ehi))
+                         naTable->hasSaltedColumn(), ehi))
     {
       deallocEHI(ehi); 
       
@@ -8863,7 +8866,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
           NAString idxName = qn.getObjectName();
 
           retcode = truncateHbaseTable(catName, schName, idxName,
-                                       naTable, ehi);
+                                       naTable->hasSaltedColumn(), ehi);
           if (retcode)
             {
               deallocEHI(ehi); 

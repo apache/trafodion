@@ -2744,6 +2744,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <tokval>    		left_outer
 %type <tokval>    		optional_col_keyword
 %type <boolean>                 optional_cast_spec_not_null_spec
+%type <boolean>                 optional_nullable_pkey
 %type <boolean>                 optional_encode_key_ordering_spec
 %type <CollationType>		optional_Collation_type
 %type <SortDirection>		optional_sort_direction
@@ -10731,6 +10732,18 @@ optional_cast_spec_not_null_spec : empty
      | TOK_NOT TOK_NULL
                                 {
                                   $$ = TRUE;  // NOT NULL phrase specified
+                                }
+
+optional_nullable_pkey: empty
+                                {
+                                  if (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_OFF)
+                                    $$ = FALSE;
+                                  else
+                                    $$ = TRUE;
+                                }
+     | TOK_NULLABLE
+                                {
+                                  $$ = TRUE;
                                 }
 
 /* type item */
@@ -25736,7 +25749,7 @@ column_constraint :  TOK_NOT TOK_NULL
 			          NonISO88591LiteralEncountered = FALSE;
                                   $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
                                 }
-                            |  TOK_NOT TOK_NULL TOK_ENABLE
+                     |  TOK_NOT TOK_NULL TOK_ENABLE
                                 {
 			          NonISO88591LiteralEncountered = FALSE;
                                   $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
@@ -25808,16 +25821,20 @@ ddl_ordering_spec : TOK_ASC
 
 /* type pElemDDLConstraintUnique */
 column_unique_specification : unique_constraint_specification
-                      | TOK_PRIMARY TOK_KEY
+                      | TOK_PRIMARY TOK_KEY optional_nullable_pkey
                                 {
-                                  $$ = new (PARSERHEAP()) ElemDDLConstraintPKColumn();
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPKColumn(
+                                         COM_ASCENDING_ORDER, 
+                                         $3 /*isNullable*/);
                                 }
 
-                      | TOK_PRIMARY TOK_KEY ddl_ordering_spec
+                      | TOK_PRIMARY TOK_KEY optional_nullable_pkey ddl_ordering_spec
                                 {
                                   $$ = new (PARSERHEAP())
 				    ElemDDLConstraintPKColumn(
-                                       $3 /*ddl_ordering_spec*/);
+                                         $4 /*ddl_ordering_spec*/,
+                                         $3 /*isNullable*/);
                                 }
 
 /* type pElemDDLConstraintUnique */
@@ -25828,20 +25845,23 @@ unique_constraint_specification : TOK_UNIQUE
 
 /* type pElemDDLConstraintUnique */
 unique_specification : unique_constraint_specification
-                      | TOK_PRIMARY TOK_KEY
+                      | TOK_PRIMARY TOK_KEY optional_nullable_pkey
                                 {
                                   $$ = new (PARSERHEAP()) 
-                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SER_NOT_SPECIFIED);
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SER_NOT_SPECIFIED,
+                                                        $3);
                                 }
-                      | TOK_PRIMARY TOK_KEY TOK_SERIALIZED
+                      | TOK_PRIMARY TOK_KEY optional_nullable_pkey TOK_SERIALIZED
                                 {
                                   $$ = new (PARSERHEAP()) 
-                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SERIALIZED);
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SERIALIZED,
+                                                        $3);
                                 }
-                      | TOK_PRIMARY TOK_KEY TOK_NOT TOK_SERIALIZED
+                      | TOK_PRIMARY TOK_KEY optional_nullable_pkey TOK_NOT TOK_SERIALIZED
                                 {
                                   $$ = new (PARSERHEAP()) 
-                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_NOT_SERIALIZED);
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_NOT_SERIALIZED,
+                                                        $3);
                                 }
 
 /* type pElemDDLConstraint */

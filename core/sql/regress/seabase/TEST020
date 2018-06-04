@@ -130,8 +130,10 @@ select * from test020t31;
 -- The following Drop Table statement should execute successfully
 drop table test020t31;
 
--- The following Create Table statement should fail
+-- The following Create Table statement should fail, cant have nullable pkey
+cqd traf_make_pkey_columns_not_null 'OFF';
 create table test020t31 (g0 smallint no default primary key);
+cqd traf_make_pkey_columns_not_null reset;
 drop table if exists test020t31;
 
 -- The following Create Table statement should fail

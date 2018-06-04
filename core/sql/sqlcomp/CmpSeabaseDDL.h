@@ -1100,6 +1100,12 @@ protected:
        ExeCliInterface * cilInterface,
        NABoolean withCreate);
 
+  short cloneAndTruncateTable(
+       const NATable * naTable, // IN: source table
+     NAString &tempTable, // OUT: temp table
+     ExpHbaseInterface * ehi,
+     ExeCliInterface * cliInterface);
+
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
                           StmtDDLDropTable * dropTableNode,
@@ -1453,7 +1459,7 @@ protected:
   short truncateHbaseTable(const NAString &catalogNamePart, 
                            const NAString &schemaNamePart, 
                            const NAString &objectNamePart,
-                           NATable * naTable,
+                           const NABoolean hasSaltedColumn,
                            ExpHbaseInterface * ehi);
 
   void purgedataHbaseTable(DDLExpr * ddlExpr,
