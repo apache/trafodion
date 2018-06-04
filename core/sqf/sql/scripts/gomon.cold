@@ -117,22 +117,6 @@ fi
 idtmstart
 sqshell -c delay 1
 
-if [[ $TRAF_AGENT != "CM" ]]
-then
-  echo  "***"
-  echo  "***" `date`  " - Starting Cluster Monitor"
-  echo  "***"
-
-  cmonstart
-  sqshell -c delay 1
-fi
-
-echo  "***"
-echo  "***" `date`  " - Starting Node Monitors"
-echo  "***"
-
-nmonstart
-
 echo  "***"
 echo  "***" `date`  " - Starting Distributed Transaction Manager (DTM)"
 echo  "***"
