@@ -2882,7 +2882,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
- 
+
+  DDkwd__(TRAF_DDL_ON_HIVE_OBJECTS,             "ON"),
+
   DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   

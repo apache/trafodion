@@ -28,6 +28,7 @@ initialize authorization;
 register user sql_user3 as sql_user3;
 
 log LOG007 clear;
+
 obey TEST007(setup_traf);
 obey TEST007(tests_traf);
 obey TEST007(error_tests_traf);
@@ -36,9 +37,10 @@ obey TEST007(setup_hive);
 obey TEST007(tests_hive);
 obey TEST007(error_tests_hive);
 
-log;
 obey TEST007(clean_up_traf);
 obey TEST007(clean_up_hive);
+
+log;
 
 exit;
 
@@ -138,8 +140,8 @@ update trafodion.sch007.vhive1 set b = 1;
 --  traf view is not updatable
 delete from trafodion.sch007.vhive4;
 
--- traf view must be in traf cat/sch
-create view vhive5 as select * from thive1;
+create view if not exists vhive5 as select * from thive1;
+drop view vhive5;
 
 -- if underlying hive table is dropped, an error is returned
 prepare s from select * from trafodion.sch007.vhive1;
@@ -149,53 +151,55 @@ execute s;
 select * from trafodion.sch007.vhive1;
 unregister hive table if exists hive.hive.thive1;
 select * from hive.hive.thive1;
-cleanup hive table hive.hive.thive1;
+cleanup table hive.hive.thive1;
 select * from hive.hive.thive1;
 
 ?section clean_up_hive
+
+set schema hive.hive;
 unregister hive table hive.hive.thive1 cleanup;
 
 unregister hive view hive.hivesch007.vhive1 cascade cleanup;
 unregister hive view hive.hivesch007.vhive11 cascade cleanup;
 
-process hive statement 'drop table hivesch007.thive1';
-process hive statement 'drop view hivesch007.vhive11';
-process hive statement 'drop view hivesch007.vhive1';
-process hive statement 'drop database hivesch007 cascade';
-process hive statement 'drop table thive007';
-process hive statement 'drop view vhive007';
+drop table hivesch007.thive1;
+drop view hivesch007.vhive11;
+drop view hivesch007.vhive1;
+drop database hivesch007 cascade;
+drop table hive.hive.thive007;
+drop view vhive007;
 
-cleanup hive view hive.hivesch007.vhive11;
+cleanup view hive.hivesch007.vhive11;
 
 drop view trafodion.sch007.vtrafonhive;
 
 drop schema trafodion.sch007 cascade;
 
-process hive statement 'drop table hivesch0071.h1';
-process hive statement 'drop view hivesch0071.vh1';
-process hive statement 'drop view hivesch0071.vh11';
+drop table hivesch0071.h1;
+drop view hivesch0071.vh1;
+drop view hivesch0071.vh11;
 
-process hive statement 'drop table hivesch007.thive9';
+drop table hivesch007.thive9;
 drop view trafodion.sch007.vhive9;
 drop external table thive9 for hive.hivesch007.thive9;
 
-process hive statement 'drop database hivesch0071 cascade';
+drop database hivesch0071 cascade;
+
 
 ?section setup_hive
-process hive statement 'create database hivesch007';
+create database hive.hivesch007;
 
-process hive statement 'create table hivesch007.thive1 (a int)';
+create table hive.hivesch007.thive1 (a int);
 
-sh echo "insert into hivesch007.thive1 values (1);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+insert into hive.hivesch007.thive1 values (1);
 
-process hive statement 'create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0';
+create view hive.hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0;
 
-process hive statement 'create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0';
+create view hive.hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0;
 
-process hive statement 'create table thive007 (a int)';
+create table hive.hive.thive007 (a int);
 
-process hive statement 'create view vhive007 as select * from thive007 where a > 0';
+create view hive.hive.vhive007 as select * from thive007 where a > 0;
 
 insert into hive.hive.thive007 values (1);
 
@@ -245,6 +249,7 @@ get views in view trafodion.sch007.vtrafonhive;
 get views on view hive.hivesch007.vhive11;
 
 unregister hive view hive.hivesch007.vhive11 cascade;
+
 get tables in view hive.hivesch007.vhive11;
 get views on table hive.hivesch007.thive1;
 

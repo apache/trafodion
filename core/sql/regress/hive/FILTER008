@@ -20,6 +20,9 @@
 #
 # @@@ END COPYRIGHT @@@
 
+# Like the pattern-masking of QACOMP, here we filter out such stuff as
+# timestamps and generated identifiers.  Called by the runregr script
+# before doing diff.
 
 fil=$1
 if [ "$fil" = "" ]; then
@@ -27,11 +30,6 @@ if [ "$fil" = "" ]; then
   exit 1
 fi
 
-sed "
-s/Logging Location: \/user\/trafodion\/bulkload\/logs\/ERR.*/Logging Location:@loggingLocation@/
-s/Logging Location: \/user\/trafodion\/bulkload\/logs\/TEST005\/ERR.*/Logging Location:@TEST005LoggingLocation@/
-s/Time:.*/Time:@time@/
-s/^\*\*\* WARNING\[8436\].*/Warning 8436 or 8577 removed/g
-s/^\*\*\* WARNING\[8577\].*/Warning 8436 or 8577 removed/g
+sed " 
 s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
 " $fil

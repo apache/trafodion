@@ -119,9 +119,6 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
        ExeCliInterface *cliInterface,
        ExpHbaseInterface *ehi);
 
-  void cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
-                         ExeCliInterface *cliInterface);
-
   void cleanupHBaseObject(const StmtDDLCleanupObjects * stmtCleanupNode,
                           ExeCliInterface *cliInterface);
   
@@ -153,10 +150,12 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
   // stop cleanup if an error occurs
   NABoolean stopOnError_;
 
+  NABoolean isHive_;
   NAString catName_;
   NAString schName_;
   NAString objName_;
   NAString extNameForHbase_;
+  NAString extNameForHive_;
   NAString objType_; // BT, IX, SG...
   Int64 objUID_;
   Int32 objectOwner_;

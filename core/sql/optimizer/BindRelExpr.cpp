@@ -1653,7 +1653,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
   if ((table) && 
-      (table->isExternalTable() && 
+      (table->isTrafExternalTable() && 
        (NOT table->getTableName().isHbaseMappedName()) &&
        (! bindWA->allowExternalTables())))    
     {
@@ -1667,7 +1667,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable() &&
+  if ((table) && table->isTrafExternalTable() &&
       (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
@@ -2119,6 +2119,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     }
 
   Parser parser(bindWA->currentCmpContext());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
   ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                        naTable->getViewLen(),
                                        naTable->getViewTextCharSet());

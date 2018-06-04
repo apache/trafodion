@@ -737,6 +737,9 @@ public:
         // first character) of the statement (within the
         // input string)
 
+  const NABoolean createIfNotExists() const { return createIfNotExists_; }
+  void setCreateIfNotExists(NABoolean v) { createIfNotExists_ = v; }
+
   //
   // method for binding
   //
@@ -838,6 +841,10 @@ private:
   ElemDDLNode * pWithCheckOption_;
 
   ElemDDLGrantee * pOwner_;
+
+  // create if view does not exist. Otherwise just return.
+  NABoolean createIfNotExists_;
+
   // All UDF's referenced in a statement
   // --------------------------------------------------------------------
   LIST(OptUDFInfo *) udfList_;

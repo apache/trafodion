@@ -1400,9 +1400,6 @@ void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Methods for class ComTdbExeUtilHiveQuery
-//
-///////////////////////////////////////////////////////////////////////////
 ComTdbExeUtilHiveQuery::ComTdbExeUtilHiveQuery(
      char * hiveQuery,
      ULng32 hiveQueryLen,
@@ -1428,34 +1425,27 @@ ComTdbExeUtilHiveQuery::ComTdbExeUtilHiveQuery(
 {
   setNodeType(ComTdb::ex_HIVE_QUERY);
 }
-
 Long ComTdbExeUtilHiveQuery::pack(void * space)
 {
   if (hiveQuery_)
     hiveQuery_.pack(space);
-
   return ComTdbExeUtil::pack(space);
 }
-
 Lng32 ComTdbExeUtilHiveQuery::unpack(void * base, void * reallocator)
 {
   if(hiveQuery_.unpack(base))
     return -1;
-
   return ComTdbExeUtil::unpack(base, reallocator);
 }
-
 void ComTdbExeUtilHiveQuery::displayContents(Space * space,
 					      ULng32 flag)
 {
   ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-  
   if(flag & 0x00000008)
     {
       char buf[500];
       str_sprintf(buf, "\nFor ComTdbExeUtilHiveQuery :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      
       if (getHiveQuery() != NULL)
 	{
 	  str_sprintf(buf,"HiveQuery = %s ",getHiveQuery());
@@ -1463,17 +1453,12 @@ void ComTdbExeUtilHiveQuery::displayContents(Space * space,
 					       sizeof(short));
 	}
     }
-  
   if (flag & 0x00000001)
     {
       displayExpression(space,flag);
       displayChildren(space,flag);
     }
-
 }
-
-///////////////////////////////////////////////////////////////////////////
-//
 // Methods for class ComTdbExeUtilGetStatistics
 //
 ///////////////////////////////////////////////////////////////////////////

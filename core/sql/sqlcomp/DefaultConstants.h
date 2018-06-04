@@ -3316,6 +3316,9 @@ enum DefaultConstants
 
   // Use the earlier implementation of HdfsScan via libhdfs
   USE_LIBHDFS_SCAN,
+
+  // if set, ddl from Traf interface on Hive objects is supported.
+  TRAF_DDL_ON_HIVE_OBJECTS,
   
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

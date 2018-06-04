@@ -906,7 +906,8 @@ StmtDDLDropView::StmtDDLDropView(const QualifiedName & viewQualName,
           dropBehavior_(dropBehavior),
 	  isCleanupSpec_(cleanupSpec),
 	  isValidateSpec_(validateSpec),
-	  pLogFile_(pLogFile)
+	  pLogFile_(pLogFile),
+          dropIfExists_(FALSE)
 {
 }
 

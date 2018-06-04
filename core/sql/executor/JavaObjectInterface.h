@@ -148,9 +148,12 @@ public:
     return isInitialized_;
   }
   static NABoolean getExceptionDetails(const char *fileName, int lineNo,
-                       const char *methodName);  
+                                       const char *methodName, 
+                                       NABoolean noDetails = FALSE);
 
-  static void appendExceptionMessages(jthrowable a_exception, NAString &error_msg);
+  static void appendExceptionMessages(jthrowable a_exception, 
+                                      NAString &error_msg,
+                                      NABoolean noDetails = FALSE);
   
   NAHeap *getHeap() { return heap_; }
 protected:

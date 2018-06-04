@@ -569,13 +569,15 @@ Int32 yyULexer::setStringval(Int32 tokCod, const char *dbgstr, YYSTYPE *lvalp)
     (YYText(),YYLeng(),targetMBCS,PARSERHEAP());
 
   if (
-      (tokCod == DELIMITED_IDENTIFIER || tokCod == IDENTIFIER)
+      (tokCod == DELIMITED_IDENTIFIER || tokCod == IDENTIFIER ||
+       tokCod == BACKQUOTED_IDENTIFIER)
       && targetMBCS != CharInfo::ISO88591
       )
   {
     NAString* tempstr = lvalp->stringval; // targetMBCS == ParScannedInputCharset
     if (tempstr == NULL)
       return invalidStrLitNonTranslatableChars(lvalp);
+
     Int32 TSLen = (Int32)tempstr->length();
     Int32 YYLen = (Int32)YYLeng();
     if(TSLen != YYLen){  // need offset of ORIGINAL string
@@ -2027,6 +2029,27 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                       //
                       return setStringval(DELIMITED_IDENTIFIER, 
                                           DBGMSG("Delimited identifier %s\n"),
+                                          lvalp);
+                  }
+            }
+          return prematureEOF(lvalp);
+        case L'`':
+          // "delimited identifier" enclosed within backquotes (`)
+          //
+          advance();
+          while ((cc=peekAdvance()) != WEOF)
+            {
+              if (cc == L'`')
+                if ((cc= peekChar()) == L'`')
+                  advance();
+                else
+                  {
+                    doBeforeAction();
+                      // In Trafodion text, double quoted strings are
+                      // delimited identifiers.
+                      //
+                      return setStringval(BACKQUOTED_IDENTIFIER, 
+                                          DBGMSG("Backquoted identifier %s\n"),
                                           lvalp);
                   }
             }

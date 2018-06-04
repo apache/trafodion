@@ -566,7 +566,8 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
 }
 
 NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
-                       const char *methodName)  
+                                                    const char *methodName,
+                                                    NABoolean noDetails)
 {
    JNIEnv *jenv = jenv_;
    CliGlobals *cliGlobals = GetCliGlobals();
@@ -585,7 +586,7 @@ NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int li
        setSqlJniErrorStr(error_msg); 
        return FALSE;
    }
-   appendExceptionMessages(a_exception, error_msg);
+   appendExceptionMessages(a_exception, error_msg, noDetails);
    setSqlJniErrorStr(error_msg); 
    logError(CAT_SQL_EXE, fileName, lineNo); 
    logError(CAT_SQL_EXE, methodName, error_msg); 
@@ -593,7 +594,9 @@ NABoolean  JavaObjectInterface::getExceptionDetails(const char *fileName, int li
    return TRUE;
 }
 
-void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAString &error_msg)
+void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, 
+                                                  NAString &error_msg,
+                                                  NABoolean noDetails)
 {
     jstring msg_obj =
        (jstring) jenv_->CallObjectMethod(a_exception,
@@ -617,6 +620,10 @@ void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAStri
                                         gGetStackTraceMethodID);
     if (frames == NULL)
        return;
+
+    if (noDetails)
+      return;
+
     jsize frames_length = jenv_->GetArrayLength(frames);
 
     jsize i = 0;
@@ -638,7 +645,7 @@ void JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAStri
     jthrowable j_cause = (jthrowable)jenv_->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
        error_msg += " Caused by \n";
-       appendExceptionMessages(j_cause, error_msg);
+       appendExceptionMessages(j_cause, error_msg, noDetails);
     }
     jenv_->DeleteLocalRef(a_exception);
 } 

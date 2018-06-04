@@ -665,6 +665,12 @@ PhysicalFastExtract::codeGen(Generator *generator)
         }
     } // do sim check
 
+  if (getHiveTableDesc() && 
+      getHiveTableDesc()->getNATable() &&
+      getHiveTableDesc()->getNATable()->isEnabledForDDLQI())
+    generator->objectUids().insert(
+         getHiveTableDesc()->getNATable()->objectUid().get_value());
+
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());

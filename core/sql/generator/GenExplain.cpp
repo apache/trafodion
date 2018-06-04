@@ -62,6 +62,7 @@
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
+#include "StmtDDLonHiveObjects.h"
 #include "ComDistribution.h"
 #include "TrafDDLdesc.h"
 
@@ -1123,7 +1124,29 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   char buf[200];
   NAString buffer;
 
-  buffer = "explain_information: not available.";
+  ExprNode *ddlNode = getDDLNode();
+  if (ddlNode)
+    {
+      if (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)
+        {
+          StmtDDLonHiveObjects * hddl =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
+          buffer = "explain_information: DDL on Hive object ";
+          buffer += NAString("ddl_operation: ") + hddl->getOperStr() + " ";
+          if (NOT hddl->getName().isNull())
+            buffer += NAString("object_name: ") + hddl->getName() + " ";
+          else
+            buffer += "object_name: unknown ";
+          buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+          if (NOT hddl->getHiveDDL().isNull())
+            buffer += NAString("hive_ddl: ") + hddl->getHiveDDL() + " ";
+          else
+            buffer += "hive_ddl: unknown ";
+        }
+    } // ddlNode
+
+  if (buffer.isNull())
+    buffer = "explain_information: not available.";
 
   explainTuple->setDescription(buffer);
   

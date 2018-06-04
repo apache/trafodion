@@ -2860,7 +2860,8 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
-             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME) ||
+             (ddlNode->getOperatorType() == DDL_ON_HIVE_OBJECTS)))
      {
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;

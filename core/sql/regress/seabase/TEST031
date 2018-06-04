@@ -215,8 +215,11 @@ control query shape cut ;
 cqd hdfs_io_buffersize reset ;
 cqd hive_min_bytes_per_esp_partition reset;
 
--- should return error.
+-- should not return error.
+process hive statement 'drop table t';
+process hive statement 'create table t (a int)';
 process hive statement 'insert into t values (1)';
+process hive statement 'drop table t';
 
 -- default USER
 drop table if exists t031t1;

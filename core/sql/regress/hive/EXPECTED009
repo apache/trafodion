@@ -17,7 +17,7 @@
 >>-- The version of hive installed does not support special characters
 >>-- TDB - when hive is upgraded to a new version, add tests where
 >>--   the hive schema contains special characters
->>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql &> $REGRRUNDIR/LOG009_a.hive.log;
+>>sh sqlci -i"$REGRTSTDIR/TEST009_a.hive.sql" &> $REGRRUNDIR/LOG009_a.hive.log;
 >>sh regrhbase.ksh $REGRTSTDIR/TEST009_create_hbase_objects.hbase &> $REGRRUNDIR/LOG009_create_hbase_tables.log ;
 >>
 >>-- make sure external schemas exist in Trafodion
@@ -135,16 +135,16 @@ CREATE EXTERNAL TABLE T009T2
 A            B            C          
 -----------  -----------  -----------
 
-         10           15           10
-          9           26           10
-          8           26           12
-          7           24            4
-          6            4           12
-          5            8            5
-          4            7            6
-          3           18            9
-          2            9            4
           1            9           12
+          2            9            4
+          3           18            9
+          4            7            6
+          5            8            5
+          6            4           12
+          7           24            4
+          8           26           12
+          9           26           10
+         10           15           10
 
 --- 10 row(s) selected.
 >>select * from hive.sch_t009.t009t2;
@@ -152,16 +152,16 @@ A            B            C
 A            B            C          
 -----------  -----------  -----------
 
-         10           15           10
-          9           26           10
-          8           26           12
-          7           24            4
-          6            4           12
-          5            8            5
-          4            7            6
-          3           18            9
-          2            9            4
           1            9           12
+          2            9            4
+          3           18            9
+          4            7            6
+          5            8            5
+          6            4           12
+          7           24            4
+          8           26           12
+          9           26           10
+         10           15           10
 
 --- 10 row(s) selected.
 >>
@@ -214,7 +214,7 @@ A            B            C
 >>invoke t009hivecust1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST1
--- Definition current  Tue Apr 10 12:50:07 2018
+-- Definition current  Thu May 24 14:49:49 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -263,7 +263,7 @@ A            B            C
 >>invoke t009hivecust2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST2
--- Definition current  Tue Apr 10 12:50:20 2018
+-- Definition current  Thu May 24 14:50:05 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -346,7 +346,7 @@ A            B            C
 >>
 >>-- cleanup data from the old table, and create/load data with additional column
 >>sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/t009t1/*;
->>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql &> $REGRRUNDIR/LOG009_b.hive.log;
+>>sh sqlci -i"$REGRTSTDIR/TEST009_b.hive.sql" &> $REGRRUNDIR/LOG009_b.hive.log;
 >>
 >>-- should fail - column mismatch
 >>select count(*) from hive.sch_t009.t009t1;
@@ -367,16 +367,16 @@ A            B            C
 A            B            C          
 -----------  -----------  -----------
 
-         10           15           10
-          9           26           10
-          8           26           12
-          7           24            4
-          6            4           12
-          5            8            5
-          4            7            6
-          3           18            9
-          2            9            4
           1            9           12
+          2            9            4
+          3           18            9
+          4            7            6
+          5            8            5
+          6            4           12
+          7           24            4
+          8           26           12
+          9           26           10
+         10           15           10
 
 --- 10 row(s) selected.
 >>
@@ -433,8 +433,8 @@ T009T2
 --- SQL operation complete.
 >>invoke hive.sch_t009.t009t1;
 
--- Definition of hive table T009T1
--- Definition current  Tue Apr 10 12:51:54 2018
+-- Definition of hive table HIVE.SCH_T009.T009T1
+-- Definition current  Thu May 24 14:51:34 2018
 
   (
     A                                INT
@@ -516,7 +516,7 @@ ROW_ID      COLS
 >>invoke bblike1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE1
--- Definition current  Tue Apr 10 12:52:10 2018
+-- Definition current  Thu May 24 14:51:53 2018
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -533,7 +533,7 @@ ROW_ID      COLS
 >>invoke bblike2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE2
--- Definition current  Tue Apr 10 12:52:16 2018
+-- Definition current  Thu May 24 14:52:01 2018
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -571,8 +571,8 @@ ROW_ID      COLS
 --- SQL operation complete.
 >>invoke hive.hive.store_sales;
 
--- Definition of hive table STORE_SALES
--- Definition current  Tue Apr 10 12:52:22 2018
+-- Definition of hive table HIVE.HIVE.STORE_SALES
+-- Definition current  Thu May 24 14:52:08 2018
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -654,6 +654,7 @@ DESCRIPTION
   HIVE_MAX_STRING_LENGTH  20
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. HIVE.HIVE
+  ObjectUIDs ........... ###
   select_list ............ HIVE.STORE_SALES.SS_SOLD_DATE_SK,
                              HIVE.STORE_SALES.SS_SOLD_TIME_SK, %(1),
                              HIVE.STORE_SALES.SS_CUSTOMER_SK,
@@ -931,8 +932,8 @@ DESCRIPTION
 --- SQL operation complete.
 >>invoke hive.hive.date_dim;
 
--- Definition of hive table DATE_DIM
--- Definition current  Tue Apr 10 12:52:29 2018
+-- Definition of hive table HIVE.HIVE.DATE_DIM
+-- Definition current  Thu May 24 14:52:14 2018
 
   (
     D_DATE_SK                        INT
@@ -981,7 +982,7 @@ DESCRIPTION
 >>showddl hive.hive.date_dim;
 
 /* Hive DDL */
-CREATE TABLE DATE_DIM
+CREATE EXTERNAL TABLE HIVE.HIVE.DATE_DIM
   (
     D_DATE_SK                        int
   , D_DATE_ID                        string
@@ -1018,7 +1019,7 @@ CREATE TABLE DATE_DIM
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 4145713645956211204 */
+/* ObjectUID = 4592144177079350537 */
 
 CREATE EXTERNAL TABLE DATE_DIM
   (
@@ -1068,8 +1069,6 @@ CREATE EXTERNAL TABLE DATE_DIM
 --- SQL operation complete.
 >>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
 
-*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
-
 --- SQL command prepared.
 >>explain options 'c' s;
 
@@ -1117,6 +1116,7 @@ DESCRIPTION
   SHOWCONTROL_SHOW_ALL ... OFF
   SCHEMA ................. TRAFODION.SCH
   VOLATILE_TABLE_FIND_SUI  SYSTEM
+  ObjectUIDs ........... ###
   select_list ............ HIVE.DATE_DIM.D_DATE_SK, HIVE.DATE_DIM.D_DATE_ID,
                              %(2016-01-27), HIVE.DATE_DIM.D_MONTH_SEQ,
                              HIVE.DATE_DIM.D_WEEK_SEQ,
@@ -1173,8 +1173,8 @@ DESCRIPTION
 --- SQL operation complete.
 >>invoke hive.hive.date_dim;
 
--- Definition of hive table DATE_DIM
--- Definition current  Tue Apr 10 12:52:50 2018
+-- Definition of hive table HIVE.HIVE.DATE_DIM
+-- Definition current  Thu May 24 14:52:24 2018
 
   (
     D_DATE_SK                        INT
@@ -1223,7 +1223,7 @@ DESCRIPTION
 >>showddl hive.hive.date_dim;
 
 /* Hive DDL */
-CREATE TABLE DATE_DIM
+CREATE EXTERNAL TABLE HIVE.HIVE.DATE_DIM
   (
     D_DATE_SK                        int
   , D_DATE_ID                        string
@@ -1260,7 +1260,7 @@ CREATE TABLE DATE_DIM
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 4145713645956211204 */
+/* ObjectUID = 4592144177079350537 */
 
 CREATE EXTERNAL TABLE DATE_DIM
   (
@@ -1309,6 +1309,8 @@ CREATE EXTERNAL TABLE DATE_DIM
 
 --- SQL operation complete.
 >>prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
+
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>explain options 'p' s;
