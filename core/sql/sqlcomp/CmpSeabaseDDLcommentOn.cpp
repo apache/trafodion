@@ -289,6 +289,23 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
                                        CmpCommon::context()->sqlSession()->getParentQid());
+  //if comment on native HBASE first shoud register first
+  if (CmpSeabaseDDL::isHbase(catalogNamePart))
+  {
+       NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT EXISTS ";
+       ddl.append(catalogNamePart);
+       ddl.append(".");
+       ddl.append("\""+schemaNamePart+"\"");
+       ddl.append(".");
+       ddl.append("\""+objNamePart+"\"");
+       cliRC = cliInterface.executeImmediate(ddl.data());
+       if (cliRC)
+       {
+           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+           processReturn();
+           return;
+       }
+  }
   Int64 objUID = 0;
   Int32 objectOwnerID = ROOT_USER_ID;
   Int32 schemaOwnerID = ROOT_USER_ID;
