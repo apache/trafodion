@@ -2412,10 +2412,14 @@ ex_expr::exp_return_type ex_arith_sum_clause::pCodeGenerate(Space *space, UInt32
      (op1->getDatatype() > REC_MAX_NUMERIC))
     return ex_clause::pCodeGenerate(space, f);
 
+  if (! isAugmentedAssignOperation())
+     return ex_clause::pCodeGenerate(space, f);
+
   // The result should be the same as one of the operands.
   //
   Int32 firstOperand = isSameAttribute(dst, op1);
   Int32 secondOperand = isSameAttribute(dst, op2);
+  
   if(!firstOperand && !secondOperand)
     return ex_clause::pCodeGenerate(space, f);
 

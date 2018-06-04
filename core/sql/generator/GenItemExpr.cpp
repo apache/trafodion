@@ -359,6 +359,8 @@ short BiArithSum::codeGen(Generator * generator)
     ex_arith_sum_clause(getOperatorType(), 
 			attr, 
 			generator->getSpace());
+  if (eg->inSequenceFuncExpr())
+     arith_clause->setAugmentedAssignOperation(FALSE);
   
   generator->getExpGenerator()->linkClause(this, arith_clause);
 

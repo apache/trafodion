@@ -1632,7 +1632,9 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
                   (oper_type == ITM_NEGATE ? 2 : 3), attr, space),
        flags_(0)
 {
+  setAugmentedAssignOperation(TRUE);
   arithRoundingMode_ = (char)arithRoundingMode;
+
 
   if (divToDownscale)
     setDivToDownscale(TRUE);
@@ -1659,6 +1661,7 @@ ex_arith_clause::ex_arith_clause(clause_type type,
 				   flags_(0)
  
 {
+  setAugmentedAssignOperation(TRUE);
   setInstruction(); 
 }
 
