@@ -303,7 +303,8 @@ create table hive.hive.thive(a int);
 
 select a from hive.hive.thive;
 
-process hive statement 'insert into thive values (1)';
+--process hive statement 'insert into thive values (1)';
+insert into hive.hive.thive values (1);
 
 select a from hive.hive.thive;
 insert into hive.hive.thive values (2);
@@ -312,7 +313,8 @@ select a from hive.hive.thive;
 drop table hive.hive.thive;
 create table hive.hive.thive(a int, b int);
 
-process hive statement 'insert into thive values (1,2)';
+--process hive statement 'insert into thive values (1,2)';
+insert into hive.hive.thive values (1,2);
 
 select a from hive.hive.thive;
 

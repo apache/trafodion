@@ -24,9 +24,11 @@ process hive ddl 'create schema if not exists sch_t009';
 process hive ddl 'drop table sch_t009.t009t1';
 process hive ddl 'create external table sch_t009.t009t1 (a int, b int, c int, d int) row format delimited fields terminated by ''|'' location ''/user/trafodion/hive/exttables/t009t1'' ';
 
--- Our version of HIVE does not support insert ... VALUES clause, so use the
--- load command from an existing table.
-process hive statement 'insert into table sch_t009.t009t1 select c_customer_sk, c_birth_day, c_birth_month, c_birth_year from customer limit 10 ';
+-- process hive statement with insert runs into an error on HDP platform.
+-- Use regrhive until that issue is fixed.
+--process hive statement 'insert into table sch_t009.t009t1 select c_customer_sk, c_birth_day, c_birth_month, c_birth_year from customer limit 10 ';
+sh echo "insert into table sch_t009.t009t1 select c_customer_sk, c_birth_day, c_birth_month, c_birth_year from customer limit 10;" > TEST009_junk;
+sh regrhive.ksh -f TEST009_junk;
 
 --select * from hive.sch_t009.t009t1;
 

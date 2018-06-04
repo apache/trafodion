@@ -924,11 +924,14 @@ RelExpr * ExeUtilHiveQuery::bindNode(BindWA *bindWA)
       bindWA->setErrStatus();
       return NULL;
     }
+
+  // insert query returns an error from HiveClient.executeQuery on HDP platform.
+  // Until that issue is fixed, disallow insert from 'process hive statement'.
   hiveQuery_ = hiveQuery_.strip(NAString::leading, ' ');
   if (NOT ((hiveQuery_.index("CREATE ", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("DROP ", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("ALTER ", 0, NAString::ignoreCase) == 0) ||
-           (hiveQuery_.index("INSERT ", 0, NAString::ignoreCase) == 0) ||
+           //           (hiveQuery_.index("INSERT ", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("TRUNCATE ", 0, NAString::ignoreCase) == 0)))
     {
       *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Specified operation cannot be executed directly by Hive.");

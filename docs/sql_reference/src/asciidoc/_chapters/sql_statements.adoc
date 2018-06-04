@@ -1484,16 +1484,29 @@ EXECUTE y;                              -- uses MYSCHEMA;
 [[control_query_default_examples]]
 === Examples of CONTROL QUERY DEFAULT
 
-* Increase the cache refresh time for the histogram cache to two hours (7,200 minutes).
+* This example changes the maximum degree of parallelism to 2 for a query. The value must be less than the number of CPUs in the cluster.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL '7200';
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS '2';
+
+--- SQL operation complete.
+```
++
+This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
+In this case, the compiler calculates the number of ESPs to be used.
++
+```
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS 'system';
+
+--- SQL operation complete.
 ```
 
-* Reset the CACHE_HISTOGRAMS_REFRESH_INTERVAL attribute to its initial value in the current process:
+* This example allows the optimizer to generate an execution using hash join.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL RESET;
+SQL>CONTROL QUERY DEFAULT HASH_JOIN 'ON';
+
+--- SQL operation complete.
 ```
 
 <<<
@@ -1515,10 +1528,10 @@ CREATE FUNCTION function-ref ([parameter-declaration[, parameter-declaration]...
        (return-parameter-declaration[, return-parameter-declaration]...)
     EXTERNAL NAME 'character-string-literal'
     LIBRARY [[catalog-name.]schema-name.]library-name
-    [language c]
+    [LANGUAGE c]
     [parameter style sql]
     [no sql]
-    [not deterministic | deterministic]
+    [NOT DETERMINISTIC | DETERMINISTIC]
     [final call | no final call]
     [no state area | state area size]
     [no parallelism | allow any parallelism]
@@ -1607,7 +1620,7 @@ specifies the case-sensitive name of the external function’s method.
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
 
-* `language c`
+* `LANGUAGE c`
 +
 specifies that the external function is written in the c language. this clause is optional.
 
@@ -1620,7 +1633,7 @@ language. this clause is optional.
 +
 specifies that the function does not perform sql operations. this clause is optional.
 
-* `deterministic | not deterministic`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the function always returns the same values for out parameters for a given set of argument
 values (deterministic, the default behavior) or does not return the same values (not deterministic). if the
@@ -1850,6 +1863,11 @@ partitions are not audited and empty.
 If the operation fails after basic semantic checks are performed, the index no longer exists and the entire transaction
 is rolled back even if it is a user-started transaction.
 
+If you are creating an index on a large Trafodion table that is already populated, 
+you should use the NO POPULATE option, and then run the POPULATE INDEX utility to load the index. 
+Because CREATE INDEX executes in a single transaction, it could experience transactional limitations such as a transaction timeout 
+if a large amount of data is to be moved.
+
 [[create_index_authorization_and_availability_requirements]]
 ==== Authorization and Availability Requirements
 
@@ -2069,13 +2087,13 @@ CREATE PROCEDURE procedure-ref([sql-parameter-list])
    EXTERNAL NAME 'java-method-name [java-signature]'
    LIBRARY [[catalog-name.]schema-name.]library-name
    [external security external-security-type]
-   language java
+   LANGUAGE java
    parameter style java
    [no sql | contains sql | modifies sql data | reads sql data]
    [dynamic result sets integer]
-   [transaction required | no transaction required]
-   [deterministic | not deterministic]
-   [no isolate | isolate]
+   [TRANSACTION REQUIRED | NO TRANSACTION REQUIRED]
+   [DETERMINISTIC | NOT DETERMINISTIC]
+   [NO ISOLATE| ISOLATE]
 
 procedure-ref is:
    [[catalog-name.]schema-name.]procedure-name
@@ -2259,7 +2277,7 @@ the database. However, be careful about the users to whom you grant execute priv
 because those users will be able to execute the SPJ without requiring privileges to the underlying database objects.
 
 <<<
-* `language java`
+* `LANGUAGE java`
 +
 specifies that the external user-defined routine is written in the java language.
 
@@ -2284,27 +2302,27 @@ contains a `java.sql.resultset[]` object. If the method contains a result set ob
 The actual number of result sets returned by the SPJ method can be fewer than or equal to this number. If you do not specify
 this option, then the default value is 0 (zero), meaning that the SPJ does not return result sets.
 
-* `transaction required | no transaction required`
+* `TRANSACTION REQUIRED | NO TRANSACTION REQUIRED`
 +
-determines whether the SPJ must run in a transaction inherited from the calling application (`transaction required`, the default
-option) or whether the SPJ runs without inheriting the calling application’s transaction (`no transaction required`). Typically,
+determines whether the SPJ must run in a transaction inherited from the calling application (`TRANSACTION REQUIRED`, the default
+option) or whether the SPJ runs without inheriting the calling application’s transaction (`NO TRANSACTION REQUIRED`). Typically,
 you want the stored procedure to inherit the transaction from the calling application. However, if the SPJ method does
 not access the database or if you want the stored procedure to manage its own transactions, then you should set the stored
-procedure’s transaction attribute to no transaction required. For more information, see
+procedure’s transaction attribute to `NO TRANSACTION REQUIRED`. For more information, see
 <<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on SPJs>>.
 
 <<<
-* `deterministic | not deterministic`
+* `DETERMINISTIC | NOT DETERMINISTIC`
 +
 specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
-(`deterministic`) or does not return the same values (`not deterministic`, the default option). If you specify `deterministic`,
+(`DETERMINISTIC`) or does not return the same values (`NOT DETERMINISTIC`, the default option). If you specify `DETERMINISTIC`,
 {project-name} is not required to call the SPJ each time to produce results; instead, {project-name} caches the results and
 reuses them during subsequent calls, thus optimizing the CALL statement.
 
-* `no isolate | isolate`
+* `NO ISOLATE | ISOLATE`
 +
-specifies that the SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
-(`isolate`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`isolate`).
+specifies that the SPJ executes either in the environment of the database server (`NO ISOLATE`) or in an isolated environment
+(`ISOLATE`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`ISOLATE`).
 
 [[create_procedure_considerations]]
 === Considerations for CREATE PROCEDURE
@@ -2669,7 +2687,7 @@ DB ROOT or anyone granted the DB_ROOTROLE role can grant the CREATE_SCHEMA privi
 [[create_schema_examples]]
 === Examples of CREATE SCHEMA
 
-* This example creates a private schema schema named MYSCHEMA, which will be owned by the current user:
+* This example creates a private schema named MYSCHEMA, which will be owned by the current user:
 +
 ```
 CREATE SCHEMA myschema;
@@ -6488,7 +6506,7 @@ The ON predicate must select a unique row if the MERGE has a _when-not-matched-c
 === Considerations for MERGE
 
 [[merge_upsert_using_single_row]]
-=== Upsert Using Single Row
+==== Upsert Using Single Row
 
 A MERGE statement allows you to specify a set of column values that should be updated if the row is found, and another 
 row to be inserted if the row is not found. The ON predicate must select exactly one row that is to be updated if the 

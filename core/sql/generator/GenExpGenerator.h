@@ -394,7 +394,9 @@ class ExpGenerator : public NABasicObject
     // if pcode has been generated, then expression generator removes the
     // clauses (except for in case of showplan or clause_eval).
     // If this flag is set, then clauses are not removed.
-    SAVE_CLAUSES_IN_EXPR = 0x0100
+    SAVE_CLAUSES_IN_EXPR   = 0x0100,
+
+    IN_SEQUENCE_FUNC_EXPR  = 0x0200
   };
 
   UInt16 pCodeMode_;
@@ -1041,6 +1043,11 @@ public:
   NABoolean saveClausesInExpr() {
     return ((flags_ & SAVE_CLAUSES_IN_EXPR) != 0);
   };
+
+  NABoolean inSequenceFuncExpr()
+    { return (flags_ & IN_SEQUENCE_FUNC_EXPR) != 0; }
+  void setInSequenceFuncExpr(NABoolean v)
+    { (v ? flags_ |= IN_SEQUENCE_FUNC_EXPR : flags_ &= ~IN_SEQUENCE_FUNC_EXPR); }	
 
   // The working heap for dynamic memory allocation, will be
   // be destroyed at the end of each statement.

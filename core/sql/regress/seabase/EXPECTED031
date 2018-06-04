@@ -446,7 +446,7 @@ Z            Z            (EXPR)  (EXPR)
 >>invoke t031t10;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T10
--- Definition current  Sat Jun  2 02:17:30 2018
+-- Definition current  Mon Jun  4 23:10:00 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -637,12 +637,13 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>process hive statement 'create table t (a int)';
 
 --- SQL operation complete.
->>process hive statement 'insert into t values (1)';
-
---- SQL operation complete.
 >>process hive statement 'drop table t';
 
 --- SQL operation complete.
+>>
+>>-- insert through "process hive statement" returns an error on HDP platform. 
+>>-- Disable it until that issue is fixed.
+>>--process hive statement 'insert into t values (1)';
 >>
 >>-- default USER
 >>drop table if exists t031t1;
@@ -654,7 +655,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:18:43 2018
+-- Definition current  Mon Jun  4 23:11:15 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -685,7 +686,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:18:50 2018
+-- Definition current  Mon Jun  4 23:11:25 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -736,7 +737,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:18:59 2018
+-- Definition current  Mon Jun  4 23:11:36 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -765,7 +766,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:19:15 2018
+-- Definition current  Mon Jun  4 23:11:52 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -790,7 +791,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:19:22 2018
+-- Definition current  Mon Jun  4 23:12:00 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -810,7 +811,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Sat Jun  2 02:19:27 2018
+-- Definition current  Mon Jun  4 23:12:07 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -825,7 +826,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Sat Jun  2 02:19:30 2018
+-- Definition current  Mon Jun  4 23:12:11 2018
 
   (
     A                                INT DEFAULT NULL
@@ -848,7 +849,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Sat Jun  2 02:19:35 2018
+-- Definition current  Mon Jun  4 23:12:15 2018
 
   (
     A                                INT DEFAULT NULL
@@ -866,7 +867,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Sat Jun  2 02:19:40 2018
+-- Definition current  Mon Jun  4 23:12:21 2018
 
   (
     A                                INT DEFAULT NULL
@@ -953,7 +954,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Sat Jun  2 02:20:02 2018
+-- Definition current  Mon Jun  4 23:12:45 2018
 
   (
     "A@"                             INT NO DEFAULT
@@ -1098,7 +1099,7 @@ CREATE TABLE HIVE.HIVE.T031HIVET1
 /* Trafodion DDL */
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T031HIVET1;
-/* ObjectUID = 6094095443794522678 */
+/* ObjectUID = 6747117915818847408 */
 
 CREATE EXTERNAL TABLE T031HIVET1
   FOR HIVE.HIVE.T031HIVET1
@@ -1265,8 +1266,8 @@ A
 A@           SYSKEY              
 -----------  --------------------
 
-          1   6394711054759248971
-          2   6394711054759564196
+          1   7183404187467833116
+          2   7183404187468147950
 
 --- 2 row(s) selected.
 >>

@@ -151,15 +151,16 @@ public:
                                        const char *methodName, 
                                        NABoolean noDetails = FALSE);
 
-  static void appendExceptionMessages(jthrowable a_exception, 
-                                      NAString &error_msg,
-                                      NABoolean noDetails = FALSE);
+  static NABoolean appendExceptionMessages(jthrowable a_exception, 
+                                           NAString &error_msg,
+                                           NABoolean noDetails = FALSE);
   
   NAHeap *getHeap() { return heap_; }
 protected:
   static JavaVM*   jvm_;
   static jclass gThrowableClass;
   static jclass gStackTraceClass;
+  static jclass gOOMErrorClass;
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
