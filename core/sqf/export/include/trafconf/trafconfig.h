@@ -50,7 +50,7 @@
 #define TC_PERSIST_KEY_MAX              64
 #define TC_PERSIST_VALUE_MAX          4096
 #define TC_PERSIST_KEYS_VALUE_MAX     4096
-#define TC_NODES_MAX                  1024 // This can be higher when needed and
+#define TC_NODES_MAX                  1536 // This can be higher when needed and
                                            // will have performance implications
                                            // in the monitor process.
                                            // NOTE: Must increment by 64, see
