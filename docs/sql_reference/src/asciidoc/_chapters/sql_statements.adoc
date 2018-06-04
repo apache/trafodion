@@ -1484,16 +1484,29 @@ EXECUTE y;                              -- uses MYSCHEMA;
 [[control_query_default_examples]]
 === Examples of CONTROL QUERY DEFAULT
 
-* Increase the cache refresh time for the histogram cache to two hours (7,200 minutes).
+* This example changes the maximum degree of parallelism to 2 for a query. The value must be less than the number of CPUs in the cluster.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL '7200';
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS '2';
+
+--- SQL operation complete.
+```
++
+This example resets the `PARALLEL_NUM_ESPS` attribute to its system value in the current process.
+In this case, the compiler calculates the number of ESPs to be used.
++
+```
+SQL>CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS 'system';
+
+--- SQL operation complete.
 ```
 
-* Reset the CACHE_HISTOGRAMS_REFRESH_INTERVAL attribute to its initial value in the current process:
+* This example allows the optimizer to generate an execution using hash join.
 +
 ```
-CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL RESET;
+SQL>CONTROL QUERY DEFAULT HASH_JOIN 'ON';
+
+--- SQL operation complete.
 ```
 
 <<<
@@ -6493,7 +6506,7 @@ The ON predicate must select a unique row if the MERGE has a _when-not-matched-c
 === Considerations for MERGE
 
 [[merge_upsert_using_single_row]]
-=== Upsert Using Single Row
+==== Upsert Using Single Row
 
 A MERGE statement allows you to specify a set of column values that should be updated if the row is found, and another 
 row to be inserted if the row is not found. The ON predicate must select exactly one row that is to be updated if the 
