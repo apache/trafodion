@@ -13342,7 +13342,9 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
 				predicatesOnParent,
 				&localExprs);
 
-  if (avoidHalloween() && child(0) && child(0)->getGroupAttr())
+  if (avoidHalloween() && child(0) &&
+      child(0)->getOperatorType() == REL_SCAN &&
+      child(0)->getGroupAttr())
     {
       ValueIdSet cur_output = child(0)->getGroupAttr()->getCharacteristicOutputs();
       if (cur_output.isEmpty())
