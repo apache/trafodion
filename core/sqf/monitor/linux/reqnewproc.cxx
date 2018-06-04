@@ -438,7 +438,7 @@ void CExtNewProcReq::performRequest()
 
             return;
         }
-    
+
         if (lnode->GetNumProcs() < MAX_PROCESSES)
         {
             strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.path, lnode );

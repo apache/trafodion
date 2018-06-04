@@ -227,7 +227,10 @@ public:
         long fullSize_;
         long compressedSize_;
         long tmLeader_;
-        unsigned long long seqNum_; 
+        long clusterRegistryCount_;
+        long processRegistryCount_;
+        long uniqueStringCount_;
+        unsigned long long seqNum_;
     } snapShotHeader_t; 
 
     enum { ACCEPT_NEW_MONITOR_RETRIES = 120 };  // Maximum retries by creator monitor

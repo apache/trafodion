@@ -319,6 +319,26 @@ sub addDbSpare {
     $insDbSpareStmt->execute;
 }
 
+sub addDbUniqStr {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $lv_nid      = $_[0];
+    my $lv_id       = $_[1];
+    my $lv_str      = $_[2];
+
+    my $insDbUniqStrStmt = $DBH->prepare("insert or replace into monRegUniqueStrings values ( ?, ?, ?)");
+
+    $insDbUniqStrStmt->bind_param(1, $lv_nid);
+    $insDbUniqStrStmt->bind_param(2, $lv_id);
+    $insDbUniqStrStmt->bind_param(3, $lv_str);
+
+    $insDbUniqStrStmt->execute;
+}
+
 sub listNodes {
     if (not defined $DBH) {
         # Database not available

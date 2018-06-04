@@ -44,7 +44,7 @@ LIBS		= $(LIBTRAFCONFIG)
 LIBSX	+= -lrt
 
 # need -lsqlite3 for SQLite
-LIBSX	+=  -lsqlite3
+LIBSX	+=  -lsqlite3 -lpthread
 
 PROGS		= $(TRAFCONF)
 

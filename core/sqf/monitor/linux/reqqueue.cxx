@@ -3622,6 +3622,12 @@ void CIntReviveReq::performRequest()
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Process Objects unpacked\n", method_name, __LINE__);
 
+    Config->UnpackRegistry(buffer, (header.clusterRegistryCount_ + header.processRegistryCount_));
+    Config->UnpackUniqueStrings(buffer, header.uniqueStringCount_);
+    
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+        trace_printf("%s@%d - Registry unpacked\n", method_name, __LINE__);
+       
     mem_log_write(MON_REQQUEUE_REVIVE_5);
 
     // process the requests that were deferred to the revive side queue.
@@ -3724,6 +3730,9 @@ void CIntSnapshotReq::performRequest()
     int idsSize = Nodes->GetSNodesCount() * sizeof(int); // spare pnids
     idsSize += (Nodes->GetPNodesCount() + Nodes->GetLNodesCount()) * sizeof(int); // pnid/nid map
     idsSize += Nodes->GetPNodesCount() * 2 * sizeof(int);    // pnid/zid
+    idsSize += Nodes->GetLNodesCount() * sizeof(int);    // nids
+    idsSize += Config->getUniqueStringsSize();
+    idsSize += Config->getRegistrySize();
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Snapshot sizes, procSize = %d, idsSize = %d\n",
@@ -3768,6 +3777,10 @@ void CIntSnapshotReq::performRequest()
     // pack process objects
     header.procCount_ = Monitor->PackProcObjs(buf);
 
+    header.clusterRegistryCount_ =  Config->PackRegistry(buf, ConfigType_Cluster);
+    header.processRegistryCount_ =  Config->PackRegistry(buf, ConfigType_Process);
+    header.uniqueStringCount_   =  Config->PackUniqueStrings(buf);
+    
     mem_log_write(MON_REQQUEUE_SNAPSHOT_6, header.nodeMapCount_, header.procCount_);
 
     header.fullSize_ = buf - snapshotBuf;

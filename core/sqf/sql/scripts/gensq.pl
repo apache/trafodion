@@ -77,6 +77,8 @@ my $SQ_IDTMSRV = $ENV{'SQ_IDTMSRV'};
 my $BDR_ERROR = 70;
 
 
+my $g_insDbUniqStrStmt = 0;
+
 sub printScript {
     ($dWhich, @rest) = @_;
 
@@ -641,6 +643,27 @@ sub doInit {
 
 }
 
+sub setupDbUniqStrings {
+
+    my $my_scripts_dir = "$TRAF_HOME" . "/sql/scripts/" ;
+    for ($i=0; $i < $gdNumNodes; $i++) {
+        sqconfigdb::addDbUniqStr($i, 1, 'shell');
+        sqconfigdb::addDbUniqStr($i, 2, 'pstartd');
+        sqconfigdb::addDbUniqStr($i, 3, 'sqwatchdog');
+        sqconfigdb::addDbUniqStr($i, 4, 'idtmsrv');
+        sqconfigdb::addDbUniqStr($i, 5, 'tm');
+        sqconfigdb::addDbUniqStr($i, 6, 'service_monitor');
+        sqconfigdb::addDbUniqStr($i, 7, 'mxsscp');
+        sqconfigdb::addDbUniqStr($i, 8, 'mxssmp');
+        sqconfigdb::addDbUniqStr($i, 9, 'run_command');
+        sqconfigdb::addDbUniqStr($i, 10, 'mxosrvr');
+        sqconfigdb::addDbUniqStr($i, 11, 'tdm_arkesp');
+        sqconfigdb::addDbUniqStr($i, 12, 'tdm_arkcmp');
+        sqconfigdb::addDbUniqStr($i, 13, 'traf_notify');
+        sqconfigdb::addDbUniqStr($i, 14, 'mxlobsrvr');
+        sqconfigdb::addDbUniqStr($i, 15, 'trafns');
+    }
+}
 
 #
 # Main
@@ -688,6 +711,8 @@ while (<>) {
 }
 
 #printZoneList;
+
+setupDbUniqStrings();
 
 printScriptEndLines;
 

@@ -1559,6 +1559,11 @@ int main (int argc, char *argv[])
         strcpy (short_node_name, str1 );
     }
 
+    if (IsRealCluster) 
+    {
+      strcpy (Node_name, short_node_name );
+    }
+
 #ifdef MULTI_TRACE_FILES
     setThreadVariable( (char *)"mainThread" );
 #endif

@@ -390,6 +390,154 @@ char *ErrorMsg (int error_code)
     return buffer;
 }
 
+bool check_environment( void )
+{
+    bool  rs = true;
+    bool  isNameServerEnabled = false;
+    char* env;
+    char  msgString[MAX_BUFFER] = { 0 };
+    int   val = 0;
+
+    env = getenv("MONITOR_COMM_PORT");
+    if ( env )
+    {
+        val = atoi(env);
+        if ( val <= 0)
+        {
+            if (VirtualNodes)
+            {
+                sprintf( msgString, "[%s] Warning: MONITOR_COMM_PORT value is invalid (%s)!", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Error: MONITOR_COMM_PORT value is invalid (%s)! Set MONITOR_COMM_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+    }
+
+    env = getenv("MONITOR_SYNC_PORT");
+    if ( env )
+    {
+        val = atoi(env);
+        if ( val <= 0)
+        {
+            if (VirtualNodes)
+            {
+                sprintf( msgString, "[%s] Warning: MONITOR_SYNC_PORT value is invalid (%s)!", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Error: MONITOR_SYNC_PORT value is invalid (%s)! Set MONITOR_COMM_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+    }
+
+    env = getenv("SQ_NAMESERVER_ENABLED");
+    if ( env )
+    {
+        val = atoi(env);
+        if ( val > 0)
+        {
+            isNameServerEnabled = (val != 0);
+        }
+    }
+    
+    if (isNameServerEnabled)
+    {
+        env = getenv("NS_COMM_PORT");
+        if ( env )
+        {
+            val = atoi(env);
+            if ( val <= 0)
+            {
+                sprintf( msgString, "[%s] Error: Name Server is enabled and NS_COMM_PORT value is invalid (%s)! Set NS_COMM_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+        else
+        {
+            sprintf( msgString, "[%s] Error: Name Server is enabled and NS_COMM_PORT is undefined! Set NS_COMM_PORT environment variable and try again.", MyName );
+            write_startup_log( msgString );
+            printf("%s\n", msgString );
+            rs = false;
+        }
+
+        env = getenv("NS_SYNC_PORT");
+        if ( env )
+        {
+            val = atoi(env);
+            if ( val <= 0)
+            {
+                sprintf( msgString, "[%s] Error: Name Server is enabled and NS_SYNC_PORT value is invalid (%s)! Set NS_SYNC_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+        else
+        {
+            sprintf( msgString, "[%s] Error: Name Server is enabled and NS_SYNC_PORT is undefined! Set NS_SYNC_PORT environment variable and try again.", MyName );
+            write_startup_log( msgString );
+            printf("%s\n", msgString );
+            rs = false;
+        }
+
+        env = getenv("NS_M2N_COMM_PORT");
+        if ( env )
+        {
+            val = atoi(env);
+            if ( val <= 0)
+            {
+                sprintf( msgString, "[%s] Error: Name Server is enabled and NS_M2N_COMM_PORT value is invalid (%s)! Set NS_M2N_COMM_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+        else
+        {
+            sprintf( msgString, "[%s] Error: Name Server is enabled and NS_M2N_COMM_PORT is undefined! Set NS_M2N_COMM_PORT environment variable and try again.", MyName );
+            write_startup_log( msgString );
+            printf("%s\n", msgString );
+            rs = false;
+        }
+
+        env = getenv("MON2MON_COMM_PORT");
+        if ( env )
+        {
+            val = atoi(env);
+            if ( val <= 0)
+            {
+                sprintf( msgString, "[%s] Error: Name Server is enabled and MON2MON_COMM_PORT value is invalid (%s)! Set MON2MON_COMM_PORT environment variable and try again.", MyName, env );
+                write_startup_log( msgString );
+                printf("%s\n", msgString );
+                rs = false;
+            }
+        }
+        else
+        {
+            sprintf( msgString, "[%s] Error: Name Server is enabled and MON2MON_COMM_PORT is undefined! Set MON2MON_COMM_PORT environment variable and try again.", MyName );
+            write_startup_log( msgString );
+            printf("%s\n", msgString );
+            rs = false;
+        }
+    }
+
+    return(rs);
+}
+
 bool init_pnode_map( void )
 {
     CPNodeConfig   *pnodeConfig;
@@ -5296,7 +5444,7 @@ int start_process (int *nid, PROCESSTYPE type, char *name, bool debug, int prior
 {
     int count;
     char delimiter;
-    char token[MAX_TOKEN];
+    char token[MAX_ARG_SIZE];
     char program[MAX_PROCESS_PATH];
     char path[MAX_SEARCH_PATH];
     char ldpath[MAX_SEARCH_PATH];
@@ -9074,7 +9222,7 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
             write_startup_log( msgString );
             printf ("[%s] Current node (%s) is a configured spare node! Must use non-spare node to startup environment.\n", MyName, MyNode);
         }
-        else
+        else if ( check_environment() )
         {
             if ( start_monitor( cmd_tail,false, false ) )
             {

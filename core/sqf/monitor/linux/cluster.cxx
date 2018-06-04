@@ -877,10 +877,11 @@ CCluster::CCluster (void)
     char *env = getenv("SQ_MON_CHECK_SEQNUM");
     if ( env )
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( errno == 0) checkSeqNum_ = (val != 0);
+        int val = atoi(env);
+        if ( val > 0)
+        {
+            checkSeqNum_ = (val != 0);
+        }
     }
 
     if (trace_settings & TRACE_INIT)
@@ -934,10 +935,11 @@ CCluster::CCluster (void)
     env = getenv("SQ_MON_NODE_DOWN_VALIDATION");
     if ( env )
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( errno == 0) validateNodeDown_ = (val != 0);
+        int val = atoi(env);
+        if ( val > 0)
+        {
+            validateNodeDown_ = (val != 0);
+        }
     }
 
     char buf[MON_STRING_BUF_SIZE];
@@ -1244,9 +1246,14 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
     }
 #endif
 
+#ifndef NAMESERVER_PROCESS
     if ( Emulate_Down )
     {
-        IAmIntegrated = false;
+        AssignTmLeader(pnid, false);
+    }
+    else
+#endif
+    {
         AssignLeaders(pnid, node->GetName(), false);
     }
 
@@ -1351,7 +1358,6 @@ void CCluster::SoftNodeDown( int pnid )
                     , node->IsSoftNodeDown());
     }
 
-    IAmIntegrated = false;
     AssignLeaders(pnid, node->GetName(), false);
 
     TRACE_EXIT;
@@ -2625,7 +2631,7 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                      "pid=%d for stdin data request.\n", method_name,
                      recv_msg->u.stdin_req.nid,
                      recv_msg->u.stdin_req.pid);
-            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_ERR, buf);
+            mon_log_write(MON_CLUSTER_HANDLEOTHERNODE_9, SQ_LOG_INFO, buf);
         }
         break;
 #endif
@@ -8752,6 +8758,7 @@ void CCluster::InitServerSock( void )
 #else
     int ptpPort = 0;
 #endif
+    int val = 0;
 
     unsigned char addr[4];
     struct hostent *he;
@@ -8777,12 +8784,22 @@ void CCluster::InitServerSock( void )
 #endif
     if ( env )
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( !IsRealCluster )
-            val += MyPNID;
-        if ( errno == 0) serverCommPort = val;
+        val = atoi(env);
+        if ( val > 0)
+        {
+            if ( !IsRealCluster )
+            {
+                val += MyPNID;
+            }
+            serverCommPort = val;
+        }
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d COMM_PORT Node_name=%s, env=%s, serverCommPort=%d, val=%d\n"
+                    , method_name, __LINE__
+                    , Node_name, env, serverCommPort, val );
     }
 
     commSock_ = MkSrvSock( &serverCommPort );
@@ -8829,14 +8846,24 @@ void CCluster::InitServerSock( void )
 #endif
     if ( env )
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( errno == 0 ) syncPort_ = val;
-        if ( !IsRealCluster )
-            val += MyPNID;
-        if ( errno == 0) serverSyncPort = val;
+        val = atoi(env);
+        if ( val > 0)
+        {
+            if ( !IsRealCluster )
+            {
+                val += MyPNID;
+            }
+            syncPort_ = serverSyncPort = val;
+        }
     }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d SYNC_PORT Node_name=%s, env=%s, serverSyncPort=%d, val=%d\n"
+                    , method_name, __LINE__
+                    , Node_name, env, syncPort_, val );
+    }
+
     syncSock_ = MkSrvSock( &serverSyncPort );
     if ( syncSock_ < 0 )
     {
@@ -8877,12 +8904,15 @@ void CCluster::InitServerSock( void )
     env = getenv("NS_M2N_COMM_PORT");
     if ( env )
     {
-        int val;
-        errno = 0;
-        val = strtol(env, NULL, 10);
-        if ( !IsRealCluster )
-            val += MyPNID;
-        if ( errno == 0) mon2nsPort = val;
+        val = atoi(env);
+        if ( val > 0)
+        {
+            if ( !IsRealCluster )
+            {
+                val += MyPNID;
+            }
+            mon2nsPort = val;
+        }
     }
 
     mon2nsSock_ = MkSrvSock( &mon2nsPort );
@@ -8924,10 +8954,11 @@ void CCluster::InitServerSock( void )
         env = getenv("MON2MON_COMM_PORT");
         if ( env )
         {
-            int val;
-            errno = 0;
-            val = strtol(env, NULL, 10);
-            if ( errno == 0) ptpPort = val;
+            val = atoi(env);
+            if ( val > 0)
+            {
+                ptpPort = val;
+            }
         }
         else
         {
