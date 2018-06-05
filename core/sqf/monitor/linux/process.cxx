@@ -5209,6 +5209,7 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
     {
         if (process->GetPid() != os_pid)
         { // Process id changed from when we started the process.
+#ifndef NAMESERVER_PROCESS
             if ( !process->IsUnhooked() )
             {   // Parent process object keeps track of child processes
                 // created on this node.  Needed in case parent process
@@ -5226,7 +5227,6 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                     parentPid = process->GetPairParentPid();
                 }
 
-#ifndef NAMESERVER_PROCESS
                 if ( parentNid != -1 && parentPid != -1 )
                 {
                     CProcess* parent;
@@ -5239,9 +5239,7 @@ CProcess *CProcessContainer::CompleteProcessStartup (char *process_name,
                         parent->childAdd ( process->GetNid(), os_pid );
                     }
                 }
-#endif
             }
-#ifndef NAMESERVER_PROCESS
             if (NameServerEnabled)
             {
                 if (process->IsUnhooked())
