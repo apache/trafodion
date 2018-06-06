@@ -792,7 +792,7 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // locked row timeout
   AQREntry(   8550,     73,      2,     0,      0,   0, "",    0,     0),  
   AQREntry(   8550,     78,      1,    60,      0,   0, "",    0,     0),
-  AQREntry(   8558,     0 ,      2,    30,      0,   0, "",    0,     0), 
+  AQREntry(   8558,     0 ,      2,    10,      0,   0, "",    0,     0), 
 
   AQREntry(   8551,     12,      1,    60,      0,   0, "",    0,     0),
 

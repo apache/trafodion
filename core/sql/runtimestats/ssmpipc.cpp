@@ -1625,6 +1625,9 @@ void SsmpNewIncomingConnectionStream::actOnLobLockReq(
                                                IpcConnection *connection)
 {
   IpcMessageObjVersion msgVer = getNextObjVersion();
+  StatsGlobals *statsGlobals;
+  NABoolean releasingLock = FALSE;
+  CliGlobals *cliGlobals = GetCliGlobals();
   ex_assert(msgVer <= CurrLobLockVersionNumber,
             "Up-rev message received.");
   LobLockRequest *llReq= new (getHeap()) LobLockRequest(getHeap());
@@ -1632,17 +1635,47 @@ void SsmpNewIncomingConnectionStream::actOnLobLockReq(
   setHandle(llReq->getHandle());
   ex_assert(!moreObjects(),"Unexpected objects following LobLockRequest");
   clearAllObjects();
-// Forward request to all mxsscps.
-  ssmpGlobals_->allocateServers();
-  SscpClientMsgStream *sscpMsgStream = new (heap_)
-  SscpClientMsgStream(heap_, getIpcEnv(), ssmpGlobals_, this);
-  sscpMsgStream->setUsedToSendLLMsgs();
-  ssmpGlobals_->addRecipients(sscpMsgStream);
-  sscpMsgStream->clearAllObjects();
-  *sscpMsgStream << *llReq;
-  llReq->decrRefCount();
-  sscpMsgStream->send(FALSE);
+  //check and set the lock in the local shared segment 
+  statsGlobals = ssmpGlobals_->getStatsGlobals();
+  char *inLobLockId = NULL;
+  inLobLockId = llReq->getLobLockId();
+  if (inLobLockId[0] == '-')   //we are releasing this lock. No need to check.
+    inLobLockId = NULL;
+  else
+    {
+      inLobLockId = &inLobLockId[1];
+      statsGlobals->checkLobLock(cliGlobals, inLobLockId);
+    }
+    
+  if (inLobLockId)
+    {
+      //It's already set, don't propagate
+      if (sscpDiagsArea_== NULL)
+        sscpDiagsArea_ = ComDiagsArea::allocate(ssmpGlobals_->getHeap());
+      *sscpDiagsArea_<< DgSqlCode(-EXE_LOB_CONCURRENT_ACCESS_ERROR);
+      RmsGenericReply *reply = new(getHeap())
+        RmsGenericReply(getHeap());
 
+      *this << *reply;
+      *this << *sscpDiagsArea_;
+      this->clearSscpDiagsArea();
+      send(FALSE);
+      reply->decrRefCount();
+    }
+  else
+    {
+                             
+      // Forward request to all mxsscps.
+      ssmpGlobals_->allocateServers();
+      SscpClientMsgStream *sscpMsgStream = new (heap_)
+        SscpClientMsgStream(heap_, getIpcEnv(), ssmpGlobals_, this);
+      sscpMsgStream->setUsedToSendLLMsgs();
+      ssmpGlobals_->addRecipients(sscpMsgStream);
+      sscpMsgStream->clearAllObjects();
+      *sscpMsgStream << *llReq;
+      llReq->decrRefCount();
+      sscpMsgStream->send(FALSE);
+    }
   // Reply to client when the msgs to mxsscp have all completed.  The reply
   // is made from the sscpMsgStream's callback.
 

@@ -1029,10 +1029,27 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
     {
       ExpLOBoper::genLobLockId(objectUID_,lobNum(),llid);
       NABoolean found = FALSE;
-      retcode = SQL_EXEC_CheckLobLock(llid, &found);
+      int trycount = 0;
+      while (trycount < 3)
+        {
+          retcode = SQL_EXEC_CheckLobLock(llid, &found);
+          if (found || retcode )
+            {
+              sleep(5);
+              trycount++;
+            }
+          else
+            trycount =3;
+        }
       if (! retcode && !found) 
         {    
           retcode = SQL_EXEC_SetLobLock(llid);
+          if (retcode)
+            {
+              ExRaiseSqlError(h, diagsArea, 
+                              retcode);
+              return ex_expr::EXPR_ERROR;
+            }
         }
       else 
         {
@@ -1041,6 +1058,7 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
      
           return ex_expr::EXPR_ERROR;
         }
+        
     }
   err = insertDesc(op_data, h, diagsArea);
   if (err == ex_expr::EXPR_ERROR)

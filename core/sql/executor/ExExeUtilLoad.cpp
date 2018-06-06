@@ -3632,7 +3632,7 @@ short ExExeUtilLobUpdateTcb::work()
                   {    
                     retcode = SQL_EXEC_SetLobLock(lobLockId_);
                   }
-                else if (found)
+                else if (found || retcode )
                   {
                     memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
                     ExRaiseSqlError(getHeap(), &diagsArea_, 

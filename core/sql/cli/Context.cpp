@@ -3184,17 +3184,50 @@ Lng32 ContextCli::setLobLock(
                              )
 {
   CliGlobals *cliGlobals = getCliGlobals();
+  NABoolean releasingLock = FALSE;
   if (cliGlobals->getStatsGlobals() == NULL)
   {
     (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
     return diagsArea_.mainSQLCODE();
   }
   ComDiagsArea *tempDiagsArea = &diagsArea_;
+  IpcServer *ssmpServer = NULL;
   tempDiagsArea->clear();
- 
-  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
-                                 cliGlobals->myNodeName(), 
-                                 cliGlobals->myCpu(), tempDiagsArea);
+  if (lobLockId[0] == '-')
+    releasingLock = TRUE;
+  // Get an ssmp node to talk to. Picking one based off of lobLockId should
+  // make it unique and avoid clash with another node that may be attempting 
+  // to lock the same lob
+  if (!releasingLock)
+    {
+      Int32 nodeCount = 0;
+      Int32 rc = msg_mon_get_node_info(&nodeCount, 0, NULL);
+      Int32 targetNodeId = 0;
+      Int32 lockHash = 0;
+      char myNodeName[MAX_SEGMENT_NAME_LEN+1];
+      MS_Mon_Node_Info_Type nodeInfo;
+      for (int i = 0; i < LOB_LOCK_ID_SIZE; i++)
+        lockHash +=(unsigned char)lobLockId[i];
+      if (nodeCount)
+        targetNodeId = lockHash%nodeCount;
+      rc = msg_mon_get_node_info_detail(targetNodeId, &nodeInfo);
+      if (rc == 0)
+        strcpy(myNodeName, nodeInfo.node[0].node_name);
+      else
+        myNodeName[0] = '\0';
+
+      ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
+                                               //cliGlobals->myNodeName(), 
+                                               //cliGlobals->myCpu(), 
+                                               myNodeName,
+                                               targetNodeId,
+                                               tempDiagsArea);
+    }
+  else
+    ssmpServer = ssmpManager_->getSsmpServer(exHeap(),
+                                             cliGlobals->myNodeName(), 
+                                             cliGlobals->myCpu(), 
+                                             tempDiagsArea);
   if (ssmpServer == NULL)
     return diagsArea_.mainSQLCODE();
 
