@@ -1778,6 +1778,32 @@ SQLEXECUTE_IOMessage(
 	{
 		inValues = (BYTE *) curptr+inputPosition;
 		inputPosition += inValuesLength;
+        //if the inValues include charset perfix should delete it
+        if (inValues[0] != '\'')
+        {
+            IDL_long perfix_beg = 0;
+            while (perfix_beg < inValuesLength-1)
+            {
+                if (inValues[perfix_beg] == '\'' && inValues[perfix_beg+2] != '\'')
+                {
+                   IDL_long perfix_end = perfix_beg+2;
+                   while (perfix_end < inValuesLength)
+                   {
+                       if (inValues[perfix_end] == '\'' && inValues[perfix_end+2] != '\'')
+                           break;
+                       perfix_end += 2;
+                   }
+                    memcpy(inValues, &inValues[perfix_beg+2], perfix_end-perfix_beg-2);
+                    for (IDL_long i=perfix_end-perfix_beg-2; i < perfix_end+1 && i < inValuesLength;)
+                    {
+                        inValues[i++] =  (BYTE)' ';
+                        inValues[i++] = 0;
+                    }
+                   break;
+                }
+                perfix_beg+=2;
+            }
+        }
 	}
 
 	transactionIDLength = *(IDL_unsigned_long*)(curptr+inputPosition);
