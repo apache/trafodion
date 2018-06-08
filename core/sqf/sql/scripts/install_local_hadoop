@@ -730,7 +730,7 @@ else
       if [ $? -ne 0 ]; then
         echo '**** ERROR:'
         cat <<EOF
-        Please make sure you are using the Java 1.6 or 1.7 SDK.
+        Please make sure you are using the Java 1.6, 1.7 or 1.8 SDK.
         Otherwise, download it into ${MY_SW_ROOT}, extract it and
         make a symbolic link ${MY_SW_ROOT}/java that points  to it and
         export JAVA_HOME=${MY_SW_ROOT}/java
