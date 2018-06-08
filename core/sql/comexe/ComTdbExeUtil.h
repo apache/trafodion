@@ -2911,6 +2911,7 @@ private:
     APPEND_OR_CREATE = 0x0080,
     RETRIEVE_HDFSFILENAME= 0x0100,
     RETRIEVE_OFFSET=0x0200
+   
   
     
   };
@@ -3013,6 +3014,11 @@ public:
   void setReplace(NABoolean v)
   {(v ? flags_ |= REPLACE_ : flags_ &= ~REPLACE_); };
   NABoolean isReplace() { return (flags_ & REPLACE_) != 0; };
+
+  void setLobLocking(NABoolean v)
+  {(v ? flags_ |= LOB_LOCKING_ : flags_ &= ~LOB_LOCKING_); };
+  NABoolean lobLocking() { return (flags_ & LOB_LOCKING_) != 0; };
+
   void setUpdateSize(Int64 upd_size){ updateSize_ = upd_size;};
   Int64 updateSize() { return updateSize_;}
   void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
@@ -3031,7 +3037,8 @@ private:
       ERROR_IF_EXISTS_ = 0x0001,
       TRUNCATE_ = 0x0002,
       APPEND_ = 0x0004,
-      REPLACE_=0x0008
+      REPLACE_=0x0008,
+      LOB_LOCKING_=0x0010
     };
   NABasicPtr handle_;
   Int32 handleLen_;

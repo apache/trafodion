@@ -4521,7 +4521,9 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
     {
       oltOptInfo().setOltOpt(FALSE);
       generator->oltOptInfo()->setOltOpt(FALSE);
-      generator->setAqrEnabled(FALSE);
+      //enabling AQR to take care of the lock conflict error 8558 that
+      // should be retried.
+      //      generator->setAqrEnabled(FALSE);
       generator->setUpdAbortOnError(TRUE);
       generator->setUpdSavepointOnError(FALSE);
     }

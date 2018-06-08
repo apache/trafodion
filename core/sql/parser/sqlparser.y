@@ -11717,7 +11717,7 @@ blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
+	      $$ = (Int64)CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -11753,7 +11753,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
+	      $$ = (Int64)CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {

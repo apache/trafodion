@@ -2670,6 +2670,7 @@ enum DefaultConstants
   LOB_GC_LIMIT_SIZE,
 
   LOB_INPUT_LIMIT_FOR_BATCH,
+  LOB_LOCKING,
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,
 

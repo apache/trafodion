@@ -867,12 +867,18 @@ A            AMAX         B                   BMAX                C            C
 >>create table t002FUI(x int);
 
 --- SQL operation complete.
+>>create table t002sol(x int);
+
+--- SQL operation complete.
 >>insert into  t002FU  values(3),(4);
 
 --- 2 row(s) inserted.
 >>insert into  t002FUI values(13);
 
 --- 1 row(s) inserted.
+>>insert into t002sol values(2),(5),(4),(3),(7);
+
+--- 5 row(s) inserted.
 >>
 >>-- Tables t002ZZ and t002ZZI are empty (have zero rows), tables t002FU and t002FUI are full.
 >>--
@@ -1264,4 +1270,13 @@ RESULT_VALUE
 
 --- 1 row(s) selected.
 >>
+>>-- Should return 7
+>>select x from (select [first 1] x from t002sol order by x desc );
+
+X
+----------
+
+ 7
+
+--- 1 row(s) selected.
 >>log;
