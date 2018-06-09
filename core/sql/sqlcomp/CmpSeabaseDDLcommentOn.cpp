@@ -293,13 +293,9 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   if (CmpSeabaseDDL::isHbase(catalogNamePart))
   {
        NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT EXISTS ";
-       ddl.append(catalogNamePart);
-       ddl.append(".");
-       ddl.append("\""+schemaNamePart+"\"");
-       ddl.append(".");
-       ddl.append("\""+objNamePart+"\"");
-       cliRC = cliInterface.executeImmediate(ddl.data());
-       if (cliRC)
+       ddl.append(extObjName.data());
+       Lng32 cliRC = cliInterface.executeImmediate(ddl.data());
+       if (cliRC < 0)
        {
            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
            processReturn();
