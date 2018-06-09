@@ -348,4 +348,37 @@ private:
 
 }; // class ElemDDLLikeOptWithoutLobColumns
 
+// -----------------------------------------------------------------------
+// definition of class ElemDDLLikeOptWithHiveOptions
+// These are options that are specified during create through the use of
+//   'with hive options' syntax.
+// These are hive specific options that are passed to hive layer during
+// creation of table. These are not interpreted by traf layer.
+//
+//  create external hive table <htab> like <traf-table> 
+//     with hive options 'hive-options'
+// -----------------------------------------------------------------------
+class ElemDDLLikeOptWithHiveOptions : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeOptWithHiveOptions(NAString &hiveOptionsText);
+
+  // virtual destructor
+  virtual ~ElemDDLLikeOptWithHiveOptions();
+
+  // cast
+  virtual ElemDDLLikeOptWithHiveOptions * castToElemDDLLikeOptWithHiveOptions();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+  const NAString &getHiveOptionsText() const { return hiveOptionsText_;}
+
+private:
+  NAString hiveOptionsText_;
+}; // class ElemDDLLikeOptWithHiveOptions
+
 #endif // ELEMDDLLIKEOPTIONS_H

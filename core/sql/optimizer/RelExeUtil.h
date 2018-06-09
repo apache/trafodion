@@ -146,6 +146,7 @@ public:
   //virtual ExprNode * getChild(long index);
 
   ExprNode * getExprNode(){return exprNode_;};
+  const ExprNode * getExprNode() const {return exprNode_;};
 
   //virtual void addLocalExpr(LIST(ExprNode *) &xlist,
   //		    LIST(NAString) &llist) const;
@@ -261,6 +262,7 @@ public:
   virtual TrafDesc 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
+  const ExprNode * getDDLNode() const {return getExprNode();};
 
   char * getDDLStmtText()
   {
@@ -1151,7 +1153,6 @@ public:
       FROM_STRING,
       FROM_FILE
     };
-
   ExeUtilHiveQuery(const NAString &hive_query,
                    HiveSourceType type,
                    CollHeap *oHeap = CmpCommon::statementHeap())
@@ -1162,26 +1163,18 @@ public:
          type_(type),
          hiveQuery_(hive_query)
   { }
-
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
-
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  // method to do code generation
   virtual short codeGen(Generator*);
-  
   NAString &hiveQuery() { return hiveQuery_; }
   const NAString &hiveQuery() const { return hiveQuery_; }
-
   HiveSourceType sourceType() { return type_;}
 private:
   HiveSourceType type_;
   NAString hiveQuery_;
 };
-
 class ExeUtilMaintainObject : public ExeUtilExpr
 {
 public:

@@ -2454,58 +2454,34 @@ ExExeUtilHiveTruncatePrivateState::~ExExeUtilHiveTruncatePrivateState()
 {
 };
 
-////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilHiveQueryTdb
-///////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilHiveQueryTdb::build(ex_globals * glob)
 {
   ExExeUtilTcb * exe_util_tcb;
-
   exe_util_tcb = new(glob->getSpace()) ExExeUtilHiveQueryTcb(*this, glob);
   exe_util_tcb->registerSubtasks();
-
   return (exe_util_tcb);
 }
-
-
-////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilHiveQueryTcb
-///////////////////////////////////////////////////////////////
 ExExeUtilHiveQueryTcb::ExExeUtilHiveQueryTcb(
      const ComTdbExeUtilHiveQuery & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob)
 {
-  // Allocate the private state in each entry of the down queue
   qparent_.down->allocatePstate(this);
-
   step_ = INITIAL_;
 }
-
 ExExeUtilHiveQueryTcb::~ExExeUtilHiveQueryTcb()
 {
 }
-
-//////////////////////////////////////////////////////
-// work() for ExExeUtilHiveQueryTsb
-//////////////////////////////////////////////////////
 short ExExeUtilHiveQueryTcb::work()
 {
   short rc = 0;
   Lng32 cliRC = 0;
-
-  // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
-
-  // if no room in up queue, won't be able to return data/status.
-  // Come back later.
   if (qparent_.up->isFull())
     return WORK_OK;
-
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
-
   while (1)
     {
       switch (step_)
@@ -2515,7 +2491,6 @@ short ExExeUtilHiveQueryTcb::work()
             step_ = PROCESS_QUERY_;
           }
           break;
-          
         case PROCESS_QUERY_:
           {
             if (HiveClient_JNI::executeHiveSQL(htTdb().getHiveQuery()) != HVC_OK)
@@ -2529,7 +2504,6 @@ short ExExeUtilHiveQueryTcb::work()
             step_ = DONE_;
           }
           break;
-          
         case ERROR_:
           {
             if (handleError())
@@ -2537,40 +2511,27 @@ short ExExeUtilHiveQueryTcb::work()
             step_ = DONE_;
           }
           break;
-          
         case DONE_:
           {
             if (handleDone())
               return WORK_OK;
-            
             step_ = INITIAL_;
-            
             return WORK_OK;
           }
           break;
-          
         } // switch
     } // while
-  
 }
-
-
 ex_tcb_private_state * ExExeUtilHiveQueryTcb::allocatePstates(
      Lng32 &numElems,      // inout, desired/actual elements
      Lng32 &pstateLength)  // out, length of one element
 {
   PstateAllocator<ExExeUtilHiveQueryPrivateState> pa;
-
   return pa.allocatePstates(this, numElems, pstateLength);
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// Constructor and destructor for ExeUtil_private_state
-/////////////////////////////////////////////////////////////////////////////
 ExExeUtilHiveQueryPrivateState::ExExeUtilHiveQueryPrivateState()
 {
 }
-
 ExExeUtilHiveQueryPrivateState::~ExExeUtilHiveQueryPrivateState()
 {
 };

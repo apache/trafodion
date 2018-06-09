@@ -219,6 +219,22 @@ struct hive_tbl_desc
       return FALSE;
   }
 
+  NABoolean isExternalTable() 
+  { 
+    if (tableType_ && (strcmp(tableType_, "EXTERNAL_TABLE") == 0))
+      return TRUE;
+    else
+      return FALSE;
+  }
+
+  NABoolean isManagedTable() 
+  { 
+    if (tableType_ && (strcmp(tableType_, "MANAGED_TABLE") == 0))
+      return TRUE;
+    else
+      return FALSE;
+  }
+
   struct hive_sd_desc* getSDs() { return sd_; };
   
   struct hive_skey_desc* getSortKeys();

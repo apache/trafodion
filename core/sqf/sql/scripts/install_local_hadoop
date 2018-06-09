@@ -726,21 +726,27 @@ else
   if [ $? -ne 0 ]; then
     (${JAVA_EXE} -version 2>&1) | grep '1.7' >/dev/null
     if [ $? -ne 0 ]; then
-      echo '**** ERROR:'
-      cat <<EOF
-      Please make sure you are using the Java 1.6 or 1.7 SDK.
-      Otherwise, download it into ${MY_SW_ROOT}, extract it and
-      make a symbolic link ${MY_SW_ROOT}/java that points  to it and
-      export JAVA_HOME=${MY_SW_ROOT}/java
+      (${JAVA_EXE} -version 2>&1) | grep '1.8' >/dev/null
+      if [ $? -ne 0 ]; then
+        echo '**** ERROR:'
+        cat <<EOF
+        Please make sure you are using the Java 1.6, 1.7 or 1.8 SDK.
+        Otherwise, download it into ${MY_SW_ROOT}, extract it and
+        make a symbolic link ${MY_SW_ROOT}/java that points  to it and
+        export JAVA_HOME=${MY_SW_ROOT}/java
 EOF
-      echo exiting...
-      exit 1
+        echo exiting...
+        exit 1
+      else
+       echo "Java version 1.8 is ok"
+      fi
     else
       echo "Java version 1.7 is ok"
     fi
   else
     echo "Java version 1.6 is ok"
   fi
+
   # end of check Java version
 
   echo

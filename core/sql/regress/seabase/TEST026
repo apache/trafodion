@@ -28,6 +28,7 @@ cleanup table t026t1;
 cleanup schema sch026;
 create schema sch026;
 cleanup metadata;
+cleanup metadata, return details;
 
 log LOG026 clear;
 

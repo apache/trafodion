@@ -347,7 +347,6 @@ char *ComTdb::findVTblPtrExe(short classID)
       GetVTblPtr(vtblptr,ExExeUtilHiveQueryTdb);
       break;
     }
-
     case ex_PROCESS_VOLATILE_TABLE:
     {
       GetVTblPtr(vtblptr,ExProcessVolatileTableTdb);

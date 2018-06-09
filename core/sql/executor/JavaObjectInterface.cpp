@@ -576,7 +576,8 @@ void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
 }
 
 NABoolean JavaObjectInterface::getExceptionDetails(const char *fileName, int lineNo,
-                       const char *methodName)  
+                                                   const char *methodName,
+                                                   NABoolean noDetails)
 {
    JNIEnv *jenv = jenv_;
    NABoolean killProcess = FALSE;
@@ -596,8 +597,10 @@ NABoolean JavaObjectInterface::getExceptionDetails(const char *fileName, int lin
        setSqlJniErrorStr(error_msg); 
        return FALSE;
    }
-   if (appendExceptionMessages(a_exception, error_msg))
-      killProcess = TRUE;
+
+   if (appendExceptionMessages(a_exception, error_msg, noDetails))
+     killProcess = TRUE;
+
    setSqlJniErrorStr(error_msg); 
    logError(CAT_SQL_EXE, fileName, lineNo); 
    logError(CAT_SQL_EXE, methodName, error_msg); 
@@ -610,7 +613,9 @@ NABoolean JavaObjectInterface::getExceptionDetails(const char *fileName, int lin
    return TRUE;
 }
 
-NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, NAString &error_msg)
+NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, 
+                                                       NAString &error_msg,
+                                                       NABoolean noDetails)
 {
     NABoolean killProcess = FALSE;
     if (jenv_->IsInstanceOf(a_exception, gOOMErrorClass) == JNI_TRUE)
@@ -637,6 +642,10 @@ NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, N
                                         gGetStackTraceMethodID);
     if (frames == NULL)
        return killProcess;
+
+    if (noDetails)
+      return killProcess;
+
     jsize frames_length = jenv_->GetArrayLength(frames);
 
     jsize i = 0;
@@ -658,8 +667,8 @@ NABoolean JavaObjectInterface::appendExceptionMessages(jthrowable a_exception, N
     jthrowable j_cause = (jthrowable)jenv_->CallObjectMethod(a_exception, gGetCauseMethodID);
     if (j_cause != NULL) {
        error_msg += " Caused by \n";
-       if (appendExceptionMessages(j_cause, error_msg))  
-          killProcess = TRUE;
+       if (appendExceptionMessages(j_cause, error_msg, noDetails))
+         killProcess = TRUE;
     }
     jenv_->DeleteLocalRef(a_exception);
     return killProcess;

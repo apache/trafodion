@@ -66,3 +66,5 @@
 #include "StmtDDLCreateRole.h"
 #include "StmtDDLRoleGrant.h"
 #include "StmtDDLCleanupObjects.h"
+#include "StmtDDLonHiveObjects.h"
+

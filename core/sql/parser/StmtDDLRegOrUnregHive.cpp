@@ -59,7 +59,7 @@ StmtDDLRegOrUnregObject::StmtDDLRegOrUnregObject(const QualifiedName & origObjNa
                                                  const StorageType storageType,
                                                  const NABoolean isRegister,
                                                  const ComObjectType objType,
-                                                 const NABoolean existsOption,
+                                                 const NABoolean registeredOption,
                                                  const NABoolean isInternal,
                                                  const NABoolean cascade,
                                                  const NABoolean cleanup,
@@ -70,7 +70,7 @@ StmtDDLRegOrUnregObject::StmtDDLRegOrUnregObject(const QualifiedName & origObjNa
        storageType_(storageType),
        isRegister_(isRegister),
        objType_(objType),
-       existsOption_(existsOption),
+       registeredOption_(registeredOption),
        isInternal_(isInternal),
        cascade_(cascade),
        cleanup_(cleanup)
