@@ -92,9 +92,12 @@ A            B
 
 --- 1 row(s) selected.
 >>
->>create table t00803 as select * from sch008.t00802;
-
---- SQL operation complete.
+>>-- hive execution of create as select... runs into an error due to a 
+>>-- security issue.
+>>-- Use regrhive until that issue is fixed.
+>>sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
+>>sh regrhive.ksh -f TEST008_junk;
+>>--create table t00803 as select * from sch008.t00802;
 >>invoke t00803;
 
 -- Definition of hive table HIVE.SCH008.T00803
