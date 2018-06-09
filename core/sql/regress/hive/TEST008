@@ -45,7 +45,12 @@ invoke t00802;
 insert into t00802 values (1,2);
 select * from t00802;
 
-create table t00803 as select * from sch008.t00802;
+-- hive execution of create as select... runs into an error due to a 
+-- security issue.
+-- Use regrhive until that issue is fixed.
+sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
+sh regrhive.ksh -f TEST008_junk;
+--create table t00803 as select * from sch008.t00802;
 invoke t00803;
 select * from t00803;
 
