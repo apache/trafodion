@@ -3456,10 +3456,6 @@ void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, 
                isHex = true;
             }
 
-
-//            if(CharInfo::isCharSetFullySupported(cs))
-//            {
-                // get dynamic param value
                 Lng32 valueBeg = perfix_end + 2;
                 Lng32 valueEnd = valueBeg;
                 while(*(source+valueEnd))
@@ -3495,37 +3491,9 @@ void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, 
                                 source[i] = 0;
                             }
                         }
-//                        if (pTempStr)
-//                        {
-//                            memcpy(source, &source[valueBeg], valueEnd-valueBeg);
-//                           NAWchar* utf16StrLit = new NAWchar[pTempStr->length()+1];
-//                          LocaleStringToUnicode(cs, pTempStr->data(),pTempStr->length(), utf16StrLit, pTempStr->length()+1, TRUE);
-//                          memcpy(source, pTempStr->data(), pTempStr->length());
-//                            for (Lng32 i =valueEnd - valueBeg; i < valueEnd+2;  ++i)
-//                            {
-//                                if (i%2 == 0)
-//                                    source[i] = ' ';
-//                                else {
-//                                    source[i] = 0;
-//                                }
-//                            }
-
-//                            return;
-//                        }
-//                        else
-//                        {
-//                            *diagsArea << DgSqlCode(-8413);
-//                            return;
-//                        }
-
-//                    }
                 }
                     valueEnd += 2;
             }
-//            else
-//            {
-//                *diagsArea << DgSqlCode(-8013);
-//            }
         }
     }
 }
