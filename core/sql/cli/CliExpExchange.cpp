@@ -1603,7 +1603,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
 	    sourceType = REC_DECIMAL_LSE;
 	  }
 	  
-	  // 5/18/98: added to handle SJIS encoding charset case.
+      // 5/18/98: added to handle SJIS encoding charset case.
 	  // This is used in ODBC where the target character set is still
 	  // ASCII but the actual character set used is SJIS.
 	  //
@@ -3383,6 +3383,111 @@ error_return:
   return ex_expr::EXPR_ERROR;
 }
 
+void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, Descriptor * inputDesc)
+{
+    char perfix[MAX_CHAR_SET_STRING_LENGTH];
+    Lng32 endIndex = MAX_CHAR_SET_STRING_LENGTH;
+    if (source)
+    {
+        Lng32 perfix_beg = 0;
+        Lng32 perfix_end = 0;
+        if(source[0] == '_' || source[0] =='N' || source[0] == 'n')
+        {
+            perfix_beg += 2;
+            perfix_end = perfix_beg;
+
+            // get charset perfix
+            while (perfix_end <= endIndex)
+            {
+                if(source[perfix_end] == '\'')
+                {
+                    //charset perfix
+                    Lng32 i;
+                    for(i = 0; i < (perfix_end-perfix_beg)/2; ++i)
+                            perfix[i] = TOUPPER(*(source+perfix_beg+i*2));
+                    perfix[i] = 0;
+                    break;
+                }
+                // not include charset name
+                if (perfix_end == endIndex)
+                    return;
+                perfix_end += 2;
+            }
+
+            // charset name lookup
+            CharInfo::CharSet cs = CharInfo::getCharSetEnum(perfix);
+            if(source[0] != '_')
+            {
+                perfix_beg = 0;
+                cs = CharInfo::UNICODE;
+            }
+            if (cs == CharInfo::UnknownCharSet)
+                return;
+            NABoolean isHex = false;
+
+            if(perfix_end > 4 && (source[perfix_end-2] == 'X' || source[perfix_end-2] == 'x') &&
+                    source[perfix-4] == ' ')
+            {
+               isHex = true;
+            }
+
+
+//            if(CharInfo::isCharSetFullySupported(cs))
+//            {
+                // get dynamic param value
+                Lng32 valueBeg = perfix_end + 2;
+                Lng32 valueEnd = valueBeg;
+                while(*(source+valueEnd))
+                {
+                    if (source[valueEnd] == '\'')
+                    {
+                        NAString* pTempStr = NULL;
+                        pTempStr = unicodeToChar((wchar_t*)&source[valueBeg], (valueEnd-valueBeg)/2,
+                                                 static_cast<Lng32>(cs), heap);
+                        memcpy(source, &source[valueBeg], valueEnd-valueBeg);
+                        for (Lng32 i =valueEnd - valueBeg; i < valueEnd+2;  ++i)
+                        {
+                            if (i%2 == 0)
+                                source[i] = ' ';
+                            else {
+                                source[i] = 0;
+                            }
+                        }
+//                        if (pTempStr)
+//                        {
+//                            memcpy(source, &source[valueBeg], valueEnd-valueBeg);
+//                           NAWchar* utf16StrLit = new NAWchar[pTempStr->length()+1];
+//                          LocaleStringToUnicode(cs, pTempStr->data(),pTempStr->length(), utf16StrLit, pTempStr->length()+1, TRUE);
+//                          memcpy(source, pTempStr->data(), pTempStr->length());
+//                            for (Lng32 i =valueEnd - valueBeg; i < valueEnd+2;  ++i)
+//                            {
+//                                if (i%2 == 0)
+//                                    source[i] = ' ';
+//                                else {
+//                                    source[i] = 0;
+//                                }
+//                            }
+
+//                            return;
+//                        }
+//                        else
+//                        {
+//                            *diagsArea << DgSqlCode(-8413);
+//                            return;
+//                        }
+
+//                    }
+                    valueEnd += 2;
+                }
+            }
+//            else
+//            {
+//                *diagsArea << DgSqlCode(-8013);
+//            }
+        }
+    }
+}
+
 ex_expr::exp_return_type
 InputOutputExpr::inputValues(atp_struct *atp,
                              void * inputDesc_,
@@ -3639,6 +3744,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	
         // do the conversion
         source = (char *)&targetRowsetSize;
+
         if (::convDoIt(source,
                        sizeof(Lng32),
                        REC_BIN32_SIGNED,
@@ -3804,7 +3910,10 @@ InputOutputExpr::inputValues(atp_struct *atp,
           if (!source) {
 	    continue;
 	  }
-
+          if(isOdbc)
+          {
+              handleCharsetPerfix(source, diagsArea, heap, inputDesc);
+          }
           if (DFS2REC::isSQLVarChar(sourceType)) {
             Lng32 vcIndLen = inputDesc->getVarIndicatorLength(entry);
             sourceLen = ExpTupleDesc::getVarLength(source, vcIndLen);
@@ -4408,6 +4517,7 @@ ex_expr::exp_return_type InputOutputExpr::addDescInfoIntoStaticDesc
   }
   
   return ex_expr::EXPR_OK;
+
 }
 
 Lng32 InputOutputExpr::getMaxParamIdx()
