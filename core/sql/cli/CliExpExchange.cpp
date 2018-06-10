@@ -3383,6 +3383,32 @@ error_return:
   return ex_expr::EXPR_ERROR;
 }
 
+NABoolean isDigit(BYTE c)
+{
+    if ((c >= '0') && (c <= '9'))
+            return TRUE;
+     return FALSE;
+}
+
+Int32 getHexDigitValue(BYTE c)
+{
+    if (isDigit(c))
+        return (Int32)c - '0';
+    else
+    {
+        if ('A' <= c and c <= 'F')
+            return (Int32)c - 'A' + 10;
+        else
+            return (Int32)c - 'a' + 10;
+    }
+
+}
+
+char HandleHexValue(char upperBits, char lowerBits)
+{
+    return getHexDigitValue(upperBits)*16 + getHexDigitValue(lowerBits);
+}
+
 void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, Descriptor * inputDesc)
 {
     char perfix[MAX_CHAR_SET_STRING_LENGTH];
@@ -3425,8 +3451,7 @@ void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, 
                 return;
             NABoolean isHex = false;
 
-            if(perfix_end > 4 && (source[perfix_end-2] == 'X' || source[perfix_end-2] == 'x') &&
-                    source[perfix-4] == ' ')
+            if(perfix_end > 4 && source[perfix_end-2] == 'X' && source[perfix_end-4] == ' ')
             {
                isHex = true;
             }
@@ -3441,10 +3466,27 @@ void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, 
                 {
                     if (source[valueEnd] == '\'')
                     {
+
                         NAString* pTempStr = NULL;
                         pTempStr = unicodeToChar((wchar_t*)&source[valueBeg], (valueEnd-valueBeg)/2,
                                                  static_cast<Lng32>(cs), heap);
+
                         memcpy(source, &source[valueBeg], valueEnd-valueBeg);
+                        if(isHex)
+                        {
+                            for (Lng32 i=0; i < valueEnd-valueBeg-2; i+=4)
+                            {
+                                source[i/2] = HandleHexValue(source[i], source[i+2]);
+                                source[i/2+1] = 0;
+                                if(i != 0)
+                                {
+                                    source[i] = ' ';
+                                    source[i+1] = 0;
+                                }
+                                source[i+2] = ' ';
+                                source[i+3] = 0;
+                            }
+                        }
                         for (Lng32 i =valueEnd - valueBeg; i < valueEnd+2;  ++i)
                         {
                             if (i%2 == 0)
@@ -3477,8 +3519,8 @@ void handleCharsetPerfix(char* source,  ComDiagsArea *diagsArea, CollHeap*heap, 
 //                        }
 
 //                    }
-                    valueEnd += 2;
                 }
+                    valueEnd += 2;
             }
 //            else
 //            {
