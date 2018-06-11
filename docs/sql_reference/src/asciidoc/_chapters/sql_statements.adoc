@@ -5819,13 +5819,16 @@ System Version 0.9.1. Expected Version 1.0.0.
 The GRANT statement grants access privileges on an SQL object and its columns to specified users or roles.
 Privileges can be granted on the object, on one or more columns, or both.
 
+TIP: As the owner who creates the object has all privileges by default, there is no need to grant privileges to the owner.
+The owner could grant/revoke privileges to/from other users or roles for safety.
+
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
 {docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
-GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
-  ON [object-type] [schema.]object
+GRANT {privilege-name [,privilege-name]... |ALL [PRIVILEGES]} 
+  ON [object-type] [schema-name.]object-name
   TO grantee
   [WITH GRANT OPTION]
   [[GRANTED] BY grantor]
@@ -5860,7 +5863,7 @@ column-list is:
 <<<
 === syntax description of grant
 
-* `_privilege_ [,_privilege_ ] &#8230; | all [privileges]`
+* `_privilege-name_ [,_privilege-name_ ] &#8230; | all [privileges]`
 +
 Specifies the privileges to grant. You can specify these privileges for an object.
 +
@@ -5873,39 +5876,78 @@ Specifies the privileges to grant. You can specify these privileges for an objec
 | SELECT     [column-list] | Can use the select statement.
 | UPDATE     [column-list] | Can use the update statement on table objects.
 | USAGE                    | For libraries, can create procedures and functions on library objects.
+
 For sequence generators, can use the sequence in a SQL statement.
-| ALL                      | All the applicable privileges. When you specify all for a table or view, 
-this includes the select, delete, insert, references, and update privileges. When the object is a 
-stored procedure or user-defined function (UDF), only the execute privilege is applied. When the 
-object is a library, only the update and usage privileges are applied. When the object is a sequence
+
+| ALL                      | All the applicable privileges. 
+
+When you specify all for a table or view, 
+this includes the select, delete, insert, references, and update privileges. 
+
+When the object is a 
+stored procedure or user-defined function (UDF), only the execute privilege is applied. 
+
+When the 
+object is a library, only the update and usage privileges are applied. 
+
+When the object is a sequence
 generator, only the usage privilege is applied.
 |===
 
-* `ON [_object-type_] [_schema_.]_object_`
+* `ON _[object-type][schema-name.]object-name_`
 +
-Specifies an object on which to grant privileges. If none is specified, it defaults to TABLE.  See <<database_object_names,"Database Object Names>> for more details. _object-type_ can be:
+Specifies an object on which to grant privileges. For more information, see <<database_object_names,Database Object Names>>. 
 
-** `FUNCTION [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
-** `LIBRARY [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
-** `PROCEDURE [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
++
+If none is specified, it defaults to TABLE. 
+
++
+`_[object-type][schema-name.]object-name_` can be:
+
+** `FUNCTION _[schema-name.]function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
+** `LIBRARY _[schema-name.]library-name_`, where _library-name_ is the name of a library object in the database.
+** `PROCEDURE _[schema-name.]procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
 registered in the database.
-** `SEQUENCE [_schema_.]_sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
-** `[TABLE] [_schema_.]_object_`, where _object_ is a table or view. 
+** `SEQUENCE _[schema-name.]sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
+** `[TABLE] _[schema-name.]object_`, where _object_ is a table or view. 
 
-* `TO {_grantee_ &#8230; }`
+* `TO {_grantee_}`
 +
 Specifies the  _auth-name_ to which you grant privileges.
 
 * `_auth-name_`
 +
-Specifies the name of an authorization id to which you grant privileges. See <<authorization_ids,authorization ids>>. 
-The authorization id must be a registered database username, an existing role name, or public. the name is a regular 
-or delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
-If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
+Specifies the name of an authorization id to which you grant privileges. For more information, see <<authorization_ids,Authorization IDs>>. 
++
+The _auth-name_ is a regular or delimited case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
++
+The authorization id must be one of the following:
++
+** A registered database username
++
+** An existing role name
++
+** PUBLIC (If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public)
 
 * `WITH GRANT OPTION`
 +
 Specifies that the _auth-name_ to which a privilege is granted may in turn grant the same privilege to other users or roles.
++
+NOTE: `WITH GRANT OPTION` cannot be granted to PUBLIC.
++
+*Example*
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:56:21]
+```
++
+```
+SQL>GRANT ALL PRIVILEGES ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:52:30]
+```
 
 * `[GRANTED] BY _grantor_`
 +
@@ -5928,18 +5970,116 @@ Specifies the list of columns to grant the requested privilege to.
 [[grant_authorization_and_availability_requirements]]
 ==== Authorization and Availability Requirements
 
-To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. Privileges can 
-be granted directly to you or to one of the roles you have been granted. You can grant a privilege on an object if you are 
-the owner of the object (by which you are implicitly granted all privileges on the object) or the owner of the schema containing 
-the object, or if you have been granted both the privilege and the WITH GRANT OPTION for the privilege.
+* To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. 
 
-If granting privileges on behalf of a role, you must specify the role in the [GRANTED] BY clause. To grant the privileges on 
-behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; that is, the 
-role must have been granted the privileges WITH GRANT OPTION.
+* Privileges can be granted directly to you or to one of the roles you have been granted. 
 
-If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
-privileges for which you do have authority to grant). If you lack authority to grant any of the specified privileges, SQL returns 
+* You can grant a privilege on an object if one of the following is true:
++
+** If you are the owner of the object (by which you are implicitly granted all privileges on the object). 
+
++
+** The owner of the schema contains the object.
+
++
+** If you have been granted both the privilege and the `WITH GRANT OPTION` for the privilege.
+
+* If granting privileges on behalf of a role, you must specify the role in the `[GRANTED] BY` clause. 
++
+To grant the privileges on behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; 
+that is, the role must have been granted the privileges `WITH GRANT OPTION`.
+
+* If you lack authority to grant:
+
+** If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
+privileges for which you do have authority to grant). 
+
++
+*Example*
+
++
+The owner of the table _customer_ is the _testuser1_, who grants `DELETE`, `INSERT` and `REFERENCES` privileges on the table _customer_ 
+to the user _testuser2_ with `WITH GRANT OPTION`.
+
++
+_testuser1_:
+
++ 
+```
+SQL>GRANT DELETE, INSERT, REFERENCES ON customer TO testuser2 WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Then the _testuser2_ tries to grant all privileges on the table _customer_ to the _testuser3_ but fails because of lacking `SELECT` and 
+`UPDATE` privileges, only successfully grants those privileges (`DELETE`, `INSERT` and `REFERENCES`) for which the _testuser2_ has 
+grant options.
+
++
+_testuser2:_
+
++
+```
+SQL>GRANT ALL PRIVILEGES ON customer TO testuser3;
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the SELECT privilege. [2018-06-11 16:07:34]
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the UPDATE privilege. [2018-06-11 16:07:34]
+
+--- SQL operation complete.
+```
+
++
+Now check privileges for the _testuser1_, _testuser2_ and _testuser3_. 
+
++
+```
+SQL>SHOWDDL customer;
+
+CREATE TABLE TRAFODION.SEABASE.CUSTOMER
+  ( 
+    CUSTNUM                          NUMERIC(4, 0) UNSIGNED NO DEFAULT NOT NULL
+      NOT DROPPABLE NOT SERIALIZED
+  , CUSTNAME                         CHAR(18) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STREET                           CHAR(22) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , CITY                             CHAR(14) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STATE                            CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591' ' NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , PRIMARY KEY (CUSTNUM ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_RSRVD_3' 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER1 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER2 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER3 GRANTED BY TESTUSER2;
+
+--- SQL operation complete.
+```
+
++
+** If you lack authority to grant any of the specified privileges, SQL returns 
 an error.
+
++
+*Example*
+
++
+(continue from examples above)
+
++
+The user _testuser3_ tries to grant `DELETE` privilege to the _testuser4_ but fails as the _testuser3_ lacks authority.
+
++
+```
+SQL>GRANT DELETE ON CUSTOMER TO testuser4;
+
+*** ERROR[1012] No privileges were granted.  TESTUSER3 lacks grant option on the specified privileges.  [2018-06-11 16:21:31]
+```
 
 <<<
 [[grant_examples]]
@@ -5956,6 +6096,122 @@ GRANT SELECT (part_no, part_name), DELETE ON TABLE invent.partloc
 +
 ```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
+```
+
+* This example explains how to grant the `SELECT` privilege to PUBLIC.
+
++
+The _testuser1_ creates the table _t1_. The _testuser2_ and _testuser3_ do not have the `SELECT` privilege on the table _t1_.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT * FROM t1;
+
+*** ERROR[4481] The testuser2 does not have SELECT privilege on table or view TRAFODION.SEABASE.T1. [2018-06-11 11:39:16]
+```
+
++
+The _testuser1_ grants the `SELECT` privilege on table _t1_ to PUBLIC, which means granting `SELECT` privilege to all users (_testuser2_ and _testuser3_). 
+
++
+_testuser1_:
+
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC；
+
+--- SQL operation complete.
+```
+
++
+Then the _testuser2_ and _testuser3_ have the `SELECT` privilege on the table _t1_.
+
++
+_testuser3:_
+
++
+```
+SQL>SELECT * FROM t1;
+
+C1          C2         
+----------- -----------
+          1           2
+          3           4
+
+--- 2 row(s) selected.
+```
+
+* This example shows how to grant privileges to the specified role _"TECHNICAL_WRITER"_ and display privileges.
+
++
+```
+SQL>GRANT DELETE, INSERT, REFERENCES, SELECT (start_date,ship_timestamp,est_complete), UPDATE ON TABLE project TO "TECHNICAL_WRITER";
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>GET PRIVILEGES FOR ROLE "TECHNICAL_WRITER";
+
+-IDU-R-    TRAFODION.SEABASE.PROJECT
+S------    TRAFODION.SEABASE.PROJECT <Column> EST_COMPLETE
+S------    TRAFODION.SEABASE.PROJECT <Column> SHIP_TIMESTAMP
+S------    TRAFODION.SEABASE.PROJECT <Column> START_DATE
+
+--- SQL operation complete.
+```
+
+* This example demonstrates how to grant the specified role _"TECHNICAL_WRITER"_ to the _testuser1_.
++
+```
+SQL>GRANT ROLE "TECHNICAL_WRITER" TO testuser1;
+
+--- SQL operation complete.
+```
+
+* This example illustrates how to grant the `USAGE` privilege.
++
+The _testuser1_ creates the sequence _sequence_testuser1_, at this time, the _testuser2_ can not use this sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, NEXT) FROM DUAL;
+
+*** ERROR[4491] The user does not have the USAGE privilege on sequence TRAFODION.SEABASE.SEQUENCE_TESTUSER1. [2018-06-11 16:49:20]
+```
+
++
+Then the _testuser1_ grants the `USAGE` privilege to the _testuser2_.
+
++
+```
+SQL>GRANT USAGE ON SEQUENCE sequence_testuser1 TO testuser2;
+
+--- SQL operation complete.
+```
+
++
+Now the _testuser2_ can use the sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, next) FROM DUAL;
+
+(EXPR)
+--------------------
+                  112
+
+--- 1 row(s) selected.
 ```
 
 <<<
