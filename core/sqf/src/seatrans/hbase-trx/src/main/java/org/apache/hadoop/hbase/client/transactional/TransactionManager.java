@@ -3301,11 +3301,12 @@ public class TransactionManager {
           //handle result and error
           if( ret == null)
           {
+            retry = true;
             LOG.error("setStoragePolicy Response ret null ");
           }
           else if (ret.getStatus() == false)
           {
-            LOG.error("setStoragePolicy Response ret false: " + ret.getException());
+            LOG.error("setStoragePolicy Response ret false." +  ret.getException());
             throw new IOException(ret.getException());
           }
           if(retryCount == RETRY_ATTEMPTS)
