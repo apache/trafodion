@@ -1657,32 +1657,6 @@ void LOG_INFO(CError* ierror)
 	LOG_MSG( ierror, EVENTLOG_INFORMATION_TYPE);
 }
 
-IDL_boolean isDigit(BYTE c)
-{
-    if ((c >= '0') && (c <= '9'))
-            return TRUE;
-     return FALSE;
-}
-
-IDL_short getHexDigitValue(BYTE c)
-{
-    if (isDigit(c))
-        return (IDL_short)c - '0';
-    else
-    {
-        if ('A' <= c and c <= 'F')
-            return (IDL_short)c - 'A' + 10;
-        else
-            return (IDL_short)c - 'a' + 10;
-    }
-
-}
-
-BYTE HandleCharSetPerfix(BYTE upperBits, BYTE lowerBits)
-{
-    return getHexDigitValue(upperBits)*16 + getHexDigitValue(lowerBits);
-}
-
 void
 SQLEXECUTE_IOMessage(
     /* In    */ CEE_tag_def objtag_
@@ -1804,50 +1778,6 @@ SQLEXECUTE_IOMessage(
 	{
 		inValues = (BYTE *) curptr+inputPosition;
 		inputPosition += inValuesLength;
-        //if the inValues include charset perfix should delete it
-        if (inValues[0] != '\'')
-        {
-            IDL_long perfix_beg = 0;
-            while (perfix_beg < inValuesLength-1)
-            {
-                if (inValues[perfix_beg] == '\'' && inValues[perfix_beg+2] != '\'')
-                {
-                   IDL_long perfix_end = perfix_beg+2;
-                   while (perfix_end < inValuesLength)
-                   {
-                       if (inValues[perfix_end] == '\'' && inValues[perfix_end+2] != '\'')
-                           break;
-                       perfix_end += 2;
-                   }
-                    memcpy(inValues, &inValues[perfix_beg+2], perfix_end-perfix_beg-2);
-
-                    // handel hex values
-                    if (perfix_beg > 1 && (inValues[perfix_beg-2] == 'x' || inValues[perfix_beg-2] == 'X'))
-                    {
-                        for(IDL_long i = 0; i < perfix_end-perfix_beg-2; i+=4)
-                        {
-                            inValues[i/2] = HandleCharSetPerfix(inValues[i], inValues[i+2]);
-                            inValues[i/2+1] = 0;
-                            if (i != 0)
-                            {
-                                inValues[i] = ' ';
-                                inValues[i+1] = 0;
-                            }
-                            inValues[i+2] = ' ';
-                            inValues[i+3] = 0;
-                        }
-                    }
-
-                    for (IDL_long i=perfix_end-perfix_beg-2; i < perfix_end+1 && i < inValuesLength;)
-                    {
-                        inValues[i++] =  (BYTE)' ';
-                        inValues[i++] = 0;
-                    }
-                   break;
-                }
-                perfix_beg+=2;
-            }
-        }
 	}
 
 	transactionIDLength = *(IDL_unsigned_long*)(curptr+inputPosition);
