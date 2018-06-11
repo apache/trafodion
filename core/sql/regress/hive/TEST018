@@ -265,17 +265,17 @@ select * from hive.hive.null_format_colon order by 1,2;
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_default'
    select * from null_format_src;
-select * from hive.hive.null_format_default;
+select * from hive.hive.null_format_default order by 1,2;
 
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_empty'
    select * from null_format_src;
-select * from hive.hive.null_format_empty;
+select * from hive.hive.null_format_empty order by 1,2;
 
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_colon'
    select * from null_format_src;
-select * from hive.hive.null_format_colon;
+select * from hive.hive.null_format_colon order by 1,2;
 
 ---index 0
 create index customer_idx1 on customer_salt(c_first_name, c_last_name);
