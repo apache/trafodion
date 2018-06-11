@@ -997,7 +997,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     return new (heap) SQLDoublePrecision(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "timestamp"))
-    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , 6);
+    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , DatetimeType::MAX_FRACTION_PRECISION);
 
   if ( !strcmp(hiveType, "date"))
     return new (heap) SQLDate(heap, TRUE /* allow NULL */);

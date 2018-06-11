@@ -48,14 +48,18 @@
 #include "exp_ovfl_ptal.h"
 #include "exp_ieee.h"
 
-
-Int64 EXP_FIXED_OV_ADD(Int64 op1, Int64 op2, short * ov)
+Int64 EXP_FIXED_ARITH_OV_OPER(short operation,
+                              Int64 op1, Int64 op2, short * ov)
 {
+  if (NOT ((operation == ITM_PLUS) || (operation == ITM_MINUS) ||
+           (operation == ITM_TIMES) || (operation == ITM_DIVIDE)))
+    return -1; // invalid operation
+
   short rc = 0;
   *ov = 0;
 
-  BigNum op1BN(16, 20, 0, 0);
-  BigNum op2BN(16, 20, 0, 0);
+  BigNum op1BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+  BigNum op2BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
 
   char op1BNdata[100];
   char op2BNdata[100];
@@ -79,15 +83,46 @@ Int64 EXP_FIXED_OV_ADD(Int64 op1, Int64 op2, short * ov)
   op1BN.castFrom(&op1ST, op1_data, NULL, NULL);
   op2BN.castFrom(&op2ST, op2_data, NULL, NULL);
 
-  char * add_data[3];
-  char addBNdata[100];
-  add_data[0] = addBNdata;
-  add_data[1] = op1BNdata;
-  add_data[2] = op2BNdata;
+  char * oper_data[3];
+  char operBNdata[100];
+  oper_data[0] = operBNdata;
+  oper_data[1] = op1BNdata;
+  oper_data[2] = op2BNdata;
 
-  BigNum addBN(16, 20, 0, 0);
+  BigNum operBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
 
-  rc = addBN.add(&op1BN, &op2BN, add_data);
+  switch (operation)
+    {
+    case ITM_PLUS:
+      {
+        rc = operBN.add(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_MINUS:
+      {
+        rc = operBN.sub(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_TIMES:
+      {
+        rc = operBN.mul(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_DIVIDE:
+      {
+        char tempSpace[200];
+        operBN.setTempSpaceInfo(ITM_DIVIDE, (ULong)tempSpace, 200);
+        rc = operBN.div(&op1BN, &op2BN, oper_data, NULL, NULL);
+      }
+      break;
+
+    default:
+      return -1;
+    } // switch
+
   if (rc)
     {
       *ov = 1;
@@ -96,82 +131,15 @@ Int64 EXP_FIXED_OV_ADD(Int64 op1, Int64 op2, short * ov)
 
   SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
 		      ExpTupleDesc::SQLMX_FORMAT,
-		      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+		      sizeof(Int64), 0, 0, 0, Attributes::NO_DEFAULT, 0);
   
   Int64 result;
   op1_data[0] = (char*)&result; 
-  op1_data[1] = add_data[0];
+  op1_data[1] = oper_data[0];
 
-  //  rc = addBN.castTo(&resultST, op1_data);
-  rc = convDoIt(op1_data[1], 16, REC_NUM_BIG_SIGNED, 20, 0,
-		op1_data[0],  8, REC_BIN64_SIGNED, 0, 0,
-		NULL, 0, NULL, NULL);
-
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  return result;
-}
-
-Int64 EXP_FIXED_OV_SUB(Int64 op1, Int64 op2, short * ov)
-{
-  short rc = 0;
-  *ov = 0;
-
-  BigNum op1BN(16, 20, 0, 0);
-  BigNum op2BN(16, 20, 0, 0);
-
-  char op1BNdata[100];
-  char op2BNdata[100];
-
-  SimpleType op1ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  SimpleType op2ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-
-  char * op1_data[2];
-  char * op2_data[2];
-
-  op1_data[0] = op1BNdata;
-  op1_data[1] = (char*)&op1;
-
-  op2_data[0] = op2BNdata;
-  op2_data[1] = (char*)&op2;
-
-  op1BN.castFrom(&op1ST, op1_data, NULL, NULL);
-  op2BN.castFrom(&op2ST, op2_data, NULL, NULL);
-
-  char * sub_data[3];
-  char subBNdata[100];
-  sub_data[0] = subBNdata;
-  sub_data[1] = op1BNdata;
-  sub_data[2] = op2BNdata;
-
-  BigNum subBN(16, 20, 0, 0);
-
-  rc = subBN.sub(&op1BN, &op2BN, sub_data);
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		      ExpTupleDesc::SQLMX_FORMAT,
-		      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  
-  Int64 result;
-  op1_data[0] = (char*)&result; 
-  op1_data[1] = sub_data[0];
-
-  //  rc = subBN.castTo(&resultST, op1_data);
-  rc = convDoIt(op1_data[1], 16, REC_NUM_BIG_SIGNED, 20, 0,
-		op1_data[0],  8, REC_BIN64_SIGNED, 0, 0,
+  rc = convDoIt(op1_data[1], BigNum::BIGNUM_TEMP_LEN, REC_NUM_BIG_SIGNED, 
+                BigNum::BIGNUM_TEMP_PRECISION, 0,
+		op1_data[0],  sizeof(Int64), REC_BIN64_SIGNED, 0, 0,
 		NULL, 0, NULL, NULL);
   if (rc)
     {
@@ -182,159 +150,48 @@ Int64 EXP_FIXED_OV_SUB(Int64 op1, Int64 op2, short * ov)
   return result;
 }
 
-Int64 EXP_FIXED_OV_MUL(Int64 op1, Int64 op2, short * ov)
+Int64 EXP_FIXED_OV_ADD(Int64 op1,Int64 op2, short * ov)
 {
-  short rc = 0;
-  *ov = 0;
-
-  BigNum op1BN(16, 38, 0, 0);
-  BigNum op2BN(16, 38, 0, 0);
-
-  char op1BNdata[100];
-  char op2BNdata[100];
-
-  SimpleType op1ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  SimpleType op2ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-
-  char * op1_data[2];
-  char * op2_data[2];
-
-  op1_data[0] = op1BNdata;
-  op1_data[1] = (char*)&op1;
-
-  op2_data[0] = op2BNdata;
-  op2_data[1] = (char*)&op2;
-
-  op1BN.castFrom(&op1ST, op1_data, NULL, NULL);
-  op2BN.castFrom(&op2ST, op2_data, NULL, NULL);
-
-  char * mul_data[3];
-  char mulBNdata[100];
-  mul_data[0] = mulBNdata;
-  mul_data[1] = op1BNdata;
-  mul_data[2] = op2BNdata;
-
-  BigNum mulBN(16, 38, 0, 0);
-
-  rc = mulBN.mul(&op1BN, &op2BN, mul_data);
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		      ExpTupleDesc::SQLMX_FORMAT,
-		      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  
-  Int64 result;
-  op1_data[0] = (char*)&result; 
-  op1_data[1] = mul_data[0];
-
-  //  rc = mulBN.castTo(&resultST, op1_data);
-  rc = convDoIt(op1_data[1], 16, REC_NUM_BIG_SIGNED, 38, 0,
-		op1_data[0],  8, REC_BIN64_SIGNED, 0, 0,
-		NULL, 0, NULL, NULL);
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  return result;
+  return EXP_FIXED_ARITH_OV_OPER(ITM_PLUS, op1, op2, ov);
 }
 
-Int64 EXP_FIXED_OV_DIV(Int64 op1, Int64 op2, short * ov)
+Int64 EXP_FIXED_OV_SUB(Int64 op1,Int64 op2, short * ov)
 {
-  short rc = 0;
-  *ov = 0;
-
-  BigNum op1BN(16, 38, 0, 0);
-  BigNum op2BN(16, 38, 0, 0);
-
-  char op1BNdata[100];
-  char op2BNdata[100];
-
-  SimpleType op1ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  SimpleType op2ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		   ExpTupleDesc::SQLMX_FORMAT,
-		   8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-
-  char * op1_data[2];
-  char * op2_data[2];
-
-  op1_data[0] = op1BNdata;
-  op1_data[1] = (char*)&op1;
-
-  op2_data[0] = op2BNdata;
-  op2_data[1] = (char*)&op2;
-
-  op1BN.castFrom(&op1ST, op1_data, NULL, NULL);
-  op2BN.castFrom(&op2ST, op2_data, NULL, NULL);
-
-  char * div_data[3];
-  char divBNdata[100];
-  div_data[0] = divBNdata;
-  div_data[1] = op1BNdata;
-  div_data[2] = op2BNdata;
-
-  BigNum divBN(16, 38, 0, 0);
-  char tempSpace[200];
-  divBN.setTempSpaceInfo(ITM_DIVIDE, (ULong)tempSpace, 200);
-  rc = divBN.div(&op1BN, &op2BN, div_data, NULL, NULL);
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		      ExpTupleDesc::SQLMX_FORMAT,
-		      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  
-  Int64 result;
-  op1_data[0] = (char*)&result; 
-  op1_data[1] = div_data[0];
-
-  //rc = divBN.castTo(&resultST, op1_data);
-  rc = convDoIt(op1_data[1], 16, REC_NUM_BIG_SIGNED, 38, 0,
-		op1_data[0],  8, REC_BIN64_SIGNED, 0, 0,
-		NULL, 0, NULL, NULL);
-  if (rc)
-    {
-      *ov = 1;
-      return -1;
-    }
-
-  return result;
+  return EXP_FIXED_ARITH_OV_OPER(ITM_MINUS, op1, op2, ov);
 }
 
-//Int64 EXP_FIXED_OV_SUB(Int64 op1, Int64 op2, short * ov);
-//Int64 EXP_FIXED_OV_MUL(Int64 op1, Int64 op2, short * ov);
-//Int64 EXP_FIXED_OV_DIV(Int64 op1, Int64 op2, short * ov);
-
-
-short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
-                        Attributes * op2,
-                        char * op_data[])
+Int64 EXP_FIXED_OV_MUL(Int64 op1,Int64 op2, short * ov)
 {
+  return EXP_FIXED_ARITH_OV_OPER(ITM_TIMES, op1, op2, ov);
+}
+
+Int64 EXP_FIXED_OV_DIV(Int64 op1,Int64 op2, short * ov)
+{
+  return EXP_FIXED_ARITH_OV_OPER(ITM_DIVIDE, op1, op2, ov);
+}
+
+
+///////////////////////////////////////////////////////////////
+short EXP_BIGN_ARITH_OPER(short operation,
+                          Attributes * op1,
+                          Attributes * op2,
+                          char * op_data[])
+{
+  if (NOT ((operation == ITM_PLUS) || (operation == ITM_MINUS) ||
+           (operation == ITM_TIMES) || (operation == ITM_DIVIDE)))
+    return -1; // invalid operation
+
   short rc = 0;
-  BigNum op1BN(16, 38, 0, 0);
-  BigNum op2BN(16, 38, 0, 0);
+  BigNum op1BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+  BigNum op2BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
 
   char op1BNdata[100];
   char op2BNdata[100];
 
-  char * mul_data[3];
+  char * oper_data[3];
 
   //initialize result place holder.
-  mul_data[0] = op_data[0];
+  oper_data[0] = op_data[0];
 
   //convert op1 & op2 to bignum if not already bignum
   if(op1->isSimpleType())
@@ -345,10 +202,10 @@ short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
     rc = op1BN.castFrom(op1, op1_data, NULL, NULL);
     if(rc)
       return -1;
-    mul_data[1] = op1BNdata;
+    oper_data[1] = op1BNdata;
   }
   else
-    mul_data[1] = op_data[1]; 
+    oper_data[1] = op_data[1]; 
 
   if(op2->isSimpleType())
   {
@@ -358,84 +215,91 @@ short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
     rc = op2BN.castFrom(op2, op2_data, NULL, NULL);
     if(rc)
       return -1;
-    mul_data[2] = op2BNdata;
+    oper_data[2] = op2BNdata;
   }
   else
-    mul_data[2] = op_data[2]; 
+    oper_data[2] = op_data[2]; 
 
-  BigNum mulBN(16, 38, 0, 0);
+  BigNum operBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
 
-  rc = mulBN.mul(&op1BN, &op2BN, mul_data);
+  switch (operation)
+    {
+    case ITM_PLUS:
+      {
+        rc = operBN.add(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_MINUS:
+      {
+        rc = operBN.sub(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_TIMES:
+      {
+        rc = operBN.mul(&op1BN, &op2BN, oper_data);
+      }
+      break;
+
+    case ITM_DIVIDE:
+      {
+        char tempSpace[200];
+        operBN.setTempSpaceInfo(ITM_DIVIDE, (ULong)tempSpace, 200);
+
+        rc = operBN.div(&op1BN, &op2BN, oper_data, NULL, NULL);
+      }
+      break;
+
+    default:
+      return -1;
+    }
+
   if (rc)
     return -1;
 
   return 0;
+}
+
+short EXP_FIXED_BIGN_OV_ADD(Attributes * op1,
+                            Attributes * op2,
+                            char * op_data[])
+{
+  return EXP_BIGN_ARITH_OPER(ITM_PLUS, op1, op2, op_data);
+}
+
+short EXP_FIXED_BIGN_OV_SUB(Attributes * op1,
+                            Attributes * op2,
+                            char * op_data[])
+{
+  return EXP_BIGN_ARITH_OPER(ITM_MINUS, op1, op2, op_data);
+}
+
+short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
+                            Attributes * op2,
+                            char * op_data[])
+{
+  return EXP_BIGN_ARITH_OPER(ITM_TIMES, op1, op2, op_data);
 }
 
 short EXP_FIXED_BIGN_OV_DIV(Attributes * op1,
-                        Attributes * op2,
-                        char * op_data[])
+                            Attributes * op2,
+                            char * op_data[])
 {
-  short rc = 0;
-  
-  BigNum op1BN(16, 38, 0, 0);
-  BigNum op2BN(16, 38, 0, 0);
-
-  char op1BNdata[100];
-  char op2BNdata[100];
-
-  char * div_data[3];
-
-  //initialize result place holder.
-  div_data[0] = op_data[0];
-
-  //convert op1 & op2 to bignum if not already bignum
-  if(op1->isSimpleType())
-  {
-    char * op1_data[2];
-    op1_data[0] = op1BNdata;
-    op1_data[1] = op_data[1];
-    rc = op1BN.castFrom(op1, op1_data, NULL, NULL);
-    if(rc)
-      return -1;
-    div_data[1] = op1BNdata;
-  }
-  else
-    div_data[1] = op_data[1]; 
-
-  if(op2->isSimpleType())
-  {
-    char * op2_data[2];
-    op2_data[0] = op2BNdata;
-    op2_data[1] = op_data[2];
-    rc = op2BN.castFrom(op2, op2_data, NULL, NULL);
-    if(rc)
-      return -1;
-    div_data[2] = op2BNdata;
-  }
-  else
-    div_data[2] = op_data[2]; 
-
-  BigNum divBN(16, 38, 0, 0);
-  char tempSpace[200];
-  divBN.setTempSpaceInfo(ITM_DIVIDE, (ULong)tempSpace, 200);
-  rc = divBN.div(&op1BN, &op2BN, div_data, NULL, NULL);
-  if (rc)
-    return -1;
-
-  return 0;
+  return EXP_BIGN_ARITH_OPER(ITM_DIVIDE, op1, op2, op_data);
 }
 
 Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
-                        Attributes * op2,
-                        char * op_data[],
-                        short * ov)
+                            Attributes * op2,
+                            char * op_data[],
+                            short * ov,
+                            Int64 * quotient)
 {
   short rc = 0;
   *ov = 0;
 
-  BigNum op1BN(16, 38, 0, 0);
-  BigNum op2BN(16, 38, 0, 0);
+  BigNum op1BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+  BigNum op2BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
 
   char op1BNdata[100];
   char op2BNdata[100];
@@ -479,7 +343,7 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
   //using basic operators:
   //z=MOD(x,y) then z = x - ((x/y)*(y))
 
-  BigNum modBN(16, 38, 0, 0);
+  BigNum modBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
   char * temp_data[3];
   
   //calculate (x/y)
@@ -495,6 +359,26 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
     *ov = 1;
     return -1;
   }
+
+  SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
+                      ExpTupleDesc::SQLMX_FORMAT,
+                      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+  
+  // if quotient(x/y) is to be returned, return it
+  if (quotient)
+    {
+      temp_data[0] = (char*)quotient; 
+      temp_data[1] = xByY; //mod_data[0];
+      
+      rc = convDoIt(temp_data[1], BigNum::BIGNUM_TEMP_LEN, REC_NUM_BIG_SIGNED, BigNum::BIGNUM_TEMP_PRECISION, 0,
+                    temp_data[0],  8, REC_BIN64_SIGNED, 0, 0,
+                    NULL, 0, NULL, NULL);
+      if (rc)
+        {
+          *ov = 1;
+          return -1;
+        }
+    }
 
   //calculate (x/y) * y
   char xByYTimesY[100];
@@ -521,16 +405,12 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
     return -1;
   }
 
-  SimpleType resultST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
-		      ExpTupleDesc::SQLMX_FORMAT,
-		      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
-  
   Int64 result;
   temp_data[0] = (char*)&result; 
   temp_data[1] = mod_data[0];
 
   //rc = divBN.castTo(&resultST, op1_data);
-  rc = convDoIt(temp_data[1], 16, REC_NUM_BIG_SIGNED, 38, 0,
+  rc = convDoIt(temp_data[1], BigNum::BIGNUM_TEMP_LEN, REC_NUM_BIG_SIGNED, BigNum::BIGNUM_TEMP_PRECISION, 0,
 		temp_data[0],  8, REC_BIN64_SIGNED, 0, 0,
 		NULL, 0, NULL, NULL);
   if (rc)
@@ -1124,7 +1004,7 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 		                         ExpTupleDesc::SQLMX_FORMAT,
 		                         8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
                           
-                          BigNum opBN(16, 38, 0, 0);                          
+                          BigNum opBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);                          
                           
                           while(!vGT5)
 		           {
@@ -1132,8 +1012,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
                             op_data[1] = (char *) &dividend;
                             op_data[2] = (char *) &multiplier; 
                             rc = EXP_FIXED_BIGN_OV_MUL(&opST,
-                                                    &opST,
-			                              op_data);
+                                                       &opST,
+                                                       op_data);
                            if (rc)
 	                    {
 	                      //end of digits.
@@ -1144,8 +1024,8 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
                            op_data[1] = result1;
                            op_data[2] = (char *) &divisor;
                            rc = EXP_FIXED_BIGN_OV_DIV(&opBN,
-				                    &opST,
-				                    op_data);
+                                                      &opST,
+                                                      op_data);
 	                    if (rc)
 	                    {
 	                      //Something went wrong, lets consider

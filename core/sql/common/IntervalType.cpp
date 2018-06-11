@@ -251,9 +251,9 @@ UInt32 IntervalType::getPrecision(rec_datetime_field startField,
 } // IntervalType::getPrecision
 
 UInt32 IntervalType::computeLeadingPrecision(rec_datetime_field startField,
-					       UInt32 precision,
-					       rec_datetime_field endField,
-					       UInt32 fractionPrecision)
+                                             UInt32 precision,
+                                             rec_datetime_field endField,
+                                             UInt32 fractionPrecision)
 {
   UInt32 leadingPrecision;
   switch (getIntervalFSDatatype(startField, endField)) {
@@ -298,10 +298,13 @@ Lng32 IntervalType::getStorageSize(rec_datetime_field startField,
 				  rec_datetime_field endField,
 				  UInt32 fractionPrecision)
 {
-  Lng32 size = getBinaryStorageSize(getPrecision(startField, 
-                                                 leadingPrecision,
-                                                 endField,
-                                                 fractionPrecision));
+  Lng32 prec = getPrecision(startField, 
+                            leadingPrecision,
+                            endField,
+                            fractionPrecision);
+  
+  Lng32 size = getBinaryStorageSize(prec);
+
   // interval datatypes are stored as 2(smallint),4(int) or 8(largeint) bytes.
   // If size is tinyint size based on precision, change it to smallint size.
   if (size == SQL_TINY_SIZE)

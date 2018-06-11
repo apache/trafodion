@@ -112,6 +112,16 @@ StmtDDLCleanupObjects::bindNode(BindWA * pBindWA)
       // remember the original table name specified by user
       origTableQualName_ = *tableQualName_;
 
+      if ((type_ == HIVE_TABLE_) ||
+          (type_ == HIVE_VIEW_))
+        {
+          // add hive catalog/schema names if not specified
+          if (tableQualName_->getCatalogName().isNull())
+            tableQualName_->setCatalogName(HIVE_SYSTEM_CATALOG);
+          if (tableQualName_->getSchemaName().isNull())
+            tableQualName_->setCatalogName(HIVE_SYSTEM_SCHEMA);
+        }
+
       if (applyDefaultsAndValidateObject(pBindWA, tableQualName_))
         {
           pBindWA->setErrStatus();

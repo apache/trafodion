@@ -164,6 +164,7 @@ enum ExeErrorCode
   EXE_ERROR_FROM_LOB_INTERFACE          = 8442,
   EXE_INVALID_LOB_HANDLE                = 8443,
   EXE_ERROR_HDFS_SCAN                   = 8447,
+  EXE_INVALID_INTERVAL_RESULT           = 8453,
   EXE_LAST_EXPRESSIONS_ERROR		= 8499,
 
   // ---------------------------------------------------------------------
