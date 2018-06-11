@@ -95,9 +95,7 @@ public class TestGetIndexInfo {
 	@Test
     public void testGetNoneUniqueIndexInfo() {
 		IndexInfo[] expIndexInfo = {
-				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, false, (String)null, (String)null, (short)0, (short)0, "C1", 0, 3, (short)0, (String)null),
-				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, false, (String)null, (String)null, (short)0, (short)0, "C2", 0, 3, (short)0, (String)null),
-				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, true, (String)null, INDEX_C1_NAME, (short)3, (short)0, "", 0, 0, (short)0, (String)null)
+				new IndexInfo("TRAFODION", "SEABASE", INDEX_INFO_TEST_TABLE, true, (String)null, INDEX_C1_NAME, (short)1, (short)1, "C1", 0, 0, (short)0, (String)null),
 		};
 		
 		try {
@@ -109,7 +107,7 @@ public class TestGetIndexInfo {
 				compareInfoWithExp("testGetUniqueIndexInfo", rowNum + 1, indexInformation, expIndexInfo[rowNum]);
 				rowNum += 1;
 			}
-			assertEquals(rowNum, 3);
+			assertEquals(rowNum, 1);
 		} catch(Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
@@ -157,6 +155,7 @@ public class TestGetIndexInfo {
 	    	this.dbType = dbType;
 	    	this.dbOrdinalPosition = dbOrdinalPosition;
 	    	this.dbColumnName = dbColumnName;
+            this.dbAscOrDesc = dbAscOrdesc == 0 ? "A" : "D";
 	    	this.dbCardinality = dbCardinality;
 	    	this.dbPages = dbPages;
 	    	this.dbFilterCondition = dbFilterCondition;
@@ -190,8 +189,8 @@ public class TestGetIndexInfo {
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbAscOrDesc ", indexInfo.dbAscOrDesc, rs.getString("ASC_OR_DESC"));
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbCardinality ", indexInfo.dbCardinality, rs.getInt("CARDINALITY"));
 			// When the type is not SQL_TABLE_STAT, dbCardinality will be NULL
-			if (indexInfo.dbType != DatabaseMetaData.tableIndexStatistic)
-				assertTrue(rs.wasNull());
+//			if (indexInfo.dbType != DatabaseMetaData.tableIndexStatistic)
+//				assertTrue(rs.wasNull());
 			assertEquals(methondName + " rowNum " + Integer.toString(rowNum) + " dbPages ", indexInfo.dbPages, rs.getInt("PAGES"));
 			// Since dbPages is not supported now, it always return NULL
 			// here check if it is real NULL
