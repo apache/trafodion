@@ -436,7 +436,8 @@ HVC_RetCode HiveClient_JNI::executeHiveSQL(const char* hiveSQL)
 
   if (jenv_->ExceptionCheck())
   {
-    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::executeHiveSQL()");
+    getExceptionDetails(__FILE__, __LINE__, "HiveClient_JNI::executeHiveSQL()",
+                        TRUE /*dont return stack details*/);
     jenv_->PopLocalFrame(NULL);
     return HVC_ERROR_EXECUTE_HIVE_SQL_EXCEPTION;
   }

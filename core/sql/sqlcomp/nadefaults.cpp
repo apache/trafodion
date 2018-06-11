@@ -1754,6 +1754,11 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  // For JDBC/ODBC batch operations, LOB  size limited to 4K bytes
   DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "16384"),
+ // Control the locking via RMS shared lock. This ensures the CLI and HDFS 
+ // operations for any LOB UID are done under a lock so concurrent operations 
+ // wont conflict and cause incosistent data. For non concurrent applications, 
+ // we can turn this off as a performance enhancement. 
+  DDkwd__(LOB_LOCKING,          "ON"),
    // Size of memoryin Megabytes  used to perform I/O to lob data file 
   // default size is 128MB   . Change to adjust memory usage. 
   DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "128"), 
@@ -2883,7 +2888,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
- 
+
+  DDkwd__(TRAF_DDL_ON_HIVE_OBJECTS,             "ON"),
+
   DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   

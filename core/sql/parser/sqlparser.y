@@ -154,6 +154,9 @@ using namespace std;
 #include "SqlParserAux.h"
 #include "StmtCompilationMode.h"
 #include "StmtDMLSetTransaction.h"
+
+#include "StmtDDLonHiveObjects.h"
+
 // -- triggers
 #include "Triggers.h"
 #include "ItemNAType.h"
@@ -173,7 +176,6 @@ using namespace std;
 #include "exp_clause_derived.h"
 #include "exp_datetime.h"
 #include "Analyzer.h"
-
 
 #include "OptimizerSimulator.h"
 
@@ -340,6 +342,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <item>      ARITH_PLACEHOLDER
 %token <item>      BOOL_PLACEHOLDER
 %token <stringval> DELIMITED_IDENTIFIER
+%token <stringval> BACKQUOTED_IDENTIFIER
 %token <stringval> CALL_CASED_IDENTIFIER
 %token <stringval> GOTO_CASED_IDENTIFIER
 %token <stringval> PERFORM_CASED_IDENTIFIER
@@ -1913,6 +1916,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval> 		identifier_with_hat
 %type <stringval> 		identifier_with_dollar
 %type <strSeq>    		qualified_name
+%type <strSeq>    		schema_name_ss
 %type <strSeq>    		module_name
 %type <strSeq>    		routine_action_name
 %type <stringval> 		correlation_name
@@ -2266,6 +2270,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>  		sql_schema_manipulation_statement
 %type <pStmtDDL>  		sql_schema_statement_prologue
 %type <pStmtDDL>  		schema_definition
+%type <uint>   	        	schema_or_database
 %type <pStmtDDL>  		routine_definition
 %type <pStmtDDL>                alter_function_statement
 %type <pElemDDL>                routine_params_list
@@ -2508,8 +2513,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                alter_table_disable_constraint_clause
 %type <pStmtDDL>                alter_table_enable_constraint_clause
 %type <pStmtDDL>  		alter_table_action
+%type <uint>   	        	alter_table_start_tokens
+%type <uint>   	        	alter_view_start_tokens
+%type <uint>   	        	alter_schema_start_tokens
 %type <pStmtDDL>  		alter_table_statement
-%type <pStmtDDL>                alter_database_statement
 %type <boolean>                 optional_ghost
 %type <pStmtDDL>  		revoke_schema_statement
 %type <pStmtDDL>                revoke_component_privilege_stmt
@@ -2786,7 +2793,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    balance_when_then
 %type <item>                    balance_else
 %type <item>                    balance_expr
-%type <longint>			options
+%type <longint>			showplan_options
 
 %type <relx>                    routine_invocation
 %type <relx>                    standalone_call_statement
@@ -2851,9 +2858,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
+%type <corrName>   	        truncate_table_name
 %type <relx>                    exe_util_fast_delete
 %type <longint>                 purgedata_options
-%type <relx>                    exe_util_hive_truncate
 
 %type <relx>                    exe_util_get_metadata_info
 %type <relx>                    exe_util_get_version_info
@@ -2873,6 +2880,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>               explain_starting_tokens
 %type <stringval> 		explain_identifier
 %type <stmt_ptr> 		explain_stmt_finalized
+%type <uint>                    showplan_starting_tokens
 %type <strSeq>                  routine_name
 %type <item>                    routine_arg_list
 %type <corrName>		actual_routine_name
@@ -2927,6 +2935,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <extractType>            extract_type
 %type <boolean>                optional_if_not_exists_clause
 %type <boolean>                optional_if_exists_clause
+%type <boolean>                optional_if_not_registered_clause
+%type <boolean>                optional_if_registered_clause
 
 %type <uint>                    merge_stmt_start_tokens
 %type <relx>                   merge_stmt_using_clause
@@ -5601,8 +5611,22 @@ identifier : regular_identifier
 				}
               | DELIMITED_IDENTIFIER
 				{
-				   $$=$1;
-				   if ( ($$==NULL) || transformIdentifier(*$$)) YYERROR;
+                                  $$=$1;
+                                  if ( ($$==NULL) || transformIdentifier(*$$)) YYERROR;
+				}
+              | BACKQUOTED_IDENTIFIER
+				{
+                                  if (NOT SqlParser_CurrentParser->hiveDDLInfo_->checkForDDL_)
+                                    {
+                                      yyerror(""); 
+                                      YYERROR;
+                                    }
+
+                                  $$=$1;
+                                  if ( ($$==NULL) || transformIdentifier(*$$)) YYERROR;
+
+                                  SqlParser_CurrentParser->hiveDDLInfo_->backquotedDelimFound_ = TRUE;
+
 				}
 
 /* type stringval */
@@ -5762,7 +5786,7 @@ qualified_name : identifier
                   if (! $1->isValid()) 
                     YYABORT;
 
-                    $$ = $1;
+                  $$ = $1;
                 }
 
 /* type strSeq */
@@ -11706,7 +11730,7 @@ blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
+	      $$ = (Int64)CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -11742,7 +11766,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 
 	  if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 	    {
-	      $$ = (Int64)CmpCommon::getDefault(TRAF_MAX_CHARACTER_COL_LENGTH );
+	      $$ = (Int64)CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH );
 	    }
 	  else
 	    {
@@ -14137,10 +14161,14 @@ sql_statement : interactive_query_expression
 		   {
 		      $$ = new (PARSERHEAP()) StmtQuery($1);
 		   }
-	       | TOK_DISPLAY interactive_query_expression
+	       | TOK_DISPLAY 
+                 {
+                   SqlParser_CurrentParser->hiveDDLInfo_->essd_ = Parser::HiveDDLInfo::DISPLAY_;                   
+                 }
+                 interactive_query_expression
 		   {
-		      ((RelRoot *)$2)->setDisplayTree(TRUE);
-		      $$ = new (PARSERHEAP()) StmtQuery($2);
+		      ((RelRoot *)$3)->setDisplayTree(TRUE);
+		      $$ = new (PARSERHEAP()) StmtQuery($3);
 		   }
 	       | TOK_BEGIN TOK_DECLARE TOK_SECTION
 		   {
@@ -14419,7 +14447,7 @@ sql_schema_definition_statement :
               | comment_on_statement
                                 {
                                 }
-
+				
 /* type pStmtDDL */
 sql_schema_manipulation_statement :
 
@@ -14476,9 +14504,7 @@ sql_schema_manipulation_statement :
               | alter_view_statement
 				{
 				}
-              | alter_database_statement
-                                {
-                                }
+
               | drop_synonym_stmt
                                 {
                                 }
@@ -14826,10 +14852,6 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-              | exe_util_hive_truncate
-                                {
-				  $$ = finalize($1);
-				}
               | exe_util_get_uid
                                 {
 				  $$ = finalize($1);
@@ -14858,11 +14880,10 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-
               | exe_util_hive_query
                                 {
-                                  $$ = finalize($1);
-                                }
+				  $$ = finalize($1);
+				}
 
 dml_query : query_expression order_by_clause access_type
             optional_lock_mode for_update_spec optional_limit_spec
@@ -15174,6 +15195,15 @@ explain_starting_tokens : TOK_EXPLAIN optional_options
                                   ParSetTextStartPosForDisplayExplain(
                                         ParNameLocListPtr);
 				  $$ = $2;
+
+                                  SqlParser_CurrentParser->hiveDDLInfo_->essd_ = Parser::HiveDDLInfo::EXPLAIN_;	
+                                  if ($2)
+                                    SqlParser_CurrentParser->hiveDDLInfo_->essdOptions_ = *$2;
+                                  StringPos start;
+                                  StringPos end;
+                                  ParGetTextStartEndPosForDisplayExplain(
+                                       ParNameLocListPtr, start, end);
+                                  SqlParser_CurrentParser->hiveDDLInfo_->essdQueryStartPos_ = start;
                                 }
 
 /* type relx */
@@ -16786,18 +16816,22 @@ exe_util_hive_query : TOK_PROCESS TOK_HIVE TOK_STATEMENT QUOTED_STRING
                       } 
                     | TOK_PROCESS TOK_HIVE TOK_DDL QUOTED_STRING
                       {
-                        $$ = new (PARSERHEAP()) 
-                          ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
-                                           PARSERHEAP());
-                      } 
+                        SqlParser_CurrentParser->hiveDDLInfo_->
+                          setValues(TRUE, StmtDDLonHiveObjects::PASSTHRU_DDL_, StmtDDLonHiveObjects::UNKNOWN_TYPE_);
+
+                        SqlParser_CurrentParser->hiveDDLInfo_->userSpecifiedStmt_ = *$4;
+                        SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_ = TRUE;
+
+                        // error out. Caller will handle this stmt.
+                        YYERROR;
+                        $$ = NULL;
+                    }
                     | TOK_PROCESS TOK_HIVE TOK_STATEMENT TOK_FROM TOK_FILE QUOTED_STRING
                       {
                         $$ = new (PARSERHEAP()) 
                           ExeUtilHiveQuery(*$6, ExeUtilHiveQuery::FROM_FILE,
                                            PARSERHEAP());
                       } 
-
-     
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
  * one token ahead.  This may be necessary in cases where the parser
@@ -17049,7 +17083,7 @@ exe_util_display_explain: explain_starting_tokens interactive_query_expression d
 		  // xn will be started, if needed, when the exeutilstmt stmt
 		  // is processed.
 		  eue->xnNeeded() = FALSE;
-		  
+
 		  $$ = eue;
 		  
 		  delete stmt;
@@ -17828,23 +17862,41 @@ optional_mt_options :   QUOTED_STRING
 		       $$ = NULL;
 		     }
 
-exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
+/* type corrName */
+truncate_table_name : TOK_PURGEDATA table_name
+                        {
+                          $$ = $2;
+                        }
+                        | TOK_TRUNCATE table_name
+                        {
+                          $$ = $2;
+                        }
+                        | TOK_TRUNCATE TOK_TABLE optional_if_exists_clause 
+                        {
+                          SqlParser_CurrentParser->hiveDDLInfo_->
+                            setValues(TRUE, StmtDDLonHiveObjects::TRUNCATE_, StmtDDLonHiveObjects::TABLE_, $3);
+                        }
+                        ddl_qualified_name
+                        {
+                          $$ = new (PARSERHEAP()) CorrName(*$5, PARSERHEAP());
+                        }
+  
+exe_util_fast_delete :  truncate_table_name purgedata_options
 		     {
-		       short noLog = ($3 & 0x1) != 0;
-		       short ignoreTrigger = ($3 & 0x2) != 0;
+		       short noLog = ($2 & 0x1) != 0;
+		       short ignoreTrigger = ($2 & 0x2) != 0;
 
 		       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-		       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-		                                       , PARSERHEAP() // in  - NAMemory * heapUsedForOutputBuffers
+		       NAString * stmt = getSqlStmtStr ( stmtCharSet
+		                                       , PARSERHEAP()
 		                                       );
-		       // If we can not get a variable-width multi-byte or single-byte string here, report error 
 		       if ( stmt == NULL )
 		       {
 		         *SqlParser_Diags <<  DgSqlCode(-3406);
 		         YYERROR;
 		       }
 		       $$ = new (PARSERHEAP())
-			 ExeUtilFastDelete(CorrName(*$2, PARSERHEAP()),
+			 ExeUtilFastDelete(CorrName(*$1, PARSERHEAP()),
 					   NULL,
 					   (char*)stmt->data(),
 					   stmtCharSet,
@@ -17854,9 +17906,8 @@ exe_util_fast_delete:  TOK_PURGEDATA table_name purgedata_options
 					   TRUE,
 					   PARSERHEAP());
 		       
-		       delete $2;
+		       delete $1;
 		     }
-
 purgedata_options : /*empty*/ { $$ = 0; }
                   | TOK_NOLOG { $$ = 1; }
                   | TOK_IGNORE_TRIGGER { $$ = 2; }
@@ -17869,25 +17920,6 @@ purgedata_options : /*empty*/ { $$ = 0; }
                   | TOK_WAITEDIO TOK_IGNORE_TRIGGER TOK_NOLOG { $$ = 7; }
                   | TOK_NOLOG TOK_WAITEDIO TOK_IGNORE_TRIGGER { $$ = 7; }
                   | TOK_IGNORE_TRIGGER TOK_WAITEDIO TOK_NOLOG { $$ = 7; }
-
-exe_util_hive_truncate:  TOK_TRUNCATE table_name 
-		     {
-		       $$ = new (PARSERHEAP())
-			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
-                                             NULL,
-                                             PARSERHEAP());
-		       
-		       delete $2;
-		     }
-                     | TOK_TRUNCATE table_name TOK_PARTITION '(' quoted_string_list ')'
-		     {
-		       $$ = new (PARSERHEAP())
-			 ExeUtilHiveTruncate(CorrName(*$2, PARSERHEAP()),
-                                             $5,
-                                             PARSERHEAP());
-		       
-		       delete $2;
-		     }
 
 exe_util_aqr: TOK_GET TOK_ALL TOK_AQR TOK_ENTRIES
                {
@@ -22553,6 +22585,24 @@ showcontrol_type:
           | TOK_TABLE			{ $$ = Describe::CONTROL_TABLE_; }
           | TOK_SESSION			{ $$ = Describe::CONTROL_SESSION_; }
 
+showplan_starting_tokens : TOK_SHOWPLAN showplan_options
+                           {
+                             SqlParser_CurrentParser->hiveDDLInfo_->essd_ = Parser::HiveDDLInfo::SHOWPLAN_;
+
+                             char buf[40];
+                             SqlParser_CurrentParser->hiveDDLInfo_->essdQueryStartPos_ = 9;
+
+                             if ($2 != 0)
+                               {
+                                 SqlParser_CurrentParser->hiveDDLInfo_->essdOptions_ = 
+                                   str_itoa($2, buf);
+
+                                 SqlParser_CurrentParser->hiveDDLInfo_->essdQueryStartPos_ += strlen("option ") + strlen("'t'");
+                               }
+
+                             $$ = $2;
+                           }
+
 /* type relx */
 show_statement:
 	     TOK_SHOWCONTROL showcontrol_type 
@@ -22865,7 +22915,7 @@ show_statement:
 		 YYERROR;
 	       }
 	     }
-	  | TOK_SHOWPLAN options interactive_query_expression
+	  | showplan_starting_tokens interactive_query_expression
 	     {
 	       // create a dummy name so as to satisfy the constructor of
 	       // Describe. The tablename param is not used for SHOWPLAN qry.
@@ -22873,13 +22923,14 @@ show_statement:
 
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-		   Describe(SQLTEXT(), c, Describe::PLAN_,COM_TABLE_NAME,$2),
+		   Describe(SQLTEXT(), c, Describe::PLAN_,COM_TABLE_NAME,$1),
 			    REL_ROOT,	
 			    new (PARSERHEAP())
 			      ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+
 	     }
 
-	  | TOK_SHOWPLAN options TOK_EXPLAIN optional_options interactive_query_expression
+	  | showplan_starting_tokens TOK_EXPLAIN optional_options interactive_query_expression
 	     {
 	       // create a dummy name so as to satisfy the constructor of
 	       // Describe. The tablename param is not used for SHOWPLAN qry.
@@ -22887,13 +22938,15 @@ show_statement:
 
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-		   Describe(SQLTEXT(), c, Describe::PLAN_,COM_TABLE_NAME,$2),
+		   Describe(SQLTEXT(), c, Describe::PLAN_,COM_TABLE_NAME,$1),
 			    REL_ROOT,	
 			    new (PARSERHEAP())
 			      ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+
+               SqlParser_CurrentParser->hiveDDLInfo_->essd_ = Parser::HiveDDLInfo::SHOWPLAN_;
 	     }
 
-	  | TOK_SHOWPLAN options TOK_PROCEDURE '(' character_string_literal ',' character_string_literal ')'
+	  | showplan_starting_tokens TOK_PROCEDURE '(' character_string_literal ',' character_string_literal ')'
 	     {
                // DEFAULT_CHARSET has no effect on character_string_literal in this context
                //
@@ -22905,16 +22958,20 @@ show_statement:
 	       //temp.append('.');
 	       //temp.append(*$6);
 
-	       CorrName c (*$7, NULL, *$5);
+	       CorrName c (*$6, NULL, *$4);
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-		   Describe(SQLTEXT(), c, Describe::STATIC_PLAN_,COM_TABLE_NAME,$2),
+		   Describe(SQLTEXT(), c, Describe::STATIC_PLAN_,COM_TABLE_NAME,$1),
 			    REL_ROOT,	
 			    new (PARSERHEAP())
 			      ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
 	     }
 
-	  | TOK_SHOWSHAPE interactive_query_expression
+	  | TOK_SHOWSHAPE 
+            {
+              SqlParser_CurrentParser->hiveDDLInfo_->essd_ = Parser::HiveDDLInfo::SHOWSHAPE_;
+            }
+            interactive_query_expression
 	     {
 	       // create a dummy name so as to satisfy the constructor of
 	       // Describe. The tablename param is not used for SHOWPLAN qry.
@@ -22926,6 +22983,7 @@ show_statement:
 			    REL_ROOT,	
 			    new (PARSERHEAP())
 			      ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+
 	     }
        | TOK_SHOWSTATS TOK_FOR TOK_QUERY query_expression
          {
@@ -23738,7 +23796,6 @@ optional_showddl_object_options_list : empty
              // include EXTERNAL(32)/INTERNAL(64), unsupported options
              // include BRIEF(8)/DETAIL(4).
              if ( (($2 & 32) && ($2 & 64)) ||
-                  ($2 & 4) || 
                   ($2 & 8) )
              {
                  yyerror("");        // emits syntax error 15001
@@ -23760,10 +23817,26 @@ optional_showddl_role_option : empty
              $$ = 16;
            }
 
-/* type pStmtDDL */
+/* type uint */
+schema_or_database : TOK_SCHEMA
+                     {
+                       $$ = 1;
+                     }
+                     | TOK_DATABASE
+                     {
+                       $$ = 2;
+                     }
 
-schema_definition : TOK_CREATE schema_class TOK_SCHEMA schema_name_clause char_set collation_option
+/* type pStmtDDL */
+schema_definition : TOK_CREATE schema_class schema_or_database schema_name_clause char_set collation_option
                     {
+                      // cannot use keyword DATABASE if not hive ddl.
+                      if (($3 == 2) &&
+                          (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                        {
+                          YYERROR;
+                        }
+
                       NAString extSchName($4->getSchemaName().getSchemaNameAsAnsiString());
                       if (! validateVolatileSchemaName(extSchName))
                       {
@@ -23785,9 +23858,16 @@ schema_definition : TOK_CREATE schema_class TOK_SCHEMA schema_name_clause char_s
                      delete $4 /*schema_name_clause*/;
                    }
 
-schema_definition : TOK_CREATE schema_class TOK_SCHEMA TOK_IF TOK_NOT TOK_EXISTS 
+schema_definition : TOK_CREATE schema_class schema_or_database TOK_IF TOK_NOT TOK_EXISTS 
                     schema_name_clause char_set collation_option
                     {
+                     // cannot use keyword DATABASE if not hive ddl.
+                      if (($3 == 2) &&
+                          (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                        {
+                          YYERROR;
+                        }
+
                       NAString extSchName($7->getSchemaName().getSchemaNameAsAnsiString());
                       if (! validateVolatileSchemaName(extSchName))
                       {
@@ -23807,6 +23887,9 @@ schema_definition : TOK_CREATE schema_class TOK_SCHEMA TOK_IF TOK_NOT TOK_EXISTS
                       pNode->setCreateIfNotExists(TRUE);
                       pNode->synthesize();
                       delete $7 /*schema_name_clause*/;
+
+                      SqlParser_CurrentParser->hiveDDLInfo_->ifExistsOrNotExists_ = TRUE;
+
                       $$ = pNode;
                     }
 
@@ -23835,6 +23918,9 @@ schema_definition : TOK_CREATE TOK_VOLATILE TOK_SCHEMA
 schema_class : empty
                                 { 
                                   $$ = COM_SCHEMA_CLASS_DEFAULT;
+
+                                  SqlParser_CurrentParser->hiveDDLInfo_->
+                                    setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::SCHEMA_);
                                 }
                               | TOK_PRIVATE
                                 {
@@ -23846,10 +23932,11 @@ schema_class : empty
                                 }
 
 /* type pElemDDLSchemaName */
-schema_name_clause: schema_name
+schema_name_clause : schema_name
                                 {
 				  $$ = new (PARSERHEAP())
 				    ElemDDLSchemaName(*$1, "", PARSERHEAP());
+
                                   delete $1;
                                 }
 
@@ -23869,18 +23956,39 @@ schema_name_clause: schema_name
                                 }
 
 /* type pSchemaName */
-schema_name : identifier '.' identifier
-                   		{
-                                    $$ = new (PARSERHEAP()) SchemaName(*$3,*$1, PARSERHEAP());
-                                    delete $3;
-                                    delete $1;
-		   		}
+schema_name : schema_name_ss
+              {
+                StringPos namePos = $1->getPosition();
+                size_t nameLen = $1->getNameLength();
+                $$ = schemaNameFromStrings($1);
+                if ($$ == NULL) 
+                  YYABORT;
 
-		      | identifier
-                                {
-                                  $$ = new (PARSERHEAP()) SchemaName(*$1,"",PARSERHEAP());
-                                  delete $1;
-                                }
+                SqlParser_CurrentParser->hiveDDLInfo_->ddlNamePos_ = namePos;
+                SqlParser_CurrentParser->hiveDDLInfo_->ddlNameLen_ = nameLen;
+
+                preprocessHiveDDL(
+                     $$->getCatalogName(), 
+                     SqlParser_CurrentParser->hiveDDLInfo_);  
+              }
+
+/* type strSeq */
+schema_name_ss : identifier
+                 {
+                   ShortStringSequence *strseq =
+                     new (PARSERHEAP()) ShortStringSequence($1);
+                   if (! strseq->isValid()) 
+                     YYABORT;
+                   $$ = strseq;
+                 }
+                | schema_name_ss '.' identifier
+                 {
+                   $1->append($3);
+                   if (! $1->isValid()) 
+                     YYABORT;
+                   
+                   $$ = $1;
+                 }
 
 /* type stringval */
 schema_authorization_identifier : authorization_identifier
@@ -24897,13 +25005,22 @@ udf_version_tag_clause : TOK_VERSION TOK_TAG std_char_string_literal
   }
 
 /* type pStmtDDL */
-table_definition : create_table_start_tokens ddl_qualified_name
+table_definition : create_table_start_tokens 
+                        ddl_qualified_name 
                         table_definition_body
                         optional_create_table_attribute_list
                         optional_in_memory_clause
                         optional_map_to_hbase_clause
                         optional_hbase_data_format
 	  	   {
+                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
+                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
+                       {
+                         *SqlParser_Diags << DgSqlCode(-3242)
+                                          << DgString0("LIKE clause must be specified to create this Hive table.");
+                         YYERROR;
+                       }
+
                      $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
                      if ($1->isVolatile())
@@ -24983,6 +25100,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     if (! qn)
                        YYABORT;
 
+                     StmtDDLNode *rNode = NULL;
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
@@ -25002,7 +25120,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 ParNameCTLocListPtr = NULL;
 		       }
 
-		     $$ = pNode;
+                     rNode = pNode;
+                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
+                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
+                       {
+                         SqlParser_CurrentParser->hiveDDLInfo_->
+                           setValues(TRUE, StmtDDLonHiveObjects::CREATE_LIKE_TRAF_, 
+                                     StmtDDLonHiveObjects::TABLE_, $1->ifNotExistsSet());
+
+                         SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_ = TRUE;
+
+                         NAString hiveDDL;
+                         StmtDDLonHiveObjects *hNode =
+                           new (PARSERHEAP())
+                           StmtDDLonHiveObjects(
+                                StmtDDLonHiveObjects::CREATE_LIKE_TRAF_,
+                                StmtDDLonHiveObjects::TABLE_,
+                                $1->ifNotExistsSet(),
+                                qn->getQualifiedNameAsAnsiString(),
+                                hiveDDL,
+                                PARSERHEAP());
+
+                         hNode->setChild(0, pNode);
+                         rNode = hNode;
+                       }
+
+		     $$ = rNode;
                      delete $1; /*TableTokens*/
 		     delete $2 /*ddl_qualified_name*/;
 		   }
@@ -25054,6 +25197,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 yyerror("");
 			 YYERROR;
 		       }
+
+                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
+                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
+                       {
+                         // create hive table .. as..   not supported.
+                         *SqlParser_Diags << DgSqlCode(-3242)
+                                          << DgString0("'create hive table ... as ...' construct is not allowed.");
+                         YYERROR;
+                       }
+
                      $1->setOptions($6);
                      if ($1->isVolatile())
                        qn = processVolatileDDLName($2, FALSE, FALSE);
@@ -25138,6 +25291,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 yyerror("");
 			 YYERROR;
 		       }
+
+                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
+                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
+                       {
+                         // create hive table .. as..   not supported.
+                         *SqlParser_Diags << DgSqlCode(-3242)
+                                          << DgString0("'create hive table ... as ...' construct is not allowed.");
+                         YYERROR;
+                       }
+
                      $1->setOptions($5);
                      if ($1->isVolatile())
                        qn = processVolatileDDLName($2, FALSE, FALSE);
@@ -25232,6 +25395,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		 $$ = pNode;
                }
 
+/* tableTokens */
 create_table_start_tokens : 
                    TOK_CREATE TOK_TABLE optional_if_not_exists_clause
                    {
@@ -25239,6 +25403,9 @@ create_table_start_tokens :
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
                      TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_REGULAR_TABLE, $3); 
                      $$ = tableTokens;
+
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $3);
 		   }
 
                    | TOK_CREATE TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
@@ -25247,6 +25414,9 @@ create_table_start_tokens :
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
                      TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_TABLE, $4); 
                      $$ = tableTokens;
+
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::TABLE_, $3);
 		   }
 
                    | TOK_CREATE TOK_IMPLICIT TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
@@ -25343,6 +25513,20 @@ create_table_start_tokens :
                      $$ = tableTokens;
 		   }
 
+                   | TOK_CREATE TOK_HIVE TOK_TABLE optional_if_not_exists_clause
+                   {
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_MANAGED_HIVE_TABLE, $4); 
+                     $$ = tableTokens;
+                   }
+                   | TOK_CREATE TOK_EXTERNAL TOK_HIVE TOK_TABLE optional_if_not_exists_clause
+                   {
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_HIVE_TABLE, $5); 
+                     $$ = tableTokens;
+                   }
 /* type boolean */
 optional_if_not_exists_clause : 
                 empty
@@ -25359,6 +25543,36 @@ optional_if_exists_clause :
           empty
             {
                $$ = FALSE;
+             }
+          | TOK_IF TOK_EXISTS
+             {
+               $$ = TRUE;
+             }
+
+/* type boolean */
+optional_if_not_registered_clause : 
+                empty
+                  {
+                    $$ = FALSE;
+                  }
+               | TOK_IF TOK_NOT TOK_REGISTERED
+                  {
+                    $$ = TRUE;
+                  }
+               | TOK_IF TOK_NOT TOK_EXISTS
+                  {
+                    $$ = TRUE;
+                  }
+
+/* type boolean */
+optional_if_registered_clause :
+          empty
+            {
+               $$ = FALSE;
+             }
+          | TOK_IF TOK_REGISTERED
+             {
+               $$ = TRUE;
              }
           | TOK_IF TOK_EXISTS
              {
@@ -26297,6 +26511,15 @@ like_definition : TOK_LIKE source_table optional_like_option_list
 /* type pElemDDL */
 external_table_definition : TOK_FOR source_table
                                 {
+                                  if (SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_)
+                                    SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_ = FALSE;
+
+                                  if (SqlParser_CurrentParser->hiveDDLInfo_->backquotedDelimFound_)
+                                    { 
+                                      yyerror(""); 
+                                      YYERROR;
+                                    }
+
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeCreateTable(
                                         *$2 /*source_table*/,
@@ -26448,6 +26671,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeOptWithoutLobColumns();
+                                }
+                      | TOK_WITH TOK_HIVE TOK_OPTIONS QUOTED_STRING
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeOptWithHiveOptions(*$4);
                                 }
 
 /* type pElemDDL */
@@ -27617,7 +27845,9 @@ store_option : TOK_PRIMARY TOK_KEY
                                 }
 
 /* type pStmtDDL */
-view_definition : create_view_keywords ddl_qualified_name
+view_definition : create_view_keywords 
+                                optional_if_not_exists_clause 
+                                ddl_qualified_name
                                 optional_view_column_list
                                 optional_location_clause
                                 optional_by_auth_identifier
@@ -27626,14 +27856,14 @@ view_definition : create_view_keywords ddl_qualified_name
                                 order_by_clause
                                 optional_with_check_option
                                 {
-				  RelRoot *top = finalize($8);
-				  if (($9) &&
+				  RelRoot *top = finalize($9);
+				  if (($10) &&
 				      (CmpCommon::getDefault(ALLOW_ORDER_BY_IN_CREATE_VIEW) == DF_OFF))
 				    {
 				      YYERROR;
 				    }
 
-                                  top->addOrderByTree($9);
+                                  top->addOrderByTree($10);
 				  if ((top->accessOptions().userSpecified()) &&
 				      (CmpCommon::getDefault(ALLOW_ISOLATION_LEVEL_IN_CREATE_VIEW) == DF_OFF))
 				    {
@@ -27655,7 +27885,7 @@ view_definition : create_view_keywords ddl_qualified_name
                                    //But if internal CQD is set, it is allowed.
                                    if(CmpCommon::getDefault(ALLOW_FIRSTN_IN_SUBQUERIES) != DF_ON)
                                    {
-                                   if ($8->getFirstNRows() != -1)
+                                   if ($9->getFirstNRows() != -1)
                                    {
                                       *SqlParser_Diags << DgSqlCode(-4103);
                                        YYERROR;
@@ -27666,25 +27896,24 @@ view_definition : create_view_keywords ddl_qualified_name
 				  StmtDDLCreateView *pCreateViewParseNode
 				    = new (PARSERHEAP())
 				    StmtDDLCreateView(
-					 *$2 /*ddl_qualified_name*/,
+					 *$3 /*ddl_qualified_name*/,
 					 *ParNameLocListPtr,
 
-                                         $3 /*optional_view_column_list*/,
-                                         $4 /*optional_location_clause*/,
+                                         $4 /*optional_view_column_list*/,
+                                         $5 /*optional_location_clause*/,
                                          top,
-                                         $10 /*optional_with_check_option*/,
+                                         $11 /*optional_with_check_option*/,
                                          $1 /*optional_create_view_behavior_enum*/,
-                                         $5 /*optional_by_auth_identifier*/);
-                                  delete $2 /*ddl_qualified_name*/;
+                                         $6 /*optional_by_auth_identifier*/);
+
+                                  if ($2)
+                                    pCreateViewParseNode->setCreateIfNotExists(TRUE);
+
+                                  delete $3 /*ddl_qualified_name*/;
                                   pCreateViewParseNode->synthesize();
                                   if (ParSetTextEndPos(pCreateViewParseNode))
 				    { yyerror(""); YYERROR; }
                                   $$ = pCreateViewParseNode;
-                                  //
-                                  // ParNameLocListPtr is no longer needed.
-                                  //
-                                  delete ParNameLocListPtr;
-                                  ParNameLocListPtr = NULL;
                                 }
 
 /* type tokval */
@@ -27714,8 +27943,9 @@ create_view_keywords : TOK_CREATE TOK_VIEW
                                         ParNameLocListPtr);
                                   $$ = COM_CREATE_VIEW_BEHAVIOR;
 
+                                  SqlParser_CurrentParser->hiveDDLInfo_->
+                                    setValues(TRUE, StmtDDLonHiveObjects::CREATE_, StmtDDLonHiveObjects::VIEW_);
                                 }
- 
                      | TOK_CREATE TOK_SYSTEM TOK_VIEW
                                 {
                                   // see comment above
@@ -27778,24 +28008,33 @@ routine_action_qualified_name : routine_action_name
 
 /* type pQualName */
 ddl_qualified_name : qualified_name
-				{
-                                  // ddl_qualified_name :
-				  // helps with computing view text
-				  //
-				  ParInsertNameLoc($1->getPosition(),
-				     		   $1->getNameLength());
-				  //
-				  // note that qualifiedNameFromStrings()
-				  // contains code that deletes $1
-				  //
-				  $$ = qualifiedNameFromStrings($1);
-				  if ($$ == NULL) 
-				    YYABORT;
-				  
-				  $$ = processVolatileDDLName($$, FALSE, FALSE);
-				  if ($$ == NULL)
-				    YYABORT;
-				}
+		     {
+                       // ddl_qualified_name :
+                       // helps with computing view text
+                       //
+                       StringPos namePos = $1->getPosition();
+                       size_t nameLen = $1->getNameLength();
+                       ParInsertNameLoc(namePos, nameLen);
+                       
+                       //
+                       // note that qualifiedNameFromStrings()
+                       // contains code that deletes $1
+                       //
+                       $$ = qualifiedNameFromStrings($1);
+                       if ($$ == NULL) 
+                         YYABORT;
+                       
+                       $$ = processVolatileDDLName($$, FALSE, FALSE);
+                       if ($$ == NULL)
+                         YYABORT;
+                       
+                       SqlParser_CurrentParser->hiveDDLInfo_->ddlNamePos_ = namePos;
+                       SqlParser_CurrentParser->hiveDDLInfo_->ddlNameLen_ = nameLen;
+                     
+                       preprocessHiveDDL(
+                            $$->getCatalogName(), 
+                            SqlParser_CurrentParser->hiveDDLInfo_);  
+                     }
 
 /* type pQualName */
 volatile_ddl_qualified_name : qualified_name
@@ -30166,10 +30405,6 @@ cleanup_objects_statement : TOK_CLEANUP cleanup_object_identifier ddl_qualified_
                    ot = StmtDDLCleanupObjects::SCHEMA_PRIVATE_;
                  else if (*$2 == "SCHEMA_S")
                    ot = StmtDDLCleanupObjects::SCHEMA_SHARED_;
-                 else if (*$2 == "HIVE_TABLE")
-                   ot = StmtDDLCleanupObjects::HIVE_TABLE_;
-                 else if (*$2 == "HIVE_VIEW")
-                   ot = StmtDDLCleanupObjects::HIVE_VIEW_;
                  else if (*$2 == "HBASE_TABLE")
                    ot = StmtDDLCleanupObjects::HBASE_TABLE_;
                  else if (*$2 == "OBJECT")
@@ -30314,10 +30549,23 @@ drop_sequence_statement : TOK_DROP TOK_SEQUENCE ddl_qualified_name
 		      }
 
 /* type pStmtDDL */
-drop_schema_statement : TOK_DROP TOK_SCHEMA schema_name_clause optional_cleanup 
+drop_schema_statement : TOK_DROP schema_or_database
+                        {
+
+                          SqlParser_CurrentParser->hiveDDLInfo_->
+                            setValues(TRUE, StmtDDLonHiveObjects::DROP_, StmtDDLonHiveObjects::SCHEMA_);
+                        }
+                        schema_name_clause optional_cleanup 
                         optional_drop_behavior 
                                 {
-				  NAString extSchName($3->getSchemaName().getSchemaNameAsAnsiString());
+                                  // cannot use keyword DATABASE if not hive ddl.
+                                  if (($2 == 2) &&
+                                      (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                                    {
+                                      YYERROR;
+                                    }
+
+				  NAString extSchName($4->getSchemaName().getSchemaNameAsAnsiString());
 				  if (! validateVolatileSchemaName(extSchName))
 				    {
 				      YYERROR;
@@ -30325,17 +30573,29 @@ drop_schema_statement : TOK_DROP TOK_SCHEMA schema_name_clause optional_cleanup
 
 				  $$ = new (PARSERHEAP())
 				    StmtDDLDropSchema(
-                                        *$3 /*schema_name_clause*/,
-                                         $5 /*optional_drop_behavior*/,
-                                         $4 /*optional_cleanup*/,
+                                        *$4 /*schema_name_clause*/,
+                                         $6 /*optional_drop_behavior*/,
+                                         $5 /*optional_cleanup*/,
 					FALSE);
-                                  delete $3 /*schema_name*/;
+                                  delete $4 /*schema_name*/;
                                 }
 
-drop_schema_statement : TOK_DROP TOK_SCHEMA TOK_IF TOK_EXISTS schema_name_clause optional_cleanup
+drop_schema_statement : TOK_DROP schema_or_database TOK_IF TOK_EXISTS 
+                        {
+                          SqlParser_CurrentParser->hiveDDLInfo_->
+                            setValues(TRUE, StmtDDLonHiveObjects::DROP_, StmtDDLonHiveObjects::SCHEMA_, TRUE);
+                        }
+                        schema_name_clause optional_cleanup
                         optional_drop_behavior
                                 {
-                                  NAString extSchName($5->getSchemaName().getSchemaNameAsAnsiString());
+                                  // cannot use keyword DATABASE if not hive ddl.
+                                  if (($2 == 2) &&
+                                      (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                                    {
+                                      YYERROR;
+                                    }
+
+                                  NAString extSchName($6->getSchemaName().getSchemaNameAsAnsiString());
                                   if (! validateVolatileSchemaName(extSchName))
                                     {
                                       YYERROR;
@@ -30344,12 +30604,12 @@ drop_schema_statement : TOK_DROP TOK_SCHEMA TOK_IF TOK_EXISTS schema_name_clause
                                     StmtDDLDropSchema *pNode =
                                       new (PARSERHEAP())
                                       StmtDDLDropSchema(
-                                        *$5 /*schema_name_clause*/,
-                                         $7 /*optional_drop_behavior*/,
-                                         $6 /*optional_cleanup*/,
+                                        *$6 /*schema_name_clause*/,
+                                         $8 /*optional_drop_behavior*/,
+                                         $7 /*optional_cleanup*/,
                                         FALSE);
                                   pNode->setDropIfExists(TRUE); 
-                                  delete $5 /*schema_name*/;
+                                  delete $6 /*schema_name*/;
                                   $$ = pNode;
                                 }
 
@@ -31067,28 +31327,37 @@ alter_trigger_statement : TOK_ALTER TOK_TRIGGER enable_status
 			    delete $5;
 			  }
 
+/* type uint */
+alter_view_start_tokens : TOK_ALTER TOK_VIEW
+                   {
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::ALTER_, StmtDDLonHiveObjects::VIEW_);
+
+                     $$ = 0;
+                   }
 
 /* type pStmtDDL */
-alter_view_statement : TOK_ALTER TOK_VIEW ddl_qualified_name
-                                 TOK_RENAME TOK_TO identifier
+alter_view_statement : alter_view_start_tokens 
+                       ddl_qualified_name
+                       TOK_RENAME TOK_TO identifier
                           {
                             $$ = new (PARSERHEAP())StmtDDLAlterView
-                                     ( *$3 // ddl_qualified_name (old name)
-                                     , *$6 // identifier (new name)
+                                     ( *$2 // ddl_qualified_name (old name)
+                                     , *$5 // identifier (new name)
                                      );
-                            delete $3;  // ddl_qualified_name
-                            delete $6;  // identifier
+                            delete $2;  // ddl_qualified_name
+                            delete $5;  // identifier
                           }
-                     |  TOK_ALTER TOK_VIEW ddl_qualified_name
-                                 TOK_COMPILE optional_cascade 
+                     |  alter_view_start_tokens
+                        ddl_qualified_name
+                        TOK_COMPILE optional_cascade 
                           {
                             $$ = new (PARSERHEAP())StmtDDLAlterView
-                                     ( *$3 // ddl_qualified_name (view name to validate)
-                                     ,  $5 // cascade TRUE or FALSE 
+                                     ( *$2 // ddl_qualified_name (view name to validate)
+                                     ,  $4 // cascade TRUE or FALSE 
                                      );
-                            delete $3;  // ddl_qualified_name
+                            delete $2;  // ddl_qualified_name
                           }
-
 
 //----------------------------------------------------------------------------
 //++ MV
@@ -31303,18 +31572,42 @@ alter_catalog_statement: TOK_ALTER TOK_CATALOG sql_mx_catalog_name enable_status
 				       *$8);
                                 }
 
+alter_schema_start_tokens : TOK_ALTER schema_or_database
+                            {
+                              SqlParser_CurrentParser->hiveDDLInfo_->
+                                setValues(TRUE, StmtDDLonHiveObjects::ALTER_, StmtDDLonHiveObjects::SCHEMA_);
+
+                              $$ = $2;
+                            }
+
 /* type pStmtDDL */
-alter_schema_statement: TOK_ALTER TOK_SCHEMA schema_name_clause alter_stored_descriptor_option
+alter_schema_statement: alter_schema_start_tokens
+                        schema_name_clause alter_stored_descriptor_option
 			{
+                          // cannot use keyword DATABASE if not hive ddl.
+                          if (($1 == 2) &&
+                              (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                            {
+                              YYERROR;
+                            }
+
                           $$ = new (PARSERHEAP()) 
                             StmtDDLAlterSchema
-                            (*$3,
-                             (StmtDDLAlterTableStoredDesc::AlterStoredDescType)$4);
+                            (*$2,
+                             (StmtDDLAlterTableStoredDesc::AlterStoredDescType)$3);
 
                         }
-                     |  TOK_ALTER TOK_SCHEMA schema_name_clause TOK_DROP TOK_ALL TOK_TABLES
+                     |  alter_schema_start_tokens
+                        schema_name_clause TOK_DROP TOK_ALL TOK_TABLES
 			{
-                          NAString extSchName($3->getSchemaName().getSchemaNameAsAnsiString());
+                          // cannot use keyword DATABASE if not hive ddl.
+                          if (($1 == 2) &&
+                              (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                            {
+                              YYERROR;
+                            }
+
+                          NAString extSchName($2->getSchemaName().getSchemaNameAsAnsiString());
                           if (! validateVolatileSchemaName(extSchName))
                             {
                               YYERROR;
@@ -31322,15 +31615,23 @@ alter_schema_statement: TOK_ALTER TOK_SCHEMA schema_name_clause alter_stored_des
                           
                           $$ = new (PARSERHEAP())
                             StmtDDLDropSchema(
-                                 *$3 /*schema_name_clause*/,
+                                 *$2 /*schema_name_clause*/,
                                  COM_CASCADE_DROP_BEHAVIOR,
                                  FALSE /*optional_cleanup*/,
                                  TRUE);
-                          delete $3 /*schema_name*/;
+                          delete $2 /*schema_name*/;
                         }
-                     |  TOK_ALTER TOK_SCHEMA schema_name_clause TOK_RENAME TOK_TO identifier
+                     |  alter_schema_start_tokens
+                        schema_name_clause TOK_RENAME TOK_TO identifier
 			{
-                          NAString extSchName($3->getSchemaName().getSchemaNameAsAnsiString());
+                          // cannot use keyword DATABASE if not hive ddl.
+                          if (($1 == 2) &&
+                              (NOT SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_))
+                            {
+                              YYERROR;
+                            }
+
+                          NAString extSchName($2->getSchemaName().getSchemaNameAsAnsiString());
                           if (! validateVolatileSchemaName(extSchName))
                             {
                               YYERROR;
@@ -31338,12 +31639,12 @@ alter_schema_statement: TOK_ALTER TOK_SCHEMA schema_name_clause alter_stored_des
                           
                           $$ = new (PARSERHEAP())
                             StmtDDLAlterSchema(
-                                 *$3 /*schema_name_clause*/,
-                                 *$6);
-                          delete $3 /*schema_name*/;
-                          delete $6; // renamed schema
+                                 *$2 , //schema_name_clause
+                                 *$5);
+                          delete $2; // schema_name
+                          delete $5; // renamed schema
                         }
-                                
+
 /* type pStmtDDL */
 alter_library_statement : TOK_ALTER TOK_LIBRARY ddl_qualified_name 
                           TOK_FILE std_char_string_literal
@@ -31449,40 +31750,53 @@ drop_library_statement : TOK_DROP TOK_LIBRARY ddl_qualified_name optional_drop_b
                                   delete $3 /*ddl_qualified_name*/;
                                }
 
+/* type uint */
+alter_table_start_tokens : TOK_ALTER optional_ghost TOK_TABLE
+                   {
+                     if ($2)
+                       $$ = 1;
+                     else
+                       $$ = 0;
+
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::ALTER_, StmtDDLonHiveObjects::TABLE_);
+                   }
+
                           
 /* type pStmtDDL */
-alter_table_statement : TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
+alter_table_statement :  alter_table_start_tokens
+                                ddl_qualified_name
                                 alter_table_action 
                                 {
-                                  $$ = $5 /*alter_table_action*/;
-                                  if ($2) /*optional_ghost*/
+                                  $$ = $3 /*alter_table_action*/;
+                                  if ($1) /*optional_ghost*/
                                     $$->setIsGhostObject(TRUE);
                                   $$->castToStmtDDLAlterTable()->
-                                    setTableName(QualifiedName (*$4 /*ddl_qualified_name*/, 
+                                    setTableName(QualifiedName (*$2 /*ddl_qualified_name*/, 
                                                   PARSERHEAP()));
 				  if($$->castToStmtDDLAlterTableAddColumn())
                                     {
 				      $$->castToStmtDDLAlterTableAddColumn()->
 					synthesize();
                                     }
-                                  delete $4 /*ddl_qualified_name*/;
+                                  delete $2 /*ddl_qualified_name*/;
                                 }
-                       | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
+                       | alter_table_start_tokens ddl_qualified_name
                                 is_not_droppable
                                 {
                                   StmtDDLAlterTable *pNode = new (PARSERHEAP())
 				                             StmtDDLAlterTable(DDL_ALTER_TABLE_DROPPABLE);
                                   pNode->setTableName(QualifiedName
-				                      (*$4 /*ddl_qualified_name*/,
+				                      (*$2 /*ddl_qualified_name*/,
 						       PARSERHEAP()));
 
-                                  pNode->setIsDroppable(!$5);
+                                  pNode->setIsDroppable(!$3);
                                   $$ = pNode;
-                                  delete $4 /*ddl_qualified_name*/;
-                                  if ($2) /*optional_ghost*/
+                                  delete $2 /*ddl_qualified_name*/;
+                                  if ($1) /*optional_ghost*/
                                     $$->setIsGhostObject(TRUE);
                                 }
-                       | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
+                       | alter_table_start_tokens ddl_qualified_name
                                 TOK_INSERT_ONLY
                                 {
                                   if (CmpCommon::getDefault(CAT_ALLOW_NEW_FEATUREX) == DF_OFF)
@@ -31495,16 +31809,16 @@ alter_table_statement : TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
                                   StmtDDLAlterTable *pNode = new (PARSERHEAP())
                                                              StmtDDLAlterTable(DDL_ALTER_TABLE_INSERT_ONLY);
                                   pNode->setTableName(QualifiedName
-                                                      (*$4 /*ddl_qualified_name*/,
+                                                      (*$2 /*ddl_qualified_name*/,
                                                        PARSERHEAP()));
                                   pNode->setInsertOnly(TRUE);
                                   $$ = pNode;
-                                  delete $4 /*ddl_qualified_name*/;
-                                  if ($2) /*optional_ghost*/
+                                  delete $2 /*ddl_qualified_name*/;
+                                  if ($1) /*optional_ghost*/
                                     $$->setIsGhostObject(TRUE);
                                 }
 
-                     | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name TOK_NAMESPACE 
+                     | alter_table_start_tokens ddl_qualified_name TOK_NAMESPACE 
 				{
                                   if ( ! Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)
 		                       && ( CmpCommon::getDefault(ALLOW_GHOST_OBJECTS) == DF_OFF )
@@ -31516,37 +31830,35 @@ alter_table_statement : TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
                                   }
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableNamespace
-                                      (*$4);
+                                      (*$2);
                                   $$->castToStmtDDLAlterTable()->
                                     setTableName(QualifiedName
-                                                 (*$4 /*ddl_qualified_name*/, 
+                                                 (*$2 /*ddl_qualified_name*/, 
                                                   PARSERHEAP()));
-  				  if($2)
+                                  if($1)
                                     $$->setIsGhostObject(TRUE);
  				  else
                                     $$->setIsGhostObject(FALSE);
-                                  delete $4; // identifier
+                                  delete $2; // identifier
 				}
 
-                       | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name online_or_offline                      
+                       | alter_table_start_tokens ddl_qualified_name online_or_offline                      
                         {
                             StmtDDLAlterTable *pNode = new (PARSERHEAP())
 			                                    StmtDDLAlterTable(DDL_ALTER_TABLE_TOGGLE_ONLINE);
-                            pNode->setTableName(QualifiedName(*$4 , PARSERHEAP())); 
-                            pNode->setIsOnline($5);
+                            pNode->setTableName(QualifiedName(*$2 , PARSERHEAP())); 
+                            pNode->setIsOnline($3);
                             $$ = pNode;
-  		            if($2)
-                               $$->setIsGhostObject(TRUE);
+  		            if($1)
+                              $$->setIsGhostObject(TRUE);
  			    else
-                               $$->setIsGhostObject(FALSE);                            
-                            delete $4;
+                              $$->setIsGhostObject(FALSE);     
+                            delete $2;
                         }
-                       | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name online_or_offline TOK_FOR TOK_PURGEDATA
+                       | alter_table_start_tokens ddl_qualified_name online_or_offline TOK_FOR TOK_PURGEDATA
                         {
 			  if ((NOT Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)) ||
-			      //			      (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) ||
-			      ($2))
-			      //(CmpCommon::getDefault(EXE_PARALLEL_PURGEDATA) == DF_OFF))
+                              ($2)) // ghost
 			    { 
 			      yyerror(""); 
 			      YYERROR; /*internal syntax only!*/
@@ -31554,12 +31866,12 @@ alter_table_statement : TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
 
 			  StmtDDLAlterTable *pNode = new (PARSERHEAP())
 			    StmtDDLAlterTable(DDL_ALTER_TABLE_TOGGLE_ONLINE);
-			  pNode->setTableName(QualifiedName(*$4 , PARSERHEAP())); 
-			  pNode->setIsOnline($5);
+			  pNode->setTableName(QualifiedName(*$2 , PARSERHEAP())); 
+			  pNode->setIsOnline($3);
 			  pNode->setForPurgedata(TRUE);
 			  $$ = pNode;
 			  $$->setIsGhostObject(FALSE);
-			  delete $4;
+			  delete $2;
                         }
                      | TOK_ALTER TOK_VOLATILE TOK_TABLE volatile_ddl_qualified_name
                                 alter_table_action
@@ -32389,6 +32701,9 @@ drop_table_statement : TOK_DROP special_table_name optional_drop_behavior
 drop_table_start_tokens : TOK_DROP TOK_TABLE
                    {
                      $$ = 0;
+
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::DROP_, StmtDDLonHiveObjects::TABLE_);
                    }
                   | TOK_DROP ghost TOK_TABLE
                    {
@@ -32397,13 +32712,17 @@ drop_table_start_tokens : TOK_DROP TOK_TABLE
                   | TOK_DROP TOK_TABLE TOK_IF TOK_EXISTS
                    {
                      $$ = 2;
+
+                     SqlParser_CurrentParser->hiveDDLInfo_->
+                       setValues(TRUE, StmtDDLonHiveObjects::DROP_, StmtDDLonHiveObjects::TABLE_, TRUE);
                    }
                   | TOK_DROP TOK_EXTERNAL TOK_TABLE 
                    {
                      $$ = 3;
                    }
                   | TOK_DROP TOK_EXTERNAL TOK_TABLE TOK_IF TOK_EXISTS
-                   {
+                  {
+                    SqlParser_CurrentParser->hiveDDLInfo_->ifExistsOrNotExists_ = TRUE;
                      $$ = 4;
                    }
 
@@ -32543,12 +32862,17 @@ drop_routine_statement : TOK_DROP drop_routine_type_tokens optional_if_exists_cl
                 }
 
 /* type pStmtDDL */
-drop_view_statement : TOK_DROP TOK_VIEW ddl_qualified_name optional_cleanup
+drop_view_statement : TOK_DROP TOK_VIEW optional_if_exists_clause 
+                        {
+                          SqlParser_CurrentParser->hiveDDLInfo_->
+                            setValues(TRUE, StmtDDLonHiveObjects::DROP_, StmtDDLonHiveObjects::VIEW_, $3);
+                        }
+                      ddl_qualified_name optional_cleanup
                       optional_drop_invalidate_dependent_behavior optional_validate optional_logfile
                 {
                   /* If VALIDATE, or LOG option specified, */
                   /* ALLOW_SPECIALTABLETYPE must also be specified  */
-                  if (($6 || $7) &&
+                  if (($8 || $9) &&
                      !Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
                   {
                     yyerror(""); YYERROR; /*internal syntax only!*/
@@ -32556,18 +32880,25 @@ drop_view_statement : TOK_DROP TOK_VIEW ddl_qualified_name optional_cleanup
                   else
                   {
                     NAString *pLogFile = NULL;
-                    if ($7)
+                    if ($9)
                       pLogFile = new (PARSERHEAP()) NAString
-                        ( $7->data(), PARSERHEAP());
-                    $$ = new (PARSERHEAP())
-		    StmtDDLDropView(
-                                    *$3  /*ddl_qualified_name*/,
-                                    $5   /*optional_drop_invalidate_dependent_behavior*/,
-                                    $4 /*for CLEANUP mode set to TRUE*/,
-                                    $6 /*for VALIDATE mode set to FALSE*/,
+                        ( $9->data(), PARSERHEAP());
+                    StmtDDLDropView * dropView = new (PARSERHEAP())
+                      StmtDDLDropView(
+                                    *$5  /*ddl_qualified_name*/,
+                                    $7   /*optional_drop_invalidate_dependent_behavior*/,
+                                    $6 /*for CLEANUP mode set to TRUE*/,
+                                    $8 /*for VALIDATE mode set to FALSE*/,
                                     pLogFile  /*log_file_name*/);
-                    delete $3 /*ddl_qualified_name*/;
-                    delete $7 /*log_file_name*/;
+
+                    if ($3)
+                      {
+                        dropView->setDropIfExists(TRUE);
+                      }
+
+                    delete $5 /*ddl_qualified_name*/;
+                    delete $9 /*log_file_name*/;
+                    $$ = dropView;
                   }
                 }
 
@@ -32872,7 +33203,7 @@ nsk_node_name: BACKSLASH_SYSTEM_NAME
 // register [internal] hive {table|view|schema} 
 //          [if not exists] <obj-name> [cascade]
 //
-register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_not_exists_clause ddl_qualified_name optional_cascade
+register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_not_registered_clause ddl_qualified_name optional_cascade
                           {
                             if (NOT ((*$4 == "TABLE") ||
                                      (*$4 == "VIEW") ||
@@ -32906,7 +33237,7 @@ register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_
 // unregister [internal] hive {table|view|schema} 
 //            [if exists] <obj-name> [cascade]
 //
-unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_exists_clause ddl_qualified_name optional_cascade optional_cleanup
+unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_registered_clause ddl_qualified_name optional_cascade optional_cleanup
                               {
                                 if (NOT ((*$4 == "TABLE") ||
                                          (*$4 == "VIEW") ||
@@ -32939,7 +33270,7 @@ unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE obj
 
 /* type pStmtDDL */
 // Syntax: register [internal] hbase table [if not exists] <table-name> 
-register_hbase_statement : TOK_REGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_not_exists_clause ddl_qualified_name
+register_hbase_statement : TOK_REGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_not_registered_clause ddl_qualified_name
                           {
                             StmtDDLRegOrUnregObject *pNode = new (PARSERHEAP())
                               StmtDDLRegOrUnregObject(
@@ -32959,7 +33290,7 @@ register_hbase_statement : TOK_REGISTER optional_internal_clause TOK_HBASE TOK_T
 
 /* type pStmtDDL */
 // Syntax: unregister [internal] hbase table [if exists] <table-name>
-unregister_hbase_statement : TOK_UNREGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_exists_clause ddl_qualified_name optional_cleanup
+unregister_hbase_statement : TOK_UNREGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_registered_clause ddl_qualified_name optional_cleanup
                               {
                                 $$ = new (PARSERHEAP())
                                   StmtDDLRegOrUnregObject(
@@ -33027,16 +33358,6 @@ drop_role_statement : TOK_DROP TOK_ROLE authorization_identifier
                                     PARSERHEAP());
                          delete $3;
                       }
-
-/* type pStmtDDL : ALTER DATABASE */
-alter_database_statement: TOK_ALTER TOK_DATABASE enable_status TOK_AUTHORIZATION
- TOK_CHANGES
-                 {
-                   $$ = new (PARSERHEAP()) StmtDDLAlterDatabase
-                     ( StmtDDLAlterDatabase::DBCMDTYPE_AUTHNAME
-                     , $3 );
-                 }
-
 
 /* type pStmtDDL */
 create_component_privilege_stmt : TOK_CREATE TOK_COMPONENT TOK_PRIVILEGE 
@@ -33174,7 +33495,7 @@ create_synonym_stmt : TOK_CREATE TOK_SYNONYM
                                }
 
 /* type longint */
-options : optional_options 
+showplan_options : optional_options 
            {
              if ($1 == NULL)
                {

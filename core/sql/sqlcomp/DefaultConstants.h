@@ -2670,6 +2670,7 @@ enum DefaultConstants
   LOB_GC_LIMIT_SIZE,
 
   LOB_INPUT_LIMIT_FOR_BATCH,
+  LOB_LOCKING,
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,
 
@@ -3333,6 +3334,9 @@ enum DefaultConstants
   // Internal cqd. Used during pkey alter/add
   TRAF_NO_HBASE_DROP_CREATE,
 
+  // if set, ddl from Traf interface on Hive objects is supported.
+  TRAF_DDL_ON_HIVE_OBJECTS,
+  
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   // Size of byte[] in java when direct byteBuffer can't be used

@@ -53,68 +53,14 @@
 #include "PrivMgrRoles.h"
 #include "PrivMgrComponentPrivileges.h"
 
+#include "StmtDDLonHiveObjects.h"
+
 #include "RelExeUtil.h"
 
 #include "TrafDDLdesc.h"
 
-
-// defined in CmpDescribe.cpp
-extern short CmpDescribeSeabaseTable ( 
-     const CorrName  &dtName,
-     short type, // 1, invoke. 2, showddl. 3, createLike
-     char* &outbuf,
-     ULng32 &outbuflen,
-     CollHeap *heap,
-     const char * pkeyName = NULL,
-     const char * pkeyStr = NULL,
-     NABoolean withPartns = FALSE,
-     NABoolean withoutSalt = FALSE,
-     NABoolean withoutDivisioning = FALSE,
-     NABoolean withoutRowFormat = FALSE,
-     NABoolean withoutLobColumns = FALSE,
-     UInt32 columnLengthLimit = UINT_MAX,
-     NABoolean noTrailingSemi = FALSE,
-     
-     // used to add,rem,alter column definition from col list.
-     // valid for 'createLike' mode. 
-     // Used for 'alter add/drop/alter col'.
-     char * colName = NULL,
-     short ada = 0, // 0,add. 1,drop. 2,alter
-     const NAColumn * nacol = NULL,
-     const NAType * natype = NULL,
-     Space *inSpace = NULL);
-
-short CmpDescribeHiveTable ( 
-                             const CorrName  &dtName,
-                             short type, // 1, invoke. 2, showddl. 3, createLike
-                             char* &outbuf,
-                             ULng32 &outbuflen,
-                             CollHeap *heap,
-                             UInt32 columnLengthLimit = UINT_MAX);
-
-// type:  1, invoke. 2, showddl. 3, create_like
-extern short cmpDisplayColumn(const NAColumn *nac,
-                              char * inColName,
-                              const NAType *inNAT,
-                              short displayType,
-                              Space *inSpace,
-                              char * buf,
-                              Lng32 &ii,
-                              NABoolean namesOnly,
-                              NABoolean &identityCol,
-                              NABoolean isExternalTable,
-                              NABoolean isAlignedRowFormat,
-                              UInt32 columnLengthLimit,
-                              NAList<const NAColumn *> * truncatedColumnList);
-
-extern short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
-                                  Lng32 numKeys,
-                                  NABoolean displaySystemCols,
-                                  Space &space, char * buf, 
-                                  NABoolean displayCompact,
-                                  NABoolean displayAscDesc,
-                                  NABoolean displayParens);
-                             
+#include "CmpDescribe.h"
+                  
 static bool checkSpecifiedPrivs(
    ElemDDLPrivActArray & privActsArray,  
    const char * externalObjectName,
@@ -376,10 +322,17 @@ void CmpSeabaseDDL::createSeabaseTableLike(ExeCliInterface * cliInterface,
     }
 
   ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
-  
+
+  if (NOT likeOptions.getLikeOptHiveOptions().isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242)
+                          << DgString0("Hive options cannot be specified for this table.");
+      return;
+    }
+
   char * buf = NULL;
   ULng32 buflen = 0;
-  if (srcCatNamePart == HIVE_SYSTEM_CATALOG)
+  if (srcCatNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0)
     retcode = CmpDescribeHiveTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
                                    likeOptions.getIsLikeOptColumnLengthLimit());
   else
@@ -1565,6 +1518,7 @@ short CmpSeabaseDDL::updateIndexInfo(
   return 0;
 }
 
+//RETURN: -1 in case of error.  -2, if specified object doesnt exist in MD.
 short CmpSeabaseDDL::setupAndErrorChecks
 (NAString &tabName, QualifiedName &origTableName, 
  NAString &currCatName, NAString &currSchName,
@@ -1638,7 +1592,7 @@ short CmpSeabaseDDL::setupAndErrorChecks
 
       processReturn();
       
-      return -1;
+      return -2;
     }
 
   Int32 objectOwnerID = 0;
@@ -10816,9 +10770,11 @@ short CmpSeabaseDDL::registerHiveView
       bindWA.setDefaultSchema(s);
 
       Parser parser(bindWA.currentCmpContext());
+      parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
       ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                            naTable->getViewLen(),
                                            naTable->getViewTextCharSet());
+
       if (! viewTree)
         {
           return -1;
@@ -10905,7 +10861,6 @@ short CmpSeabaseDDL::unregisterHiveView
   
   // drop from metadata
   retcode =
-    //    deleteFromSeabaseMDObjectsTable
     deleteFromSeabaseMDTable
     (&cliInterface,
      catalogNamePart.data(),
@@ -10932,9 +10887,11 @@ short CmpSeabaseDDL::unregisterHiveView
       bindWA.setDefaultSchema(s);
 
       Parser parser(bindWA.currentCmpContext());
+      parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
       ExprNode *viewTree = parser.parseDML(naTable->getViewText(),
                                            naTable->getViewLen(),
                                            naTable->getViewTextCharSet());
+
       if (! viewTree)
         {
           return -1;
@@ -10992,7 +10949,16 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
           (NOT naTable->isHiveTable()) ||
           (NOT naTable->isRegistered()))
         {
-          SEABASEDDL_INTERNAL_ERROR("NATable pointer in unregisterHiveViewUsage");
+          NAString reason;
+          if (naTable == NULL)
+            reason = NAString("naTable for ") + extUsedObjName + " is NULL.";
+          else if (NOT naTable->isHiveTable())
+            reason = extUsedObjName + " is not a Hive table.";
+          else 
+            reason = extUsedObjName + " is not registered.";
+          *CmpCommon::diags() << DgSqlCode(-3242) << 
+            DgString0(reason);
+
           return -1; 
         }
       
@@ -11035,6 +11001,75 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
   return 0;
 } 
 
+short CmpSeabaseDDL::unregisterHiveSchema
+(
+     const NAString &catalogNamePart,
+     const NAString &schemaNamePart,
+     ExeCliInterface &cliInterface,
+     NABoolean cascade
+ )
+{
+  Lng32 cliRC = 0;
+  short retcode = 0;
+
+  if (cascade)
+    {
+      //  unregister all objects in this schema
+      Queue * objectsInfo = NULL;
+      char query[2000];
+      str_sprintf(query, "select object_type, object_name "
+                  "from %s.\"%s\".%s "
+                  "where catalog_name = '%s' and schema_name = '%s'"
+                  "order by 1 for read committed access",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  catalogNamePart.data(), schemaNamePart.data());
+      cliRC = cliInterface.fetchAllRows(objectsInfo, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+      
+      objectsInfo->position();
+      for (Lng32 i = 0; i < objectsInfo->numEntries(); i++)
+        {
+          OutputInfo * oi = (OutputInfo*)objectsInfo->getNext(); 
+          
+          char * objType = (char*)oi->get(0);
+
+          char * objName = (char*)oi->get(1);
+          
+          if (strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0)
+            {
+              retcode = unregisterNativeTable(
+                   catalogNamePart, schemaNamePart, objName,
+                   cliInterface,
+                   COM_BASE_TABLE_OBJECT);
+            }
+          else if (strcmp(objType, COM_VIEW_OBJECT_LIT) == 0)
+            {
+              retcode = unregisterHiveView(
+                   catalogNamePart, schemaNamePart, objName,
+                   NULL,
+                   cliInterface,
+                   FALSE); // dont cascade
+            }
+          
+          if (retcode < 0)
+            {
+              return -1;
+            }
+        } // for
+    }
+
+  retcode = unregisterNativeTable(
+       catalogNamePart, schemaNamePart, SEABASE_SCHEMA_OBJECTNAME,
+       cliInterface,
+       COM_SHARED_SCHEMA_OBJECT);
+
+  return retcode;
+}
+
 void CmpSeabaseDDL::regOrUnregNativeObject(
      StmtDDLRegOrUnregObject * regOrUnregObject,
      NAString &currCatName, NAString &currSchName)
@@ -11055,8 +11090,9 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   NAString tabName;
   NAString extTableName;
 
-  NABoolean isHive  = (catalogNamePart == HIVE_SYSTEM_CATALOG);
-  NABoolean isHBase = (catalogNamePart == HBASE_SYSTEM_CATALOG);
+  NABoolean isHive  = (catalogNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0);
+
+  NABoolean isHBase = (catalogNamePart.index(HBASE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0);
 
   if (NOT (isHive || isHBase))
     {
@@ -11065,6 +11101,13 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       
       processReturn();
       return;
+    }
+
+  if (isHive)
+    {
+      if (NOT (schemaNamePart == HIVE_SYSTEM_SCHEMA))
+        schemaNamePart.toUpper();
+      objectNamePart.toUpper();
     }
 
   // make sure that underlying hive/hbase object exists
@@ -11104,7 +11147,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       if (regOrUnregObject->isRegister() && 
           (naTable->isRegistered())) // already registered
         {
-          if (NOT regOrUnregObject->existsOption())
+          if (NOT regOrUnregObject->registeredOption())
             {
               str_sprintf(errReason, " Reason: %s has already been registered.",
                           (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
@@ -11123,7 +11166,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       else if ((NOT regOrUnregObject->isRegister()) && // unregister
                (NOT naTable->isRegistered())) // not registered
         {
-          if (NOT regOrUnregObject->existsOption())
+          if (NOT regOrUnregObject->registeredOption())
             {
               str_sprintf(errReason, " Reason: %s has not been registered.",
                           (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
@@ -11168,7 +11211,7 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
         (&cliInterface,
          catalogNamePart.data(),
          schemaNamePart.data(),
-         "__SCHEMA__",
+         SEABASE_SCHEMA_OBJECTNAME,
          regOrUnregObject->objType(),
          NULL,
          objOwnerId, schemaOwnerId,
@@ -11259,6 +11302,14 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
                    catalogNamePart, HBASE_ROW_SCHEMA, objectNamePart,
                    cliInterface);
             }
+          else if ((regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT) &&
+                   (catalogNamePart.index(HIVE_SYSTEM_CATALOG, 0, NAString::ignoreCase) == 0))
+            {
+              retcode = unregisterHiveSchema(
+                   catalogNamePart, schemaNamePart,
+                   cliInterface,
+                   regOrUnregObject->cascade());
+            }
           else
             {
               retcode = unregisterNativeTable(
@@ -11300,7 +11351,765 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   
   return;
 }
- 
+
+static short processHiveTruncate(StmtDDLonHiveObjects * hddl,
+                                 NATable * naTable,
+                                 NAString &extObjectName)
+{
+  // A Hive table can be an External or Managed table.
+  // Currently, an External Hive table cannot be truncated.
+  // Maybe some future Hive version will allow that.
+  // Temporarily change the table attribute to be Managed,
+  // truncate the table and then change it back to be External.
+  NABoolean tableWasAltered = FALSE;
+  NAString alterStmt;
+  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
+      (naTable && naTable->isHiveExternalTable()))
+    {
+      // make the table managed table before truncate
+      alterStmt = "alter table " + extObjectName + " set tblproperties ('EXTERNAL'='False')";
+      if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
+        {
+          // alter failed
+          *CmpCommon::diags() << DgSqlCode(-1214)
+                              << DgString0(getSqlJniErrorStr())
+                              << DgString1(hddl->getHiveDDL());
+          
+          return -1;
+        }
+      
+      tableWasAltered = TRUE;
+      
+      // alter stmt to switch the table back to external type
+      alterStmt = "alter table " + extObjectName + " set tblproperties ('EXTERNAL'='TRUE')";
+    }
+  
+  // execute the hive DDL statement.
+  if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
+    {
+      if (tableWasAltered)
+        {
+          // table was altered to Managed. Alter it back to External.
+          if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
+            {
+              // alter itself failed. Return error.
+              *CmpCommon::diags() << DgSqlCode(-1214)
+                                  << DgString0(getSqlJniErrorStr())
+                                  << DgString1(hddl->getHiveDDL());
+              
+              return -1;
+            }
+        }
+
+      *CmpCommon::diags() << DgSqlCode(-1214)
+                          << DgString0(getSqlJniErrorStr())
+                          << DgString1(hddl->getHiveDDL());
+      
+      return -1;
+    }
+
+  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
+      (naTable && naTable->isHiveExternalTable()) &&
+      (tableWasAltered))
+     {
+       // table was altered to Managed. Alter it back to External.
+       if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
+         {
+           // alter itself failed. Return error.
+           *CmpCommon::diags() << DgSqlCode(-1214)
+                               << DgString0(getSqlJniErrorStr())
+                               << DgString1(hddl->getHiveDDL());
+           
+           return -1;
+         }
+     }
+
+  return 0;
+}
+
+static void processPassthruHiveDDL(StmtDDLonHiveObjects * hddl)
+{
+  NAString hiveQuery(hddl->getHiveDDL());
+  
+  hiveQuery = hiveQuery.strip(NAString::leading, ' ');
+  if (NOT ((hiveQuery.index("CREATE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("DROP ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("ALTER ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("TRUNCATE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("GRANT ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("REVOKE ", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery.index("RELOAD ", 0, NAString::ignoreCase) == 0)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Specified DDL operation cannot be executed directly by hive.");
+      
+      return;
+    }
+  
+  if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1214)
+                          << DgString0(getSqlJniErrorStr())
+                          << DgString1(hddl->getHiveDDL());
+      
+      return;
+    }
+  
+  return;
+} // passthru
+
+void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                                            NAString &currCatName, 
+                                            NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+
+  // For hive ddl operations, grantor must be DB__ROOT or belong
+  // to one of the admin roles:  DB__ROOTROLE or DB__HIVEROLE.
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&
+      !ComUser::isRootUserID() &&
+      !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+      !ComUser::currentUserHasRole(HIVE_ROLE_ID))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      processReturn();
+      return;
+    }
+
+  // if passthru ddl specified via "process hive ddl" or "create hive table like"
+  // stmt, execute the specified string.
+  if (hddl->getOper() == StmtDDLonHiveObjects::PASSTHRU_DDL_)
+    {
+      // error diagnostics is set in CmpCommon::diags
+      processPassthruHiveDDL(hddl);
+
+      return;
+    }
+  
+  // Start error checks
+  if (NOT ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::ALTER_) ||
+           (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only CREATE, DROP, ALTER or TRUNCATE DDL commands can be specified on hive objects. Use \"PROCESS HIVE DDL '<ddl-stmt>' \" to directly execute other statements through hive.");
+      
+      return;
+    }
+  
+  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
+      (hddl->getType() != StmtDDLonHiveObjects::TABLE_))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only table can be truncated.");
+      
+      return;
+    }
+  
+  if (NOT ((hddl->getType() == StmtDDLonHiveObjects::TABLE_) ||
+           (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_) ||
+           (hddl->getType() == StmtDDLonHiveObjects::VIEW_)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only TABLE, VIEW or SCHEMA object can be specified. Use \"PROCESS HIVE DDL '<ddl-stmt>' \" to directly execute other statements through hive.");
+      
+      return;
+    }
+  // End error checks
+  
+   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                                CmpCommon::context()->sqlSession()->getParentQid());
+
+   char buf[4000];
+   buf[0] = 0;
+
+   ComObjectName con(hddl->getName());
+   con.applyDefaults(currCatName, currSchName);
+
+   const NAString &catName = con.getCatalogNamePartAsAnsiString(TRUE);
+
+   NAString schName =
+     ((con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ?
+      HIVE_SYSTEM_SCHEMA : con.getSchemaNamePartAsAnsiString(TRUE));
+
+   NAString objName = con.getObjectNamePartAsAnsiString(TRUE);
+
+   NAString extObjectName;
+
+   if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0)
+     extObjectName = HIVE_DEFAULT_SCHEMA_EXE;
+   else if (schName != HIVE_SYSTEM_SCHEMA)
+     extObjectName = schName;
+
+   if (NOT (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_))
+     {
+       if (NOT extObjectName.isNull())
+         extObjectName += NAString(".");
+       extObjectName += objName;
+     }
+   extObjectName.toLower();
+
+   if (NOT (schName.compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0))
+     schName.toUpper();
+
+   if (NOT (objName == SEABASE_SCHEMA_OBJECTNAME))
+     objName.toUpper();
+
+   CorrName cnTgt(objName, STMTHEAP, schName, catName);
+
+   ComObjectType objType;
+   NAString objStr;
+   if (hddl->getType() == StmtDDLonHiveObjects::TABLE_)
+     {
+       objType = COM_BASE_TABLE_OBJECT;
+       objStr = "Table";
+     }
+   else if (hddl->getType() == StmtDDLonHiveObjects::SCHEMA_)
+     {
+       objType = COM_SHARED_SCHEMA_OBJECT;
+       cnTgt.setSpecialType(ExtendedQualName::SCHEMA_TABLE);
+       objStr = "Schema";
+     }
+   else
+     {
+       objType = COM_VIEW_OBJECT;
+       objStr = "View";
+     }
+
+   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+   NATable *naTable = bindWA.getNATable(cnTgt);
+
+   NABoolean objExists = FALSE;
+   if (naTable == NULL || bindWA.errStatus())
+     objExists = FALSE;
+   else
+     objExists = TRUE;
+
+   NABoolean isRegistered = FALSE;
+   if (naTable && naTable->isRegistered())
+     isRegistered = TRUE;
+
+   NABoolean hasExternalTable = FALSE;
+   if (naTable && naTable->hasExternalTable())
+     hasExternalTable = TRUE;
+
+   NABoolean tableWasAltered = FALSE;
+   NAString alterStmt;
+
+   CmpCommon::diags()->clear();
+
+   if ((hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
+       (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_))
+     {
+       if (NOT objExists)
+         {
+           // return error if 'if exists' option is not specified.
+           // otherwise just return.
+           if (NOT hddl->getIfExistsOrNotExists())
+             {
+               *CmpCommon::diags() << DgSqlCode(-1388)
+                                   << DgString0(objStr)
+                                   << DgString1(extObjectName);
+             }
+           
+           return;
+         }
+     }
+
+   if ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
+       (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_))
+     {
+       if (objExists)
+         {
+           // return error if 'if  not exists' option is not specified.
+           // Otherwise just return.
+           if (NOT hddl->getIfExistsOrNotExists())
+             {
+               *CmpCommon::diags() << DgSqlCode(-1387)
+                                   << DgString0(objStr)
+                                   << DgString1(extObjectName);
+             }
+
+           return;
+         }
+     }
+
+   NABoolean xnWasStartedHere = FALSE;
+   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+     return;
+
+   if ((objExists) && 
+       (hddl->getOper() == StmtDDLonHiveObjects::DROP_))
+    {
+      cliRC = 0;
+
+      // drop any external table, if exists
+      if ((objType == COM_BASE_TABLE_OBJECT) &&
+          (hasExternalTable))
+        {
+          str_sprintf(buf, "drop external table if exists %s.\"%s\".\"%s\" ",
+                      catName.data(), schName.data(), objName.data());
+          cliRC = cliInterface.executeImmediate(buf);
+          if (cliRC < 0)
+            {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              goto label_error;
+            }
+        }
+
+      if (isRegistered)
+        {
+          if (objType == COM_BASE_TABLE_OBJECT)
+            {
+              cliRC = unregisterNativeTable(
+                   catName, schName, objName,
+                   cliInterface, 
+                   objType);
+            }
+          else if (objType == COM_SHARED_SCHEMA_OBJECT)
+            {
+              cliRC = unregisterHiveSchema(
+                   catName, schName,
+                   cliInterface, 
+                   TRUE /*cascade*/);
+            }
+          else if (objType == COM_VIEW_OBJECT)
+            {
+              cliRC = unregisterHiveView(
+                   catName, schName, objName,
+                   NULL,
+                   cliInterface, 
+                   FALSE); // dont cascade
+            }
+        } // isRegistered
+
+      if (cliRC < 0)
+        {
+          goto label_error;
+        }
+    } // drop
+   
+   if ((CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF) &&
+       ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
+        (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) ||
+        (hddl->getOper() == StmtDDLonHiveObjects::ALTER_)) &&
+       (NOT isRegistered))
+     {
+       cliRC = 0;
+       if (objType == COM_SHARED_SCHEMA_OBJECT)
+         {
+           Int64 objUID = -1;
+           Int64 flags = 0;
+           cliRC =
+             updateSeabaseMDObjectsTable
+             (&cliInterface,
+              catName, schName,
+              SEABASE_SCHEMA_OBJECTNAME,
+              objType,
+              NULL,
+              HIVE_ROLE_ID, HIVE_ROLE_ID,
+              flags, objUID);
+         }
+       else if (objType == COM_BASE_TABLE_OBJECT)
+         {
+           cliRC = registerNativeTable(
+                catName, schName, objName,
+                HIVE_ROLE_ID, HIVE_ROLE_ID,
+                cliInterface, 
+                TRUE, // register
+                TRUE ); // internal
+         }
+       else if (objType == COM_VIEW_OBJECT)
+         {
+           cliRC = registerHiveView(
+                catName, schName, objName,
+                HIVE_ROLE_ID, HIVE_ROLE_ID,
+                NULL,
+                cliInterface, 
+                TRUE, // register
+                FALSE); // no cascade
+         }
+       
+       if (cliRC < 0)
+         {
+           goto label_error;
+         }
+     } // register this object
+
+   if (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_)
+     {
+       if (processHiveTruncate(hddl, naTable, extObjectName))
+         goto label_error;
+     }
+   else
+     {
+       // execute the hive DDL statement.
+       if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
+         {
+           *CmpCommon::diags() << DgSqlCode(-1214)
+                               << DgString0(getSqlJniErrorStr())
+                               << DgString1(hddl->getHiveDDL());
+           
+           goto label_error;
+         }
+     }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cnTgt,
+     ComQiScope::REMOVE_FROM_ALL_USERS,
+     COM_BASE_TABLE_OBJECT,
+     FALSE, FALSE);
+
+  return;
+
+label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+  return;
+}
+
+short CmpSeabaseDDL::genDDLforHiveTableLikeTrafTable(StmtDDLCreateTable * createTableNode,
+                                                     NAString &currCatName, NAString &currSchName,
+                                                     NAString &tableDDL)
+{ 
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  ComObjectName tgtTableName(createTableNode->getTableName(), COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tgtTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  if (tgtTableName.getCatalogNamePartAsAnsiString() != HIVE_SYSTEM_CATALOG)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-3242)
+        << DgString0("LIKE target table must be a hive table.");
+      return -1;
+    }
+
+  NAString tgtSchName;
+
+  if ((tgtTableName.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ||
+      (tgtTableName.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0))
+    tgtSchName = HIVE_SYSTEM_SCHEMA;
+  else
+    tgtSchName = tgtTableName.getSchemaNamePartAsAnsiString(TRUE);
+
+  ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
+
+  srcTableName.applyDefaults(currCatName, currSchName);
+
+  const NAString srcCatNamePart = srcTableName.getCatalogNamePartAsAnsiString();
+  const NAString srcSchNamePart = srcTableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString srcObjNamePart = srcTableName.getObjectNamePartAsAnsiString(TRUE);
+  CorrName srcCN(srcObjNamePart, STMTHEAP, srcSchNamePart, srcCatNamePart);
+  
+  if (NOT createTableNode->getIsLikeOptionSpecified())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-3242)
+        << DgString0("LIKE clause must be specified to create this hive table.");
+      return -1;
+    }
+
+  ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
+
+  if (srcTableName.getCatalogNamePartAsAnsiString() != TRAFODION_SYSCAT_LIT)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-3242)
+        << DgString0("LIKE source table must be a trafodion table.");
+      return -1;
+    }
+
+  if (createTableNode->managedHiveTable())
+    tableDDL = "CREATE TABLE ";
+  else
+    tableDDL = "CREATE EXTERNAL TABLE ";
+  if (createTableNode->createIfNotExists())
+    tableDDL += " IF NOT EXISTS ";
+
+  tableDDL += (tgtSchName == HIVE_SYSTEM_SCHEMA ? "`default`" : tgtSchName) + ".";
+  tableDDL += tgtTableName.getObjectNamePartAsAnsiString(TRUE);
+
+  char * buf = NULL;
+  ULng32 buflen = 0;
+  retcode = CmpDescribeTrafAsHiveTable(srcCN, 3/*createlike*/, 
+                                       buf, buflen, 
+                                       STMTHEAP);
+  if (retcode)
+    return -1;
+
+  NABoolean done = FALSE;
+  Lng32 curPos = 0;
+  while (NOT done)
+    {
+      short len = *(short*)&buf[curPos];
+      NAString frag(&buf[curPos+sizeof(short)],
+                    len - ((buf[curPos+len-1]== '\n') ? 1 : 0));
+
+      tableDDL += frag;
+      curPos += ((((len+sizeof(short))-1)/8)+1)*8;
+
+      if (curPos >= buflen)
+        done = TRUE;
+    }
+
+  if (NOT likeOptions.getLikeOptHiveOptions().isNull())
+    {
+      tableDDL += " " + likeOptions.getLikeOptHiveOptions();
+    }
+
+  return 0;
+}
+
+// ------------------------------------------------------------------------
+// setupQueryTreeForHiveDDL
+//
+// This method is called if a hive ddl statement is seen during parsing.
+// When that is detected, information is set in HiveDDLInfo 
+// and parsing phase errors out.
+// This is needed to avoid enhancing the parser with hive ddl syntax.
+// 
+// For example:
+//  create table hive.hive.t (a int) stored as sequencefile;
+// Traf parser does not undertand 'stored as sequencefile' syntax.
+// As soon as 'hive.hive.t' is detected, all relevant information is 
+// stored in HiveDDLInfo class and parsing phase is terminated.
+// This method then creates the needed structures so the create stmt could
+// be passed on to hive api layer.
+// 
+// Return:  'node' contains the generated tree.
+//          TRUE, if all ok.
+//          FALSE, if error.
+// -------------------------------------------------------------------------
+NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
+     Parser::HiveDDLInfo * hiveDDLInfo,
+     char * inputStr, 
+     CharInfo::CharSet inputStrCharSet,
+     NAString currCatName,
+     NAString currSchName,
+     ExprNode** node)
+{
+  // extract hive ddl info from global SqlParser_CurrentParser. These fields
+  // are set during parsing.
+
+  // ddl operation and type of object.
+  StmtDDLonHiveObjects::Operation oper = 
+    (StmtDDLonHiveObjects::Operation)hiveDDLInfo->ddlOperation_;
+  StmtDDLonHiveObjects::ObjectType type = 
+    (StmtDDLonHiveObjects::ObjectType)hiveDDLInfo->ddlObjectType_;
+
+  if ((oper == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) &&
+      (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::EXPLAIN_) ||
+            (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+            (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_))))
+    {
+      ExprNode *hlt = *node;
+      if (hlt == NULL)
+        return FALSE; // node must be passed in.
+
+      StmtQuery * stmt = (StmtQuery*)hlt->castToStatementExpr();
+      RelRoot * root = (RelRoot*)stmt->getQueryExpression();
+      DDLExpr * ddl = (DDLExpr*)root->child(0)->castToRelExpr();
+      StmtDDLonHiveObjects * doh = 
+        ddl->getDDLNode()->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
+      StmtDDLCreateTable * ct = doh->getChild(0)->castToStmtDDLNode()->castToStmtDDLCreateTable();
+      if (! ct)
+        return FALSE;
+
+      NAString tableDDL;
+      if (CmpSeabaseDDL::genDDLforHiveTableLikeTrafTable(ct, currCatName, currSchName,
+                                                         tableDDL))
+        return FALSE;
+      
+      doh->setHiveDDL(tableDDL);
+
+      // indicate that this is the root for the entire query
+      if (root)
+        {
+          if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::DISPLAY_)
+            ((RelRoot*)root)->setDisplayTree(TRUE);
+        }
+      
+      *node = stmt;  
+      
+      return TRUE;
+    }
+
+  // position and length of the object name specified in the query.
+  Lng32 hiveNamePos = hiveDDLInfo->ddlNamePos_;
+  Lng32 hiveNameLen =  hiveDDLInfo->ddlNameLen_;
+
+  NABoolean ifExistsOrNotExists = hiveDDLInfo->ifExistsOrNotExists_;
+
+  NAString &origHiveDDL = hiveDDLInfo->userSpecifiedStmt_;
+  NAString hiveDDL = origHiveDDL;
+  
+  NAString hiveNameStr;
+  if (hiveNameLen > 0)
+    hiveNameStr = NAString(&origHiveDDL.data()[hiveNamePos], hiveNameLen);
+  
+  ComObjectName con;
+  
+  if (hiveNameStr.isNull())
+    con = NAString("");
+  else
+    {
+      con = hiveNameStr + 
+        ((type == StmtDDLonHiveObjects::SCHEMA_) ? 
+         (NAString(".") + "\"" + SEABASE_SCHEMA_OBJECTNAME + "\"") : "");
+      con.applyDefaults(ComAnsiNamePart(CmpCommon::getDefaultString(CATALOG)),
+                        ComAnsiNamePart(CmpCommon::getDefaultString(SCHEMA)));
+    }
+
+  NAString newHiveName;
+  if (con.getCatalogNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_CATALOG, NAString::ignoreCase) != 0)
+    {
+      // should never reach here. Parser should have validated that the
+      // name is a hive name.
+      // Throw an assertion if it does.
+      PARSERASSERT(1);
+    }
+
+  // Original hive name specified in the query may have any of the following
+  // forms after they are fully qualified:
+  //  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
+  // These names are valid in traf environment only and are used to determine
+  // if hive ddl is being processed.
+  //
+  // Replace them in the query by equivalent hive names:
+  //   t, `default`.t, hivesch.t, hivesch
+  //
+  if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) // matches  'default'
+    {
+      newHiveName += NAString("`") + con.getSchemaNamePartAsAnsiString(TRUE) + "`";
+      if (type != StmtDDLonHiveObjects::SCHEMA_)
+        newHiveName += ".";
+    }
+  else if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0) // matches  'hive'
+    {
+      // set fully qualified hive default schema name `default`
+      newHiveName += NAString("`default`");
+      if (type != StmtDDLonHiveObjects::SCHEMA_)
+        newHiveName += ".";
+    }
+  else // user schema name
+    {
+      newHiveName += con.getSchemaNamePartAsAnsiString(1);
+      if (type != StmtDDLonHiveObjects::SCHEMA_)
+        newHiveName += ".";
+    }
+
+  if (type != StmtDDLonHiveObjects::SCHEMA_)
+    newHiveName += con.getObjectNamePartAsAnsiString(TRUE);
+  
+  // remove original name at hiveNamePos/hiveNameLen and replace with the
+  // newly constructed name.
+  if ((hiveDDL.length() > 0) && (hiveNameLen > 0))
+    {
+      hiveDDL.remove(hiveNamePos, hiveNameLen);
+      hiveDDL.insert(hiveNamePos, newHiveName);
+    }
+
+  // remove trailing semicolon
+  if ((hiveDDL.length() > 0) &&
+      (hiveDDL[hiveDDL.length()-1] == ';'))
+    hiveDDL.remove(hiveDDL.length()-1);
+  
+  CmpCommon::diags()->clear();
+
+  // Construct DDL expr tree for regular query or query
+  // explain/showplan/showshape/display.
+  //
+  // Regular DDL query:
+  // HiveLikeTraf DDL query:
+  //   StmtQuery => RelRoot => DDLExpr => StmtDDLonHiveObjects
+  //
+  // explain query:
+  //  StmtQuery => RelRoot => ExeUtilDisplayExplain => RelRoot
+  //                  => DDLExpr => StmtDDLonHiveObjects
+  //
+  // showplan/showshape:
+  //  StmtQuery => RelRoot => Describe
+  //
+  // display:
+  //   same as regular query with displayTree flag set in RelRoot
+  //
+  DDLExpr * ddlExpr = NULL;
+  RelExpr * ddlExprRoot = NULL;
+  if (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+           (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_)))
+    {
+      StmtDDLonHiveObjects * sdho = 
+        new (PARSERHEAP()) StmtDDLonHiveObjects(oper, type, 
+                                                ifExistsOrNotExists,
+                                                con.getExternalName(),
+                                                hiveDDL, PARSERHEAP());
+      
+      DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
+        DDLExpr(sdho, inputStr, inputStrCharSet,
+                CmpCommon::statementHeap());
+      
+      ddlExprRoot = new(CmpCommon::statementHeap()) RelRoot(ddlExpr);
+    }
+
+  RelExpr *root = ddlExprRoot;
+  if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::EXPLAIN_)
+    {
+      ExeUtilDisplayExplain * eue = 
+        new (PARSERHEAP ()) ExeUtilDisplayExplain
+        (ExeUtilExpr::DISPLAY_EXPLAIN_,
+         &inputStr[hiveDDLInfo->essdQueryStartPos_],
+         inputStrCharSet,
+         NULL, NULL,
+         (hiveDDLInfo->essdOptions_.isNull() ? NULL :
+          (char*)hiveDDLInfo->essdOptions_.data()),
+         ddlExprRoot,
+         PARSERHEAP());
+      
+      root = new(CmpCommon::statementHeap()) RelRoot(eue);
+    }
+  else if ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+           (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_))
+    {
+      CorrName c;
+      Describe * des = NULL;
+      if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_)
+        {
+          des = new (PARSERHEAP ()) Describe
+            (inputStr, c, Describe::PLAN_, COM_TABLE_NAME, 0);
+        }
+      else
+        {
+          des = new (PARSERHEAP ()) Describe
+            (inputStr, c, Describe::SHAPE_);
+        }
+
+      root = new(CmpCommon::statementHeap()) 
+        RelRoot(des, REL_ROOT,
+                new (PARSERHEAP())
+                ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+    }
+
+  // indicate that this is the root for the entire query
+  if (root)
+    {
+      ((RelRoot *) root)->setRootFlag(TRUE);
+      if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::DISPLAY_)
+        ((RelRoot*)root)->setDisplayTree(TRUE);
+    }
+
+  StmtQuery* query = new(PARSERHEAP()) StmtQuery(root);
+  *node = query;  
+  
+  return TRUE;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // This method generates and returns tableInfo struct for internal special
 // tables (like metadata, histograms). These tables have hardcoded definitions
@@ -11497,6 +12306,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   ComTdbVirtTableIndexInfo * indexInfo;
 
   Parser parser(CmpCommon::context());
+  parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
 
   ComTdbVirtTableConstraintInfo * constrInfo =
     new(STMTHEAP) ComTdbVirtTableConstraintInfo[1];

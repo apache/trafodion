@@ -473,6 +473,7 @@ public:
                           SQL_QIKEY [],
                           Int32 maxNumSiKeys,
                           Int32 *returnedNumSiKeys);
+  Int32 checkLobLock(CliGlobals *cliGlobals,char *&lobLockId);
 
   void mergeNewSikeys(Int32 numSikeys, 
                     SQL_QIKEY sikeys[]);
@@ -489,6 +490,7 @@ public:
   SB_Phandle_Type *getSsmpProcHandle() { return &ssmpProcHandle_; }
   SB_Phandle_Type *getSscpProcHandle() { return &sscpProcHandle_; }
   SyncHashQueue *getRecentSikeys() { return recentSikeys_; }
+  SyncHashQueue *getLobLocks() { return lobLocks_;}
   void setSsmpProcSemId(Long semId) { ssmpProcSemId_ = semId; } 
   Long &getSsmpProcSemId() { return ssmpProcSemId_; } 
   void setSscpProcSemId(Long semId) { sscpProcSemId_ = semId; } 
@@ -531,6 +533,7 @@ private:
   pid_t maxPid_;
   Int64 ssmpDumpedTimestamp_;
   MemoryMonitor *memMonitor_;
+  SyncHashQueue *lobLocks_;
 };
 StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP = TRUE);
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu);

@@ -608,7 +608,7 @@ X
 >>
 >>create view v3bd as select b,d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -620,7 +620,7 @@ X
 
 >>create view v3b as select b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -632,7 +632,7 @@ X
 
 >>create view v3d as select d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -644,7 +644,7 @@ X
 
 >>create view v3bbbbbb (c1,c2,c3,c4,c5,c6) as select b,b,b,b,b,b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -659,45 +659,45 @@ X
 >>
 >>create view v3ac as select a,c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3a as select a from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3c as select c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>create view v3 as select * from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>create view v3ab as select a,b from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3abcd as select a,b,c,d from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v3bc as select b,c from t3;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -706,7 +706,7 @@ X
 >>
 >>create view v34bf as select b,f from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -718,7 +718,7 @@ X
 
 >>create view v34bdfg as select b,d,f,g from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -730,7 +730,7 @@ X
 
 >>create view v34bdfg2 (c1,c2,c3,c4) as select b,d,f,g from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -742,7 +742,7 @@ X
 
 >>create view v34gb as select g,b from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -757,19 +757,19 @@ X
 >>
 >>create view v34 as select * from t3,t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v34af as select a,f from t3, t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>create view v34bh as select b,h from t3,t4;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+*** ERROR[3242] This statement is not supported. Reason: This view cannot be created or dropped in the specified catalog 'CAT'.
 
 *** ERROR[8822] The statement was not prepared.
 

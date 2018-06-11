@@ -763,7 +763,13 @@ Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp);
 
-
+Lng32 SQLCLI_SetLobLock(CliGlobals *cliGlobals,
+                        /* IN */    char * lobLockId
+                        );
+Lng32 SQLCLI_CheckLobLock(CliGlobals *cliGlobals,
+                        /* IN */   char *lobLockId,
+                        /*OUT */ NABoolean *found
+                          );
 Lng32 SQLCLI_GetStatistics2(CliGlobals *cliGlobals,
             /* IN */  	short statsReqType,
 	    /* IN */  	char *statsReqStr,

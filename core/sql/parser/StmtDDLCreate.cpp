@@ -3821,7 +3821,9 @@ StmtDDLCreateTable::StmtDDLCreateTable(const QualifiedName & aTableQualName,
 	  pSGOptions_(NULL),
 	  createIfNotExists_(FALSE),
           mapToHbaseTable_(FALSE),
-          hbaseDataFormat_(FALSE)
+          hbaseDataFormat_(FALSE),
+          externalHiveTable_(FALSE),
+          managedHiveTable_(FALSE)
 {
   setChild(INDEX_TABLE_DEFINITION, pTableDefBody);
   setChild(INDEX_ATTRIBUTE_LIST, pCreateTableAttrList);
@@ -6850,7 +6852,8 @@ StmtDDLCreateView::StmtDDLCreateView(const QualifiedName & viewQualName,
           pWithCheckOption_(optionalWithCheckOption),
           columnDefArray_(heap),
           viewUsages_(heap),
-	  udfList_(heap)
+	  udfList_(heap),
+          createIfNotExists_(FALSE)
 {
   setChild(INDEX_VIEW_OWNER, pOwner);
 }

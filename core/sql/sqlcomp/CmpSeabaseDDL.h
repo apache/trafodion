@@ -45,6 +45,7 @@
 #include "PrivMgrMD.h"
 #include "ElemDDLHbaseOptions.h"
 #include "CmpContext.h"
+#include "parser.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -1085,6 +1086,22 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
+  static short genDDLforHiveTableLikeTrafTable(
+       StmtDDLCreateTable * createTableNode,
+       NAString &currCatName, NAString &currSchName,
+       NAString &tableDDL); // output. Contains hive DDL string.
+  
+public:
+  static NABoolean setupQueryTreeForHiveDDL(
+       Parser::HiveDDLInfo * hiveDDLInfo,
+       char * inputStr, 
+       CharInfo::CharSet inputStrCharSet,
+       NAString currCatName,
+       NAString currSchName,
+       ExprNode** node);
+
+protected:
+
   // makes a copy of underlying hbase table
   short cloneHbaseTable(
        const NAString &srcTable, const NAString &clonedTable,
@@ -1374,6 +1391,14 @@ protected:
        NABoolean cascade
    );
 
+  short unregisterHiveSchema
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       ExeCliInterface &cliInterface,
+       NABoolean cascade
+   );
+
   void regOrUnregNativeObject (
        StmtDDLRegOrUnregObject * regOrUnregObject,
        NAString &currCatName, NAString &currSchName);
@@ -1421,6 +1446,9 @@ protected:
                              StmtDDLDropHbaseTable * dropTableNode,
                              NAString &currCatName, NAString &currSchName);
   
+  void processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                               NAString &currCatName, NAString &currSchName);
+
   void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
