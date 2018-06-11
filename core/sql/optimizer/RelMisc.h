@@ -1662,6 +1662,7 @@ public:
   NABoolean isFirstN()                          { return isFirstN_; }
 
   ValueIdList & reqdOrder()                     { return reqdOrder_; }
+  ValueIdList & reqdOrderInSubquery()           { return reqdOrderInSubquery_; }
 
 private:
   // Otherwise, return firstNRows_ at runtime.
@@ -1673,6 +1674,7 @@ private:
   // Optional ORDER BY to force ordering before applying First N; populated
   // at normalizeNode time.
   ValueIdList reqdOrder_;
+  ValueIdList reqdOrderInSubquery_;
 
 }; // class FirstN
 

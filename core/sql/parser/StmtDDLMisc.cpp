@@ -97,8 +97,6 @@ StmtDDLCleanupObjects::bindNode(BindWA * pBindWA)
       (type_ == VIEW_) ||
       (type_ == SCHEMA_PRIVATE_) ||
       (type_ == SCHEMA_SHARED_) ||
-      (type_ == HIVE_TABLE_) ||
-      (type_ == HIVE_VIEW_) ||
       (type_ == HBASE_TABLE_) ||
       (type_ == UNKNOWN_))
     {

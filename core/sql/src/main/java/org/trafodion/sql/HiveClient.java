@@ -258,7 +258,11 @@ public class HiveClient {
          con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
       }
       Statement stmt = con.createStatement();
-      stmt.execute(ddl);
+      try {
+          stmt.execute(ddl);
+      } catch (SQLException s) {
+          throw s;            
+      }
   }
 
 }

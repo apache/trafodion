@@ -385,7 +385,7 @@ alter-action is:
    | DISABLE INDEX index-name 
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name
-   | DROP COLUMN [IF EXISTS] column-name
+   | DROP [COLUMN] [IF EXISTS] column-name
    | ALTER COLUMN column-definition
 
 column-definition is:

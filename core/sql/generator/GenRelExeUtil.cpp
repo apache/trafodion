@@ -3404,40 +3404,27 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   return 0;
 }
 
-/////////////////////////////////////////////////////////
-//
-// ExeUtilHiveQuery::codeGen()
-//
-/////////////////////////////////////////////////////////
 short ExeUtilHiveQuery::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
-
-  // allocate a map table for the retrieved columns
   generator->appendAtEnd();
-
   ex_cri_desc * givenDesc
     = generator->getCriDesc(Generator::DOWN);
-
   ex_cri_desc * returnedDesc
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
-
   short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
                               returnedDesc);
   if (rc)
     {
       return -1;
     }
-
   char * hive_query = 
     space->AllocateAndCopyToAlignedSpace (hiveQuery(), 0);
   Lng32 hive_query_len = hiveQuery().length();
-
   ComTdbExeUtilHiveQuery * exe_util_tdb = 
     new(space) 
     ComTdbExeUtilHiveQuery(hive_query, hive_query_len,
@@ -3447,24 +3434,17 @@ short ExeUtilHiveQuery::codeGen(Generator * generator)
                            (queue_index)getDefault(GEN_DDL_SIZE_UP),
                            getDefault(GEN_DDL_NUM_BUFFERS),
                            getDefault(GEN_DDL_BUFFER_SIZE));
-
   generator->initTdbFields(exe_util_tdb);
-
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, 0, 0, generator));
   }
-
-  // no tupps are returned 
   generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 			Generator::UP);
   generator->setGenObj(this, exe_util_tdb);
-
   generator->setTransactionFlag(0); // transaction is not needed.
-  
   return 0;
 }
-
 ////////////////////////////////////////////////////////////////////
 // class ExeUtilRegionStats
 ////////////////////////////////////////////////////////////////////
@@ -4338,6 +4318,8 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
   const char* f = ActiveSchemaDB()->getDefaults().
     getValue(LOB_STORAGE_FILE_DIR);
 
+    
+
   char *lobLoc = space->allocateAlignedSpace(strlen(f) + 1);
   strcpy(lobLoc, f);
   ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
@@ -4385,6 +4367,10 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
     exe_util_lobupdate_tdb->setAppend(TRUE);
   else
     exe_util_lobupdate_tdb->setAppend(FALSE);
+  if((ActiveSchemaDB()->getDefaults()).getToken(LOB_LOCKING) == DF_ON)
+    exe_util_lobupdate_tdb->setLobLocking(TRUE);
+  else
+    exe_util_lobupdate_tdb->setLobLocking(FALSE);
 
   generator->initTdbFields(exe_util_lobupdate_tdb);
 

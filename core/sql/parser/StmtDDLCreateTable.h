@@ -466,6 +466,12 @@ public:
 
   inline void setInsertMode(ComInsertMode insertMode);
 
+  void setExternalHiveTable(ComBoolean v) { externalHiveTable_ = v; }
+  NABoolean externalHiveTable() { return externalHiveTable_; }
+
+  void setManagedHiveTable(ComBoolean v) { managedHiveTable_ = v; }
+  NABoolean managedHiveTable() { return managedHiveTable_; }
+
   // sets the Constraint data member with the information in
   // the parse node pointed by pConstraint.  This parse node
   // represents either a column or a table constraint definition.
@@ -855,6 +861,14 @@ private:
 
   // create only if table doesnt exist. Otherwise just return.
   NABoolean createIfNotExists_;
+
+  // Usage:
+  //   create external hive table hive.hive.tgt like trafodion.sch.src;
+  NABoolean externalHiveTable_;
+
+  // Usage:
+  //   create hive table hive.hive.tgt like trafodion.sch.src;
+  NABoolean managedHiveTable_;
 
 }; // class StmtDDLCreateTable
 

@@ -45,7 +45,7 @@ sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_dos_num/*;
 sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_bad/*;
 
 --- setup Hive tables
-sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_a.hive.sql;
+sh sqlci -i"$REGRTSTDIR/TEST005_a.hive.sql";
 
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_utf8.data /user/trafodion/hive/exttables/tbl_utf8;
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_type.data /user/trafodion/hive/exttables/tbl_type;
@@ -298,61 +298,61 @@ cqd HIVE_SCAN_SPECIAL_MODE reset;
 -- tests for hive timestamp mismatch check
 cqd auto_query_retry_warnings 'ON';
 
-process hive statement 'drop table thive';
-process hive statement 'create table thive(a int)';
+drop table if exists hive.hive.thive;
+create table hive.hive.thive(a int);
 
 select a from hive.hive.thive;
 
-sh echo "insert into thive values (1);" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
+--process hive statement 'insert into thive values (1)';
+insert into hive.hive.thive values (1);
 
 select a from hive.hive.thive;
 insert into hive.hive.thive values (2);
 select a from hive.hive.thive;
 
-process hive statement 'drop table thive';
-process hive statement 'create table thive(a int, b int)';
+drop table hive.hive.thive;
+create table hive.hive.thive(a int, b int);
 
-sh echo "insert into thive values (1,2);" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
+--process hive statement 'insert into thive values (1,2)';
+insert into hive.hive.thive values (1,2);
 
 select a from hive.hive.thive;
 
 select * from hive.hive.thive;
 
--- truncate of hive data
---cqd query_cache '0';
-truncate hive.hive.thive;
+-- truncate of regular hive table
+truncate table hive.hive.thive;
 select * from hive.hive.thive;
 insert into hive.hive.thive values (10, 20);
 select * from hive.hive.thive;
-truncate hive.hive.thive;
-truncate hive.hive.thive;
+truncate table hive.hive.thive;
+truncate table hive.hive.thive;
 select * from hive.hive.thive;
 
 -- truncate of partitioned hive table
-process hive statement 'drop table t005part';
-process hive statement 'create table t005part(a int) partitioned by (b int, c int)';
+-- When partitioned hive tables are supported, then inserts and selects below
+-- can be executed directly from traf instead of through hive shell.
+drop table if exists hive.hive.t005part;
+create table hive.hive.t005part(a int) partitioned by (b int, c int);
 
 sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk;
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
-truncate hive.hive.t005part;
+truncate table hive.hive.t005part;
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
 sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk;
-truncate hive.hive.t005part partition ('b=10');
+truncate table hive.hive.t005part partition (b=10);
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
-
 sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk;
-truncate hive.hive.t005part partition ('b=10','c=11');
+truncate table hive.hive.t005part partition (b=10,c=11);
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
@@ -363,16 +363,16 @@ sh regrhive.ksh -f TEST005_junk;
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
-truncate hive.hive.t005part partition ('b=10','c=11');
+truncate table hive.hive.t005part partition (b=10,c=11);
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
-truncate hive.hive.t005part partition ('b=10');
+truncate table hive.hive.t005part partition (b=10);
 sh echo "select * from t005part;" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 
 -- should return error
-truncate hive.hive.t005part partition ('b=12');
+truncate table hive.hive.t005part partition (b=10,c=13);
 
 -- should return error
 purgedata hive.hive.thive;
@@ -381,25 +381,25 @@ purgedata hive.hive.thive;
 invoke hive.hive.thive_insert_smallint;
 showddl hive.hive.thive_insert_smallint;
 
-truncate hive.hive.thive_insert_smallint;
+truncate table hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '0';
 insert into hive.hive.thive_insert_smallint select * from 
  (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
-truncate hive.hive.thive_insert_smallint;
+truncate table hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '1';
 insert into hive.hive.thive_insert_smallint select * from
  (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
-truncate hive.hive.thive_insert_smallint;
+truncate table hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '2';
 insert into hive.hive.thive_insert_smallint select * from 
  (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
-truncate hive.hive.thive_insert_smallint;
+truncate table hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '3';
 insert into hive.hive.thive_insert_smallint select * from
  (values (10), (11111111), (21), (22222222));
@@ -409,11 +409,10 @@ cqd hive_max_string_length_in_bytes '2';
 invoke hive.hive.thive_insert_varchar;
 showddl hive.hive.thive_insert_varchar;
 cqd hive_insert_error_mode '1';
-truncate hive.hive.thive_insert_varchar;
+truncate table hive.hive.thive_insert_varchar;
 insert into hive.hive.thive_insert_varchar values ('abcddcba','efghijkl');
 
 cqd hive_max_string_length_in_bytes '20';
 select * from hive.hive.thive_insert_varchar;
-
 
 log;

@@ -3325,7 +3325,7 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
   lobHandleLen_ = 2050;
   lobHandle_[0] = '\0';
   exLobGlobals_=NULL;
-
+  memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
   ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
                       lobTdb().getLobHdfsServer(),
                       lobTdb().getLobHdfsPort());
@@ -3349,7 +3349,6 @@ short ExExeUtilLobUpdateTcb::work()
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -3459,6 +3458,25 @@ short ExExeUtilLobUpdateTcb::work()
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_ , &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found)
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR)); 
+                               
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             retcode = ExpLOBInterfaceUpdate(lobGlobs,
                                             lobTdb().getLobHdfsServer(),
                                             lobTdb().getLobHdfsPort(),
@@ -3521,6 +3539,24 @@ short ExExeUtilLobUpdateTcb::work()
 	    lobDataLen_ = lobTdb().totalBufSize_; 
             strcpy(lobLoc_, lobTdb().getLobLocation());
            
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);;
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_, &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found)
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR));
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
@@ -3586,8 +3622,25 @@ short ExExeUtilLobUpdateTcb::work()
 
 	    lobDataLen_ = lobTdb().totalBufSize_; 
             strcpy(lobLoc_, lobTdb().getLobLocation());
-           
-           
+
+            if (lobTdb().lobLocking())
+              {
+                ExpLOBoper::genLobLockId(uid,lobNum,lobLockId_);;
+                NABoolean found = FALSE;
+                retcode = SQL_EXEC_CheckLobLock(lobLockId_, &found);
+                if (! retcode && !found) 
+                  {    
+                    retcode = SQL_EXEC_SetLobLock(lobLockId_);
+                  }
+                else if (found || retcode )
+                  {
+                    memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
+                    ExRaiseSqlError(getHeap(), &diagsArea_, 
+                                    (ExeErrorCode)(EXE_LOB_CONCURRENT_ACCESS_ERROR));
+                    step_=HANDLE_ERROR_;
+                    break;
+                  }
+              }
             char outLobHandle[LOB_HANDLE_LEN];
             Int32 outHandleLen;
             Int64 requestTag = 0;
@@ -3653,8 +3706,13 @@ short ExExeUtilLobUpdateTcb::work()
         case HANDLE_ERROR_:
           {
             retcode = handleError();
+
 	    if (retcode == 1)
-	      return WORK_OK;
+              {
+                if (lobLockId_[0] && lobTdb().lobLocking())
+                  retcode = SQL_EXEC_ReleaseLobLock(lobLockId_);
+                return WORK_OK;
+              }
 	    step_ = DONE_;
             
           }
@@ -3662,6 +3720,8 @@ short ExExeUtilLobUpdateTcb::work()
         case DONE_:
           {
             retcode = handleDone();
+            if(lobLockId_[0] && lobTdb().lobLocking())
+              retcode = SQL_EXEC_ReleaseLobLock(lobLockId_);
 	    if (retcode == 1)
 	      return WORK_OK;
 

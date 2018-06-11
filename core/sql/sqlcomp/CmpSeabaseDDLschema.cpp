@@ -371,9 +371,8 @@ ComObjectType objectType;
        output = "/* Hive DDL */";
        outlines.push_back(output.data());
 
-       output = "create database ";
+       output = "CREATE SCHEMA HIVE.";
        NAString lsch(schemaName);
-       lsch.toLower();
        output += lsch.data();
        output += ";";
 
@@ -383,7 +382,7 @@ ComObjectType objectType;
 
        if (isHiveRegistered)
          {
-           output = "REGISTER /*INTERNAL*/ HIVE SCHEMA hive.";
+           output = "REGISTER /*INTERNAL*/ HIVE SCHEMA HIVE.";
            output += lsch.data();
            output += ";";
            
