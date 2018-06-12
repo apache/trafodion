@@ -649,7 +649,7 @@ adds a column to _table_ if it does not already exist in the table.
 +
 the clauses for the _column-definition_ are the same as described in add [column] _column-definition_.
 
-* `drop column [if exists] _column-name_`
+* `drop [column] [if exists] _column-name_`
 +
 drops the specified column from _table_, including the column’s data. you cannot drop a primary key column.
 
@@ -1118,7 +1118,7 @@ argument-list is:
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1558,7 +1558,7 @@ specifies the name of the function and any SQL parameters that correspond to the
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_function-name_`
+`_[[catalog-name.]schema-name.]function-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1615,7 +1615,7 @@ trafodion. see <<data_types,data types>>.
 +
 specifies the case-sensitive name of the external function’s method.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
@@ -2139,7 +2139,7 @@ the SPJ method.
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -2249,7 +2249,7 @@ brackets (`[ ]`), such as `java.lang.integer[]`.
 +
 Specifies a mappable Java data type. For the mapping of the Java data types to SQL data types, see _sql-datatype_.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
 then {project-name} qualifies it according to the schema of the current session.
@@ -4377,7 +4377,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `\[[_catalog-name_.]_schema-name_.]_function-name_`
+* `_[[catalog-name.]schema-name.]function-name`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4490,7 +4490,7 @@ DROP LIBRARY [[catalog-name.]schema-name.]library-name [restrict | cascade]
 [[drop_library_syntax]]
 === Syntax Description of DROP LIBRARY
 
-* `\[[_catalog-name_.]_schema-name_.]_library-name_`
+* `_[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a
 maximum of 128 characters. specify the name of a library object that has already been registered in the schema. if
@@ -4560,7 +4560,7 @@ DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
 [[drop_procedure_syntax]]
 === Syntax Description of DROP PROCEDURE
 
-* `\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+* `_[[catalog-name.]schema-name.]procedure-name_`
 +
 specifies the ANSI logical name of the stored procedure in java (SPJ), where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify the name of a procedure that has already been registered in the
@@ -5268,94 +5268,98 @@ displays a list of all the existing components.
 displays the names of all the user-defined functions (UDFs) in the catalog and schema of the current session. By default,
 the catalog is TRAFODION, and the schema is SEABASE.
 
-* `FUNCTIONS FOR LIBRARY \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `FUNCTIONS FOR LIBRARY _[[catalog-name.]schema-name.]library-name_`
 +
 displays the UDFs that reference the specified library.
 
-* `functions in schema [_catalog-name_.]_schema-name_`
+* `FUNCTIONS [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the UDFs in the specified schema.
 
-* `libraries`
+* `LIBRARIES`
 +
 displays the names of all the libraries in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `libraries in schema [_catalog-name_.]_schema-name_`
+* `LIBRARIES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the libraries in the specified schema.
 
-* `procedures`
+* `PROCEDURES`
 +
 displays the names of all the procedures in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `procedures for library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `PROCEDURES FOR LIBRARY for _[[catalog-name.]schema-name.]library-name_`
 +
 displays the procedures that reference the specified library.
 
-* `procedures in schema [_catalog-name_.]_schema-name_`
+* `PROCEDURES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the procedures in the specified schema.
 
-* `roles`
+* `ROLES`
 +
 displays a list of all the existing roles.
 
-* `roles for user _database-username_`
+* `ROLES [FOR USER _database-username_]`
 +
 displays all the roles that have been granted to the specified database user. The _database-username_ can be a regular or delimited
 case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
-* `schemas`
+* `SCHEMAS`
 +
 displays the names of all the schemas in the catalog of the current session. By default, the catalog is trafodion.
 
-* `schemas in catalog _catalog-name_`
+* `SCHEMAS [IN CATALOG _catalog-name_]`
 +
 displays the names of all the schemas in the specified catalog. For the _catalog-name_, you can specify only trafodion.
 
-* `schemas for [user | role] _authorization-id_`
+* `SCHEMAS FOR [USER | ROLE] _authorization-id_`
 +
 displays all the schemas managed (or owned) by a specified user or role.
 
-* `_authorization-id_`
+** `_authorization-id_`
 +
 is the name of a user or role. you may specify either user or role for users or roles.
 
-* `tables`
+* `TABLES`
 +
 displays the names of all the tables in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `tables in schema [_catalog-name_.]_schema-name_`
+* `TABLES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the tables in the specified schema.
 
-* `users`
+* `USERS`
 +
 displays a list of all the registered database users.
 
-* `users for role _role-name_`
+* `USERS [FOR ROLE _role-name_]`
 +
 displays all the database users who have been granted the specified role. The _role-name_ can be a regular or delimited
 case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
 <<<
-* `views`
+* `VIEWS`
 +
 displays the names of all the views in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `views in schema [_catalog-name_.]_schema-name_`
+* `VIEWS [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
-* `views on table \[[_catalog-name_.]_schema-name_.]_table-name_`
+* `VIEWS ON TABLE _[[catalog-name.]schema-name.]table-name_`
 +
 displays the names of all the views that were created for the specified table. If you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
+
+* `PRIVILEGES FOR {USER _database-username_ | ROLE _role-name_}`
++
+displays all privileges for a specified user or role.
 
 [[get_considerations]]
 === Considerations for GET
@@ -6036,7 +6040,7 @@ has been granted to PUBLIC by default.
 specifies a component name on which to grant component privileges. Currently, the only valid component name is SQL_OPERATIONS.
 
 * `TO _grantee_`
-
++
 specifies an _auth-name_ to which you grant component privileges.
 
 * `_auth-name_`
@@ -6109,7 +6113,7 @@ grantee is:
 [[grant_role_syntax]]
 === Syntax Description of GRANT ROLE
 
-* `_role-name_ [,_role-name_]_`
+* `_role-name [,role-name]_`
 + 
 specifies the existing roles to grant.
 
@@ -6146,7 +6150,7 @@ The INSERT statement is a DML statement that inserts rows in a table or
 view.
 
 ```
-INSERT INTO table [(target-col-list)] insert-source
+INSERT INTO table-name [(target-col-list)] insert-source
 
 target-col-list is:
     colname [,colname]...
@@ -6158,7 +6162,7 @@ insert-source is:
 [[insert_syntax]]
 === Syntax Description of INSERT
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view in which to insert rows. _table_ must be a base table or an updatable view.
 
@@ -6181,7 +6185,7 @@ _table_.)
 +
 specifies the rows of values to be inserted into all columns of _table_ or, optionally, into specified columns of _table_.
 
-* `_query-expr_`
+** `_query-expr_`
 +
 For the description of _query-expr_, _order-by-clause_, and _access-clause_, see the <<select_statement,SELECT Statement>>.
 
@@ -6319,7 +6323,7 @@ VALUES (1120, 'EXPERT MAILERS', '5769 N. 25TH PL',
 --- 1 row(s) inserted.
 ```
 Unlike the previous example, the insert source of this statement does not contain a value for the CREDIT column, which 
-has a default value. Asa result, this INSERT must include the column name list.
+has a default value. As a result, this INSERT must include the column name list.
 +
 This SELECT statement shows the default value 'C1' for CREDIT:
 +
@@ -6430,7 +6434,7 @@ See <<database_object_names,Database Object Names>>.
 === Considerations for INVOKE
 
 [[invoke_required_privileges]]
-=== Required Privileges
+==== Required Privileges
 
 To issue an INVOKE statement, one of the following must be true:
 
@@ -6643,7 +6647,7 @@ MERGE INTO t ON
 
 For each row selected out of the select-query, the MERGE statement is evaluated. Values selected are used 
 in the _on-clause_ to join with the column of the merged table. If the value is found, it is updated. If it
-is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>.
+is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>>.
 
 [[merge_examples]]
 === Examples of MERGE
