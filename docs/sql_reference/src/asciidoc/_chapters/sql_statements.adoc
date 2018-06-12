@@ -5819,8 +5819,8 @@ System Version 0.9.1. Expected Version 1.0.0.
 The GRANT statement grants access privileges on an SQL object and its columns to specified users or roles.
 Privileges can be granted on the object, on one or more columns, or both.
 
-TIP: As the owner who creates the object has all privileges by default, there is no need to grant privileges to the owner.
-The owner could grant/revoke privileges to/from other users or roles for safety.
+TIP: The user or role that creates the object becomes the object owner and has all privileges on the object.
+There is no need to grant privileges to the owner, the owner can grant/revoke privileges to/from other users or roles for safety.
 
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
@@ -6012,9 +6012,16 @@ SQL>GRANT DELETE, INSERT, REFERENCES ON customer TO testuser2 WITH GRANT OPTION;
 ```
 
 +
-Then the _testuser2_ tries to grant all privileges on the table _customer_ to the _testuser3_ but fails because of lacking `SELECT` and 
-`UPDATE` privileges, only successfully grants those privileges (`DELETE`, `INSERT` and `REFERENCES`) for which the _testuser2_ has 
-grant options.
+Then _testuser2_ tries to grant all privileges on table _customer_ to _testuser3_.
+
++
+The grant command returns a warning stating that only some of the privileges were granted.
+
++
+`DELETE`, `INSERT` and `REFERENCES` privileges are granted because _testuser2_ has been granted these privileges with grant option.
+
++
+`SELECT` and `UPDATE` privileges are not granted.
 
 +
 _testuser2:_
@@ -6114,7 +6121,7 @@ SQL>SELECT * FROM t1;
 ```
 
 +
-The _testuser1_ grants the `SELECT` privilege on table _t1_ to PUBLIC, which means granting `SELECT` privilege to all users (_testuser2_ and _testuser3_). 
+The _testuser1_ grants the `SELECT` privilege to all current (_testuser2_ and _testuser3_) and future users.
 
 +
 _testuser1_:
@@ -6127,7 +6134,7 @@ SQL>GRANT SELECT ON t1 TO PUBLIC；
 ```
 
 +
-Then the _testuser2_ and _testuser3_ have the `SELECT` privilege on the table _t1_.
+Then _testuser2_ and _testuser3_ have the `SELECT` privilege on the table _t1_.
 
 +
 _testuser3:_
