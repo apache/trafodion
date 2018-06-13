@@ -1276,9 +1276,9 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			} else {
 				 if(resultSet_[result_set_offset].keepRawBuffer_ == true)
 			          resultSet_[result_set_offset].rawBuffer_ = values;
-				 
+				//if setExecute2FetchOutputs is not called by fetch set flag to false , data has not been clipped 
 				resultSet_[result_set_offset].irs_.setExecute2FetchOutputs(resultSet_[result_set_offset], 1, true,
-						values);
+						values,false);
 			}
 		} else {
 			resultSet_[result_set_offset] = null;

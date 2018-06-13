@@ -35,6 +35,7 @@ class CONNECTION_CONTEXT_def {
 	short autoCommit;
 	short queryTimeoutSec;
 	short idleTimeoutSec;
+	short clipVarchar;
 	short loginTimeoutSec;
 	short txnIsolationLevel;
 	short rowSetSize;
