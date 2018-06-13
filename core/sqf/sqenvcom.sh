@@ -693,10 +693,10 @@ export SQ_STARTUP=r
 # Uncomment the next environment variable
 #export SQ_NAMESERVER_ENABLED=1
 if [[ "$SQ_NAMESERVER_ENABLED" == "1" ]]; then
-  export NS_COMM_PORT=23370
-  export NS_SYNC_PORT=23360
-  export NS_M2N_COMM_PORT=23350
-  export MON2MON_COMM_PORT=23340
+  export NS_COMM_PORT=${NS_COMM_PORT:-23370}
+  export NS_SYNC_PORT=${NS_SYNC_PORT:-23360}
+  export NS_M2N_COMM_PORT=${NS_M2N_COMM_PORT:-23350}
+  export MON2MON_COMM_PORT=${MON2MON_COMM_PORT:-23340}
 fi
 
 # Alternative logging capability in monitor
