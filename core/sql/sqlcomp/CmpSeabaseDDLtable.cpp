@@ -7993,44 +7993,43 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       dependentObjects = TRUE;
     }
 
-  // if the table has dependent objects return error.
-  // Users need to drop them before adding primary key
   // If cqd is set to create pkey as a unique constraint, then do that.
-  if (dependentObjects)
+  // otherwise if table has dependent objects, return error.
+  // Users need to drop them before adding primary key
+  if (CmpCommon::getDefault(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT) == DF_ON)
     {
-      if (CmpCommon::getDefault(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT) == DF_OFF)
+      // either dependent objects or cqd set to create unique constraint.
+      // cannot create clustered primary key constraint.
+      // create a unique constraint instead.
+      NAString cliQuery;
+      cliQuery = "alter table " + extTableName + " add constraint " + uniqueStr
+        + " unique " + pkeyColsStr + ";";
+      cliRC = cliInterface.executeImmediate((char*)cliQuery.data());
+      if (cliRC < 0)
         {
-          // error
-          *CmpCommon::diags() << DgSqlCode(-3242) 
-                              << DgString0("Cannot alter/add primary key constraint on a table with dependencies. Drop all dependent objects (views, indexes, unique and referential constraints) on the specified table and recreate them after adding the primary key.");
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
         }
-      else
+      
+      if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
         {
-          // cannot create clustered primary key constraint.
-          // create a unique constraint instead.
-          NAString cliQuery;
-          cliQuery = "alter table " + extTableName + " add constraint " + uniqueStr
-            + " unique " + pkeyColsStr + ";";
-          cliRC = cliInterface.executeImmediate((char*)cliQuery.data());
-          if (cliRC < 0)
-            {
-              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-            }
-          
-          if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
-            {
-              // remove NATable for this table
-              ActiveSchemaDB()->getNATableDB()->removeNATable
-                (cn,
-                 ComQiScope::REMOVE_FROM_ALL_USERS, 
-                 COM_BASE_TABLE_OBJECT,
-                 alterAddConstraint->ddlXns(), FALSE);
-            }
+          // remove NATable for this table
+          ActiveSchemaDB()->getNATableDB()->removeNATable
+            (cn,
+             ComQiScope::REMOVE_FROM_ALL_USERS, 
+             COM_BASE_TABLE_OBJECT,
+             alterAddConstraint->ddlXns(), FALSE);
         }
-
+      
       return;
     }
-
+  else if (dependentObjects)
+    {
+      // error
+      *CmpCommon::diags() << DgSqlCode(-3242) 
+                          << DgString0("Cannot alter/add primary key constraint on a table with dependencies. Drop all dependent objects (views, indexes, unique and referential constraints) on the specified table and recreate them after adding the primary key.");
+      return;
+    }
+  
   // create a true primary key by drop/create/populate of table.
   NABoolean isEmpty = FALSE;
 
