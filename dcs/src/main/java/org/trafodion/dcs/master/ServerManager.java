@@ -328,6 +328,10 @@ public class ServerManager implements Callable {
                     }
                 }
 
+                if (!zkc.isSessionRecoverSuccessful()) {
+                    throw new Exception("error while recover zkclient session. lose zookeeper connection. restart DCS Master.");
+                }
+
                 try {
                     Thread.sleep(timeoutMillis);
                 } catch (InterruptedException e) {
@@ -335,9 +339,8 @@ public class ServerManager implements Callable {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
             if (LOG.isErrorEnabled())
-                LOG.error(e);
+                LOG.error(e.getMessage(), e);
             pool.shutdown();
             throw e;
         }

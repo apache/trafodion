@@ -54,7 +54,7 @@ public class RetryCounter {
     public void sleepUntilNextRetry() throws InterruptedException {
         int attempts = getAttemptTimes();
         long sleepTime = (long) (retryInterval * Math.log(attempts + 15));
-        LOG.info("Sleeping " + sleepTime + "ms before retry #" + attempts + "...");
+        LOG.info("Sleeping " + sleepTime + " " + timeUnit.name() + " before retry #" + attempts + "...");
         timeUnit.sleep(sleepTime);
     }
 

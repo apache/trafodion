@@ -407,6 +407,15 @@ public final class ServerManager implements Callable {
                                                              // script is
                                                              // running
         int exitCode = scriptContext.getExitCode();
+        if (LOG.isDebugEnabled()) {
+            StringBuffer sb = new StringBuffer();
+            sb.append("exit code [" + exitCode + "]");
+            if (!scriptContext.getStdOut().toString().isEmpty())
+                sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+            if (!scriptContext.getStdErr().toString().isEmpty())
+                sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+            LOG.debug(sb.toString());
+        }
         return (exitCode == 0 || exitCode == 1) ? true : false;
     }
 
@@ -463,14 +472,12 @@ public final class ServerManager implements Callable {
                     Integer result = f.get();
                     LOG.info("Server handler [" + instance + ":" + result + "] exit");
 
-                    retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
-                    while (!isTrafodionRunning(nid)) {
-                        if (!retryCounter.shouldRetry()) {
-                            throw new IOException("Node " + nid + " is not Up");
-                        } else {
-                            retryCounter.sleepUntilNextRetry();
-                            retryCounter.useRetry();
-                        }
+                    // Here dcs server has already checked trafodion is up when it is starting,
+                    // so there is no need to sleep 6(default) times while restart mxosrvr,
+                    // if sleep too many times,the result will be dcs server doesn't down
+                    // but dcs master down when network down occurs on one node.
+                    if (!isTrafodionRunning(nid)) {
+                        throw new IOException("Node " + nid + " is not Up");
                     }
                     int childInstance = result.intValue();
                     // get the node id
@@ -484,8 +491,7 @@ public final class ServerManager implements Callable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            LOG.error(e);
+            LOG.error(e.getMessage(), e);
             if (executorService != null)
                 executorService.shutdown();
             throw e;

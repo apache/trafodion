@@ -162,6 +162,7 @@ public class ListenerService extends Thread{
             server.configureBlocking(false);
 //          InetSocketAddress isa = new InetSocketAddress(ia, port);
             InetSocketAddress isa = new InetSocketAddress(port); //use any ip address for this port
+            server.socket().setReuseAddress(true);
             server.socket().bind(isa);
             SelectionKey serverkey = server.register(selector, SelectionKey.OP_ACCEPT );
             int keysAdded = 0;
@@ -263,17 +264,24 @@ public class ListenerService extends Thread{
                         }
                     }
                 }
+                if (this.isInterrupted()) {
+                    throw new InterruptedException();
+                }
                 //gc();
             }
+        } catch (InterruptedException e) {
+            LOG.error("ListenerService be interrupted by DCS master, exit thread.", e);
         } catch (IOException e) {
             LOG.error(e);
             System.exit(1);
         } finally {
+            LOG.info("close ServerSocketChannel...");
             if (server != null) {
                 try {
+                    server.socket().close();
                     server.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.error(e.getMessage(), e);
                 }
             }
         }
@@ -433,5 +441,9 @@ public class ListenerService extends Thread{
 
     public static void main(String [] args) {
         ListenerService as = new ListenerService(args);
+    }
+
+    public ListenerWorker getWorker() {
+        return worker;
     }
 }
