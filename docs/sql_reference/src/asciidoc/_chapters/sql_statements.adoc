@@ -5242,7 +5242,7 @@ option is:
   | USERS [FOR ROLE role-name]
   | VIEWS [IN SCHEMA [catalog-name.]schema-name]
   | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
-  | PRIVILEGES FOR {USER database-username | ROLE role-name}
+  | PRIVILEGES FOR {USER | ROLE} authorization-id
 ```
 
 [[get_syntax]]
@@ -5347,7 +5347,7 @@ case-insensitive identifier. For more information, see <<case_insensitive_delimi
 displays the names of all the views in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `VIEWS [IN SCHEMA _[catalog-name.]schema-name_`
+* `VIEWS [IN SCHEMA _[catalog-name.]schema-name_]`
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
@@ -5357,7 +5357,7 @@ displays the names of all the views that were created for the specified table. I
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
 
-* `PRIVILEGES FOR {USER _database-username_ | ROLE _role-name_}`
+* `PRIVILEGES FOR {USER | ROLE} _authorization-id_`
 +
 displays all privileges for a specified user or role.
 
