@@ -181,7 +181,6 @@ static short CmpDescribeTransaction(
    char         *&outbuf,
    ULng32 &outbuflen,
    NAMemory      *h);
-   
 
 short CmpDescribeSequence ( 
                              const CorrName  &dtName,
@@ -862,7 +861,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       rc = 
         CmpDescribeSeabaseTable(d->getDescribedTableName(), 
                                 (d->getFormat() == Describe::INVOKE_ ? 1 : 2),
-                                outbuf, outbuflen, heap, NULL, TRUE,
+                                outbuf, outbuflen, heap, NULL, NULL, TRUE,
                                 FALSE, FALSE, FALSE, FALSE, UINT_MAX, FALSE,
                                 NULL, 0, NULL, NULL, NULL,
                                 d->getIsDetail());
@@ -2456,7 +2455,7 @@ short CmpDescribeHiveTable (
       short rc = CmpDescribeSeabaseTable(cn, 
                                          type,
                                          dummyBuf, dummyLen, heap, 
-                                         NULL, 
+                                         NULL, NULL,
                                          TRUE, FALSE, FALSE, FALSE, 
                                          FALSE,
                                          UINT_MAX, TRUE,
@@ -2979,6 +2978,7 @@ short CmpDescribeSeabaseTable (
                                char* &outbuf,
                                ULng32 &outbuflen,
                                CollHeap *heap,
+                               const char * pkeyName,
                                const char * pkeyStr,
                                NABoolean withPartns,
                                NABoolean withoutSalt,
@@ -3388,23 +3388,75 @@ short CmpDescribeSeabaseTable (
 
   if ((type == 3) && (pkeyStr))
     {
-      outputShortLine(*space, " , PRIMARY KEY ");
-      
+      if (pkeyName)
+        {
+          NAString pkeyPrefix(", CONSTRAINT ");
+          pkeyPrefix += NAString(pkeyName) + " PRIMARY KEY ";
+          outputLine(*space, pkeyPrefix.data(), 0);
+        }
+      else
+        {
+          outputShortLine(*space, " , PRIMARY KEY ");
+        }
+
       outputLine(*space, pkeyStr, 2);
     }
   else
     {
-      if ((naTable->getClusteringIndex()) &&
+      if ((naf) &&
           (nonSystemKeyCols > 0) &&
           (NOT isStoreBy))
         {
+          NAString pkeyConstrName;
+          NAString pkeyConstrObjectName;
+          if (type == 2) // showddl
+            {
+              const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+              
+              for (Int32 i = 0; i < uniqueList.entries(); i++)
+                {
+                  AbstractRIConstraint *ariConstr = uniqueList[i];
+                  
+                  UniqueConstraint * uniqConstr = (UniqueConstraint*)ariConstr;
+                  if (uniqConstr->isPrimaryKeyConstraint())
+                    {                  
+                      pkeyConstrName =
+                        uniqConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+                      pkeyConstrObjectName =
+                        uniqConstr->getConstraintName().getObjectName();
+                      break;
+                    }
+                } // for
+            } // type 2
+
           numBTpkeys = naf->getIndexKeyColumns().entries();
           
           if (type == 1)
             sprintf(buf,  "  PRIMARY KEY ");
           else
-            sprintf(buf,  "  , PRIMARY KEY ");
-          
+            {
+              // Display primary key name for showddl (type == 2).
+              // First check to see if pkey name is a generated random name or 
+              // a user specified name.
+              // If it is a generated random name, then dont display it.
+              // This is being done for backward compatibility in showddl
+              // output as well as avoid the need to update multiple
+              // regressions files.
+              // Currently we check to see if the name has random generated
+              // format to determine whether to display it or not.
+              // If it so happens that a user specified primary key constraint 
+              // has that exact format, then it will not be displayed.
+              // At some point in future, we can store in metadata if pkey 
+              // name was internally generated or user specified.
+              if ((type == 2) &&
+                  (NOT pkeyConstrObjectName.isNull()) &&
+                  (NOT ComIsRandomInternalName(pkeyConstrObjectName)))
+                sprintf(buf, " , CONSTRAINT %s PRIMARY KEY ",
+                        pkeyConstrName.data());
+              else
+                sprintf(buf,  "  , PRIMARY KEY ");
+            }
+
           // if all primary key columns are 'not serialized primary key',
           // then display that.
           NABoolean serialized = FALSE;

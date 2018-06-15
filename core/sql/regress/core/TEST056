@@ -152,10 +152,12 @@ showddl T056t10;
 --showlabel index T056in5,detail;
 showddl T056t11;
 
+cqd traf_alter_add_pkey_as_unique_constraint 'ON';
 alter table T056t10 add column duck int default 20 
   not null no heading 
 constraint duck_PK PRIMARY KEY desc
 ;
+cqd traf_alter_add_pkey_as_unique_constraint reset;
 
 insert into T056t10 (swallow,barnowl,duck) values (10,1,201);
 alter table T056t10 add column gosling int default 700 

@@ -575,6 +575,7 @@ public:
   const char *getHiveOriginalViewText() const { return hiveOrigViewText_; }
 
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
+  const NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL) const;
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
 
   void setUpdatable( NABoolean value )

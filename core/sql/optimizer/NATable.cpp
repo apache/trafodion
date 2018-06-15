@@ -7725,6 +7725,11 @@ NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos)
   return FALSE;
 }
 
+const NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos) const
+{
+  return ((NATable*)this)->hasSaltedColumn(saltColPos);
+}
+
 NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
 {
   for (CollIndex i=0; i<colArray_.entries(); i++ )

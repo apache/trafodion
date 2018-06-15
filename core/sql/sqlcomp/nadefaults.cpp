@@ -2859,7 +2859,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
  
- 
   DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
@@ -2867,6 +2866,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
  
   DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
+  DDkwd__(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT, "OFF"),   
 
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
@@ -2925,6 +2926,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
+  DDkwd__(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,    "ON"),
+
   // max size in bytes of a char or varchar column. Set to 16M
   DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
   DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
@@ -2934,6 +2937,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
+
+  DDkwd__(TRAF_NO_HBASE_DROP_CREATE,                   "OFF"),
 
   DDint__(TRAF_NUM_HBASE_VERSIONS,                     "0"),
 
@@ -5127,7 +5132,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "OFF";
                     
           insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
                     
           NAString csVal;
           if (value == "ON")
