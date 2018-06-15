@@ -292,6 +292,7 @@ public class HDFSClient
 
    boolean hdfsCreate(String fname , boolean overwrite, boolean compress) throws IOException
    {
+      filename_ = fname;
       if (logger_.isDebugEnabled()) 
         logger_.debug("HDFSClient.hdfsCreate() - started" );
       if (!compress || (compress && fname.endsWith(".gz")))
@@ -302,27 +303,17 @@ public class HDFSClient
       fs_ = FileSystem.get(filepath_.toUri(),config_);
       compressed_ = compress;
       fsdis_ = null;      
-      FSDataOutputStream fsOut;
+      FSDataOutputStream fsOut = null;
       if (overwrite)
          fsOut = fs_.create(filepath_);
-      else
-      if (fs_.exists(filepath_))
-         fsOut = fs_.append(filepath_);
-      else
-         fsOut = fs_.create(filepath_);
-
-      if (compressed_) {
-          GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, config_);
-          Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
-          outStream_= gzipCodec.createOutputStream(fsOut, gzipCompressor);
-      }
-      else
-         outStream_ = fsOut;
+      if (fsOut != null)
+         fsOut.close();
       return true;
-   }
+   } 
 
    boolean hdfsOpen(String fname , boolean compress) throws IOException
    {
+      filename_ = fname;
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsOpen() - started" );
       if (!compress || (compress && fname.endsWith(".gz")))
@@ -334,6 +325,43 @@ public class HDFSClient
       outStream_ = null;
       fsdis_ = null;      
       return true;
+    }
+
+    long hdfsSize() throws IOException
+    {
+       FileStatus filestatus;
+       try 
+       {
+          filestatus = fs_.getFileStatus(filepath_);
+       } catch (java.io.FileNotFoundException e)
+       {
+          return 0;
+       }
+       if (filestatus.isFile())
+          return filestatus.getLen();
+       else
+          return -1;
+    }
+
+    long hdfsWriteImmediate(byte[] buff) throws IOException
+    {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsWriteClose() - started" );
+      FSDataOutputStream fsOut;
+      FileStatus filestatus;
+      long writeOffset; 
+      if (fs_.exists(filepath_)) {
+         filestatus = fs_.getFileStatus(filepath_);
+         fsOut = fs_.append(filepath_);
+         writeOffset = filestatus.getLen(); 
+      }
+      else {
+         fsOut = fs_.create(filepath_);
+         writeOffset = 0;
+      }
+      fsOut.write(buff);
+      fsOut.close();
+      return writeOffset;
     }
     
     int hdfsWrite(byte[] buff) throws IOException
@@ -359,16 +387,19 @@ public class HDFSClient
             logger_.debug("HDFSClient.hdfsWrite() - output stream created" );
       }
       outStream_.write(buff);
+      if (outStream_ instanceof FSDataOutputStream)
+         ((FSDataOutputStream)outStream_).hsync();
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsWrite() - bytes written " + buff.length);
       return buff.length;
     }
 
-    int hdfsRead(ByteBuffer buffer) throws IOException
+    int hdfsRead(long pos, ByteBuffer buffer) throws IOException
     {
       if (logger_.isDebugEnabled()) 
          logger_.debug("HDFSClient.hdfsRead() - started" );
       if (fsdis_ == null && inStream_ == null ) {
+         try {
          codec_ = codecFactory_.getCodec(filepath_);
          if (codec_ != null) {
             compressed_ = true;
@@ -376,19 +407,34 @@ public class HDFSClient
          }
          else
             fsdis_ = fs_.open(filepath_);
-         pos_ = 0;
+         } catch (java.io.FileNotFoundException e) {
+            return 0;
+         }
       }
       int lenRemain;   
       int bytesRead;
       int totalBytesRead = 0;
       int bufLen;
       int bufOffset = 0;
+      if (compressed_) {
+         if (pos != 0 && pos != -1)
+            throw new IOException("Compressed files can be read from a non-zero position");
+         else
+            pos_ = 0;
+      }
+      else
+      if (pos != -1) 
+         pos_ = pos;
       if (compressed_ && bufArray_ != null) 
          bufArray_ = new byte[ioByteArraySizeInKB_ * 1024];
       if (buffer.hasArray())
          bufLen = buffer.array().length;
       else
+      {
+         if (pos_ != -1)
+            fsdis_.seek(pos_);
          bufLen = buffer.capacity();
+      }
       lenRemain = bufLen;
       do
       {
@@ -413,7 +459,6 @@ public class HDFSClient
     {
       if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsClose() - started" );
       if (outStream_ != null) {
-          outStream_.flush();
           outStream_.close();
           outStream_ = null;
       }
@@ -422,7 +467,24 @@ public class HDFSClient
       return true;
     }
 
-    
+    static long hdfsSize(String filename) throws IOException
+    {
+       Path filepath = new Path(filename);
+       FileSystem fs = FileSystem.get(filepath.toUri(),config_);
+       FileStatus filestatus;
+       try
+       {
+          filestatus = fs.getFileStatus(filepath);
+       } catch (java.io.FileNotFoundException e)
+       {
+          return 0;
+       } 
+       if (filestatus.isFile())
+          return filestatus.getLen();
+       else
+          return -1;
+    } 
+
     public static boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws IOException
     {
       if (logger_.isDebugEnabled()) logger_.debug("HDFSClient.hdfsMergeFiles() - start");
@@ -547,7 +609,7 @@ public class HDFSClient
          return 0;
    }
 
-
+   
    public void stop() throws IOException
    {
       if (future_ != null) {
@@ -666,6 +728,17 @@ public class HDFSClient
       Path dirPath = new Path(pathStr );
       FileSystem fs = FileSystem.get(dirPath.toUri(), config_);
       fs.mkdirs(dirPath);
+      return true;
+   }
+
+   public static boolean hdfsRename(String fromPathStr, String toPathStr) throws IOException 
+   {
+      if (logger_.isDebugEnabled()) 
+         logger_.debug("HDFSClient.hdfsRename(" + fromPathStr + ", " + toPathStr + ")");
+      Path fromPath = new Path(fromPathStr );
+      Path toPath = new Path(toPathStr );
+      FileSystem fs = FileSystem.get(fromPath.toUri(), config_);
+      fs.rename(fromPath, toPath);
       return true;
    }
 

@@ -135,7 +135,7 @@ void ex_globals::deleteMe(NABoolean fatalError)
   statsArea_ = NULL;
   cleanupTcbs();
   tcbList_.deallocate();
-  ExpLOBinterfaceCleanup(exLobGlobals_);
+  NADELETE(exLobGlobals_, ExLobGlobals, exLobGlobals_->getHeap());
   exLobGlobals_ = NULL;
 
 }

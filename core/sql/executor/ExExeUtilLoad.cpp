@@ -3052,7 +3052,7 @@ short ExExeUtilLobExtractTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea_, 
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
-				    getLobErrStr(intParam1));
+		                    getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -3098,7 +3098,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3151,7 +3151,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3219,7 +3219,7 @@ short ExExeUtilLobExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      } 
@@ -3507,7 +3507,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3590,7 +3590,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-			 	getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3675,7 +3675,7 @@ short ExExeUtilLobUpdateTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }  
@@ -3848,7 +3848,7 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/open",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3894,7 +3894,7 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/read",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -3949,7 +3949,7 @@ short ExExeUtilFileExtractTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/close",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4084,7 +4084,7 @@ short ExExeUtilFileLoadTcb::work()
 		    ExRaiseSqlError(getHeap(), &diagsArea_, 
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
 				    &cliError, NULL, (char*)"ExpLOBInterfaceCreate",
-				    getLobErrStr(intParam1));
+		                    getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
@@ -4199,7 +4199,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
@@ -4229,7 +4229,7 @@ short ExExeUtilFileLoadTcb::work()
 		ExRaiseSqlError(getHeap(), &diagsArea_, 
 				(ExeErrorCode)(8442), NULL, &intParam1, 
 				&cliError, NULL, (char*)"ExpLOBInterfaceCloseFile",
-				getLobErrStr(intParam1));
+		                getLobErrStr(intParam1), (char*)getSqlJniErrorStr());
 		step_ = HANDLE_ERROR_;
 		break;
 	      }

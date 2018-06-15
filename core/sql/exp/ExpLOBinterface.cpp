@@ -65,16 +65,17 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
 		   0);
   if (exLobGlob)
     {
-    
-      if (isHiveRead)
+      if (exLobGlob->useLibHdfs_) 
+      {
+        if (isHiveRead)
         {
           ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
           lobHeap->setThreadSafe();
         }
-      
-      
+      }
     }
-
+  if (exLobGlob->useLibHdfs_)
+  {
   //set hdfsConnection from context global 
   ContextCli *localContext = (ContextCli *)currContext;
   if (localContext)
@@ -89,7 +90,8 @@ Lng32 ExpLOBinterfaceInit(ExLobGlobals *& exLobGlob, NAHeap * parentHeap,
           ((ExLobGlobals *)exLobGlob)->setHdfsFs(fs);
         }
     }
-
+  }
+ 
   if (err != LOB_OPER_OK)
     return err;
   else

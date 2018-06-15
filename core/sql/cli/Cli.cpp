@@ -9397,7 +9397,7 @@ Lng32 SQLCLI_LOB_GC_Interface
       ExRaiseSqlError(currContext.exHeap(), &da, 
                       (ExeErrorCode)(8442), NULL, &cliRC    , 
                       &rc, NULL, (char*)"Lob GC call",
-                      getLobErrStr(rc));
+		      getLobErrStr(rc), (char*)getSqlJniErrorStr());
       // TBD When local transaction support is in
       // rollback all the updates to the lob desc chunks file too. 
       // return with warning
@@ -9533,8 +9533,7 @@ Lng32 SQLCLI_LOBddlInterface
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
-
-			    getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
             goto non_cli_error_return;
           }
           
@@ -9553,8 +9552,7 @@ Lng32 SQLCLI_LOBddlInterface
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
-
-			    getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
 		goto non_cli_error_return;
 	      }
 	    
@@ -9650,7 +9648,7 @@ Lng32 SQLCLI_LOBddlInterface
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
-			    getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
             goto non_cli_error_return;
 	      
           }
@@ -9668,7 +9666,7 @@ Lng32 SQLCLI_LOBddlInterface
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
-			    getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
 		goto non_cli_error_return;
               }
           }//for
@@ -9700,7 +9698,7 @@ Lng32 SQLCLI_LOBddlInterface
             ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
                             &rc, NULL, (char*)"ExpLOBInterfaceCreate",
-                            getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
             goto non_cli_error_return;	      
           }
 	// drop descriptor table
@@ -9718,7 +9716,7 @@ Lng32 SQLCLI_LOBddlInterface
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
-			    getLobErrStr(rc));
+		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
 		goto non_cli_error_return;
 	      }
 	    
