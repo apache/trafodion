@@ -8,7 +8,7 @@
 --- SQL operation complete.
 >>alter table t031t1 add constraint ppk primary key(b);
 
-*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
 
 --- SQL operation failed with errors.
 >>alter table t031t1 add constraint ppk2 primary key(b);
@@ -38,12 +38,14 @@
 --- SQL operation complete.
 >>alter table t031t1 add constraint ppk primary key(b);
 
-*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
 
 --- SQL operation failed with errors.
 >>alter table t031t1 add constraint ppk2 primary key(b);
 
---- SQL operation complete.
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
 >>alter table t031t1 add constraint ppk unique(b);
 
 *** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
@@ -51,7 +53,9 @@
 --- SQL operation failed with errors.
 >>alter table t031t1 drop constraint ppk;
 
---- SQL operation complete.
+*** ERROR[1255] Constraint TRAFODION.SCH.PPK is the clustering key constraint for table TRAFODION.SCH.T031T1 and cannot be dropped.
+
+--- SQL operation failed with errors.
 >>
 >>drop table if exists t031t1;
 
@@ -79,7 +83,7 @@
 --- SQL operation complete.
 >>alter table t031t1 add constraint ppk primary key(a);
 
-*** ERROR[1254] Duplicate unique constraints are not allowed with same set of columns.
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
 
 --- SQL operation failed with errors.
 >>alter table t031t1 add constraint ppk primary key(b);

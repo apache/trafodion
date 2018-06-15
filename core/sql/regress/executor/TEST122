@@ -175,9 +175,9 @@ explain options 'f'
 insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
 insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
 
--- see new pk in t122t4_pk 
 explain options 'f' 
 insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+-- next insert should fail due to duplicate pkey values
 insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
 
 -- see new ri in t122t4_fk
@@ -421,7 +421,10 @@ log LOG122;
 alter table t122t3_col drop column c3;
 alter table t122t3_ck drop constraint t122_ck;
 alter table t122t3_unique drop constraint t122_uq;
+
+-- next alter should fail, cannot drop primary key
 alter table t122t4_pk drop constraint t122_pk;
+
 alter table t122t4_fk drop constraint t122_fk;
 drop index t122t3_index;
 

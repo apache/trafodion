@@ -62,6 +62,7 @@ extern short CmpDescribeSeabaseTable (
      char* &outbuf,
      ULng32 &outbuflen,
      CollHeap *heap,
+     const char * pkeyName = NULL,
      const char * pkeyStr = NULL,
      NABoolean withPartns = FALSE,
      NABoolean withoutSalt = FALSE,

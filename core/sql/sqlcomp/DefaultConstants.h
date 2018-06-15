@@ -3318,6 +3318,22 @@ enum DefaultConstants
   // Use the earlier implementation of HdfsScan via libhdfs
   USE_LIBHDFS_SCAN,
 
+  // if set, make primary key columns non-nullable. ANSI specification.
+  // Default is ON.
+  TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,
+
+  // if ON and there are dependent objects on the table, then
+  // create unique constraint instead of clustered primary key.
+  //
+  // Otherwise return error. Users will need to drop dependent objects and
+  // then recreate them after adding the primary key.
+  // Default is OFF.
+  TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT,
+
+  // if set, do not drop or create hbase objects.
+  // Internal cqd. Used during pkey alter/add
+  TRAF_NO_HBASE_DROP_CREATE,
+
   // if set, ddl from Traf interface on Hive objects is supported.
   TRAF_DDL_ON_HIVE_OBJECTS,
   
