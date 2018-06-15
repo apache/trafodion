@@ -1962,7 +1962,6 @@ enum DefaultConstants
   TMUDF_LEAF_CARDINALITY,
 
   UDF_SUBQ_IN_AGGS_AND_GBYS,
-
   USTAT_FETCHCOUNT_ACTIVE,
 
   SEMIJOIN_TO_INNERJOIN_INNER_ALLOWANCE,
@@ -2875,8 +2874,7 @@ enum DefaultConstants
 
   HBASE_MIN_BYTES_PER_ESP_PARTITION,
   HBASE_MAX_ESPS,
-
-
+  
 
   // for testing setjmp/longjmp compiler logic
   MEMORY_LIMIT_CMPCTXT_UPPER_KB,
@@ -3015,9 +3013,15 @@ enum DefaultConstants
   // In special cases, previous default value could be overridden. 
   // Internal use only or use only under trafodion supervision.
   TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
-
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 
+
+  // set to limit the number of rows in scanner cache when we have very
+  // wide rows. If the rows are too large we may run into an OOM error
+  // since weuse HBASE_NUM_CACHE_ROWS_MIN(MAX) CQDs to calculate
+  // the number of rows
+  TRAF_MAX_ROWSIZE_IN_CACHE,
+
   TRAF_BOOTSTRAP_MD_MODE,
 
   UDR_DEBUG_FLAGS,

@@ -3141,7 +3141,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
-                                  hbpa, samplePercent()) ;
+                                  hbpa, hbaseRowSize,samplePercent()) ;
   generator->setHBaseCacheBlocks(hbaseRowSize,
                                  getEstRowsAccessed().getValue(),hbpa);
   generator->setHBaseSmallScanner(hbaseRowSize,

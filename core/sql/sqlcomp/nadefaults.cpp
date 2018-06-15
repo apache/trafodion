@@ -2925,6 +2925,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // max size in bytes of a char or varchar column. Set to 16M
   DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
   DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
+  // max size in MB of a row that canbe accomodated  in scanner cache when 
+  // using th the default scanner cache size. 
+  DDint__(TRAF_MAX_ROWSIZE_IN_CACHE,     "10"),
 
   DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 

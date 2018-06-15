@@ -1647,6 +1647,7 @@ public:
 
   void setHBaseNumCacheRows(double rowsAccessed, 
                             ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                            Int32 hbaseRowSize,
                             Float32 samplePercent = 0.0);
   void setHBaseCacheBlocks(Int32 hbaseRowSize, double rowsAccessed, 
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);

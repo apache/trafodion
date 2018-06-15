@@ -110,12 +110,12 @@ public:
 
   void setNextTDIOffset(ULng32 tdiOffset)
   {
-    nextTDIOffset() = (short)tdiOffset;
+    nextTDIOffset() = tdiOffset;
   }
 
   void setPrevTDIOffset(ULng32 tdiOffset)
   {
-    prevTDIOffset() = (short)tdiOffset;
+    prevTDIOffset() = tdiOffset;
   }
 
 
