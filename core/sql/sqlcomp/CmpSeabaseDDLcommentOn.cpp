@@ -354,16 +354,21 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
 
   if (comment.length() > 0)
     {
+		
+	  //'removeConsecutiveQuotes' was done at the beginning of lexical analysis.
+	  // so we should recovery it("'" ==> "''") in there to make insert successfully.
+      NAString quotedComment; 
+      ToQuotedString(quotedComment, comment, FALSE);
+
       //add or modify comment
       char query[2048];
-
       str_sprintf(query, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, '%s') ; ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               objUID, 
               textType, 
               subID, 
               0,
-              comment.data());
+              quotedComment.data());
       cliRC = cliInterface.executeImmediate(query);
       
       if (cliRC < 0)
