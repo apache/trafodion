@@ -228,6 +228,7 @@ class InterfaceConnection {
 
 		inContext.queryTimeoutSec = t4props.getQueryTimeout();
 		inContext.idleTimeoutSec = (short) t4props.getConnectionTimeout();
+		inContext.clipVarchar = (short) t4props.getClipVarchar();
 		inContext.loginTimeoutSec = (short) t4props.getLoginTimeout();
 		inContext.txnIsolationLevel = (short) SQL_TXN_READ_COMMITTED;
 		inContext.rowSetSize = t4props.getFetchBufferSize();
@@ -387,6 +388,9 @@ class InterfaceConnection {
 
 	int getConnectionTimeout() {
 		return inContext.idleTimeoutSec;
+	}
+	short getClipVarchar() {
+		return inContext.clipVarchar;
 	}
 
 	String getCatalog() {
@@ -700,7 +704,7 @@ class InterfaceConnection {
 			_security.openCertificate();
 			this.encryptPassword();
 		}catch(SecurityException se) {	
-			if(se.getErrorCode() != 29713) {
+			if(se.getErrorCode() != 29713 && se.getErrorCode() != 29721) {
 				throw se; //we have a fatal error
 			}
 				
@@ -909,6 +913,7 @@ class InterfaceConnection {
 			this.oldEncryptPassword();
 			this.initDiag(false,false);
 		}
+        this.setConnectionAttr(this._t4Conn, TRANSPORT.SQL_ATTR_CLIPVARCHAR, this.inContext.clipVarchar, String.valueOf(this.inContext.clipVarchar));
 	}
 
 	// @deprecated

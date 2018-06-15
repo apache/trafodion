@@ -1319,6 +1319,10 @@ if (hTabStats->isOrcFile())
         }
     }
 
+  if (getTableDesc()->getNATable()->isEnabledForDDLQI())
+    generator->objectUids().insert(
+         getTableDesc()->getNATable()->objectUid().get_value());
+  
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(

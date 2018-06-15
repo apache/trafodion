@@ -15,7 +15,7 @@
 >>invoke t032t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T032T1
--- Definition current  Tue Jan 17 18:16:14 2017
+-- Definition current  Wed Jun 13 23:15:19 2018
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +140,7 @@ B
 (EXPR)                        
 ------------------------------
 
-RANDOMVAL=1210881081          
+RANDOMVAL=791360135           
 
 --- 1 row(s) selected.
 >>select random() from (values(1)) x(a);
@@ -333,8 +333,8 @@ B
 (EXPR)      
 ------------
 
-11
-21
+11          
+21          
 
 --- 2 row(s) selected.
 >>insert into t032t1 values ('3', 3, 3, date '2016-08-15',  time '10:11:12',
@@ -380,6 +380,9 @@ A
 >>
 >>
 >>-- auto create schema
+>>drop schema if exists t032sch cascade;
+
+--- SQL operation complete.
 >>
 >>-- should fail, schema doesnt exist
 >>create table t032sch.t032t2 (a int);
@@ -401,7 +404,7 @@ A
 >>invoke t032t2;
 
 -- Definition of Trafodion table TRAFODION.T032SCH.T032T2
--- Definition current  Tue Jan 17 18:16:25 2017
+-- Definition current  Wed Jun 13 23:15:37 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -412,6 +415,241 @@ A
 >>insert into t032t2 values (1);
 
 --- 1 row(s) inserted.
+>>
+>>-- auto NOT NULL attr for pkey columns
+>>create schema if not exists t032sch;
+
+--- SQL operation complete.
+>>set schema t032sch;
+
+--- SQL operation complete.
+>>drop table if exists t032t1;
+
+--- SQL operation complete.
+>>drop table if exists t032t2;
+
+--- SQL operation complete.
+>>drop table if exists t032t3;
+
+--- SQL operation complete.
+>>drop table if exists t032t4 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t032t5 cascade;
+
+--- SQL operation complete.
+>>
+>>-- NOT NULL attr for pkey columns
+>>create table t032t1 (a int primary key);
+
+--- SQL operation complete.
+>>showddl t032t1;
+
+CREATE TABLE TRAFODION.T032SCH.T032T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>drop table t032t1;
+
+--- SQL operation complete.
+>>create table t032t1 (a int, primary key(a));
+
+--- SQL operation complete.
+>>showddl t032t1;
+
+CREATE TABLE TRAFODION.T032SCH.T032T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>drop table t032t1;
+
+--- SQL operation complete.
+>>create table t032t1 (a int) primary key(a);
+
+--- SQL operation complete.
+>>showddl t032t1;
+
+CREATE TABLE TRAFODION.T032SCH.T032T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>drop table t032t1;
+
+--- SQL operation complete.
+>>create table t032t1 primary key(a) as select cast(1 as nullable) a from dual;
+
+--- 1 row(s) inserted.
+>>showddl t032t1;
+
+CREATE TABLE TRAFODION.T032SCH.T032T1
+  (
+    A                                NUMERIC(1, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>-- no NOT NULL attr if nullable pkey is specified
+>>create table t032t2 (a int constraint t2pk primary key nullable);
+
+--- SQL operation complete.
+>>showddl t032t2;
+
+CREATE TABLE TRAFODION.T032SCH.T032T2
+  (
+    A                                INT DEFAULT NULL
+ , CONSTRAINT TRAFODION.T032SCH.T2PK PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>insert into t032t2 values (1), (null);
+
+--- 2 row(s) inserted.
+>>select * from t032t2 order by a;
+
+A          
+-----------
+
+          1
+          ?
+
+--- 2 row(s) selected.
+>>drop table t032t2;
+
+--- SQL operation complete.
+>>create table t032t2 (a int, b int);
+
+--- SQL operation complete.
+>>alter table t032t2 add constraint pkt2 primary key nullable (a);
+
+--- SQL operation complete.
+>>showddl t032t2;
+
+CREATE TABLE TRAFODION.T032SCH.T032T2
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+ , CONSTRAINT TRAFODION.T032SCH.PKT2 PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>-- should return unique violation
+>>insert into t032t2 values (null, 1), (null, 2);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>
+>>-- alter/add pkey on empty table
+>>create table t032t3 (a int, b int not null);
+
+--- SQL operation complete.
+>>alter table t032t3 add constraint pkt3 primary key(a);
+
+--- SQL operation complete.
+>>invoke t032t3;
+
+-- Definition of Trafodion table TRAFODION.T032SCH.T032T3
+-- Definition current  Wed Jun 13 23:17:19 2018
+
+  (
+    A                                INT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>-- alter/add pkey on non-empty table
+>>create table t032t4 (a int, b int not null);
+
+--- SQL operation complete.
+>>insert into t032t4 values (1,1);
+
+--- 1 row(s) inserted.
+>>alter table t032t4 add constraint pkt4 primary key(a);
+
+--- SQL operation complete.
+>>invoke t032t4;
+
+-- Definition of Trafodion table TRAFODION.T032SCH.T032T4
+-- Definition current  Wed Jun 13 23:18:03 2018
+
+  (
+    A                                INT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>-- pkey not allowed with dependent objects
+>>create table t032t5 (a int, b int);
+
+--- SQL operation complete.
+>>create view v032t5 as select * from t032t5;
+
+--- SQL operation complete.
+>>alter table t032t5 add constraint pkt5 primary key(a);
+
+*** ERROR[3242] This statement is not supported. Reason: Cannot alter/add primary key constraint on a table with dependencies. Drop all dependent objects (views, indexes, unique and referential constraints) on the specified table and recreate them after adding the primary key.
+
+--- SQL operation failed with errors.
+>>
+>>-- pkey created as unique constraint if cqd is set
+>>cqd traf_alter_add_pkey_as_unique_constraint 'ON';
+
+--- SQL operation complete.
+>>alter table t032t5 add constraint pkt5 primary key(a);
+
+--- SQL operation complete.
+>>showddl t032t5;
+
+CREATE TABLE TRAFODION.T032SCH.T032T5
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX PKT5 ON TRAFODION.T032SCH.T032T5
+  (
+    A ASC
+  )
+;
+
+ALTER TABLE TRAFODION.T032SCH.T032T5 ADD CONSTRAINT TRAFODION.T032SCH.PKT5
+  UNIQUE
+  (
+    A
+  )
+;
+
+--- SQL operation complete.
 >>
 >>drop schema t032sch cascade;
 

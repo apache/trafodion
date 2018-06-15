@@ -528,7 +528,7 @@ T_TIME_SK    T_TIME_ID                  T_TIME       T_HOUR       T_MINUTE     T
 >>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
->>truncate ins_store_sales_summary;
+>>truncate table ins_store_sales_summary;
 
 --- SQL operation complete.
 >>control query shape esp_exchange(cut);

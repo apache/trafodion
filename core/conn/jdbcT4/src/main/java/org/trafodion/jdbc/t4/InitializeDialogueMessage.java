@@ -45,9 +45,9 @@ class InitializeDialogueMessage {
 
 		buf = new LogicalByteArray(wlength, Header.sizeOf(), ic.getByteSwap());
 
+
 		userDesc.insertIntoByteArray(buf);
 		inContext.insertIntoByteArray(buf);
-
 		buf.insertInt(dialogueId);
 		buf.insertInt(optionFlags1);
 		buf.insertInt(optionFlags2);
@@ -60,7 +60,6 @@ class InitializeDialogueMessage {
 		{
 			buf.insertString(clientUserBytes);
 		}
-
 		return buf;
 	}
 }

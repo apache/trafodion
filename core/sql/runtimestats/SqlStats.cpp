@@ -73,6 +73,7 @@ StatsGlobals::StatsGlobals(void *baseAddr, short envType, Lng32 maxSegSize)
       , maxPid_(0)
       , pidToCheck_(0)
       , ssmpDumpedTimestamp_(0)
+      , lobLocks_(NULL)
 {
   statsHeap_.setSharedMemory();
   //Phandle wrapper in porting layer
@@ -112,6 +113,7 @@ void StatsGlobals::init()
   stmtStatsList_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
   rmsStats_ = new (&statsHeap_) ExRMSStats(&statsHeap_);
   recentSikeys_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
+  lobLocks_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
   rmsStats_->setCpu(cpu_);
   rmsStats_->setRmsVersion(version_);
   rmsStats_->setRmsEnvType(rtsEnvType_);
@@ -1082,7 +1084,25 @@ Lng32 StatsGlobals::updateStats(ComDiagsArea &diags, SQLQUERY_ID *query_id, void
      diags << DgSqlCode(-CLI_INTERNAL_ERROR);
   return retcode;
 }
-
+Int32 StatsGlobals::checkLobLock(CliGlobals *cliGlobals, char *&lobLockId)
+{
+  int error = getStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
+  if ((lobLocks_ ==NULL) || lobLocks_->isEmpty())
+    {
+      lobLockId = NULL;
+      releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
+      return 0;
+    }
+  lobLocks_->position(lobLockId,LOB_LOCK_ID_SIZE);
+  //Look in the current chain for a match
+  while (lobLocks_->getCurr() != NULL && memcmp(lobLockId, (char *)(lobLocks_->getCurr()),LOB_LOCK_ID_SIZE) !=0 )
+    lobLocks_->getNext();
+  if (lobLocks_->getCurr() == NULL)
+    lobLockId = NULL;
+    
+  releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
+  return 0;
+}
 Lng32 StatsGlobals::getSecInvalidKeys(
                           CliGlobals * cliGlobals,
                           Int64 lastCallTimestamp,

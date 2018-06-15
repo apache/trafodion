@@ -2141,7 +2141,7 @@ directs {project-name} SQL to create a persistent sample table and store the
 random sample in it. This table can then be used later for updating statistics
 incrementally.
 
-**** `PERIODIC _size_ ROWS EVERY _period_ ROW`
+**** `PERIODIC _size_ ROWS EVERY _period_ ROWS`
 +
 directs {project-name} SQL to choose the first _size_ number of rows from
 each _period_ of rows. The value _size_ must be an integer that is

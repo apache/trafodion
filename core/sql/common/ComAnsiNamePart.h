@@ -386,4 +386,6 @@ ComBoolean ComDeriveRandomInternalName( Lng32 nameCharSet,
                                         ComString &generatedNameInInternalFormat,
                                         NAHeap *h = 0 );
 
+ComBoolean ComIsRandomInternalName(const ComString &inputName);
+
 #endif // COMANSINAMEPART_H

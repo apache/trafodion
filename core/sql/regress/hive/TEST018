@@ -34,7 +34,10 @@ obey TEST018(clean_up);
 
 log LOG018 clear;
 
-sh regrhive.ksh -v -f $REGRTSTDIR/TEST018_create_hive_tables.hive &> $REGRRUNDIR/LOG018_create_hive_tables.log ;
+--sh regrhive.ksh -v -f $REGRTSTDIR/TEST018_create_hive_tables.hive &> $REGRRUNDIR/LOG018_create_hive_tables.log ;
+set schema hive.hive;
+obey TEST018(create_hive_tables);
+set schema trafodion.hbase;
 
 obey TEST018(setup);
 obey TEST018(test_bulk_unload_simple);
@@ -249,30 +252,30 @@ select count(*) from store_sales_salt;
 
 -- using insert
 insert overwrite table hive.hive.null_format_default select * from null_format_src;
-select * from hive.hive.null_format_default;
+select * from hive.hive.null_format_default order by 1,2;
 
 insert overwrite table hive.hive.null_format_empty select * from null_format_src;
-select * from hive.hive.null_format_empty;
+select * from hive.hive.null_format_empty order by 1,2;
 
 insert overwrite table hive.hive.null_format_colon select * from null_format_src;
-select * from hive.hive.null_format_colon;
+select * from hive.hive.null_format_colon order by 1,2;
 
 
 -- using unload
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_default'
    select * from null_format_src;
-select * from hive.hive.null_format_default;
+select * from hive.hive.null_format_default order by 1,2;
 
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_empty'
    select * from null_format_src;
-select * from hive.hive.null_format_empty;
+select * from hive.hive.null_format_empty order by 1,2;
 
 unload with purgedata from target
    into '/user/trafodion/hive/exttables/null_format_colon'
    select * from null_format_src;
-select * from hive.hive.null_format_colon;
+select * from hive.hive.null_format_colon order by 1,2;
 
 ---index 0
 create index customer_idx1 on customer_salt(c_first_name, c_last_name);
@@ -752,3 +755,146 @@ sh regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demograp
 log LOG018;
 
 log;
+
+?section create_hive_tables
+drop table if exists unload_customer_address;
+create external table unload_customer_address
+(
+    ca_address_sk             int,
+    ca_address_id             string,
+    ca_street_number          string,
+    ca_street_name            string,
+    ca_street_type            string,
+    ca_suite_number           string,
+    ca_city                   string,
+    ca_county                 string,
+    ca_state                  string,
+    ca_zip                    string,
+    ca_country                string,
+    ca_gmt_offset             float,
+    ca_location_type          string
+)
+row format delimited fields terminated by '|' 
+location '/user/trafodion/hive/exttables/unload_customer_address';
+
+
+drop table if exists unload_customer_demographics;
+create external table unload_customer_demographics
+(
+    cd_demo_sk                int,
+    cd_gender                 string,
+    cd_marital_status         string,
+    cd_education_status       string,
+    cd_purchase_estimate      int,
+    cd_credit_rating          string,
+    cd_dep_count              int,
+    cd_dep_employed_count     int,
+    cd_dep_college_count      int 
+)
+row format delimited fields terminated by '|' 
+location '/user/trafodion/hive/exttables/unload_customer_demographics';
+
+drop table if exists unload_customer;
+create external table unload_customer
+(
+    c_customer_sk             int,
+    c_customer_id             string,
+    c_current_cdemo_sk        int,
+    c_current_hdemo_sk        int,
+    c_current_addr_sk         int,
+    c_first_shipto_date_sk    int,
+    c_first_sales_date_sk     int,
+    c_salutation              string,
+    c_first_name              string,
+    c_last_name               string,
+    c_preferred_cust_flag     string,
+    c_birth_day               int,
+    c_birth_month             int,
+    c_birth_year              int,
+    c_birth_country           string,
+    c_login                   string,
+    c_email_address           string,
+    c_last_review_date        string
+)
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
+location '/user/trafodion/hive/exttables/unload_customer';
+
+drop table if exists unload_customer_name;
+create external table unload_customer_name
+(
+    c_first_name              string,
+    c_last_name               string
+)
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
+location '/user/trafodion/hive/exttables/unload_customer_name';
+
+drop table if exists unload_customer_and_address;
+create external table unload_customer_and_address
+(
+    c_customer_sk             int,
+    c_customer_id             string,
+    c_current_cdemo_sk        int,
+    c_current_hdemo_sk        int,
+    c_current_addr_sk         int,
+    c_first_shipto_date_sk    int,
+    c_first_sales_date_sk     int,
+    c_salutation              string,
+    c_first_name              string,
+    c_last_name               string,
+    c_preferred_cust_flag     string,
+    c_birth_day               int,
+    c_birth_month             int,
+    c_birth_year              int,
+    c_birth_country           string,
+    c_login                   string,
+    c_email_address           string,
+    c_last_review_date        string,
+    ca_address_sk             int,
+    ca_address_id             string,
+    ca_street_number          string,
+    ca_street_name            string,
+    ca_street_type            string,
+    ca_suite_number           string,
+    ca_city                   string,
+    ca_county                 string,
+    ca_state                  string,
+    ca_zip                    string,
+    ca_country                string,
+    ca_gmt_offset             float,
+    ca_location_type          string
+)
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
+location '/user/trafodion/hive/exttables/unload_customer_and_address';
+
+drop table if exists tmp_unload_table;
+create external table tmp_unload_table
+(
+    filed string
+)
+row format delimited fields terminated by '|' 
+location '/user/trafodion/hive/exttables/tmp_unload_table';
+
+drop table if exists unload_store_sales_summary;
+create external table unload_store_sales_summary
+(
+    ss_sold_date_sk           int,
+    --s_store_id                string,
+    --s_store_name              string,
+    ss_store_sk               int,
+    ss_quantity               int
+)
+row format delimited fields terminated by '|' 
+location  '/user/trafodion/hive/exttables/unload_store_sales_summary';
+
+drop table if exists null_format_default;
+create external table null_format_default (a string, b string);
+
+drop table if exists null_format_empty;
+create external table null_format_empty(a string, b string)
+row format delimited fields terminated by '|' 
+null defined as '';
+
+drop table if exists null_format_colon;
+create external table null_format_colon(a string, b string)
+row format delimited fields terminated by '|' 
+null defined as ':';

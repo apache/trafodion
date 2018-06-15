@@ -515,8 +515,18 @@ NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID,
     {
       nullFormatSpec = TRUE;
       std::size_t foundNB = foundB + strlen(nullStr);
-      std::size_t foundNE = tblStr->find(", ", foundNB);
-      nullFormat = NAString(tblStr->substr(foundNB, (foundNE-foundNB)));
+      std::size_t foundNE = std::string::npos;
+      std::size_t foundNE1 = tblStr->find("}), ", foundNB);
+      std::size_t foundNE2 = tblStr->find(", ", foundNB);
+      if (foundNE1 == std::string::npos)
+        foundNE = foundNE2;
+      else if (foundNE2 == std::string::npos)
+        foundNE = foundNE1;
+      else
+        foundNE = MINOF(foundNE1, foundNE2);
+
+      if (foundNE != std::string::npos)
+        nullFormat = NAString(tblStr->substr(foundNB, (foundNE-foundNB)));
     }
 
   foundB = tblStr->find(fieldStr,pos);

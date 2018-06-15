@@ -53,6 +53,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -3055,6 +3056,13 @@ void processCmdMode(String zipfile)
            
           int from = "jar:file:".length();
           int to = urlStr.indexOf("!/");
+          if(to == -1){
+              try {
+                  return new File(this.getClass().getResource("/").toURI()).getParent() + File.separator + "trafciInstaller.jar";
+              } catch (URISyntaxException e) {
+                  e.printStackTrace();
+              }
+          }
           return urlStr.substring(from, to);
       }
    }

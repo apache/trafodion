@@ -2753,6 +2753,7 @@ void ComDiagsArea::insertNewEODWarning()
 
 void ComDiagsArea::insertNewError()
 {
+
   errors_.insert(newCondition_);
   // for non-atomic inserts, if any error is inserted after NonFatalErrorSeen flag
   // is set, then we want to unset the flag so that mainSQLCODE does not return 30022.
