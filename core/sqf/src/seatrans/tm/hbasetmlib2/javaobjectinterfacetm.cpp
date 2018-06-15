@@ -29,7 +29,7 @@
 // ===========================================================================
 
 JavaVM* JavaObjectInterfaceTM::jvm_  = NULL;
-jint jniHandleCapacity_ = 0;
+int JavaObjectInterfaceTM::jniHandleCapacity_ = 0;
 
 #define DEFAULT_MAX_TM_HEAP_SIZE "2048" 
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
@@ -413,7 +413,6 @@ JOI_RetCode JavaObjectInterfaceTM::initJNIEnv()
          return retcode;
   }
   if (_tlp_jenv->PushLocalFrame(jniHandleCapacity_) != 0) {
-    getExceptionDetails(NULL);
     return JOI_ERROR_INIT_JNI;
   }
   return JOI_OK;

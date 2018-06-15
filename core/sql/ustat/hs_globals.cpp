@@ -3688,10 +3688,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
   if (!CmpCommon::context()->isAuthorizationEnabled())
     return TRUE;
 
-   // no privilege support available for hbase and hive tables
-   HS_ASSERT (objDef->getNATable());
-   if (CmpSeabaseDDL::isHbase(objDef->getCatName()))
-     return TRUE;
+  HS_ASSERT (objDef->getNATable());
 
   // Let keep track of how long authorization takes
   HSLogMan *LM = HSLogMan::Instance();
@@ -8530,6 +8527,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
                                       (void *)&colNum, (void *)&colCount
                                       );
           // Don't read any more (break out of loop) if fetch did not succeed.
+          HSFilterWarning(retcode);
           if (retcode)
             break;
           // If EXISTING keyword specified and REASON field is EMPTY, skip.
@@ -10457,6 +10455,7 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
 
     // Go ahead to write information for intervals of this histogram if DETAIL
     // option was specified, else return now.
+    HSFilterWarning(retcode);  // clean up any warnings before possible return
     if (!(optFlags & DETAIL_OPT))
         return 0;
 
@@ -10582,6 +10581,8 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
     }
     intData.close();
     displayData += "\n";
+
+    HSFilterWarning(retcode);  // filter out any warnings so HSErrorCatcher doesn't act up
 
     return 0;
 }

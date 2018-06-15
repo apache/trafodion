@@ -63,16 +63,20 @@ class ElemDDLConstraintPK : public ElemDDLConstraintUnique
 public:
   // constructors
   ElemDDLConstraintPK(ElemDDLNode * pColumnRefList = NULL,
-                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED)
+                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED,
+                      NABoolean isNullableSpecified = FALSE)
   : ElemDDLConstraintUnique(ELM_CONSTRAINT_PRIMARY_KEY_ELEM,
                             pColumnRefList),
-    ser_(ser)
+    ser_(ser),
+    isNullableSpecified_(isNullableSpecified)
   { }
   ElemDDLConstraintPK(OperatorTypeEnum operatorType,
-                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED)
+                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED,
+                      NABoolean isNullableSpecified = FALSE)
   : ElemDDLConstraintUnique(operatorType,
                             NULL /*column_reference_list*/),
-    ser_(ser)
+    ser_(ser),
+    isNullableSpecified_(isNullableSpecified)
   { }
 
   // virtual destructor
@@ -91,6 +95,8 @@ public:
   NABoolean serialized() 
   { return (ser_ == ComPkeySerialization::COM_SERIALIZED); }
 
+  NABoolean isNullableSpecified() { return isNullableSpecified_; }
+
 private:
   // if set to SERIALIZED, then pkey will be encoded before passint to hbase.
   // if set to NOT_SERIALIZED, then primary key will not be encoded before 
@@ -100,6 +106,9 @@ private:
   // if not specified, then will be determined based on table type.
   ComPkeySerialization ser_;
 
+  // if set, primary key is nullable. Do not make pkey columns non-nullable
+  // if NOT NULL is not explicitly specified.
+  NABoolean isNullableSpecified_;
 }; // class ElemDDLConstraintPK
 
 // -----------------------------------------------------------------------
@@ -111,8 +120,10 @@ class ElemDDLConstraintPKColumn : public ElemDDLConstraintPK
 public:
 
   // constructor
-  ElemDDLConstraintPKColumn(ComColumnOrdering orderingSpec = COM_ASCENDING_ORDER)
-       : ElemDDLConstraintPK(ELM_CONSTRAINT_PRIMARY_KEY_COLUMN_ELEM),
+  ElemDDLConstraintPKColumn(ComColumnOrdering orderingSpec = COM_ASCENDING_ORDER,
+                            NABoolean isNullableSpecified = FALSE)
+       : ElemDDLConstraintPK(ELM_CONSTRAINT_PRIMARY_KEY_COLUMN_ELEM, 
+                             COM_SER_NOT_SPECIFIED, isNullableSpecified),
          columnOrdering_(orderingSpec)
   { }
   

@@ -476,8 +476,12 @@ static short ft_codegen(Generator *generator,
     replication
     );
 
+  UInt16 hdfsIoByteArraySize = (UInt16)
+      CmpCommon::getDefaultNumeric(HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB);
+  tdb->setHdfsIoByteArraySize(hdfsIoByteArraySize);
   tdb->setSequenceFile(isSequenceFile);
   tdb->setHdfsCompressed(CmpCommon::getDefaultNumeric(TRAF_UNLOAD_HDFS_COMPRESS)!=0);
+  
 
   if ((hiveNAColArray) &&
       (hiveInsertErrMode == 2))
@@ -660,6 +664,12 @@ PhysicalFastExtract::codeGen(Generator *generator)
           modTS = hTabStats->getModificationTSmsec();
         }
     } // do sim check
+
+  if (getHiveTableDesc() && 
+      getHiveTableDesc()->getNATable() &&
+      getHiveTableDesc()->getNATable()->isEnabledForDDLQI())
+    generator->objectUids().insert(
+         getHiveTableDesc()->getNATable()->objectUid().get_value());
 
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());

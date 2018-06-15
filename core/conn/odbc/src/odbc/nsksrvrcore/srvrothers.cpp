@@ -3552,6 +3552,117 @@ odbc_SQLSvc_ExecDirect_sme_(
 }
 //LCOV_EXCL_STOP
 
+
+// Cut extra parts of varchar in outputDataValue  to make data compaction
+long long  clipVarchar(SRVR_STMT_HDL *pSrvrStmt )
+{
+    if(srvrGlobal->clipVarchar == 0)
+    {
+        return pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+    }
+    BYTE * desc = pSrvrStmt->outputDescBuffer; 
+    BYTE *VarPtr = pSrvrStmt->outputDescVarBuffer;
+    long long remainLen = 0;
+    int numEntries = pSrvrStmt->columnCount;
+    int rowsAffected = pSrvrStmt->rowsAffected ;
+    int bufferRowLen = pSrvrStmt->outputDescVarBufferLen;
+    long long * colBuferLen = new long long [numEntries] ;
+    long startOffset = 0;
+    long varcharCount = 0; //counter of varchar column per row 
+    BYTE * cpStart = VarPtr;
+    BYTE * cpEnd   = cpStart;
+    BYTE * colEnd  = cpStart;
+    BYTE * bufferOffset  = cpStart;
+    int IndBuf,VarBuf;
+    int i = 0,j = 0;
+    for(j = 0 ; j < numEntries ; j++)//Calculate the data length of each column
+    {
+        if(pSrvrStmt->SqlDescInfo[j].DataType ==SQLTYPECODE_VARCHAR_WITH_LENGTH)
+            varcharCount ++;
+        if(j == numEntries -1 ){
+            colBuferLen[j] = bufferRowLen - remainLen;
+            if(varcharCount == 0)
+            {
+                // if there is no varchar in the data do nothing and  return
+                delete [] colBuferLen;
+                return pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+            }
+        }
+        else
+        {
+            IndBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j+1].IndBuf) ;
+            VarBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j+1].VarBuf);
+            if(IndBuf == -1)
+            {
+                colBuferLen[j] = VarBuf - startOffset;
+                startOffset = VarBuf;
+            }
+            else
+            {
+                colBuferLen[j] = IndBuf - startOffset;
+                startOffset = IndBuf;
+            }
+            remainLen += colBuferLen[j];
+        }
+    }
+    for( i = 0; i < rowsAffected ; i++){//do clip 
+        for (j = 0 ; j < numEntries ; j++)
+        {
+            switch (pSrvrStmt->SqlDescInfo[j].DataType)
+            {
+                case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+                    /*
+                                             |--------------column 1 ------|--------------column 2 ------|
+                     column format nullable: |align_1|indPtr|align_2|varPtr|align_1|indPtr|align_2|varPtr|
+
+                                             |--column 1--|--column 2--|
+                     column format not null: |align|varPtr|align|varPtr|
+                     indPtr is the pointer to store nullable info ,if column value is null indPtr = -1
+                     if varPtr is pointer to store column value 
+                     IndBuf is the offset of indPtr
+                     VarBuf is the offset of varPtr
+
+                    */
+                    IndBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j].IndBuf);
+                    VarBuf = *(int*)(desc+pSrvrStmt->SqlDescInfo[j].VarBuf);
+                    if(IndBuf != -1 && (*(short*)(VarPtr+IndBuf + i*bufferRowLen) == -1))
+                    {
+                        cpEnd = cpStart+VarBuf-IndBuf;
+                        colEnd = cpStart + colBuferLen[j];
+                        break;
+                    }
+                    if( pSrvrStmt->SqlDescInfo[j].Length > SHRT_MAX )
+                    {
+                        cpEnd = VarPtr+VarBuf + i*bufferRowLen + 4 + *(int*)(VarPtr+VarBuf+i*bufferRowLen);
+                    }
+                    else
+                    {
+                        cpEnd =  VarPtr+VarBuf + i*bufferRowLen + 2 + *(short*)(VarPtr+VarBuf+i*bufferRowLen);
+
+                    }
+                    colEnd = cpStart + colBuferLen[j];
+                    break;
+                default:
+                    cpEnd = cpStart + colBuferLen[j];
+                    colEnd = cpEnd;
+                    break;
+            }
+            if(cpStart != bufferOffset)
+            {
+                memcpy(bufferOffset,cpStart,cpEnd-cpStart);
+            }
+
+            bufferOffset += cpEnd-cpStart;
+            cpStart = colEnd;
+        }
+    }
+
+    delete [] colBuferLen;
+    return bufferOffset-VarPtr;
+}
+//for setting in the indicator and Varpointers.
+
+
 //LCOV_EXCL_START
 /*
  * Synchronous method function for
@@ -5242,6 +5353,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                  if (retcode == SQL_ERROR)
                  {
                     ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
+                    char             errNumStr[128] = {0};
+                    sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
                     strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
                     RequestError[sizeof(RequestError) - 1] = '\0';
 
@@ -5251,7 +5364,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                  ODBCMX_SERVER,
                                  srvrGlobal->srvrObjRef,
                                  2,
-                                 p_buffer->sqlcode,
+                                 errNumStr,
                                  RequestError);
 
                     exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
@@ -5579,6 +5692,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 
 	switch (connectionOption) {
 //Special Case//
+   
 	case SQL_ACCESSMODE_AND_ISOLATION:
 			switch (optionValueNum) {
 		case SQL_TXN_READ_UNCOMMITTED:
@@ -6043,6 +6157,10 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	case WMS_QUERY_MONITORING:
 		strcpy(sqlString, "CONTROL QUERY DEFAULT WMS_QUERY_MONITORING 'OFF'");
 		break;
+    case SQL_ATTR_CLIPVARCHAR:
+        srvrGlobal->clipVarchar = optionValueNum;
+		sqlStringNeedsExecution = false;
+        break;
 	default:
 		exception_->exception_nr = odbc_SQLSvc_SetConnectionOption_ParamError_exn_;
 		exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_CONNECTION_OPTION;
@@ -6115,7 +6233,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
 	int outputDataOffset = 0;
 
 	*returnCode = SQL_SUCCESS;
-
+    long long tmpLength;
 	if (maxRowCnt < 0)
 	{
 		*returnCode = SQL_ERROR;
@@ -6244,12 +6362,12 @@ odbc_SQLSrvr_FetchPerf_sme_(
 				*outValuesFormat = ROWWISE_ROWSETS;
 
 				rc = FETCH2bulk(pSrvrStmt);
-				if (pSrvrStmt->rowsAffected > 0)
-				{
+				tmpLength = clipVarchar(pSrvrStmt);
+				if (pSrvrStmt->rowsAffected > 0){
 					if(pSrvrStmt->outputDataValue._length == 0 && pSrvrStmt->outputDataValue._buffer == NULL)
 					{
 						outputDataValue->_buffer = pSrvrStmt->outputDescVarBuffer;
-						outputDataValue->_length = pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+						outputDataValue->_length = tmpLength;
 					}
 					else
 					{
@@ -6533,6 +6651,8 @@ odbc_SQLSrvr_ExtractLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+            char            errNumStr[128] = {0};
+            sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6541,7 +6661,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
 
             exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
@@ -6616,6 +6736,9 @@ odbc_SQLSrvr_UpdateLob_sme_(
         if (retcode == SQL_ERROR)
         {
             ERROR_DESC_def * p_buffer = QryLobUpdateSrvrStmt->sqlError.errorList._buffer;
+            char             errNumStr[128] = {0};
+            sprintf(errNumStr, "%d", (int)p_buffer->sqlcode);
+
             strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
 
             SendEventMsg(MSG_SQL_ERROR,
@@ -6624,7 +6747,7 @@ odbc_SQLSrvr_UpdateLob_sme_(
                          ODBCMX_SERVER,
                          srvrGlobal->srvrObjRef,
                          2,
-                         p_buffer->sqlcode,
+                         errNumStr,
                          RequestError);
             exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
             exception_->u.SQLError.errorList._length = QryLobUpdateSrvrStmt->sqlError.errorList._length;

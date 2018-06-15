@@ -87,6 +87,7 @@ int zkSessionTimeout;
 short stopOnDisconnect;
 char trafIPAddr[20];
 int aggrInterval;
+int statisticsCacheSize;
 int queryPubThreshold;
 statistics_type statisticsPubType;
 bool bStatisticsEnabled;
@@ -1085,6 +1086,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	memset(trafIPAddr,0,sizeof(trafIPAddr));
 	memset(hostname,0,sizeof(hostname));
 	aggrInterval = 60;
+    statisticsCacheSize = 60;
 	queryPubThreshold = 60;
 	statisticsPubType = STATISTICS_AGGREGATED;
 	bStatisticsEnabled = false;
@@ -1314,6 +1316,27 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 			}
 		}
 		else
+		if (strcmp(arg, "-STATISTICSCACHESIZE") == 0)
+		{
+			if (++count < argc )
+			{
+                            if(strspn(argv[count], "0123456789")==strlen(argv[count])){
+                                number=atoi(argv[count]);
+                                if(number > 0)
+                                    statisticsCacheSize = number;
+                            }
+                            else
+                            {
+                                argWrong = TRUE;
+                            }
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+               else
 		if (strcmp(arg, "-STATISTICSLIMIT") == 0)
 		{
 			if (++count < argc)

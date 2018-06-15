@@ -812,8 +812,21 @@ private:
 
   // values used to avoid bushy join trees
   Int32          numBaseTables_;    // # of base tables involved in this subtree
-  Int32          numJoinedTables_;  // # of tables in join backbone
+  Int32          numJoinedTables_;  // # of tables in join backbone (see note below)
   Int32          numTMUDFs_;        // # of table-mapping UDFs in this subtree
+
+  // Note: For numJoinedTables_, we calculate this when we create the
+  // GroupAttributes for an expression for the first time. For most nodes
+  // this will be 1; for a Join node it will be more than 1 in general.
+  // Later, when we form Groups for a given expression, this initial value
+  // applies to the Group. Optimization will in general add more expressions
+  // to a given group. For example, a Group originally associated with a
+  // GroupByAgg node might get a Join expression if the GroupByOnJoinRule
+  // chooses to push a Group By below a Join. When this happens, though,
+  // we leave numJoinedTables_ as 1 in the GroupAttributes (see
+  // Join::synthLogProp), which will inhibit the LeftShiftJoinRule from
+  // firing on that Join. This is important, because we want the large
+  // scope rules to control what join orders are enumerated.
 
   // QSTUFF VV
   // --------------------------------------------------------------------

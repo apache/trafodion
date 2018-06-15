@@ -1730,7 +1730,6 @@ public:
   ComTdbExeUtilHiveQuery()
   : ComTdbExeUtil()
   {}
-
   ComTdbExeUtilHiveQuery(char * hiveQuery,
                          ULng32 hiveQueryLen,
                          ex_cri_desc * given_cri_desc,
@@ -1740,36 +1739,23 @@ public:
                          Lng32 num_buffers,
                          ULng32 buffer_size
                          );
-  
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
   virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHiveQuery);}
-
   virtual const char *getNodeName() const
   {
     return "HIVE_QUERY";
   };
-
   char * getHiveQuery() const
   {
     return hiveQuery_;
   }
-
-  // ---------------------------------------------------------------------
-  // Used by the internal SHOWPLAN command to get attributes of a TDB.
-  // ---------------------------------------------------------------------
   void displayContents(Space *space, ULng32 flag);
-
 private:
   NABasicPtr hiveQuery_;                     // 00-07
   UInt32 hiveQueryLen_;                      // 08-11
   UInt32 flags_;                             // 12-15
 };
-
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
 {
   friend class ExExeUtilGetStatisticsTcb;
@@ -2522,6 +2508,7 @@ public:
     PRIVILEGES_ON_TABLE_,
     PRIVILEGES_ON_MV_,
     PRIVILEGES_ON_VIEW_,
+    PRIVILEGES_ON_SEQUENCE_,
     SYNONYMS_ON_TABLE_,
 
     OBJECTS_ON_TABLE_,
@@ -2559,6 +2546,9 @@ public:
     PROCEDURES_FOR_LIBRARY_,
     FUNCTIONS_FOR_LIBRARY_,
     TABLE_FUNCTIONS_FOR_LIBRARY_,
+    PRIVILEGES_ON_LIBRARY_,
+    PRIVILEGES_ON_PROCEDURE_,
+    PRIVILEGES_ON_ROUTINE_,
 
     COMPONENTS_,
     COMPONENT_OPERATIONS_,

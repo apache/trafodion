@@ -31,17 +31,20 @@ public class SecurityException extends SQLException
 {
    private static final String SQLState = "38001";
 
-   public SecurityException(String key, Object[] params)
+   public SecurityException(Exception cex, String key, Object[] params)
    {
 	  // Get the text message from the file secClient.properties.
 	  // Parse the message for the error message and error number.
-      this((SecResourceBundle.obtainMessageText(key, params)).substring(6),
+      this(cex, (SecResourceBundle.obtainMessageText(key, params)).substring(6),
     		  Integer.parseInt((SecResourceBundle.obtainMessageText(key, params)).substring(0, 5)));
    }
 
-   public SecurityException(String errMsg, int errNum)
+   public SecurityException(Exception cex, String errMsg, int errNum)
    {
-	   super(errMsg, SQLState, errNum);
+	   super(errMsg, SQLState, errNum, cex);
    }
 
+    public SecurityException(String key, Object[] params) {
+        this(null, key, params);
+    }
 }

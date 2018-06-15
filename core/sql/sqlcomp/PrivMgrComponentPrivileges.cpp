@@ -204,6 +204,12 @@ using namespace ComponentPrivileges;
 // -----------------------------------------------------------------------
 // Construct a PrivMgrComponentPrivileges object for a new component operation.
 // -----------------------------------------------------------------------
+PrivMgrComponentPrivileges::PrivMgrComponentPrivileges()
+: PrivMgr(),
+  fullTableName_(metadataLocation_ + "." + PRIVMGR_COMPONENT_PRIVILEGES),
+  myTable_(*new MyTable(fullTableName_,pDiags_)) 
+{ };
+
 PrivMgrComponentPrivileges::PrivMgrComponentPrivileges(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)

@@ -30,7 +30,9 @@
 +>;
 
 --- SQL operation complete.
->>
+>>create table t3015 (a1 NUMERIC(19,0), a2 int);
+
+--- SQL operation complete.
 >>-- MVs not support on seabase
 >>#ifndef SEABASE_REGRESS
 >>create MVGroup MVG_016;
@@ -214,6 +216,9 @@ CREATE TABLE TRAFODION.SCH.T016T2
 
 --- 1 row(s) inserted.
 >>insert into t016t2 values (11, 22, null);
+
+--- 1 row(s) inserted.
+>>insert into t3015 values(27380468,27380468);
 
 --- 1 row(s) inserted.
 >>
@@ -869,11 +874,22 @@ C1                     C2
 >>select * from t016_2535_3 where (c1,c2) <= (1234567.3, 0);
 
 --- 0 row(s) selected.
->>
+>>--JIRA TRAFODION-3015
+>>select * from t3015 where a1='27380468';
+
+A1 A2
+----------
+
+ 27380468 27380468
+
+--- 1 row(s) selected.
 >>drop table t016_2535_2;
 
 --- SQL operation complete.
 >>drop table t016_2535_3;
+
+--- SQL operation complete.
+>>drop table t3015;
 
 --- SQL operation complete.
 >>

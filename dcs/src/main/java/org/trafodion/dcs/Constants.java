@@ -92,7 +92,7 @@ public final class Constants {
     public static final String DCS_SERVER_USER_PROGRAM_COMMAND = "dcs.server.user.program.command";
 
     /** Default value for DCS server user program command */
-    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. ./sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS -TCPKEEPALIVESTATUS -TCPKEEPALIVEIDLETIME -TCPKEEPALIVEINTERVAL -TCPKEEPALIVERETRYCOUNT";
+    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. ./sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSCACHESIZE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS -TCPKEEPALIVESTATUS -TCPKEEPALIVEIDLETIME -TCPKEEPALIVEINTERVAL -TCPKEEPALIVERETRYCOUNT";
 
     /** Configuration key for DCS server user program connecting timeout */
     public static final String DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT = "dcs.server.user.program.connecting.timeout";
@@ -146,6 +146,11 @@ public final class Constants {
      * large
      */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT = 0;
+/** Configuration key for DCS server user program statistics cache size */
+    public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = "dcs.server.user.program.statistics.cache.size";
+
+    /** Default value for DCS server user program statistics cache size */
+    public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_CACHE_SIZE = 1;
 
     /** Configuration key for DCS server user program statistics interval time */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = "dcs.server.user.program.statistics.interval.time";

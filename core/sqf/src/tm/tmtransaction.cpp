@@ -101,7 +101,7 @@ short  TM_Transaction::register_region(long startid, int port, char *hostName, i
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::register_region ENTRY\n"), 2);
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_REGISTERREGION, &lv_req);
@@ -150,7 +150,7 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len,
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table ENTRY tablename: %s\n", pa_tblname), 1);
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
@@ -204,7 +204,7 @@ short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,
     int total_buffer = len_aligned + buffer_size;
     char *buffer = new char[total_buffer];
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
@@ -251,7 +251,7 @@ short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len,
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::reg_truncateonabort ENTRY tablename: %s\n", pa_tblname), 1);
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
@@ -285,7 +285,7 @@ short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len,
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table ENTRY tablename: %s\n", pa_tblname), 1);
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
@@ -333,7 +333,7 @@ short TM_Transaction::begin(int abort_timeout, int64 transactiontype_bits)
 
     // We don't validate transactiontype flags
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
          gv_tmlib.initialize();
 
     // if there is already an active tx, switch it out
@@ -410,7 +410,7 @@ short TM_Transaction::end(char* &pv_err_str, int &pv_err_len)
         return iv_last_error;    
     } 
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
         gv_tmlib.initialize();
 
     if (gv_tmlib.localBegin()) {
@@ -496,7 +496,7 @@ short TM_Transaction::abort(bool pv_doom)
         return iv_last_error;   
    */
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
         gv_tmlib.initialize();
 
     if (gv_tmlib.localBegin()) {
@@ -563,7 +563,7 @@ short TM_Transaction::join(bool pv_coordinator_role)
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::join ENTRY\n"), 2);
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
         gv_tmlib.initialize();
 
     // if there is already an active tx, switch it out
@@ -673,7 +673,7 @@ short TM_Transaction::suspend(TM_Transid *pp_transid, bool pv_coordinator_role)
         //return iv_last_error;
     }
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
     {
         gv_tmlib.initialize();
     }
@@ -797,7 +797,7 @@ short TM_Transaction::status(short *pp_status)
         return iv_last_error;
     }
 
-    if (!gv_tmlib.is_initialized())
+    if (!gv_tmlib_initialized)
     {
         gv_tmlib.initialize();
     }

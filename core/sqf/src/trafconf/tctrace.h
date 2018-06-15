@@ -80,7 +80,7 @@ private:
                             , const char *key_cmp );
 
     // The number of trace areas held in "traceAreaList"
-    int   numTraceAreas_;
+    long  numTraceAreas_;
     bool  tracingEnabled_;
 
     // Save area for retaining prior trace settings if tracing is

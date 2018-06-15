@@ -2888,6 +2888,8 @@ RelExpr* Join::transformSemiJoin(NormWA& normWARef)
 				child(1)->castToRelExpr()) ;
 	newGrby->setGroupAttr(new (stmtHeap) 
 	  GroupAttributes(*(child(1)->getGroupAttr())));
+	// must reset numJoinedTables_; we might be copying GroupAttributes from a join
+	newGrby->getGroupAttr()->resetNumJoinedTables(1);
 	newGrby->getGroupAttr()->clearLogProperties();
 	  
 	newGrby->setGroupExpr(equiJoinCols1);
@@ -7469,7 +7471,15 @@ void RelRoot::transformNode(NormWA & normWARef,
         }
       else
         updatableSelect() = FALSE;
-
+      
+      if ((child(0)->castToRelExpr()->getOperatorType() == REL_FIRST_N) )
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         if(firstn->reqdOrderInSubquery().entries() >0 )
+         {
+           reqdOrder().insert( firstn->reqdOrderInSubquery());
+         }
+      }
     }
   else
     {
@@ -7488,6 +7498,14 @@ void RelRoot::transformNode(NormWA & normWARef,
     
       locationOfPointerToMe = child(0); // my parent now -> my child
       child(0)->setFirstNRows(getFirstNRows());
+
+      //keep the order if there is FIRSTN
+      if (child(0)->getOperatorType()==REL_FIRST_N)
+      {
+         FirstN* firstn = (FirstN *)child(0)->castToRelExpr();
+         firstn->reqdOrderInSubquery().insert(reqdOrder()) ;
+      }
+
       deleteInstance();                 // Goodbye!
       
       

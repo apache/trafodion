@@ -2,8 +2,8 @@
     "linux":  ["centos", "redhat"],
     "hadoop": ["cloudera", "hortonworks", "apache"],
     "java":   ["1.7", "1.8"],
-    "centos": ["6"],
-    "redhat": ["6"],
+    "centos": ["6","7"],
+    "redhat": ["6","7"],
     "cdh":    ["5.4", "5.5", "5.6", "5.7"],
     "hdp":    ["2.3", "2.4"],
     "hbase":  ["1.0", "1.1", "1.2"]

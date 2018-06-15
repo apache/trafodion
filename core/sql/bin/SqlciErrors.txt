@@ -213,7 +213,7 @@
 1211 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The column values of the SPLIT BY first key in position $0~Int0 (one-based) are not greater (for ascending columns) or less (for descending columns) than its predecessor.
 1212 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An HBase region start key provided only part of the value for Trafodion key column $0~Int0. This could in some unusual situations cause errors.
 1213 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unable to create or initialize a connection to Apache Hive.
-1214 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error $0~String0 encountered when executing HiveQL statement $1~String1.
+1214 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error encountered when executing HiveQL statement "$1~String1". Details: $0~String0
 1215 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while determining host, port, or file name for HDFS URI $0~string0. Cause: $1~string1.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
@@ -382,8 +382,8 @@
 1384 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1385 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1386 ZZZZZ 99999 BEGINNER MINOR DBADMIN	--- unused ---
-1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
-1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist in hive metadata.
+1387 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 $1~String1 already exists in Hive Metadata.
+1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 $1~String1 does not exist in Hive Metadata.
 1389 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 does not exist in Trafodion.
 1390 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 already exists in Trafodion.
 1391 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a $1~String1 object and cannot be updated.
@@ -1242,7 +1242,7 @@ $1~String1 --------------------------------
 4179 0A000 99999 BEGINNER MAJOR DBADMIN SEQUENCE BY is not supported for stream expressions.
 4180 0A000 99999 BEGINNER MAJOR DBADMIN Stream expression is not supported for top level DELETE statement. 
 4181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
-4182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
+4182 42000 99999 BEGINNER MAJOR DBADMIN Function $0~String0 operand $0~Int0 must be of type $1~String1.
 4183 0A000 99999 BEGINNER MAJOR DBADMIN Embedded DELETE statements are not allowed on referenced tables.
 4184 0A000 99999 BEGINNER MAJOR DBADMIN Columns that are part of a referential constraint cannot be updated using embedded UPDATE statements. 
 4185 42000 99999 BEGINNER MAJOR DBADMIN Select list index is not allowed to be specified in the GROUP BY clause for this query.
@@ -1309,8 +1309,8 @@ $1~String1 --------------------------------
 4259 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary Key clause must be specified for an HBase mapped table.
 4260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN HBase table($0~String0) to be mapped as an external table does not exist.
 4261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for HBase mapped tables and cannot be explicitly specified.
-4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup hive table' command to cleanup this table.
-4263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
+4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup table' command to cleanup this table.
+4263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup table/view' command to cleanup this object.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

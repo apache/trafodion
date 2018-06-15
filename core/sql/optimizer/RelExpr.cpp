@@ -7880,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the
@@ -10257,7 +10263,6 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
       return this;
     }
 
-  //  CorrName &corrName = (CorrName&)getCorrName();
   CorrName &corrName = getTableName();
   NATable * naTable = NULL;
 
@@ -10268,7 +10273,8 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
     {
       *CmpCommon::diags()
 	<< DgSqlCode(-1388)
-	<< DgTableName(corrName.getExposedNameAsAnsiString());
+        << DgString0("Object")
+	<< DgString1(corrName.getExposedNameAsAnsiString());
       
       bindWA->setErrStatus();
       return this;

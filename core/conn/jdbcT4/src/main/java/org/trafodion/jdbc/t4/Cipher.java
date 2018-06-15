@@ -91,7 +91,7 @@ public class Cipher
 
          len = cipherText.length;
       }catch (Exception ex) {
-         throw new SecurityException(SecClientMsgKeys.ENCRYPTION_FAILED, null);
+         throw new SecurityException(ex, SecClientMsgKeys.ENCRYPTION_FAILED, null);
       }
       return len;
    }
@@ -108,7 +108,7 @@ public class Cipher
 
 	       return javax.crypto.Cipher.getInstance("AES/CBC/PKCS5Padding");
 	   } catch (Exception ex) {
-		   throw new SecurityException(SecClientMsgKeys.ENCRYPTION_FAILED, null);
+		   throw new SecurityException(ex, SecClientMsgKeys.ENCRYPTION_FAILED, null);
 	   }
    }
 
@@ -145,7 +145,7 @@ public class Cipher
 	  	   }
 
 	   }catch (Exception ex) {
-	       throw new SecurityException(SecClientMsgKeys.DATA_ENCRYPTION_FAILED, null);
+	       throw new SecurityException(ex, SecClientMsgKeys.DATA_ENCRYPTION_FAILED, null);
 	   }
    }
 
@@ -192,7 +192,7 @@ public class Cipher
 
             len = plainText.length;
          }catch (Exception ex) {
-            throw new SecurityException(SecClientMsgKeys.DECRYPTION_FAILED, null);
+            throw new SecurityException(ex, SecClientMsgKeys.DECRYPTION_FAILED, null);
          }
       }
 

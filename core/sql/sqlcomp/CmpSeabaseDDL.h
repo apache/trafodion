@@ -45,6 +45,7 @@
 #include "PrivMgrMD.h"
 #include "ElemDDLHbaseOptions.h"
 #include "CmpContext.h"
+#include "parser.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -1085,6 +1086,22 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
+  static short genDDLforHiveTableLikeTrafTable(
+       StmtDDLCreateTable * createTableNode,
+       NAString &currCatName, NAString &currSchName,
+       NAString &tableDDL); // output. Contains hive DDL string.
+  
+public:
+  static NABoolean setupQueryTreeForHiveDDL(
+       Parser::HiveDDLInfo * hiveDDLInfo,
+       char * inputStr, 
+       CharInfo::CharSet inputStrCharSet,
+       NAString currCatName,
+       NAString currSchName,
+       ExprNode** node);
+
+protected:
+
   // makes a copy of underlying hbase table
   short cloneHbaseTable(
        const NAString &srcTable, const NAString &clonedTable,
@@ -1099,6 +1116,12 @@ protected:
        ExpHbaseInterface * ehi,
        ExeCliInterface * cilInterface,
        NABoolean withCreate);
+
+  short cloneAndTruncateTable(
+       const NATable * naTable, // IN: source table
+     NAString &tempTable, // OUT: temp table
+     ExpHbaseInterface * ehi,
+     ExeCliInterface * cliInterface);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
@@ -1368,6 +1391,14 @@ protected:
        NABoolean cascade
    );
 
+  short unregisterHiveSchema
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       ExeCliInterface &cliInterface,
+       NABoolean cascade
+   );
+
   void regOrUnregNativeObject (
        StmtDDLRegOrUnregObject * regOrUnregObject,
        NAString &currCatName, NAString &currSchName);
@@ -1406,13 +1437,18 @@ protected:
   
 
  void createNativeHbaseTable(
-			     StmtDDLCreateHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLCreateHbaseTable * createTableNode,
+                             NAString &currCatName, NAString &currSchName);
 
  void dropNativeHbaseTable(
-			     StmtDDLDropHbaseTable                  * createTableNode,
-			     NAString &currCatName, NAString &currSchName);
+                             ExeCliInterface *cliInterface,
+                             StmtDDLDropHbaseTable * dropTableNode,
+                             NAString &currCatName, NAString &currSchName);
   
+  void processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
+                               NAString &currCatName, NAString &currSchName);
+
   void initSeabaseMD(NABoolean ddlXns, NABoolean minimal);
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
@@ -1451,7 +1487,7 @@ protected:
   short truncateHbaseTable(const NAString &catalogNamePart, 
                            const NAString &schemaNamePart, 
                            const NAString &objectNamePart,
-                           NATable * naTable,
+                           const NABoolean hasSaltedColumn,
                            ExpHbaseInterface * ehi);
 
   void purgedataHbaseTable(DDLExpr * ddlExpr,

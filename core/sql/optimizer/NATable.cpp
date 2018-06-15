@@ -5081,7 +5081,6 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        setHbaseDataFormatString(TRUE);
        break;
      }
-
    if (table_desc->tableDesc()->isInMemoryObject())
      {
        setInMemoryObjectDefn( TRUE );
@@ -5094,7 +5093,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
    if (corrName.isExternal())
      {
-       setIsExternalTable(TRUE);
+       setIsTrafExternalTable(TRUE);
      }
 
    if (qualifiedName_.getQualifiedNameObj().isHistograms() || 
@@ -5147,10 +5146,10 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    if ((table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
        (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
      {
-       setIsExternalTable(TRUE);
+       setIsTrafExternalTable(TRUE);
 
        if (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL)
-         setIsImplicitExternalTable(TRUE);
+         setIsImplicitTrafExternalTable(TRUE);
      }
 
    if (CmpSeabaseDDL::isMDflagsSet
@@ -5841,6 +5840,12 @@ NATable::NATable(BindWA *bindWA,
       viewExpandedText = replaceAll(viewExpandedText, "`", "");
       
       NAString createViewStmt("CREATE VIEW ");
+      createViewStmt += NAString("hive.");
+      if (strcmp(htbl->schName_, "default") == 0)
+        createViewStmt += "hive";
+      else
+        createViewStmt += htbl->schName_;
+      createViewStmt += ".";
       createViewStmt += htbl->tblName_ + NAString(" AS ") +
         viewExpandedText + NAString(";");
       
@@ -5862,6 +5867,11 @@ NATable::NATable(BindWA *bindWA,
     }
   else
     {
+      if (htbl->isExternalTable())
+        setIsHiveExternalTable(TRUE);
+      else if (htbl->isManagedTable())
+        setIsHiveManagedTable(TRUE);
+      
       if (createNAFileSets(htbl             /*IN*/,
                            this             /*IN*/,
                            colArray_        /*IN*/,
@@ -6771,10 +6781,11 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
- if ((!isSeabaseTable() && !isHiveTable()) ||
-       !CmpCommon::context()->isAuthorizationEnabled() ||
-       isVolatileTable() ||
-       (ComUser::isRootUserID() && !isHiveTable()) )
+ if (!CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable() ||
+      (ComUser::isRootUserID() && 
+        (!isHiveTable() && !isHbaseCellTable() && 
+         !isHbaseRowTable() && !isHbaseMapTable()) ))
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6794,7 +6805,8 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
   {
-    if (isHiveTable())
+    if (isHiveTable() || isHbaseCellTable() ||
+        isHbaseRowTable() || isHbaseMapTable())
       readPrivileges();
     else
       privInfo_ = NULL;
@@ -6920,7 +6932,9 @@ bool NATable::isEnabledForDDLQI() const
 {
   if (isSeabaseMD_ || isSMDTable_ || (getSpecialType() == ExtendedQualName::VIRTUAL_TABLE))
     return false;
-  else 
+  else if (isHiveTable() && (objectUID_.get_value() == 0))
+    return false;
+  else
     {
       if (objectUID_.get_value() == 0)
         {
@@ -7711,6 +7725,11 @@ NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos)
   return FALSE;
 }
 
+const NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos) const
+{
+  return ((NATable*)this)->hasSaltedColumn(saltColPos);
+}
+
 NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
 {
   for (CollIndex i=0; i<colArray_.entries(); i++ )
@@ -8321,7 +8340,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       if (isHbaseMap)
         {
           table->setIsHbaseMapTable(TRUE);
-          table->setIsExternalTable(TRUE);
+          table->setIsTrafExternalTable(TRUE);
         }
     }
     else if (isHiveTable(corrName) &&
@@ -8490,7 +8509,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                      {
                        *CmpCommon::diags()
                          << DgSqlCode(-1388)
-                         << DgTableName(corrName.getExposedNameAsAnsiString());
+                         << DgString0("Object")
+                         << DgString1(corrName.getExposedNameAsAnsiString());
                      }
                  }
                else
@@ -9149,6 +9169,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
     NABoolean toRemove = FALSE;
     if ((currTable->isSeabaseTable()) ||
         (currTable->isHiveTable()) ||
+        (currTable->isHbaseCellTable()) ||
+        (currTable->isHbaseRowTable()) ||
         (currTable->hasExternalTable()))
       toRemove = TRUE;
     if (! toRemove)

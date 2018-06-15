@@ -1,0 +1,63 @@
+>>obey TEST163(tests);
+>>--------------------------------------------------------------------------
+>>
+>>set param ?id '12345678';
+>>prepare s1 from 
++>SELECT  (
++>         SELECT 'Y'
++>         FROM dual
++>         WHERE EXISTS (
++>                       SELECT 1
++>                       FROM dic
++>                       WHERE area_id = dom.area_id
++>                      )
++>        ) impact_yn
++>      , (
++>         SELECT cd_nm
++>         FROM code
++>         WHERE lang_cd = 'zh_CN'
++>               AND up_cd_id = '6023'
++>               AND cd_id = dom.type_cd
++>        ) dic_gbn_nm
++>FROM dom
++>WHERE dom.area_id = ?id
++>      AND dom.type_cd = '0003';
+
+--- SQL command prepared.
+>>execute s1;
+
+IMPACT_YN  DIC_GBN_NM
+---------  ----------------------------------------------------------------------------------------------------
+
+Y          level code                                                                                          
+
+--- 1 row(s) selected.
+>>
+>>SELECT  (
++>         SELECT 'Y'
++>         FROM dual
++>         WHERE EXISTS (
++>                       SELECT 1
++>                       FROM dic
++>                       WHERE area_id = dom.area_id
++>                      )
++>        ) impact_yn
++>      , (
++>         SELECT cd_nm
++>         FROM code
++>         WHERE lang_cd = 'zh_CN'
++>               AND up_cd_id = '6023'
++>               AND cd_id = dom.type_cd
++>        ) dic_gbn_nm
++>FROM dom
++>WHERE dom.area_id = '12345678'
++>      AND dom.type_cd = '0003';
+
+IMPACT_YN  DIC_GBN_NM
+---------  ----------------------------------------------------------------------------------------------------
+
+Y          level code                                                                                          
+
+--- 1 row(s) selected.
+>>
+>>log;
