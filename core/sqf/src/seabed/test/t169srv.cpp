@@ -27,8 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <alsa/iatomic.h>
-
+#include "seabed/atomic.h"
 #include "seabed/fserr.h"
 #include "seabed/ms.h"
 #include "seabed/pctl.h"
@@ -58,7 +57,7 @@ private:
 };
 
 
-atomic_t       count;
+SB_Atomic_Int  count;
 bool           first = true;
 int            loop = 10;
 int            maxcp = 1;
@@ -101,8 +100,8 @@ void Server_Thread::work() {
             done = true;
         else {
             msgs++;
-            atomic_inc(&count);
-            int lcount = atomic_read(&count);
+            count.add_val(1);
+            int lcount = count.read_val();
             if (lcount == (maxcp * loop)) {
                 util_time_timer_start(&t_stop);
                 util_time_elapsed(&t_start, &t_stop, &t_elapsed);
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]) {
     ferr = msg_mon_process_startup(true);  // system messages?
     TEST_CHK_FEOK(ferr);
     util_gethostname(my_name, sizeof(my_name));
-    atomic_set(&count, 0);
+    count.set_val(0);
 
     msg_mon_enable_mon_messages(true);
     for (inx = 0; inx < maxs; inx++) {

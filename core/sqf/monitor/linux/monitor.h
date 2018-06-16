@@ -48,10 +48,16 @@ enum OpType
 #endif
 };
 
+#ifdef NAMESERVER_PROCESS
+class CMonitor : public CCluster
+#else
 class CMonitor : public CTmSync_Container
+#endif
 {
+#ifndef NAMESERVER_PROCESS
 friend class SQ_LocalIOToClient;
 friend class CExternalReq;
+#endif
 public:
     int OpenCount;
     int NoticeCount;
@@ -59,7 +65,11 @@ public:
     int NumOutstandingIO;     // Current # of I/Os outstanding
     int NumOutstandingSends;  // Current # of Sends outstanding
 
+#ifdef NAMESERVER_PROCESS
+    CMonitor(void);
+#else
     CMonitor( int procTermSig );
+#endif
     ~CMonitor( void );
 
     bool  CompleteProcessStartup( struct message_def *msg );
@@ -69,7 +79,10 @@ public:
     void  DecrOpenCount(void);
     void  DecrNoticeCount(void);
     void  DecrProcessCount(void);
+#ifndef NAMESERVER_PROCESS
     void  StartPrimitiveProcesses( void );  
+#endif
+#ifndef NAMESERVER_PROCESS
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );
     void  writeProcessMapBegin( const char *name
@@ -88,6 +101,7 @@ public:
                             , int parentPid
                             , int parentVerifier
                             , const char *program );
+#endif
     int   GetProcTermSig() { return procTermSig_; }
     int   PackProcObjs(char *&buffer);
     void  UnpackProcObjs(char *&buffer, int procCount);
@@ -97,7 +111,9 @@ public:
 protected:
 private:
     int  Last_error;     // last MPI error returned
+#ifndef NAMESERVER_PROCESS
     int  processMapFd;   // file desc for process map file
+#endif
 
 #ifdef DELAY_TP
     void Delay_TP(char *tpName);

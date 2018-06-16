@@ -38,11 +38,17 @@ using namespace std;
 #include "pnode.h"
 #include "notice.h"
 #include "mlio.h"
-
 #include "replicate.h"
+#include "ptpclient.h"
+#include "nameserver.h"
 
 extern int trace_level;
 extern CMonitor *Monitor;
+extern int NameServerEnabled;
+extern CNameServer *NameServer;
+extern CPtpClient *PtpClient;
+extern CNode *MyNode;
+
 extern CNodeContainer *Nodes;
 extern CMonStats *MonStats;
 extern int MyPNID;
@@ -263,8 +269,9 @@ void CNotice::Notify( SQ_LocalIOToClient::bcastPids_t *bcastPids )
 
 
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                        trace_printf( "%s@%d - Sending %s (%d, %d:%d) Death "
-                                      "message to %s (%d, %d:%d)\n"
+                    {
+                        trace_printf( "%s@%d - Sending Death message of"
+                                      " %s (%d, %d:%d) to %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
                                     , Process->GetName()
                                     , Process->GetNid()
@@ -274,41 +281,55 @@ void CNotice::Notify( SQ_LocalIOToClient::bcastPids_t *bcastPids )
                                     , notify->GetNid()
                                     , notify->GetPid()
                                     , notify->GetVerifier());
-
-
+                    }
                 }
                 else
                 {
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                        trace_printf( "%s@%d - Process %s (%d, %d:%d)" 
-                                      " doesn't want Death message" "\n"
+                    {
+                        trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                      " not wanted by %s (%d, %d:%d)\n"
                                     , method_name, __LINE__
                                     , Process->GetName()
                                     , Process->GetNid()
                                     , Process->GetPid()
-                                    , Process->GetVerifier() );
+                                    , Process->GetVerifier()
+                                    , notify->GetName()
+                                    , notify->GetNid()
+                                    , notify->GetPid()
+                                    , notify->GetVerifier());
+                    }
                 }
             }
             else
             {
                 if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                    trace_printf( "%s@%d - Not processed for clone Process %s (%d, %d:%d)\n"
+                {
+                    trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                  " not processed for clone %s (%d, %d:%d)\n"
                                 , method_name, __LINE__
                                 , Process->GetName()
                                 , Process->GetNid()
                                 , Process->GetPid()
-                                , Process->GetVerifier() );
+                                , Process->GetVerifier()
+                                , notify->GetName()
+                                , notify->GetNid()
+                                , notify->GetPid()
+                                , notify->GetVerifier());
+                }
             }
         }
         else
         {
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-               trace_printf( "%s@%d - Can't find process %s (%d, %d:%d)\n"
-                           , method_name, __LINE__
-                           , name_.c_str()
-                           , Nid
-                           , Pid
-                           , verifier_ );
+            {
+                trace_printf( "%s@%d - Can't find process %s (%d, %d:%d)\n"
+                            , method_name, __LINE__
+                            , name_.c_str()
+                            , Nid
+                            , Pid
+                            , verifier_ );
+            }
         }
     }
     TRACE_EXIT;
@@ -370,6 +391,152 @@ void CNotice::NotifyAll( void )
         delete bcastPids;
     }
 
+    TRACE_EXIT;
+}
+
+void CNotice::NotifyRemote( void )
+{
+    const char method_name[] = "CNotice::NotifyRemote";
+    TRACE_ENTRY;
+
+    int      targetNid = -1;
+    CNotice *entry = NULL;
+    NidQueue_t *nidQueue = new NidQueue_t;
+
+    // build the nid queue of nodes to notify
+    for( entry=this; entry; entry=entry->Next )
+    {
+        entry->NotifyNid( nidQueue );
+    }
+
+    while ( !nidQueue->empty() )
+    {
+        targetNid = nidQueue->front();
+        CLNode *targetLNode = Nodes->GetLNode( targetNid );
+    
+        int rc = -1;
+        // Send the process exit to the target node
+        rc = PtpClient->ProcessExit( Process
+                                   , targetNid
+                                   , targetLNode->GetNode()->GetName() );
+        if (rc)
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] - Can't send process exit "
+                      "for process %s (%d, %d) "
+                      "to target node %s, nid=%d\n"
+                    , method_name
+                    , Process->GetName()
+                    , Process->GetNid()
+                    , Process->GetPid()
+                    , targetLNode->GetNode()->GetName()
+                    , targetLNode->GetNid() );
+            mon_log_write(NOTICE_NOTIFYREMOTE_1, SQ_LOG_ERR, la_buf);
+        }
+        nidQueue->pop();
+    }
+
+    delete nidQueue;
+
+    TRACE_EXIT;
+}
+
+void CNotice::NotifyNid( NidQueue_t *nidQueue )
+{
+    const char method_name[] = "CNotice::NotifyNid";
+    TRACE_ENTRY;
+
+    CProcess *remoteProcess;
+    
+    if ( canceled_ )
+    {
+        if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf( "%s@%d - Process death notice for process %s (%d, %d:%d) "
+                          "was canceled so not delivered to process %s (%d, %d:%d)\n"
+                        , method_name, __LINE__
+                        , Process->GetName()
+                        , Process->GetNid()
+                        , Process->GetPid()
+                        , Process->GetVerifier()
+                        , name_.c_str()
+                        , Nid
+                        , Pid
+                        , verifier_);
+    }
+    else
+    {
+        if ( !MyNode->IsMyNode(Nid) )
+        {
+            // find by nid (check node state, check process state, backup is Ok)
+            remoteProcess = Nodes->GetProcess( Nid
+                                             , Pid
+                                             , verifier_
+                                             , true, true, true );
+            if( remoteProcess )
+            {
+                if (remoteProcess->IsSystemMessages() )
+                {
+                    // Add this process' nid to the queue
+                    nidQueue->push( Nid);
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        CLNode *lnode = Nodes->GetLNode( Nid );
+                        trace_printf( "%s@%d - Sending exit message of"
+                                      " %s (%d, %d:%d) to %s (nid=%d)\n"
+                                    , method_name, __LINE__
+                                    , Process->GetName()
+                                    , Process->GetNid()
+                                    , Process->GetPid()
+                                    , Process->GetVerifier()
+                                    , lnode?lnode->GetNode()->GetName():""
+                                    , lnode?lnode->GetNode()->GetPNid():Nid);
+                    }
+                }
+                else
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d - Death message of %s (%d, %d:%d)" 
+                                      " not wanted by %s (%d, %d:%d)\n"
+                                    , method_name, __LINE__
+                                    , Process->GetName()
+                                    , Process->GetNid()
+                                    , Process->GetPid()
+                                    , Process->GetVerifier()
+                                    , remoteProcess->GetName()
+                                    , remoteProcess->GetNid()
+                                    , remoteProcess->GetPid()
+                                    , remoteProcess->GetVerifier() );
+                    }
+                }
+            }
+            else
+            {
+                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+               {
+                   trace_printf( "%s@%d - Can't find process %s (%d, %d:%d)\n"
+                               , method_name, __LINE__
+                               , name_.c_str()
+                               , Nid
+                               , Pid
+                               , verifier_ );
+               }
+            }
+        }
+        else
+        {
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf( "%s@%d - Not processed for local Process %s (%d, %d:%d)\n"
+                            , method_name, __LINE__
+                            , Process->GetName()
+                            , Process->GetNid()
+                            , Process->GetPid()
+                            , Process->GetVerifier() );
+            }
+        }
+    }
     TRACE_EXIT;
 }
 

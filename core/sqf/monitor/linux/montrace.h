@@ -32,39 +32,43 @@ using namespace std;
 #include "seabed/trace.h"
 
 // Monitor request processing
-#define TRACE_REQUEST         0x00001
-#define TRACE_REQUEST_DETAIL  0x00002
-#define TRACE_PROCESS         0x00004
-#define TRACE_PROCESS_DETAIL  0x00008
+#define TRACE_REQUEST         0x000001
+#define TRACE_REQUEST_DETAIL  0x000002
+#define TRACE_PROCESS         0x000004
+#define TRACE_PROCESS_DETAIL  0x000008
 // Monitor synchronization cycle
-#define TRACE_SYNC            0x00010
-#define TRACE_SYNC_DETAIL     0x00020
+#define TRACE_SYNC            0x000010
+#define TRACE_SYNC_DETAIL     0x000020
 // Notice processing
-#define TRACE_NOTICE          0x00040
-#define TRACE_NOTICE_DETAIL   0x00080
+#define TRACE_NOTICE          0x000040
+#define TRACE_NOTICE_DETAIL   0x000080
 // Local I/O
-#define TRACE_MLIO            0x00100
-#define TRACE_MLIO_DETAIL     0x00200
+#define TRACE_MLIO            0x000100
+#define TRACE_MLIO_DETAIL     0x000200
 // TMSync processing
-#define TRACE_TMSYNC          0x00400
+#define TRACE_TMSYNC          0x000400
 // Monitor initialization/shutdown information
-#define TRACE_INIT            0x00800
+#define TRACE_INIT            0x000800
 // Failed node recovery
-#define TRACE_RECOVERY        0x01000
+#define TRACE_RECOVERY        0x001000
 // Monitor statistics
-#define TRACE_STATS           0x02000
+#define TRACE_STATS           0x002000
 // Events logged to event log
-#define TRACE_EVLOG_MSG       0x04000
+#define TRACE_EVLOG_MSG       0x004000
 // Entry and exit from methods
-#define TRACE_ENTRY_EXIT      0x08000
+#define TRACE_ENTRY_EXIT      0x008000
 // Input/output redirection from child processes
-#define TRACE_REDIRECTION     0x10000
+#define TRACE_REDIRECTION     0x010000
 // Cluster Configration
-#define TRACE_TRAFCONFIG      0x20000
+#define TRACE_TRAFCONFIG      0x020000
 // Health check
-#define TRACE_HEALTH          0x40000
+#define TRACE_HEALTH          0x040000
 // Signal handler
-#define TRACE_SIG_HANDLER     0x80000
+#define TRACE_SIG_HANDLER     0x080000
+// nameserver
+#define TRACE_NS              0x100000
+// lightweight measure
+#define TRACE_MEAS            0x200000
 
 
 #define TRACE_ENTRY \

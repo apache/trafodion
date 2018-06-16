@@ -279,10 +279,10 @@ sub verifyParse
             displayStmt($stmtOk);
             print "   Error: node-id not specified\n";
         }
-        elsif ($nodeId > 255)
+        elsif ($nodeId > 1535)
         {
             displayStmt($stmtOk);
-            print "   Error: node-id must be in the range 0..255.\n";
+            print "   Error: node-id must be in the range 0..1535.\n";
         }
         if (@cores == 0)
         {

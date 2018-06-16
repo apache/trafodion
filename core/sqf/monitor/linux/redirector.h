@@ -25,6 +25,7 @@
 
 #ifndef REDIRECTOR_H_
 #define REDIRECTOR_H_
+#ifndef NAMESERVER_PROCESS
 
 #include <map>
 #include <list>
@@ -306,4 +307,5 @@ private:
 };
 
 
+#endif
 #endif // REDIRECTOR_H_

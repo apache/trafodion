@@ -35,6 +35,7 @@ using namespace std;
 #include "process.h"
 #include "open.h"
 #include "notice.h"
+#include "nameserverconfig.h"
 
 
 
@@ -154,6 +155,11 @@ private:
     int nameLen_;
     int infileLen_;
     int outfileLen_;
+#ifdef NAMESERVER_PROCESS
+    int pathLen_;
+    int ldpathLen_;
+    int programLen_;
+#endif
     int argvLen_;
 };
 
@@ -191,6 +197,11 @@ private:
     int infileLen_;
     int outfileLen_;
     int argvLen_;
+#ifdef NAMESERVER_PROCESS
+    int pathLen_;
+    int ldpathLen_;
+    int programLen_;
+#endif
 };
 
 class CReplExit: public CReplObj
@@ -209,6 +220,32 @@ private:
     bool abended_;
 };
 
+class CReplExitNs: public CReplObj
+{
+public:
+    CReplExitNs( int nid
+               , int pid
+               , Verifier_t verifier
+               , const char *name
+               , bool abended
+               , struct message_def *msg
+               , int  sockFd
+               , int  origPNid );
+    virtual ~CReplExitNs();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
+    char name_[MAX_PROCESS_NAME];
+    bool abended_;
+    struct message_def *msg_;
+    int  sockFd_;
+    int  origPNid_;
+};
+
 class CReplKill: public CReplObj
 {
 public:
@@ -224,6 +261,7 @@ private:
     bool abort_;
 };
 
+#ifndef NAMESERVER_PROCESS
 class CReplDevice: public CReplObj
 {
 public:
@@ -235,7 +273,9 @@ public:
 private:
     CLogicalDevice* ldev_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplDump: public CReplObj
 {
 public:
@@ -247,7 +287,9 @@ public:
 private:
     CProcess * process_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplDumpComplete: public CReplObj
 {
 public:
@@ -259,6 +301,7 @@ public:
 private:
     CProcess * process_;
 };
+#endif
 
 class CReplShutdown: public CReplObj
 {
@@ -270,6 +313,32 @@ public:
 
 private:
     int level_;
+};
+
+class CReplNameServerAdd: public CReplObj
+{
+public:
+    CReplNameServerAdd(CNameServerConfig *config, CProcess *process);
+    virtual ~CReplNameServerAdd();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CNameServerConfig *config_;
+    CProcess          *process_;
+};
+
+class CReplNameServerDelete: public CReplObj
+{
+public:
+    CReplNameServerDelete(CNameServerConfig *config, CProcess *process);
+    virtual ~CReplNameServerDelete();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CNameServerConfig *config_;
+    CProcess          *process_;
 };
 
 class CReplNodeAdd: public CReplObj
@@ -365,6 +434,7 @@ private:
 };
 
 
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
 class CReplSchedData: public CReplObj
 {
 public:
@@ -376,7 +446,9 @@ public:
 private:
 
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplStdioData: public CReplObj
 {
 public:
@@ -392,7 +464,9 @@ private:
     ssize_t count_;
     char *data_;
 };
+#endif
 
+#ifndef NAMESERVER_PROCESS
 class CReplStdinReq: public CReplObj
 {
 public:
@@ -408,6 +482,7 @@ private:
     int supplierNid_;
     int supplierPid_;
 };
+#endif
 
 
 class CReplUniqStr: public CReplObj
