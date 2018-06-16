@@ -140,7 +140,6 @@ class ElemDDLLikeOptWithoutDivision;
 class ElemDDLLikeLimitColumnLength;
 class ElemDDLLikeOptWithoutRowFormat;
 class ElemDDLLikeOptWithoutLobColumns;
-class ElemDDLLikeOptWithHiveOptions;
 class ElemDDLList;
 class ElemDDLLocation;
 class ElemDDLOptionList;
@@ -469,8 +468,6 @@ public:
   virtual ElemDDLLikeLimitColumnLength  * castToElemDDLLikeLimitColumnLength();
   virtual ElemDDLLikeOptWithoutRowFormat* castToElemDDLLikeOptWithoutRowFormat();
   virtual ElemDDLLikeOptWithoutLobColumns * castToElemDDLLikeOptWithoutLobColumns();
-  virtual ElemDDLLikeOptWithHiveOptions * castToElemDDLLikeOptWithHiveOptions()
-  {return NULL;}
   virtual ElemDDLList                   * castToElemDDLList();
   virtual ElemDDLLocation               * castToElemDDLLocation();
   virtual ElemDDLOptionList             * castToElemDDLOptionList();

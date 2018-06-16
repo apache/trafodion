@@ -2925,6 +2925,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                   locking_stmt
 %type <parTriggerScopeType>         optional_row_table
 
+%type <stringval>              optional_hive_options
+
 %type <tableTokens>            create_table_start_tokens
 %type <tableLoadAttrEnum>      ctas_load_and_in_memory_options
 %type <pElemDDL>               ctas_insert_columns
@@ -25004,6 +25006,15 @@ udf_version_tag_clause : TOK_VERSION TOK_TAG std_char_string_literal
     delete $3; // std_char_string_literal
   }
 
+optional_hive_options : empty 
+                      {
+                        $$ = NULL;
+                      }
+                      | TOK_HIVE TOK_OPTIONS QUOTED_STRING
+                      {
+                        $$ = $3;
+                      }
+
 /* type pStmtDDL */
 table_definition : create_table_start_tokens 
                         ddl_qualified_name 
@@ -25013,14 +25024,6 @@ table_definition : create_table_start_tokens
                         optional_map_to_hbase_clause
                         optional_hbase_data_format
 	  	   {
-                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
-                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
-                       {
-                         *SqlParser_Diags << DgSqlCode(-3242)
-                                          << DgString0("LIKE clause must be specified to create this Hive table.");
-                         YYERROR;
-                       }
-
                      $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
                      if ($1->isVolatile())
@@ -25056,10 +25059,9 @@ table_definition : create_table_start_tokens
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
-			    *qn /*ddl_qualified_name*/,
-			    $3 /*table_definition_body*/,
-			    $4 /*optional_create_table_
-				*attribute_list*/,
+			    *qn, //ddl_qualified_name
+			    $3,  //table_definition_body
+			    $4,  //optional_create_table_attribute_list
 			    NULL,
 			    NULL,
 			    PARSERHEAP());
@@ -25084,12 +25086,13 @@ table_definition : create_table_start_tokens
 		       }
 
 		     $$ = pNode;
-                     delete $1; /*TableTokens*/
-		     delete $2 /*ddl_qualified_name*/;
+                     delete $1; //TableTokens
+		     delete $2; //ddl_qualified_name
 		   }
 
-table_definition : create_table_start_tokens ddl_qualified_name
-                        like_definition
+table_definition : create_table_start_tokens 
+                   ddl_qualified_name
+                   like_definition
 	  	   {
                      $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
@@ -25100,12 +25103,11 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     if (! qn)
                        YYABORT;
 
-                     StmtDDLNode *rNode = NULL;
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
-			    *qn /*ddl_qualified_name*/,
-			    $3 /*like_definition*/,
+			    *qn, //ddl_qualified_name
+			    $3,  //like_definition
 			    NULL,
 			    NULL,
 			    NULL,
@@ -25120,34 +25122,9 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 ParNameCTLocListPtr = NULL;
 		       }
 
-                     rNode = pNode;
-                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
-                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
-                       {
-                         SqlParser_CurrentParser->hiveDDLInfo_->
-                           setValues(TRUE, StmtDDLonHiveObjects::CREATE_LIKE_TRAF_, 
-                                     StmtDDLonHiveObjects::TABLE_, $1->ifNotExistsSet());
-
-                         SqlParser_CurrentParser->hiveDDLInfo_->foundDDL_ = TRUE;
-
-                         NAString hiveDDL;
-                         StmtDDLonHiveObjects *hNode =
-                           new (PARSERHEAP())
-                           StmtDDLonHiveObjects(
-                                StmtDDLonHiveObjects::CREATE_LIKE_TRAF_,
-                                StmtDDLonHiveObjects::TABLE_,
-                                $1->ifNotExistsSet(),
-                                qn->getQualifiedNameAsAnsiString(),
-                                hiveDDL,
-                                PARSERHEAP());
-
-                         hNode->setChild(0, pNode);
-                         rNode = hNode;
-                       }
-
-		     $$ = rNode;
-                     delete $1; /*TableTokens*/
-		     delete $2 /*ddl_qualified_name*/;
+		     $$ = pNode;
+                     delete $1; //TableTokens
+		     delete $2; //ddl_qualified_name
 		   }
 
 		 | TOK_CREATE special_table_name
@@ -25178,13 +25155,18 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   }
 
                  | create_table_start_tokens
-                   ddl_qualified_name 
-		   table_definition_body
-		   optional_create_table_attribute_list 
-		   create_table_as_attr_list_end
+                   ddl_qualified_name
+ 		   table_definition_body
+ 		   optional_create_table_attribute_list 
+ 		   create_table_as_attr_list_end
 		   ctas_load_and_in_memory_options
 		   ctas_insert_columns
+                   optional_hive_options
 		   create_table_as_token 
+                   {
+                     if (CmpCommon::getDefault(HIVE_CTAS_IN_NATIVE_MODE) == DF_OFF)
+                       SqlParser_CurrentParser->hiveDDLInfo_->setFoundDDL(FALSE);                       
+                   }
 		   optional_locking_stmt_list 
                    query_expression 
                    optional_limit_spec
@@ -25197,15 +25179,6 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 yyerror("");
 			 YYERROR;
 		       }
-
-                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
-                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
-                       {
-                         // create hive table .. as..   not supported.
-                         *SqlParser_Diags << DgSqlCode(-3242)
-                                          << DgString0("'create hive table ... as ...' construct is not allowed.");
-                         YYERROR;
-                       }
 
                      $1->setOptions($6);
                      if ($1->isVolatile())
@@ -25215,9 +25188,9 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     if (! qn)
 			 YYABORT;
 
-		     RelRoot *top = finalize($10);
+		     RelRoot *top = finalize($12);
                    //limit clause
-                   if ($11)
+                   if ($13)
                    {
                      if (top->getFirstNRows() >= 0)
                        {
@@ -25227,16 +25200,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
                      else
                        {
                          NABoolean negate;
-                         if ($11->castToConstValue(negate))
+                         if ($13->castToConstValue(negate))
                            {
-                             ConstValue * limit = (ConstValue*)$11;
+                             ConstValue * limit = (ConstValue*)$13;
                              Lng32 scale = 0;
                              top->setFirstNRows(limit->getExactNumericValue(scale));
                              top->setFirstNRowsParam(NULL);
                            }
                          else
                            {
-                             top->setFirstNRowsParam($11);
+                             top->setFirstNRowsParam($13);
                              top->setFirstNRows(-1);
                            }
                        }
@@ -25245,11 +25218,10 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
-			    *qn /*ddl_qualified_name*/,
-			    $3 /*table_definition_body*/,
-			    $4 /*optional_create_table_
-				*attribute_list*/,
-			    $7, /* insert column list */
+			    *qn, //ddl_qualified_name
+			    $3,  // table_definition_body
+			    $4,  // optional_create_table_attribute_list
+			    $7,  // insert column list 
 			    top,
 			    PARSERHEAP());
                      $1->setTableTokens(pNode);
@@ -25266,18 +25238,26 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 delete ParNameCTLocListPtr;
 			 ParNameCTLocListPtr = NULL;
 		       }
-		     
+
+                     if ($8)
+                       pNode->setHiveOptions(*$8);
+
 		     $$ = pNode;
-                     delete $1; /*TableTokens*/
-		     delete $2 /*ddl_qualified_name*/;
+                     delete $1; //TableTokens
+		     delete $2; //ddl_qualified_name
 		   }
 
                  | create_table_start_tokens 
                    ddl_qualified_name 
+                   {
+                     if (CmpCommon::getDefault(HIVE_CTAS_IN_NATIVE_MODE) == DF_OFF)
+                       SqlParser_CurrentParser->hiveDDLInfo_->setFoundDDL(FALSE);                       
+                   }
 		   optional_create_table_attribute_list 
 		   create_table_as_attr_list_end
 		   ctas_load_and_in_memory_options
 		   ctas_insert_columns
+                   optional_hive_options
 		   create_table_as_token 
 		   optional_locking_stmt_list 
                    query_expression 
@@ -25292,16 +25272,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 YYERROR;
 		       }
 
-                     if (($1->getType() == TableTokens::TYPE_EXTERNAL_HIVE_TABLE) ||
-                         ($1->getType() == TableTokens::TYPE_MANAGED_HIVE_TABLE))
-                       {
-                         // create hive table .. as..   not supported.
-                         *SqlParser_Diags << DgSqlCode(-3242)
-                                          << DgString0("'create hive table ... as ...' construct is not allowed.");
-                         YYERROR;
-                       }
-
-                     $1->setOptions($5);
+                     $1->setOptions($6);
                      if ($1->isVolatile())
                        qn = processVolatileDDLName($2, FALSE, FALSE);
 		     else
@@ -25309,9 +25280,9 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     if (! qn)
                        YYABORT;
 
-		     RelRoot *top = finalize($9);
+		     RelRoot *top = finalize($11);
                    //limit clause
-                   if ($10)
+                   if ($12)
                    {
                      if (top->getFirstNRows() >= 0)
                        {
@@ -25321,16 +25292,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
                      else
                        {
                          NABoolean negate;
-                         if ($10->castToConstValue(negate))
+                         if ($12->castToConstValue(negate))
                            {
-                             ConstValue * limit = (ConstValue*)$10;
+                             ConstValue * limit = (ConstValue*)$12;
                              Lng32 scale = 0;
                              top->setFirstNRows(limit->getExactNumericValue(scale));
                              top->setFirstNRowsParam(NULL);
                            }
                          else
                            {
-                             top->setFirstNRowsParam($10);
+                             top->setFirstNRowsParam($12);
                              top->setFirstNRows(-1);
                            }
                        }
@@ -25339,11 +25310,10 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
 		       StmtDDLCreateTable(
-			    *qn /*ddl_qualified_name*/,
-			    NULL /*table_definition_body*/,
-			    $3 /*optional_create_table_
-				*attribute_list*/,
-			    $6, /* insert column list */
+			    *qn,  //ddl_qualified_name
+			    NULL, //table_definition_body
+			    $4,   //optional_create_table_attribute_list
+			    $7,   //insert column list 
 			    top,
 			    PARSERHEAP());
                      $1->setTableTokens(pNode);
@@ -25361,9 +25331,12 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			 ParNameCTLocListPtr = NULL;
 		       }
 
+                     if ($8)
+                       pNode->setHiveOptions(*$8);
+
 		     $$ = pNode;
-                     delete $1; /*TableTokens*/
-		     delete $2 /*ddl_qualified_name*/;
+                     delete $1; //TableTokens
+		     delete $2;  //ddl_qualified_name
 		   }
 
               | TOK_CREATE TOK_HBASE TOK_TABLE identifier '(' col_fam_quoted_string_list ')'
@@ -25513,20 +25486,6 @@ create_table_start_tokens :
                      $$ = tableTokens;
 		   }
 
-                   | TOK_CREATE TOK_HIVE TOK_TABLE optional_if_not_exists_clause
-                   {
-		     ParNameCTLocListPtr = new (PARSERHEAP())
-		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_MANAGED_HIVE_TABLE, $4); 
-                     $$ = tableTokens;
-                   }
-                   | TOK_CREATE TOK_EXTERNAL TOK_HIVE TOK_TABLE optional_if_not_exists_clause
-                   {
-		     ParNameCTLocListPtr = new (PARSERHEAP())
-		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_HIVE_TABLE, $5); 
-                     $$ = tableTokens;
-                   }
 /* type boolean */
 optional_if_not_exists_clause : 
                 empty
@@ -26671,11 +26630,6 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeOptWithoutLobColumns();
-                                }
-                      | TOK_WITH TOK_HIVE TOK_OPTIONS QUOTED_STRING
-                                {
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLLikeOptWithHiveOptions(*$4);
                                 }
 
 /* type pElemDDL */

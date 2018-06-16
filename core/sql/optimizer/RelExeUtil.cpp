@@ -4864,8 +4864,17 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return NULL;
 
+  NABoolean isHive = FALSE;
+  if ((getTableName().isHive()) &&
+      (CmpCommon::getDefault(TRAF_DDL_ON_HIVE_OBJECTS) == DF_ON))
+    {
+      isHive = TRUE;
+      upsertUsingLoadAllowed = FALSE;
+    }
+
   if ((NOT isVolatile_) &&
-      (NOT getTableName().isSeabase())) // can only create traf tables
+      (NOT getTableName().isSeabase()) && // can only create traf tables
+      (NOT isHive))
     {
       *CmpCommon::diags() << DgSqlCode(-3242) << 
         DgString0(NAString("This DDL operation is not allowed in the specified catalog '" + getTableName().getQualifiedNameObj().getCatalogName() + "'."));
@@ -4943,7 +4952,9 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
             }
           else if (createTableNode->isVolatile())
 	    ctQuery_ = "CREATE VOLATILE TABLE ";
-	  else
+	  else if ((isHive) && (createTableNode->isExternal()))
+            ctQuery_ = "CREATE EXTERNAL TABLE ";
+          else
 	    ctQuery_ = "CREATE TABLE ";
 
           if (createTableNode->createIfNotExists())
@@ -4970,6 +4981,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  
 	  ctQuery_ += "( ";
 
+          NAString hiveType;
 	  if (! pTableDefBody)
 	    {
 	      for (CollIndex i = 0; i < retDesc->getDegree(); i++)
@@ -4993,7 +5005,13 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 		  colDef += " ";
 		  
 		  NAType &colType = (NAType&)(queryRoot->compExpr()[i].getType());
-		  colType.getMyTypeAsText(&colDef);
+                 if (isHive)
+                    {
+                      colType.getMyTypeAsHiveText(&hiveType);
+                      colDef += hiveType;
+                    }
+                 else
+                   colType.getMyTypeAsText(&colDef);
 
 		  if (colType.isLob())
 		    upsertUsingLoadAllowed = FALSE;
@@ -5138,10 +5156,10 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  // if attribute list is specified, append that to col definition.
 	  if (createTableNode->getChild(1/*StmtDDLCreateTable::INDEX_ATTRIBUTE_LIST*/))
 	    {
-	      ctQuery_ += " ";
-	      ctQuery_.append(&stmtText[attrListStartPos], 
-			      attrListEndPos - attrListStartPos);
-	    }
+              ctQuery_ += " ";
+              ctQuery_.append(&stmtText[attrListStartPos], 
+                              attrListEndPos - attrListStartPos);
+            }
 	}
       else
 	{
@@ -5150,7 +5168,24 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	  ctQuery_ = "";
 	  ctQuery_.append(stmtText, attrListEndPos);
 	}
-      
+
+      if (NOT createTableNode->getHiveOptions().isNull())
+        {
+          if (NOT isHive)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3242) << 
+                DgString0(NAString("WITH HIVE OPTIONS cannot be specified for non-Hive tables."));
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+          else
+            {
+              ctQuery_ += " ";
+              ctQuery_ += createTableNode->getHiveOptions();
+            }
+        }
+       
       if (createTableNode->isInMemoryObjectDefn())
 	ctQuery_.append(" IN MEMORY ");
 

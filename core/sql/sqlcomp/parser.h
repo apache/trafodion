@@ -323,6 +323,11 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
       ifExistsOrNotExists_ = ifExistsOrNotExists;
     }
 
+    void setFoundDDL(NABoolean v) 
+    {
+      foundDDL_ = v;
+    }
+
     // in some cases, parser should not do hive ddl check.
     // This may happen for internal parsing, for ex, for view expansion,
     // or internal MD ddl compiles.

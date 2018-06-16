@@ -3336,14 +3336,19 @@ enum DefaultConstants
 
   // if set, ddl from Traf interface on Hive objects is supported.
   TRAF_DDL_ON_HIVE_OBJECTS,
-  
-  // This enum constant must be the LAST one in the list; it's a count,
-  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
+
+  // If set to TRUE, CTAS on Hive object(Create and Insert...select) is processed in Hive.
+  // If set to FALSE, Create is done in Hive, and Insert...select is done in Traf.
+  // Default is OFF.
+  HIVE_CTAS_IN_NATIVE_MODE,
+
   // Size of byte[] in java when direct byteBuffer can't be used
   // Used to read compressed hdfs text files and to write
   // both compressed and uncompressed hdfs files
   HDFS_IO_INTERIM_BYTEARRAY_SIZE_IN_KB,
 
+  // This enum constant must be the LAST one in the list; it's a count,
+  // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
 };
 

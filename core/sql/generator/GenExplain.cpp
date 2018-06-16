@@ -2124,6 +2124,41 @@ ExplainTuple * ExeUtilWnrInsert::addSpecificExplainInfo(
   return(explainTuple);
 }
 
+ExplainTuple * ExeUtilCreateTableAs::addSpecificExplainInfo( 
+     ExplainTupleMaster *explainTuple, 
+     ComTdb *tdb, 
+     Generator *generator)
+{
+
+  Lng32 maxBufLen = 2000;
+  maxBufLen = MAXOF(maxBufLen, ctQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, siQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, viQuery_.length());
+  maxBufLen = MAXOF(maxBufLen, usQuery_.length());
+
+  maxBufLen = MINOF(maxBufLen, 4000);
+  maxBufLen++;
+
+  char buf[maxBufLen];
+  snprintf(buf, maxBufLen, "CreateQuery: %s ", 
+           (ctQuery_.length() > 0 ? ctQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "InsertQuery: %s ", 
+           (viQuery_.length() > 0 ? viQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+          
+  snprintf(buf, maxBufLen, "UpsertLoadQuery: %s ", 
+           (siQuery_.length() > 0 ? siQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  snprintf(buf, maxBufLen, "UpdStatsQuery: %s ", 
+           (usQuery_.length() > 0 ? usQuery_.data() : "NULL"));
+  explainTuple->setDescription(buf);
+
+  return(explainTuple);
+}
+
 const char * ExplainFunc::getVirtualTableName()
 //{ return "EXPLAIN__"; }
 {return getVirtualTableNameStr();}

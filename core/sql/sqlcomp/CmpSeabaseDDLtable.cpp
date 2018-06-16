@@ -11487,7 +11487,6 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
   
   // Start error checks
   if (NOT ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
-           (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) ||
            (hddl->getOper() == StmtDDLonHiveObjects::DROP_) ||
            (hddl->getOper() == StmtDDLonHiveObjects::ALTER_) ||
            (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_)))
@@ -11617,8 +11616,7 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
          }
      }
 
-   if ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
-       (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_))
+   if (hddl->getOper() == StmtDDLonHiveObjects::CREATE_)
      {
        if (objExists)
          {
@@ -11692,7 +11690,6 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
    
    if ((CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF) &&
        ((hddl->getOper() == StmtDDLonHiveObjects::CREATE_) ||
-        (hddl->getOper() == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) ||
         (hddl->getOper() == StmtDDLonHiveObjects::ALTER_)) &&
        (NOT isRegistered))
      {
@@ -11770,102 +11767,6 @@ label_error:
   return;
 }
 
-short CmpSeabaseDDL::genDDLforHiveTableLikeTrafTable(StmtDDLCreateTable * createTableNode,
-                                                     NAString &currCatName, NAString &currSchName,
-                                                     NAString &tableDDL)
-{ 
-  Lng32 cliRC = 0;
-  Lng32 retcode = 0;
-
-  ComObjectName tgtTableName(createTableNode->getTableName(), COM_TABLE_NAME);
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
-  tgtTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
-
-  if (tgtTableName.getCatalogNamePartAsAnsiString() != HIVE_SYSTEM_CATALOG)
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-3242)
-        << DgString0("LIKE target table must be a hive table.");
-      return -1;
-    }
-
-  NAString tgtSchName;
-
-  if ((tgtTableName.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) ||
-      (tgtTableName.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0))
-    tgtSchName = HIVE_SYSTEM_SCHEMA;
-  else
-    tgtSchName = tgtTableName.getSchemaNamePartAsAnsiString(TRUE);
-
-  ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
-
-  srcTableName.applyDefaults(currCatName, currSchName);
-
-  const NAString srcCatNamePart = srcTableName.getCatalogNamePartAsAnsiString();
-  const NAString srcSchNamePart = srcTableName.getSchemaNamePartAsAnsiString(TRUE);
-  const NAString srcObjNamePart = srcTableName.getObjectNamePartAsAnsiString(TRUE);
-  CorrName srcCN(srcObjNamePart, STMTHEAP, srcSchNamePart, srcCatNamePart);
-  
-  if (NOT createTableNode->getIsLikeOptionSpecified())
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-3242)
-        << DgString0("LIKE clause must be specified to create this hive table.");
-      return -1;
-    }
-
-  ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
-
-  if (srcTableName.getCatalogNamePartAsAnsiString() != TRAFODION_SYSCAT_LIT)
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-3242)
-        << DgString0("LIKE source table must be a trafodion table.");
-      return -1;
-    }
-
-  if (createTableNode->managedHiveTable())
-    tableDDL = "CREATE TABLE ";
-  else
-    tableDDL = "CREATE EXTERNAL TABLE ";
-  if (createTableNode->createIfNotExists())
-    tableDDL += " IF NOT EXISTS ";
-
-  tableDDL += (tgtSchName == HIVE_SYSTEM_SCHEMA ? "`default`" : tgtSchName) + ".";
-  tableDDL += tgtTableName.getObjectNamePartAsAnsiString(TRUE);
-
-  char * buf = NULL;
-  ULng32 buflen = 0;
-  retcode = CmpDescribeTrafAsHiveTable(srcCN, 3/*createlike*/, 
-                                       buf, buflen, 
-                                       STMTHEAP);
-  if (retcode)
-    return -1;
-
-  NABoolean done = FALSE;
-  Lng32 curPos = 0;
-  while (NOT done)
-    {
-      short len = *(short*)&buf[curPos];
-      NAString frag(&buf[curPos+sizeof(short)],
-                    len - ((buf[curPos+len-1]== '\n') ? 1 : 0));
-
-      tableDDL += frag;
-      curPos += ((((len+sizeof(short))-1)/8)+1)*8;
-
-      if (curPos >= buflen)
-        done = TRUE;
-    }
-
-  if (NOT likeOptions.getLikeOptHiveOptions().isNull())
-    {
-      tableDDL += " " + likeOptions.getLikeOptHiveOptions();
-    }
-
-  return 0;
-}
-
 // ------------------------------------------------------------------------
 // setupQueryTreeForHiveDDL
 //
@@ -11902,43 +11803,6 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
     (StmtDDLonHiveObjects::Operation)hiveDDLInfo->ddlOperation_;
   StmtDDLonHiveObjects::ObjectType type = 
     (StmtDDLonHiveObjects::ObjectType)hiveDDLInfo->ddlObjectType_;
-
-  if ((oper == StmtDDLonHiveObjects::CREATE_LIKE_TRAF_) &&
-      (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::EXPLAIN_) ||
-            (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
-            (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_))))
-    {
-      ExprNode *hlt = *node;
-      if (hlt == NULL)
-        return FALSE; // node must be passed in.
-
-      StmtQuery * stmt = (StmtQuery*)hlt->castToStatementExpr();
-      RelRoot * root = (RelRoot*)stmt->getQueryExpression();
-      DDLExpr * ddl = (DDLExpr*)root->child(0)->castToRelExpr();
-      StmtDDLonHiveObjects * doh = 
-        ddl->getDDLNode()->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
-      StmtDDLCreateTable * ct = doh->getChild(0)->castToStmtDDLNode()->castToStmtDDLCreateTable();
-      if (! ct)
-        return FALSE;
-
-      NAString tableDDL;
-      if (CmpSeabaseDDL::genDDLforHiveTableLikeTrafTable(ct, currCatName, currSchName,
-                                                         tableDDL))
-        return FALSE;
-      
-      doh->setHiveDDL(tableDDL);
-
-      // indicate that this is the root for the entire query
-      if (root)
-        {
-          if (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::DISPLAY_)
-            ((RelRoot*)root)->setDisplayTree(TRUE);
-        }
-      
-      *node = stmt;  
-      
-      return TRUE;
-    }
 
   // position and length of the object name specified in the query.
   Lng32 hiveNamePos = hiveDDLInfo->ddlNamePos_;
@@ -12026,7 +11890,6 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
   // explain/showplan/showshape/display.
   //
   // Regular DDL query:
-  // HiveLikeTraf DDL query:
   //   StmtQuery => RelRoot => DDLExpr => StmtDDLonHiveObjects
   //
   // explain query:

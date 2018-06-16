@@ -97,7 +97,13 @@ A            B
 >>-- Use regrhive until that issue is fixed.
 >>sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
 >>sh regrhive.ksh -f TEST008_junk;
->>--create table t00803 as select * from sch008.t00802;
+>>cqd hive_ctas_in_native_mode 'ON';
+
+--- SQL operation complete.
+>>-- create table t00803 as select * from sch008.t00802;
+>>cqd hive_ctas_in_native_mode reset;
+
+--- SQL operation complete.
 >>invoke t00803;
 
 -- Definition of hive table HIVE.SCH008.T00803
@@ -118,6 +124,35 @@ A            B
           1            2
 
 --- 1 row(s) selected.
+>>
+>>-- ctas create executed in Hive and insert executed in sql
+>>drop table if exists t008032;
+
+--- SQL operation complete.
+>>explain options 'f' create table t008032 no load as select * from t00802;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table t008032 no load as select * from sch008.t00802;
+
+--- 0 row(s) inserted.
+>>invoke t008032;
+
+-- Definition of hive table HIVE.SCH008.T008032
+-- Definition current  Fri Jun 15 05:38:24 2018
+
+  (
+    A                                INT
+  , B                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
 >>
 >>-- describe will show datatype 132 for b
 >>prepare s from insert into t00802 values (?, ?);
@@ -289,6 +324,7 @@ Objects in Schema HIVE.SCH008
 
 t00802
 t00803
+t008032
 v00802
 v00803
 
@@ -311,6 +347,7 @@ Objects in Schema HIVE.SCH008
 
 t00802
 t00803
+t008032
 v00803
 
 --- SQL operation complete.
@@ -401,18 +438,101 @@ REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.T00805;
 
 --- SQL operation complete.
 >>
->>-- create external hive table LIKE a traf table
+>>-- create external hive table like a traf table
 >>drop table if exists hive.sch008.columns;
 
 --- SQL operation complete.
->>create external hive table hive.sch008.columns like trafodion."_MD_".columns 
-+>      with hive options 'stored as sequencefile';
+>>explain create external table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212395845354479165
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0
+STATEMENT ................ create external table hive.sch008.columns no load
+                             hive options 'stored as sequencefile'      as
+                             select * from trafodion."_MD_".columns;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  affinity_value ......... 0
+  max_max_cardinality .... 1
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled for privilege checks
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_INDEX_CREATE_OPT    ON
+  TRAF_DDL_ON_HIVE_OBJECT  ON
+  SCHEMA ................. HIVE.SCH008
+  GENERATE_EXPLAIN ....... ON
+
+
+CREATE_TABLE_AS ===========================  SEQ_NO 1        NO CHILDREN
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
+DESCRIPTION
+  max_card_est ........... -1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  CreateQuery ............ CREATE EXTERNAL TABLE HIVE.SCH008.COLUMNS (
+                             OBJECT_UID bigint, COLUMN_NAME varchar(256),
+                             COLUMN_NUMBER int, COLUMN_CLASS char(2),
+                             FS_DATA_TYPE int, SQL_DATA_TYPE char(32),
+                             COLUMN_SIZE int, COLUMN_PRECISION int,
+                             COLUMN_SCALE int, DATETIME_START_FIELD int,
+                             DATETIME_END_FIELD int, IS_UPSHIFTED char(2),
+                             COLUMN_FLAGS int, NULLABLE int,
+                             CHARACTER_SET char(40), DEFAULT_CLASS int,
+                             DEFAULT_VALUE varchar(1024),
+                             COLUMN_HEADING varchar(256),
+                             HBASE_COL_FAMILY varchar(40),
+                             HBASE_COL_QUALIFIER varchar(40),
+                             DIRECTION char(2), IS_OPTIONAL char(2),
+                             FLAGS bigint  )  stored as sequencefile
+  InsertQuery ............ insert into HIVE.SCH008.COLUMNS  select * from
+                             trafodion."_MD_".columns;
+  UpsertLoadQuery ........ NULL
+  UpdStatsQuery .......... UPDATE STATISTICS FOR TABLE HIVE.SCH008.COLUMNS ON
+                             EVERY KEY SAMPLE SET ROWCOUNT %Ld;
 
 --- SQL operation complete.
->>create external hive table if not exists hive.sch008.columns like trafodion."_MD_".columns 
-+>      with hive options 'stored as sequencefile';
+>>create external table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
 
---- SQL operation complete.
+--- 0 row(s) inserted.
+>>create external table if not exists hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
+
+--- 0 row(s) inserted.
 >>showddl hive.sch008.columns;
 
 /* Hive DDL */
@@ -451,14 +571,16 @@ REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.COLUMNS;
 /* ObjectUID = 1402470925633639085 */
 
 --- SQL operation complete.
+>>
 >>-- create managed hive table LIKE traf table
 >>drop table if exists hive.sch008.columns;
 
 --- SQL operation complete.
->>create hive table hive.sch008.columns like trafodion."_MD_".columns 
-+>      with hive options 'stored as sequencefile';
+>>create table hive.sch008.columns no load 
++>    hive options 'stored as sequencefile' 
++>    as select * from trafodion."_MD_".columns;
 
---- SQL operation complete.
+--- 0 row(s) inserted.
 >>showddl hive.sch008.columns;
 
 /* Hive DDL */
@@ -495,6 +617,51 @@ CREATE TABLE HIVE.SCH008.COLUMNS
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.SCH008.COLUMNS;
 /* ObjectUID = 1402470925633639718 */
+
+--- SQL operation complete.
+>>
+>>-- ctas stmt is passed to Hive layer. 
+>>drop table if exists hive.hive.tempsrc;
+
+--- SQL operation complete.
+>>drop table if exists hive.hive.temptgt;
+
+--- SQL operation complete.
+>>create table hive.hive.tempsrc(a int);
+
+--- SQL operation complete.
+>>cqd hive_ctas_in_native_mode 'ON';
+
+--- SQL operation complete.
+>>explain options 'f' create external table hive.hive.temptgt as select * from tempsrc;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hive_ddl                                              1.00E+000
+
+--- SQL operation complete.
+>>create external table hive.hive.temptgt as select * from tempsrc;
+
+*** ERROR[1214] Error encountered when executing HiveQL statement "create external table `default`.TEMPTGT as select * from tempsrc". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table
+
+--- SQL operation failed with errors.
+>>create table hive.hive.temptgt as select * from tempsrc;
+
+--- SQL operation complete.
+>>invoke hive.hive.temptgt;
+
+-- Definition of hive table HIVE.HIVE.TEMPTGT
+-- Definition current  Fri Jun 15 18:12:41 2018
+
+  (
+    A                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>cqd hive_ctas_in_native_mode reset;
 
 --- SQL operation complete.
 >>
@@ -792,7 +959,57 @@ t00807.a	t00807.b
 >>sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
 t00807.a	t00807.b
 >>
+>>explain options 'f' create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+--- 0 row(s) inserted.
+>>
+>>drop table t008072;
+
+--- SQL operation complete.
+>>
+>>drop table if exists trafodion.sch.t00807;
+
+--- SQL operation complete.
+>>create table trafodion.sch.t00807 (a int);
+
+--- SQL operation complete.
+>>explain options 'f' create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    create_table_as                                       1.00E+000
+
+--- SQL operation complete.
+>>create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+
+--- 0 row(s) inserted.
+>>invoke hive.sch008.t008072;
+
+-- Definition of hive table HIVE.SCH008.T008072
+-- Definition current  Fri Jun 15 05:43:02 2018
+
+  (
+    A                                INT
+  )
+  /* stored as textfile */
+
+--- SQL operation complete.
+>>
 >>drop table t00807;
+
+--- SQL operation complete.
+>>drop table t008072;
 
 --- SQL operation complete.
 >>
@@ -1030,50 +1247,10 @@ alter database trafodion.temp;
 
 --- SQL operation failed with errors.
 >>
->>-- return error: ctas on hive cannot use traf in the SELECT query
+>>-- return error: table temp does not exist
 >>create table hive.hive.temptab2 as select * from trafodion.sch.temp;
 
-*** ERROR[1214] Error encountered when executing HiveQL statement "create table `default`.TEMPTAB2 as select * from trafodion.sch.temp". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: ParseException line 1:62 cannot recognize input near '.' 'temp' '<EOF>' in table source
-
---- SQL operation failed with errors.
->>
->>-- cannot use 'with hive options' with non-hive tables
->>create table trafodion.seabase.temp like trafodion."_MD_".objects
-+>   with hive options 'abc';
-
-*** ERROR[3242] This statement is not supported. Reason: Hive options cannot be specified for this table.
-
---- SQL operation failed with errors.
->>
->>-- target table must be a hive table
->>create external hive table trafodion.seabase.temp like trafodion."_MD_".objects;
-
-*** ERROR[3242] This statement is not supported. Reason: LIKE target table must be a hive table.
-
-*** ERROR[8822] The statement was not prepared.
-
->>
->>-- source table must be a trafodion table
->>create external hive table hive.hive.temp like hive.hive.temp2
-+>   with hive options 'abc';
-
-*** ERROR[3242] This statement is not supported. Reason: LIKE source table must be a trafodion table.
-
-*** ERROR[8822] The statement was not prepared.
-
->>
->>-- ctas tgt cannot be an external hive table
->>create external hive table hive.hive.temp as select * from trafodion."_MD_".objects;
-
-*** ERROR[3242] This statement is not supported. Reason: 'create hive table ... as ...' construct is not allowed.
-
-*** ERROR[8822] The statement was not prepared.
-
->>
->>-- like option must be specified
->>create external hive table hive.hive.temp (a int);
-
-*** ERROR[3242] This statement is not supported. Reason: LIKE clause must be specified to create this Hive table.
+*** ERROR[4082] Object TRAFODION.SCH.TEMP does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 

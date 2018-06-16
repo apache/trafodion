@@ -1636,6 +1636,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DD_____(HIVE_CATALOG,                                ""),
 
+  DDkwd__(HIVE_CTAS_IN_NATIVE_MODE,             "OFF"),
+
   DDkwd__(HIVE_DATA_MOD_CHECK,                  "ON"),
 
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),

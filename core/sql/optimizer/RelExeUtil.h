@@ -983,6 +983,10 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
 
+  ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+				       ComTdb * tdb, 
+				       Generator *generator);
+
   virtual NABoolean explainSupported() { return TRUE; }
 
   virtual NABoolean producesOutput() { 
