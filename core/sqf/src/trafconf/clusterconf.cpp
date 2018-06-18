@@ -261,6 +261,10 @@ TcProcessType_t CClusterConfig::GetProcessType( const char *processtype )
     {
         return(ProcessType_Watchdog);
     }
+    else if (strcmp( "TNS", processtype) == 0)
+    {
+        return(ProcessType_NameServer);
+    }
     else if (strcmp( "MXOSRVR", processtype) == 0)
     {
         return(ProcessType_MXOSRVR);
@@ -372,9 +376,52 @@ bool CClusterConfig::LoadNodeConfig( void )
         return( false );
     }
 
+    bool lv_is_real_cluster = true;
+    if ( getenv( "SQ_VIRTUAL_NODES" ) )
+    {
+        lv_is_real_cluster = false;
+    }
+
     // Process logical nodes
     for (int i =0; i < nodeCount; i++ )
     {
+        char *tmpptr = nodeConfigData[i].node_name;
+        while ( *tmpptr )
+        {
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
+    
+        if (lv_is_real_cluster)
+        {
+            // Remove the domain portion of the name if any
+            char short_node_name[TC_PROCESSOR_NAME_MAX];
+            char str1[TC_PROCESSOR_NAME_MAX];
+            memset( str1, 0, TC_PROCESSOR_NAME_MAX );
+            memset( short_node_name, 0, TC_PROCESSOR_NAME_MAX );
+            strcpy (str1, nodeConfigData[i].node_name );
+
+            char *str1_dot = strchr( (char *) str1, '.' );
+            if ( str1_dot )
+            {
+                memcpy( short_node_name, str1, str1_dot - str1 );
+            }
+            else
+            {
+                strcpy (short_node_name, str1 );
+            }
+
+            strcpy(nodeConfigData[i].node_name, short_node_name);
+
+        }
+
+        if ( TcTraceSettings & TC_TRACE_INIT )
+        {
+            trace_printf( "%s@%d nodename=%s\n"
+                          , method_name, __LINE__
+                          , nodeConfigData[i].node_name);
+        }
+
         ProcessLNode( nodeConfigData[i], pnodeConfigInfo, lnodeConfigInfo );
         // We want to pick the first configured node so all monitors pick the same one
         // This only comes into play for a Trafodion start from scratch

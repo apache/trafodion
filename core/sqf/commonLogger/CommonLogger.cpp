@@ -145,6 +145,8 @@ void CommonLogger::log1(const std::string &cat,
   // a format specifier, with ugly consequences.
   std::string msg(cmsg);
 
+  eventId = eventId; // touch
+
   switch(level)
   {
     case LL_FATAL:
@@ -189,6 +191,7 @@ char* CommonLogger::buildMsgBuffer(const std::string &cat,
   va_list args2;
   va_copy(args2, args);
   bool secondTry = false;
+  level = level; // touch
   if (buffer == NULL)
       buffer = new char[bufferSize];
 

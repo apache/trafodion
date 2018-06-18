@@ -80,7 +80,6 @@ void CExtNodeAddReq::performRequest()
     CLNodeConfig   *lnodeConfig = NULL;
     CPNodeConfig   *pnodeConfig = NULL; 
     CProcess       *requester = NULL;
-    cpu_set_t       coreMask;
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
@@ -204,7 +203,7 @@ void CExtNodeAddReq::performRequest()
         else
         {
             char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+            sprintf(la_buf, "[%s], Failed to retrieve ClusterConfig object!\n",
                     method_name);
             mon_log_write(MON_REQ_NODE_ADD_4, SQ_LOG_CRIT, la_buf);
 

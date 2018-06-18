@@ -202,8 +202,10 @@ int main(int argc, char *argv[]) {
             TEST_CHK_CCEQ(cc);
             printf("%s\n", send_buffer);
         }
+        disable = msg_test_assert_disable();
         ferr = XFILE_CLOSE_(filenums, 0);
         TEST_CHK_FEOK(ferr);
+        msg_test_assert_enable(disable);
         if (death) {
             sleep(2);
         }

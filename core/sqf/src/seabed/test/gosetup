@@ -64,10 +64,11 @@ if [ "$cluster" = "-cluster" ]; then
 	unset SQ_VIRTUAL_NODES
 	unset SQ_VIRTUAL_NID
 	if [ $keep = 0 ]; then
+		./godb 2
 		host1=`gohost 1`
 		host2=`gohost 2`
-		./godb 2
 		gocleanport
+		pdcp -w $host2 sqconfig.db $PWD/sqconfig.db
 	fi
 fi
 if [ "$clustern" = "-cluster" ]; then
@@ -76,7 +77,12 @@ if [ "$clustern" = "-cluster" ]; then
 	if [ $keep = 0 ]; then
 		./godb 6
 		gocleanport
+		nodes=`SQ_CONFIGDB=$PWD/sqconfig.db trafconf -wname`
+		pdcp $nodes sqconfig.db $PWD/sqconfig.db
 	fi
+fi
+if [ "$SQ_VIRTUAL_NODES" != "1" ]; then
+	nid0="nid 0"
 fi
 export SQ_SHELL_NOCWD=1
 export SQ_CONFIGDB=$PWD/sqconfig.db

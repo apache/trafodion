@@ -36,12 +36,18 @@ extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CDeviceContainer *Devices;
+#ifndef NAMESERVER_PROCESS
+#include "ptpclient.h"
+extern CPtpClient *PtpClient;
+extern bool NameServerEnabled;
+#endif
 
 extern const char *ProcessTypeString( PROCESSTYPE type );
 
-CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType, int pid,
+CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType,
+                                int nid, int pid, int sockFd,
                                 struct message_def *msg )
-    : CExternalReq(msgType, pid, msg)
+    : CExternalReq(msgType, nid, pid, sockFd, msg)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQEI", 4);
@@ -71,7 +77,6 @@ void CExtNewProcReq::populateRequestString( void )
               , msg_->u.request.u.new_process.priority );
     requestString_.assign( strBuf );
 }
-
 
 void CExtNewProcReq::performRequest()
 {
@@ -433,12 +438,12 @@ void CExtNewProcReq::performRequest()
 
             return;
         }
-    
+
         if (lnode->GetNumProcs() < MAX_PROCESSES)
         {
-            strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.path );
-            strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process.ldpath );
-            strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.program );
+            strId_t pathStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.path, lnode );
+            strId_t ldpathStrId = MyNode->GetStringId (msg_->u.request.u.new_process.ldpath, lnode );
+            strId_t programStrId = MyNode->GetStringId ( msg_->u.request.u.new_process.program, lnode );
 
             if (MyNode->IsMyNode(lnode->Nid))
             {
@@ -456,6 +461,7 @@ void CExtNewProcReq::performRequest()
                                                 programStrId,
                                                 msg_->u.request.u.new_process.infile,
                                                 msg_->u.request.u.new_process.outfile
+                                                , 0 // tag
                                                 , result
                                                 );
                 if ( process )
@@ -463,7 +469,7 @@ void CExtNewProcReq::performRequest()
                     process->userArgs (  msg_->u.request.u.new_process.argc,
                                          msg_->u.request.u.new_process.argv );
                 }
-                if ( process && process->Create(process->GetParent(), result))
+                if ( process && process->Create(process->GetParent(), 0, result))
                 {
                     MyNode->AddToNameMap(process);
                     MyNode->AddToPidMap(process->GetPid(), process);
@@ -516,14 +522,42 @@ void CExtNewProcReq::performRequest()
                                               programStrId,
                                               msg_->u.request.u.new_process.infile,
                                               msg_->u.request.u.new_process.outfile,
-                                              NULL);
+                                              NULL,
+                                              -1);
                 if (process)
                 {
                     process->userArgs (  msg_->u.request.u.new_process.argc,
                                          msg_->u.request.u.new_process.argv );
-                    // Replicate the process to other nodes
-                    CReplProcess *repl = new CReplProcess(process);
-                    Replicator.addItem(repl);
+#ifndef NAMESERVER_PROCESS
+                    if (NameServerEnabled)
+                    {
+                        // Forward the process create to the target node
+                        int rc = PtpClient->ProcessNew( process
+                                                      , lnode->GetNid()
+                                                      , lnode->GetNode()->GetName());
+                        if (rc)
+                        {
+                            char la_buf[MON_STRING_BUF_SIZE];
+                            snprintf( la_buf, sizeof(la_buf)
+                                    , "[%s] - Can't send process create "
+                                      "request for process %s (%d, %d) "
+                                      "to target node %s, nid=%d\n"
+                                    , method_name
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , lnode->GetNode()->GetName()
+                                    , lnode->GetNid() );
+                            mon_log_write(MON_MONITOR_STARTPROCESS_15, SQ_LOG_ERR, la_buf);
+                        }
+                    }
+                    else
+#endif
+                    {
+                        // Replicate the process to other nodes
+                        CReplProcess *repl = new CReplProcess(process);
+                        Replicator.addItem(repl);
+                    }
                 }
             }
             if (process)
@@ -543,19 +577,6 @@ void CExtNewProcReq::performRequest()
                     strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
                     msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
                 }
-#ifdef QUICK_WAITED_NEWPROCESS_REPLY
-                else if (process->GetPid() != -1)
-                {   // Process was created locally, reply now.  The process
-                    // was created but the process startup message has not yet
-                    // arrived.
-                    msg_->u.reply.type = ReplyType_NewProcess;
-                    msg_->u.reply.u.new_process.nid = process->GetNid();
-                    msg_->u.reply.u.new_process.pid = process->GetPid();
-                    msg_->u.reply.u.new_process.verifier = process->GetVerifier();
-                    strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
-                    msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
-                }
-#endif
                 else
                 {
                     // we will not reply at this time ... but wait for the child process to 
