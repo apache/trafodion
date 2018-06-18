@@ -434,9 +434,12 @@ ComObjectName::operator= (const ComObjectName &rhsObjectName)
 //
 
 const NAString &
-ComObjectName::getCatalogNamePartAsAnsiString(NABoolean) const
+ComObjectName::getCatalogNamePartAsAnsiString(NABoolean v) const
 {
-  return catalogNamePart_.getExternalName();
+  if (v == FALSE)
+    return catalogNamePart_.getExternalName();
+  else
+    return catalogNamePart_.getInternalName();
 }
 
 const NAString &

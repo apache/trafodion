@@ -113,3 +113,10 @@ create table monRegPersistData
    valueName   varchar(4096)
 );
 
+-- nameserver Data (monitor gensq.pl)
+create table monRegNameServer
+(
+   keyName     varchar(64) primary key,
+   valueName   varchar(64)
+);
+

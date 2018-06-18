@@ -33,4 +33,5 @@ s/Logging Location: \/user\/trafodion\/bulkload\/logs\/TEST005\/ERR.*/Logging Lo
 s/Time:.*/Time:@time@/
 s/^\*\*\* WARNING\[8436\].*/Warning 8436 or 8577 removed/g
 s/^\*\*\* WARNING\[8577\].*/Warning 8436 or 8577 removed/g
+s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
 " $fil

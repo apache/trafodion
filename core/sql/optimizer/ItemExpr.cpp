@@ -3886,7 +3886,23 @@ ItemExpr * Parameter::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 ItemExpr * DynamicParam::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
-  return this;
+  ItemExpr *result;
+
+  if (derivedNode == NULL) {
+    result = new (outHeap) DynamicParam(paramName_, indicatorName_, outHeap);
+    ((DynamicParam *) result)->setRowsetSize(rowsetSize_);
+    ((DynamicParam *) result)->setRowsetInfo(rowsetInfo_);
+    ((DynamicParam *) result)->setParamHeading(heading_);
+    ((DynamicParam *) result)->setParamTablename(tablename_);
+    // we remember our original dynamic parameter because we
+    // must use their valueid at dynamicparam::codegen time
+    ((DynamicParam *) result)->setOriginal(this);
+  }
+
+  else
+    result = derivedNode;
+
+  return Parameter::copyTopNode(result, outHeap);
 }
 
 const NAType * DynamicParam::pushDownType(NAType& desiredType,

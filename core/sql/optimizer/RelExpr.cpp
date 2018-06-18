@@ -10263,7 +10263,6 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
       return this;
     }
 
-  //  CorrName &corrName = (CorrName&)getCorrName();
   CorrName &corrName = getTableName();
   NATable * naTable = NULL;
 
@@ -10274,7 +10273,8 @@ RelExpr *HbaseAccess::bindNode(BindWA *bindWA)
     {
       *CmpCommon::diags()
 	<< DgSqlCode(-1388)
-	<< DgTableName(corrName.getExposedNameAsAnsiString());
+        << DgString0("Object")
+	<< DgString1(corrName.getExposedNameAsAnsiString());
       
       bindWA->setErrStatus();
       return this;

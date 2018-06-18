@@ -792,7 +792,6 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // locked row timeout
   AQREntry(   8550,     73,      2,     0,      0,   0, "",    0,     0),  
   AQREntry(   8550,     78,      1,    60,      0,   0, "",    0,     0),
-
   AQREntry(   8551,     12,      1,    60,      0,   0, "",    0,     0),
 
   // DP2/FS memory errors
@@ -816,6 +815,9 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // out of server storage
   AQREntry(   8551,   3502,      1,    60,      0,   0, "",    0,     0),
+
+  // locked row timeout
+  AQREntry(   8558,     0 ,      2,    10,      0,   0, "",    0,     0), 
 
   // lost open
   AQREntry(   8574,      0,      1,     0,      1,   0, "",    0,     0), 

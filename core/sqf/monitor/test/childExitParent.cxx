@@ -142,6 +142,7 @@ int main (int argc, char *argv[])
     printf ("[%s] children created, ready to be killed ...\n", MyName);
 
     for (int i=0; i<7; i++)
+//    while( 1 )
     {
         // temp print
         printf ("[%s] delaying...\n", MyName);

@@ -44,6 +44,7 @@ TPT_DECL                 (server_phandle);
 int                       server_pid;
 char                     *srv1 = (char *) "$srv1";
 char                     *srv2 = (char *) "$srv2";
+char                     *vn;
 
 void restart_server(int argc, char **argv) {
     int  arg;
@@ -59,6 +60,8 @@ void restart_server(int argc, char **argv) {
     printf("restarting server\n");
     for (int inx = 0; inx < 10; inx++) {
         server_nid = -1;
+        if (vn == NULL)
+            server_nid = 0; // real cluster needs same node
         disable = msg_test_assert_disable(); // allow for errors in start
         ferr = msg_mon_start_process(prog,                   // prog
                                      srv1,                   // name
@@ -115,6 +118,7 @@ int main(int argc, char *argv[]) {
       { "",           TA_End,  TA_NOMAX,    NULL       }
     };
 
+    vn = getenv("SQ_VIRTUAL_NODES");
     ferr = file_init(&argc, &argv);
     TEST_CHK_FEOK(ferr);
     msfs_util_init_fs(&argc, &argv, file_debug_hook);

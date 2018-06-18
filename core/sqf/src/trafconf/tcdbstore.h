@@ -54,6 +54,7 @@ public:
                                     , int lastCore
                                     , int processors
                                     , int roles ) = 0;
+    virtual int         AddNameServer( const char *nodeName ) = 0;
     virtual int         AddPNodeData( const char *name
                                     , int pnid
                                     , int excludedFirstCore
@@ -69,8 +70,11 @@ public:
                                        , int id
                                        , const char *uniqStr ) = 0;
     virtual int         Close( void ) = 0;
+    virtual int         DeleteNameServer( const char *nodeName ) = 0;
     virtual int         DeleteNodeData( int pnid ) = 0;
     virtual int         DeleteUniqueString( int nid ) = 0;
+    virtual int         GetNameServer( const char *nodeName ) = 0;
+    virtual int         GetNameServers( int *count, int max, char **nodeNames ) = 0;
     virtual int         GetNode( int nid
                                , TcNodeConfiguration_t &nodeConfig ) = 0;
     virtual int         GetNode( const char *name

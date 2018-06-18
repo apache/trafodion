@@ -1754,6 +1754,11 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  // For JDBC/ODBC batch operations, LOB  size limited to 4K bytes
   DDint__(LOB_INPUT_LIMIT_FOR_BATCH,  "16384"),
+ // Control the locking via RMS shared lock. This ensures the CLI and HDFS 
+ // operations for any LOB UID are done under a lock so concurrent operations 
+ // wont conflict and cause incosistent data. For non concurrent applications, 
+ // we can turn this off as a performance enhancement. 
+  DDkwd__(LOB_LOCKING,          "ON"),
    // Size of memoryin Megabytes  used to perform I/O to lob data file 
   // default size is 128MB   . Change to adjust memory usage. 
   DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "128"), 
@@ -2854,7 +2859,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
  
- 
   DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
@@ -2862,6 +2866,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
  
   DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
+  DDkwd__(TRAF_ALTER_ADD_PKEY_AS_UNIQUE_CONSTRAINT, "OFF"),   
 
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
@@ -2882,7 +2888,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
   DDkwd__(TRAF_CREATE_TINYINT_LITERAL,        "ON"),   
- 
+
+  DDkwd__(TRAF_DDL_ON_HIVE_OBJECTS,             "ON"),
+
   DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
@@ -2918,6 +2926,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
+  DDkwd__(TRAF_MAKE_PKEY_COLUMNS_NOT_NULL,    "ON"),
+
   // max size in bytes of a char or varchar column. Set to 16M
   DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
   DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
@@ -2927,6 +2937,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
+
+  DDkwd__(TRAF_NO_HBASE_DROP_CREATE,                   "OFF"),
 
   DDint__(TRAF_NUM_HBASE_VERSIONS,                     "0"),
 
@@ -5120,7 +5132,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "OFF";
                     
           insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
                     
           NAString csVal;
           if (value == "ON")

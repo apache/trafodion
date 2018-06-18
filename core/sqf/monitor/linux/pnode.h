@@ -32,6 +32,7 @@
 
 #include "internal.h"
 #include "clusterconf.h"
+#include "nameserverconfig.h"
 #include "lnode.h"
 #include "monlogging.h"
 
@@ -65,6 +66,9 @@ public:
     ~CNodeContainer( void );
 
     void    AddedNode( CNode *node );
+#ifndef NAMESERVER_PROCESS
+    CProcess *AddCloneProcess( ProcessInfoNs_reply_def *processInfo );
+#endif
     CNode  *AddNode( int pnid );
     void    AddNodes( void );
     void    AddToSpareNodesList( int pnid );
@@ -74,10 +78,17 @@ public:
                                    , int verifier
                                    , _TM_Txid_External trans_id );
     void    ChangedNode( CNode *node );
+    CProcess *CloneProcessNs( int nid
+                            , int pid
+                            , Verifier_t verifier );
+    CProcess *CloneProcessNs( const char *name
+                            , Verifier_t verifier );
+    void    DeleteCloneProcess( CProcess *process );
     void    DeletedNode( CNode *node );
     bool    DeleteNode( int pnid );
     void    DeleteNode( CNode *node );
     inline CClusterConfig *GetClusterConfig( void ) { return ( clusterConfig_ ); }
+    inline CNameServerConfigContainer *GetNameServerConfig( void ) { return ( nameServerConfig_ ); }
     int     GetFirstNid( void );
     int     GetNextNid( int nid );
     inline CNode *GetFirstNode( void ) { return ( head_ ); }
@@ -109,6 +120,15 @@ public:
                         , bool checkstate=true
                         , bool backupOk=false );
     CProcess *GetProcessByName( const char *name, bool checkstate=true );
+    int     GetProcessInfoNs( int nid
+                            , int pid
+                            , Verifier_t verifier
+                            , ProcessInfoNs_reply_def *processInfo );
+    int     GetProcessInfoNs( const char *name
+                            , Verifier_t verifier
+                            , ProcessInfoNs_reply_def *processInfo );
+    CProcess *GetProcessLByTypeNs( int nid
+                                 , PROCESSTYPE type );
     SyncState GetTmState( SyncState check_state );
     CNode  *GetZoneNode( int zid );
 
@@ -150,6 +170,7 @@ private:
     int     pnodeCount_;    // # of physical node objects in array
     int    *indexToPnid_;   // map of configuration entries to Node[pnid]
     CClusterConfig *clusterConfig_;  // configuration objects
+    CNameServerConfigContainer *nameServerConfig_;  // name server config
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list
     CNode  *head_;  // head of physical nodes linked list
@@ -198,6 +219,10 @@ public:
     void    GetCpuStat ( void );
     bool    GetSchedulingData( void );
 
+#ifdef NAMESERVER_PROCESS
+    inline void AddMonConnCount( int add ) { monConnCount_ += add; }
+#endif
+
     inline unsigned int GetFreeCache( void ) { return( freeCache_ ); }
     inline unsigned int GetFreeMemory( void )
                       { return( memInfoData_[memFree] ); }
@@ -228,6 +253,14 @@ public:
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
     inline const char *GetCommPort( void ) { return commPort_.c_str(); }
     inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
+#ifdef NAMESERVER_PROCESS
+    inline const char *GetMon2NsPort( void ) { return mon2NsPort_.c_str(); }
+    inline int   GetMon2NsSocketPort( void ) { return( mon2NsSocketPort_ ); }
+    inline int GetMonConnCount( void ) { return monConnCount_; }
+#else
+    inline const char *GetPtPPort( void ) { return ptpPort_.c_str(); }
+    inline int   GetPtPSocketPort( void ) { return( ptpSocketPort_ ); }
+#endif
     inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
     inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
     inline PNidVector   &GetSparePNids( void ) { return( sparePNids_ ); }
@@ -236,7 +269,7 @@ public:
     // If candidate string has not been seen before assign a unique
     // id and store it in the config database.   In either case return
     // the unique id as the value of the method.
-    strId_t GetStringId(char *candidate);
+    strId_t GetStringId( char *candidate, CLNode *targetLNode = NULL, bool clone = false );
 
     inline int   GetTmSyncNid( void ) { return( tmSyncNid_ ); }
     inline SyncState GetTmSyncState( void ) { return( tmSyncState_ ); }
@@ -250,12 +283,15 @@ public:
     inline bool  IsRankFailure( void ) { return( rankFailure_ ); }
     inline bool  IsSpareNode( void ) { return( spareNode_ ); }
     inline bool  IsSoftNodeDown( void ) { return( internalState_ == State_SoftDown ); }
+    inline bool  IsSoftNodeUp( void ) { return( internalState_ == State_SoftUp ); }
+    inline bool  IsShutdownNameServer( void ) { return( shutdownNameServer_ ); }
 
     CNode  *Link( CNode *entry );
     void    MoveLNodes( CNode *targetNode );
     inline void ResetSpareNode( void ) { spareNode_ = false; }
     void    ResetWatchdogTimer( void );
     inline void ResetSoftNodeDown( void ) { internalState_ = State_Default; }
+    inline void ResetSoftNodeUp( void ) { internalState_ = State_Default; }
     inline void SetActivatingSpare( int activatingSpare ) { activatingSpare_ = activatingSpare; }
     void    SetAffinity( int nid, pid_t pid, PROCESSTYPE type );
     void    SetAffinity( CProcess *process );
@@ -286,6 +322,7 @@ public:
     inline void SetNumCores( int numCores ) { numCores_ = numCores; }
     inline void SetPhase( NodePhase phase ) { phase_ = phase; }
     inline void SetSoftNodeDown( void ) { internalState_ = State_SoftDown; }
+    inline void SetSoftNodeUp( void ) { internalState_ = State_SoftUp; }
     inline void SetSparePNids( PNidVector &sparePNids ) { sparePNids_ = sparePNids; }
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
@@ -293,10 +330,18 @@ public:
     //inline void SetPort( char * port) { port_ = port; }
     inline void SetCommPort( char *commPort) { commPort_ = commPort; }
     inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
+#ifdef NAMESERVER_PROCESS
+    inline void SetMon2NsPort( char *mon2NsPort) { mon2NsPort_ = mon2NsPort; }
+    inline void SetMon2NsSocketPort( int mon2NsSocketPort) { mon2NsSocketPort_ = mon2NsSocketPort; }
+#else
+    inline void SetPtPPort( char *ptpPort) { ptpPort_ = ptpPort; }  
+    inline void SetPtPSocketPort( int ptpSocketPort) { ptpSocketPort_ = ptpSocketPort; }
+#endif
     //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
     inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
     inline void SetSyncSocketPort( int syncSocketPort) { syncSocketPort_ = syncSocketPort; }
     inline void SetSpareNode( void ) { spareNode_ = true; }
+    inline void SetShutdownNameServer( bool shutdown ) { shutdownNameServer_ = shutdown; }
     inline void SetShutdownLevel( ShutdownLevel level ) { shutdownLevel_ = level; }
     void SetState( STATE state );
     inline void SetTmSyncNid( int nid ) { tmSyncNid_ = nid; }
@@ -307,6 +352,7 @@ public:
     void StartPStartDPersistent( void );
     void StartPStartDPersistentDTM( int nid );
     void StartSMServiceProcess( void );
+    void StartNameServerProcess( void );
     void StartWatchdogProcess( void );
     void StartWatchdogTimer( void );
     void StopWatchdogTimer( void );
@@ -314,9 +360,11 @@ public:
     void addToQuiesceSendPids( int pid, Verifier_t verifier );
     void addToQuiesceExitPids( int pid, Verifier_t verifier );
     void delFromQuiesceExitPids( int pid, Verifier_t verifier );
+#ifndef NAMESERVER_PROCESS
     inline bool isQuiesceExitPidsEmpty() { return quiesceExitPids_->empty(); }
     inline int getNumQuiesceExitPids() { return quiesceExitPids_->size(); }
     inline int getNumQuiesceSendPids() { return quiesceExitPids_->size(); }
+#endif
     inline bool isInQuiesceState() { return (internalState_ == State_Quiesce); }
     inline void setQuiesceState() { internalState_ = State_Quiesce; }
     inline void clearQuiesceState() { internalState_ = State_Default; }
@@ -371,16 +419,27 @@ private:
     int           tmSyncNid_;    // Logical Node of TM that initiated sync
     SyncState     tmSyncState_;  // Sync operation state with TMs
     ShutdownLevel shutdownLevel_;
+    bool          shutdownNameServer_; // true when monitor shutdown Name Server request is received
     int           wdtKeepAliveTimerValue_; // expiration time
     struct timeval todStart_;    // time of last watchdog reset
 
+#ifndef NAMESERVER_PROCESS
     SQ_LocalIOToClient::bcastPids_t   *quiesceSendPids_;   // list of pids on this node that needs quiescing.
     SQ_LocalIOToClient::bcastPids_t   *quiesceExitPids_;   // list of pids on this node that will exit on quiescing
+#endif
     IntNodeState  internalState_;     // internal state of a node, not externalized to users 
     
     int           zid_;
     string        commPort_;          // monitor MPI or Integration port
     string        syncPort_;          // monitor socket allgather port
+#ifdef NAMESERVER_PROCESS
+    string        mon2NsPort_;        // monitor to ns port
+    int           mon2NsSocketPort_;  // monitor to ns socket port
+    int           monConnCount_;      // monitor connections
+#else
+    string        ptpPort_;
+    int           ptpSocketPort_;           // point-2-point socket port
+#endif
     int           commSocketPort_;          // re-integration socket port
     int           syncSocketPort_;          // algather socket port
 

@@ -83,7 +83,7 @@ public final class ServerManager implements Callable {
     private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
-    private String nid = null;
+//    private String nid = null;
     private static String userProgKeepaliveStatus;
     private static int userProgKeepaliveIdletime;
     private static int userProgKeepaliveIntervaltime;
@@ -423,12 +423,9 @@ public final class ServerManager implements Callable {
             featureCheck();
             registerInRunning(instance);
             RetryCounter retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
-            while (!isTrafodionRunning(nid)) {
+            while (!isTrafodionRunning(null)) {
                if (!retryCounter.shouldRetry()) {
-                  if (nid != null)
-                     throw new IOException("Node " + nid + " is not Up");
-                  else
-                     throw new IOException("Trafodion is not running");
+                  throw new IOException("Trafodion is not running");
                } else {
                   retryCounter.sleepUntilNextRetry();
                   retryCounter.useRetry();
@@ -464,6 +461,9 @@ public final class ServerManager implements Callable {
                     LOG.info("Server handler [" + instance + ":" + result + "] exit");
 
                     retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
+                    int childInstance = result.intValue();
+                    ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
+                    String nid = serverHandlers[childInstance - 1].serverMonitor.nid;
                     while (!isTrafodionRunning(nid)) {
                         if (!retryCounter.shouldRetry()) {
                             throw new IOException("Node " + nid + " is not Up");
@@ -472,9 +472,7 @@ public final class ServerManager implements Callable {
                             retryCounter.useRetry();
                         }
                     }
-                    int childInstance = result.intValue();
                     // get the node id
-                    ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
                     if (previousServerHandler.retryCounter.shouldRetryInnerMinutes()) {
                         serverHandlers[childInstance - 1] = previousServerHandler;
                         completionService.submit(serverHandlers[childInstance - 1]);

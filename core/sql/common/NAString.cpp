@@ -560,7 +560,12 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
 
   size_t countOfRemoved = i;
   i = 0;
-  if (ansiIdent[i] != '"') {	// REGULAR identifier
+  // Handle double quotes or backquotes as delimited identifiers.
+  // Backquotes are used for hive objects.
+  // An error will be returned later if they are used for traf objects.
+  NABoolean isDquote = (ansiIdent[i] == '"');
+  if ((ansiIdent[i] != '"') && 
+      (ansiIdent[i] != '`')) {	// REGULAR identifier
 
     // ANSI 5.2 SR 13 + 14 and 8.2 SR 3a say that trailing spaces are
     // insignificant in equality-testing of identifiers, so remove them
@@ -759,7 +764,7 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
   } // end REGULAR identifier
   else {
 
-    UInt32 state = 1;
+    UInt32 state = (isDquote ? 1 : 3);
     ansiIdent.remove(0,1);         // remove initial dquote
     countOfRemoved++;
 
@@ -937,12 +942,28 @@ Lng32 ToInternalIdentifier( NAString &ansiIdent
             return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
           i++;
           break;
+	case 3:
+          if (c == '`') {
+            ansiIdent.remove(i,1);
+            countOfRemoved++;
+            state = 4;
+          } else
+            i++;
+          break;
+	case 4:
+          if (c == '`')
+            state = 3;
+          else if (c != ' ')		// tab became space
+            return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
+          i++;
+          break;
 	default:
           ComASSERT(FALSE); 
         }		 // switch
       }		 // while
 
-      if (state != 2)
+      if ((isDquote && (state != 2)) ||
+          (NOT isDquote && (state != 4)))
         return illegalCharInIdentifier(ansiIdent, i, countOfRemoved);
 
       // ANSI 5.2 SR 13 + 14 and 8.2 SR 3a say that trailing spaces

@@ -769,6 +769,10 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
   // Load definitions of system metadata tables
   for (size_t i = 0; i < numMDTables; i++)
     {
+	  // no need to do hive ddl checks for MD query compiles
+      parser.hiveDDLInfo_->init();
+      parser.hiveDDLInfo_->disableDDLcheck_ = TRUE;
+
       const MDTableInfo &mdti = allMDtablesInfo[i];
 
       const char * oldName = NULL;
@@ -4098,7 +4102,6 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objectUID);
-              
 
   cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
@@ -6302,6 +6305,10 @@ short CmpSeabaseDDL::buildKeyInfoArray(
           ComTdbVirtTableKeyInfo::ASCENDING_ORDERING : 
           ComTdbVirtTableKeyInfo::DESCENDING_ORDERING);
       keyInfoArray[index].nonKeyCol = 0;
+
+      ElemDDLColDef *colDef = (*colArray)[keyInfoArray[index].tableColNum];
+      if (colDef && colDef->getConstraintPK() && colDef->getConstraintPK()->isNullableSpecified())
+        allowNullableUniqueConstr = TRUE;
 
       if ((colInfoArray) &&
           (colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
@@ -8644,7 +8651,7 @@ void CmpSeabaseDDL::updateVersion()
 short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart, 
                                         const NAString &schemaNamePart, 
                                         const NAString &objectNamePart,
-                                        NATable * naTable,
+                                        const NABoolean hasSaltedColumn,
                                         ExpHbaseInterface * ehi)
 {
   Lng32 retcode = 0;
@@ -8657,7 +8664,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   hbaseTable.len = extNameForHbase.length();
 
   // if salted table, preserve splits.
-  if (naTable->hasSaltedColumn())
+  if (hasSaltedColumn)
     retcode = ehi->truncate(hbaseTable, TRUE, TRUE);
   else
     retcode = ehi->truncate(hbaseTable, FALSE, TRUE);
@@ -8841,7 +8848,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
                                  
   NABoolean ddlXns = ddlExpr->ddlXns();
   if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
-                         naTable, ehi))
+                         naTable->hasSaltedColumn(), ehi))
     {
       deallocEHI(ehi); 
       
@@ -8868,7 +8875,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
           NAString idxName = qn.getObjectName();
 
           retcode = truncateHbaseTable(catName, schName, idxName,
-                                       naTable, ehi);
+                                       naTable->hasSaltedColumn(), ehi);
           if (retcode)
             {
               deallocEHI(ehi); 
@@ -9078,8 +9085,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
             ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable();
           
           if ((createTableParseNode->getAddConstraintUniqueArray().entries() > 0) ||
-              (createTableParseNode->getAddConstraintRIArray().entries() > 0) ||
-              (createTableParseNode->getAddConstraintCheckArray().entries() > 0))
+                   (createTableParseNode->getAddConstraintRIArray().entries() > 0) ||
+                   (createTableParseNode->getAddConstraintCheckArray().entries() > 0))
             createSeabaseTableCompound(createTableParseNode, currCatName, currSchName);
           else
             {
@@ -9553,6 +9560,13 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
              ddlNode->castToStmtDDLNode()->castToStmtDDLCommentOn();
 
            doSeabaseCommentOn(comment, currCatName, currSchName);
+        }
+      else if (ddlNode->getOperatorType() ==  DDL_ON_HIVE_OBJECTS)
+        {
+           StmtDDLonHiveObjects * hddl =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLonHiveObjects();
+
+           processDDLonHiveObjects(hddl, currCatName, currSchName);
         }
       else
         {

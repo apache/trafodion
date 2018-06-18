@@ -44,15 +44,20 @@
 
 begin node
 
-node-id=0;node-name=n7;cores=0-1;processors=2;roles=connection,aggregation,storage
-node-id=1;node-name=n7;cores=2-3;processors=2;roles=connection,aggregation,storage
-node-id=2;node-name=n6;cores=0-1;processors=2;roles=connection,aggregation,storage
-node-id=3;node-name=n6;cores=2-3;processors=2;roles=connection,aggregation,storage
-node-id=4;node-name=n5;cores=0-1;processors=2;roles=connection,aggregation,storage
-node-id=5;node-name=n5;cores=2-3;processors=2;roles=connection,aggregation,storage
+node-id=0;node-name=n001.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
+node-id=1;node-name=n002.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
+node-id=2;node-name=n003.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
+node-id=3;node-name=n004.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
+node-id=4;node-name=n005.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
+node-id=5;node-name=n006.mydomain;cores=0-7;processors=8;roles=connection,aggregation,storage
 
 end node
 
+# Note: There must be at minimum one name server which maps to the first node
+# in the node section above, i.e., node-id=0
+begin name-server
+nodes=n001.mydomain,n002.mydomain
+end name-server
 
 ###############################################################################
 #

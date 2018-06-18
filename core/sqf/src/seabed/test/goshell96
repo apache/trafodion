@@ -46,7 +46,7 @@ ps
 ! Start the client process
 exec {nowait,name \$CLI1} $xclient -client1 $*
 exec {nowait,name \$CLI2} $xclient -client2 $*
-exec {name \$CLI3} $xclient -client3 $*
+exec {$nid0 name \$CLI3} $xclient -client3 $*
 ! Display process status to see new processes
 ps
 ! Wait for our processes to stop, then stop the monitor processes and exit.

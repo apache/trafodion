@@ -49,6 +49,9 @@ const char *PersistProcessTypeString( TcProcessType_t type )
         case ProcessType_Watchdog:
             str = "WDG";
             break;
+        case ProcessType_NameServer:
+            str = "TNS";
+            break;
         case ProcessType_AMP:
             str = "AMP";
             break;

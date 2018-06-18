@@ -32,7 +32,7 @@
 #include "ComSmallDefs.h"
 #include "ComCextdecs.h"
 #include "Int64.h"
-
+#include "ExpLOBenums.h"
 #include <stdio.h>
 
 #include "sqlcli.h"
@@ -73,7 +73,7 @@ const Int32 CurrSuspendQueryReplyVersionNumber = 100;
 const Int32 CurrActivateQueryReqVersionNumber = 100;
 const Int32 CurrActivateQueryReplyVersionNumber = 100;
 const Int32 CurrSecurityInvalidKeyVersionNumber = 100;
-
+const Int32 CurrLobLockVersionNumber=100;
 //
 // An enumeration of all IPC objects for RTS Servers.
 // Includes both message objects and stream objects.
@@ -107,12 +107,13 @@ enum RtsMessageObjType
   CANCEL_QUERY_KILL_SERVERS_REQ,        // 9019
   CANCEL_QUERY_KILL_SERVERS_REPLY,      // 9020 
   SECURITY_INVALID_KEY_REQ,             // 9021
-
+  LOB_LOCK_REQ,                         // 9022
   // Object Types
   RTS_QUERY_ID = IPC_MSG_RTS_FIRST + 500, // 9500
   RTS_EXPLAIN_FRAG, 			  // 9501
   
-  RTS_DIAGNOSTICS_AREA = IPC_SQL_DIAG_AREA
+  RTS_DIAGNOSTICS_AREA = IPC_SQL_DIAG_AREA,
+  
 };
 
 typedef Int64 RtsHandle;
@@ -1194,5 +1195,36 @@ private:
 
 };
 
+
+// This message is sent from the CLI's ContextCli::setLobLock
+// to MXSSMP.  It is also sent from MXSSMP to MXSSCP.
+class LobLockRequest: public RtsMessageObj
+{
+public:
+  LobLockRequest(NAMemory *heap)
+    : RtsMessageObj(LOB_LOCK_REQ, 
+                    CurrLobLockVersionNumber, heap)
+  {
+    memset(lobLockId_,0, sizeof(lobLockId_));
+  }
+
+  LobLockRequest(NAMemory *heap,
+                  char *lobId );
+
+  virtual ~LobLockRequest();
+
+  IpcMessageObjSize packedLength();
+  IpcMessageObjSize packObjIntoMessage(IpcMessageBufferPtr buffer);
+  void unpackObj(IpcMessageObjType objType,
+		 IpcMessageObjVersion objVersion,
+		 NABoolean sameEndianness,
+		 IpcMessageObjSize objSize,
+		 IpcConstMessageBufferPtr buffer);
+
+  char *getLobLockId()  {return lobLockId_; }
+
+private:
+  char lobLockId_[LOB_LOCK_ID_SIZE+1];//allow for the lock as well as a '+' or '-'
+};
 #endif // _RTS_EXE_IPC_H_
 
