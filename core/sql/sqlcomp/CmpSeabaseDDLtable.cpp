@@ -10436,7 +10436,12 @@ short CmpSeabaseDDL::unregisterNativeTable
      objectNamePart.data(),
      objType
      );
-  
+
+  // drop comment text
+  retcode = deleteFromTextTable(&cliInterface,
+                                objUID,
+                                ComTextType::COM_OBJECT_COMMENT_TEXT,
+                                0);
   return 0;
 }
 
