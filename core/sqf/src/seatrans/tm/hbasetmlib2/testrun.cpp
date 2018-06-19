@@ -41,7 +41,7 @@ int main () {
    short lv_dtmid = 0;
    char *errStr = NULL;
    int   errStrLen = 0;
-   long ctrlPtNum;
+   long ctrlPtNum = 0;
    CHbaseTM *lp_myHbaseTM = 0;
 
    lp_myHbaseTM = new CHbaseTM();
