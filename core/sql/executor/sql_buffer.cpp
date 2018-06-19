@@ -1818,7 +1818,7 @@ tupp_descriptor *SqlBufferDense::add_tuple_desc(Lng32 tup_data_size)
       tdi = firstTupleDesc();
 
   tupp_descriptor * td = tdi->tupleDesc();
-  td->init((unsigned short)tup_data_size,
+  td->init(tup_data_size,
 	   0, 
 	   (char *)td + td_size);
 
