@@ -5242,7 +5242,8 @@ option is:
   | PROCEDURES FOR LIBRARY [[catalog-name.]schema-name.]library-name
   | PROCEDURES [IN SCHEMA [catalog-name.]schema-name]
   | ROLES [FOR USER database-username]
-  | SEQUENCES [IN {CATALOG catalog-name | SCHEMA schema-name}]
+  | SEQUENCES [IN CATALOG catalog-name]
+  | SEQUENCES [IN SCHEMA schema-name}]
   | SCHEMAS [IN CATALOG catalog-name]
   | SCHEMAS FOR [USER | ROLE] authorization-id
   | TABLES [IN CATALOG catalog-name]
