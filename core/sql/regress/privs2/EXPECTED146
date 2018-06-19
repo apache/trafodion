@@ -1,0 +1,1773 @@
+>>obey TEST146(create_db);
+>>-- =================================================================
+>>-- create native hbase table and roles
+>>-- =================================================================
+>>
+>>-- create hbase table 
+>>create hbase table t146t1 ( column family 'cf');
+
+--- SQL operation complete.
+>>insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'team_number', -1, '1');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'visitor_team', -1, '2');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'game_location', -1, 'California');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'team_number', -1, '1');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'visitor_team', -1, '3');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'game_location', -1, 'Oklahoma');
+
+--- 1 row(s) inserted.
+>>select count(*) from hbase."_CELL_".t146t1;
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>select count(*) from hbase."_ROW_".t146t1;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>create external table t146t1 
++>  (row_id varchar(20) not null primary key, 
++>   row_value varchar (1000))
++> attribute default column family 'cf'
++> map to hbase table t146t1;
+
+--- SQL operation complete.
+>>
+>>create hbase table t146t3 ( column family 'cf');
+
+--- SQL operation complete.
+>>
+>>-- These operations are not allowed on hbase tables
+>>update hbase."_CELL_".t146t1 set col_value = '4' where row_id = '2' and col_name = 'visitor_team';
+
+*** ERROR[1425] This operation could not be performed on HBASE."_CELL_".T146T1. Reason: Cannot update an hbase table in CELL format. Use ROW format for this operation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>delete from hbase."_CELL_".t146t1 where row_id = '3';
+
+*** ERROR[1425] This operation could not be performed on HBASE."_CELL_".T146T1. Reason: Cannot delete from an hbase table in CELL format. Use ROW format for this operation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>showddl hbase."_CELL_".t146t1;
+
+/*
+CREATE TABLE HBASE."_CELL_".T146T1
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (ROW_ID ASC)
+  )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
+/* ObjectUID = 7181713655023564985 */
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>showddl hbase."_ROW_".t146t1;
+
+/*
+CREATE TABLE HBASE."_ROW_".T146T1
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (ROW_ID ASC)
+  )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
+/* ObjectUID = 7181713655023565067 */
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>showddl hbase."_MAP_".t146t1;
+
+CREATE EXTERNAL TABLE T146T1
+  (
+    "cf".ROW_ID                      VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".ROW_VALUE                   VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , PRIMARY KEY NOT SERIALIZED (ROW_ID ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+  MAP TO HBASE TABLE T146T1 DATA FORMAT VARCHAR
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_MAP_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_CELL_".T146T3
+"_ROW_".T146T1
+"_ROW_".T146T3
+
+--- SQL operation complete.
+>>
+>>create role t146_role1;
+
+--- SQL operation complete.
+>>grant role t146_role1 to sql_user1;
+
+--- SQL operation complete.
+>>grant role db__hbaserole to sql_user5;
+
+--- SQL operation complete.
+>>
+>>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+CREATE_SCHEMA
+
+--- SQL operation complete.
+>>get external hbase objects, match '%T146%';
+
+External HBase objects
+======================
+
+T146T1
+T146T3
+
+--- SQL operation complete.
+>>
+>>obey TEST146(test_grants);
+>>-- =================================================================
+>>-- this set of tests run basic grant tests for native Hive tables
+>>-- =================================================================
+>>
+>>-- grant a privilege where user has no grant privilege
+>>sh sqlci -i "TEST146(perform_grants)" -u sql_user3;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>grant all on hbase."_CELL_".t146t1 to t146_role1 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select, update, insert, delete on hbase."_ROW_".t146t1 to t146_role1 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select(row_id, col_value) on hbase."_CELL_".t146t1 to sql_user2 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select on hbase."_CELL_".t146t1 to sql_user3 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select (row_id) on hbase."_ROW_".t146t1 to sql_user2 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select on hbase."_ROW_".t146t1 to sql_user3 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>grant select on t146t1 to sql_user3 by db__hbaserole;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>showddl hbase."_CELL_".t146t1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>showddl hbase."_ROW_".t146t1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>showddl hbase."_MAP_".t146t1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- grant privileges by the hbase admin user
+>>sh sqlci -i "TEST146(perform_grants)" -u sql_user5;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>grant all on hbase."_CELL_".t146t1 to t146_role1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select, update, insert, delete on hbase."_ROW_".t146t1 to t146_role1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select(row_id, col_value) on hbase."_CELL_".t146t1 to sql_user2 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_CELL_".t146t1 to sql_user3 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select (row_id) on hbase."_ROW_".t146t1 to sql_user2 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_ROW_".t146t1 to sql_user3 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on t146t1 to sql_user3 by db__hbaserole;
+
+--- SQL operation complete.
+>>showddl hbase."_CELL_".t146t1;
+
+/*
+CREATE TABLE HBASE."_CELL_".T146T1
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (ROW_ID ASC)
+  )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
+/* ObjectUID = 7181713655023564985 */
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+  GRANT SELECT ON HBASE."_CELL_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
+  GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_CELL_".T146T1 TO
+  T146_ROLE1 GRANTED BY DB__HBASEROLE;
+GRANT SELECT(ROW_ID, COL_VALUE) ON
+  HBASE."_CELL_".T146T1 TO SQL_USER2 GRANTED BY DB__HBASEROLE;
+
+--- SQL operation complete.
+>>showddl hbase."_ROW_".t146t1;
+
+/*
+CREATE TABLE HBASE."_ROW_".T146T1
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (ROW_ID ASC)
+  )
+;
+*/
+
+/* HBase DDL */
+CREATE HBASE TABLE T146T1 ( COLUMN FAMILY '#1')
+
+REGISTER /*INTERNAL*/ HBASE TABLE T146T1;
+/* ObjectUID = 7181713655023565067 */
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_ROW_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+  GRANT SELECT ON HBASE."_ROW_".T146T1 TO SQL_USER3 GRANTED BY DB__HBASEROLE;
+  GRANT SELECT, INSERT, DELETE, UPDATE ON HBASE."_ROW_".T146T1 TO T146_ROLE1
+  GRANTED BY DB__HBASEROLE;
+GRANT SELECT(ROW_ID) ON HBASE."_ROW_".T146T1 TO
+  SQL_USER2 GRANTED BY DB__HBASEROLE;
+
+--- SQL operation complete.
+>>showddl hbase."_MAP_".t146t1;
+
+CREATE EXTERNAL TABLE T146T1
+  (
+    "cf".ROW_ID                      VARCHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".ROW_VALUE                   VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , PRIMARY KEY NOT SERIALIZED (ROW_ID ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+  MAP TO HBASE TABLE T146T1 DATA FORMAT VARCHAR
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON HBASE."_MAP_".T146T1 TO DB__HBASEROLE WITH GRANT OPTION;
+  GRANT SELECT ON HBASE."_MAP_".T146T1 TO SQL_USER3;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user1 can select and update table via t146_role1, no select from map table
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+ROW_ID  COL_FAMILY                                                                                            COL_NAME              COL_VALUE
+------  ----------------------------------------------------------------------------------------------------  --------------------  --------------------
+
+1       cf                                                                                                    game_location         California          
+1       cf                                                                                                    visitor_team          2                   
+1       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    game_location         Oklahoma            
+2       cf                                                                                                    visitor_team          3                   
+
+--- 6 row(s) selected.
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+ROW_ID  COLUMN_DETAILS
+------  --------------
+
+1       cf:game_      
+2       cf:game_      
+
+--- 2 row(s) selected.
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+ROW_ID
+------
+
+1     
+2     
+
+--- 2 row(s) selected.
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+--- 3 row(s) inserted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       Ohio                                    
+3       1                                       
+3       3                                       
+
+--- 9 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+--- 1 row(s) updated.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       1                                       
+3       2018-04-30                              
+3       Ohio                                    
+3       3                                       
+
+--- 10 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+--- 1 row(s) deleted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user2 can select subset of columns
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1(columns: COL_FAMILY, COL_NAME).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1(columns: COLUMN_DETAILS).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+ROW_ID
+------
+
+1     
+2     
+
+--- 2 row(s) selected.
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1(columns: COLUMN_DETAILS).
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user3 can select all 
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user3;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+ROW_ID  COL_FAMILY                                                                                            COL_NAME              COL_VALUE
+------  ----------------------------------------------------------------------------------------------------  --------------------  --------------------
+
+1       cf                                                                                                    game_location         California          
+1       cf                                                                                                    visitor_team          2                   
+1       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    game_location         Oklahoma            
+2       cf                                                                                                    visitor_team          3                   
+
+--- 6 row(s) selected.
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+--- 0 row(s) selected.
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+ROW_ID  COLUMN_DETAILS
+------  --------------
+
+1       cf:game_      
+2       cf:game_      
+
+--- 2 row(s) selected.
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+ROW_ID
+------
+
+1     
+2     
+
+--- 2 row(s) selected.
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user4 has no privileges
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user4;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER4                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user5 has all privileges through role db__hbaserole
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user5;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+ROW_ID  COL_FAMILY                                                                                            COL_NAME              COL_VALUE
+------  ----------------------------------------------------------------------------------------------------  --------------------  --------------------
+
+1       cf                                                                                                    game_location         California          
+1       cf                                                                                                    visitor_team          2                   
+1       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    game_location         Oklahoma            
+2       cf                                                                                                    visitor_team          3                   
+
+--- 6 row(s) selected.
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+--- 0 row(s) selected.
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+ROW_ID  COLUMN_DETAILS
+------  --------------
+
+1       cf:game_      
+2       cf:game_      
+
+--- 2 row(s) selected.
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+ROW_ID
+------
+
+1     
+2     
+
+--- 2 row(s) selected.
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+--- 3 row(s) inserted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       Ohio                                    
+3       1                                       
+3       3                                       
+
+--- 9 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+--- 1 row(s) updated.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       1                                       
+3       2018-04-30                              
+3       Ohio                                    
+3       3                                       
+
+--- 10 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+--- 1 row(s) deleted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+External HBase objects
+======================
+
+T146T1
+T146T3
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_CELL_".T146T3
+"_ROW_".T146T1
+"_ROW_".T146T3
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>obey TEST146(test_revokes);
+>>-- ============================================================================
+>>-- verify that revoking privileges work as expected on native Hive tables
+>>-- ============================================================================
+>>
+>>-- revoke update from t146_role1
+>>revoke update on hbase."_ROW_".t146t1 from t146_role1 by db__hbaserole;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+ROW_ID  COL_FAMILY                                                                                            COL_NAME              COL_VALUE
+------  ----------------------------------------------------------------------------------------------------  --------------------  --------------------
+
+1       cf                                                                                                    game_location         California          
+1       cf                                                                                                    visitor_team          2                   
+1       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    team_number           1                   
+2       cf                                                                                                    game_location         Oklahoma            
+2       cf                                                                                                    visitor_team          3                   
+
+--- 6 row(s) selected.
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+ROW_ID  COLUMN_DETAILS
+------  --------------
+
+1       cf:game_      
+2       cf:game_      
+
+--- 2 row(s) selected.
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+ROW_ID
+------
+
+1     
+2     
+
+--- 2 row(s) selected.
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+--- 3 row(s) inserted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       Ohio                                    
+3       1                                       
+3       3                                       
+
+--- 9 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       1                                       
+1       2                                       
+2       3                                       
+2       1                                       
+2       Oklahoma                                
+3       Ohio                                    
+3       1                                       
+3       3                                       
+
+--- 9 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+--- 1 row(s) deleted.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+"_ROW_".T146T1
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- revoke role from sql_user1, no longer has privilege
+>>revoke role t146_role1 from sql_user1;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+*** ERROR[15017] Statement S1 was not found.
+
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>--revoke column privs from sql_user2
+>>revoke select (row_id) on hbase."_ROW_".t146t1 from sql_user2 by db__hbaserole;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST146(perform_ops)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- contains most columns
+>>select substring (row_id,1,5) as row_id, 
++>       col_family,
++>       cast(col_name as char(20) character set iso88591) as col_name,
++>       cast(col_value as char(20) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_CELL_".T146T1(columns: COL_FAMILY, COL_NAME).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s1 from
++>select substring (row_id,1,4) as row_id, 
++>       cast (col_value as char (40) character set iso88591) as col_value
++>  from hbase."_CELL_".t146t1 order by 1;
+
+--- SQL command prepared.
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>select row_id from t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION."_HB_MAP_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- contains columns associated with granted column level privileges
+>>select substring(row_id,1,4) as row_id, 
++>       substring (column_details,3,8) as column_details
++>  from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>insert into hbase."_CELL_".t146t1 values 
++>  ('3', 'cf', 'game_location', -1, 'Ohio'), 
++>  ('3', 'cf', 'visitor_team', -1, '3'),
++>  ('3', 'cf', 'team_number', -1, '1');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view HBASE."_CELL_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
++>   where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t146t1 where row_id = '3';
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view HBASE."_ROW_".T146T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s1;
+
+ROW_ID  COL_VALUE                               
+------  ----------------------------------------
+
+1       California                              
+1       2                                       
+1       1                                       
+2       1                                       
+2       Oklahoma                                
+2       3                                       
+
+--- 6 row(s) selected.
+>>
+>>get external hbase objects, match '%T146%';
+
+--- SQL operation complete.
+>>get hbase registered tables in catalog trafodion, match '%T146%';
+
+HBase Registered Tables in Catalog TRAFODION
+============================================
+
+"_CELL_".T146T1
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>obey TEST146(test_ddl);
+>>-- ============================================================================
+>>-- verify that DDL operations work correctly
+>>-- ============================================================================
+>>
+>>--  db__root can create hbase tables
+>>obey TEST146(perform_ddl);
+>>-- ============================================================================
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>log LOG146;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+DB__ROOT                                                                                                                         
+
+--- 1 row(s) selected.
+>>
+>>create hbase table t146t2 ( column family 'cf');
+
+--- SQL operation complete.
+>>
+>>create external table t146t2
++>  (row_id varchar(20) not null primary key,
++>   row_value varchar (1000))
++> attribute default column family 'cf'
++> map to hbase table t146t2;
+
+--- SQL operation complete.
+>>
+>>grant select on hbase."_CELL_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_ROW_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_MAP_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>get privileges for role db__hbaserole, match '%146%';
+
+Privileges for Role DB__HBASEROLE
+=================================
+
+SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T2
+SIDU-R-    HBASE._CELL_.T146T3
+SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T2
+SIDU-R-    HBASE._ROW_.T146T3
+SIDU-R-    TRAFODION._HB_MAP_.T146T1
+SIDU-R-    TRAFODION._HB_MAP_.T146T2
+
+--- SQL operation complete.
+>>
+>>drop hbase table t146t2;
+
+--- SQL operation complete.
+>>get privileges for role db__hbaserole, match '%146%';
+
+Privileges for Role DB__HBASEROLE
+=================================
+
+SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T3
+SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T3
+SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+--- SQL operation complete.
+>>
+>>
+>>-- sql_user3 has no privleges, cannot create tables
+>>sh sqlci -i "TEST146(perform_ddl)" -u sql_user3;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>create hbase table t146t2 ( column family 'cf');
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>create external table t146t2
++>  (row_id varchar(20) not null primary key,
++>   row_value varchar (1000))
++> attribute default column family 'cf'
++> map to hbase table t146t2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+*** ERROR[4260] HBase table(T146T2) to be mapped as an external table does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>grant select on hbase."_CELL_".t146t2 to sql_user1 by db__hbaserole;
+
+*** ERROR[1389] Object T146T2 does not exist in Trafodion.
+
+*** ERROR[4082] Object HBASE."_CELL_".T146T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>grant select on hbase."_ROW_".t146t2 to sql_user1 by db__hbaserole;
+
+*** ERROR[1389] Object T146T2 does not exist in Trafodion.
+
+*** ERROR[4082] Object HBASE."_ROW_".T146T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>grant select on hbase."_MAP_".t146t2 to sql_user1 by db__hbaserole;
+
+*** ERROR[4082] Object TRAFODION."_HB_MAP_".T146T2 does not exist or is inaccessible.
+
+*** ERROR[4082] Object TRAFODION."_HB_MAP_".T146T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>get privileges for role db__hbaserole, match '%146%';
+
+--- SQL operation complete.
+>>
+>>drop hbase table t146t2;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>get privileges for role db__hbaserole, match '%146%';
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- sql_user5 that has been granted db__hbaserole can create hbase tables
+>>grant role db__hbaserole to sql_user5;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST146(perform_ddl)" -u sql_user5;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>create hbase table t146t2 ( column family 'cf');
+
+--- SQL operation complete.
+>>
+>>create external table t146t2
++>  (row_id varchar(20) not null primary key,
++>   row_value varchar (1000))
++> attribute default column family 'cf'
++> map to hbase table t146t2;
+
+--- SQL operation complete.
+>>
+>>grant select on hbase."_CELL_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_ROW_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>grant select on hbase."_MAP_".t146t2 to sql_user1 by db__hbaserole;
+
+--- SQL operation complete.
+>>get privileges for role db__hbaserole, match '%146%';
+
+Privileges for Role DB__HBASEROLE
+=================================
+
+SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T2
+SIDU-R-    HBASE._CELL_.T146T3
+SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T2
+SIDU-R-    HBASE._ROW_.T146T3
+SIDU-R-    TRAFODION._HB_MAP_.T146T1
+SIDU-R-    TRAFODION._HB_MAP_.T146T2
+
+--- SQL operation complete.
+>>
+>>drop hbase table t146t2;
+
+--- SQL operation complete.
+>>get privileges for role db__hbaserole, match '%146%';
+
+Privileges for Role DB__HBASEROLE
+=================================
+
+SIDU-R-    HBASE._CELL_.T146T1
+SIDU-R-    HBASE._CELL_.T146T3
+SIDU-R-    HBASE._ROW_.T146T1
+SIDU-R-    HBASE._ROW_.T146T3
+SIDU-R-    TRAFODION._HB_MAP_.T146T1
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>revoke role db__hbaserole from sql_user5;
+
+--- SQL operation complete.
+>>
+>>-- make sure correct result when repeating tests
+>>create hbase table t146t2 ( column family 'cf');
+
+--- SQL operation complete.
+>>create hbase table t146t2 ( column family 'cf');
+
+*** WARNING[1055] Object T146T2 already exists.
+
+--- SQL operation complete.
+>>
+>>drop hbase table t146t2;
+
+--- SQL operation complete.
+>>drop hbase table t146t2;
+
+*** WARNING[1004] Object T146T2 does not exist or object type is invalid for the current operation.
+
+--- SQL operation complete.
+>>drop hbase table t146t3;
+
+--- SQL operation complete.
+>>
+>>log;

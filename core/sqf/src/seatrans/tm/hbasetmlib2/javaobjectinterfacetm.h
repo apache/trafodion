@@ -160,6 +160,7 @@ protected:
   static jmethodID gStackFrameToStringMethodID;
   static jmethodID gGetCauseMethodID;
   static jmethodID gGetErrorCodeMethodID;
+  static jint jniHandleCapacity_;
 };
 
 void set_error_msg(std::string &error_msg); 

@@ -1,0 +1,255 @@
+-- ============================================================================
+-- TEST146 - tests grant and revoke privileges on native HBase tables
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+obey TEST146(clean_up);
+log LOG146 clear;
+obey TEST146(create_db);
+obey TEST146(test_grants);
+obey TEST146(test_revokes);
+obey TEST146(test_ddl);
+log;
+
+obey TEST146(clean_up);
+
+exit;
+
+?section clean_up
+-- =================================================================
+-- remove objects and update standard privileges
+-- =================================================================
+
+revoke all on hbase."_CELL_".t146t1 from t146_role1 by db__hbaserole;
+revoke all on hbase."_ROW_".t146t1 from t146_role1 by db__hbaserole;
+revoke all on hbase."_CELL_".t146t1 from sql_user1 by db__hbaserole;
+revoke all on hbase."_ROW_".t146t1 from sql_user1 by db__hbaserole;
+revoke select (row_id, col_value) on hbase."_CELL_".t146t1 from sql_user2 by db__hbaserole;  
+revoke select on hbase."_CELL_".t146t1 from sql_user3 by db__hbaserole;
+revoke select (row_id) on hbase."_ROW_".t146t1 from sql_user3 by db__hbaserole;
+revoke select on hbase."_ROW_".t146t1 from sql_user3 by db__hbaserole;
+revoke select on t146t1 from sql_user3 by db__hbaserole;
+revoke role t146_role1 from sql_user1;
+
+unregister hbase table if exists t146t1;
+drop external table if exists t146t1;
+
+drop hbase table t146t1;
+drop hbase table t146t2;
+drop hbase table t146t3;
+
+drop role t146_role1;
+revoke role db__hbaserole from sql_user5;
+
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+
+?section create_db
+-- =================================================================
+-- create native hbase table and roles
+-- =================================================================
+
+-- create hbase table 
+create hbase table t146t1 ( column family 'cf');
+insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'team_number', -1, '1');
+insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'visitor_team', -1, '2');
+insert into hbase."_CELL_".t146t1 values ('1', 'cf', 'game_location', -1, 'California');
+insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'team_number', -1, '1');
+insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'visitor_team', -1, '3');
+insert into hbase."_CELL_".t146t1 values ('2', 'cf', 'game_location', -1, 'Oklahoma');
+select count(*) from hbase."_CELL_".t146t1;
+select count(*) from hbase."_ROW_".t146t1;
+
+create external table t146t1 
+  (row_id varchar(20) not null primary key, 
+   row_value varchar (1000))
+ attribute default column family 'cf'
+ map to hbase table t146t1;
+
+create hbase table t146t3 ( column family 'cf');
+
+-- These operations are not allowed on hbase tables
+update hbase."_CELL_".t146t1 set col_value = '4' where row_id = '2' and col_name = 'visitor_team';
+delete from hbase."_CELL_".t146t1 where row_id = '3';
+
+showddl hbase."_CELL_".t146t1;
+showddl hbase."_ROW_".t146t1;
+showddl hbase."_MAP_".t146t1;
+get hbase registered tables in catalog trafodion, match '%T146%';
+
+create role t146_role1;
+grant role t146_role1 to sql_user1;
+grant role db__hbaserole to sql_user5;
+
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+get external hbase objects, match '%T146%';
+
+?section test_grants
+-- =================================================================
+-- this set of tests run basic grant tests for native Hive tables
+-- =================================================================
+
+-- grant a privilege where user has no grant privilege
+sh sqlci -i "TEST146(perform_grants)" -u sql_user3;
+
+-- grant privileges by the hbase admin user
+sh sqlci -i "TEST146(perform_grants)" -u sql_user5;
+
+-- user1 can select and update table via t146_role1, no select from map table
+sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+
+-- user2 can select subset of columns
+sh sqlci -i "TEST146(perform_ops)" -u sql_user2;
+
+-- user3 can select all 
+sh sqlci -i "TEST146(perform_ops)" -u sql_user3;
+
+-- user4 has no privileges
+sh sqlci -i "TEST146(perform_ops)" -u sql_user4;
+
+-- user5 has all privileges through role db__hbaserole
+sh sqlci -i "TEST146(perform_ops)" -u sql_user5;
+
+?section test_revokes
+-- ============================================================================
+-- verify that revoking privileges work as expected on native Hive tables
+-- ============================================================================
+
+-- revoke update from t146_role1
+revoke update on hbase."_ROW_".t146t1 from t146_role1 by db__hbaserole;
+sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+
+-- revoke role from sql_user1, no longer has privilege
+revoke role t146_role1 from sql_user1;
+sh sqlci -i "TEST146(perform_ops)" -u sql_user1;
+
+--revoke column privs from sql_user2
+revoke select (row_id) on hbase."_ROW_".t146t1 from sql_user2 by db__hbaserole;
+sh sqlci -i "TEST146(perform_ops)" -u sql_user2;
+
+?section test_ddl
+-- ============================================================================
+-- verify that DDL operations work correctly
+-- ============================================================================
+
+--  db__root can create hbase tables
+obey TEST146(perform_ddl);
+
+-- sql_user3 has no privleges, cannot create tables
+sh sqlci -i "TEST146(perform_ddl)" -u sql_user3;
+
+-- sql_user5 that has been granted db__hbaserole can create hbase tables
+grant role db__hbaserole to sql_user5;
+sh sqlci -i "TEST146(perform_ddl)" -u sql_user5;
+revoke role db__hbaserole from sql_user5;
+
+-- make sure correct result when repeating tests
+create hbase table t146t2 ( column family 'cf');
+create hbase table t146t2 ( column family 'cf');
+
+drop hbase table t146t2;
+drop hbase table t146t2;
+drop hbase table t146t3;
+
+?section perform_ddl
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+log LOG146;
+values(user);
+
+create hbase table t146t2 ( column family 'cf');
+
+create external table t146t2
+  (row_id varchar(20) not null primary key,
+   row_value varchar (1000))
+ attribute default column family 'cf'
+ map to hbase table t146t2;
+
+grant select on hbase."_CELL_".t146t2 to sql_user1 by db__hbaserole;
+grant select on hbase."_ROW_".t146t2 to sql_user1 by db__hbaserole;
+grant select on hbase."_MAP_".t146t2 to sql_user1 by db__hbaserole;
+get privileges for role db__hbaserole, match '%146%';
+
+drop hbase table t146t2;
+get privileges for role db__hbaserole, match '%146%';
+
+?section perform_grants
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+log LOG146;
+values(user);
+
+grant all on hbase."_CELL_".t146t1 to t146_role1 by db__hbaserole;
+grant select, update, insert, delete on hbase."_ROW_".t146t1 to t146_role1 by db__hbaserole;
+grant select(row_id, col_value) on hbase."_CELL_".t146t1 to sql_user2 by db__hbaserole;
+grant select on hbase."_CELL_".t146t1 to sql_user3 by db__hbaserole;
+grant select (row_id) on hbase."_ROW_".t146t1 to sql_user2 by db__hbaserole;
+grant select on hbase."_ROW_".t146t1 to sql_user3 by db__hbaserole;
+grant select on t146t1 to sql_user3 by db__hbaserole;
+showddl hbase."_CELL_".t146t1;
+showddl hbase."_ROW_".t146t1;
+showddl hbase."_MAP_".t146t1;
+
+?section perform_ops
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+log LOG146;
+values (user);
+
+-- contains most columns
+select substring (row_id,1,5) as row_id, 
+       col_family,
+       cast(col_name as char(20) character set iso88591) as col_name,
+       cast(col_value as char(20) character set iso88591) as col_value
+  from hbase."_CELL_".t146t1 order by 1;
+prepare s1 from
+select substring (row_id,1,4) as row_id, 
+       cast (col_value as char (40) character set iso88591) as col_value
+  from hbase."_CELL_".t146t1 order by 1;
+execute s1;
+select row_id from t146t1;
+
+-- contains columns associated with granted column level privileges
+select substring(row_id,1,4) as row_id, 
+       substring (column_details,3,8) as column_details
+  from hbase."_ROW_".t146t1;
+select substring(row_id,1,4) as row_id from hbase."_ROW_".t146t1;
+
+insert into hbase."_CELL_".t146t1 values 
+  ('3', 'cf', 'game_location', -1, 'Ohio'), 
+  ('3', 'cf', 'visitor_team', -1, '3'),
+  ('3', 'cf', 'team_number', -1, '1');
+execute s1;
+
+update hbase."_ROW_".t146t1 set column_details = column_create ('cf:game_time', '2018-04-30')
+   where row_id = '3';
+execute s1;
+
+delete from hbase."_ROW_".t146t1 where row_id = '3';
+execute s1;
+
+get external hbase objects, match '%T146%';
+get hbase registered tables in catalog trafodion, match '%T146%';

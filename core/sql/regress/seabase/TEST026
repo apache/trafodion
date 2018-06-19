@@ -125,7 +125,8 @@ create table t026t10(a int);
 create table t026t11(a int);
 create table t026t12(a int);
 cleanup metadata, check;
-drop hbase table "TRAFODION.SCH026.T026T10";
+-- drop hbase table "TRAFODION.SCH026.T026T10" from hbase shell
+sh regrhbase.ksh $REGRTSTDIR/TEST026_drop_hbase &> $REGRRUNDIR/TEST026_drop_hbase.log ;
 set parserflags 131072;
 delete from "_MD_".objects where schema_name = 'SCH026' and object_name = 'T026T11';
 set parserflags 1;

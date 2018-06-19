@@ -7880,11 +7880,17 @@ NABoolean GroupByAgg::tryToPullUpPredicatesInPreCodeGen(
       else
         pulledPredicates += tempPulledPreds;
 
+      // just remove pulled up predicates from char. input
+      ValueIdSet newInputs(getGroupAttr()->getCharacteristicInputs());
+      myLocalExpr += selectionPred();
+      myLocalExpr -= tempPulledPreds;
+      myLocalExpr.weedOutUnreferenced(newInputs);
+      
       // adjust char. inputs - this is not exactly
       // good style, just overwriting the char. inputs, but
       // hopefully we'll get away with it at this stage in
       // the processing
-      getGroupAttr()->setCharacteristicInputs(myNewInputs);
+      getGroupAttr()->setCharacteristicInputs(newInputs);
     }
 
   // note that we removed these predicates from our node, it's the

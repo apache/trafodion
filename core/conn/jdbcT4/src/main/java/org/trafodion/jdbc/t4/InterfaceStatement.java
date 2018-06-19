@@ -287,9 +287,14 @@ class InterfaceStatement {
 				}
 				break;
 			case InterfaceResultSet.SQLDTCODE_TIMESTAMP:
-				Timestamp tmpts;
+				Timestamp tmpts = null;
 				try {
-					tmpts = Timestamp.valueOf((String) paramValue);
+					String tmpStr = (String) paramValue;
+					String pattern = "(\\d{4}-\\d{1,2}-\\d{1,2}):(.*)";
+					if(tmpStr != null && tmpStr.matches(pattern)) {
+						tmpStr = tmpStr.replaceFirst(pattern, "$1 $2");
+					}
+					tmpts = Timestamp.valueOf(tmpStr);
 				} catch (IllegalArgumentException iex) {
 					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 							"Timestamp data format is incorrect for column: " + paramNumber + " = " + paramValue);

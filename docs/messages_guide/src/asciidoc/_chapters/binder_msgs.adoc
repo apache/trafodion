@@ -2404,6 +2404,23 @@ statement.
 
 *Recovery:* Modify the statement and resubmit.
 
+[[SQL-4182]]
+== SQL 4182
+
+```
+Function <function-name> operand <operand-position> must be of type <data-type>.
+```
+
+*Cause:* The expression given for the indicated operand of the indicated function
+has the wrong data type. 
+
+*Effect:* {project-name} is unable to compile the statement.
+
+*Recovery:* Modify the statement and resubmit. If the expression in question
+is a dynamic parameter and the required
+data type is DATE, TIME, TIMESTAMP or INTERVAL, you must use a CAST expression to force
+the dynamic parameter to the required data type.
+
 [[SQL-4183]]
 == SQL 4183
 

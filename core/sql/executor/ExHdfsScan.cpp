@@ -129,7 +129,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
   useLibhdfsScan_ = hdfsScanTdb.getUseLibhdfsScan();
-  if (isSequenceFile() || hdfsScanTdb.isCompressedFile())
+  if (isSequenceFile())
      useLibhdfsScan_ = TRUE;
   lobGlob_ = NULL;
   hdfsScanBufMaxSize_ = hdfsScanTdb.hdfsBufSize_;
@@ -569,6 +569,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 break;
              } 
              hdfsScan_ = HdfsScan::newInstance((NAHeap *)getHeap(), hdfsScanBuf_, hdfsScanBufMaxSize_, 
+                            hdfsScanTdb().hdfsIoByteArraySizeInKB_, 
                             &hdfsFileInfoListAsArray_, beginRangeNum_, numRanges_, hdfsScanTdb().rangeTailIOSize_, 
                             hdfsStats_, hdfsScanRetCode);
              if (hdfsScanRetCode != HDFS_SCAN_OK) {
@@ -602,6 +603,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 break;
              } 
              hdfo = hdfsFileInfoListAsArray_.at(retArray_[RANGE_NO]);
+             if (retArray_[BYTES_COMPLETED] == 0) {
+                ex_assert(headRoomCopied_ == 0, "Internal Error in HdfsScan");
+                step_ = TRAF_HDFS_READ;
+                break;  
+             }
              bufEnd_ = hdfsScanBuf_[retArray_[BUF_NO]].buf_ + retArray_[BYTES_COMPLETED];
              if (retArray_[RANGE_NO] != prevRangeNum_) {  
                 currRangeBytesRead_ = retArray_[BYTES_COMPLETED];
@@ -624,13 +630,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 extraBytesRead_ = currRangeBytesRead_ - hdfo->getBytesToRead(); 
              else
                 extraBytesRead_ = 0;
+             ex_assert(extraBytesRead_ >= 0, "Negative number of extraBytesRead");
              // headRoom_ is the number of extra bytes to be read (rangeTailIOSize)
              // If the whole range fits in one buffer, it is needed to process rows till EOF for the last range alone.
-/*
-             if (retArray_[IS_EOF] && (extraBytesRead_ < headRoom_)  
-                   && (retArray_[RANGE_NO] == (hdfsFileInfoListAsArray_.entries()-1)))
-                 extraBytesRead_ = 0;
-*/
              if (numFiles_ <= 1) {
                 if (retArray_[IS_EOF] && extraBytesRead_ < headRoom_ && (retArray_[RANGE_NO] == (hdfsFileInfoListAsArray_.entries()-1)))
                    extraBytesRead_ = 0;
@@ -2048,7 +2050,7 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
         }
       else
         e->bytesToRead_ = (Int64) fileInfos[h].mSize;
-
+      e->compressionMethod_  = 0;
       hdfsFileInfoListAsArray_.insertAt(h, e);
     }
 }
@@ -2093,7 +2095,6 @@ short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len,
 	*rc = WORK_POOL_BLOCKED;
       return -1;
     }
-  
   char * dp = p.getDataPointer();
   if (isVarchar)
     {

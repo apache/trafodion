@@ -313,10 +313,11 @@ void CHandle::structExceptionHandling(long exceptionCode)
 bool CHandle::setAppType(int value)
 {
 	bool rc = true;
-	if(m_ICUConv->m_AppType == APP_TYPE_NONE) //First time
+/*	if(m_ICUConv->m_AppType == APP_TYPE_NONE) //First time
 		m_ICUConv->m_AppType = value;
 	else if(value !=  m_ICUConv->m_AppType) //throw an error! We can not mix and match W and A functions!!!
-		rc = false;
+		rc = false;*/
+    m_ICUConv->m_AppType = value; // support match W and A functions
 	return rc;
 }
 

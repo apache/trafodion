@@ -142,7 +142,7 @@ class ComTdbHdfsScan : public ComTdb
   NABasicPtr hdfsRootDir_;                                     // 200 - 207
   Int64  modTSforDir_;                                         // 208 - 215
   Lng32  numOfPartCols_;                                       // 216 - 219
-  char fillersComTdbHdfsScan2_[4];                             // 220 - 223
+  Lng32  hdfsIoByteArraySizeInKB_;                             // 220 - 223
   QueuePtr hdfsDirsToCheck_;                                   // 224 - 231
     
 public:
@@ -362,6 +362,10 @@ public:
   Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
  
   char *hdfsRootDir() { return hdfsRootDir_; }
+  void setHdfsIoByteArraySize(int size)
+    { hdfsIoByteArraySizeInKB_ = size; }
+  int getHdfsIoByteArraySize() 
+    { return hdfsIoByteArraySizeInKB_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()

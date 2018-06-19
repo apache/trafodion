@@ -564,7 +564,7 @@ ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
 == ASCII Function
 
 The ASCII function returns the integer that is the ASCII code of the
-first character in a character string expression associated with either
+first character in a character string expression associated with 
 the ISO88591 character set or the UTF8 character set.
 
 ASCII is a {project-name} SQL extension.
@@ -573,21 +573,577 @@ ASCII is a {project-name} SQL extension.
 ASCII (character-expression)
 ```
 
-* `_character-expression`
+* `_character-expression_`
 +
 is an SQL character value expression that specifies a string of
-characters. See <<character_value_expressions,Character Value Expressions>>.
+characters. 
++
+For more information, see <<character_value_expressions,Character Value Expressions>>.
 
 [[considerations_for_ascii]]
 === Considerations For ASCII
 
-For a string expression in the UTF8 character set, if the value of the
-first byte in the string is greater than 127, {project-name} SQL returns this
-error message:
+The ASCII function handles string literals and columns differently:
 
+* For a string, the value of the character or *the value of each character* in the string cannot be greater than 255, or else it returns the following error:
++
 ```
-ERROR[8428] The argument to function ASCII is not valid.
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591
 ```
+
++
+*Example*
+
++
+```
+SQL>SELECT ASCII('ÿ') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('u') FROM DUAL;
+
+(EXPR)
+----------
+       117
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('ÿu') FROM DUAL;
+
+(EXPR)
+----------
+       255
+
+--- 1 row(s) selected.
+```
+
++
+```
+SQL>SELECT ASCII('昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-07 06:01:55]
+```
+
++
+```
+SQL>SELECT ASCII('ÿu昱') FROM DUAL;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591. [2018-05-08 08:21:34]
+```
+
+* For a column, the string expression(s) in this column can be only single-byte, or else it returns the following error:
+
++
+```
+*** ERROR[8428] The argument to function ASCII is not valid.
+```
+
++
+** For a string in a column with definition of UTF8, the value of the first byte in the string cannot be greater than 127.
+** For a string in a column with definition of ISO88591, the value of the first byte in the string can be all characters in the ISO88591 character set.
+
++
+*Example*
+
++
+.UTF8 (with and without error) -- Table with One Row
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t25;
+
+CREATE TABLE TRAFODION.SEABASE.T25
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T25 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t24;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T24
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T24 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t25;
+
+C1
+
+----
+
+昱u    
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t24;
+
+C1
+
+----
+
+u昱   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t25;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:14:08]`
+|
+`SQL>SELECT ASCII(c1) FROM t24;
+
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+
+|===
+
+
++
+.UTF8 (with and without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *UTF8* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t26;
+
+CREATE TABLE TRAFODION.SEABASE.T26
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T26 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t27;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T27
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T27 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t26;
+
+C1
+
+----
+
+u昱 
+
+昱u    
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t27;
+
+C1
+
+----
+
+u昱 
+
+u昱   
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t26;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:29:03]`
+|
+`SQL>SELECT ASCII(c1) FROM t27;
+
+
+(EXPR)
+
+----------
+
+       117
+
+       117
+
+--- 2 row(s) selected.`
+
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t11;
+
+CREATE TABLE TRAFODION.SEABASE.T11
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T11 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t12;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T12
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T12 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t11;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t12;
+
+C1
+
+----
+
+ÿu   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t1;
+
+***ERROR[8428] The argument to function ASCII is not valid. [2018-05-07 02:13:42]`
+|
+`SQL>SELECT ASCII(c1) FROM t2;
+
+(EXPR)
+
+----------
+
+       255
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with One Row 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t17;
+
+CREATE TABLE TRAFODION.SEABASE.T17
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T17 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t18;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T18
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T18 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t17;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT * FROM t18;
+
+C1
+
+----
+
+uÿ   
+
+--- 1 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t17;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t18;
+
+(EXPR)
+
+----------
+
+       117
+
+--- 1 row(s) selected.`
+|===
+
+
++
+.Comparison between UTF8 and ISO88591 (with error) -- Table with Two Rows 
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t22;
+
+CREATE TABLE TRAFODION.SEABASE.T22
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T22 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t23;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T23
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T23 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t22;
+
+C1
+
+----
+
+uÿ
+
+ÿu
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t23;
+
+C1
+
+----
+
+uÿ
+
+ÿu 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t22;
+
+*** ERROR[8428] The argument to function ASCII is not valid. [2018-05-08 10:01:29]`
+|
+`SQL>SELECT ASCII(c1) FROM t23;
+
+(EXPR)
+
+----------
+
+       117
+       
+       255
+
+--- 2 row(s) selected.`
+|===
+
+
+
+
+
++
+.Comparison between UTF8 and ISO88591 (without error) -- Table with Two Rows
+[cols="10%,45%,45%"]
+|===
+| *Column Definition* | *UTF8* | *ISO99591* 
+| *Table Structure*   
+| 
+`SQL>SHOWDDL t20;
+
+CREATE TABLE TRAFODION.SEABASE.T20
+  ( 
+    C1                               CHAR(4 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T20 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| 
+`SQL>SHOWDDL t21;   
+ 
+CREATE TABLE TRAFODION.SEABASE.T21
+  ( 
+    C1                               CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL NOT SERIALIZED
+  )
+ ATTRIBUTES ALIGNED FORMAT 
+;
+ 
+--- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.T21 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.`
+
+| *Data*
+| 
+`SQL>SELECT * FROM t20;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT * FROM t21;
+
+C1
+
+----
+
+uÿ
+
+uÿ 
+
+--- 2 row(s) selected.`
+| *Result*
+| 
+`SQL>SELECT ASCII(c1) FROM t20;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|
+`SQL>SELECT ASCII(c1) FROM t21;
+
+(EXPR)
+
+----------
+
+       117
+       
+       117
+
+--- 2 row(s) selected.`
+|===
 
 [[examples_of_ascii]]
 === Examples of ASCII
