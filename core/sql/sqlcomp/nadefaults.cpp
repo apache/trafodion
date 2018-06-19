@@ -1221,8 +1221,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(FAKE_VOLUME_ASSIGNMENTS,		"OFF"),
   DDui1__(FAKE_VOLUME_NUM_VOLUMES,              "24"),
 
-  DDkwd__(FAST_DELETE,                          "OFF"),
-
  // upper and lower limit (2,10) must be in sync with error values in 
  //ExFastTransport.cpp
   DDkwd__(FAST_EXTRACT_DIAGS,			"OFF"),

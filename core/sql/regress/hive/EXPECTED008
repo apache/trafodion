@@ -872,9 +872,10 @@ A            B
 >>-- next truncate should return error
 >>truncate table t00807;
 
-*** ERROR[1388] Table sch008.t00807 does not exist in Hive Metadata.
+*** ERROR[1388] Object HIVE.SCH008.T00807 does not exist in Hive Metadata.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>truncate table if exists t00807;
 
 --- SQL operation complete.

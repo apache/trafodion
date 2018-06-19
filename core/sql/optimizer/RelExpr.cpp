@@ -13600,7 +13600,6 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       ConstStringList * csl,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
-    isFastDelete_(FALSE),
     csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
@@ -13630,7 +13629,6 @@ RelExpr * Delete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   else
     result = (Delete *) derivedNode;
 
-  result->isFastDelete_       = isFastDelete_;
   result->csl() = csl();
   result->setEstRowsAccessed(getEstRowsAccessed());
 

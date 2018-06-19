@@ -7756,8 +7756,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
         stoi_->setDeleteAccess();
         if (((GenericUpdate*)re)->isMerge())
           stoi_->setInsertAccess();
-        if (((Delete*)re)->isFastDelete())
-          stoi_->setSelectAccess();
       }
       break;
     case REL_SCAN:
@@ -12034,7 +12032,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
   // Triggers --
   
-  if ((NOT isFastDelete()) && (NOT noIMneeded()))
+  if (NOT noIMneeded())
     boundExpr = handleInlining(bindWA, boundExpr);
   else if (hbaseOper() && (getGroupAttr()->isEmbeddedUpdateOrDelete()))
   {
@@ -12936,16 +12934,10 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 
     // If this is not an INTERNAL REFRESH command, make sure the MV is
     // initialized and available.
-    // If this is FastDelete using parallel purgedata, do not enforce
-    // that MV is initialized.
     if (!bindWA->isBindingMvRefresh())
     {
-      if (NOT ((getOperatorType() == REL_UNARY_DELETE) &&
-               (((Delete*)this)->isFastDelete())))
-        {
-          if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
-            return NULL;
-        }
+      if (naTable->verifyMvIsInitializedAndAvailable(bindWA))
+        return NULL;
     }
   }
 

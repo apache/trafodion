@@ -1817,8 +1817,6 @@ enum DefaultConstants
   GEN_UDRRS_SIZE_DOWN  ,
   GEN_UDRRS_SIZE_UP    ,
 
-  FAST_DELETE,
-
   ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS,
 
   EXE_MEMORY_AVAILABLE_IN_MB, // Mem size (MB) in ESP available for BMOs

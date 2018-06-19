@@ -2858,9 +2858,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
-%type <corrName>   	        truncate_table_name
-%type <relx>                    exe_util_fast_delete
-%type <longint>                 purgedata_options
+%type <ptr_placeholder>         truncate_table_name
+%type <relx>                    truncate_table
 
 %type <relx>                    exe_util_get_metadata_info
 %type <relx>                    exe_util_get_version_info
@@ -14850,7 +14849,7 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-              | exe_util_fast_delete
+              | truncate_table
                                 {
 				  $$ = finalize($1);
 				}
@@ -17865,13 +17864,25 @@ optional_mt_options :   QUOTED_STRING
 		     }
 
 /* type corrName */
-truncate_table_name : TOK_PURGEDATA table_name
+truncate_table_name : TOK_PURGEDATA optional_if_exists_clause table_name 
                         {
-                          $$ = $2;
+                          $$ = new(PARSERHEAP()) 
+                            PtrPlaceHolder($3, 
+                                           ($2 ? new(PARSERHEAP()) NAString() 
+                                            : NULL));
                         }
-                        | TOK_TRUNCATE table_name
+                        | TOK_TRUNCATE optional_if_exists_clause 
                         {
-                          $$ = $2;
+                          SqlParser_CurrentParser->hiveDDLInfo_->
+                            setValues(TRUE, StmtDDLonHiveObjects::TRUNCATE_, StmtDDLonHiveObjects::TABLE_, $2);
+                        }
+                        ddl_qualified_name
+                        {
+                          CorrName * cn = new(PARSERHEAP()) CorrName(*$4, PARSERHEAP());
+                          $$ = new(PARSERHEAP()) 
+                            PtrPlaceHolder(cn, 
+                                           ($2 ? new(PARSERHEAP()) NAString() 
+                                            : NULL));
                         }
                         | TOK_TRUNCATE TOK_TABLE optional_if_exists_clause 
                         {
@@ -17880,13 +17891,16 @@ truncate_table_name : TOK_PURGEDATA table_name
                         }
                         ddl_qualified_name
                         {
-                          $$ = new (PARSERHEAP()) CorrName(*$5, PARSERHEAP());
+                          CorrName * cn = new(PARSERHEAP()) CorrName(*$5, PARSERHEAP());
+                          $$ = new(PARSERHEAP()) 
+                            PtrPlaceHolder(cn, 
+                                           ($3 ? new(PARSERHEAP()) NAString() 
+                                            : NULL));
                         }
-  
-exe_util_fast_delete :  truncate_table_name purgedata_options
+
+truncate_table :  truncate_table_name 
 		     {
-		       short noLog = ($2 & 0x1) != 0;
-		       short ignoreTrigger = ($2 & 0x2) != 0;
+                       PtrPlaceHolder *pph = $1;
 
 		       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
 		       NAString * stmt = getSqlStmtStr ( stmtCharSet
@@ -17897,31 +17911,20 @@ exe_util_fast_delete :  truncate_table_name purgedata_options
 		         *SqlParser_Diags <<  DgSqlCode(-3406);
 		         YYERROR;
 		       }
-		       $$ = new (PARSERHEAP())
-			 ExeUtilFastDelete(CorrName(*$1, PARSERHEAP()),
-					   NULL,
-					   (char*)stmt->data(),
-					   stmtCharSet,
-					   FALSE,
-					   noLog,
-					   ignoreTrigger,
-					   TRUE,
-					   PARSERHEAP());
-		       
-		       delete $1;
-		     }
-purgedata_options : /*empty*/ { $$ = 0; }
-                  | TOK_NOLOG { $$ = 1; }
-                  | TOK_IGNORE_TRIGGER { $$ = 2; }
-                  | TOK_NOLOG TOK_IGNORE_TRIGGER { $$ = 3; }
-                  | TOK_IGNORE_TRIGGER TOK_NOLOG { $$ = 3; }
-                  | TOK_WAITEDIO { $$ = 4; }
-                  | TOK_NOLOG TOK_IGNORE_TRIGGER TOK_WAITEDIO { $$ = 7; }
-                  | TOK_IGNORE_TRIGGER TOK_NOLOG TOK_WAITEDIO { $$ = 7; }
-                  | TOK_WAITEDIO TOK_NOLOG TOK_IGNORE_TRIGGER { $$ = 7; }
-                  | TOK_WAITEDIO TOK_IGNORE_TRIGGER TOK_NOLOG { $$ = 7; }
-                  | TOK_NOLOG TOK_WAITEDIO TOK_IGNORE_TRIGGER { $$ = 7; }
-                  | TOK_IGNORE_TRIGGER TOK_WAITEDIO TOK_NOLOG { $$ = 7; }
+                       CorrName *cn = (CorrName*) pph->ptr1_;
+                       NABoolean ifExists = (pph->ptr2_ != NULL);
+
+                       DDLExpr * ddlExpr = new(PARSERHEAP()) 
+                         DDLExpr(NULL,
+                                 (char*)stmt->data(),
+                                 CharInfo::UnknownCharSet,
+                                 CmpCommon::statementHeap());
+                       ddlExpr->setPurgedata(TRUE);
+                       ddlExpr->setPurgedataTableName(*cn);
+                       ddlExpr->setPurgedataIfExists(ifExists);
+                       
+                       $$ = ddlExpr;
+                     }
 
 exe_util_aqr: TOK_GET TOK_ALL TOK_AQR TOK_ENTRIES
                {
@@ -19575,10 +19578,10 @@ Rest_Of_insert_statement : no_check_log no_rollback TOK_INTO table_name query_ex
                $5);
           
           ((Insert*)$$)->setOverwriteHiveTable(TRUE);
-          
+
           delete $3;
         }  
-            
+
           | no_check_log no_rollback TOK_INTO  table_name '(' '*' ')' query_expression order_by_clause access_type optional_limit_spec
         {
           if (!finalizeAccessOptions($8, $10)) YYERROR;
@@ -20637,76 +20640,8 @@ delete_statement : delete_start_tokens where_clause
                                   }
 				}
 
-delete_statement : TOK_DELETE TOK_DATA TOK_FROM table_name 
-				{
-				  if (CmpCommon::getDefault(FAST_DELETE) == DF_OFF)
-				    {
-				      YYERROR;
-				    }
-				  
-				  CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-				  NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-				                                  , PARSERHEAP() // in  - NAMemory * heapUsedForOutputBuffers
-				                                  );
-				  // If we can not get a variable-width multi-byte or single-byte string here, report error 
-				  if ( stmt == NULL )
-				  {
-				    *SqlParser_Diags <<  DgSqlCode(-3406);
-				    YYERROR;
-				  }
-				  $$ = new (PARSERHEAP())
-				    ExeUtilFastDelete(CorrName(*$4, PARSERHEAP()),
-						      NULL,
-						      (char*)stmt->data(),
-						      stmtCharSet,
-						      FALSE,
-						      FALSE, FALSE,
-						      FALSE,
-						      PARSERHEAP());
-
-				  delete $4;
-				}
-
 /* type relx */
-delete_statement : TOK_DELETE TOK_USING TOK_PURGEDATA TOK_FROM table_name
-				{
-				  Scan * inputScan =
-				    new (PARSERHEAP()) Scan(CorrName(*$5, PARSERHEAP()));
-
-				  Delete *del = new (PARSERHEAP())
-				    Delete(CorrName(*$5, PARSERHEAP()),
-					   NULL,
-					   REL_UNARY_DELETE,
-					   inputScan,
-					   NULL);
-
-				  del->setIsFastDelete(TRUE);
-
-				  delete $5;
-
-				  $$ = del;
-				}
-
-                   | TOK_DELETE TOK_NO TOK_PURGEDATA TOK_FROM table_name
-				{
-				  Scan * inputScan =
-				    new (PARSERHEAP()) Scan(CorrName(*$5, PARSERHEAP()));
-
-				  Delete *del = new (PARSERHEAP())
-				    Delete(CorrName(*$5, PARSERHEAP()),
-					   NULL,
-					   REL_UNARY_DELETE,
-					   inputScan,
-					   NULL);
-
-				  del->setIsFastDelete(FALSE);
-				  del->setNoIMneeded(TRUE);
-
-				  delete $5;
-
-				  $$ = del;
-				}
-		| TOK_DELETE no_check_log TOK_WITH TOK_NO TOK_ROLLBACK TOK_FROM table_name optimizer_hint where_clause 
+delete_statement : TOK_DELETE no_check_log TOK_WITH TOK_NO TOK_ROLLBACK TOK_FROM table_name optimizer_hint where_clause 
                 {
                   Scan * inputScan =
                     new (PARSERHEAP()) Scan(CorrName(*$7, PARSERHEAP()));

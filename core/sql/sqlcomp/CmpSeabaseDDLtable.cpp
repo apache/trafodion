@@ -11351,81 +11351,6 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   return;
 }
 
-static short processHiveTruncate(StmtDDLonHiveObjects * hddl,
-                                 NATable * naTable,
-                                 NAString &extObjectName)
-{
-  // A Hive table can be an External or Managed table.
-  // Currently, an External Hive table cannot be truncated.
-  // Maybe some future Hive version will allow that.
-  // Temporarily change the table attribute to be Managed,
-  // truncate the table and then change it back to be External.
-  NABoolean tableWasAltered = FALSE;
-  NAString alterStmt;
-  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
-      (naTable && naTable->isHiveExternalTable()))
-    {
-      // make the table managed table before truncate
-      alterStmt = "alter table " + extObjectName + " set tblproperties ('EXTERNAL'='False')";
-      if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
-        {
-          // alter failed
-          *CmpCommon::diags() << DgSqlCode(-1214)
-                              << DgString0(getSqlJniErrorStr())
-                              << DgString1(hddl->getHiveDDL());
-          
-          return -1;
-        }
-      
-      tableWasAltered = TRUE;
-      
-      // alter stmt to switch the table back to external type
-      alterStmt = "alter table " + extObjectName + " set tblproperties ('EXTERNAL'='TRUE')";
-    }
-  
-  // execute the hive DDL statement.
-  if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
-    {
-      if (tableWasAltered)
-        {
-          // table was altered to Managed. Alter it back to External.
-          if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
-            {
-              // alter itself failed. Return error.
-              *CmpCommon::diags() << DgSqlCode(-1214)
-                                  << DgString0(getSqlJniErrorStr())
-                                  << DgString1(hddl->getHiveDDL());
-              
-              return -1;
-            }
-        }
-
-      *CmpCommon::diags() << DgSqlCode(-1214)
-                          << DgString0(getSqlJniErrorStr())
-                          << DgString1(hddl->getHiveDDL());
-      
-      return -1;
-    }
-
-  if ((hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_) &&
-      (naTable && naTable->isHiveExternalTable()) &&
-      (tableWasAltered))
-     {
-       // table was altered to Managed. Alter it back to External.
-       if (HiveClient_JNI::executeHiveSQL(alterStmt.data()) != HVC_OK)
-         {
-           // alter itself failed. Return error.
-           *CmpCommon::diags() << DgSqlCode(-1214)
-                               << DgString0(getSqlJniErrorStr())
-                               << DgString1(hddl->getHiveDDL());
-           
-           return -1;
-         }
-     }
-
-  return 0;
-}
-
 static void processPassthruHiveDDL(StmtDDLonHiveObjects * hddl)
 {
   NAString hiveQuery(hddl->getHiveDDL());
@@ -11734,22 +11659,14 @@ void CmpSeabaseDDL::processDDLonHiveObjects(StmtDDLonHiveObjects * hddl,
          }
      } // register this object
 
-   if (hddl->getOper() == StmtDDLonHiveObjects::TRUNCATE_)
+   // execute the hive DDL statement.
+   if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
      {
-       if (processHiveTruncate(hddl, naTable, extObjectName))
-         goto label_error;
-     }
-   else
-     {
-       // execute the hive DDL statement.
-       if (HiveClient_JNI::executeHiveSQL(hddl->getHiveDDL().data()) != HVC_OK)
-         {
-           *CmpCommon::diags() << DgSqlCode(-1214)
-                               << DgString0(getSqlJniErrorStr())
-                               << DgString1(hddl->getHiveDDL());
-           
-           goto label_error;
-         }
+       *CmpCommon::diags() << DgSqlCode(-1214)
+                           << DgString0(getSqlJniErrorStr())
+                           << DgString1(hddl->getHiveDDL());
+       
+       goto label_error;
      }
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
@@ -11831,46 +11748,16 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
     }
 
   NAString newHiveName;
-  if (con.getCatalogNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_CATALOG, NAString::ignoreCase) != 0)
+  newHiveName = ComConvertTrafHiveNameToNativeHiveName
+    (con.getCatalogNamePartAsAnsiString(TRUE),
+     con.getSchemaNamePartAsAnsiString(TRUE),
+     (type != StmtDDLonHiveObjects::SCHEMA_ ?
+      con.getObjectNamePartAsAnsiString(TRUE) : NAString("")));
+  if (newHiveName.isNull())
     {
-      // should never reach here. Parser should have validated that the
-      // name is a hive name.
-      // Throw an assertion if it does.
       PARSERASSERT(1);
     }
 
-  // Original hive name specified in the query may have any of the following
-  // forms after they are fully qualified:
-  //  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
-  // These names are valid in traf environment only and are used to determine
-  // if hive ddl is being processed.
-  //
-  // Replace them in the query by equivalent hive names:
-  //   t, `default`.t, hivesch.t, hivesch
-  //
-  if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_DEFAULT_SCHEMA_EXE, NAString::ignoreCase) == 0) // matches  'default'
-    {
-      newHiveName += NAString("`") + con.getSchemaNamePartAsAnsiString(TRUE) + "`";
-      if (type != StmtDDLonHiveObjects::SCHEMA_)
-        newHiveName += ".";
-    }
-  else if (con.getSchemaNamePartAsAnsiString(TRUE).compareTo(HIVE_SYSTEM_SCHEMA, NAString::ignoreCase) == 0) // matches  'hive'
-    {
-      // set fully qualified hive default schema name `default`
-      newHiveName += NAString("`default`");
-      if (type != StmtDDLonHiveObjects::SCHEMA_)
-        newHiveName += ".";
-    }
-  else // user schema name
-    {
-      newHiveName += con.getSchemaNamePartAsAnsiString(1);
-      if (type != StmtDDLonHiveObjects::SCHEMA_)
-        newHiveName += ".";
-    }
-
-  if (type != StmtDDLonHiveObjects::SCHEMA_)
-    newHiveName += con.getObjectNamePartAsAnsiString(TRUE);
-  
   // remove original name at hiveNamePos/hiveNameLen and replace with the
   // newly constructed name.
   if ((hiveDDL.length() > 0) && (hiveNameLen > 0))
@@ -11885,6 +11772,29 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
     hiveDDL.remove(hiveDDL.length()-1);
   
   CmpCommon::diags()->clear();
+  
+  DDLExpr * ddlExpr = NULL;
+  RelExpr * ddlExprRoot = NULL;
+  if (oper == StmtDDLonHiveObjects::TRUNCATE_)
+    {
+      NAString newHiveDDL("TRUNCATE TABLE ");
+      newHiveDDL += hiveDDL(hiveNamePos, hiveDDL.length() - hiveNamePos);
+      hiveDDL.clear();
+      hiveDDL = newHiveDDL;
+
+      CorrName cn(con.getObjectNamePartAsAnsiString(), 
+                  PARSERHEAP(),
+                  con.getSchemaNamePartAsAnsiString(),
+                  con.getCatalogNamePartAsAnsiString());
+      ExeUtilHiveTruncate * ht = 
+        new (PARSERHEAP()) ExeUtilHiveTruncate
+        (cn, newHiveName, hiveDDL, PARSERHEAP());
+
+      if (ifExistsOrNotExists)
+        ht->setIfExist(TRUE);
+
+      ddlExprRoot = new(CmpCommon::statementHeap()) RelRoot(ht);
+    }
 
   // Construct DDL expr tree for regular query or query
   // explain/showplan/showshape/display.
@@ -11902,10 +11812,8 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
   // display:
   //   same as regular query with displayTree flag set in RelRoot
   //
-  DDLExpr * ddlExpr = NULL;
-  RelExpr * ddlExprRoot = NULL;
-  if (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
-           (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_)))
+  else if (NOT ((hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWPLAN_) ||
+                (hiveDDLInfo->essd_ == Parser::HiveDDLInfo::SHOWSHAPE_)))
     {
       StmtDDLonHiveObjects * sdho = 
         new (PARSERHEAP()) StmtDDLonHiveObjects(oper, type, 

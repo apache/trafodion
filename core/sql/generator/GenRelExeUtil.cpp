@@ -3121,177 +3121,10 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
 
 /////////////////////////////////////////////////////////
 //
-// ExeUtilFastDelete::codeGen()
+// ExeUtilHiveTruncateLegacy::codeGen()
 //
 /////////////////////////////////////////////////////////
-short ExeUtilFastDelete::codeGen(Generator * generator)
-{
-  ExpGenerator * expGen = generator->getExpGenerator();
-  Space * space = generator->getSpace();
-
-  char * stmtText = getStmtText();
-
-  // remove trailing blanks and append a semicolon, if one is not present.
-  char * stmt = NULL;
-  CollIndex i = 0;
-  if (stmtText)
-    {
-      i = strlen(stmtText);
-      while ((i > 0) && (getStmtText()[i-1] == ' '))
-	i--;
-      
-      if (stmtText[i-1] != ';')
-	{
-	  // add a semicolon to the end of str (required by the parser)
-	  stmt = space->allocateAlignedSpace(i+1+1);
-	  strncpy(stmt, stmtText, i);
-	  stmt[i]   = ';' ;
-	  stmt[i+1] = '\0';
-	}
-      else
-	{
-	  stmt = space->allocateAlignedSpace(i+1);
-	  strncpy(stmt, stmtText, i);
-	  stmt[i] = '\0';
-	}
-    }
-
-  // allocate a map table for the retrieved columns
-  generator->appendAtEnd();
-
-  ex_cri_desc * givenDesc
-    = generator->getCriDesc(Generator::DOWN);
-
-  ex_cri_desc * returnedDesc
-    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-
-  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
-  const Int32 work_atp = 1;
-  const Int32 exe_util_row_atp_index = 2;
-
-  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
-                              returnedDesc);
-  if (rc)
-    {
-      return -1;
-    }
-
-  char * tablename = NULL;
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isVolatileTable()))
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-	(getTableName().getQualifiedNameObj().getObjectName(), 0);
-    }
-  else
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-	(generator->genGetNameAsAnsiNAString(getTableName()), 0);
-    }
-
-  char * primaryPartnLoc = NULL;
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isAnMV()))
-    {
-      primaryPartnLoc = space->AllocateAndCopyToAlignedSpace
-      (getUtilTableDesc()->getClusteringIndex()->getNAFileSet()->
-       getFileSetName().getQualifiedNameAsString(), 0);
-    }
-
-  Queue * deleteIndexList    = NULL;
-  if (getUtilTableDesc())
-    {
-      const LIST(IndexDesc *) indexList = 
-	getUtilTableDesc()->getIndexes();
-      if (indexList.entries() > 0)
-	deleteIndexList = new(space) Queue(space);
-      for (i=0; i<indexList.entries(); i++) 
-	{
-	  IndexDesc *index = indexList[i];
-	  
-	  // The base table itself is an index (the clustering index);
-	  // obviously IM need not deal with it.
-	  if (index->isClusteringIndex())
-	    continue;
-	  
-	  char * indexName = 
-	    space->AllocateAndCopyToAlignedSpace
-	    (index->getExtIndexName(), 0);
-	  
-	  deleteIndexList->insert(indexName);
-	}
-    }
-
-  Lng32 numEsps = -1;
-
-  ComTdbExeUtilFastDelete * exe_util_tdb = new(space) 
-    ComTdbExeUtilFastDelete(tablename, strlen(tablename),
-			    primaryPartnLoc,
-			    deleteIndexList,
-			    stmt,
-			    (stmt ? strlen(stmt) : 0),
-			    numEsps,
-			    (getUtilTableDesc() ? getUtilTableDesc()->getNATable()->
-			     objectUid().get_value() : 0),
-			    numLOBs_,
-			    NULL,
-			    0, 0, // no work cri desc
-			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			    (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-			    (queue_index)getDefault(GEN_DDL_SIZE_UP),
-			    getDefault(GEN_DDL_NUM_BUFFERS),
-			    getDefault(GEN_DDL_BUFFER_SIZE));
-
-  if (doPurgedataCat_)
-    exe_util_tdb->setDoPurgedataCat(TRUE);
-
-  if (doParallelDelete_)
-    exe_util_tdb->setDoParallelDelete(TRUE);
-
-  if (doParallelDeleteIfXn_)
-    exe_util_tdb->setDoParallelDeleteIfXn(TRUE);
-
-  if (offlineTable_)
-    exe_util_tdb->setOfflineTable(TRUE);
-
-  if (doLabelPurgedata_)
-    exe_util_tdb->setDoLabelPurgedata(TRUE);
-
-  if ((getUtilTableDesc()) && 
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isAnMV()))
-    exe_util_tdb->setIsMV(TRUE);
-
-  generator->initTdbFields(exe_util_tdb);
-  
-  if(!generator->explainDisabled()) {
-    generator->setExplainTuple(
-       addExplainInfo(exe_util_tdb, 0, 0, generator));
-  }
-
-  // no tupps are returned 
-  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-			Generator::UP);
-  generator->setGenObj(this, exe_util_tdb);
-
-  // Set the transaction flag.
-  //  if (xnNeeded())
-  // {
-  generator->setTransactionFlag(0); // transaction is not needed.
-  //}
-  
-  return 0;
-}
-
-/////////////////////////////////////////////////////////
-//
-// ExeUtilHiveTruncate::codeGen()
-//
-/////////////////////////////////////////////////////////
-short ExeUtilHiveTruncate::codeGen(Generator * generator)
+short ExeUtilHiveTruncateLegacy::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
@@ -3377,6 +3210,7 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
                               (doSimCheck ? hiveModTS_ : -1),
+                              NULL,
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
@@ -3388,7 +3222,92 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 
   if (getDropTableOnDealloc())
     exe_util_tdb->setDropOnDealloc(TRUE);
+
+  exe_util_tdb->setIsLegacy(TRUE);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  // no tupps are returned 
+  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+			Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  generator->setTransactionFlag(0); // transaction is not needed.
   
+  return 0;
+}
+
+/////////////////////////////////////////////////////////
+//
+// ExeUtilHiveTruncate::codeGen()
+//
+/////////////////////////////////////////////////////////
+short ExeUtilHiveTruncate::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  char * tablename = NULL;
+  tablename = space->AllocateAndCopyToAlignedSpace
+    (generator->genGetNameAsAnsiNAString(getTableName()), 0);
+
+  char * hiveTableName = NULL;
+  hiveTableName = space->AllocateAndCopyToAlignedSpace(getHiveTableName(), 0);
+
+  char * hiveTruncQuery = NULL;
+  hiveTruncQuery = space->AllocateAndCopyToAlignedSpace(getHiveTruncQuery(), 0);
+
+  ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
+    ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableName,
+                              NULL, NULL,
+                              NULL, -1,
+                              -1,
+                              hiveTruncQuery,
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                              (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                              (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                              getDefault(GEN_DDL_NUM_BUFFERS),
+                              getDefault(GEN_DDL_BUFFER_SIZE));
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if (getDropTableOnDealloc())
+    exe_util_tdb->setDropOnDealloc(TRUE);
+
+  if (getHiveExternalTable())
+    exe_util_tdb->setIsExternal(TRUE);
+
+  if (getIfExist())
+    exe_util_tdb->setIfExists(TRUE);
+
+  if (NOT getTableNotExist())
+    exe_util_tdb->setTableNotExists(TRUE);
+
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, 0, 0, generator));

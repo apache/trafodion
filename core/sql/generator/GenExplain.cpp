@@ -1153,6 +1153,29 @@ DDLExpr::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   return(explainTuple);
 }
 
+ExplainTuple *
+ExeUtilHiveTruncate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
+                                            ComTdb * tdb, 
+                                            Generator *generator)
+{
+  char buf[200];
+  NAString buffer;
+
+  ComTdbExeUtilHiveTruncate *ctdb = (ComTdbExeUtilHiveTruncate*)tdb;
+  if (ctdb->getTableName() != NULL)
+    buffer += NAString("table_name: ") + ctdb->getTableName() + " ";
+  else
+    buffer += "table_name: unknown ";
+  //  buffer += NAString("object_type: ") + hddl->getTypeStr() + " ";
+  if (NOT getHiveTruncQuery().isNull())
+    buffer += NAString("hive_trunc_query: ") + getHiveTruncQuery() + " ";
+  else
+    buffer += "hive_trunc_query: unknown ";
+
+  explainTuple->setDescription(buffer);
+  
+  return(explainTuple);
+}
 
 ExplainTuple*
 GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
