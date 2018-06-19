@@ -292,7 +292,7 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   //if comment on native HBASE first shoud register first
   if (CmpSeabaseDDL::isHbase(catalogNamePart))
   {
-       NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT EXISTS ";
+       NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT REGISTERED ";
        ddl.append(extObjName.data());
        Lng32 cliRC = cliInterface.executeImmediate(ddl.data());
        if (cliRC < 0)
