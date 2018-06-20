@@ -19,43 +19,74 @@
  * limitations under the License.
  */
 -->
+  <groupId>org.trafodion.sql</groupId>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>trafodion-sql</artifactId>
+  <version>${INTERNAL_VERSION}</version>
+  <name>trafodion-sql</name>
+  <description>Java code for SQL engine in Trafodion</description>
+
   <repositories>
     <repository>
-      <id>Horton Works</id>
-      <url>http://repo.hortonworks.com/content/groups/public/</url>
+      <id>Apache</id>
+      <url>https://repo1.maven.org/maven2</url>
     </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
-    <hbase.version>${env.HBASE_DEP_VER_HDP}</hbase.version>
-    <hbase-trx.id>${env.HBASE_TRX_ID_HDP}</hbase-trx.id>
-    <hive.version>${env.HIVE_DEP_VER_HDP}</hive.version>
-    <hbase-flavor-id>hdp</hbase-flavor-id>
-    <thrift.version>0.9.0</thrift.version>
-    <java.version>1.7</java.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <hbase-flavor-id>apache</hbase-flavor-id>
   </properties>
-  
+
+  <profiles>
+    <profile>
+        <id>dev</id>
+        <properties>
+            <INTERNAL_VERSION>0.1</INTERNAL_VERSION>
+            <hbase.version>1.2.0</hbase.version>
+            <hbase-trx.id>hbase-trx-apache1_2</hbase-trx.id>
+            <hive.version>1.1.0</hive.version>
+            <thrift.version>0.9.0</thrift.version>
+        </properties>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+    </profile>
+    <profile>
+        <id>production</id>
+        <properties>
+            <INTERNAL_VERSION>${env.TRAFODION_VER}</INTERNAL_VERSION>
+            <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
+            <hbase-trx.id>${env.HBASE_TRX_ID_APACHE}</hbase-trx.id>
+            <hive.version>${env.HIVE_DEP_VER_APACHE}</hive.version>
+            <thrift.version>${THRIFT_DEP_VER}</thrift.version>
+            <java.version>1.7</java.version>
+        </properties>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-jar-plugin</artifactId>
+              <configuration>
+                <archive>
+                  <manifestFile>
+                    ${env.TRAF_HOME}/export/include/SCMBuildMan.mf
+                  </manifestFile>
+                </archive>
+              </configuration>
+            </plugin>
+          </plugins>
+        </build>
+    </profile>
+  </profiles>
+
   <build>
     <defaultGoal>package</defaultGoal>
     <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
     <finalName>${project.artifactId}-${project.version}</finalName>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>
-              src/main/resources/trafodion-sql.jar.mf
-            </manifestFile>
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
   </build>
- 
+
   <dependencies>
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -68,11 +99,24 @@
       <version>${hbase.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.hbase.client.transactional</groupId>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-common</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-protocol</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache</groupId>
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
-      <scope>system</scope>
-      <systemPath>${env.TRAF_HOME}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -95,17 +139,15 @@
       <version>${thrift.version}</version>
     </dependency>
     <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <version>1.6</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>2.5.0</version>
     </dependency>
   </dependencies>
-
-  <groupId>org.trafodion.sql</groupId>
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql-${hbase-flavor-id}</artifactId>
-  <version>${env.TRAFODION_VER}</version>
-  <name>trafodion-sql</name>
-  <description>Java code for SQL engine in Trafodion</description>
 
 </project>

@@ -21,11 +21,19 @@
 
 INSTALL_LIBDIR := ${TRAF_HOME}/export/lib
 CP :=/bin/cp -f
-all:
-	@$(MAVEN) package -DskipTests 2>&1 | sed -e "s/$$/  ##(lib_mgmt)/";exit $${PIPESTATUS[0]}
-	mkdir -p ${INSTALL_LIBDIR}
-	${CP} target/lib_mgmt-${TRAFODION_VER}.jar ${INSTALL_LIBDIR}/lib_mgmt.jar
+all: mavenbuild
+
+# Java files get built through Maven
+mavenbuild:
+	# create a jar manifest file with the correct version information
+	# run maven
+	$(MAVEN) -Pproduction install -DskipTests 2>&1 | sed -e "s/$$/  ##(trafodion-sql)/";exit $${PIPESTATUS[0]} 
+	cp -pf target/trafodion-sql-$(TRAFODION_VER).jar $(TRAF_HOME)/export/lib
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-sql-$(TRAFODION_VER).jar trafodion-sql-apache-$(TRAFODION_VER).jar
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-sql-$(TRAFODION_VER).jar trafodion-sql-cdh-$(TRAFODION_VER).jar 
+	@cd $(TRAF_HOME)/export/lib; ln -sf trafodion-sql-$(TRAFODION_VER).jar trafodion-sql-hdp-$(TRAFODION_VER).jar 
+
 clean:
-	@rm -f ${INSTALL_LIBDIR}/lib_mgmt.jar
-	@$(MAVEN) clean
+	@rm -f ${INSTALL_LIBDIR}/trafodion-sql-*.jar
+	@$(MAVEN) -Pproduction clean
 cleanall: clean

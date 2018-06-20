@@ -1,1 +1,0 @@
-../../../../../../../../../../../sql/src/main/java/org/trafodion/sql/TrafConfiguration.java
