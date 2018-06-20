@@ -1163,8 +1163,8 @@ select cast(a as char(30)), cast(b as char(20)), cast(c as char(20)) from t022na
 select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456789';
 select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456788';
 
-process hive ddl 'drop table thivets';
-process hive ddl 'create table thivets (a timestamp)';
+drop table hive.hive.thivets;
+create table hive.hive.thivets (a timestamp);
 insert into hive.hive.thivets values (timestamp '2018-01-01 10:10:10.123456789');
 select * from hive.hive.thivets;
 select * from hive.hive.thivets where a = timestamp '2018-01-01 10:10:10.123456788' + interval '0.000000001' second (1,9);
@@ -1172,7 +1172,12 @@ select * from hive.hive.thivets where a = timestamp '2018-01-01 10:10:10.1234567
 select extract(second from a), extract(second from b), extract(second from c)
   from t022nanos;
 
--- error cases
+
+-- ERROR CASES
+
+-- total precision exceeds Int64 max.
+create table t022interr(a interval second(12, 9));
+
 select timestamp '9999-01-01 10:10:10.123456789' - timestamp '2018-01-01 10:10:10.123456' from dual;
 select timestamp '2100-01-01 10:10:10.123456789' - timestamp '2018-01-01 10:10:10.123456' from dual;
 

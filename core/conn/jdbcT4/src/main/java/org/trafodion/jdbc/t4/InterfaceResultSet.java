@@ -253,7 +253,6 @@ class InterfaceResultSet {
 				retObj = Date.valueOf(tmpStr);
 				break;
 			case SQLDTCODE_TIMESTAMP:
-                            System.out.println("tmpStr = " + tmpStr);
 				retObj = Timestamp.valueOf(tmpStr);
 				break;
 			case SQLDTCODE_TIME:

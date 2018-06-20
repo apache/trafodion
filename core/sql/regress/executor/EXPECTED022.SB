@@ -4091,7 +4091,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2018-04-17 23:19:00.000494
+10:13:14.0000  10:13:14.0000  2018-06-20 20:52:53.000980
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -4594,7 +4594,7 @@ lkjihgfedc  ?                               ?
 >>invoke t022nanos;
 
 -- Definition of Trafodion table TRAFODION.SCH.T022NANOS
--- Definition current  Tue Apr 17 23:19:36 2018
+-- Definition current  Wed Jun 20 20:53:22 2018
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -4655,10 +4655,10 @@ A                              B                   C
 
 --- 0 row(s) selected.
 >>
->>process hive ddl 'drop table thivets';
+>>drop table hive.hive.thivets;
 
 --- SQL operation complete.
->>process hive ddl 'create table thivets (a timestamp)';
+>>create table hive.hive.thivets (a timestamp);
 
 --- SQL operation complete.
 >>insert into hive.hive.thivets values (timestamp '2018-01-01 10:10:10.123456789');
@@ -4692,7 +4692,17 @@ A
 
 --- 2 row(s) selected.
 >>
->>-- error cases
+>>
+>>-- ERROR CASES
+>>
+>>-- total precision exceeds Int64 max.
+>>create table t022interr(a interval second(12, 9));
+
+*** ERROR[3044] The interval SECOND(12,9) is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
 >>select timestamp '9999-01-01 10:10:10.123456789' - timestamp '2018-01-01 10:10:10.123456' from dual;
 
 *** ERROR[8453] This expression results in an invalid interval value '251856000000000000789'

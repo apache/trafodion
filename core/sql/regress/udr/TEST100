@@ -76,9 +76,9 @@ obey TEST100(java_compile);
 obey TEST100(set_up);
 obey TEST100(tests);
 log;
---obey TEST100(clean_up_procs);
---obey TEST100(clean_up_tables);
---obey TEST100(clean_up_files);
+obey TEST100(clean_up_procs);
+obey TEST100(clean_up_tables);
+obey TEST100(clean_up_files);
 exit;
 
 ?section clean_up_files
