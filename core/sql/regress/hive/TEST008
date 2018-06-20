@@ -50,9 +50,17 @@ select * from t00802;
 -- Use regrhive until that issue is fixed.
 sh echo "create table sch008.t00803 as select * from sch008.t00802;" > TEST008_junk;
 sh regrhive.ksh -f TEST008_junk;
---create table t00803 as select * from sch008.t00802;
+cqd hive_ctas_in_native_mode 'ON';
+-- create table t00803 as select * from sch008.t00802;
+cqd hive_ctas_in_native_mode reset;
 invoke t00803;
 select * from t00803;
+
+-- ctas create executed in Hive and insert executed in sql
+drop table if exists t008032;
+explain options 'f' create table t008032 no load as select * from t00802;
+create table t008032 no load as select * from sch008.t00802;
+invoke t008032;
 
 -- describe will show datatype 132 for b
 prepare s from insert into t00802 values (?, ?);
@@ -108,18 +116,36 @@ drop table if exists hive.sch008.`t00805like2`;
 create table hive."sch008"."t00805" (`a` int);
 showddl hive.sch008.t00805;
 
--- create external hive table LIKE a traf table
+-- create external hive table like a traf table
 drop table if exists hive.sch008.columns;
-create external hive table hive.sch008.columns like trafodion."_MD_".columns 
-      with hive options 'stored as sequencefile';
-create external hive table if not exists hive.sch008.columns like trafodion."_MD_".columns 
-      with hive options 'stored as sequencefile';
+explain create external table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+create external table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
+create external table if not exists hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
 showddl hive.sch008.columns;
+
 -- create managed hive table LIKE traf table
 drop table if exists hive.sch008.columns;
-create hive table hive.sch008.columns like trafodion."_MD_".columns 
-      with hive options 'stored as sequencefile';
+create table hive.sch008.columns no load 
+    hive options 'stored as sequencefile' 
+    as select * from trafodion."_MD_".columns;
 showddl hive.sch008.columns;
+
+-- ctas stmt is passed to Hive layer. 
+drop table if exists hive.hive.tempsrc;
+drop table if exists hive.hive.temptgt;
+create table hive.hive.tempsrc(a int);
+cqd hive_ctas_in_native_mode 'ON';
+explain options 'f' create external table hive.hive.temptgt as select * from tempsrc;
+create external table hive.hive.temptgt as select * from tempsrc;
+create table hive.hive.temptgt as select * from tempsrc;
+invoke hive.hive.temptgt;
+cqd hive_ctas_in_native_mode reset;
 
 -- create and drop hive table and external table
 drop table if exists t00806;
@@ -194,7 +220,19 @@ truncate table t00807;
 sh echo "select * from sch008.t00807;" > TEST008_junk;
 sh regrhive.ksh -f TEST008_junk | tee -a LOG008;
 
+explain options 'f' create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+create table hive.sch008.t008072 as select * from hive.sch008.t00807;
+
+drop table t008072;
+
+drop table if exists trafodion.sch.t00807;
+create table trafodion.sch.t00807 (a int);
+explain options 'f' create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+create table hive.sch008.t008072 as select * from trafodion.sch.t00807;
+invoke hive.sch008.t008072;
+
 drop table t00807;
+drop table t008072;
 
 
 -- explain on hive DDL
@@ -270,25 +308,8 @@ alter database trafodion.temp;
 -- return error: unsupported operation from 'process hive ddl' stmt
 process hive ddl 'grnt abc';
 
--- return error: ctas on hive cannot use traf in the SELECT query
+-- return error: table temp does not exist
 create table hive.hive.temptab2 as select * from trafodion.sch.temp;
-
--- cannot use 'with hive options' with non-hive tables
-create table trafodion.seabase.temp like trafodion."_MD_".objects
-   with hive options 'abc';
-
--- target table must be a hive table
-create external hive table trafodion.seabase.temp like trafodion."_MD_".objects;
-
--- source table must be a trafodion table
-create external hive table hive.hive.temp like hive.hive.temp2
-   with hive options 'abc';
-
--- ctas tgt cannot be an external hive table
-create external hive table hive.hive.temp as select * from trafodion."_MD_".objects;
-
--- like option must be specified
-create external hive table hive.hive.temp (a int);
 
 drop database hive.sch008 cascade;
 drop schema if exists hive.sch008 cascade;

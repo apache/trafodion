@@ -527,10 +527,6 @@ RelExpr* Insert::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
 // is this entire expression cacheable after this phase?
 NABoolean Delete::isCacheableExpr(CacheWA& cwa)
 {
-  // fastdelete (purgedata) is not a cacheable expression.
-  if (isFastDelete())
-    return FALSE; 
-
   return GenericUpdate::isCacheableExpr(cwa);
 }
 
