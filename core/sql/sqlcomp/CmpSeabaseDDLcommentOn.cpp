@@ -292,10 +292,17 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
   //if comment on native HBASE first shoud register first
   if (CmpSeabaseDDL::isHbase(catalogNamePart))
   {
+      // HBase."MAP" fromater should covert
+      if (ComIsHBaseMappedExtFormat(catalogNamePart, schemaNamePart))
+      {
+           ComConvertHBaseMappedExtToInt(catalogNamePart, schemaNamePart, catalogNamePart, schemaNamePart);
+      }
+
        NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT REGISTERED ";
        ddl.append(extObjName.data());
        Lng32 cliRC = cliInterface.executeImmediate(ddl.data());
-       if (cliRC < 0)
+       // error code -8102 means the object already register
+       if (cliRC < 0 && cliRC != -8102)
        {
            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
            processReturn();
