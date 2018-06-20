@@ -42,6 +42,7 @@ open(CONF, "<nmap.conf");
 my @node_names;
 my $ninx = 0;
 while (<CONF>) {
+	$_ =~ s/\s+$//;
 	$node_names[$ninx] = $_;
 	$ninx++;
 }
@@ -80,3 +81,17 @@ sqconfigdb::addDbPersistData( "WDG_REQUIRES_DTM", "N"  );
 sqconfigdb::addDbPersistData( "WDG_STDOUT", "stdout_WDG%nid"  );
 sqconfigdb::addDbPersistData( "WDG_PERSIST_RETRIES", "10,60"  );
 sqconfigdb::addDbPersistData( "WDG_PERSIST_ZONES", "%zid"  );
+
+my $en = $ENV{'SQ_NAMESERVER_ENABLED'};
+if ($en == '1') {
+	open(NSCONF, "<ns.conf");
+	my $nscnt = 0;
+	while (<NSCONF>) {
+		$_ =~ s/\s+$//;
+		sqconfigdb::addDbNameServer( $_ );
+		$nscnt++;
+	}
+	if ($nscnt == 0) {
+		sqconfigdb::addDbNameServer( 'n0' );
+	}
+}

@@ -151,6 +151,17 @@ int CTcdb::AddLNodeData( int         nid
     return( rc );
 }
 
+int CTcdb::AddNameServer( const char *nodeName )
+{
+    const char method_name[] = "CTcdb::AddNameServer";
+    TRACE_ENTRY;
+
+    int rc = tcdbStore_->AddNameServer( nodeName );
+
+    TRACE_EXIT;
+    return( rc );
+}
+
 int CTcdb::AddPNodeData( const char *name
                         , int         pnid
                         , int         excludedFirstCore
@@ -240,6 +251,17 @@ int CTcdb::Close( void )
     return( rc );
 }
 
+int CTcdb::DeleteNameServer( const char *nodeName )
+{
+    const char method_name[] = "CTcdb::DeleteNameServer";
+    TRACE_ENTRY;
+
+    int rc = tcdbStore_->DeleteNameServer( nodeName );
+
+    TRACE_EXIT;
+    return( rc );
+}
+
 int CTcdb::DeleteNodeData( int pnid )
 {
     const char method_name[] = "CTcdb::DeleteNodeData";
@@ -312,6 +334,28 @@ bool CTcdb::IsInitialized( void )
 
     TRACE_EXIT;
     return( rs );
+}
+
+int CTcdb::GetNameServer( const char* nodeName )
+{
+    const char method_name[] = "CTcdb::GetNameServer";
+    TRACE_ENTRY;
+
+    int rc = tcdbStore_->GetNameServer( nodeName );
+
+    TRACE_EXIT;
+    return( rc );
+}
+
+int CTcdb::GetNameServers( int *count, int max, char *nodeNames[] )
+{
+    const char method_name[] = "CTcdb::GetNameServers";
+    TRACE_ENTRY;
+
+    int rc = tcdbStore_->GetNameServers( count, max, nodeNames );
+
+    TRACE_EXIT;
+    return( rc );
 }
 
 int CTcdb::GetNode( int nid

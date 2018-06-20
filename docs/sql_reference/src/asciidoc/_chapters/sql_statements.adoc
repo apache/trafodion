@@ -649,7 +649,7 @@ adds a column to _table_ if it does not already exist in the table.
 +
 the clauses for the _column-definition_ are the same as described in add [column] _column-definition_.
 
-* `drop column [if exists] _column-name_`
+* `drop [column] [if exists] _column-name_`
 +
 drops the specified column from _table_, including the column’s data. you cannot drop a primary key column.
 
@@ -1118,7 +1118,7 @@ argument-list is:
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1558,7 +1558,7 @@ specifies the name of the function and any SQL parameters that correspond to the
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_function-name_`
+`_[[catalog-name.]schema-name.]function-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1615,7 +1615,7 @@ trafodion. see <<data_types,data types>>.
 +
 specifies the case-sensitive name of the external function’s method.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
@@ -2139,7 +2139,7 @@ the SPJ method.
 +
 specifies an ANSI logical name of the form:
 +
-`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`_[[catalog-name.]schema-name.]procedure-name_`
 +
 where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -2249,7 +2249,7 @@ brackets (`[ ]`), such as `java.lang.integer[]`.
 +
 Specifies a mappable Java data type. For the mapping of the Java data types to SQL data types, see _sql-datatype_.
 
-* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `library _[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
 then {project-name} qualifies it according to the schema of the current session.
@@ -4377,7 +4377,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `\[[_catalog-name_.]_schema-name_.]_function-name_`
+* `_[[catalog-name.]schema-name.]function-name`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -4490,7 +4490,7 @@ DROP LIBRARY [[catalog-name.]schema-name.]library-name [restrict | cascade]
 [[drop_library_syntax]]
 === Syntax Description of DROP LIBRARY
 
-* `\[[_catalog-name_.]_schema-name_.]_library-name_`
+* `_[[catalog-name.]schema-name.]library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a
 maximum of 128 characters. specify the name of a library object that has already been registered in the schema. if
@@ -4560,7 +4560,7 @@ DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
 [[drop_procedure_syntax]]
 === Syntax Description of DROP PROCEDURE
 
-* `\[[_catalog-name_.]_schema-name_.]_procedure-name_`
+* `_[[catalog-name.]schema-name.]procedure-name_`
 +
 specifies the ANSI logical name of the stored procedure in java (SPJ), where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify the name of a procedure that has already been registered in the
@@ -5242,7 +5242,7 @@ option is:
   | USERS [FOR ROLE role-name]
   | VIEWS [IN SCHEMA [catalog-name.]schema-name]
   | VIEWS ON TABLE [[catalog-name.]schema-name.]table-name
-  | PRIVILEGES FOR {USER database-username | ROLE role-name}
+  | PRIVILEGES FOR {USER | ROLE} authorization-id
 ```
 
 [[get_syntax]]
@@ -5268,94 +5268,98 @@ displays a list of all the existing components.
 displays the names of all the user-defined functions (UDFs) in the catalog and schema of the current session. By default,
 the catalog is TRAFODION, and the schema is SEABASE.
 
-* `FUNCTIONS FOR LIBRARY \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `FUNCTIONS FOR LIBRARY _[[catalog-name.]schema-name.]library-name_`
 +
 displays the UDFs that reference the specified library.
 
-* `functions in schema [_catalog-name_.]_schema-name_`
+* `FUNCTIONS [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the UDFs in the specified schema.
 
-* `libraries`
+* `LIBRARIES`
 +
 displays the names of all the libraries in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `libraries in schema [_catalog-name_.]_schema-name_`
+* `LIBRARIES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the libraries in the specified schema.
 
-* `procedures`
+* `PROCEDURES`
 +
 displays the names of all the procedures in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `procedures for library \[[_catalog-name_.]_schema-name_.]_library-name_`
+* `PROCEDURES FOR LIBRARY for _[[catalog-name.]schema-name.]library-name_`
 +
 displays the procedures that reference the specified library.
 
-* `procedures in schema [_catalog-name_.]_schema-name_`
+* `PROCEDURES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the procedures in the specified schema.
 
-* `roles`
+* `ROLES`
 +
 displays a list of all the existing roles.
 
-* `roles for user _database-username_`
+* `ROLES [FOR USER _database-username_]`
 +
 displays all the roles that have been granted to the specified database user. The _database-username_ can be a regular or delimited
 case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
-* `schemas`
+* `SCHEMAS`
 +
 displays the names of all the schemas in the catalog of the current session. By default, the catalog is trafodion.
 
-* `schemas in catalog _catalog-name_`
+* `SCHEMAS [IN CATALOG _catalog-name_]`
 +
 displays the names of all the schemas in the specified catalog. For the _catalog-name_, you can specify only trafodion.
 
-* `schemas for [user | role] _authorization-id_`
+* `SCHEMAS FOR [USER | ROLE] _authorization-id_`
 +
 displays all the schemas managed (or owned) by a specified user or role.
 
-* `_authorization-id_`
+** `_authorization-id_`
 +
 is the name of a user or role. you may specify either user or role for users or roles.
 
-* `tables`
+* `TABLES`
 +
 displays the names of all the tables in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `tables in schema [_catalog-name_.]_schema-name_`
+* `TABLES [IN SCHEMA _[catalog-name.]schema-name_`
 +
 displays the names of all the tables in the specified schema.
 
-* `users`
+* `USERS`
 +
 displays a list of all the registered database users.
 
-* `users for role _role-name_`
+* `USERS [FOR ROLE _role-name_]`
 +
 displays all the database users who have been granted the specified role. The _role-name_ can be a regular or delimited
 case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 
 <<<
-* `views`
+* `VIEWS`
 +
 displays the names of all the views in the catalog and schema of the current session. By default, the catalog is trafodion,
 and the schema is seabase.
 
-* `views in schema [_catalog-name_.]_schema-name_`
+* `VIEWS [IN SCHEMA _[catalog-name.]schema-name_]`
 +
 displays the names of all the views in the specified schema. For the _catalog-name_, you can specify only trafodion.
 
-* `views on table \[[_catalog-name_.]_schema-name_.]_table-name_`
+* `VIEWS ON TABLE _[[catalog-name.]schema-name.]table-name_`
 +
 displays the names of all the views that were created for the specified table. If you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. For the _catalog-name_, you can specify
 only trafodion.
+
+* `PRIVILEGES FOR {USER | ROLE} _authorization-id_`
++
+displays all privileges for a specified user or role.
 
 [[get_considerations]]
 === Considerations for GET
@@ -5819,13 +5823,16 @@ System Version 0.9.1. Expected Version 1.0.0.
 The GRANT statement grants access privileges on an SQL object and its columns to specified users or roles.
 Privileges can be granted on the object, on one or more columns, or both.
 
+TIP: The user or role that creates the object becomes the object owner and has all privileges on the object.
+There is no need to grant privileges to the owner, the owner can grant/revoke privileges to/from other users or roles for safety.
+
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
 {docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
 
 ```
-GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
-  ON [object-type] [schema.]object
+GRANT {privilege-name [,privilege-name]... |ALL [PRIVILEGES]} 
+  ON [object-type] [schema-name.]object-name
   TO grantee
   [WITH GRANT OPTION]
   [[GRANTED] BY grantor]
@@ -5860,7 +5867,7 @@ column-list is:
 <<<
 === syntax description of grant
 
-* `_privilege_ [,_privilege_ ] &#8230; | all [privileges]`
+* `_privilege-name_ [,_privilege-name_ ] &#8230; | all [privileges]`
 +
 Specifies the privileges to grant. You can specify these privileges for an object.
 +
@@ -5873,39 +5880,78 @@ Specifies the privileges to grant. You can specify these privileges for an objec
 | SELECT     [column-list] | Can use the select statement.
 | UPDATE     [column-list] | Can use the update statement on table objects.
 | USAGE                    | For libraries, can create procedures and functions on library objects.
+
 For sequence generators, can use the sequence in a SQL statement.
-| ALL                      | All the applicable privileges. When you specify all for a table or view, 
-this includes the select, delete, insert, references, and update privileges. When the object is a 
-stored procedure or user-defined function (UDF), only the execute privilege is applied. When the 
-object is a library, only the update and usage privileges are applied. When the object is a sequence
+
+| ALL                      | All the applicable privileges. 
+
+When you specify all for a table or view, 
+this includes the select, delete, insert, references, and update privileges. 
+
+When the object is a 
+stored procedure or user-defined function (UDF), only the execute privilege is applied. 
+
+When the 
+object is a library, only the update and usage privileges are applied. 
+
+When the object is a sequence
 generator, only the usage privilege is applied.
 |===
 
-* `ON [_object-type_] [_schema_.]_object_`
+* `ON _[object-type][schema-name.]object-name_`
 +
-Specifies an object on which to grant privileges. If none is specified, it defaults to TABLE.  See <<database_object_names,"Database Object Names>> for more details. _object-type_ can be:
+Specifies an object on which to grant privileges. For more information, see <<database_object_names,Database Object Names>>. 
 
-** `FUNCTION [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
-** `LIBRARY [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
-** `PROCEDURE [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
++
+If none is specified, it defaults to TABLE. 
+
++
+`_[object-type][schema-name.]object-name_` can be:
+
+** `FUNCTION _[schema-name.]function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
+** `LIBRARY _[schema-name.]library-name_`, where _library-name_ is the name of a library object in the database.
+** `PROCEDURE _[schema-name.]procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
 registered in the database.
-** `SEQUENCE [_schema_.]_sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
-** `[TABLE] [_schema_.]_object_`, where _object_ is a table or view. 
+** `SEQUENCE _[schema-name.]sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
+** `[TABLE] _[schema-name.]object_`, where _object_ is a table or view. 
 
-* `TO {_grantee_ &#8230; }`
+* `TO {_grantee_}`
 +
 Specifies the  _auth-name_ to which you grant privileges.
 
 * `_auth-name_`
 +
-Specifies the name of an authorization id to which you grant privileges. See <<authorization_ids,authorization ids>>. 
-The authorization id must be a registered database username, an existing role name, or public. the name is a regular 
-or delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
-If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
+Specifies the name of an authorization id to which you grant privileges. For more information, see <<authorization_ids,Authorization IDs>>. 
++
+The _auth-name_ is a regular or delimited case-insensitive identifier. For more information, see <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
++
+The authorization id must be one of the following:
++
+** A registered database username
++
+** An existing role name
++
+** PUBLIC (If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public)
 
 * `WITH GRANT OPTION`
 +
 Specifies that the _auth-name_ to which a privilege is granted may in turn grant the same privilege to other users or roles.
++
+NOTE: `WITH GRANT OPTION` cannot be granted to PUBLIC.
++
+*Example*
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:56:21]
+```
++
+```
+SQL>GRANT ALL PRIVILEGES ON t1 TO PUBLIC WITH GRANT OPTION;
+
+*** ERROR[1007] The WITH GRANT OPTION is not supported. [2018-06-11 10:52:30]
+```
 
 * `[GRANTED] BY _grantor_`
 +
@@ -5928,18 +5974,123 @@ Specifies the list of columns to grant the requested privilege to.
 [[grant_authorization_and_availability_requirements]]
 ==== Authorization and Availability Requirements
 
-To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. Privileges can 
-be granted directly to you or to one of the roles you have been granted. You can grant a privilege on an object if you are 
-the owner of the object (by which you are implicitly granted all privileges on the object) or the owner of the schema containing 
-the object, or if you have been granted both the privilege and the WITH GRANT OPTION for the privilege.
+* To grant a privilege on an object, you must have both that privilege and the right to grant that privilege. 
 
-If granting privileges on behalf of a role, you must specify the role in the [GRANTED] BY clause. To grant the privileges on 
-behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; that is, the 
-role must have been granted the privileges WITH GRANT OPTION.
+* Privileges can be granted directly to you or to one of the roles you have been granted. 
 
-If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
-privileges for which you do have authority to grant). If you lack authority to grant any of the specified privileges, SQL returns 
+* You can grant a privilege on an object if one of the following is true:
++
+** If you are the owner of the object (by which you are implicitly granted all privileges on the object). 
+
++
+** The owner of the schema contains the object.
+
++
+** If you have been granted both the privilege and the `WITH GRANT OPTION` for the privilege.
+
+* If granting privileges on behalf of a role, you must specify the role in the `[GRANTED] BY` clause. 
++
+To grant the privileges on behalf of a role, you must be a member of the role, and the role must have the authority to grant the privileges; 
+that is, the role must have been granted the privileges `WITH GRANT OPTION`.
+
+* If you lack authority to grant:
+
+** If you lack authority to grant one or more of the specified privileges, SQL returns a warning (yet does grant the specified 
+privileges for which you do have authority to grant). 
+
++
+*Example*
+
++
+The owner of the table _customer_ is the _testuser1_, who grants `DELETE`, `INSERT` and `REFERENCES` privileges on the table _customer_ 
+to the user _testuser2_ with `WITH GRANT OPTION`.
+
++
+_testuser1_:
+
++ 
+```
+SQL>GRANT DELETE, INSERT, REFERENCES ON customer TO testuser2 WITH GRANT OPTION;
+
+--- SQL operation complete.
+```
+
++
+Then _testuser2_ tries to grant all privileges on table _customer_ to _testuser3_.
+
++
+The grant command returns a warning stating that only some of the privileges were granted.
+
++
+`DELETE`, `INSERT` and `REFERENCES` privileges are granted because _testuser2_ has been granted these privileges with grant option.
+
++
+`SELECT` and `UPDATE` privileges are not granted.
+
++
+_testuser2:_
+
++
+```
+SQL>GRANT ALL PRIVILEGES ON customer TO testuser3;
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the SELECT privilege. [2018-06-11 16:07:34]
+
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the UPDATE privilege. [2018-06-11 16:07:34]
+
+--- SQL operation complete.
+```
+
++
+Now check privileges for the _testuser1_, _testuser2_ and _testuser3_. 
+
++
+```
+SQL>SHOWDDL customer;
+
+CREATE TABLE TRAFODION.SEABASE.CUSTOMER
+  ( 
+    CUSTNUM                          NUMERIC(4, 0) UNSIGNED NO DEFAULT NOT NULL
+      NOT DROPPABLE NOT SERIALIZED
+  , CUSTNAME                         CHAR(18) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STREET                           CHAR(22) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , CITY                             CHAR(14) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , STATE                            CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591' ' NOT NULL NOT DROPPABLE NOT SERIALIZED
+  , PRIMARY KEY (CUSTNUM ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT NAMESPACE 'TRAF_RSRVD_3' 
+;
+ 
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER1 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER2 WITH GRANT OPTION;
+   GRANT INSERT, DELETE, REFERENCES ON TRAFODION.SEABASE.CUSTOMER TO TESTUSER3 GRANTED BY TESTUSER2;
+
+--- SQL operation complete.
+```
+
++
+** If you lack authority to grant any of the specified privileges, SQL returns 
 an error.
+
++
+*Example*
+
++
+(continue from examples above)
+
++
+The user _testuser3_ tries to grant `DELETE` privilege to the _testuser4_ but fails as the _testuser3_ lacks authority.
+
++
+```
+SQL>GRANT DELETE ON CUSTOMER TO testuser4;
+
+*** ERROR[1012] No privileges were granted.  TESTUSER3 lacks grant option on the specified privileges.  [2018-06-11 16:21:31]
+```
 
 <<<
 [[grant_examples]]
@@ -5956,6 +6107,122 @@ GRANT SELECT (part_no, part_name), DELETE ON TABLE invent.partloc
 +
 ```
 GRANT SELECT ON TABLE invent.partloc TO ajones;
+```
+
+* This example explains how to grant the `SELECT` privilege to PUBLIC.
+
++
+The _testuser1_ creates the table _t1_. The _testuser2_ and _testuser3_ do not have the `SELECT` privilege on the table _t1_.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT * FROM t1;
+
+*** ERROR[4481] The testuser2 does not have SELECT privilege on table or view TRAFODION.SEABASE.T1. [2018-06-11 11:39:16]
+```
+
++
+The _testuser1_ grants the `SELECT` privilege to all current (_testuser2_ and _testuser3_) and future users.
+
++
+_testuser1_:
+
++
+```
+SQL>GRANT SELECT ON t1 TO PUBLIC；
+
+--- SQL operation complete.
+```
+
++
+Then _testuser2_ and _testuser3_ have the `SELECT` privilege on the table _t1_.
+
++
+_testuser3:_
+
++
+```
+SQL>SELECT * FROM t1;
+
+C1          C2         
+----------- -----------
+          1           2
+          3           4
+
+--- 2 row(s) selected.
+```
+
+* This example shows how to grant privileges to the specified role _"TECHNICAL_WRITER"_ and display privileges.
+
++
+```
+SQL>GRANT DELETE, INSERT, REFERENCES, SELECT (start_date,ship_timestamp,est_complete), UPDATE ON TABLE project TO "TECHNICAL_WRITER";
+
+--- SQL operation complete.
+```
+
++
+```
+SQL>GET PRIVILEGES FOR ROLE "TECHNICAL_WRITER";
+
+-IDU-R-    TRAFODION.SEABASE.PROJECT
+S------    TRAFODION.SEABASE.PROJECT <Column> EST_COMPLETE
+S------    TRAFODION.SEABASE.PROJECT <Column> SHIP_TIMESTAMP
+S------    TRAFODION.SEABASE.PROJECT <Column> START_DATE
+
+--- SQL operation complete.
+```
+
+* This example demonstrates how to grant the specified role _"TECHNICAL_WRITER"_ to the _testuser1_.
++
+```
+SQL>GRANT ROLE "TECHNICAL_WRITER" TO testuser1;
+
+--- SQL operation complete.
+```
+
+* This example illustrates how to grant the `USAGE` privilege.
++
+The _testuser1_ creates the sequence _sequence_testuser1_, at this time, the _testuser2_ can not use this sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, NEXT) FROM DUAL;
+
+*** ERROR[4491] The user does not have the USAGE privilege on sequence TRAFODION.SEABASE.SEQUENCE_TESTUSER1. [2018-06-11 16:49:20]
+```
+
++
+Then the _testuser1_ grants the `USAGE` privilege to the _testuser2_.
+
++
+```
+SQL>GRANT USAGE ON SEQUENCE sequence_testuser1 TO testuser2;
+
+--- SQL operation complete.
+```
+
++
+Now the _testuser2_ can use the sequence generator.
+
++
+_testuser2_:
+
++
+```
+SQL>SELECT SEQNUM(sequence_testuser1, next) FROM DUAL;
+
+(EXPR)
+--------------------
+                  112
+
+--- 1 row(s) selected.
 ```
 
 <<<
@@ -6036,7 +6303,7 @@ has been granted to PUBLIC by default.
 specifies a component name on which to grant component privileges. Currently, the only valid component name is SQL_OPERATIONS.
 
 * `TO _grantee_`
-
++
 specifies an _auth-name_ to which you grant component privileges.
 
 * `_auth-name_`
@@ -6109,7 +6376,7 @@ grantee is:
 [[grant_role_syntax]]
 === Syntax Description of GRANT ROLE
 
-* `_role-name_ [,_role-name_]_`
+* `_role-name [,role-name]_`
 + 
 specifies the existing roles to grant.
 
@@ -6146,7 +6413,7 @@ The INSERT statement is a DML statement that inserts rows in a table or
 view.
 
 ```
-INSERT INTO table [(target-col-list)] insert-source
+INSERT INTO table-name [(target-col-list)] insert-source
 
 target-col-list is:
     colname [,colname]...
@@ -6158,7 +6425,7 @@ insert-source is:
 [[insert_syntax]]
 === Syntax Description of INSERT
 
-* `_table_`
+* `_table-name_`
 +
 names the user table or view in which to insert rows. _table_ must be a base table or an updatable view.
 
@@ -6181,7 +6448,7 @@ _table_.)
 +
 specifies the rows of values to be inserted into all columns of _table_ or, optionally, into specified columns of _table_.
 
-* `_query-expr_`
+** `_query-expr_`
 +
 For the description of _query-expr_, _order-by-clause_, and _access-clause_, see the <<select_statement,SELECT Statement>>.
 
@@ -6319,7 +6586,7 @@ VALUES (1120, 'EXPERT MAILERS', '5769 N. 25TH PL',
 --- 1 row(s) inserted.
 ```
 Unlike the previous example, the insert source of this statement does not contain a value for the CREDIT column, which 
-has a default value. Asa result, this INSERT must include the column name list.
+has a default value. As a result, this INSERT must include the column name list.
 +
 This SELECT statement shows the default value 'C1' for CREDIT:
 +
@@ -6430,7 +6697,7 @@ See <<database_object_names,Database Object Names>>.
 === Considerations for INVOKE
 
 [[invoke_required_privileges]]
-=== Required Privileges
+==== Required Privileges
 
 To issue an INVOKE statement, one of the following must be true:
 
@@ -6643,7 +6910,7 @@ MERGE INTO t ON
 
 For each row selected out of the select-query, the MERGE statement is evaluated. Values selected are used 
 in the _on-clause_ to join with the column of the merged table. If the value is found, it is updated. If it
-is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>.
+is not found, the insert is done. The restrictions are the same as those for <<upsert_using_single_row, Upsert Using Single Row>>.
 
 [[merge_examples]]
 === Examples of MERGE

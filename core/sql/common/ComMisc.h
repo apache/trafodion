@@ -90,6 +90,20 @@ NAString ComConvertTrafNameToNativeName(
                                          const NAString &schemaName,
                                          const NAString &objectName);
 
+// Hive names specified in the query may have any of the following
+// forms after they are fully qualified:
+//  hive.hive.t, hive.`default`.t, hive.hivesch.t, hive.hivesch
+// These names are valid in traf environment only and are used to determine
+// if hive ddl is being processed.
+//
+// Return equivalent native hive names of the format:
+//   `default`.t, `default`.t, hivesch.t, hivesch
+// Return NULL string in case of an error.
+NAString ComConvertTrafHiveNameToNativeHiveName(
+     const NAString &catalogName,
+     const NAString &schemaName,
+     const NAString &objectName);
+
 // returns TRUE if specified name is a reserved name.
 // Currently, reserved names for traf internal usage are:
 //   SYSKEY

@@ -252,7 +252,6 @@ private:
   NABoolean isLikeOptLimitColumnLengthSpec_;
   NABoolean isLikeOptWithoutRowFormatSpec_;
   NABoolean isLikeOptWithoutLobColumnsSpec_;
-  NABoolean isLikeOptWithHiveOptionsSpec_;
 
   // legal Like options in DDL Create Table statements
 

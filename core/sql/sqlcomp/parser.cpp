@@ -896,20 +896,10 @@ Int32 Parser::parseSQL
       // if a hive ddl object was found during parsing, generate ddl expr tree.
       // foundDDL_ could be set during successful parsing as well as for
       // a query which gave a syntax error.
-      if (SqlParser_CurrentParser->hiveDDLInfo_->ddlOperation_ == 
-          StmtDDLonHiveObjects::CREATE_LIKE_TRAF_)
-        {
-          // TheParseTree is already set up with the needed structures.
-          // Any additional info would be added in processHiveDDL method.
-          *node = TheParseTree;  
-        }
-      else
-        {
-          if (TheParseTree)
-            delete TheParseTree; 
-          TheParseTree = NULL;
-          *node = NULL;
-        }
+      if (TheParseTree)
+        delete TheParseTree; 
+      TheParseTree = NULL;
+      *node = NULL;
       
       if ((processHiveDDL(SqlParser_CurrentParser->hiveDDLInfo_, node)) &&
           (*node != NULL))

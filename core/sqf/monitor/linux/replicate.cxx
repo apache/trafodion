@@ -39,7 +39,9 @@ extern int MyPNID;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
 extern CMonStats *MonStats;
+#ifndef NAMESERVER_PROCESS
 extern CRedirector Redirector;
+#endif
 CReplicate Replicator;
 
 int CReplObj::objAllocSize_ = CReplObj::calcAllocSize();
@@ -59,21 +61,34 @@ CReplObj::~CReplObj()
 
 void CReplObj::validateObj()
 {
-    if (strncmp((const char *)&eyecatcher_, "RPL", 3) !=0 )
+    if ((strncmp((const char *)&eyecatcher_, "RPL", 3) !=0 ) &&
+        (strncmp((const char *)&eyecatcher_, "RpL", 3) !=0 ))
     {  // Not a valid object
         abort();
     }
 }
 
+#ifdef NAMESERVER_PROCESS
+struct dummy_sizeof_def {};
+#endif
+#ifndef EXCHANGE_CPU_SCHEDULING_DATA
+struct dummy1_sizeof_def {};
+#endif
+
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplNodeName),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplNameServerAdd),
+                                                                                                sizeof(CReplNodeName)),
                                                                                             sizeof(CReplNodeAdd)),
                                                                                         sizeof(CReplNodeDelete)),
                                                                                     sizeof(CReplSoftNodeUp)),
                                                                                 sizeof(CReplSoftNodeDown)),
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
                                                                             sizeof(CReplSchedData)),
+#else
+                                                                            sizeof(dummy1_sizeof_def)),
+#endif
                                                                         sizeof(CReplActivateSpare)),
                                                                     sizeof(CReplConfigData)),
                                                                 sizeof(CReplOpen)),
@@ -82,13 +97,33 @@ int CReplObj::calcAllocSize()
                                                     sizeof(CReplClone)),
                                                 sizeof(CReplExit)),
                                             sizeof(CReplKill)),
+#ifdef NAMESERVER_PROCESS
+                                        sizeof(CReplExitNs)),
+#else
                                         sizeof(CReplDevice)),
+#endif
                                     sizeof(CReplNodeDown)),
                                 sizeof(CReplNodeUp)),
+#ifdef NAMESERVER_PROCESS
+                            sizeof(dummy_sizeof_def)),
+#else
                             sizeof(CReplDump)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                        sizeof(dummy_sizeof_def)),
+#else
                         sizeof(CReplDumpComplete)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                    sizeof(dummy_sizeof_def)),
+#else
                     sizeof(CReplStdioData)),
+#endif
+#ifdef NAMESERVER_PROCESS
+                sizeof(dummy_sizeof_def)),
+#else
                 sizeof(CReplStdinReq)),
+#endif
             sizeof(CReplShutdown));
 }
 
@@ -553,6 +588,9 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         msg->type = InternalType_Process;
         msg->u.process.nid = process_->GetNid();
         msg->u.process.pid = process_->GetPid();
+#ifdef NAMESERVER_PROCESS
+        msg->u.process.verifier = process_->GetVerifier();
+#endif
         msg->u.process.type = process_->GetType();
         msg->u.process.priority = process_->GetPriority();
         msg->u.process.backup = process_->IsBackup();
@@ -564,16 +602,18 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         msg->u.process.pair_parent_nid = process_->GetPairParentNid();
         msg->u.process.pair_parent_pid = process_->GetPairParentPid();
         msg->u.process.pair_parent_verifier = process_->GetPairParentVerifier();
+#ifndef NAMESERVER_PROCESS
         msg->u.process.pathStrId =  process_->pathStrId();
         msg->u.process.ldpathStrId = process_->ldPathStrId();
         msg->u.process.programStrId = process_->programStrId();
+#endif
         msg->u.process.argc = process_->argc();
 
         char * stringData = & msg->u.process.stringData;
 
-        // Copy the program name
+        // Copy the process name
         msg->u.process.nameLen = nameLen_;
-        memcpy(stringData, process_->GetName(),  nameLen_ );
+        memcpy(stringData, process_->GetName(), nameLen_ );
         stringData += nameLen_;
 
         // Copy the standard in file name
@@ -583,9 +623,25 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
         // Copy the standard out file name
         msg->u.process.outfileLen = outfileLen_;
-        memcpy(stringData, process_->outfile(),  outfileLen_ );
+        memcpy(stringData, process_->outfile(), outfileLen_ );
         stringData += outfileLen_;
 
+#ifdef NAMESERVER_PROCESS
+        // Copy the path
+        msg->u.process.pathLen = pathLen_;
+        memcpy(stringData, process_->path(), pathLen_ );
+        stringData += pathLen_;
+
+        // Copy the ldpath
+        msg->u.process.ldpathLen = ldpathLen_;
+        memcpy(stringData, process_->ldpath(), ldpathLen_ );
+        stringData += ldpathLen_;
+
+        // Copy the program
+        msg->u.process.programLen = programLen_;
+        memcpy(stringData, process_->program(), programLen_ );
+        stringData += programLen_;
+#endif
         // Copy the program argument strings
         msg->u.process.argvLen =  argvLen_;
         memcpy(stringData, process_->userArgv(), argvLen_);
@@ -593,8 +649,42 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         // temp trace
         if (trace_settings & TRACE_PROCESS)
         {
-            trace_printf("%s@%d - replSize_=%d, programStrId=(%d,%d), pathStrId=(%d,%d), ldPathStrId=(%d,%d), name=%s, strlen(name)=%d, infile=%s, strlen(infile)=%d, outfile=%s, strlen(outfile)=%d, argc=%d, strlen(total argv)=%d, args=[%.*s]\n",
-                         method_name, __LINE__, replSize_, msg->u.process.programStrId.nid, msg->u.process.programStrId.id, msg->u.process.pathStrId.nid, msg->u.process.pathStrId.id, msg->u.process.ldpathStrId.nid, msg->u.process.ldpathStrId.id, &msg->u.process.stringData, nameLen_, &msg->u.process.stringData+nameLen_, infileLen_, &msg->u.process.stringData+nameLen_+infileLen_, outfileLen_, msg->u.process.argc, argvLen_, argvLen_, &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_);
+            trace_printf( "%s@%d - replSize_=%d\n"
+                          "        msg->u.process.name=%s, strlen(name)=%d\n"
+                          "        msg->u.process.infile=%s, strlen(infile)=%d\n"
+                          "        msg->u.process.outfile=%s, strlen(outfile)=%d\n"
+#ifdef NAMESERVER_PROCESS
+                          "        msg->u.process.path=%s, strlen(path)=%d\n"
+                          "        msg->u.process.ldpath=%s, strlen(ldpath)=%d\n"
+                          "        msg->u.process.program=%s, strlen(program)=%d\n"
+#else
+                          "        msg->u.process.programStrId=(%d,%d)\n"
+                          "        msg->u.process.pathStrId=(%d,%d)\n"
+                          "        msg->u.process.ldPathStrId=(%d,%d)\n"
+#endif
+                          "        msg->u.process.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                        , method_name, __LINE__, replSize_
+                        , &msg->u.process.stringData, nameLen_
+                        , &msg->u.process.stringData+nameLen_, infileLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_, outfileLen_
+#ifdef NAMESERVER_PROCESS
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_, pathLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_+pathLen_, ldpathLen_
+                        , &msg->u.process.stringData+nameLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_, programLen_
+#else
+                        , msg->u.process.programStrId.nid
+                        , msg->u.process.programStrId.id
+                        , msg->u.process.pathStrId.nid
+                        , msg->u.process.pathStrId.id
+                        , msg->u.process.ldpathStrId.nid
+                        , msg->u.process.ldpathStrId.id
+#endif
+                        , msg->u.process.argc
+#ifdef NAMESERVER_PROCESS
+                        , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_+programLen_);
+#else
+                        , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+infileLen_+outfileLen_);
+#endif
         }
 
         // Advance sync buffer pointer
@@ -610,8 +700,6 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
-
-
 
 CReplProcInit::CReplProcInit( CProcess *process
                             , void *tag
@@ -673,7 +761,7 @@ bool CReplProcInit::replicate(struct internal_msg_def *&msg)
         trace_printf("%s@%d - Replicating proc init new process %s, result=%d\n",
                      method_name, __LINE__, name_, result_);
 
-    // Build message to replicate process initializationdata other nodes
+    // Build message to replicate process initialization data other nodes
     msg->type = InternalType_ProcessInit;
     msg->u.processInit.nid = nid_;
     msg->u.processInit.pid = pid_;
@@ -702,18 +790,30 @@ CReplClone::CReplClone(CProcess *process) : process_(process)
     infileLen_ = strlen(process->infile()) + 1;
     outfileLen_ = strlen(process->outfile()) + 1;
     argvLen_ = process->userArgvLen();
+#ifdef NAMESERVER_PROCESS
+    pathLen_ = strlen(process_->path()) + 1;
+    ldpathLen_ = strlen(process_->ldpath()) + 1;
+    programLen_ = strlen(process_->program()) + 1;
+#endif
     // Compute message size (adjust if needed to conform to
     // internal_msg_def structure alignment).
+#ifdef NAMESERVER_PROCESS
+    replSize_ = (MSG_HDR_SIZE + sizeof( clone_def ) + nameLen_ + portLen_
+                 + infileLen_ + outfileLen_ + argvLen_
+                 + pathLen_ + ldpathLen_ + programLen_ + msgAlignment_
+                 ) & ~msgAlignment_;
+#else
     replSize_ = (MSG_HDR_SIZE + sizeof( clone_def ) + nameLen_ + portLen_
                  + infileLen_ + outfileLen_ + argvLen_ + msgAlignment_
                  ) & ~msgAlignment_;
+#endif
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplClone::CReplClone";
-        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d:%d)\n",
+        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d:%d), port=%s\n",
                      method_name, __LINE__, process_->GetName(), process_->GetNid(),
-                     process_->GetPid(), process_->GetVerifier());
+                     process_->GetPid(), process_->GetVerifier(), process_->GetPort());
     }
 
     // Increment reference count for process object
@@ -757,9 +857,11 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     msg->u.clone.priority = process_->GetPriority();
     msg->u.clone.backup = process_->IsBackup();
     msg->u.clone.unhooked = process_->IsUnhooked();
+#ifndef NAMESERVER_PROCESS
     msg->u.clone.pathStrId = process_->pathStrId();
     msg->u.clone.ldpathStrId = process_->ldPathStrId();
     msg->u.clone.programStrId = process_->programStrId();
+#endif
     msg->u.clone.os_pid = process_->GetPid();
     msg->u.clone.verifier = process_->GetVerifier();
     msg->u.clone.prior_pid = process_->GetPriorPid ();
@@ -771,12 +873,15 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     msg->u.clone.persistent_retries = process_->GetPersistentRetries();
     msg->u.clone.event_messages = process_->IsEventMessages();
     msg->u.clone.system_messages = process_->IsSystemMessages();
+#ifdef NAMESERVER_PROCESS
+    msg->u.clone.origPNidNs = process_->GetOrigPNidNs();
+#endif
     msg->u.clone.argc = process_->argc();
     msg->u.clone.creation_time = process_->GetCreationTime();
 
     char * stringData = & msg->u.clone.stringData;
 
-    // Copy the program name
+    // Copy the process name
     msg->u.clone.nameLen = nameLen_;
     memcpy(stringData, process_->GetName(),  nameLen_ );
     stringData += nameLen_;
@@ -796,17 +901,78 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     memcpy(stringData, process_->outfile(),  outfileLen_ );
     stringData += outfileLen_;
 
+#ifdef NAMESERVER_PROCESS
+    // Copy the path
+    msg->u.clone.pathLen = pathLen_;
+    memcpy(stringData, process_->path(),  pathLen_ );
+    stringData += pathLen_;
+
+    // Copy the ldpath
+    msg->u.clone.ldpathLen = ldpathLen_;
+    memcpy(stringData, process_->ldpath(),  ldpathLen_ );
+    stringData += ldpathLen_;
+
+    // Copy the program
+    msg->u.clone.programLen = programLen_;
+    memcpy(stringData, process_->program(),  programLen_ );
+    stringData += programLen_;
+#endif
+
     // Copy the program argument strings
     msg->u.clone.argvLen =  argvLen_;
     memcpy(stringData, process_->userArgv(), argvLen_);
 
     // temp trace
+#ifndef NAMESERVER_PROCESS
     if (trace_settings & TRACE_PROCESS)
     {
-        trace_printf("%s@%d - replSize_=%d, programStrId=(%d,%d), pathStrId=(%d,%d), ldPathStrId=(%d,%d), name=%s, strlen(name)=%d, port=%s, strlen(port)=%d, infile=%s, strlen(infile)=%d, outfile=%s, strlen(outfile)=%d, argc=%d, strlen(total argv)=%d, args=[%.*s]\n",
-                     method_name, __LINE__, replSize_, msg->u.clone.programStrId.nid, msg->u.clone.programStrId.id, msg->u.clone.pathStrId.nid, msg->u.clone.pathStrId.id, msg->u.clone.ldpathStrId.nid, msg->u.clone.ldpathStrId.id, &msg->u.clone.stringData, nameLen_, &msg->u.clone.stringData+nameLen_, portLen_,  &msg->u.clone.stringData+nameLen_+portLen_, infileLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_, msg->u.clone.argc, argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
+        trace_printf( "%s@%d - replSize_=%d\n"
+                      "        msg->u.clone.name=%s, strlen(name)=%d\n"
+                      "        msg->u.clone.port=%s, strlen(port)=%d\n"
+                      "        msg->u.clone.infile=%s, strlen(infile)=%d\n"
+                      "        msg->u.clone.outfile=%s, strlen(outfile)=%d\n"
+                      "        msg->u.clone.programStrId=(%d,%d)\n"
+                      "        msg->u.clone.pathStrId=(%d,%d)\n"
+                      "        msg->u.clone.ldPathStrId=(%d,%d)\n"
+                      "        msg->u.clone.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                    , method_name, __LINE__, replSize_
+                    , &msg->u.clone.stringData, nameLen_
+                    , &msg->u.clone.stringData+nameLen_, portLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_, infileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_
+                    , msg->u.clone.programStrId.nid
+                    , msg->u.clone.programStrId.id
+                    , msg->u.clone.pathStrId.nid
+                    , msg->u.clone.pathStrId.id
+                    , msg->u.clone.ldpathStrId.nid
+                    , msg->u.clone.ldpathStrId.id
+                    , msg->u.clone.argc
+                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_);
     }
-
+#else
+    if (trace_settings & TRACE_PROCESS)
+    {
+        trace_printf( "%s@%d - replSize_=%d\n"
+                      "        msg->u.clone.name=%s, strlen(name)=%d\n"
+                      "        msg->u.clone.port=%s, strlen(port)=%d\n"
+                      "        msg->u.clone.infile=%s, strlen(infile)=%d\n"
+                      "        msg->u.clone.outfile=%s, strlen(outfile)=%d\n"
+                      "        msg->u.clone.path=%s, strlen(path)=%d\n"
+                      "        msg->u.clone.ldpath=%s, strlen(ldpath)=%d\n"
+                      "        msg->u.clone.program=%s, strlen(program)=%d\n"
+                      "        msg->u.clone.argc=%d, strlen(total argv)=%d, args=[%.*s]\n"
+                    , method_name, __LINE__, replSize_
+                    , &msg->u.clone.stringData, nameLen_
+                    , &msg->u.clone.stringData+nameLen_, portLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_, infileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_, outfileLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_, pathLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_, ldpathLen_
+                    , &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_, programLen_
+                    , msg->u.clone.argc
+                    , argvLen_, argvLen_, &msg->u.clone.stringData+nameLen_+portLen_+infileLen_+outfileLen_+pathLen_+ldpathLen_+programLen_);
+    }
+#endif
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );
 
@@ -878,6 +1044,79 @@ bool CReplExit::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+CReplExitNs::CReplExitNs( int nid
+                        , int pid
+                        , Verifier_t verifier
+                        , const char *name
+                        , bool abended
+                        , struct message_def *msg
+                        , int  sockFd
+                        , int  origPNid )
+            : nid_(nid)
+            , pid_(pid)
+            , verifier_(verifier)
+            , abended_(abended)
+            , msg_(msg)
+            , sockFd_(sockFd)
+            , origPNid_(origPNid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLJ", 4);
+
+    strcpy(name_, name);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( exit_ns_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplExitNs::CReplExitNs";
+        trace_printf( "%s@%d  - Queuing replicating process exit %s (%d, %d:%d),"
+                      " abended=%d, msg=%p, sockFd=%d, origPNid=%d\n"
+                    , method_name, __LINE__
+                    , name_, nid_, pid_, verifier_, abended_
+                    , msg_, sockFd_, origPNid_ );
+    }
+}
+
+CReplExitNs::~CReplExitNs()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rplj", 4);
+}
+
+
+bool CReplExitNs::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplExitNs::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf("%s@%d" " - Replicating process exit %s (%d, %d:%d),"
+                     " abended=%d\n", method_name, __LINE__,
+                     name_, nid_, pid_, verifier_, abended_);
+
+    // Build message to replicate this process exit to other nodes
+    msg->type = InternalType_Exit;
+    msg->u.exit_ns.nid = nid_;
+    msg->u.exit_ns.pid = pid_;
+    msg->u.exit_ns.verifier = verifier_;
+    strcpy(msg->u.exit_ns.name, name_);
+    msg->u.exit_ns.abended = abended_;
+    msg->u.exit_ns.msg = msg_;
+    msg->u.exit_ns.sockFd = sockFd_;
+    msg->u.exit_ns.origPNid = origPNid_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
 
 CReplKill::CReplKill( int nid
                     , int pid
@@ -889,7 +1128,7 @@ CReplKill::CReplKill( int nid
           , abort_(abort)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RPLJ", 4);
+    memcpy(&eyecatcher_, "RPLU", 4);
 
     // Compute message size (adjust if needed to conform to
     // internal_msg_def structure alignment).
@@ -913,7 +1152,7 @@ CReplKill::~CReplKill()
                      method_name, __LINE__, nid_, pid_, verifier_ );
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rplj", 4);
+    memcpy(&eyecatcher_, "rplu", 4);
 }
 
 bool CReplKill::replicate(struct internal_msg_def *&msg)
@@ -940,6 +1179,7 @@ bool CReplKill::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifndef NAMESERVER_PROCESS
 CReplDevice::CReplDevice(CLogicalDevice *ldev) : ldev_(ldev)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1012,7 +1252,9 @@ bool CReplDevice::replicate(struct internal_msg_def *&msg)
 
     return copied;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplDump::CReplDump(CProcess *process) : process_(process)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1085,7 +1327,9 @@ bool CReplDump::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplDumpComplete::CReplDumpComplete(CProcess *process) : process_(process)
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1161,6 +1405,7 @@ bool CReplDumpComplete::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
 CReplShutdown::CReplShutdown(int level) : level_(level)
 {
@@ -1202,6 +1447,160 @@ bool CReplShutdown::replicate(struct internal_msg_def *&msg)
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_Shutdown;
     msg->u.shutdown.level = level_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplNameServerAdd::CReplNameServerAdd(CNameServerConfig *config, CProcess *process) 
+            : config_(config)
+            , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RpLA", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( nameserver_add_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNameServerAdd::CReplNameServerAdd";
+        trace_printf( "%s@%d  - Queuing NameServer add replication: node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNameServerAdd::~CReplNameServerAdd()
+{
+    const char method_name[] = "CReplNameServerAdd::~CReplNameServerAdd";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - NameServer add replication for node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+
+    delete config_;
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rPla", 4);
+}
+
+bool CReplNameServerAdd::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNameServerAdd::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf( "%s@%d  - Replicating node add (%s): node-name=%s\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , config_->GetName()
+                    );
+
+    // build message to replicate this node add to other nodes
+    msg->type = InternalType_NameServerAdd;
+    msg->u.nameserver_add.req_nid = process_->GetNid();
+    msg->u.nameserver_add.req_pid = process_->GetPid();
+    msg->u.nameserver_add.req_verifier = process_->GetVerifier();
+    STRCPY( msg->u.nameserver_add.node_name, config_->GetName() );
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplNameServerDelete::CReplNameServerDelete(CNameServerConfig *config, CProcess *process) 
+               : config_(config)
+               , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RpLB", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( nameserver_delete_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNameServerDelete::CReplNameServerDelete";
+        trace_printf( "%s@%d  - Queuing NameServer delete replication: node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNameServerDelete::~CReplNameServerDelete()
+{
+    const char method_name[] = "CReplNameServerDelete::~CReplNameServerDelete";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - NameServer delete replication for node-name=%s\n"
+                    , method_name, __LINE__
+                    , config_->GetName()
+                    );
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rPlb", 4);
+}
+
+bool CReplNameServerDelete::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNameServerDelete::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d  - Replicating nameserver delete (%s): node-name=%s\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , config_->GetName()
+                    );
+
+    // build message to replicate this node delete to other nodes
+    msg->type = InternalType_NameServerDelete;
+    msg->u.nameserver_delete.req_nid = process_->GetNid();
+    msg->u.nameserver_delete.req_pid = process_->GetPid();
+    msg->u.nameserver_delete.req_verifier = process_->GetVerifier();
+    strcpy(msg->u.nameserver_delete.node_name, config_->GetName());
 
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );
@@ -1505,6 +1904,7 @@ bool CReplNodeName::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifdef EXCHANGE_CPU_SCHEDULING_DATA
 CReplSchedData::CReplSchedData()
 {
     // Add eyecatcher sequence as a debugging aid
@@ -1581,6 +1981,7 @@ bool CReplSchedData::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
 
 CReplNodeUp::CReplNodeUp(int pnid) : pnid_(pnid)
@@ -1731,6 +2132,7 @@ bool CReplSoftNodeUp::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
+#ifndef NAMESERVER_PROCESS
 CReplStdioData::CReplStdioData(int nid, int pid, StdIoType type, ssize_t count,
                                char *data)
     : nid_(nid), pid_(pid), type_(type), count_(count)
@@ -1794,7 +2196,9 @@ bool CReplStdioData::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 CReplStdinReq::CReplStdinReq(int nid, int pid, StdinReqType type,
                              int supplierNid, int supplierPid) 
     : nid_(nid), pid_(pid), type_(type), supplierNid_(supplierNid),
@@ -1853,7 +2257,7 @@ bool CReplStdinReq::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
-
+#endif
 
 CReplicate::CReplicate(): 
     maxListSize_(0), syncClusterData_ (false)

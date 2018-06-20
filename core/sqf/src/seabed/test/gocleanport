@@ -20,7 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-hostlist=`showConfigDb -x | grep -v Physical | cut -d, -f2|cut -d= -f2`
+hostlist=`showConfigDb -x | grep -v excFirstCore | grep -v Physical | cut -d, -f2|cut -d= -f2`
 for host in $hostlist; do
 	ssh $host rm -f \$MPI_TMPDIR/monitor.port.*
 done

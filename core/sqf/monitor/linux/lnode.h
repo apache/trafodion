@@ -88,7 +88,8 @@ public:
                                       int os_pid, 
                                       bool event_messages,
                                       bool system_messages,
-                                      struct timespec *creation_time );
+                                      struct timespec *creation_time,
+                                      int origPNidNs );
     void    PrepareForTransactions( bool activatingSpare );
     void    SendDTMRestarted( void );
     inline void SetCpuUser( long long num ) { cpuUser_ = num; }

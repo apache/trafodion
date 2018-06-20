@@ -1274,7 +1274,7 @@ void ContextCli::closeAllCursors(enum CloseCursorType type,
             // scope.
             if (statement->getCliLevel() == getNumOfCliCalls())
             {
-              statement->close(diagsArea_, inRollback);
+              statement->close(diagsArea_, inRollback);            
             }
             // STATUSTRANSACTION slows down the response time
             // Browse access cursor that are started under a transaction

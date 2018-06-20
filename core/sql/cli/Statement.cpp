@@ -3725,6 +3725,10 @@ RETCODE Statement::fetch(CliGlobals * cliGlobals, Descriptor * output_desc,
     {
       StmtDebug3("[END fetch] %p, result is %s, stmt state %s", this,
 		     RetcodeToString(ERROR), stmtState(getState()));
+      // In case there is a commit conflict, we need to reset the rowcount 
+      // since none of the rows would have got committed. 
+      diagsArea.setRowCount(0);
+      stmtStats_->getMasterStats()->setRowsAffected(0);
       return ERROR;
     }
 
@@ -4891,7 +4895,15 @@ short Statement::commitTransaction(ComDiagsArea &diagsArea)
       // get current context and close all statements
       // started under the current transaction
       context_->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_CURR_XN);
-
+      // Capture any errors that happened and return eg. transaction 
+      // related errors that happen during 
+      // Statement::close-> ExTransaction::commitTransaction that get called 
+      // in ::closeAllCursors
+      if (diagsArea.mainSQLCODE() <0)
+        {
+          return ERROR;
+        }
+      
       // if transaction is still active(it may have been committed at
       // close cursor time if auto commit is on), commit it.
       if (context_->getTransaction()->xnInProgress())

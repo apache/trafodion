@@ -297,37 +297,6 @@ const NAString ElemDDLLikeOptWithoutLobColumns::getText() const
   return "ElemDDLLikeOptWithoutLobColumns";
 }
 
-// -----------------------------------------------------------------------
-// methods for class ElemDDLLikeOptWithHiveOptions
-// -----------------------------------------------------------------------
-
-ElemDDLLikeOptWithHiveOptions::ElemDDLLikeOptWithHiveOptions(NAString &hiveOptionsText)
-     : ElemDDLLikeOpt(ELM_LIKE_OPT_WITH_HIVE_OPTIONS),
-       hiveOptionsText_(hiveOptionsText)
-{
-}
-
-// virtual destructor
-ElemDDLLikeOptWithHiveOptions::~ElemDDLLikeOptWithHiveOptions()
-{
-}
-
-// casting
-ElemDDLLikeOptWithHiveOptions * ElemDDLLikeOptWithHiveOptions::castToElemDDLLikeOptWithHiveOptions()
-{
-  return this;
-}
-
-//
-// methods for tracing
-//
-
-const NAString ElemDDLLikeOptWithHiveOptions::getText() const
-{
-  return "ElemDDLLikeOptWithHiveOptions";
-}
-
-
 //
 // End of File
 //

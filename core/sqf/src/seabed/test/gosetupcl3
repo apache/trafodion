@@ -22,7 +22,10 @@
 # setup
 . ./gosetup
 ./godb 3
-if [ "$cluster" != "-cluster" ]; then
+if [ "$cluster" = "-cluster" ]; then
+	nodes=`SQ_CONFIGDB=$PWD/sqconfig.db trafconf -wname`
+	pdcp $nodes sqconfig.db $PWD/sqconfig.db
+else
 	export SQ_VIRTUAL_NODES=3
 	export SQ_VIRTUAL_NID=0
 fi

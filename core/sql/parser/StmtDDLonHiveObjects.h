@@ -66,7 +66,6 @@ public:
       ALTER_,
       TRUNCATE_,
       PASSTHRU_DDL_,
-      CREATE_LIKE_TRAF_,
       UNKNOWN_OPER_
     };
   
@@ -125,7 +124,6 @@ public:
       case ALTER_        : return "alter";
       case TRUNCATE_     : return "truncate";
       case PASSTHRU_DDL_ : return "passthru";
-      case CREATE_LIKE_TRAF_: return "create_like_traf";
       case UNKNOWN_OPER_ : return "unknown";
       default            : return "unknown";
       } // switch

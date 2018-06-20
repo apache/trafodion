@@ -142,20 +142,20 @@ friend class tupp;
     
     struct
     {
-      unsigned short nextTDIOffset_;
-      unsigned short prevTDIOffset_;
+      ULng32 nextTDIOffset_;
+      ULng32 prevTDIOffset_;
     } tdiOffset_;
   };
   
   union
     {
-      Lng32   offset_;
+      Int64   offset_;
       char * tupleAddress_;
     };
 
 protected:
-  unsigned short& nextTDIOffset() { return tdiOffset_.nextTDIOffset_; }
-  unsigned short& prevTDIOffset() { return tdiOffset_.prevTDIOffset_; }
+  ULng32& nextTDIOffset() { return tdiOffset_.nextTDIOffset_; }
+  ULng32& prevTDIOffset() { return tdiOffset_.prevTDIOffset_; }
 
 public:
 
@@ -183,12 +183,12 @@ void resetCommFlags()
 
   inline char *getTupleAddress() const;
 
-  inline Lng32 getTupleOffset() const
+  inline Int64 getTupleOffset() const
     {
       return offset_;
     }
 
-  inline void setTupleOffset(Lng32 offset)
+  inline void setTupleOffset(Int64 offset)
     {
       offset_ = offset;
     }

@@ -62,8 +62,6 @@ enum ExeErrorCode
   EXE_EXPLAIN_BAD_DATA			= 8019,
 
   EXE_INITIALIZE_MAINTAIN               = 8020,
-  EXE_PURGEDATA_CAT                     = 8021,
-  EXE_PARALLEL_PURGEDATA_FAILED         = 8022,
 
   EXE_QUERY_LIMITS_CPU                  = 8023,
   EXE_QUERY_LIMITS_CPU_DEBUG            = 8024,

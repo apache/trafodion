@@ -772,14 +772,6 @@ public:
       TYPE_VOLATILE_SET_TABLE,
       TYPE_VOLATILE_MULTISET_TABLE,
       TYPE_GHOST_TABLE,
-
-      // create external hive table.
-      // usage: create external hive table hive.hive.tgt like trafodion.sch.src;
-      TYPE_EXTERNAL_HIVE_TABLE,
-
-      // create managed hive table.
-      // usage: create hive table hive.hive.tgt like trafodion.sch.src;
-      TYPE_MANAGED_HIVE_TABLE
     };
 
   // load/in memory options
