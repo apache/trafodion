@@ -11791,7 +11791,7 @@ NABoolean CmpSeabaseDDL::setupQueryTreeForHiveDDL(
         (cn, newHiveName, hiveDDL, PARSERHEAP());
 
       if (ifExistsOrNotExists)
-        ht->setIfExist(TRUE);
+        ht->setIfExists(TRUE);
 
       ddlExprRoot = new(CmpCommon::statementHeap()) RelRoot(ht);
     }

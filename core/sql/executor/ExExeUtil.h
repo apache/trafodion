@@ -898,7 +898,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
     {
       INITIAL_,
       CREATE_,
-      DELETE_DATA_,
+      TRUNCATE_TABLE_,
       INSERT_SIDETREE_,
       INSERT_VSBB_,
       ALTER_TO_NOAUDIT_,
@@ -906,7 +906,7 @@ class ExExeUtilCreateTableAsTcb : public ExExeUtilTcb
       ALTER_TO_AUDIT_AND_INSERT_VSBB_,
       UPD_STATS_,
       DONE_,
-      HANDLE_ERROR_, DELETE_DATA_AND_ERROR_, ERROR_,
+      HANDLE_ERROR_, TRUNCATE_TABLE_AND_ERROR_, ERROR_,
       DROP_AND_ERROR_,
       DROP_AND_DONE_,
       INSERT_SIDETREE_EXECUTE_,

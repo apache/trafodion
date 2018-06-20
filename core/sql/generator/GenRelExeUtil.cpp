@@ -3302,10 +3302,10 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   if (getHiveExternalTable())
     exe_util_tdb->setIsExternal(TRUE);
 
-  if (getIfExist())
+  if (getIfExists())
     exe_util_tdb->setIfExists(TRUE);
 
-  if (NOT getTableNotExist())
+  if (getTableNotExists())
     exe_util_tdb->setTableNotExists(TRUE);
 
   if(!generator->explainDisabled()) {

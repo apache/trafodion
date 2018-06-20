@@ -25503,7 +25503,11 @@ ctas_load_and_in_memory_options : TOK_LOAD TOK_IF TOK_EXISTS
                    {
 		     $$ = TableTokens::OPT_IN_MEM; 
 		   }
-                 | TOK_LOAD TOK_IF TOK_EXISTS TOK_WITH TOK_DELETE TOK_DATA 
+                 | TOK_LOAD TOK_IF TOK_EXISTS TOK_WITH TOK_TRUNCATE
+                   {
+		     $$ = TableTokens::OPT_LOAD_WITH_DELETE; 
+		   }
+                 | TOK_LOAD TOK_IF TOK_EXISTS TOK_WITH TOK_DELETE TOK_DATA
                    {
 		     $$ = TableTokens::OPT_LOAD_WITH_DELETE; 
 		   }

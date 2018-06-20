@@ -520,7 +520,7 @@ DESCRIPTION
                              trafodion."_MD_".columns;
   UpsertLoadQuery ........ NULL
   UpdStatsQuery .......... UPDATE STATISTICS FOR TABLE HIVE.SCH008.COLUMNS ON
-                             EVERY KEY SAMPLE SET ROWCOUNT %Ld;
+                             EVERY COLUMN SAMPLE SET ROWCOUNT %Ld;
 
 --- SQL operation complete.
 >>create external table hive.sch008.columns no load 

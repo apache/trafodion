@@ -1110,8 +1110,8 @@ public:
          dropTableOnDealloc_(FALSE),
          noSecurityCheck_(FALSE),
          hiveExternalTable_(FALSE),
-         ifExist_(FALSE),
-         tableNotExist_(FALSE)
+         ifExists_(FALSE),
+         tableNotExists_(FALSE)
   { }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
@@ -1136,14 +1136,14 @@ public:
   NABoolean getDropTableOnDealloc() const       { return dropTableOnDealloc_; }
   NABoolean getNoSecurityCheck() const          { return noSecurityCheck_; }
   NABoolean getHiveExternalTable() const        { return hiveExternalTable_; }
-  NABoolean getIfExist() const                  { return ifExist_; }
-  NABoolean getTableNotExist()   const          { return tableNotExist_; }
+  NABoolean getIfExists() const                 { return ifExists_; }
+  NABoolean getTableNotExists()   const         { return tableNotExists_; }
 
   void setDropTableOnDealloc(NABoolean v=TRUE)  { dropTableOnDealloc_ = v; }
   void setNoSecurityCheck(NABoolean v)          { noSecurityCheck_ = v; }  
   void setHiveExternalTable(NABoolean v)        { hiveExternalTable_ = v; }
-  void setIfExist(NABoolean v)                  { ifExist_ = v; }
-  void setTableNotExist(NABoolean v)            { tableNotExist_ = v; }
+  void setIfExists(NABoolean v)                 { ifExists_ = v; }
+  void setTableNotExists(NABoolean v)           { tableNotExists_ = v; }
 
 private:
 
@@ -1160,10 +1160,10 @@ private:
   NABoolean hiveExternalTable_;
 
   // if 'if exist' clause is specified
-  NABoolean ifExist_;
+  NABoolean ifExists_;
 
   // if table does not exist
-  NABoolean tableNotExist_;
+  NABoolean tableNotExists_;
 };
 
 class ExeUtilHiveQuery : public ExeUtilExpr

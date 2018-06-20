@@ -5245,7 +5245,10 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
       // get the upd stats query
       usQuery_ = "UPDATE STATISTICS FOR TABLE ";
       usQuery_ += getTableName().getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
-      usQuery_ += " ON EVERY KEY SAMPLE SET ROWCOUNT %Ld;";
+      if (isHive)
+        usQuery_ += " ON EVERY COLUMN SAMPLE SET ROWCOUNT %Ld;";
+      else
+        usQuery_ += " ON EVERY KEY SAMPLE SET ROWCOUNT %Ld;";        
     }
 
   return boundExpr;
@@ -5367,9 +5370,9 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
   bindWA->setToOverrideSchema(FALSE);
   
   naTable = bindWA->getNATable(getTableName());
-  if (getIfExist() && (! naTable))
+  if (getIfExists() && (! naTable))
     {
-      setTableNotExist(TRUE);
+      setTableNotExists(TRUE);
 
       bindWA->resetErrStatus();
       CmpCommon::diags()->clear();
