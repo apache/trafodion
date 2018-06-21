@@ -251,7 +251,6 @@ public:
     ex_CLEANUP_VOLATILE_TABLES = 109,
     ex_GET_VOLATILE_INFO = 110,
     ex_CREATE_TABLE_AS = 111,
-    ex_FAST_DELETE       = 112,
     ex_GET_STATISTICS    = 113,
     ex_PROBE_CACHE = 114,
     ex_LONG_RUNNING = 116,

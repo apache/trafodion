@@ -1200,7 +1200,7 @@ short HbaseDelete::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,rowIdAsciiRowLen) ;
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -2163,7 +2163,7 @@ short HbaseUpdate::codeGen(Generator * generator)
   if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
-  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
+  generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa,asciiRowLen) ;
 
 
   // create hdfsscan_tdb

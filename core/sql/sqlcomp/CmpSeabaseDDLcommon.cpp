@@ -8741,7 +8741,31 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               tableName.getSchemaNamePart().getInternalName(),
               tableName.getCatalogNamePart().getInternalName());
   cn.setSpecialType(purgedataTableName);
+
+  if (cn.isHive())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) 
+                          << DgString0("Purgedata is not allowed for Hive tables. Use 'Truncate Table' command.");
+      return;
+    }
+
+  if (cn.isHbase())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) 
+                          << DgString0("Purgedata is not allowed for HBase tables.");
+      return;
+    }
+    
   NATable *naTable = bindWA.getNATable(cn); 
+
+  // if table doesn't exist and 'if exists' clause is specified, return.
+  if (ddlExpr->purgedataIfExists() && (! naTable))
+    {
+      bindWA.resetErrStatus();
+      CmpCommon::diags()->clear();
+      return;
+    }
+
   if (naTable == NULL || bindWA.errStatus())
     {
       processReturn();

@@ -394,6 +394,11 @@ public:
         // returns TURE if table feature clause appears;
         // returns FALSE otherwise
 
+  inline const NAString &getHiveOptions()
+  {return hiveOptions_; }
+  void setHiveOptions(NAString h)
+  {hiveOptions_ = h;}
+
   // POS
   inline NABoolean isPOSNumPartnsSpecified() const;
   inline NABoolean isPOSInitialTableSizeSpecified() const;
@@ -465,12 +470,6 @@ public:
   inline void setTableType(ExtendedQualName::SpecialTableType tableType);
 
   inline void setInsertMode(ComInsertMode insertMode);
-
-  void setExternalHiveTable(ComBoolean v) { externalHiveTable_ = v; }
-  NABoolean externalHiveTable() { return externalHiveTable_; }
-
-  void setManagedHiveTable(ComBoolean v) { managedHiveTable_ = v; }
-  NABoolean managedHiveTable() { return managedHiveTable_; }
 
   // sets the Constraint data member with the information in
   // the parse node pointed by pConstraint.  This parse node
@@ -862,13 +861,8 @@ private:
   // create only if table doesnt exist. Otherwise just return.
   NABoolean createIfNotExists_;
 
-  // Usage:
-  //   create external hive table hive.hive.tgt like trafodion.sch.src;
-  NABoolean externalHiveTable_;
-
-  // Usage:
-  //   create hive table hive.hive.tgt like trafodion.sch.src;
-  NABoolean managedHiveTable_;
+  // optional options specified during CTAS into a hive table
+  NAString hiveOptions_;
 
 }; // class StmtDDLCreateTable
 

@@ -139,18 +139,85 @@ RelExpr *FastExtract::makeFastExtractTree(
   unloadRelExpr->setIsMainQueryOperator(calledFromBinder);
   result = unloadRelExpr;
 
-  if (overwriteTable)
+  // keeping older Hive Truncate around for time being.
+  // Once newer method is tested, legacy will be removed.
+  NABoolean legacyHiveTruncate = FALSE;
+  char * leg = getenv("TRUNC_LEGACY");
+  if (leg)
+    legacyHiveTruncate = TRUE;
+  if (overwriteTable && legacyHiveTruncate)
     {
-      ExeUtilHiveTruncate *trunc = new (bindWA->wHeap())
-        ExeUtilHiveTruncate(tableDesc->getCorrNameObj(),
-                            NULL,
-                            bindWA->wHeap());
+      ExeUtilHiveTruncateLegacy *trunc = new (bindWA->wHeap())
+        ExeUtilHiveTruncateLegacy(tableDesc->getCorrNameObj(),
+                                  NULL,
+                                  bindWA->wHeap());
+      trunc->setNoSecurityCheck(TRUE);
+
       RelExpr * newRelExpr = trunc;
 
       if (tempTableForCSE)
         {
           trunc->setSuppressModCheck();
 
+          // This table gets created at compile time, unlike most
+          // other tables. It gets dropped when the statement is
+          // deallocated. Note that there are three problems:
+          // a) Statement gets never executed
+          // b) Process exits before deallocating the statement
+          // c) Statement gets deallocated, then gets executed again
+          //
+          // Todo: CSE: Handle these issues.
+          // Cases a) and b) are handled like volatile tables, there
+          // is a cleanup mechanism.
+          // Case c) gets handled by AQR.
+          trunc->setDropTableOnDealloc();
+        }
+
+      if (calledFromBinder)
+        //new root to prevent  error 4056 when binding
+        newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
+      else
+        // this node must be bound, even outside the binder,
+        // to set some values
+        newRelExpr = newRelExpr->bindNode(bindWA);
+
+      Union *blockedUnion = new (bindWA->wHeap()) Union(newRelExpr, result);
+
+      blockedUnion->setBlockedUnion();
+      blockedUnion->setSerialUnion();
+      result = blockedUnion;
+    }
+
+  if (overwriteTable && (NOT legacyHiveTruncate))
+    {
+      NAString hiveName = ComConvertTrafHiveNameToNativeHiveName
+        (tableDesc->getCorrNameObj().getQualifiedNameObj().getCatalogName(),
+         tableDesc->getCorrNameObj().getQualifiedNameObj().getSchemaName(),
+         tableDesc->getCorrNameObj().getQualifiedNameObj().getObjectName());
+
+      if (hiveName.isNull())
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-3242)
+            << DgString0("Invalid Hive name specified.");
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      NAString hiveTruncQuery("truncate table ");
+      hiveTruncQuery += hiveName;
+
+      ExeUtilHiveTruncate *trunc = new (bindWA->wHeap())
+        ExeUtilHiveTruncate(tableDesc->getCorrNameObj(),
+                            hiveName,
+                            hiveTruncQuery,
+                            bindWA->wHeap());
+      trunc->setNoSecurityCheck(TRUE);
+
+      RelExpr * newRelExpr = trunc;
+
+      if (tempTableForCSE)
+        {
           // This table gets created at compile time, unlike most
           // other tables. It gets dropped when the statement is
           // deallocated. Note that there are three problems:

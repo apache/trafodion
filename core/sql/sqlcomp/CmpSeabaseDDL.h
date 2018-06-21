@@ -1086,11 +1086,6 @@ protected:
                                    const ComObjectName &tgtTableName,
                                    const ComObjectName &srcTableName);
 
-  static short genDDLforHiveTableLikeTrafTable(
-       StmtDDLCreateTable * createTableNode,
-       NAString &currCatName, NAString &currSchName,
-       NAString &tableDDL); // output. Contains hive DDL string.
-  
 public:
   static NABoolean setupQueryTreeForHiveDDL(
        Parser::HiveDDLInfo * hiveDDLInfo,

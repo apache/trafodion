@@ -116,7 +116,6 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptLimitColumnLengthSpec_ = likeOptions.isLikeOptLimitColumnLengthSpec_;
   isLikeOptWithoutRowFormatSpec_  = likeOptions.isLikeOptWithoutRowFormatSpec_;
   isLikeOptWithoutLobColumnsSpec_  = likeOptions.isLikeOptWithoutLobColumnsSpec_;
-  isLikeOptWithHiveOptionsSpec_ = likeOptions.isLikeOptWithHiveOptionsSpec_;
 
   isLikeOptWithComments_        = likeOptions.isLikeOptWithComments_;
   isLikeOptWithoutConstraints_  = likeOptions.isLikeOptWithoutConstraints_;
@@ -166,7 +165,6 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptLimitColumnLengthSpec_ = FALSE;
   isLikeOptWithoutRowFormatSpec_  = FALSE;
   isLikeOptWithoutLobColumnsSpec_  = FALSE;
-  isLikeOptWithHiveOptionsSpec_  = FALSE;
 
   isLikeOptWithComments_        = FALSE;
   isLikeOptWithoutConstraints_  = FALSE;
@@ -314,18 +312,6 @@ ParDDLLikeOptsCreateTable::setLikeOption(ElemDDLLikeOpt * pLikeOption)
     ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutLobColumns() != NULL);
     isLikeOptWithoutLobColumns_ = TRUE;
     isLikeOptWithoutLobColumnsSpec_ = TRUE;
-    break;
-
-  case ELM_LIKE_OPT_WITH_HIVE_OPTIONS :
-    if (isLikeOptWithHiveOptionsSpec_)
-    {
-      // ERROR[3152] Duplicate WITH HIVE OPTIONS phrases were specified
-      //             in LIKE clause in CREATE TABLE statement.
-      *SqlParser_Diags << DgSqlCode(-3152) << DgString0("HIVE OPTIONS");
-    }
-    ComASSERT(pLikeOption->castToElemDDLLikeOptWithHiveOptions() != NULL);
-    likeOptHiveOptions_ = pLikeOption->castToElemDDLLikeOptWithHiveOptions()->getHiveOptionsText();
-    isLikeOptWithHiveOptionsSpec_ = TRUE;
     break;
 
   default :

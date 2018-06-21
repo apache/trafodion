@@ -166,15 +166,16 @@ short ExExeUtilCreateTableAsTcb::work()
 		 ctaTdb().ctQuery_);
 	    if (cliRC < 0)
 	      {
-		if (((cliRC == -1055) || // SQ table err msg
-		     (cliRC == -1390)) && // Traf err msg
+		if (((cliRC == -1055) ||  // SQ table err msg
+		     (cliRC == -1390) ||  // Traf err msg
+		     (cliRC == -1387)) && // Hive err msg
 		    (ctaTdb().loadIfExists()))
 		  {
 		    SQL_EXEC_ClearDiagnostics(NULL);
 		    tableExists_ = TRUE;
 
 		    if (ctaTdb().deleteData())
-		      step_ = DELETE_DATA_;
+		      step_ = TRUNCATE_TABLE_;
 		    else
 		      step_ = ALTER_TO_NOAUDIT_;
 		    break;
@@ -200,14 +201,14 @@ short ExExeUtilCreateTableAsTcb::work()
 	  }
 	break;
 
-	case DELETE_DATA_:
-	case DELETE_DATA_AND_ERROR_:
+	case TRUNCATE_TABLE_:
+	case TRUNCATE_TABLE_AND_ERROR_:
 	  {
 	    char * ddQuery = 
-	      new(getMyHeap()) char[strlen("DELETE DATA FROM; ") + 
+	      new(getMyHeap()) char[strlen("TRUNCATE TABLE; ") + 
 				   strlen(ctaTdb().getTableName()) +
 				   100];
-	    strcpy(ddQuery, "DELETE DATA FROM ");
+	    strcpy(ddQuery, "TRUNCATE TABLE ");
 	    strcat(ddQuery, ctaTdb().getTableName());
 	    strcat(ddQuery, ";");
 	    cliRC = cliInterface()->executeImmediate(ddQuery, NULL,NULL,TRUE,NULL,TRUE);
@@ -217,7 +218,7 @@ short ExExeUtilCreateTableAsTcb::work()
 
 	    if (cliRC < 0)
 	      {
-		if (step_ == DELETE_DATA_)
+		if (step_ == TRUNCATE_TABLE_)
 		  {
 		    step_ = ERROR_;
 		    break;
@@ -230,7 +231,7 @@ short ExExeUtilCreateTableAsTcb::work()
 		break;
 	      }
 
-	    if (step_ == DELETE_DATA_AND_ERROR_)
+	    if (step_ == TRUNCATE_TABLE_AND_ERROR_)
 	      {
 
 		if (doSidetreeInsert_)
@@ -492,7 +493,7 @@ short ExExeUtilCreateTableAsTcb::work()
 	      {
 		// error case and 'load if exists' specified.
 		// Do not drop the table, only delete data from it.
-		step_ = DELETE_DATA_AND_ERROR_;
+		step_ = TRUNCATE_TABLE_AND_ERROR_;
 	      }
 	    else
 	      step_ = DROP_AND_ERROR_;

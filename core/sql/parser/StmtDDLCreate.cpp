@@ -3821,9 +3821,7 @@ StmtDDLCreateTable::StmtDDLCreateTable(const QualifiedName & aTableQualName,
 	  pSGOptions_(NULL),
 	  createIfNotExists_(FALSE),
           mapToHbaseTable_(FALSE),
-          hbaseDataFormat_(FALSE),
-          externalHiveTable_(FALSE),
-          managedHiveTable_(FALSE)
+          hbaseDataFormat_(FALSE)
 {
   setChild(INDEX_TABLE_DEFINITION, pTableDefBody);
   setChild(INDEX_ATTRIBUTE_LIST, pCreateTableAttrList);

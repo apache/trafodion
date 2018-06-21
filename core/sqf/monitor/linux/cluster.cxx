@@ -42,6 +42,7 @@ using namespace std;
 #include <sys/resource.h>
 #include <errno.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "localio.h"
 #include "mlio.h"

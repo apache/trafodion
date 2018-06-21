@@ -3376,14 +3376,6 @@ TableTokens::setTableTokens(StmtDDLCreateTable *pNode)
       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
       break;
 
-    case TableTokens::TYPE_EXTERNAL_HIVE_TABLE:
-      pNode->setExternalHiveTable(TRUE);
-      break;
-
-    case TableTokens::TYPE_MANAGED_HIVE_TABLE:
-      pNode->setManagedHiveTable(TRUE);
-      break;
-
     default:
       NAAbort("TableTokens - TypeAttr", __LINE__, "internal logic error");
       break;
