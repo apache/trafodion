@@ -1163,7 +1163,7 @@ select cast(a as char(30)), cast(b as char(20)), cast(c as char(20)) from t022na
 select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456789';
 select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456788';
 
-drop table hive.hive.thivets;
+drop table if exists hive.hive.thivets;
 create table hive.hive.thivets (a timestamp);
 insert into hive.hive.thivets values (timestamp '2018-01-01 10:10:10.123456789');
 select * from hive.hive.thivets;

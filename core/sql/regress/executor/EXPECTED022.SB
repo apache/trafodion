@@ -4655,7 +4655,7 @@ A                              B                   C
 
 --- 0 row(s) selected.
 >>
->>drop table hive.hive.thivets;
+>>drop table if exists hive.hive.thivets;
 
 --- SQL operation complete.
 >>create table hive.hive.thivets (a timestamp);
