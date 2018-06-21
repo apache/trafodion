@@ -313,6 +313,9 @@ REGISTER /*INTERNAL*/ HIVE VIEW HIVE.SCH008.V00803;
 /* ObjectUID = 1402470925633636550 */
 
 --- SQL operation complete.
+>>-- next one should not return an error but it currently does.
+>>-- Tables in schemas different than views schema is not being handled.
+>>-- Track it as a known diff.
 >>prepare s from select * from v00803;
 
 --- SQL command prepared.
@@ -642,25 +645,25 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    hive_ddl                                              1.00E+000
 
 --- SQL operation complete.
+>>-- cannot create external table thru CTAS in Hive
 >>create external table hive.hive.temptgt as select * from tempsrc;
 
 *** ERROR[1214] Error encountered when executing HiveQL statement "create external table `default`.TEMPTGT as select * from tempsrc". Details: org.apache.hive.service.cli.HiveSQLException: Error while compiling statement: FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table
 
 --- SQL operation failed with errors.
->>create table hive.hive.temptgt as select * from tempsrc;
+>>
+>>-- hive execution of CTAS returns an error due to a security issue on some
+>>-- platforms. Do not execute it until the issue is fixed.
+>>prepare s from create table hive.hive.temptgt as select * from tempsrc;
 
---- SQL operation complete.
+--- SQL command prepared.
+>>--execute s;
 >>invoke hive.hive.temptgt;
 
--- Definition of hive table HIVE.HIVE.TEMPTGT
--- Definition current  Fri Jun 15 18:12:41 2018
+*** ERROR[1388] Object HIVE.HIVE.TEMPTGT does not exist in Hive Metadata.
 
-  (
-    A                                INT
-  )
-  /* stored as textfile */
+*** ERROR[8822] The statement was not prepared.
 
---- SQL operation complete.
 >>cqd hive_ctas_in_native_mode reset;
 
 --- SQL operation complete.
