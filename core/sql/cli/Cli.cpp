@@ -9466,7 +9466,7 @@ Lng32 SQLCLI_LOBddlInterface
   ComDiagsArea & diags       = currContext.diags();
 
   ComDiagsArea * myDiags = NULL;
-
+  NABoolean useLibHdfs = currContext.getSessionDefaults()->getUseLibHdfs();
   char logBuf[4096];
   lobDebugInfo("In LOBddlInterface",0,__LINE__,lobTrace);
   ExeCliInterface *cliInterface = NULL;
@@ -9486,6 +9486,7 @@ Lng32 SQLCLI_LOBddlInterface
   char * query = new(currContext.exHeap()) char[4096];
   char *hdfsServer = new(currContext.exHeap()) char[256];
   strcpy(hdfsServer,lobHdfsServer);
+  Int32 rc = 0;
   switch (qType)
     {
     case LOB_CLI_CREATE:
@@ -9525,8 +9526,8 @@ Lng32 SQLCLI_LOBddlInterface
 
         //Initialize LOB interface 
         
-        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
-        if (rc)
+        exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
+        if (exLobGlob == NULL) 
           {
             cliRC = 0;
             ComDiagsArea * da = &diags;
@@ -9536,7 +9537,7 @@ Lng32 SQLCLI_LOBddlInterface
 		            getLobErrStr(rc), (char*)getSqlJniErrorStr());
             goto non_cli_error_return;
           }
-          
+
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
 	    // create lob data tables
@@ -9640,8 +9641,8 @@ Lng32 SQLCLI_LOBddlInterface
         //above tables . 
         //Initialize LOB interface 
        
-        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
-        if (rc)
+        exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
+        if (exLobGlob == NULL) 
           {
             cliRC = 0;
             ComDiagsArea * da = &diags;
@@ -9689,9 +9690,8 @@ Lng32 SQLCLI_LOBddlInterface
            goto error_return;
 
 	//Initialize LOB interface 
-        
-        Int32 rc= ExpLOBoper::initLOBglobal(exLobGlob,currContext.exHeap(),&currContext,hdfsServer,hdfsPort);
-        if (rc)
+        exLobGlob = ExpLOBoper::initLOBglobal(currContext.exHeap(), &currContext, useLibHdfs);
+        if (exLobGlob == NULL) 
           {
             cliRC = 0;
             ComDiagsArea * da = &diags;
@@ -9853,7 +9853,8 @@ Lng32 SQLCLI_LOBddlInterface
       myDiags->decrRefCount();
     }
  non_cli_error_return:
-  ExpLOBinterfaceCleanup(exLobGlob);
+  if (exLobGlob != NULL)
+     ExpLOBoper::deleteLOBglobal(exLobGlob, currContext.exHeap());
   NADELETEBASIC(query, currContext.exHeap());
   NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;

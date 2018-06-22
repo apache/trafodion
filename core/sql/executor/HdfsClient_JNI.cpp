@@ -370,6 +370,7 @@ HdfsClient::~HdfsClient()
    deleteHdfsFileInfo();
    if (path_ != NULL) 
       NADELETEBASIC(path_, getHeap());
+   path_ = NULL;
 }
 
 void HdfsClient::deleteHdfsFileInfo()
@@ -504,7 +505,7 @@ void HdfsClient::setPath(const char *path)
 {
    if (path_ != NULL) 
       NADELETEBASIC(path_, getHeap());
-   short len = strlen(path);
+   size_t len = strlen(path);
    path_ = new (getHeap()) char[len+1];
    strcpy(path_, path); 
 }

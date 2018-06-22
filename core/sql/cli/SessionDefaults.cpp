@@ -108,6 +108,7 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::SCHEMA,                   SCHEMA,                     SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::STATISTICS_VIEW_TYPE,     STATISTICS_VIEW_TYPE,       SessionDefaults::SDT_ASCII,          FALSE,   FALSE, TRUE,  TRUE),
   SDEntry(SessionDefaults::SUSPEND_LOGGING,          SUSPEND_LOGGING,            SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
+  SDEntry(SessionDefaults::USE_LIBHDFS,              USE_LIBHDFS,                SessionDefaults::SDT_BOOLEAN,        TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::USER_EXPERIENCE_LEVEL,    USER_EXPERIENCE_LEVEL,      SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
   SDEntry(SessionDefaults::WMS_PROCESS,              WMS_PROCESS,                SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE)
 };
@@ -237,6 +238,7 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setCancelEscalationMxosrvrInterval(120);
   setCancelEscalationSaveabend(FALSE);
   setModeSeabase(FALSE);
+  setUseLibHdfs(FALSE);
 }
   
 SessionDefaults::~SessionDefaults()
@@ -450,6 +452,12 @@ void SessionDefaults::setSessionDefaultAttributeValue
       };
     break;
 
+    case USE_LIBHDFS:
+      {
+         setUseLibHdfs(defaultValueAsBoolean);
+
+      }
+      break;
     case USER_EXPERIENCE_LEVEL:
       {
 	setUEL(attrValue, attrValueLen);

@@ -907,8 +907,10 @@ short Exchange::codeGenForESP(Generator * generator)
 
     splitBottom->setCIFON( (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
 
-    if (generator->processLOB())
-      splitBottom->setProcessLOB(TRUE);
+    if (generator->processLOB()) {
+       splitBottom->setProcessLOB(TRUE);
+       splitBottom->setUseLibHdfs(CmpCommon::getDefault(USE_LIBHDFS) == DF_ON);
+    }
 
     if (CmpCommon::getDefault(COMP_BOOL_153) == DF_ON)
       splitBottom->setForceSkewRoundRobin(TRUE);

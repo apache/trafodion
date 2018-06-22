@@ -55,13 +55,30 @@
 #include "ex_globals.h"
 #include "ex_god.h"
 
+ExLobGlobals *ExpLOBoper::initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs)
+{
+  NAHeap *lobHeap = new (parentHeap) NAHeap("LOB Heap", parentHeap);
+  ExLobGlobals *exLobGlobals = new (lobHeap) ExLobGlobals(lobHeap);
+  exLobGlobals->setUseLibHdfs(useLibHdfs);
+  exLobGlobals->initialize();
+  // initialize lob interface
+  ExpLOBoper::initLOBglobal(exLobGlobals, lobHeap, currContext, (char *)"default", (Int32)0);
+  return exLobGlobals; 
+}
 
-Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *parentHeap, ContextCli *currContext, char *hdfsServer ,Int32 port)
+
+Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *heap, ContextCli *currContext, char *hdfsServer ,Int32 port)
 {
   // call ExeLOBinterface to initialize lob globals
-  ExpLOBinterfaceInit(exLobGlobals, parentHeap,currContext,FALSE, hdfsServer,  port);
-
+  ExpLOBinterfaceInit(exLobGlobals, heap,currContext,FALSE, hdfsServer,  port);
   return 0;
+}
+
+void ExpLOBoper::deleteLOBglobal(ExLobGlobals *exLobGlobals, NAHeap *heap)
+{
+  NAHeap *lobHeap = exLobGlobals->getHeap();
+  NADELETE(exLobGlobals, ExLobGlobals, lobHeap);
+  NADELETE(lobHeap, NAHeap, heap);
 }
 
 char * ExpLOBoper::ExpGetLOBname(Int64 uid, Lng32 num, char * outBuf, Lng32 outBufLen)

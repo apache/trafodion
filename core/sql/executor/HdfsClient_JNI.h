@@ -47,7 +47,6 @@ typedef enum {
 class HdfsScan : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   HdfsScan(NAHeap *heap)
   :  JavaObjectInterface(heap) 
   , hdfsStats_(NULL)
@@ -163,7 +162,6 @@ typedef enum {
 class HdfsClient : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   HdfsClient(NAHeap *heap)
   :  JavaObjectInterface(heap) 
     , path_(NULL)

@@ -561,6 +561,10 @@ public:
 
   void setProcessLOB(NABoolean v){ v ? flags_ |= PROCESS_LOB: flags_ &= ~PROCESS_LOB;}
 
+  NABoolean useLibHdfs() const { return flags_ & USE_LIBHDFS;}
+
+  void setUseLibHdfs(NABoolean v){ v ? flags_ |= USE_LIBHDFS : flags_ &= ~USE_LIBHDFS ;}
+
   enum CollectStatsType
   {
     NO_STATS      = SQLCLI_NO_STATS,
@@ -675,7 +679,9 @@ private:
     // code generation:
     //  master root(ComTdbRoot), esp root(ComTdbSplitBottom),
     //  eid root (ComTdbEidRoot)
-    PROCESS_LOB = 0x0100
+    PROCESS_LOB = 0x0100,
+    //
+    USE_LIBHDFS = 0x0200
 
   };
 

@@ -303,11 +303,16 @@ public class HDFSClient
       fs_ = FileSystem.get(filepath_.toUri(),config_);
       compressed_ = compress;
       fsdis_ = null;      
+      if (fs_.exists(filepath_))
+      {
+         if (overwrite)
+            fs_.delete(filepath_);
+         else
+            throw new IOException(filepath_ + " already exists");
+      }
       FSDataOutputStream fsOut = null;
-      if (overwrite)
-         fsOut = fs_.create(filepath_);
-      if (fsOut != null)
-         fsOut.close();
+      fsOut = fs_.create(filepath_);
+      fsOut.close();
       return true;
    } 
 

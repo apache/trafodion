@@ -4200,7 +4200,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
         {
           // assign individual files and blocks to each ESPs
           ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-          generator->setProcessLOB(TRUE);
+          if (CmpCommon::getDefault(USE_LIBHDFS) == DF_ON)
+             generator->setProcessLOB(TRUE);
 	  
 	  // flag set for HBase scan in HbaseAccess::preCodeGen
 	  // unique scan unlikely for hive scans except 
@@ -5477,7 +5478,6 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
     return this;
 
   generator->setHiveAccess(TRUE);
-  generator->setProcessLOB(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 

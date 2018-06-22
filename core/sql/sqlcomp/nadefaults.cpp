@@ -3055,7 +3055,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
-  DDkwd__(USE_LIBHDFS_SCAN,                     "OFF"),
+ XDDkwd__(USE_LIBHDFS,                          "OFF"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
 
@@ -6308,6 +6308,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case AUTO_QUERY_RETRY_WARNINGS:
+    case USE_LIBHDFS:
       if (tok == DF_ON ||
 	  tok == DF_OFF)
 	isValid = TRUE;

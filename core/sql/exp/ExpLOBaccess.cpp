@@ -189,11 +189,9 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
         if (hdfsClientRetcode != HDFS_CLIENT_OK)
             return LOB_DATA_FILE_CREATE_ERROR;
      }
-     else {
-        hdfsClientRetcode = hdfsClient_->hdfsOpen(lobDataFile_.data(), FALSE);
-        if (hdfsClientRetcode != HDFS_CLIENT_OK)
-            return LOB_DATA_FILE_OPEN_ERROR;
-     }
+     hdfsClientRetcode = hdfsClient_->hdfsOpen(lobDataFile_.data(), FALSE);
+     if (hdfsClientRetcode != HDFS_CLIENT_OK)
+        return LOB_DATA_FILE_OPEN_ERROR;
      fdData_ = NULL;
   }
   else
@@ -215,7 +213,6 @@ Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode,
 	}
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
-     
     }
   }
   return LOB_OPER_OK;
@@ -697,11 +694,15 @@ Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &si
         HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
         ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
         hdfsClientRetcode  = srcHdfsClient->hdfsOpen(srcfile, FALSE);
-        if (hdfsClientRetcode != HDFS_CLIENT_OK)
+        if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+           HdfsClient::deleteInstance(srcHdfsClient);
            return LOB_SOURCE_FILE_OPEN_ERROR;
+        }
         fileData = (char *) (getLobGlobalHeap())->allocateMemory(size);
-        if (fileData == (char *)-1) 
+        if (fileData == (char *)-1) {
+           HdfsClient::deleteInstance(srcHdfsClient);
            return LOB_SOURCE_DATA_ALLOC_ERROR;
+        }
         bytesRead = srcHdfsClient->hdfsRead(offset, fileData, size, hdfsClientRetcode);
         if (hdfsClientRetcode != HDFS_CLIENT_OK) {
            HdfsClient::deleteInstance(srcHdfsClient);
@@ -2273,10 +2274,28 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       if (! useLibHdfs_) {
          HDFS_Client_RetCode hdfsClientRetcode;
          Int32 readLen;
-         readLen = hdfsClient_->hdfsRead(offset, memAddr, size, hdfsClientRetcode);
-         if (hdfsClientRetcode != HDFS_CLIENT_OK)
-            return LOB_DATA_READ_ERROR;
-         operLen = readLen;
+         if (storage_ == Lob_External_HDFS_File) {
+            HdfsClient *srcHdfsClient = HdfsClient::newInstance(getLobGlobalHeap(), NULL, hdfsClientRetcode);
+            ex_assert(hdfsClientRetcode == HDFS_CLIENT_OK, "Internal error: HdfsClient::newInstance returned an error");
+            hdfsClientRetcode  = srcHdfsClient->hdfsOpen(lobDataFile_.data(), FALSE);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+               HdfsClient::deleteInstance(srcHdfsClient);
+               return LOB_SOURCE_FILE_OPEN_ERROR;
+            }
+            readLen = srcHdfsClient->hdfsRead(offset, memAddr, size, hdfsClientRetcode);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK) {
+               HdfsClient::deleteInstance(srcHdfsClient);
+               return LOB_SOURCE_FILE_READ_ERROR;
+            }  
+            HdfsClient::deleteInstance(srcHdfsClient);
+            operLen = readLen;
+         } 
+         else {
+            readLen = hdfsClient_->hdfsRead(offset, memAddr, size, hdfsClientRetcode);
+            if (hdfsClientRetcode != HDFS_CLIENT_OK)
+               return LOB_DATA_READ_ERROR;
+            operLen = readLen;
+         }
          return LOB_OPER_OK;
       }
       lobDebugInfo("Reading in single chunk",0,__LINE__,lobTrace_);
@@ -3498,12 +3517,6 @@ ExLobGlobals::ExLobGlobals(NAHeap *lobHeap) :
     }
   if(getenv("TRACE_LOB_ACTIONS"))
     lobTrace_ = TRUE;
-  char *useLibHdfsStr = getenv("USE_LIBHDFS");
-  int useLibHdfs = 0;
-  if (useLibHdfsStr != NULL) 
-     useLibHdfs = atoi(useLibHdfsStr);
-  if (useLibHdfs != 0) 
-      useLibHdfs_ = TRUE;
 }
 
 ExLobGlobals::~ExLobGlobals()
@@ -3598,8 +3611,6 @@ ExLobGlobals::~ExLobGlobals()
     if (threadTraceFile_)
       fclose(threadTraceFile_);
     threadTraceFile_ = NULL;
-
-   
 }
 
 
