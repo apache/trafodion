@@ -561,7 +561,7 @@ public:
 
   void setProcessLOB(NABoolean v){ v ? flags_ |= PROCESS_LOB: flags_ &= ~PROCESS_LOB;}
 
-  NABoolean useLibHdfs() const { return flags_ & USE_LIBHDFS;}
+  NABoolean useLibHdfs() const { return ((flags_ & USE_LIBHDFS) > 0);}
 
   void setUseLibHdfs(NABoolean v){ v ? flags_ |= USE_LIBHDFS : flags_ &= ~USE_LIBHDFS ;}
 

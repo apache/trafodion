@@ -46,6 +46,7 @@
 #include "ExpORCinterface.h"
 #include "ComSmallDefs.h"
 #include "HdfsClient_JNI.h"
+#include "ExpLOB.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -374,10 +375,9 @@ ex_tcb_private_state *ExHdfsScanTcb::allocatePstates(
 Int32 ExHdfsScanTcb::fixup()
 {
   lobGlob_ = NULL;
-
-  ExpLOBinterfaceInit
-    (lobGlob_, (NAHeap *)getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, hdfsScanTdb().hostName_,hdfsScanTdb().port_);
-  
+  lobGlob_ = ExpLOBoper::initLOBglobal((NAHeap *)getGlobals()->getDefaultHeap(),
+                                         getGlobals()->castToExExeStmtGlobals()->getContext(), 
+                                         useLibhdfsScan_);
   return 0;
 }
 

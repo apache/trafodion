@@ -2546,12 +2546,9 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   lobLoc_[0] = '\0';
   exLobGlobals_ = NULL;
  
-  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
+  ExpLOBinterfaceInit(exLobGlobals_,(NAHeap *)glob->getDefaultHeap(),currContext,TRUE,
                       lobTdb().getLobHdfsServer(),
                       lobTdb().getLobHdfsPort());
-                                     
-    
-
 }
 
 void ExExeUtilLobExtractTcb::freeResources()
@@ -3326,7 +3323,7 @@ ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
   lobHandle_[0] = '\0';
   exLobGlobals_=NULL;
   memset(lobLockId_,'\0',LOB_LOCK_ID_SIZE);
-  ExpLOBinterfaceInit(exLobGlobals_,currContext->exHeap(),currContext,TRUE,
+  ExpLOBinterfaceInit(exLobGlobals_,(NAHeap *)glob->getDefaultHeap(),currContext,TRUE,
                       lobTdb().getLobHdfsServer(),
                       lobTdb().getLobHdfsPort());
                                      
