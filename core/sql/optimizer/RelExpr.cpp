@@ -13341,6 +13341,40 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
 				newExternalInputs,
 				predicatesOnParent,
 				&localExprs);
+
+/*to fix jira 18-20180111-2901  
+ *For query " insert into to t1 select seqnum(seq1, next) from t1;", there is no SORT as left child of TSJ, and it 
+ *is a self-referencing updates Halloween problem. In NestedJoin::genWriteOpLeftChildSortReq(), child(0)
+ *producing no outputs for this query, which means that there is no column to sort on. So we solve this by 
+ *having the source for Halloween insert produce at least one output column always.
+ * */
+  if (avoidHalloween() && child(0) &&
+      child(0)->getOperatorType() == REL_SCAN &&
+      child(0)->getGroupAttr())
+    {
+      if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+        {
+          ValueId exprId;
+          ValueId atLeastOne;
+
+          ValueIdSet output_source = child(0)->getTableDescForExpr()->getColumnList();
+          for (exprId = output_source.init();
+               output_source.next(exprId);
+               output_source.advance(exprId))
+            {
+              atLeastOne = exprId;
+              if (!(exprId.getItemExpr()->doesExprEvaluateToConstant(FALSE, TRUE)))
+                {
+                  child(0)->getGroupAttr()->addCharacteristicOutputs(exprId);
+                  break;
+                }
+            }
+         if (child(0)->getGroupAttr()->getCharacteristicOutputs().isEmpty())
+           {
+             child(0)->getGroupAttr()->addCharacteristicOutputs(atLeastOne);
+           }
+        }
+    }	
 }
 
 /*
