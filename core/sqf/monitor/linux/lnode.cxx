@@ -31,6 +31,7 @@
 #include "redirector.h"
 
 using namespace std;
+#include "msgdef.h"
 #include "internal.h"
 #include "monlogging.h"
 #include "monsonar.h"
@@ -215,11 +216,11 @@ void CLNode::DeLinkP(CLNode **head, CLNode **tail)
 
 void CLNode::Added( void )
 {
-    struct  message_def *msg;
-
     const char method_name[] = "CLNode::Added";
     TRACE_ENTRY;
 
+#ifndef NAMESERVER_PROCESS
+    struct  message_def *msg;
     if ( MyNode->GetState() == State_Up )
     {
         // send node added message to local node's processes
@@ -251,17 +252,20 @@ void CLNode::Added( void )
         MyNode->Bcast( msg );
         delete msg;
     }
+#endif
 
     TRACE_EXIT;
 }
 
 void CLNode::Changed( CLNodeConfig *lnodeConfig )
 {
-    struct  message_def *msg;
-
     const char method_name[] = "CLNode::Changed";
     TRACE_ENTRY;
 
+#ifdef NAMESERVER_PROCESS
+    lnodeConfig = lnodeConfig; // touch
+#else
+    struct  message_def *msg;
     if ( MyNode->GetState() == State_Up )
     {
         // send node changed message to local node's processes
@@ -305,17 +309,18 @@ void CLNode::Changed( CLNodeConfig *lnodeConfig )
         MyNode->Bcast( msg );
         delete msg;
     }
+#endif
 
     TRACE_EXIT;
 }
 
 void CLNode::Deleted( void )
 {
-    struct  message_def *msg;
-
     const char method_name[] = "CLNode::Deleted";
     TRACE_ENTRY;
 
+#ifndef NAMESERVER_PROCESS
+    struct  message_def *msg;
     if ( MyNode->GetState() == State_Up )
     {
         // send node added message to local node's processes
@@ -347,18 +352,18 @@ void CLNode::Deleted( void )
         MyNode->Bcast( msg );
         delete msg;
     }
+#endif
 
     TRACE_EXIT;
 }
 
 void CLNode::Down( void )
 {
-    struct  message_def *msg;
-    
     const char method_name[] = "CLNode::Down";
     TRACE_ENTRY;
 
-
+#ifndef NAMESERVER_PROCESS
+    struct  message_def *msg;
     if ( MyNode->GetState() == State_Up )
     {
         // Record statistics (sonar counters)
@@ -395,6 +400,7 @@ void CLNode::Down( void )
         MyNode->Bcast( msg );
         delete msg;
     }
+#endif
 
     TRACE_EXIT;
 }
@@ -488,7 +494,8 @@ CProcess *CLNode::CompleteProcessStartup( char *process_name,
                                           int os_pid, 
                                           bool event_messages,
                                           bool system_messages,
-                                          struct timespec *creation_time )
+                                          struct timespec *creation_time,
+                                          int origPNidNs )
 {
     CProcess *entry = NULL;
     const char method_name[] = "CLNode::CompleteProcessStartup";
@@ -499,7 +506,8 @@ CProcess *CLNode::CompleteProcessStartup( char *process_name,
                                               os_pid, 
                                               event_messages,
                                               system_messages,
-                                              creation_time);
+                                              creation_time,
+                                              origPNidNs);
     TRACE_EXIT;
     return entry;
 }
@@ -566,6 +574,7 @@ CLNode *CLNode::LinkP(CLNode * entry)
     return entry;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::PrepareForTransactions( bool activatingSpare )
 {
     const char method_name[] = "CLNode::PrepareForTransactions";
@@ -656,7 +665,9 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SendDTMRestarted( void )
 {
     const char method_name[] = "CLNode::SendDTMRestarted";
@@ -708,7 +719,9 @@ void CLNode::SendDTMRestarted( void )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
 {
     int rc = 0;
@@ -781,7 +794,9 @@ void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
 
     TRACE_EXIT;
 }
+#endif
 
+#ifndef NAMESERVER_PROCESS
 void CLNode::SetAffinity( CProcess *process )
 {
     int rc = 0;
@@ -919,15 +934,16 @@ void CLNode::SetAffinity( CProcess *process )
 
     TRACE_EXIT;
 }
+#endif
 
 void CLNode::Up( void )
 {
-    struct  message_def *msg;
-    char    la_buf[MON_STRING_BUF_SIZE];
-    
     const char method_name[] = "CLNode::Up";
     TRACE_ENTRY;
 
+#ifndef NAMESERVER_PROCESS
+    struct  message_def *msg;
+    char    la_buf[MON_STRING_BUF_SIZE];
     sprintf(la_buf, "[CLNode::Up], Node %d (%s) is up.\n", GetNid(), GetNode()->GetName());
     mon_log_write(MON_LNODE_MARKUP, SQ_LOG_INFO, la_buf); 
 
@@ -964,6 +980,7 @@ void CLNode::Up( void )
     
     MyNode->Bcast( msg );
     delete msg;
+#endif
 
     TRACE_EXIT;
 }
@@ -1106,6 +1123,7 @@ void CLNodeContainer::AddLNodeP( CLNode *lnode )
     TRACE_EXIT;
 }
 
+#ifndef NAMESERVER_PROCESS
 void CLNodeContainer::CancelDeathNotification( int nid
                                              , int pid
                                              , int verifier
@@ -1123,6 +1141,7 @@ void CLNodeContainer::CancelDeathNotification( int nid
 
     TRACE_EXIT;
 }
+#endif
    
 void CLNodeContainer::CheckForPendingCreates ( CProcess *process )
 {

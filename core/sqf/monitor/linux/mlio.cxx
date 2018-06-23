@@ -86,6 +86,7 @@ extern char *ErrorMsg( int error_code );
 const int SQ_LocalIOToClient::serviceRequestSize[] = {
    0, // unused, request types start at 1
    sizeof(REQTYPE) + sizeof( Close_def ),           // ReqType_Close
+   sizeof(REQTYPE) + sizeof( DelProcessNs_def ),    // ReqType_DelProcessNs
    sizeof(REQTYPE) + sizeof( Dump_def ),            // ReqType_Dump
    sizeof(REQTYPE) + sizeof( Event_Notice_def ),    // ReqType_Event
    sizeof(REQTYPE) + sizeof( Exit_def ),            // ReqType_Exit
@@ -93,11 +94,17 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( Kill_def ),            // ReqType_Kill
    sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
    sizeof(REQTYPE) + sizeof( Mount_def ),           // ReqType_Mount
+   sizeof(REQTYPE) + sizeof( NameServerAdd_def ),   // ReqType_NameServerAdd
+   sizeof(REQTYPE) + sizeof( NameServerDelete_def ),// ReqType_NameServerDelete
+   sizeof(REQTYPE) + sizeof( NameServerStart_def ), // ReqType_NameServerStart
+   sizeof(REQTYPE) + sizeof( NameServerStop_def ),  // ReqType_NameServerStop
    sizeof(REQTYPE) + sizeof( NewProcess_def ),      // ReqType_NewProcess
-   sizeof(REQTYPE) + sizeof( NodeAdd_def ),         // ReqType_NodeDown
-   sizeof(REQTYPE) + sizeof( NodeDelete_def ),      // ReqType_NodeDown
+   sizeof(REQTYPE) + sizeof( NewProcessNs_def ),    // ReqType_NewProcessNs
+   sizeof(REQTYPE) + sizeof( NodeAdd_def ),         // ReqType_NodeAdd
+   sizeof(REQTYPE) + sizeof( NodeDelete_def ),      // ReqType_NodeDelete
    sizeof(REQTYPE) + sizeof( NodeDown_def ),        // ReqType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeInfo_def ),        // ReqType_NodeInfo
+   sizeof(REQTYPE) + sizeof( NodeName_def ),        // ReqType_NodeName
    sizeof(REQTYPE) + sizeof( NodeUp_def ),          // ReqType_NodeUp
    0,                              // ReqType_Notice -- not an actual request
    sizeof(REQTYPE) + sizeof( Notify_def ),          // ReqType_Notify
@@ -109,14 +116,14 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( ProcessInfo_def ),     // ReqType_ProcessInfoPat
    sizeof(REQTYPE) + sizeof( Set_def ),             // ReqType_Set
    sizeof(REQTYPE) + sizeof( Shutdown_def ),        // ReqType_Shutdown
+   sizeof(REQTYPE) + sizeof( ShutdownNs_def ),      // ReqType_ShutdownNs
    sizeof(REQTYPE) + sizeof( Startup_def ),         // ReqType_Startup
    sizeof(REQTYPE) + sizeof( Stfsd_def ),           // ReqType_Stfsd
    sizeof(REQTYPE) + sizeof( TmLeader_def ),        // ReqType_TmLeader
    sizeof(REQTYPE) + sizeof( TmReady_def ),         // ReqType_TmReady
    sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
    sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
-   sizeof(REQTYPE) + sizeof( ZoneInfo_def ),        // ReqType_ZoneInfo
-   sizeof(REQTYPE) + sizeof( NodeName_def )         // ReqType_NodeName
+   sizeof(REQTYPE) + sizeof( ZoneInfo_def )         // ReqType_ZoneInfo
 };
 
 // The serviceReplySize array holds the size of the request messages for
@@ -124,22 +131,25 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
 // that of the REPLYTYPE enum in msgdef.h.
 const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( Generic_reply_def ),     // ReplyType_Generic
+   sizeof(REPLYTYPE) + sizeof( DelProcessNs_reply_def ),// ReplyType_DelProcessNs
    sizeof(REPLYTYPE) + sizeof( Dump_reply_def ),        // ReplyType_Dump
    sizeof(REPLYTYPE) + sizeof( Get_reply_def ),         // ReplyType_Get
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
    sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
    sizeof(REPLYTYPE) + sizeof( NewProcess_reply_def ),  // ReplyType_NewProcess
+   sizeof(REPLYTYPE) + sizeof( NewProcessNs_reply_def ),// ReplyType_NewProcessNs
    sizeof(REPLYTYPE) + sizeof( NodeInfo_reply_def ),    // ReplyType_NodeInfo
+   sizeof(REPLYTYPE) + sizeof( NodeName_reply_def ),    // ReplyType_NodeName
    sizeof(REPLYTYPE) + sizeof( Open_reply_def ),        // ReplyType_Open
    sizeof(REPLYTYPE) + sizeof( OpenInfo_reply_def ),    // ReplyType_OpenInfo
    sizeof(REPLYTYPE) + sizeof( PNodeInfo_reply_def ),   // ReplyType_PNodeInfo
    sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
+   sizeof(REPLYTYPE) + sizeof( ProcessInfoNs_reply_def ),// ReplyType_ProcessInfoNs
    sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
    sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
    sizeof(REPLYTYPE) + sizeof( TmSync_reply_def ),      // ReplyType_TmSync 
    sizeof(REPLYTYPE) + sizeof( TransInfo_reply_def ),   // ReplyType_TransInfo 
-   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def ),    // ReplyType_ZoneInfo
-   sizeof(REPLYTYPE) + sizeof( NodeName_reply_def )     // ReplyType_NodeName
+   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def )     // ReplyType_ZoneInfo
 };
 
 
@@ -911,7 +921,7 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
           }
 
           // Place new request on request queue
-          ReqQueue.enqueueReq(msgType, pid, msg);
+          ReqQueue.enqueueReq(msgType, -1, pid, -1, msg);
       }
 
       break;
@@ -1239,6 +1249,10 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
 
   int shsize = (int) ((sharedBuffersMax * sizeof( SharedMsgDef )) + 
                 sizeof( SharedMemHdr ));
+
+  if (trace_settings & TRACE_INIT)
+     trace_printf("%s@%d number of buffers=%d, shared mem header size=%u, shared buffer size=%u, shared size=%d\n", method_name, __LINE__,
+                  sharedBuffersMax, (int)sizeof(SharedMemHdr), (int)sizeof(SharedMsgDef), shsize);
 
   long enableHugePages;
   int lv_shmFlag = SHM_NORESERVE | IPC_CREAT | IPC_EXCL | SQ_LIO_SHM_PERMISSIONS;

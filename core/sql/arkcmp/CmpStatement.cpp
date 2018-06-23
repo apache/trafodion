@@ -151,7 +151,6 @@ CmpStatement::CmpStatement(CmpContext* context,
   recompiling_ = FALSE;
   isDDL_ = FALSE;
   isSMDRecompile_ = FALSE;
-  isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
   cses_ = NULL;
   detailsOnRefusedRequirements_ = NULL;

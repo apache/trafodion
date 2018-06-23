@@ -5742,19 +5742,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   return this;
 }
 
-RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
-
-RelExpr * ExeUtilHiveTruncate::preCodeGen(Generator * generator,
-                                          const ValueIdSet & externalInputs,
-                                          ValueIdSet &pulledNewInputs)
+RelExpr * ExeUtilHiveTruncateLegacy::preCodeGen(Generator * generator,
+                                                const ValueIdSet & externalInputs,
+                                                ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;

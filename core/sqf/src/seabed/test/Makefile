@@ -47,8 +47,8 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		                 t253                               \
 		       t261 t262                t266           \
 		                                     t277      t279 \
-		  t280 t281 t282 t284      \
-		  tcheck tsock ttee
+		  t280 t281 t282      t284      t286 \
+		  tcheck tdelta tmerge tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
 		  t15ms t16ms t17cli t17srv t17svc t18cli t18srv t19ms \
@@ -984,6 +984,10 @@ t285: $(CHK) t285fs
 t285fs: $(OUTDIR)/t285fs.o $(TFS)
 	$(LINKITCXX) -o $@ $< $(RFS)
 
+t286: $(CHK) t286ms
+t286ms: $(OUTDIR)/t286ms.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
+
 
 tcheck: $(OUTDIR)/tcheck.o
 	$(LINKITCXX) $(INCLUDESX) -o $@ $<
@@ -995,6 +999,16 @@ testfiles:
 		echo "creating sqconfig.db"; \
 		./gocleandb; \
 	fi
+
+tmerge: tmerge.o
+	$(LINKITCXX) $(INCLUDESX) -o $@ $<
+$(OUTDIR)/tmerge.o: tmerge.cpp
+	$(RCXXINCLUDES)
+
+tdelta: tdelta.o
+	$(LINKITCXX) $(INCLUDESX) -o $@ $<
+$(OUTDIR)/tdelta.o: tdelta.cpp
+	$(RCXXINCLUDES)
 
 tsock: tsock.cpp
 	$(LINKITCXX) -DMAIN $(INCLUDESX) -o $@ $<

@@ -1037,6 +1037,7 @@ void CPStartD::startProcs ( bool requiresDTM )
             case ProcessType_TMID:
             case ProcessType_PERSIST:
             case ProcessType_SSMP:
+            case ProcessType_NameServer:
                 if ( persistConfig->GetRequiresDTM() && !requiresDTM )
                 {
                     if ( tracing )

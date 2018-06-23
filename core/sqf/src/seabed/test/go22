@@ -33,8 +33,8 @@ node
 ! Start the monitor processes across the cluster
 startup
 ! Start the client process
-exec {nowait name \$CLI} $xclient $*
-exec {name \$CLI2} $xclient $*
+exec {$nid0 nowait name \$CLI} $xclient $*
+exec {$nid0 name \$CLI2} $xclient $*
 ! Display process status to see new processes
 ps
 ! Wait for our processes to stop, then stop the monitor processes and exit.

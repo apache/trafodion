@@ -50,7 +50,11 @@
 #define TC_PERSIST_KEY_MAX              64
 #define TC_PERSIST_VALUE_MAX          4096
 #define TC_PERSIST_KEYS_VALUE_MAX     4096
-#define TC_NODES_MAX                   256
+#define TC_NODES_MAX                  1536 // This can be higher when needed and
+                                           // will have performance implications
+                                           // in the monitor process.
+                                           // NOTE: Must increment by 64, see
+                                           //       monitor's msgdef.h MAX_NODES
 #define TC_SPARE_NODES_MAX             256
 #define TC_UNIQUE_STRING_VALUE_MAX    4096
 
@@ -77,6 +81,7 @@ typedef enum {
     ProcessType_DTM,                        // Identifies a Distributed Transaction Monitor process
     ProcessType_ASE,                        // Identifies a Audit Storage Engine (ADP)
     ProcessType_Generic,                    // Identifies a generic process
+    ProcessType_NameServer,                 // Identifies a nameserver processes
     ProcessType_Watchdog,                   // Identifies the monitor's watchdog processes
     ProcessType_AMP,                        // Identifies a AMP process
     ProcessType_Backout,                    // Identifies a Backout process
@@ -106,15 +111,13 @@ typedef enum {
 } TcZoneType_t;
 
 typedef enum {
-//enum TC_STORAGE_TYPE {
       TCDBSTOREUNDEFINED = 0     
     , TCDBMYSQL          = 1 // MySQL Database
     , TCDBPOSTGRESQL     = 2 // PostgresQL Database   [TBD]
-    , TCDBSQLITE         = 3 // Sqlite Database       [deprecated]
+    , TCDBSQLITE         = 3 // Sqlite Database
 } TcStorageType_t;
 
 typedef enum {
-//enum TC_ERRORS {
       TCSUCCESS = 0         // Successful operation
     , TCNOTIMPLEMENTED = -1 // Not implemented
     , TCNOTINIT = -2        // Database not open
@@ -180,6 +183,20 @@ TC_Export int tc_initialize( bool traceEnabled
                            , const char *traceFileName = NULL
                            , const char *instanceNode = NULL
                            , const char *rootNode = NULL )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_delete_nameserver( const char *node_name )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_get_nameservers( int   *count
+                                , int    max
+                                , char **nodeNames )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_get_nameserver( const char *node_name )
+TC_DIAG_UNUSED;
+
+TC_Export int tc_put_nameserver( const char *node_name )
 TC_DIAG_UNUSED;
 
 TC_Export TcStorageType_t tc_get_storage_type( void )

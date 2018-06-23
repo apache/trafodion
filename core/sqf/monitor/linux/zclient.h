@@ -104,7 +104,11 @@ using namespace std;
 
 #define ZCLIENT_TRAFODION_ZNODE     "/trafodion"
 #define ZCLIENT_INSTANCE_ZNODE      "/instance"
+#ifdef NAMESERVER_PROCESS
+#define ZCLIENT_MASTER_ZNODE        "/nsmaster"
+#else
 #define ZCLIENT_MASTER_ZNODE        "/master"
+#endif
 
 typedef list<string>    ZNodeList_t;
 
@@ -115,6 +119,7 @@ typedef list<string>    ZNodeList_t;
 //   the nodeName passed in expires.
 extern void HandleMyNodeExpiration( void );
 extern void HandleNodeExpiration( const char *nodeName );
+extern void HandleAssignMonitorLeader ( const char* failedMaster );
 
 class CZClient : public CLock
 {
@@ -164,6 +169,7 @@ private:
     int     GetZNodeData( string &monZnode, string &nodeName, int &pnid );
     ZClientState_t GetState( void ) { CAutoLock lock(getLocker()); return( state_ ); }
     void    HandleExpiredZNode( void );
+    void    HandleMasterZNode ( void );
     int     InitializeZClient( void );
     bool    IsEnabled( void ) { CAutoLock lock(getLocker()); return( enabled_ ); }
     bool    IsCheckCluster( void ) { CAutoLock lock(getLocker()); return( checkCluster_ ); }

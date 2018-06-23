@@ -586,7 +586,7 @@ void CUtility::GetOutput( char *buf, int bufSize )
             bytes = (size <= (bufSize - count)) ? size : (bufSize - count);
             count =+ bytes;
             memcpy( ptr, str.data(), bytes );
-            ptr =+ (char *)bytes;
+            for (int i=0; i<bytes ;ptr++ );
         }
     }
 

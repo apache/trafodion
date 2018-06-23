@@ -387,7 +387,7 @@ ex_root_tcb::ex_root_tcb(
       tupp_descriptor *tp = new(glob->getSpace()) tupp_descriptor;
       char * dataPtr =
 	(char *)glob->getSpace()->allocateMemory(root_tdb.pkeyLen_);
-      tp->init((short) root_tdb.pkeyLen_,0,dataPtr);
+      tp->init( root_tdb.pkeyLen_,0,dataPtr);
       workAtp_->getTupp(numTuples++) = tp;
     }
   else if (pkeyExpr())
@@ -398,7 +398,7 @@ ex_root_tcb::ex_root_tcb(
       tupp_descriptor *tp = new(glob->getSpace()) tupp_descriptor;
       char * dataPtr =
 	(char *)glob->getSpace()->allocateMemory(root_tdb.pkeyLen_);
-      tp->init((short) root_tdb.pkeyLen_,0,dataPtr);
+      tp->init( root_tdb.pkeyLen_,0,dataPtr);
       pkeyAtp_->getTupp(2) = tp;
     }
   
