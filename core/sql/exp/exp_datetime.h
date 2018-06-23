@@ -120,7 +120,9 @@ public:
   enum { DATETIME_MAX_NUM_FIELDS = 7 };
   enum { MAX_DATETIME_SIZE = 11 };
 
-  enum { MAX_DATETIME_FRACT_PREC = 6 };
+  enum { MAX_DATETIME_MICROS_FRACT_PREC = 6 };
+  enum { MAX_DATETIME_NANOS_FRACT_PREC = 9 };
+  enum { MAX_DATETIME_FRACT_PREC = 9 };
 
   // MAX Length of Datetime string is 50 -
   // "DATE 'YYYY-MM-DD';"
@@ -143,12 +145,17 @@ public:
                                  rec_datetime_field &startField,
                                  rec_datetime_field &endField);
 
+  static NABoolean fractionStoredAsNanos(rec_datetime_field endField,
+                                         short fractionPrecision);
+
   void convertDatetimeToInterval(rec_datetime_field datetimeStartField,
                                  rec_datetime_field datetimeEndField,
                                  short fractionPrecision,
                                  rec_datetime_field intervalEndField,
                                  char *datetimeOpData,
-                                 Int64 &interval) const;
+                                 Int64 &interval,
+                                 char * intervalBignum,
+                                 NABoolean &isBignum) const;
 
   static short getYearMonthDay(Int64 totalDays,
                                short &year,
@@ -156,6 +163,7 @@ public:
                                char &day);
 
   short convertIntervalToDatetime(Int64 interval,
+                                  char * intervalBignum,
                                   rec_datetime_field startField,
                                   rec_datetime_field endField,
                                   short fractionPrecision,

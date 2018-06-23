@@ -45,7 +45,7 @@
 #include "exp_interval.h"
 #include "exp_clause_derived.h"
 #include "NAAssert.h"
-
+#include "exp_bignum.h"
 
 
 #undef DllImport
@@ -325,6 +325,9 @@ short ExpDatetime::getDatetimeFields(Lng32 datetimeCode,
   return 0;
 }
 
+static const Lng32 powersOfTen[] = {1, 10 ,100, 1000, 10000, 100000, 1000000,
+                                    10000000, 100000000, 1000000000};
+
 void ExpDatetime::convertDatetimeToInterval
 ( rec_datetime_field datetimeStartField
 , rec_datetime_field datetimeEndField
@@ -332,8 +335,14 @@ void ExpDatetime::convertDatetimeToInterval
 , rec_datetime_field intervalEndField
 , char *datetimeOpData
 , Int64 &interval
+, char * intervalBignum
+, NABoolean &isBignum
 ) const
 {
+  short rc = 0;
+
+  isBignum = FALSE;
+
   interval = 0;
   short year;
   char month;
@@ -375,18 +384,58 @@ void ExpDatetime::convertDatetimeToInterval
       break;
     case REC_DATE_SECOND:
       interval *= 60;
+
       if (field <= datetimeEndField) {
         char second;
         str_cpy_all((char *) &second, datetimeOpData, sizeof(second));
         datetimeOpData += sizeof(second);
         interval = interval + second;
         if (fractionPrecision > 0) {
-          do {
-            interval *= 10;
-          } while (--fractionPrecision > 0);
           Lng32 fraction;
+          Int64 fraction64;
+
           str_cpy_all((char *) &fraction, datetimeOpData, sizeof(fraction));
-          interval = interval + fraction;
+
+          Int64 multiplicator = powersOfTen[fractionPrecision];
+          if (fractionPrecision <= MAX_DATETIME_MICROS_FRACT_PREC) 
+            {
+              interval *= multiplicator;
+              interval = interval + fraction;
+            }
+          else
+            {
+              // Int64 may run into an overflow if fract precision is > 6
+              // Use bignum computation to do:
+              //   interval = interval * multiplicator
+              //   interval = interval + fraction
+              SimpleType op1ST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
+                               ExpTupleDesc::SQLMX_FORMAT,
+                               8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+
+              char *op_data[3];
+              char mulBignum[BigNum::BIGNUM_TEMP_LEN]; // 16 bytes bignum result length
+
+              op_data[0] = mulBignum; // result
+              op_data[1] = (char*) &interval;
+              op_data[2] = (char*) &multiplicator;
+              rc = EXP_FIXED_BIGN_OV_MUL(&op1ST, &op1ST, op_data);
+
+              BigNum op1BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+              
+              char addBignum[BigNum::BIGNUM_TEMP_LEN];
+              fraction64 = fraction;
+
+              op_data[0] = addBignum;
+              op_data[1] = mulBignum;
+              op_data[2] = (char*)&fraction64;
+              rc = EXP_FIXED_BIGN_OV_ADD(&op1BN, &op1ST, op_data);
+              
+              if (intervalBignum)
+                {
+                  str_cpy_all(intervalBignum, addBignum, BigNum::BIGNUM_TEMP_LEN);
+                  isBignum = TRUE;
+                }
+            }
         }
       }
       break;
@@ -450,11 +499,14 @@ short ExpDatetime::getYearMonthDay(Int64 totalDays,
 }
 
 short ExpDatetime::convertIntervalToDatetime(Int64 interval,
+                                             char * intervalBignum,
                                              rec_datetime_field startField,
                                              rec_datetime_field endField,
                                              short fractionPrecision,
                                              char *datetimeOpData) const
 {
+  short rc = 0;
+
   short year;
   char month;
   char day;
@@ -467,22 +519,44 @@ short ExpDatetime::convertIntervalToDatetime(Int64 interval,
     switch (field) {
     case REC_DATE_SECOND:
       if (fractionPrecision > 0) {
-        Lng32 divisor = 1;
-        short fp = fractionPrecision;
-        do {
-          divisor *= 10;
-        } while (--fp > 0);
-        Int64 dividend = interval;
-        interval = dividend / (Int64) divisor;
-        dividend -= interval * (Int64) divisor;
-        //
-        // Underflow is allowed for time types, so wrap around if necessary.
-        //
-        if (dividend < 0) {
-          dividend += divisor;
-          interval -= 1;
-        }
-        fraction = int64ToInt32(dividend);
+
+        //Int64 multiplicator = powersOfTen[fractionPrecision];
+        Int64 divisor = powersOfTen[fractionPrecision];
+        Int64 dividend = 0;
+        if (fractionPrecision <= MAX_DATETIME_MICROS_FRACT_PREC)
+          {
+            Int64 dividend = interval;
+            interval = dividend / divisor;
+            dividend = dividend - (interval * divisor);
+            //
+            // Underflow is allowed for time types, so wrap around if necessary.
+            //
+            if (dividend < 0) {
+              dividend += divisor;
+              interval -= 1;
+            }
+            fraction = int64ToInt32(dividend);
+          }
+        else
+          {
+            SimpleType opST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
+                            ExpTupleDesc::SQLMX_FORMAT,
+                            8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+            BigNum opBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+            
+            char *op_data[2];
+            
+            op_data[0] = intervalBignum;
+            op_data[1] = (char*) &divisor;
+            Int64 quotient = -1;
+            short ov;
+            dividend = 
+              EXP_FIXED_BIGN_OV_MOD(&opBN, &opST, op_data, &ov, &quotient);
+            interval = quotient;
+
+            fraction = int64ToInt32(dividend);
+          }
+
       }
       //
       // Underflow is allowed for time types, so wrap around if necessary.
@@ -935,6 +1009,7 @@ ExpDatetime::arithDatetimeInterval(arithOps operation,
                                    CollHeap *heap,
                                    ComDiagsArea** diagsArea)
 {
+  short rc = 0;
 
   if (operation != DATETIME_ADD && 
       operation != DATETIME_SUB) {
@@ -1016,33 +1091,39 @@ ExpDatetime::arithDatetimeInterval(arithOps operation,
   // (endField) as the Interval operand.  We want to make sure we
   // add/subtract MONTHs to MONTHs, etc.
   //
-  Int64 value;
+  Int64 value = -1;
+  char intervalBignum[BigNum::BIGNUM_TEMP_LEN];
+  char resultBignum[BigNum::BIGNUM_TEMP_LEN];
+  NABoolean isBignum = FALSE;
   convertDatetimeToInterval(datetimeStartField,
                             datetimeEndField,
                             datetimeOpType->getScale(),
                             intervalEndField,
                             dateTimeValue,
-                            value);
+                            value,
+                            intervalBignum,
+                            isBignum);
 
   // Perform the arithmetic operation.
   //
+  Int64 interval64 = 0;
   switch (intervalOpType->getLength()) {
   case SQL_SMALL_SIZE: {
     short interval;
     str_cpy_all((char *) &interval, intervalOpData, sizeof(interval));
-    value += ((operation == DATETIME_ADD) ? interval : -interval);
+    interval64 = interval;
     break;
   }
   case SQL_INT_SIZE: {
     Lng32 interval;
     str_cpy_all((char *) &interval, intervalOpData, sizeof(interval));
-    value += ((operation == DATETIME_ADD) ? interval : -interval);
+    interval64 = interval;
     break;
   }
   case SQL_LARGE_SIZE: {
     Int64 interval;
     str_cpy_all((char *) &interval, intervalOpData, sizeof(interval));
-    value += ((operation == DATETIME_ADD) ? interval : -interval);
+    interval64 = interval;
     break;
   }
   default:
@@ -1050,20 +1131,43 @@ ExpDatetime::arithDatetimeInterval(arithOps operation,
     return -1;
   }
 
+  if (NOT isBignum) { // result is not a bignum  
+    value += ((operation == DATETIME_ADD) ? interval64 : -interval64);
+  } else {
+    // result is a bignum
+    char *op_data[3];
+    
+    BigNum op1BN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+    SimpleType intST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
+                     ExpTupleDesc::SQLMX_FORMAT,
+                     8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+
+    op_data[0] = resultBignum;
+    op_data[1] = intervalBignum;
+    op_data[2] = (char*)&interval64;
+    
+    if (operation == DATETIME_ADD) {
+      rc = EXP_FIXED_BIGN_OV_ADD(&op1BN, &intST, op_data);
+    } else {
+      rc = EXP_FIXED_BIGN_OV_SUB(&op1BN, &intST, op_data);
+    }
+  }
+
   // Underflow is ok for time only datetime types.  Arithmetic on the
   // hour field is computed modulo 24.  For datetime types containing
   // a date portion, underflow is an error.
   //
-  if ((value < 0) && (datetimeStartField < REC_DATE_HOUR)) {
+  if ((NOT isBignum) && (value < 0) && 
+      (datetimeStartField < REC_DATE_HOUR)) {
     ExRaiseSqlError(heap, diagsArea, EXE_DATETIME_FIELD_OVERFLOW);
     return -1;
   }
-
 
   // Convert result back to datetime.  Note that this is overlaying the
   // local copy of the datetime value.
   //
   if (convertIntervalToDatetime(value,
+                                (isBignum ?  resultBignum : NULL),
                                 datetimeStartField,
                                 intervalEndField,
                                 datetimeOpType->getScale(),
@@ -1115,6 +1219,8 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
                                        CollHeap *heap,
                                        ComDiagsArea** diagsArea) const
 {
+  short rc = 0;
+
   rec_datetime_field datetimeStartField;
   rec_datetime_field datetimeEndField;
   if (getDatetimeFields(datetimeOpType->getPrecision(),
@@ -1146,20 +1252,81 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
     }
 
   Int64 value1;
+  char intervalBignum1[BigNum::BIGNUM_TEMP_LEN];
+  NABoolean isBignum1 = FALSE;
+  NABoolean isBignum2 = FALSE;
   convertDatetimeToInterval(datetimeStartField,
                             datetimeEndField,
                             datetimeOpType->getScale(),
                             intervalEndField,
                             datetimeOpData1,
-                            value1);
+                            value1,
+                            intervalBignum1,
+                            isBignum1);
+
   Int64 value2;
+  char intervalBignum2[BigNum::BIGNUM_TEMP_LEN];
   convertDatetimeToInterval(datetimeStartField,
                             datetimeEndField,
                             datetimeOpType->getScale(),
                             intervalEndField,
                             datetimeOpData2,
-                            value2);
-  Int64 result = value1 - value2;
+                            value2,
+                            intervalBignum2,
+                            isBignum2);
+
+  Int64 result = 0;
+
+  if ((NOT isBignum1) && (NOT isBignum2)) // neither is bignum
+    result = value1 - value2;
+  else
+    {
+      BigNum opBN(BigNum::BIGNUM_TEMP_LEN, BigNum::BIGNUM_TEMP_PRECISION, 0, 0);
+      SimpleType opST(REC_BIN64_SIGNED, sizeof(Int64), 0, 0,
+                      ExpTupleDesc::SQLMX_FORMAT,
+                      8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+
+      char *op_data[3];
+
+      char resultBN[BigNum::BIGNUM_TEMP_LEN];
+      op_data[0] = resultBN;
+      op_data[1] = (isBignum1 ? intervalBignum1 : (char*)&value1);
+      op_data[2] = (isBignum2 ? intervalBignum2 : (char*)&value2);
+     
+      rc = EXP_FIXED_BIGN_OV_SUB((isBignum1 ? (Attributes*)&opBN : (Attributes*)&opST), 
+                                 (isBignum2 ? (Attributes*)&opBN : (Attributes*)&opST), 
+                                 op_data); 
+      if (rc)
+        {
+          ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+          return -1;
+        }
+
+      rc = convDoIt(op_data[0], BigNum::BIGNUM_TEMP_LEN, REC_NUM_BIG_SIGNED, BigNum::BIGNUM_TEMP_PRECISION, 0,
+                    (char*)&result,  8, REC_BIN64_SIGNED, 0, 0,
+                    NULL, 0, NULL, NULL);
+      if (rc)
+        {
+          // convert interval value to ascii format
+          char invalidVal[BigNum::BIGNUM_TEMP_PRECISION+1];
+          Int32 len = BigNum::BIGNUM_TEMP_PRECISION;
+          memset(invalidVal, ' ', len);
+          convDoIt(op_data[0], BigNum::BIGNUM_TEMP_LEN, REC_NUM_BIG_SIGNED, BigNum::BIGNUM_TEMP_PRECISION, 0,
+                   invalidVal, BigNum::BIGNUM_TEMP_PRECISION, REC_BYTE_F_ASCII, 0, 0,
+                   NULL, 0, NULL, NULL);
+          len--;
+          while (invalidVal[len] == ' ')
+            len--;
+          len++;
+          invalidVal[len]  = 0;
+
+          ExRaiseSqlError(heap, diagsArea, EXE_INVALID_INTERVAL_RESULT,
+                          NULL, NULL, NULL, NULL,
+                          invalidVal);
+          return -1;
+        }
+    }
+
   //
   // Scale the result to the interval qualifier's fractional precision.
   //
@@ -1222,8 +1389,6 @@ scaleFraction(Int32 srcFractPrec,
 
   Lng32 fraction = 0;
  
-  static const Lng32 powersOfTen[] = {1, 10 ,100, 1000, 10000, 100000, 1000000};
-
   // If there is a fraction value in the destination and there is a
   // fraction value in the source, scale the fraction to the
   // destination precision.
@@ -1546,7 +1711,6 @@ ExpDatetime::convDatetimeDatetime(char *srcData,
     return -1;
   }
 
-
   // Skip over source fields that are not in the destination.
   //
   srcData += sizeofDatetimeFields(srcStartField, 
@@ -1841,9 +2005,9 @@ scanField(char *&src,
   // The maximum lengths of the various fields.  Since the value of
   // REC_DATE_YEAR is 1, the first entry is just a place holder.
   //
-  static const Lng32 maxLens[] =  { 0,    4,  2,  2,  2,  2,  2,      6 };
-  static const Lng32 minValue[] = { 0, 0001, 01, 01, 00, 00, 00, 000000 };
-  static const Lng32 maxValue[] = { 0, 9999, 12, 31, 23, 59, 59, 999999 };
+  static const Lng32 maxLens[] =  { 0,    4,  2,  2,  2,  2,  2,         9 };
+  static const Lng32 minValue[] = { 0, 0001, 01, 01, 00, 00, 00, 000000000 };
+  static const Lng32 maxValue[] = { 0, 9999, 12, 31, 23, 59, 59, 999999999 };
 
   // The length of the scanned field.
   //
@@ -2290,9 +2454,10 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     // timezone specified. Compute the new datetime value.
 
     // first, convert current datetime value to juliantimestamp
+    Lng32 jtsFraction = fraction / 1000;
     short timestamp[] = {
       year, month, day, hour, minute, second, 
-      (short)(fraction / 1000), (short)(fraction % 1000)
+      (short)(jtsFraction / 1000), (short)(jtsFraction % 1000)
     };
     
     short error;
@@ -2340,7 +2505,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
         second = (char) timestamp[5];
         *dst++ = second;
         if (scale) {
-          fraction = timestamp[6] * 1000 + timestamp[7];
+          //fraction = timestamp[6] * 1000 + timestamp[7];
           str_cpy_all(dst, (char *)&fraction, sizeof(fraction));
           dst += sizeof(fraction);
         }

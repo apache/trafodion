@@ -153,6 +153,12 @@
 
 --- SQL operation complete.
 >>
+>>create procedure T100_io_mmm(IN IN1 timestamp(9), OUT OUT2 timestamp(9))
++>external name 't100.T100_io_mmm' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
 >>create procedure T100_iii_iii(IN IN1 int, IN IN2 int, IN IN3 int)
 +>external name 't100.T100_iii_iii' language java parameter style java
 +>library T100 no sql;
@@ -1087,6 +1093,14 @@ OUT2
 1999-12-31 23:59:59
 
 --- SQL operation complete.
+>>call T100_io_mmm(cast(timestamp'12/31/1999 11:59:59.987654321 pm' as TIMESTAMP(9)), ?x);
+
+OUT2                         
+-----------------------------
+
+1999-12-31 23:59:59.987654321
+
+--- SQL operation complete.
 >>
 >>obey TEST100(all_datatypes2);
 >>--
@@ -1236,6 +1250,14 @@ OUT2
 *** ERROR[8416] A datetime expression evaluated to an invalid datetime value.
 
 --- SQL operation failed with errors.
+>>call T100_io_mmm(interval'0.123456789'second(1,9) + timestamp'12/31/9999 11:59:59.123456789', ?x);
+
+OUT2                         
+-----------------------------
+
+9999-12-31 11:59:59.246913578
+
+--- SQL operation complete.
 >>
 >>obey TEST100(prepexec);
 >>--------------------------------------------------------------------------
@@ -1776,8 +1798,8 @@ OUT2
 >>
 >>obey TEST100(udrtrace);
 >>log;
-Apache Trafodion Conversational Interface 2.1.0
-Copyright (c) 2015-2016 Apache Software Foundation
+Apache Trafodion Conversational Interface 2.3.0
+Copyright (c) 2015-2017 Apache Software Foundation
 >>?section udrtrace2
 >>--
 >>-- This section will be executed by the mxci fired off while executing

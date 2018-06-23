@@ -1260,7 +1260,7 @@ drop table t038aqr;
 drop table T038a;
 drop table T038b;
 drop table T038c;
-drop table T038d;
+drop table T038d cascade;
 drop table T038e;
 drop table T038f;
 drop table T038g;

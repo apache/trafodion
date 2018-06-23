@@ -23,17 +23,8 @@
 -- Functionality: Basic data type conversions, arithmetic and comparative
 --                operations, both positive and negative tests.
 -- Expected files: EXPECTED022, EXPECTED022.MX, EXPECTED022.MP
--- Table created: t022t1 - t022tg, t022u, t022u2
+-- Table created: 
 -- Limitations:
--- To do: - Remove DIFF022.KNOWN.NSK when Unicode is supported on MX tables
---          while Unicode may never be supported on MP tables
--- Revision history:
---     (1/28/02) - Copied from fullstack/TEST022
---     (2/27/02) - Merged in tests fullstack/TEST022U
---     (3/04/02) - Comment out Unicode tests for MP tables
---     (5/19/02) - Removed DIFF022.KNOWN.NSK as Unicode is supported
---     (4/05/04) - Addition interval conversion tests for overflow detection
---     (8/18/05) - Float comparisons and unaligned float accesses
 
 obey TEST022 (clean_up);
 
@@ -43,6 +34,7 @@ log;
 
 obey TEST022 (clean_up);
 
+?ignore
 log LOG022;
 --Now we will run the same test again with PCODE CQD option 'OFF'
 --to ensure PCODE and CLAUSE's evaluation are exactly similar.
@@ -51,18 +43,16 @@ obey TEST022 (test);
 log;
 
 obey TEST022 (clean_up);
+?ignore
+
 exit;
 
 -------------------------------------------------------------------------------
 ?section clean_up
 -------------------------------------------------------------------------------
-drop table t022t1;
-drop table t022t2;
 drop table t022t3;
 drop table t022t4;
-drop table t022t5;
 drop table t022t6;
-drop table t022t7;
 drop table t022t8;
 drop table t022t9;
 drop table t022ta;
@@ -74,34 +64,24 @@ drop table t022tf;
 drop table t022tg;
 drop table t022th;
 drop table t022ti;
-?ifMX
-drop table t022u;
 drop table t022u2;
 drop table $$TEST_SCHEMA$$.t022a7;
 drop table t022fltcmp;
 drop table t022bug cascade;
-?ifMX
 drop table t022dtime;
+drop table t022nanos;
 
 -------------------------------------------------------------------------------
 ?section test
 -------------------------------------------------------------------------------
-create table t022t1 (a int);
-create table t022t2 (a int);
 create table t022t3 (a int unsigned);
 create table t022t4 (a smallint unsigned, b smallint); 
 
-insert into t022t1 values (1);
-insert into t022t2 values (1), (2);
 insert into t022t3 values (4294967295), (3000000000);
 insert into t022t4 values (65535, 32767);
 
-?ifMX
-create table t022u (a int);
-insert into t022u values (1), (2);
 create table t022a7 (c1 float(22), c2 float not null);
-?ifNT
--- The ifNT setting is also enabled when run on Linux platforms.
+
 prepare insertIntoT022A7 from insert into t022a7 values (?,?);
 sh sh -c 'rm -f t022xxx > /dev/null 2>&1 ';
 -- Must use "sh sh -c" if we want the command to work on NT platforms.
@@ -112,125 +92,120 @@ sh sh -c 'echo "execute insertIntoT022A7 using 0 , 1. ; "        >> t022xxx ';
 sh sh -c 'echo "execute insertIntoT022A7 using 1 , 2.E3 ; "      >> t022xxx ';
 sh sh -c 'echo "execute insertIntoT022A7 using 3 , 123.456E2 ; " >> t022xxx ';
 sh sh -c 'echo "commit work;"                                    >> t022xxx ';
-?ifNT
-?ifNSK
-sh echo 0 , 1.   > t022xxx;sh echo 1 , 2.E3  >> t022xxx;sh echo 3 , 123.456E2 >> t022xxx;
-?ifNSK
-?ifMX
 
 -- Positive cases to test the limits of each data type.
 
-select cast (-9 as numeric(1)) from t022t1;
-select cast (9 as numeric(1)) from t022t1;
-select cast (-9999 as numeric(4)) from t022t1;
-select cast (9999 as numeric(4)) from t022t1;
-select cast (-32768 as smallint) from t022t1;
-select cast (32767 as smallint) from t022t1;
+select cast (-9 as numeric(1)) from dual;
+select cast (9 as numeric(1)) from dual;
+select cast (-9999 as numeric(4)) from dual;
+select cast (9999 as numeric(4)) from dual;
+select cast (-32768 as smallint) from dual;
+select cast (32767 as smallint) from dual;
 
-select cast (0 as numeric(1) unsigned) from t022t1;
-select cast (9 as numeric(1) unsigned) from t022t1;
-select cast (0 as numeric(4) unsigned) from t022t1;
-select cast (9999 as numeric(4) unsigned) from t022t1;
-select cast (0 as smallint unsigned) from t022t1;
-select cast (65535 as smallint unsigned) from t022t1;
+select cast (0 as numeric(1) unsigned) from dual;
+select cast (9 as numeric(1) unsigned) from dual;
+select cast (0 as numeric(4) unsigned) from dual;
+select cast (9999 as numeric(4) unsigned) from dual;
+select cast (0 as smallint unsigned) from dual;
+select cast (65535 as smallint unsigned) from dual;
 
-select cast (-99999 as numeric(5)) from t022t1;
-select cast (99999 as numeric(5)) from t022t1;
-select cast (-999999999 as numeric(9)) from t022t1;
-select cast (999999999 as numeric(9)) from t022t1;
-select cast (-2147483648 as int) from t022t1;
-select cast (2147483647 as int) from t022t1;
+select cast (-99999 as numeric(5)) from dual;
+select cast (99999 as numeric(5)) from dual;
+select cast (-999999999 as numeric(9)) from dual;
+select cast (999999999 as numeric(9)) from dual;
+select cast (-2147483648 as int) from dual;
+select cast (2147483647 as int) from dual;
 
-select cast (0 as numeric(5) unsigned) from t022t1;
-select cast (99999 as numeric(5) unsigned) from t022t1;
-select cast (0 as numeric(9) unsigned) from t022t1;
-select cast (999999999 as numeric(9) unsigned) from t022t1;
-select cast (0 as int unsigned) from t022t1;
-select cast (4294967295 as int unsigned) from t022t1;
+select cast (0 as numeric(5) unsigned) from dual;
+select cast (99999 as numeric(5) unsigned) from dual;
+select cast (0 as numeric(9) unsigned) from dual;
+select cast (999999999 as numeric(9) unsigned) from dual;
+select cast (0 as int unsigned) from dual;
+select cast (4294967295 as int unsigned) from dual;
 
-select cast (-9999999999 as numeric(10)) from t022t1;
-select cast (9999999999 as numeric(10)) from t022t1;
-select cast (-999999999999999999 as numeric(18)) from t022t1;
-select cast (999999999999999999 as numeric(18)) from t022t1;
-select cast (-9223372036854775808 as largeint) from t022t1;
-select cast (9223372036854775807 as largeint) from t022t1;
+select cast (-9999999999 as numeric(10)) from dual;
+select cast (9999999999 as numeric(10)) from dual;
+select cast (-999999999999999999 as numeric(18)) from dual;
+select cast (999999999999999999 as numeric(18)) from dual;
+select cast (-9223372036854775808 as largeint) from dual;
+select cast (9223372036854775807 as largeint) from dual;
 
-select cast (-9 as decimal(1)) from t022t1;
-select cast (9 as decimal(1)) from t022t1;
-select cast (-999999999999999999 as decimal(18)) from t022t1;
-select cast (999999999999999999 as decimal(18)) from t022t1;
+select cast (-9 as decimal(1)) from dual;
+select cast (9 as decimal(1)) from dual;
+select cast (-999999999999999999 as decimal(18)) from dual;
+select cast (999999999999999999 as decimal(18)) from dual;
 
-select cast (0 as decimal(1) unsigned) from t022t1;
-select cast (9 as decimal(1) unsigned) from t022t1;
-select cast (0 as decimal(9) unsigned) from t022t1;
-select cast (999999999 as decimal(9) unsigned) from t022t1;
+select cast (0 as decimal(1) unsigned) from dual;
+select cast (9 as decimal(1) unsigned) from dual;
+select cast (0 as decimal(9) unsigned) from dual;
+select cast (999999999 as decimal(9) unsigned) from dual;
 
-select cast (10 as tinyint) from t022t1;
-select cast (-10 as tinyint) from t022t1;
-select cast (127 as tinyint) from t022t1;
-select cast (-128 as tinyint) from t022t1;
-select cast (10 as tinyint unsigned) from t022t1;
-select cast (0 as tinyint unsigned) from t022t1;
-select cast (255 as tinyint unsigned) from t022t1;
+select cast (10 as tinyint) from dual;
+select cast (-10 as tinyint) from dual;
+select cast (127 as tinyint) from dual;
+select cast (-128 as tinyint) from dual;
+select cast (10 as tinyint unsigned) from dual;
+select cast (0 as tinyint unsigned) from dual;
+select cast (255 as tinyint unsigned) from dual;
 
-select cast (date'12/31/9999' as timestamp(3)) from t022t1;
-select cast (timestamp'12/31/9999 11:59:59.999999 pm' as date) from t022t1;
-select cast (timestamp'12/31/9999 11:59:59.999999 pm' as time(3)) from t022t1;
+select cast (date'12/31/9999' as timestamp(3)) from dual;
+select cast (timestamp'12/31/9999 11:59:59.999999 pm' as date) from dual;
+select cast (timestamp'12/31/9999 11:59:59.999999 pm' as time(3)) from dual;
 
-select interval'0.1'second + timestamp'12/31/9998 11:59:59.9 pm' from t022t1;
-select timestamp'12/31/9998 11:59:59.9 pm' + interval'0.1'second from t022t1;
-select timestamp'01/01/9999 00:00:00.0' + interval-'0.1'second from t022t1;
-select timestamp'01/01/9999 00:00:00.0' - interval'0.1'second from t022t1;
-select (date'12/31/9999' - date'12/31/9998') day(3) from t022t1;
-select (date'12/31/9998' - date'12/31/9999') day(3) from t022t1;
+select interval'0.1'second + timestamp'12/31/9998 11:59:59.9 pm' from dual;
+select timestamp'12/31/9998 11:59:59.9 pm' + interval'0.1'second from dual;
+select timestamp'01/01/9999 00:00:00.0' + interval-'0.1'second from dual;
+select timestamp'01/01/9999 00:00:00.0' - interval'0.1'second from dual;
+select (date'12/31/9999' - date'12/31/9998') day(3) from dual;
+select (date'12/31/9998' - date'12/31/9999') day(3) from dual;
 
-select interval'1'month + timestamp'12/31/9998 11:59:59.999 pm' from t022t1;
-select timestamp'12/31/9998 11:59:59.999 pm' + interval'1'month from t022t1;
-select timestamp'01/31/9999 11:59:59.999 pm' + interval-'1'month from t022t1;
-select timestamp'01/31/9999 11:59:59.999 pm' - interval'1'month from t022t1;
-select (date'12/31/9999' - date'12/31/9998') month from t022t1;
-select (date'12/31/9998' - date'12/31/9999') month from t022t1;
-select (date'12/31/9999' - date'12/31/9998') year to month from t022t1;
-select (date'12/31/9998' - date'12/31/9999') year to month from t022t1;
+select interval'1'month + timestamp'12/31/9998 11:59:59.999 pm' from dual;
+select timestamp'12/31/9998 11:59:59.999 pm' + interval'1'month from dual;
+select timestamp'01/31/9999 11:59:59.999 pm' + interval-'1'month from dual;
+select timestamp'01/31/9999 11:59:59.999 pm' - interval'1'month from dual;
+select (date'12/31/9999' - date'12/31/9998') month from dual;
+select (date'12/31/9998' - date'12/31/9999') month from dual;
+select (date'12/31/9999' - date'12/31/9998') year to month from dual;
+select (date'12/31/9998' - date'12/31/9999') year to month from dual;
 
-select interval'1'second + time'11:59:59 pm' from t022t1;
-select time'11:59:59 pm' + interval'1'second from t022t1;
-select time'12:00:00 am' + interval-'1'second from t022t1;
-select time'12:00:00 am' - interval'1'second from t022t1;
+select interval'1'second + time'11:59:59 pm' from dual;
+select time'11:59:59 pm' + interval'1'second from dual;
+select time'12:00:00 am' + interval-'1'second from dual;
+select time'12:00:00 am' - interval'1'second from dual;
 
-select timestamp '2015-05-31T10:11:12' from t022t1;
-select timestamp '2015-05-31T10:11:12Z' from t022t1;
-select timestamp '2015-05-31T10:11:12-05:00' from t022t1;
-select timestamp '2015-05-31T10:11:12+05:00' from t022t1;
-select timestamp '2015-05-31T10:11:12.123-05:00' from t022t1;
-select timestamp '2015-05-31T10:11:12.123+05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12' from dual;
+select timestamp '2015-05-31T10:11:12Z' from dual;
+select timestamp '2015-05-31T10:11:12-05:00' from dual;
+select timestamp '2015-05-31T10:11:12+05:00' from dual;
+select timestamp '2015-05-31T10:11:12.123-05:00' from dual;
+select timestamp '2015-05-31T10:11:12.123+05:00' from dual;
 
-select cast('2015-05-31T10:11:12' as timestamp) from t022t1;
-select cast('2015-05-31T10:11:12Z' as timestamp) from t022t1;
-select cast('2015-05-31T10:11:12-05:00' as timestamp) from t022t1;
-select cast('2015-05-31T10:11:12+05:00' as timestamp) from t022t1;
-select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from t022t1;
-select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12' as timestamp) from dual;
+select cast('2015-05-31T10:11:12Z' as timestamp) from dual;
+select cast('2015-05-31T10:11:12-05:00' as timestamp) from dual;
+select cast('2015-05-31T10:11:12+05:00' as timestamp) from dual;
+select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from dual;
+select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from dual;
 
-select time '10:11:12' from t022t1;
-select time '10:11:12Z' from t022t1;
-select time '10:11:12-05:00' from t022t1;
-select time '10:11:12+05:00' from t022t1;
-select time '10:11:12.123-05:00' from t022t1;
-select time '10:11:12.123+05:00' from t022t1;
+select time '10:11:12' from dual;
+select time '10:11:12Z' from dual;
+select time '10:11:12-05:00' from dual;
+select time '10:11:12+05:00' from dual;
+select time '10:11:12.123-05:00' from dual;
+select time '10:11:12.123+05:00' from dual;
 
-select cast('10:11:12' as time) from t022t1;
-select cast('10:11:12Z' as time) from t022t1;
-select cast('10:11:12-05:00' as time) from t022t1;
-select cast('10:11:12+05:00' as time) from t022t1;
-select cast('10:11:12.123-05:00' as time) from t022t1;
-select cast('10:11:12.123+05:00' as time) from t022t1;
+select cast('10:11:12' as time) from dual;
+select cast('10:11:12Z' as time) from dual;
+select cast('10:11:12-05:00' as time) from dual;
+select cast('10:11:12+05:00' as time) from dual;
+select cast('10:11:12.123-05:00' as time) from dual;
+select cast('10:11:12.123+05:00' as time) from dual;
 
-select time '23:11:06.123' from t022t1;
-select cast ('23:11:06.123' as time(2)) from t022t1;
+select time '23:11:06.123' from dual;
+select cast ('23:11:06.123' as time(2)) from dual;
 
-select cast('2010-01-01' as timestamp(3)) from t022t1;
-select cast('2010-01-01 10' as timestamp) from t022t1;
+select cast('2010-01-01' as timestamp(3)) from dual;
+select cast('2010-01-01 10' as timestamp) from dual;
 
 create table if not exists t022dtime(a date not null, b time, c timestamp);
 prepare s from upsert into t022dtime values (?, ?, ?);
@@ -238,330 +213,330 @@ execute s using '2010-01-01', '10:10:10', '2010-01-01 10:10:10.123';
 select * from t022dtime;
 
 -- negative cases
-select cast('2016-01-29Z' as date) from t022t1;
-select cast('2016-01-29+05:00' as date) from t022t1;
-select cast('10:11:12-05:000' as time) from t022t1;
-select date '2016-01-29Z' from t022t1;
-select date '2016-01-29+05:00' from t022t1;
-select time '25:11:11' from t022t1;
-select time '23:11:11.1234567' from t022t1;
-select cast ('23:11:61' as time) from t022t1;
-select cast ('23:11:06' as timestamp) from t022t1;
-select cast('2010-01-01' as time) from t022t1;
-select timestamp'2010-01-01 10' from t022t1;
+select cast('2016-01-29Z' as date) from dual;
+select cast('2016-01-29+05:00' as date) from dual;
+select cast('10:11:12-05:000' as time) from dual;
+select date '2016-01-29Z' from dual;
+select date '2016-01-29+05:00' from dual;
+select time '25:11:11' from dual;
+select time '23:11:11.1234567890' from dual;
+select cast ('23:11:61' as time) from dual;
+select cast ('23:11:06' as timestamp) from dual;
+select cast('2010-01-01' as time) from dual;
+select timestamp'2010-01-01 10' from dual;
 
 -- Prove these cases work since they're used in the succeeding negative tests.
 
-select cast (cast (-10 as smallint) as numeric(2)) from t022t1;
-select cast (cast (10 as smallint) as numeric(2)) from t022t1;
-select cast (cast (-10 as numeric(2)) as smallint) from t022t1;
-select cast (cast (10 as numeric(2)) as smallint) from t022t1;
-select cast (-1 as smallint) from t022t1;
+select cast (cast (-10 as smallint) as numeric(2)) from dual;
+select cast (cast (10 as smallint) as numeric(2)) from dual;
+select cast (cast (-10 as numeric(2)) as smallint) from dual;
+select cast (cast (10 as numeric(2)) as smallint) from dual;
+select cast (-1 as smallint) from dual;
 
-select cast (32768 as smallint unsigned) from t022t1;
-select cast (10 as smallint unsigned) from t022t1;
+select cast (32768 as smallint unsigned) from dual;
+select cast (10 as smallint unsigned) from dual;
 
-select cast (-32769 as int) from t022t1;
-select cast (32768 as int) from t022t1;
-select cast (-10 as int) from t022t1;
-select cast (10 as int) from t022t1;
-select cast (-1 as int) from t022t1;
-select cast (65536 as int) from t022t1;
-select cast (-100000 as int) from t022t1;
-select cast (100000 as int) from t022t1;
+select cast (-32769 as int) from dual;
+select cast (32768 as int) from dual;
+select cast (-10 as int) from dual;
+select cast (10 as int) from dual;
+select cast (-1 as int) from dual;
+select cast (65536 as int) from dual;
+select cast (-100000 as int) from dual;
+select cast (100000 as int) from dual;
 
-select cast (32768 as int unsigned) from t022t1;
-select cast (10 as int unsigned) from t022t1;
-select cast (65536 as int unsigned) from t022t1;
-select cast (2147483648 as int unsigned) from t022t1;
-select cast (100000 as int unsigned) from t022t1;
+select cast (32768 as int unsigned) from dual;
+select cast (10 as int unsigned) from dual;
+select cast (65536 as int unsigned) from dual;
+select cast (2147483648 as int unsigned) from dual;
+select cast (100000 as int unsigned) from dual;
 
-select cast (-32769 as largeint) from t022t1;
-select cast (32768 as largeint) from t022t1;
-select cast (-10 as largeint) from t022t1;
-select cast (10 as largeint) from t022t1;
-select cast (-1 as largeint) from t022t1;
-select cast (65536 as largeint) from t022t1;
-select cast (-2147483649 as largeint) from t022t1;
-select cast (2147483648 as largeint) from t022t1;
-select cast (-100000 as largeint) from t022t1;
-select cast (100000 as largeint) from t022t1;
-select cast (4294967296 as largeint) from t022t1;
-select cast (-10000000000 as largeint) from t022t1;
-select cast (10000000000 as largeint) from t022t1;
+select cast (-32769 as largeint) from dual;
+select cast (32768 as largeint) from dual;
+select cast (-10 as largeint) from dual;
+select cast (10 as largeint) from dual;
+select cast (-1 as largeint) from dual;
+select cast (65536 as largeint) from dual;
+select cast (-2147483649 as largeint) from dual;
+select cast (2147483648 as largeint) from dual;
+select cast (-100000 as largeint) from dual;
+select cast (100000 as largeint) from dual;
+select cast (4294967296 as largeint) from dual;
+select cast (-10000000000 as largeint) from dual;
+select cast (10000000000 as largeint) from dual;
 
-select cast (-32769 as decimal(5)) from t022t1;
-select cast (32768 as decimal(5)) from t022t1;
-select cast (-10 as decimal(2)) from t022t1;
-select cast (10 as decimal(2)) from t022t1;
-select cast (-1 as decimal(1)) from t022t1;
-select cast (65536 as decimal(5)) from t022t1;
-select cast (-2147483649 as decimal(10)) from t022t1;
-select cast (2147483648 as decimal(10)) from t022t1;
-select cast (-100000 as decimal(6)) from t022t1;
-select cast (100000 as decimal(6)) from t022t1;
-select cast (4294967296 as decimal(10)) from t022t1;
-select cast (-10000000000 as decimal(11)) from t022t1;
-select cast (10000000000 as decimal(11)) from t022t1;
+select cast (-32769 as decimal(5)) from dual;
+select cast (32768 as decimal(5)) from dual;
+select cast (-10 as decimal(2)) from dual;
+select cast (10 as decimal(2)) from dual;
+select cast (-1 as decimal(1)) from dual;
+select cast (65536 as decimal(5)) from dual;
+select cast (-2147483649 as decimal(10)) from dual;
+select cast (2147483648 as decimal(10)) from dual;
+select cast (-100000 as decimal(6)) from dual;
+select cast (100000 as decimal(6)) from dual;
+select cast (4294967296 as decimal(10)) from dual;
+select cast (-10000000000 as decimal(11)) from dual;
+select cast (10000000000 as decimal(11)) from dual;
 
-select cast (32768 as decimal(5) unsigned) from t022t1;
-select cast (10 as decimal(2) unsigned) from t022t1;
-select cast (65536 as decimal(5) unsigned) from t022t1;
-select cast (100000 as decimal(6) unsigned) from t022t1;
+select cast (32768 as decimal(5) unsigned) from dual;
+select cast (10 as decimal(2) unsigned) from dual;
+select cast (65536 as decimal(5) unsigned) from dual;
+select cast (100000 as decimal(6) unsigned) from dual;
 
-select cast (-32769 as real) from t022t1;
-select cast (32768 as real) from t022t1;
-select cast (-10 as real) from t022t1;
-select cast (10 as real) from t022t1;
-select cast (-1 as real) from t022t1;
-select cast (65536 as real) from t022t1;
-select cast (-2147483649 as real) from t022t1;
-select cast (9999999999 as real) from t022t1;
-select cast (-100000 as real) from t022t1;
-select cast (100000 as real) from t022t1;
-select cast (9999999999 as real) from t022t1;
+select cast (-32769 as real) from dual;
+select cast (32768 as real) from dual;
+select cast (-10 as real) from dual;
+select cast (10 as real) from dual;
+select cast (-1 as real) from dual;
+select cast (65536 as real) from dual;
+select cast (-2147483649 as real) from dual;
+select cast (9999999999 as real) from dual;
+select cast (-100000 as real) from dual;
+select cast (100000 as real) from dual;
+select cast (9999999999 as real) from dual;
 
-select cast (-32769 as double precision) from t022t1;
-select cast (32768 as double precision) from t022t1;
-select cast (-10 as double precision) from t022t1;
-select cast (10 as double precision) from t022t1;
-select cast (-1 as double precision) from t022t1;
-select cast (65536 as double precision) from t022t1;
-select cast (-2147483649 as double precision) from t022t1;
-select cast (2147483648 as double precision) from t022t1;
-select cast (-100000 as double precision) from t022t1;
-select cast (100000 as double precision) from t022t1;
-select cast (4294967296 as double precision) from t022t1;
+select cast (-32769 as double precision) from dual;
+select cast (32768 as double precision) from dual;
+select cast (-10 as double precision) from dual;
+select cast (10 as double precision) from dual;
+select cast (-1 as double precision) from dual;
+select cast (65536 as double precision) from dual;
+select cast (-2147483649 as double precision) from dual;
+select cast (2147483648 as double precision) from dual;
+select cast (-100000 as double precision) from dual;
+select cast (100000 as double precision) from dual;
+select cast (4294967296 as double precision) from dual;
 
-select cast ('Hello, world!' as char(13)) from t022t2;
-select cast ('Hello, world!' as varchar(13)) from t022t2;
-select cast (cast ('Hello        ' as char(13)) as char(5)) from t022t2;
-select cast (cast ('Hello        ' as char(13)) as varchar(5)) from t022t2;
-select cast (cast ('Hello, world!' as char(13)) as char(5)) from t022t2;
-select cast (cast ('Hello, world!' as char(13)) as varchar(5)) from t022t2;
-select cast (cast ('Hello        ' as varchar(13)) as char(5)) from t022t2;
-select cast (cast ('Hello        ' as varchar(13)) as varchar(5)) from t022t2;
-select cast (cast ('Hello, world!' as varchar(13)) as char(5)) from t022t2;
-select cast (cast ('Hello, world!' as varchar(13)) as varchar(5)) from t022t2;
-select cast (cast (-2147483649 as double precision) as largeint) from t022t1;
-select cast (cast (2147483648 as double precision) as largeint) from t022t1;
+select cast ('Hello, world!' as char(13)) from dual;
+select cast ('Hello, world!' as varchar(13)) from dual;
+select cast (cast ('Hello        ' as char(13)) as char(5)) from dual;
+select cast (cast ('Hello        ' as char(13)) as varchar(5)) from dual;
+select cast (cast ('Hello, world!' as char(13)) as char(5)) from dual;
+select cast (cast ('Hello, world!' as char(13)) as varchar(5)) from dual;
+select cast (cast ('Hello        ' as varchar(13)) as char(5)) from dual;
+select cast (cast ('Hello        ' as varchar(13)) as varchar(5)) from dual;
+select cast (cast ('Hello, world!' as varchar(13)) as char(5)) from dual;
+select cast (cast ('Hello, world!' as varchar(13)) as varchar(5)) from dual;
+select cast (cast (-2147483649 as double precision) as largeint) from dual;
+select cast (cast (2147483648 as double precision) as largeint) from dual;
 
 -- Positive cases to test division.
 
-select cast (1 as numeric(1)) / cast (1 as numeric(1)) from t022t1;
-select cast (1 as numeric(5)) / cast (1 as numeric(1)) from t022t1;
-select cast (1 as numeric(1)) / cast (1 as numeric(5)) from t022t1;
-select cast (1 as numeric(5)) / cast (1 as numeric(5)) from t022t1;
-select cast (1 as numeric(10)) / cast (1 as numeric(10)) from t022t1;
+select cast (1 as numeric(1)) / cast (1 as numeric(1)) from dual;
+select cast (1 as numeric(5)) / cast (1 as numeric(1)) from dual;
+select cast (1 as numeric(1)) / cast (1 as numeric(5)) from dual;
+select cast (1 as numeric(5)) / cast (1 as numeric(5)) from dual;
+select cast (1 as numeric(10)) / cast (1 as numeric(10)) from dual;
 
 select cast (1 as numeric(1) unsigned) /
-       cast (1 as numeric(1) unsigned) from t022t1;
+       cast (1 as numeric(1) unsigned) from dual;
 select cast (1 as numeric(5) unsigned) /
-       cast (1 as numeric(1) unsigned) from t022t1;
+       cast (1 as numeric(1) unsigned) from dual;
 select cast (1 as numeric(1) unsigned) /
-       cast (1 as numeric(5) unsigned) from t022t1;
+       cast (1 as numeric(5) unsigned) from dual;
 select cast (1 as numeric(5) unsigned) /
-       cast (1 as numeric(5) unsigned) from t022t1;
+       cast (1 as numeric(5) unsigned) from dual;
 select cast (1 as numeric(9) unsigned) /
-       cast (1 as numeric(9) unsigned) from t022t1;
+       cast (1 as numeric(9) unsigned) from dual;
 
-select cast (1 as double precision) / cast (1 as double precision) from t022t1;
+select cast (1 as double precision) / cast (1 as double precision) from dual;
 
 -- Negative tests.
 
-select cast (cast (-10 as smallint) as numeric(1)) from t022t1;
-select cast (cast (10 as smallint) as numeric(1)) from t022t1;
-select cast (cast (-10 as numeric(2)) as numeric(1)) from t022t1;
-select cast (cast (10 as numeric(2)) as numeric(1)) from t022t1;
-select cast (cast (-1 as smallint) as smallint unsigned) from t022t1;
-select cast (cast (10 as smallint) as numeric(1) unsigned) from t022t1;
-select cast (cast (-1 as smallint) as int unsigned) from t022t1;
-select cast (cast (-10 as smallint) as decimal(1)) from t022t1;
-select cast (cast (10 as smallint) as decimal(1)) from t022t1;
-select cast (cast (-1 as smallint) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as smallint) as decimal(1) unsigned) from t022t1;
+select cast (cast (-10 as smallint) as numeric(1)) from dual;
+select cast (cast (10 as smallint) as numeric(1)) from dual;
+select cast (cast (-10 as numeric(2)) as numeric(1)) from dual;
+select cast (cast (10 as numeric(2)) as numeric(1)) from dual;
+select cast (cast (-1 as smallint) as smallint unsigned) from dual;
+select cast (cast (10 as smallint) as numeric(1) unsigned) from dual;
+select cast (cast (-1 as smallint) as int unsigned) from dual;
+select cast (cast (-10 as smallint) as decimal(1)) from dual;
+select cast (cast (10 as smallint) as decimal(1)) from dual;
+select cast (cast (-1 as smallint) as decimal(1) unsigned) from dual;
+select cast (cast (10 as smallint) as decimal(1) unsigned) from dual;
 
-select cast (cast (32768 as smallint unsigned) as smallint) from t022t1;
-select cast (cast (10 as smallint unsigned) as numeric(1)) from t022t1;
-select cast (cast (10 as smallint unsigned) as numeric(1)unsigned) from t022t1;
-select cast (cast (10 as smallint unsigned) as decimal(1)) from t022t1;
-select cast (cast (10 as smallint unsigned) as decimal(1)unsigned) from t022t1;
+select cast (cast (32768 as smallint unsigned) as smallint) from dual;
+select cast (cast (10 as smallint unsigned) as numeric(1)) from dual;
+select cast (cast (10 as smallint unsigned) as numeric(1)unsigned) from dual;
+select cast (cast (10 as smallint unsigned) as decimal(1)) from dual;
+select cast (cast (10 as smallint unsigned) as decimal(1)unsigned) from dual;
 
-select cast (cast (-32769 as int) as smallint) from t022t1;
-select cast (cast (32768 as int) as smallint) from t022t1;
-select cast (cast (-10 as int) as numeric(1)) from t022t1;
-select cast (cast (10 as int) as numeric(1)) from t022t1;
-select cast (cast (-1 as int) as smallint unsigned) from t022t1;
-select cast (cast (65536 as int) as smallint unsigned) from t022t1;
-select cast (cast (10 as int) as numeric(1) unsigned) from t022t1;
-select cast (cast (-100000 as int) as numeric(5)) from t022t1;
-select cast (cast (100000 as int) as numeric(5)) from t022t1;
-select cast (cast (-1 as int) as int unsigned) from t022t1;
-select cast (cast (100000 as int) as numeric(5) unsigned) from t022t1;
-select cast (cast (-10 as int) as decimal(1)) from t022t1;
-select cast (cast (10 as int) as decimal(1)) from t022t1;
-select cast (cast (-1 as int) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as int) as decimal(1) unsigned) from t022t1;
+select cast (cast (-32769 as int) as smallint) from dual;
+select cast (cast (32768 as int) as smallint) from dual;
+select cast (cast (-10 as int) as numeric(1)) from dual;
+select cast (cast (10 as int) as numeric(1)) from dual;
+select cast (cast (-1 as int) as smallint unsigned) from dual;
+select cast (cast (65536 as int) as smallint unsigned) from dual;
+select cast (cast (10 as int) as numeric(1) unsigned) from dual;
+select cast (cast (-100000 as int) as numeric(5)) from dual;
+select cast (cast (100000 as int) as numeric(5)) from dual;
+select cast (cast (-1 as int) as int unsigned) from dual;
+select cast (cast (100000 as int) as numeric(5) unsigned) from dual;
+select cast (cast (-10 as int) as decimal(1)) from dual;
+select cast (cast (10 as int) as decimal(1)) from dual;
+select cast (cast (-1 as int) as decimal(1) unsigned) from dual;
+select cast (cast (10 as int) as decimal(1) unsigned) from dual;
 
-select cast (cast (32768 as int unsigned) as smallint) from t022t1;
-select cast (cast (10 as int unsigned) as numeric(1)) from t022t1;
-select cast (cast (65536 as int unsigned) as smallint unsigned) from t022t1;
-select cast (cast (10 as int unsigned) as numeric(1) unsigned) from t022t1;
-select cast (cast (2147483648 as int unsigned) as int) from t022t1;
-select cast (cast (100000 as int unsigned) as numeric(5)) from t022t1;
-select cast (cast (100000 as int unsigned) as numeric(5) unsigned) from t022t1;
-select cast (cast (10 as int unsigned) as decimal(1)) from t022t1;
-select cast (cast (10 as int unsigned) as decimal(1) unsigned) from t022t1;
+select cast (cast (32768 as int unsigned) as smallint) from dual;
+select cast (cast (10 as int unsigned) as numeric(1)) from dual;
+select cast (cast (65536 as int unsigned) as smallint unsigned) from dual;
+select cast (cast (10 as int unsigned) as numeric(1) unsigned) from dual;
+select cast (cast (2147483648 as int unsigned) as int) from dual;
+select cast (cast (100000 as int unsigned) as numeric(5)) from dual;
+select cast (cast (100000 as int unsigned) as numeric(5) unsigned) from dual;
+select cast (cast (10 as int unsigned) as decimal(1)) from dual;
+select cast (cast (10 as int unsigned) as decimal(1) unsigned) from dual;
 
-select cast (cast (-32769 as largeint) as smallint) from t022t1;
-select cast (cast (32768 as largeint) as smallint) from t022t1;
-select cast (cast (-10 as largeint) as numeric(1)) from t022t1;
-select cast (cast (10 as largeint) as numeric(1)) from t022t1;
-select cast (cast (-1 as largeint) as smallint unsigned) from t022t1;
-select cast (cast (65536 as largeint) as smallint unsigned) from t022t1;
-select cast (cast (10 as largeint) as numeric(1) unsigned) from t022t1;
-select cast (cast (-2147483649 as largeint) as int) from t022t1;
-select cast (cast (2147483648 as largeint) as int) from t022t1;
-select cast (cast (-100000 as largeint) as numeric(5)) from t022t1;
-select cast (cast (100000 as largeint) as numeric(5)) from t022t1;
-select cast (cast (-1 as largeint) as int unsigned) from t022t1;
-select cast (cast (4294967296 as largeint) as int unsigned) from t022t1;
-select cast (cast (100000 as largeint) as numeric(5) unsigned) from t022t1;
-select cast (cast (-10000000000 as largeint) as numeric(10)) from t022t1;
-select cast (cast (10000000000 as largeint) as numeric(10)) from t022t1;
-select cast (cast (10 as largeint) as decimal(1)) from t022t1;
-select cast (cast (-1 as largeint) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as largeint) as decimal(1) unsigned) from t022t1;
+select cast (cast (-32769 as largeint) as smallint) from dual;
+select cast (cast (32768 as largeint) as smallint) from dual;
+select cast (cast (-10 as largeint) as numeric(1)) from dual;
+select cast (cast (10 as largeint) as numeric(1)) from dual;
+select cast (cast (-1 as largeint) as smallint unsigned) from dual;
+select cast (cast (65536 as largeint) as smallint unsigned) from dual;
+select cast (cast (10 as largeint) as numeric(1) unsigned) from dual;
+select cast (cast (-2147483649 as largeint) as int) from dual;
+select cast (cast (2147483648 as largeint) as int) from dual;
+select cast (cast (-100000 as largeint) as numeric(5)) from dual;
+select cast (cast (100000 as largeint) as numeric(5)) from dual;
+select cast (cast (-1 as largeint) as int unsigned) from dual;
+select cast (cast (4294967296 as largeint) as int unsigned) from dual;
+select cast (cast (100000 as largeint) as numeric(5) unsigned) from dual;
+select cast (cast (-10000000000 as largeint) as numeric(10)) from dual;
+select cast (cast (10000000000 as largeint) as numeric(10)) from dual;
+select cast (cast (10 as largeint) as decimal(1)) from dual;
+select cast (cast (-1 as largeint) as decimal(1) unsigned) from dual;
+select cast (cast (10 as largeint) as decimal(1) unsigned) from dual;
 
-select cast (cast (-32769 as decimal(5)) as smallint) from t022t1;
-select cast (cast (32768 as decimal(5)) as smallint) from t022t1;
-select cast (cast (-10 as decimal(2)) as numeric(1)) from t022t1;
-select cast (cast (10 as decimal(2)) as numeric(1)) from t022t1;
-select cast (cast (-1 as decimal(1)) as smallint unsigned) from t022t1;
-select cast (cast (65536 as decimal(5)) as smallint unsigned) from t022t1;
-select cast (cast (10 as decimal(2)) as numeric(1) unsigned) from t022t1;
-select cast (cast (-2147483649 as decimal(10)) as int) from t022t1;
-select cast (cast (2147483648 as decimal(10)) as int) from t022t1;
-select cast (cast (-100000 as decimal(6)) as numeric(5)) from t022t1;
-select cast (cast (100000 as decimal(6)) as numeric(5)) from t022t1;
-select cast (cast (-1 as decimal(1)) as int unsigned) from t022t1;
-select cast (cast (4294967296 as decimal(10)) as int unsigned) from t022t1;
-select cast (cast (100000 as decimal(6)) as numeric(5) unsigned) from t022t1;
-select cast (cast (-10000000000 as decimal(11)) as numeric(10)) from t022t1;
-select cast (cast (10000000000 as decimal(11)) as numeric(10)) from t022t1;
-select cast (cast (10 as decimal(2)) as decimal(1)) from t022t1;
-select cast (cast (-1 as decimal(1)) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as decimal(2)) as decimal(1) unsigned) from t022t1;
+select cast (cast (-32769 as decimal(5)) as smallint) from dual;
+select cast (cast (32768 as decimal(5)) as smallint) from dual;
+select cast (cast (-10 as decimal(2)) as numeric(1)) from dual;
+select cast (cast (10 as decimal(2)) as numeric(1)) from dual;
+select cast (cast (-1 as decimal(1)) as smallint unsigned) from dual;
+select cast (cast (65536 as decimal(5)) as smallint unsigned) from dual;
+select cast (cast (10 as decimal(2)) as numeric(1) unsigned) from dual;
+select cast (cast (-2147483649 as decimal(10)) as int) from dual;
+select cast (cast (2147483648 as decimal(10)) as int) from dual;
+select cast (cast (-100000 as decimal(6)) as numeric(5)) from dual;
+select cast (cast (100000 as decimal(6)) as numeric(5)) from dual;
+select cast (cast (-1 as decimal(1)) as int unsigned) from dual;
+select cast (cast (4294967296 as decimal(10)) as int unsigned) from dual;
+select cast (cast (100000 as decimal(6)) as numeric(5) unsigned) from dual;
+select cast (cast (-10000000000 as decimal(11)) as numeric(10)) from dual;
+select cast (cast (10000000000 as decimal(11)) as numeric(10)) from dual;
+select cast (cast (10 as decimal(2)) as decimal(1)) from dual;
+select cast (cast (-1 as decimal(1)) as decimal(1) unsigned) from dual;
+select cast (cast (10 as decimal(2)) as decimal(1) unsigned) from dual;
 
-select cast (cast (32768 as decimal(5) unsigned) as smallint) from t022t1;
-select cast (cast (10 as decimal(2) unsigned) as numeric(1)) from t022t1;
-select cast (cast (65536 as decimal(5) unsigned) as smallint unsigned) from t022t1;
-select cast (cast (10 as decimal(2) unsigned) as numeric(1) unsigned) from t022t1;
-select cast (cast (100000 as decimal(6) unsigned) as numeric(5)) from t022t1;
-select cast (cast (100000 as decimal(6) unsigned) as numeric(5) unsigned) from t022t1;
-select cast (cast (10 as decimal(2) unsigned) as decimal(1)) from t022t1;
-select cast (cast (10 as decimal(2) unsigned) as decimal(1) unsigned) from t022t1;
+select cast (cast (32768 as decimal(5) unsigned) as smallint) from dual;
+select cast (cast (10 as decimal(2) unsigned) as numeric(1)) from dual;
+select cast (cast (65536 as decimal(5) unsigned) as smallint unsigned) from dual;
+select cast (cast (10 as decimal(2) unsigned) as numeric(1) unsigned) from dual;
+select cast (cast (100000 as decimal(6) unsigned) as numeric(5)) from dual;
+select cast (cast (100000 as decimal(6) unsigned) as numeric(5) unsigned) from dual;
+select cast (cast (10 as decimal(2) unsigned) as decimal(1)) from dual;
+select cast (cast (10 as decimal(2) unsigned) as decimal(1) unsigned) from dual;
 
-select cast (cast (-32769 as real) as smallint) from t022t1;
-select cast (cast (32768 as real) as smallint) from t022t1;
-select cast (cast (-10 as real) as numeric(1)) from t022t1;
-select cast (cast (10 as real) as numeric(1)) from t022t1;
-select cast (cast (-1 as real) as smallint unsigned) from t022t1;
-select cast (cast (65536 as real) as smallint unsigned) from t022t1;
-select cast (cast (10 as real) as numeric(1) unsigned) from t022t1;
-select cast (cast (-2147484160 as real) as int) from t022t1;
-select cast (cast (9999999999 as real) as int) from t022t1;
-select cast (cast (-100000 as real) as numeric(5)) from t022t1;
-select cast (cast (100000 as real) as numeric(5)) from t022t1;
-select cast (cast (-1 as real) as int unsigned) from t022t1;
-select cast (cast (9999999999 as real) as int unsigned) from t022t1;
-select cast (cast (100000 as real) as numeric(5) unsigned) from t022t1;
-select cast (cast (10 as real) as decimal(1)) from t022t1;
-select cast (cast (-1 as real) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as real) as decimal(1) unsigned) from t022t1;
+select cast (cast (-32769 as real) as smallint) from dual;
+select cast (cast (32768 as real) as smallint) from dual;
+select cast (cast (-10 as real) as numeric(1)) from dual;
+select cast (cast (10 as real) as numeric(1)) from dual;
+select cast (cast (-1 as real) as smallint unsigned) from dual;
+select cast (cast (65536 as real) as smallint unsigned) from dual;
+select cast (cast (10 as real) as numeric(1) unsigned) from dual;
+select cast (cast (-2147484160 as real) as int) from dual;
+select cast (cast (9999999999 as real) as int) from dual;
+select cast (cast (-100000 as real) as numeric(5)) from dual;
+select cast (cast (100000 as real) as numeric(5)) from dual;
+select cast (cast (-1 as real) as int unsigned) from dual;
+select cast (cast (9999999999 as real) as int unsigned) from dual;
+select cast (cast (100000 as real) as numeric(5) unsigned) from dual;
+select cast (cast (10 as real) as decimal(1)) from dual;
+select cast (cast (-1 as real) as decimal(1) unsigned) from dual;
+select cast (cast (10 as real) as decimal(1) unsigned) from dual;
 
-select cast (cast (-32769 as double precision) as smallint) from t022t1;
-select cast (cast (32768 as double precision) as smallint) from t022t1;
-select cast (cast (-10 as double precision) as numeric(1)) from t022t1;
-select cast (cast (10 as double precision) as numeric(1)) from t022t1;
-select cast (cast (-1 as double precision) as smallint unsigned) from t022t1;
-select cast (cast (65536 as double precision) as smallint unsigned) from t022t1;
-select cast (cast (10 as double precision) as numeric(1) unsigned) from t022t1;
-select cast (cast (-2147483649 as double precision) as int) from t022t1;
-select cast (cast (2147483648 as double precision) as int) from t022t1;
-select cast (cast (-100000 as double precision) as numeric(5)) from t022t1;
-select cast (cast (100000 as double precision) as numeric(5)) from t022t1;
-select cast (cast (-1 as double precision) as int unsigned) from t022t1;
-select cast (cast (4294967296 as double precision) as int unsigned) from t022t1;
-select cast (cast (100000 as double precision) as numeric(5) unsigned) from t022t1;
-select cast (cast (10 as double precision) as decimal(1)) from t022t1;
-select cast (cast (-1 as double precision) as decimal(1) unsigned) from t022t1;
-select cast (cast (10 as double precision) as decimal(1) unsigned) from t022t1;
+select cast (cast (-32769 as double precision) as smallint) from dual;
+select cast (cast (32768 as double precision) as smallint) from dual;
+select cast (cast (-10 as double precision) as numeric(1)) from dual;
+select cast (cast (10 as double precision) as numeric(1)) from dual;
+select cast (cast (-1 as double precision) as smallint unsigned) from dual;
+select cast (cast (65536 as double precision) as smallint unsigned) from dual;
+select cast (cast (10 as double precision) as numeric(1) unsigned) from dual;
+select cast (cast (-2147483649 as double precision) as int) from dual;
+select cast (cast (2147483648 as double precision) as int) from dual;
+select cast (cast (-100000 as double precision) as numeric(5)) from dual;
+select cast (cast (100000 as double precision) as numeric(5)) from dual;
+select cast (cast (-1 as double precision) as int unsigned) from dual;
+select cast (cast (4294967296 as double precision) as int unsigned) from dual;
+select cast (cast (100000 as double precision) as numeric(5) unsigned) from dual;
+select cast (cast (10 as double precision) as decimal(1)) from dual;
+select cast (cast (-1 as double precision) as decimal(1) unsigned) from dual;
+select cast (cast (10 as double precision) as decimal(1) unsigned) from dual;
 
 -- negative tests for tinyint
-select cast(-129 as tinyint) from t022t1;
-select cast(128 as tinyint) from t022t1;
-select cast(256 as tinyint unsigned) from t022t1;
-select cast(-1 as tinyint unsigned) from t022t1;
+select cast(-129 as tinyint) from dual;
+select cast(128 as tinyint) from dual;
+select cast(256 as tinyint unsigned) from dual;
+select cast(-1 as tinyint unsigned) from dual;
 
 -- tests for DATE, TIME, TIMESTAMP
-select cast ('12.07.1961 03.04.55.123456' as timestamp) from t022t2;
-select cast ('12.07.1961 03.04.55.123456' as timestamp(3)) from t022t2;
-select cast (cast ('12.07.1961 03.04.55.123456' as timestamp) as DATE) from t022t2;
-select cast (cast ('12.07.1961 03.04.55.123456' as timestamp) as char(21)) from t022t2;
-select cast ('12/13/1987' as date) from t022t2;
+select cast ('12.07.1961 03.04.55.123456' as timestamp) from dual;
+select cast ('12.07.1961 03.04.55.123456' as timestamp(3)) from dual;
+select cast (cast ('12.07.1961 03.04.55.123456' as timestamp) as DATE) from dual;
+select cast (cast ('12.07.1961 03.04.55.123456' as timestamp) as char(21)) from dual;
+select cast ('12/13/1987' as date) from dual;
 
 -- some negative DATE, TIME, TIMESTAMP
 -- illegal european format
-select cast ('12.13.1987' as date) from t022t2;
+select cast ('12.13.1987' as date) from dual;
 
 -- illegal US format
-select cast ('13/12/1987' as date) from t022t2;
+select cast ('13/12/1987' as date) from dual;
 
 -- string overflow
-select cast (cast ('12.07.1961 03:04:55.123456' as timestamp) as char(18)) from t022t2;
+select cast (cast ('12.07.1961 03:04:55.123456' as timestamp) as char(18)) from dual;
 
 -- Feb. 30th doesn't exist
-select cast('1997-30-02' as DATE) from t022t2;
+select cast('1997-30-02' as DATE) from dual;
 
-select interval'0.1'second + timestamp'12/31/9999 11:59:59.9 pm' from t022t1;
-select timestamp'12/31/9999 11:59:59.9 pm' + interval'0.1'second from t022t1;
-select timestamp'01/01/0001 00:00:00.0' + interval-'0.1'second from t022t1;
-select timestamp'01/01/0001 00:00:00.0' - interval'0.1'second from t022t1;
+select interval'0.1'second + timestamp'12/31/9999 11:59:59.9 pm' from dual;
+select timestamp'12/31/9999 11:59:59.9 pm' + interval'0.1'second from dual;
+select timestamp'01/01/0001 00:00:00.0' + interval-'0.1'second from dual;
+select timestamp'01/01/0001 00:00:00.0' - interval'0.1'second from dual;
 
-select interval'1'month + date'12/31/9999' from t022t1;
-select date'12/31/9999' + interval'1'month from t022t1;
-select date'01/01/0001' + interval-'1'month from t022t1;
-select date'01/01/0001' - interval'1'month from t022t1;
+select interval'1'month + date'12/31/9999' from dual;
+select date'12/31/9999' + interval'1'month from dual;
+select date'01/01/0001' + interval-'1'month from dual;
+select date'01/01/0001' - interval'1'month from dual;
 
-select interval'1'month + date'01/31/9999' from t022t1;
-select date'01/31/9999' + interval'1'month from t022t1;
-select date'03/30/9999' + interval-'1'month from t022t1;
-select date'03/30/9999' - interval'1'month from t022t1;
+select interval'1'month + date'01/31/9999' from dual;
+select date'01/31/9999' + interval'1'month from dual;
+select date'03/30/9999' + interval-'1'month from dual;
+select date'03/30/9999' - interval'1'month from dual;
 
 -- Negative cases to test division by zero.
 
-select cast (1 as numeric(1)) / cast (0 as numeric(1)) from t022t1;
-select cast (1 as numeric(5)) / cast (0 as numeric(1)) from t022t1;
-select cast (1 as numeric(1)) / cast (0 as numeric(5)) from t022t1;
-select cast (1 as numeric(5)) / cast (0 as numeric(5)) from t022t1;
-select cast (1 as numeric(10)) / cast (0 as numeric(10)) from t022t1;
+select cast (1 as numeric(1)) / cast (0 as numeric(1)) from dual;
+select cast (1 as numeric(5)) / cast (0 as numeric(1)) from dual;
+select cast (1 as numeric(1)) / cast (0 as numeric(5)) from dual;
+select cast (1 as numeric(5)) / cast (0 as numeric(5)) from dual;
+select cast (1 as numeric(10)) / cast (0 as numeric(10)) from dual;
 
 select cast (1 as numeric(1) unsigned) /
-       cast (0 as numeric(1) unsigned) from t022t1;
+       cast (0 as numeric(1) unsigned) from dual;
 select cast (1 as numeric(5) unsigned) /
-       cast (0 as numeric(1) unsigned) from t022t1;
+       cast (0 as numeric(1) unsigned) from dual;
 select cast (1 as numeric(1) unsigned) /
-       cast (0 as numeric(5) unsigned) from t022t1;
+       cast (0 as numeric(5) unsigned) from dual;
 select cast (1 as numeric(5) unsigned) /
-       cast (0 as numeric(5) unsigned) from t022t1;
+       cast (0 as numeric(5) unsigned) from dual;
 select cast (1 as numeric(9) unsigned) /
-       cast (0 as numeric(9) unsigned) from t022t1;
+       cast (0 as numeric(9) unsigned) from dual;
 
-select cast (1 as double precision) / cast (0 as double precision) from t022t1;
+select cast (1 as double precision) / cast (0 as double precision) from dual;
 
 -- results:  1 row selected
-select cast('66.2' as float) from t022t1 where cast('66.2' as float) = 66.2;
+select cast('66.2' as float) from dual where cast('66.2' as float) = 66.2;
 
 -- to test comparisons between signed and unsigned numbers.
 
@@ -584,25 +559,10 @@ select * from t022t4 where b >= 3000000000;
 
 
 -- negative test cases
--- The next three tests get different results depending on whether they
--- are run using SQL/MX or SQL/MP tables.  Run them separately 
-?ifMP
-create table t022t5 (t022t5_c1 numeric( 9) unsigned,
-                     t022t5_c2 numeric(10) unsigned);
 create table t022t6 (t022t6_c1 decimal( 9) unsigned,
-                     t022t6_c2 decimal(10) unsigned);
-create table t022t7 (t022t7_c1 dec    ( 9) unsigned,
+                     t022t6_c2 decimal(10) unsigned,
+                     t022t7_c1 dec    ( 9) unsigned,
                      t022t7_c2 dec    (10) unsigned);
-?ifMP
-
-?ifMX
-create table t022t5 (t022t5_c1 numeric( 9) unsigned,
-                     t022t5_c2 numeric(10) unsigned);
-create table t022t6 (t022t6_c1 decimal( 9) unsigned,
-                     t022t6_c2 decimal(10) unsigned);
-create table t022t7 (t022t7_c1 dec    ( 9) unsigned,
-                     t022t7_c2 dec    (10) unsigned);
-?ifMX
 
 select cast(1 as numeric(10) unsigned) from (values(0))x;
 select cast(1 as decimal(10) unsigned) from (values(0))x;
@@ -723,16 +683,9 @@ select cast ('123.' as real) ,
        cast ('123.12' as real),
        cast ('123.E2' as real),
        cast ('123.12E2' as real)from (values(1)) as T;
-?ifNT
+
 obey t022xxx;
 select * from $$TEST_SCHEMA$$.t022a7;
-?ifNT
-?ifNSK
-?ifMX
-sh $mxcidir/import $$TEST_SCHEMA$$.t022a7 -I t022xxx;
-select * from $$TEST_SCHEMA$$.t022a7;
-?ifMX
-?ifNSK
 
 -- negative cases (expect errors)
 select cast('.-2' as int) from t022t8;
@@ -752,20 +705,11 @@ select cast ('123..12' as real)from (values(1)) as T;
 
 -- Testing solution 10-030707-7648
 -- Catch overflow while manipulating interval internal type (decimal)
-?ifMX
 create table t022t9 (h10s4 interval hour(10) to second(4));
 insert into t022t9 values (-interval '1111111111:12:00.1234'
    hour(10) to second(4));
 insert into t022t9 values (interval '1111111111:12:00.1234'
    hour(10) to second(4));
-?ifMX
-?ifMP
-create table t022t9 (h10s4 interval hour(10) to fraction(4));
-insert into t022t9 values (-interval '1111111111:12:00.1234'
-   hour(10) to fraction(4));
-insert into t022t9 values (interval '1111111111:12:00.1234'
-   hour(10) to fraction(4));
-?ifMP
 
 -- Should not overflow.
 update t022t9 set h10s4 = h10s4 * 1;
@@ -783,7 +727,6 @@ select * from t022t9;
 -- End of testing solution 10-030707-7648
 
 -- Numeric to interval converion overflow checking
-?ifMX
 create table t022ta(a interval second not null primary key);
 insert into t022ta values (interval '12.200' second(2,3));
 insert into t022ta values (interval '12.300' second(2,4));
@@ -842,17 +785,9 @@ insert into t022tc values (interval '12' second);
 
 select ivsc * 0.02 from t022tc;
 
-?ifMX
-?ifMX
 create table t022td (D_to_F      INTERVAL    DAY TO SECOND(3));
 insert into t022td values (interval '18 15:17:02.123' day to second(3));
 insert into t022td values (interval '27 04:57:58.999' day to second(3));
-?ifMX
-?ifMP
-create table t022td (D_to_F      INTERVAL    DAY TO FRACTION(3));
-insert into t022td values (interval '18 15:17:02.123' day to fraction(3));
-insert into t022td values (interval '27 04:57:58.999' day to fraction(3));
-?ifMP
 select D_to_F / 1  from t022td;
 
 -- End of testing solution 10-040302-3733
@@ -864,14 +799,8 @@ create table t022te (inum integer, dnum numeric (8,6));
 insert into t022te values (99, 23.123456);
 
 -- should not overflow
-?ifMX
 select CAST (dnum as INTERVAL second) from t022te;
-?ifMX
-?ifMP
-select CAST (dnum as INTERVAL second TO fraction) from t022te;
-?ifMP
 
-?ifMX
 create table t022tf (
     ivyr interval year (4),
     ivmt interval month,
@@ -919,163 +848,155 @@ update t022tf set
 
 select * from t022tf;
 
-?ifMX
 -- End of testing Solution 10-040226-3566
 
 -- negative tests on casts between CHAR/NCHAR 
-?ifMX
-select cast (N'Hello, world!' as char(13)) from t022u;
-select cast (N'Hello, world!' as varchar(13)) from t022u;
-select cast ('Hello, world!' as nchar(13)) from t022u;
-select cast ('Hello, world!' as nchar varying(13)) from t022u;
+select cast (N'Hello, world!' as char(13)) from dual;
+select cast (N'Hello, world!' as varchar(13)) from dual;
+select cast ('Hello, world!' as nchar(13)) from dual;
+select cast ('Hello, world!' as nchar varying(13)) from dual;
 
 -- tests on cast VAR/NCHAR to VAR/NCHAR
-select cast (N'Hello, world!' as nchar(13)) from t022u;
-select cast (N'Hello, world!' as nchar varying(13)) from t022u;
-select cast (cast (N'Hello        ' as nchar(13)) as nchar(5)) from t022u;
-select cast (cast (N'Hello        ' as nchar(13)) as nchar varying(5)) from t022u;
-select cast (cast (N'Hello, world!' as nchar(13)) as nchar(5)) from t022u;
-select cast (cast (N'Hello, world!' as nchar(13)) as nchar varying(5)) from t022u;
-select cast (cast (N'Hello        ' as nchar varying(13)) as nchar(5)) from t022u;
-select cast (cast (N'Hello        ' as nchar varying(13)) as nchar varying(5)) from t022u;
-select cast (cast (N'Hello, world!' as nchar varying(13)) as nchar(5)) from t022u;
-select cast (cast (N'Hello, world!' as nchar varying(13)) as nchar varying(5)) from t022u;
+select cast (N'Hello, world!' as nchar(13)) from dual;
+select cast (N'Hello, world!' as nchar varying(13)) from dual;
+select cast (cast (N'Hello        ' as nchar(13)) as nchar(5)) from dual;
+select cast (cast (N'Hello        ' as nchar(13)) as nchar varying(5)) from dual;
+select cast (cast (N'Hello, world!' as nchar(13)) as nchar(5)) from dual;
+select cast (cast (N'Hello, world!' as nchar(13)) as nchar varying(5)) from dual;
+select cast (cast (N'Hello        ' as nchar varying(13)) as nchar(5)) from dual;
+select cast (cast (N'Hello        ' as nchar varying(13)) as nchar varying(5)) from dual;
+select cast (cast (N'Hello, world!' as nchar varying(13)) as nchar(5)) from dual;
+select cast (cast (N'Hello, world!' as nchar varying(13)) as nchar varying(5)) from dual;
 
 -- tests on cast VAR/NCHAR to DATETIME
-select cast (N'12.07.1961 03.04.55.123456' as timestamp) from t022u;
-select cast (N'12.07.1961 03.04.55.123456' as timestamp(3)) from t022u;
+select cast (N'12.07.1961 03.04.55.123456' as timestamp) from dual;
+select cast (N'12.07.1961 03.04.55.123456' as timestamp(3)) from dual;
 select cast (cast (N'12.07.1961 03.04.55.123456' as timestamp) as DATE) 
-from t022u;
-select cast (cast (N'12.07.1961 03.04.55.123456' as timestamp) as char(21)) from
-t022u;
-select cast (N'12/13/1987' as date) from t022u;
+from dual;
+select cast (cast (N'12.07.1961 03.04.55.123456' as timestamp) as char(21)) from dual;
+select cast (N'12/13/1987' as date) from dual;
 
 -- some negative DATE, TIME, TIMESTAMP
 -- illegal european format
-select cast (N'12.13.1987' as date) from t022u;
+select cast (N'12.13.1987' as date) from dual;
 
 -- illegal US format
-select cast (N'13/12/1987' as date) from t022u;
+select cast (N'13/12/1987' as date) from dual;
 
 -- string overflow
-select cast (cast (N'12/07/1961 03:04:55.123456' as timestamp) as char(18)) from
-t022u;
+select cast (cast (N'12/07/1961 03:04:55.123456' as timestamp) as char(18)) from dual;
 
 -- Feb. 32th doesn't exist
-select cast(N'1997-02-32' as DATE) from t022u;
+select cast(N'1997-02-32' as DATE) from dual;
 
 -- test on cast VAR/NCAR to smallint
-select cast(N'2' as SMALLINT) from t022u;
-select cast(N'-32768' as SMALLINT) from t022u;
-select cast(N'32767' as SMALLINT) from t022u;
-select cast(N'0' as SMALLINT UNSIGNED) from t022u;
-select cast(N'65535' as SMALLINT UNSIGNED) from t022u;
+select cast(N'2' as SMALLINT) from dual;
+select cast(N'-32768' as SMALLINT) from dual;
+select cast(N'32767' as SMALLINT) from dual;
+select cast(N'0' as SMALLINT UNSIGNED) from dual;
+select cast(N'65535' as SMALLINT UNSIGNED) from dual;
 
 -- negative test on cast VAR/NCAR to smallint
-select cast(N'-1' as SMALLINT UNSIGNED) from t022u;
-select cast(N'-32769' as SMALLINT) from t022u;
-select cast(N'50000' as SMALLINT) from t022u;
-select cast(N'-32769' as SMALLINT UNSIGNED) from t022u;
-select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
-select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
+select cast(N'-1' as SMALLINT UNSIGNED) from dual;
+select cast(N'-32769' as SMALLINT) from dual;
+select cast(N'50000' as SMALLINT) from dual;
+select cast(N'-32769' as SMALLINT UNSIGNED) from dual;
+select cast(N'70000' as SMALLINT UNSIGNED) from dual;
+select cast(N'70000' as SMALLINT UNSIGNED) from dual;
 
 -- test on cast VAR/NCAR to bit precision integer(X) unsigned
-select cast(N'1000' as bit precision integer(15) UNSIGNED) from t022u;
-select cast(N'0' as bit precision integer(15) UNSIGNED) from t022u;
-select cast(N'32767' as bit precision integer(15) UNSIGNED) from t022u;
+select cast(N'1000' as bit precision integer(15) UNSIGNED) from dual;
+select cast(N'0' as bit precision integer(15) UNSIGNED) from dual;
+select cast(N'32767' as bit precision integer(15) UNSIGNED) from dual;
 
 -- negative test on cast VAR/NCAR to bit precision integer(X) unsigned
-select cast(N'32768' as bit precision integer(15) UNSIGNED) from t022u;
-select cast(N'-1' as bit precision integer(15) UNSIGNED) from t022u;
+select cast(N'32768' as bit precision integer(15) UNSIGNED) from dual;
+select cast(N'-1' as bit precision integer(15) UNSIGNED) from dual;
 
 -- test on cast VAR/NCAR to integer
-select cast(N'4294967295' as integer unsigned) from t022u;
-select cast(N'0' as integer unsigned) from t022u;
-select cast(N'2147483647' as integer) from t022u;
-select cast(N'-2147483648' as integer) from t022u;
+select cast(N'4294967295' as integer unsigned) from dual;
+select cast(N'0' as integer unsigned) from dual;
+select cast(N'2147483647' as integer) from dual;
+select cast(N'-2147483648' as integer) from dual;
 
 -- negative test on cast VAR/NCAR to integer
-select cast(N'4294967296' as integer unsigned) from t022u;
-select cast(N'-1' as integer unsigned) from t022u;
-select cast(N'2147483648' as integer) from t022u;
-select cast(N'-2147483649' as integer) from t022u;
+select cast(N'4294967296' as integer unsigned) from dual;
+select cast(N'-1' as integer unsigned) from dual;
+select cast(N'2147483648' as integer) from dual;
+select cast(N'-2147483649' as integer) from dual;
 
 -- test on cast VAR/NCAR to largeint
-select cast(N'42949672960000' as largeint) from t022u;
+select cast(N'42949672960000' as largeint) from dual;
 
 -- test on cast VAR/NCAR to DEC 
-select cast(N'42949672960000' as DEC) from t022u;
-select cast(N'12345.56' as DEC (7,2) unsigned) from t022u;
+select cast(N'42949672960000' as DEC) from dual;
+select cast(N'12345.56' as DEC (7,2) unsigned) from dual;
 
 -- negative test on cast VAR/NCAR to DEC 
-select cast(N'1009a' as  DEC) from t022u;
+select cast(N'1009a' as  DEC) from dual;
 
-?ifMX
-?ifNT
 -- test on cast VAR/NCAR to float/real/double 
-select cast(N'-107' as float) from t022u;
-select cast(N'1.2E-001' as real) from t022u;
-select cast(N'12E-001' as double precision) from t022u;
+select cast(N'-107' as float) from dual;
+select cast(N'1.2E-001' as real) from dual;
+select cast(N'12E-001' as double precision) from dual;
 
 -- negative test on cast VAR/NCAR to float/real/double 
-select cast(N'this is not a number.' as float) from t022u;
-select cast(N'1023u' as real) from t022u;
-select cast(N'''\2' as double precision) from t022u;
-?ifNT
-?ifMX
+select cast(N'this is not a number.' as float) from dual;
+select cast(N'1023u' as real) from dual;
+select cast(N'''\2' as double precision) from dual;
 
 -- test on cast VAR/NCAR to interval 
-select cast(N'-07' as interval year) from t022u;
-select cast(N'5' as interval year) from t022u;
+select cast(N'-07' as interval year) from dual;
+select cast(N'5' as interval year) from dual;
 
 -- test on cast smallint to VAR/NCAR 
-select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(10)) from t022u;
-select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR(10)) from t022u;
-select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(10)) from t022u;
-select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR VARYING(10)) from t022u;
-select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(10)) from t022u;
+select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(10)) from dual;
+select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR(10)) from dual;
+select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(10)) from dual;
+select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR VARYING(10)) from dual;
+select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(10)) from dual;
 
 -- negative test on cast smallint to VAR/NCAR 
-select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(1)) from t022u;
-select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(1)) from t022u;
+select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(1)) from dual;
+select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(1)) from dual;
 
 -- test on cast integer to VAR/NCAR 
-select cast(cast(N'4294967295' as integer unsigned) as NCHAR VARYING(10)) from t022u;
-select cast(cast(N'0' as integer unsigned) as NCHAR(2)) from t022u;
-select cast(cast(N'2147483647' as integer) as NCHAR(12)) from t022u;
-select cast(cast(N'-2147483648' as integer) as NCHAR(12)) from t022u;
+select cast(cast(N'4294967295' as integer unsigned) as NCHAR VARYING(10)) from dual;
+select cast(cast(N'0' as integer unsigned) as NCHAR(2)) from dual;
+select cast(cast(N'2147483647' as integer) as NCHAR(12)) from dual;
+select cast(cast(N'-2147483648' as integer) as NCHAR(12)) from dual;
 
 -- negative test on cast integer to VAR/NCAR
-select cast(cast(N'4294967296' as integer unsigned) as nchar(1)) from t022u;
-select cast(cast(N'-10' as integer) as nchar(1)) from t022u;
-select cast(cast(N'2147483648' as integer) as nchar varying(1)) from t022u;
-select cast(cast(N'-2147483649' as integer) as nchar(1)) from t022u;
+select cast(cast(N'4294967296' as integer unsigned) as nchar(1)) from dual;
+select cast(cast(N'-10' as integer) as nchar(1)) from dual;
+select cast(cast(N'2147483648' as integer) as nchar varying(1)) from dual;
+select cast(cast(N'-2147483649' as integer) as nchar(1)) from dual;
 
 -- test on cast DEC to VAR/NCAR 
-select cast(cast(N'42949672960000' as DEC) as nchar(10)) from t022u;
-select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(20)) from t022u;
+select cast(cast(N'42949672960000' as DEC) as nchar(10)) from dual;
+select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(20)) from dual;
 
 -- "timestamp - timestamp" should return result in seconds
 select timestamp '2018-10-10 10:10:10' - timestamp '2017-10-10 10:10:10' from dual;
 
 -- negative test on cast DEC to VAR/NCAR 
-select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
+select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from dual;
 
 -- test on cast date, time and timestamp to VAR/NCAR 
-select cast(date '1998-03-02' as nchar varying(11)) from t022u;
-select cast(date '1998-03-02' as nchar(11)) from t022u;
-select cast(time '08:03:02' as nchar(11)) from t022u;
-select cast(time '08:03:02 pm' as nchar(11)) from t022u;
+select cast(date '1998-03-02' as nchar varying(11)) from dual;
+select cast(date '1998-03-02' as nchar(11)) from dual;
+select cast(time '08:03:02' as nchar(11)) from dual;
+select cast(time '08:03:02 pm' as nchar(11)) from dual;
 select cast(timestamp 
-'1998-06-03 08:03:02.000000' as nchar varying(21)) from t022u;
-select cast(timestamp '1998-06-03 08:03:02.000000' as nchar(21)) from t022u;
+'1998-06-03 08:03:02.000000' as nchar varying(21)) from dual;
+select cast(timestamp '1998-06-03 08:03:02.000000' as nchar(21)) from dual;
 -- Genesis case-10-050208-6275
 -- Test on ascii to time
 
 select cast('10:13:14' as time(4)),cast('10:13:14' as time(4)) from (values(1)) as x;
 select cast('10:13:14' as time(4)),cast('10:13:14' as time(4)),current_timestamp from (values(1)) as x;
 --test on precision of time
-select cast('10:13:14' as time(7)),cast('10:13:14' as time(4));
+select cast('10:13:14' as time(10)),cast('10:13:14' as time(4)) from dual;
 --
 -- testing translate.  1998 6/12
 --
@@ -1119,9 +1040,7 @@ select translate(date '1998-06-15' using ucs2Toiso88591) from t022u2; -- not a c
 select translate(time '08:03:02 pm' using iso88591ToUcs) from t022u2; -- not a char 
 select translate(timestamp '1998-06-03 08:03:02.000000' using iso88591ToUcs2) 
 from t022u2; -- not a char 
-?ifMX
 
-?ifMX
 -- New PCode comparison instructions for float32 and float64
 create table t022fltcmp(c0 char(23), c1 real not null, c2 float not null);
 -- Insert some rows
@@ -1174,8 +1093,6 @@ insert into t022bug values ( date '1959-12-31', 9, null, '~!#$%^\&');
 -- Expect 1 row selected
 select f2 from vt022bug where f2 > 8.2399999E-1 and f2 < 9.1234567E01
        group by vc1, f2 having vc1 in ('~', '~!#$%^\&');
-
-?ifMX
 
 --to test comparison between shorter signed and longer unsigned
 --comparisons that involve implicit typecast of both operands
@@ -1230,5 +1147,42 @@ insert into t022u2 (a) values ('abcdefghijkl');
 select * from t022u2;
 update t022u2 set a = 'lkjihgfedcba';
 select * from t022u2;
+
+-- tests for nanosecond precision for datetime and interval
+create table t022nanos(a timestamp(9), b time(9), c interval hour to second(9));
+invoke t022nanos;
+insert into t022nanos values (timestamp '2018-01-01 10:10:10.123456789',
+                              time '10:10:10.123456789',
+                              interval '10:10:10.123456789' hour to second(9));
+prepare s from insert into t022nanos values (?, ?, ?);
+execute s using '2019-02-02 11:11:11.987654321', '01:01:01.112233445',
+                 '02:02:02.111111111';
+select * from t022nanos;
+select a - a, b - b, c-c, c+c, a+c, a-c from t022nanos;
+select cast(a as char(30)), cast(b as char(20)), cast(c as char(20)) from t022nanos;
+select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456789';
+select * from t022nanos where a = timestamp '2018-01-01 10:10:10.123456788';
+
+drop table if exists hive.hive.thivets;
+create table hive.hive.thivets (a timestamp);
+insert into hive.hive.thivets values (timestamp '2018-01-01 10:10:10.123456789');
+select * from hive.hive.thivets;
+select * from hive.hive.thivets where a = timestamp '2018-01-01 10:10:10.123456788' + interval '0.000000001' second (1,9);
+
+select extract(second from a), extract(second from b), extract(second from c)
+  from t022nanos;
+
+
+-- ERROR CASES
+
+-- total precision exceeds Int64 max.
+create table t022interr(a interval second(12, 9));
+
+select timestamp '9999-01-01 10:10:10.123456789' - timestamp '2018-01-01 10:10:10.123456' from dual;
+select timestamp '2100-01-01 10:10:10.123456789' - timestamp '2018-01-01 10:10:10.123456' from dual;
+
+-- invalid timestamp, time, interval values
+execute s using '2019-02-02 11:11:11.98765432115', '01:01:01.1122334455',
+                 '02:02:02.1111111115';
 
 -- done

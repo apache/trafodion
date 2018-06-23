@@ -887,7 +887,7 @@ $1~String1 --------------------------------
 3131 0A000 99999 BEGINNER MAJOR DBADMIN The statement just entered is currently not supported.
 3132 42000 99999 BEGINNER MAJOR DBADMIN The HEADING for column $0~ColumnName exceeds the maximum size of 128 characters.
 3133 42000 99999 BEGINNER MAJOR DBADMIN PERFORM is valid only in COBOL programs.
-3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 6.
+3134 42000 99999 BEGINNER MAJOR DBADMIN The specified TIME or TIMESTAMP precision value, $0~int0, cannot exceed 9.
 3135 42000 99999 BEGINNER MAJOR DBADMIN The precision of float, $0~int0, cannot exceed 54.
 3136 42000 99999 BEGINNER MAJOR DBADMIN Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj ...}
 3137 0A000 99999 BEGINNER MAJOR DBADMIN UNION JOIN is not yet supported.
@@ -1589,6 +1589,7 @@ $1~String1 --------------------------------
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
 8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error $0~String0  returned while retrieving region stats from hbase.
 8452 ZZZZZ 99999 BEGINNER MINOR LOGONLY The regular expression is invalid. Cause: $0~String0
+8453 ZZZZZ 99999 BEGINNER MINOR LOGONLY This expression results in an invalid interval value '$0~String0'
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
 8552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the version of the system $0~string0.

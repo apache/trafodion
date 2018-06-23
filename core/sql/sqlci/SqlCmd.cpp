@@ -1671,6 +1671,7 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
                   
                   rec_datetime_field dtStartField = REC_DATE_YEAR;
                   rec_datetime_field dtEndField = REC_DATE_SECOND;
+                  Lng32 intLeadPrec = SQLInterval::DEFAULT_LEADING_PRECISION;
                   if (datatype == REC_DATETIME)
                     {
                       Lng32 dtCode;
@@ -1701,12 +1702,28 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
                           dtEndField = REC_DATE_SECOND;
                         }
                      }
+                  else if (DFS2REC::isInterval(datatype))
+                    {
+                      getIntervalFields(datatype, dtStartField, dtEndField);
+
+                      // this will get fractional precision
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_PRECISION,
+                                                     &precision, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+
+                      // this will get interval leading precision
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_INT_LEAD_PREC,
+                                                     &intLeadPrec, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+                    }
 
 		  NAType::convertTypeToText(tgttype,
 					    datatype, length, precision, scale,
 					    dtStartField, dtEndField,
 					    (short)precision,
-					    SQLInterval::DEFAULT_LEADING_PRECISION,
+                                            (short)intLeadPrec,
 					    FALSE/*upshift*/,
 					    FALSE/*caseinsensitive*/,
 					    (CharInfo::CharSet) charSet,
