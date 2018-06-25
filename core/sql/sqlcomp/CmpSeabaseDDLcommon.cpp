@@ -2492,6 +2492,11 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
           else
 	      isError = TRUE;
         }
+      else if (hbaseOption->key() == "HDFS_STORAGE_POLICY")
+        {
+          hbaseCreateOptionsArray[HBASE_HDFS_STORAGE_POLICY] =
+            hbaseOption->val();
+        }
       else
         isError = TRUE;
 
