@@ -739,6 +739,7 @@ T116T1
 Summary info of get:
 Get 1 rows.
 
+
 --- SQL operation complete.
 >>drop table t116t1;
 
@@ -755,6 +756,7 @@ SB_PERSISTENT_SAMPLES
 =======================
 Summary info of get:
 Get 3 rows.
+
 
 --- SQL operation complete.
 >>create table t116t2 (a int);
@@ -774,6 +776,7 @@ T116T2
 Summary info of get:
 Get 4 rows.
 
+
 --- SQL operation complete.
 >>drop schema t116sch1 cascade;
 
@@ -784,6 +787,7 @@ Get 4 rows.
 =======================
 Summary info of get:
 Get 0 rows.
+
 
 --- SQL operation complete.
 >>select count(*) from "_MD_".objects where schema_name = 'T116SCH1' 
@@ -811,6 +815,7 @@ T116T1
 =======================
 Summary info of get:
 Get 4 rows.
+
 
 --- SQL operation complete.
 >>

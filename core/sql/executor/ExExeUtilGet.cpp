@@ -949,7 +949,6 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
 {
   if (getMItdb().noHeader())
     {
-printf("LMDBG noheader is true\n");
       return 0;
     }
   // make sure there is enough space to move header

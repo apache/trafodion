@@ -1076,6 +1076,7 @@ HIVE
 Summary info of get:
 Get 2 rows.
 
+
 --- SQL operation complete.
 >>
 >>-- external and hive table mismatch on hive 'string' datatype

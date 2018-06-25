@@ -1268,6 +1268,8 @@ HBase Registered Tables in Catalog TRAFODION
 =======================
 Summary info of get:
 Get 2 rows.
+
+
 --- SQL operation complete.
 >>unregister hbase table t022hbm2;
 
@@ -1286,6 +1288,8 @@ HBase Registered Tables in Catalog TRAFODION
 =======================
 Summary info of get:
 Get 2 rows.
+
+
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
@@ -1344,6 +1348,7 @@ REGISTER HBASE TABLE T022HBM2;
 Summary info of get:
 Get 0 rows.
 
+
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
@@ -1398,6 +1403,8 @@ HBase Registered Tables in Catalog TRAFODION
 =======================
 Summary info of get:
 Get 1 rows.
+
+
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
@@ -1466,6 +1473,8 @@ HBase Registered Tables in Catalog TRAFODION
 =======================
 Summary info of get:
 Get 1 rows.
+
+
 --- SQL operation complete.
 >>showddl hbase."_CELL_".t022hbm2;
 
