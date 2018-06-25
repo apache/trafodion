@@ -297,17 +297,22 @@ void  CmpSeabaseDDL::doSeabaseCommentOn(StmtDDLCommentOn   *commentOnNode,
       {
            ComConvertHBaseMappedExtToInt(catalogNamePart, schemaNamePart, catalogNamePart, schemaNamePart);
       }
+      else
+      {
+          //HBASE erternal table already register in create time no need to register again
+          NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT REGISTERED ";
+          ddl.append(extObjName.data());
 
-       NAString ddl = "REGISTER INTERNAL HBASE TABLE IF NOT REGISTERED ";
-       ddl.append(extObjName.data());
-       Lng32 cliRC = cliInterface.executeImmediate(ddl.data());
-       // error code -8102 means the object already register
-       if (cliRC < 0 && cliRC != -8102)
-       {
-           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-           processReturn();
-           return;
-       }
+          Lng32 cliRC = cliInterface.executeImmediate(ddl.data());
+          // error code -8102 means the object already register
+          if (cliRC < 0 && cliRC != -8102)
+          {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              processReturn();
+              return;
+          }
+      }
+
   }
   Int64 objUID = 0;
   Int32 objectOwnerID = ROOT_USER_ID;
