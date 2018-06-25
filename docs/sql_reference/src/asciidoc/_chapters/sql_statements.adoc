@@ -7882,7 +7882,7 @@ table-ref [join-type] JOIN table-ref join-spec
 ```
 
 <<<
-*** `_join-type_ is: 
+*** `_join-type_` is: 
 +
 `INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
 +
