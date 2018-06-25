@@ -1449,6 +1449,7 @@ $1~String1 --------------------------------
 4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 4494 ZZZZZ 99999 BEGINNER MINOR LOGONLY LOAD is not supported on a table with LOB columns. Table $0~TableName has LOB column $1~ColumnName.
 4495 ZZZZZ 99999 BEGINNER MINOR LOGONLY UNLOAD is not supported on a SELECT with LOB columns. $0~ColumnName is a LOB column.
+4496 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 is supported only with datetime fields.
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 will not be shared among multiple consumers. Reason: $1~String1.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.

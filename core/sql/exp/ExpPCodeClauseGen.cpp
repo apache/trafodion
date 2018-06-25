@@ -4797,6 +4797,7 @@ ex_function_extract::pCodeGenerate(Space *space, UInt32 f)
   // fractional precision - this requires slightly more work.
   if ((attrs[1]->getDatatype() != REC_DATETIME) ||
       (getExtractField() > REC_DATE_MAX_SINGLE_FIELD) ||
+      (getExtractField()>=REC_DATE_CENTURY && getExtractField()<=REC_DATE_WOM) ||
       ((getExtractField() == REC_DATE_SECOND) && (attrs[1]->getScale() > 0)))
     return ex_clause::pCodeGenerate(space, f);
 
