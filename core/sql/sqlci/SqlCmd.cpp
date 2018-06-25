@@ -2673,7 +2673,7 @@ Lng32 Execute::storeParams(char* argument_, short &num_params,
     char param[MAX_LEN_UNNAMED_PARAM+1];	// buffer for current value
     size_t i = 0;				// len(param)+1
 
-    if ( using_param_charsets && *args == '_' ) {
+    if ( using_param_charsets && (*args == '_' || TOUPPER(*args) == 'N')) {
        char* prefixPtr = args+1;
        while ( *prefixPtr ) {
           if ( *prefixPtr == '\'' ) {
@@ -2692,6 +2692,9 @@ Lng32 Execute::storeParams(char* argument_, short &num_params,
 
              // name lookup
              CharInfo::CharSet cs = CharInfo::getCharSetEnum(upperCaseName);
+             if ( TOUPPER(*args) == 'N') {
+                cs = CharInfo::UNICODE;
+             }
              delete [] upperCaseName;
 
              if (CharInfo::isCharSetFullySupported(cs)) {
