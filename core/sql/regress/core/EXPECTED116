@@ -735,6 +735,10 @@ Tables in Schema TRAFODION.T116SCH1
 
 T116T1
 
+=======================
+Summary info of get:
+Get 1 rows.
+
 --- SQL operation complete.
 >>drop table t116t1;
 
@@ -747,6 +751,10 @@ Tables in Schema TRAFODION.T116SCH1
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+Summary info of get:
+Get 3 rows.
 
 --- SQL operation complete.
 >>create table t116t2 (a int);
@@ -762,11 +770,20 @@ SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 T116T2
 
+=======================
+Summary info of get:
+Get 4 rows.
+
 --- SQL operation complete.
 >>drop schema t116sch1 cascade;
 
 --- SQL operation complete.
 >>get tables in schema t116sch1;
+
+
+=======================
+Summary info of get:
+Get 0 rows.
 
 --- SQL operation complete.
 >>select count(*) from "_MD_".objects where schema_name = 'T116SCH1' 
@@ -790,6 +807,10 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 T116T1
+
+=======================
+Summary info of get:
+Get 4 rows.
 
 --- SQL operation complete.
 >>

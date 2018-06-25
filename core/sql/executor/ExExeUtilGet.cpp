@@ -949,6 +949,7 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
 {
   if (getMItdb().noHeader())
     {
+printf("LMDBG noheader is true\n");
       return 0;
     }
   // make sure there is enough space to move header
@@ -1818,7 +1819,11 @@ short ExExeUtilGetMetadataInfoTcb::work()
 {
   short retcode = 0;
   Lng32 cliRC = 0;
+  Lng32 returnRowCount=0;
+  char returnMsg[256];
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+
+  memset(returnMsg, 0, 256);
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -3184,6 +3189,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             }
 
 	    infoList_->advance();
+            returnRowCount++;
 	  }
 	break;
 
@@ -3343,6 +3349,14 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	case DONE_:
 	  {
+            if (NOT getMItdb().noHeader())
+            {
+              short rc = 0;
+              sprintf(returnMsg, "\n=======================\nSummary info of get:\nGet %d rows.", returnRowCount);
+              moveRowToUpQueue(returnMsg, strlen(returnMsg), &rc);
+              moveRowToUpQueue(" ");
+            }
+
 	    retcode = handleDone();
 	    if (retcode == 1)
 	      return WORK_OK;

@@ -23,6 +23,10 @@ SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
 
+=======================
+Summary info of get:
+Get 3 rows.
+
 --- SQL operation complete.
 >>
 >>CREATE TABLE stest
@@ -106,6 +110,10 @@ STEST
 STESTC
 STEST_EMPTY
 
+=======================
+Summary info of get:
+Get 6 rows.
+
 --- SQL operation complete.
 >>  -- should be just stest, stest_empty, stestc, and the sb_* tables
 >>
@@ -149,6 +157,10 @@ STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441663_444545
 
+=======================
+Summary info of get:
+Get 7 rows.
+
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + a sample table
 >>
@@ -172,6 +184,10 @@ STEST
 STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441711_141471
+
+=======================
+Summary info of get:
+Get 7 rows.
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + a different sample table
@@ -203,6 +219,10 @@ STEST
 STESTC
 STEST_EMPTY
 
+=======================
+Summary info of get:
+Get 6 rows.
+
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables only
 >>
@@ -229,6 +249,10 @@ STEST
 STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441748_979037
+
+=======================
+Summary info of get:
+Get 7 rows.
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + another sample table
@@ -263,6 +287,10 @@ STEST
 STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
+
+=======================
+Summary info of get:
+Get 7 rows.
 
 --- SQL operation complete.
 >> -- should be stest, stest_empty, stestc, sb_* tables + another sample table
@@ -393,6 +421,10 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
+=======================
+Summary info of get:
+Get 8 rows.
+
 --- SQL operation complete.
 >>
 >>execute s1 using 'STESTC';
@@ -428,6 +460,10 @@ STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
 
+=======================
+Summary info of get:
+Get 8 rows.
+
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
 >>
@@ -455,6 +491,10 @@ STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
+
+=======================
+Summary info of get:
+Get 8 rows.
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -484,6 +524,10 @@ STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
+
+=======================
+Summary info of get:
+Get 8 rows.
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -515,6 +559,10 @@ STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 TRAF_SAMPLE_07158060726899023220_1517441862_582002
+
+=======================
+Summary info of get:
+Get 8 rows.
 
 --- SQL operation complete.
 >> -- should be the same as previous "get tables"
@@ -567,6 +615,10 @@ STESTC
 STEST_EMPTY
 TRAF_SAMPLE_07158060726899021395_1517441802_045572
 
+=======================
+Summary info of get:
+Get 7 rows.
+
 --- SQL operation complete.
 >> -- should be the same as previous "get tables" except only one sample table
 >>
@@ -591,6 +643,10 @@ Tables in Schema TRAFODION.COMPGENERAL_TEST023
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES
+
+=======================
+Summary info of get:
+Get 3 rows.
 
 --- SQL operation complete.
 >>  -- sample tables should be gone too
