@@ -136,8 +136,8 @@ public:
 			    char * lobLob,
 			    Int64 uid, Lng32 lobNum);
 
-  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port );
-  static ExLobGlobals *initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs);
+  static Lng32 initLOBglobal(ExLobGlobals *& lobGlob, NAHeap *heap, ContextCli *currContext,char *server, Int32 port, NABoolean isHiveRead = FALSE);
+  static ExLobGlobals *initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs, NABoolean isHiveRead = FALSE);
   static void deleteLOBglobal(ExLobGlobals *lobGlob, NAHeap *parentHeap);
   static void genLobLockId(Int64 objUid,Int32 lobNum, char *llid);
 

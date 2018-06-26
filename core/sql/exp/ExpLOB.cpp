@@ -55,22 +55,22 @@
 #include "ex_globals.h"
 #include "ex_god.h"
 
-ExLobGlobals *ExpLOBoper::initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs)
+ExLobGlobals *ExpLOBoper::initLOBglobal(NAHeap *parentHeap, ContextCli *currContext, NABoolean useLibHdfs, NABoolean isHiveRead)
 {
   NAHeap *lobHeap = new (parentHeap) NAHeap("LOB Heap", parentHeap);
   ExLobGlobals *exLobGlobals = new (lobHeap) ExLobGlobals(lobHeap);
   exLobGlobals->setUseLibHdfs(useLibHdfs);
   exLobGlobals->initialize();
   // initialize lob interface
-  ExpLOBoper::initLOBglobal(exLobGlobals, lobHeap, currContext, (char *)"default", (Int32)0);
+  ExpLOBoper::initLOBglobal(exLobGlobals, lobHeap, currContext, (char *)"default", (Int32)0, isHiveRead);
   return exLobGlobals; 
 }
 
 
-Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *heap, ContextCli *currContext, char *hdfsServer ,Int32 port)
+Lng32 ExpLOBoper::initLOBglobal(ExLobGlobals *& exLobGlobals, NAHeap *heap, ContextCli *currContext, char *hdfsServer ,Int32 port, NABoolean isHiveRead)
 {
   // call ExeLOBinterface to initialize lob globals
-  ExpLOBinterfaceInit(exLobGlobals, heap,currContext,FALSE, hdfsServer,  port);
+  ExpLOBinterfaceInit(exLobGlobals, heap, currContext, isHiveRead, hdfsServer, port);
   return 0;
 }
 

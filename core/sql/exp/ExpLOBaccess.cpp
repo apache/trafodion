@@ -3623,11 +3623,6 @@ Ex_Lob_Error ExLobGlobals::initialize()
     lobMap_ = (lobMap_t *) new (getHeap())lobMap_t;  
     if (lobMap_ == NULL)
       return LOB_INIT_ERROR;
-    // No need to start them here for LOB usage.These worker threads are needed 
-    // only for hive access so moving them to the ExpLOBInterfaceInit function 
-    // where they will get started only in case of hive access.
-    // start the worker threads
-    //startWorkerThreads();
 
     return err;
 }

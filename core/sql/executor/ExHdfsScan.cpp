@@ -377,7 +377,7 @@ Int32 ExHdfsScanTcb::fixup()
   lobGlob_ = NULL;
   lobGlob_ = ExpLOBoper::initLOBglobal((NAHeap *)getGlobals()->getDefaultHeap(),
                                          getGlobals()->castToExExeStmtGlobals()->getContext(), 
-                                         useLibhdfsScan_);
+                                         useLibhdfsScan_, TRUE);
   return 0;
 }
 
