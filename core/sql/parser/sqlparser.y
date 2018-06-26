@@ -500,6 +500,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CARDINALITY
 %token <tokval> TOK_CASE
 %token <tokval> TOK_CAST
+%token <tokval> TOK_CENTURY
 %token <tokval> TOK_TYPECAST
 %token <tokval> TOK_CATCHUP	  // MV
 %token <tokval> TOK_TRANSLATE
@@ -622,6 +623,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_DYNAMIC
 %token <tokval> TOK_DYNAMIC_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_D_RANK             /* Tandem extension non-reserved word */
+%token <tokval> TOK_DECADE
+%token <tokval> TOK_DOW
+%token <tokval> TOK_DOY
 %token <tokval> TOK_EACH                
 %token <tokval> TOK_EID
 %token <tokval> TOK_ELSEIF
@@ -656,6 +660,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EXTRACT
 %token <tokval> TOK_EXTRACT_SOURCE
 %token <tokval> TOK_EXTRACT_TARGET
+%token <tokval> TOK_EPOCH
 %token <tokval> TOK_FALSE
 %token <tokval> TOK_FAMILY
 %token <tokval> TOK_FEATURE_VERSION_INFO   /* Versioning. Non-reserved */
@@ -1173,6 +1178,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_WAITEDIO
 %token <tokval> TOK_WCHAR
 %token <tokval> TOK_WEEK
+%token <tokval> TOK_WOM
 %token <tokval> TOK_WHEN
 %token <tokval> TOK_WHENEVER
 %token <tokval> TOK_WHERE
@@ -12479,6 +12485,38 @@ non_second_datetime_field : TOK_YEAR
                           | TOK_MINUTE
                           {
                             $$ = REC_DATE_MINUTE;
+                          }
+                          | TOK_CENTURY
+                          {
+                            $$ = REC_DATE_CENTURY;
+                          }
+                          | TOK_DECADE
+                          {
+                            $$ = REC_DATE_DECADE;
+                          }
+                          | TOK_WEEK
+                          {
+                            $$ = REC_DATE_WEEK;
+                          }
+                          | TOK_QUARTER
+                          {
+                            $$ = REC_DATE_QUARTER;
+                          }
+                          | TOK_EPOCH
+                          {
+                            $$ = REC_DATE_EPOCH;
+                          }
+                          | TOK_DOW
+                          {
+                            $$ = REC_DATE_DOW;
+                          }
+                          | TOK_DOY
+                          {
+                            $$ = REC_DATE_DOY;
+                          }
+                          | TOK_WOM
+                          {
+                            $$ = REC_DATE_WOM;
                           }
 
 /* type datetimeField */

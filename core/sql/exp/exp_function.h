@@ -2804,7 +2804,9 @@ public:
   ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
   ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
-					   ComDiagsArea** = 0);  
+					   ComDiagsArea** = 0);
+
+  Int64 getExtraTimeValue(rec_datetime_field eField, Lng32 eCode, char *dateTime);
   Long pack(void *);
 
   // ---------------------------------------------------------------------

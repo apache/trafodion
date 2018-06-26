@@ -4416,6 +4416,22 @@ const NAType *Extract::synthesizeType()
 
     return NULL;
   }
+  if ( type != NA_DATETIME_TYPE )
+    {
+      enum rec_datetime_field eField = getExtractField();
+      NAString sErr;
+      if ( REC_DATE_WEEK == eField
+          || REC_DATE_DOW == eField
+          || REC_DATE_DOY == eField
+          || REC_DATE_WOM == eField
+          || REC_DATE_CENTURY == eField)
+        sErr = dti.getFieldName(eField);
+      if (sErr.length() > 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4496) << DgString0(sErr);
+          return NULL;
+        }
+    }
   // ANSI 6.6 SR 3a.
   enum rec_datetime_field extractStartField = getExtractField();
   enum rec_datetime_field extractEndField = extractStartField;
@@ -4439,16 +4455,19 @@ const NAType *Extract::synthesizeType()
         }
     }
 
-  if (dti.getStartField() > extractStartField ||
-      dti.getEndField()   < extractEndField ||
-      !dti.isSupportedType()) {
-    // 4037 cannot extract field from type
-    *CmpCommon::diags() << DgSqlCode(-4037)
-       << DgString0(dti.getFieldName(getExtractField()))
-       << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
+  if ( !(extractStartField >=REC_DATE_CENTURY && extractStartField<=REC_DATE_WOM) )
+    {
+      if (dti.getStartField() > extractStartField ||
+          dti.getEndField()   < extractEndField ||
+          !dti.isSupportedType()) {
+        // 4037 cannot extract field from type
+        *CmpCommon::diags() << DgSqlCode(-4037)
+           << DgString0(dti.getFieldName(getExtractField()))
+           << DgString1(dti.getTypeSQLname(TRUE /*terse*/));
 
-    return NULL;
-  }
+        return NULL;
+      }
+    }
   // ANSI 6.6 SR 4.  Precision is implementation-defined:
   // EXTRACT(YEAR       from datetime):  result precision is 4 + scale
   // EXTRACT(other      from datetime):  result precision is 2 + scale
@@ -4470,15 +4489,31 @@ const NAType *Extract::synthesizeType()
   else if (getExtractField() == REC_DATE_YEARWEEK_EXTRACT ||
            getExtractField() == REC_DATE_YEARWEEK_D_EXTRACT)
     prec = 6;					// YEARMWEEK is yyyyww
+  else if (getExtractField() == REC_DATE_DECADE ||
+           getExtractField() == REC_DATE_DOY)
+    prec = 3;
+  else if (getExtractField() == REC_DATE_QUARTER ||
+           getExtractField() == REC_DATE_DOW)
+    prec = 1;
+  else if (getExtractField() == REC_DATE_EPOCH)
+    prec = 10;
   else
     prec = 2;					// else max of 12, 31, 24, 59
   if (getExtractField() == REC_DATE_SECOND) {
     prec  += dti.getFractionPrecision();
     scale += dti.getFractionPrecision();
   }
+  if (getExtractField() == REC_DATE_EPOCH)
+    {
+      prec  += dti.getFractionPrecision();
+      scale += dti.getFractionPrecision();
+    }
+  NABoolean bNegValue = FALSE;
+  if ( getExtractField() >= REC_DATE_CENTURY && extractStartField <= REC_DATE_WOM )
+    bNegValue = TRUE;
   const Int16 disAmbiguate = 0; // added for 64bit project
   return new HEAP
-    SQLNumeric(HEAP, type == NA_INTERVAL_TYPE, /*allowNegValues*/
+    SQLNumeric(HEAP, (type == NA_INTERVAL_TYPE) || bNegValue, /*allowNegValues*/
 	       prec,
 	       scale,
                disAmbiguate,
