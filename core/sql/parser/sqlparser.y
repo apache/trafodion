@@ -67,6 +67,7 @@
 // This solves the problem because bison does not have to reduce after reading TOK_DROP. Rather,
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
+
 #include "Platform.h"				// must be the first #include
 //debug yacc
 #define YY_LOG_FILE "yylog"
@@ -2047,6 +2048,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <intervalQualifier>	end_field
 %type <intervalQualifier>       fraction_only_interval
 %type <datetimeField>		non_second_datetime_field
+%type <datetimeField>		new_non_second_datetime_field
 %type <datetimeField>		datetime_field
 %type <datetimeQualifier>       datetime_qualifier           //For MP Datetime
 %type <datetimeQualifier>       datetime_start_field         //For MP Datetime
@@ -12486,7 +12488,8 @@ non_second_datetime_field : TOK_YEAR
                           {
                             $$ = REC_DATE_MINUTE;
                           }
-                          | TOK_CENTURY
+new_non_second_datetime_field:
+                          TOK_CENTURY
                           {
                             $$ = REC_DATE_CENTURY;
                           }
@@ -12521,6 +12524,10 @@ non_second_datetime_field : TOK_YEAR
 
 /* type datetimeField */
 datetime_field : non_second_datetime_field
+               {
+                 $$ = $1;
+               }
+               | new_non_second_datetime_field
                {
                  $$ = $1;
                }
