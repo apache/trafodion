@@ -7889,8 +7889,6 @@ table-ref [join-type] JOIN table-ref join-spec
 is a joined table. You specify the `_join-type_` by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
 If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, {project-name} SQL assumes the join is
 an outer join.
-+
-If you specify a CROSS join as the `_join-type_`, you cannot specify a NATURAL join or a
 
 *** `_join-spec_`
 +

@@ -539,6 +539,8 @@ if this CQD is turned ON.
 ** `UPSERT USING LOAD`
 +
 specifies that data is inserted into target tables using rowset inserts without transactions.
++
+In this case, Trafodion uses regular HBase interface (Put) rather than HBase Bulk Loader when inserting multiple rows at a time.
 
 <<<
 [[load_considerations]]
