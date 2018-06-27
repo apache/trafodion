@@ -74,6 +74,7 @@ StatsGlobals::StatsGlobals(void *baseAddr, short envType, Lng32 maxSegSize)
       , pidToCheck_(0)
       , ssmpDumpedTimestamp_(0)
       , lobLocks_(NULL)
+      , pidViolationCount_(0)
 {
   statsHeap_.setSharedMemory();
   //Phandle wrapper in porting layer
@@ -1614,6 +1615,20 @@ void StatsGlobals::createMemoryMonitor()
                                                       memMonitorSampleInterval,
                                                       &statsHeap_);
    memMonitor_->enableLogger();
+}
+
+NABoolean StatsGlobals::getInitError(pid_t pid, NABoolean &reportError)
+{
+   NABoolean retcode = FALSE;
+   reportError = FALSE; 
+   if ((getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_) ||
+        (pid >= configuredPidMax_))
+   {
+      retcode = TRUE;
+      if (pidViolationCount_++ < PID_VIOLATION_MAX_COUNT) 
+         reportError = TRUE;
+   } 
+   return retcode; 
 }
 
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu)

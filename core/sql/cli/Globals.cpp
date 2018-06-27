@@ -179,16 +179,12 @@ void CliGlobals::init( NABoolean espProcess,
     statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
     NABoolean reportError = FALSE;
     char msg[256];;
-    if (statsGlobals_ != NULL && myPin_ >= statsGlobals_->getConfiguredPidMax())
-       reportError = TRUE;
     if ((statsGlobals_ == NULL)
-      || ((statsGlobals_ != NULL) && 
-        ((statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_) ||
-        (myPin_ >= statsGlobals_->getConfiguredPidMax()))))
+      || ((statsGlobals_ != NULL) && (statsGlobals_->getInitError(myPin_, reportError))))
     {
       if (reportError) {
          snprintf(msg, sizeof(msg),
-          "Pid %d,%d is higher than the configured pid max %d",
+          "Version mismatch or Pid %d,%d is higher than the configured pid max %d",
            myCpu_, myPin_, statsGlobals_->getConfiguredPidMax());
          SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
       }

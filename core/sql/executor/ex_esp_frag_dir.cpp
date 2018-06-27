@@ -103,16 +103,12 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
   tid_ = syscall(SYS_gettid);
   NABoolean reportError = FALSE;
   char msg[256];;
-  if (statsGlobals_ != NULL && pid_ >= statsGlobals_->getConfiguredPidMax())
-     reportError = TRUE;
   if ((statsGlobals_ == NULL)
-     || ((statsGlobals_ != NULL) && 
-        ((statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_) ||
-        (pid_ >= statsGlobals_->getConfiguredPidMax()))))
+     || ((statsGlobals_ != NULL) &&  (statsGlobals_->getInitError(pid_, reportError))))
   {
     if (reportError) {
          snprintf(msg, sizeof(msg), 
-          "Pid %d,%d is higher than the configured pid max %d",
+          "Version mismatch or Pid %d,%d is higher than the configured pid max %d",
            cpu_, pid_, statsGlobals_->getConfiguredPidMax()); 
          SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
     }

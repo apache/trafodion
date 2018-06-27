@@ -72,6 +72,7 @@ class MemoryMonitor;
 #define PID_MAX_DEFAULT     65536
 #define PID_MAX_DEFAULT_MAX 131072
 #define PID_MAX_DEFAULT_MIN 32768
+#define PID_VIOLATION_MAX_COUNT 100
 
 typedef struct GlobalStatsArray
 {
@@ -201,6 +202,7 @@ public:
   RtsExplainFrag *getExplainInfo() { return explainInfo_; }
   void deleteExplainFrag();
   ULng32 getFlags() const { return flags_; }
+  NABoolean reportError(pid_t pid);
 private:
   enum Flags
   {
@@ -496,6 +498,7 @@ public:
   Long &getSsmpProcSemId() { return ssmpProcSemId_; } 
   void setSscpProcSemId(Long semId) { sscpProcSemId_ = semId; } 
   void setSeabedError(Int32 error) { seabedError_ = error; }
+  NABoolean getInitError(pid_t pid, NABoolean &reportError );
 private:
   void *statsSharedSegAddr_;
   Lng32 version_;             // A field used to prevent downrev compiler or other 
@@ -536,6 +539,7 @@ private:
   MemoryMonitor *memMonitor_;
   SyncHashQueue *lobLocks_;
   pid_t configuredPidMax_;
+  Int64 pidViolationCount_;
 };
 StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP = TRUE);
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu);
