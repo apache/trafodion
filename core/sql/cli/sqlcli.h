@@ -696,7 +696,10 @@ enum SQLTRANS_COMMAND {
   SQLTRANS_BEGIN_WITH_DP2_XNS   = 9,
 
   /* inherit the global transaction and make it the current xn */
-  SQLTRANS_INHERIT          = 10
+  SQLTRANS_INHERIT          = 10,
+
+  SQLTRANS_SUSPEND          = 11,
+  SQLTRANS_RESUME           = 12,
 };
 
 /* specifies the type/format of an AUTHID */

@@ -7148,6 +7148,18 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
       }
     break;
 
+    case SQLTRANS_SUSPEND:
+      {
+        currContext.getTransaction()->suspendTransaction();
+      }
+    break;
+
+    case SQLTRANS_RESUME:
+      {
+        currContext.getTransaction()->resumeTransaction();
+      }
+    break;
+
     default:
       diags << DgSqlCode(-CLI_INVALID_SQLTRANS_COMMAND);
       return SQLCLI_ReturnCode(&currContext,diags.mainSQLCODE());

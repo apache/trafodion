@@ -13595,7 +13595,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
      {
-      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_HBASE_ACCESS_ERROR)
         *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
                             << DgInt0(CmpCommon::context()->hbaseErrNum())
                             << DgString0(CmpCommon::context()->hbaseErrStr());
@@ -13643,7 +13643,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
       if ((CmpCommon::context()->isUninitializedSeabase()) &&
           (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
         {
-          if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+          if (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_HBASE_ACCESS_ERROR)
             *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
                                 << DgInt0(CmpCommon::context()->hbaseErrNum())
                                 << DgString0(CmpCommon::context()->hbaseErrStr());

@@ -261,7 +261,8 @@ CmpCompileInfo::CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
        sqltext_(sourceStr), sqlTextLen_(sourceStrLen),
        sqlTextCharSet_(sourceStrCharSet),
        schemaName_(schemaName), schemaNameLen_(schemaNameLen),
-       inputArrayMaxsize_(inputArrayMaxsize)
+       inputArrayMaxsize_(inputArrayMaxsize),
+       unused2_(0)
 {
   if (atomicity == 1) {
       flags_ |= ROWSET_ATOMICITY_SPECIFIED;

@@ -16444,7 +16444,7 @@ optional_from_schema : /* empty */
 	       }
 
 /* type relx */
-exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
+exe_util_init_hbase :TOK_INITIALIZE TOK_TRAFODION 
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
 		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
@@ -16459,6 +16459,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
                  de->setInitHbase(TRUE);
                  de->setCreateMDViews(TRUE);
+                 de->setReturnStatus(TRUE);
 
 		 $$ = de;
 	       }
@@ -16479,17 +16480,17 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
                  de->setInitHbase(TRUE);
                  de->setCreateMDViews(TRUE);
                  de->setMinimal(TRUE);
+                 de->setReturnStatus(TRUE);
 
 		 $$ = de;                
                }
 
-           | TOK_INITIALIZE TOK_TRAFODION ',' TOK_NO TOK_METADATA TOK_VIEWS
+          | TOK_INITIALIZE TOK_TRAFODION ',' TOK_NO TOK_RETURN TOK_STATUS
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
 		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
 						   , PARSERHEAP() 
 	                                       );
-
 
                  DDLExpr * de = new(PARSERHEAP()) DDLExpr
                    (NULL,
@@ -16498,9 +16499,30 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
                     PARSERHEAP());
 
                  de->setInitHbase(TRUE);
+                 de->setCreateMDViews(TRUE);
 
 		 $$ = de;
 	       }
+          | TOK_INITIALIZE TOK_TRAFODION ',' TOK_MINIMAL ',' TOK_NO TOK_RETURN TOK_STATUS
+               {
+ 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setInitHbase(TRUE);
+                 de->setCreateMDViews(TRUE);
+                 de->setMinimal(TRUE);
+
+		 $$ = de;                
+               }
+
 
              | TOK_INITIALIZE TOK_TRAFODION ',' TOK_DROP
                {

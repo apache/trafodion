@@ -315,11 +315,11 @@ Int64 DatetimeType::julianTimestampValue(const char * value, const short valueLe
       str_cpy_all((char *) &fraction, datetimeOpData, sizeof(fraction));
       if (fractionPrec > 0)
         {
-          if (fractionPrec > DatetimeType::MAX_FRACTION_PRECISION_MSEC)
+          if (fractionPrec > DatetimeType::MAX_FRACTION_PRECISION_USEC)
             // Adjust the fractional seconds part to be the number of microseconds
-            fraction /= (Lng32)pow(10, (fractionPrec - DatetimeType::MAX_FRACTION_PRECISION_MSEC));
+            fraction /= (Lng32)pow(10, (fractionPrec - DatetimeType::MAX_FRACTION_PRECISION_USEC));
           else 
-            fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION_MSEC - fractionPrec));
+            fraction *= (Lng32)pow(10, (DatetimeType::MAX_FRACTION_PRECISION_USEC - fractionPrec));
         }
     }
   short timestamp[] = {

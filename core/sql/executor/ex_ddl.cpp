@@ -479,6 +479,8 @@ short ExDDLwithStatusTcb::work()
             currEntry_ = 0;
             currPtr_ = NULL;
 
+            queryStartTime_ = NA_JulianTimestamp();
+
             if (ddlTdb().hbaseDDL())
               {
                 if (ddlTdb().hbaseDDLNoUserXn())
@@ -530,6 +532,9 @@ short ExDDLwithStatusTcb::work()
                 if (ddlTdb().getReturnDetails())
                   mdi_->setReturnDetails(TRUE);
               }
+            else if (ddlTdb().getInitTraf())
+              mdi_->setInitTraf(TRUE);
+
             mdi_->setHbaseDDL(TRUE);            
 
             if (ddlTdb().inputExpr_)
@@ -561,9 +566,6 @@ short ExDDLwithStatusTcb::work()
               {
                 callEmbeddedCmp_ = FALSE;
               }
-
-            // TEMP, until embedded call is fixed to handle returning status.
-            callEmbeddedCmp_ = FALSE;
 
             step_ = SETUP_NEXT_STEP_;
          }
@@ -608,8 +610,9 @@ short ExDDLwithStatusTcb::work()
                currContext->getSqlParserFlags(),
                parentQid, str_len(parentQid), cpDiagsArea);
 
-            getHeap()->deallocateMemory(data_);
- 
+            if (currContext->getDiagsArea())
+              currContext->getDiagsArea()->clear();
+
             if ((cpDiagsArea) &&
                 ((cpDiagsArea->getNumber(DgSqlCode::WARNING_) > 0) ||
                  (cpDiagsArea->getNumber(DgSqlCode::ERROR_) > 0)))
@@ -680,15 +683,18 @@ short ExDDLwithStatusTcb::work()
                 
                 replyDWS_ = (CmpDDLwithStatusInfo*)(new(getHeap()) char[replyBufLen_]);
                 memcpy((char*)replyDWS_, replyBuf_, replyBufLen_);
-                cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
+                if (cmp_)
+                  cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
+                else
+                  currContext->exHeap()->deallocateMemory((void*)replyBuf_);
                 replyBuf_ = NULL;
                 replyBufLen_ = 0;
 
                 replyDWS_->unpack((char*)replyDWS_);
 
-                if (mdi_->computeST())
+                if (replyDWS_->computeST())
                   startTime_ = NA_JulianTimestamp();
-                else if (mdi_->computeET())
+                else if (replyDWS_->computeET())
                   endTime_ = NA_JulianTimestamp();
               }
             
@@ -719,7 +725,19 @@ short ExDDLwithStatusTcb::work()
             char buf[1000];
             if (strlen(replyDWS_->msg()) > 0)
               {
-                str_sprintf(buf, "%s", replyDWS_->msg());
+                if (replyDWS_->returnET())
+                  {
+                    if (replyDWS_->done())
+                      startTime_ = queryStartTime_;
+
+                    char timeBuf[100];
+                    ExExeUtilTcb::getTimeAsString((endTime_-startTime_), timeBuf,
+                                                  TRUE);
+                    str_sprintf(buf, "%s {ET: %s}", replyDWS_->msg(),
+                                timeBuf);
+                  }
+                else
+                  str_sprintf(buf, "%s", replyDWS_->msg());
                 if (moveRowToUpQueue(&qparent_, ddlTdb().tuppIndex(), buf, 0, &rc))
                   return rc;
               }

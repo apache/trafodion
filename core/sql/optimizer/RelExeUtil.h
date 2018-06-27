@@ -257,6 +257,7 @@ public:
 				       ComTdb * tdb, 
 				       Generator *generator);
 
+  void setReturnStatus(NABoolean v) { returnStatus_ = v; }
   virtual NABoolean producesOutput() { return returnStatus_;}
   virtual const char 	*getVirtualTableName();
   virtual TrafDesc 	*createVirtualTableDesc();

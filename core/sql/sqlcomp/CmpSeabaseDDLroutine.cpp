@@ -1597,9 +1597,9 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
   Lng32 cliRC = 0;
   
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
-      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -TRAF_NOT_INITIALIZED))
     {
-      *CmpCommon::diags() << DgSqlCode(-1393);
+      *CmpCommon::diags() << DgSqlCode(-TRAF_NOT_INITIALIZED);
       return -1;
     }
 
